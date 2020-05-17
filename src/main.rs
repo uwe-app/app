@@ -5,6 +5,8 @@ use std::env;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use regex::Regex;
+use std::fs;
+use log::{info};
 
 use hypertext::{Finder, InputOptions, OutputOptions};
 use hypertext::matcher::{FileMatcher};
@@ -33,11 +35,11 @@ struct Cli {
     ignore: Option<Vec<Regex>>,
 
     /// Read files from directory
-    #[structopt(parse(from_os_str))]
+    #[structopt(parse(from_os_str), default_value="site")]
     input: PathBuf,
 
     /// Write files to directory
-    #[structopt(parse(from_os_str))]
+    #[structopt(parse(from_os_str), default_value="build")]
     output: PathBuf,
 }
 
@@ -66,6 +68,17 @@ fn main() {
     if !args.input.is_dir() {
         error!("not a directory: {}", args.input.display());
         std::process::exit(1);
+    }
+
+    let mut def_build = PathBuf::new();
+    def_build.push("build");
+
+    if args.output == def_build && !args.output.exists() {
+        info!("mkdir {}", def_build.display());
+        if let Err(e) = fs::create_dir(def_build) {
+            error!("{}", e);
+            std::process::exit(1);
+        }
     }
 
     if !args.output.is_dir() {
