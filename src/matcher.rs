@@ -11,7 +11,7 @@ pub enum FileType {
     Ignored,
     Markdown,
     Html,
-    Handlebars,
+    Template,
     Private,
     Unknown,
 }
@@ -100,7 +100,7 @@ impl FileMatcher {
                     } else if nm.ends_with(HTML) {
                         return FileType::Html
                     } else if nm.ends_with(HBS) {
-                        return FileType::Handlebars
+                        return FileType::Template
                     } else if nm.ends_with(TOML) && self.has_parse_file(file) {
                         return FileType::Private
                     }

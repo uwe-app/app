@@ -35,7 +35,7 @@ impl OutputOptions {
             Ok(relative) => {
                 let mut result = self.target.join(relative).to_owned();
                 match file_type {
-                    FileType::Markdown | FileType::Handlebars | FileType::Html => {
+                    FileType::Markdown | FileType::Html => {
                         result.set_extension("html");
 
                         let clean_target = file.clone();
@@ -100,7 +100,7 @@ impl Finder {
             FileType::Unknown => {
                 return fs::copy(input, output)
             },
-            FileType::Html | FileType::Handlebars => {
+            FileType::Html => {
                 info!("HTML {} -> {}", input.display(), output.display());
                 let result = parser.parse_html(input);
                 match result {
@@ -122,13 +122,10 @@ impl Finder {
                     Err(e) => return Err(e)
                 }
             },
-            FileType::Ignored => {
-                debug!("NOOP {}", input.display());
-            },
-            FileType::Private => {
+            FileType::Ignored | FileType::Private | FileType::Template => {
                 // Ignore templates here as they are located and 
                 // used during the parsing and rendering process
-                debug!("PRIV {}", input.display());
+                debug!("NOOP {}", input.display());
             },
         }
 

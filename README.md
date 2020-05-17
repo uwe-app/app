@@ -10,16 +10,19 @@ hypertext
 
 ## Rules
 
-* Parse `.html` and `.hbs` as HTML *template files*.
-* Parse `.md` files as Markdown *template files*.
-* For each parsed *template file* look for the *layout file* `layout.hbs` in the current directory and parents; if a layout is found pass it the file `content` (see [layout.hbs](/site/layout.hbs)) for rendering. If no layout is located render the *template file*.
+* Treat `.html` and `.md` files as *documents* to be parsed as templates using a layout.
+* Treat `.hbs` files as *templates*; never copy them to `build`.
 * Infer document title from the file name or parent directory (in the case of index files).
-* If a *template file* has a sibling *data file* (`.toml`) use it to define the template data (see [index.toml](/site/index.toml)).
+* If a *document* has a sibling *configuration* (`.toml` file) use it to define the template data (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
 * If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, **exclude** theme files.
-* Treat destination files as clean URLs wherever possible (see [contact](/site/contact.hbs)).
+* Treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)).
 * Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.
+
+## Layout
+
+For each document look for a *layout template* (`layout.hbs`) in the current directory and parents; if a layout is found pass it the file `content` (see [layout.hbs](/site/layout.hbs)) for rendering. If no layout is located render the *document*.
 
 ## Template Data
 
@@ -33,7 +36,6 @@ Layout templates have an additional `content` field containing the rendered temp
 ## Bugs
 
 * Due to the `theme` convention the site cannot have a top-level `theme` directory.
-* Cannot use `layout.hbs` as input to a page template.
 
 ## Help
 
