@@ -1,0 +1,10 @@
+{
+  "directory": "build",
+  "watch": "example",
+  "open": true,
+  "build": {
+    "name": "make",
+    "args": ["run"]
+  },
+  "live": true
+}
