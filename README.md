@@ -12,7 +12,7 @@ hypertext
 
 * Parse `.html` and `.hbs` as HTML templates.
 * Parse `.md` files as Markdown templates.
-* For each parsed template look for the layout file `layout.hbs` in the current directory and parents; if a layout is found use it as a master template passing the file `content` (see [hypertext.hbs](/site/layout.hbs)).
+* For each parsed template look for the layout file `layout.hbs` in the current directory and parents; if a layout is found use it passing the file `content` (see [layout.hbs](/site/layout.hbs)).
 * Document title is inferred from the file name or parent directory (in the case of index files).
 * If a parse template has a sibling `.toml` file it is used to define document meta data such as the `title` overriding the inferred title (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
