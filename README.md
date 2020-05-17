@@ -1,18 +1,22 @@
 # Hyper Text
 
-A program for combining HTML and [Commonmark][] seamlessly using [Handlebars][] for templating.
+Fast, opinionated static site generation combining HTML, [commonmark][] with [handlebars][] and [mdbook][] support.
+
+See [site](/site) for example files.
 
 ```
-hypertext source target
+hypertext
 ```
 
-Read all files in source and process them according to the following rules:
+Process all files in `site` and write the result to `build` using these rules:
 
-* `.html`, `.hbs`: Parse as HTML template.
-* `.md`: Parse as Markdown template.
-* Treat `hypertext.hbs` files as master templates.
+* Parse `.html` and `.hbs` as HTML templates.
+* Parse `.md` files as Markdown templates.
+* For each parsed template walk the parent directroy structure, if a `hypertext.hbs` file is found use it as a master template passing each processed template as a `content` property.
+* If a directory contains a `book.toml` file build using [mdbook][].
+* If the directory matches `site/theme` treat as a global theme for [mdbook][].
 * Skip any files matched by ignore patterns (`--ignore`).
-* Copy all other files to `target`.
+* Copy all other files.
 
 For each matched file if a `hypertext.hbs` file exists in any parent directory use it as a master template and generate the file content by parsing using the `hypertext.hbs` template file assigning the template markup as `content`.
 
@@ -44,5 +48,6 @@ hypertext source target --ignore ".*\.txt$"
 
 You may specify multiple `--ignore` patterns if you need to.
 
-[Commonmark]: https://commonmark.org/
-[Handlebars]: https://handlebarsjs.com/
+[commonmark]: https://commonmark.org/
+[handlebars]: https://handlebarsjs.com/
+[mdbook]: https://rust-lang.github.io/mdBook/
