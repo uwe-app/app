@@ -6,7 +6,9 @@ Fast, opinionated static site generation combining [commonmark][], [handlebars][
 hypertext
 ```
 
-Process all files in `site` and write the result to `build` using these rules:
+> Process all files in `site` and write the result to `build`.
+
+## Rules
 
 * Parse `.html` and `.hbs` as HTML templates.
 * Parse `.md` files as Markdown templates.
@@ -21,6 +23,10 @@ Process all files in `site` and write the result to `build` using these rules:
 ## Help
 
 See all options with `hypertext --help`.
+
+## Notes
+
+The files in [site](/site) are an example to demonstrate and test various configurations and are clearly not the best way to structure a site.
 
 [commonmark]: https://commonmark.org/
 [handlebars]: https://handlebarsjs.com/
