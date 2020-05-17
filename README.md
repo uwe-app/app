@@ -17,7 +17,7 @@ hypertext
 * If a *template file* has a sibling *data file* (`.toml`) use it to define the document meta data (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
 * If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, **exclude** theme files.
-* Treat destination files as clean URLs wherever possible (see [guide](/site/contact.hbs)).
+* Treat destination files as clean URLs wherever possible (see [contact](/site/contact.hbs)).
 * Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.
 
