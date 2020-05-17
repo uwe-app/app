@@ -17,6 +17,7 @@ hypertext
 * If a parse template has a sibling `.toml` file it is used to define document meta data such as the `title` overriding the inferred title (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
 * If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, **exclude** theme files.
+* Treat destination files as clean URLs wherever possible (see [guide](/site/contact.hbs)).
 * Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.
 
