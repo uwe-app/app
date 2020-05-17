@@ -16,13 +16,13 @@ hypertext
 * Document title is inferred from the file name or parent directory.
 * If a parse template has a sibling `.toml` file it is used to define document meta data such as the `title` overriding the inferred title (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
-* If the directory matches `site/theme` treat as a global theme for [mdbook][].
-* Skip any files matched by ignore patterns (`--ignore`).
+* If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, do **not** copy to `build`.
+* Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.
 
 ## Help
 
-See all options with `hypertext --help`.
+Get short help with `hypertext -h` and see more detail with `hypertext --help`.
 
 ## Notes
 

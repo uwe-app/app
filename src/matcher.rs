@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use regex::Regex;
 
 pub struct FileMatcher {
-    ignore: Option<Vec<Regex>>,
+    exclude: Option<Vec<Regex>>,
 }
 
 #[derive(Debug)]
@@ -25,22 +25,9 @@ const HBS: &'static str = ".hbs";
 const TOML: &'static str = ".toml";
 
 impl FileMatcher {
-    pub fn new(ignore: Option<Vec<Regex>>) -> Self {
-        FileMatcher{ignore}
+    pub fn new(exclude: Option<Vec<Regex>>) -> Self {
+        FileMatcher{exclude}
     } 
-
-    fn is_ignored(&self, path: &PathBuf) -> bool {
-        if let Some(list) = &self.ignore {
-            for ptn in list {
-                if let Some(s) = path.to_str() {
-                    if ptn.is_match(s) {
-                        return true
-                    }
-                }
-            }
-        }
-        false
-    }
 
     fn has_parse_file(&self, file: &PathBuf) -> bool {
         let mut copy = file.clone();
@@ -48,6 +35,19 @@ impl FileMatcher {
             copy.set_extension(ext);
             if copy.exists() {
                 return true; 
+            }
+        }
+        false
+    }
+
+    pub fn is_excluded(&self, path: &PathBuf) -> bool {
+        if let Some(list) = &self.exclude {
+            for ptn in list {
+                if let Some(s) = path.to_str() {
+                    if ptn.is_match(s) {
+                        return true
+                    }
+                }
             }
         }
         false
@@ -68,8 +68,8 @@ impl FileMatcher {
     }
 
     pub fn get_type(&self, file: &PathBuf) -> FileType {
-        // Explicitly ignored files take precedence
-        if self.is_ignored(&file) {
+        // Explicitly excluded files take precedence
+        if self.is_excluded(&file) {
             return FileType::Ignored
         }
 

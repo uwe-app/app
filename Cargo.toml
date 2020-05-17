@@ -1,6 +1,6 @@
 [package]
 name = "hypertext"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Fast static site generator with mdbook support"
 repository = "https://github.com/tmpfs/hypertext"

@@ -18,7 +18,9 @@ const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 #[structopt(name = "hypertext")]
 struct Cli {
 
-    /// Theme directory used for books
+    /// Specific theme directory used for books
+    ///
+    /// Overrides the theme directory convention.
     #[structopt(long)]
     theme: Option<String>,
 
@@ -30,9 +32,17 @@ struct Cli {
     #[structopt(long)]
     follow_links: bool,
 
-    /// Ignore patterns
+    /// Exclude patterns
+    ///
+    /// Any paths matching these regular expression patterns are excluded 
+    /// from processing.
+    ///
+    /// Match is performed on the entire file path.
+    ///
+    /// The file path may be relative or absolute depending upon the input.
+    ///
     #[structopt(short, long)]
-    ignore: Option<Vec<Regex>>,
+    exclude: Option<Vec<Regex>>,
 
     /// Read files from directory
     #[structopt(parse(from_os_str), default_value="site")]
@@ -45,7 +55,7 @@ struct Cli {
 
 fn main() {
     let args = Cli::from_args();
-    //println!("hypertext(1) {:?}", args.ignore);
+    //println!("hypertext(1) {:?}", args.exclude);
 
     match &*args.log_level {
         "trace" => env::set_var(LOG_ENV_NAME, args.log_level),
@@ -86,7 +96,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    let matcher = FileMatcher::new(args.ignore);
+    let matcher = FileMatcher::new(args.exclude);
     let input_opts = InputOptions{
         source: args.input.clone(), 
         follow_links: args.follow_links,

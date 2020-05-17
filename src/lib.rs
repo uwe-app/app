@@ -184,10 +184,16 @@ impl Finder {
     fn handle(&self, entry: &DirEntry) -> bool {
         let path = entry.path().clone();
         if path.is_dir() {
-            if self.input.matcher.is_theme(&self.input.source, &path.to_path_buf()) {
+            let buf = &path.to_path_buf();
+            // Can prevent recursing if a directory pattern matches
+            if self.input.matcher.is_excluded(buf) {
+                return false 
+            }
+
+            if self.input.matcher.is_theme(&self.input.source, buf) {
                 return false
             }
-            let mut book = path.to_path_buf();
+            let mut book = buf.clone();
             book.push("book.toml");
             if book.exists() {
                 self.book(book.parent().unwrap());
