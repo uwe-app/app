@@ -10,8 +10,7 @@ Process all files in `site` and write the result to `build` using these rules:
 
 * Parse `.html` and `.hbs` as HTML templates.
 * Parse `.md` files as Markdown templates.
-* For each parsed template walk parent directories looking for `hypertext.hbs`.
-    If `hypertext.hbs` is found use it as a master template passing the file `content` (see [hypertext.hbs](/site/hypertext.hbs)).
+* For each parsed template for `hypertext.hbs` in the current directory and parents; if `hypertext.hbs` is found use it as a master template passing the file `content` (see [hypertext.hbs](/site/hypertext.hbs)).
 * If a directory contains a `book.toml` file build using [mdbook][].
 * If the directory matches `site/theme` treat as a global theme for [mdbook][].
 * Skip any files matched by ignore patterns (`--ignore`).
