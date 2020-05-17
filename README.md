@@ -1,6 +1,6 @@
 # Hyper Text
 
-Fast, opinionated static site generation combining [commonmark][] with [handlebars][] and [mdbook][] support; see [site](/site) for an example.
+Fast, opinionated static site generation combining [commonmark][], [handlebars][] with [mdbook][]; see [site](/site) for an example.
 
 ```
 hypertext
