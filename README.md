@@ -20,7 +20,7 @@ hypertext
 * Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.
 
-## Caveats
+## Bugs
 
 * Due to the `theme` convention the site cannot have a top-level `theme` directory.
 * Cannot use `hypertext.hbs` as input to a page template.
