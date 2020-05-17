@@ -25,8 +25,12 @@ struct Cli {
     theme: Option<String>,
 
     /// Log level
-    #[structopt(long, short,default_value = "info")]
+    #[structopt(long, default_value = "info")]
     log_level: String,
+
+    /// Layout file name
+    #[structopt(long, default_value = "layout.hbs")]
+    layout: String,
 
     /// Follow symbolic links
     #[structopt(long)]
@@ -97,13 +101,14 @@ fn main() {
     }
 
     let input_opts = InputOptions{
-        matcher: FileMatcher::new(args.exclude.clone()),
+        matcher: FileMatcher::new(args.exclude.clone(), args.layout.clone()),
+        layout: args.layout.clone(),
         source: args.input.clone(), 
         follow_links: args.follow_links,
     };
 
     let output_opts = OutputOptions{
-        matcher: FileMatcher::new(args.exclude.clone()),
+        matcher: FileMatcher::new(args.exclude.clone(), args.layout.clone()),
         target: args.output.clone(),
         theme: args.theme.unwrap_or("".to_string()),
         clean: true,

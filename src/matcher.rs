@@ -3,6 +3,7 @@ use regex::Regex;
 
 pub struct FileMatcher {
     exclude: Option<Vec<Regex>>,
+    layout: String,
 }
 
 #[derive(Debug)]
@@ -17,7 +18,6 @@ pub enum FileType {
 
 const INDEX: &'static str = "index";
 const THEME: &'static str = "theme";
-const TEMPLATE_NAME: &'static str = "hypertext.hbs";
 const PARSE_EXTENSIONS:[&'static str; 3] = ["html", "hbs", "md"];
 
 const MD: &'static str = ".md";
@@ -26,8 +26,8 @@ const HBS: &'static str = ".hbs";
 const TOML: &'static str = ".toml";
 
 impl FileMatcher {
-    pub fn new(exclude: Option<Vec<Regex>>) -> Self {
-        FileMatcher{exclude}
+    pub fn new(exclude: Option<Vec<Regex>>, layout: String) -> Self {
+        FileMatcher{exclude, layout}
     } 
 
     pub fn is_index(&self, file: &PathBuf) -> bool {
@@ -91,7 +91,7 @@ impl FileMatcher {
         match name {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
-                    if nm == TEMPLATE_NAME {
+                    if nm == self.layout {
                         return FileType::Private
                     }else if nm == THEME {
                         return FileType::Private

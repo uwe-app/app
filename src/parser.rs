@@ -20,12 +20,14 @@ struct FileProperties {
     title: Option<String>,
 }
 
-pub struct Parser;
+pub struct Parser {
+    layout: String,
+}
 
 impl Parser {
 
-    pub fn new() -> Self {
-        Parser{}
+    pub fn new(layout: String) -> Self {
+        Parser{layout}
     }
 
     // Convert a file name to title case
@@ -89,7 +91,6 @@ impl Parser {
     }
 
     fn resolve_template(&self, input: &PathBuf) -> Option<PathBuf> {
-        let name = "hypertext.hbs";
         if let Some(p) = input.parent() {
             // Note that ancestors() does not implement DoubleEndedIterator
             // so we cannot call rev()
@@ -97,7 +98,7 @@ impl Parser {
             ancestors.reverse();
             for p in ancestors {
                 let mut copy = p.to_path_buf().clone();
-                copy.push(name);
+                copy.push(&self.layout);
                 if copy.exists() {
                     return Some(copy)
                 }

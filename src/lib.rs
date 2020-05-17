@@ -16,6 +16,7 @@ pub struct InputOptions {
     pub matcher: matcher::FileMatcher,
     pub source: PathBuf,
     pub follow_links: bool,
+    pub layout: String,
 }
 
 pub struct OutputOptions {
@@ -91,7 +92,7 @@ impl Finder {
     }
 
     fn process(&self, input: PathBuf, file_type: FileType) -> io::Result<()> {
-        let mut parser = parser::Parser::new();
+        let mut parser = parser::Parser::new(self.input.layout.clone());
 
         let output = self.output.destination(&self.input.source, &input, &file_type);
 
