@@ -82,7 +82,7 @@ fn main() {
 
     let output_opts = OutputOptions{
         target: args.output.clone(),
-        theme: args.theme.unwrap_or("./theme".to_string()),
+        theme: args.theme.unwrap_or("".to_string()),
     };
 
     let finder = Finder::new(input_opts, output_opts);

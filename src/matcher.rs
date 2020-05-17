@@ -53,9 +53,14 @@ impl FileMatcher {
         false
     }
 
-    pub fn is_theme(&self, base: &PathBuf, file: &PathBuf) -> bool {
+    pub fn get_theme_dir(&self, base: &PathBuf) -> PathBuf {
         let mut root_theme = base.clone();
         root_theme.push(THEME);
+        root_theme
+    }
+
+    pub fn is_theme(&self, base: &PathBuf, file: &PathBuf) -> bool {
+        let root_theme = self.get_theme_dir(base);
         if &root_theme == file {
             return true
         }

@@ -143,7 +143,18 @@ impl Finder {
             Ok(mut md) => {
                 //println!("{:?}", md.config);
 
-                md.config.set("output.html.theme", &self.output.theme);
+                let mut theme = self.output.theme.clone();
+
+                if theme.is_empty() {
+                    let theme_dir = self.input.matcher.get_theme_dir(&self.input.source);
+                    if theme_dir.exists() {
+                        if let Some(s) = theme_dir.to_str() {
+                            theme = s.to_string();
+                        } 
+                    }
+                }
+
+                md.config.set("output.html.theme", theme);
                 let theme = md.config.get("output.html.theme").unwrap();
 
                 debug!("THEME {}", theme);
