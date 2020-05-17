@@ -1,6 +1,6 @@
 # Hyper Text
 
-Fast, opinionated static site generation combining [commonmark][], [handlebars][] with [mdbook][]; see [site](/site) for an example.
+Super fast, opinionated static site generation combining [commonmark][], [handlebars][] with [mdbook][]; see [site](/site) for an example.
 
 ```
 hypertext
@@ -16,9 +16,14 @@ hypertext
 * Document title is inferred from the file name or parent directory.
 * If a parse template has a sibling `.toml` file it is used to define document meta data such as the `title` overriding the inferred title (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
-* If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, do **not** copy to `build`.
+* If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, **exclude** theme files.
 * Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.
+
+## Caveats
+
+* Due to the `theme` convention the site cannot have a top-level `theme` directory.
+* Cannot use `hypertext.hbs` as input to a page template.
 
 ## Help
 
