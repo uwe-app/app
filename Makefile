@@ -13,6 +13,9 @@ run: clean-build
 build:
 	@cargo build
 
+release-darwin:
+	@cargo build --release --target=x86_64-apple-darwin
+
 release:
 	@cargo build --release
 
