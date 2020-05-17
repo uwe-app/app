@@ -147,7 +147,7 @@ impl Finder {
                 md.config.set("output.html.theme", &self.output.theme);
                 let theme = md.config.get("output.html.theme").unwrap();
 
-                info!("THEME {}", theme);
+                debug!("THEME {}", theme);
 
                 let built = md.build();
                 match built {

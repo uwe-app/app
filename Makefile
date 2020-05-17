@@ -3,8 +3,12 @@ all: release
 clean:
 	@rm -rf ./target
 
-run:
-	@cargo run -- test target --ignore=.*\.txt$
+clean-build:
+	@rm -rf ./build
+
+run: clean-build
+	@mkdir build
+	@cargo run -- example build --ignore=.*\.txt$
 
 build:
 	@cargo build
