@@ -19,31 +19,9 @@ Process all files in `site` and write the result to `build` using these rules:
 * Skip any files matched by ignore patterns (`--ignore`).
 * Copy all other files.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>{{title}}</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  </head>
-  <body>
-    {{{content}}}
-  </body>
-</html>
-```
+## Help
 
-Notice the ***triple braces*** around `content` so the parsed template markup is not escaped.
-
-## Options
-
-If there are some files with those file extensions that you with to omit from processing use the `--ignore` option. It specifies a regular expression pattern tested on the entire file path, if the pattern matches the file will not be included:
-
-```
-hypertext source target --ignore ".*\.txt$"
-```
-
-You may specify multiple `--ignore` patterns if you need to.
+See all options with `hypertext --help`.
 
 [commonmark]: https://commonmark.org/
 [handlebars]: https://handlebarsjs.com/
