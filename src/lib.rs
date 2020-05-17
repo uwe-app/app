@@ -173,6 +173,9 @@ impl Finder {
     fn handle(&self, entry: &DirEntry) -> bool {
         let path = entry.path().clone();
         if path.is_dir() {
+            if self.input.matcher.is_theme(&self.input.source, &path.to_path_buf()) {
+                return false
+            }
             let mut book = path.to_path_buf();
             book.push("book.toml");
             if book.exists() {

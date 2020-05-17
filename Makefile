@@ -8,7 +8,7 @@ clean-build:
 
 run: clean-build
 	@mkdir build
-	@cargo run -- example build --ignore=.*\.txt$
+	@RUST_BACKTRACE=1 cargo run -- example build --ignore=.*\.txt$
 
 build:
 	@cargo build

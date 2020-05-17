@@ -80,8 +80,7 @@ impl Parser {
                     return Ok(s)                
                 },
                 Err(e) => {
-                    // TODO: wrap handlebars::error::RenderError
-                    panic!(e);
+                    error!("{}", e);
                 }
             }
 
