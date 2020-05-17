@@ -14,6 +14,8 @@ use pulldown_cmark::{Parser as MarkdownParser, Options, html};
 
 use log::{info, error};
 
+const INDEX_STEM: &'static str = "index";
+
 #[derive(Deserialize,Debug)]
 struct FileProperties {
     title: Option<String>,
@@ -30,11 +32,26 @@ impl Parser {
     // Convert a file name to title case
     fn file_auto_title(&self, input: &PathBuf) -> Option<String> {
         if let Some(nm) = input.file_stem() {
-            let auto = nm.to_str().unwrap().to_string();
-            let capitalized = auto.to_title_case();
-            return Some(capitalized)
+            // If the file is an index file, try to get the name 
+            // from a parent directory
+            if nm == INDEX_STEM {
+                if let Some(p) = input.parent() {
+                    return self.file_auto_title(&p.to_path_buf());
+                }
+            } else {
+                let auto = nm.to_str().unwrap().to_string();
+                let capitalized = auto.to_title_case();
+                return Some(capitalized)
+            }
+
         }
         None
+    }
+
+    fn auto_title(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
+        if let Some(auto) = self.file_auto_title(&input) {
+            data.insert("title", Value::String(auto));
+        }
     }
 
     fn read_string(&self, input: &PathBuf) -> io::Result<String> {
@@ -89,12 +106,6 @@ impl Parser {
             }
         }
         None
-    }
-
-    fn auto_title(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
-        if let Some(auto) = self.file_auto_title(&input) {
-            data.insert("title", Value::String(auto));
-        }
     }
 
     fn master(
