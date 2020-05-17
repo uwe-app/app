@@ -1,4 +1,4 @@
-use log::{info,error,debug};
+use log::{info,error,debug,trace};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -71,7 +71,7 @@ impl Finder {
                 let result = parser.parse_html(input);
                 match result {
                     Ok(s) => {
-                        debug!("{}", s);
+                        trace!("{}", s);
                         return renderer.write_string(output, s)
                     },
                     Err(e) => return Err(e)
@@ -82,7 +82,7 @@ impl Finder {
                 let result = parser.parse_markdown(input);
                 match result {
                     Ok(s) => {
-                        debug!("{}", s);
+                        trace!("{}", s);
                         return renderer.write_string(output, s)
                     },
                     Err(e) => return Err(e)
@@ -91,9 +91,10 @@ impl Finder {
             FileType::Ignored => {
                 debug!("NOOP {}", input.display());
             },
-            FileType::Template => {
+            FileType::Private => {
                 // Ignore templates here as they are located and 
                 // used during the parsing and rendering process
+                debug!("PRIV {}", input.display());
             },
         }
 

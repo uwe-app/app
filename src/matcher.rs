@@ -11,9 +11,13 @@ pub enum FileType {
     Markdown,
     Html,
     Handlebars,
-    Template,
+    Private,
     Unknown,
 }
+
+const TOML: &'static str = ".toml";
+
+const PARSE_EXTENSIONS:[&'static str; 3] = ["html", "hbs", "md"];
 
 impl FileMatcher {
     pub fn new(ignore: Option<Vec<Regex>>) -> Self {
@@ -33,6 +37,17 @@ impl FileMatcher {
         false
     }
 
+    fn has_parse_file(&self, file: &PathBuf) -> bool {
+        let mut copy = file.clone();
+        for ext in PARSE_EXTENSIONS.iter() {
+            copy.set_extension(ext);
+            if copy.exists() {
+                return true; 
+            }
+        }
+        false
+    }
+
     pub fn get_type(&self, file: &PathBuf) -> FileType {
         // Explicitly ignored files take precedence
         if self.is_ignored(&file) {
@@ -43,14 +58,16 @@ impl FileMatcher {
         match name {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
-                    if nm.ends_with(".md") || nm.ends_with(".markdown") {
+                    if nm == "hypertext.hbs" {
+                        return FileType::Private
+                    } else if nm.ends_with(".md") {
                         return FileType::Markdown
-                    } else if nm.ends_with(".htm") || nm.ends_with(".html") {
+                    } else if nm.ends_with(".html") {
                         return FileType::Html
-                    } else if nm == "hypertext.hbs" {
-                        return FileType::Template
                     } else if nm.ends_with(".hbs") {
                         return FileType::Handlebars
+                    } else if nm.ends_with(TOML) && self.has_parse_file(file) {
+                        return FileType::Private
                     }
                 }
             },

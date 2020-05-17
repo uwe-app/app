@@ -8,8 +8,8 @@ hypertext source target
 
 Read all files in source and process them according to the following rules:
 
-* `.htm`, `.html`, `.hbs`: Parse as HTML template.
-* `.md`, `.markdown`: Parse as Markdown template.
+* `.html`, `.hbs`: Parse as HTML template.
+* `.md`: Parse as Markdown template.
 * Treat `hypertext.hbs` files as master templates.
 * Skip any files matched by ignore patterns (`--ignore`).
 * Copy all other files to `target`.
