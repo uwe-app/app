@@ -1,6 +1,6 @@
 {
   "directory": "build",
-  "watch": "example",
+  "watch": "site",
   "open": true,
   "build": {
     "name": "make",

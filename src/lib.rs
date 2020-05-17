@@ -13,14 +13,16 @@ pub mod fs;
 use matcher::{FileType};
 
 pub struct InputOptions {
+    pub matcher: matcher::FileMatcher,
     pub source: PathBuf,
     pub follow_links: bool,
-    pub matcher: matcher::FileMatcher,
 }
 
 pub struct OutputOptions {
+    pub matcher: matcher::FileMatcher,
     pub target: PathBuf,
     pub theme: String,
+    pub clean: bool,
 }
 
 impl OutputOptions {
@@ -32,8 +34,40 @@ impl OutputOptions {
             Ok(relative) => {
                 let mut result = self.target.join(relative).to_owned();
                 match file_type {
-                    FileType::Markdown | FileType::Handlebars => {
+                    FileType::Markdown | FileType::Handlebars | FileType::Html => {
                         result.set_extension("html");
+
+                        let clean_target = file.clone();
+                        if self.clean && !self.matcher.is_index(&clean_target) {
+                            if let Some(parent) = clean_target.parent() {
+                                if let Some(stem) = clean_target.file_stem() {
+                                    let mut target = parent.to_path_buf();
+                                    target.push(stem);
+                                    target.push(self.matcher.get_index_stem());
+
+                                    //println!("{:?}", target);
+
+                                    // No corresponding input file that would collide
+                                    // with the clean output destination
+                                    if !self.matcher.has_parse_file(&target) {
+                                        //println!("{:?}", target); 
+                                        //println!("{:?}", result); 
+                                        let clean_result = result.clone();
+                                        if let Some(parent) = clean_result.parent() {
+                                            if let Some(stem) = clean_result.file_stem() {
+                                                let mut res = parent.to_path_buf();
+                                                res.push(stem);
+                                                res.push(self.matcher.get_index_stem());
+                                                res.set_extension("html");
+                                                debug!("clean url {:?}", res); 
+                                                result = res;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
                     },
                     _ => {}
                 }

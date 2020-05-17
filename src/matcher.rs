@@ -15,6 +15,7 @@ pub enum FileType {
     Unknown,
 }
 
+const INDEX: &'static str = "index";
 const THEME: &'static str = "theme";
 const TEMPLATE_NAME: &'static str = "hypertext.hbs";
 const PARSE_EXTENSIONS:[&'static str; 3] = ["html", "hbs", "md"];
@@ -29,7 +30,20 @@ impl FileMatcher {
         FileMatcher{exclude}
     } 
 
-    fn has_parse_file(&self, file: &PathBuf) -> bool {
+    pub fn is_index(&self, file: &PathBuf) -> bool {
+        if let Some(nm) = file.file_stem() {
+            if nm == INDEX {
+                return true
+            } 
+        } 
+        false
+    }
+
+    pub fn get_index_stem(&self) -> &str {
+        INDEX
+    }
+
+    pub fn has_parse_file(&self, file: &PathBuf) -> bool {
         let mut copy = file.clone();
         for ext in PARSE_EXTENSIONS.iter() {
             copy.set_extension(ext);

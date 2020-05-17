@@ -96,16 +96,17 @@ fn main() {
         std::process::exit(1);
     }
 
-    let matcher = FileMatcher::new(args.exclude);
     let input_opts = InputOptions{
+        matcher: FileMatcher::new(args.exclude.clone()),
         source: args.input.clone(), 
         follow_links: args.follow_links,
-        matcher: matcher,
     };
 
     let output_opts = OutputOptions{
+        matcher: FileMatcher::new(args.exclude.clone()),
         target: args.output.clone(),
         theme: args.theme.unwrap_or("".to_string()),
+        clean: true,
     };
 
     let finder = Finder::new(input_opts, output_opts);
