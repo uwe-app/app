@@ -1,7 +1,4 @@
 use std::io;
-use std::io::BufReader;
-use std::io::prelude::*;
-use std::fs::File;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 
@@ -13,6 +10,8 @@ use handlebars::Handlebars;
 use pulldown_cmark::{Parser as MarkdownParser, Options, html};
 
 use log::{info, error};
+
+use super::fs;
 
 const INDEX_STEM: &'static str = "index";
 
@@ -54,13 +53,13 @@ impl Parser {
         }
     }
 
-    fn read_string(&self, input: &PathBuf) -> io::Result<String> {
-        let file = File::open(input)?;
-        let mut reader = BufReader::new(file);
-        let mut contents = String::new();
-        reader.read_to_string(&mut contents)?;
-        Ok(contents) 
-    }
+    //fn read_string(&self, input: &PathBuf) -> io::Result<String> {
+        //let file = File::open(input)?;
+        //let mut reader = BufReader::new(file);
+        //let mut contents = String::new();
+        //reader.read_to_string(&mut contents)?;
+        //Ok(contents) 
+    //}
 
     fn parse_template(
         &mut self,
@@ -115,7 +114,7 @@ impl Parser {
         &mut BTreeMap<&str, Value>) -> io::Result<String> {
         if let Some(template) = self.resolve_template(&input) {
             // Read the master template
-            let template_content = self.read_string(&template)?;
+            let template_content = fs::read_string(&template)?;
             // Inject the result into the master template data
             // re-using the same data object
             data.insert("content", Value::String(result));
@@ -129,7 +128,7 @@ impl Parser {
         props.set_extension("toml");
         if props.exists() {
             info!("TOML {}", props.display());
-            let properties = self.read_string(&props);
+            let properties = fs::read_string(&props);
             match properties {
                 Ok(s) => {
                     //println!("{}", s);
@@ -160,7 +159,7 @@ impl Parser {
     }
 
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
-        let mut result = self.read_string(&input)?;
+        let mut result = fs::read_string(&input)?;
         let mut data: BTreeMap<&str, Value> = BTreeMap::new();
         self.load_file_data(&input, &mut data);
         result = self.parse_template(&input, result, &mut data)?;
@@ -169,7 +168,7 @@ impl Parser {
     }    
 
     pub fn parse_markdown(&mut self, input: PathBuf) -> io::Result<String> {
-        let content = self.read_string(&input)?;
+        let content = fs::read_string(&input)?;
 
         let mut options = Options::empty();
         options.insert(Options::ENABLE_STRIKETHROUGH);

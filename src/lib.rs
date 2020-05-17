@@ -8,7 +8,7 @@ use mdbook::MDBook;
 
 pub mod matcher;
 pub mod parser;
-pub mod renderer;
+pub mod fs;
 
 use matcher::{FileType};
 
@@ -58,13 +58,12 @@ impl Finder {
 
     fn process(&self, input: PathBuf, file_type: FileType) -> io::Result<()> {
         let mut parser = parser::Parser::new();
-        let mut renderer = renderer::Renderer::new();
 
         let output = self.output.destination(&self.input.source, &input, &file_type);
 
         match file_type {
             FileType::Unknown => {
-                return renderer.copy(input, output)
+                return fs::copy(input, output)
             },
             FileType::Html | FileType::Handlebars => {
                 info!("HTML {} -> {}", input.display(), output.display());
@@ -72,7 +71,7 @@ impl Finder {
                 match result {
                     Ok(s) => {
                         trace!("{}", s);
-                        return renderer.write_string(output, s)
+                        return fs::write_string(output, s)
                     },
                     Err(e) => return Err(e)
                 }
@@ -83,7 +82,7 @@ impl Finder {
                 match result {
                     Ok(s) => {
                         trace!("{}", s);
-                        return renderer.write_string(output, s)
+                        return fs::write_string(output, s)
                     },
                     Err(e) => return Err(e)
                 }
@@ -102,7 +101,6 @@ impl Finder {
     }
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
-        let renderer = renderer::Renderer::new();
 
         // Jump some hoops to bypass the book build_dir
         let relative = source_dir.strip_prefix(&self.input.source).unwrap();
@@ -125,7 +123,7 @@ impl Finder {
                 let mut output = base.clone();
                 output.push(dest);
                 // Copy the file content
-                let copied = renderer.copy(file, output);
+                let copied = fs::copy(file, output);
                 match copied {
                     Err(e) => {
                         error!("{}", e);
