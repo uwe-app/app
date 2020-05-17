@@ -28,6 +28,12 @@ Get short help with `hypertext -h` and see more detail with `hypertext --help`.
 
 The files in [site](/site) are an example to demonstrate and test various configurations and are clearly not the best way to structure a site.
 
+Much inspiration lifted from [mdbook][].
+
+## License
+
+See [LICENSE](/LICENSE).
+
 [commonmark]: https://commonmark.org/
 [handlebars]: https://handlebarsjs.com/
 [mdbook]: https://rust-lang.github.io/mdBook/
