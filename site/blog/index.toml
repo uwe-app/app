@@ -1,0 +1,6 @@
+title = 'Blog'
+articles = [
+  { href = 'article1', title = 'Article 1' },
+  { href = 'article2', title = 'Article 2' },
+  { href = 'article3', title = 'Article 3' }
+]
