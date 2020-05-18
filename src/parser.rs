@@ -12,8 +12,8 @@ pub struct Parser<'a> {
 
 impl Parser<'_> {
 
-    pub fn new(layout_name: String) -> Self {
-        let loader = template::DataLoader::new();
+    pub fn new(layout_name: String, source: PathBuf) -> Self {
+        let loader = template::DataLoader::new(source);
         let render = template::TemplateRender::new(layout_name);
         Parser{loader, render}
     }

@@ -246,7 +246,7 @@ impl Finder {
     pub fn run(&self) {
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let mut parser = parser::Parser::new(self.options.layout.clone());
+        let mut parser = parser::Parser::new(self.options.layout.clone(), self.options.source.clone());
         let mut templates = self.options.source.clone();
         templates.push(&self.options.template);
         if let Err(e) = parser.render.handlebars.register_templates_directory(".hbs", templates.as_path()) {

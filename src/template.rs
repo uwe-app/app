@@ -1,5 +1,7 @@
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
+use std::convert::AsRef;
 
 use toml::Value;
 use toml::de::{Error as TomlError};
@@ -15,11 +17,13 @@ use super::fs;
 const INDEX_STEM: &'static str = "index";
 
 /// Manages the data associated with a template.
-pub struct DataLoader;
+pub struct DataLoader {
+    source: PathBuf,
+}
 
 impl DataLoader {
-    pub fn new() -> Self {
-        DataLoader{}
+    pub fn new(source: PathBuf) -> Self {
+        DataLoader{source}
     }
 
     pub fn create() -> Map<String, Value> {
@@ -27,12 +31,13 @@ impl DataLoader {
     }
 
     // Convert a file name to title case
-    fn file_auto_title(&self, input: &PathBuf) -> Option<String> {
-        if let Some(nm) = input.file_stem() {
+    fn file_auto_title<P : AsRef<Path>>(&self, input: P) -> Option<String> {
+        let i = input.as_ref();
+        if let Some(nm) = i.file_stem() {
             // If the file is an index file, try to get the name 
             // from a parent directory
             if nm == INDEX_STEM {
-                if let Some(p) = input.parent() {
+                if let Some(p) = i.parent() {
                     return self.file_auto_title(&p.to_path_buf());
                 }
             } else {
@@ -45,43 +50,57 @@ impl DataLoader {
         None
     }
 
-    fn auto_title(&self, input: &PathBuf, data: &mut Map<String, Value>) {
-        if let Some(auto) = self.file_auto_title(&input) {
+    fn auto_title<P : AsRef<Path>>(&self, input: P, data: &mut Map<String, Value>) {
+        if let Some(auto) = self.file_auto_title(&input.as_ref()) {
             data.insert("title".to_string(), Value::String(auto));
         }
     }
 
-    fn load_file_properties(&self, input: &PathBuf, data: &mut Map<String, Value>) {
-        let mut props = input.clone(); 
-        props.set_extension("toml");
-        if props.exists() {
-            info!("toml {}", props.display());
-            let properties = fs::read_string(&props);
-            match properties {
-                Ok(s) => {
-                    let config: Result<Map<String, Value>, TomlError> = toml::from_str(&s);
-                    match config {
-                        Ok(props) => {
-                            //println!("{:?}", props);
-                            for (k, v) in props {
-                                data.insert(k, v);
-                            }
-                        },
-                        Err(e) => {
-                            error!("{}", e);
+    fn load_file<P : AsRef<Path>>(&self, file: P, data: &mut Map<String, Value>) {
+        let src = file.as_ref();
+        info!("toml {}", src.display());
+        let properties = fs::read_string(src);
+        match properties {
+            Ok(s) => {
+                let config: Result<Map<String, Value>, TomlError> = toml::from_str(&s);
+                match config {
+                    Ok(props) => {
+                        //println!("{:?}", props);
+                        for (k, v) in props {
+                            data.insert(k, v);
                         }
+                    },
+                    Err(e) => {
+                        error!("{}", e);
                     }
-                },
-                Err(e) => {
-                    error!("{}", e);
-                },
-            }
+                }
+            },
+            Err(e) => {
+                error!("{}", e);
+            },
+        }
+    }
+
+    fn load_global_config(&self, data: &mut Map<String, Value>) {
+        let mut config = self.source.clone(); 
+        config.push("layout.toml");
+        if config.exists() {
+            self.load_file(&config, data);
+        }
+    }
+
+    fn load_file_config(&self, input: &PathBuf, data: &mut Map<String, Value>) {
+        let mut config = input.clone(); 
+        config.set_extension("toml");
+        if config.exists() {
+            self.load_file(&config, data);
         }
     }
 
     pub fn load_file_data(&self, input: &PathBuf, data: &mut Map<String, Value>) {
+        self.load_global_config(data);
         self.auto_title(&input, data);
-        self.load_file_properties(&input, data);
+        self.load_file_config(&input, data);
     }
 }
 
