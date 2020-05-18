@@ -20,7 +20,7 @@ hypertext --minify
 * Exclude hidden files.
 * Copy all other files.
 
-See [site](/site) for example source files. The files in [site](/site) are to demonstrate and test various configurations -- they are clearly not the best way to structure a site.
+See [site](/site) for example source files that demonstrate and test various configurations; they are *not the ideal* way to structure a site.
 
 ## Layout
 
