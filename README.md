@@ -54,7 +54,7 @@ Fields available to configure processing:
 * `title` Document title.
 * `standalone` Document is standalone.
 
-When the `standalone` field is boolean `true` the document will skip layout processing, if you assign any other value (including other types) it is ignored. Be aware if you set this field in the top-level `layout.toml` then no layouts would be used due to configuration inheritance.
+When the `standalone` field is `true` the document will skip layout processing. Be aware if you set this field in the top-level `layout.toml` then no layouts would be used due to configuration inheritance.
 
 ### Custom
 
