@@ -33,6 +33,35 @@ impl FileMatcher {
         FileMatcher{exclude, layout, template}
     } 
 
+    pub fn clean<P: AsRef<Path>>(&self, file: P, result: P) -> Option<PathBuf> {
+
+        let clean_target = file.as_ref().clone();
+        if !self.is_index(&clean_target) {
+            if let Some(parent) = clean_target.parent() {
+                if let Some(stem) = clean_target.file_stem() {
+                    let mut target = parent.to_path_buf();
+                    target.push(stem);
+                    target.push(self.get_index_stem());
+
+                    if !self.has_parse_file(&target) {
+                        let clean_result = result.as_ref().clone();
+                        if let Some(parent) = clean_result.parent() {
+                            if let Some(stem) = clean_result.file_stem() {
+                                let mut res = parent.to_path_buf();
+                                res.push(stem);
+                                res.push(self.get_index_stem());
+                                res.set_extension("html");
+                                return Some(res)
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+        None
+    }
+
     pub fn is_index<P: AsRef<Path>>(&self, file: P) -> bool {
         if let Some(nm) = file.as_ref().file_stem() {
             if nm == INDEX {

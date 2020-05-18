@@ -15,61 +15,34 @@ use matcher::{FileType,FileMatcher};
 
 pub struct Options {
     pub source: PathBuf,
+    pub target: PathBuf,
     pub follow_links: bool,
     pub layout: String,
     pub template: String,
-    pub target: PathBuf,
     pub theme: String,
     pub clean: bool,
 }
 
 // Build the destination file path.
-pub fn destination(
+fn destination(
     matcher: &FileMatcher,
-    target: &PathBuf,
-    input: &PathBuf,
+    options: &Options,
     file: &PathBuf,
     file_type: &FileType,
     clean: bool) -> PathBuf {
 
-    let relative = file.strip_prefix(input);
+    let relative = file.strip_prefix(&options.source);
     match relative {
         Ok(relative) => {
-            let mut result = target.join(relative).to_owned();
+            let mut result = options.target.clone().join(relative);
             match file_type {
                 FileType::Markdown | FileType::Html => {
                     result.set_extension("html");
-
-                    let clean_target = file.clone();
-                    if clean && !matcher.is_index(&clean_target) {
-                        if let Some(parent) = clean_target.parent() {
-                            if let Some(stem) = clean_target.file_stem() {
-                                let mut target = parent.to_path_buf();
-                                target.push(stem);
-                                target.push(matcher.get_index_stem());
-
-                                //println!("{:?}", target);
-
-                                // No corresponding input file that would collide
-                                // with the clean output destination
-                                if !matcher.has_parse_file(&target) {
-                                    //println!("{:?}", target); 
-                                    //println!("{:?}", result); 
-                                    let clean_result = result.clone();
-                                    if let Some(parent) = clean_result.parent() {
-                                        if let Some(stem) = clean_result.file_stem() {
-                                            let mut res = parent.to_path_buf();
-                                            res.push(stem);
-                                            res.push(matcher.get_index_stem());
-                                            res.set_extension("html");
-                                            debug!("clean url {:?}", res); 
-                                            result = res;
-                                        }
-                                    }
-                                }
-                            }
+                    if clean {
+                        if let Some(res) = matcher.clean(file, &result) {
+                            debug!("clean url {:?}", res); 
+                            result = res;
                         }
-
                     }
                 },
                 _ => {}
@@ -87,7 +60,7 @@ fn process_file(
     file: PathBuf,
     file_type: FileType) -> io::Result<()> {
 
-    let dest = destination(&matcher, &options.target, &options.source, &file, &file_type, options.clean);
+    let dest = destination(&matcher, &options, &file, &file_type, options.clean);
 
     match file_type {
         FileType::Unknown => {
@@ -142,11 +115,6 @@ impl Finder {
         let relative = source_dir.strip_prefix(&self.options.source).unwrap();
         let mut base = self.options.target.clone();
         base.push(relative);
-
-        //println!("dir {}", source_dir.display());
-        //println!("build_dir {}", build_dir.display());
-        //println!("base {}", base.display());
-        
 
         let walker = WalkDir::new(&build_dir)
             .follow_links(self.options.follow_links);
