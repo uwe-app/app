@@ -1,5 +1,7 @@
 ## Home
 
+{{> intro.md}}
+
 * File path: `{{filepath}}`
 * Title: `{{title}}`
 

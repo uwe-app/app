@@ -137,7 +137,6 @@ impl Parser<'_> {
                             }
                         },
                         Err(e) => {
-                            println!("got toml parser error");
                             error!("{}", e);
                         }
                     }
@@ -166,19 +165,22 @@ impl Parser<'_> {
     pub fn parse_markdown(&mut self, input: PathBuf) -> io::Result<String> {
         let content = fs::read_string(&input)?;
 
-        let mut options = Options::empty();
-        options.insert(Options::ENABLE_STRIKETHROUGH);
-        let parser = MarkdownParser::new_ext(&content, options);
-
-        let mut markup = String::new();
-        html::push_html(&mut markup, parser);
-
         let mut data: BTreeMap<&str, Value> = BTreeMap::new();
         self.load_file_data(&input, &mut data);
 
-        let mut result = self.parse_template(&input, markup, &mut data)?;
-        result = self.layout(&input, result, &mut data)?;
+        let parsed = self.parse_template(&input, content, &mut data);
+        match parsed {
+            Ok(content) => {
+                let mut options = Options::empty();
+                options.insert(Options::ENABLE_STRIKETHROUGH);
+                let parser = MarkdownParser::new_ext(&content, options);
+                let mut markup = String::new();
+                html::push_html(&mut markup, parser);
 
-        Ok(result)
+                return self.layout(&input, markup, &mut data)
+            },
+            Err(e) => return Err(e),
+        }
+
     }
 }
