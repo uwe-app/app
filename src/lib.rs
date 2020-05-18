@@ -30,7 +30,7 @@ pub struct Options {
 
 pub fn build(options: Options) {
     let matcher = FileMatcher::new(&options);
-    let finder = Finder::new(&matcher, &options);
+    let finder = Builder::new(&matcher, &options);
     finder.run();
 }
 
@@ -85,15 +85,15 @@ fn process_file(
     Ok(())
 }
 
-pub struct Finder<'a> {
+pub struct Builder<'a> {
     matcher: &'a FileMatcher<'a>,
     options: &'a Options,
 }
 
-impl<'a> Finder<'a> {
+impl<'a> Builder<'a> {
 
     pub fn new(matcher: &'a FileMatcher, options: &'a Options) -> Self {
-        Finder{matcher, options} 
+        Builder{matcher, options} 
     }
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
