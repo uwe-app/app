@@ -4,6 +4,7 @@
 
 * File path: `{{filepath}}`
 * Title: `{{title}}`
+* Message: *{{message}}*
 
 This is a *document* with some _markdown_ including an [example][] link reference.
 

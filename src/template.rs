@@ -1,10 +1,9 @@
 use std::io;
 use std::path::PathBuf;
-use std::collections::BTreeMap;
 
 use toml::Value;
 use toml::de::{Error as TomlError};
-use serde_derive::Deserialize;
+use toml::map::Map;
 use inflector::Inflector;
 
 use handlebars::Handlebars;
@@ -15,11 +14,6 @@ use super::fs;
 
 const INDEX_STEM: &'static str = "index";
 
-#[derive(Deserialize,Debug)]
-struct FileProperties {
-    title: Option<String>,
-}
-
 /// Manages the data associated with a template.
 pub struct DataLoader;
 
@@ -28,8 +22,8 @@ impl DataLoader {
         DataLoader{}
     }
 
-    pub fn create() -> BTreeMap<&'static str, Value> {
-        BTreeMap::new()
+    pub fn create() -> Map<String, Value> {
+        Map::new()
     }
 
     // Convert a file name to title case
@@ -51,13 +45,13 @@ impl DataLoader {
         None
     }
 
-    fn auto_title(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
+    fn auto_title(&self, input: &PathBuf, data: &mut Map<String, Value>) {
         if let Some(auto) = self.file_auto_title(&input) {
-            data.insert("title", Value::String(auto));
+            data.insert("title".to_string(), Value::String(auto));
         }
     }
 
-    fn load_file_properties(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
+    fn load_file_properties(&self, input: &PathBuf, data: &mut Map<String, Value>) {
         let mut props = input.clone(); 
         props.set_extension("toml");
         if props.exists() {
@@ -65,13 +59,12 @@ impl DataLoader {
             let properties = fs::read_string(&props);
             match properties {
                 Ok(s) => {
-                    //println!("{}", s);
-                    let config: Result<FileProperties, TomlError> = toml::from_str(&s);
+                    let config: Result<Map<String, Value>, TomlError> = toml::from_str(&s);
                     match config {
                         Ok(props) => {
-                            //println!("{:?}", deser);
-                            if let Some(title) = props.title {
-                                data.insert("title", Value::String(title));
+                            //println!("{:?}", props);
+                            for (k, v) in props {
+                                data.insert(k, v);
                             }
                         },
                         Err(e) => {
@@ -86,7 +79,7 @@ impl DataLoader {
         }
     }
 
-    pub fn load_file_data(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
+    pub fn load_file_data(&self, input: &PathBuf, data: &mut Map<String, Value>) {
         self.auto_title(&input, data);
         self.load_file_properties(&input, data);
     }
@@ -126,14 +119,14 @@ impl TemplateRender<'_> {
         &mut self,
         input: &PathBuf,
         content: String,
-        data: &mut BTreeMap<&str, Value>) -> io::Result<String> {
+        data: &mut Map<String, Value>) -> io::Result<String> {
 
         let name = &input.to_str().unwrap();
         // FIXME: call register_template_file
         if self.handlebars.register_template_string(name, &content).is_ok() {
 
             let filepath = input.to_str().unwrap().to_string();
-            data.insert("filepath", Value::String(filepath));
+            data.insert("filepath".to_string(), Value::String(filepath));
 
             //println!("render with name {}", name);
 
@@ -154,13 +147,13 @@ impl TemplateRender<'_> {
         &mut self,
         input: &PathBuf,
         result: String, data:
-        &mut BTreeMap<&str, Value>) -> io::Result<String> {
+        &mut Map<String, Value>) -> io::Result<String> {
         if let Some(template) = self.resolve_layout(&input) {
             // Read the layout template
             let template_content = fs::read_string(&template)?;
             // Inject the result into the layout template data
             // re-using the same data object
-            data.insert("content", Value::String(result));
+            data.insert("content".to_string(), Value::String(result));
             return self.parse_template(&template, template_content, data)
         }
         Ok(result)

@@ -1,1 +1,2 @@
 title = 'Example Static Site'
+message = "Custom message data specific to this page defined in `index.toml`"
