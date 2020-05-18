@@ -4,9 +4,31 @@ use std::io::prelude::*;
 use std::io::Write;
 use std::fs::File;
 use std::path::Path;
+use std::path::PathBuf;
 use std::convert::AsRef;
 
 use log::{debug};
+
+pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Option<PathBuf> {
+    if let Some(p) = input.as_ref().parent() {
+        for p in p.ancestors() {
+            let mut copy = p.to_path_buf().clone();
+            copy.push(name.as_ref());
+
+            if copy.exists() {
+                return Some(copy)
+            }
+
+
+            // Ensure we do not go beyond the base which coould happen
+            // if the program source is an absolute path
+            if base.as_ref() == &p.to_path_buf() {
+                break;
+            }
+        }
+    }
+    None
+}
 
 pub fn read_string<P: AsRef<Path>>(input: P) -> io::Result<String> {
     let file = File::open(input)?;

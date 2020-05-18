@@ -19,14 +19,19 @@ const INDEX_STEM: &'static str = "index";
 
 /// Manages the data associated with a template.
 pub struct DataLoader<'a> {
-    //source: PathBuf,
-
+    name: String,
     options: &'a Options,
 }
 
 impl<'a> DataLoader<'a> {
     pub fn new(options: &'a Options) -> Self {
-        DataLoader{options}
+
+        // Derive the layout.toml from the layout.hbs option
+        let mut nm = Path::new(&options.layout).to_path_buf();
+        nm.set_extension("toml");
+        let name = nm.file_name().unwrap().to_string_lossy().into_owned();
+
+        DataLoader{name, options}
     }
 
     pub fn create() -> Map<String, Value> {
@@ -84,11 +89,10 @@ impl<'a> DataLoader<'a> {
         }
     }
 
-    fn load_global_config(&self, data: &mut Map<String, Value>) {
-        let mut config = self.options.source.clone(); 
-        config.push("layout.toml");
-        if config.exists() {
-            self.load_file(&config, data);
+    fn load_config(&self, input: &PathBuf, data: &mut Map<String, Value>) {
+
+        if let Some(cfg) = fs::inherit(&self.options.source, input, &self.name) {
+            self.load_file(&cfg, data);
         }
     }
 
@@ -101,7 +105,7 @@ impl<'a> DataLoader<'a> {
     }
 
     pub fn load_file_data(&self, input: &PathBuf, data: &mut Map<String, Value>) {
-        self.load_global_config(data);
+        self.load_config(&input, data);
         self.auto_title(&input, data);
         self.load_file_config(&input, data);
     }
@@ -123,23 +127,6 @@ impl<'a> TemplateRender<'a> {
     pub fn register_templates_directory<P: AsRef<Path>>(&mut self, ext: &'static str, dir: P) 
         -> Result<(), TemplateFileError> {
         self.handlebars.register_templates_directory(ext, dir)
-    }
-
-    fn resolve_layout(&self, input: &PathBuf) -> Option<PathBuf> {
-        if let Some(p) = input.parent() {
-            // Note that ancestors() does not implement DoubleEndedIterator
-            // so we cannot call rev()
-            let mut ancestors = p.ancestors().collect::<Vec<_>>();
-            ancestors.reverse();
-            for p in ancestors {
-                let mut copy = p.to_path_buf().clone();
-                copy.push(&self.options.layout);
-                if copy.exists() {
-                    return Some(copy)
-                }
-            }
-        }
-        None
     }
 
     pub fn parse_template_string(&mut self, input: &PathBuf, content: String, data: &mut Map<String, Value>)
@@ -177,7 +164,7 @@ impl<'a> TemplateRender<'a> {
             }
         }
 
-        if let Some(template) = self.resolve_layout(&input) {
+        if let Some(template) = fs::inherit(&self.options.source, input, &self.options.layout) {
             let name = template.to_string_lossy().into_owned();
             if !self.handlebars.has_template(&name) {
                 if let Err(e) = self.handlebars.register_template_file(&name, &template) {
