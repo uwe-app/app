@@ -53,10 +53,6 @@ The `.hbs` extension is always removed so you can reference snippets like this:
 {{> snippet.md}}
 ```
 
-## Bugs
-
-* Due to the `theme` convention the site cannot have a top-level `theme` directory.
-
 ## Help
 
 Get short help with `hypertext -h` and see more detail with `hypertext --help`.
