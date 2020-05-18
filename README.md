@@ -1,6 +1,6 @@
 # Hyper Text
 
-Super fast, opinionated static site generation combining [commonmark][], [handlebars][] with [mdbook][]; see [site](/site) for an example.
+Super fast, opinionated static site generation combining [pulldown-cmark][], [handlebars][] with [mdbook][]; see [site](/site) for an example.
 
 ```
 hypertext
@@ -33,6 +33,16 @@ Templates are exposed the following fields:
 
 Layout templates have an additional `content` field containing the rendered template content.
 
+## Snippets
+
+Markdown documents are parsed via handlebars before being converted to HTML which allows including other markdown document snippets using the normal handlebars syntax. The referenced templates will also be parsed as markdown so we recommend using the `.md.hbs` file extension to distinguish them from.
+
+The `.hbs` extension is always removed so you can reference snippets like this:
+
+```markdown
+{{> snippet.md}}
+```
+
 ## Bugs
 
 * Due to the `theme` convention the site cannot have a top-level `theme` directory.
@@ -51,6 +61,6 @@ Much inspiration lifted from [mdbook][].
 
 See [LICENSE](/LICENSE).
 
-[commonmark]: https://commonmark.org/
-[handlebars]: https://handlebarsjs.com/
-[mdbook]: https://rust-lang.github.io/mdBook/
+[pulldown-cmark]: https://github.com/raphlinus/pulldown-cmark
+[handlebars]: https://github.com/sunng87/handlebars-rust
+[mdbook]: https://github.com/rust-lang/mdBook
