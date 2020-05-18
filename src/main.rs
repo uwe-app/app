@@ -109,7 +109,7 @@ fn main() {
     }
 
     let opts = Options{
-        exclude: args.exclude,
+        exclude: args.exclude.clone(),
         layout: args.layout.clone(),
         source: args.input.clone(), 
         follow_links: args.follow_links,

@@ -2,11 +2,11 @@ use std::path::PathBuf;
 
 use regex::Regex;
 
-pub mod build;
-pub mod fs;
-pub mod matcher;
-pub mod parser;
-pub mod template;
+mod build;
+mod fs;
+mod matcher;
+mod parser;
+mod template;
 
 use matcher::FileMatcher;
 use build::Builder;
