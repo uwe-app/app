@@ -24,7 +24,15 @@ hypertext
 
 For each document look for a *layout template* (`layout.hbs`) in the current directory and parents; if a layout is found pass it the file `content` (see [layout.hbs](/site/layout.hbs)) for rendering. If no layout is located render the *document*.
 
-## Template Data
+## Partials
+
+Partial templates (`.hbs`)  in the `site/template` directory are automatically registered using a relative path without the file extension. So the file `site/template/header.hbs` can be included with:
+
+```
+{{> header}}
+```
+
+## Data
 
 Templates are exposed the following fields:
 
@@ -35,7 +43,7 @@ Layout templates have an additional `content` field containing the rendered temp
 
 ## Snippets
 
-Markdown documents are parsed via handlebars before being converted to HTML which allows including other markdown document snippets using the normal handlebars syntax. The referenced templates will also be parsed as markdown so we recommend using the `.md.hbs` file extension to distinguish them from.
+Markdown documents are parsed via handlebars before being rendered to HTML which allows including document snippets using the normal handlebars syntax. The referenced templates will also be parsed as markdown so we recommend using the `.md.hbs` file extension to distinguish them from.
 
 The `.hbs` extension is always removed so you can reference snippets like this:
 
