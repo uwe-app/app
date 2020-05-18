@@ -36,7 +36,7 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 
 See [header.hbs](/site/template/header.hbs).
 
-## Data
+## Configuration
 
 Create a file with the same name and `.toml` extension for document-specific configuration; see [index.toml](/site/index.toml) and [about.toml](/site/about.toml).
 
@@ -58,7 +58,7 @@ When the `standalone` field is `true` the document will skip layout processing. 
 
 ### Custom
 
-You can add custom data to document *configuration* `.toml` files and access it in the document template. See [blog/index.toml](/site/blog/index.toml) and [blog/index.html](/site/blog/index.html) for an example.
+You can add custom configuration data and access it in the document template. See [blog/index.toml](/site/blog/index.toml) and [blog/index.html](/site/blog/index.html) for an example.
 
 ## Snippets
 
