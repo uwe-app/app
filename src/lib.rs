@@ -33,36 +33,6 @@ pub fn build(options: Options) {
     finder.run();
 }
 
-// Build the destination file path.
-fn destination(
-    matcher: &FileMatcher,
-    options: &Options,
-    file: &PathBuf,
-    file_type: &FileType,
-    clean: bool) -> PathBuf {
-
-    let relative = file.strip_prefix(&options.source);
-    match relative {
-        Ok(relative) => {
-            let mut result = options.target.clone().join(relative);
-            match file_type {
-                FileType::Markdown | FileType::Html => {
-                    result.set_extension("html");
-                    if clean {
-                        if let Some(res) = matcher.clean(file, &result) {
-                            debug!("clean url {:?}", res); 
-                            result = res;
-                        }
-                    }
-                },
-                _ => {}
-            }
-            result
-        },
-        Err(e) => panic!(e),
-    }
-}
-
 fn process_file(
     parser: &mut parser::Parser,
     matcher: &FileMatcher,
@@ -70,7 +40,7 @@ fn process_file(
     file: PathBuf,
     file_type: FileType) -> io::Result<()> {
 
-    let dest = destination(&matcher, &options, &file, &file_type, options.clean);
+    let dest = matcher.destination(&file, &file_type, options.clean);
 
     match file_type {
         FileType::Unknown => {

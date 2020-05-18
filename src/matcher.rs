@@ -1,15 +1,8 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::convert::AsRef;
-use regex::Regex;
 
 use super::Options;
-
-//pub struct FileMatcher {
-    //exclude: Option<Vec<Regex>>,
-    //layout: String,
-    //template: String,
-//}
 
 pub struct FileMatcher<'a> {
     options: &'a Options,
@@ -40,12 +33,7 @@ impl<'a> FileMatcher<'a> {
         FileMatcher{options} 
     }
 
-    //pub fn new(exclude: Option<Vec<Regex>>, layout: String, template: String) -> Self {
-        //FileMatcher{exclude, layout, template}
-    //} 
-
     pub fn clean<P: AsRef<Path>>(&self, file: P, result: P) -> Option<PathBuf> {
-
         let clean_target = file.as_ref().clone();
         if !self.is_index(&clean_target) {
             if let Some(parent) = clean_target.parent() {
@@ -71,6 +59,34 @@ impl<'a> FileMatcher<'a> {
 
         }
         None
+    }
+
+    // Build the destination file path.
+    pub fn destination(
+        &self,
+        file: &PathBuf,
+        file_type: &FileType,
+        clean: bool) -> PathBuf {
+
+        let relative = file.strip_prefix(&self.options.source);
+        match relative {
+            Ok(relative) => {
+                let mut result = self.options.target.clone().join(relative);
+                match file_type {
+                    FileType::Markdown | FileType::Html => {
+                        result.set_extension("html");
+                        if clean {
+                            if let Some(res) = self.clean(file, &result) {
+                                result = res;
+                            }
+                        }
+                    },
+                    _ => {}
+                }
+                result
+            },
+            Err(e) => panic!(e),
+        }
     }
 
     pub fn is_index<P: AsRef<Path>>(&self, file: P) -> bool {
