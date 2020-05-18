@@ -44,6 +44,8 @@ Templates are exposed the following fields:
 
 Layout templates have an additional `content` field containing the rendered template content.
 
+You can add custom data to document *configuration* `.toml` files and access it in the document template. See [blog/index.toml](/site/blog/index.toml) and [blog/index.html](/site/blog/index.html) for an example.
+
 ## Snippets
 
 Markdown documents are parsed via handlebars before being rendered to HTML which allows document snippets using the normal handlebars syntax. The referenced templates will also be parsed as markdown so we recommend using the `.md.hbs` file extension to distinguish them; the `.hbs` extension is always removed so you can reference snippets like so:
