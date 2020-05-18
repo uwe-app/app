@@ -88,12 +88,9 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mut def_build = PathBuf::new();
-    def_build.push("build");
-
-    if args.output == def_build && !args.output.exists() {
-        info!("mkdir {}", def_build.display());
-        if let Err(e) = fs::create_dir(def_build) {
+    if !args.output.exists() {
+        info!("mkdir {}", args.output.display());
+        if let Err(e) = fs::create_dir(&args.output) {
             error!("{}", e);
             std::process::exit(1);
         }
