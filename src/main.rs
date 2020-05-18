@@ -70,7 +70,6 @@ struct Cli {
 
 fn main() {
     let args = Cli::from_args();
-    //println!("hypertext(1) {:?}", args.exclude);
 
     match &*args.log_level {
         "trace" => env::set_var(LOG_ENV_NAME, args.log_level),
@@ -109,15 +108,15 @@ fn main() {
     }
 
     let opts = Options{
-        exclude: args.exclude.clone(),
-        layout: args.layout.clone(),
-        source: args.input.clone(), 
+        source: args.input, 
+        target: args.output,
+        exclude: args.exclude,
+        layout: args.layout,
         follow_links: args.follow_links,
-        template: args.template.to_string(),
-        target: args.output.clone(),
-        theme: args.theme.unwrap_or("".to_string()),
         clean: args.clean_url,
         minify: args.minify,
+        template: args.template.to_string(),
+        theme: args.theme.unwrap_or("".to_string()),
     };
 
     build(opts);
