@@ -267,7 +267,7 @@ impl Finder {
         let mut parser = parser::Parser::new(self.input.layout.clone());
         let mut templates = self.input.source.clone();
         templates.push(&self.input.template);
-        if let Err(e) = parser.handlebars.register_templates_directory(".hbs", templates.as_path()) {
+        if let Err(e) = parser.render.handlebars.register_templates_directory(".hbs", templates.as_path()) {
             error!("{}", e);
             std::process::exit(1);
         }

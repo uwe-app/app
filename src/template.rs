@@ -1,3 +1,4 @@
+use std::io;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 
@@ -5,6 +6,8 @@ use toml::Value;
 use toml::de::{Error as TomlError};
 use serde_derive::Deserialize;
 use inflector::Inflector;
+
+use handlebars::Handlebars;
 
 use log::{info, error};
 
@@ -18,11 +21,11 @@ struct FileProperties {
 }
 
 /// Manages the data associated with a template.
-pub struct TemplateData;
+pub struct DataLoader;
 
-impl TemplateData {
+impl DataLoader {
     pub fn new() -> Self {
-        TemplateData{}
+        DataLoader{}
     }
 
     pub fn create() -> BTreeMap<&'static str, Value> {
@@ -87,4 +90,80 @@ impl TemplateData {
         self.auto_title(&input, data);
         self.load_file_properties(&input, data);
     }
+}
+
+// Render templates using handlebars.
+pub struct TemplateRender<'a> {
+    layout_name: String,
+    pub handlebars: Handlebars<'a>,
+}
+
+impl TemplateRender<'_> {
+    pub fn new(layout_name: String) -> Self {
+        let mut handlebars = Handlebars::new();
+        handlebars.set_strict_mode(true);
+        TemplateRender{layout_name, handlebars}
+    }
+
+    fn resolve_layout(&self, input: &PathBuf) -> Option<PathBuf> {
+        if let Some(p) = input.parent() {
+            // Note that ancestors() does not implement DoubleEndedIterator
+            // so we cannot call rev()
+            let mut ancestors = p.ancestors().collect::<Vec<_>>();
+            ancestors.reverse();
+            for p in ancestors {
+                let mut copy = p.to_path_buf().clone();
+                copy.push(&self.layout_name);
+                if copy.exists() {
+                    return Some(copy)
+                }
+            }
+        }
+        None
+    }
+
+    pub fn parse_template(
+        &mut self,
+        input: &PathBuf,
+        content: String,
+        data: &mut BTreeMap<&str, Value>) -> io::Result<String> {
+
+        let name = &input.to_str().unwrap();
+        // FIXME: call register_template_file
+        if self.handlebars.register_template_string(name, &content).is_ok() {
+
+            let filepath = input.to_str().unwrap().to_string();
+            data.insert("filepath", Value::String(filepath));
+
+            //println!("render with name {}", name);
+
+            let parsed = self.handlebars.render(name, data);
+            match parsed {
+                Ok(s) => {
+                    return Ok(s)                
+                },
+                Err(e) => {
+                    error!("{}", e);
+                }
+            }
+        }
+        Ok(content)
+    }
+
+    pub fn layout(
+        &mut self,
+        input: &PathBuf,
+        result: String, data:
+        &mut BTreeMap<&str, Value>) -> io::Result<String> {
+        if let Some(template) = self.resolve_layout(&input) {
+            // Read the layout template
+            let template_content = fs::read_string(&template)?;
+            // Inject the result into the layout template data
+            // re-using the same data object
+            data.insert("content", Value::String(result));
+            return self.parse_template(&template, template_content, data)
+        }
+        Ok(result)
+    }
+
 }
