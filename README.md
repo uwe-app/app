@@ -1,6 +1,6 @@
 # Hyper Text
 
-Super fast, opinionated static site generation combining [pulldown-cmark][], [handlebars][] with [mdbook][]; see [site](/site) for an example.
+Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebars][] with [mdbook][].
 
 ```
 hypertext
@@ -8,14 +8,16 @@ hypertext
 
 > Process all files in `site` and write the result to `build`.
 
+See [site](/site) for example source files.
+
 ## Rules
 
-* Treat `.html` and `.md` files as *documents* to be parsed as templates using a layout.
-* Treat `.hbs` files as *templates*; never copy them to `build`.
+* Treat `.html` and `.md` files as *documents* to be parsed as templates.
+* Use the nearest `layout.hbs` for templates wherever possible.
 * Infer document title from the file name or parent directory (in the case of index files).
 * If a *document* has a sibling *configuration* (`.toml` file) use it to define the template data (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
-* If the directory matches `site/theme` treat as a global theme for [mdbook][] builds, **exclude** theme files.
+* If the directory matches `site/template/theme` treat as a global theme for [mdbook][].
 * Treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)).
 * Skip any files matched by exclude patterns (`--exclude`).
 * Copy all other files.

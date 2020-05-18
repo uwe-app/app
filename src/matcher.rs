@@ -5,6 +5,7 @@ use regex::Regex;
 pub struct FileMatcher {
     exclude: Option<Vec<Regex>>,
     layout: String,
+    template: String,
 }
 
 #[derive(Debug)]
@@ -27,8 +28,8 @@ const HBS: &'static str = ".hbs";
 const TOML: &'static str = ".toml";
 
 impl FileMatcher {
-    pub fn new(exclude: Option<Vec<Regex>>, layout: String) -> Self {
-        FileMatcher{exclude, layout}
+    pub fn new(exclude: Option<Vec<Regex>>, layout: String, template: String) -> Self {
+        FileMatcher{exclude, layout, template}
     } 
 
     //pub fn is_layout(&self, file: &PathBuf) -> bool {
@@ -79,6 +80,7 @@ impl FileMatcher {
 
     pub fn get_theme_dir(&self, base: &PathBuf) -> PathBuf {
         let mut root_theme = base.clone();
+        root_theme.push(&self.template);
         root_theme.push(THEME);
         root_theme
     }
@@ -103,7 +105,7 @@ impl FileMatcher {
                 if let Some(nm) = nm.to_str() {
                     if nm == self.layout {
                         return FileType::Private
-                    }else if nm == THEME {
+                    }else if nm == self.template {
                         return FileType::Private
                     } else if nm.ends_with(MD) {
                         return FileType::Markdown
