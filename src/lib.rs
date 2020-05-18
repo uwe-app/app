@@ -2,11 +2,11 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
-use log::{info,error,debug};
 use regex::Regex;
 use walkdir::{WalkDir,DirEntry};
 use minify::html::minify;
 use mdbook::MDBook;
+use log::{info,error,debug,warn};
 
 pub mod fs;
 pub mod matcher;
@@ -154,7 +154,10 @@ impl<'a> Finder<'a> {
                     }
                 }
 
-                md.config.set("output.html.theme", theme);
+                if let Err(e) = md.config.set("output.html.theme", theme) {
+                    warn!("cannot set book theme {}", e);
+                }
+
                 let theme = md.config.get("output.html.theme").unwrap();
 
                 debug!("theme {}", theme);
