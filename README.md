@@ -13,8 +13,8 @@ See [site](/site) for example source files.
 ## Rules
 
 * Treat `.html` and `.md` files as *documents* to be parsed as templates.
-* Use the nearest `layout.hbs` for templates wherever possible.
-* Infer document title from the file name or parent directory (in the case of index files).
+* Use the nearest layout (`layout.hbs`) wherever possible.
+* Infer document title from the file name (or parent directory in the case of index files).
 * If a *document* has a sibling *configuration* (`.toml` file) use it to define the template data (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
 * If the directory matches `site/template/theme` treat as a global theme for [mdbook][].
