@@ -24,7 +24,7 @@ impl Parser<'_> {
         let mut data = template::DataLoader::create();
         self.loader.load_file_data(&input, &mut data);
 
-        result = self.render.parse_template(&input, result, &mut data)?;
+        result = self.render.parse_template_string(&input, result, &mut data)?;
         result = self.render.layout(&input, result, &mut data)?;
         Ok(result)
     }    
@@ -35,7 +35,7 @@ impl Parser<'_> {
         let mut data = template::DataLoader::create();
         self.loader.load_file_data(&input, &mut data);
 
-        let parsed = self.render.parse_template(&input, content, &mut data);
+        let parsed = self.render.parse_template_string(&input, content, &mut data);
         match parsed {
             Ok(content) => {
                 let mut options = Options::empty();

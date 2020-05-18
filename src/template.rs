@@ -115,14 +115,10 @@ impl TemplateRender<'_> {
         None
     }
 
-    pub fn parse_template(
-        &mut self,
-        input: &PathBuf,
-        content: String,
-        data: &mut Map<String, Value>) -> io::Result<String> {
+    pub fn parse_template_string(&mut self, input: &PathBuf, content: String, data: &mut Map<String, Value>)
+        -> io::Result<String> {
 
         let name = &input.to_str().unwrap();
-        // FIXME: call register_template_file
         if self.handlebars.register_template_string(name, &content).is_ok() {
 
             let filepath = input.to_str().unwrap().to_string();
@@ -144,19 +140,35 @@ impl TemplateRender<'_> {
     }
 
     pub fn layout(
-        &mut self,
-        input: &PathBuf,
-        result: String, data:
-        &mut Map<String, Value>) -> io::Result<String> {
+        &mut self, input: &PathBuf, document: String, data: &mut Map<String, Value>)
+        -> io::Result<String> {
+
         if let Some(template) = self.resolve_layout(&input) {
-            // Read the layout template
-            let template_content = fs::read_string(&template)?;
+            let name = template.to_string_lossy().into_owned();
+            if !self.handlebars.has_template(&name) {
+                if let Err(e) = self.handlebars.register_template_file(&name, &template) {
+                    return Err(io::Error::new(io::ErrorKind::Other, e))
+                }
+            }
+
             // Inject the result into the layout template data
             // re-using the same data object
-            data.insert("content".to_string(), Value::String(result));
-            return self.parse_template(&template, template_content, data)
+            data.insert("content".to_string(), Value::String(document));
+
+            let parsed = self.handlebars.render(&name, data);
+            match parsed {
+                Ok(s) => {
+                    return Ok(s)                
+                },
+                Err(e) => {
+                    error!("{}", e);
+                    return Err(io::Error::new(io::ErrorKind::Other, e))
+                }
+            }
         }
-        Ok(result)
+
+        // Could not resolve a layout to pass back the document
+        Ok(document)
     }
 
 }
