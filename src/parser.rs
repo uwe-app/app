@@ -20,14 +20,17 @@ struct FileProperties {
     title: Option<String>,
 }
 
-pub struct Parser {
+pub struct Parser<'a> {
     layout: String,
+    pub handlebars: Handlebars<'a>,
 }
 
-impl Parser {
+impl Parser<'_> {
 
     pub fn new(layout: String) -> Self {
-        Parser{layout}
+        let mut handlebars = Handlebars::new();
+        handlebars.set_strict_mode(true);
+        Parser{layout, handlebars}
     }
 
     // Convert a file name to title case
@@ -55,28 +58,21 @@ impl Parser {
         }
     }
 
-    //fn read_string(&self, input: &PathBuf) -> io::Result<String> {
-        //let file = File::open(input)?;
-        //let mut reader = BufReader::new(file);
-        //let mut contents = String::new();
-        //reader.read_to_string(&mut contents)?;
-        //Ok(contents) 
-    //}
-
     fn parse_template(
         &mut self,
         input: &PathBuf,
         content: String,
         data: &mut BTreeMap<&str, Value>) -> io::Result<String> {
 
-        let mut handlebars = Handlebars::new();
         let name = &input.to_str().unwrap();
-        if handlebars.register_template_string(name, &content).is_ok() {
+        if self.handlebars.register_template_string(name, &content).is_ok() {
 
             let filepath = input.to_str().unwrap().to_string();
             data.insert("filepath", Value::String(filepath));
 
-            let parsed = handlebars.render(name, data);
+            //println!("render with name {}", name);
+
+            let parsed = self.handlebars.render(name, data);
             match parsed {
                 Ok(s) => {
                     return Ok(s)                
@@ -90,7 +86,7 @@ impl Parser {
         Ok(content)
     }
 
-    fn resolve_template(&self, input: &PathBuf) -> Option<PathBuf> {
+    fn resolve_layout(&self, input: &PathBuf) -> Option<PathBuf> {
         if let Some(p) = input.parent() {
             // Note that ancestors() does not implement DoubleEndedIterator
             // so we cannot call rev()
@@ -107,15 +103,15 @@ impl Parser {
         None
     }
 
-    fn master(
+    fn layout(
         &mut self,
         input: &PathBuf,
         result: String, data:
         &mut BTreeMap<&str, Value>) -> io::Result<String> {
-        if let Some(template) = self.resolve_template(&input) {
-            // Read the master template
+        if let Some(template) = self.resolve_layout(&input) {
+            // Read the layout template
             let template_content = fs::read_string(&template)?;
-            // Inject the result into the master template data
+            // Inject the result into the layout template data
             // re-using the same data object
             data.insert("content", Value::String(result));
             return self.parse_template(&template, template_content, data)
@@ -158,12 +154,26 @@ impl Parser {
         self.load_file_properties(&input, data);
     }
 
+    //pub fn register_template_file(&mut self, input: PathBuf) -> io::Result<()> {
+        //println!("register template {}", input.display());
+
+        //let name = "header";
+        //let res = self.handlebars.register_template_file("header", &input);
+        //match res {
+            //Ok(()) => {
+                //println!("template was registered {}", name);
+                //return Ok(())
+            //},
+            //Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
+        //}
+    //}
+
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
         let mut result = fs::read_string(&input)?;
         let mut data: BTreeMap<&str, Value> = BTreeMap::new();
         self.load_file_data(&input, &mut data);
         result = self.parse_template(&input, result, &mut data)?;
-        result = self.master(&input, result, &mut data)?;
+        result = self.layout(&input, result, &mut data)?;
         Ok(result)
     }    
 
@@ -181,7 +191,7 @@ impl Parser {
         self.load_file_data(&input, &mut data);
 
         let mut result = self.parse_template(&input, markup, &mut data)?;
-        result = self.master(&input, result, &mut data)?;
+        result = self.layout(&input, result, &mut data)?;
 
         Ok(result)
     }

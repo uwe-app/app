@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+//use std::ffi::OsStr;
 use regex::Regex;
 
 pub struct FileMatcher {
@@ -29,6 +30,15 @@ impl FileMatcher {
     pub fn new(exclude: Option<Vec<Regex>>, layout: String) -> Self {
         FileMatcher{exclude, layout}
     } 
+
+    //pub fn is_layout(&self, file: &PathBuf) -> bool {
+        //if let Some(nm) = file.file_name() {
+            //if nm == OsStr::new(&self.layout) {
+                //return true
+            //} 
+        //} 
+        //false
+    //}
 
     pub fn is_index(&self, file: &PathBuf) -> bool {
         if let Some(nm) = file.file_stem() {

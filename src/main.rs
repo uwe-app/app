@@ -105,6 +105,7 @@ fn main() {
         layout: args.layout.clone(),
         source: args.input.clone(), 
         follow_links: args.follow_links,
+        templates: "template".to_string(),
     };
 
     let output_opts = OutputOptions{

@@ -17,6 +17,7 @@ pub struct InputOptions {
     pub source: PathBuf,
     pub follow_links: bool,
     pub layout: String,
+    pub templates: String,
 }
 
 pub struct OutputOptions {
@@ -80,6 +81,52 @@ impl OutputOptions {
 
 }
 
+
+fn process_file(
+    parser: &mut parser::Parser,
+    input: &InputOptions,
+    output: &OutputOptions,
+    file: PathBuf,
+    file_type: FileType) -> io::Result<()> {
+
+    let output = output.destination(&input.source, &file, &file_type);
+
+    match file_type {
+        FileType::Unknown => {
+            return fs::copy(file, output)
+        },
+        FileType::Html => {
+            info!("HTML {} -> {}", file.display(), output.display());
+            let result = parser.parse_html(file);
+            match result {
+                Ok(s) => {
+                    trace!("{}", s);
+                    return fs::write_string(output, s)
+                },
+                Err(e) => return Err(e)
+            }
+        },
+        FileType::Markdown => {
+            info!("MARK {} -> {}", file.display(), output.display());
+            let result = parser.parse_markdown(file);
+            match result {
+                Ok(s) => {
+                    trace!("{}", s);
+                    return fs::write_string(output, s)
+                },
+                Err(e) => return Err(e)
+            }
+        },
+        FileType::Ignored | FileType::Private | FileType::Template => {
+            // Ignore templates here as they are located and 
+            // used during the parsing and rendering process
+            debug!("NOOP {}", file.display());
+        },
+    }
+
+    Ok(())
+}
+
 pub struct Finder {
     input: InputOptions,
     output: OutputOptions,
@@ -88,48 +135,7 @@ pub struct Finder {
 impl Finder {
 
     pub fn new(input: InputOptions, output: OutputOptions) -> Self {
-       Finder{input, output} 
-    }
-
-    fn process(&self, input: PathBuf, file_type: FileType) -> io::Result<()> {
-        let mut parser = parser::Parser::new(self.input.layout.clone());
-
-        let output = self.output.destination(&self.input.source, &input, &file_type);
-
-        match file_type {
-            FileType::Unknown => {
-                return fs::copy(input, output)
-            },
-            FileType::Html => {
-                info!("HTML {} -> {}", input.display(), output.display());
-                let result = parser.parse_html(input);
-                match result {
-                    Ok(s) => {
-                        trace!("{}", s);
-                        return fs::write_string(output, s)
-                    },
-                    Err(e) => return Err(e)
-                }
-            },
-            FileType::Markdown => {
-                info!("MARK {} -> {}", input.display(), output.display());
-                let result = parser.parse_markdown(input);
-                match result {
-                    Ok(s) => {
-                        trace!("{}", s);
-                        return fs::write_string(output, s)
-                    },
-                    Err(e) => return Err(e)
-                }
-            },
-            FileType::Ignored | FileType::Private | FileType::Template => {
-                // Ignore templates here as they are located and 
-                // used during the parsing and rendering process
-                debug!("NOOP {}", input.display());
-            },
-        }
-
-        Ok(())
+        Finder{input, output} 
     }
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
@@ -237,11 +243,13 @@ impl Finder {
 
     // Find files in an input directory to process and invoke the callback 
     // for each matched file.
-    fn walk<T>(&self, callback: T) where T: Fn(PathBuf, FileType) {
+    fn walk<T>(&self, mut callback: T) where T: FnMut(PathBuf, FileType) {
         let walker = WalkDir::new(self.input.source.clone())
             .follow_links(self.input.follow_links)
             .into_iter();
-        for entry in walker.filter_entry(|e| self.handle(e)) {
+
+        let iter = walker.filter_entry(|e| self.handle(e));
+        for entry in iter {
             let entry = entry.unwrap();
             if entry.file_type().is_file() {
                 let file = entry.path().to_path_buf();
@@ -253,8 +261,15 @@ impl Finder {
 
     // Find files and process each entry.
     pub fn run(&self) {
-        self.walk(|file: PathBuf, file_type: FileType| {
-            let result = self.process(file, file_type);
+        // Parser must exist for the entire lifetime to that
+        // template partials can be found
+        let mut parser = parser::Parser::new(self.input.layout.clone());
+        let mut templates = self.input.source.clone();
+        templates.push(&self.input.templates);
+        parser.handlebars.register_templates_directory(".hbs", templates.as_path());
+
+        self.walk(|file, file_type| {
+            let result = process_file(&mut parser, &self.input, &self.output, file, file_type);
             match result {
                 Err(e) => {
                     error!("{}", e);
