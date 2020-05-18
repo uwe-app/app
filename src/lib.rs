@@ -13,14 +13,11 @@ pub mod template;
 
 use matcher::{FileType};
 
-pub struct InputOptions {
+pub struct Options {
     pub source: PathBuf,
     pub follow_links: bool,
     pub layout: String,
     pub template: String,
-}
-
-pub struct OutputOptions {
     pub target: PathBuf,
     pub theme: String,
     pub clean: bool,
@@ -86,12 +83,11 @@ pub fn destination(
 fn process_file(
     parser: &mut parser::Parser,
     matcher: &matcher::FileMatcher,
-    input: &InputOptions,
-    output: &OutputOptions,
+    options: &Options,
     file: PathBuf,
     file_type: FileType) -> io::Result<()> {
 
-    let dest = destination(&matcher, &output.target, &input.source, &file, &file_type, output.clean);
+    let dest = destination(&matcher, &options.target, &options.source, &file, &file_type, options.clean);
 
     match file_type {
         FileType::Unknown => {
@@ -131,21 +127,20 @@ fn process_file(
 
 pub struct Finder {
     matcher: matcher::FileMatcher,
-    input: InputOptions,
-    output: OutputOptions,
+    options: Options,
 }
 
 impl Finder {
 
-    pub fn new(matcher: matcher::FileMatcher, input: InputOptions, output: OutputOptions) -> Self {
-        Finder{matcher, input, output} 
+    pub fn new(matcher: matcher::FileMatcher, options: Options) -> Self {
+        Finder{matcher, options} 
     }
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
 
         // Jump some hoops to bypass the book build_dir
-        let relative = source_dir.strip_prefix(&self.input.source).unwrap();
-        let mut base = self.output.target.clone();
+        let relative = source_dir.strip_prefix(&self.options.source).unwrap();
+        let mut base = self.options.target.clone();
         base.push(relative);
 
         //println!("dir {}", source_dir.display());
@@ -154,7 +149,7 @@ impl Finder {
         
 
         let walker = WalkDir::new(&build_dir)
-            .follow_links(self.input.follow_links);
+            .follow_links(self.options.follow_links);
         for entry in walker {
             let entry = entry.unwrap();
             if entry.file_type().is_file() {
@@ -184,10 +179,10 @@ impl Finder {
             Ok(mut md) => {
                 //println!("{:?}", md.config);
 
-                let mut theme = self.output.theme.clone();
+                let mut theme = self.options.theme.clone();
 
                 if theme.is_empty() {
-                    let theme_dir = self.matcher.get_theme_dir(&self.input.source);
+                    let theme_dir = self.matcher.get_theme_dir(&self.options.source);
                     if theme_dir.exists() {
                         if let Some(s) = theme_dir.to_str() {
                             theme = s.to_string();
@@ -231,7 +226,7 @@ impl Finder {
                 return false 
             }
 
-            if self.matcher.is_theme(&self.input.source, buf) {
+            if self.matcher.is_theme(&self.options.source, buf) {
                 return false
             }
             let mut book = buf.clone();
@@ -247,8 +242,8 @@ impl Finder {
     // Find files in an input directory to process and invoke the callback 
     // for each matched file.
     fn walk<T>(&self, mut callback: T) where T: FnMut(PathBuf, FileType) {
-        let walker = WalkDir::new(self.input.source.clone())
-            .follow_links(self.input.follow_links)
+        let walker = WalkDir::new(self.options.source.clone())
+            .follow_links(self.options.follow_links)
             .into_iter();
 
         let iter = walker.filter_entry(|e| self.handle(e));
@@ -266,16 +261,16 @@ impl Finder {
     pub fn run(&self) {
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let mut parser = parser::Parser::new(self.input.layout.clone());
-        let mut templates = self.input.source.clone();
-        templates.push(&self.input.template);
+        let mut parser = parser::Parser::new(self.options.layout.clone());
+        let mut templates = self.options.source.clone();
+        templates.push(&self.options.template);
         if let Err(e) = parser.render.handlebars.register_templates_directory(".hbs", templates.as_path()) {
             error!("{}", e);
             std::process::exit(1);
         }
 
         self.walk(|file, file_type| {
-            let result = process_file(&mut parser, &self.matcher, &self.input, &self.output, file, file_type);
+            let result = process_file(&mut parser, &self.matcher, &self.options, file, file_type);
             match result {
                 Err(e) => {
                     error!("{}", e);

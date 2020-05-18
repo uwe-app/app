@@ -8,7 +8,7 @@ use regex::Regex;
 use std::fs;
 use log::{info};
 
-use hypertext::{Finder, InputOptions, OutputOptions};
+use hypertext::{Finder, Options};
 use hypertext::matcher::{FileMatcher};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -105,20 +105,16 @@ fn main() {
     }
 
     let matcher = FileMatcher::new(args.exclude.clone(), args.layout.clone(), args.template.clone());
-
-    let input_opts = InputOptions{
+    let opts = Options{
         layout: args.layout.clone(),
         source: args.input.clone(), 
         follow_links: args.follow_links,
         template: args.template.to_string(),
-    };
-
-    let output_opts = OutputOptions{
         target: args.output.clone(),
         theme: args.theme.unwrap_or("".to_string()),
         clean: true,
     };
 
-    let finder = Finder::new(matcher, input_opts, output_opts);
+    let finder = Finder::new(matcher, opts);
     finder.run();
 }
