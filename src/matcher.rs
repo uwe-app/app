@@ -1,5 +1,6 @@
+use std::path::Path;
 use std::path::PathBuf;
-//use std::ffi::OsStr;
+use std::convert::AsRef;
 use regex::Regex;
 
 pub struct FileMatcher {
@@ -32,17 +33,8 @@ impl FileMatcher {
         FileMatcher{exclude, layout, template}
     } 
 
-    //pub fn is_layout(&self, file: &PathBuf) -> bool {
-        //if let Some(nm) = file.file_name() {
-            //if nm == OsStr::new(&self.layout) {
-                //return true
-            //} 
-        //} 
-        //false
-    //}
-
-    pub fn is_index(&self, file: &PathBuf) -> bool {
-        if let Some(nm) = file.file_stem() {
+    pub fn is_index<P: AsRef<Path>>(&self, file: P) -> bool {
+        if let Some(nm) = file.as_ref().file_stem() {
             if nm == INDEX {
                 return true
             } 
@@ -54,8 +46,9 @@ impl FileMatcher {
         INDEX
     }
 
-    pub fn has_parse_file(&self, file: &PathBuf) -> bool {
-        let mut copy = file.clone();
+    pub fn has_parse_file<P: AsRef<Path>>(&self, file: P) -> bool {
+        let path = file.as_ref();
+        let mut copy = path.to_path_buf();
         for ext in PARSE_EXTENSIONS.iter() {
             copy.set_extension(ext);
             if copy.exists() {
@@ -65,7 +58,8 @@ impl FileMatcher {
         false
     }
 
-    pub fn is_excluded(&self, path: &PathBuf) -> bool {
+    pub fn is_excluded<P: AsRef<Path>>(&self, file: P) -> bool {
+        let path = file.as_ref();
         if let Some(list) = &self.exclude {
             for ptn in list {
                 if let Some(s) = path.to_str() {
@@ -78,28 +72,28 @@ impl FileMatcher {
         false
     }
 
-    pub fn get_theme_dir(&self, base: &PathBuf) -> PathBuf {
-        let mut root_theme = base.clone();
+    pub fn get_theme_dir<P: AsRef<Path>>(&self, base: P) -> PathBuf {
+        let mut root_theme = base.as_ref().to_path_buf();
         root_theme.push(&self.template);
         root_theme.push(THEME);
         root_theme
     }
 
-    pub fn is_theme(&self, base: &PathBuf, file: &PathBuf) -> bool {
+    pub fn is_theme<P: AsRef<Path>>(&self, base: P, file: P) -> bool {
         let root_theme = self.get_theme_dir(base);
-        if &root_theme == file {
+        if &root_theme == file.as_ref() {
             return true
         }
         false
     }
 
-    pub fn get_type(&self, file: &PathBuf) -> FileType {
+    pub fn get_type<P: AsRef<Path>>(&self, file: P) -> FileType {
         // Explicitly excluded files take precedence
         if self.is_excluded(&file) {
             return FileType::Ignored
         }
-
-        let name = file.file_name();
+        
+        let name = file.as_ref().file_name();
         match name {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
