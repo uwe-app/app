@@ -28,12 +28,8 @@ pub struct Options {
 }
 
 pub fn build(options: Options) {
-    let matcher = FileMatcher::new(
-        options.exclude.clone(),
-        options.layout.clone(),
-        options.template.clone());
-
-    let finder = Finder::new(matcher, options);
+    let matcher = FileMatcher::new(&options);
+    let finder = Finder::new(&matcher, &options);
     finder.run();
 }
 
@@ -118,14 +114,14 @@ fn process_file(
     Ok(())
 }
 
-pub struct Finder {
-    matcher: FileMatcher,
-    options: Options,
+pub struct Finder<'a> {
+    matcher: &'a FileMatcher<'a>,
+    options: &'a Options,
 }
 
-impl Finder {
+impl<'a> Finder<'a> {
 
-    pub fn new(matcher: FileMatcher, options: Options) -> Self {
+    pub fn new(matcher: &'a FileMatcher, options: &'a Options) -> Self {
         Finder{matcher, options} 
     }
 

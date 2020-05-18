@@ -3,10 +3,16 @@ use std::path::PathBuf;
 use std::convert::AsRef;
 use regex::Regex;
 
-pub struct FileMatcher {
-    exclude: Option<Vec<Regex>>,
-    layout: String,
-    template: String,
+use super::Options;
+
+//pub struct FileMatcher {
+    //exclude: Option<Vec<Regex>>,
+    //layout: String,
+    //template: String,
+//}
+
+pub struct FileMatcher<'a> {
+    options: &'a Options,
 }
 
 #[derive(Debug)]
@@ -28,10 +34,15 @@ const HTML: &'static str = ".html";
 const HBS: &'static str = ".hbs";
 const TOML: &'static str = ".toml";
 
-impl FileMatcher {
-    pub fn new(exclude: Option<Vec<Regex>>, layout: String, template: String) -> Self {
-        FileMatcher{exclude, layout, template}
-    } 
+impl<'a> FileMatcher<'a> {
+    
+    pub fn new(options: &'a Options) -> Self {
+        FileMatcher{options} 
+    }
+
+    //pub fn new(exclude: Option<Vec<Regex>>, layout: String, template: String) -> Self {
+        //FileMatcher{exclude, layout, template}
+    //} 
 
     pub fn clean<P: AsRef<Path>>(&self, file: P, result: P) -> Option<PathBuf> {
 
@@ -89,7 +100,7 @@ impl FileMatcher {
 
     pub fn is_excluded<P: AsRef<Path>>(&self, file: P) -> bool {
         let path = file.as_ref();
-        if let Some(list) = &self.exclude {
+        if let Some(list) = &self.options.exclude {
             for ptn in list {
                 if let Some(s) = path.to_str() {
                     if ptn.is_match(s) {
@@ -103,7 +114,7 @@ impl FileMatcher {
 
     pub fn get_theme_dir<P: AsRef<Path>>(&self, base: P) -> PathBuf {
         let mut root_theme = base.as_ref().to_path_buf();
-        root_theme.push(&self.template);
+        root_theme.push(&self.options.template);
         root_theme.push(THEME);
         root_theme
     }
@@ -126,9 +137,9 @@ impl FileMatcher {
         match name {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
-                    if nm == self.layout || nm.starts_with(".") {
+                    if nm == self.options.layout || nm.starts_with(".") {
                         return FileType::Private
-                    }else if nm == self.template {
+                    }else if nm == self.options.template {
                         return FileType::Private
                     } else if nm.ends_with(MD) {
                         return FileType::Markdown
