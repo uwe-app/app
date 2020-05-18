@@ -170,6 +170,13 @@ impl<'a> TemplateRender<'a> {
         &mut self, input: &PathBuf, document: String, data: &mut Map<String, Value>)
         -> io::Result<String> {
 
+        // Skip layout for standalone documents
+        if let Some(val) = data.get("standalone") {
+            if val.is_bool() && val.as_bool().unwrap() {
+                return Ok(document)
+            }
+        }
+
         if let Some(template) = self.resolve_layout(&input) {
             let name = template.to_string_lossy().into_owned();
             if !self.handlebars.has_template(&name) {

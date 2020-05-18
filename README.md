@@ -36,12 +36,25 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 
 ## Data
 
-Global data is loaded from `layout.toml` before file-specific configuration data is merged. Supported fields are:
+Global data is loaded from `layout.toml` before file-specific configuration data is merged. 
+
+### Generated
+
+Generated fields are:
 
 * `filepath` Template file path.
-* `title` Document title.
+* `content` Rendered document content (layouts only).
 
-Layout templates have an additional `content` field containing the rendered template content.
+### Configure
+
+Fields available to configure processing:
+
+* `title` Document title.
+* `standalone` Document is standalone.
+
+When the `standalone` field is boolean `true` the document will skip layout processing, if you assign any other value (including other types) it is ignored. Be aware if you set this field in the top-level `layout.toml` then no layouts would be used due to configuration inheritance.
+
+### Custom
 
 You can add custom data to document *configuration* `.toml` files and access it in the document template. See [blog/index.toml](/site/blog/index.toml) and [blog/index.html](/site/blog/index.html) for an example.
 
