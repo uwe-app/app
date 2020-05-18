@@ -40,6 +40,10 @@ struct Cli {
     #[structopt(long)]
     follow_links: bool,
 
+    /// Compress HTML output
+    #[structopt(long)]
+    minify: bool,
+
     /// Exclude patterns
     ///
     /// Any paths matching these regular expression patterns are excluded 
@@ -110,6 +114,7 @@ fn main() {
         target: args.output.clone(),
         theme: args.theme.unwrap_or("".to_string()),
         clean: true,
+        minify: args.minify,
     };
 
     let finder = Finder::new(matcher, opts);

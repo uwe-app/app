@@ -1,8 +1,9 @@
-use log::{info,error,debug,trace};
+use log::{info,error,debug};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 use walkdir::{WalkDir,DirEntry};
+use minify::html::minify;
 
 use mdbook::MDBook;
 
@@ -21,6 +22,7 @@ pub struct Options {
     pub template: String,
     pub theme: String,
     pub clean: bool,
+    pub minify: bool,
 }
 
 // Build the destination file path.
@@ -71,8 +73,11 @@ fn process_file(
             let result = parser.parse_html(file);
             match result {
                 Ok(s) => {
-                    trace!("{}", s);
-                    return fs::write_string(dest, s)
+                    if options.minify {
+                        return fs::write_string(dest, minify(&s))
+                    } else {
+                        return fs::write_string(dest, s)
+                    }
                 },
                 Err(e) => return Err(e)
             }
@@ -82,8 +87,11 @@ fn process_file(
             let result = parser.parse_markdown(file);
             match result {
                 Ok(s) => {
-                    trace!("{}", s);
-                    return fs::write_string(dest, s)
+                    if options.minify {
+                        return fs::write_string(dest, minify(&s))
+                    } else {
+                        return fs::write_string(dest, s)
+                    }
                 },
                 Err(e) => return Err(e)
             }
@@ -130,6 +138,9 @@ impl Finder {
                     let dest = file.strip_prefix(&build_dir).unwrap();
                     let mut output = base.clone();
                     output.push(dest);
+
+                    // TODO: minify files with HTML file extension
+
                     // Copy the file content
                     let copied = fs::copy(file, output);
                     match copied {
