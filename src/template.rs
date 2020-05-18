@@ -13,17 +13,20 @@ use handlebars::{Handlebars, TemplateFileError};
 use log::{info, error};
 
 use super::fs;
+use super::Options;
 
 const INDEX_STEM: &'static str = "index";
 
 /// Manages the data associated with a template.
-pub struct DataLoader {
-    source: PathBuf,
+pub struct DataLoader<'a> {
+    //source: PathBuf,
+
+    options: &'a Options,
 }
 
-impl DataLoader {
-    pub fn new(source: PathBuf) -> Self {
-        DataLoader{source}
+impl<'a> DataLoader<'a> {
+    pub fn new(options: &'a Options) -> Self {
+        DataLoader{options}
     }
 
     pub fn create() -> Map<String, Value> {
@@ -82,7 +85,7 @@ impl DataLoader {
     }
 
     fn load_global_config(&self, data: &mut Map<String, Value>) {
-        let mut config = self.source.clone(); 
+        let mut config = self.options.source.clone(); 
         config.push("layout.toml");
         if config.exists() {
             self.load_file(&config, data);

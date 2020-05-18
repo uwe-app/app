@@ -13,14 +13,14 @@ use super::Options;
 
 pub struct Parser<'a> {
     options: &'a Options,
-    loader: template::DataLoader,
+    loader: template::DataLoader<'a>,
     render: template::TemplateRender<'a>,
 }
 
 impl<'a> Parser<'a> {
 
     pub fn new(options: &'a Options) -> Self {
-        let loader = template::DataLoader::new(options.source.clone());
+        let loader = template::DataLoader::new(options);
         let render = template::TemplateRender::new(options.layout.clone());
         Parser{options, loader, render}
     }
