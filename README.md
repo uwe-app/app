@@ -20,6 +20,7 @@ See [site](/site) for example source files.
 * If the directory matches `site/template/theme` treat as a global theme for [mdbook][].
 * Treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)).
 * Skip any files matched by exclude patterns (`--exclude`).
+* Exclude hidden files.
 * Copy all other files.
 
 ## Layout
