@@ -97,7 +97,7 @@ impl FileMatcher {
         match name {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
-                    if nm == self.layout {
+                    if nm == self.layout || nm.starts_with(".") {
                         return FileType::Private
                     }else if nm == self.template {
                         return FileType::Private

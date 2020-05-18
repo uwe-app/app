@@ -11,7 +11,7 @@ pub mod parser;
 pub mod fs;
 pub mod template;
 
-use matcher::{FileType};
+use matcher::{FileType,FileMatcher};
 
 pub struct Options {
     pub source: PathBuf,
@@ -25,7 +25,7 @@ pub struct Options {
 
 // Build the destination file path.
 pub fn destination(
-    matcher: &matcher::FileMatcher,
+    matcher: &FileMatcher,
     target: &PathBuf,
     input: &PathBuf,
     file: &PathBuf,
@@ -82,7 +82,7 @@ pub fn destination(
 
 fn process_file(
     parser: &mut parser::Parser,
-    matcher: &matcher::FileMatcher,
+    matcher: &FileMatcher,
     options: &Options,
     file: PathBuf,
     file_type: FileType) -> io::Result<()> {
@@ -126,13 +126,13 @@ fn process_file(
 }
 
 pub struct Finder {
-    matcher: matcher::FileMatcher,
+    matcher: FileMatcher,
     options: Options,
 }
 
 impl Finder {
 
-    pub fn new(matcher: matcher::FileMatcher, options: Options) -> Self {
+    pub fn new(matcher: FileMatcher, options: Options) -> Self {
         Finder{matcher, options} 
     }
 
@@ -152,22 +152,28 @@ impl Finder {
             .follow_links(self.options.follow_links);
         for entry in walker {
             let entry = entry.unwrap();
-            if entry.file_type().is_file() {
-                let file = entry.path().to_path_buf();
-                // Get a relative file and append it to the correct output base directory
-                let dest = file.strip_prefix(&build_dir).unwrap();
-                let mut output = base.clone();
-                output.push(dest);
-                // Copy the file content
-                let copied = fs::copy(file, output);
-                match copied {
-                    Err(e) => {
-                        error!("{}", e);
-                        std::process::exit(1);
-                    },
-                    _ => {}
+
+            if self.matcher.is_excluded(&entry.path()) {
+                debug!("noop {}", entry.path().display());
+            } else {
+                if entry.file_type().is_file() {
+                    let file = entry.path().to_path_buf();
+                    // Get a relative file and append it to the correct output base directory
+                    let dest = file.strip_prefix(&build_dir).unwrap();
+                    let mut output = base.clone();
+                    output.push(dest);
+                    // Copy the file content
+                    let copied = fs::copy(file, output);
+                    match copied {
+                        Err(e) => {
+                            error!("{}", e);
+                            std::process::exit(1);
+                        },
+                        _ => {}
+                    }
                 }
             }
+
         }
     }
 
