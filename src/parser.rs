@@ -13,6 +13,7 @@ use super::template;
 
 pub struct Parser<'a> {
     layout: String,
+    handler: template::TemplateData,
     pub handlebars: Handlebars<'a>,
 }
 
@@ -21,7 +22,8 @@ impl Parser<'_> {
     pub fn new(layout: String) -> Self {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
-        Parser{layout, handlebars}
+        let handler = template::TemplateData::new();
+        Parser{layout, handlebars, handler}
     }
 
     fn parse_template(
@@ -85,49 +87,11 @@ impl Parser<'_> {
         Ok(result)
     }
 
-    //fn load_file_properties(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
-        //let mut props = input.clone(); 
-        //props.set_extension("toml");
-        //if props.exists() {
-            //info!("TOML {}", props.display());
-            //let properties = fs::read_string(&props);
-            //match properties {
-                //Ok(s) => {
-                    ////println!("{}", s);
-                    //let config: Result<FileProperties, TomlError> = toml::from_str(&s);
-                    //match config {
-                        //Ok(props) => {
-                            ////println!("{:?}", deser);
-                            //if let Some(title) = props.title {
-                                //data.insert("title", Value::String(title));
-                            //}
-                        //},
-                        //Err(e) => {
-                            //error!("{}", e);
-                        //}
-                    //}
-                //},
-                //Err(e) => {
-                    //error!("{}", e);
-                //},
-            //}
-        //}
-    //}
-
-    //fn load_file_data(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
-        //self.auto_title(&input, data);
-        //self.load_file_properties(&input, data);
-    //}
-
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
         let mut result = fs::read_string(&input)?;
 
         let mut data = template::TemplateData::create();
-        let data_handler = template::TemplateData::new();
-        data_handler.load_file_data(&input, &mut data);
-
-        //let mut data: BTreeMap<&str, Value> = BTreeMap::new();
-        //self.load_file_data(&input, &mut data);
+        self.handler.load_file_data(&input, &mut data);
 
         result = self.parse_template(&input, result, &mut data)?;
         result = self.layout(&input, result, &mut data)?;
@@ -138,9 +102,7 @@ impl Parser<'_> {
         let content = fs::read_string(&input)?;
 
         let mut data = template::TemplateData::create();
-        let data_handler = template::TemplateData::new();
-        data_handler.load_file_data(&input, &mut data);
-        //self.load_file_data(&input, &mut data);
+        self.handler.load_file_data(&input, &mut data);
 
         let parsed = self.parse_template(&input, content, &mut data);
         match parsed {
@@ -155,6 +117,5 @@ impl Parser<'_> {
             },
             Err(e) => return Err(e),
         }
-
     }
 }
