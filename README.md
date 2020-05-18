@@ -15,9 +15,9 @@ See [site](/site) for example source files.
 * Treat `.html` and `.md` files as *documents* to be parsed as templates.
 * Use the nearest layout (`layout.hbs`) wherever possible.
 * Infer document title from the file name (or parent directory in the case of index files).
-* If a *document* has a sibling *configuration* (`.toml` file) use it to define the template data (see [index.toml](/site/index.toml)).
-* If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
-* If the directory `site/template/theme` exists use it as a global theme for [mdbook][].
+* Load template configuration data from `.toml` files.
+* If a directory contains `book.toml` use [mdbook][] (see [guide](/site/guide)).
+* If the directory `site/template/theme` exists use it as the theme for [mdbook][].
 * Skip any files matched by exclude patterns (`--exclude`).
 * Exclude hidden files.
 * Copy all other files.
@@ -36,7 +36,9 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 
 ## Data
 
-Global data is loaded from `layout.toml` before file-specific configuration data is merged. 
+Create a file with the same name and `.toml` extension for document-specific configuration; see [index.toml](/site/index.toml) and [about.toml](/site/about.toml).
+
+Search for the *configuration file* (`layout.toml`) in the current directory and parents, if a file is found use it then set the inferred document title before merging with a document-specific configuration file when available.
 
 ### Generated
 
