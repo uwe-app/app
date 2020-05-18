@@ -1,19 +1,20 @@
-use log::{info,error,debug};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+
+use log::{info,error,debug};
 use regex::Regex;
 use walkdir::{WalkDir,DirEntry};
 use minify::html::minify;
-
 use mdbook::MDBook;
 
+pub mod fs;
 pub mod matcher;
 pub mod parser;
-pub mod fs;
 pub mod template;
 
 use matcher::{FileType,FileMatcher};
+use parser::Parser;
 
 pub struct Options {
     pub source: PathBuf,
@@ -34,7 +35,7 @@ pub fn build(options: Options) {
 }
 
 fn process_file(
-    parser: &mut parser::Parser,
+    parser: &mut Parser,
     matcher: &FileMatcher,
     options: &Options,
     file: PathBuf,
@@ -224,7 +225,7 @@ impl<'a> Finder<'a> {
     pub fn run(&self) {
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let mut parser = parser::Parser::new(self.options.layout.clone(), self.options.source.clone());
+        let mut parser = Parser::new(self.options.layout.clone(), self.options.source.clone());
         let mut templates = self.options.source.clone();
         templates.push(&self.options.template);
         if let Err(e) = parser.render.handlebars.register_templates_directory(".hbs", templates.as_path()) {
