@@ -109,15 +109,15 @@ impl<'a> DataLoader<'a> {
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
-    layout_name: String,
+    options: &'a Options,
     handlebars: Handlebars<'a>,
 }
 
-impl TemplateRender<'_> {
-    pub fn new(layout_name: String) -> Self {
+impl<'a> TemplateRender<'a> {
+    pub fn new(options: &'a Options) -> Self {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
-        TemplateRender{layout_name, handlebars}
+        TemplateRender{options, handlebars}
     }
 
     pub fn register_templates_directory<P: AsRef<Path>>(&mut self, ext: &'static str, dir: P) 
@@ -133,7 +133,7 @@ impl TemplateRender<'_> {
             ancestors.reverse();
             for p in ancestors {
                 let mut copy = p.to_path_buf().clone();
-                copy.push(&self.layout_name);
+                copy.push(&self.options.layout);
                 if copy.exists() {
                     return Some(copy)
                 }

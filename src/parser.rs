@@ -12,7 +12,7 @@ use super::template;
 use super::Options;
 
 pub struct Parser<'a> {
-    options: &'a Options,
+    //options: &'a Options,
     loader: template::DataLoader<'a>,
     render: template::TemplateRender<'a>,
 }
@@ -21,8 +21,9 @@ impl<'a> Parser<'a> {
 
     pub fn new(options: &'a Options) -> Self {
         let loader = template::DataLoader::new(options);
-        let render = template::TemplateRender::new(options.layout.clone());
-        Parser{options, loader, render}
+        let render = template::TemplateRender::new(options);
+        //Parser{options, loader, render}
+        Parser{loader, render}
     }
 
     pub fn register_templates_directory<P: AsRef<Path>>(&mut self, ext: &'static str, dir: P) 
