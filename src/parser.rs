@@ -1,5 +1,10 @@
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
+use std::convert::AsRef;
+
+use handlebars::TemplateFileError;
+
 use pulldown_cmark::{Parser as MarkdownParser, Options, html};
 
 use super::fs;
@@ -7,7 +12,7 @@ use super::template;
 
 pub struct Parser<'a> {
     loader: template::DataLoader,
-    pub render: template::TemplateRender<'a>,
+    render: template::TemplateRender<'a>,
 }
 
 impl Parser<'_> {
@@ -16,6 +21,11 @@ impl Parser<'_> {
         let loader = template::DataLoader::new(source);
         let render = template::TemplateRender::new(layout_name);
         Parser{loader, render}
+    }
+
+    pub fn register_templates_directory<P: AsRef<Path>>(&mut self, ext: &'static str, dir: P) 
+        -> Result<(), TemplateFileError> {
+        self.render.register_templates_directory(ext, dir)
     }
 
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {

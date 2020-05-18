@@ -8,7 +8,7 @@ use toml::de::{Error as TomlError};
 use toml::map::Map;
 use inflector::Inflector;
 
-use handlebars::Handlebars;
+use handlebars::{Handlebars, TemplateFileError};
 
 use log::{info, error};
 
@@ -107,7 +107,7 @@ impl DataLoader {
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
     layout_name: String,
-    pub handlebars: Handlebars<'a>,
+    handlebars: Handlebars<'a>,
 }
 
 impl TemplateRender<'_> {
@@ -115,6 +115,11 @@ impl TemplateRender<'_> {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
         TemplateRender{layout_name, handlebars}
+    }
+
+    pub fn register_templates_directory<P: AsRef<Path>>(&mut self, ext: &'static str, dir: P) 
+        -> Result<(), TemplateFileError> {
+        self.handlebars.register_templates_directory(ext, dir)
     }
 
     fn resolve_layout(&self, input: &PathBuf) -> Option<PathBuf> {
