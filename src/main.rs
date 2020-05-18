@@ -18,7 +18,7 @@ const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 #[structopt(name = "hypertext")]
 struct Cli {
 
-    /// Specific theme directory used for books
+    /// Book theme directory relative to <template>
     ///
     /// Overrides the theme directory convention.
     #[structopt(long)]
@@ -31,6 +31,10 @@ struct Cli {
     /// Layout file name
     #[structopt(long, default_value = "layout.hbs")]
     layout: String,
+
+    /// Template directory relative to <input>
+    #[structopt(long, default_value = "template")]
+    template: String,
 
     /// Follow symbolic links
     #[structopt(long)]
@@ -105,7 +109,7 @@ fn main() {
         layout: args.layout.clone(),
         source: args.input.clone(), 
         follow_links: args.follow_links,
-        templates: "template".to_string(),
+        template: args.template.to_string(),
     };
 
     let output_opts = OutputOptions{

@@ -154,20 +154,6 @@ impl Parser<'_> {
         self.load_file_properties(&input, data);
     }
 
-    //pub fn register_template_file(&mut self, input: PathBuf) -> io::Result<()> {
-        //println!("register template {}", input.display());
-
-        //let name = "header";
-        //let res = self.handlebars.register_template_file("header", &input);
-        //match res {
-            //Ok(()) => {
-                //println!("template was registered {}", name);
-                //return Ok(())
-            //},
-            //Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
-        //}
-    //}
-
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
         let mut result = fs::read_string(&input)?;
         let mut data: BTreeMap<&str, Value> = BTreeMap::new();

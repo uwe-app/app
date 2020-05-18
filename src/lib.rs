@@ -17,7 +17,7 @@ pub struct InputOptions {
     pub source: PathBuf,
     pub follow_links: bool,
     pub layout: String,
-    pub templates: String,
+    pub template: String,
 }
 
 pub struct OutputOptions {
@@ -265,7 +265,7 @@ impl Finder {
         // template partials can be found
         let mut parser = parser::Parser::new(self.input.layout.clone());
         let mut templates = self.input.source.clone();
-        templates.push(&self.input.templates);
+        templates.push(&self.input.template);
         parser.handlebars.register_templates_directory(".hbs", templates.as_path());
 
         self.walk(|file, file_type| {
