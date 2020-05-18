@@ -37,7 +37,7 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 
 ## Data
 
-Templates are exposed the following fields:
+Global data is loaded from `layout.toml` before file-specific configuration data is merged. Supported fields are:
 
 * `filepath` Template file path.
 * `title` Document title.
