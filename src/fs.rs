@@ -4,7 +4,6 @@ use std::io::prelude::*;
 use std::io::Write;
 use std::fs::File;
 use std::path::Path;
-use std::path::PathBuf;
 use std::convert::AsRef;
 
 use log::{debug};

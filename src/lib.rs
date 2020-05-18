@@ -2,6 +2,7 @@ use log::{info,error,debug};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+use regex::Regex;
 use walkdir::{WalkDir,DirEntry};
 use minify::html::minify;
 
@@ -18,11 +19,22 @@ pub struct Options {
     pub source: PathBuf,
     pub target: PathBuf,
     pub follow_links: bool,
+    pub exclude: Option<Vec<Regex>>,
     pub layout: String,
     pub template: String,
     pub theme: String,
     pub clean: bool,
     pub minify: bool,
+}
+
+pub fn build(options: Options) {
+    let matcher = FileMatcher::new(
+        options.exclude.clone(),
+        options.layout.clone(),
+        options.template.clone());
+
+    let finder = Finder::new(matcher, options);
+    finder.run();
 }
 
 // Build the destination file path.
