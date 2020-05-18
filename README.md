@@ -1,6 +1,6 @@
 # Hyper Text
 
-Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebars][] with [mdbook][].
+Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebars][] and [mdbook][].
 
 ```
 hypertext --minify
@@ -39,8 +39,6 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 Global data is loaded from `layout.toml` before file-specific configuration data is merged. 
 
 ### Generated
-
-Generated fields are:
 
 * `filepath` Template file path.
 * `content` Rendered document content (layouts only).
