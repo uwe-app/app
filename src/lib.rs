@@ -225,8 +225,7 @@ impl<'a> Finder<'a> {
     pub fn run(&self) {
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let mut parser = Parser::new(
-            self.options.layout.clone(), self.options.source.clone());
+        let mut parser = Parser::new(self.options);
 
         let mut templates = self.options.source.clone();
         templates.push(&self.options.template);

@@ -5,22 +5,24 @@ use std::convert::AsRef;
 
 use handlebars::TemplateFileError;
 
-use pulldown_cmark::{Parser as MarkdownParser, Options, html};
+use pulldown_cmark::{Parser as MarkdownParser, Options as MarkdownOptions, html};
 
 use super::fs;
 use super::template;
+use super::Options;
 
 pub struct Parser<'a> {
+    options: &'a Options,
     loader: template::DataLoader,
     render: template::TemplateRender<'a>,
 }
 
-impl Parser<'_> {
+impl<'a> Parser<'a> {
 
-    pub fn new(layout_name: String, source: PathBuf) -> Self {
-        let loader = template::DataLoader::new(source);
-        let render = template::TemplateRender::new(layout_name);
-        Parser{loader, render}
+    pub fn new(options: &'a Options) -> Self {
+        let loader = template::DataLoader::new(options.source.clone());
+        let render = template::TemplateRender::new(options.layout.clone());
+        Parser{options, loader, render}
     }
 
     pub fn register_templates_directory<P: AsRef<Path>>(&mut self, ext: &'static str, dir: P) 
@@ -48,8 +50,8 @@ impl Parser<'_> {
         let parsed = self.render.parse_template_string(&input, content, &mut data);
         match parsed {
             Ok(content) => {
-                let mut options = Options::empty();
-                options.insert(Options::ENABLE_STRIKETHROUGH);
+                let mut options = MarkdownOptions::empty();
+                options.insert(MarkdownOptions::ENABLE_STRIKETHROUGH);
                 let parser = MarkdownParser::new_ext(&content, options);
                 let mut markup = String::new();
                 html::push_html(&mut markup, parser);
