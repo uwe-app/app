@@ -8,19 +8,19 @@ hypertext --minify
 
 > Process all files in `site` and write the result to `build`.
 
-See [site](/site) for example source files.
-
 ## Rules
 
 * Treat `.html` and `.md` files as *documents* to be parsed as templates.
 * Use the nearest layout (`layout.hbs`) wherever possible.
 * Infer document title from the file name (or parent directory in the case of index files).
 * Load template configuration data from `.toml` files.
-* If a directory contains `book.toml` use [mdbook][] (see [guide](/site/guide)).
+* If a directory contains `book.toml` use [mdbook][].
 * If the directory `site/template/theme` exists use it as the theme for [mdbook][].
 * Skip any files matched by exclude patterns (`--exclude`).
 * Exclude hidden files.
 * Copy all other files.
+
+See [site](/site) for example source files. The files in [site](/site) are to demonstrate and test various configurations -- they are clearly not the best way to structure a site.
 
 ## Layout
 
@@ -33,6 +33,8 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 ```
 {{> header}}
 ```
+
+See [header.hbs](/site/template/header.hbs).
 
 ## Data
 
@@ -75,8 +77,6 @@ When the `--clean-url` option is given treat destination files as clean URLs whe
 Get short help with `hypertext -h` and see more detail with `hypertext --help`.
 
 ## Notes
-
-The files in [site](/site) are an example to demonstrate and test various configurations and are clearly not the best way to structure a site.
 
 Much inspiration lifted from [mdbook][].
 
