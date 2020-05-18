@@ -36,12 +36,16 @@ struct Cli {
     template: String,
 
     /// Follow symbolic links
-    #[structopt(long)]
+    #[structopt(short, long)]
     follow_links: bool,
 
     /// Compress HTML output
-    #[structopt(long)]
+    #[structopt(short, long)]
     minify: bool,
+
+    /// Generate clean URLs
+    #[structopt(short, long)]
+    clean_url: bool,
 
     /// Exclude patterns
     ///
@@ -112,7 +116,7 @@ fn main() {
         template: args.template.to_string(),
         target: args.output.clone(),
         theme: args.theme.unwrap_or("".to_string()),
-        clean: true,
+        clean: args.clean_url,
         minify: args.minify,
     };
 

@@ -8,7 +8,7 @@ clean-build:
 
 run: clean-build
 	@mkdir build
-	@cargo run --
+	@cargo run -- --clean-url
 
 build:
 	@cargo build

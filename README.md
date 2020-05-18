@@ -18,7 +18,6 @@ See [site](/site) for example source files.
 * If a *document* has a sibling *configuration* (`.toml` file) use it to define the template data (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
 * If the directory `site/template/theme` exists use it as a global theme for [mdbook][].
-* Treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)).
 * Skip any files matched by exclude patterns (`--exclude`).
 * Exclude hidden files.
 * Copy all other files.
@@ -53,6 +52,10 @@ Markdown documents are parsed via handlebars before being rendered to HTML which
 ```markdown
 {{> snippet.md}}
 ```
+
+## Clean URLs
+
+When the `--clean-url` option is given treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)). Does not apply to files generated via [mdbook][].
 
 ## Help
 
