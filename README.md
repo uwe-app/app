@@ -17,7 +17,7 @@ See [site](/site) for example source files.
 * Infer document title from the file name (or parent directory in the case of index files).
 * If a *document* has a sibling *configuration* (`.toml` file) use it to define the template data (see [index.toml](/site/index.toml)).
 * If a directory contains a `book.toml` file build using [mdbook][] (see [guide](/site/guide)).
-* If the directory matches `site/template/theme` treat as a global theme for [mdbook][].
+* If the directory `site/template/theme` exists use it as a global theme for [mdbook][].
 * Treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)).
 * Skip any files matched by exclude patterns (`--exclude`).
 * Exclude hidden files.
