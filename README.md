@@ -40,7 +40,7 @@ See [header.hbs](/site/template/header.hbs).
 
 Create a file with the same name and `.toml` extension for document-specific configuration; see [index.toml](/site/index.toml) and [about.toml](/site/about.toml).
 
-Data is loaded by searching for the `layout.toml` in the current directory and parents, if a file is found it is used; then an inferred document title is set before merging with any document-specific configuration file.
+Data is loaded by searching for `layout.toml` in the current directory and parents, if a file is found it is used before merging with any document-specific configuration file.
 
 ### Generated
 
