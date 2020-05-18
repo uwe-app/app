@@ -9,6 +9,7 @@ use mdbook::MDBook;
 pub mod matcher;
 pub mod parser;
 pub mod fs;
+pub mod template;
 
 use matcher::{FileType};
 
@@ -96,7 +97,7 @@ fn process_file(
             return fs::copy(file, output)
         },
         FileType::Html => {
-            info!("HTML {} -> {}", file.display(), output.display());
+            info!("html {} -> {}", file.display(), output.display());
             let result = parser.parse_html(file);
             match result {
                 Ok(s) => {
@@ -107,7 +108,7 @@ fn process_file(
             }
         },
         FileType::Markdown => {
-            info!("MARK {} -> {}", file.display(), output.display());
+            info!("mark {} -> {}", file.display(), output.display());
             let result = parser.parse_markdown(file);
             match result {
                 Ok(s) => {
@@ -120,7 +121,7 @@ fn process_file(
         FileType::Ignored | FileType::Private | FileType::Template => {
             // Ignore templates here as they are located and 
             // used during the parsing and rendering process
-            debug!("NOOP {}", file.display());
+            debug!("noop {}", file.display());
         },
     }
 
@@ -174,7 +175,7 @@ impl Finder {
     }
 
     fn book(&self, dir: &Path) {
-        info!("BOOK {}", dir.display());
+        info!("book {}", dir.display());
 
         let result = MDBook::load(dir);
         match result {
@@ -195,7 +196,7 @@ impl Finder {
                 md.config.set("output.html.theme", theme);
                 let theme = md.config.get("output.html.theme").unwrap();
 
-                debug!("THEME {}", theme);
+                debug!("theme {}", theme);
 
                 let built = md.build();
                 match built {
@@ -261,12 +262,15 @@ impl Finder {
 
     // Find files and process each entry.
     pub fn run(&self) {
-        // Parser must exist for the entire lifetime to that
+        // Parser must exist for the entire lifetime so that
         // template partials can be found
         let mut parser = parser::Parser::new(self.input.layout.clone());
         let mut templates = self.input.source.clone();
         templates.push(&self.input.template);
-        parser.handlebars.register_templates_directory(".hbs", templates.as_path());
+        if let Err(e) = parser.handlebars.register_templates_directory(".hbs", templates.as_path()) {
+            error!("{}", e);
+            std::process::exit(1);
+        }
 
         self.walk(|file, file_type| {
             let result = process_file(&mut parser, &self.input, &self.output, file, file_type);

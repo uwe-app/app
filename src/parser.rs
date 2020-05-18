@@ -3,22 +3,13 @@ use std::path::PathBuf;
 use std::collections::BTreeMap;
 
 use toml::Value;
-use toml::de::{Error as TomlError};
-use serde_derive::Deserialize;
-use inflector::Inflector;
 use handlebars::Handlebars;
 use pulldown_cmark::{Parser as MarkdownParser, Options, html};
 
-use log::{info, error};
+use log::{error};
 
 use super::fs;
-
-const INDEX_STEM: &'static str = "index";
-
-#[derive(Deserialize,Debug)]
-struct FileProperties {
-    title: Option<String>,
-}
+use super::template;
 
 pub struct Parser<'a> {
     layout: String,
@@ -31,31 +22,6 @@ impl Parser<'_> {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
         Parser{layout, handlebars}
-    }
-
-    // Convert a file name to title case
-    fn file_auto_title(&self, input: &PathBuf) -> Option<String> {
-        if let Some(nm) = input.file_stem() {
-            // If the file is an index file, try to get the name 
-            // from a parent directory
-            if nm == INDEX_STEM {
-                if let Some(p) = input.parent() {
-                    return self.file_auto_title(&p.to_path_buf());
-                }
-            } else {
-                let auto = nm.to_str().unwrap().to_string();
-                let capitalized = auto.to_title_case();
-                return Some(capitalized)
-            }
-
-        }
-        None
-    }
-
-    fn auto_title(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
-        if let Some(auto) = self.file_auto_title(&input) {
-            data.insert("title", Value::String(auto));
-        }
     }
 
     fn parse_template(
@@ -119,44 +85,50 @@ impl Parser<'_> {
         Ok(result)
     }
 
-    fn load_file_properties(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
-        let mut props = input.clone(); 
-        props.set_extension("toml");
-        if props.exists() {
-            info!("TOML {}", props.display());
-            let properties = fs::read_string(&props);
-            match properties {
-                Ok(s) => {
-                    //println!("{}", s);
-                    let config: Result<FileProperties, TomlError> = toml::from_str(&s);
-                    match config {
-                        Ok(props) => {
-                            //println!("{:?}", deser);
-                            if let Some(title) = props.title {
-                                data.insert("title", Value::String(title));
-                            }
-                        },
-                        Err(e) => {
-                            error!("{}", e);
-                        }
-                    }
-                },
-                Err(e) => {
-                    error!("{}", e);
-                },
-            }
-        }
-    }
+    //fn load_file_properties(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
+        //let mut props = input.clone(); 
+        //props.set_extension("toml");
+        //if props.exists() {
+            //info!("TOML {}", props.display());
+            //let properties = fs::read_string(&props);
+            //match properties {
+                //Ok(s) => {
+                    ////println!("{}", s);
+                    //let config: Result<FileProperties, TomlError> = toml::from_str(&s);
+                    //match config {
+                        //Ok(props) => {
+                            ////println!("{:?}", deser);
+                            //if let Some(title) = props.title {
+                                //data.insert("title", Value::String(title));
+                            //}
+                        //},
+                        //Err(e) => {
+                            //error!("{}", e);
+                        //}
+                    //}
+                //},
+                //Err(e) => {
+                    //error!("{}", e);
+                //},
+            //}
+        //}
+    //}
 
-    fn load_file_data(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
-        self.auto_title(&input, data);
-        self.load_file_properties(&input, data);
-    }
+    //fn load_file_data(&self, input: &PathBuf, data: &mut BTreeMap<&str, Value>) {
+        //self.auto_title(&input, data);
+        //self.load_file_properties(&input, data);
+    //}
 
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
         let mut result = fs::read_string(&input)?;
-        let mut data: BTreeMap<&str, Value> = BTreeMap::new();
-        self.load_file_data(&input, &mut data);
+
+        let mut data = template::TemplateData::create();
+        let data_handler = template::TemplateData::new();
+        data_handler.load_file_data(&input, &mut data);
+
+        //let mut data: BTreeMap<&str, Value> = BTreeMap::new();
+        //self.load_file_data(&input, &mut data);
+
         result = self.parse_template(&input, result, &mut data)?;
         result = self.layout(&input, result, &mut data)?;
         Ok(result)
@@ -165,8 +137,10 @@ impl Parser<'_> {
     pub fn parse_markdown(&mut self, input: PathBuf) -> io::Result<String> {
         let content = fs::read_string(&input)?;
 
-        let mut data: BTreeMap<&str, Value> = BTreeMap::new();
-        self.load_file_data(&input, &mut data);
+        let mut data = template::TemplateData::create();
+        let data_handler = template::TemplateData::new();
+        data_handler.load_file_data(&input, &mut data);
+        //self.load_file_data(&input, &mut data);
 
         let parsed = self.parse_template(&input, content, &mut data);
         match parsed {
