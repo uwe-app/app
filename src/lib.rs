@@ -14,7 +14,6 @@ pub mod template;
 use matcher::{FileType};
 
 pub struct InputOptions {
-    pub matcher: matcher::FileMatcher,
     pub source: PathBuf,
     pub follow_links: bool,
     pub layout: String,
@@ -22,98 +21,100 @@ pub struct InputOptions {
 }
 
 pub struct OutputOptions {
-    pub matcher: matcher::FileMatcher,
     pub target: PathBuf,
     pub theme: String,
     pub clean: bool,
 }
 
-impl OutputOptions {
+// Build the destination file path.
+pub fn destination(
+    matcher: &matcher::FileMatcher,
+    target: &PathBuf,
+    input: &PathBuf,
+    file: &PathBuf,
+    file_type: &FileType,
+    clean: bool) -> PathBuf {
 
-    // Build the destination file path.
-    pub fn destination(&self, input: &PathBuf, file: &PathBuf, file_type: &FileType) -> PathBuf {
-        let relative = file.strip_prefix(input);
-        match relative {
-            Ok(relative) => {
-                let mut result = self.target.join(relative).to_owned();
-                match file_type {
-                    FileType::Markdown | FileType::Html => {
-                        result.set_extension("html");
+    let relative = file.strip_prefix(input);
+    match relative {
+        Ok(relative) => {
+            let mut result = target.join(relative).to_owned();
+            match file_type {
+                FileType::Markdown | FileType::Html => {
+                    result.set_extension("html");
 
-                        let clean_target = file.clone();
-                        if self.clean && !self.matcher.is_index(&clean_target) {
-                            if let Some(parent) = clean_target.parent() {
-                                if let Some(stem) = clean_target.file_stem() {
-                                    let mut target = parent.to_path_buf();
-                                    target.push(stem);
-                                    target.push(self.matcher.get_index_stem());
+                    let clean_target = file.clone();
+                    if clean && !matcher.is_index(&clean_target) {
+                        if let Some(parent) = clean_target.parent() {
+                            if let Some(stem) = clean_target.file_stem() {
+                                let mut target = parent.to_path_buf();
+                                target.push(stem);
+                                target.push(matcher.get_index_stem());
 
-                                    //println!("{:?}", target);
+                                //println!("{:?}", target);
 
-                                    // No corresponding input file that would collide
-                                    // with the clean output destination
-                                    if !self.matcher.has_parse_file(&target) {
-                                        //println!("{:?}", target); 
-                                        //println!("{:?}", result); 
-                                        let clean_result = result.clone();
-                                        if let Some(parent) = clean_result.parent() {
-                                            if let Some(stem) = clean_result.file_stem() {
-                                                let mut res = parent.to_path_buf();
-                                                res.push(stem);
-                                                res.push(self.matcher.get_index_stem());
-                                                res.set_extension("html");
-                                                debug!("clean url {:?}", res); 
-                                                result = res;
-                                            }
+                                // No corresponding input file that would collide
+                                // with the clean output destination
+                                if !matcher.has_parse_file(&target) {
+                                    //println!("{:?}", target); 
+                                    //println!("{:?}", result); 
+                                    let clean_result = result.clone();
+                                    if let Some(parent) = clean_result.parent() {
+                                        if let Some(stem) = clean_result.file_stem() {
+                                            let mut res = parent.to_path_buf();
+                                            res.push(stem);
+                                            res.push(matcher.get_index_stem());
+                                            res.set_extension("html");
+                                            debug!("clean url {:?}", res); 
+                                            result = res;
                                         }
                                     }
                                 }
                             }
-
                         }
-                    },
-                    _ => {}
-                }
-                result
-            },
-            Err(e) => panic!(e),
-        }
+
+                    }
+                },
+                _ => {}
+            }
+            result
+        },
+        Err(e) => panic!(e),
     }
-
 }
-
 
 fn process_file(
     parser: &mut parser::Parser,
+    matcher: &matcher::FileMatcher,
     input: &InputOptions,
     output: &OutputOptions,
     file: PathBuf,
     file_type: FileType) -> io::Result<()> {
 
-    let output = output.destination(&input.source, &file, &file_type);
+    let dest = destination(&matcher, &output.target, &input.source, &file, &file_type, output.clean);
 
     match file_type {
         FileType::Unknown => {
-            return fs::copy(file, output)
+            return fs::copy(file, dest)
         },
         FileType::Html => {
-            info!("html {} -> {}", file.display(), output.display());
+            info!("html {} -> {}", file.display(), dest.display());
             let result = parser.parse_html(file);
             match result {
                 Ok(s) => {
                     trace!("{}", s);
-                    return fs::write_string(output, s)
+                    return fs::write_string(dest, s)
                 },
                 Err(e) => return Err(e)
             }
         },
         FileType::Markdown => {
-            info!("mark {} -> {}", file.display(), output.display());
+            info!("mark {} -> {}", file.display(), dest.display());
             let result = parser.parse_markdown(file);
             match result {
                 Ok(s) => {
                     trace!("{}", s);
-                    return fs::write_string(output, s)
+                    return fs::write_string(dest, s)
                 },
                 Err(e) => return Err(e)
             }
@@ -129,14 +130,15 @@ fn process_file(
 }
 
 pub struct Finder {
+    matcher: matcher::FileMatcher,
     input: InputOptions,
     output: OutputOptions,
 }
 
 impl Finder {
 
-    pub fn new(input: InputOptions, output: OutputOptions) -> Self {
-        Finder{input, output} 
+    pub fn new(matcher: matcher::FileMatcher, input: InputOptions, output: OutputOptions) -> Self {
+        Finder{matcher, input, output} 
     }
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
@@ -185,7 +187,7 @@ impl Finder {
                 let mut theme = self.output.theme.clone();
 
                 if theme.is_empty() {
-                    let theme_dir = self.input.matcher.get_theme_dir(&self.input.source);
+                    let theme_dir = self.matcher.get_theme_dir(&self.input.source);
                     if theme_dir.exists() {
                         if let Some(s) = theme_dir.to_str() {
                             theme = s.to_string();
@@ -225,11 +227,11 @@ impl Finder {
         if path.is_dir() {
             let buf = &path.to_path_buf();
             // Can prevent recursing if a directory pattern matches
-            if self.input.matcher.is_excluded(buf) {
+            if self.matcher.is_excluded(buf) {
                 return false 
             }
 
-            if self.input.matcher.is_theme(&self.input.source, buf) {
+            if self.matcher.is_theme(&self.input.source, buf) {
                 return false
             }
             let mut book = buf.clone();
@@ -254,7 +256,7 @@ impl Finder {
             let entry = entry.unwrap();
             if entry.file_type().is_file() {
                 let file = entry.path().to_path_buf();
-                let file_type = self.input.matcher.get_type(&file);
+                let file_type = self.matcher.get_type(&file);
                 callback(file, file_type)
             }
         }
@@ -273,7 +275,7 @@ impl Finder {
         }
 
         self.walk(|file, file_type| {
-            let result = process_file(&mut parser, &self.input, &self.output, file, file_type);
+            let result = process_file(&mut parser, &self.matcher, &self.input, &self.output, file, file_type);
             match result {
                 Err(e) => {
                     error!("{}", e);

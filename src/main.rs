@@ -104,9 +104,9 @@ fn main() {
         std::process::exit(1);
     }
 
+    let matcher = FileMatcher::new(args.exclude.clone(), args.layout.clone(), args.template.clone());
+
     let input_opts = InputOptions{
-        matcher: FileMatcher::new(
-                     args.exclude.clone(), args.layout.clone(), args.template.clone()),
         layout: args.layout.clone(),
         source: args.input.clone(), 
         follow_links: args.follow_links,
@@ -114,13 +114,11 @@ fn main() {
     };
 
     let output_opts = OutputOptions{
-        matcher: FileMatcher::new(
-                     args.exclude.clone(), args.layout.clone(), args.template.clone()),
         target: args.output.clone(),
         theme: args.theme.unwrap_or("".to_string()),
         clean: true,
     };
 
-    let finder = Finder::new(input_opts, output_opts);
+    let finder = Finder::new(matcher, input_opts, output_opts);
     finder.run();
 }
