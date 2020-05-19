@@ -102,7 +102,7 @@ impl<'a> Builder<'a> {
     // Find files and process each entry.
     pub fn run(&self) {
 
-        let mut books: Vec<PathBuf> = Vec::new();
+        //let mut books: Vec<PathBuf> = Vec::new();
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
@@ -125,7 +125,7 @@ impl<'a> Builder<'a> {
                     book.push("book.toml");
                     if book.exists() {
                         //println!("filter book directory {:?}", self.matcher);
-                        //self.book.add(parent);
+                        //tmp.book.add(parent);
                         //books.push(parent);
                         return false
                     }
