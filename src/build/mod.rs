@@ -35,7 +35,7 @@ impl<'a> Builder<'a> {
     fn process_file(&mut self, file: PathBuf, file_type: FileType) -> io::Result<()> {
 
         let dest = matcher::destination(
-            &self.options.source, &self.options.target, &file, &file_type, self.options.clean);
+            &self.options.source, &self.options.target, &file, &file_type, self.options.clean_url);
 
         match file_type {
             FileType::Unknown => {

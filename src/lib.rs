@@ -19,7 +19,7 @@ pub struct Options {
     pub layout: String,
     pub template: String,
     pub theme: String,
-    pub clean: bool,
+    pub clean_url: bool,
     pub minify: bool,
 }
 

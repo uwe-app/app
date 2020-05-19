@@ -2,7 +2,9 @@
 
 {{> intro.md}}
 
-* File path: `{{filepath}}`
+* File path: `{{context.file}}`
+* Source: `{{context.source}}`
+* Target: `{{context.target}}`
 * Title: `{{title}}`
 * Message: *{{message}}*
 

@@ -99,7 +99,7 @@ fn main() {
         target: args.output,
         layout: args.layout,
         follow_links: args.follow_links,
-        clean: args.clean_url,
+        clean_url: args.clean_url,
         minify: args.minify,
         template: args.template.to_string(),
         theme: args.theme.unwrap_or("".to_string()),

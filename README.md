@@ -23,7 +23,7 @@ See [site](/site) for example source files that demonstrate and test various con
 
 ## Layout
 
-For each document look for a *layout template* (`layout.hbs`) in the current directory and parents; if a layout is found pass it the file `content` (see [layout.hbs](/site/layout.hbs)) for rendering. If no layout is located render the *document*.
+For each document look for a *layout template* (`layout.hbs`) in the current directory and parents; if a layout is found pass it the file `template` (see [layout.hbs](/site/layout.hbs)) for rendering. If no layout is located render the *document*.
 
 ## Partials
 
@@ -43,8 +43,10 @@ Data is loaded by searching for `layout.toml` in the current directory and paren
 
 ### Generated
 
-* `filepath` Template file path.
-* `content` Rendered document content (layouts only).
+These fields are **reserved** keywords for template data:
+
+* `context` Helper context information.
+* `template` Rendered document content (layouts only).
 
 ### Configure
 

@@ -98,22 +98,23 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
 }
 
 // Build the destination file path.
-pub fn destination(
-    source: &PathBuf,
-    target: &PathBuf,
-    file: &PathBuf,
+pub fn destination<P: AsRef<Path>>(
+    source: P,
+    target: P,
+    file: P,
     file_type: &FileType,
     clean_urls: bool) -> PathBuf {
 
-    let relative = file.strip_prefix(source);
+    let pth = file.as_ref();
+    let relative = pth.strip_prefix(source.as_ref());
     match relative {
         Ok(relative) => {
-            let mut result = target.clone().join(relative);
+            let mut result = target.as_ref().clone().join(relative);
             match file_type {
                 FileType::Markdown | FileType::Html => {
                     result.set_extension("html");
                     if clean_urls {
-                        if let Some(res) = clean(file, &result) {
+                        if let Some(res) = clean(pth, &result) {
                             result = res;
                         }
                     }

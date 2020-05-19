@@ -7,14 +7,21 @@ use ignore::WalkBuilder;
 
 use handlebars::*;
 
+use serde_json::value::Value;
+
+use super::matcher;
+
 #[derive(Debug)]
 struct TocEntry {
     source: PathBuf,
 }
 
-fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<TocEntry>> {
+fn get_files<P: AsRef<Path>>(p: P, ctx: &Value) -> io::Result<Vec<TocEntry>> {
 
     let mut entries: Vec<TocEntry> = Vec::new();
+
+    let src = ctx.get("source").unwrap().as_str().unwrap();
+    let source = Path::new(src);
 
     for result in WalkBuilder::new(p.as_ref()).max_depth(Some(1)).build() {
 
@@ -68,16 +75,24 @@ impl HelperDef for Toc {
 
     let data = ctx.data();
 
-    if let Some(fp) = data.get("filepath") {
-        if let Some(fp) = fp.as_str() {
-            let path = Path::new(&fp);
-            //println!("got file path {:?}", path); 
-            if let Some(parent) = path.parent() {
-                let entries = get_files(parent);
-                //println!("got paretn path {:?}", entries); 
+    //data.foo();
 
+    if let Some(tpl_context) = data.get("context") {
+        //tpl_context.foo();
+        println!("{:?}", tpl_context);
+
+        if let Some(fp) = data.get("filepath") {
+            if let Some(fp) = fp.as_str() {
+                let path = Path::new(&fp);
+                //println!("got file path {:?}", path); 
+                if let Some(parent) = path.parent() {
+                    let entries = get_files(parent, tpl_context);
+                    //println!("got paretn path {:?}", entries); 
+
+                }
             }
         }
+
     }
 
     //h.template()

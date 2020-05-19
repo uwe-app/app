@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::convert::AsRef;
 
 use toml::Value;
+use toml::value::Table;
 use toml::de::{Error as TomlError};
 use toml::map::Map;
 use inflector::Inflector;
@@ -11,8 +12,6 @@ use inflector::Inflector;
 use handlebars::{Handlebars, TemplateFileError};
 
 use log::{error, debug};
-
-//use serde::Serialize;
 
 use super::fs;
 use super::helpers;
@@ -27,6 +26,7 @@ pub struct DataLoader<'a> {
 }
 
 impl<'a> DataLoader<'a> {
+
     pub fn new(options: &'a Options) -> Self {
 
         // Derive the layout.toml from the layout.hbs option
@@ -61,13 +61,13 @@ impl<'a> DataLoader<'a> {
         None
     }
 
-    fn auto_title<P : AsRef<Path>>(&self, input: P, data: &mut Map<String, Value>) {
+    fn auto_title<P : AsRef<Path>>(&self, input: P, data: &mut Table) {
         if let Some(auto) = self.file_auto_title(&input.as_ref()) {
             data.insert("title".to_string(), Value::String(auto));
         }
     }
 
-    fn load_file<P : AsRef<Path>>(&self, file: P, data: &mut Map<String, Value>) {
+    fn load_file<P : AsRef<Path>>(&self, file: P, data: &mut Table) {
         let src = file.as_ref();
         debug!("toml {}", src.display());
         let properties = fs::read_string(src);
@@ -92,14 +92,14 @@ impl<'a> DataLoader<'a> {
         }
     }
 
-    fn load_config(&self, input: &PathBuf, data: &mut Map<String, Value>) {
+    fn load_config(&self, input: &PathBuf, data: &mut Table) {
 
         if let Some(cfg) = fs::inherit(&self.options.source, input, &self.name) {
             self.load_file(&cfg, data);
         }
     }
 
-    fn load_file_config(&self, input: &PathBuf, data: &mut Map<String, Value>) {
+    fn load_file_config(&self, input: &PathBuf, data: &mut Table) {
         let mut config = input.clone(); 
         config.set_extension("toml");
         if config.exists() {
@@ -107,7 +107,7 @@ impl<'a> DataLoader<'a> {
         }
     }
 
-    pub fn load_file_data(&self, input: &PathBuf, data: &mut Map<String, Value>) {
+    pub fn load_file_data(&self, input: &PathBuf, data: &mut Table) {
         self.load_config(&input, data);
         self.auto_title(&input, data);
         self.load_file_config(&input, data);
@@ -135,17 +135,28 @@ impl<'a> TemplateRender<'a> {
         self.handlebars.register_templates_directory(ext, dir)
     }
 
-    pub fn parse_template_string(&mut self, input: &PathBuf, content: String, data: &mut Map<String, Value>)
+    pub fn parse_template_string(&mut self, input: &PathBuf, content: String, data: &mut Table)
         -> io::Result<String> {
 
         let name = &input.to_str().unwrap();
         if self.handlebars.register_template_string(name, &content).is_ok() {
 
             let filepath = input.to_str().unwrap().to_string();
-            data.insert("filepath".to_string(), Value::String(filepath));
-            //data.insert("options".to_string(), self.options);
+            //data.insert("filepath".to_string(), Value::String(filepath));
 
-            //println!("render with name {}", name);
+            let mut ctx: Table = Table::new();
+            ctx.insert("file".to_string(), Value::String(filepath));
+            ctx.insert(
+                "source".to_string(),
+                Value::String(self.options.source.to_string_lossy().to_string()));
+            ctx.insert(
+                "target".to_string(),
+                Value::String(self.options.target.to_string_lossy().to_string()));
+            ctx.insert(
+                "clean_url".to_string(),
+                Value::Boolean(self.options.clean_url));
+
+            data.insert("context".to_string(), Value::Table(ctx));
 
             let parsed = self.handlebars.render(name, data);
             match parsed {
@@ -161,7 +172,7 @@ impl<'a> TemplateRender<'a> {
     }
 
     pub fn layout(
-        &mut self, input: &PathBuf, document: String, data: &mut Map<String, Value>)
+        &mut self, input: &PathBuf, document: String, data: &mut Table)
         -> io::Result<String> {
 
         // Skip layout for standalone documents
@@ -181,7 +192,7 @@ impl<'a> TemplateRender<'a> {
 
             // Inject the result into the layout template data
             // re-using the same data object
-            data.insert("content".to_string(), Value::String(document));
+            data.insert("template".to_string(), Value::String(document));
 
             let parsed = self.handlebars.render(&name, data);
             match parsed {
