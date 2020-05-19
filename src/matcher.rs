@@ -38,10 +38,11 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
 pub fn get_type<P: AsRef<Path>>(layout: &str, file: P) -> FileType {
 
     let name = file.as_ref().file_name();
+    let layout_toml = "layout.toml";
     match name {
         Some(nm) => {
             if let Some(nm) = nm.to_str() {
-                if nm == layout || nm.ends_with(HBS) {
+                if nm == layout || nm == layout_toml || nm.ends_with(HBS) {
                     return FileType::Private
                 } else if nm.ends_with(MD) {
                     return FileType::Markdown
