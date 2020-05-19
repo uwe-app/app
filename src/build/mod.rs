@@ -68,7 +68,7 @@ impl<'a> Builder<'a> {
                     Err(e) => return Err(e)
                 }
             },
-            FileType::Ignored | FileType::Private | FileType::Template => {
+            FileType::Ignored | FileType::Private => {
                 // Ignore templates here as they are located and 
                 // used during the parsing and rendering process
                 debug!("noop {}", file.display());
@@ -94,6 +94,8 @@ impl<'a> Builder<'a> {
             .hidden(false)
             .filter_entry(move |e| {
                 let path = e.path();
+
+                // Ensure the template directory is ignored
                 if path == templates.as_path() {
                     return false
                 }

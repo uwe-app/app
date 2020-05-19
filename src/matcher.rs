@@ -13,7 +13,6 @@ pub enum FileType {
     Ignored,
     Markdown,
     Html,
-    Template,
     Private,
     Unknown,
 }
@@ -142,14 +141,12 @@ impl<'a> FileMatcher<'a> {
         match name {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
-                    if nm == self.options.layout {
+                    if nm == self.options.layout || nm.ends_with(HBS) {
                         return FileType::Private
                     } else if nm.ends_with(MD) {
                         return FileType::Markdown
                     } else if nm.ends_with(HTML) {
                         return FileType::Html
-                    } else if nm.ends_with(HBS) {
-                        return FileType::Template
                     } else if nm.ends_with(TOML) && self.has_parse_file(file) {
                         return FileType::Private
                     }
