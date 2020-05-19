@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use regex::Regex;
-
 mod build;
 mod fs;
 mod matcher;
@@ -15,7 +13,6 @@ pub struct Options {
     pub source: PathBuf,
     pub target: PathBuf,
     pub follow_links: bool,
-    pub exclude: Option<Vec<Regex>>,
     pub layout: String,
     pub template: String,
     pub theme: String,

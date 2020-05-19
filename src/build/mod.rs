@@ -68,7 +68,7 @@ impl<'a> Builder<'a> {
                     Err(e) => return Err(e)
                 }
             },
-            FileType::Ignored | FileType::Private => {
+            FileType::Private => {
                 // Ignore templates here as they are located and 
                 // used during the parsing and rendering process
                 debug!("noop {}", file.display());
@@ -91,7 +91,6 @@ impl<'a> Builder<'a> {
 
         for result in WalkBuilder::new(&self.options.source)
             .follow_links(self.options.follow_links)
-            .hidden(false)
             .filter_entry(move |e| {
                 let path = e.path();
 

@@ -4,7 +4,6 @@ extern crate pretty_env_logger;
 use std::env;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use regex::Regex;
 use std::fs;
 use log::{info};
 
@@ -46,18 +45,6 @@ struct Cli {
     /// Generate clean URLs
     #[structopt(short, long)]
     clean_url: bool,
-
-    /// Exclude patterns
-    ///
-    /// Any paths matching these regular expression patterns are excluded 
-    /// from processing.
-    ///
-    /// Match is performed on the entire file path.
-    ///
-    /// The file path may be relative or absolute depending upon the input.
-    ///
-    #[structopt(short, long)]
-    exclude: Option<Vec<Regex>>,
 
     /// Read files from directory
     #[structopt(parse(from_os_str), default_value="site")]
@@ -110,7 +97,6 @@ fn main() {
     let opts = Options{
         source: args.input, 
         target: args.output,
-        exclude: args.exclude,
         layout: args.layout,
         follow_links: args.follow_links,
         clean: args.clean_url,

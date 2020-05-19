@@ -16,8 +16,7 @@ hypertext --minify
 * Load template configuration data from `.toml` files.
 * If a directory contains `book.toml` use [mdbook][].
 * If the directory `site/template/theme` exists use it as the theme for [mdbook][].
-* Skip any files matched by exclude patterns (`--exclude`).
-* Exclude hidden files.
+* Exclude hidden files and patterns in `.gitignore`.
 * Copy all other files.
 
 See [site](/site) for example source files that demonstrate and test various configurations; they are *not the ideal* way to structure a site.

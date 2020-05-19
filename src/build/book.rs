@@ -64,27 +64,23 @@ impl<'a> BookBuilder<'a> {
 
             match result {
                 Ok(entry) => {
-                    if self.matcher.is_excluded(&entry.path()) {
-                        debug!("noop {}", entry.path().display());
-                    } else {
-                        if entry.path().is_file() {
-                            let file = entry.path().to_path_buf();
-                            // Get a relative file and append it to the correct output base directory
-                            let dest = file.strip_prefix(&build_dir).unwrap();
-                            let mut output = base.clone();
-                            output.push(dest);
+                    if entry.path().is_file() {
+                        let file = entry.path().to_path_buf();
+                        // Get a relative file and append it to the correct output base directory
+                        let dest = file.strip_prefix(&build_dir).unwrap();
+                        let mut output = base.clone();
+                        output.push(dest);
 
-                            // TODO: minify files with HTML file extension
+                        // TODO: minify files with HTML file extension
 
-                            // Copy the file content
-                            let copied = fs::copy(file, output);
-                            match copied {
-                                Err(e) => {
-                                    error!("{}", e);
-                                    std::process::exit(1);
-                                },
-                                _ => {}
-                            }
+                        // Copy the file content
+                        let copied = fs::copy(file, output);
+                        match copied {
+                            Err(e) => {
+                                error!("{}", e);
+                                std::process::exit(1);
+                            },
+                            _ => {}
                         }
                     }
                 }, Err(e) => {

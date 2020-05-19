@@ -10,7 +10,6 @@ pub struct FileMatcher<'a> {
 
 #[derive(Debug)]
 pub enum FileType {
-    Ignored,
     Markdown,
     Html,
     Private,
@@ -109,20 +108,6 @@ impl<'a> FileMatcher<'a> {
         false
     }
 
-    pub fn is_excluded<P: AsRef<Path>>(&self, file: P) -> bool {
-        let path = file.as_ref();
-        if let Some(list) = &self.options.exclude {
-            for ptn in list {
-                if let Some(s) = path.to_str() {
-                    if ptn.is_match(s) {
-                        return true
-                    }
-                }
-            }
-        }
-        false
-    }
-
     pub fn get_theme_dir<P: AsRef<Path>>(&self, base: P) -> PathBuf {
         let mut root_theme = base.as_ref().to_path_buf();
         root_theme.push(&self.options.template);
@@ -132,11 +117,6 @@ impl<'a> FileMatcher<'a> {
 
     pub fn get_type<P: AsRef<Path>>(&self, file: P) -> FileType {
 
-        // Explicitly excluded files take precedence
-        if self.is_excluded(&file) {
-            return FileType::Ignored
-        }
-        
         let name = file.as_ref().file_name();
         match name {
             Some(nm) => {
