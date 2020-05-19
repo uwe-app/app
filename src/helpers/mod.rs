@@ -28,53 +28,76 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, ctx: &Value) -> io::Result<Vec<
     let source = Path::new(src);
     let target = Path::new(tgt);
 
+    let rel_base = parent.as_ref().strip_prefix(source).unwrap_or(Path::new(""));
+
+    println!("parent {:?}", rel_base);
+
     for result in WalkBuilder::new(parent.as_ref()).max_depth(Some(1)).build() {
 
         match result {
             Ok(entry) => {
-                //println!("got entry {:?}", entry.path());
                 let path = entry.path();
-                let mut matched = false;
-
                 let mut href = "".to_string();
 
                 if path.is_file() {
 
-                    let file_type = matcher::get_type(layout, path);
+                    // Ignore self
+                    if path == file.as_ref() {
+                        continue;
+                    }
 
+
+                    let file_type = matcher::get_type(layout, path);
                     match file_type {
                         FileType::Markdown | FileType::Html => {
                             let mut dest = matcher::destination(source, target, path, &file_type, clean_url);
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
                             }
+                            if let Ok(rel) = dest.strip_prefix(rel_base) {
+                                dest = rel.to_path_buf();
+                            }
                             href = dest.to_string_lossy().to_string();
-                            println!("got parse file {:?}", href); 
                         },
                         _ => {},
                     }
 
-                    //if path == p.as_ref() {
-                        //println!("got same path!Q!!") 
-                        ////continue;
-                    //}
-
-
-                    if let Some(ext) = path.extension() {
-                        if ext == "md" || ext == "html" {
-                            //println!("FOUND MATCH");
-                            //entries.push(path.to_path_buf()); 
-                            matched = true;
-                        } 
-                    }
                 } else {
-                    // TODO
+                    // Ignore self
+                    if path == parent.as_ref() {
+                        continue;
+                    }
+
+                    let mut dir_index = path.to_path_buf();
+                    dir_index.push("index");
+                    let candidates = vec![
+                        dir_index.with_extension("md"),
+                        dir_index.with_extension("html")
+                    ];
+
+                    for f in candidates {
+                        if f.exists() {
+                            let file_type = matcher::get_type(layout, &f);
+                            let mut dest = matcher::destination(source, target, &f, &file_type, clean_url);
+                            if let Ok(cleaned) = dest.strip_prefix(target) {
+                                dest = cleaned.to_path_buf();
+                            }
+                            if let Ok(rel) = dest.strip_prefix(rel_base) {
+                                dest = rel.to_path_buf();
+                            }
+                            href = dest.to_string_lossy().to_string();
+                        }
+                    }
                 }
 
-                if matched {
-                    let e = TocEntry{
-                        href: href,
-                    };
+                if !href.is_empty() {
+                    if clean_url {
+                        let index_name = "index.html";
+                        if href.ends_with(index_name) {
+                            href.truncate(href.len() - index_name.len());
+                        }
+                    }
+                    let e = TocEntry{href: href};
                     entries.push(e);
                 }
             }, Err(e) => {
@@ -114,7 +137,6 @@ impl HelperDef for Toc {
                         Some(t) => {
 
                             for li in entries {
-                                println!("got matching template {:?}", &li);
                                 let mut context: BTreeMap<String, Value> = BTreeMap::new();
 
                                 let href = &li.href;
