@@ -25,7 +25,7 @@ pub struct Options {
 
 pub fn build(options: Options) {
     let matcher = FileMatcher::new(&options);
-    let finder = Builder::new(&matcher, &options);
+    let mut finder = Builder::new(&matcher, &options);
     finder.run();
 }
 

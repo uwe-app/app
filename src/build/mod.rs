@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use minify::html::minify;
 use log::{info,error,debug};
-use ignore::{WalkBuilder,DirEntry};
+use ignore::WalkBuilder;
 
 mod book;
 
@@ -77,33 +77,8 @@ impl<'a> Builder<'a> {
         Builder{matcher, options, book} 
     }
 
-    fn handle_book(&self, entry: &DirEntry) -> bool {
-        let path = entry.path();
-        if path.is_dir() {
-            let buf = &path.to_path_buf();
-            // Can prevent recursing if a directory pattern matches
-            if self.matcher.is_excluded(buf) {
-                return true 
-            }
-
-            if self.matcher.is_theme(&self.options.source, buf) {
-                return true
-            }
-            let mut book = buf.clone();
-            book.push("book.toml");
-            if book.exists() {
-                self.book.build(book.parent().unwrap());
-                return true
-            }
-        }
-        false
-    }
-
     // Find files and process each entry.
-    pub fn run(&self) {
-
-        //let mut books: Vec<PathBuf> = Vec::new();
-
+    pub fn run(&mut self) {
         // Parser must exist for the entire lifetime so that
         // template partials can be found
         let mut parser = Parser::new(self.options);
@@ -118,26 +93,24 @@ impl<'a> Builder<'a> {
         for result in WalkBuilder::new(&self.options.source)
             .follow_links(self.options.follow_links)
             .hidden(false)
-            .filter_entry(|e| {
-                if e.path().is_dir() {
-                    let parent = e.path().to_path_buf();
-                    let mut book = parent.clone();
-                    book.push("book.toml");
-                    if book.exists() {
-                        //println!("filter book directory {:?}", self.matcher);
-                        //tmp.book.add(parent);
-                        //books.push(parent);
-                        return false
-                    }
-                }
-                true
-            })
             .build() {
+
             match result {
                 Ok(entry) => {
-                    if entry.path().is_dir() && self.handle_book(&entry) {
+                    let path = entry.path();
+
+                    if self.book.contains_file(&path) {
                         continue;
-                    } else if entry.path().is_file() {
+                    }
+
+                    //println!("ENTRY");
+                    if path.is_dir() && self.book.is_book_dir(&path) {
+                        // Add the book so we can skip processing of descendants
+                        self.book.add(&path);
+
+                        // Build the book
+                        self.book.build(&path);
+                    } else if path.is_file() {
                         //println!("{:?}", entry);
 
                         let file = entry.path().to_path_buf();
