@@ -12,8 +12,10 @@ This is a *document* with some _markdown_ including an [example][] link referenc
 
 You can view an example book at the [guide](/guide/).
 
+<ul>
 {{#toc}}
-link for youo
+<li><a href="{{href}}">{{href}}</a></li>
 {{/toc}}
+</ul>
 
 [example]: https://example.org 

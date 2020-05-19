@@ -153,6 +153,9 @@ impl<'a> TemplateRender<'a> {
                 "target".to_string(),
                 Value::String(self.options.target.to_string_lossy().to_string()));
             ctx.insert(
+                "layout".to_string(),
+                Value::String(self.options.layout.clone()));
+            ctx.insert(
                 "clean_url".to_string(),
                 Value::Boolean(self.options.clean_url));
 

@@ -1,6 +1,6 @@
 use std::io;
 use std::path::Path;
-use std::path::PathBuf;
+use std::collections::BTreeMap;
 use std::convert::AsRef;
 
 use ignore::WalkBuilder;
@@ -10,20 +10,24 @@ use handlebars::*;
 use serde_json::value::Value;
 
 use super::matcher;
+use super::matcher::FileType;
 
 #[derive(Debug)]
 struct TocEntry {
-    source: PathBuf,
+    href: String,
 }
 
-fn get_files<P: AsRef<Path>>(p: P, ctx: &Value) -> io::Result<Vec<TocEntry>> {
+fn get_files<P: AsRef<Path>>(file: P, parent: P, ctx: &Value) -> io::Result<Vec<TocEntry>> {
 
     let mut entries: Vec<TocEntry> = Vec::new();
 
     let src = ctx.get("source").unwrap().as_str().unwrap();
+    let tgt = ctx.get("target").unwrap().as_str().unwrap();
+    let layout = ctx.get("layout").unwrap().as_str().unwrap();
     let source = Path::new(src);
+    let target = Path::new(tgt);
 
-    for result in WalkBuilder::new(p.as_ref()).max_depth(Some(1)).build() {
+    for result in WalkBuilder::new(parent.as_ref()).max_depth(Some(1)).build() {
 
         match result {
             Ok(entry) => {
@@ -31,12 +35,32 @@ fn get_files<P: AsRef<Path>>(p: P, ctx: &Value) -> io::Result<Vec<TocEntry>> {
                 let path = entry.path();
                 let mut matched = false;
 
-                //if path == p.as_ref() {
-                    //println!("got same path!Q!!") 
-                    ////continue;
-                //}
+                let mut href = "".to_string();
 
                 if path.is_file() {
+
+                    let file_type = matcher::get_type(layout, path);
+
+                    //println!("got source: {:?}", source);
+                    //println!("got source: {:?}", target);
+                    //println!("got source: {:?}", file_type);
+
+                    match file_type {
+                        FileType::Markdown | FileType::Html => {
+                            let dest = matcher::destination(source, target, path, &file_type, true);
+                            href = dest.to_string_lossy().to_string();
+                            println!("got parse file {:?}", href); 
+                        },
+                        _ => {},
+                    }
+
+
+                    //if path == p.as_ref() {
+                        //println!("got same path!Q!!") 
+                        ////continue;
+                    //}
+
+
                     if let Some(ext) = path.extension() {
                         if ext == "md" || ext == "html" {
                             //println!("FOUND MATCH");
@@ -50,7 +74,7 @@ fn get_files<P: AsRef<Path>>(p: P, ctx: &Value) -> io::Result<Vec<TocEntry>> {
 
                 if matched {
                     let e = TocEntry{
-                        source: path.to_path_buf(),
+                        href: href,
                     };
                     entries.push(e);
                 }
@@ -68,36 +92,64 @@ fn get_files<P: AsRef<Path>>(p: P, ctx: &Value) -> io::Result<Vec<TocEntry>> {
 pub struct Toc;
 
 impl HelperDef for Toc {
-  fn call<'reg: 'rc, 'rc>(&self, h: &Helper, _: &Handlebars, ctx: &Context, rc: &mut RenderContext, out: &mut dyn Output) -> HelperResult {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'reg, 'rc>,
+        r: &'reg Handlebars<'_>,
+        ctx: &'rc Context,
+        rc: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+
+    //let current_path = rc
+        //.evaluate(ctx, "context")?
+        //.as_json()
+        //.as_object()
+        //.ok_or_else(|| RenderError::new("Type error for `path`, string expected"))?;
+
+    //println!("currnt context {:?}", current_path);
+
+        //.replace("\"", "");
 
     //println!("template name {:?}", rc.get_current_template_name());
     //println!("template name {:?}", ctx.data());
 
     let data = ctx.data();
 
-    //data.foo();
-
     if let Some(tpl_context) = data.get("context") {
-        //tpl_context.foo();
-        println!("{:?}", tpl_context);
-
-        if let Some(fp) = data.get("filepath") {
+        if let Some(fp) = tpl_context.get("file") {
             if let Some(fp) = fp.as_str() {
                 let path = Path::new(&fp);
-                //println!("got file path {:?}", path); 
                 if let Some(parent) = path.parent() {
-                    let entries = get_files(parent, tpl_context);
-                    //println!("got paretn path {:?}", entries); 
+                    let entries = get_files(path, parent, tpl_context).unwrap();
+
+                    let template = h.template();
+
+                    match template {
+                        Some(t) => {
+
+                            for li in entries {
+                                println!("got matching template {:?}", &li);
+                                let mut context: BTreeMap<String, Value> = BTreeMap::new();
+
+                                let href = &li.href;
+                                context.insert("href".to_owned(), Value::String(href.to_owned()));
+
+                                let mut local_rc = rc.clone();
+                                let local_ctx = Context::wraps(&context)?;
+                                t.render(r, &local_ctx, &mut local_rc, out)?;
+                            }
+
+                            return Ok(())
+                        },
+                        None => return Ok(())
+                    }
 
                 }
             }
         }
 
     }
-
-    //h.template()
-        //.map(|t| t.render(r, ctx, rc, out))
-        //.unwrap_or(Ok(()))
 
     Ok(())
   }
