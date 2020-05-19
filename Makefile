@@ -3,10 +3,10 @@ all: release
 clean:
 	@rm -rf ./target
 
-clean-build:
+clean-site:
 	@rm -rf ./build
 
-run: clean-build
+site: clean-site
 	@mkdir build
 	@cargo run -- --clean-url
 
