@@ -131,14 +131,6 @@ impl<'a> FileMatcher<'a> {
         root_theme
     }
 
-    //pub fn is_theme<P: AsRef<Path>>(&self, base: P, file: P) -> bool {
-        //let root_theme = self.get_theme_dir(base);
-        //if &root_theme == file.as_ref() {
-            //return true
-        //}
-        //false
-    //}
-
     pub fn get_type<P: AsRef<Path>>(&self, file: P) -> FileType {
 
         // Explicitly excluded files take precedence
@@ -151,8 +143,6 @@ impl<'a> FileMatcher<'a> {
             Some(nm) => {
                 if let Some(nm) = nm.to_str() {
                     if nm == self.options.layout {
-                        return FileType::Private
-                    }else if nm == self.options.template {
                         return FileType::Private
                     } else if nm.ends_with(MD) {
                         return FileType::Markdown
