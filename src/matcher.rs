@@ -20,6 +20,7 @@ pub enum FileType {
 
 const INDEX: &'static str = "index";
 const THEME: &'static str = "theme";
+const IGNORE: &'static str = ".gitignore";
 const PARSE_EXTENSIONS:[&'static str; 3] = ["html", "hbs", "md"];
 
 const MD: &'static str = ".md";
@@ -140,6 +141,7 @@ impl<'a> FileMatcher<'a> {
     }
 
     pub fn get_type<P: AsRef<Path>>(&self, file: P) -> FileType {
+
         // Explicitly excluded files take precedence
         if self.is_excluded(&file) {
             return FileType::Ignored
