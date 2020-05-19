@@ -10,6 +10,8 @@ This is a *document* with some _markdown_ including an [example][] link referenc
 
 You can view an example book at the [guide](/guide/).
 
-{{ toc }}
+{{#toc}}
+link for youo
+{{/toc}}
 
 [example]: https://example.org 

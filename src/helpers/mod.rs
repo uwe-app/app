@@ -7,9 +7,14 @@ use ignore::WalkBuilder;
 
 use handlebars::*;
 
-fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<PathBuf>> {
+#[derive(Debug)]
+struct TocEntry {
+    source: PathBuf,
+}
 
-    let mut entries: Vec<PathBuf> = Vec::new();
+fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<TocEntry>> {
+
+    let mut entries: Vec<TocEntry> = Vec::new();
 
     for result in WalkBuilder::new(p.as_ref()).max_depth(Some(1)).build() {
 
@@ -17,6 +22,7 @@ fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<PathBuf>> {
             Ok(entry) => {
                 println!("got entry {:?}", entry.path());
                 let path = entry.path();
+                let mut matched = false;
 
                 //if path == p.as_ref() {
                     //println!("got same path!Q!!") 
@@ -24,8 +30,22 @@ fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<PathBuf>> {
                 //}
 
                 if path.is_file() {
-                    println!("FOUND MATCH");
-                    entries.push(path.to_path_buf()); 
+                    if let Some(ext) = path.extension() {
+                        if ext == "md" || ext == "html" {
+                            println!("FOUND MATCH");
+                            //entries.push(path.to_path_buf()); 
+                            matched = true;
+                        } 
+                    }
+                } else {
+                    // TODO
+                }
+
+                if matched {
+                    let e = TocEntry{
+                        source: path.to_path_buf(),
+                    };
+                    entries.push(e);
                 }
             }, Err(e) => {
                 return Err(io::Error::new(io::ErrorKind::Other, e));
@@ -54,7 +74,6 @@ impl HelperDef for Toc {
             println!("got file path {:?}", path); 
             if let Some(parent) = path.parent() {
                 let entries = get_files(parent);
-
                 println!("got paretn path {:?}", entries); 
 
             }
