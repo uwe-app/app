@@ -10,9 +10,9 @@ mod utils;
 
 use build::Builder;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
     pub source: PathBuf,
     pub target: PathBuf,

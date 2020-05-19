@@ -3,8 +3,8 @@
 {{> intro.md}}
 
 * File path: `{{context.file}}`
-* Source: `{{context.source}}`
-* Target: `{{context.target}}`
+* Source: `{{context.options.source}}`
+* Target: `{{context.options.target}}`
 * Title: `{{title}}`
 * Message: *{{message}}*
 
