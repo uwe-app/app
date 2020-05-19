@@ -6,6 +6,7 @@ mod helpers;
 mod matcher;
 mod parser;
 mod template;
+mod utils;
 
 use build::Builder;
 

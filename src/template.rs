@@ -7,7 +7,6 @@ use toml::Value;
 use toml::value::Table;
 use toml::de::{Error as TomlError};
 use toml::map::Map;
-use inflector::Inflector;
 
 use handlebars::{Handlebars, TemplateFileError};
 
@@ -16,8 +15,7 @@ use log::{error, debug};
 use super::fs;
 use super::helpers;
 use super::Options;
-
-const INDEX_STEM: &'static str = "index";
+use super::utils;
 
 /// Manages the data associated with a template.
 pub struct DataLoader<'a> {
@@ -28,7 +26,6 @@ pub struct DataLoader<'a> {
 impl<'a> DataLoader<'a> {
 
     pub fn new(options: &'a Options) -> Self {
-
         // Derive the layout.toml from the layout.hbs option
         let mut nm = Path::new(&options.layout).to_path_buf();
         nm.set_extension("toml");
@@ -37,34 +34,8 @@ impl<'a> DataLoader<'a> {
         DataLoader{name, options}
     }
 
-    pub fn create() -> Map<String, Value> {
+    pub fn create() -> Table {
         Map::new()
-    }
-
-    // Convert a file name to title case
-    fn file_auto_title<P : AsRef<Path>>(&self, input: P) -> Option<String> {
-        let i = input.as_ref();
-        if let Some(nm) = i.file_stem() {
-            // If the file is an index file, try to get the name 
-            // from a parent directory
-            if nm == INDEX_STEM {
-                if let Some(p) = i.parent() {
-                    return self.file_auto_title(&p.to_path_buf());
-                }
-            } else {
-                let auto = nm.to_str().unwrap().to_string();
-                let capitalized = auto.to_title_case();
-                return Some(capitalized)
-            }
-
-        }
-        None
-    }
-
-    fn auto_title<P : AsRef<Path>>(&self, input: P, data: &mut Table) {
-        if let Some(auto) = self.file_auto_title(&input.as_ref()) {
-            data.insert("title".to_string(), Value::String(auto));
-        }
     }
 
     fn load_file<P : AsRef<Path>>(&self, file: P, data: &mut Table) {
@@ -92,24 +63,25 @@ impl<'a> DataLoader<'a> {
         }
     }
 
-    fn load_config(&self, input: &PathBuf, data: &mut Table) {
-
-        if let Some(cfg) = fs::inherit(&self.options.source, input, &self.name) {
+    fn load_config<P : AsRef<Path>>(&self, input: P, data: &mut Table) {
+        if let Some(cfg) = fs::inherit(&self.options.source, &input.as_ref().to_path_buf(), &self.name) {
             self.load_file(&cfg, data);
         }
     }
 
-    fn load_file_config(&self, input: &PathBuf, data: &mut Table) {
-        let mut config = input.clone(); 
+    fn load_file_config<P : AsRef<Path>>(&self, input: P, data: &mut Table) {
+        let mut config = input.as_ref().to_path_buf().clone(); 
         config.set_extension("toml");
         if config.exists() {
             self.load_file(&config, data);
         }
     }
 
-    pub fn load_file_data(&self, input: &PathBuf, data: &mut Table) {
+    pub fn load_file_data<P : AsRef<Path>>(&self, input: P, data: &mut Table) {
         self.load_config(&input, data);
-        self.auto_title(&input, data);
+        if let Some(auto) = utils::file_auto_title(&input) {
+            data.insert("title".to_owned(), Value::String(auto));
+        }
         self.load_file_config(&input, data);
     }
 }
@@ -209,7 +181,7 @@ impl<'a> TemplateRender<'a> {
             }
         }
 
-        // Could not resolve a layout to pass back the document
+        // Could not resolve a layout so pass back the document
         Ok(document)
     }
 

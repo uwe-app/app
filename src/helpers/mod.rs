@@ -30,7 +30,7 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, ctx: &Value) -> io::Result<Vec<
 
     let rel_base = parent.as_ref().strip_prefix(source).unwrap_or(Path::new(""));
 
-    println!("parent {:?}", rel_base);
+    //println!("parent {:?}", rel_base);
 
     for result in WalkBuilder::new(parent.as_ref()).max_depth(Some(1)).build() {
 
@@ -132,7 +132,6 @@ impl HelperDef for Toc {
                 if let Some(parent) = path.parent() {
                     let entries = get_files(path, parent, file_context).unwrap();
                     let template = h.template();
-
                     match template {
                         Some(t) => {
 
@@ -151,7 +150,6 @@ impl HelperDef for Toc {
                         },
                         None => return Ok(())
                     }
-
                 }
             }
         }
