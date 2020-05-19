@@ -105,6 +105,8 @@ impl<'a> Builder<'a> {
                 Ok(entry) => {
                     let path = entry.path();
 
+                    // If a file or directory is a descendant of 
+                    // a book directory we do not process it
                     if self.book.contains_file(&path) {
                         continue;
                     }
