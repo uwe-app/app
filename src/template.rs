@@ -12,6 +12,8 @@ use handlebars::{Handlebars, TemplateFileError};
 
 use log::{error, debug};
 
+//use serde::Serialize;
+
 use super::fs;
 use super::helpers;
 use super::Options;
@@ -141,6 +143,7 @@ impl<'a> TemplateRender<'a> {
 
             let filepath = input.to_str().unwrap().to_string();
             data.insert("filepath".to_string(), Value::String(filepath));
+            //data.insert("options".to_string(), self.options);
 
             //println!("render with name {}", name);
 

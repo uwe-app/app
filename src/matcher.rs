@@ -35,7 +35,6 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
     false
 }
 
-
 pub fn get_type<P: AsRef<Path>>(layout: &str, file: P) -> FileType {
 
     let name = file.as_ref().file_name();

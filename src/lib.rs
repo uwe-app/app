@@ -9,6 +9,9 @@ mod template;
 
 use build::Builder;
 
+use serde::Serialize;
+
+#[derive(Serialize)]
 pub struct Options {
     pub source: PathBuf,
     pub target: PathBuf,
