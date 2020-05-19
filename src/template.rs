@@ -13,6 +13,7 @@ use handlebars::{Handlebars, TemplateFileError};
 use log::{error, debug};
 
 use super::fs;
+use super::helpers;
 use super::Options;
 
 const INDEX_STEM: &'static str = "index";
@@ -121,6 +122,9 @@ impl<'a> TemplateRender<'a> {
     pub fn new(options: &'a Options) -> Self {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
+
+        handlebars.register_helper("toc", Box::new(helpers::Toc));
+
         TemplateRender{options, handlebars}
     }
 

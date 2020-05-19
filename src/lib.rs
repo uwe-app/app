@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 mod build;
 mod fs;
+mod helpers;
 mod matcher;
 mod parser;
 mod template;
