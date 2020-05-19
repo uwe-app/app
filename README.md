@@ -13,7 +13,7 @@ hypertext --minify
 * Treat `.html` and `.md` files as *documents* to be parsed as templates.
 * Use the nearest layout (`layout.hbs`) wherever possible.
 * Infer document title from the file name (or parent directory in the case of index files).
-* Load template configuration data from `.toml` files.
+* Load template data from `.toml` files.
 * If a directory contains `book.toml` use [mdbook][].
 * If the directory `site/template/theme` exists use it as the theme for [mdbook][].
 * Exclude hidden files and patterns in `.gitignore`.
@@ -35,7 +35,7 @@ Partial templates (`.hbs`)  in the `site/template` directory are automatically r
 
 See [header.hbs](/site/template/header.hbs).
 
-## Configuration
+## Template Data
 
 Create a file with the same name and `.toml` extension for document-specific configuration; see [index.toml](/site/index.toml) and [about.toml](/site/about.toml).
 
