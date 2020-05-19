@@ -20,7 +20,7 @@ fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<TocEntry>> {
 
         match result {
             Ok(entry) => {
-                println!("got entry {:?}", entry.path());
+                //println!("got entry {:?}", entry.path());
                 let path = entry.path();
                 let mut matched = false;
 
@@ -32,7 +32,7 @@ fn get_files<P: AsRef<Path>>(p: P) -> io::Result<Vec<TocEntry>> {
                 if path.is_file() {
                     if let Some(ext) = path.extension() {
                         if ext == "md" || ext == "html" {
-                            println!("FOUND MATCH");
+                            //println!("FOUND MATCH");
                             //entries.push(path.to_path_buf()); 
                             matched = true;
                         } 
@@ -63,18 +63,18 @@ pub struct Toc;
 impl HelperDef for Toc {
   fn call<'reg: 'rc, 'rc>(&self, h: &Helper, _: &Handlebars, ctx: &Context, rc: &mut RenderContext, out: &mut dyn Output) -> HelperResult {
 
-  println!("template name {:?}", rc.get_current_template_name());
-  println!("template name {:?}", ctx.data());
+    //println!("template name {:?}", rc.get_current_template_name());
+    //println!("template name {:?}", ctx.data());
 
     let data = ctx.data();
 
     if let Some(fp) = data.get("filepath") {
         if let Some(fp) = fp.as_str() {
             let path = Path::new(&fp);
-            println!("got file path {:?}", path); 
+            //println!("got file path {:?}", path); 
             if let Some(parent) = path.parent() {
                 let entries = get_files(parent);
-                println!("got paretn path {:?}", entries); 
+                //println!("got paretn path {:?}", entries); 
 
             }
         }

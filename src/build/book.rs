@@ -8,19 +8,19 @@ use log::{info,error,debug,warn};
 
 use crate::fs;
 use crate::Options;
-use crate::matcher::FileMatcher;
+
+use crate::matcher;
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
-    matcher: &'a FileMatcher<'a>,
     options: &'a Options,
 }
 
 impl<'a> BookBuilder<'a> {
 
-    pub fn new(matcher: &'a FileMatcher, options: &'a Options) -> Self {
+    pub fn new(options: &'a Options) -> Self {
         let books: Vec<PathBuf> = Vec::new();
-        BookBuilder{books, matcher, options} 
+        BookBuilder{books, options} 
     }
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
@@ -103,7 +103,7 @@ impl<'a> BookBuilder<'a> {
                 let mut theme = self.options.theme.clone();
 
                 if theme.is_empty() {
-                    let theme_dir = self.matcher.get_theme_dir(&self.options.source);
+                    let theme_dir = matcher::get_theme_dir(&self.options.source, &self.options.template);
                     if theme_dir.exists() {
                         if let Some(s) = theme_dir.to_str() {
                             theme = s.to_string();

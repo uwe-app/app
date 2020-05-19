@@ -7,7 +7,6 @@ mod matcher;
 mod parser;
 mod template;
 
-use matcher::FileMatcher;
 use build::Builder;
 
 pub struct Options {
@@ -22,8 +21,7 @@ pub struct Options {
 }
 
 pub fn build(options: Options) {
-    let matcher = FileMatcher::new(&options);
-    let mut finder = Builder::new(&matcher, &options);
-    finder.run();
+    let mut builder = Builder::new(&options);
+    builder.build();
 }
 

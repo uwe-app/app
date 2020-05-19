@@ -9,12 +9,12 @@ mod book;
 
 use super::fs;
 use super::Options;
-use super::matcher::{FileType,FileMatcher};
+use super::matcher;
+use super::matcher::FileType;
 use super::parser::Parser;
 use book::BookBuilder;
 
 pub struct Builder<'a> {
-    matcher: &'a FileMatcher<'a>,
     options: &'a Options,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
@@ -22,19 +22,20 @@ pub struct Builder<'a> {
 
 impl<'a> Builder<'a> {
 
-    pub fn new(matcher: &'a FileMatcher, options: &'a Options) -> Self {
-        let book = BookBuilder::new(matcher, options);
+    pub fn new(options: &'a Options) -> Self {
+        let book = BookBuilder::new(options);
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
         let parser = Parser::new(options);
 
-        Builder{matcher, options, book, parser}
+        Builder{options, book, parser}
     }
 
     fn process_file(&mut self, file: PathBuf, file_type: FileType) -> io::Result<()> {
 
-        let dest = self.matcher.destination(&file, &file_type, self.options.clean);
+        let dest = matcher::destination(
+            &self.options.source, &self.options.target, &file, &file_type, self.options.clean);
 
         match file_type {
             FileType::Unknown => {
@@ -80,7 +81,7 @@ impl<'a> Builder<'a> {
 
 
     // Find files and process each entry.
-    pub fn run(&mut self) {
+    pub fn build(&mut self) {
 
         let mut templates = self.options.source.clone();
         templates.push(&self.options.template);
@@ -123,7 +124,7 @@ impl<'a> Builder<'a> {
                         //println!("{:?}", entry);
 
                         let file = entry.path().to_path_buf();
-                        let file_type = self.matcher.get_type(&path);
+                        let file_type = matcher::get_type(&self.options.layout, &path);
 
                         let result = self.process_file(file, file_type);
                         match result {
