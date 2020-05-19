@@ -11,10 +11,9 @@ structopt = "*"
 log = "*"
 pretty_env_logger = "*"
 Inflector = "*"
-walkdir = "2"
 handlebars = {version = "3.0", default-features = true, features = [ "dir_source" ] }
 regex = "1.0.0"
-gitignore = "1.0.6"
+ignore = "0.4"
 toml = "0.5.1"
 minify = "1.1"
 mdbook = { version = "0.3.7", default-features = false, features = [ "output" ] }

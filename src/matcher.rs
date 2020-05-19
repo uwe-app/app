@@ -20,7 +20,6 @@ pub enum FileType {
 
 const INDEX: &'static str = "index";
 const THEME: &'static str = "theme";
-const IGNORE: &'static str = ".gitignore";
 const PARSE_EXTENSIONS:[&'static str; 3] = ["html", "hbs", "md"];
 
 const MD: &'static str = ".md";

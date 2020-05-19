@@ -1,12 +1,9 @@
 use std::io;
-use std::collections::HashMap;
-use std::path::Path;
 use std::path::PathBuf;
 
-use walkdir::{WalkDir,DirEntry};
 use minify::html::minify;
 use log::{info,error,debug};
-use gitignore::File;
+use ignore::{WalkBuilder,DirEntry};
 
 mod book;
 
@@ -80,99 +77,32 @@ impl<'a> Builder<'a> {
         Builder{matcher, options, book} 
     }
 
-
-    fn is_ignored(&self) -> bool {
-    
-        //if let Some(ignores_file) = self.get_ignores_file_parent(&file) {
-            //if ignores_file.exists() {
-                //let ignores = File::new(&ignores_file).unwrap();
-                //if ignores.is_excluded(file) {
-                    //println!("EXCLUDED THE FILE {}", file.display()); 
-                //}
-
-                ////if self.ignores.contains_key(&ignores_file) {
-                    ////println!("USE IGNORES FILE");
-                ////} else {
-                    ////println!("CREATE IGNORES FILE");
-
-                    ////let tmp = &ignores_file.as_path();
-                    ////let file = File::new(&tmp).unwrap();
-                    //////self.ignores.insert(ignores_file, file);
-                ////}
-
-            //}
-        //}
-
-        false
-    }
-
-    //pub fn get_ignores_file_parent<P: AsRef<Path>>(&self, f: P) -> Option<PathBuf> {
-        //if let Some(parent) = f.as_ref().parent() {
-            //let mut ignores = parent.to_path_buf();
-            //ignores.push(".gitignore");
-            //return Some(ignores)
-        //}
-        //None
-    //}
-
-    fn handle(&self, entry: &DirEntry, ignores: &'a mut HashMap<PathBuf, File>) -> bool {
+    fn handle_book(&self, entry: &DirEntry) -> bool {
         let path = entry.path();
         if path.is_dir() {
-
-            let mut ignores_file = entry.path().to_path_buf();
-            ignores_file.push(".gitignore");
-
-            if ignores_file.exists() {
-                let tmp = &ignores_file.clone();
-                let gf = File::new(tmp.as_path());
-                if let Ok(file) = gf {
-                    //ignores.insert(tmp.to_owned(), file);
-                }
-
-            }
-
             let buf = &path.to_path_buf();
             // Can prevent recursing if a directory pattern matches
             if self.matcher.is_excluded(buf) {
-                return false 
+                return true 
             }
 
             if self.matcher.is_theme(&self.options.source, buf) {
-                return false
+                return true
             }
             let mut book = buf.clone();
             book.push("book.toml");
             if book.exists() {
                 self.book.build(book.parent().unwrap());
-                return false
+                return true
             }
         }
-        true
-    }
-
-    // Find files in an input directory to process and invoke the callback 
-    // for each matched file.
-    fn walk<T>(&self, ignores: &'a mut HashMap<PathBuf, File>, mut callback: T) where T: FnMut(PathBuf, FileType) {
-        let walker = WalkDir::new(self.options.source.clone())
-            .follow_links(self.options.follow_links)
-            .into_iter();
-
-        let iter = walker.filter_entry(|e| self.handle(e, ignores));
-        for entry in iter {
-            let entry = entry.unwrap();
-            if entry.file_type().is_file() {
-                let file = entry.path().to_path_buf();
-                let file_type = self.matcher.get_type(&file);
-                callback(file, file_type)
-            }
-        }
+        false
     }
 
     // Find files and process each entry.
     pub fn run(&self) {
 
-        // Store ignore files found in directories
-        let mut ignores: HashMap<PathBuf, File> = HashMap::new();
+        let mut books: Vec<PathBuf> = Vec::new();
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
@@ -185,15 +115,49 @@ impl<'a> Builder<'a> {
             std::process::exit(1);
         }
 
-        self.walk(&mut ignores, |file, file_type| {
-            let result = process_file(&mut parser, &self.matcher, &self.options, file, file_type);
+        for result in WalkBuilder::new(&self.options.source)
+            .follow_links(self.options.follow_links)
+            .hidden(false)
+            .filter_entry(|e| {
+                if e.path().is_dir() {
+                    let parent = e.path().to_path_buf();
+                    let mut book = parent.clone();
+                    book.push("book.toml");
+                    if book.exists() {
+                        //println!("filter book directory {:?}", self.matcher);
+                        //self.book.add(parent);
+                        //books.push(parent);
+                        return false
+                    }
+                }
+                true
+            })
+            .build() {
             match result {
+                Ok(entry) => {
+                    if entry.path().is_dir() && self.handle_book(&entry) {
+                        continue;
+                    } else if entry.path().is_file() {
+                        //println!("{:?}", entry);
+
+                        let file = entry.path().to_path_buf();
+                        let file_type = self.matcher.get_type(&file);
+
+                        let result = process_file(&mut parser, &self.matcher, &self.options, file, file_type);
+                        match result {
+                            Err(e) => {
+                                error!("{}", e);
+                                std::process::exit(1);
+                            },
+                            _ => {},
+                        }
+                    }
+                },
                 Err(e) => {
                     error!("{}", e);
                     std::process::exit(1);
-                },
-                _ => {},
+                }
             }
-        });
+        }
     }
 }

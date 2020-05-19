@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use walkdir::{WalkDir};
+use ignore::{WalkBuilder};
 use mdbook::MDBook;
 use log::{info,error,debug,warn};
 
@@ -20,6 +20,10 @@ impl<'a> BookBuilder<'a> {
         BookBuilder{matcher, options} 
     }
 
+    pub fn add(&self, dir: PathBuf) {
+        println!("add book {:?}", dir); 
+    }
+
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
 
         // Jump some hoops to bypass the book build_dir
@@ -27,36 +31,39 @@ impl<'a> BookBuilder<'a> {
         let mut base = self.options.target.clone();
         base.push(relative);
 
-        let walker = WalkDir::new(&build_dir)
-            .follow_links(self.options.follow_links);
-        for entry in walker {
-            let entry = entry.unwrap();
+        for result in WalkBuilder::new(&build_dir).follow_links(self.options.follow_links).build() {
 
-            if self.matcher.is_excluded(&entry.path()) {
-                debug!("noop {}", entry.path().display());
-            } else {
-                if entry.file_type().is_file() {
-                    let file = entry.path().to_path_buf();
-                    // Get a relative file and append it to the correct output base directory
-                    let dest = file.strip_prefix(&build_dir).unwrap();
-                    let mut output = base.clone();
-                    output.push(dest);
+            match result {
+                Ok(entry) => {
+                    if self.matcher.is_excluded(&entry.path()) {
+                        debug!("noop {}", entry.path().display());
+                    } else {
+                        if entry.path().is_file() {
+                            let file = entry.path().to_path_buf();
+                            // Get a relative file and append it to the correct output base directory
+                            let dest = file.strip_prefix(&build_dir).unwrap();
+                            let mut output = base.clone();
+                            output.push(dest);
 
-                    // TODO: minify files with HTML file extension
+                            // TODO: minify files with HTML file extension
 
-                    // Copy the file content
-                    let copied = fs::copy(file, output);
-                    match copied {
-                        Err(e) => {
-                            error!("{}", e);
-                            std::process::exit(1);
-                        },
-                        _ => {}
+                            // Copy the file content
+                            let copied = fs::copy(file, output);
+                            match copied {
+                                Err(e) => {
+                                    error!("{}", e);
+                                    std::process::exit(1);
+                                },
+                                _ => {}
+                            }
+                        }
                     }
-                }
+                }, Err(e) => {
+                    error!("{}", e);
+                    std::process::exit(1);
+                },
             }
-
-        }
+            }
     }
 
     pub fn build(&self, dir: &Path) {

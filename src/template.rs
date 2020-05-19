@@ -10,7 +10,7 @@ use inflector::Inflector;
 
 use handlebars::{Handlebars, TemplateFileError};
 
-use log::{info, error};
+use log::{error, debug};
 
 use super::fs;
 use super::Options;
@@ -66,7 +66,7 @@ impl<'a> DataLoader<'a> {
 
     fn load_file<P : AsRef<Path>>(&self, file: P, data: &mut Map<String, Value>) {
         let src = file.as_ref();
-        info!("toml {}", src.display());
+        debug!("toml {}", src.display());
         let properties = fs::read_string(src);
         match properties {
             Ok(s) => {
