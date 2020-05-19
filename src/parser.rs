@@ -5,11 +5,7 @@ use std::convert::AsRef;
 
 use handlebars::TemplateFileError;
 
-use pulldown_cmark::{Parser as MarkdownParser, Options as MarkdownOptions, html};
-
-use super::fs;
-use super::template;
-use super::Options;
+use super::{fs,template,utils,Options};
 
 pub struct Parser<'a> {
     //options: &'a Options,
@@ -51,12 +47,7 @@ impl<'a> Parser<'a> {
         let parsed = self.render.parse_template_string(&input, content, &mut data);
         match parsed {
             Ok(content) => {
-                let mut options = MarkdownOptions::empty();
-                options.insert(MarkdownOptions::ENABLE_STRIKETHROUGH);
-                let parser = MarkdownParser::new_ext(&content, options);
-                let mut markup = String::new();
-                html::push_html(&mut markup, parser);
-
+                let markup = utils::render_markdown_string(&content);
                 return self.render.layout(&input, markup, &mut data)
             },
             Err(e) => return Err(e),
