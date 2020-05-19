@@ -40,7 +40,7 @@ impl<'a> FileMatcher<'a> {
                 if let Some(stem) = clean_target.file_stem() {
                     let mut target = parent.to_path_buf();
                     target.push(stem);
-                    target.push(self.get_index_stem());
+                    target.push(INDEX);
 
                     if !self.has_parse_file(&target) {
                         let clean_result = result.as_ref().clone();
@@ -48,7 +48,7 @@ impl<'a> FileMatcher<'a> {
                             if let Some(stem) = clean_result.file_stem() {
                                 let mut res = parent.to_path_buf();
                                 res.push(stem);
-                                res.push(self.get_index_stem());
+                                res.push(INDEX);
                                 res.set_extension("html");
                                 return Some(res)
                             }
@@ -96,10 +96,6 @@ impl<'a> FileMatcher<'a> {
             } 
         } 
         false
-    }
-
-    pub fn get_index_stem(&self) -> &str {
-        INDEX
     }
 
     pub fn has_parse_file<P: AsRef<Path>>(&self, file: P) -> bool {
