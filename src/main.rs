@@ -97,9 +97,7 @@ fn main() {
         minify: args.minify,
     };
 
-    let result = build(opts);
-    match result {
-        Err(e) => fatal(e),
-        _ => {},
+    if let Err(e) = build(opts) {
+        fatal(e); 
     }
 }

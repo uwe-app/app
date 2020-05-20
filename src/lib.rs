@@ -29,6 +29,9 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 
 pub use crate::error::Error;
 
+use crate::matcher::FileType;
+use crate::parser::Parser;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
     pub source: PathBuf,

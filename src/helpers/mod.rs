@@ -4,20 +4,18 @@ use std::collections::BTreeMap;
 use std::convert::AsRef;
 
 use ignore::WalkBuilder;
-
 use handlebars::*;
-
 use serde_json::{Value,json};
 
 use super::{
     matcher,
+    FileType,
     Options,
     INDEX_STEM,
     INDEX_HTML,
     MD,
     HTML
 };
-use super::matcher::FileType;
 
 #[derive(Debug)]
 struct TocEntry {

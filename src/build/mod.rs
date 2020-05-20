@@ -7,9 +7,15 @@ use ignore::WalkBuilder;
 
 mod book;
 
-use super::{utils,Error,Options,matcher,TEMPLATE, TEMPLATE_EXT};
-use super::matcher::FileType;
-use super::parser::Parser;
+use super::{
+    utils,
+    Parser,
+    FileType,
+    Error,
+    Options,
+    matcher,
+    TEMPLATE, TEMPLATE_EXT
+};
 use book::BookBuilder;
 
 pub struct Builder<'a> {
