@@ -47,7 +47,7 @@ fn fatal(e: impl std::error::Error) {
 }
 
 fn error(s: String) {
-    fatal(Error::Message(s));
+    fatal(Error::new(s));
 }
 
 fn main() {

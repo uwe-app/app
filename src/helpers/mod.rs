@@ -6,6 +6,8 @@ use handlebars::*;
 use ignore::WalkBuilder;
 use serde_json::{json, Value, Map};
 
+pub mod html;
+
 use super::{
     matcher,
     DataLoader,
@@ -121,7 +123,6 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
     Ok(entries)
 }
 
-// implement by a structure impls HelperDef
 #[derive(Clone, Copy)]
 pub struct Toc;
 

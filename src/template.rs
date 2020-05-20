@@ -23,6 +23,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.set_strict_mode(true);
 
         handlebars.register_helper("toc", Box::new(helpers::Toc));
+        handlebars.register_helper("html", Box::new(helpers::html::Element));
 
         TemplateRender {
             options,

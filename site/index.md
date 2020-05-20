@@ -18,4 +18,10 @@ You can view an example book at the [guide](/guide/).
 {{/toc}}
 </ul>
 
+{{#html "div" {"class": "note \"another\""}}}
+This is some text with inline _markdown_.
+
+And some more paragraphs...that you can read...
+{{/html}}
+
 [example]: https://example.org 

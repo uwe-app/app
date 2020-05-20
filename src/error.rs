@@ -13,6 +13,12 @@ pub enum Error {
     BookError(mdbook::errors::Error),
 }
 
+impl Error {
+    pub fn new(s: String) -> Self {
+        Error::Message(s)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

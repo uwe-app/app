@@ -77,7 +77,7 @@ Some helpers are available to make life easier.
 
 Use the `toc` helper to iterate the index of a directory:
 
-```html
+```handlebars
 {{#toc}}
 <li><a href="{{href}}">{{title}}</a></li>
 {{/toc}}
