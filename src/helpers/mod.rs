@@ -7,6 +7,7 @@ use ignore::WalkBuilder;
 use serde_json::{json, Value, Map};
 
 pub mod html;
+pub mod json;
 
 use super::{
     matcher,

@@ -4,7 +4,7 @@
   "open": true,
   "build": {
     "name": "make",
-    "args": ["run"]
+    "args": ["site"]
   },
   "live": true
 }

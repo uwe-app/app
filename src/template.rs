@@ -24,6 +24,7 @@ impl<'a> TemplateRender<'a> {
 
         handlebars.register_helper("toc", Box::new(helpers::Toc));
         handlebars.register_helper("html", Box::new(helpers::html::Element));
+        handlebars.register_helper("json", Box::new(helpers::json::Debug));
 
         TemplateRender {
             options,

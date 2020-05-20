@@ -2,11 +2,9 @@
 
 {{> intro.md}}
 
-* File path: `{{context.file}}`
-* Source: `{{context.options.source}}`
-* Target: `{{context.options.target}}`
-* Title: `{{title}}`
-* Message: *{{message}}*
+<pre>
+{{json}}
+</pre>
 
 This is a *document* with some _markdown_ including an [example][] link reference.
 
