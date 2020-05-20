@@ -8,7 +8,7 @@ ht
 
 > Process all files in `site` and write the result to `build`.
 
-## Rules
+---
 
 * Treat `.html` and `.md` files as *documents* to be parsed as templates.
 * Use the nearest layout (`layout.hbs`) wherever possible.
@@ -18,6 +18,10 @@ ht
 * If the directory `site/template/theme` exists use it as the theme for [mdbook][].
 * Exclude hidden files and patterns in `.gitignore`.
 * Copy all other files.
+
+---
+
+Get short help with `hypertext -h` and see more detail with `hypertext --help`.
 
 See [site](/site) for example source files that demonstrate and test various configurations; they are *not the ideal* way to structure a site.
 
@@ -124,10 +128,6 @@ Be aware that the inner block of markdown is parsed outside of the document scop
 ## Clean URLs
 
 When the `--clean-url` option is given treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)). Does not apply to files generated via [mdbook][].
-
-## Help
-
-Get short help with `hypertext -h` and see more detail with `hypertext --help`.
 
 ## Notes
 
