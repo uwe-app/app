@@ -21,9 +21,10 @@
 	:root {
 		--nc-tx-1: #ffffff;
 		--nc-tx-2: #eeeeee;
-		--nc-bg-1: #000000;
-		--nc-bg-2: #111111;
-		--nc-bg-3: #222222;
+		--nc-bg-1: #282c34;
+		--nc-bg-2: #282934;
+		/*--nc-bg-2: #373737;*/
+		--nc-bg-3: #484848;
 		--nc-lk-1: #3291FF;
 		--nc-lk-2: #0070F3;
 		--nc-lk-tx: #FFFFFF;
@@ -177,7 +178,7 @@ header {
 	background: var(--nc-bg-2);
 	border-bottom: 1px solid var(--nc-bg-3);
 	padding: 2rem 1.5rem;
-	
+
 	/* This sets the right and left margins to cancel out the body's margins. It's width is still the same, but the background stretches across the page's width. */
 
 	margin: -2rem calc(0px - (50vw - 50%)) 2rem;
@@ -189,7 +190,7 @@ header {
 
 	margin-left: calc(0px - (50vw - 50%));
 	margin-right: calc(0px - (50vw - 50%)); */
-	
+
 	padding-left: calc(50vw - 50%);
 	padding-right: calc(50vw - 50%);
 }

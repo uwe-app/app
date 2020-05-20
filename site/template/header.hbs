@@ -1,8 +1,8 @@
 <header>
   <nav>
     <a href="/">Home</a>
-    <a href="/blog/">Blog</a>
-    <a href="/about/">About</a>
-    <a href="/contact/">Contact</a>
+    {{#toc}}
+    <a href="/{{href}}">{{title}}</a>
+    {{/toc}}
   </nav>
 </header>
