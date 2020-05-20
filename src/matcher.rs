@@ -10,14 +10,15 @@ pub enum FileType {
     Unknown,
 }
 
-const INDEX: &'static str = "index";
-const THEME: &'static str = "theme";
-const PARSE_EXTENSIONS:[&'static str; 2] = ["html", "md"];
-
-const MD: &'static str = ".md";
-const HTML: &'static str = ".html";
-const HBS: &'static str = ".hbs";
-const TOML: &'static str = ".toml";
+use super::{
+    INDEX,
+    THEME,
+    MD,
+    HTML,
+    HBS,
+    TOML,
+    PARSE_EXTENSIONS,
+};
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P, template: &str) -> PathBuf {
     let mut root_theme = base.as_ref().to_path_buf();

@@ -9,8 +9,7 @@ use handlebars::*;
 
 use serde_json::{Value,json};
 
-use super::matcher;
-use super::Options;
+use super::{matcher, Options};
 use super::matcher::FileType;
 
 #[derive(Debug)]
@@ -66,6 +65,8 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                         continue;
                     }
 
+                    // For directories try to find a potential index
+                    // file and generate a destination
                     let mut dir_index = path.to_path_buf();
                     dir_index.push("index");
                     let candidates = vec![
@@ -76,7 +77,9 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                     for f in candidates {
                         if f.exists() {
                             let file_type = matcher::get_type(&opts.layout, &f);
-                            let mut dest = matcher::destination(source, target, &f, &file_type, opts.clean_url);
+                            let mut dest = matcher::destination(
+                                source, target, &f, &file_type, opts.clean_url);
+
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
                             }
@@ -146,7 +149,6 @@ impl HelperDef for Toc {
         let template = h.template();
         match template {
             Some(t) => {
-
                 for li in entries {
                     let mut context: BTreeMap<String, Value> = BTreeMap::new();
 
@@ -157,13 +159,11 @@ impl HelperDef for Toc {
                     let local_ctx = Context::wraps(&context)?;
                     t.render(r, &local_ctx, &mut local_rc, out)?;
                 }
-
                 return Ok(())
             },
             None => return Ok(())
         }
     }
-
     Ok(())
   }
 }

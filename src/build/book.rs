@@ -6,10 +6,7 @@ use ignore::{WalkBuilder};
 use mdbook::MDBook;
 use log::{info,error,debug,warn};
 
-use crate::fs;
-use crate::Options;
-
-use crate::matcher;
+use crate::{fs,Options,matcher,TEMPLATE};
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
@@ -100,24 +97,19 @@ impl<'a> BookBuilder<'a> {
             Ok(mut md) => {
                 //println!("{:?}", md.config);
 
-                let mut theme = self.options.theme.clone();
+                let theme_dir = matcher::get_theme_dir(&self.options.source, TEMPLATE);
+                if theme_dir.exists() {
+                    if let Some(s) = theme_dir.to_str() {
+                        let theme = s.to_string();
 
-                if theme.is_empty() {
-                    let theme_dir = matcher::get_theme_dir(&self.options.source, &self.options.template);
-                    if theme_dir.exists() {
-                        if let Some(s) = theme_dir.to_str() {
-                            theme = s.to_string();
-                        } 
-                    }
+                        if let Err(e) = md.config.set("output.html.theme", theme) {
+                            warn!("cannot set book theme {}", e);
+                        }
+                    } 
                 }
 
-                if let Err(e) = md.config.set("output.html.theme", theme) {
-                    warn!("cannot set book theme {}", e);
-                }
-
-                let theme = md.config.get("output.html.theme").unwrap();
-
-                debug!("theme {}", theme);
+                //let theme = md.config.get("output.html.theme").unwrap();
+                //debug!("theme {}", theme);
 
                 let built = md.build();
                 match built {

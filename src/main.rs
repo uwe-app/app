@@ -7,7 +7,10 @@ use structopt::StructOpt;
 use std::fs;
 use log::{info};
 
-use hypertext::{build, Options};
+use hypertext::{
+    build,
+    Options
+};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -16,12 +19,6 @@ const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 #[structopt(name = "hypertext")]
 struct Cli {
 
-    /// Book theme directory relative to <template>
-    ///
-    /// Overrides the theme directory convention.
-    #[structopt(long)]
-    theme: Option<String>,
-
     /// Log level
     #[structopt(long, default_value = "info")]
     log_level: String,
@@ -29,10 +26,6 @@ struct Cli {
     /// Layout file name
     #[structopt(long, default_value = "layout.hbs")]
     layout: String,
-
-    /// Template directory relative to <input>
-    #[structopt(long, default_value = "template")]
-    template: String,
 
     /// Follow symbolic links
     #[structopt(short, long)]
@@ -101,8 +94,6 @@ fn main() {
         follow_links: args.follow_links,
         clean_url: args.clean_url,
         minify: args.minify,
-        template: args.template.to_string(),
-        theme: args.theme.unwrap_or("".to_string()),
     };
 
     build(opts);
