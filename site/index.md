@@ -14,7 +14,7 @@ You can view an example book at the [guide](/guide/).
 
 <ul>
 {{#toc}}
-<li><a href="{{href}}">{{href}}</a></li>
+<li><a href="{{href}}">{{title}}</a></li>
 {{/toc}}
 </ul>
 

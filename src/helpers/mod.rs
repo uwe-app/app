@@ -1,18 +1,23 @@
-use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::io;
 use std::path::Path;
 
 use handlebars::*;
 use ignore::WalkBuilder;
-use serde_json::{json, Value};
+use serde_json::{json, Value, Map};
 
-use super::{matcher, FileType, Options, HTML, INDEX_HTML, INDEX_STEM, MD};
+use super::{
+    matcher,
+    DataLoader,
+    FileType,
+    Options,
+    HTML,
+    INDEX_HTML,
+    INDEX_STEM,
+    MD
+};
 
-#[derive(Debug)]
-struct TocEntry {
-    href: String,
-}
+type TocEntry = Map<String, Value>;
 
 fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<Vec<TocEntry>> {
     let mut entries: Vec<TocEntry> = Vec::new();
@@ -25,13 +30,14 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
         .strip_prefix(source)
         .unwrap_or(Path::new(""));
 
-    //println!("parent {:?}", rel_base);
+    let loader = DataLoader::new(opts);
 
     for result in WalkBuilder::new(parent.as_ref()).max_depth(Some(1)).build() {
         match result {
             Ok(entry) => {
                 let path = entry.path();
                 let mut href = "".to_string();
+                let mut data = DataLoader::create(); 
 
                 if path.is_file() {
                     // Ignore self
@@ -56,6 +62,7 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
+                            loader.load(&path, &mut data);
                         }
                         _ => {}
                     }
@@ -90,6 +97,7 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
+                            loader.load(&f, &mut data);
                         }
                     }
                 }
@@ -100,8 +108,8 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                             href.truncate(href.len() - INDEX_HTML.len());
                         }
                     }
-                    let e = TocEntry { href: href };
-                    entries.push(e);
+                    data.insert("href".to_owned(), json!(href));
+                    entries.push(data);
                 }
             }
             Err(e) => {
@@ -152,13 +160,8 @@ impl HelperDef for Toc {
             match template {
                 Some(t) => {
                     for li in entries {
-                        let mut context: BTreeMap<String, Value> = BTreeMap::new();
-
-                        let href = &li.href;
-                        context.insert("href".to_owned(), Value::String(href.to_owned()));
-
                         let mut local_rc = rc.clone();
-                        let local_ctx = Context::wraps(&context)?;
+                        let local_ctx = Context::wraps(&li)?;
                         t.render(r, &local_ctx, &mut local_rc, out)?;
                     }
                     return Ok(());

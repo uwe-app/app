@@ -31,6 +31,7 @@ pub use crate::error::Error;
 
 use crate::matcher::FileType;
 use crate::parser::Parser;
+use crate::loader::DataLoader;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
