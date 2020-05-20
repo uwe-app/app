@@ -5,20 +5,18 @@ use std::convert::AsRef;
 
 use handlebars::TemplateFileError;
 
-use super::{fs,template,utils,Options};
+use super::{fs,loader,Options,template,utils};
 
 pub struct Parser<'a> {
-    //options: &'a Options,
-    loader: template::DataLoader<'a>,
+    loader: loader::DataLoader<'a>,
     render: template::TemplateRender<'a>,
 }
 
 impl<'a> Parser<'a> {
 
     pub fn new(options: &'a Options) -> Self {
-        let loader = template::DataLoader::new(options);
+        let loader = loader::DataLoader::new(options);
         let render = template::TemplateRender::new(options);
-        //Parser{options, loader, render}
         Parser{loader, render}
     }
 
@@ -30,8 +28,8 @@ impl<'a> Parser<'a> {
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
         let mut result = fs::read_string(&input)?;
 
-        let mut data = template::DataLoader::create();
-        self.loader.load_file_data(&input, &mut data);
+        let mut data = loader::DataLoader::create();
+        self.loader.load(&input, &mut data);
 
         result = self.render.parse_template_string(&input, result, &mut data)?;
         result = self.render.layout(&input, result, &mut data)?;
@@ -41,8 +39,8 @@ impl<'a> Parser<'a> {
     pub fn parse_markdown(&mut self, input: PathBuf) -> io::Result<String> {
         let content = fs::read_string(&input)?;
 
-        let mut data = template::DataLoader::create();
-        self.loader.load_file_data(&input, &mut data);
+        let mut data = loader::DataLoader::create();
+        self.loader.load(&input, &mut data);
 
         let parsed = self.render.parse_template_string(&input, content, &mut data);
         match parsed {

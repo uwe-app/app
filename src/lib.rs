@@ -3,6 +3,7 @@ use std::path::PathBuf;
 mod build;
 mod fs;
 mod helpers;
+mod loader;
 mod matcher;
 mod parser;
 mod template;
