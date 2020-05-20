@@ -22,7 +22,7 @@ impl<'a> TemplateRender<'a> {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
 
-        handlebars.register_helper("toc", Box::new(helpers::Toc));
+        handlebars.register_helper("toc", Box::new(helpers::toc::Toc));
         handlebars.register_helper("html", Box::new(helpers::html::Element));
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
 
@@ -100,7 +100,6 @@ impl<'a> TemplateRender<'a> {
             match parsed {
                 Ok(s) => return Ok(s),
                 Err(e) => {
-                    error!("{}", e);
                     return Err(io::Error::new(io::ErrorKind::Other, e));
                 }
             }
