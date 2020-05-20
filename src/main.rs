@@ -5,6 +5,7 @@ extern crate log;
 use log::info;
 use std::env;
 use std::fs;
+use std::time::SystemTime;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -93,7 +94,11 @@ fn main() {
         minify: args.minify,
     };
 
+    let now = SystemTime::now();
     if let Err(e) = build(opts) {
         fatal(e);
+    }
+    if let Ok(t) = now.elapsed() {
+        info!("{:?}", t);
     }
 }

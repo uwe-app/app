@@ -17,21 +17,21 @@
     --nc-ac-tx: #0C4047;
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--nc-tx-1: #ffffff;
-		--nc-tx-2: #eeeeee;
-		--nc-bg-1: #282c34;
-		--nc-bg-2: #282934;
-		/*--nc-bg-2: #373737;*/
-		--nc-bg-3: #484848;
-		--nc-lk-1: #3291FF;
-		--nc-lk-2: #0070F3;
-		--nc-lk-tx: #FFFFFF;
-		--nc-ac-1: #7928CA;
-		--nc-ac-tx: #FFFFFF;
-	}
-}
+/*@media (prefers-color-scheme: dark) {*/
+	/*:root {*/
+		/*--nc-tx-1: #ffffff;*/
+		/*--nc-tx-2: #eeeeee;*/
+		/*--nc-bg-1: #282c34;*/
+		/*--nc-bg-2: #282934;*/
+		/*[>--nc-bg-2: #373737;<]*/
+		/*--nc-bg-3: #484848;*/
+		/*--nc-lk-1: #3291FF;*/
+		/*--nc-lk-2: #0070F3;*/
+		/*--nc-lk-tx: #FFFFFF;*/
+		/*--nc-ac-1: #7928CA;*/
+		/*--nc-ac-tx: #FFFFFF;*/
+	/*}*/
+/*}*/
 
 * {
 	/* Reset margins and padding */
