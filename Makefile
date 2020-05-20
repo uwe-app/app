@@ -6,6 +6,9 @@ clean: clean-site
 clean-site:
 	@rm -rf ./build
 
+help:
+	@cargo run -- --help > site/template/help.md.hbs
+
 site: clean-site
 	@mkdir build
 	@cargo run -- --clean-url
