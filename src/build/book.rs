@@ -7,7 +7,7 @@ use mdbook::MDBook;
 use log::{info,debug,warn};
 
 use crate::{
-    fs,
+    utils,
     Error,
     Options,
     matcher,
@@ -77,7 +77,7 @@ impl<'a> BookBuilder<'a> {
                         // TODO: minify files with HTML file extension
 
                         // Copy the file content
-                        if let Err(e) = fs::copy(file, output) {
+                        if let Err(e) = utils::copy(file, output) {
                             return Err(Error::IoError(e))
                         }
                     }

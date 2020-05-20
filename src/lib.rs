@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 mod build;
-mod fs;
 mod error;
 mod helpers;
 mod loader;

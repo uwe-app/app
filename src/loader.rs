@@ -9,7 +9,7 @@ use serde_json::{Map,Value,json};
 
 use log::{error, debug};
 
-use super::{fs, Options, utils, LAYOUT_TOML};
+use super::{utils, Options, LAYOUT_TOML};
 
 /// Loads the data associated with a template.
 pub struct DataLoader<'a> {
@@ -29,7 +29,7 @@ impl<'a> DataLoader<'a> {
     fn load_file<P : AsRef<Path>>(&self, file: P, data: &mut Map<String, Value>) {
         let src = file.as_ref();
         debug!("toml {}", src.display());
-        let properties = fs::read_string(src);
+        let properties = utils::read_string(src);
         match properties {
             Ok(s) => {
                 let config: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&s);
@@ -52,7 +52,7 @@ impl<'a> DataLoader<'a> {
 
     fn load_config<P : AsRef<Path>>(&self, input: P, data: &mut Map<String, Value>) {
         // FIXME: this &input handling is wrong!
-        if let Some(cfg) = fs::inherit(&self.options.source, &input.as_ref().to_path_buf(), LAYOUT_TOML) {
+        if let Some(cfg) = utils::inherit(&self.options.source, &input.as_ref().to_path_buf(), LAYOUT_TOML) {
             self.load_file(&cfg, data);
         }
     }

@@ -5,7 +5,7 @@ use std::convert::AsRef;
 
 use handlebars::TemplateFileError;
 
-use super::{fs,loader,Options,template,utils};
+use super::{loader,Options,template,utils};
 
 pub struct Parser<'a> {
     loader: loader::DataLoader<'a>,
@@ -26,7 +26,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
-        let mut result = fs::read_string(&input)?;
+        let mut result = utils::read_string(&input)?;
 
         let mut data = loader::DataLoader::create();
         self.loader.load(&input, &mut data);
@@ -37,7 +37,7 @@ impl<'a> Parser<'a> {
     }    
 
     pub fn parse_markdown(&mut self, input: PathBuf) -> io::Result<String> {
-        let content = fs::read_string(&input)?;
+        let content = utils::read_string(&input)?;
 
         let mut data = loader::DataLoader::create();
         self.loader.load(&input, &mut data);

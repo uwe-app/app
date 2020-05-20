@@ -7,7 +7,7 @@ use ignore::WalkBuilder;
 
 mod book;
 
-use super::{fs,Error,Options,matcher,TEMPLATE, TEMPLATE_EXT};
+use super::{utils,Error,Options,matcher,TEMPLATE, TEMPLATE_EXT};
 use super::matcher::FileType;
 use super::parser::Parser;
 use book::BookBuilder;
@@ -37,7 +37,7 @@ impl<'a> Builder<'a> {
 
         match file_type {
             FileType::Unknown => {
-                return fs::copy(file, dest)
+                return utils::copy(file, dest)
             },
             FileType::Html => {
                 info!("html {} -> {}", file.display(), dest.display());
@@ -45,9 +45,9 @@ impl<'a> Builder<'a> {
                 match result {
                     Ok(s) => {
                         if self.options.minify {
-                            return fs::write_string(dest, minify(&s))
+                            return utils::write_string(dest, minify(&s))
                         } else {
-                            return fs::write_string(dest, s)
+                            return utils::write_string(dest, s)
                         }
                     },
                     Err(e) => return Err(e)
@@ -59,9 +59,9 @@ impl<'a> Builder<'a> {
                 match result {
                     Ok(s) => {
                         if self.options.minify {
-                            return fs::write_string(dest, minify(&s))
+                            return utils::write_string(dest, minify(&s))
                         } else {
-                            return fs::write_string(dest, s)
+                            return utils::write_string(dest, s)
                         }
                     },
                     Err(e) => return Err(e)
