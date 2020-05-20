@@ -1,19 +1,18 @@
-use std::io;
-use std::io::BufReader;
-use std::io::prelude::*;
-use std::io::Write;
 use std::fs::File;
+use std::io;
+use std::io::prelude::*;
+use std::io::BufReader;
+use std::io::Write;
 use std::path::PathBuf;
 
-use std::path::Path;
 use std::convert::AsRef;
+use std::path::Path;
 
 use inflector::Inflector;
 
-use pulldown_cmark::{Parser,Options,html};
+use pulldown_cmark::{html, Options, Parser};
 
-
-use log::{debug};
+use log::debug;
 
 pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Option<PathBuf> {
     if let Some(p) = input.as_ref().parent() {
@@ -22,9 +21,8 @@ pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Opt
             copy.push(name.as_ref());
 
             if copy.exists() {
-                return Some(copy)
+                return Some(copy);
             }
-
 
             // Ensure we do not go beyond the base which coould happen
             // if the program source is an absolute path
@@ -41,23 +39,21 @@ pub fn read_string<P: AsRef<Path>>(input: P) -> io::Result<String> {
     let mut reader = BufReader::new(file);
     let mut contents = String::new();
     reader.read_to_string(&mut contents)?;
-    Ok(contents) 
+    Ok(contents)
 }
 
 pub fn copy<P: AsRef<Path>>(input: P, output: P) -> io::Result<()> {
     let i = input.as_ref();
     let o = output.as_ref();
-    debug!("COPY {} -> {}", i.display(), o.display());
+    debug!("copy {} -> {}", i.display(), o.display());
     if let Some(parent) = o.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let result = std::fs::copy(i, o);
     // Discard the number of bytes copied
     match result {
-        Ok(_) => {
-            Ok(()) 
-        },
-        Err(e) => Err(e)
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
     }
 }
 
@@ -75,14 +71,13 @@ pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()
     write_all(output, content.as_bytes())
 }
 
-
 const INDEX_STEM: &'static str = "index";
 
 // Convert a file name to title case
-pub fn file_auto_title<P : AsRef<Path>>(input: P) -> Option<String> {
+pub fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
     let i = input.as_ref();
     if let Some(nm) = i.file_stem() {
-        // If the file is an index file, try to get the name 
+        // If the file is an index file, try to get the name
         // from a parent directory
         if nm == INDEX_STEM {
             if let Some(p) = i.parent() {
@@ -91,9 +86,8 @@ pub fn file_auto_title<P : AsRef<Path>>(input: P) -> Option<String> {
         } else {
             let auto = nm.to_str().unwrap().to_string();
             let capitalized = auto.to_title_case();
-            return Some(capitalized)
+            return Some(capitalized);
         }
-
     }
     None
 }

@@ -1,17 +1,14 @@
 extern crate pretty_env_logger;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 
+use log::info;
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use std::fs;
-use log::{info};
 
-use hypertext::{
-    build,
-    Options,
-    Error
-};
+use hypertext::{build, Error, Options};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -19,7 +16,6 @@ const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 /// Static site generator with mdbook support
 #[structopt(name = "hypertext")]
 struct Cli {
-
     /// Log level
     #[structopt(long, default_value = "info")]
     log_level: String,
@@ -37,11 +33,11 @@ struct Cli {
     clean_url: bool,
 
     /// Read files from directory
-    #[structopt(parse(from_os_str), default_value="site")]
+    #[structopt(parse(from_os_str), default_value = "site")]
     input: PathBuf,
 
     /// Write files to directory
-    #[structopt(parse(from_os_str), default_value="build")]
+    #[structopt(parse(from_os_str), default_value = "build")]
     output: PathBuf,
 }
 
@@ -69,7 +65,7 @@ fn main() {
             env::set_var(LOG_ENV_NAME, "error");
             pretty_env_logger::init_custom_env(LOG_ENV_NAME);
             error(format!("unknown log level: {}", level));
-        },
+        }
     }
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
@@ -89,8 +85,8 @@ fn main() {
         error(format!("not a directory: {}", args.input.display()));
     }
 
-    let opts = Options{
-        source: args.input, 
+    let opts = Options {
+        source: args.input,
         target: args.output,
         follow_links: args.follow_links,
         clean_url: args.clean_url,
@@ -98,6 +94,6 @@ fn main() {
     };
 
     if let Err(e) = build(opts) {
-        fatal(e); 
+        fatal(e);
     }
 }

@@ -10,6 +10,9 @@ site: clean-site
 	@mkdir build
 	@cargo run -- --clean-url
 
+fmt:
+	@cargo fmt
+
 build:
 	@cargo build
 

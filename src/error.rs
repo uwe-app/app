@@ -1,4 +1,4 @@
-use std::{fmt,io,error};
+use std::{error, fmt, io};
 
 use handlebars;
 use ignore;
@@ -16,7 +16,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::Message(ref s) =>  write!(f,"{}", s),
+            Error::Message(ref s) => write!(f, "{}", s),
             Error::IoError(ref e) => e.fmt(f),
             Error::TemplateFileError(ref e) => e.fmt(f),
             Error::IgnoreError(ref e) => e.fmt(f),
@@ -32,8 +32,7 @@ impl error::Error for Error {
             Error::TemplateFileError(ref e) => Some(e),
             Error::IgnoreError(ref e) => Some(e),
             Error::BookError(ref e) => Some(e),
-            _ => None
+            _ => None,
         }
     }
 }
-

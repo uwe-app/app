@@ -1,19 +1,12 @@
+use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
-use std::convert::AsRef;
 
-use ignore::{WalkBuilder};
+use ignore::WalkBuilder;
+use log::{debug, info, warn};
 use mdbook::MDBook;
-use log::{info,debug,warn};
 
-use crate::{
-    utils,
-    Error,
-    Options,
-    matcher,
-    BOOK_TOML,
-    BOOK_THEME_KEY
-};
+use crate::{matcher, utils, Error, Options, BOOK_THEME_KEY, BOOK_TOML};
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
@@ -21,10 +14,9 @@ pub struct BookBuilder<'a> {
 }
 
 impl<'a> BookBuilder<'a> {
-
     pub fn new(options: &'a Options) -> Self {
         let books: Vec<PathBuf> = Vec::new();
-        BookBuilder{books, options} 
+        BookBuilder { books, options }
     }
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
@@ -32,7 +24,7 @@ impl<'a> BookBuilder<'a> {
         for b in self.books.iter() {
             if f.starts_with(b.as_path()) {
                 debug!("ignore book file {}", f.display());
-                return true
+                return true;
             }
         }
         false
@@ -45,7 +37,7 @@ impl<'a> BookBuilder<'a> {
             let mut book = parent.clone();
             book.push(BOOK_TOML);
             if book.exists() {
-                return true
+                return true;
             }
         }
         false
@@ -57,14 +49,15 @@ impl<'a> BookBuilder<'a> {
     }
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
-
         // Jump some hoops to bypass the book build_dir
         let relative = source_dir.strip_prefix(&self.options.source).unwrap();
         let mut base = self.options.target.clone();
         base.push(relative);
 
-        for result in WalkBuilder::new(&build_dir).follow_links(self.options.follow_links).build() {
-
+        for result in WalkBuilder::new(&build_dir)
+            .follow_links(self.options.follow_links)
+            .build()
+        {
             match result {
                 Ok(entry) => {
                     if entry.path().is_file() {
@@ -78,10 +71,10 @@ impl<'a> BookBuilder<'a> {
 
                         // Copy the file content
                         if let Err(e) = utils::copy(file, output) {
-                            return Err(Error::IoError(e))
+                            return Err(Error::IoError(e));
                         }
                     }
-                },
+                }
                 Err(e) => return Err(Error::IgnoreError(e)),
             }
         }
@@ -104,7 +97,7 @@ impl<'a> BookBuilder<'a> {
                         if let Err(e) = md.config.set(BOOK_THEME_KEY, s) {
                             warn!("cannot set book theme {}", e);
                         }
-                    } 
+                    }
                 }
 
                 let built = md.build();
@@ -113,13 +106,12 @@ impl<'a> BookBuilder<'a> {
                         let bd = md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);
-                        return self.copy_book(dir, src)
-                    },
+                        return self.copy_book(dir, src);
+                    }
                     Err(e) => return Err(Error::BookError(e)),
                 }
-            },
+            }
             Err(e) => return Err(Error::BookError(e)),
         }
     }
-
 }
