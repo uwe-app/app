@@ -11,14 +11,13 @@ pub enum FileType {
 }
 
 use super::{
-    INDEX,
+    INDEX_STEM,
     TEMPLATE,
     THEME,
     LAYOUT_HBS,
     LAYOUT_TOML,
     MD,
     HTML,
-    HBS,
     TOML,
     PARSE_EXTENSIONS,
 };
@@ -32,27 +31,30 @@ pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
 
 pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
     if let Some(nm) = file.as_ref().file_stem() {
-        if nm == INDEX {
+        if nm == INDEX_STEM {
             return true
         } 
     } 
     false
 }
 
-pub fn get_type<P: AsRef<Path>>(file: P) -> FileType {
-
-    let name = file.as_ref().file_name();
-    match name {
+pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
+    let file = p.as_ref();
+    match file.file_name() {
         Some(nm) => {
             if let Some(nm) = nm.to_str() {
-                if nm == LAYOUT_HBS || nm == LAYOUT_TOML || nm.ends_with(HBS) {
+                if nm == LAYOUT_HBS || nm == LAYOUT_TOML {
                     return FileType::Private
-                } else if nm.ends_with(MD) {
-                    return FileType::Markdown
-                } else if nm.ends_with(HTML) {
-                    return FileType::Html
-                } else if nm.ends_with(TOML) && has_parse_file_match(file) {
-                    return FileType::Private
+                } else {
+                    if let Some(ext) = file.extension() {
+                        if ext == MD {
+                            return FileType::Markdown
+                        } else if ext == HTML {
+                            return FileType::Html
+                        } else if ext == TOML && has_parse_file_match(file) {
+                            return FileType::Private
+                        }
+                    }
                 }
             }
         },
@@ -80,7 +82,7 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
             if let Some(stem) = clean_target.file_stem() {
                 let mut target = parent.to_path_buf();
                 target.push(stem);
-                target.push(INDEX);
+                target.push(INDEX_STEM);
 
                 if !has_parse_file_match(&target) {
                     let clean_result = result.as_ref().clone();
@@ -88,8 +90,8 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
                         if let Some(stem) = clean_result.file_stem() {
                             let mut res = parent.to_path_buf();
                             res.push(stem);
-                            res.push(INDEX);
-                            res.set_extension("html");
+                            res.push(INDEX_STEM);
+                            res.set_extension(HTML);
                             return Some(res)
                         }
                     }
@@ -116,7 +118,7 @@ pub fn destination<P: AsRef<Path>>(
             let mut result = target.as_ref().clone().join(relative);
             match file_type {
                 FileType::Markdown | FileType::Html => {
-                    result.set_extension("html");
+                    result.set_extension(HTML);
                     if clean_urls {
                         if let Some(res) = clean(pth, &result) {
                             result = res;

@@ -9,7 +9,14 @@ use handlebars::*;
 
 use serde_json::{Value,json};
 
-use super::{matcher, Options, INDEX_HTML};
+use super::{
+    matcher,
+    Options,
+    INDEX_STEM,
+    INDEX_HTML,
+    MD,
+    HTML
+};
 use super::matcher::FileType;
 
 #[derive(Debug)]
@@ -68,10 +75,10 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                     // For directories try to find a potential index
                     // file and generate a destination
                     let mut dir_index = path.to_path_buf();
-                    dir_index.push("index");
+                    dir_index.push(INDEX_STEM);
                     let candidates = vec![
-                        dir_index.with_extension("md"),
-                        dir_index.with_extension("html")
+                        dir_index.with_extension(MD),
+                        dir_index.with_extension(HTML)
                     ];
 
                     for f in candidates {

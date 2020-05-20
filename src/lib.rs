@@ -13,18 +13,19 @@ use build::Builder;
 
 use serde::{Deserialize, Serialize};
 
-static INDEX: &str = "index";
+static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
 static TEMPLATE: &str = "template";
+static TEMPLATE_EXT: &str = ".hbs";
 static THEME: &str = "theme";
 static LAYOUT_HBS: &str = "layout.hbs";
 static LAYOUT_TOML: &str = "layout.toml";
-static MD: &str = ".md";
-static HTML: &str = ".html";
-static HBS: &str = ".hbs";
-static TOML: &str = ".toml";
-static PARSE_EXTENSIONS:[&str; 2] = ["html", "md"];
+static MD: &str = "md";
+static HTML: &str = "html";
+static TOML: &str = "toml";
+static PARSE_EXTENSIONS:[&str; 2] = [HTML, MD];
 
+static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
 #[derive(Debug, Serialize, Deserialize)]

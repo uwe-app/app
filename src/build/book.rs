@@ -6,7 +6,7 @@ use ignore::{WalkBuilder};
 use mdbook::MDBook;
 use log::{info,error,debug,warn};
 
-use crate::{fs,Options,matcher,BOOK_THEME_KEY};
+use crate::{fs,Options,matcher,BOOK_TOML,BOOK_THEME_KEY};
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
@@ -36,7 +36,7 @@ impl<'a> BookBuilder<'a> {
         if e.is_dir() {
             let parent = e.to_path_buf();
             let mut book = parent.clone();
-            book.push("book.toml");
+            book.push(BOOK_TOML);
             if book.exists() {
                 return true
             }
@@ -108,7 +108,6 @@ impl<'a> BookBuilder<'a> {
                 let built = md.build();
                 match built {
                     Ok(_) => {
-                        // TODO: copy dir/BOOK -> target output directory
                         let bd = md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);

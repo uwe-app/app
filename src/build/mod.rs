@@ -7,7 +7,7 @@ use ignore::WalkBuilder;
 
 mod book;
 
-use super::{fs,Options,matcher,TEMPLATE};
+use super::{fs,Options,matcher,TEMPLATE, TEMPLATE_EXT};
 use super::matcher::FileType;
 use super::parser::Parser;
 use book::BookBuilder;
@@ -83,7 +83,7 @@ impl<'a> Builder<'a> {
 
         let mut templates = self.options.source.clone();
         templates.push(TEMPLATE);
-        if let Err(e) = self.parser.register_templates_directory(".hbs", templates.as_path()) {
+        if let Err(e) = self.parser.register_templates_directory(TEMPLATE_EXT, templates.as_path()) {
             error!("{}", e);
             std::process::exit(1);
         }
