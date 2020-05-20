@@ -9,6 +9,9 @@ clean-site:
 help:
 	@cargo run -- --help > site/template/help.md.hbs
 
+output:
+	@ht > site/template/output.md.hbs 2>&1
+
 site: clean-site
 	@mkdir build
 	@cargo run -- --clean-url
