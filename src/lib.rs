@@ -25,6 +25,8 @@ static HBS: &str = ".hbs";
 static TOML: &str = ".toml";
 static PARSE_EXTENSIONS:[&str; 2] = ["html", "md"];
 
+static BOOK_THEME_KEY: &str = "output.html.theme";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
     pub source: PathBuf,

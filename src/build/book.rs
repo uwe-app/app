@@ -6,7 +6,7 @@ use ignore::{WalkBuilder};
 use mdbook::MDBook;
 use log::{info,error,debug,warn};
 
-use crate::{fs,Options,matcher};
+use crate::{fs,Options,matcher,BOOK_THEME_KEY};
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
@@ -99,7 +99,7 @@ impl<'a> BookBuilder<'a> {
                 let theme_dir = matcher::get_theme_dir(&self.options.source);
                 if theme_dir.exists() {
                     if let Some(s) = theme_dir.to_str() {
-                        if let Err(e) = md.config.set("output.html.theme", s) {
+                        if let Err(e) = md.config.set(BOOK_THEME_KEY, s) {
                             warn!("cannot set book theme {}", e);
                         }
                     } 
