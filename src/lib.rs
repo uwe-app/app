@@ -1,10 +1,8 @@
-use std::io;
-use std::fmt;
-use std::error;
 use std::path::PathBuf;
 
 mod build;
 mod fs;
+mod error;
 mod helpers;
 mod loader;
 mod matcher;
@@ -13,10 +11,6 @@ mod template;
 mod utils;
 
 use build::Builder;
-
-use handlebars;
-use ignore;
-use mdbook;
 use serde::{Deserialize, Serialize};
 
 static INDEX_STEM: &str = "index";
@@ -34,38 +28,7 @@ static PARSE_EXTENSIONS:[&str; 2] = [HTML, MD];
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
-#[derive(Debug)]
-pub enum Error {
-    Message(String),
-    IoError(io::Error),
-    TemplateFileError(handlebars::TemplateFileError),
-    IgnoreError(ignore::Error),
-    BookError(mdbook::errors::Error),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::Message(ref s) =>  write!(f,"{}", s),
-            Error::IoError(ref e) => e.fmt(f),
-            Error::TemplateFileError(ref e) => e.fmt(f),
-            Error::IgnoreError(ref e) => e.fmt(f),
-            Error::BookError(ref e) => e.fmt(f),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match *self {
-            Error::IoError(ref e) => Some(e),
-            Error::TemplateFileError(ref e) => Some(e),
-            Error::IgnoreError(ref e) => Some(e),
-            Error::BookError(ref e) => Some(e),
-            _ => None
-        }
-    }
-}
+pub use crate::error::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
