@@ -3,7 +3,7 @@
 Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebars][] and [mdbook][].
 
 ```
-hypertext --minify
+ht
 ```
 
 > Process all files in `site` and write the result to `build`.

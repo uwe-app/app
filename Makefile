@@ -1,6 +1,6 @@
 all: release
 
-clean:
+clean: clean-site
 	@rm -rf ./target
 
 clean-site:
@@ -23,6 +23,6 @@ check:
 	@cargo check
 
 install: release
-	@cp -f target/release/hypertext $(HOME)/bin
+	@cp -f target/release/ht $(HOME)/bin
 
 .PHONY: all, clean, install
