@@ -8,8 +8,6 @@ ht
 
 > Process all files in `site` and write the result to `build`.
 
----
-
 * Treat `.html` and `.md` files as *documents* to be parsed as templates.
 * Use the nearest layout (`layout.hbs`) wherever possible.
 * Infer document title from the file name (or parent directory in the case of index files).
@@ -19,11 +17,7 @@ ht
 * Exclude hidden files and patterns in `.gitignore`.
 * Copy all other files.
 
----
-
-Get short help with `hypertext -h` and see more detail with `hypertext --help`.
-
-See [site](/site) for example source files that demonstrate and test various configurations; they are *not the ideal* way to structure a site.
+Get short help with `ht -h` and see more detail with `ht --help`.
 
 ## Layout
 
