@@ -1,5 +1,4 @@
 use std::convert::AsRef;
-use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -11,6 +10,7 @@ use crate::{
     matcher,
     DataLoader,
     FileType,
+    Error,
     Options,
     HTML,
     INDEX_HTML,
@@ -20,7 +20,7 @@ use crate::{
 
 type TocEntry = Map<String, Value>;
 
-fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<Vec<TocEntry>> {
+fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> Result<Vec<TocEntry>, Error> {
     let mut entries: Vec<TocEntry> = Vec::new();
 
     let source = &opts.source;
@@ -63,7 +63,11 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            loader.load(&path, &mut data);
+                            //loader.load(&path, &mut data);
+
+                            if let Err(e) = loader.load(&path, &mut data) {
+                                return Err(e)
+                            }
                         }
                         _ => {}
                     }
@@ -98,7 +102,10 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            loader.load(&f, &mut data);
+                            if let Err(e) = loader.load(&f, &mut data) {
+                                return Err(e)
+                            }
+
                         }
                     }
                 }
@@ -114,7 +121,7 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                 }
             }
             Err(e) => {
-                return Err(io::Error::new(io::ErrorKind::Other, e));
+                return Err(Error::from(e))
             }
         }
     }

@@ -1,11 +1,8 @@
 use std::convert::AsRef;
-use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
-use handlebars::TemplateFileError;
-
-use super::{loader, template, utils, Options};
+use super::{loader, Error, template, utils, Options};
 
 pub struct Parser<'a> {
     loader: loader::DataLoader<'a>,
@@ -23,15 +20,17 @@ impl<'a> Parser<'a> {
         &mut self,
         ext: &'static str,
         dir: P,
-    ) -> Result<(), TemplateFileError> {
+    ) -> Result<(), Error> {
         self.render.register_templates_directory(ext, dir)
     }
 
-    pub fn parse_html(&mut self, input: PathBuf) -> io::Result<String> {
-        let mut result = utils::read_string(&input)?;
+    pub fn parse_html(&mut self, input: PathBuf) -> Result<String, Error> {
+        let mut result = utils::read_string(&input).map_err(Error::from).unwrap();
 
         let mut data = loader::DataLoader::create();
-        self.loader.load(&input, &mut data);
+        if let Err(e) = self.loader.load(&input, &mut data) {
+            return Err(e)
+        }
 
         result = self
             .render
@@ -40,11 +39,13 @@ impl<'a> Parser<'a> {
         Ok(result)
     }
 
-    pub fn parse_markdown(&mut self, input: PathBuf) -> io::Result<String> {
-        let content = utils::read_string(&input)?;
+    pub fn parse_markdown(&mut self, input: PathBuf) -> Result<String, Error> {
+        let content = utils::read_string(&input).map_err(Error::from).unwrap();
 
         let mut data = loader::DataLoader::create();
-        self.loader.load(&input, &mut data);
+        if let Err(e) = self.loader.load(&input, &mut data) {
+            return Err(e)
+        }
 
         let parsed = self
             .render

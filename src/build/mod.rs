@@ -1,4 +1,3 @@
-use std::io;
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
@@ -31,7 +30,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn process_file(&mut self, file: PathBuf, file_type: FileType) -> io::Result<()> {
+    fn process_file(&mut self, file: PathBuf, file_type: FileType) -> Result<(), Error> {
         let dest = matcher::destination(
             &self.options.source,
             &self.options.target,
@@ -41,16 +40,16 @@ impl<'a> Builder<'a> {
         );
 
         match file_type {
-            FileType::Unknown => return utils::copy(file, dest),
+            FileType::Unknown => return utils::copy(file, dest).map_err(Error::from),
             FileType::Html => {
                 info!("html {} -> {}", file.display(), dest.display());
                 let result = self.parser.parse_html(file);
                 match result {
                     Ok(s) => {
                         if self.options.minify {
-                            return utils::write_string(dest, minify(&s));
+                            return utils::write_string(dest, minify(&s)).map_err(Error::from);
                         } else {
-                            return utils::write_string(dest, s);
+                            return utils::write_string(dest, s).map_err(Error::from);
                         }
                     }
                     Err(e) => return Err(e),
@@ -62,9 +61,9 @@ impl<'a> Builder<'a> {
                 match result {
                     Ok(s) => {
                         if self.options.minify {
-                            return utils::write_string(dest, minify(&s));
+                            return utils::write_string(dest, minify(&s)).map_err(Error::from);
                         } else {
-                            return utils::write_string(dest, s);
+                            return utils::write_string(dest, s).map_err(Error::from);
                         }
                     }
                     Err(e) => return Err(e),
@@ -88,7 +87,7 @@ impl<'a> Builder<'a> {
             .parser
             .register_templates_directory(TEMPLATE_EXT, templates.as_path())
         {
-            return Err(Error::TemplateFileError(e));
+            return Err(e);
         }
 
         for result in WalkBuilder::new(&self.options.source)
@@ -129,10 +128,8 @@ impl<'a> Builder<'a> {
                         let file = entry.path().to_path_buf();
                         let file_type = matcher::get_type(&path);
 
-                        let result = self.process_file(file, file_type);
-                        match result {
-                            Err(e) => return Err(Error::IoError(e)),
-                            _ => {}
+                        if let Err(e) = self.process_file(file, file_type) {
+                            return Err(e)
                         }
                     }
                 }

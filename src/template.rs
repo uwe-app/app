@@ -1,15 +1,14 @@
 use std::convert::AsRef;
-use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
 use serde_json::{json, Map, Value};
 
-use handlebars::{Handlebars, TemplateFileError};
+use handlebars::Handlebars;
 
 use log::{debug, error};
 
-use super::{helpers, utils, Options, LAYOUT_HBS};
+use super::{helpers, utils, Error, Options, LAYOUT_HBS};
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
@@ -36,8 +35,8 @@ impl<'a> TemplateRender<'a> {
         &mut self,
         ext: &'static str,
         dir: P,
-    ) -> Result<(), TemplateFileError> {
-        self.handlebars.register_templates_directory(ext, dir)
+    ) -> Result<(), Error> {
+        self.handlebars.register_templates_directory(ext, dir).map_err(Error::from)
     }
 
     pub fn parse_template_string(
@@ -45,7 +44,7 @@ impl<'a> TemplateRender<'a> {
         input: &PathBuf,
         content: String,
         data: &mut Map<String, Value>,
-    ) -> io::Result<String> {
+    ) -> Result<String, Error> {
         let name = &input.to_str().unwrap();
         if self
             .handlebars
@@ -76,7 +75,7 @@ impl<'a> TemplateRender<'a> {
         input: &PathBuf,
         document: String,
         data: &mut Map<String, Value>,
-    ) -> io::Result<String> {
+    ) -> Result<String, Error> {
         // Skip layout for standalone documents
         if let Some(val) = data.get("standalone") {
             if let Some(_) = val.as_bool() {
@@ -88,7 +87,7 @@ impl<'a> TemplateRender<'a> {
             let name = template.to_string_lossy().into_owned();
             if !self.handlebars.has_template(&name) {
                 if let Err(e) = self.handlebars.register_template_file(&name, &template) {
-                    return Err(io::Error::new(io::ErrorKind::Other, e));
+                    return Err(Error::from(e))
                 }
             }
 
@@ -96,13 +95,7 @@ impl<'a> TemplateRender<'a> {
             // re-using the same data object
             data.insert("template".to_owned(), json!(document));
 
-            let parsed = self.handlebars.render(&name, data);
-            match parsed {
-                Ok(s) => return Ok(s),
-                Err(e) => {
-                    return Err(io::Error::new(io::ErrorKind::Other, e));
-                }
-            }
+            return self.handlebars.render(&name, data).map_err(Error::from)
         }
 
         // Could not resolve a layout so pass back the document

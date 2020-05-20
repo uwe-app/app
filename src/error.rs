@@ -12,11 +12,36 @@ pub enum Error {
     RenderError(handlebars::RenderError),
     IgnoreError(ignore::Error),
     BookError(mdbook::errors::Error),
+    TomlDeserError(toml::de::Error),
 }
 
 impl Error {
     pub fn new(s: String) -> Self {
         Error::Message(s)
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Self {
+        Error::IoError(error)
+    }
+}
+
+impl From<handlebars::TemplateFileError> for Error {
+    fn from(error: handlebars::TemplateFileError) -> Self {
+        Error::TemplateFileError(error)
+    }
+}
+
+impl From<handlebars::RenderError> for Error {
+    fn from(error: handlebars::RenderError) -> Self {
+        Error::RenderError(error)
+    }
+}
+
+impl From<ignore::Error> for Error {
+    fn from(error: ignore::Error) -> Self {
+        Error::IgnoreError(error)
     }
 }
 
@@ -29,6 +54,7 @@ impl fmt::Display for Error {
             Error::RenderError(ref e) => e.fmt(f),
             Error::IgnoreError(ref e) => e.fmt(f),
             Error::BookError(ref e) => e.fmt(f),
+            Error::TomlDeserError(ref e) => e.fmt(f),
         }
     }
 }
@@ -41,6 +67,7 @@ impl error::Error for Error {
             Error::RenderError(ref e) => Some(e),
             Error::IgnoreError(ref e) => Some(e),
             Error::BookError(ref e) => Some(e),
+            Error::TomlDeserError(ref e) => Some(e),
             _ => None,
         }
     }
