@@ -9,7 +9,8 @@ use log::{info};
 
 use hypertext::{
     build,
-    Options
+    Options,
+    Error
 };
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -44,6 +45,15 @@ struct Cli {
     output: PathBuf,
 }
 
+fn fatal(e: impl std::error::Error) {
+    error!("{}", e);
+    std::process::exit(1);
+}
+
+fn error(s: String) {
+    fatal(Error::Message(s));
+}
+
 fn main() {
     let args = Cli::from_args();
 
@@ -58,29 +68,25 @@ fn main() {
             let level = &args.log_level;
             env::set_var(LOG_ENV_NAME, "error");
             pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-            error!("unknown log level: {}", level);
-            std::process::exit(1);
+            error(format!("unknown log level: {}", level));
         },
     }
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
 
     if !args.input.is_dir() {
-        error!("not a directory: {}", args.input.display());
-        std::process::exit(1);
+        error(format!("not a directory: {}", args.input.display()));
     }
 
     if !args.output.exists() {
         info!("mkdir {}", args.output.display());
         if let Err(e) = fs::create_dir(&args.output) {
-            error!("{}", e);
-            std::process::exit(1);
+            fatal(e);
         }
     }
 
     if !args.output.is_dir() {
-        error!("not a directory: {}", args.output.display());
-        std::process::exit(1);
+        error(format!("not a directory: {}", args.input.display()));
     }
 
     let opts = Options{
@@ -93,10 +99,7 @@ fn main() {
 
     let result = build(opts);
     match result {
-        Err(e) => {
-            error!("{}", e);
-            std::process::exit(1);
-        },
+        Err(e) => fatal(e),
         _ => {},
     }
 }

@@ -4,9 +4,16 @@ use std::convert::AsRef;
 
 use ignore::{WalkBuilder};
 use mdbook::MDBook;
-use log::{info,error,debug,warn};
+use log::{info,debug,warn};
 
-use crate::{fs,Options,matcher,BOOK_TOML,BOOK_THEME_KEY};
+use crate::{
+    fs,
+    Error,
+    Options,
+    matcher,
+    BOOK_TOML,
+    BOOK_THEME_KEY
+};
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
@@ -49,7 +56,7 @@ impl<'a> BookBuilder<'a> {
         self.books.push(b.to_path_buf().to_owned());
     }
 
-    fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) {
+    fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
 
         // Jump some hoops to bypass the book build_dir
         let relative = source_dir.strip_prefix(&self.options.source).unwrap();
@@ -70,24 +77,19 @@ impl<'a> BookBuilder<'a> {
                         // TODO: minify files with HTML file extension
 
                         // Copy the file content
-                        let copied = fs::copy(file, output);
-                        match copied {
-                            Err(e) => {
-                                error!("{}", e);
-                                std::process::exit(1);
-                            },
-                            _ => {}
+                        if let Err(e) = fs::copy(file, output) {
+                            return Err(Error::IoError(e))
                         }
                     }
-                }, Err(e) => {
-                    error!("{}", e);
-                    std::process::exit(1);
                 },
+                Err(e) => return Err(Error::IgnoreError(e)),
             }
-            }
+        }
+
+        Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&self, p: P) {
+    pub fn build<P: AsRef<Path>>(&self, p: P) -> Result<(), Error> {
         let dir = p.as_ref();
         info!("book {}", dir.display());
 
@@ -111,18 +113,12 @@ impl<'a> BookBuilder<'a> {
                         let bd = md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);
-                        self.copy_book(dir, src);
+                        return self.copy_book(dir, src)
                     },
-                    Err(e) => {
-                        error!("{}", e);
-                        std::process::exit(1);
-                    },
+                    Err(e) => return Err(Error::BookError(e)),
                 }
             },
-            Err(e) => {
-                error!("{}", e);
-                std::process::exit(1);
-            },
+            Err(e) => return Err(Error::BookError(e)),
         }
     }
 
