@@ -2,12 +2,12 @@ use std::io;
 use std::path::PathBuf;
 
 use minify::html::minify;
-use log::{info,error,debug};
+use log::{info,debug};
 use ignore::WalkBuilder;
 
 mod book;
 
-use super::{fs,Options,matcher,TEMPLATE, TEMPLATE_EXT};
+use super::{fs,Error,Options,matcher,TEMPLATE, TEMPLATE_EXT};
 use super::matcher::FileType;
 use super::parser::Parser;
 use book::BookBuilder;
@@ -79,13 +79,12 @@ impl<'a> Builder<'a> {
 
 
     // Find files and process each entry.
-    pub fn build(&mut self) {
+    pub fn build(&mut self) -> Result<(), Error> {
 
         let mut templates = self.options.source.clone();
         templates.push(TEMPLATE);
         if let Err(e) = self.parser.register_templates_directory(TEMPLATE_EXT, templates.as_path()) {
-            error!("{}", e);
-            std::process::exit(1);
+            return Err(Error::TemplateFileError(e));
         }
 
         for result in WalkBuilder::new(&self.options.source)
@@ -127,18 +126,15 @@ impl<'a> Builder<'a> {
                         let result = self.process_file(file, file_type);
                         match result {
                             Err(e) => {
-                                error!("{}", e);
-                                std::process::exit(1);
+                                return Err(Error::IoError(e))
                             },
                             _ => {},
                         }
                     }
                 },
-                Err(e) => {
-                    error!("{}", e);
-                    std::process::exit(1);
-                }
+                Err(e) => return Err(Error::IgnoreError(e))
             }
         }
+        Ok(())
     }
 }

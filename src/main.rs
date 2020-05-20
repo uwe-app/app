@@ -91,5 +91,12 @@ fn main() {
         minify: args.minify,
     };
 
-    build(opts);
+    let result = build(opts);
+    match result {
+        Err(e) => {
+            error!("{}", e);
+            std::process::exit(1);
+        },
+        _ => {},
+    }
 }

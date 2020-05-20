@@ -1,3 +1,6 @@
+use std::io;
+use std::fmt;
+use std::error;
 use std::path::PathBuf;
 
 mod build;
@@ -11,6 +14,8 @@ mod utils;
 
 use build::Builder;
 
+use handlebars;
+use ignore;
 use serde::{Deserialize, Serialize};
 
 static INDEX_STEM: &str = "index";
@@ -28,6 +33,33 @@ static PARSE_EXTENSIONS:[&str; 2] = [HTML, MD];
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
+#[derive(Debug)]
+pub enum Error {
+    IoError(io::Error),
+    TemplateFileError(handlebars::TemplateFileError),
+    IgnoreError(ignore::Error),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::IoError(ref e) => e.fmt(f),
+            Error::TemplateFileError(ref e) => e.fmt(f),
+            Error::IgnoreError(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match *self {
+            Error::IoError(ref e) => Some(e),
+            Error::TemplateFileError(ref e) => Some(e),
+            Error::IgnoreError(ref e) => Some(e),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
     pub source: PathBuf,
@@ -37,8 +69,8 @@ pub struct Options {
     pub minify: bool,
 }
 
-pub fn build(options: Options) {
+pub fn build(options: Options) -> Result<(), Error> {
     let mut builder = Builder::new(&options);
-    builder.build();
+    builder.build()
 }
 
