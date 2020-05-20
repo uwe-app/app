@@ -122,7 +122,7 @@ impl<'a> Builder<'a> {
                         //println!("{:?}", entry);
 
                         let file = entry.path().to_path_buf();
-                        let file_type = matcher::get_type(&self.options.layout, &path);
+                        let file_type = matcher::get_type(&path);
 
                         let result = self.process_file(file, file_type);
                         match result {

@@ -12,7 +12,10 @@ pub enum FileType {
 
 use super::{
     INDEX,
+    TEMPLATE,
     THEME,
+    LAYOUT_HBS,
+    LAYOUT_TOML,
     MD,
     HTML,
     HBS,
@@ -20,9 +23,9 @@ use super::{
     PARSE_EXTENSIONS,
 };
 
-pub fn get_theme_dir<P: AsRef<Path>>(base: P, template: &str) -> PathBuf {
+pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
     let mut root_theme = base.as_ref().to_path_buf();
-    root_theme.push(template);
+    root_theme.push(TEMPLATE);
     root_theme.push(THEME);
     root_theme
 }
@@ -36,14 +39,13 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
     false
 }
 
-pub fn get_type<P: AsRef<Path>>(layout: &str, file: P) -> FileType {
+pub fn get_type<P: AsRef<Path>>(file: P) -> FileType {
 
     let name = file.as_ref().file_name();
-    let layout_toml = "layout.toml";
     match name {
         Some(nm) => {
             if let Some(nm) = nm.to_str() {
-                if nm == layout || nm == layout_toml || nm.ends_with(HBS) {
+                if nm == LAYOUT_HBS || nm == LAYOUT_TOML || nm.ends_with(HBS) {
                     return FileType::Private
                 } else if nm.ends_with(MD) {
                     return FileType::Markdown

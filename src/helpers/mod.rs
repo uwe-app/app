@@ -9,7 +9,7 @@ use handlebars::*;
 
 use serde_json::{Value,json};
 
-use super::{matcher, Options};
+use super::{matcher, Options, INDEX_HTML};
 use super::matcher::FileType;
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
                     }
 
 
-                    let file_type = matcher::get_type(&opts.layout, path);
+                    let file_type = matcher::get_type(path);
                     match file_type {
                         FileType::Markdown | FileType::Html => {
                             let mut dest = matcher::destination(
@@ -76,7 +76,7 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
 
                     for f in candidates {
                         if f.exists() {
-                            let file_type = matcher::get_type(&opts.layout, &f);
+                            let file_type = matcher::get_type(&f);
                             let mut dest = matcher::destination(
                                 source, target, &f, &file_type, opts.clean_url);
 
@@ -93,9 +93,8 @@ fn get_files<P: AsRef<Path>>(file: P, parent: P, opts: &Options) -> io::Result<V
 
                 if !href.is_empty() {
                     if opts.clean_url {
-                        let index_name = "index.html";
-                        if href.ends_with(index_name) {
-                            href.truncate(href.len() - index_name.len());
+                        if href.ends_with(INDEX_HTML) {
+                            href.truncate(href.len() - INDEX_HTML.len());
                         }
                     }
                     let e = TocEntry{href: href};

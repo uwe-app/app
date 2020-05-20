@@ -14,8 +14,11 @@ use build::Builder;
 use serde::{Deserialize, Serialize};
 
 static INDEX: &str = "index";
+static INDEX_HTML: &str = "index.html";
 static TEMPLATE: &str = "template";
 static THEME: &str = "theme";
+static LAYOUT_HBS: &str = "layout.hbs";
+static LAYOUT_TOML: &str = "layout.toml";
 static MD: &str = ".md";
 static HTML: &str = ".html";
 static HBS: &str = ".hbs";
@@ -27,7 +30,6 @@ pub struct Options {
     pub source: PathBuf,
     pub target: PathBuf,
     pub follow_links: bool,
-    pub layout: String,
     pub clean_url: bool,
     pub minify: bool,
 }

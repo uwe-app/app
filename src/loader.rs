@@ -9,25 +9,17 @@ use serde_json::{Map,Value,json};
 
 use log::{error, debug};
 
-use super::fs;
-use super::Options;
-use super::utils;
+use super::{fs, Options, utils, LAYOUT_TOML};
 
 /// Loads the data associated with a template.
 pub struct DataLoader<'a> {
-    name: String,
     options: &'a Options,
 }
 
 impl<'a> DataLoader<'a> {
 
     pub fn new(options: &'a Options) -> Self {
-        // Derive the layout.toml from the layout.hbs option
-        let mut nm = Path::new(&options.layout).to_path_buf();
-        nm.set_extension("toml");
-        let name = nm.file_name().unwrap().to_string_lossy().into_owned();
-
-        DataLoader{name, options}
+        DataLoader{options}
     }
 
     pub fn create() -> Map<String, Value> {
@@ -60,7 +52,7 @@ impl<'a> DataLoader<'a> {
 
     fn load_config<P : AsRef<Path>>(&self, input: P, data: &mut Map<String, Value>) {
         // FIXME: this &input handling is wrong!
-        if let Some(cfg) = fs::inherit(&self.options.source, &input.as_ref().to_path_buf(), &self.name) {
+        if let Some(cfg) = fs::inherit(&self.options.source, &input.as_ref().to_path_buf(), LAYOUT_TOML) {
             self.load_file(&cfg, data);
         }
     }

@@ -23,10 +23,6 @@ struct Cli {
     #[structopt(long, default_value = "info")]
     log_level: String,
 
-    /// Layout file name
-    #[structopt(long, default_value = "layout.hbs")]
-    layout: String,
-
     /// Follow symbolic links
     #[structopt(short, long)]
     follow_links: bool,
@@ -90,7 +86,6 @@ fn main() {
     let opts = Options{
         source: args.input, 
         target: args.output,
-        layout: args.layout,
         follow_links: args.follow_links,
         clean_url: args.clean_url,
         minify: args.minify,

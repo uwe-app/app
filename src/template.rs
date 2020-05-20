@@ -9,7 +9,7 @@ use handlebars::{Handlebars, TemplateFileError};
 
 use log::{error, debug};
 
-use super::{fs, helpers, Options};
+use super::{fs, helpers, Options, LAYOUT_HBS};
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
@@ -68,7 +68,7 @@ impl<'a> TemplateRender<'a> {
             }
         }
 
-        if let Some(template) = fs::inherit(&self.options.source, input, &self.options.layout) {
+        if let Some(template) = fs::inherit(&self.options.source, input, LAYOUT_HBS) {
 
             let name = template.to_string_lossy().into_owned();
             if !self.handlebars.has_template(&name) {
