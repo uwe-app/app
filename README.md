@@ -69,6 +69,22 @@ Markdown documents are parsed via handlebars before being rendered to HTML which
 {{> snippet.md}}
 ```
 
+## Helpers
+
+Some helpers are available to make life easier.
+
+### Table of Contents
+
+Use the `toc` helper to iterate the index of a directory:
+
+```html
+{{#toc}}
+<li><a href="{{href}}">{{title}}</a></li>
+{{/toc}}
+```
+
+The computed data for each destination is available and `href` which points to the destination for the source file.
+
 ## Clean URLs
 
 When the `--clean-url` option is given treat destination files as clean URLs wherever possible (see [contact](/site/contact.html)). Does not apply to files generated via [mdbook][].
