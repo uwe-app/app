@@ -75,20 +75,16 @@ Some helpers are available to make life easier.
 
 ### JSON
 
-A useful helper so you can pretty print the JSON data available to your templates.
+A useful helper to pretty print the JSON data available to your templates.
 
 ```handlebars
-<pre>
 {{json}}
-</pre>
 ```
 
 If a parameter is passed it prints only the given variable:
 
 ```handlebars
-<pre>
 {{json context}}
-</pre>
 ```
 
 ### Table of Contents
