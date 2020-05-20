@@ -58,3 +58,13 @@ Tag names and attribute values ***are not escaped***, it is assumed you know wha
 
 Be aware that the inner block of markdown is parsed outside of the document scope and ***cannot use link references*** in the containing document.
 
+### Markdown
+
+This helper renders markdown; useful in HTML documents.
+
+```handlebars
+{{{{raw}}}}
+{{#markdown}}
+This ***is*** some _markdown_ for you to `read`.
+{{/markdown}}{{{{/raw}}}}
+```

@@ -37,3 +37,4 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
 pub mod html;
 pub mod toc;
 pub mod json;
+pub mod markdown;
