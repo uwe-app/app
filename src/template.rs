@@ -6,7 +6,7 @@ use serde_json::{json, Map, Value};
 
 use handlebars::Handlebars;
 
-use log::{debug, error};
+use log::{debug};
 
 use super::{helpers, utils, Error, Options, LAYOUT_HBS};
 
@@ -25,6 +25,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("html", Box::new(helpers::html::Element));
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("markdown", Box::new(helpers::markdown::Markdown));
+        handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
 
         TemplateRender {
             options,
@@ -60,13 +61,7 @@ impl<'a> TemplateRender<'a> {
 
             debug!("{:?}", data);
 
-            let parsed = self.handlebars.render(name, data);
-            match parsed {
-                Ok(s) => return Ok(s),
-                Err(e) => {
-                    error!("{}", e);
-                }
-            }
+            return self.handlebars.render(name, data).map_err(Error::from)
         }
         Ok(content)
     }

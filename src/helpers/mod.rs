@@ -1,8 +1,12 @@
 use std::io;
-
 use handlebars::*;
-
 use super::Error;
+
+pub mod html;
+pub mod toc;
+pub mod json;
+pub mod markdown;
+pub mod parent;
 
 pub struct BufferedOutput {
     buffer: String,
@@ -34,7 +38,3 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
     Err(Error::RenderError(RenderError::new("no template for render buffer")))
 }
 
-pub mod html;
-pub mod toc;
-pub mod json;
-pub mod markdown;
