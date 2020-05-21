@@ -4,11 +4,13 @@ Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebar
 ht
 ```
 
-Process all files in `site` and write the result to `build`.
+Process all files in `site` and write the result to `build/debug`.
 
 ```
 {{> output.md}}
 ```
+
+For a production version run `ht --release`; your website is now in `build/release`.
 
 Get short help with `ht -h` and see more detail with `ht --help`, more information on program options in the [command line][] docs.
 

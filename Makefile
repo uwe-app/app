@@ -3,20 +3,19 @@ all: release
 clean: clean-site
 	@rm -rf ./target
 
-clean-site:
-	@rm -rf ./build
-
 help:
 	@cargo run -- --help > site/template/help.md.hbs
 
 output:
 	@ht > site/template/output.md.hbs 2>&1
 
-site: clean-site
-	@mkdir build
+site:
+	@rm -rf ./build/debug
 	@cargo run -- --clean-url
 
-site-release: site help
+site-release: install help output
+	@rm -rf ./build/release
+	@ht --release
 
 fmt:
 	@cargo fmt

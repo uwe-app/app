@@ -9,7 +9,7 @@ use std::time::SystemTime;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use hypertext::{build, Error, Options};
+use hypertext::{build, BuildTag, Error, Options};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -25,9 +25,9 @@ struct Cli {
     #[structopt(short, long)]
     follow_links: bool,
 
-    /// Compress HTML output
+    /// Generate a release build
     #[structopt(short, long)]
-    minify: bool,
+    release: bool,
 
     /// Generate clean URLs
     #[structopt(short, long)]
@@ -83,15 +83,35 @@ fn main() {
     }
 
     if !args.output.is_dir() {
-        error(format!("not a directory: {}", args.input.display()));
+        error(format!("not a directory: {}", args.output.display()));
+    }
+
+    let mut minify = false;
+    let mut tag = BuildTag::Debug;
+    if args.release {
+        minify = true;
+        tag = BuildTag::Release;
+    }
+
+    let mut target = args.output.clone();
+    let target_dir = tag.get_path_name();
+
+    //if target_dir.starts_with("/") {
+
+    //}
+
+    if !target_dir.is_empty() {
+        target.push(target_dir);
     }
 
     let opts = Options {
         source: args.input,
-        target: args.output,
+        output: args.output,
+        target: target,
         follow_links: args.follow_links,
         clean_url: args.clean_url,
-        minify: args.minify,
+        minify,
+        tag,
     };
 
     let now = SystemTime::now();

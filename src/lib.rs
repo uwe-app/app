@@ -35,12 +35,31 @@ use crate::parser::Parser;
 use crate::loader::DataLoader;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub enum BuildTag {
+    Custom(String),
+    Debug,
+    Release
+}
+
+impl BuildTag {
+    pub fn get_path_name(&self) -> String {
+        match self {
+            BuildTag::Debug => return "debug".to_owned(),
+            BuildTag::Release => return "release".to_owned(),
+            BuildTag::Custom(s) => return s.to_owned()
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Options {
     pub source: PathBuf,
+    pub output: PathBuf,
     pub target: PathBuf,
     pub follow_links: bool,
     pub clean_url: bool,
     pub minify: bool,
+    pub tag: BuildTag,
 }
 
 pub fn build(options: Options) -> Result<(), Error> {
