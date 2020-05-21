@@ -75,6 +75,7 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
 
 pub fn load(opts: &Options) -> Result<(), Error> {
     let mut src = opts.source.to_path_buf();
+    // FIXME: use a constant here
     src.push("data.toml");
 
     if src.exists() {

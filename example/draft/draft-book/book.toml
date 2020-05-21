@@ -1,0 +1,7 @@
+[book]
+authors = ["muji"]
+language = "en"
+multilingual = false
+src = "src"
+title = "draft-book"
+draft = true
