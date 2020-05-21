@@ -16,6 +16,8 @@ site: clean-site
 	@mkdir build
 	@cargo run -- --clean-url
 
+site-release: site help
+
 fmt:
 	@cargo fmt
 
