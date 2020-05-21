@@ -21,6 +21,10 @@ struct Cli {
     #[structopt(long, default_value = "info")]
     log_level: String,
 
+    /// Build tag name
+    #[structopt(short, long)]
+    tag: Option<String>,
+
     /// Follow symbolic links
     #[structopt(short, long)]
     follow_links: bool,
@@ -76,7 +80,6 @@ fn main() {
     }
 
     if !args.output.exists() {
-        info!("mkdir {}", args.output.display());
         if let Err(e) = fs::create_dir(&args.output) {
             fatal(e);
         }
@@ -93,23 +96,35 @@ fn main() {
         tag = BuildTag::Release;
     }
 
-    let mut target = args.output.clone();
+    if let Some(t) = args.tag {
+        if !t.is_empty() {
+            tag = BuildTag::Custom(t);
+        }
+    }
+
     let target_dir = tag.get_path_name();
 
-    //if target_dir.starts_with("/") {
+    info!("{}", target_dir);
 
-    //}
+    let mut target = args.output.clone();
 
     if !target_dir.is_empty() {
+        let mut target_dir_buf = PathBuf::new();
+        target_dir_buf.push(&target_dir);
+
+        if target_dir_buf.is_absolute() {
+            error(format!("build tag may not be an absolute path {}", target_dir));
+        }
+
         target.push(target_dir);
     }
 
     let opts = Options {
         source: args.input,
         output: args.output,
-        target: target,
         follow_links: args.follow_links,
         clean_url: args.clean_url,
+        target,
         minify,
         tag,
     };

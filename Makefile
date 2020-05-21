@@ -1,6 +1,9 @@
+#SOURCES = $(wildcard site/**/*.*)
+#DEBUG = $(wildcard build/debug/**/*.*)
+
 all: release
 
-clean: clean-site
+clean:
 	@rm -rf ./target
 
 help:
@@ -32,4 +35,4 @@ check:
 install: release
 	@cp -f target/release/ht $(HOME)/bin
 
-.PHONY: all, clean, install
+.PHONY: all site site-release clean install
