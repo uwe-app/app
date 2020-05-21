@@ -1,0 +1,9 @@
+description = "Hyper Text"
+keywords = "fast, static, rust"
+
+[index]
+title = "foo title"
+
+[foo]
+title = "foo title"
+

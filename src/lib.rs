@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate lazy_static;
+
+use std::path::Path;
 use std::path::PathBuf;
 
 mod build;
@@ -64,6 +68,14 @@ pub struct Options {
 }
 
 pub fn build(options: Options) -> Result<(), Error> {
+    //println!("{:?}", crate::loader::DATA.get("_globals"))
+    if let Err(e) = loader::load(&options) {
+        return Err(e)
+    }
+
+    let test = Path::new("site/index.md");
+    println!("{:?}", loader::compute(test));
+
     let mut builder = Builder::new(&options);
     builder.build()
 }
