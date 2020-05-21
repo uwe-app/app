@@ -1,6 +1,3 @@
-#SOURCES = $(wildcard site/**/*.*)
-#DEBUG = $(wildcard build/debug/**/*.*)
-
 all: release
 
 clean:
@@ -19,6 +16,10 @@ site:
 site-release: install help output
 	@rm -rf ./build/release
 	@ht --release
+
+example: install
+	@ht example/layout --tag=layout-example
+	@ht example/draft --tag=draft-example
 
 fmt:
 	@cargo fmt

@@ -2,7 +2,9 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 
-use super::{loader, Error, template, utils, Options};
+use super::{FileType, Error, template, utils, Options};
+
+use serde_json::{Map, Value};
 
 pub struct Parser<'a> {
     render: template::TemplateRender<'a>,
@@ -22,28 +24,40 @@ impl<'a> Parser<'a> {
         self.render.register_templates_directory(ext, dir)
     }
 
-    pub fn parse_html(&mut self, input: PathBuf) -> Result<String, Error> {
+    fn parse_html(&mut self, input: PathBuf, data: &mut Map<String, Value>) -> Result<String, Error> {
         let mut result = utils::read_string(&input).map_err(Error::from).unwrap();
-        let mut data = loader::compute(&input);
+
         result = self
             .render
-            .parse_template_string(&input, result, &mut data)?;
-        result = self.render.layout(&input, result, &mut data)?;
+            .parse_template_string(&input, result, data)?;
+        result = self.render.layout(&input, result, data)?;
         Ok(result)
     }
 
-    pub fn parse_markdown(&mut self, input: PathBuf) -> Result<String, Error> {
+    fn parse_markdown(&mut self, input: PathBuf, data: &mut Map<String, Value>) -> Result<String, Error> {
         let content = utils::read_string(&input).map_err(Error::from).unwrap();
-        let mut data = loader::compute(&input);
+
         let parsed = self
             .render
-            .parse_template_string(&input, content, &mut data);
+            .parse_template_string(&input, content, data);
         match parsed {
             Ok(content) => {
                 let markup = utils::render_markdown_string(&content);
-                return self.render.layout(&input, markup, &mut data);
+                return self.render.layout(&input, markup, data);
             }
             Err(e) => return Err(e),
+        }
+    }
+
+    pub fn parse(&mut self, input: PathBuf, file_type: FileType, data: &mut Map<String, Value>) -> Result<String, Error> {
+        match file_type {
+            FileType::Html => {
+                return self.parse_html(input, data)
+            }
+            FileType::Markdown => {
+                return self.parse_markdown(input, data)
+            },
+            _ => Err(Error::new("parser got invalid file type".to_string()))
         }
     }
 }

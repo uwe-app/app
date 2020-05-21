@@ -6,7 +6,7 @@ use minify::html::minify;
 
 mod book;
 
-use super::{matcher, utils, Error, FileType, Options, Parser, TEMPLATE, TEMPLATE_EXT};
+use super::{matcher, loader, utils, Error, FileType, Options, Parser, TEMPLATE, TEMPLATE_EXT};
 use book::BookBuilder;
 
 pub struct Builder<'a> {
@@ -41,23 +41,15 @@ impl<'a> Builder<'a> {
 
         match file_type {
             FileType::Unknown => return utils::copy(file, dest).map_err(Error::from),
-            FileType::Html => {
-                info!("html {} -> {}", file.display(), dest.display());
-                let result = self.parser.parse_html(file);
-                match result {
-                    Ok(s) => {
-                        if self.options.minify {
-                            return utils::write_string(dest, minify(&s)).map_err(Error::from);
-                        } else {
-                            return utils::write_string(dest, s).map_err(Error::from);
-                        }
-                    }
-                    Err(e) => return Err(e),
+            FileType::Markdown | FileType::Html => {
+                let mut data = loader::compute(&file);
+
+                if utils::is_draft(&data, self.options) {
+                    return Ok(())
                 }
-            }
-            FileType::Markdown => {
-                info!("mark {} -> {}", file.display(), dest.display());
-                let result = self.parser.parse_markdown(file);
+
+                info!("{} -> {}", file.display(), dest.display());
+                let result = self.parser.parse(file, file_type, &mut data);
                 match result {
                     Ok(s) => {
                         if self.options.minify {

@@ -58,6 +58,7 @@ pub struct Options {
     pub source: PathBuf,
     pub output: PathBuf,
     pub target: PathBuf,
+    pub release: bool,
     pub follow_links: bool,
     pub strict: bool,
     pub clean_url: bool,

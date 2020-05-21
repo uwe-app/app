@@ -129,6 +129,7 @@ fn main() {
         follow_links: args.follow_links,
         clean_url: args.clean_url,
         strict: !args.loose,
+        release: args.release,
         target,
         minify,
         tag,

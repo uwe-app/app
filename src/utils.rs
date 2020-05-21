@@ -8,11 +8,24 @@ use std::path::PathBuf;
 use std::convert::AsRef;
 use std::path::Path;
 
+use serde_json::{Map, Value};
+
 use inflector::Inflector;
 
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
+
+use super::Options;
 
 use log::debug;
+
+pub fn is_draft(data: &Map<String, Value>, opts: &Options) -> bool {
+    if opts.release {
+        if let Some(val) = data.get("draft") {
+            return val.as_bool().is_some()
+        }
+    }
+    false
+}
 
 pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Option<PathBuf> {
     if let Some(p) = input.as_ref().parent() {
@@ -93,8 +106,8 @@ pub fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
 }
 
 pub fn render_markdown_string(content: &str) -> String {
-    let mut options = Options::empty();
-    options.insert(Options::ENABLE_STRIKETHROUGH);
+    let mut options = MarkdownOptions::empty();
+    options.insert(MarkdownOptions::ENABLE_STRIKETHROUGH);
     let parser = Parser::new_ext(content, options);
     let mut markup = String::new();
     html::push_html(&mut markup, parser);

@@ -8,6 +8,7 @@ use serde_json::{json, Value, Map};
 use crate::{
     matcher,
     loader,
+    utils,
     FileType,
     Error,
     Options,
@@ -131,11 +132,6 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
                             href = dest.to_string_lossy().to_string();
                             loader::compute_into(&path, &mut data);
 
-                            //loader.load(&path, &mut data);
-
-                            //if let Err(e) = loader.load(&path, &mut data) {
-                                //return Err(e)
-                            //}
                         }
                         _ => {}
                     }
@@ -172,13 +168,13 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
                             href = dest.to_string_lossy().to_string();
                             loader::compute_into(&f, &mut data);
 
-                            //if let Err(e) = loader.load(&f, &mut data) {
-                                //return Err(e)
-                            //}
-                            
                             break;
                         }
                     }
+                }
+
+                if utils::is_draft(&data, &opts) {
+                    continue
                 }
 
                 if !href.is_empty() {
