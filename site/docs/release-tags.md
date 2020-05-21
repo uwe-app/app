@@ -7,11 +7,11 @@ A release implies that all available optimizations are used; currently this is j
 You may want to output to a different build directory for certain versions in which case you can use the tag option:
 
 ```
-ht --tag=version-3.1.0-alpha1
+ht --tag=v3.1.0-alpha1
 ```
 
-Which will generate a debug build in `build/version-3.1.0-alpha1`; if you want a release version in the target directory you can combine `--tag` with `--release`.
+Which will generate a debug build in `build/v3.1.0-alpha1`; if you want a release version in the target directory you can combine `--tag` with `--release`.
 
 ```
-ht --tag=version-3.1.0-alpha1 --release
+ht --tag=v3.1.0-alpha1 --release
 ```
