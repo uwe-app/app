@@ -27,6 +27,7 @@ pub struct PathAndHref {
 
 pub struct ListOptions {
     pub sort: bool,
+    pub sort_key: String,
     pub dir: String,
 }
 
@@ -55,7 +56,7 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &Options) ->
 
     if let Some(parent) = path.parent() {
         //parent.foo();
-        return children(&path, &parent, &opts);
+        return children(&path, &parent, &list, &opts);
     }
 
     Ok(vec![])
@@ -86,7 +87,7 @@ fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &Options) -> Option<Path
     None
 }
 
-fn children<P: AsRef<Path>>(file: P, parent: &Path, opts: &Options) -> Result<Vec<ItemData>, Error> {
+fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &Options) -> Result<Vec<ItemData>, Error> {
     let mut entries: Vec<ItemData> = Vec::new();
 
     let source = &opts.source;
@@ -191,6 +192,25 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, opts: &Options) -> Result<Ve
                 return Err(Error::from(e))
             }
         }
+    }
+
+    if list.sort {
+        entries.sort_by(|a,b| {
+            let mut s1 = "".to_string();
+            let mut s2 = "".to_string();
+            if let Some(v1) = a.get(&list.sort_key) {
+                if let Some(v2) = b.get(&list.sort_key) {
+                    if let Some(v1) = v1.as_str() {
+                        if let Some(v2) = v2.as_str() {
+                            s1 = v1.to_string();
+                            s2 = v2.to_string();
+                        }
+                    }
+                }
+            }
+
+            s1.partial_cmp(&s2).unwrap()
+        });
     }
 
     Ok(entries)

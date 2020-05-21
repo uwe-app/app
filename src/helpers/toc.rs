@@ -47,6 +47,7 @@ impl HelperDef for Toc {
 
         let list_opts = ListOptions{
             sort: true,
+            sort_key: "title".to_string(),
             dir: dir.to_owned(),
         };
 
