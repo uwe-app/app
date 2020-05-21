@@ -19,7 +19,7 @@ pub struct TemplateRender<'a> {
 impl<'a> TemplateRender<'a> {
     pub fn new(options: &'a Options) -> Self {
         let mut handlebars = Handlebars::new();
-        handlebars.set_strict_mode(true);
+        handlebars.set_strict_mode(options.strict);
 
         handlebars.register_helper("toc", Box::new(helpers::toc::Toc));
         handlebars.register_helper("html", Box::new(helpers::html::Element));

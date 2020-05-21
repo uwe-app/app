@@ -37,6 +37,10 @@ struct Cli {
     #[structopt(short, long)]
     clean_url: bool,
 
+    /// Disable strict mode
+    #[structopt(long)]
+    loose: bool,
+
     /// Read files from directory
     #[structopt(parse(from_os_str), default_value = "site")]
     input: PathBuf,
@@ -124,6 +128,7 @@ fn main() {
         output: args.output,
         follow_links: args.follow_links,
         clean_url: args.clean_url,
+        strict: !args.loose,
         target,
         minify,
         tag,

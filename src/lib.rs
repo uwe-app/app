@@ -57,6 +57,7 @@ pub struct Options {
     pub output: PathBuf,
     pub target: PathBuf,
     pub follow_links: bool,
+    pub strict: bool,
     pub clean_url: bool,
     pub minify: bool,
     pub tag: BuildTag,
