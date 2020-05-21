@@ -46,12 +46,11 @@ impl HelperDef for Toc {
         }
 
         let list_opts = ListOptions{
-            target: &path,
             sort: true,
             dir: dir.to_owned(),
         };
 
-        let list_result = tree::listing(&list_opts, &opts);
+        let list_result = tree::listing(&path, &list_opts, &opts);
         match list_result {
             Ok(entries) => {
                 let template = h.template();

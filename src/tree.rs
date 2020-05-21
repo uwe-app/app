@@ -19,14 +19,13 @@ use crate::{
 
 pub type ItemData = Map<String, Value>;
 
-pub struct ListOptions<'a> {
-    pub target: &'a PathBuf,
+pub struct ListOptions {
     pub sort: bool,
     pub dir: String,
 }
 
-pub fn listing(list: &ListOptions, opts: &Options) -> Result<Vec<ItemData>, Error> {
-    let mut path = list.target.clone();
+pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &Options) -> Result<Vec<ItemData>, Error> {
+    let mut path: PathBuf = target.as_ref().to_path_buf();
 
     // Resolve using a dir string argument
     if !list.dir.is_empty() {
@@ -49,7 +48,8 @@ pub fn listing(list: &ListOptions, opts: &Options) -> Result<Vec<ItemData>, Erro
     }
 
     if let Some(parent) = path.parent() {
-        return children(&path, parent, &opts);
+        //parent.foo();
+        return children(&path, &parent, &opts);
     }
 
     Ok(vec![])
@@ -60,6 +60,8 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, opts: &Options) -> Result<Ve
 
     let source = &opts.source;
     let target = &opts.target;
+
+    //let p = parent.as_ref();
 
     let rel_base = parent
         .strip_prefix(source)
