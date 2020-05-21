@@ -7,7 +7,7 @@ use serde_json::{json, Value, Map};
 
 use crate::{
     matcher,
-    DataLoader,
+    loader,
     FileType,
     Error,
     Options,
@@ -99,14 +99,12 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
         .strip_prefix(source)
         .unwrap_or(Path::new(""));
 
-    let loader = DataLoader::new(opts);
-
     for result in WalkBuilder::new(parent).max_depth(Some(1)).build() {
         match result {
             Ok(entry) => {
                 let path = entry.path();
                 let mut href = "".to_string();
-                let mut data = DataLoader::create();
+                let mut data: Map<String, Value> = Map::new();
 
                 if path.is_file() {
                     // Ignore self
@@ -131,11 +129,13 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
+                            loader::compute_into(&path, &mut data);
+
                             //loader.load(&path, &mut data);
 
-                            if let Err(e) = loader.load(&path, &mut data) {
-                                return Err(e)
-                            }
+                            //if let Err(e) = loader.load(&path, &mut data) {
+                                //return Err(e)
+                            //}
                         }
                         _ => {}
                     }
@@ -170,10 +170,13 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            if let Err(e) = loader.load(&f, &mut data) {
-                                return Err(e)
-                            }
+                            loader::compute_into(&f, &mut data);
 
+                            //if let Err(e) = loader.load(&f, &mut data) {
+                                //return Err(e)
+                            //}
+                            
+                            break;
                         }
                     }
                 }

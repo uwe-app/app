@@ -1,9 +1,8 @@
-description = "Hyper Text"
-keywords = "fast, static, rust"
+description = "Super fast, opinionated, site generator"
+keywords = "Fast, Static, Rust, Website, Generator"
 
-[index]
-title = "foo title"
+["index"]
+title = "Home"
 
-[foo]
-title = "foo title"
-
+["docs/index"]
+title = "Documentation"

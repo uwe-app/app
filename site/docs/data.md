@@ -1,14 +1,19 @@
 ## Template Data
 
-Data is loaded by first searching for `layout.toml` in the current directory and parents, if a file is found it is used before merging with any document-specific configuration file. This allows us to set global data in `site/layout.toml` and override variables for certain directories if necessary.
+Template data is loaded from `data.toml`.
 
-Document specific data is defined in a file using the same name and the `.toml` extension; this data take precedence over global and directory `layout.toml` files.
+Define global variables first then page-specific data in tables:
 
-### Strict Mode
+```toml
+description = "Super fast, opinionated, site generator"
+keywords = "Fast, Static, Rust, Website, Generator"
 
-Templates are parsed with strict mode enabled so it is an error if a variable does not exist.
+["index"]
+title = "Home"
 
-If you have **not** defined a variable in the root `layout.toml` but refer to it in a `layout.hbs` you can easily generate an error. A good practice to avoid this is to declare all your variables with default values in the `site/layout.toml` file.
+["docs/index"]
+title = "Documentation"
+```
 
 ### Reserved Keywords
 
