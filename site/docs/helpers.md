@@ -24,6 +24,17 @@ If a parameter is passed it prints only the given variable:
 {{json context}}
 ```
 
+### Parent
+
+Get the `href` for a parent directory; typically used for *back* links:
+
+```handlebars
+{{{{raw}}}}
+{{#parent}}
+[Back to documentation]({{href}})
+{{/parent}}{{{{/raw}}}}
+```
+
 ### Table of Contents
 
 Use the `toc` helper to iterate the index of a directory:
@@ -68,3 +79,7 @@ This helper renders markdown; useful in HTML documents.
 This ***is*** some _markdown_ for you to `read`.
 {{/markdown}}{{{{/raw}}}}
 ```
+
+{{#parent}}
+[Back to documentation]({{href}})
+{{/parent}}

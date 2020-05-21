@@ -30,3 +30,6 @@ When the `standalone` field is `true` the document will skip layout processing. 
 
 You can add custom configuration data and access it in the document template.
 
+{{#parent}}
+[Back to documentation]({{href}})
+{{/parent}}

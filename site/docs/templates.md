@@ -22,3 +22,6 @@ Markdown documents are parsed via handlebars before being rendered to HTML which
 {{{{raw}}}}{{> snippet.md}}{{{{/raw}}}}
 ```
 
+{{#parent}}
+[Back to documentation]({{href}})
+{{/parent}}
