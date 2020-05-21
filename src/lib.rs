@@ -7,6 +7,7 @@ mod loader;
 mod matcher;
 mod parser;
 mod template;
+mod tree;
 mod utils;
 
 use build::Builder;
