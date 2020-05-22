@@ -1,4 +1,5 @@
 use std::convert::AsRef;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -77,14 +78,19 @@ pub fn parent<P: AsRef<Path>>(target: P, opts: &Options, data: &mut Map<String, 
 
 fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &Options) -> Option<PathAndHref> {
     let t = target.as_ref();
-    if let Some(p) = t.parent() {
-        if let Ok(rel) = p.strip_prefix(&opts.source) {
-            if let Some(h) = rel.to_str() {
-                let href = format!("/{}/", h);
-                return Some(PathAndHref{href, path: p.to_path_buf()});
-            }
+
+    let stem = t.file_stem().unwrap_or(OsStr::new(""));
+    let mut p = t.parent().unwrap_or(t);
+    if stem == INDEX_STEM {
+        p = p.parent().unwrap_or(p);
+    }
+    if let Ok(rel) = p.strip_prefix(&opts.source) {
+        if let Some(h) = rel.to_str() {
+            let href = format!("/{}/", h);
+            return Some(PathAndHref{href, path: p.to_path_buf()});
         }
     }
+
     None
 }
 

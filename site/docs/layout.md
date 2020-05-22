@@ -6,3 +6,6 @@ For each page (`.md` and `.html`) find a layout template (`layout.hbs`) in the c
 
 If a page has been marked [standalone](/docs/standalone/) no layout is applied.
 
+{{#parent}}
+[Back to documentation]({{href}})
+{{/parent}}
