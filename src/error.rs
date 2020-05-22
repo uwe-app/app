@@ -39,6 +39,13 @@ impl From<handlebars::RenderError> for Error {
     }
 }
 
+
+impl From<toml::de::Error> for Error {
+    fn from(error: toml::de::Error) -> Self {
+        Error::TomlDeserError(error)
+    }
+}
+
 impl From<ignore::Error> for Error {
     fn from(error: ignore::Error) -> Self {
         Error::IgnoreError(error)

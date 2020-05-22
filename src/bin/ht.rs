@@ -93,7 +93,9 @@ fn main() {
         error(format!("not a directory: {}", args.output.display()));
     }
 
-    let mut minify = false;
+    // FIXME: remove minify option
+    let minify = false;
+
     let mut tag = BuildTag::Debug;
     if args.release {
         //minify = true;

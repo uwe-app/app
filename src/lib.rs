@@ -29,7 +29,8 @@ static MD: &str = "md";
 static HTML: &str = "html";
 static TOML: &str = "toml";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
-
+static ROOT_TABLE_KEY: &str = "site";
+static DRAFT_KEY: &str = "draft";
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 

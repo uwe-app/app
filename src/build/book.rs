@@ -6,7 +6,17 @@ use ignore::WalkBuilder;
 use log::{debug, info, warn};
 use mdbook::MDBook;
 
-use crate::{matcher, utils, Error, Options, BOOK_THEME_KEY, BOOK_TOML};
+use crate::{
+    loader,
+    matcher,
+    utils,
+    Error,
+    Options,
+    ROOT_TABLE_KEY,
+    DRAFT_KEY,
+    BOOK_THEME_KEY,
+    BOOK_TOML
+};
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
@@ -30,15 +40,16 @@ impl<'a> BookBuilder<'a> {
         false
     }
 
+    pub fn get_book_config<P: AsRef<Path>>(&self, p: P) -> PathBuf {
+        let mut book = p.as_ref().to_path_buf();
+        book.push(BOOK_TOML);
+        book
+    }
+
     pub fn is_book_dir<P: AsRef<Path>>(&self, p: P) -> bool {
-        let e = p.as_ref();
-        if e.is_dir() {
-            let parent = e.to_path_buf();
-            let mut book = parent.clone();
-            book.push(BOOK_TOML);
-            if book.exists() {
-                return true;
-            }
+        let book = self.get_book_config(p);
+        if book.exists() {
+            return true;
         }
         false
     }
@@ -82,8 +93,31 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&self, p: P) -> Result<(), Error> {
+    pub fn build<P: AsRef<Path>>(&self, p: P, opts: &Options) -> Result<(), Error> {
         let dir = p.as_ref();
+
+        let mut is_draft = false;
+        if opts.release {
+            let conf_result = loader::load_toml_to_json(self.get_book_config(&dir));
+            match conf_result {
+                Ok(map) => {
+                    if let Some(site) = map.get(ROOT_TABLE_KEY) {
+                        if let Some(draft) = site.get(DRAFT_KEY) {
+                            if let Some(val) = draft.as_bool() {
+                                is_draft = val;
+                            }
+                        }
+
+                    }
+                },
+                Err(e) => return Err(e)
+            }
+        }
+
+        if is_draft {
+            return Ok(())
+        }
+
         info!("book {}", dir.display());
 
         let result = MDBook::load(dir);

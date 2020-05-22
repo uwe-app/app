@@ -1,0 +1,10 @@
+{
+  "directory": "build/debug",
+  "watch": "site",
+  "open": true,
+  "build": {
+    "name": "make",
+    "args": ["site"]
+  },
+  "live": true
+}

@@ -12,9 +12,7 @@ use serde_json::{json, Map, Value};
 
 use log::{warn};
 
-use super::{utils, Error, Options, PARSE_EXTENSIONS, DATA_TOML};
-
-static ROOT_TABLE_KEY: &str = "site";
+use super::{utils, Error, Options, ROOT_TABLE_KEY, PARSE_EXTENSIONS, DATA_TOML};
 
 lazy_static! {
     #[derive(Debug)]
@@ -84,6 +82,22 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     }
 
     map
+}
+
+pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {
+    let res = utils::read_string(f).map_err(Error::from);
+    match res {
+        Ok(s) => {
+            let config: Result<TomlMap<String, TomlValue>, Error> = toml::from_str(&s).map_err(Error::from);
+            match config {
+                Ok(props) => {
+                    return Ok(table_to_json_map(&props))
+                }
+                Err(e) => return Err(e)
+            }
+        },
+        Err(e) => return Err(e)
+    }
 }
 
 pub fn load(opts: &Options) -> Result<(), Error> {

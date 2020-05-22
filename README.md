@@ -19,6 +19,10 @@ ht
 
 Get short help with `ht -h` and see more detail with `ht --help`.
 
+## TODO
+
+* Support `ho(1)` for optimization pass to compress HTML etc.
+
 ## Notes
 
 Much inspiration lifted from [mdbook][].

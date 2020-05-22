@@ -112,7 +112,7 @@ impl<'a> Builder<'a> {
                         self.book.add(&path);
 
                         // Build the book
-                        if let Err(e) = self.book.build(&path) {
+                        if let Err(e) = self.book.build(&path, self.options) {
                             return Err(e);
                         }
                     } else if path.is_file() {
