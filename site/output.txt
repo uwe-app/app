@@ -1,18 +1,23 @@
  INFO  ht > release
  INFO  hypertext::build > site/index.md -> build/release/index.html
  INFO  hypertext::build > site/install/index.md -> build/release/install/index.html
- INFO  hypertext::build > site/usage.md -> build/release/usage.html
- INFO  hypertext::build > site/docs/standalone.md -> build/release/docs/standalone.html
+ INFO  hypertext::build > site/usage.md -> build/release/usage/index.html
+ INFO  hypertext::build > site/docs/standalone.md -> build/release/docs/standalone/index.html
+ INFO  hypertext::build > site/docs/helpers/index.md -> build/release/docs/helpers/index.html
+ INFO  hypertext::build > site/docs/helpers/tree.md -> build/release/docs/helpers/tree/index.html
+ INFO  hypertext::build > site/docs/helpers/html.md -> build/release/docs/helpers/html/index.html
+ INFO  hypertext::build > site/docs/helpers/json.md -> build/release/docs/helpers/json/index.html
+ INFO  hypertext::build > site/docs/helpers/parent.md -> build/release/docs/helpers/parent/index.html
+ INFO  hypertext::build > site/docs/helpers/markdown.md -> build/release/docs/helpers/markdown/index.html
  INFO  hypertext::build > site/docs/index.md -> build/release/docs/index.html
- INFO  hypertext::build > site/docs/book.md -> build/release/docs/book.html
- INFO  hypertext::build > site/docs/pages.md -> build/release/docs/pages.html
- INFO  hypertext::build > site/docs/drafts.md -> build/release/docs/drafts.html
- INFO  hypertext::build > site/docs/strict-mode.md -> build/release/docs/strict-mode.html
- INFO  hypertext::build > site/docs/layout.md -> build/release/docs/layout.html
- INFO  hypertext::build > site/docs/ignore.md -> build/release/docs/ignore.html
- INFO  hypertext::build > site/docs/partials.md -> build/release/docs/partials.html
- INFO  hypertext::build > site/docs/helpers.md -> build/release/docs/helpers.html
- INFO  hypertext::build > site/docs/release-tags.md -> build/release/docs/release-tags.html
- INFO  hypertext::build > site/docs/title.md -> build/release/docs/title.html
- INFO  hypertext::build > site/docs/data.md -> build/release/docs/data.html
- INFO  ht               > 10.416045ms
+ INFO  hypertext::build > site/docs/book.md -> build/release/docs/book/index.html
+ INFO  hypertext::build > site/docs/pages.md -> build/release/docs/pages/index.html
+ INFO  hypertext::build > site/docs/drafts.md -> build/release/docs/drafts/index.html
+ INFO  hypertext::build > site/docs/strict-mode.md -> build/release/docs/strict-mode/index.html
+ INFO  hypertext::build > site/docs/layout.md -> build/release/docs/layout/index.html
+ INFO  hypertext::build > site/docs/ignore.md -> build/release/docs/ignore/index.html
+ INFO  hypertext::build > site/docs/partials.md -> build/release/docs/partials/index.html
+ INFO  hypertext::build > site/docs/release-tags.md -> build/release/docs/release-tags/index.html
+ INFO  hypertext::build > site/docs/title.md -> build/release/docs/title/index.html
+ INFO  hypertext::build > site/docs/data.md -> build/release/docs/data/index.html
+ INFO  ht               > 12.89508ms

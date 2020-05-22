@@ -83,8 +83,14 @@ impl<'a> Builder<'a> {
             return Err(e);
         }
 
-        for result in WalkBuilder::new(&self.options.source)
+        let mut target = &self.options.source;
+        if let Some(dir) = &self.options.directory {
+            target = dir;
+        }
+
+        for result in WalkBuilder::new(&target)
             .follow_links(self.options.follow_links)
+            .max_depth(self.options.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
 

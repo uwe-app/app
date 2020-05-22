@@ -61,11 +61,12 @@ pub struct Options {
     pub source: PathBuf,
     pub output: PathBuf,
     pub target: PathBuf,
+    pub directory: Option<PathBuf>,
+    pub max_depth: Option<usize>,
     pub release: bool,
     pub follow_links: bool,
     pub strict: bool,
     pub clean_url: bool,
-    pub minify: bool,
     pub tag: BuildTag,
 }
 

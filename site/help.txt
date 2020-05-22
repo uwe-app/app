@@ -2,10 +2,9 @@ hypertext 0.5.0
 Fast and elegant site generator
 
 USAGE:
-    ht [FLAGS] [OPTIONS] [ARGS]
+    ht [FLAGS] [OPTIONS] [ARGS] [SUBCOMMAND]
 
 FLAGS:
-    -c, --clean-url       Generate clean URLs
     -f, --follow-links    Follow symbolic links
     -h, --help            Prints help information
         --loose           Disable strict mode
@@ -13,9 +12,16 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
+    -d, --directory <directory>    Build input sub-directory
         --log-level <log-level>    Log level [default: info]
+        --max-depth <max-depth>    Maximum depth for recursion
     -t, --tag <tag>                Build tag name
 
 ARGS:
     <input>     Read files from directory [default: site]
     <output>    Write files to directory [default: build]
+
+SUBCOMMANDS:
+    build    Compile a site to the build directory
+    help     Prints this message or the help of the given subcommand(s)
+    init     Create a simple site source directory

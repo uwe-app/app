@@ -21,6 +21,16 @@ struct Cli {
     #[structopt(long, default_value = "info")]
     log_level: String,
 
+    #[structopt(subcommand)]
+    cmd: Option<Command>,
+
+    #[structopt(flatten)]
+    build_opts: BuildOpts,
+
+}
+
+#[derive(StructOpt,Debug)]
+struct BuildOpts {
     /// Build tag name
     #[structopt(short, long)]
     tag: Option<String>,
@@ -29,13 +39,17 @@ struct Cli {
     #[structopt(short, long)]
     follow_links: bool,
 
+    /// Build input sub-directory
+    #[structopt(short, long)]
+    directory: Option<PathBuf>,
+
+    /// Maximum depth for recursion
+    #[structopt(long)]
+    max_depth: Option<usize>,
+
     /// Generate a release build
     #[structopt(short, long)]
     release: bool,
-
-    /// Generate clean URLs
-    #[structopt(short, long)]
-    clean_url: bool,
 
     /// Disable strict mode
     #[structopt(long)]
@@ -50,6 +64,25 @@ struct Cli {
     output: PathBuf,
 }
 
+#[derive(StructOpt,Debug)]
+enum Command {
+    /// Create a simple site source directory
+    Init,
+    /// Compile a site to the build directory
+    Build {
+        #[structopt(flatten)]
+        args: BuildOpts,
+    }
+}
+
+impl Command {
+    fn default(cli: Cli) -> Self {
+        Command::Build {
+            args: cli.build_opts
+        }
+    }
+}
+
 fn fatal(e: impl std::error::Error) {
     error!("{}", e);
     std::process::exit(1);
@@ -59,18 +92,103 @@ fn error(s: String) {
     fatal(Error::new(s));
 }
 
-fn main() {
-    let args = Cli::from_args();
+fn process_command(cmd: &Command) {
+    match cmd {
+        Command::Init => {
+            println!("Got init command");
+        },
+        Command::Build {ref args} => {
 
-    match &*args.log_level {
-        "trace" => env::set_var(LOG_ENV_NAME, args.log_level),
-        "debug" => env::set_var(LOG_ENV_NAME, args.log_level),
-        "info" => env::set_var(LOG_ENV_NAME, args.log_level),
-        "warn" => env::set_var(LOG_ENV_NAME, args.log_level),
-        "error" => env::set_var(LOG_ENV_NAME, args.log_level),
+            if !args.input.is_dir() {
+                error(format!("not a directory: {}", args.input.display()));
+            }
+
+            if !args.output.exists() {
+                if let Err(e) = fs::create_dir(&args.output) {
+                    fatal(e);
+                }
+            }
+
+            if !args.output.is_dir() {
+                error(format!("not a directory: {}", args.output.display()));
+            }
+
+            let mut tag_target = BuildTag::Debug;
+            if args.release {
+                tag_target = BuildTag::Release;
+            }
+
+            if let Some(t) = &args.tag {
+                if !t.is_empty() {
+                    tag_target = BuildTag::Custom(t.to_string());
+                }
+            }
+
+            let target_dir = tag_target.get_path_name();
+            info!("{}", target_dir);
+
+            let mut target = args.output.clone();
+
+            if !target_dir.is_empty() {
+                let mut target_dir_buf = PathBuf::new();
+                target_dir_buf.push(&target_dir);
+
+                if target_dir_buf.is_absolute() {
+                    error(format!("build tag may not be an absolute path {}", target_dir));
+                }
+
+                target.push(target_dir);
+            }
+
+            let mut dir = None;
+            if let Some(d) = &args.directory {
+                if d.is_absolute() {
+                    error(format!("directory must be relative {}", d.display()));
+                }
+                let mut src = args.input.clone();
+                src.push(d);
+                if !src.exists() {
+                    error(format!("target directory does not exist {}", src.display()));
+                }
+                dir = Some(src);
+            }
+
+            let opts = Options {
+                source: args.input.clone(),
+                target,
+                output: args.output.clone(),
+                directory: dir,
+                max_depth: args.max_depth,
+                follow_links: args.follow_links,
+                clean_url: true,
+                strict: !args.loose,
+                release: args.release,
+                tag: tag_target,
+            };
+
+            let now = SystemTime::now();
+            if let Err(e) = build(opts) {
+                fatal(e);
+            }
+            if let Ok(t) = now.elapsed() {
+                info!("{:?}", t);
+            }
+        }
+    }
+}
+
+fn main() {
+    let root_args = Cli::from_args();
+
+    match &*root_args.log_level {
+        "trace" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
+        "debug" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
+        "info" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
+        "warn" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
+        "error" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
         _ => {
             // Jump a few hoops to pretty print this message
-            let level = &args.log_level;
+            let level = &root_args.log_level;
             env::set_var(LOG_ENV_NAME, "error");
             pretty_env_logger::init_custom_env(LOG_ENV_NAME);
             error(format!("unknown log level: {}", level));
@@ -78,70 +196,13 @@ fn main() {
     }
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-
-    if !args.input.is_dir() {
-        error(format!("not a directory: {}", args.input.display()));
-    }
-
-    if !args.output.exists() {
-        if let Err(e) = fs::create_dir(&args.output) {
-            fatal(e);
+    
+    match &root_args.cmd {
+        Some(cmd) => {
+            process_command(cmd);
+        },
+        None => {
+            process_command(&Command::default(root_args));
         }
-    }
-
-    if !args.output.is_dir() {
-        error(format!("not a directory: {}", args.output.display()));
-    }
-
-    // FIXME: remove minify option
-    let minify = false;
-
-    let mut tag = BuildTag::Debug;
-    if args.release {
-        //minify = true;
-        tag = BuildTag::Release;
-    }
-
-    if let Some(t) = args.tag {
-        if !t.is_empty() {
-            tag = BuildTag::Custom(t);
-        }
-    }
-
-    let target_dir = tag.get_path_name();
-
-    info!("{}", target_dir);
-
-    let mut target = args.output.clone();
-
-    if !target_dir.is_empty() {
-        let mut target_dir_buf = PathBuf::new();
-        target_dir_buf.push(&target_dir);
-
-        if target_dir_buf.is_absolute() {
-            error(format!("build tag may not be an absolute path {}", target_dir));
-        }
-
-        target.push(target_dir);
-    }
-
-    let opts = Options {
-        source: args.input,
-        output: args.output,
-        follow_links: args.follow_links,
-        clean_url: args.clean_url,
-        strict: !args.loose,
-        release: args.release,
-        target,
-        minify,
-        tag,
-    };
-
-    let now = SystemTime::now();
-    if let Err(e) = build(opts) {
-        fatal(e);
-    }
-    if let Ok(t) = now.elapsed() {
-        info!("{:?}", t);
     }
 }

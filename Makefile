@@ -1,14 +1,14 @@
-all: release
+all: site-release
 
 clean:
 	@rm -rf ./target
 
 help:
-	@cargo run -- --help > site/help.txt
+	@cargo run -- -h > site/help.txt
 
 site:
 	@rm -rf ./build/debug
-	@cargo run -- --clean-url
+	@cargo run --
 
 output:
 	@ht --release 2>&1 | tee site/output.txt
