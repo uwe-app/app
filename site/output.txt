@@ -1,6 +1,7 @@
  INFO  ht > release
  INFO  hypertext::build > site/index.md -> build/release/index.html
  INFO  hypertext::build > site/install/index.md -> build/release/install/index.html
+ INFO  hypertext::build > site/usage.md -> build/release/usage.html
  INFO  hypertext::build > site/docs/standalone.md -> build/release/docs/standalone.html
  INFO  hypertext::build > site/docs/index.md -> build/release/docs/index.html
  INFO  hypertext::build > site/docs/command-line.md -> build/release/docs/command-line.html
@@ -15,4 +16,4 @@
  INFO  hypertext::build > site/docs/release-tags.md -> build/release/docs/release-tags.html
  INFO  hypertext::build > site/docs/title.md -> build/release/docs/title.html
  INFO  hypertext::build > site/docs/data.md -> build/release/docs/data.html
- INFO  ht               > 10.180714ms
+ INFO  ht               > 10.135248ms

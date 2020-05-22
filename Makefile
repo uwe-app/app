@@ -4,7 +4,7 @@ clean:
 	@rm -rf ./target
 
 help:
-	@cargo run -- --help > site/template/help.md.hbs
+	@cargo run -- --help > site/help.txt
 
 site:
 	@rm -rf ./build/debug
@@ -13,7 +13,7 @@ site:
 output:
 	@ht --release 2>&1 | tee site/output.txt
 
-site-release: install help output
+site-release: install help output digest
 
 example: install
 	@ht example/layout --tag=layout-example
