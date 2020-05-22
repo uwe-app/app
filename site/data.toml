@@ -1,3 +1,4 @@
+[site]
 description = "Super fast, opinionated, site generator"
 keywords = "Fast, Static, Rust, Website, Generator"
 

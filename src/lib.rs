@@ -23,6 +23,7 @@ static TEMPLATE_EXT: &str = ".hbs";
 static THEME: &str = "theme";
 static LAYOUT_HBS: &str = "layout.hbs";
 static LAYOUT_TOML: &str = "layout.toml";
+static DATA_TOML: &str = "data.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
 static TOML: &str = "toml";

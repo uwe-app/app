@@ -130,7 +130,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            loader::compute_into(&path, &mut data);
+                            data = loader::compute(&path);
 
                         }
                         _ => {}
@@ -166,7 +166,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &O
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            loader::compute_into(&f, &mut data);
+                            data = loader::compute(&f);
 
                             break;
                         }
