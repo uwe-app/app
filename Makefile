@@ -24,12 +24,19 @@ example: install
 fmt:
 	@cargo fmt
 
+digest:
+	@sha256sum site/files/* > site/download/sha256.txt
+
 build:
 	@cargo build
 
-release:
+build-release:
 	@cargo build --release
+
+copy-release:
 	@cp -f target/release/ht site/files/ht-gnu-linux-x86_64
+
+release: build-release copy-release digest
 
 check:
 	@cargo check
@@ -37,4 +44,4 @@ check:
 install: release
 	@cp -f target/release/ht $(HOME)/bin
 
-.PHONY: all site site-release clean install
+.PHONY: all site site-release checksum clean install
