@@ -8,3 +8,7 @@ This helper renders markdown; useful in HTML documents.
 This ***is*** some _markdown_ for you to `read`.
 {{/markdown}}{{{{/raw}}}}
 ```
+
+{{#parent}}
+[Back to helpers]({{href}})
+{{/parent}}

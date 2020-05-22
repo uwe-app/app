@@ -78,7 +78,6 @@ pub fn parent<P: AsRef<Path>>(target: P, opts: &Options, data: &mut Map<String, 
 
 fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &Options) -> Option<PathAndHref> {
     let t = target.as_ref();
-
     let stem = t.file_stem().unwrap_or(OsStr::new(""));
     let mut p = t.parent().unwrap_or(t);
     if stem == INDEX_STEM {
@@ -90,7 +89,6 @@ fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &Options) -> Option<Path
             return Some(PathAndHref{href, path: p.to_path_buf()});
         }
     }
-
     None
 }
 

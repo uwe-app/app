@@ -1,6 +1,6 @@
 ## Parent
 
-Get the `href` for a parent directory; typically used for *back* links:
+Get the `href` for a parent directory; typically used for back links:
 
 ```handlebars
 {{{{raw}}}}
@@ -9,3 +9,6 @@ Get the `href` for a parent directory; typically used for *back* links:
 {{/parent}}{{{{/raw}}}}
 ```
 
+{{#parent}}
+[Back to helpers]({{href}})
+{{/parent}}

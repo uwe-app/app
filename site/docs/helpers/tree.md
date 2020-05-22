@@ -10,3 +10,6 @@ Use the `toc` helper to iterate the index of a directory:
 
 The computed data for each destination is available and `href` which points to the destination for the source file.
 
+{{#parent}}
+[Back to helpers]({{href}})
+{{/parent}}
