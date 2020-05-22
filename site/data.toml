@@ -8,3 +8,6 @@ title = "Home"
 
 ["docs/index"]
 title = "Documentation"
+
+["install/index"]
+digest_url = "https://github.com/tmpfs/hypertext/blob/master/sha256.txt"

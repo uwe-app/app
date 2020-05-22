@@ -23,7 +23,7 @@ fmt:
 	@cargo fmt
 
 digest:
-	@sha256sum site/files/* > site/download/sha256.txt
+	@sha256sum site/files/* > sha256.txt
 
 build:
 	@cargo build
