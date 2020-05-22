@@ -96,7 +96,7 @@ fn main() {
     let mut minify = false;
     let mut tag = BuildTag::Debug;
     if args.release {
-        minify = true;
+        //minify = true;
         tag = BuildTag::Release;
     }
 
