@@ -29,6 +29,7 @@ build:
 
 release:
 	@cargo build --release
+	@cp -f target/release/ht site/files/ht-gnu-linux-x86_64
 
 check:
 	@cargo check
