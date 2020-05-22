@@ -21,7 +21,7 @@ impl<'a> TemplateRender<'a> {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(options.strict);
 
-        handlebars.register_helper("toc", Box::new(helpers::toc::Toc));
+        handlebars.register_helper("tree", Box::new(helpers::tree::Tree));
         handlebars.register_helper("html", Box::new(helpers::html::Element));
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("markdown", Box::new(helpers::markdown::Markdown));

@@ -7,9 +7,9 @@ use crate::{tree,Options};
 use crate::tree::*;
 
 #[derive(Clone, Copy)]
-pub struct Toc;
+pub struct Tree;
 
-impl HelperDef for Toc {
+impl HelperDef for Tree {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

@@ -3,9 +3,9 @@
 Helpers are here to make life easier.
 
 <ul>
-{{#toc}}
+{{#tree}}
 <li><a href="{{href}}">{{title}}</a></li>
-{{/toc}}
+{{/tree}}
 </ul>
 
 {{#parent}}

@@ -1,8 +1,8 @@
 ## Docs
 
 <ul>
-{{#toc}}
+{{#tree}}
 <li><a href="{{href}}">{{title}}</a></li>
-{{/toc}}
+{{/tree}}
 </ul>
 
