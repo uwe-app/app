@@ -9,12 +9,12 @@ use std::convert::AsRef;
 use std::path::Path;
 
 use serde_json::{Map, Value};
-
 use inflector::Inflector;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
-use super::Options;
+use super::{Options, INDEX_STEM};
+use super::minify;
 
 use log::debug;
 
@@ -84,7 +84,17 @@ pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()
     write_all(output, content.as_bytes())
 }
 
-const INDEX_STEM: &'static str = "index";
+pub fn write_string_minify<P: AsRef<Path>>(output: P, content: String) -> io::Result<()> {
+    let o = output.as_ref();
+    if let Some(parent) = o.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let mut file = File::create(o)?;
+    minify::minify(&mut content.as_bytes(), &mut file)
+
+    //write_all(output, content.as_bytes())
+}
 
 // Convert a file name to title case
 pub fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {

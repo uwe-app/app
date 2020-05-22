@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use ignore::WalkBuilder;
 use log::{debug, info};
-use minify::html::minify;
 
 mod book;
 
@@ -53,7 +52,7 @@ impl<'a> Builder<'a> {
                 match result {
                     Ok(s) => {
                         if self.options.minify {
-                            return utils::write_string(dest, minify(&s)).map_err(Error::from);
+                            return utils::write_string_minify(dest, s).map_err(Error::from);
                         } else {
                             return utils::write_string(dest, s).map_err(Error::from);
                         }
