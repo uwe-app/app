@@ -1,6 +1,6 @@
 [site]
-description = "Super fast, opinionated, site generator"
-keywords = "Fast, Static, Rust, Website, Generator"
+description = "Fast and elegant site generator"
+keywords = "Fast, Static, Website, Generator, Markdown, Handlebars, Mdbook, Rust"
 repo_url = "https://github.com/tmpfs/hypertext"
 
 ["index"]
