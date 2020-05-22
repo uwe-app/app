@@ -51,11 +51,13 @@ impl<'a> Builder<'a> {
                 let result = self.parser.parse(file, file_type, &mut data);
                 match result {
                     Ok(s) => {
-                        if self.options.minify {
-                            return utils::write_string_minify(dest, s).map_err(Error::from);
-                        } else {
-                            return utils::write_string(dest, s).map_err(Error::from);
-                        }
+
+                        return utils::write_string(dest, s).map_err(Error::from)
+                        //if self.options.minify {
+                            //return utils::write_string_minify(dest, s).map_err(Error::from);
+                        //} else {
+                            //return utils::write_string(dest, s).map_err(Error::from);
+                        //}
                     }
                     Err(e) => return Err(e),
                 }

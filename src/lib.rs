@@ -9,7 +9,7 @@ mod helpers;
 mod loader;
 mod matcher;
 mod parser;
-mod minify;
+//mod minify;
 mod template;
 mod tree;
 mod utils;
