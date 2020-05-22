@@ -1,6 +1,10 @@
 ### Usage
 
-Once you have hypertext [installed](/install/) you can get short help with `ht -h` and see more detail with `ht --help`; information on options is in the [command line](/docs/command-line/) docs.
+Once you have hypertext [installed](/install/) you can get short help with `ht -h` and see more detail with `ht --help`:
+
+```
+{{include help.txt}}
+```
 
 Process all files in `site` and write the result to `build/release`.
 

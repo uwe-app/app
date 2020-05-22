@@ -14,7 +14,7 @@ use hypertext::{build, BuildTag, Error, Options};
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
 #[derive(Debug, StructOpt)]
-/// Static site generator with mdbook support
+/// Fast and elegant site generator
 #[structopt(name = "hypertext")]
 struct Cli {
     /// Log level

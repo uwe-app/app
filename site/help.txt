@@ -1,5 +1,5 @@
 hypertext 0.5.0
-Static site generator with mdbook support
+Fast and elegant site generator
 
 USAGE:
     ht [FLAGS] [OPTIONS] [ARGS]
