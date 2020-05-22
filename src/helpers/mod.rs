@@ -7,6 +7,7 @@ pub mod toc;
 pub mod json;
 pub mod markdown;
 pub mod parent;
+pub mod include;
 
 pub struct BufferedOutput {
     buffer: String,

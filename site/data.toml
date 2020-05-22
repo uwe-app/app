@@ -1,6 +1,7 @@
 [site]
 description = "Super fast, opinionated, site generator"
 keywords = "Fast, Static, Rust, Website, Generator"
+repo_url = "https://github.com/tmpfs/hypertext"
 
 ["index"]
 title = "Home"

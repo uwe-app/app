@@ -26,6 +26,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("markdown", Box::new(helpers::markdown::Markdown));
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
+        handlebars.register_helper("include", Box::new(helpers::include::Include));
 
         TemplateRender {
             options,

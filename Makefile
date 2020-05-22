@@ -6,16 +6,14 @@ clean:
 help:
 	@cargo run -- --help > site/template/help.md.hbs
 
-output:
-	@ht > site/template/output.md.hbs 2>&1
-
 site:
 	@rm -rf ./build/debug
 	@cargo run -- --clean-url
 
+output:
+	@ht --release 2>&1 | tee site/output.txt
+
 site-release: install help output
-	@rm -rf ./build/release
-	@ht --release
 
 example: install
 	@ht example/layout --tag=layout-example
@@ -31,6 +29,7 @@ build:
 	@cargo build
 
 build-release:
+	@rm -rf ./build/debug
 	@cargo build --release
 
 copy-release:
