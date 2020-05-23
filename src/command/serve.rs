@@ -30,12 +30,12 @@ pub struct ServeOptions {
 }
 
 impl ServeOptions {
-    pub fn new(target: PathBuf, watch: PathBuf) -> Self {
+    pub fn new(target: PathBuf, watch: PathBuf, host: String, port: String) -> Self {
         ServeOptions {
             target,
             watch: Some(watch),
-            host: "localhost".to_string(),
-            port: "8989".to_string(),
+            host,
+            port,
             open_browser: true,
         } 
     }

@@ -38,6 +38,8 @@ pub struct BuildOptions {
     pub tag: BuildTag,
     pub live: bool,
     pub livereload: Option<String>,
+    pub host: String,
+    pub port: String,
 }
 
 pub fn build(mut options: BuildOptions) -> Result<(), Error> {
@@ -46,21 +48,19 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     }
 
     if options.live {
-        // FIXME: get host/port from options
-        let host = "localhost";
-        let port = "8989";
-        let url = format!("ws://{}:{}/{}", host, port, LIVE_RELOAD_ENDPOINT);
-        options.livereload = Some(url)
+        let url = format!("ws://{}:{}/{}", options.host, options.port, LIVE_RELOAD_ENDPOINT);
+        options.livereload = Some(url);
     }
 
     let mut builder = Builder::new(&options);
     builder.build()?;
 
     if options.live {
-        // TODO: pass host and port in
         let opts = ServeOptions::new(
             options.target.clone(),
-            options.source.clone());
+            options.source.clone(),
+            options.host.to_owned(),
+            options.port.to_owned());
 
         serve(opts, move |paths, source_dir| {
             info!("changed({}) in {}", paths.len(), source_dir.display());

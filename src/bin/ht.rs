@@ -32,7 +32,6 @@ struct Cli {
 
     #[structopt(flatten)]
     build_opts: BuildOpts,
-
 }
 
 #[derive(StructOpt,Debug)]
@@ -65,6 +64,9 @@ struct BuildOpts {
     #[structopt(long)]
     loose: bool,
 
+    #[structopt(flatten)]
+    server: WebServerOpts,
+
     /// Read files from directory
     #[structopt(parse(from_os_str), default_value = "site")]
     input: PathBuf,
@@ -88,17 +90,23 @@ struct InitOpts {
 
 #[derive(StructOpt,Debug)]
 struct ServeOpts {
+    #[structopt(flatten)]
+    server: WebServerOpts,
+
+    /// Target directory to serve files from
+    #[structopt(parse(from_os_str))]
+    target: PathBuf,
+}
+
+#[derive(StructOpt,Debug)]
+struct WebServerOpts {
     /// The name of the host
     #[structopt(short, long, default_value = "localhost")]
     host: String,
 
     /// The port number
-    #[structopt(short, long, default_value = "8989")]
+    #[structopt(short, long, default_value = "3000")]
     port: String,
-
-    /// Target directory to serve files from
-    #[structopt(parse(from_os_str))]
-    target: PathBuf,
 }
 
 #[derive(StructOpt,Debug)]
@@ -161,8 +169,8 @@ fn process_command(cmd: &Command) {
         } => {
             let opts = ServeOptions {
                 target: args.target.clone(),
-                host: args.host.clone(),
-                port: args.port.clone(),
+                host: args.server.host.to_owned(),
+                port: args.server.port.to_owned(),
                 open_browser: true,
                 watch: None,
             };
@@ -244,6 +252,8 @@ fn process_command(cmd: &Command) {
                 live: args.live,
                 livereload: None,
                 tag: tag_target,
+                host: args.server.host.to_owned(),
+                port: args.server.port.to_owned(),
             };
 
             let now = SystemTime::now();
