@@ -9,7 +9,13 @@ use std::time::SystemTime;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use hypertext::{build, BuildTag, Error, ServeOptions, InitOptions, Options};
+use hypertext::{
+    BuildTag,
+    Error,
+    Options,
+    ServeOptions,
+    InitOptions,
+};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -236,7 +242,7 @@ fn process_command(cmd: &Command) {
             };
 
             let now = SystemTime::now();
-            if let Err(e) = build(opts) {
+            if let Err(e) = hypertext::build(opts) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {
