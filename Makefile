@@ -13,13 +13,21 @@ init-tacit:
 	@cargo run -- init --template=tacit ./build/init-tacit
 	@cargo run -- build ./build/init-tacit/site ./build/init-tacit/build
 
+init-bahunya:
+	@rm -rf ./build/init-bahunya
+	@cargo run -- init --template=bahunya ./build/init-bahunya
+	@cargo run -- build ./build/init-bahunya/site ./build/init-bahunya/build
+
 init-newcss-open: init-newcss
-	@(cd ./build/init-newcss && dev -open ./build/debug)
+	@(cd ./build/init-newcss && cargo run -- build --live)
 
 init-tacit-open: init-tacit
-	@(cd ./build/init-tacit && dev -open ./build/debug)
+	@(cd ./build/init-tacit && cargo run -- build --live)
 
-init: init-newcss init-tacit
+init-bahunya-open: init-bahunya
+	@(cd ./build/init-bahunya && cargo run -- build --live)
+
+init: init-newcss init-tacit init-bahunya
 
 help:
 	@cargo run -- -h > site/help.txt
