@@ -66,6 +66,11 @@ struct BuildOpts {
 
 #[derive(StructOpt,Debug)]
 struct InitOpts {
+
+    /// The name of a template to use
+    #[structopt(short, long, default_value = "newcss")]
+    template: String,
+
     /// Target directory to create
     #[structopt(parse(from_os_str))]
     target: PathBuf,
@@ -109,6 +114,7 @@ fn process_command(cmd: &Command) {
         } => {
             let opts = InitOptions {
                 target: args.target.clone(),
+                template: args.template.clone(),
             };
 
             if opts.target.exists() {

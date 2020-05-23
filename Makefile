@@ -3,6 +3,24 @@ all: site-release
 clean:
 	@rm -rf ./target
 
+init-newcss:
+	@rm -rf ./build/init-newcss
+	@cargo run -- init --template=newcss ./build/init-newcss
+	@cargo run -- build ./build/init-newcss/site ./build/init-newcss/build
+
+init-tacit:
+	@rm -rf ./build/init-tacit
+	@cargo run -- init --template=tacit ./build/init-tacit
+	@cargo run -- build ./build/init-tacit/site ./build/init-tacit/build
+
+init-newcss-open: init-newcss
+	@(cd ./build/init-newcss && dev -open ./build/debug)
+
+init-tacit-open: init-tacit
+	@(cd ./build/init-tacit && dev -open ./build/debug)
+
+init: init-newcss init-tacit
+
 help:
 	@cargo run -- -h > site/help.txt
 
