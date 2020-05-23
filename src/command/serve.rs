@@ -17,7 +17,7 @@ use std::sync::mpsc::channel;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::Error;
+use crate::{Error, LIVE_RELOAD_ENDPOINT};
 use log::{info, trace, error, debug};
 
 #[derive(Debug)]
@@ -41,10 +41,10 @@ impl ServeOptions {
     }
 }
 
-// The HTTP endpoint for the websocket used to trigger reloads when a file changes.
-const LIVE_RELOAD_ENDPOINT: &str = "__livereload";
-
-pub fn serve(options: ServeOptions) -> Result<(), Error> {
+pub fn serve<F>(options: ServeOptions, mut callback: F) -> Result<(), Error>
+    where
+        F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
+     {
 
     let address = format!("{}:{}", options.host, options.port);
     let sockaddr: SocketAddr = address
@@ -72,29 +72,12 @@ pub fn serve(options: ServeOptions) -> Result<(), Error> {
 
     if let Some(p) = options.watch {
         let source_dir = p.as_path();
-    
         #[cfg(feature = "watch")]
         trigger_on_change(source_dir, move |paths, source_dir| {
-            info!("Building {}", source_dir.display());
-            info!("Files changed: {:?}", paths);
-
-            // FIXME: This area is really ugly because we need to re-set livereload :(
-            //let result = MDBook::load(&book_dir)
-                //.and_then(|mut b| {
-                    //b.config
-                        //.set("output.html.livereload-url", &livereload_url)?;
-                    //Ok(b)
-                //})
-                //.and_then(|b| b.build());
-
-            //if let Err(e) = result {
-                //error!("Unable to load the book");
-                //utils::log_backtrace(&e);
-            //} else {
-                //let _ = tx.send(Message::text("reload"));
-            //}
+            if let Ok(_) = callback(paths, source_dir) {
+                let _ = tx.send(Message::text("reload"));
+            }
         });
-
     }
 
     let _ = thread_handle.join();
@@ -103,10 +86,10 @@ pub fn serve(options: ServeOptions) -> Result<(), Error> {
 }
 
 /// Calls the closure when a book source file is changed, blocking indefinitely.
-pub fn trigger_on_change<P, F>(dir: P, closure: F)
+pub fn trigger_on_change<P, F>(dir: P, mut closure: F)
 where
     P: AsRef<Path>,
-    F: Fn(Vec<PathBuf>, &Path),
+    F: FnMut(Vec<PathBuf>, &Path),
 {
     use notify::DebouncedEvent::*;
     use notify::RecursiveMode::*;

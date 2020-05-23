@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 use crate::build::Builder;
 use crate::build::loader;
 use crate::command::serve::*;
-use crate::Error;
+use crate::{Error, LIVE_RELOAD_ENDPOINT};
+
+use log::{info, debug, error};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildTag {
@@ -35,23 +37,45 @@ pub struct BuildOptions {
     pub clean_url: bool,
     pub tag: BuildTag,
     pub live: bool,
+    pub livereload: Option<String>,
 }
 
-pub fn build(options: BuildOptions) -> Result<(), Error> {
+pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     if let Err(e) = loader::load(&options) {
         return Err(e)
     }
 
-    //let test = Path::new("site/index.md");
-    //println!("{:?}", loader::compute(test));
+    if options.live {
+        // FIXME: get host/port from options
+        let host = "localhost";
+        let port = "8989";
+        let url = format!("ws://{}:{}/{}", host, port, LIVE_RELOAD_ENDPOINT);
+        options.livereload = Some(url)
+    }
 
     let mut builder = Builder::new(&options);
     builder.build()?;
 
     if options.live {
-        let opts = ServeOptions::new(options.target.clone(), options.source.clone());
-        println!("Start live reload logic... {:?}", opts);
-        serve(opts)?;
+        // TODO: pass host and port in
+        let opts = ServeOptions::new(
+            options.target.clone(),
+            options.source.clone());
+
+        serve(opts, move |paths, source_dir| {
+            info!("changed({}) in {}", paths.len(), source_dir.display());
+            debug!("files changed: {:?}", paths);
+
+            let result = builder.build();
+            match result {
+                Err(e) => {
+                    error!("{}", e);
+                }
+                _ => {}
+            }
+
+            Ok(())
+        })?;
     }
 
     Ok(())

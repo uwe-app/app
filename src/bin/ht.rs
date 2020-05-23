@@ -171,7 +171,7 @@ fn process_command(cmd: &Command) {
                 error(format!("directory does not exist: {}", opts.target.display()));
             }
 
-            if let Err(e) = hypertext::serve(opts) {
+            if let Err(e) = hypertext::serve(opts, |_, _| { Ok(()) }) {
                 fatal(e);
             }
         },
@@ -242,6 +242,7 @@ fn process_command(cmd: &Command) {
                 strict: !args.loose,
                 release: args.release,
                 live: args.live,
+                livereload: None,
                 tag: tag_target,
             };
 
