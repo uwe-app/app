@@ -64,6 +64,13 @@ impl<'a> TemplateRender<'a> {
             let mut ctx: Map<String, Value> = Map::new();
             ctx.insert("file".to_string(), json!(filepath));
             ctx.insert("options".to_string(), json!(self.options));
+
+            let mut url = &"".to_string();
+            if let Some(u) = &self.options.livereload {
+                url = u
+            }
+
+            data.insert("livereload".to_string(), json!(url));
             data.insert("context".to_string(), json!(ctx));
 
             debug!("{:?}", data);

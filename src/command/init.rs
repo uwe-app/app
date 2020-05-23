@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use crate::utils;
 use crate::Error;
@@ -12,11 +14,21 @@ struct Asset;
 
 #[derive(Debug)]
 pub struct InitOptions {
-    pub target: PathBuf,
+    pub target: Option<PathBuf>,
     pub template: String,
+    pub list: bool,
 }
 
-static TEMPLATES: [&str; 2] = ["newcss", "tacit"];
+lazy_static! {
+    #[derive(Debug)]
+    pub static ref DATA: Mutex<BTreeMap<String, String>> = {
+        let mut map = BTreeMap::new();
+        map.insert("newcss".to_string(), "https://github.com/xz/new.css".to_string());
+        map.insert("tacit".to_string(), "https://github.com/yegor256/tacit".to_string());
+        map.insert("bahunya".to_string(), "https://github.com/Kimeiga/bahunya".to_string());
+        Mutex::new(map)
+    };
+}
 
 fn copy_file(f: &str, template_name: &str, output: &mut PathBuf) -> Result<(), Error> {
     let mut s = template_name.clone().to_string();
@@ -37,15 +49,25 @@ fn copy_file(f: &str, template_name: &str, output: &mut PathBuf) -> Result<(), E
 
 pub fn init(options: InitOptions) -> Result<(), Error> {
 
+    let data = DATA.lock().unwrap();
     let template_name = options.template;
 
-    if !TEMPLATES.contains(&template_name.as_str()) {
+    if options.list {
+        for (k, v) in data.iter() {
+            info!("{} {}", k, v);
+        }
+        return Ok(())
+    }
+
+    if !data.contains_key(&template_name) {
         return Err(Error::new(format!("unknown template {}", &template_name)))
     }
 
-    let common_name = "common";
+    //if !TEMPLATES.contains(&template_name.as_str()) {
+        //return Err(Error::new(format!("unknown template {}", &template_name)))
+    //}
 
-    info!("init {} using {}", options.target.display(), template_name);
+    let common_name = "common";
 
     let common_files: Vec<&str> = vec![
         "site/.gitignore",
@@ -60,14 +82,26 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         "site/assets/style.css"
     ];
 
-    for f in common_files.iter() {
-        let mut o = options.target.clone();
-        copy_file(f, common_name, &mut o)?;
-    }
+    if let Some(target) = options.target {
 
-    for f in template_files.iter() {
-        let mut o = options.target.clone();
-        copy_file(f, &template_name, &mut o)?;
+        if target.exists() {
+            return Err(
+                Error::new(format!("directory already exists: {}", target.display())));
+        }
+
+
+        info!("init {} using {}", target.display(), template_name);
+
+        for f in common_files.iter() {
+            let mut o = target.clone();
+            copy_file(f, common_name, &mut o)?;
+        }
+        for f in template_files.iter() {
+            let mut o = target.clone();
+            copy_file(f, &template_name, &mut o)?;
+        }
+    } else {
+        return Err(Error::new("init target was not given".to_string()))
     }
 
     Ok(())

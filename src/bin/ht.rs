@@ -83,9 +83,17 @@ struct InitOpts {
     #[structopt(short, long, default_value = "newcss")]
     template: String,
 
+    /// List available templates
+    #[structopt(short, long)]
+    list: bool,
+
     /// Target directory to create
+    ///
+    /// The directory cannot already exist.
     #[structopt(parse(from_os_str))]
-    target: PathBuf,
+    // Not that normally we want a path but when --list
+    // is given clap will error without the Option
+    target: Option<PathBuf>,
 }
 
 #[derive(StructOpt,Debug)]
@@ -151,14 +159,19 @@ fn process_command(cmd: &Command) {
         Command::Init {
             ref args
         } => {
-            let opts = InitOptions {
-                target: args.target.clone(),
-                template: args.template.clone(),
-            };
 
-            if opts.target.exists() {
-                error(format!("directory already exists: {}", opts.target.display()));
+            // FIXME: find a better way to clone the Option
+            // SEE: https://stackoverflow.com/a/58674899/7625589
+            let mut target = None;
+            if let Some(t) = &args.target {
+                target = Some(t.clone());
             }
+
+            let opts = InitOptions {
+                target,
+                template: args.template.clone(),
+                list: args.list,
+            };
 
             if let Err(e) = hypertext::init(opts) {
                 fatal(e);

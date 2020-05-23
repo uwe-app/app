@@ -10,12 +10,15 @@
   </head>
   <body>
     {{> header}}
+    <main>
     {{{template}}}
+    </main>
+    {{> footer}}
     <script src="/assets/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    {{#if context.options.live}}
+    {{#if livereload}}
       <script type="text/javascript">
-          var socket = new WebSocket("{{{context.options.livereload}}}");
+          var socket = new WebSocket("{{{livereload}}}");
           socket.onmessage = (event) => {
               if (event.data === "reload") {
                   socket.close();

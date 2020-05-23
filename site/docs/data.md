@@ -21,6 +21,7 @@ You do not need to specify the file extension for page-specific data but you sho
 These fields are **reserved** keywords:
 
 * `context` Helper context information.
+* `livereload` Websocket URL for live reload.
 * `template` Rendered document content (layouts only).
 
 These fields are configurable:
