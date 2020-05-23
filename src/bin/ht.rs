@@ -161,7 +161,7 @@ fn process_command(cmd: &Command) {
                 host: args.host.clone(),
                 port: args.port.clone(),
                 open_browser: true,
-                watch: true,
+                watch: false,
             };
 
             if !opts.target.exists() {
