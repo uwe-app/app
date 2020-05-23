@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::build::Builder;
 use crate::build::loader;
+use crate::command::serve::*;
 use crate::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,6 +34,7 @@ pub struct BuildOptions {
     pub strict: bool,
     pub clean_url: bool,
     pub tag: BuildTag,
+    pub live: bool,
 }
 
 pub fn build(options: BuildOptions) -> Result<(), Error> {
@@ -44,6 +46,14 @@ pub fn build(options: BuildOptions) -> Result<(), Error> {
     //println!("{:?}", loader::compute(test));
 
     let mut builder = Builder::new(&options);
-    builder.build()
+    builder.build()?;
+
+    if options.live {
+        let opts = ServeOptions::new(options.target.clone(), options.source.clone());
+        println!("Start live reload logic... {:?}", opts);
+        serve(opts)?;
+    }
+
+    Ok(())
 }
 

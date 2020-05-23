@@ -26,7 +26,19 @@ pub struct ServeOptions {
     pub host: String,
     pub port: String,
     pub open_browser: bool,
-    pub watch: bool,
+    pub watch: Option<PathBuf>,
+}
+
+impl ServeOptions {
+    pub fn new(target: PathBuf, watch: PathBuf) -> Self {
+        ServeOptions {
+            target,
+            watch: Some(watch),
+            host: "localhost".to_string(),
+            port: "8989".to_string(),
+            open_browser: true,
+        } 
+    }
 }
 
 // The HTTP endpoint for the websocket used to trigger reloads when a file changes.
@@ -58,8 +70,8 @@ pub fn serve(options: ServeOptions) -> Result<(), Error> {
         open::that(serving_url).map(|_| ()).unwrap_or(());
     }
 
-    if options.watch {
-        let source_dir = Path::new("site");
+    if let Some(p) = options.watch {
+        let source_dir = p.as_path();
     
         #[cfg(feature = "watch")]
         trigger_on_change(source_dir, move |paths, source_dir| {

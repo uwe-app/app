@@ -53,6 +53,10 @@ struct BuildOpts {
     #[structopt(long)]
     max_depth: Option<usize>,
 
+    /// Enable live reload
+    #[structopt(short, long)]
+    live: bool,
+
     /// Generate a release build
     #[structopt(short, long)]
     release: bool,
@@ -84,7 +88,6 @@ struct InitOpts {
 
 #[derive(StructOpt,Debug)]
 struct ServeOpts {
-
     /// The name of the host
     #[structopt(short, long, default_value = "localhost")]
     host: String,
@@ -161,7 +164,7 @@ fn process_command(cmd: &Command) {
                 host: args.host.clone(),
                 port: args.port.clone(),
                 open_browser: true,
-                watch: false,
+                watch: None,
             };
 
             if !opts.target.exists() {
@@ -238,6 +241,7 @@ fn process_command(cmd: &Command) {
                 clean_url: true,
                 strict: !args.loose,
                 release: args.release,
+                live: args.live,
                 tag: tag_target,
             };
 
