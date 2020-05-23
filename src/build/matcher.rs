@@ -10,8 +10,16 @@ pub enum FileType {
     Unknown,
 }
 
-use super::{
-    HTML, INDEX_STEM, LAYOUT_HBS, LAYOUT_TOML, MD, PARSE_EXTENSIONS, TEMPLATE, THEME, TOML,
+use crate::{
+    HTML,
+    INDEX_STEM,
+    LAYOUT_HBS,
+    LAYOUT_TOML,
+    MD,
+    PARSE_EXTENSIONS,
+    TEMPLATE,
+    THEME,
+    TOML,
 };
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {

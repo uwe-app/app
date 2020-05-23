@@ -3,10 +3,17 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use log::{debug, info};
 
-mod book;
+pub mod book;
+pub mod loader;
+pub mod helpers;
+pub mod matcher;
+pub mod parser;
+pub mod template;
 
-use super::{matcher, loader, utils, Error, FileType, Options, Parser, TEMPLATE, TEMPLATE_EXT};
+use super::{utils, Error, Options, TEMPLATE, TEMPLATE_EXT};
 use book::BookBuilder;
+use matcher::FileType;
+use parser::Parser;
 
 pub struct Builder<'a> {
     options: &'a Options,

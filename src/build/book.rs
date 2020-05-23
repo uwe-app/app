@@ -6,9 +6,10 @@ use ignore::WalkBuilder;
 use log::{debug, info, warn};
 use mdbook::MDBook;
 
+use crate::build::loader;
+use crate::build::matcher;
+
 use crate::{
-    loader,
-    matcher,
     utils,
     Error,
     Options,

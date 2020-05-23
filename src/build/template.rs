@@ -8,7 +8,13 @@ use handlebars::Handlebars;
 
 use log::{debug};
 
-use super::{helpers, utils, Error, Options, LAYOUT_HBS};
+use super::helpers;
+use crate::{
+    utils,
+    Error,
+    Options,
+    LAYOUT_HBS
+};
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {

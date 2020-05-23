@@ -2,7 +2,14 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 
-use super::{FileType, Error, template, utils, Options};
+use crate::{
+    Error, 
+    utils,
+    Options
+};
+
+use super::matcher::FileType;
+use super::template;
 
 use serde_json::{Map, Value};
 

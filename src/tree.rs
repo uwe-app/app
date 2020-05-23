@@ -6,11 +6,12 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use serde_json::{json, Value, Map};
 
+use crate::build::loader;
+use crate::build::matcher;
+use crate::build::matcher::FileType;
+
 use crate::{
-    matcher,
-    loader,
     utils,
-    FileType,
     Error,
     Options,
     HTML,

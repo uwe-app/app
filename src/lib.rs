@@ -4,12 +4,7 @@ extern crate open;
 
 mod build;
 mod error;
-mod helpers;
-mod loader;
-mod matcher;
-mod parser;
 mod command;
-mod template;
 mod tree;
 mod utils;
 
@@ -34,7 +29,4 @@ pub use crate::error::Error;
 pub use crate::command::init::*;
 pub use crate::command::build::*;
 pub use crate::command::serve::*;
-
-use crate::matcher::FileType;
-use crate::parser::Parser;
 

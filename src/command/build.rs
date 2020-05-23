@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::build::Builder;
-use crate::loader;
+use crate::build::loader;
 use crate::Error;
 
 #[derive(Debug, Serialize, Deserialize)]

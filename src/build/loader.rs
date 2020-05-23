@@ -12,7 +12,7 @@ use serde_json::{json, Map, Value};
 
 use log::{warn};
 
-use super::{utils, Error, Options, ROOT_TABLE_KEY, PARSE_EXTENSIONS, DATA_TOML};
+use crate::{utils, Error, Options, ROOT_TABLE_KEY, PARSE_EXTENSIONS, DATA_TOML};
 
 lazy_static! {
     #[derive(Debug)]
