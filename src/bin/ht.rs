@@ -9,7 +9,7 @@ use std::time::SystemTime;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use hypertext::{build, BuildTag, Error, Options};
+use hypertext::{build, BuildTag, Error, InitOptions, Options};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -65,9 +65,19 @@ struct BuildOpts {
 }
 
 #[derive(StructOpt,Debug)]
+struct InitOpts {
+    /// Target directory to create
+    #[structopt(parse(from_os_str))]
+    target: PathBuf,
+}
+
+#[derive(StructOpt,Debug)]
 enum Command {
-    /// Create a simple site source directory
-    Init,
+    /// Create a website structure
+    Init {
+        #[structopt(flatten)]
+        args: InitOpts,
+    },
     /// Compile a site to the build directory
     Build {
         #[structopt(flatten)]
@@ -94,8 +104,20 @@ fn error(s: String) {
 
 fn process_command(cmd: &Command) {
     match cmd {
-        Command::Init => {
-            println!("Got init command");
+        Command::Init {
+            ref args
+        } => {
+            let opts = InitOptions {
+                target: args.target.clone(),
+            };
+
+            if opts.target.exists() {
+                error(format!("directory already exists: {}", opts.target.display()));
+            }
+
+            if let Err(e) = hypertext::init(opts) {
+                fatal(e);
+            }
         },
         Command::Build {ref args} => {
 

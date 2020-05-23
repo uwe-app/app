@@ -9,7 +9,7 @@ mod helpers;
 mod loader;
 mod matcher;
 mod parser;
-//mod minify;
+mod command;
 mod template;
 mod tree;
 mod utils;
@@ -35,6 +35,7 @@ static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
 pub use crate::error::Error;
+pub use crate::command::init::*;
 
 use crate::matcher::FileType;
 use crate::parser::Parser;
@@ -81,3 +82,4 @@ pub fn build(options: Options) -> Result<(), Error> {
     let mut builder = Builder::new(&options);
     builder.build()
 }
+
