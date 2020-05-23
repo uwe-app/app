@@ -9,7 +9,7 @@ use std::time::SystemTime;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use hypertext::{build, BuildTag, Error, InitOptions, Options};
+use hypertext::{build, BuildTag, Error, ServeOptions, InitOptions, Options};
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -77,16 +77,38 @@ struct InitOpts {
 }
 
 #[derive(StructOpt,Debug)]
+struct ServeOpts {
+
+    /// The name of the host
+    #[structopt(short, long, default_value = "localhost")]
+    host: String,
+
+    /// The port number
+    #[structopt(short, long, default_value = "8989")]
+    port: String,
+
+    /// Target directory to serve files from
+    #[structopt(parse(from_os_str))]
+    target: PathBuf,
+}
+
+#[derive(StructOpt,Debug)]
 enum Command {
-    /// Create a website structure
+    /// Create a site
     Init {
         #[structopt(flatten)]
         args: InitOpts,
     },
-    /// Compile a site to the build directory
+    /// Compile a site
     Build {
         #[structopt(flatten)]
         args: BuildOpts,
+    },
+
+    /// Serve site files
+    Serve {
+        #[structopt(flatten)]
+        args: ServeOpts,
     }
 }
 
@@ -122,6 +144,24 @@ fn process_command(cmd: &Command) {
             }
 
             if let Err(e) = hypertext::init(opts) {
+                fatal(e);
+            }
+        },
+        Command::Serve {
+            ref args
+        } => {
+            let opts = ServeOptions {
+                target: args.target.clone(),
+                host: args.host.clone(),
+                port: args.port.clone(),
+                open_browser: true,
+            };
+
+            if !opts.target.exists() {
+                error(format!("directory does not exist: {}", opts.target.display()));
+            }
+
+            if let Err(e) = hypertext::serve(opts) {
                 fatal(e);
             }
         },

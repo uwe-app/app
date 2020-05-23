@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate lazy_static;
 
+extern crate open;
+
 use std::path::PathBuf;
 
 mod build;
@@ -36,6 +38,7 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 
 pub use crate::error::Error;
 pub use crate::command::init::*;
+pub use crate::command::serve::*;
 
 use crate::matcher::FileType;
 use crate::parser::Parser;
