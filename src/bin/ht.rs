@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use hypertext::{
     BuildTag,
     Error,
-    Options,
+    BuildOptions,
     ServeOptions,
     InitOptions,
 };
@@ -228,7 +228,7 @@ fn process_command(cmd: &Command) {
                 dir = Some(src);
             }
 
-            let opts = Options {
+            let opts = BuildOptions {
                 source: args.input.clone(),
                 target,
                 output: args.output.clone(),

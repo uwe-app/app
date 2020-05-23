@@ -10,19 +10,19 @@ pub mod matcher;
 pub mod parser;
 pub mod template;
 
-use super::{utils, Error, Options, TEMPLATE, TEMPLATE_EXT};
+use super::{utils, Error, BuildOptions, TEMPLATE, TEMPLATE_EXT};
 use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
 
 pub struct Builder<'a> {
-    options: &'a Options,
+    options: &'a BuildOptions,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(options: &'a Options) -> Self {
+    pub fn new(options: &'a BuildOptions) -> Self {
         let book = BookBuilder::new(options);
 
         // Parser must exist for the entire lifetime so that

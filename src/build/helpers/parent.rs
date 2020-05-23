@@ -3,7 +3,7 @@ use std::path::Path;
 use handlebars::*;
 use serde_json::{json, Map};
 
-use crate::{tree, Options};
+use crate::{tree, BuildOptions};
 
 #[derive(Clone, Copy)]
 pub struct Parent;
@@ -31,7 +31,7 @@ impl HelperDef for Parent{
             .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
             .to_owned();
 
-        let opts: Options = serde_json::from_value(json!(opts)).unwrap();
+        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         //println!("got parent macro {:?}", path);

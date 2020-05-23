@@ -12,18 +12,18 @@ use super::helpers;
 use crate::{
     utils,
     Error,
-    Options,
+    BuildOptions,
     LAYOUT_HBS
 };
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
-    options: &'a Options,
+    options: &'a BuildOptions,
     handlebars: Handlebars<'a>,
 }
 
 impl<'a> TemplateRender<'a> {
-    pub fn new(options: &'a Options) -> Self {
+    pub fn new(options: &'a BuildOptions) -> Self {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(options.strict);
 

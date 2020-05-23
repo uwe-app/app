@@ -12,7 +12,7 @@ use serde_json::{json, Map, Value};
 
 use log::{warn};
 
-use crate::{utils, Error, Options, ROOT_TABLE_KEY, PARSE_EXTENSIONS, DATA_TOML};
+use crate::{utils, Error, BuildOptions, ROOT_TABLE_KEY, PARSE_EXTENSIONS, DATA_TOML};
 
 lazy_static! {
     #[derive(Debug)]
@@ -21,7 +21,7 @@ lazy_static! {
     };
 }
 
-fn find_file_for_key(k: &str, opts: &Options) -> Option<PathBuf> {
+fn find_file_for_key(k: &str, opts: &BuildOptions) -> Option<PathBuf> {
     let mut pth = PathBuf::new();
     pth.push(&opts.source);
     pth.push(&k);
@@ -100,7 +100,7 @@ pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Err
     }
 }
 
-pub fn load(opts: &Options) -> Result<(), Error> {
+pub fn load(opts: &BuildOptions) -> Result<(), Error> {
     let mut src = opts.source.to_path_buf();
     src.push(DATA_TOML);
 

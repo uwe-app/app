@@ -54,7 +54,8 @@ pub fn serve(options: ServeOptions) -> Result<(), Error> {
     info!("serve {}", serving_url);
 
     if options.open_browser {
-        open::that(serving_url);
+        // It is ok if this errors we just don't open a browser window
+        open::that(serving_url).map(|_| ()).unwrap_or(());
     }
 
     if options.watch {

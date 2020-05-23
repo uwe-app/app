@@ -22,7 +22,7 @@ impl BuildTag {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Options {
+pub struct BuildOptions {
     pub source: PathBuf,
     pub output: PathBuf,
     pub target: PathBuf,
@@ -35,7 +35,7 @@ pub struct Options {
     pub tag: BuildTag,
 }
 
-pub fn build(options: Options) -> Result<(), Error> {
+pub fn build(options: BuildOptions) -> Result<(), Error> {
     if let Err(e) = loader::load(&options) {
         return Err(e)
     }

@@ -12,7 +12,7 @@ use crate::build::matcher;
 use crate::{
     utils,
     Error,
-    Options,
+    BuildOptions,
     ROOT_TABLE_KEY,
     DRAFT_KEY,
     BOOK_THEME_KEY,
@@ -21,11 +21,11 @@ use crate::{
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
-    options: &'a Options,
+    options: &'a BuildOptions,
 }
 
 impl<'a> BookBuilder<'a> {
-    pub fn new(options: &'a Options) -> Self {
+    pub fn new(options: &'a BuildOptions) -> Self {
         let books: Vec<PathBuf> = Vec::new();
         BookBuilder { books, options }
     }
@@ -94,7 +94,7 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&self, p: P, opts: &Options) -> Result<(), Error> {
+    pub fn build<P: AsRef<Path>>(&self, p: P, opts: &BuildOptions) -> Result<(), Error> {
         let dir = p.as_ref();
 
         let mut is_draft = false;

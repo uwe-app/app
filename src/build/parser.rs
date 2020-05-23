@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::{
     Error, 
     utils,
-    Options
+    BuildOptions
 };
 
 use super::matcher::FileType;
@@ -18,7 +18,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(options: &'a Options) -> Self {
+    pub fn new(options: &'a BuildOptions) -> Self {
         let render = template::TemplateRender::new(options);
         Parser{render}
     }

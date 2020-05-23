@@ -13,12 +13,12 @@ use inflector::Inflector;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
-use super::{Options, INDEX_STEM};
+use super::{BuildOptions, INDEX_STEM};
 //use super::minify;
 
 use log::debug;
 
-pub fn is_draft(data: &Map<String, Value>, opts: &Options) -> bool {
+pub fn is_draft(data: &Map<String, Value>, opts: &BuildOptions) -> bool {
     if opts.release {
         if let Some(val) = data.get("draft") {
             return val.as_bool().is_some()

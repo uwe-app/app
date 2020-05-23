@@ -13,7 +13,7 @@ use crate::build::matcher::FileType;
 use crate::{
     utils,
     Error,
-    Options,
+    BuildOptions,
     HTML,
     INDEX_HTML,
     INDEX_STEM,
@@ -34,7 +34,7 @@ pub struct ListOptions {
     pub dir: String,
 }
 
-pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &Options) -> Result<Vec<ItemData>, Error> {
+pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &BuildOptions) -> Result<Vec<ItemData>, Error> {
     let mut path: PathBuf = target.as_ref().to_path_buf();
 
     // Resolve using a dir string argument
@@ -67,7 +67,7 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &Options) ->
 
 // Try to find a parent and load into data
 // if a parent could be located.
-pub fn parent<P: AsRef<Path>>(target: P, opts: &Options, data: &mut Map<String, Value>) -> Result<(), Error> {
+pub fn parent<P: AsRef<Path>>(target: P, opts: &BuildOptions, data: &mut Map<String, Value>) -> Result<(), Error> {
     if let Some(p) = resolve_parent_href(target, &opts) {
         //println!("Found a parent path {:?}", p);
         data.insert("href".to_owned(), json!(p.href));
@@ -77,7 +77,7 @@ pub fn parent<P: AsRef<Path>>(target: P, opts: &Options, data: &mut Map<String, 
     Err(Error::new("Could not resolve parent".to_owned()))
 }
 
-fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &Options) -> Option<PathAndHref> {
+fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &BuildOptions) -> Option<PathAndHref> {
     let t = target.as_ref();
     let stem = t.file_stem().unwrap_or(OsStr::new(""));
     let mut p = t.parent().unwrap_or(t);
@@ -93,7 +93,7 @@ fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &Options) -> Option<Path
     None
 }
 
-fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &Options) -> Result<Vec<ItemData>, Error> {
+fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &BuildOptions) -> Result<Vec<ItemData>, Error> {
     let mut entries: Vec<ItemData> = Vec::new();
 
     let source = &opts.source;
