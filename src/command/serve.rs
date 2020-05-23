@@ -2,18 +2,23 @@
 // Respect to the original authors.
 
 #[cfg(feature = "watch")]
-//use super::watch;
 use crate::{open};
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::path::PathBuf;
 use tokio::sync::broadcast;
 use warp::ws::Message;
 use warp::Filter;
+use std::convert::AsRef;
+
+use notify::Watcher;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc::channel;
+use std::thread::sleep;
+use std::time::Duration;
 
 use crate::Error;
-use log::{info, trace};
+use log::{info, trace, error, debug};
 
 #[derive(Debug)]
 pub struct ServeOptions {
@@ -21,6 +26,7 @@ pub struct ServeOptions {
     pub host: String,
     pub port: String,
     pub open_browser: bool,
+    pub watch: bool,
 }
 
 // The HTTP endpoint for the websocket used to trigger reloads when a file changes.
@@ -51,31 +57,94 @@ pub fn serve(options: ServeOptions) -> Result<(), Error> {
         open::that(serving_url);
     }
 
-    //#[cfg(feature = "watch")]
-    //watch::trigger_on_change(&book, move |paths, book_dir| {
-        //info!("Files changed: {:?}", paths);
-        //info!("Building book...");
+    if options.watch {
+        let source_dir = Path::new("site");
+    
+        #[cfg(feature = "watch")]
+        trigger_on_change(source_dir, move |paths, source_dir| {
+            info!("Building {}", source_dir.display());
+            info!("Files changed: {:?}", paths);
 
-        //// FIXME: This area is really ugly because we need to re-set livereload :(
-        //let result = MDBook::load(&book_dir)
-            //.and_then(|mut b| {
-                //b.config
-                    //.set("output.html.livereload-url", &livereload_url)?;
-                //Ok(b)
-            //})
-            //.and_then(|b| b.build());
+            // FIXME: This area is really ugly because we need to re-set livereload :(
+            //let result = MDBook::load(&book_dir)
+                //.and_then(|mut b| {
+                    //b.config
+                        //.set("output.html.livereload-url", &livereload_url)?;
+                    //Ok(b)
+                //})
+                //.and_then(|b| b.build());
 
-        //if let Err(e) = result {
-            //error!("Unable to load the book");
-            //utils::log_backtrace(&e);
-        //} else {
-            //let _ = tx.send(Message::text("reload"));
-        //}
-    //});
+            //if let Err(e) = result {
+                //error!("Unable to load the book");
+                //utils::log_backtrace(&e);
+            //} else {
+                //let _ = tx.send(Message::text("reload"));
+            //}
+        });
+
+    }
 
     let _ = thread_handle.join();
 
     Ok(())
+}
+
+/// Calls the closure when a book source file is changed, blocking indefinitely.
+pub fn trigger_on_change<P, F>(dir: P, closure: F)
+where
+    P: AsRef<Path>,
+    F: Fn(Vec<PathBuf>, &Path),
+{
+    use notify::DebouncedEvent::*;
+    use notify::RecursiveMode::*;
+
+    // Create a channel to receive the events.
+    let (tx, rx) = channel();
+
+    let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
+        Ok(w) => w,
+        Err(e) => {
+            error!("Error while trying to watch the files:\n\n\t{:?}", e);
+            std::process::exit(1)
+        }
+    };
+
+    // Add the source directory to the watcher
+    if let Err(e) = watcher.watch(&dir, Recursive) {
+        error!("Error while watching {:?}:\n    {:?}", dir.as_ref().display(), e);
+        std::process::exit(1);
+    };
+
+    //let _ = watcher.watch(book.theme_dir(), Recursive);
+    // Add the book.toml file to the watcher if it exists
+    //let _ = watcher.watch(book.root.join("book.toml"), NonRecursive);
+
+    info!("watch {}", dir.as_ref().display());
+
+    loop {
+        let first_event = rx.recv().unwrap();
+        sleep(Duration::from_millis(50));
+        let other_events = rx.try_iter();
+
+        let all_events = std::iter::once(first_event).chain(other_events);
+
+        let paths = all_events
+            .filter_map(|event| {
+                debug!("Received filesystem event: {:?}", event);
+
+                match event {
+                    Create(path) | Write(path) | Remove(path) | Rename(_, path) => Some(path),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        //let paths = remove_ignored_files(&book.root, &paths[..]);
+
+        if !paths.is_empty() {
+            closure(paths, &dir.as_ref());
+        }
+    }
 }
 
 #[tokio::main]
