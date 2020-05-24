@@ -6,7 +6,7 @@ use serde_json::{json, Map, Value};
 
 use handlebars::Handlebars;
 
-use log::{debug};
+use log::{warn, debug};
 
 use super::helpers;
 use crate::{
@@ -97,7 +97,11 @@ impl<'a> TemplateRender<'a> {
         let mut layout_path = PathBuf::new();
         if let Some(path) = data.get("layout") {
             if let Some(name) = path.as_str() {
-                layout_path = Path::new(name).to_path_buf();
+                layout_path = self.options.source.clone();
+                layout_path.push(name);
+                if !layout_path.exists() {
+                    warn!("missing layout {}", layout_path.display());
+                }
             } 
         }
 

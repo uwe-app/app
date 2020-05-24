@@ -18,6 +18,7 @@
  INFO  hypertext::build > site/docs/ignore.md -> build/release/docs/ignore/index.html
  INFO  hypertext::build > site/docs/partials.md -> build/release/docs/partials/index.html
  INFO  hypertext::build > site/docs/release-tags.md -> build/release/docs/release-tags/index.html
+ INFO  hypertext::build > site/docs/clean-locations.md -> build/release/docs/clean-locations/index.html
  INFO  hypertext::build > site/docs/title.md -> build/release/docs/title/index.html
  INFO  hypertext::build > site/docs/data.md -> build/release/docs/data/index.html
- INFO  ht               > 12.975981ms
+ INFO  ht               > 25.156346ms
