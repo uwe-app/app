@@ -109,14 +109,27 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
         match result {
             Ok(entry) => {
                 let path = entry.path();
+
+                // Prevent duplicate index on /folder/ and /folder/index.md
+                if path == parent {
+                    continue;
+                }
+
                 let mut href = "".to_string();
+
+                // NOTE: there is an invalid lint warning on this
+                // NOTE: saying it is not used but we pass it to 
+                // NOTE: the json!() macro later
+                #[allow(unused_assignments)]
+                let mut this: bool = false;
+
                 let mut data: Map<String, Value> = Map::new();
 
+                //println!("children {:?}", path);
+
                 if path.is_file() {
-                    // Ignore self
-                    if path == file.as_ref() {
-                        continue;
-                    }
+
+                    this = path == file.as_ref();
 
                     let file_type = matcher::get_type(path);
                     match file_type {
@@ -141,10 +154,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                         _ => {}
                     }
                 } else {
-                    // Ignore self
-                    if path == parent {
-                        continue;
-                    }
+                    this = path == parent;
 
                     // For directories try to find a potential index
                     // file and generate a destination
@@ -188,7 +198,9 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                             href.truncate(href.len() - INDEX_HTML.len());
                         }
                     }
+
                     data.insert("href".to_owned(), json!(href));
+                    data.insert("self".to_owned(), json!(this));
                     entries.push(data);
                 }
             }
