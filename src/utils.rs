@@ -3,7 +3,6 @@ use std::io;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::Write;
-use std::path::PathBuf;
 
 use std::convert::AsRef;
 use std::path::Path;
@@ -27,6 +26,7 @@ pub fn is_draft(data: &Map<String, Value>, opts: &BuildOptions) -> bool {
     false
 }
 
+/*
 pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Option<PathBuf> {
     if let Some(p) = input.as_ref().parent() {
         for p in p.ancestors() {
@@ -46,6 +46,7 @@ pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Opt
     }
     None
 }
+*/
 
 pub fn read_string<P: AsRef<Path>>(input: P) -> io::Result<String> {
     let file = File::open(input)?;

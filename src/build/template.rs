@@ -10,7 +10,6 @@ use log::{debug};
 
 use super::helpers;
 use crate::{
-    utils,
     Error,
     BuildOptions,
     LAYOUT_HBS
@@ -82,10 +81,11 @@ impl<'a> TemplateRender<'a> {
 
     pub fn layout(
         &mut self,
-        input: &PathBuf,
+        _input: &PathBuf,
         document: String,
         data: &mut Map<String, Value>,
     ) -> Result<String, Error> {
+
         // Skip layout for standalone documents
         if let Some(val) = data.get("standalone") {
             if let Some(_) = val.as_bool() {
@@ -93,22 +93,37 @@ impl<'a> TemplateRender<'a> {
             }
         }
 
-        if let Some(template) = utils::inherit(&self.options.source, input, LAYOUT_HBS) {
-            let name = template.to_string_lossy().into_owned();
-            if !self.handlebars.has_template(&name) {
-                if let Err(e) = self.handlebars.register_template_file(&name, &template) {
-                    return Err(Error::from(e))
-                }
-            }
-
-            // Inject the result into the layout template data
-            // re-using the same data object
-            data.insert("template".to_owned(), json!(document));
-
-            return self.handlebars.render(&name, data).map_err(Error::from)
+        // See if the file has a specific layout
+        let mut layout_path = PathBuf::new();
+        if let Some(path) = data.get("layout") {
+            if let Some(name) = path.as_str() {
+                layout_path = Path::new(name).to_path_buf();
+            } 
         }
 
-        // Could not resolve a layout so pass back the document
-        Ok(document)
+        // Use a default layout path
+        if layout_path == PathBuf::new() {
+            layout_path = self.options.source.clone();
+            layout_path.push(LAYOUT_HBS);
+        }
+
+        // No layout available so bail
+        if !layout_path.exists() {
+            return Ok(document);
+        }
+
+        let layout_name = layout_path.to_string_lossy().into_owned();
+
+        if !self.handlebars.has_template(&layout_name) {
+            if let Err(e) = self.handlebars.register_template_file(&layout_name, &layout_path) {
+                return Err(Error::from(e))
+            }
+        }
+
+        // Inject the result into the layout template data
+        // re-using the same data object
+        data.insert("template".to_owned(), json!(document));
+
+        self.handlebars.render(&layout_name, data).map_err(Error::from)
     }
 }
