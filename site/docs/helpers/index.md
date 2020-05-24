@@ -3,9 +3,11 @@
 Helpers are here to make life easier.
 
 <ul>
-{{#tree}}
+{{#children}}
+{{#unless self}}
 <li><a href="{{href}}">{{title}}</a></li>
-{{/tree}}
+{{/unless}}
+{{/children}}
 </ul>
 
 {{#parent}}

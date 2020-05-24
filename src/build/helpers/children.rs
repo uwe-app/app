@@ -7,9 +7,9 @@ use crate::{tree,BuildOptions};
 use crate::tree::*;
 
 #[derive(Clone, Copy)]
-pub struct Tree;
+pub struct Children;
 
-impl HelperDef for Tree {
+impl HelperDef for Children {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -49,6 +49,7 @@ impl HelperDef for Tree {
             sort: true,
             sort_key: "title".to_string(),
             dir: dir.to_owned(),
+            depth: 1,
         };
 
         let list_result = tree::listing(&path, &list_opts, &opts);

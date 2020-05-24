@@ -1,17 +1,9 @@
 ## Docs
 
 <ul>
-{{#tree}}
+{{#children}}
 {{#unless self}}
 <li><a href="{{href}}">{{title}}</a></li>
 {{/unless}}
-{{/tree}}
+{{/children}}
 </ul>
-
-
-<ul>
-{{#tree}}
-<li><a href="{{href}}">{{title}}</a></li>
-{{/tree}}
-</ul>
-

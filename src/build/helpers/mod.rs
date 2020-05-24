@@ -3,7 +3,7 @@ use handlebars::*;
 use super::Error;
 
 pub mod html;
-pub mod tree;
+pub mod children;
 pub mod json;
 pub mod markdown;
 pub mod parent;

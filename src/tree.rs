@@ -32,6 +32,7 @@ pub struct ListOptions {
     pub sort: bool,
     pub sort_key: String,
     pub dir: String,
+    pub depth: usize,
 }
 
 pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &BuildOptions) -> Result<Vec<ItemData>, Error> {
@@ -105,7 +106,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
         .strip_prefix(source)
         .unwrap_or(Path::new(""));
 
-    for result in WalkBuilder::new(parent).max_depth(Some(1)).build() {
+    for result in WalkBuilder::new(parent).max_depth(Some(list.depth)).build() {
         match result {
             Ok(entry) => {
                 let path = entry.path();
