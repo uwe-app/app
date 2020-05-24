@@ -15,12 +15,11 @@ use crate::{
     HTML,
     INDEX_STEM,
     LAYOUT_HBS,
-    LAYOUT_TOML,
+    DATA_TOML,
     MD,
     PARSE_EXTENSIONS,
     TEMPLATE,
     THEME,
-    TOML,
 };
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
@@ -44,7 +43,7 @@ pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
     match file.file_name() {
         Some(nm) => {
             if let Some(nm) = nm.to_str() {
-                if nm == LAYOUT_HBS || nm == LAYOUT_TOML {
+                if nm == LAYOUT_HBS || nm == DATA_TOML {
                     return FileType::Private;
                 } else {
                     if let Some(ext) = file.extension() {
@@ -52,8 +51,6 @@ pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
                             return FileType::Markdown;
                         } else if ext == HTML {
                             return FileType::Html;
-                        } else if ext == TOML && has_parse_file_match(file) {
-                            return FileType::Private;
                         }
                     }
                 }
@@ -112,10 +109,24 @@ pub fn destination<P: AsRef<Path>>(
     clean_urls: bool,
 ) -> Result<PathBuf, Error> {
     let pth = file.as_ref();
-    let relative = pth.strip_prefix(source.as_ref());
 
-    println!("matcher replacing {}", source.as_ref().display());
-    println!("matcher relative {:?}", relative);
+    // NOTE: When watching files we can get absolute
+    // NOTE: paths passed for `file` even when `source`
+    // NOTE: is relative. This handles that case by making
+    // NOTE: the `source` absolute based on the current working
+    // NOTE: directory.
+    let mut src: PathBuf = source.as_ref().to_path_buf();
+    if pth.is_absolute() && src.is_relative() {
+        if let Ok(cwd) = std::env::current_dir() {
+            src = cwd.clone();
+            src.push(source.as_ref())
+        }
+    }
+
+    let relative = pth.strip_prefix(src);
+
+    //println!("matcher replacing {}", source.as_ref().display());
+    //println!("matcher relative {:?}", relative);
 
     match relative {
         Ok(relative) => {

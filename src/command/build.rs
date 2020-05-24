@@ -5,7 +5,7 @@ use crate::build::loader;
 use crate::command::serve::*;
 use crate::{Error, LIVE_RELOAD_ENDPOINT};
 
-use log::{info, debug, error};
+use log::{info, debug};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildTag {
@@ -52,13 +52,19 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
         options.livereload = Some(url);
     }
 
+    // FIXME: ensure this is used for watching etc. too
+    let mut target = options.source.clone();
+    if let Some(dir) = &options.directory {
+        target = dir.clone();
+    }
+
     let mut builder = Builder::new(&options);
-    builder.build()?;
+    builder.build(&target)?;
 
     if options.live {
         let opts = ServeOptions::new(
             options.target.clone(),
-            options.source.clone(),
+            target.clone(),
             options.host.to_owned(),
             options.port.to_owned());
 
@@ -66,12 +72,9 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             info!("changed({}) in {}", paths.len(), source_dir.display());
             debug!("files changed: {:?}", paths);
 
-            let result = builder.build_files(paths);
-            match result {
-                Err(e) => {
-                    error!("{}", e);
-                }
-                _ => {}
+            if let Ok(invalidation) = builder.get_invalidation(paths) {
+                debug!("invalidation {:?}", invalidation);
+                builder.invalidate(&target, invalidation)?;
             }
 
             Ok(())

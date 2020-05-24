@@ -100,6 +100,16 @@ pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Err
     }
 }
 
+fn clear() {
+    let mut data = DATA.lock().unwrap();
+    data.clear();
+}
+
+pub fn reload(opts: &BuildOptions) -> Result<(), Error> {
+    clear();
+    load(opts)
+}
+
 pub fn load(opts: &BuildOptions) -> Result<(), Error> {
     let mut src = opts.source.to_path_buf();
     src.push(DATA_TOML);

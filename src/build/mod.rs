@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
-use log::{debug, info};
+use log::{debug, info, error};
 
 pub mod book;
 pub mod loader;
@@ -10,10 +10,17 @@ pub mod matcher;
 pub mod parser;
 pub mod template;
 
-use super::{utils, Error, BuildOptions, TEMPLATE, TEMPLATE_EXT};
+use super::{utils, Error, BuildOptions, TEMPLATE, TEMPLATE_EXT, DATA_TOML, LAYOUT_HBS};
 use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
+
+#[derive(Debug)]
+pub struct Invalidation {
+    data: bool,
+    layout: bool,
+    paths: Vec<PathBuf>,
+}
 
 pub struct Builder<'a> {
     options: &'a BuildOptions,
@@ -79,36 +86,104 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    pub fn build_files(&mut self, paths: Vec<PathBuf>) -> Result<(), Error> {
-        println!("build files {:?}", paths);
+    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
+        let mut invalidation = Invalidation{
+            layout: false,
+            data: false,
+            paths: Vec::new()
+        };
+
+        let mut src = self.options.source.clone();
+        if !src.is_absolute() {
+            if let Ok(cwd) = std::env::current_dir() {
+                src = cwd.clone();
+                src.push(&self.options.source);
+            }
+        }
 
         // TODO: handle data.toml files???
         // TODO: handle layout file change - find dependents???
         // TODO: handle partial file changes - find dependents???
 
-        // NOTE: that the notify logic will give us absolute paths
+        let mut data_file = src.clone();
+        data_file.push(DATA_TOML);
 
-        //let mut abs_source = self.options.source.clone();
-        //if abs_source.is_relative() {
-            //if let Ok(cwd) = std::env::current_dir() {
-                //abs_source = cwd.to_path_buf(); 
-            //}
-        //}
+        let mut layout_file = src.clone();
+        layout_file.push(LAYOUT_HBS);
 
         for path in paths {
-            //let file = path.strip_prefix(&abs_source);
-            println!("process file {:?}", path);
-            let file_type = matcher::get_type(&path);
-            if let Err(e) = self.process_file(path, file_type) {
-                return Err(e)
+            if path == data_file {
+                invalidation.data = true;
+            }else if path == layout_file {
+                invalidation.layout = true;
+            } else {
+                if let Some(name) = path.file_name() {
+                    let nm = name.to_string_lossy().into_owned();
+                    if nm.starts_with(".") {
+                        continue;
+                    }
+                }
+
+                // Prefer relative paths, makes the output much 
+                // easier to read
+                if let Ok(cwd) = std::env::current_dir() {
+                    if let Ok(p) = path.strip_prefix(cwd) {
+                        invalidation.paths.push((*p).to_path_buf());
+                    } else {
+                        invalidation.paths.push(path);
+                    }
+                } else {
+                    invalidation.paths.push(path);
+                }
             }
         }
+
+        //println!("invalidation {:?}", invalidation);
+
+        Ok(invalidation)
+    }
+
+    pub fn invalidate(&mut self, target: &PathBuf, invalidation: Invalidation) -> Result<(), Error> {
+        // FIXME: find out which section of the data.toml changed
+        // FIXME: and ensure only those pages are invalidated
+        
+        // Should we invalidate everything?
+        let mut all = false;
+
+        if invalidation.data {
+            info!("reload {}", DATA_TOML);
+            if let Err(e) = loader::reload(&self.options) {
+                error!("{}", e); 
+            } else {
+                all = true;
+            }
+        }
+
+        if invalidation.layout {
+            all = true;
+        }
+
+        if all {
+            return self.build(target); 
+        } else {
+        
+            for path in invalidation.paths {
+                //println!("process file {:?}", path);
+                let file_type = matcher::get_type(&path);
+                if let Err(e) = self.process_file(path, file_type) {
+                    return Err(e)
+                }
+            }
+        }
+
+        //println!("build files {:?}", invalidation.paths);
+        
 
         Ok(())
     }
 
     // Find files and process each entry.
-    pub fn build(&mut self) -> Result<(), Error> {
+    pub fn build(&mut self, target: &PathBuf) -> Result<(), Error> {
         let mut templates = self.options.source.clone();
         templates.push(TEMPLATE);
         if let Err(e) = self
@@ -116,11 +191,6 @@ impl<'a> Builder<'a> {
             .register_templates_directory(TEMPLATE_EXT, templates.as_path())
         {
             return Err(e);
-        }
-
-        let mut target = &self.options.source;
-        if let Some(dir) = &self.options.directory {
-            target = dir;
         }
 
         for result in WalkBuilder::new(&target)

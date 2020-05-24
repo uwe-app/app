@@ -105,6 +105,8 @@ where
         }
     };
 
+    // FIXME: if --directory we must also watch data.toml and layout.hbs
+
     // Add the source directory to the watcher
     if let Err(e) = watcher.watch(&dir, Recursive) {
         error!("Error while watching {:?}:\n    {:?}", dir.as_ref().display(), e);
