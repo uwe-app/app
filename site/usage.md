@@ -1,6 +1,6 @@
 ## Usage
 
-Once you have hypertext [installed](/install/) you can get help with `ht -h`, a longer form with `ht --help` and more about each command using `ht help <cmd>`.
+Once you have hypertext [installed](/install/) you can get help with `ht --help` and more about each command using `ht help <cmd>`.
 
 As a convenience the most common command `build` is run when no command is given.
 

@@ -30,7 +30,7 @@ init-bahunya-open: init-bahunya
 init: init-newcss init-tacit init-bahunya
 
 help:
-	@cargo run -- -h > site/help.txt
+	@cargo run -- --help > site/help.txt
 
 site:
 	@rm -rf ./build/debug

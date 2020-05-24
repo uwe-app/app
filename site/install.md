@@ -1,9 +1,16 @@
 ## Install
 
-Binary executables are available to download for [linux](/files/ht-gnu-linux-x86_64); just rename the downloaded file to `ht` and put it in your `PATH` (digests are [here]({{digest_url}})).
+Binary executables are available to download for [linux](/files/ht-gnu-linux-x86_64); just put it in your `PATH`. Other platforms can be built from the [source](/source/) which is available upon request. 
 
-Other platforms can be built from [source]({{repo_url}}) if you have the [rust][] toolchain installed. 
+Once you have hypertext [installed](/install/) you can get going with this one-liner:
 
-Once installed you can check out [usage](/usage/) to get started and learn more in the [docs](/docs/).
+```
+ht init project && (cd project && ht --live)
+```
 
-[rust]: https://www.rust-lang.org/
+Which will create a new website in the `project` folder; compile it then launch the site in a browser and watch the `project/site` directory for changes - you can get going right away!
+
+Now you should edit the files in `project/site` and check your changes in the browser.
+
+To learn more check out [usage](/usage/) and the [docs](/docs/).
+
