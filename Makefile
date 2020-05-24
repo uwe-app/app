@@ -1,4 +1,4 @@
-all: site-release
+all: init example site-release
 
 clean:
 	@rm -rf ./target

@@ -20,4 +20,4 @@
  INFO  hypertext::build > site/docs/release-tags.md -> build/release/docs/release-tags/index.html
  INFO  hypertext::build > site/docs/title.md -> build/release/docs/title/index.html
  INFO  hypertext::build > site/docs/data.md -> build/release/docs/data/index.html
- INFO  ht               > 12.89508ms
+ INFO  ht               > 12.975981ms
