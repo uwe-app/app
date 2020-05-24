@@ -52,6 +52,10 @@ struct BuildOpts {
     #[structopt(long)]
     max_depth: Option<usize>,
 
+    /// Disable clean locations
+    #[structopt(long)]
+    html_extension: bool,
+
     /// Enable live reload
     #[structopt(short, long)]
     live: bool,
@@ -259,7 +263,7 @@ fn process_command(cmd: &Command) {
                 directory: dir,
                 max_depth: args.max_depth,
                 follow_links: args.follow_links,
-                clean_url: true,
+                clean_url: !args.html_extension,
                 strict: !args.loose,
                 release: args.release,
                 live: args.live,

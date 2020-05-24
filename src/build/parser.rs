@@ -32,7 +32,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_html(&mut self, input: PathBuf, data: &mut Map<String, Value>) -> Result<String, Error> {
-        let mut result = utils::read_string(&input).map_err(Error::from).unwrap();
+        let mut result = utils::read_string(&input).map_err(Error::from)?;
 
         result = self
             .render
@@ -42,7 +42,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_markdown(&mut self, input: PathBuf, data: &mut Map<String, Value>) -> Result<String, Error> {
-        let content = utils::read_string(&input).map_err(Error::from).unwrap();
+        let content = utils::read_string(&input).map_err(Error::from)?;
 
         let parsed = self
             .render
