@@ -1,6 +1,6 @@
 ## Install
 
-Binary executables are available to download for [linux](/files/ht-gnu-linux-x86_64); just put it in your `PATH`. Other platforms can be built from the [source](/source/) which is available upon request. 
+Binary executables are available to download for [Linux](/files/ht-gnu-linux-x86_64/ht); just put it in your `PATH`. Other platforms can be built from the [source](/source/) which is available upon request. 
 
 Once you have hypertext [installed](/install/) you can get going with this one-liner:
 

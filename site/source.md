@@ -1,6 +1,6 @@
 ## Source
 
-This project is a larger work using various open-source projects; the source code is available on request by sending an email to `muji [at] tmpfs.org`.
+This project is a larger work using various open-source projects; the source code is available on request by sending an email to `muji` at the domain name `tmpfs.org`.
 
 To compile the source code you will need to have the [rust][] toolchain installed.
 
