@@ -66,7 +66,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             info!("changed({}) in {}", paths.len(), source_dir.display());
             debug!("files changed: {:?}", paths);
 
-            let result = builder.build();
+            let result = builder.build_files(paths);
             match result {
                 Err(e) => {
                     error!("{}", e);

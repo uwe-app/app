@@ -11,6 +11,7 @@ pub enum FileType {
 }
 
 use crate::{
+    Error,
     HTML,
     INDEX_STEM,
     LAYOUT_HBS,
@@ -109,9 +110,13 @@ pub fn destination<P: AsRef<Path>>(
     file: P,
     file_type: &FileType,
     clean_urls: bool,
-) -> PathBuf {
+) -> Result<PathBuf, Error> {
     let pth = file.as_ref();
     let relative = pth.strip_prefix(source.as_ref());
+
+    println!("matcher replacing {}", source.as_ref().display());
+    println!("matcher relative {:?}", relative);
+
     match relative {
         Ok(relative) => {
             let mut result = target.as_ref().clone().join(relative);
@@ -126,8 +131,8 @@ pub fn destination<P: AsRef<Path>>(
                 }
                 _ => {}
             }
-            result
+            return Ok(result)
         }
-        Err(e) => panic!(e),
+        Err(e) => return Err(Error::from(e))
     }
 }

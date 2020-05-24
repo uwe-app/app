@@ -43,7 +43,7 @@ impl<'a> Builder<'a> {
             &file,
             &file_type,
             self.options.clean_url,
-        );
+        )?;
 
         match file_type {
             FileType::Unknown => return utils::copy(file, dest).map_err(Error::from),
@@ -73,6 +73,34 @@ impl<'a> Builder<'a> {
                 // Ignore templates here as they are located and
                 // used during the parsing and rendering process
                 debug!("noop {}", file.display());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn build_files(&mut self, paths: Vec<PathBuf>) -> Result<(), Error> {
+        println!("build files {:?}", paths);
+
+        // TODO: handle data.toml files???
+        // TODO: handle layout file change - find dependents???
+        // TODO: handle partial file changes - find dependents???
+
+        // NOTE: that the notify logic will give us absolute paths
+
+        //let mut abs_source = self.options.source.clone();
+        //if abs_source.is_relative() {
+            //if let Ok(cwd) = std::env::current_dir() {
+                //abs_source = cwd.to_path_buf(); 
+            //}
+        //}
+
+        for path in paths {
+            //let file = path.strip_prefix(&abs_source);
+            println!("process file {:?}", path);
+            let file_type = matcher::get_type(&path);
+            if let Err(e) = self.process_file(path, file_type) {
+                return Err(e)
             }
         }
 

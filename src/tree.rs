@@ -127,7 +127,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                                 &path.to_path_buf(),
                                 &file_type,
                                 opts.clean_url,
-                            );
+                            )?;
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
                             }
@@ -162,7 +162,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                                 &f,
                                 &file_type,
                                 opts.clean_url,
-                            );
+                            )?;
 
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();

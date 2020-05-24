@@ -1,4 +1,4 @@
-use std::{error, fmt, io};
+use std::{error, fmt, io, path};
 
 use handlebars;
 use ignore;
@@ -8,6 +8,7 @@ use mdbook;
 pub enum Error {
     Message(String),
     IoError(io::Error),
+    StripPrefixError(path::StripPrefixError),
     TemplateFileError(handlebars::TemplateFileError),
     RenderError(handlebars::RenderError),
     IgnoreError(ignore::Error),
@@ -24,6 +25,12 @@ impl Error {
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Self {
         Error::IoError(error)
+    }
+}
+
+impl From<path::StripPrefixError> for Error {
+    fn from(error: path::StripPrefixError) -> Self {
+        Error::StripPrefixError(error)
     }
 }
 
@@ -57,6 +64,7 @@ impl fmt::Display for Error {
         match *self {
             Error::Message(ref s) => write!(f, "{}", s),
             Error::IoError(ref e) => e.fmt(f),
+            Error::StripPrefixError(ref e) => e.fmt(f),
             Error::TemplateFileError(ref e) => e.fmt(f),
             Error::RenderError(ref e) => e.fmt(f),
             Error::IgnoreError(ref e) => e.fmt(f),
@@ -70,6 +78,7 @@ impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::IoError(ref e) => Some(e),
+            Error::StripPrefixError(ref e) => Some(e),
             Error::TemplateFileError(ref e) => Some(e),
             Error::RenderError(ref e) => Some(e),
             Error::IgnoreError(ref e) => Some(e),
