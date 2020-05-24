@@ -4,7 +4,7 @@ This project is a larger work using various open-source projects; the source cod
 
 To compile the source code you will need to have the [rust][] toolchain installed.
 
-It draws much inspiration from [mdbook][]; much respect and credit to the authors!
+Hypertext draws inspiration from [mdbook][]; much respect and credit to the authors!
 
 Huge thanks to the authors of these projects:
 

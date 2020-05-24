@@ -4,33 +4,46 @@ Once you have hypertext [installed](/install/) you can get help with `ht --help`
 
 As a convenience the most common command `build` is run when no command is given.
 
----
+### Init
+
+To create a new website with some skeleton files use the `init` command:
 
 ```
-{{include help.txt}}
+ht init website
 ```
 
----
+Which will create the folder `website` and all the basic files using the default template. To see available template names run `ht init --list`.
 
-#### Debug
+Once you find one you prefer you can use it with the template option:
 
-For a debug version run `ht` which will process all files in `site` and write the result to `build/debug`.
+```
+ht init --template=tacit website
+```
 
-#### Release
+### Build
 
-For a release version the files are written to `build/release`:
+Now you can enter the new website and create a build:
+
+```
+cd website
+ht
+```
+
+Which will process all files in `site` and write the result to `build/debug`. For a release version the files are written to `build/release`:
 
 ```
 ht --release
 ```
 
-Which produces the output:
+### Live Reload
+
+To live reload files in the browser as you work pass the `--live` option:
 
 ```
-{{ include output.txt }}
+ht --live
 ```
 
-#### Filters
+### Filters
 
 Hypertext is designed to be used on very large sites and offers several options for controlling what to compile.
 
@@ -55,4 +68,22 @@ ht --max-depth=1
 ```
 
 Careful, if you pass `--max-depth=0` nothing is compiled!
+
+### Help
+
+---
+
+```
+{{include help.txt}}
+```
+
+---
+
+### Output
+
+Example output when building this website:
+
+```
+{{ include output.txt }}
+```
 
