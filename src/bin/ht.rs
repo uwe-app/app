@@ -9,6 +9,9 @@ use std::time::SystemTime;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+use std::sync::mpsc::channel;
+use std::net::SocketAddr;
+
 use hypertext::{
     BuildTag,
     Error,
@@ -196,7 +199,9 @@ fn process_command(cmd: &Command) {
                 error(format!("directory does not exist: {}", opts.target.display()));
             }
 
-            if let Err(e) = hypertext::serve(opts, |_, _| { Ok(()) }) {
+            // Create a channel to receive the bind address.
+            let (tx, _rx) = channel::<SocketAddr>();
+            if let Err(e) = hypertext::serve(opts, tx, |_, _| { Ok(()) }) {
                 fatal(e);
             }
         },

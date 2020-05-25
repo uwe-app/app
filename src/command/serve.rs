@@ -16,6 +16,7 @@ use std::convert::AsRef;
 use notify::Watcher;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -43,7 +44,7 @@ impl ServeOptions {
     }
 }
 
-pub fn serve<F>(options: ServeOptions, mut callback: F) -> Result<(), Error>
+pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F) -> Result<(), Error>
     where
         F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
     {
@@ -58,6 +59,24 @@ pub fn serve<F>(options: ServeOptions, mut callback: F) -> Result<(), Error>
     let host = options.host.clone();
     let open_browser = options.open_browser.clone();
 
+    // Create a channel to receive the bind address.
+    let (ctx, crx) = channel::<SocketAddr>();
+
+    let _bind_handle = std::thread::spawn(move || {
+        let addr = crx.recv().unwrap();
+        let serving_url = format!("http://{}:{}", &host, addr.port());
+        info!("serve {}", serving_url);
+        if open_browser {
+            // It is ok if this errors we just don't open a browser window
+            open::that(serving_url).map(|_| ()).unwrap_or(());
+        }
+
+        if let Err(e) = bind.send(addr) {
+            error!("{}", e);
+            std::process::exit(1);
+        }
+    });
+
     // A channel used to broadcast to any websockets to reload when a file changes.
     let (tx, _rx) = tokio::sync::broadcast::channel::<Message>(100);
 
@@ -65,9 +84,8 @@ pub fn serve<F>(options: ServeOptions, mut callback: F) -> Result<(), Error>
     let thread_handle = std::thread::spawn(move || {
         serve_web(
             build_dir,
-            &host,
-            open_browser,
             sockaddr,
+            ctx,
             reload_tx);
     });
 
@@ -146,9 +164,8 @@ where
 #[tokio::main]
 async fn serve_web(
     build_dir: PathBuf,
-    host: &str,
-    open_browser: bool,
     address: SocketAddr,
+    bind_tx: Sender<SocketAddr>,
     reload_tx: broadcast::Sender<Message>) {
 
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
@@ -172,20 +189,15 @@ async fn serve_web(
             })
         });
 
-    // A warp Filter that serves from the filesystem.
     let static_route = warp::fs::dir(build_dir);
     let routes = livereload.or(static_route);
-
-    //println!("bind socket address is {:?}", address.port());
 
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);
     match bind_result {
         Ok((addr, future)) => {
-            let serving_url = format!("http://{}:{}", host, addr.port());
-            info!("serve {}", serving_url);
-            if open_browser {
-                // It is ok if this errors we just don't open a browser window
-                open::that(serving_url).map(|_| ()).unwrap_or(());
+            if let Err(e) = bind_tx.send(addr) {
+                error!("{}", e);
+                std::process::exit(1);
             }
             future.await;
         },
