@@ -210,7 +210,7 @@ async fn serve_web(
                 }
             })
         })
-        .with(cors);
+        .with(&cors);
 
     let static_route = warp::fs::dir(build_dir);
     let routes = livereload.or(static_route);
