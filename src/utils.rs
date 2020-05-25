@@ -17,6 +17,15 @@ use super::{BuildOptions, INDEX_STEM};
 
 use log::debug;
 
+pub fn generate_id(len: i32) -> String {
+    let mut s: String = "".to_owned();
+    for _ in 0..len {
+        let x = rand::random::<u8>();
+        s.push_str(&format!("{:x}", x));
+    }
+    s
+}
+
 pub fn is_draft(data: &Map<String, Value>, opts: &BuildOptions) -> bool {
     if opts.release {
         if let Some(val) = data.get("draft") {

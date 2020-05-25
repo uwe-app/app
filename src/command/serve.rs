@@ -20,7 +20,7 @@ use std::sync::mpsc::Sender;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::{Error, LIVE_RELOAD_ENDPOINT};
+use crate::{Error};
 use log::{info, trace, error, debug};
 
 #[derive(Debug)]
@@ -30,15 +30,22 @@ pub struct ServeOptions {
     pub port: String,
     pub open_browser: bool,
     pub watch: Option<PathBuf>,
+    pub endpoint: String,
 }
 
 impl ServeOptions {
-    pub fn new(target: PathBuf, watch: PathBuf, host: String, port: String) -> Self {
+    pub fn new(
+        target: PathBuf,
+        watch: PathBuf,
+        host: String,
+        port: String,
+        endpoint: String) -> Self {
         ServeOptions {
             target,
             watch: Some(watch),
             host,
             port,
+            endpoint,
             open_browser: true,
         } 
     }
@@ -81,9 +88,11 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
     let (tx, _rx) = tokio::sync::broadcast::channel::<Message>(100);
 
     let reload_tx = tx.clone();
+    let endpoint = options.endpoint.clone();
     let thread_handle = std::thread::spawn(move || {
         serve_web(
             build_dir,
+            endpoint,
             sockaddr,
             ctx,
             reload_tx);
@@ -164,6 +173,7 @@ where
 #[tokio::main]
 async fn serve_web(
     build_dir: PathBuf,
+    endpoint: String,
     address: SocketAddr,
     bind_tx: Sender<SocketAddr>,
     reload_tx: broadcast::Sender<Message>) {
@@ -175,7 +185,7 @@ async fn serve_web(
     // A warp Filter to handle the livereload endpoint. This upgrades to a
     // websocket, and then waits for any filesystem change notifications, and
     // relays them over the websocket.
-    let livereload = warp::path(LIVE_RELOAD_ENDPOINT)
+    let livereload = warp::path(endpoint)
         .and(warp::ws())
         .and(sender)
         .map(|ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {

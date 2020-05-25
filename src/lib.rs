@@ -6,7 +6,7 @@ mod build;
 mod error;
 mod command;
 mod tree;
-mod utils;
+pub mod utils;
 
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
@@ -22,10 +22,8 @@ static ROOT_TABLE_KEY: &str = "site";
 static DRAFT_KEY: &str = "draft";
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
-static LIVE_RELOAD_ENDPOINT: &str = "__livereload";
 
 pub use crate::error::Error;
 pub use crate::command::init::*;
 pub use crate::command::build::*;
 pub use crate::command::serve::*;
-

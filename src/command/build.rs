@@ -6,12 +6,14 @@ use crate::command::serve::*;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
-use crate::{Error, LIVE_RELOAD_ENDPOINT};
+use crate::{Error};
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
 
 use log::{info, debug};
+
+use crate::utils;
 
 lazy_static! {
     #[derive(Debug)]
@@ -104,8 +106,8 @@ impl BuildOptions {
     }
 }
 
-fn get_websocket_url(options: &BuildOptions, addr: SocketAddr) -> String {
-    format!("ws://{}:{}/{}", options.host, addr.port(), LIVE_RELOAD_ENDPOINT)
+fn get_websocket_url(options: &BuildOptions, addr: SocketAddr, endpoint: &str) -> String {
+    format!("ws://{}:{}/{}", options.host, addr.port(), endpoint)
 }
 
 fn do_build(target: PathBuf, options: BuildOptions) -> Result<(), Error> {
@@ -153,11 +155,15 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
         // Must copy options due to use in multiple closures
         let mut copy = options.clone();
 
+        let endpoint = utils::generate_id(16);
+        let reload_endpoint = endpoint.clone();
+
         let opts = ServeOptions::new(
             options.target.clone(),
             target.clone(),
             options.host.to_owned(),
-            options.port.to_owned());
+            options.port.to_owned(),
+            endpoint.clone());
 
         // Create a channel to receive the bind address.
         let (tx, rx) = channel::<SocketAddr>();
@@ -168,7 +174,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             let mut data = ADDR.lock().unwrap();
             *data = addr;
 
-            let url = get_websocket_url(&options, addr);
+            let url = get_websocket_url(&options, addr, &endpoint);
             options.livereload = Some(url);
 
             do_build(target, options)
@@ -180,7 +186,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
 
             let data = ADDR.lock().unwrap();
 
-            let url = get_websocket_url(&copy, *data);
+            let url = get_websocket_url(&copy, *data, &reload_endpoint);
             copy.livereload = Some(url);
 
             let mut builder = Builder::new(&copy);

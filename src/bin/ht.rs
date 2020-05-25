@@ -20,6 +20,8 @@ use hypertext::{
     InitOptions,
 };
 
+use hypertext::utils;
+
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
 #[derive(Debug, StructOpt)]
@@ -193,6 +195,7 @@ fn process_command(cmd: &Command) {
                 port: args.server.port.to_owned(),
                 open_browser: true,
                 watch: None,
+                endpoint: utils::generate_id(16),
             };
 
             if !opts.target.exists() {
