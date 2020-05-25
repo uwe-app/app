@@ -16,6 +16,7 @@ use hypertext::{
     BuildTag,
     Error,
     BuildOptions,
+    BundleOptions,
     ServeOptions,
     InitOptions,
 };
@@ -127,12 +128,21 @@ struct WebServerOpts {
 }
 
 #[derive(StructOpt,Debug)]
+struct BundleOpts {
+    /// Target directory containing website files to bundle
+    #[structopt(parse(from_os_str))]
+    target: PathBuf,
+}
+
+#[derive(StructOpt,Debug)]
 enum Command {
+
     /// Create a site
     Init {
         #[structopt(flatten)]
         args: InitOpts,
     },
+
     /// Compile a site
     Build {
         #[structopt(flatten)]
@@ -143,6 +153,12 @@ enum Command {
     Serve {
         #[structopt(flatten)]
         args: ServeOpts,
+    },
+
+    /// Bundle a site into executables (requires Go)
+    Bundle {
+        #[structopt(flatten)]
+        args: BundleOpts,
     }
 }
 
@@ -208,6 +224,23 @@ fn process_command(cmd: &Command) {
                 fatal(e);
             }
         },
+
+        Command::Bundle {
+            ref args
+        } => {
+
+            let opts = BundleOptions {
+                target: args.target.clone(),
+            };
+
+            if !opts.target.exists() {
+                error(format!("directory does not exist: {}", opts.target.display()));
+            }
+
+            println!("got bundle command");
+
+        },
+
         Command::Build {ref args} => {
 
             if !args.input.is_dir() {
