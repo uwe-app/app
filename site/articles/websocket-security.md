@@ -33,7 +33,7 @@ ws://localhost:3000/f46011997b3c2f9ed4f72691840a287
 
 The `u8` type has 256 possible values and we are using 16 or them when we generate the endpoint identifier which gives us `256^16` possible values or `3.402823669209385e+38`! This makes it incredibly difficult for any malicious actors to locate the endpoint for the live reload websocket server.
 
-So, unless the page was rendered by our local web server there is very little opportunity to guess the websocket server endpoint!
+So, unless the page was rendered by the `ht` web server there is very little chance to know the websocket server endpoint!
 
 {{#parent}}
 [Back to articles]({{href}})

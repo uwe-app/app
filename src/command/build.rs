@@ -116,6 +116,12 @@ fn do_build(target: PathBuf, options: BuildOptions) -> Result<(), Error> {
 }
 
 pub fn build(mut options: BuildOptions) -> Result<(), Error> {
+
+    if options.live && options.release {
+        return Err(
+            Error::new("live reload is not available for release builds".to_string()))
+    }
+
     if let Err(e) = loader::load(&options) {
         return Err(e)
     }
@@ -173,7 +179,6 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
 
             let mut data = ADDR.lock().unwrap();
             *data = addr;
-
             let url = get_websocket_url(&options, addr, &endpoint);
             options.livereload = Some(url);
 
