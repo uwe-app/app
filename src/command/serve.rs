@@ -64,6 +64,7 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
 
     let build_dir = options.target.clone();
     let host = options.host.clone();
+    let serve_host = host.clone();
     let open_browser = options.open_browser.clone();
 
     // Create a channel to receive the bind address.
@@ -92,6 +93,7 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
     let thread_handle = std::thread::spawn(move || {
         serve_web(
             build_dir,
+            serve_host,
             endpoint,
             sockaddr,
             ctx,
@@ -173,6 +175,7 @@ where
 #[tokio::main]
 async fn serve_web(
     build_dir: PathBuf,
+    host: String,
     endpoint: String,
     address: SocketAddr,
     bind_tx: Sender<SocketAddr>,
@@ -182,13 +185,22 @@ async fn serve_web(
     // receive reload messages.
     let sender = warp::any().map(move || reload_tx.subscribe());
 
+    let port = address.port();
+    let mut cors = warp::cors().allow_any_origin();
+    if port > 0 {
+        let origin = format!("http://{}:{}", host, port);
+        cors = warp::cors()
+            .allow_origin(origin.as_str())
+            .allow_methods(vec!["GET"]);
+    }
+
     // A warp Filter to handle the livereload endpoint. This upgrades to a
     // websocket, and then waits for any filesystem change notifications, and
     // relays them over the websocket.
     let livereload = warp::path(endpoint)
         .and(warp::ws())
         .and(sender)
-        .map(|ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
+        .map(move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
             ws.on_upgrade(move |ws| async move {
                 let (mut user_ws_tx, _user_ws_rx) = ws.split();
                 trace!("websocket got connection");
@@ -197,7 +209,8 @@ async fn serve_web(
                     let _ = user_ws_tx.send(m).await;
                 }
             })
-        });
+        })
+        .with(cors);
 
     let static_route = warp::fs::dir(build_dir);
     let routes = livereload.or(static_route);
@@ -205,6 +218,7 @@ async fn serve_web(
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);
     match bind_result {
         Ok((addr, future)) => {
+            //println!("got addr: {:?}", addr);
             if let Err(e) = bind_tx.send(addr) {
                 error!("{}", e);
                 std::process::exit(1);

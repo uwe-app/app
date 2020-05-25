@@ -1,4 +1,4 @@
-Fast and elegant static site generator with [mdbook][] support designed for people that want to focus on the content. Perfect for teaching and technical documentation.
+Fast and elegant static site generator with [mdbook][] support designed for people that want to focus on the content; ideal for teaching, technical documentation or a quick blog.
 
 These are the processing rules at a glance; more information in the [docs](/docs/).
 

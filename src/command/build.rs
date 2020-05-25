@@ -11,7 +11,7 @@ use crate::{Error};
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
 
-use log::{info, debug};
+use log::{info, debug, error};
 
 use crate::utils;
 
@@ -185,11 +185,14 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             debug!("files changed: {:?}", paths);
 
             let data = ADDR.lock().unwrap();
-
             let url = get_websocket_url(&copy, *data, &reload_endpoint);
             copy.livereload = Some(url);
 
             let mut builder = Builder::new(&copy);
+            if let Err(e) = builder.register_templates_directory() {
+                error!("{}", e);
+                std::process::exit(1);
+            }
             if let Ok(invalidation) = builder.get_invalidation(paths) {
                 debug!("invalidation {:?}", invalidation);
                 builder.invalidate(&watch_target, invalidation)?;

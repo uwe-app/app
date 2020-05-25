@@ -182,16 +182,34 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    // Find files and process each entry.
-    pub fn build(&mut self, target: &PathBuf) -> Result<(), Error> {
+    pub fn get_templates_path(&self) -> PathBuf {
         let mut templates = self.options.source.clone();
         templates.push(TEMPLATE);
+        templates
+    }
+
+    pub fn register_templates_directory(&mut self) -> Result<PathBuf, Error> {
+        let templates = self.get_templates_path();
         if let Err(e) = self
             .parser
             .register_templates_directory(TEMPLATE_EXT, templates.as_path())
         {
             return Err(e);
         }
+        Ok(templates)
+    }
+
+    // Find files and process each entry.
+    pub fn build(&mut self, target: &PathBuf) -> Result<(), Error> {
+        let templates = self.register_templates_directory()?;
+        //let mut templates = self.options.source.clone();
+        //templates.push(TEMPLATE);
+        //if let Err(e) = self
+            //.parser
+            //.register_templates_directory(TEMPLATE_EXT, templates.as_path())
+        //{
+            //return Err(e);
+        //}
 
         for result in WalkBuilder::new(&target)
             .follow_links(self.options.follow_links)
