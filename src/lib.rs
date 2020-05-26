@@ -2,11 +2,12 @@
 extern crate lazy_static;
 extern crate open;
 
+mod asset;
 mod build;
 mod error;
 mod command;
 mod tree;
-pub mod utils;
+mod utils;
 
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
@@ -28,3 +29,4 @@ pub use crate::command::init::*;
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;
 pub use crate::command::serve::*;
+pub use crate::utils::generate_id;

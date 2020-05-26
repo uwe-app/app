@@ -21,8 +21,6 @@ use hypertext::{
     InitOptions,
 };
 
-use hypertext::utils;
-
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
 #[derive(Debug, StructOpt)]
@@ -129,9 +127,17 @@ struct WebServerOpts {
 
 #[derive(StructOpt,Debug)]
 struct BundleOpts {
-    /// Target directory containing website files to bundle
+    /// Force overwrite generated files
+    #[structopt(long)]
+    force: bool,
+
+    /// Directory containing website files to bundle
     #[structopt(parse(from_os_str))]
-    target: PathBuf,
+    input: PathBuf,
+
+    /// Write files to directory
+    #[structopt(parse(from_os_str), default_value = "build")]
+    output: PathBuf,
 }
 
 #[derive(StructOpt,Debug)]
@@ -179,6 +185,18 @@ fn error(s: String) {
     fatal(Error::new(s));
 }
 
+fn create_output_dir(output: &PathBuf) {
+    if !output.exists() {
+        if let Err(e) = fs::create_dir(output) {
+            fatal(e);
+        }
+    }
+
+    if !output.is_dir() {
+        error(format!("not a directory: {}", output.display()));
+    }
+}
+
 fn process_command(cmd: &Command) {
     match cmd {
         Command::Init {
@@ -211,7 +229,7 @@ fn process_command(cmd: &Command) {
                 port: args.server.port.to_owned(),
                 open_browser: true,
                 watch: None,
-                endpoint: utils::generate_id(16),
+                endpoint: hypertext::generate_id(16),
             };
 
             if !opts.target.exists() {
@@ -228,17 +246,22 @@ fn process_command(cmd: &Command) {
         Command::Bundle {
             ref args
         } => {
-
-            let opts = BundleOptions {
-                target: args.target.clone(),
-            };
-
-            if !opts.target.exists() {
-                error(format!("directory does not exist: {}", opts.target.display()));
+            if !args.input.exists() {
+                error(format!("directory does not exist: {}", args.input.display()));
             }
 
-            println!("got bundle command");
+            create_output_dir(&args.output);
 
+            let opts = BundleOptions {
+                source: args.input.clone(),
+                target: args.output.clone(),
+                force: args.force,
+            };
+
+
+            if let Err(e) = hypertext::bundle(opts) {
+                fatal(e);
+            }
         },
 
         Command::Build {ref args} => {
@@ -247,15 +270,7 @@ fn process_command(cmd: &Command) {
                 error(format!("not a directory: {}", args.input.display()));
             }
 
-            if !args.output.exists() {
-                if let Err(e) = fs::create_dir(&args.output) {
-                    fatal(e);
-                }
-            }
-
-            if !args.output.is_dir() {
-                error(format!("not a directory: {}", args.output.display()));
-            }
+            create_output_dir(&args.output);
 
             let mut tag_target = BuildTag::Debug;
             if args.release {
