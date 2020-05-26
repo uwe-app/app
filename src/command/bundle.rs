@@ -17,6 +17,7 @@ pub struct BundleOptions {
     pub linux: bool,
     pub mac: bool,
     pub windows: bool,
+    pub compress: bool,
 }
 
 pub fn bundle(options: BundleOptions) -> Result<(), Error> {
@@ -107,9 +108,7 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         targets.push(Target{platform: Platform::windows(), arch: Arch::amd64()});
     }
 
-    if targets.len() > 0 {
-        bundler.compile(&target, &name, targets)?;
-    }
+    let executables = bundler.compile(&target, &name, targets)?;
 
     if !options.keep {
         for src in sources {
@@ -117,6 +116,17 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
             std::fs::remove_file(src)?;
         }
     }
+
+    if options.compress {
+        for exe in executables {
+            println!("exe {:?}", exe.display());
+            let mut zip = exe.clone();
+            zip.set_extension("zip");
+            println!("using zip: {:?}", zip.display());
+            utils::zip_from_file(zip.as_path(), exe.as_path(), target.as_path());
+        }
+    }
+    
 
     Ok(())
 }

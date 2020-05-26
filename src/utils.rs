@@ -38,27 +38,25 @@ pub fn is_draft(data: &Map<String, Value>, opts: &BuildOptions) -> bool {
     false
 }
 
-/*
-pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Option<PathBuf> {
-    if let Some(p) = input.as_ref().parent() {
-        for p in p.ancestors() {
-            let mut copy = p.to_path_buf().clone();
-            copy.push(name.as_ref());
+pub fn zip_from_file<P: AsRef<Path>>(archive: P, file: P, prefix: P) -> zip::result::ZipResult<()> {
 
-            if copy.exists() {
-                return Some(copy);
-            }
+    if let Ok(rel) = file.as_ref().strip_prefix(prefix) {
+        println!("got rel {:?}", rel);
 
-            // Ensure we do not go beyond the base which coould happen
-            // if the program source is an absolute path
-            if base.as_ref() == &p.to_path_buf() {
-                break;
-            }
-        }
+        let w = File::create(archive)?;
+        let mut zip = zip::ZipWriter::new(w);
+        let options = zip::write::FileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+
+        let bytes = read_bytes(file.as_ref())?;
+        let rel_name = rel.to_string_lossy().into_owned();
+        zip.start_file(rel_name, options)?;
+        zip.write(&bytes)?;
+        zip.finish()?;
     }
-    None
+
+    Ok(())
 }
-*/
 
 pub fn read_bytes<P: AsRef<Path>>(input: P) -> io::Result<Vec<u8>> {
     let mut file = File::open(input)?;

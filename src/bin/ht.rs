@@ -147,6 +147,10 @@ struct BundleOpts {
     #[structopt(short, long)]
     windows: bool,
 
+    /// Compress generated executables
+    #[structopt(short, long)]
+    compress: bool,
+
     /// The name of the generated bundle 
     #[structopt(short, long)]
     name: Option<String>,
@@ -273,6 +277,7 @@ fn process_command(cmd: &Command) {
                 linux: args.linux,
                 mac: args.mac,
                 windows: args.windows,
+                compress: args.compress,
                 name: args.name.clone(),
             };
 

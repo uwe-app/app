@@ -240,13 +240,16 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
         Ok(()) 
     }
 
-    pub fn compile<P: AsRef<Path>>(&self, path: P, name: &str, targets: Vec<Target>) -> Result<(), Error> {
+    pub fn compile<P: AsRef<Path>>(&self, path: P, name: &str, targets: Vec<Target>) 
+        -> Result<Vec<PathBuf>, Error> {
+        let mut result: Vec<PathBuf> = Vec::new();
         info!("compile {}", path.as_ref().display());
         for target in targets {
             let name = target.get_binary_name(name);
             let mut dest = path.as_ref().to_path_buf();
             dest.push(&name);
-            info!("{} ({} {})", &name, target.platform.to_string(), target.arch.to_string());
+            info!("{} ({} {})",
+                &name, target.platform.to_string(), target.arch.to_string());
             let now = SystemTime::now();
             Command::new("go")
                 .current_dir(path.as_ref())
@@ -260,9 +263,10 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
                 if let Ok(meta) = dest.metadata() {
                     let bytes = human_bytes(meta.len() as f64);
                     info!("{} {} in {:?}", &name, bytes, t);
+                    result.push(dest);
                 }
             }
         }
-        Ok(()) 
+        Ok(result) 
     }
 }
