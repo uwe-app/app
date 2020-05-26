@@ -131,6 +131,10 @@ struct BundleOpts {
     #[structopt(long)]
     force: bool,
 
+    /// Keep intermediary source files
+    #[structopt(short, long)]
+    keep: bool,
+
     /// The name of the generated bundle 
     #[structopt(short, long)]
     name: Option<String>,
@@ -139,7 +143,7 @@ struct BundleOpts {
     #[structopt(parse(from_os_str))]
     input: PathBuf,
 
-    /// Write files to directory
+    /// Generate bundle executables in directory
     #[structopt(parse(from_os_str), default_value = "build")]
     output: PathBuf,
 }
@@ -253,6 +257,7 @@ fn process_command(cmd: &Command) {
                 source: args.input.clone(),
                 target: args.output.clone(),
                 force: args.force,
+                keep: args.keep,
                 name: args.name.clone(),
             };
 

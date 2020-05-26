@@ -5,7 +5,7 @@ use crate::Error;
 use crate::utils;
 use crate::bundle::*;
 
-use log::info;
+use log::{info, debug};
 
 #[derive(Debug)]
 pub struct BundleOptions {
@@ -13,6 +13,7 @@ pub struct BundleOptions {
     pub target: PathBuf,
     pub force: bool,
     pub name: Option<String>,
+    pub keep: bool,
 }
 
 pub fn bundle(options: BundleOptions) -> Result<(), Error> {
@@ -68,14 +69,18 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
 
     info!("bundle {} -> {}", options.source.display(), target.display());
 
+    let mut sources: Vec<PathBuf> = Vec::new();
+
     for f in copy_files.iter() {
-        utils::copy_asset_bundle_file(f, base_name, &target)?;
+        let pth = utils::copy_asset_bundle_file(f, base_name, &target)?;
+        sources.push(pth);
     }
 
-    let content = bundler.generate(&options.source)?;
     let mut dest = target.clone();
     dest.push("assets.go");
+    sources.push(dest.clone());
 
+    let content = bundler.generate(&options.source)?;
     utils::write_string(dest, content)?;
 
     // Set up default targets
@@ -85,6 +90,13 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
     targets.push(Target{platform: Platform::windows(), arch: Arch::amd64()});
 
     bundler.compile(&target, &name, targets)?;
+
+    if !options.keep {
+        for src in sources {
+            debug!("rm {}", src.display());
+            std::fs::remove_file(src)?;
+        }
+    }
 
     Ok(())
 }

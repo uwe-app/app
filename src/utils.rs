@@ -18,7 +18,7 @@ use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 use super::{BuildOptions, Error, INDEX_STEM};
 //use super::minify;
 
-use log::{debug,info};
+use log::{debug};
 
 pub fn generate_id(len: i32) -> String {
     let mut s: String = "".to_owned();
@@ -104,23 +104,23 @@ pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()
     write_all(output, content.as_bytes())
 }
 
-pub fn copy_asset_bundle_file(f: &str, template_name: &str, output: &PathBuf) -> Result<(), Error> {
+pub fn copy_asset_bundle_file(f: &str, template_name: &str, output: &PathBuf) -> Result<PathBuf, Error> {
     let mut s = template_name.clone().to_string();
     s.push('/');
     s.push_str(f);
 
     let mut out = output.clone();
     out.push(f);
-    info!("copy {} -> {}", s, out.display());
+    debug!("copy {} -> {}", s, out.display());
     let dir = Asset::get(&s);
     match dir {
         Some(f) => {
-            write_all(out, &f)?;
+            write_all(&out, &f)?;
         },
         None  => return Err(
             Error::new("application bundle source file not found".to_string()))
     }
-    Ok(())
+    Ok(out)
 }
 
 

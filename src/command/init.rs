@@ -67,10 +67,12 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         info!("init {} using {}", target.display(), template_name);
 
         for f in common_files.iter() {
-            utils::copy_asset_bundle_file(f, common_name, &target)?;
+            let pth = utils::copy_asset_bundle_file(f, common_name, &target)?;
+            info!("copy {}", pth.display());
         }
         for f in template_files.iter() {
-            utils::copy_asset_bundle_file(f, &template_name, &target)?;
+            let pth = utils::copy_asset_bundle_file(f, &template_name, &target)?;
+            info!("copy {}", pth.display());
         }
     } else {
         return Err(Error::new("init target was not given".to_string()))
