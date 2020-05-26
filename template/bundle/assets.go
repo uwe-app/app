@@ -1,5 +1,12 @@
 package main
 
+// This file exists so that `go run .` will work in this
+// directory and gives us something to refer to.
+//
+// This file will be automatically generated when bundles
+// are created so it is never actually used; it exists
+// solely for test purposes.
+
 import (
 	"os"
 	"time"
