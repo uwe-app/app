@@ -135,6 +135,18 @@ struct BundleOpts {
     #[structopt(short, long)]
     keep: bool,
 
+    /// Bundle for Linux
+    #[structopt(short, long)]
+    linux: bool,
+
+    /// Bundle for MacOs
+    #[structopt(short, long)]
+    mac: bool,
+
+    /// Bundle for Windows
+    #[structopt(short, long)]
+    windows: bool,
+
     /// The name of the generated bundle 
     #[structopt(short, long)]
     name: Option<String>,
@@ -258,9 +270,11 @@ fn process_command(cmd: &Command) {
                 target: args.output.clone(),
                 force: args.force,
                 keep: args.keep,
+                linux: args.linux,
+                mac: args.mac,
+                windows: args.windows,
                 name: args.name.clone(),
             };
-
 
             if let Err(e) = hypertext::bundle(opts) {
                 fatal(e);

@@ -14,6 +14,9 @@ pub struct BundleOptions {
     pub force: bool,
     pub name: Option<String>,
     pub keep: bool,
+    pub linux: bool,
+    pub mac: bool,
+    pub windows: bool,
 }
 
 pub fn bundle(options: BundleOptions) -> Result<(), Error> {
@@ -83,13 +86,30 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
     let content = bundler.generate(&options.source)?;
     utils::write_string(dest, content)?;
 
+    let mut linux = options.linux;
+    let mut mac = options.mac;
+    let mut windows = options.windows;
+
+    // No flags given so build all target platforms
+    if !linux && !mac && !windows {
+        linux = true; mac = true; windows = true;
+    }
+
     // Set up default targets
     let mut targets: Vec<Target> = Vec::new();
-    targets.push(Target{platform: Platform::linux(), arch: Arch::amd64()});
-    targets.push(Target{platform: Platform::darwin(), arch: Arch::amd64()});
-    targets.push(Target{platform: Platform::windows(), arch: Arch::amd64()});
+    if linux {
+        targets.push(Target{platform: Platform::linux(), arch: Arch::amd64()});
+    }
+    if mac {
+        targets.push(Target{platform: Platform::darwin(), arch: Arch::amd64()});
+    }
+    if windows {
+        targets.push(Target{platform: Platform::windows(), arch: Arch::amd64()});
+    }
 
-    bundler.compile(&target, &name, targets)?;
+    if targets.len() > 0 {
+        bundler.compile(&target, &name, targets)?;
+    }
 
     if !options.keep {
         for src in sources {
