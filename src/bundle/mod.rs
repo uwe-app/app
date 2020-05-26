@@ -5,13 +5,74 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::fs::Metadata;
 use std::convert::AsRef;
+use std::time::SystemTime;
 
 use ignore::WalkBuilder;
+
+use human_bytes::human_bytes;
 
 use crate::Error;
 use crate::utils;
 
 use log::info;
+
+pub enum Platform {
+    Linux(String),
+    Darwin(String),
+    Windows(String)
+}
+
+impl Platform {
+    pub fn linux() -> Self {
+        Platform::Linux(String::from("linux"))
+    }
+
+    pub fn darwin() -> Self {
+        Platform::Darwin(String::from("darwin"))
+    }
+
+    pub fn windows() -> Self {
+        Platform::Windows(String::from("windows"))
+    }
+
+    pub fn to_string(&self) -> &String {
+        match *self {
+            Platform::Linux(ref s) => return s,
+            Platform::Darwin(ref s) => return s,
+            Platform::Windows(ref s) => return s,
+        }
+    }
+}
+
+pub enum Arch {
+    Amd64(String)
+}
+
+impl Arch {
+    pub fn amd64() -> Self {
+        Arch::Amd64(String::from("amd64"))
+    }
+
+    pub fn to_string(&self) -> &String {
+        match *self {
+            Arch::Amd64(ref s) => return s,
+        }
+    }
+}
+
+pub struct Target {
+    pub platform: Platform,
+    pub arch: Arch,
+}
+
+impl Target {
+    pub fn get_binary_name(&self, name: &str) -> String {
+        match self.platform {
+            Platform::Linux(ref s) | Platform::Darwin(ref s) => return format!("{}-{}", name, s),
+            Platform::Windows(ref s) => return format!("{}-{}.exe", name, s),
+        }
+    }
+}
 
 pub struct Bundler;
 
@@ -43,7 +104,7 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
     }
 
     fn get_mod_time(&self, _meta: &Metadata) -> &str {
-        // TODO: generate modTime
+        // FIXME: generate modTime
         "time.Now()"
     }
 
@@ -67,11 +128,11 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
         let mod_time = self.get_mod_time(&meta);
         let content = self.get_file_content(path)?;
         Ok(format!("\"{}\": &AssetFile{{name:\"{}\", modTime: {}, size: {}, content: {}}},\n",
-                key,
-                name,
-                mod_time,
-                meta.len(),
-                content))
+            key,
+            name,
+            mod_time,
+            meta.len(),
+            content))
     }
 
     fn get_dir_start(&self, key: &str) -> String {
@@ -101,7 +162,7 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
     // NOTE: index correctly.
     //
     // NOTE: A future version could improve this with manual iteration that maintains
-    // NOTE: a stack of entered directories, removing the WalkBuilder.
+    // NOTE: a stack of entered directories and remove the WalkBuilder.
     pub fn generate(&self, source: &PathBuf) -> Result<String, Error> {
         let mut s = "".to_owned();
 
@@ -132,13 +193,16 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
                             } else if path.is_file() {
                                 s.push_str(&self.get_file_entry(nm, &key, &path, meta)?);
                             } else {
-                                return Err(Error::new("unknown path type encountered".to_string()))
+                                return Err(
+                                    Error::new("unknown path type encountered".to_string()))
                             }
                         } else {
-                            return Err(Error::new("failed to determine file name".to_string()))
+                            return Err(
+                                Error::new("failed to determine file name".to_string()))
                         }
                     } else {
-                        return Err(Error::new("failed to get file meta data".to_string()))
+                        return Err(
+                            Error::new("failed to get file meta data".to_string()))
                     }
 
                 },
@@ -176,16 +240,29 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
         Ok(()) 
     }
 
-    pub fn compile<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
-
-        // TODO: custom file name
-        // TODO: platform filters
-
-        Command::new("go")
-            .current_dir(path)
-            .arg("build")
-            .spawn()?;
-
+    pub fn compile<P: AsRef<Path>>(&self, path: P, name: &str, targets: Vec<Target>) -> Result<(), Error> {
+        info!("compile {}", path.as_ref().display());
+        for target in targets {
+            let name = target.get_binary_name(name);
+            let mut dest = path.as_ref().to_path_buf();
+            dest.push(&name);
+            info!("{} ({} {})", &name, target.platform.to_string(), target.arch.to_string());
+            let now = SystemTime::now();
+            Command::new("go")
+                .current_dir(path.as_ref())
+                .env("GOOS", target.platform.to_string())
+                .env("GOARCH", target.arch.to_string())
+                .arg("build")
+                .arg("-o")
+                .arg(&name)
+                .output()?;
+            if let Ok(t) = now.elapsed() {
+                if let Ok(meta) = dest.metadata() {
+                    let bytes = human_bytes(meta.len() as f64);
+                    info!("{} {} in {:?}", &name, bytes, t);
+                }
+            }
+        }
         Ok(()) 
     }
 }

@@ -131,6 +131,10 @@ struct BundleOpts {
     #[structopt(long)]
     force: bool,
 
+    /// The name of the generated bundle 
+    #[structopt(short, long)]
+    name: Option<String>,
+
     /// Directory containing website files to bundle
     #[structopt(parse(from_os_str))]
     input: PathBuf,
@@ -203,15 +207,8 @@ fn process_command(cmd: &Command) {
             ref args
         } => {
 
-            // FIXME: find a better way to clone the Option
-            // SEE: https://stackoverflow.com/a/58674899/7625589
-            let mut target = None;
-            if let Some(t) = &args.target {
-                target = Some(t.clone());
-            }
-
             let opts = InitOptions {
-                target,
+                target: args.target.clone(),
                 template: args.template.clone(),
                 list: args.list,
             };
@@ -256,6 +253,7 @@ fn process_command(cmd: &Command) {
                 source: args.input.clone(),
                 target: args.output.clone(),
                 force: args.force,
+                name: args.name.clone(),
             };
 
 

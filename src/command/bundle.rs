@@ -3,16 +3,16 @@ use std::path::PathBuf;
 use crate::Error;
 
 use crate::utils;
-use crate::bundle::Bundler;
+use crate::bundle::*;
 
 use log::info;
-
 
 #[derive(Debug)]
 pub struct BundleOptions {
     pub source: PathBuf,
     pub target: PathBuf,
     pub force: bool,
+    pub name: Option<String>,
 }
 
 pub fn bundle(options: BundleOptions) -> Result<(), Error> {
@@ -31,6 +31,18 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         "open_linux.go",
         "open_windows.go",
     ];
+
+    let mut name = "".to_string();
+
+    if let Some(nm) = options.name {
+        name = nm;
+    } else {
+        if let Ok(cwd) = std::env::current_dir() {
+            if let Some(nm) = cwd.file_name() {
+                name = nm.to_string_lossy().into_owned();
+            }
+        }
+    }
 
     let bundler = Bundler::new();
     if let Err(_) = bundler.version() {
@@ -63,12 +75,16 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
     let content = bundler.generate(&options.source)?;
     let mut dest = target.clone();
     dest.push("assets.go");
-    //println!("{}", content);
-    //println!("{}", dest.display());
 
     utils::write_string(dest, content)?;
 
-    bundler.compile(&target)?;
+    // Set up default targets
+    let mut targets: Vec<Target> = Vec::new();
+    targets.push(Target{platform: Platform::linux(), arch: Arch::amd64()});
+    targets.push(Target{platform: Platform::darwin(), arch: Arch::amd64()});
+    targets.push(Target{platform: Platform::windows(), arch: Arch::amd64()});
+
+    bundler.compile(&target, &name, targets)?;
 
     Ok(())
 }
