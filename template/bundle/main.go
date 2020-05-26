@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"flag"
 	"log"
 	"net"
 	"net/http"
@@ -21,7 +22,6 @@ type Options struct {
 }
 
 func serve(ln net.Listener, opts *Options) {
-	fs := http.Dir(".")
 	fileServer := http.FileServer(fs)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
@@ -39,11 +39,30 @@ func launch(url string, cmd *Command) {
 }
 
 func main() {
+
+	flag.Parse()
+
 	opts := &Options{
 		Host: "localhost",
 		Port: 0,
 		Launch: &Command{},
 	}
+
+	// Support passing specifc host and port, eg: localhost:3000
+	conn := flag.Arg(0)
+	if conn != "" {
+		connHost, connPort, err := net.SplitHostPort(conn)
+		if err != nil {
+			log.Fatal(err)	
+		}
+		portInt, err := strconv.Atoi(connPort)
+		if err != nil {
+			log.Fatal(err)	
+		}
+		opts.Host = connHost
+		opts.Port = portInt
+	}
+
 	withOptions(opts)
 
 	targetPort := strconv.Itoa(opts.Port)

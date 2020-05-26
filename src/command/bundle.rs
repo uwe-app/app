@@ -24,6 +24,7 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
 
     let copy_files : Vec<&str> = vec![
         "main.go",
+        "fs.go",
         "open_darwin.go",
         "open_linux.go",
         "open_windows.go",
