@@ -59,6 +59,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)	
 		}
+		// Allow port-only syntax
+		if connHost == "" {
+			connHost = "localhost"
+		}
 		opts.Host = connHost
 		opts.Port = portInt
 	}
