@@ -17,7 +17,7 @@ pub struct BundleOptions {
     pub linux: bool,
     pub mac: bool,
     pub windows: bool,
-    pub compress: bool,
+    pub archive: bool,
 }
 
 pub fn bundle(options: BundleOptions) -> Result<(), Error> {
@@ -117,16 +117,24 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         }
     }
 
-    if options.compress {
+    if options.archive {
         for exe in executables {
-            println!("exe {:?}", exe.display());
             let mut zip = exe.clone();
             zip.set_extension("zip");
-            println!("using zip: {:?}", zip.display());
-            utils::zip_from_file(zip.as_path(), exe.as_path(), target.as_path());
+
+            if let Ok(_) = utils::zip_from_file(zip.as_path(), exe.as_path(), target.as_path()) {
+                debug!("rm {}", exe.display());
+                std::fs::remove_file(exe)?;
+                info!("{}", zip.display());
+            } else {
+                return Err(Error::new(format!("failed to create archive {}", zip.display())))
+            }
+        }
+    } else {
+        for exe in executables {
+            info!("{}", exe.display());
         }
     }
-    
 
     Ok(())
 }

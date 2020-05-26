@@ -147,9 +147,9 @@ struct BundleOpts {
     #[structopt(short, long)]
     windows: bool,
 
-    /// Compress generated executables
+    /// Archive generated executables
     #[structopt(short, long)]
-    compress: bool,
+    archive: bool,
 
     /// The name of the generated bundle 
     #[structopt(short, long)]
@@ -277,7 +277,7 @@ fn process_command(cmd: &Command) {
                 linux: args.linux,
                 mac: args.mac,
                 windows: args.windows,
-                compress: args.compress,
+                archive: args.archive,
                 name: args.name.clone(),
             };
 

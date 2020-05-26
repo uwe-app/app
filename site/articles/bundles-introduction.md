@@ -2,6 +2,8 @@
 
 Bundles allow us to package up a website into a standalone executable. If publishing a preview version of a website is not ideal bundles can be a good way to get feedback on work in progress by sending it directly.
 
+> Running executables can be dangerous you should only execute code you trust and send bundles to people that trust you
+
 By default bundles for each major platform are generated using the [Go][] toolchain (which must be installed).
 
 To generate a bundle first create a release version then pass the result to the bundle command:
