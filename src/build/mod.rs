@@ -202,14 +202,6 @@ impl<'a> Builder<'a> {
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf) -> Result<(), Error> {
         let templates = self.register_templates_directory()?;
-        //let mut templates = self.options.source.clone();
-        //templates.push(TEMPLATE);
-        //if let Err(e) = self
-            //.parser
-            //.register_templates_directory(TEMPLATE_EXT, templates.as_path())
-        //{
-            //return Err(e);
-        //}
 
         for result in WalkBuilder::new(&target)
             .follow_links(self.options.follow_links)

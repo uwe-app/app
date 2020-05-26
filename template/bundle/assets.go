@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+type FileInfo = os.FileInfo
+
 var fs = &EmbeddedFileSystem{
 	assets: AssetMap {
 		"/": &DirInfo {
@@ -21,7 +23,7 @@ var fs = &EmbeddedFileSystem{
 };
 
 func init () {
-	fs.assets["/"].(*DirInfo).entries = []os.FileInfo{
-		fs.assets["/index.html"].(os.FileInfo),
+	fs.assets["/"].(*DirInfo).entries = []FileInfo{
+		fs.assets["/index.html"].(FileInfo),
 	}
 }

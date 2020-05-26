@@ -3,8 +3,10 @@ use std::path::PathBuf;
 use crate::Error;
 
 use crate::utils;
+use crate::bundle::Bundler;
 
 use log::info;
+
 
 #[derive(Debug)]
 pub struct BundleOptions {
@@ -54,6 +56,15 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
     for f in copy_files.iter() {
         utils::copy_asset_bundle_file(f, base_name, &target)?;
     }
+
+    let bundler = Bundler::new();
+    let content = bundler.generate(&options.source)?;
+    let mut dest = target.clone();
+    dest.push("assets.go");
+    //println!("{}", content);
+    //println!("{}", dest.display());
+
+    utils::write_string(dest, content)?;
 
     Ok(())
 }

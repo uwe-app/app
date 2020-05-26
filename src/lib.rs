@@ -4,6 +4,7 @@ extern crate open;
 
 mod asset;
 mod build;
+mod bundle;
 mod error;
 mod command;
 mod tree;

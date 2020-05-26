@@ -60,6 +60,13 @@ pub fn inherit<P: AsRef<Path>, S: AsRef<str>>(base: P, input: P, name: S) -> Opt
 }
 */
 
+pub fn read_bytes<P: AsRef<Path>>(input: P) -> io::Result<Vec<u8>> {
+    let mut file = File::open(input)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    Ok(buffer)
+}
+
 pub fn read_string<P: AsRef<Path>>(input: P) -> io::Result<String> {
     let file = File::open(input)?;
     let mut reader = BufReader::new(file);
