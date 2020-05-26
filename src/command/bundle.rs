@@ -32,9 +32,12 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         "open_windows.go",
     ];
 
-    let template_files : Vec<&str> = vec![
-        "dir.go",
-    ];
+    let bundler = Bundler::new();
+    if let Err(_) = bundler.version() {
+        return Err(
+            Error::new(
+                "could not execute 'go version', install from https://golang.org/dl/".to_string()))
+    }
 
     let mut target = options.target.clone();
     target.push(target_dir);
@@ -57,7 +60,6 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         utils::copy_asset_bundle_file(f, base_name, &target)?;
     }
 
-    let bundler = Bundler::new();
     let content = bundler.generate(&options.source)?;
     let mut dest = target.clone();
     dest.push("assets.go");
@@ -65,6 +67,8 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
     //println!("{}", dest.display());
 
     utils::write_string(dest, content)?;
+
+    bundler.compile(&target)?;
 
     Ok(())
 }
