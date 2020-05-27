@@ -14,6 +14,7 @@ pub enum Error {
     IgnoreError(ignore::Error),
     BookError(mdbook::errors::Error),
     TomlDeserError(toml::de::Error),
+    ZipResultError(zip::result::ZipError),
 }
 
 impl Error {
@@ -59,6 +60,12 @@ impl From<ignore::Error> for Error {
     }
 }
 
+impl From<zip::result::ZipError> for Error {
+    fn from(error: zip::result::ZipError) -> Self {
+        Error::ZipResultError(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -70,6 +77,7 @@ impl fmt::Display for Error {
             Error::IgnoreError(ref e) => e.fmt(f),
             Error::BookError(ref e) => e.fmt(f),
             Error::TomlDeserError(ref e) => e.fmt(f),
+            Error::ZipResultError(ref e) => e.fmt(f),
         }
     }
 }
@@ -84,6 +92,7 @@ impl error::Error for Error {
             Error::IgnoreError(ref e) => Some(e),
             Error::BookError(ref e) => Some(e),
             Error::TomlDeserError(ref e) => Some(e),
+            Error::ZipResultError(ref e) => Some(e),
             _ => None,
         }
     }

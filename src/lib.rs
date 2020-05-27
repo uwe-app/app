@@ -26,8 +26,9 @@ static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
 pub use crate::error::Error;
-pub use crate::command::init::*;
+pub use crate::command::archive::*;
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;
+pub use crate::command::init::*;
 pub use crate::command::serve::*;
 pub use crate::utils::generate_id;

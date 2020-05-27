@@ -49,7 +49,7 @@ The name for the generated executables is inferred from the name of the current 
 ht bundle build/release --force --name=website-v3.1.0-alpha1
 ```
 
-> Note that the final name will always include the platform identifier.
+> Note that the final name will always include the platform identifier and only the `amd64` architecture is currently supported
 
 Next lets look at what happens when a [bundle is launched](../bundles-launch/).
 

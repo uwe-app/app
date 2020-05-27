@@ -15,6 +15,7 @@ use std::net::SocketAddr;
 use hypertext::{
     BuildTag,
     Error,
+    ArchiveOptions,
     BuildOptions,
     BundleOptions,
     ServeOptions,
@@ -165,9 +166,24 @@ struct BundleOpts {
 }
 
 #[derive(StructOpt,Debug)]
+struct ArchiveOpts {
+    /// Force overwrite an existing archive
+    #[structopt(long)]
+    force: bool,
+
+    /// Archive source directory
+    #[structopt(parse(from_os_str))]
+    input: PathBuf,
+
+    /// Archive file destination
+    #[structopt(parse(from_os_str))]
+    output: Option<PathBuf>,
+}
+
+#[derive(StructOpt,Debug)]
 enum Command {
 
-    /// Create a site
+    /// Generate site source files
     Init {
         #[structopt(flatten)]
         args: InitOpts,
@@ -189,6 +205,11 @@ enum Command {
     Bundle {
         #[structopt(flatten)]
         args: BundleOpts,
+    },
+    /// Create zip archive
+    Archive {
+        #[structopt(flatten)]
+        args: ArchiveOpts,
     }
 }
 
@@ -249,7 +270,7 @@ fn process_command(cmd: &Command) {
                 endpoint: hypertext::generate_id(16),
             };
 
-            if !opts.target.exists() {
+            if !opts.target.exists() || !opts.target.is_dir() {
                 error(format!("directory does not exist: {}", opts.target.display()));
             }
 
@@ -263,7 +284,7 @@ fn process_command(cmd: &Command) {
         Command::Bundle {
             ref args
         } => {
-            if !args.input.exists() {
+            if !args.input.exists() || !args.input.is_dir() {
                 error(format!("directory does not exist: {}", args.input.display()));
             }
 
@@ -282,6 +303,24 @@ fn process_command(cmd: &Command) {
             };
 
             if let Err(e) = hypertext::bundle(opts) {
+                fatal(e);
+            }
+        },
+
+        Command::Archive {
+            ref args
+        } => {
+            if !args.input.exists() || !args.input.is_dir() {
+                error(format!("directory does not exist: {}", args.input.display()));
+            }
+
+            let opts = ArchiveOptions {
+                source: args.input.clone(),
+                target: args.output.clone(),
+                force: args.force,
+            };
+
+            if let Err(e) = hypertext::archive(opts) {
                 fatal(e);
             }
         },
