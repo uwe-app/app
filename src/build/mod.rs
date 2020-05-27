@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
@@ -58,40 +59,51 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn process_file(&mut self, file: PathBuf, file_type: FileType) -> Result<(), Error> {
+    fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<(), Error> {
+        let file = p.as_ref();
         let dest = matcher::destination(
             &self.options.source,
             &self.options.target,
-            &file,
+            &file.to_path_buf(),
             &file_type,
             self.options.clean_url,
         )?;
 
         match file_type {
             FileType::Unknown => {
-                if self.manifest.is_dirty(&file, &dest, self.options.force) {
+                if self.manifest.is_dirty(file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
-                    let result = utils::copy(&file, &dest).map_err(Error::from);
-                    self.manifest.touch(&file, &dest);
+                    let result = utils::copy(file, &dest).map_err(Error::from);
+                    self.manifest.touch(file, &dest);
                     return result
                 } else {
                     info!("noop {}", file.display());
                 }
             },
             FileType::Markdown | FileType::Html => {
-                let mut data = loader::compute(&file);
+                let mut data = loader::compute(file);
+
+                let (collides, other) = matcher::collides(file, &file_type);
+                if collides {
+                    return Err(
+                        Error::new(
+                            format!("file name collision {} with {}",
+                                file.display(),
+                                other.display()
+                        )))
+                }
 
                 if utils::is_draft(&data, self.options) {
                     return Ok(())
                 }
 
-                if self.manifest.is_dirty(&file, &dest, self.options.force) {
+                if self.manifest.is_dirty(file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let result = self.parser.parse(&file, file_type, &mut data);
                     match result {
                         Ok(s) => {
                             let result = utils::write_string(&dest, s).map_err(Error::from);
-                            self.manifest.touch(&file, &dest);
+                            self.manifest.touch(file, &dest);
                             return result
                         }
                         Err(e) => return Err(e),
@@ -195,7 +207,7 @@ impl<'a> Builder<'a> {
             for path in invalidation.paths {
                 //println!("process file {:?}", path);
                 let file_type = matcher::get_type(&path);
-                if let Err(e) = self.process_file(path, file_type) {
+                if let Err(e) = self.process_file(&path, file_type) {
                     return Err(e)
                 }
             }
@@ -263,7 +275,7 @@ impl<'a> Builder<'a> {
                         let file = entry.path().to_path_buf();
                         let file_type = matcher::get_type(&path);
 
-                        if let Err(e) = self.process_file(file, file_type) {
+                        if let Err(e) = self.process_file(&file, file_type) {
                             return Err(e)
                         }
                     }

@@ -30,9 +30,12 @@ impl<'a> Parser<'a> {
         self.render.register_templates_directory(ext, dir)
     }
 
-    fn parse_html<P: AsRef<Path>>(&mut self, input: P, data: &mut Map<String, Value>) -> Result<String, Error> {
-        let mut result = utils::read_string(&input).map_err(Error::from)?;
+    fn parse_html<P: AsRef<Path>>(
+        &mut self,
+        input: P,
+        data: &mut Map<String, Value>) -> Result<String, Error> {
 
+        let mut result = utils::read_string(&input).map_err(Error::from)?;
         result = self
             .render
             .parse_template_string(input.as_ref(), result, data)?;
@@ -40,9 +43,12 @@ impl<'a> Parser<'a> {
         Ok(result)
     }
 
-    fn parse_markdown<P: AsRef<Path>>(&mut self, input: P, data: &mut Map<String, Value>) -> Result<String, Error> {
-        let content = utils::read_string(input.as_ref()).map_err(Error::from)?;
+    fn parse_markdown<P: AsRef<Path>>(
+        &mut self,
+        input: P,
+        data: &mut Map<String, Value>) -> Result<String, Error> {
 
+        let content = utils::read_string(input.as_ref()).map_err(Error::from)?;
         let parsed = self
             .render
             .parse_template_string(input.as_ref(), content, data);
@@ -55,7 +61,12 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse<P: AsRef<Path>>(&mut self, input: P, file_type: FileType, data: &mut Map<String, Value>) -> Result<String, Error> {
+    pub fn parse<P: AsRef<Path>>(
+        &mut self,
+        input: P,
+        file_type: FileType,
+        data: &mut Map<String, Value>) -> Result<String, Error> {
+
         match file_type {
             FileType::Html => {
                 return self.parse_html(input, data)

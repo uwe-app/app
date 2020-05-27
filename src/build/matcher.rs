@@ -38,19 +38,34 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
     false
 }
 
+pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf) {
+    let mut other = file.as_ref().to_path_buf(); 
+    match file_type {
+        FileType::Markdown => {
+            other.set_extension(HTML);
+            return (other.exists(), other)
+        },
+        FileType::Html => {
+            other.set_extension(MD);
+            return (other.exists(), other)
+        }
+        _ => return (false, Path::new("").to_path_buf())
+    }
+}
+
 pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
     let file = p.as_ref();
     match file.file_name() {
         Some(nm) => {
             if let Some(nm) = nm.to_str() {
                 if nm == LAYOUT_HBS || nm == DATA_TOML {
-                    return FileType::Private;
+                    return FileType::Private
                 } else {
                     if let Some(ext) = file.extension() {
                         if ext == MD {
-                            return FileType::Markdown;
+                            return FileType::Markdown
                         } else if ext == HTML {
-                            return FileType::Html;
+                            return FileType::Html
                         }
                     }
                 }
@@ -108,6 +123,7 @@ pub fn destination<P: AsRef<Path>>(
     file_type: &FileType,
     clean_urls: bool,
 ) -> Result<PathBuf, Error> {
+
     let pth = file.as_ref();
 
     // NOTE: When watching files we can get absolute
