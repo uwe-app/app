@@ -98,24 +98,25 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     } else {
         let endpoint = utils::generate_id(16);
 
-        let opts = ServeOptions::new(
-            options.target.clone(),
-            target.clone(),
-            options.host.to_owned(),
-            options.port.to_owned(),
-            endpoint.clone());
+        let opts = ServeOptions {
+            target: options.target.clone(),
+            watch: Some(target.clone()),
+            host: options.host.to_owned(),
+            port: options.port.to_owned(),
+            endpoint: endpoint.clone(),
+            open_browser: false,
+        };
 
         // Create a channel to receive the bind address.
-        let (tx, rx) = channel::<(SocketAddr, TokioSender<Message>)>();
+        let (tx, rx) = channel::<(SocketAddr, TokioSender<Message>, String)>();
 
         // Spawn a thread to receive a notification on the `rx` channel
         // once the server has bound to a port
         std::thread::spawn(move || {
             // Get the socket address and websocket transmission channel
-            let (addr, tx) = rx.recv().unwrap();
+            let (addr, tx, url) = rx.recv().unwrap();
 
-            let url = get_websocket_url(&options, addr, &endpoint);
-            options.livereload = Some(url);
+            options.livereload = Some(get_websocket_url(&options, addr, &endpoint));
 
             // Do a full build before listening for filesystem changes
             let mut serve_builder = Builder::new(&options);
@@ -134,6 +135,10 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
 
             match result {
                 Ok(_) => {
+
+                    // NOTE: only open the browser if initial build succeeds
+                    open::that(&url).map(|_| ()).unwrap_or(());
+
                     #[cfg(feature = "watch")]
                     trigger_on_change(&target.clone(), move |paths, source_dir| {
                         info!("changed({}) in {}", paths.len(), source_dir.display());

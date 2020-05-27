@@ -36,30 +36,12 @@ pub struct ServeOptions {
     pub endpoint: String,
 }
 
-impl ServeOptions {
-    pub fn new(
-        target: PathBuf,
-        watch: PathBuf,
-        host: String,
-        port: String,
-        endpoint: String) -> Self {
-        ServeOptions {
-            target,
-            watch: Some(watch),
-            host,
-            port,
-            endpoint,
-            open_browser: true,
-        } 
-    }
-}
-
 pub fn serve_only(options: ServeOptions) -> Result<(), Error> {
-    let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>)>();
+    let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>, String)>();
     serve(options, tx)
 }
 
-pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Message>)>) -> Result<(), Error>
+pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Message>, String)>) -> Result<(), Error>
     {
 
     let address = format!("{}:{}", options.host, options.port);
@@ -71,7 +53,7 @@ pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Messag
     let build_dir = options.target.clone();
     let host = options.host.clone();
     let serve_host = host.clone();
-    let open_browser = options.open_browser.clone();
+    let open_browser = options.open_browser;
 
     // A channel used to broadcast to any websockets to reload when a file changes.
     let (tx, _rx) = tokio::sync::broadcast::channel::<Message>(100);
@@ -82,15 +64,15 @@ pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Messag
 
     let _bind_handle = std::thread::spawn(move || {
         let addr = crx.recv().unwrap();
-        let serving_url = format!("http://{}:{}", &host, addr.port());
+        let url = format!("http://{}:{}", &host, addr.port());
         //serving_url.foo();
-        info!("serve {}", serving_url);
+        info!("serve {}", url);
         if open_browser {
             // It is ok if this errors we just don't open a browser window
-            open::that(serving_url).map(|_| ()).unwrap_or(());
+            open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(e) = bind.send((addr, tx)) {
+        if let Err(e) = bind.send((addr, tx, url)) {
             error!("{}", e);
             std::process::exit(1);
         }
