@@ -18,20 +18,23 @@ pub struct ArchiveOptions {
 }
 
 pub fn archive(options: ArchiveOptions) -> Result<(), Error> {
-    let mut dest = Path::new("").to_path_buf();
+    let mut dest = Path::new(&options.source).to_path_buf();
     if let Some(target) = options.target {
         dest = target;
-    } else {
-        if let Some(name) = options.source.file_name() {
-            dest = Path::new(name).to_path_buf(); 
-        } 
     }
 
     if dest == Path::new("").to_path_buf() {
         return Err(Error::new("failed to determine archive target".to_string()))
     }
 
-    dest.set_extension("zip");
+    //dest.set_extension("zip");
+
+    // NOTE: using set_extension break names like "v3.1.0-alpha1"
+    let name = dest.file_name().unwrap_or(std::ffi::OsStr::new(""))
+        .to_string_lossy().into_owned();
+    if !name.is_empty() && !name.ends_with(".zip") {
+        dest.set_file_name(format!("{}.zip", name));
+    }
 
     if dest.exists() {
         if options.force {
@@ -42,6 +45,12 @@ pub fn archive(options: ArchiveOptions) -> Result<(), Error> {
                 Error::new(
                     format!(
                         "{} already exists, use --force to overwrite", dest.display())))
+        }
+    }
+
+    if let Some(parent) = dest.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
         }
     }
 
