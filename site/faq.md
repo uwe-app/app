@@ -44,7 +44,7 @@ Get in touch using our [contact](/contact/) details.
 
 ### Can I submit a theme?
 
-Yes. If you have created a good classless CSS style file that you would like to include please [contact](/contact/) us.
+Yes, if you have created a good classless CSS style file that you would like us to include please [get in touch](/contact/).
 
 [handlebars]: https://handlebarsjs.com/
 [commonmark]: https://commonmark.org/
