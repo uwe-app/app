@@ -287,7 +287,7 @@ impl<'a> Builder<'a> {
     pub fn load_manifest(&mut self) -> Result<(), Error> {
         let file = self.get_manifest_file();
         if file.exists() && file.is_file() {
-            info!("manifest {}", file.display());
+            debug!("manifest {}", file.display());
             let json = utils::read_string(file)?;
             self.manifest = serde_json::from_str(&json)?;
 
@@ -298,7 +298,7 @@ impl<'a> Builder<'a> {
     pub fn save_manifest(&self) -> Result<(), Error> {
         let file = self.get_manifest_file();
         let json = serde_json::to_string(&self.manifest)?;
-        info!("manifest {}", file.display());
+        debug!("manifest {}", file.display());
         utils::write_string(file, json)?;
         Ok(())
     }

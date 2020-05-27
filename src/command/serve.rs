@@ -110,16 +110,6 @@ pub fn serve/*<F>*/(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender
             reload_tx);
     });
 
-    //if let Some(p) = options.watch {
-        //let source_dir = p.as_path();
-        //#[cfg(feature = "watch")]
-        //trigger_on_change(source_dir, move |paths, source_dir| {
-            //if let Ok(_) = callback(paths, source_dir) {
-                //let _ = tx.send(Message::text("reload"));
-            //}
-        //});
-    //}
-
     let _ = thread_handle.join();
 
     Ok(())
@@ -230,7 +220,6 @@ async fn serve_web(
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);
     match bind_result {
         Ok((addr, future)) => {
-            //println!("got addr: {:?}", addr);
             if let Err(e) = bind_tx.send(addr) {
                 error!("{}", e);
                 std::process::exit(1);

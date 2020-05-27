@@ -122,6 +122,12 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
                 error!("{}", e);
                 std::process::exit(1);
             }
+
+            // WARN: must not load_manifest() here otherwise we can have
+            // WARN: stale livereload endpoint URLs!
+
+            //if let Err(_) = serve_builder.load_manifest() {}
+
             if let Ok(_) = serve_builder.build(&target) {
                 #[cfg(feature = "watch")]
                 trigger_on_change(&target.clone(), move |paths, source_dir| {
@@ -130,6 +136,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
                     if let Ok(invalidation) = serve_builder.get_invalidation(paths) {
                         debug!("invalidation {:?}", invalidation);
                         serve_builder.invalidate(&target, invalidation)?;
+                        serve_builder.save_manifest()?;
                         let _ = tx.send(Message::text("reload"));
                     }
 
