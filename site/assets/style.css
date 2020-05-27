@@ -31,6 +31,10 @@ footer > nav > ul > li:not(:last-child):after {
   margin: 0 .2rem;
 }
 
+.center {
+  text-align: center;
+}
+
 @media screen and (max-width: 320px) {
   footer {
     flex-direction: column;

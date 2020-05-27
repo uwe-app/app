@@ -1,4 +1,8 @@
-Fast and elegant static site generator with [mdbook][] support designed for people that want to focus on the content; ideal for websites, technical documentation or a quick blog.
+<p class="center">Beautiful web pages, incredibly fast</p>
+
+Hypertext is a static site generator with [mdbook][] support designed for people that want to focus on the content; ideal for websites, technical documentation or a quick blog.
+
+Use Markdown, HTML and CSS to build your site; add a sprinkle of Javascript if you need it.
 
 These are the processing rules at a glance; more information in the [docs](/docs/).
 
