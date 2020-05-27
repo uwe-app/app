@@ -93,7 +93,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     if !options.live {
         let mut builder = Builder::new(&options);
         builder.load_manifest()?;
-        builder.build(&target)?;
+        builder.build(&target, false)?;
         return builder.save_manifest()
     } else {
         let endpoint = utils::generate_id(16);
@@ -128,10 +128,9 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             // WARN: must not load_manifest() here otherwise we can have
             // WARN: stale livereload endpoint URLs!
 
-            //if let Err(_) = serve_builder.load_manifest() {}
-            //
+            if let Err(_) = serve_builder.load_manifest() {}
 
-            let result = serve_builder.build(&target);
+            let result = serve_builder.build(&target, true);
 
             match result {
                 Ok(_) => {

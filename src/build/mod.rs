@@ -59,7 +59,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<(), Error> {
+    fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType, pages_only: bool) -> Result<(), Error> {
         let file = p.as_ref();
         let dest = matcher::destination(
             &self.options.source,
@@ -71,6 +71,7 @@ impl<'a> Builder<'a> {
 
         match file_type {
             FileType::Unknown => {
+
                 if self.manifest.is_dirty(file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let result = utils::copy(file, &dest).map_err(Error::from);
@@ -97,7 +98,7 @@ impl<'a> Builder<'a> {
                     return Ok(())
                 }
 
-                if self.manifest.is_dirty(file, &dest, self.options.force) {
+                if self.manifest.is_dirty(file, &dest, pages_only || self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let s = self.parser.parse(&file, file_type, &mut data)?;
                     let result = utils::write_string(&dest, s).map_err(Error::from);
@@ -196,15 +197,13 @@ impl<'a> Builder<'a> {
         }
 
         if all {
-            println!("building all");
-            return self.build(target);
+            return self.build(target, false);
         } else {
         
             for path in invalidation.paths {
                 //println!("process file {:?}", path);
                 let file_type = matcher::get_type(&path);
-                if let Err(e) = self.process_file(&path, file_type) {
-                    println!("invalidate got error");
+                if let Err(e) = self.process_file(&path, file_type, false) {
                     return Err(e)
                 }
             }
@@ -233,7 +232,7 @@ impl<'a> Builder<'a> {
     }
 
     // Find files and process each entry.
-    pub fn build(&mut self, target: &PathBuf) -> Result<(), Error> {
+    pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let templates = self.register_templates_directory()?;
 
         for result in WalkBuilder::new(&target)
@@ -272,7 +271,7 @@ impl<'a> Builder<'a> {
                         let file = entry.path().to_path_buf();
                         let file_type = matcher::get_type(&path);
 
-                        if let Err(e) = self.process_file(&file, file_type) {
+                        if let Err(e) = self.process_file(&file, file_type, pages_only) {
                             return Err(e)
                         }
                     }
