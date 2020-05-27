@@ -69,7 +69,7 @@ impl<'a> Builder<'a> {
 
         match file_type {
             FileType::Unknown => {
-                if self.manifest.is_dirty(&file, &dest) {
+                if self.manifest.is_dirty(&file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let result = utils::copy(&file, &dest).map_err(Error::from);
                     self.manifest.touch(&file, &dest);
@@ -85,7 +85,7 @@ impl<'a> Builder<'a> {
                     return Ok(())
                 }
 
-                if self.manifest.is_dirty(&file, &dest) {
+                if self.manifest.is_dirty(&file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let result = self.parser.parse(&file, file_type, &mut data);
                     match result {

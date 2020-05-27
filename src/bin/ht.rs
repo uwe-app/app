@@ -43,7 +43,7 @@ struct BuildOpts {
     tag: Option<String>,
 
     /// Follow symbolic links
-    #[structopt(short, long)]
+    #[structopt(long)]
     follow_links: bool,
 
     /// Build input sub-directory
@@ -61,6 +61,10 @@ struct BuildOpts {
     /// Enable live reload
     #[structopt(short, long)]
     live: bool,
+
+    /// Disable incremental build
+    #[structopt(long)]
+    force: bool,
 
     /// Generate a release build
     #[structopt(short, long)]
@@ -379,6 +383,7 @@ fn process_command(cmd: &Command) {
                 strict: !args.loose,
                 release: args.release,
                 live: args.live,
+                force: args.force,
                 livereload: None,
                 tag: tag_target,
                 host: args.server.host.to_owned(),

@@ -2,7 +2,7 @@
 name = "hypertext"
 version = "0.7.0"
 authors = ["muji <muji@tmpfs.org>"]
-description = "Fast and elegant site generator"
+description = "Fast and lean static site generator"
 repository = "https://github.com/tmpfs/hypertext"
 edition = "2018"
 
