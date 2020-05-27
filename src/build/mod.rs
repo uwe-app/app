@@ -11,7 +11,16 @@ pub mod matcher;
 pub mod parser;
 pub mod template;
 
-use super::{utils, Error, BuildOptions, TEMPLATE, TEMPLATE_EXT, DATA_TOML, LAYOUT_HBS};
+use super::{
+    utils,
+    Error,
+    BuildOptions,
+    TEMPLATE,
+    TEMPLATE_EXT,
+    DATA_TOML,
+    LAYOUT_HBS
+};
+
 use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
@@ -193,7 +202,6 @@ impl<'a> Builder<'a> {
         }
 
         //println!("build files {:?}", invalidation.paths);
-        
 
         Ok(())
     }
@@ -243,7 +251,6 @@ impl<'a> Builder<'a> {
                         continue;
                     }
 
-                    //println!("ENTRY");
                     if path.is_dir() && self.book.is_book_dir(&path) {
                         // Add the book so we can skip processing of descendants
                         self.book.add(&path);
@@ -253,8 +260,6 @@ impl<'a> Builder<'a> {
                             return Err(e);
                         }
                     } else if path.is_file() {
-                        //println!("{:?}", entry);
-
                         let file = entry.path().to_path_buf();
                         let file_type = matcher::get_type(&path);
 
@@ -266,6 +271,27 @@ impl<'a> Builder<'a> {
                 Err(e) => return Err(Error::IgnoreError(e)),
             }
         }
+        Ok(())
+    }
+
+    pub fn load_manifest(&mut self) -> Result<(), Error> {
+        let mut file = self.options.target.clone();
+        file.set_extension("json");
+        if file.exists() && file.is_file() {
+            info!("manifest {}", file.display());
+            let json = utils::read_string(file)?;
+            self.manifest = serde_json::from_str(&json)?;
+
+        }
+        Ok(())
+    }
+
+    pub fn save_manifest(&self) -> Result<(), Error> {
+        let json = serde_json::to_string(&self.manifest)?;
+        let mut file = self.options.target.clone();
+        file.set_extension("json");
+        info!("manifest {}", file.display());
+        utils::write_string(file, json)?;
         Ok(())
     }
 }

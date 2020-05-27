@@ -1,10 +1,19 @@
 use std::path::Path;
 use std::convert::AsRef;
+use std::time::SystemTime;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value, Map};
 
+#[derive(Serialize, Deserialize)]
+pub struct ManifestEntry {
+    output: String,
+    modified: SystemTime,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct Manifest {
-    map: Map<String, Value>
+    pub map: Map<String, Value>
 }
 
 impl Manifest {
@@ -16,35 +25,50 @@ impl Manifest {
         file.as_ref().to_string_lossy().into_owned()
     }
 
-    pub fn is_dirty<P: AsRef<Path>>(&self, file: P, _dest: P) -> bool {
-        let key = self.get_key(file);
+    fn get_entry<P: AsRef<Path>>(&self, file: P, dest: P) -> Option<ManifestEntry> {
+        if let Ok(meta) = file.as_ref().metadata() {
+            if let Ok(modified) = meta.modified() {
+                let output = dest.as_ref().to_string_lossy().into_owned();
+                return Some(ManifestEntry{
+                    output,
+                    modified,
+                })
+            }
+        }
+        None
+    }
 
-        println!("is_dirty {:?}", key);
+    pub fn is_dirty<P: AsRef<Path>>(&self, file: P, dest: P) -> bool {
+        if !dest.as_ref().exists() {
+            return true
+        }
 
+        let key = self.get_key(file.as_ref());
         if !self.map.contains_key(&key) {
-            println!("does not contain key");
             return true 
         }
 
-        println!("AFTER DOES NOT CONTAIN KEY");
-
-        if let Some(val) = self.map.get(&key) {
-            println!("got existing value in manifest {:?} {:?}", key, val)
+        if let Some(entry) = self.map.get(&key) {
+            let entry: ManifestEntry = serde_json::from_value(json!(entry)).unwrap();
+            if let Some(current) = self.get_entry(file, dest) {
+                if current.modified > entry.modified {
+                    return true 
+                }
+            }
         }
 
-        true 
+        false
     }
 
     pub fn touch<P: AsRef<Path>>(&mut self, file: P, dest: P) {
-        let key = self.get_key(file);
-        let output = dest.as_ref().to_string_lossy().into_owned();
-        let mut value = Map::new();
-        value.insert("output".to_string(), json!(output));
+        let key = self.get_key(file.as_ref());
 
-        let copy = key.clone();
+        if !file.as_ref().exists() {
+            self.map.remove(&key); 
+        }
 
-        self.map.insert(key, json!(value));
-
-        println!("manifest saving entry {:?} {:?}", &copy, self.map.contains_key(&copy));
+        if let Some(value) = self.get_entry(file.as_ref(), dest.as_ref()) {
+            self.map.insert(key, json!(value));
+        }
     }
 }

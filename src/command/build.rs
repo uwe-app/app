@@ -91,7 +91,9 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
 
     if !options.live {
         let mut builder = Builder::new(&options);
-        return builder.build(&target)
+        builder.load_manifest()?;
+        builder.build(&target)?;
+        return builder.save_manifest()
     } else {
         let endpoint = utils::generate_id(16);
 

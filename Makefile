@@ -33,7 +33,6 @@ help:
 	@cargo run -- --help > site/help.txt
 
 site:
-	@rm -rf ./build/debug
 	@cargo run --
 
 output:
