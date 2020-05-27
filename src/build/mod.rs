@@ -6,6 +6,7 @@ use log::{debug, info, error};
 pub mod book;
 pub mod loader;
 pub mod helpers;
+pub mod manifest;
 pub mod matcher;
 pub mod parser;
 pub mod template;
@@ -14,6 +15,7 @@ use super::{utils, Error, BuildOptions, TEMPLATE, TEMPLATE_EXT, DATA_TOML, LAYOU
 use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
+use manifest::Manifest;
 
 #[derive(Debug)]
 pub struct Invalidation {
@@ -26,6 +28,7 @@ pub struct Builder<'a> {
     options: &'a BuildOptions,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
+    manifest: Manifest,
 }
 
 impl<'a> Builder<'a> {
@@ -36,10 +39,13 @@ impl<'a> Builder<'a> {
         // template partials can be found
         let parser = Parser::new(options);
 
+        let manifest = Manifest::new();
+
         Builder {
             options,
             book,
             parser,
+            manifest,
         }
     }
 
@@ -61,20 +67,21 @@ impl<'a> Builder<'a> {
                     return Ok(())
                 }
 
-                info!("{} -> {}", file.display(), dest.display());
-                let result = self.parser.parse(file, file_type, &mut data);
-                match result {
-                    Ok(s) => {
-
-                        return utils::write_string(dest, s).map_err(Error::from)
-                        //if self.options.minify {
-                            //return utils::write_string_minify(dest, s).map_err(Error::from);
-                        //} else {
-                            //return utils::write_string(dest, s).map_err(Error::from);
-                        //}
+                if self.manifest.is_dirty(&file, &dest) {
+                    info!("{} -> {}", file.display(), dest.display());
+                    let result = self.parser.parse(&file, file_type, &mut data);
+                    match result {
+                        Ok(s) => {
+                            let result = utils::write_string(&dest, s).map_err(Error::from);
+                            self.manifest.touch(&file, &dest);
+                            return result
+                        }
+                        Err(e) => return Err(e),
                     }
-                    Err(e) => return Err(e),
+                } else {
+                    info!("noop {}", file.display());
                 }
+
             }
             FileType::Private => {
                 // Ignore templates here as they are located and

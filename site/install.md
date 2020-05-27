@@ -19,5 +19,3 @@ Which will perform the following tasks:
     
 You can get going right away; edit the files in `project/site` and check your changes in the browser. To learn more check out [usage](/usage/) and the [docs](/docs/).
 
-Other platforms can be built from the [source](/source/) which is available upon request. 
-

@@ -47,19 +47,19 @@ impl<'a> TemplateRender<'a> {
         self.handlebars.register_templates_directory(ext, dir).map_err(Error::from)
     }
 
-    pub fn parse_template_string(
+    pub fn parse_template_string<P: AsRef<Path>>(
         &mut self,
-        input: &PathBuf,
+        input: P,
         content: String,
         data: &mut Map<String, Value>,
     ) -> Result<String, Error> {
-        let name = &input.to_str().unwrap();
+        let name = input.as_ref().to_str().unwrap();
         if self
             .handlebars
             .register_template_string(name, &content)
             .is_ok()
         {
-            let filepath = input.to_str().unwrap().to_string();
+            let filepath = input.as_ref().to_str().unwrap().to_string();
             let mut ctx: Map<String, Value> = Map::new();
             ctx.insert("file".to_string(), json!(filepath));
             ctx.insert("options".to_string(), json!(self.options));
@@ -79,9 +79,9 @@ impl<'a> TemplateRender<'a> {
         Ok(content)
     }
 
-    pub fn layout(
+    pub fn layout<P: AsRef<Path>>(
         &mut self,
-        _input: &PathBuf,
+        _input: P,
         document: String,
         data: &mut Map<String, Value>,
     ) -> Result<String, Error> {
