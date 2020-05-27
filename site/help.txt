@@ -1,11 +1,12 @@
-hypertext 0.6.0
+hypertext 0.7.0
 Fast and elegant site generator
 
 USAGE:
     ht [FLAGS] [OPTIONS] [ARGS] [SUBCOMMAND]
 
 FLAGS:
-    -f, --follow-links      Follow symbolic links
+        --follow-links      Follow symbolic links
+        --force             Disable incremental build
         --help              Prints help information
         --html-extension    Disable clean locations
     -l, --live              Enable live reload
@@ -26,7 +27,9 @@ ARGS:
     <output>    Write files to directory [default: build]
 
 SUBCOMMANDS:
-    build    Compile a site
-    help     Prints this message or the help of the given subcommand(s)
-    init     Create a site
-    serve    Serve site files
+    archive    Create zip archive
+    build      Compile a site
+    bundle     Bundle a site into executables (requires Go)
+    help       Prints this message or the help of the given subcommand(s)
+    init       Generate site source files
+    serve      Serve site files

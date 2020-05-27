@@ -35,10 +35,7 @@ help:
 site:
 	@cargo run --
 
-output:
-	@ht --release 2>&1 | tee site/output.txt
-
-site-release: install help output digest
+site-release: install help
 
 example: install
 	@ht example/layout --tag=layout-example

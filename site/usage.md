@@ -79,11 +79,3 @@ Careful, if you pass `--max-depth=0` nothing is compiled!
 
 ---
 
-### Output
-
-Example output when building this website:
-
-```
-{{ include output.txt }}
-```
-

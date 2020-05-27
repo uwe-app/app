@@ -3,7 +3,7 @@
 This is a home page for a draft example.
 
 <li>
-{{#tree}}
+{{#children}}
 <li><a href="{{href}}">{{title}}</a></li>
-{{/tree}}
+{{/children}}
 </li>

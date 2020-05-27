@@ -4,7 +4,7 @@ Some frequently asked questions and relevant answers!
 
 ### Where can I get the source code?
 
-This is not an open-source project but has various dependencies that are Apache-2 or MIT. This project is a larger work and we will release some source code to comply with those licenses if you email `muji` at the domain name `tmpfs.org`.
+This is not an open-source project but has various dependencies that are Apache-2 or MIT. This project is a larger work and we will release some source code to comply with those licenses, see [contact](/contact/).
 
 ### Why not open-source?
 
@@ -37,6 +37,14 @@ We use [commonmark][] with support for a few non-standard features:
 * [Strike through](https://github.github.com/gfm/#strikethrough-extension-)
 * [Tables](https://github.github.com/gfm/#tables-extension-)
 * [Task lists](https://github.github.com/gfm/#task-list-items-extension-)
+
+### Where should I report bugs or request features?
+
+Get in touch using our [contact](/contact/) details.
+
+### Can I submit a theme?
+
+Yes. If you have created a good classless CSS style file that you would like to include please [contact](/contact/) us.
 
 [handlebars]: https://handlebarsjs.com/
 [commonmark]: https://commonmark.org/
