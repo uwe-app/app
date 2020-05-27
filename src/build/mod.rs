@@ -99,15 +99,10 @@ impl<'a> Builder<'a> {
 
                 if self.manifest.is_dirty(file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
-                    let result = self.parser.parse(&file, file_type, &mut data);
-                    match result {
-                        Ok(s) => {
-                            let result = utils::write_string(&dest, s).map_err(Error::from);
-                            self.manifest.touch(file, &dest);
-                            return result
-                        }
-                        Err(e) => return Err(e),
-                    }
+                    let s = self.parser.parse(&file, file_type, &mut data)?;
+                    let result = utils::write_string(&dest, s).map_err(Error::from);
+                    self.manifest.touch(file, &dest);
+                    return result
                 } else {
                     info!("noop {}", file.display());
                 }
@@ -201,13 +196,15 @@ impl<'a> Builder<'a> {
         }
 
         if all {
-            return self.build(target); 
+            println!("building all");
+            return self.build(target);
         } else {
         
             for path in invalidation.paths {
                 //println!("process file {:?}", path);
                 let file_type = matcher::get_type(&path);
                 if let Err(e) = self.process_file(&path, file_type) {
+                    println!("invalidate got error");
                     return Err(e)
                 }
             }

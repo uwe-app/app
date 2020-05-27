@@ -59,11 +59,7 @@ pub fn serve_only(options: ServeOptions) -> Result<(), Error> {
     serve(options, tx)
 }
 
-pub fn serve/*<F>*/(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Message>)>/*, mut callback: F*/) -> Result<(), Error>
-    /*
-    where
-        F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
-    */
+pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Message>)>) -> Result<(), Error>
     {
 
     let address = format!("{}:{}", options.host, options.port);
@@ -87,6 +83,7 @@ pub fn serve/*<F>*/(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender
     let _bind_handle = std::thread::spawn(move || {
         let addr = crx.recv().unwrap();
         let serving_url = format!("http://{}:{}", &host, addr.port());
+        //serving_url.foo();
         info!("serve {}", serving_url);
         if open_browser {
             // It is ok if this errors we just don't open a browser window

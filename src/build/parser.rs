@@ -52,6 +52,7 @@ impl<'a> Parser<'a> {
         let parsed = self
             .render
             .parse_template_string(input.as_ref(), content, data);
+
         match parsed {
             Ok(content) => {
                 let markup = utils::render_markdown_string(&content);

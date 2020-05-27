@@ -128,22 +128,32 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             // WARN: stale livereload endpoint URLs!
 
             //if let Err(_) = serve_builder.load_manifest() {}
+            //
 
-            if let Ok(_) = serve_builder.build(&target) {
-                #[cfg(feature = "watch")]
-                trigger_on_change(&target.clone(), move |paths, source_dir| {
-                    info!("changed({}) in {}", paths.len(), source_dir.display());
-                    debug!("files changed: {:?}", paths);
-                    if let Ok(invalidation) = serve_builder.get_invalidation(paths) {
-                        debug!("invalidation {:?}", invalidation);
-                        serve_builder.invalidate(&target, invalidation)?;
-                        serve_builder.save_manifest()?;
-                        let _ = tx.send(Message::text("reload"));
-                    }
+            let result = serve_builder.build(&target);
 
-                    Ok(())
-                });
+            match result {
+                Ok(_) => {
+                    #[cfg(feature = "watch")]
+                    trigger_on_change(&target.clone(), move |paths, source_dir| {
+                        info!("changed({}) in {}", paths.len(), source_dir.display());
+                        debug!("files changed: {:?}", paths);
+                        if let Ok(invalidation) = serve_builder.get_invalidation(paths) {
+                            debug!("invalidation {:?}", invalidation);
+                            if let Err(e) = serve_builder.invalidate(&target, invalidation) {
+                                error!("{}", e);
+                            }
+                            serve_builder.save_manifest()?;
+                            let _ = tx.send(Message::text("reload"));
+                        }
 
+                        Ok(())
+                    });
+                },
+                Err(e) => {
+                    error!("{}", e);
+                    std::process::exit(1);
+                }
             }
         });
 
