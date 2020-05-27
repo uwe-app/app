@@ -7,7 +7,6 @@ use serde_json::{json, Value, Map};
 
 #[derive(Serialize, Deserialize)]
 pub struct ManifestEntry {
-    output: String,
     modified: SystemTime,
 }
 
@@ -25,12 +24,10 @@ impl Manifest {
         file.as_ref().to_string_lossy().into_owned()
     }
 
-    fn get_entry<P: AsRef<Path>>(&self, file: P, dest: P) -> Option<ManifestEntry> {
+    fn get_entry<P: AsRef<Path>>(&self, file: P, _dest: P) -> Option<ManifestEntry> {
         if let Ok(meta) = file.as_ref().metadata() {
             if let Ok(modified) = meta.modified() {
-                let output = dest.as_ref().to_string_lossy().into_owned();
                 return Some(ManifestEntry{
-                    output,
                     modified,
                 })
             }
