@@ -9,8 +9,11 @@ use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use std::net::{SocketAddr, ToSocketAddrs};
 use tokio::sync::broadcast;
-use warp::ws::Message;
 use warp::Filter;
+
+use tokio::sync::broadcast::Sender as TokioSender;
+use warp::ws::Message;
+
 use std::convert::AsRef;
 
 use notify::Watcher;
@@ -51,9 +54,16 @@ impl ServeOptions {
     }
 }
 
-pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F) -> Result<(), Error>
+pub fn serve_only(options: ServeOptions) -> Result<(), Error> {
+    let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>)>();
+    serve(options, tx)
+}
+
+pub fn serve/*<F>*/(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Message>)>/*, mut callback: F*/) -> Result<(), Error>
+    /*
     where
         F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
+    */
     {
 
     let address = format!("{}:{}", options.host, options.port);
@@ -67,6 +77,10 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
     let serve_host = host.clone();
     let open_browser = options.open_browser.clone();
 
+    // A channel used to broadcast to any websockets to reload when a file changes.
+    let (tx, _rx) = tokio::sync::broadcast::channel::<Message>(100);
+    let reload_tx = tx.clone();
+
     // Create a channel to receive the bind address.
     let (ctx, crx) = channel::<SocketAddr>();
 
@@ -79,16 +93,12 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
             open::that(serving_url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(e) = bind.send(addr) {
+        if let Err(e) = bind.send((addr, tx)) {
             error!("{}", e);
             std::process::exit(1);
         }
     });
 
-    // A channel used to broadcast to any websockets to reload when a file changes.
-    let (tx, _rx) = tokio::sync::broadcast::channel::<Message>(100);
-
-    let reload_tx = tx.clone();
     let endpoint = options.endpoint.clone();
     let thread_handle = std::thread::spawn(move || {
         serve_web(
@@ -100,15 +110,15 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
             reload_tx);
     });
 
-    if let Some(p) = options.watch {
-        let source_dir = p.as_path();
-        #[cfg(feature = "watch")]
-        trigger_on_change(source_dir, move |paths, source_dir| {
-            if let Ok(_) = callback(paths, source_dir) {
-                let _ = tx.send(Message::text("reload"));
-            }
-        });
-    }
+    //if let Some(p) = options.watch {
+        //let source_dir = p.as_path();
+        //#[cfg(feature = "watch")]
+        //trigger_on_change(source_dir, move |paths, source_dir| {
+            //if let Ok(_) = callback(paths, source_dir) {
+                //let _ = tx.send(Message::text("reload"));
+            //}
+        //});
+    //}
 
     let _ = thread_handle.join();
 
@@ -118,7 +128,7 @@ pub fn serve<F>(options: ServeOptions, bind: Sender<SocketAddr>, mut callback: F
 pub fn trigger_on_change<P, F>(dir: P, mut closure: F)
 where
     P: AsRef<Path>,
-    F: FnMut(Vec<PathBuf>, &Path),
+    F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
 {
     use notify::DebouncedEvent::*;
     use notify::RecursiveMode::*;
@@ -167,7 +177,9 @@ where
             .collect::<Vec<_>>();
 
         if !paths.is_empty() {
-            closure(paths, &dir.as_ref());
+            if let Err(e) = closure(paths, &dir.as_ref()) {
+                error!("{}", e);
+            }
         }
     }
 }

@@ -59,7 +59,16 @@ impl<'a> Builder<'a> {
         )?;
 
         match file_type {
-            FileType::Unknown => return utils::copy(file, dest).map_err(Error::from),
+            FileType::Unknown => {
+                if self.manifest.is_dirty(&file, &dest) {
+                    info!("{} -> {}", file.display(), dest.display());
+                    let result = utils::copy(&file, &dest).map_err(Error::from);
+                    self.manifest.touch(&file, &dest);
+                    return result
+                } else {
+                    info!("noop {}", file.display());
+                }
+            },
             FileType::Markdown | FileType::Html => {
                 let mut data = loader::compute(&file);
 
