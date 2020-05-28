@@ -9,14 +9,16 @@ Define global variables in `[site]` and page-specific tables by relative path; p
 description = "Super fast, opinionated, site generator"
 keywords = "Fast, Static, Rust, Website, Generator"
 
-["index"]
+["/"]
 title = "Home"
 
-["docs/index"]
+["docs/"]
 title = "Documentation"
 ```
 
 You do not need to specify the file extension for page-specific data but you should be sure to quote the path to prevent a TOML error. Paths are resolved relative to the source directory and a warning is printed if an unknown table is declared.
+
+To reference the index file in a directory use a trailing slash; so `docs/` becomes shorthand for `docs/index`.
 
 These fields are **reserved** keywords:
 

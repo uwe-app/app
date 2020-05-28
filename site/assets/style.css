@@ -35,11 +35,15 @@ li > p:last-child {
   margin-bottom: 0;
 }
 
+li > a + p:last-child {
+  font-size: 0.9rem;
+}
+
 .center {
   text-align: center;
 }
 
-@media screen and (max-width: 320px) {
+@media screen and (max-width: 480px) {
   footer {
     flex-direction: column;
   }

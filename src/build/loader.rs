@@ -12,7 +12,15 @@ use serde_json::{json, Map, Value};
 
 use log::{warn};
 
-use crate::{utils, Error, BuildOptions, ROOT_TABLE_KEY, PARSE_EXTENSIONS, DATA_TOML};
+use crate::{
+    utils,
+    Error,
+    BuildOptions,
+    INDEX_STEM,
+    ROOT_TABLE_KEY,
+    PARSE_EXTENSIONS,
+    DATA_TOML
+};
 
 lazy_static! {
     #[derive(Debug)]
@@ -22,9 +30,17 @@ lazy_static! {
 }
 
 fn find_file_for_key(k: &str, opts: &BuildOptions) -> Option<PathBuf> {
+
+    let mut key = k.to_string().clone();
+    if k == "/" {
+        key = INDEX_STEM.to_string().clone(); 
+    } else if key.ends_with("/") {
+        key.push_str(INDEX_STEM);
+    }
+
     let mut pth = PathBuf::new();
     pth.push(&opts.source);
-    pth.push(&k);
+    pth.push(&key);
 
     // Key already includes a file extension
     if pth.exists() {
