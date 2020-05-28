@@ -9,6 +9,4 @@ To set a custom title for a page, define it in the [data]({{ link "/docs/data" }
 title = "Custom Page Title"
 ```
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

@@ -14,6 +14,4 @@ Which will generate a debug build in `build/v3.1.0-alpha1`; if you want a releas
 ht --tag=v3.1.0-alpha1 --release
 ```
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

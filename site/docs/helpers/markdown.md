@@ -9,6 +9,4 @@ This ***is*** some _markdown_ for you to `read`.
 {{/markdown}}{{{{/raw}}}}
 ```
 
-{{#parent}}
-[Back to helpers]({{href}})
-{{/parent}}
+[Back to helpers](..)

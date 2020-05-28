@@ -4,6 +4,4 @@ Markdown and HTML documents are parsed as page templates. They are rendered usin
 
 Like layouts they can include [partials]({{ link "/docs/partials/" }}) and may use all the handlebars features including [helpers]({{ link "/docs/helpers/" }}).
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

@@ -10,6 +10,4 @@ Helpers are here to make life easier.
 {{/children}}
 </ul>
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

@@ -41,6 +41,4 @@ build/debug
 
 If you design your site structure to avoid these naming conflicts then clean locations should work just fine!
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

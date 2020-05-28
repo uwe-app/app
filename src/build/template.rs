@@ -67,8 +67,12 @@ impl<'a> TemplateRender<'a> {
             ctx.insert("file".to_string(), json!(filepath));
             ctx.insert("options".to_string(), json!(self.options));
 
+            // TODO: allow using UTC configuration
             let dt = Local::now();
-            let modified = dt.format("%a %b %e %T %Y").to_string();
+            //let modified = dt.format("%a %b %e %T %Y").to_string();
+            
+            // TODO: allow configuration of format string
+            let modified = dt.format("%a %b %e %Y").to_string();
             ctx.insert("modified".to_string(), json!(modified));
 
             data.insert("context".to_string(), json!(ctx));

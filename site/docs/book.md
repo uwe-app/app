@@ -8,9 +8,7 @@ If the directory `site/template/theme` exists then it is configured as the theme
 
 Note that this has not been tested when `build.build_dir` has been specified, currently the expectation is that books are generated in the default `book` directory.
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)
 
 [mdbook]: https://github.com/rust-lang/mdBook
 

@@ -22,9 +22,7 @@ ht bundle build/release --force --keep
 
 Apart from having a web server as part of the standard library the other reason [Go][] is the right choice for this task is because of it's excellent cross-compilation abilities!
 
-{{#parent}}
-[Back to articles]({{href}})
-{{/parent}}
+[Back to articles](..)
 
 [Go]: https://golang.org/
 [http.Dir]: https://golang.org/pkg/net/http/#Dir.Open

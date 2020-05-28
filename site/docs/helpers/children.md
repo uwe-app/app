@@ -20,6 +20,4 @@ The `self` boolean allows us to ignore the current location which is useful for 
 {{/children}}{{{{/raw}}}}
 ```
 
-{{#parent}}
-[Back to helpers]({{href}})
-{{/parent}}
+[Back to helpers](..)

@@ -35,8 +35,6 @@ The `u8` type has 256 possible values and we are using 16 or them when we genera
 
 Unless the page was rendered by the `ht` web server there is very little chance of knowing the websocket server endpoint!
 
-{{#parent}}
-[Back to articles]({{href}})
-{{/parent}}
+[Back to articles](..)
 
 [CORS]: https://en.wikipedia.org/wiki/Cross-origin_resource_sharing

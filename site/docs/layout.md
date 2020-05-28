@@ -21,6 +21,4 @@ Layouts are passed the `template` variable which contains the HTML content for t
 {{{{/raw}}}}
 ```
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

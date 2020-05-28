@@ -19,6 +19,4 @@ draft = true
 # book configuration goes here
 ```
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

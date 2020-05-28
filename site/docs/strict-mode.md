@@ -6,6 +6,4 @@ If you define page specific data that does not exist as a global variable and th
 
 You can either define the variable as global with a default value in `data.toml` (which is recommended) or if you absolutely must you can disable strict mode with the `--loose` option.
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

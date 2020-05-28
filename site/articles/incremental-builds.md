@@ -26,6 +26,4 @@ If you want to force a full build you can use the `--force` option.
 
 Note that when the `--live` option is given pages *must be compiled* to ensure they connect to the correct websocket server endpoint.
 
-{{#parent}}
-[Back to articles]({{href}})
-{{/parent}}
+[Back to articles](..)

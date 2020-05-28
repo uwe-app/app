@@ -18,6 +18,4 @@ ht serve build/release --port=0
 
 The operating system will allocate the web server a free port when it attempts to bind and our code will operate on the actual socket address that was used.
 
-{{#parent}}
-[Back to articles]({{href}})
-{{/parent}}
+[Back to articles](..)

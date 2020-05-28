@@ -20,6 +20,4 @@ Then override the pattern in `.ignore`:
 
 Job done!
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

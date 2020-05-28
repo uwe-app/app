@@ -53,8 +53,6 @@ ht bundle build/release --force --name=website-v3.1.0-alpha1
 
 Next lets look at what happens when a [bundle is launched]({{ link "../bundles-launch/" }}).
 
-{{#parent}}
-[Back to articles]({{href}})
-{{/parent}}
+[Back to articles](..)
 
 [Go]: https://golang.org/

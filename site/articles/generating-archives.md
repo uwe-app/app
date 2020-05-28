@@ -16,6 +16,4 @@ ht archive build/release archive/releases/v3.1.0-alpha1
 
 Parent directories will be created where necessary and it will always be given the `.zip` extension; to overwrite an existing bundle pass the `--force` option.
 
-{{#parent}}
-[Back to articles]({{href}})
-{{/parent}}
+[Back to articles](..)

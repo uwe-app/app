@@ -9,6 +9,4 @@ Get the `href` for a parent directory; typically used for back links:
 {{/parent}}{{{{/raw}}}}
 ```
 
-{{#parent}}
-[Back to helpers]({{href}})
-{{/parent}}
+[Back to helpers](..)

@@ -33,9 +33,7 @@ These fields are configurable:
 
 Other than these keywords you may define any fields you like and they will be made available to your templates.
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)
 
 [standalone]: {{ link "/docs/standalone" }}
 [drafts]: {{ link "/docs/drafts" }}

@@ -10,6 +10,4 @@ standalone = true
 
 Be aware if you set this field globally no layouts will be applied.
 
-{{#parent}}
-[Back to documentation]({{href}})
-{{/parent}}
+[Back to documentation](..)

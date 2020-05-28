@@ -20,6 +20,4 @@ Tag names and attribute values ***are not escaped***, it is assumed you know wha
 
 Be aware that the inner block of markdown is parsed outside of the document scope and ***cannot use link references*** in the containing document.
 
-{{#parent}}
-[Back to helpers]({{href}})
-{{/parent}}
+[Back to helpers](..)

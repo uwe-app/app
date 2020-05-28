@@ -20,6 +20,4 @@ If a parameter is passed it prints only the given variable:
 {{json context}}
 ```
 
-{{#parent}}
-[Back to helpers]({{href}})
-{{/parent}}
+[Back to helpers](..)
