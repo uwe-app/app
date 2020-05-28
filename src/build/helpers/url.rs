@@ -31,10 +31,6 @@ impl HelperDef for Link{
                 return Err(RenderError::new("Type error for `rel`, expected string parameter")) 
             }
 
-            //if input == "/" {
-                //input = "".to_string();
-            //}
-
             // Strip the leading slash
             if input.starts_with("/") {
                 input = input.replacen("/", "", 1);

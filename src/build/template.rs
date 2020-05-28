@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use serde_json::{json, Map, Value};
 
 use handlebars::Handlebars;
+use chrono::Local;
 
 use log::{warn, debug};
 
@@ -65,6 +66,10 @@ impl<'a> TemplateRender<'a> {
             let mut ctx: Map<String, Value> = Map::new();
             ctx.insert("file".to_string(), json!(filepath));
             ctx.insert("options".to_string(), json!(self.options));
+
+            let dt = Local::now();
+            let modified = dt.format("%a %b %e %T %Y").to_string();
+            ctx.insert("modified".to_string(), json!(modified));
 
             data.insert("context".to_string(), json!(ctx));
 
