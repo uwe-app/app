@@ -1,4 +1,4 @@
-## HTML
+{{> components}}
 
 The `html` helper is designed to be used in markdown documents; it renders an element with attributes and processes the inner block as markdown.
 

@@ -1,4 +1,4 @@
-## Pages
+{{> components}}
 
 Markdown and HTML documents are parsed as page templates. They are rendered using a [layout]({{ link "/docs/layout/" }}) unless configured to be [standalone]({{ link "/docs/standalone/" }}).
 

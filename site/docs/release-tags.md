@@ -1,4 +1,4 @@
-## Release Tags
+{{> components}}
 
 The default release tag is `debug` and the `--release` option will generate a release build into `build/release`.
 

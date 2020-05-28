@@ -1,4 +1,4 @@
-## Helpers
+{{> components}}
 
 Helpers are here to make life easier.
 

@@ -1,4 +1,4 @@
-## Title
+{{> components}}
 
 A page title is inferred from the file name and assigned to the page template data unless a specific title has been defined; when a page is an index file the name of the parent directory is used instead.
 

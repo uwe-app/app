@@ -1,4 +1,4 @@
-## Parent
+{{> components}}
 
 Get the data for a parent directory:
 

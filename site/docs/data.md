@@ -1,4 +1,4 @@
-## Template Data
+{{> components}}
 
 Template data is loaded from `site/data.toml`.
 

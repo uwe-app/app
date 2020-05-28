@@ -1,4 +1,4 @@
-## Docs
+{{> components}}
 
 {{#children}}
 {{#unless self}}

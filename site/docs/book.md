@@ -1,4 +1,4 @@
-## Book
+{{> components}}
 
 Support for [mdbook][] is first-class; if a `book.toml` file is found the directory is treated as a book and it is handled differently.
 

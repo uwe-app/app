@@ -1,4 +1,4 @@
-## Children
+{{> components}}
 
 Use the `children` helper to iterate the destinations for the current location:
 

@@ -1,4 +1,4 @@
-## Ignore
+{{> components}}
 
 You may wish to ignore certain files from the `site` directory; by default the entire `template` directory is excluded for obvious reasons.
 

@@ -153,13 +153,6 @@ impl HelperDef for Components{
                         }
                         let url = up.repeat(amount);
 
-                        println!("using href {:?}", href);
-                        println!("using pos {:?}", pos);
-                        println!("using amount {:?}", amount);
-                        println!("using first {:?}", first);
-                        println!("using last {:?}", last);
-                        println!("using url {:?}", url);
-
                         if let Some(src) = matcher::lookup(
                             &opts.source, &href, opts.clean_url) {
                             let mut data = loader::compute(src);

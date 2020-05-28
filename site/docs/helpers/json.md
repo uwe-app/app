@@ -1,7 +1,5 @@
 {{> components}}
 
-## JSON
-
 A useful helper to pretty print the template data as JSON.
 
 ```handlebars

@@ -1,4 +1,4 @@
-## Strict Mode
+{{> components}}
 
 Templates are parsed with strict mode enabled so it is an error if a variable does not exist.
 

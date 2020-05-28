@@ -1,4 +1,4 @@
-## Draft
+{{> components}}
 
 Drafts allow you to work on documents and books but exclude them from release builds.
 

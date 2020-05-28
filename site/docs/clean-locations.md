@@ -1,4 +1,4 @@
-## Clean Locations
+{{> components}}
 
 It is prettier to use clean locations wherever possible so the default behaviour is to generate directories with an `index.html` file.
 

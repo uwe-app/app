@@ -1,4 +1,4 @@
-### Markdown
+{{> components}}
 
 This helper renders markdown; useful in HTML documents.
 
