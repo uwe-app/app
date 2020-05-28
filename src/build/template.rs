@@ -32,6 +32,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("markdown", Box::new(helpers::markdown::Markdown));
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
         handlebars.register_helper("include", Box::new(helpers::include::Include));
+        handlebars.register_helper("rel", Box::new(helpers::url::Relative));
 
         TemplateRender {
             options,
@@ -63,11 +64,6 @@ impl<'a> TemplateRender<'a> {
             let mut ctx: Map<String, Value> = Map::new();
             ctx.insert("file".to_string(), json!(filepath));
             ctx.insert("options".to_string(), json!(self.options));
-
-            let mut url = &"".to_string();
-            if let Some(u) = &self.options.livereload {
-                url = u
-            }
 
             data.insert("context".to_string(), json!(ctx));
 

@@ -13,8 +13,6 @@ Get short help with `ht -h` and see more detail with `ht --help`.
 
 ## TODO
 
-<a href="{{ rel '/install/' }}">Install</a>
-
 * Support `ho(1)` for optimization pass to compress HTML etc.
 
 ## Notes

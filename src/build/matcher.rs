@@ -88,8 +88,14 @@ pub fn has_parse_file_match<P: AsRef<Path>>(file: P) -> bool {
     false
 }
 
+pub fn is_clean<P: AsRef<Path>>(file: P) -> bool {
+    let target = file.as_ref().to_path_buf();
+    let result = target.clone();
+    return clean(target, result).is_some();
+}
+
 pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
-    let clean_target = file.as_ref().clone();
+    let clean_target = file.as_ref();
     if !is_index(&clean_target) {
         if let Some(parent) = clean_target.parent() {
             if let Some(stem) = clean_target.file_stem() {

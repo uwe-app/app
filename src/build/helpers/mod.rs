@@ -8,6 +8,7 @@ pub mod json;
 pub mod markdown;
 pub mod parent;
 pub mod include;
+pub mod url;
 
 pub struct BufferedOutput {
     buffer: String,
