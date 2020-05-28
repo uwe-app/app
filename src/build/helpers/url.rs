@@ -5,17 +5,16 @@ use serde_json::json;
 use log::debug;
 
 use crate::build::matcher;
-use crate::utils;
 use crate::BuildOptions;
 
 #[derive(Clone, Copy)]
-pub struct Relative;
+pub struct Link;
 
-impl HelperDef for Relative{
+impl HelperDef for Link{
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
+        _r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
@@ -67,7 +66,7 @@ impl HelperDef for Relative{
                     if opts.clean_url && matcher::is_clean(&path) {
                         parents.push_str("../");
                     }
-                    for part in p.components() {
+                    for _ in p.components() {
                         parents.push_str("../");
                     }
                 }
