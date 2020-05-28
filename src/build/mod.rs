@@ -197,7 +197,7 @@ impl<'a> Builder<'a> {
         }
 
         if all {
-            return self.build(target, false);
+            return self.build(target, true);
         } else {
         
             for path in invalidation.paths {

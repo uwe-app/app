@@ -9,5 +9,59 @@ title = "Home"
 ["docs/index"]
 title = "Documentation"
 
-["install"]
-digest_url = "https://github.com/tmpfs/hypertext/blob/master/sha256.txt"
+["docs/book"]
+description = "Create books and define a common theme"
+
+["docs/clean-locations"]
+description = "Clean URLs and how to disable them"
+
+["docs/data"]
+description = "How to define template data for your pages"
+
+["docs/drafts"]
+description = "Mark work in progress as drafts"
+
+["docs/helpers/index"]
+description = "Template rendering helpers"
+
+["docs/ignore"]
+description = "How to ignore files"
+
+["docs/layout"]
+description = "Describes the process for rendering layouts"
+
+["docs/pages"]
+description = "Brief overview of pages"
+
+["docs/partials"]
+description = "Where to put partials and how to include them"
+
+["docs/release-tags"]
+description = "Types of releases and how to create your own tags"
+
+["docs/standalone"]
+description = "Marking pages as standalone"
+
+["docs/strict-mode"]
+description = "What is strict mode and how to disable it"
+
+["docs/title"]
+description = "How titles are generated and customized"
+
+["articles/bundles-introduction"]
+description = "An introduction to standalone bundles"
+
+["articles/bundles-launch"]
+description = "What happens when a bundle is launched"
+
+["articles/ephemeral-port"]
+description = "Use an ephemeral port for multiple projects"
+
+["articles/generating-archives"]
+description = "How to generate zip archives"
+
+["articles/incremental-builds"]
+description = "Insights into how the incremental builds work"
+
+["articles/websocket-security"]
+description = "Mitigations for local websocket server attacks"

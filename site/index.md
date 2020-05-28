@@ -1,6 +1,6 @@
 <p class="center">Beautiful web pages, incredibly fast</p>
 
-Hypertext is a static site generator with [mdbook][] support designed for people that want to focus on the content; ideal for websites, technical documentation or a quick blog.
+Hypertext is a static site generator with [mdbook][] support designed for people that want to focus on the content; ideal for websites, technical documentation or a blog.
 
 Use Markdown, HTML and CSS to build your site; add a sprinkle of Javascript if you need it.
 
