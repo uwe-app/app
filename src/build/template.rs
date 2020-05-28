@@ -90,7 +90,7 @@ impl<'a> TemplateRender<'a> {
     pub fn layout<P: AsRef<Path>>(
         &mut self,
         _input: P,
-        output: P,
+        _output: P,
         document: String,
         data: &mut Map<String, Value>,
     ) -> Result<String, Error> {

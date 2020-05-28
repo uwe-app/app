@@ -5,6 +5,7 @@ use serde_json::json;
 use log::debug;
 
 use crate::build::matcher;
+use crate::build::loader;
 use crate::BuildOptions;
 
 #[derive(Clone, Copy)]
@@ -100,7 +101,7 @@ impl HelperDef for Components{
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
+        r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
@@ -121,11 +122,47 @@ impl HelperDef for Components{
             .to_owned();
 
         let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
-        let mut path = Path::new(&base_path).to_path_buf();
+        let path = Path::new(&base_path).to_path_buf();
 
-        let rel = path.strip_prefix(&opts.target);
+        let template = h.template();
+        match template {
+            Some(t) => {
 
-        //println!("rendering url components {}", rel.display());
+                if let Ok(rel) = path.strip_prefix(&opts.target) {
+                    let mut buf = rel.to_path_buf();
+                    if buf.ends_with("index.html") {
+                        buf.pop();
+                    }
+
+                    buf.pop();
+
+                    let parts: Vec<String> = buf.iter()
+                        .map(|part| part.to_string_lossy().into_owned())
+                        .collect();
+
+                    let up = "../".to_string();
+                    let mut href = "".to_string();
+                    for (pos, name) in parts.iter().enumerate() {
+                        let amount = parts.len() - pos;
+                        href.push('/');
+                        href.push_str(&name);
+                        let url = up.repeat(amount);
+                        if let Some(src) = matcher::lookup(&opts.source, &href, opts.clean_url) {
+                            let mut data = loader::compute(src);
+                            data.insert("href".to_string(), json!(url));
+                            let mut local_rc = rc.clone();
+                            let local_ctx = Context::wraps(&data)?;
+                            t.render(r, &local_ctx, &mut local_rc, out)?;
+                        }
+                    }
+                }
+
+
+            }
+            None => return Err(RenderError::new("Template expected for components helper")),
+        }
+
+
         Ok(())
     }
 }

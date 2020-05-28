@@ -51,6 +51,22 @@ li > a + p:last-child {
   text-align: center;
 }
 
+ul.components {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+ul.components > li {
+  display: inline-block;
+}
+
+ul.components > li::after {
+  display: inline-block;
+  content: '»';
+  margin: 0 .5rem;
+}
+
 @media screen and (max-width: 480px) {
   footer {
     flex-direction: column;
