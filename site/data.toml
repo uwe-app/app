@@ -26,6 +26,9 @@ description = "Template rendering helpers"
 ["docs/helpers/children"]
 description = "List directory contents"
 
+["docs/helpers/components"]
+description = "Create crumbtrails"
+
 ["docs/helpers/html"]
 description = "Wrap a markdown block in an element"
 
