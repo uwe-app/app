@@ -69,7 +69,6 @@ impl<'a> TemplateRender<'a> {
                 url = u
             }
 
-            data.insert("livereload".to_string(), json!(url));
             data.insert("context".to_string(), json!(ctx));
 
             debug!("{:?}", data);

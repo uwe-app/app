@@ -23,7 +23,6 @@ To reference the index file in a directory use a trailing slash; so `docs/` beco
 These fields are **reserved** keywords:
 
 * `context` Helper context information.
-* `livereload` Websocket URL for live reload.
 * `template` Rendered document content (layouts only).
 
 These fields are configurable:
