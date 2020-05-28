@@ -31,14 +31,15 @@ impl HelperDef for Link{
                 return Err(RenderError::new("Type error for `rel`, expected string parameter")) 
             }
 
+            let passthrough = !input.starts_with("/") || input.starts_with("http:") || input.starts_with("https:");
+            if passthrough {
+                out.write(&input)?;
+                return Ok(())
+            }
+
             // Strip the leading slash
             if input.starts_with("/") {
                 input = input.replacen("/", "", 1);
-            } else {
-                // Looks like we got a relative path
-                // just use it
-                out.write(&input)?;
-                return Ok(())
             }
 
             let base_path = rc

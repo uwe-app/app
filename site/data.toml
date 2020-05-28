@@ -1,7 +1,6 @@
 [site]
 description = "Fast and elegant site generator"
 keywords = "Fast, Static, Website, Generator, Markdown, Handlebars, Mdbook, Rust"
-repo_url = "https://github.com/tmpfs/hypertext"
 
 ["/"]
 title = "Home"
@@ -23,6 +22,24 @@ description = "Mark work in progress as drafts"
 
 ["docs/helpers/"]
 description = "Template rendering helpers"
+
+["docs/helpers/children"]
+description = "List directory contents"
+
+["docs/helpers/html"]
+description = "Wrap a markdown block in an element"
+
+["docs/helpers/json"]
+description = "Debug your template data"
+
+["docs/helpers/link"]
+description = "Create valid, relative links"
+
+["docs/helpers/markdown"]
+description = "Embed markdown in HTML pages"
+
+["docs/helpers/parent"]
+description = "Get data for parent pages"
 
 ["docs/ignore"]
 description = "How to ignore files"

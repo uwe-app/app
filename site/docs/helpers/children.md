@@ -4,7 +4,7 @@ Use the `children` helper to iterate the destinations for the current location:
 
 ```handlebars
 {{{{raw}}}}{{#children}}
-<li><a href="{{href}}">{{title}}</a></li>
+* [{{title}}]({{href}})
 {{/children}}{{{{/raw}}}}
 ```
 
@@ -15,7 +15,7 @@ The `self` boolean allows us to ignore the current location which is useful for 
 ```handlebars
 {{{{raw}}}}{{#children}}
 {{#unless self}}
-<li><a href="{{href}}">{{title}}</a></li>
+* [{{title}}]({{href}})
 {{/unless}}
 {{/children}}{{{{/raw}}}}
 ```
