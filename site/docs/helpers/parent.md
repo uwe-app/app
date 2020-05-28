@@ -1,12 +1,18 @@
 ## Parent
 
-Get the `href` for a parent directory; typically used for back links:
+Get the data for a parent directory:
 
 ```handlebars
 {{{{raw}}}}
 {{#parent}}
-[Back to documentation]({{href}})
+{{json}}
 {{/parent}}{{{{/raw}}}}
+```
+
+Which for this page shows us:
+
+```json
+{{#parent}}{{json}}{{/parent}}
 ```
 
 [Back to helpers](..)

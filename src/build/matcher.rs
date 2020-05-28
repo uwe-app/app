@@ -22,6 +22,35 @@ use crate::{
     THEME,
 };
 
+fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
+    let mut buf = file.as_ref().to_path_buf();
+    buf.push(INDEX_STEM);
+    for ext in PARSE_EXTENSIONS.iter() {
+        buf.set_extension(ext);
+        if buf.exists() {
+            return Some(buf)
+        }
+    }
+    None
+}
+
+pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
+    if let Some(parent) = file.as_ref().parent() {
+
+        // Not an index file so a single level is sufficient
+        if !is_index(&file) {
+            return resolve_dir_index(&parent);
+        // Otherwise go back down one more level
+        } else {
+            if let Some(parent) = parent.parent() {
+                return resolve_dir_index(&parent);
+            }
+        }
+
+    }
+    None
+}
+
 pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
     let mut url = href.to_string().clone();
     if url.starts_with("/") {

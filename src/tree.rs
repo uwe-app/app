@@ -1,5 +1,4 @@
 use std::convert::AsRef;
-use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -64,34 +63,6 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &BuildOption
     }
 
     Ok(vec![])
-}
-
-// Try to find a parent and load into data
-// if a parent could be located.
-pub fn parent<P: AsRef<Path>>(target: P, opts: &BuildOptions, data: &mut Map<String, Value>) -> Result<(), Error> {
-    if let Some(p) = resolve_parent_href(target, &opts) {
-        //println!("Found a parent path {:?}", p);
-        data.insert("href".to_owned(), json!(p.href));
-        data.insert("path".to_owned(), json!(p.path.to_string_lossy()));
-        return Ok(())
-    }
-    Err(Error::new("Could not resolve parent".to_owned()))
-}
-
-fn resolve_parent_href<P: AsRef<Path>>(target: P, opts: &BuildOptions) -> Option<PathAndHref> {
-    let t = target.as_ref();
-    let stem = t.file_stem().unwrap_or(OsStr::new(""));
-    let mut p = t.parent().unwrap_or(t);
-    if stem == INDEX_STEM {
-        p = p.parent().unwrap_or(p);
-    }
-    if let Ok(rel) = p.strip_prefix(&opts.source) {
-        if let Some(h) = rel.to_str() {
-            let href = format!("/{}/", h);
-            return Some(PathAndHref{href, path: p.to_path_buf()});
-        }
-    }
-    None
 }
 
 fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &BuildOptions) -> Result<Vec<ItemData>, Error> {
