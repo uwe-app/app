@@ -31,12 +31,19 @@ impl HelperDef for Link{
                 return Err(RenderError::new("Type error for `rel`, expected string parameter")) 
             }
 
-            if input == "/" {
-                input = "".to_string();
-            }
+            //if input == "/" {
+                //input = "".to_string();
+            //}
 
             // Strip the leading slash
-            input = input.replacen("/", "", 1);
+            if input.starts_with("/") {
+                input = input.replacen("/", "", 1);
+            } else {
+                // Looks like we got a relative path
+                // just use it
+                out.write(&input)?;
+                return Ok(())
+            }
 
             let base_path = rc
                 .evaluate(ctx, "@root/context.file")?
@@ -56,11 +63,6 @@ impl HelperDef for Link{
             let path = Path::new(&base_path).to_path_buf();
 
             if let Ok(rel) = path.strip_prefix(opts.source) {
-                //println!("got relative {:?}", p);
-                //println!("got relative {:?}", input);
-                //println!("got relative {:?}", path.display());
-                //println!("got relative {:?}", rel.display());
-
                 let mut parents: String = "".to_string();
                 if let Some(p) = rel.parent() {
                     if opts.clean_url && matcher::is_clean(&path) {
@@ -72,7 +74,7 @@ impl HelperDef for Link{
                 }
 
                 parents.push_str(&input);
-                debug!("rel {:?}", parents);
+                debug!("link {:?}", parents);
                 out.write(&parents)?;
 
             } else {

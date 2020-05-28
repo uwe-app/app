@@ -1,6 +1,6 @@
 ## Incremental Builds
 
-If source files have not changed there is no need for us to render or copy them; a manifest is created for each [release tag](/docs/release-tags/) which is written to the build directory as a JSON file.
+If source files have not changed there is no need for us to render or copy them; a manifest is created for each [release tag]({{ link "/docs/release-tags/" }}) which is written to the build directory as a JSON file.
 
 The manifest contains a list of source files and modification times; when a build runs it will compare modification times to determine if a file appears to have changed.
 

@@ -37,5 +37,5 @@ Other than these keywords you may define any fields you like and they will be ma
 [Back to documentation]({{href}})
 {{/parent}}
 
-[standalone]: /docs/standalone
-[drafts]: /docs/drafts
+[standalone]: {{ link "/docs/standalone" }}
+[drafts]: {{ link "/docs/drafts" }}

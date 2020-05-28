@@ -1,6 +1,6 @@
 ## Bundles: Launch
 
-In the [first part](../bundles-introduction/) of this series on bundles we looked at how to generate bundles. Now let's examine what happens when you launch the executable and how files are bundled.
+In the [first part]({{ link "../bundles-introduction/" }}) of this series on bundles we looked at how to generate bundles. Now let's examine what happens when you launch the executable and how files are bundled.
 
 When a bundle executable is launched it binds a web server to an ephemeral port, serves the bundled files from that address and opens a browser window with the website.
 

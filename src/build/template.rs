@@ -33,6 +33,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
         handlebars.register_helper("include", Box::new(helpers::include::Include));
         handlebars.register_helper("link", Box::new(helpers::url::Link));
+        //handlebars.register_helper("page", Box::new(helpers::url::Page));
 
         TemplateRender {
             options,
