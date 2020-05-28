@@ -58,6 +58,12 @@ impl HelperDef for Link{
             let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
             let path = Path::new(&base_path).to_path_buf();
 
+            let exists = matcher::source_exists(&opts.source, &input, opts.clean_url);
+
+            if !exists {
+                return Err(RenderError::new(format!("Type error for `link`, missing url {}", input)))
+            }
+
             if let Ok(rel) = path.strip_prefix(opts.source) {
                 let mut parents: String = "".to_string();
                 if let Some(p) = rel.parent() {

@@ -22,6 +22,47 @@ use crate::{
     THEME,
 };
 
+pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
+    let mut url = href.to_string().clone();
+    if url.starts_with("/") {
+        url = url.trim_start_matches("/").to_owned();
+    }
+
+    let is_dir = url.ends_with("/") || !url.contains(".");
+
+    // Check index pages first
+    if is_dir {
+        let mut buf = base.as_ref().to_path_buf();
+        buf.push(&url);
+        buf.push(INDEX_STEM);
+        for ext in PARSE_EXTENSIONS.iter() {
+            buf.set_extension(ext);
+            if buf.exists() {
+                return true
+            }
+        }
+    }
+
+    // Check for lower-level files that could map 
+    // to index pages
+    if clean_url && is_dir {
+        let mut buf = base.as_ref().to_path_buf();
+        url = url.trim_end_matches("/").to_owned();
+        buf.push(&url);
+        for ext in PARSE_EXTENSIONS.iter() {
+            buf.set_extension(ext);
+            if buf.exists() {
+                return true
+            }
+        }
+    } 
+
+    // Check if the file exists directly
+    let mut buf = base.as_ref().to_path_buf();
+    buf.push(&url);
+    buf.exists()
+}
+
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
     let mut root_theme = base.as_ref().to_path_buf();
     root_theme.push(TEMPLATE);

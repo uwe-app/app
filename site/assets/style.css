@@ -1,4 +1,4 @@
-@import url("/assets/theme.css");
+@import url("./theme.css");
 
 header {
   text-align: center;
@@ -39,7 +39,7 @@ footer nav > ul > li:not(:last-child):after {
   margin: 0 .2rem;
 }
 
-li > p:last-child {
+li > p:first-child, li > p:last-child {
   margin-bottom: 0;
 }
 

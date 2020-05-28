@@ -2,12 +2,11 @@
 
 Helpers are here to make life easier.
 
-<ul>
 {{#children}}
 {{#unless self}}
-<li><a href="{{href}}">{{title}}</a></li>
+* [{{title}}]({{href}})
+    <p>{{description}}</p>
 {{/unless}}
 {{/children}}
-</ul>
 
 [Back to documentation](..)

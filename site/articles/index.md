@@ -1,12 +1,8 @@
 ## Articles
 
-<ul>
 {{#children}}
 {{#unless self}}
-<li>
-  <a href="{{href}}">{{title}}</a>
-  <p>{{ description }}</p>
-</li>
+* [{{title}}]({{href}})
+    <p>{{description}}</p>
 {{/unless}}
 {{/children}}
-</ul>
