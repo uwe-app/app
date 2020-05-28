@@ -134,21 +134,37 @@ impl HelperDef for Components{
                         buf.pop();
                     }
 
-                    buf.pop();
-
-                    let parts: Vec<String> = buf.iter()
+                    let mut parts: Vec<String> = buf.iter()
                         .map(|part| part.to_string_lossy().into_owned())
                         .collect();
+
+                    // Add an empty string for home page
+                    parts.insert(0, "/".to_string());
 
                     let up = "../".to_string();
                     let mut href = "".to_string();
                     for (pos, name) in parts.iter().enumerate() {
-                        let amount = parts.len() - pos;
-                        href.push('/');
-                        href.push_str(&name);
+                        let amount = (parts.len() - 1) - pos;
+                        let first = pos == 0;
+                        let last = amount == 0;
+                        if pos > 0 {
+                            href.push('/');
+                            href.push_str(&name);
+                        }
                         let url = up.repeat(amount);
-                        if let Some(src) = matcher::lookup(&opts.source, &href, opts.clean_url) {
+
+                        println!("using href {:?}", href);
+                        println!("using pos {:?}", pos);
+                        println!("using amount {:?}", amount);
+                        println!("using first {:?}", first);
+                        println!("using last {:?}", last);
+                        println!("using url {:?}", url);
+
+                        if let Some(src) = matcher::lookup(
+                            &opts.source, &href, opts.clean_url) {
                             let mut data = loader::compute(src);
+                            data.insert("first".to_string(), json!(first));
+                            data.insert("last".to_string(), json!(last));
                             data.insert("href".to_string(), json!(url));
                             let mut local_rc = rc.clone();
                             let local_ctx = Context::wraps(&data)?;
@@ -161,7 +177,6 @@ impl HelperDef for Components{
             }
             None => return Err(RenderError::new("Template expected for components helper")),
         }
-
 
         Ok(())
     }

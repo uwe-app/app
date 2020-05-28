@@ -1,8 +1,12 @@
-<ul class="components">
+<nav>
 {{#components}}
-<li>
-  <a href="{{href}}">{{title}}</a>
-</li>
+{{#unless first}}
+{{#if last}}
+{{title}}
+{{else}}
+<a href="{{href}}">{{title}}</a>
+{{/if}}
+{{/unless}}
 {{/components}}
-</ul>
+</nav>
 

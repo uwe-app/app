@@ -51,17 +51,13 @@ li > a + p:last-child {
   text-align: center;
 }
 
-ul.components {
-  list-style-type: none;
+main > nav:first-child > * {
+  display: inline-block;
   margin: 0;
   padding: 0;
 }
 
-ul.components > li {
-  display: inline-block;
-}
-
-ul.components > li::after {
+main > nav:first-child > *::after {
   display: inline-block;
   content: '»';
   margin: 0 .5rem;
