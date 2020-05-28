@@ -22,7 +22,7 @@ use crate::{
     THEME,
 };
 
-pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
+pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
     let mut url = href.to_string().clone();
     if url.starts_with("/") {
         url = url.trim_start_matches("/").to_owned();
@@ -38,7 +38,7 @@ pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bo
         for ext in PARSE_EXTENSIONS.iter() {
             buf.set_extension(ext);
             if buf.exists() {
-                return true
+                return Some(buf)
             }
         }
     }
@@ -52,7 +52,7 @@ pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bo
         for ext in PARSE_EXTENSIONS.iter() {
             buf.set_extension(ext);
             if buf.exists() {
-                return true
+                return Some(buf)
             }
         }
     } 
@@ -60,7 +60,16 @@ pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bo
     // Check if the file exists directly
     let mut buf = base.as_ref().to_path_buf();
     buf.push(&url);
-    buf.exists()
+    if buf.exists() {
+        return Some(buf)
+    }
+
+    None
+}
+
+
+pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
+    lookup(base, href, clean_url).is_some()
 }
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
