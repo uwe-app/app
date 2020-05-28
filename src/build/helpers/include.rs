@@ -25,6 +25,8 @@ impl HelperDef for Include{
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
+        // TODO: support embedding only certain lines only
+
         let mut buf = Path::new(&base_path).to_path_buf();
 
         if let Some(parent) = buf.parent() {

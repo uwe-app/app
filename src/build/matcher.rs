@@ -51,6 +51,7 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     None
 }
 
+// Try to find a source file for the given URL
 pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
     let mut url = href.to_string().clone();
     if url.starts_with("/") {

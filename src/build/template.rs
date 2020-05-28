@@ -34,7 +34,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
         handlebars.register_helper("include", Box::new(helpers::include::Include));
         handlebars.register_helper("link", Box::new(helpers::url::Link));
-        //handlebars.register_helper("page", Box::new(helpers::url::Page));
+        handlebars.register_helper("components", Box::new(helpers::url::Components));
 
         TemplateRender {
             options,
@@ -53,6 +53,7 @@ impl<'a> TemplateRender<'a> {
     pub fn parse_template_string<P: AsRef<Path>>(
         &mut self,
         input: P,
+        output: P,
         content: String,
         data: &mut Map<String, Value>,
     ) -> Result<String, Error> {
@@ -63,8 +64,10 @@ impl<'a> TemplateRender<'a> {
             .is_ok()
         {
             let filepath = input.as_ref().to_str().unwrap().to_string();
+            let destpath = output.as_ref().to_str().unwrap().to_string();
             let mut ctx: Map<String, Value> = Map::new();
             ctx.insert("file".to_string(), json!(filepath));
+            ctx.insert("dest".to_string(), json!(destpath));
             ctx.insert("options".to_string(), json!(self.options));
 
             // TODO: allow using UTC configuration
@@ -87,6 +90,7 @@ impl<'a> TemplateRender<'a> {
     pub fn layout<P: AsRef<Path>>(
         &mut self,
         _input: P,
+        output: P,
         document: String,
         data: &mut Map<String, Value>,
     ) -> Result<String, Error> {

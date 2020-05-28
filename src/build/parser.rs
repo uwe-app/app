@@ -33,30 +33,32 @@ impl<'a> Parser<'a> {
     fn parse_html<P: AsRef<Path>>(
         &mut self,
         input: P,
+        output: P,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
         let mut result = utils::read_string(&input).map_err(Error::from)?;
         result = self
             .render
-            .parse_template_string(input.as_ref(), result, data)?;
-        result = self.render.layout(input, result, data)?;
+            .parse_template_string(&input, &output, result, data)?;
+        result = self.render.layout(&input, &output, result, data)?;
         Ok(result)
     }
 
     fn parse_markdown<P: AsRef<Path>>(
         &mut self,
         input: P,
+        output: P,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
-        let content = utils::read_string(input.as_ref()).map_err(Error::from)?;
+        let content = utils::read_string(&input).map_err(Error::from)?;
         let parsed = self
             .render
-            .parse_template_string(input.as_ref(), content, data);
+            .parse_template_string(&input, &output, content, data);
 
         match parsed {
             Ok(content) => {
                 let markup = utils::render_markdown_string(&content);
-                return self.render.layout(input, markup, data);
+                return self.render.layout(&input, &output, markup, data);
             }
             Err(e) => return Err(e),
         }
@@ -65,15 +67,16 @@ impl<'a> Parser<'a> {
     pub fn parse<P: AsRef<Path>>(
         &mut self,
         input: P,
+        output: P,
         file_type: FileType,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
         match file_type {
             FileType::Html => {
-                return self.parse_html(input, data)
+                return self.parse_html(input, output, data)
             }
             FileType::Markdown => {
-                return self.parse_markdown(input, data)
+                return self.parse_markdown(input, output, data)
             },
             _ => Err(Error::new("parser got invalid file type".to_string()))
         }

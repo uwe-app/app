@@ -57,7 +57,7 @@ impl HelperDef for Link{
                 .to_owned();
 
             let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
-            let path = Path::new(&base_path).to_path_buf();
+            let path = Path::new(&base_path);
 
             let exists = matcher::source_exists(&opts.source, &input, opts.clean_url);
 
@@ -92,3 +92,40 @@ impl HelperDef for Link{
     }
 }
 
+
+#[derive(Clone, Copy)]
+pub struct Components;
+
+impl HelperDef for Components{
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'reg, 'rc>,
+        _r: &'reg Handlebars<'_>,
+        ctx: &'rc Context,
+        rc: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+
+        let base_path = rc
+            .evaluate(ctx, "@root/context.dest")?
+            .as_json()
+            .as_str()
+            .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
+            .replace("\"", "");
+
+        let opts = rc
+            .evaluate(ctx, "@root/context.options")?
+            .as_json()
+            .as_object()
+            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            .to_owned();
+
+        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let mut path = Path::new(&base_path).to_path_buf();
+
+        let rel = path.strip_prefix(&opts.target);
+
+        //println!("rendering url components {}", rel.display());
+        Ok(())
+    }
+}

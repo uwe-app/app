@@ -100,7 +100,7 @@ impl<'a> Builder<'a> {
 
                 if self.manifest.is_dirty(file, &dest, pages_only || self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
-                    let s = self.parser.parse(&file, file_type, &mut data)?;
+                    let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut data)?;
                     let result = utils::write_string(&dest, s).map_err(Error::from);
                     self.manifest.touch(file, &dest);
                     return result
