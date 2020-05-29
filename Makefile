@@ -1,3 +1,5 @@
+SITE_ROOT = "../website"
+
 all: init example site-release
 
 clean:
@@ -33,7 +35,10 @@ help:
 	@cargo run -- --help > site/help.txt
 
 site:
-	@cargo run --
+	@cargo run -- ../website/site ../website/build
+
+site-live:
+	@cargo run -- ../website/site ../website/build --live --force
 
 site-release: install help
 
@@ -48,14 +53,14 @@ build-release:
 	@cargo build --release
 
 copy-release:
-	@rm -rf site/files/ht-gnu-linux-x86_64
-	@mkdir -p site/files/ht-gnu-linux-x86_64
-	@cp -f target/release/ht site/files/ht-gnu-linux-x86_64/ht
+	#@rm -rf $(SITE_ROOT)/site/files/ht-gnu-linux-x86_64
+	#@mkdir -p $(SITE_ROOT)/site/files/ht-gnu-linux-x86_64
+	#@cp -f target/release/ht $(SITE_ROOT)/site/files/ht-gnu-linux-x86_64/ht
 
 copy-release-darwin:
-	@rm -rf site/files/ht-darwin-x86_64
-	@mkdir -p site/files/ht-darwin-x86_64
-	@cp -f target/release/ht site/files/ht-darwin-x86_64/ht
+	#@rm -rf $(SITE_ROOT)/site/files/ht-darwin-x86_64
+	#@mkdir -p $(SITE_ROOT)/site/files/ht-darwin-x86_64
+	#@cp -f target/release/ht $(SITE_ROOT)/site/files/ht-darwin-x86_64/ht
 
 release: build-release copy-release
 release-darwin: build-release copy-release-darwin
