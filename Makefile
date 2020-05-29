@@ -32,19 +32,19 @@ init-bahunya-open: init-bahunya
 init: init-newcss init-tacit init-bahunya
 
 help:
-	@cargo run -- --help > site/help.txt
+	@cargo run -- --help > $(SITE_ROOT)/site/help.txt
 
 site:
-	@cargo run -- ../website/site ../website/build --force
+	@cargo run -- $(SITE_ROOT)/site $(SITE_ROOT)/build --force
 
 site-live:
-	@cargo run -- ../website/site ../website/build --live --force
+	@cargo run -- $(SITE_ROOT)/site $(SITE_ROOT)/build --live --force
 
 site-release: install help
 
 dist: site-release
-	@ht ../website/site ../website/build --release --index-links --tag=ht-preview
-	@ht archive ../website/build/ht-preview
+	@ht $(SITE_ROOT)/site $(SITE_ROOT)/build --release --force --index-links --tag=ht-dist
+	@ht archive $(SITE_ROOT)/build/ht-dist --force
 
 example: install
 	@ht example/layout --tag=layout-example

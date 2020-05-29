@@ -165,7 +165,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                 }
 
                 if !href.is_empty() {
-                    if opts.clean_url {
+                    if opts.clean_url && !opts.index_links {
                         if href.ends_with(INDEX_HTML) {
                             href.truncate(href.len() - INDEX_HTML.len());
                         }

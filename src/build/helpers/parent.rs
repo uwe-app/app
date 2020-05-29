@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use handlebars::*;
+use serde_json::{json, Map, Value};
 
 use crate::build::loader;
 use crate::build::matcher;
@@ -30,9 +31,23 @@ impl HelperDef for Parent{
             let template = h.template();
             match template {
                 Some(t) => {
+                    // This dance keeps the parent context data intact
+                    // so that the `link` helper can be called inside this
+                    // context
+                    
+                    let existing = ctx.data().as_object().unwrap();
                     let data = loader::compute(&parent);
                     let mut local_rc = rc.clone();
-                    let local_ctx = Context::wraps(&data)?;
+
+                    let mut new_data: Map<String, Value> = Map::new();
+                    for (k, v) in existing {
+                        new_data.insert(k.clone(), json!(v));
+                    }
+                    for (k, v) in &data {
+                        new_data.insert(k.clone(), json!(v));
+                    }
+
+                    let local_ctx = Context::wraps(&new_data)?;
                     t.render(r, &local_ctx, &mut local_rc, out)?;
                     return Ok(());
                 }

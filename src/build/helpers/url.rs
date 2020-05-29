@@ -23,6 +23,23 @@ impl HelperDef for Link{
         out: &mut dyn Output,
     ) -> HelperResult {
 
+        let base_path = rc
+            .evaluate(ctx, "@root/context.file")?
+            .as_json()
+            .as_str()
+            .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
+            .replace("\"", "");
+
+        let opts = rc
+            .evaluate(ctx, "@root/context.options")?
+            .as_json()
+            .as_object()
+            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            .to_owned();
+
+        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let path = Path::new(&base_path);
+
         let mut input: String = "".to_string();
 
         if let Some(p) = h.params().get(0) {
@@ -37,6 +54,10 @@ impl HelperDef for Link{
             let passthrough = !input.starts_with("/") || input.starts_with("http:") || input.starts_with("https:");
             if passthrough {
                 out.write(&input)?;
+                if opts.index_links && (input == "." || input == "..") {
+                    out.write("/")?;
+                    out.write(INDEX_HTML)?;
+                }
                 return Ok(())
             }
 
@@ -44,23 +65,6 @@ impl HelperDef for Link{
             if input.starts_with("/") {
                 input = input.trim_start_matches("/").to_owned();
             }
-
-            let base_path = rc
-                .evaluate(ctx, "@root/context.file")?
-                .as_json()
-                .as_str()
-                .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
-                .replace("\"", "");
-
-            let opts = rc
-                .evaluate(ctx, "@root/context.options")?
-                .as_json()
-                .as_object()
-                .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
-                .to_owned();
-
-            let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
-            let path = Path::new(&base_path);
 
             let exists = matcher::source_exists(&opts.source, &input, opts.clean_url);
 
@@ -81,15 +85,10 @@ impl HelperDef for Link{
                 }
 
                 value.push_str(&input);
-                if opts.index_links && value.ends_with("/") {
+                if opts.index_links && (value.ends_with("/") || value == "") {
                     value.push_str(INDEX_HTML);
                 }
                 debug!("link {:?}", value);
-
-                if value == "" && opts.index_links {
-                    value.push('/');
-                    value.push_str(INDEX_HTML);
-                }
 
                 out.write(&value)?;
 
