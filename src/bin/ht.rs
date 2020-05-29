@@ -54,6 +54,10 @@ struct BuildOpts {
     #[structopt(long)]
     max_depth: Option<usize>,
 
+    /// Use index.html for directory links
+    #[structopt(long)]
+    index_links: bool,
+
     /// Disable clean locations
     #[structopt(long)]
     html_extension: bool,
@@ -384,6 +388,7 @@ fn process_command(cmd: &Command) {
                 release: args.release,
                 live: args.live,
                 force: args.force,
+                index_links: args.index_links,
                 livereload: None,
                 tag: tag_target,
                 host: args.server.host.to_owned(),

@@ -8,6 +8,8 @@ use crate::build::matcher;
 use crate::build::loader;
 use crate::BuildOptions;
 
+use crate::{INDEX_HTML};
+
 #[derive(Clone, Copy)]
 pub struct Link;
 
@@ -29,7 +31,7 @@ impl HelperDef for Link{
             }
 
             if input.is_empty() {
-                return Err(RenderError::new("Type error for `rel`, expected string parameter")) 
+                return Err(RenderError::new("Type error for `link`, expected string parameter")) 
             }
 
             let passthrough = !input.starts_with("/") || input.starts_with("http:") || input.starts_with("https:");
@@ -40,7 +42,7 @@ impl HelperDef for Link{
 
             // Strip the leading slash
             if input.starts_with("/") {
-                input = input.replacen("/", "", 1);
+                input = input.trim_start_matches("/").to_owned();
             }
 
             let base_path = rc
@@ -63,31 +65,41 @@ impl HelperDef for Link{
             let exists = matcher::source_exists(&opts.source, &input, opts.clean_url);
 
             if !exists {
-                return Err(RenderError::new(format!("Type error for `link`, missing url {}", input)))
+                return Err(
+                    RenderError::new(format!("Type error for `link`, missing url {}", input)))
             }
 
             if let Ok(rel) = path.strip_prefix(opts.source) {
-                let mut parents: String = "".to_string();
+                let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
                     if opts.clean_url && matcher::is_clean(&path) {
-                        parents.push_str("../");
+                        value.push_str("../");
                     }
                     for _ in p.components() {
-                        parents.push_str("../");
+                        value.push_str("../");
                     }
                 }
 
-                parents.push_str(&input);
-                debug!("link {:?}", parents);
-                out.write(&parents)?;
+                value.push_str(&input);
+                if opts.index_links && value.ends_with("/") {
+                    value.push_str(INDEX_HTML);
+                }
+                debug!("link {:?}", value);
+
+                if value == "" && opts.index_links {
+                    value.push('/');
+                    value.push_str(INDEX_HTML);
+                }
+
+                out.write(&value)?;
 
             } else {
-                return Err(RenderError::new("Type error for `rel`, file is outside source!")) 
+                return Err(RenderError::new("Type error for `link`, file is outside source!")) 
             }
 
 
         } else {
-            return Err(RenderError::new("Type error for `rel`, expected string parameter")) 
+            return Err(RenderError::new("Type error for `link`, expected string parameter")) 
         }
         Ok(())
     }
@@ -130,7 +142,7 @@ impl HelperDef for Components{
 
                 if let Ok(rel) = path.strip_prefix(&opts.target) {
                     let mut buf = rel.to_path_buf();
-                    if buf.ends_with("index.html") {
+                    if buf.ends_with(INDEX_HTML) {
                         buf.pop();
                     }
 
@@ -151,7 +163,10 @@ impl HelperDef for Components{
                             href.push('/');
                             href.push_str(&name);
                         }
-                        let url = up.repeat(amount);
+                        let mut url = up.repeat(amount);
+                        if opts.index_links {
+                            url.push_str(INDEX_HTML);
+                        }
 
                         if let Some(src) = matcher::lookup(
                             &opts.source, &href, opts.clean_url) {

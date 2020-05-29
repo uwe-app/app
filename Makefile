@@ -35,12 +35,16 @@ help:
 	@cargo run -- --help > site/help.txt
 
 site:
-	@cargo run -- ../website/site ../website/build
+	@cargo run -- ../website/site ../website/build --force
 
 site-live:
 	@cargo run -- ../website/site ../website/build --live --force
 
 site-release: install help
+
+dist: site-release
+	@ht ../website/site ../website/build --release --index-links --tag=ht-preview
+	@ht archive ../website/build/ht-preview
 
 example: install
 	@ht example/layout --tag=layout-example

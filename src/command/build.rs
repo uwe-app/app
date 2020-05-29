@@ -68,6 +68,7 @@ pub struct BuildOptions {
     pub host: String,
     pub port: String,
     pub force: bool,
+    pub index_links: bool,
 }
 
 fn get_websocket_url(options: &BuildOptions, addr: SocketAddr, endpoint: &str) -> String {
