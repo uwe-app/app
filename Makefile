@@ -43,8 +43,9 @@ site-live:
 site-release: install help
 
 dist: site-release
-	@ht $(SITE_ROOT)/site $(SITE_ROOT)/build --release --force --index-links --tag=ht-dist
-	@ht archive $(SITE_ROOT)/build/ht-dist --force
+	@ht $(SITE_ROOT)/site $(SITE_ROOT)/build --release --force --index-links --tag=hypertext-preview
+	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
+	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip hypertext-preview/*)
 
 example: install
 	@ht example/layout --tag=layout-example
