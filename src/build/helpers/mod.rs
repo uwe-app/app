@@ -1,6 +1,5 @@
 use std::io;
 use handlebars::*;
-use super::Error;
 
 pub mod html;
 pub mod children;
@@ -26,7 +25,7 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
     h: &Helper<'reg, 'rc>,
     r: &'reg Handlebars<'_>,
     ctx: &'rc Context,
-    rc: &mut RenderContext<'reg, 'rc>) -> Result<String, Error> {
+    rc: &mut RenderContext<'reg, 'rc>) -> Result<String, RenderError> {
     if let Some(t) = h.template() {
         let mut buf = BufferedOutput{buffer: "".to_owned()};
         let result = t.render(r, ctx, rc, &mut buf);
@@ -34,9 +33,9 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
             Ok(_) => {
                 return Ok(buf.buffer)
             },
-            Err(e) => return Err(Error::RenderError(e)),
+            Err(e) => return Err(RenderError::new(e.to_string())),
         }
     }
-    Err(Error::RenderError(RenderError::new("no template for render buffer")))
+    Err(RenderError::new("no template for render buffer"))
 }
 

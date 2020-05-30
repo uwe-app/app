@@ -15,9 +15,15 @@ impl HelperDef for Markdown{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        if let Ok(ref md) = render_buffer(h, r, ctx, rc) {
-            let result = utils::render_markdown_string(md);
-            out.write(&result)?;
+        let result = render_buffer(h, r, ctx, rc);
+        match result {
+            Ok(ref md) => {
+                let result = utils::render_markdown_string(md);
+                out.write(&result)?;
+            },
+            Err(e) => {
+                return Err(e)
+            }
         }
         Ok(())
     }
