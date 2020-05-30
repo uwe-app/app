@@ -68,6 +68,12 @@ impl<'a> TemplateRender<'a> {
             let mut ctx: Map<String, Value> = Map::new();
             ctx.insert("file".to_string(), json!(filepath));
             ctx.insert("dest".to_string(), json!(destpath));
+
+            if let Some(stem) = input.as_ref().file_stem() {
+                let stem = stem.to_string_lossy().into_owned();
+                ctx.insert("name".to_string(), json!(stem));
+            }
+
             ctx.insert("options".to_string(), json!(self.options));
 
             // TODO: allow using UTC configuration
