@@ -201,13 +201,11 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
     None
 }
 
-// Build the destination file path.
-pub fn destination<P: AsRef<Path>>(
+// Build the direct destination file path.
+pub fn direct_destination<P: AsRef<Path>>(
     source: P,
     target: P,
     file: P,
-    file_type: &FileType,
-    clean_urls: bool,
 ) -> Result<PathBuf, Error> {
 
     let pth = file.as_ref();
@@ -232,12 +230,30 @@ pub fn destination<P: AsRef<Path>>(
 
     match relative {
         Ok(relative) => {
-            let mut result = target.as_ref().clone().join(relative);
+            let result = target.as_ref().clone().join(relative);
+            return Ok(result)
+        }
+        Err(e) => return Err(Error::from(e))
+    }
+}
+
+// Build the destination file path and update the file extension.
+pub fn destination<P: AsRef<Path>>(
+    source: P,
+    target: P,
+    file: P,
+    file_type: &FileType,
+    clean_urls: bool,
+) -> Result<PathBuf, Error> {
+    let pth = file.as_ref().to_path_buf().clone();
+    let result = direct_destination(source, target, file);
+    match result {
+        Ok(mut result) => {
             match file_type {
                 FileType::Markdown | FileType::Html => {
                     result.set_extension(HTML);
                     if clean_urls {
-                        if let Some(res) = clean(pth, &result) {
+                        if let Some(res) = clean(pth.as_path(), result.as_path()) {
                             result = res;
                         }
                     }
@@ -245,7 +261,8 @@ pub fn destination<P: AsRef<Path>>(
                 _ => {}
             }
             return Ok(result)
-        }
-        Err(e) => return Err(Error::from(e))
+        },
+        Err(e) => return Err(e)
     }
+
 }

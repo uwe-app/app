@@ -61,16 +61,14 @@ impl<'a> Builder<'a> {
 
     fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType, pages_only: bool) -> Result<(), Error> {
         let file = p.as_ref();
-        let dest = matcher::destination(
-            &self.options.source,
-            &self.options.target,
-            &file.to_path_buf(),
-            &file_type,
-            self.options.clean_url,
-        )?;
 
         match file_type {
             FileType::Unknown => {
+                let dest = matcher::direct_destination(
+                    &self.options.source,
+                    &self.options.target,
+                    &file.to_path_buf(),
+                )?;
 
                 if self.manifest.is_dirty(file, &dest, self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
@@ -83,6 +81,21 @@ impl<'a> Builder<'a> {
             },
             FileType::Markdown | FileType::Html => {
                 let mut data = loader::compute(file);
+                let mut clean = self.options.clean_url;
+
+                if let Some(val) = data.get("clean") {
+                    if let Some(val) = val.as_bool() {
+                        clean = val;
+                    }
+                }
+
+                let dest = matcher::destination(
+                    &self.options.source,
+                    &self.options.target,
+                    &file.to_path_buf(),
+                    &file_type,
+                    clean,
+                )?;
 
                 let (collides, other) = matcher::collides(file, &file_type);
                 if collides {
