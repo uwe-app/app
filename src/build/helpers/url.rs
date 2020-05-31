@@ -188,3 +188,77 @@ impl HelperDef for Components{
         Ok(())
     }
 }
+
+
+#[derive(Clone, Copy)]
+pub struct IsPage;
+
+impl HelperDef for IsPage{
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'reg, 'rc>,
+        _r: &'reg Handlebars<'_>,
+        ctx: &'rc Context,
+        rc: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+
+        let base_path = rc
+            .evaluate(ctx, "@root/context.dest")?
+            .as_json()
+            .as_str()
+            .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
+            .replace("\"", "");
+
+        let opts = rc
+            .evaluate(ctx, "@root/context.options")?
+            .as_json()
+            .as_object()
+            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            .to_owned();
+
+        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let path = Path::new(&base_path).to_path_buf();
+
+        if h.params().len() != 2 {
+            return Err(RenderError::new("Type error for `is_page`, two parameters expected"))
+        }
+
+        let mut target: String = "".to_owned();
+        let mut output: String = "".to_owned();
+
+        if let Some(p) = h.params().get(0) {
+            if !p.is_value_missing() {
+                target= p.value().as_str().unwrap_or("").to_string();
+            }
+        }
+
+        if target.ends_with("/") {
+            target = target.trim_end_matches("/").to_string();
+        }
+
+        if let Some(p) = h.params().get(1) {
+            if !p.is_value_missing() {
+                output= p.value().as_str().unwrap_or("").to_string();
+            }
+        }
+
+        if let Ok(rel) = path.strip_prefix(&opts.target) {
+            let mut pth = "".to_string();
+            pth.push('/');
+            pth.push_str(&rel.to_string_lossy().into_owned());
+            if pth.ends_with(INDEX_HTML) {
+                pth = pth.trim_end_matches(INDEX_HTML).to_string();
+            }
+            if pth.ends_with("/") {
+                pth = pth.trim_end_matches("/").to_string();
+            }
+
+            if pth == target {
+                out.write(&output)?;
+            }
+        }
+
+        Ok(())
+    }
+}
