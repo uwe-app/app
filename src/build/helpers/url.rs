@@ -191,9 +191,9 @@ impl HelperDef for Components{
 
 
 #[derive(Clone, Copy)]
-pub struct IsPage;
+pub struct Match;
 
-impl HelperDef for IsPage{
+impl HelperDef for Match{
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -220,12 +220,13 @@ impl HelperDef for IsPage{
         let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
-        if h.params().len() != 2 {
+        if h.params().len() != 2 && h.params().len() != 3 {
             return Err(RenderError::new("Type error for `is_page`, two parameters expected"))
         }
 
         let mut target: String = "".to_owned();
         let mut output: String = "".to_owned();
+        let mut exact: bool = false;
 
         if let Some(p) = h.params().get(0) {
             if !p.is_value_missing() {
@@ -239,7 +240,13 @@ impl HelperDef for IsPage{
 
         if let Some(p) = h.params().get(1) {
             if !p.is_value_missing() {
-                output= p.value().as_str().unwrap_or("").to_string();
+                output = p.value().as_str().unwrap_or("").to_string();
+            }
+        }
+
+        if let Some(p) = h.params().get(2) {
+            if !p.is_value_missing() {
+                exact = p.value().as_bool().unwrap_or(true);
             }
         }
 
@@ -254,11 +261,14 @@ impl HelperDef for IsPage{
                 pth = pth.trim_end_matches("/").to_string();
             }
 
-            if pth == target {
+            let matches = (exact && pth == target)
+                || (!exact && target != "" && pth.starts_with(&target))
+                || (!exact && target == "" && pth == "");
+
+            if matches {
                 out.write(&output)?;
             }
         }
-
         Ok(())
     }
 }

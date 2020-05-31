@@ -35,7 +35,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("include", Box::new(helpers::include::Include));
         handlebars.register_helper("link", Box::new(helpers::url::Link));
         handlebars.register_helper("components", Box::new(helpers::url::Components));
-        handlebars.register_helper("is_page", Box::new(helpers::url::IsPage));
+        handlebars.register_helper("match", Box::new(helpers::url::Match));
 
         TemplateRender {
             options,
