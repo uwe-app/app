@@ -20,9 +20,16 @@ use crate::{
 
 lazy_static! {
     #[derive(Debug)]
-    pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, Vec<String>>> = {
+    pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, Vec<GeneratorUrlMapInfo>>> = {
         Mutex::new(BTreeMap::new())
     };
+}
+
+#[derive(Debug)]
+pub struct GeneratorUrlMapInfo {
+    pub id: String,
+    pub copy_json: bool,
+    pub use_index_file: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -127,7 +134,20 @@ impl Generator {
                                 serde_json::from_str(&contents)?;
                             if let Some(stem) = path.file_stem() {
                                 let id = stem.to_string_lossy().into_owned();
-                                mapping_vec.push(id.clone());
+
+                                let mut copy_json = false;
+                                let mut use_index_file = false;
+                                if let Some(json) = &self.config.json {
+                                    copy_json = json.copy; 
+                                    use_index_file = json.index_file.is_some();
+                                }
+
+                                let info = GeneratorUrlMapInfo {
+                                    id: id.clone(),
+                                    copy_json,
+                                    use_index_file,
+                                };
+                                mapping_vec.push(info);
                                 self.documents.push(SourceDocument{id, value});
                             }
                         },

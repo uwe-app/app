@@ -99,8 +99,25 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
     // Try generator sources
     let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
 
-    for dest in mapping.iter() {
-        println!("Test on generated dest: {:?}", dest);
+    if url.ends_with("/") {
+        url = url.trim_end_matches("/").to_owned();
+    }
+
+    // FIXME: complete these test cases
+    //
+    // 1) Test that the generator is copying an index file before test on key
+    // 2) Support clean_url option for referring to non-clean URLs
+    // 3) Support pointing to .json files when copy_json is true
+
+    println!("checking href {:?}", href);
+
+    for (k, dest) in mapping.iter() {
+        let mut buf = base.as_ref().to_path_buf();
+        // URL points to a generator output directory
+        if k == &url {
+            buf.push(k);
+            return Some(buf); 
+        }
     }
 
     None
