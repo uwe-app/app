@@ -92,6 +92,10 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
         return Err(e)
     }
 
+    if let Err(e) = generator::build() {
+        return Err(e)
+    }
+
     let mut target = options.source.clone();
     if let Some(dir) = &options.directory {
         target = dir.clone();

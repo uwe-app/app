@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use log::{info};
 
 use crate::{
@@ -25,34 +26,33 @@ lazy_static! {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GeneratorConfig {
+pub struct GeneratorBuildConfig {
+    // Destination output for generated pages
+    // relative to the site
     pub destination: String,
+    // Name of the template used for page generation
     pub template: String,
+    // Name of an index file to copy to the generated directory
     pub index: Option<String>,
+    // Whether to output a JSON file containing the data
     pub json: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Generator {
-    pub source: PathBuf,
-    pub config: GeneratorConfig,
-}
-
-impl GeneratorConfig {
-    pub fn validate<P: AsRef<Path>>(&self, dir: P) -> Option<Error> {
+impl GeneratorBuildConfig {
+    pub fn validate<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
         let f = dir.as_ref();
 
         let mut t = f.to_path_buf();
         t.push(&self.template);
         if !t.exists() || !t.is_file() {
-            return Some(
+            return Err(
                 Error::new(
                     format!("Generator template '{}' is not a file", self.template)))
         }
 
         let dest = Path::new(&self.destination);
         if dest.is_absolute() {
-            return Some(
+            return Err(
                 Error::new(
                     format!("Generator destination '{}' must be relative path", self.destination)))
         }
@@ -61,17 +61,80 @@ impl GeneratorConfig {
             let mut i = f.to_path_buf();
             i.push(ind);
             if !i.exists() || !i.is_file() {
-                return Some(
+                return Err(
                     Error::new(
                         format!("Generator index '{}' is not a file", ind)))
             }
         }
 
-        None
+        Ok(())
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratorConfig {
+    pub build: GeneratorBuildConfig,
+}
+
+impl GeneratorConfig {
+    pub fn validate<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
+        self.build.validate(dir)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Generator {
+    pub site: PathBuf,
+    pub source: PathBuf,
+    pub config: GeneratorConfig,
+}
+
+impl Generator {
+    pub fn build(&self) -> Result<(), Error> {
+
+        let mut site_dir = self.site.clone();
+        site_dir.push(&self.config.build.destination);
+
+        let mut data_dir = self.source.clone();
+        data_dir.push(DATA);
+
+        println!("build all generators {:?}", &data_dir);
+        println!("build all generators {:?}", &site_dir);
+
+        match data_dir.read_dir() {
+            Ok(contents) => {
+                for e in contents {
+                    match e {
+                        Ok(entry) => {
+                            let path = entry.path();
+                            let contents = utils::read_string(&path)?;
+                            let document: Value =
+                                serde_json::from_str(&contents)?;
+                            println!("{}", document);
+                        },
+                        Err(e) => return Err(Error::from(e))
+                    }
+                } 
+            },
+            Err(e) => return Err(Error::from(e))
+        }
+        Ok(())
+    }
+}
+
+pub fn build() -> Result<(), Error> {
+    let generators = GENERATORS.lock().unwrap();
+    for (k, g) in generators.iter() {
+        info!("{} < {}", k, g.source.display());
+        g.build()?;
+    }
+    Ok(())
+}
+
 pub fn load(opts: &BuildOptions) -> Result<(), Error> {
+
+    let mut generators = GENERATORS.lock().unwrap();
+
     let mut src = opts.source.clone();
     src.push(TEMPLATE);
     src.push(GENERATOR);
@@ -105,18 +168,17 @@ pub fn load(opts: &BuildOptions) -> Result<(), Error> {
                                 let contents = utils::read_string(conf)?;
                                 let config: GeneratorConfig = toml::from_str(&contents)?;
 
-                                if let Some(e) = config.validate(path) {
+                                if let Err(e) = config.validate(&path) {
                                     return Err(e) 
                                 }
 
                                 let generator = Generator {
-                                    source: opts.source.clone(),
+                                    site: opts.source.clone(),
+                                    source: path.to_path_buf(),
                                     config,
                                 };
 
-                                info!("{} < {}", key, data.display());
-
-                                println!("{:?}", generator);
+                                generators.insert(key, generator);
                             }
                         }
                     }
