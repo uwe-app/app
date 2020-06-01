@@ -14,7 +14,7 @@ use crate::{
     BuildOptions,
     TEMPLATE,
     GENERATOR,
-    DATA,
+    DOCUMENTS,
     DATA_TOML,
 };
 
@@ -87,20 +87,16 @@ pub struct Generator {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
+    pub documents: Vec<Value>,
 }
 
 impl Generator {
-    pub fn build(&self) -> Result<(), Error> {
-
+    pub fn load(&mut self) -> Result<(), Error> {
         let mut site_dir = self.site.clone();
         site_dir.push(&self.config.build.destination);
 
         let mut data_dir = self.source.clone();
-        data_dir.push(DATA);
-
-        println!("build all generators {:?}", &data_dir);
-        println!("build all generators {:?}", &site_dir);
-
+        data_dir.push(DOCUMENTS);
         match data_dir.read_dir() {
             Ok(contents) => {
                 for e in contents {
@@ -108,9 +104,9 @@ impl Generator {
                         Ok(entry) => {
                             let path = entry.path();
                             let contents = utils::read_string(&path)?;
-                            let document: Value =
+                            let value: Value =
                                 serde_json::from_str(&contents)?;
-                            println!("{}", document);
+                            self.documents.push(value);
                         },
                         Err(e) => return Err(Error::from(e))
                     }
@@ -123,10 +119,10 @@ impl Generator {
 }
 
 pub fn build() -> Result<(), Error> {
-    let generators = GENERATORS.lock().unwrap();
-    for (k, g) in generators.iter() {
-        info!("{} < {}", k, g.source.display());
-        g.build()?;
+    let mut generators = GENERATORS.lock().unwrap();
+    for (k, g) in generators.iter_mut() {
+        g.load()?;
+        info!("{} < {} ({})", k, g.source.display(), g.documents.len());
     }
     Ok(())
 }
@@ -158,11 +154,11 @@ pub fn load(opts: &BuildOptions) -> Result<(), Error> {
                                 }
 
                                 let mut data = path.to_path_buf().clone();
-                                data.push(DATA);
+                                data.push(DOCUMENTS);
                                 if !data.exists() || !data.is_dir() {
                                     return Err(
                                         Error::new(
-                                            format!("No {} directory for generator {}", DATA, key)));
+                                            format!("No {} directory for generator {}", DOCUMENTS, key)));
                                 }
 
                                 let contents = utils::read_string(conf)?;
@@ -175,6 +171,7 @@ pub fn load(opts: &BuildOptions) -> Result<(), Error> {
                                 let generator = Generator {
                                     site: opts.source.clone(),
                                     source: path.to_path_buf(),
+                                    documents: Vec::new(),
                                     config,
                                 };
 

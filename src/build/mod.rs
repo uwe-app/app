@@ -245,9 +245,20 @@ impl<'a> Builder<'a> {
         Ok(templates)
     }
 
+    pub fn build_generators(&self) -> Result<(), Error> {
+        if let Err(e) = generator::build() {
+            return Err(e)
+        }
+        Ok(())
+    }
+
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let templates = self.register_templates_directory()?;
+
+        if let Err(e) = self.build_generators() {
+            return Err(e)
+        }
 
         for result in WalkBuilder::new(&target)
             .follow_links(self.options.follow_links)
