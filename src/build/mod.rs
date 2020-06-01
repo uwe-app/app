@@ -262,7 +262,6 @@ impl<'a> Builder<'a> {
 
             // Write out the document files
             for doc in &g.documents {
-
                 // Mock a sorce file to build a destination
                 // respecting the clean URL setting
                 let mut file = self.options.source.clone();
@@ -302,8 +301,15 @@ impl<'a> Builder<'a> {
                 utils::write_string(&dest, s).map_err(Error::from)?;
             }
 
-            // TODO: write out JSON file with data
-
+            // Write out json data
+            if let Some(json) = &g.config.build.json {
+                let mut file = self.options.source.clone();
+                file.push(json);
+                if let Ok(s) = serde_json::to_string(&g.documents) {
+                    info!("json {}", file.display());
+                    utils::write_string(&file, s).map_err(Error::from)?;
+                }
+            }
         }
         Ok(())
     }
