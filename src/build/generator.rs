@@ -27,15 +27,23 @@ lazy_static! {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorBuildConfig {
-    // Destination output for generated pages
-    // relative to the site
+    // Destination output for generated pages relative to the site
     pub destination: String,
     // Name of the template used for page generation
     pub template: String,
     // Name of an index file to copy to the generated directory
     pub index: Option<String>,
-    // Whether to output a JSON file containing the data
-    pub json: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratorJsonConfig {
+    // Copy documents to the build
+    pub copy: bool,
+    // Whether the JSON contents just contains
+    // an index pointing to the copied files
+    pub index: bool,
+    // Output file for the index
+    pub index_file: Option<String>,
 }
 
 impl GeneratorBuildConfig {
@@ -74,6 +82,7 @@ impl GeneratorBuildConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
     pub build: GeneratorBuildConfig,
+    pub json: Option<GeneratorJsonConfig>,
 }
 
 impl GeneratorConfig {

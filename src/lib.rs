@@ -21,6 +21,7 @@ static LAYOUT_HBS: &str = "layout.hbs";
 static DATA_TOML: &str = "data.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
+static JSON: &str = "json";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 static ROOT_TABLE_KEY: &str = "site";
 static DRAFT_KEY: &str = "draft";
