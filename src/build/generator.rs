@@ -36,8 +36,6 @@ pub struct GeneratorBuildConfig {
     pub index: Option<String>,
     // Whether to output a JSON file containing the data
     pub json: Option<String>,
-    // Whether the index template is passed a `documents` array
-    pub include_documents: bool,
 }
 
 impl GeneratorBuildConfig {

@@ -98,8 +98,14 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
 }
 
 
+// Try to find a source generator file for the given URL
+pub fn lookup_generator<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
+    // FIXME: implement this
+    None
+}
+
 pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
-    lookup(base, href, clean_url).is_some()
+    lookup(&base, href, clean_url).is_some() || lookup_generator(&base, href, clean_url).is_some()
 }
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {

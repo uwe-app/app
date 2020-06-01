@@ -19,7 +19,6 @@ use super::{
     utils,
     Error,
     BuildOptions,
-    HTML,
     INDEX_HTML,
     TEMPLATE,
     TEMPLATE_EXT,
@@ -251,6 +250,8 @@ impl<'a> Builder<'a> {
 
     pub fn build_generators(&mut self) -> Result<(), Error> {
         let generators = generator::GENERATORS.lock().unwrap();
+        let clean = self.options.clean_url;
+
         for (k, g) in generators.iter() {
             let mut tpl = g.source.clone();
             tpl.push(&g.config.build.template);
@@ -261,15 +262,25 @@ impl<'a> Builder<'a> {
 
             // Write out the document files
             for doc in &g.documents {
-                let mut dest = self.options.target.clone();
-                dest.push(&g.config.build.destination);
-                dest.push(&doc.id);
-                dest.set_extension(HTML);
+
+                // Mock a sorce file to build a destination
+                // respecting the clean URL setting
+                let mut file = self.options.source.clone();
+                file.push(&g.config.build.destination);
+                file.push(&doc.id);
 
                 let mut data = generator_data.clone();
                 data.insert("document".to_string(), json!(&doc.value));
 
                 let file_type = matcher::get_type_extension(&tpl);
+                let dest = matcher::destination(
+                    &self.options.source,
+                    &self.options.target,
+                    &file.to_path_buf(),
+                    &file_type,
+                    clean,
+                )?;
+
                 let s = self.parser.parse(&tpl, &dest, file_type, &mut data)?;
                 utils::write_string(&dest, s).map_err(Error::from)?;
             }
@@ -284,9 +295,7 @@ impl<'a> Builder<'a> {
                 dest.push(INDEX_HTML);
 
                 let mut data = generator_data.clone();
-                if g.config.build.include_documents {
-                    data.insert("documents".to_string(), json!(&g.documents));
-                }
+                data.insert("documents".to_string(), json!(&g.documents));
 
                 let file_type = matcher::get_type_extension(&index_tpl);
                 let s = self.parser.parse(&index_tpl, &dest, file_type, &mut data)?;
