@@ -1,7 +1,6 @@
 use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Mutex;
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
@@ -17,13 +16,6 @@ use crate::{
     DOCUMENTS,
     DATA_TOML,
 };
-
-lazy_static! {
-    #[derive(Debug)]
-    pub static ref GENERATORS: Mutex<BTreeMap<String, Generator>> = {
-        Mutex::new(BTreeMap::new())
-    };
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorBuildConfig {
@@ -136,8 +128,7 @@ impl Generator {
     }
 }
 
-fn load_documents() -> Result<(), Error> {
-    let mut generators = GENERATORS.lock().unwrap();
+fn load_documents(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
     for (k, g) in generators.iter_mut() {
         g.load()?;
         info!("{} < {}", k, g.source.display());
@@ -145,8 +136,7 @@ fn load_documents() -> Result<(), Error> {
     Ok(())
 }
 
-fn load_configurations(opts: &BuildOptions) -> Result<(), Error> {
-    let mut generators = GENERATORS.lock().unwrap();
+fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
     let mut src = opts.source.clone();
     src.push(TEMPLATE);
     src.push(GENERATOR);
@@ -204,7 +194,9 @@ fn load_configurations(opts: &BuildOptions) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn load(opts: &BuildOptions) -> Result<(), Error> {
-    load_configurations(opts)?;
-    load_documents()
+pub fn load(opts: &BuildOptions) -> Result<BTreeMap<String, Generator>, Error> {
+    let mut map: BTreeMap<String, Generator> = BTreeMap::new();
+    load_configurations(opts, &mut map)?;
+    load_documents(&mut map)?;
+    Ok(map)
 }

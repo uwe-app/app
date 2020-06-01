@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
+use std::collections::BTreeMap;
 
 use ignore::WalkBuilder;
 use log::{debug, info, error};
@@ -32,6 +33,7 @@ use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
 use manifest::Manifest;
+use generator::Generator;
 
 #[derive(Debug)]
 pub struct Invalidation {
@@ -42,13 +44,14 @@ pub struct Invalidation {
 
 pub struct Builder<'a> {
     options: &'a BuildOptions,
+    generators: &'a BTreeMap<String, Generator>,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
     manifest: Manifest,
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(options: &'a BuildOptions) -> Self {
+    pub fn new(options: &'a BuildOptions, generators: &'a BTreeMap<String, Generator>) -> Self {
         let book = BookBuilder::new(options);
 
         // Parser must exist for the entire lifetime so that
@@ -59,6 +62,7 @@ impl<'a> Builder<'a> {
 
         Builder {
             options,
+            generators,
             book,
             parser,
             manifest,
@@ -251,10 +255,9 @@ impl<'a> Builder<'a> {
     }
 
     pub fn build_generators(&mut self) -> Result<(), Error> {
-        let generators = generator::GENERATORS.lock().unwrap();
         let clean = self.options.clean_url;
 
-        for (k, g) in generators.iter() {
+        for (k, g) in self.generators.iter() {
             let mut tpl = g.source.clone();
             tpl.push(&g.config.build.template);
 

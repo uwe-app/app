@@ -84,13 +84,9 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             Error::new("live reload is not available for release builds".to_string()))
     }
 
-    if let Err(e) = loader::load(&options) {
-        return Err(e)
-    }
+    loader::load(&options)?;
 
-    if let Err(e) = generator::load(&options) {
-        return Err(e)
-    }
+    let generators = generator::load(&options)?;
 
     let mut target = options.source.clone();
     if let Some(dir) = &options.directory {
@@ -98,7 +94,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     }
 
     if !options.live {
-        let mut builder = Builder::new(&options);
+        let mut builder = Builder::new(&options, &generators);
         builder.load_manifest()?;
         builder.build(&target, false)?;
         return builder.save_manifest()
@@ -126,7 +122,7 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             options.livereload = Some(get_websocket_url(&options, addr, &endpoint));
 
             // Do a full build before listening for filesystem changes
-            let mut serve_builder = Builder::new(&options);
+            let mut serve_builder = Builder::new(&options, &generators);
             if let Err(e) = serve_builder.register_templates_directory() {
                 error!("{}", e);
                 std::process::exit(1);

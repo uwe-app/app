@@ -100,7 +100,6 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
 
 // Try to find a source generator file for the given URL
 pub fn lookup_generator<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
-    // FIXME: implement this
     None
 }
 
