@@ -1,21 +1,23 @@
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
-use crate::build::Builder;
-use crate::build::loader;
-use crate::command::serve::*;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
-use crate::{Error};
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
+
+use serde::{Deserialize, Serialize};
 
 use tokio::sync::broadcast::Sender as TokioSender;
 use warp::ws::Message;
 
 use log::{info, debug, error};
 
+use crate::build::Builder;
+use crate::build::loader;
+use crate::build::generator;
+use crate::command::serve::*;
+use crate::{Error};
 use crate::utils;
 
 lazy_static! {
@@ -83,6 +85,10 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     }
 
     if let Err(e) = loader::load(&options) {
+        return Err(e)
+    }
+
+    if let Err(e) = generator::load(&options) {
         return Err(e)
     }
 

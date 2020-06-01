@@ -13,6 +13,8 @@ mod utils;
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
 static TEMPLATE: &str = "template";
+static GENERATOR: &str = "generator";
+static DATA: &str = "data";
 static TEMPLATE_EXT: &str = ".hbs";
 static THEME: &str = "theme";
 static LAYOUT_HBS: &str = "layout.hbs";

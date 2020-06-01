@@ -5,6 +5,7 @@ use ignore::WalkBuilder;
 use log::{debug, info, error};
 
 pub mod book;
+pub mod generator;
 pub mod loader;
 pub mod helpers;
 pub mod manifest;
