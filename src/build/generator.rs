@@ -2,6 +2,7 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -16,6 +17,13 @@ use crate::{
     DOCUMENTS,
     DATA_TOML,
 };
+
+lazy_static! {
+    #[derive(Debug)]
+    pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, Vec<String>>> = {
+        Mutex::new(BTreeMap::new())
+    };
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorBuildConfig {
@@ -99,6 +107,10 @@ pub struct SourceDocument {
 
 impl Generator {
     pub fn load(&mut self) -> Result<(), Error> {
+
+        let mut mapping = GENERATOR_MAPPING.lock().unwrap();
+        let mut mapping_vec = mapping.get_mut(&self.config.build.destination).unwrap(); 
+
         let mut site_dir = self.site.clone();
         site_dir.push(&self.config.build.destination);
 
@@ -115,6 +127,7 @@ impl Generator {
                                 serde_json::from_str(&contents)?;
                             if let Some(stem) = path.file_stem() {
                                 let id = stem.to_string_lossy().into_owned();
+                                mapping_vec.push(id.clone());
                                 self.documents.push(SourceDocument{id, value});
                             }
                         },
@@ -137,6 +150,8 @@ fn load_documents(generators: &mut BTreeMap<String, Generator>) -> Result<(), Er
 }
 
 fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+    let mut mapping = GENERATOR_MAPPING.lock().unwrap();
+
     let mut src = opts.source.clone();
     src.push(TEMPLATE);
     src.push(GENERATOR);
@@ -181,7 +196,11 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     config,
                                 };
 
+                                mapping.insert(
+                                    generator.config.build.destination.clone(), Vec::new());
+
                                 generators.insert(key, generator);
+
                             }
                         }
                     }

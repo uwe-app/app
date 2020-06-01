@@ -22,6 +22,8 @@ use crate::{
     THEME,
 };
 
+use super::generator;
+
 fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     let mut buf = file.as_ref().to_path_buf();
     buf.push(INDEX_STEM);
@@ -94,17 +96,18 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
         return Some(buf)
     }
 
-    None
-}
+    // Try generator sources
+    let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
 
+    for dest in mapping.iter() {
+        println!("Test on generated dest: {:?}", dest);
+    }
 
-// Try to find a source generator file for the given URL
-pub fn lookup_generator<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
     None
 }
 
 pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
-    lookup(&base, href, clean_url).is_some() || lookup_generator(&base, href, clean_url).is_some()
+    lookup(&base, href, clean_url).is_some()
 }
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
