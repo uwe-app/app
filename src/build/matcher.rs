@@ -133,6 +133,18 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
     }
 }
 
+pub fn get_type_extension<P: AsRef<Path>>(p: P) -> FileType {
+    let file = p.as_ref();
+    if let Some(ext) = file.extension() {
+        if ext == MD {
+            return FileType::Markdown
+        } else if ext == HTML {
+            return FileType::Html
+        }
+    }
+    FileType::Unknown
+}
+
 pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
     let file = p.as_ref();
     match file.file_name() {
@@ -141,6 +153,7 @@ pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
                 if nm == LAYOUT_HBS || nm == DATA_TOML {
                     return FileType::Private
                 } else {
+                    // TODO: call new get_type_extension() here!
                     if let Some(ext) = file.extension() {
                         if ext == MD {
                             return FileType::Markdown

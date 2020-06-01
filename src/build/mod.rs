@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use log::{debug, info, error};
 
+use serde_json::json;
+
 pub mod book;
 pub mod generator;
 pub mod loader;
@@ -17,6 +19,8 @@ use super::{
     utils,
     Error,
     BuildOptions,
+    HTML,
+    INDEX_HTML,
     TEMPLATE,
     TEMPLATE_EXT,
     DATA_TOML,
@@ -245,9 +249,52 @@ impl<'a> Builder<'a> {
         Ok(templates)
     }
 
-    pub fn build_generators(&self) -> Result<(), Error> {
-        if let Err(e) = generator::build() {
-            return Err(e)
+    pub fn build_generators(&mut self) -> Result<(), Error> {
+        let generators = generator::GENERATORS.lock().unwrap();
+        for (k, g) in generators.iter() {
+            let mut tpl = g.source.clone();
+            tpl.push(&g.config.build.template);
+
+            let generator_data = loader::compute(k);
+
+            info!("generate {} ({})", k, g.documents.len());
+
+            // Write out the document files
+            for doc in &g.documents {
+                let mut dest = self.options.target.clone();
+                dest.push(&g.config.build.destination);
+                dest.push(&doc.id);
+                dest.set_extension(HTML);
+
+                let mut data = generator_data.clone();
+                data.insert("document".to_string(), json!(&doc.value));
+
+                let file_type = matcher::get_type_extension(&tpl);
+                let s = self.parser.parse(&tpl, &dest, file_type, &mut data)?;
+                utils::write_string(&dest, s).map_err(Error::from)?;
+            }
+
+            // Write out an index page
+            if let Some(index_file) = &g.config.build.index {
+                let mut index_tpl = g.source.clone();
+                index_tpl.push(index_file);
+
+                let mut dest = self.options.target.clone();
+                dest.push(&g.config.build.destination);
+                dest.push(INDEX_HTML);
+
+                let mut data = generator_data.clone();
+                if g.config.build.include_documents {
+                    data.insert("documents".to_string(), json!(&g.documents));
+                }
+
+                let file_type = matcher::get_type_extension(&index_tpl);
+                let s = self.parser.parse(&index_tpl, &dest, file_type, &mut data)?;
+                utils::write_string(&dest, s).map_err(Error::from)?;
+            }
+
+            // TODO: write out JSON file with data
+
         }
         Ok(())
     }

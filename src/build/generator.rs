@@ -36,6 +36,8 @@ pub struct GeneratorBuildConfig {
     pub index: Option<String>,
     // Whether to output a JSON file containing the data
     pub json: Option<String>,
+    // Whether the index template is passed a `documents` array
+    pub include_documents: bool,
 }
 
 impl GeneratorBuildConfig {
@@ -87,7 +89,13 @@ pub struct Generator {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
-    pub documents: Vec<Value>,
+    pub documents: Vec<SourceDocument>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SourceDocument {
+    pub id: String,
+    pub value: Value,
 }
 
 impl Generator {
@@ -106,7 +114,10 @@ impl Generator {
                             let contents = utils::read_string(&path)?;
                             let value: Value =
                                 serde_json::from_str(&contents)?;
-                            self.documents.push(value);
+                            if let Some(stem) = path.file_stem() {
+                                let id = stem.to_string_lossy().into_owned();
+                                self.documents.push(SourceDocument{id, value});
+                            }
                         },
                         Err(e) => return Err(Error::from(e))
                     }
@@ -118,19 +129,17 @@ impl Generator {
     }
 }
 
-pub fn build() -> Result<(), Error> {
+fn load_documents() -> Result<(), Error> {
     let mut generators = GENERATORS.lock().unwrap();
     for (k, g) in generators.iter_mut() {
         g.load()?;
-        info!("{} < {} ({})", k, g.source.display(), g.documents.len());
+        info!("{} < {}", k, g.source.display());
     }
     Ok(())
 }
 
-pub fn load(opts: &BuildOptions) -> Result<(), Error> {
-
+fn load_configurations(opts: &BuildOptions) -> Result<(), Error> {
     let mut generators = GENERATORS.lock().unwrap();
-
     let mut src = opts.source.clone();
     src.push(TEMPLATE);
     src.push(GENERATOR);
@@ -188,3 +197,7 @@ pub fn load(opts: &BuildOptions) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn load(opts: &BuildOptions) -> Result<(), Error> {
+    load_configurations(opts)?;
+    load_documents()
+}
