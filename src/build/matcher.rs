@@ -138,7 +138,6 @@ pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
             }
         }
     }
-
     None
 }
 
