@@ -16,9 +16,10 @@ use inflector::Inflector;
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
 use super::{BuildOptions, Error, INDEX_STEM};
-//use super::minify;
 
 use log::{debug};
+
+pub mod url;
 
 pub fn generate_id(len: i32) -> String {
     let mut s: String = "".to_owned();

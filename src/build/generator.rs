@@ -29,8 +29,9 @@ lazy_static! {
 pub struct GeneratorUrlMapInfo {
     pub destination: String,
     pub ids: Vec<String>,
-    pub copy_json: bool,
     pub use_index_file: bool,
+    pub copy_json: bool,
+    pub json_index: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -197,11 +198,13 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                 }
 
                                 let mut copy_json = false;
-                                let mut use_index_file = false;
+                                let mut json_index = None;
                                 if let Some(json) = &config.json {
                                     copy_json = json.copy; 
-                                    use_index_file = json.index_file.is_some();
+                                    json_index = json.index_file.clone();
                                 }
+
+                                let use_index_file = config.build.index.is_some();
 
                                 let generator = Generator {
                                     site: opts.source.clone(),
@@ -213,8 +216,9 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                 let gmi = GeneratorUrlMapInfo {
                                     destination: generator.config.build.destination.clone(),
                                     ids: Vec::new(),
-                                    copy_json,
                                     use_index_file,
+                                    copy_json,
+                                    json_index,
                                 };
                                 mapping.insert(key.clone(), gmi);
 

@@ -13,6 +13,8 @@ pub enum FileType {
 use crate::{
     Error,
     HTML,
+    JSON,
+    INDEX_HTML,
     INDEX_STEM,
     LAYOUT_HBS,
     DATA_TOML,
@@ -23,6 +25,7 @@ use crate::{
 };
 
 use super::generator;
+use crate::utils;
 
 fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     let mut buf = file.as_ref().to_path_buf();
@@ -53,27 +56,116 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     None
 }
 
+// Try to find a generator file for the given URL
+pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
+    let mut url = href.to_string().clone();
+    url = utils::url::trim_slash(&url).to_owned();
+
+    // Try to match against generated output files.
+    //
+    // For these cases there are no source files on disc with 
+    // a direct mapping to output files as they are generated
+    // and this code can be called (via the `link` helper) before
+    // output has been generated so we cannot compare to output
+    // destination files.
+    let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
+    for (_, map) in mapping.iter() {
+        let dest = Path::new(&map.destination);
+
+        // Generator has an index file so directory
+        // and index.html URLs should be valid
+        if map.use_index_file {
+            let mut target = utils::url::to_url_lossy(&dest);
+            if target == url {
+                return Some(dest.to_path_buf())
+            }
+
+            let mut idx = dest.to_path_buf();
+            idx.push(INDEX_HTML);
+            target = utils::url::to_url_lossy(&idx);
+
+            if target == url {
+                return Some(idx)
+            }
+        }
+
+        let is_json = url.ends_with(".json");
+
+        // NOTE: json index file output is a path
+        // NOTE: relative to the site *not* the 
+        // NOTE: generator destination directory
+        if let Some(idx) = &map.json_index {
+            let dest = Path::new(&idx);
+            let target = utils::url::to_url_lossy(&dest);
+            if target == url {
+                return Some(dest.to_path_buf())
+            }
+        }
+
+        // Now try to match on generated document id
+        for id in &map.ids {
+            let mut page = dest.to_path_buf();
+            if is_json && map.copy_json {
+                page.push(id);
+                page.set_extension(JSON);
+
+                let target = utils::url::to_url_lossy(&page);
+                if target == url {
+                    return Some(page)
+                }
+            } else {
+                if clean_url {
+                    page.push(id);
+                    let mut target = utils::url::to_url_lossy(&page);
+                    if target == url {
+                        return Some(page)
+                    }
+
+                    page.push(INDEX_HTML);
+
+                    target = utils::url::to_url_lossy(&page);
+                    if target == url {
+                        return Some(page)
+                    }
+                } else {
+                    page.push(id);
+                    page.set_extension(HTML);
+                    let target = utils::url::to_url_lossy(&page);
+                    if target == url {
+                        return Some(page)
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 // Try to find a source file for the given URL
 pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
 
-    // FIXME: this logic needs to be sure it works with URL paths
-    // FIXME: and the native path delimiters (windows!)
-
     let mut url = href.to_string().clone();
-    if url.starts_with("/") {
-        url = url.trim_start_matches("/").to_owned();
+    url = utils::url::trim_slash(&url).to_owned();
+
+    let is_dir = utils::url::is_dir(&url);
+
+    let mut buf = base.as_ref().to_path_buf();
+    buf.push(&utils::url::to_path_separator(&url));
+
+    // Check if the file exists directly
+    if buf.exists() {
+        return Some(buf)
     }
 
-    let is_dir = url.ends_with("/") || !url.contains(".");
-
-    // Check index pages first
+    // Check index pages
     if is_dir {
-        let mut buf = base.as_ref().to_path_buf();
-        buf.push(&url);
-        buf.push(INDEX_STEM);
+        let mut idx = base.as_ref().to_path_buf();
+        idx.push(&utils::url::to_path_separator(&url));
+        idx.push(INDEX_STEM);
         for ext in PARSE_EXTENSIONS.iter() {
-            buf.set_extension(ext);
-            if buf.exists() {
+            idx.set_extension(ext);
+            if idx.exists() {
                 return Some(buf)
             }
         }
@@ -82,9 +174,6 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
     // Check for lower-level files that could map 
     // to index pages
     if clean_url && is_dir {
-        let mut buf = base.as_ref().to_path_buf();
-        url = url.trim_end_matches("/").to_owned();
-        buf.push(&url);
         for ext in PARSE_EXTENSIONS.iter() {
             buf.set_extension(ext);
             if buf.exists() {
@@ -93,43 +182,11 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
         }
     } 
 
-    // Check if the file exists directly
-    let mut buf = base.as_ref().to_path_buf();
-    buf.push(&url);
-    if buf.exists() {
-        return Some(buf)
-    }
-
-    // Try generator sources
-    let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
-
-    if url.ends_with("/") {
-        url = url.trim_end_matches("/").to_owned();
-    }
-
-    // FIXME: complete these test cases
-    //
-    // 1) Test that the generator is copying an index file before test on key
-    // 2) Support clean_url option for referring to non-clean URLs
-    // 3) Support pointing to .json files when copy_json is true
-
-    println!("checking href {:?}", href);
-    println!("checking href {:?}", mapping);
-
-    for (_, map) in mapping.iter() {
-        let mut buf = base.as_ref().to_path_buf();
-        // URL points to a generator output directory
-        if &map.destination == &url {
-            buf.push(&map.destination);
-            return Some(buf); 
-        }
-    }
-
     None
 }
 
 pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
-    lookup(&base, href, clean_url).is_some()
+    lookup(&base, href, clean_url).is_some() || lookup_generator(href, clean_url).is_some()
 }
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
