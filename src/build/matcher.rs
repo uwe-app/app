@@ -55,6 +55,10 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
 
 // Try to find a source file for the given URL
 pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
+
+    // FIXME: this logic needs to be sure it works with URL paths
+    // FIXME: and the native path delimiters (windows!)
+
     let mut url = href.to_string().clone();
     if url.starts_with("/") {
         url = url.trim_start_matches("/").to_owned();
