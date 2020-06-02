@@ -110,12 +110,13 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
     // 3) Support pointing to .json files when copy_json is true
 
     println!("checking href {:?}", href);
+    println!("checking href {:?}", mapping);
 
-    for (k, dest) in mapping.iter() {
+    for (_, map) in mapping.iter() {
         let mut buf = base.as_ref().to_path_buf();
         // URL points to a generator output directory
-        if k == &url {
-            buf.push(k);
+        if &map.destination == &url {
+            buf.push(&map.destination);
             return Some(buf); 
         }
     }

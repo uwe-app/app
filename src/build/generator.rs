@@ -20,14 +20,15 @@ use crate::{
 
 lazy_static! {
     #[derive(Debug)]
-    pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, Vec<GeneratorUrlMapInfo>>> = {
+    pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, GeneratorUrlMapInfo>> = {
         Mutex::new(BTreeMap::new())
     };
 }
 
 #[derive(Debug)]
 pub struct GeneratorUrlMapInfo {
-    pub id: String,
+    pub destination: String,
+    pub ids: Vec<String>,
     pub copy_json: bool,
     pub use_index_file: bool,
 }
@@ -113,11 +114,7 @@ pub struct SourceDocument {
 }
 
 impl Generator {
-    pub fn load(&mut self) -> Result<(), Error> {
-
-        let mut mapping = GENERATOR_MAPPING.lock().unwrap();
-        let mut mapping_vec = mapping.get_mut(&self.config.build.destination).unwrap(); 
-
+    pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
         let mut site_dir = self.site.clone();
         site_dir.push(&self.config.build.destination);
 
@@ -134,20 +131,7 @@ impl Generator {
                                 serde_json::from_str(&contents)?;
                             if let Some(stem) = path.file_stem() {
                                 let id = stem.to_string_lossy().into_owned();
-
-                                let mut copy_json = false;
-                                let mut use_index_file = false;
-                                if let Some(json) = &self.config.json {
-                                    copy_json = json.copy; 
-                                    use_index_file = json.index_file.is_some();
-                                }
-
-                                let info = GeneratorUrlMapInfo {
-                                    id: id.clone(),
-                                    copy_json,
-                                    use_index_file,
-                                };
-                                mapping_vec.push(info);
+                                ids.push(id.clone());
                                 self.documents.push(SourceDocument{id, value});
                             }
                         },
@@ -162,8 +146,11 @@ impl Generator {
 }
 
 fn load_documents(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+    let mut mapping = GENERATOR_MAPPING.lock().unwrap();
     for (k, g) in generators.iter_mut() {
-        g.load()?;
+        let item = mapping.get_mut(k).unwrap();
+        let mut ids = &mut item.ids;
+        g.load(&mut ids)?;
         info!("{} < {}", k, g.source.display());
     }
     Ok(())
@@ -209,6 +196,13 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     return Err(e) 
                                 }
 
+                                let mut copy_json = false;
+                                let mut use_index_file = false;
+                                if let Some(json) = &config.json {
+                                    copy_json = json.copy; 
+                                    use_index_file = json.index_file.is_some();
+                                }
+
                                 let generator = Generator {
                                     site: opts.source.clone(),
                                     source: path.to_path_buf(),
@@ -216,8 +210,13 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     config,
                                 };
 
-                                mapping.insert(
-                                    generator.config.build.destination.clone(), Vec::new());
+                                let gmi = GeneratorUrlMapInfo {
+                                    destination: generator.config.build.destination.clone(),
+                                    ids: Vec::new(),
+                                    copy_json,
+                                    use_index_file,
+                                };
+                                mapping.insert(key.clone(), gmi);
 
                                 generators.insert(key, generator);
 
