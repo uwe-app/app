@@ -91,14 +91,12 @@ pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
 
         let is_json = url.ends_with(".json");
 
-        // NOTE: json index file output is a path
-        // NOTE: relative to the site *not* the 
-        // NOTE: generator destination directory
         if let Some(idx) = &map.json_index {
-            let dest = Path::new(&idx);
-            let target = utils::url::to_url_lossy(&dest);
+            let mut json_idx = dest.to_path_buf();
+            json_idx.push(&idx);
+            let target = utils::url::to_url_lossy(&json_idx);
             if target == url {
-                return Some(dest.to_path_buf())
+                return Some(json_idx)
             }
         }
 

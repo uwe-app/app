@@ -331,6 +331,7 @@ impl<'a> Builder<'a> {
             if let Some(json) = &g.config.json {
                 if let Some(file_name) = &json.index_file {
                     let mut file = self.options.target.clone();
+                    file.push(&g.config.build.destination);
                     file.push(file_name);
 
                     // Just write out the identifiers
