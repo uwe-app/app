@@ -274,7 +274,7 @@ impl<'a> Builder<'a> {
                 file.push(&doc.id);
 
                 let mut data = generator_data.clone();
-                data.insert("document".to_string(), json!(&doc.value));
+                data.insert("document".to_string(), json!(&doc.document));
 
                 let file_type = matcher::get_type_extension(&tpl);
                 let dest = matcher::destination(
@@ -335,7 +335,7 @@ impl<'a> Builder<'a> {
                     file.push(file_name);
 
                     // Just write out the identifiers
-                    if json.index {
+                    if json.index_slim {
                         let list: Vec<&String> = g.documents
                             .iter()
                             .map(|d| &d.id)

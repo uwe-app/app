@@ -50,7 +50,7 @@ pub struct GeneratorJsonConfig {
     pub copy: bool,
     // Whether the JSON contents just contains
     // an index pointing to the copied files
-    pub index: bool,
+    pub index_slim: bool,
     // Output file for the index
     pub index_file: Option<String>,
 }
@@ -111,7 +111,7 @@ pub struct Generator {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SourceDocument {
     pub id: String,
-    pub value: Value,
+    pub document: Value,
 }
 
 impl Generator {
@@ -128,12 +128,12 @@ impl Generator {
                         Ok(entry) => {
                             let path = entry.path();
                             let contents = utils::read_string(&path)?;
-                            let value: Value =
+                            let document: Value =
                                 serde_json::from_str(&contents)?;
                             if let Some(stem) = path.file_stem() {
                                 let id = stem.to_string_lossy().into_owned();
                                 ids.push(id.clone());
-                                self.documents.push(SourceDocument{id, value});
+                                self.documents.push(SourceDocument{id, document});
                             }
                         },
                         Err(e) => return Err(Error::from(e))
