@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
-use serde_json::{to_value, Value};
+use serde_json::{json, to_value, Map, Value};
 use log::{info};
 
 use crate::{
@@ -120,6 +120,15 @@ pub struct SourceDocument {
 }
 
 impl Generator {
+
+    pub fn find_by_id(&self, id: &str) -> Option<Value> {
+        for doc in &self.all.documents {
+            if doc.id == id {
+                return Some(to_value(&doc.document).unwrap());
+            } 
+        }
+        None
+    }
 
     pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
 
@@ -250,17 +259,41 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
         if let Some(index) = &generator.config.build.index {
             let mut indices = &mut generator.indices;
             let all = &generator.all;
+
+            // Collect identifiers grouping first by index key
+            // and then by the values for the referenced fields
+            let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
             for def in index {
-                let mut values = ValueIndex {documents: Vec::new()};
+                let key = &def.key;
                 for doc in &all.documents {
-                    //println!("add doc to index {:?}", doc);
+                    let id = doc.id.clone();
+                    let document = &doc.document;
 
-                    // TODO : build indices from definitions!
-                    values.documents.push(to_value(&doc).unwrap());
+                    if let Some(val) = document.get(&key) {
+                        let mut cache = caches.entry(key.clone()).or_insert(BTreeMap::new());
+
+                        // TODO: support grouping on array values
+                        if let Some(s) = val.as_str() {
+                            let mut items = cache.entry(s.to_string()).or_insert(Vec::new());
+                            let mut map = Map::new();
+                            map.insert("id".to_string(), json!(id));
+                            items.push(to_value(map).unwrap());
+                        }
+                    }
                 }
-
-                indices.insert(def.name.clone(), values);
             }
+
+            for (k, v) in caches {
+                let mut values = ValueIndex {documents: Vec::new()};
+                for (key, val) in v {
+                    let mut map = Map::new();
+                    map.insert("key".to_string(), json!(key));
+                    map.insert("value".to_string(), json!(val));
+                    values.documents.push(json!(map));
+                }
+                indices.insert(k, values);
+            }
+
         }
     }
     Ok(())

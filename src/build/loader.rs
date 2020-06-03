@@ -24,6 +24,7 @@ use crate::{
 };
 
 use super::generator::Generator;
+use super::generator::ValueIndex;
 
 lazy_static! {
     #[derive(Debug)]
@@ -103,12 +104,51 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     map
 }
 
+fn get_index_include_docs(
+    generator: &Generator,
+    name: String,
+    idx: &ValueIndex) -> Result<Option<(String, Value)>, Error> {
+
+    let mut out: Vec<Value> = Vec::new();
+    for doc in &idx.documents {
+        let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
+        if let Some(value) = map.get("value") {
+            if let Some(ref mut items) = value.as_array() {
+                let mut values: Vec<Value> = Vec::new();
+                for item in items.iter() {
+                    let mut new_item = Map::new();
+                    if let Some(id) = item.get("id").and_then(Value::as_str) {
+                        new_item.insert("id".to_string(), json!(id));
+                        if let Some(doc) = generator.find_by_id(id) {
+                            new_item.insert("document".to_string(), json!(doc));
+                        } else {
+                            // Something very wrong if we make it here!
+                            warn!("Failed to include document for index {} with id {}", &name, id);
+                        }
+                    }
+                    values.push(json!(new_item));
+                }
+
+                map.insert("value".to_string(), json!(values));
+            }
+        }
+        out.push(to_value(map).unwrap());
+    }
+
+    return Ok(
+        Some(
+            (name, to_value(&out).unwrap())
+        )
+    );
+}
 
 pub fn find_generator_index<'a>(
     generators: &'a BTreeMap<String, Generator>,
     generator: Option<&Value>) -> Result<Option<(String, Value)>, Error> {
 
     if let Some(value) = generator {
+        let include_docs = value.get("include_docs").and_then(Value::as_bool);
+
         if let Some(name) = value.get("name").and_then(Value::as_str) {
             if let Some(generator) = generators.get(name) {
                 if let Some(idx_name) = value.get("index").and_then(Value::as_str) {
@@ -122,6 +162,12 @@ pub fn find_generator_index<'a>(
                             );
                         } else {
                             if let Some(idx) = generator.indices.get(idx_name) {
+                                // TODO: handle include_docs cross-references
+                                //
+                                if let Some(include) = include_docs {
+                                    println!("got index ref with include_docs");
+                                    return get_index_include_docs(generator, as_name.to_string(), idx);
+                                }
                                 return Ok(
                                     Some(
                                         (as_name.to_string(), to_value(&idx.documents).unwrap())
