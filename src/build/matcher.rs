@@ -72,23 +72,6 @@ pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
     for (_, map) in mapping.iter() {
         let dest = Path::new(&map.destination);
 
-        // Generator has an index file so directory
-        // and index.html URLs should be valid
-        if map.use_index_file {
-            let mut target = utils::url::to_url_lossy(&dest);
-            if target == url {
-                return Some(dest.to_path_buf())
-            }
-
-            let mut idx = dest.to_path_buf();
-            idx.push(INDEX_HTML);
-            target = utils::url::to_url_lossy(&idx);
-
-            if target == url {
-                return Some(idx)
-            }
-        }
-
         let is_json = url.ends_with(".json");
 
         if let Some(idx) = &map.json_index {

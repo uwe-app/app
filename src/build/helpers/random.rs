@@ -32,16 +32,10 @@ impl HelperDef for Random{
                         if let Some(t) = h.template() {
                             let mut local_rc = rc.clone();
                             let mut data = Map::new();
-                            if element.is_object() {
-                                data = element.as_object().unwrap().to_owned();
-                            } else {
-                                data.insert("value".to_string(), json!(element));
-                            }
-
+                            data.insert("entry".to_string(), json!(element));
                             let local_ctx = with_parent_context(ctx, &data)?;
                             t.render(r, &local_ctx, &mut local_rc, out)?;
                             return Ok(());
-
                         } else {
                             return template_err
                         }

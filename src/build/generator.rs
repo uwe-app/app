@@ -29,7 +29,6 @@ lazy_static! {
 pub struct GeneratorUrlMapInfo {
     pub destination: String,
     pub ids: Vec<String>,
-    pub use_index_file: bool,
     pub copy_json: bool,
     pub json_index: Option<String>,
 }
@@ -40,8 +39,7 @@ pub struct GeneratorBuildConfig {
     pub destination: String,
     // Name of the template used for page generation
     pub template: String,
-    // Name of an index file to copy to the generated directory
-    pub index: Option<String>,
+    //pub index: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -74,15 +72,15 @@ impl GeneratorBuildConfig {
                     format!("Generator destination '{}' must be relative path", self.destination)))
         }
 
-        if let Some(ind) = &self.index {
-            let mut i = f.to_path_buf();
-            i.push(ind);
-            if !i.exists() || !i.is_file() {
-                return Err(
-                    Error::new(
-                        format!("Generator index '{}' is not a file", ind)))
-            }
-        }
+        //if let Some(ind) = &self.index {
+            //let mut i = f.to_path_buf();
+            //i.push(ind);
+            //if !i.exists() || !i.is_file() {
+                //return Err(
+                    //Error::new(
+                        //format!("Generator index '{}' is not a file", ind)))
+            //}
+        //}
 
         Ok(())
     }
@@ -212,8 +210,6 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     json_index = json.index_file.clone();
                                 }
 
-                                let use_index_file = config.build.index.is_some();
-
                                 let all = GeneratorIndex {
                                     documents: Vec::new(),
                                 };
@@ -231,7 +227,6 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                 let gmi = GeneratorUrlMapInfo {
                                     destination: generator.config.build.destination.clone(),
                                     ids: Vec::new(),
-                                    use_index_file,
                                     copy_json,
                                     json_index,
                                 };
