@@ -15,7 +15,7 @@ use crate::{
     TEMPLATE,
     GENERATOR,
     DOCUMENTS,
-    DATA_TOML,
+    GENERATOR_TOML,
 };
 
 lazy_static! {
@@ -175,11 +175,11 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                             if let Some(nm) = path.file_name() {
                                 let key = nm.to_string_lossy().into_owned(); 
                                 let mut conf = path.to_path_buf().clone();
-                                conf.push(DATA_TOML);
+                                conf.push(GENERATOR_TOML);
                                 if !conf.exists() || !conf.is_file() {
                                     return Err(
                                         Error::new(
-                                            format!("No {} for generator {}", DATA_TOML, key)));
+                                            format!("No {} for generator {}", GENERATOR_TOML, key)));
                                 }
 
                                 let mut data = path.to_path_buf().clone();

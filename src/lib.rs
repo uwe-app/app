@@ -19,6 +19,7 @@ static TEMPLATE_EXT: &str = ".hbs";
 static THEME: &str = "theme";
 static LAYOUT_HBS: &str = "layout.hbs";
 static DATA_TOML: &str = "data.toml";
+static GENERATOR_TOML: &str = "generator.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
 static JSON: &str = "json";
