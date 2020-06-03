@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{to_value, Value};
 use log::{info};
 
 use crate::{
@@ -99,13 +99,8 @@ pub struct Generator {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
-    pub indices: BTreeMap<String, IndexType>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum IndexType{
-    Documents(DocumentIndex),
-    Values(ValueIndex),
+    pub all: DocumentIndex,
+    pub indices: BTreeMap<String, ValueIndex>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -127,39 +122,32 @@ pub struct SourceDocument {
 impl Generator {
 
     pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
-        let all = self.indices.get_mut("all").unwrap();
 
-        match all {
-            IndexType::Documents(ref mut all) => {
-                let mut site_dir = self.site.clone();
-                site_dir.push(&self.config.build.destination);
+        let mut site_dir = self.site.clone();
+        site_dir.push(&self.config.build.destination);
 
-                let mut data_dir = self.source.clone();
-                data_dir.push(DOCUMENTS);
-                match data_dir.read_dir() {
-                    Ok(contents) => {
-                        for e in contents {
-                            match e {
-                                Ok(entry) => {
-                                    let path = entry.path();
-                                    let contents = utils::read_string(&path)?;
-                                    let document: Value =
-                                        serde_json::from_str(&contents)?;
-                                    if let Some(stem) = path.file_stem() {
-                                        let id = stem.to_string_lossy().into_owned();
-                                        ids.push(id.clone());
-                                        all.documents.push(SourceDocument{id, document});
-                                    }
-                                },
-                                Err(e) => return Err(Error::from(e))
+        let mut data_dir = self.source.clone();
+        data_dir.push(DOCUMENTS);
+        match data_dir.read_dir() {
+            Ok(contents) => {
+                for e in contents {
+                    match e {
+                        Ok(entry) => {
+                            let path = entry.path();
+                            let contents = utils::read_string(&path)?;
+                            let document: Value =
+                                serde_json::from_str(&contents)?;
+                            if let Some(stem) = path.file_stem() {
+                                let id = stem.to_string_lossy().into_owned();
+                                ids.push(id.clone());
+                                self.all.documents.push(SourceDocument{id, document});
                             }
-                        } 
-                    },
-                    Err(e) => return Err(Error::from(e))
-                }
-            
+                        },
+                        Err(e) => return Err(Error::from(e))
+                    }
+                } 
             },
-            _ => {}
+            Err(e) => return Err(Error::from(e))
         }
 
         Ok(())
@@ -224,13 +212,13 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     json_index = json.index_file.clone();
                                 }
 
-                                let all = IndexType::Documents(DocumentIndex{documents: Vec::new()});
-                                let mut indices: BTreeMap<String, IndexType> = BTreeMap::new();
-                                indices.insert("all".to_string(), all);
+                                let all = DocumentIndex{documents: Vec::new()};
+                                let mut indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
 
                                 let generator = Generator {
                                     site: opts.source.clone(),
                                     source: path.to_path_buf(),
+                                    all,
                                     indices,
                                     config,
                                 };
@@ -261,16 +249,18 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
     for (k, generator) in &mut generators.iter_mut() {
         if let Some(index) = &generator.config.build.index {
             let mut indices = &mut generator.indices;
-            let all = indices.get("all").unwrap();
-
+            let all = &generator.all;
             for def in index {
-                println!("got index def {:?}", def);
-                // Documents for this index
-                //let mut docs: Vec<SourceDocument> = Vec::new();
-            }
+                let mut values = ValueIndex {documents: Vec::new()};
+                for doc in &all.documents {
+                    //println!("add doc to index {:?}", doc);
 
-            //println!("build index for {:?}", k);
-            //println!("build index for {:?}", indices);
+                    // TODO : build indices from definitions!
+                    values.documents.push(to_value(&doc).unwrap());
+                }
+
+                indices.insert(def.name.clone(), values);
+            }
         }
     }
     Ok(())

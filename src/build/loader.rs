@@ -9,7 +9,7 @@ use toml::map::Map as TomlMap;
 use toml::Value as TomlValue;
 use toml::value::Table;
 
-use serde_json::{json, Map, Value};
+use serde_json::{json, to_value, Map, Value};
 
 use log::{warn};
 
@@ -24,7 +24,6 @@ use crate::{
 };
 
 use super::generator::Generator;
-use super::generator::IndexType;
 
 lazy_static! {
     #[derive(Debug)]
@@ -104,22 +103,35 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     map
 }
 
+
 pub fn find_generator_index<'a>(
     generators: &'a BTreeMap<String, Generator>,
-    generator: Option<&Value>) -> Result<Option<(String, &'a IndexType)>, Error> {
+    generator: Option<&Value>) -> Result<Option<(String, Value)>, Error> {
 
     if let Some(value) = generator {
         if let Some(name) = value.get("name").and_then(Value::as_str) {
             if let Some(generator) = generators.get(name) {
-
                 if let Some(idx_name) = value.get("index").and_then(Value::as_str) {
-                    if let Some(idx) = generator.indices.get(idx_name) {
-                        if let Some(as_name) = value.get("as").and_then(Value::as_str) {
-                            //data.insert(as_name.to_string(), json!(idx.documents));
-                            return Ok(Some((as_name.to_string(), idx)))
+                    if let Some(as_name) = value.get("as").and_then(Value::as_str) {
+
+                        if idx_name == "all" {
+                            return Ok(
+                                Some(
+                                    (as_name.to_string(), to_value(&generator.all.documents).unwrap())
+                                )
+                            );
+                        } else {
+                            if let Some(idx) = generator.indices.get(idx_name) {
+                                return Ok(
+                                    Some(
+                                        (as_name.to_string(), to_value(&idx.documents).unwrap())
+                                    )
+                                );
+                            } else {
+                                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
+                            }
                         }
-                    } else {
-                        return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
+
                     }
                 }
             } else {
