@@ -34,12 +34,18 @@ pub struct GeneratorUrlMapInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratorIndexRequest {
+    pub name: String,
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorBuildConfig {
     // Destination output for generated pages relative to the site
     pub destination: String,
     // Name of the template used for page generation
     pub template: String,
-    //pub index: Option<String>,
+    pub index: Option<Vec<GeneratorIndexRequest>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -72,16 +78,6 @@ impl GeneratorBuildConfig {
                     format!("Generator destination '{}' must be relative path", self.destination)))
         }
 
-        //if let Some(ind) = &self.index {
-            //let mut i = f.to_path_buf();
-            //i.push(ind);
-            //if !i.exists() || !i.is_file() {
-                //return Err(
-                    //Error::new(
-                        //format!("Generator index '{}' is not a file", ind)))
-            //}
-        //}
-
         Ok(())
     }
 }
@@ -103,12 +99,23 @@ pub struct Generator {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
-    pub indices: BTreeMap<String, GeneratorIndex>,
+    pub indices: BTreeMap<String, DocumentIndex>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GeneratorIndex {
+pub enum IndexType{
+    Documents(DocumentIndex),
+    Values(ValueIndex),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DocumentIndex{
     pub documents: Vec<SourceDocument>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValueIndex{
+    pub documents: Vec<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -210,11 +217,8 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     json_index = json.index_file.clone();
                                 }
 
-                                let all = GeneratorIndex {
-                                    documents: Vec::new(),
-                                };
-
-                                let mut indices: BTreeMap<String, GeneratorIndex> = BTreeMap::new();
+                                let all = DocumentIndex{ documents: Vec::new() };
+                                let mut indices: BTreeMap<String, DocumentIndex> = BTreeMap::new();
                                 indices.insert("all".to_string(), all);
 
                                 let generator = Generator {
@@ -246,9 +250,29 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
     Ok(())
 }
 
+fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+    for (k, generator) in &mut generators.iter_mut() {
+        if let Some(index) = &generator.config.build.index {
+            let mut indices = &mut generator.indices;
+            let all = indices.get("all").unwrap();
+
+            for def in index {
+                println!("got index def {:?}", def);
+                // Documents for this index
+                //let mut docs: Vec<SourceDocument> = Vec::new();
+            }
+
+            //println!("build index for {:?}", k);
+            //println!("build index for {:?}", indices);
+        }
+    }
+    Ok(())
+}
+
 pub fn load(opts: &BuildOptions) -> Result<BTreeMap<String, Generator>, Error> {
     let mut map: BTreeMap<String, Generator> = BTreeMap::new();
     load_configurations(opts, &mut map)?;
     load_documents(&mut map)?;
+    build_index(&mut map)?;
     Ok(map)
 }

@@ -24,7 +24,7 @@ use crate::{
 };
 
 use super::generator::Generator;
-use super::generator::GeneratorIndex;
+use super::generator::DocumentIndex;
 
 lazy_static! {
     #[derive(Debug)]
@@ -106,9 +106,7 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
 
 pub fn find_generator_index<'a>(
     generators: &'a BTreeMap<String, Generator>,
-    generator: Option<&Value>) -> Result<Option<(String, &'a GeneratorIndex)>, Error> {
-
-    // FIXME: https://github.com/rust-lang/rust/issues/59159
+    generator: Option<&Value>) -> Result<Option<(String, &'a DocumentIndex)>, Error> {
 
     if let Some(value) = generator {
         if let Some(name) = value.get("name").and_then(Value::as_str) {
