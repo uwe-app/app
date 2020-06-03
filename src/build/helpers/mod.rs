@@ -1,6 +1,8 @@
 use std::io;
 use handlebars::*;
 
+use serde_json::{json, Map, Value};
+
 pub mod children;
 pub mod html;
 pub mod include;
@@ -38,5 +40,24 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
         }
     }
     Err(RenderError::new("no template for render buffer"))
+}
+
+// This dance keeps the parent context data intact
+// so that the `link` helper can be called inside another 
+// context
+pub fn with_parent_context<'rc>(
+    ctx: &'rc Context,
+    data: &Map<String, Value>) -> Result<Context, RenderError> {
+
+    let existing = ctx.data().as_object().unwrap();
+    let mut new_data: Map<String, Value> = Map::new();
+    for (k, v) in existing {
+        new_data.insert(k.clone(), json!(v));
+    }
+    for (k, v) in data {
+        new_data.insert(k.clone(), json!(v));
+    }
+
+    return Context::wraps(&new_data);
 }
 
