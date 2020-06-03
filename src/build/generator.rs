@@ -99,7 +99,7 @@ pub struct Generator {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
-    pub indices: BTreeMap<String, DocumentIndex>,
+    pub indices: BTreeMap<String, IndexType>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -129,32 +129,39 @@ impl Generator {
     pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
         let all = self.indices.get_mut("all").unwrap();
 
-        let mut site_dir = self.site.clone();
-        site_dir.push(&self.config.build.destination);
+        match all {
+            IndexType::Documents(ref mut all) => {
+                let mut site_dir = self.site.clone();
+                site_dir.push(&self.config.build.destination);
 
-        let mut data_dir = self.source.clone();
-        data_dir.push(DOCUMENTS);
-        match data_dir.read_dir() {
-            Ok(contents) => {
-                for e in contents {
-                    match e {
-                        Ok(entry) => {
-                            let path = entry.path();
-                            let contents = utils::read_string(&path)?;
-                            let document: Value =
-                                serde_json::from_str(&contents)?;
-                            if let Some(stem) = path.file_stem() {
-                                let id = stem.to_string_lossy().into_owned();
-                                ids.push(id.clone());
-                                all.documents.push(SourceDocument{id, document});
+                let mut data_dir = self.source.clone();
+                data_dir.push(DOCUMENTS);
+                match data_dir.read_dir() {
+                    Ok(contents) => {
+                        for e in contents {
+                            match e {
+                                Ok(entry) => {
+                                    let path = entry.path();
+                                    let contents = utils::read_string(&path)?;
+                                    let document: Value =
+                                        serde_json::from_str(&contents)?;
+                                    if let Some(stem) = path.file_stem() {
+                                        let id = stem.to_string_lossy().into_owned();
+                                        ids.push(id.clone());
+                                        all.documents.push(SourceDocument{id, document});
+                                    }
+                                },
+                                Err(e) => return Err(Error::from(e))
                             }
-                        },
-                        Err(e) => return Err(Error::from(e))
-                    }
-                } 
+                        } 
+                    },
+                    Err(e) => return Err(Error::from(e))
+                }
+            
             },
-            Err(e) => return Err(Error::from(e))
+            _ => {}
         }
+
         Ok(())
     }
 }
@@ -217,8 +224,8 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     json_index = json.index_file.clone();
                                 }
 
-                                let all = DocumentIndex{ documents: Vec::new() };
-                                let mut indices: BTreeMap<String, DocumentIndex> = BTreeMap::new();
+                                let all = IndexType::Documents(DocumentIndex{documents: Vec::new()});
+                                let mut indices: BTreeMap<String, IndexType> = BTreeMap::new();
                                 indices.insert("all".to_string(), all);
 
                                 let generator = Generator {

@@ -33,6 +33,7 @@ use matcher::FileType;
 use parser::Parser;
 use manifest::Manifest;
 use generator::Generator;
+use generator::IndexType;
 
 #[derive(Debug)]
 pub struct Invalidation {
@@ -94,7 +95,14 @@ impl<'a> Builder<'a> {
 
                 let idx = loader::find_generator_index(self.generators, generator_config)?;
                 if let Some((key, idx)) = idx {
-                    data.insert(key, json!(&idx.documents));
+                    match *idx {
+                        IndexType::Documents(ref i) => {
+                            data.insert(key, json!(i.documents));
+                        },
+                        IndexType::Values(ref i) => {
+                            data.insert(key, json!(i.documents));
+                        },
+                    }
                 }
 
                 let mut clean = self.options.clean_url;
@@ -271,79 +279,88 @@ impl<'a> Builder<'a> {
 
             let all = g.indices.get("all").unwrap();
 
-            info!("generate {} ({})", k, all.documents.len());
+            match all {
+                IndexType::Documents(ref all) => {
+                    info!("generate {} ({})", k, all.documents.len());
 
-            // Write out the document files
-            for doc in &all.documents {
-                // Mock a sorce file to build a destination
-                // respecting the clean URL setting
-                let mut file = self.options.source.clone();
-                file.push(&g.config.build.destination);
-                file.push(&doc.id);
-
-                let mut data = generator_data.clone();
-                data.insert("document".to_string(), json!(&doc.document));
-
-                let file_type = matcher::get_type_extension(&tpl);
-                let dest = matcher::destination(
-                    &self.options.source,
-                    &self.options.target,
-                    &file.to_path_buf(),
-                    &file_type,
-                    clean,
-                )?;
-
-                info!("{} -> {}", &doc.id, &dest.display());
-
-                let s = self.parser.parse(&tpl, &dest, file_type, &mut data)?;
-                utils::write_string(&dest, s).map_err(Error::from)?;
-
-                // Copy over the JSON documents when asked
-                if let Some(json) = &g.config.json {
-                    if json.copy {
-                        let mut file = g.source.clone();
-                        file.push(DOCUMENTS);
+                    // Write out the document files
+                    for doc in &all.documents {
+                        // Mock a sorce file to build a destination
+                        // respecting the clean URL setting
+                        let mut file = self.options.source.clone();
+                        file.push(&g.config.build.destination);
                         file.push(&doc.id);
-                        file.set_extension(JSON);
 
-                        let mut dest = self.options.target.clone();
-                        dest.push(&g.config.build.destination);
-                        dest.push(&doc.id);
-                        dest.set_extension(JSON);
-                        debug!("{} -> {}", &file.display(), &dest.display());
-                        utils::copy(&file, &dest).map_err(Error::from)?;
+                        let mut data = generator_data.clone();
+                        data.insert("document".to_string(), json!(&doc.document));
+
+                        let file_type = matcher::get_type_extension(&tpl);
+                        let dest = matcher::destination(
+                            &self.options.source,
+                            &self.options.target,
+                            &file.to_path_buf(),
+                            &file_type,
+                            clean,
+                        )?;
+
+                        info!("{} -> {}", &doc.id, &dest.display());
+
+                        let s = self.parser.parse(&tpl, &dest, file_type, &mut data)?;
+                        utils::write_string(&dest, s).map_err(Error::from)?;
+
+                        // Copy over the JSON documents when asked
+                        if let Some(json) = &g.config.json {
+                            if json.copy {
+                                let mut file = g.source.clone();
+                                file.push(DOCUMENTS);
+                                file.push(&doc.id);
+                                file.set_extension(JSON);
+
+                                let mut dest = self.options.target.clone();
+                                dest.push(&g.config.build.destination);
+                                dest.push(&doc.id);
+                                dest.set_extension(JSON);
+                                debug!("{} -> {}", &file.display(), &dest.display());
+                                utils::copy(&file, &dest).map_err(Error::from)?;
+                            }
+                        }
                     }
-                }
+
+                    // Write out json index
+                    if let Some(json) = &g.config.json {
+                        if let Some(file_name) = &json.index_file {
+                            let mut file = self.options.target.clone();
+                            file.push(&g.config.build.destination);
+                            file.push(file_name);
+
+                            // Just write out the identifiers
+                            if json.index_slim {
+                                let list: Vec<&String> = all.documents
+                                    .iter()
+                                    .map(|d| &d.id)
+                                    .collect::<Vec<_>>();
+                                if let Ok(s) = serde_json::to_string(&list) {
+                                    info!("json {}", file.display());
+                                    utils::write_string(&file, s).map_err(Error::from)?;
+                                }
+                            // Write out identifiers with the document values
+                            } else {
+                                if let Ok(s) = serde_json::to_string(&all.documents) {
+                                    info!("json {}", file.display());
+                                    utils::write_string(&file, s).map_err(Error::from)?;
+                                }
+                            }
+
+                        }
+
+                    }
+
+                },
+                _ => {}
             }
 
-            // Write out json index
-            if let Some(json) = &g.config.json {
-                if let Some(file_name) = &json.index_file {
-                    let mut file = self.options.target.clone();
-                    file.push(&g.config.build.destination);
-                    file.push(file_name);
 
-                    // Just write out the identifiers
-                    if json.index_slim {
-                        let list: Vec<&String> = all.documents
-                            .iter()
-                            .map(|d| &d.id)
-                            .collect::<Vec<_>>();
-                        if let Ok(s) = serde_json::to_string(&list) {
-                            info!("json {}", file.display());
-                            utils::write_string(&file, s).map_err(Error::from)?;
-                        }
-                    // Write out identifiers with the document values
-                    } else {
-                        if let Ok(s) = serde_json::to_string(&all.documents) {
-                            info!("json {}", file.display());
-                            utils::write_string(&file, s).map_err(Error::from)?;
-                        }
-                    }
 
-                }
-
-            }
         }
         Ok(())
     }
