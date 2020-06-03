@@ -1,12 +1,13 @@
 use std::io;
 use handlebars::*;
 
-pub mod html;
 pub mod children;
+pub mod html;
+pub mod include;
 pub mod json;
 pub mod markdown;
 pub mod parent;
-pub mod include;
+pub mod random;
 pub mod url;
 
 pub struct BufferedOutput {
