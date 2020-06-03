@@ -105,6 +105,11 @@ pub struct Generator {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
+    pub indices: BTreeMap<String, GeneratorIndex>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratorIndex {
     pub documents: Vec<SourceDocument>,
 }
 
@@ -115,7 +120,10 @@ pub struct SourceDocument {
 }
 
 impl Generator {
+
     pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
+        let all = self.indices.get_mut("all").unwrap();
+
         let mut site_dir = self.site.clone();
         site_dir.push(&self.config.build.destination);
 
@@ -133,7 +141,7 @@ impl Generator {
                             if let Some(stem) = path.file_stem() {
                                 let id = stem.to_string_lossy().into_owned();
                                 ids.push(id.clone());
-                                self.documents.push(SourceDocument{id, document});
+                                all.documents.push(SourceDocument{id, document});
                             }
                         },
                         Err(e) => return Err(Error::from(e))
@@ -206,10 +214,17 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
 
                                 let use_index_file = config.build.index.is_some();
 
+                                let all = GeneratorIndex {
+                                    documents: Vec::new(),
+                                };
+
+                                let mut indices: BTreeMap<String, GeneratorIndex> = BTreeMap::new();
+                                indices.insert("all".to_string(), all);
+
                                 let generator = Generator {
                                     site: opts.source.clone(),
                                     source: path.to_path_buf(),
-                                    documents: Vec::new(),
+                                    indices,
                                     config,
                                 };
 

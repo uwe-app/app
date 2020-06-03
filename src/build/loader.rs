@@ -2,6 +2,7 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::collections::BTreeMap;
 
 use toml::de::Error as TomlError;
 use toml::map::Map as TomlMap;
@@ -21,6 +22,9 @@ use crate::{
     PARSE_EXTENSIONS,
     DATA_TOML
 };
+
+use super::generator::Generator;
+use super::generator::GeneratorIndex;
 
 lazy_static! {
     #[derive(Debug)]
@@ -98,6 +102,35 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     }
 
     map
+}
+
+pub fn find_generator_index<'a>(
+    generators: &'a BTreeMap<String, Generator>,
+    generator: Option<&Value>) -> Result<Option<(String, &'a GeneratorIndex)>, Error> {
+
+    // FIXME: https://github.com/rust-lang/rust/issues/59159
+
+    if let Some(value) = generator {
+        if let Some(name) = value.get("name").and_then(Value::as_str) {
+            if let Some(generator) = generators.get(name) {
+
+                if let Some(idx_name) = value.get("index").and_then(Value::as_str) {
+                    if let Some(idx) = generator.indices.get(idx_name) {
+                        if let Some(as_name) = value.get("as").and_then(Value::as_str) {
+                            //data.insert(as_name.to_string(), json!(idx.documents));
+                            return Ok(Some((as_name.to_string(), idx)))
+                        }
+                    } else {
+                        return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
+                    }
+                }
+            } else {
+                return Err(Error::new(format!("Missing generator with name '{}'", name))) 
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {

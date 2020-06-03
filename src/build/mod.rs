@@ -22,7 +22,6 @@ use super::{
     BuildOptions,
     DOCUMENTS,
     JSON,
-    INDEX_HTML,
     TEMPLATE,
     TEMPLATE_EXT,
     DATA_TOML,
@@ -91,6 +90,13 @@ impl<'a> Builder<'a> {
             },
             FileType::Markdown | FileType::Html => {
                 let mut data = loader::compute(file);
+                let generator_config = data.get("generator");
+
+                let idx = loader::find_generator_index(self.generators, generator_config)?;
+                if let Some((key, idx)) = idx {
+                    data.insert(key, json!(&idx.documents));
+                }
+
                 let mut clean = self.options.clean_url;
 
                 if let Some(val) = data.get("clean") {
@@ -263,10 +269,12 @@ impl<'a> Builder<'a> {
 
             let generator_data = loader::compute(k);
 
-            info!("generate {} ({})", k, g.documents.len());
+            let all = g.indices.get("all").unwrap();
+
+            info!("generate {} ({})", k, all.documents.len());
 
             // Write out the document files
-            for doc in &g.documents {
+            for doc in &all.documents {
                 // Mock a sorce file to build a destination
                 // respecting the clean URL setting
                 let mut file = self.options.source.clone();
@@ -308,25 +316,6 @@ impl<'a> Builder<'a> {
                 }
             }
 
-            // Write out an index page
-            if let Some(index_file) = &g.config.build.index {
-                let mut index_tpl = g.source.clone();
-                index_tpl.push(index_file);
-
-                let mut dest = self.options.target.clone();
-                dest.push(&g.config.build.destination);
-                dest.push(INDEX_HTML);
-
-                let mut data = generator_data.clone();
-                data.insert("documents".to_string(), json!(&g.documents));
-
-                info!("{} -> {}", &index_tpl.display(), &dest.display());
-
-                let file_type = matcher::get_type_extension(&index_tpl);
-                let s = self.parser.parse(&index_tpl, &dest, file_type, &mut data)?;
-                utils::write_string(&dest, s).map_err(Error::from)?;
-            }
-
             // Write out json index
             if let Some(json) = &g.config.json {
                 if let Some(file_name) = &json.index_file {
@@ -336,7 +325,7 @@ impl<'a> Builder<'a> {
 
                     // Just write out the identifiers
                     if json.index_slim {
-                        let list: Vec<&String> = g.documents
+                        let list: Vec<&String> = all.documents
                             .iter()
                             .map(|d| &d.id)
                             .collect::<Vec<_>>();
@@ -346,7 +335,7 @@ impl<'a> Builder<'a> {
                         }
                     // Write out identifiers with the document values
                     } else {
-                        if let Ok(s) = serde_json::to_string(&g.documents) {
+                        if let Ok(s) = serde_json::to_string(&all.documents) {
                             info!("json {}", file.display());
                             utils::write_string(&file, s).map_err(Error::from)?;
                         }
