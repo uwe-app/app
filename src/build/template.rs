@@ -106,7 +106,8 @@ impl<'a> TemplateRender<'a> {
 
         // Skip layout for standalone documents
         if let Some(val) = data.get("standalone") {
-            if let Some(_) = val.as_bool() {
+            let standalone = val.is_boolean() && val.as_bool().unwrap();
+            if standalone {
                 return Ok(document);
             }
         }
