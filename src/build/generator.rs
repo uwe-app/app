@@ -271,6 +271,10 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
 }
 
 fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+
+    let type_err = Err(
+        Error::new(format!("Type error building index, keys must be string values")));
+
     for (_, generator) in &mut generators.iter_mut() {
         if let Some(index) = &generator.config.build.index {
             let indices = &mut generator.indices;
@@ -280,16 +284,36 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
             // and then by the values for the referenced fields
             let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
             for def in index {
+                let name = &def.name;
                 let key = &def.key;
                 for doc in &all.documents {
                     let id = doc.id.clone();
                     let document = &doc.document;
 
                     if let Some(val) = document.get(&key) {
-                        let cache = caches.entry(key.clone()).or_insert(BTreeMap::new());
+                        let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
 
-                        // TODO: support grouping on array values
+                        let mut candidates: Vec<&str> = Vec::new();
+
+                        if !val.is_string() && !val.is_array() {
+                            return type_err
+                        }
+
                         if let Some(s) = val.as_str() {
+                            candidates.push(s);
+                        }
+
+                        if let Some(arr) = val.as_array() {
+                            for val in arr {
+                                if let Some(s) = val.as_str() {
+                                    candidates.push(s);
+                                } else {
+                                    return type_err
+                                }
+                            }
+                        }
+
+                        for s in candidates {
                             let items = cache.entry(s.to_string()).or_insert(Vec::new());
                             let mut map = Map::new();
                             map.insert("id".to_string(), json!(id));
