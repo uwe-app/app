@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use ignore::WalkBuilder;
 use log::{debug, info, error};
 
-use serde_json::{json, from_value};
+use serde_json::{json, from_value, Map, Value};
 
 pub mod book;
 pub mod generator;
@@ -68,9 +68,61 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType, pages_only: bool) -> Result<(), Error> {
-        let file = p.as_ref();
+    fn each_generator<P: AsRef<Path>>(
+        &mut self,
+        p: P,
+        file_type: &FileType,
+        mut data: &mut Map<String, Value>,
+        reference: GeneratorReference,
+        values: Vec<Value>,
+        clean: bool) -> Result<(), Error> {
 
+        let file = p.as_ref();
+        let parent = file.parent().unwrap();
+
+        // Write out the document files
+        for doc in &values {
+            if let Some(id) = doc.get("id") {
+                if let Some(id) = id.as_str() {
+                    if doc.is_object() {
+                        let map = doc.as_object().unwrap(); 
+                        for (k, v) in map {
+                            data.insert(k.clone(), json!(v));
+                        }
+                    } else {
+                        return Err(Error::new(format!("Generator document should be an object")))
+                    }
+
+                    // Mock a sorce file to build a destination
+                    // respecting the clean URL setting
+                    let mut mock = parent.to_path_buf();
+                    mock.push(&id);
+
+                    let dest = matcher::destination(
+                        &self.options.source,
+                        &self.options.target,
+                        &mock,
+                        &file_type,
+                        clean,
+                    )?;
+
+                    info!("{} -> {}", &id, &dest.display());
+
+                    let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut data)?;
+                    utils::write_string(&dest, s).map_err(Error::from)?;
+                }
+            } else {
+                return Err(Error::new(format!("Generator document must have an id")))
+            }
+        }
+
+        Ok(())
+    }
+
+    fn process_file<P: AsRef<Path>>(
+        &mut self, p: P, file_type: FileType, pages_only: bool) -> Result<(), Error> {
+
+        let file = p.as_ref();
         match file_type {
             FileType::Unknown => {
                 let dest = matcher::direct_destination(
@@ -89,7 +141,28 @@ impl<'a> Builder<'a> {
                 }
             },
             FileType::Markdown | FileType::Html => {
+                let (collides, other) = matcher::collides(file, &file_type);
+                if collides {
+                    return Err(
+                        Error::new(
+                            format!("file name collision {} with {}",
+                                file.display(),
+                                other.display()
+                        )))
+                }
+
                 let mut data = loader::compute(file);
+
+                let mut clean = self.options.clean_url;
+                if let Some(val) = data.get("clean") {
+                    if let Some(val) = val.as_bool() {
+                        clean = val;
+                    }
+                }
+
+                if utils::is_draft(&data, self.options) {
+                    return Ok(())
+                }
 
                 let generator_config = data.get("generator");
                 let mut page_generators: Vec<GeneratorReference> = Vec::new();
@@ -114,20 +187,31 @@ impl<'a> Builder<'a> {
                     }
                 }
 
+                let mut each_iters: Vec<(GeneratorReference, Vec<Value>)> = Vec::new();
+
                 for gen in page_generators {
-                    let key = gen.parameter.clone();
-                    let idx = generator::find_generator_index(self.generators, gen)?;
-                    if let Some(val) = idx {
-                        data.insert(key, json!(val));
+                    let each = gen.each.is_some() && gen.each.unwrap();
+
+                    let idx = generator::find_generator_index(self.generators, &gen)?;
+                    if let Some(key) = &gen.parameter {
+                        data.insert(key.clone(), json!(idx));
+                    }
+
+                    // Push on to the list of generators to iterate
+                    // over so that we can support the same template
+                    // for multiple generator indices although not sure
+                    // how useful/desirable it is to declare multiple each iterators
+                    // as identifiers may well collide.
+                    if each {
+                        each_iters.push((gen, idx));
                     }
                 }
 
-                let mut clean = self.options.clean_url;
-
-                if let Some(val) = data.get("clean") {
-                    if let Some(val) = val.as_bool() {
-                        clean = val;
-                    }
+                if !each_iters.is_empty() {
+                    for (gen, idx) in each_iters {
+                        self.each_generator(&p, &file_type, &mut data, gen, idx, clean)?;
+                    } 
+                    return Ok(())
                 }
 
                 let dest = matcher::destination(
@@ -138,23 +222,9 @@ impl<'a> Builder<'a> {
                     clean,
                 )?;
 
-                let (collides, other) = matcher::collides(file, &file_type);
-                if collides {
-                    return Err(
-                        Error::new(
-                            format!("file name collision {} with {}",
-                                file.display(),
-                                other.display()
-                        )))
-                }
-
-                if utils::is_draft(&data, self.options) {
-                    return Ok(())
-                }
-
                 if self.manifest.is_dirty(file, &dest, pages_only || self.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
-                    let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut data)?;
+                    let s = self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?;
                     let result = utils::write_string(&dest, s).map_err(Error::from);
                     self.manifest.touch(file, &dest);
                     return result
@@ -289,41 +359,19 @@ impl<'a> Builder<'a> {
         let clean = self.options.clean_url;
 
         for (k, g) in self.generators.iter() {
-            let mut tpl = g.source.clone();
-            tpl.push(&g.config.build.template);
+            //let mut tpl = g.source.clone();
+            //tpl.push(&g.config.build.template);
 
             let generator_data = loader::compute(k);
             let all = &g.all;
             info!("generate {} ({})", k, all.documents.len());
 
-            // Write out the document files
-            for doc in &all.documents {
-                // Mock a sorce file to build a destination
-                // respecting the clean URL setting
-                let mut file = self.options.source.clone();
-                file.push(&g.config.build.destination);
-                file.push(&doc.id);
+            // Copy over the JSON documents when asked
+            if let Some(json) = &g.config.json {
 
-                let mut data = generator_data.clone();
-                data.insert("document".to_string(), json!(&doc.document));
-
-                let file_type = matcher::get_type_extension(&tpl);
-                let dest = matcher::destination(
-                    &self.options.source,
-                    &self.options.target,
-                    &file.to_path_buf(),
-                    &file_type,
-                    clean,
-                )?;
-
-                info!("{} -> {}", &doc.id, &dest.display());
-
-                let s = self.parser.parse(&tpl, &dest, file_type, &mut data)?;
-                utils::write_string(&dest, s).map_err(Error::from)?;
-
-                // Copy over the JSON documents when asked
-                if let Some(json) = &g.config.json {
-                    if json.copy {
+                if json.copy {
+                    // Write out the document files
+                    for doc in &all.documents {
                         let mut file = g.source.clone();
                         file.push(DOCUMENTS);
                         file.push(&doc.id);
@@ -337,10 +385,8 @@ impl<'a> Builder<'a> {
                         utils::copy(&file, &dest).map_err(Error::from)?;
                     }
                 }
-            }
 
-            // Write out json index
-            if let Some(json) = &g.config.json {
+                // Write out json index
                 if let Some(file_name) = &json.index_file {
                     let mut file = self.options.target.clone();
                     file.push(&g.config.build.destination);
@@ -363,9 +409,7 @@ impl<'a> Builder<'a> {
                             utils::write_string(&file, s).map_err(Error::from)?;
                         }
                     }
-
                 }
-
             }
         }
         Ok(())

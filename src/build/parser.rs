@@ -68,7 +68,7 @@ impl<'a> Parser<'a> {
         &mut self,
         input: P,
         output: P,
-        file_type: FileType,
+        file_type: &FileType,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
         match file_type {

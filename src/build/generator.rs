@@ -39,8 +39,9 @@ pub struct GeneratorUrlMapInfo {
 pub struct GeneratorReference {
     pub name: String,
     pub index: String,
-    pub parameter: String,
+    pub parameter: Option<String>,
     pub include_docs: Option<bool>,
+    pub each: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,7 +55,7 @@ pub struct GeneratorBuildConfig {
     // Destination output for generated pages relative to the site
     pub destination: String,
     // Name of the template used for page generation
-    pub template: String,
+    //pub template: String,
     pub index: Option<Vec<GeneratorIndexRequest>>,
 }
 
@@ -73,13 +74,13 @@ impl GeneratorBuildConfig {
     pub fn validate<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
         let f = dir.as_ref();
 
-        let mut t = f.to_path_buf();
-        t.push(&self.template);
-        if !t.exists() || !t.is_file() {
-            return Err(
-                Error::new(
-                    format!("Generator template '{}' is not a file", self.template)))
-        }
+        //let mut t = f.to_path_buf();
+        //t.push(&self.template);
+        //if !t.exists() || !t.is_file() {
+            //return Err(
+                //Error::new(
+                    //format!("Generator template '{}' is not a file", self.template)))
+        //}
 
         let dest = Path::new(&self.destination);
         if dest.is_absolute() {
@@ -118,9 +119,24 @@ pub struct DocumentIndex{
     pub documents: Vec<SourceDocument>,
 }
 
+impl DocumentIndex {
+    pub fn to_value_vec(&self) -> Vec<Value> {
+        return self.documents
+            .iter()
+            .map(|v| to_value(v).unwrap())
+            .collect::<Vec<_>>();
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ValueIndex{
     pub documents: Vec<Value>,
+}
+
+impl ValueIndex {
+    pub fn to_value_vec(&self) -> Vec<Value> {
+        return self.documents.clone();
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -319,7 +335,7 @@ pub fn load(opts: &BuildOptions) -> Result<BTreeMap<String, Generator>, Error> {
 
 fn get_index_include_docs(
     generator: &Generator,
-    idx: &ValueIndex) -> Value {
+    idx: &ValueIndex) -> Vec<Value> {
     let mut out: Vec<Value> = Vec::new();
     for doc in &idx.documents {
         let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
@@ -346,24 +362,24 @@ fn get_index_include_docs(
         out.push(to_value(map).unwrap());
     }
 
-    return json!(&out);
+    return out;
 }
 
 pub fn find_generator_index<'a>(
     generators: &'a BTreeMap<String, Generator>,
-    generator: GeneratorReference) -> Result<Option<Value>, Error> {
+    generator: &GeneratorReference) -> Result<Vec<Value>, Error> {
     let name = &generator.name;
     let idx_name = &generator.index;
     let include_docs = generator.include_docs.is_some() && generator.include_docs.unwrap();
     if let Some(generator) = generators.get(name) {
         if idx_name == "all" {
-            return Ok(Some(json!(&generator.all.documents)));
+            return Ok(generator.all.to_value_vec());
         } else {
             if let Some(idx) = generator.indices.get(idx_name) {
                 if include_docs {
-                    return Ok(Some(get_index_include_docs(generator, idx)));
+                    return Ok(get_index_include_docs(generator, idx));
                 }
-                return Ok(Some(json!(&idx.documents)));
+                return Ok(idx.to_value_vec());
             } else {
                 return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }
