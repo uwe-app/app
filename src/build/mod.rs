@@ -72,8 +72,8 @@ impl<'a> Builder<'a> {
         &mut self,
         p: P,
         file_type: &FileType,
-        mut data: &mut Map<String, Value>,
-        reference: GeneratorReference,
+        data: &Map<String, Value>,
+        _reference: GeneratorReference,
         values: Vec<Value>,
         clean: bool) -> Result<(), Error> {
 
@@ -82,12 +82,14 @@ impl<'a> Builder<'a> {
 
         // Write out the document files
         for doc in &values {
+            let mut item_data = data.clone();
+
             if let Some(id) = doc.get("id") {
                 if let Some(id) = id.as_str() {
                     if doc.is_object() {
                         let map = doc.as_object().unwrap(); 
                         for (k, v) in map {
-                            data.insert(k.clone(), json!(v));
+                            item_data.insert(k.clone(), json!(v));
                         }
                     } else {
                         return Err(Error::new(format!("Generator document should be an object")))
@@ -108,10 +110,11 @@ impl<'a> Builder<'a> {
 
                     info!("{} -> {}", &id, &dest.display());
 
-                    let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut data)?;
+                    let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut item_data)?;
                     utils::write_string(&dest, s).map_err(Error::from)?;
                 }
             } else {
+                println!("doc {:?}", doc);
                 return Err(Error::new(format!("Generator document must have an id")))
             }
         }
@@ -209,7 +212,7 @@ impl<'a> Builder<'a> {
 
                 if !each_iters.is_empty() {
                     for (gen, idx) in each_iters {
-                        self.each_generator(&p, &file_type, &mut data, gen, idx, clean)?;
+                        self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
                     } 
                     return Ok(())
                 }
@@ -356,13 +359,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn build_generators(&mut self) -> Result<(), Error> {
-        let clean = self.options.clean_url;
-
         for (k, g) in self.generators.iter() {
-            //let mut tpl = g.source.clone();
-            //tpl.push(&g.config.build.template);
-
-            let generator_data = loader::compute(k);
             let all = &g.all;
             info!("generate {} ({})", k, all.documents.len());
 

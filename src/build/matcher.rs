@@ -220,14 +220,7 @@ pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
                 if nm == LAYOUT_HBS || nm == DATA_TOML {
                     return FileType::Private
                 } else {
-                    // TODO: call new get_type_extension() here!
-                    if let Some(ext) = file.extension() {
-                        if ext == MD {
-                            return FileType::Markdown
-                        } else if ext == HTML {
-                            return FileType::Html
-                        }
-                    }
+                    return get_type_extension(p)
                 }
             }
         }

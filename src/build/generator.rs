@@ -71,17 +71,7 @@ pub struct GeneratorJsonConfig {
 }
 
 impl GeneratorBuildConfig {
-    pub fn validate<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
-        let f = dir.as_ref();
-
-        //let mut t = f.to_path_buf();
-        //t.push(&self.template);
-        //if !t.exists() || !t.is_file() {
-            //return Err(
-                //Error::new(
-                    //format!("Generator template '{}' is not a file", self.template)))
-        //}
-
+    pub fn validate<P: AsRef<Path>>(&self, _dir: P) -> Result<(), Error> {
         let dest = Path::new(&self.destination);
         if dest.is_absolute() {
             return Err(
@@ -313,6 +303,7 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
                 let mut values = ValueIndex {documents: Vec::new()};
                 for (key, val) in v {
                     let mut map = Map::new();
+                    map.insert("id".to_string(), json!(slug::slugify(&key)));
                     map.insert("key".to_string(), json!(key));
                     map.insert("value".to_string(), json!(val));
                     values.documents.push(json!(map));
