@@ -4,6 +4,7 @@ extern crate open;
 
 mod asset;
 mod build;
+mod config;
 mod bundle;
 mod error;
 mod command;
@@ -19,6 +20,7 @@ static TEMPLATE_EXT: &str = ".hbs";
 static THEME: &str = "theme";
 static LAYOUT_HBS: &str = "layout.hbs";
 static DATA_TOML: &str = "data.toml";
+static SITE_TOML: &str = "site.toml";
 static GENERATOR_TOML: &str = "generator.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
@@ -29,6 +31,7 @@ static DRAFT_KEY: &str = "draft";
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
+pub use crate::config::Config;
 pub use crate::error::Error;
 pub use crate::command::archive::*;
 pub use crate::command::build::*;

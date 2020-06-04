@@ -13,6 +13,7 @@ use warp::ws::Message;
 
 use log::{info, debug, error};
 
+use crate::config::Config;
 use crate::build::Builder;
 use crate::build::loader;
 use crate::build::generator;
@@ -77,16 +78,18 @@ fn get_websocket_url(options: &BuildOptions, addr: SocketAddr, endpoint: &str) -
     format!("ws://{}:{}/{}", options.host, addr.port(), endpoint)
 }
 
-pub fn build(mut options: BuildOptions) -> Result<(), Error> {
+pub fn build(cfg: Config) -> Result<(), Error> {
+
+    let mut options = cfg.build.unwrap();
 
     if options.live && options.release {
         return Err(
             Error::new("live reload is not available for release builds".to_string()))
     }
 
-    loader::load(&options)?;
-
     let generators = generator::load(&options)?;
+
+    loader::load(&options)?;
 
     let mut target = options.source.clone();
     if let Some(dir) = &options.directory {

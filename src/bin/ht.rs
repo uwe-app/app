@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use hypertext::{
+    Config,
     BuildTag,
     Error,
     ArchiveOptions,
@@ -248,6 +249,7 @@ fn create_output_dir(output: &PathBuf) {
 }
 
 fn process_command(cmd: &Command) {
+
     match cmd {
         Command::Init {
             ref args
@@ -334,6 +336,8 @@ fn process_command(cmd: &Command) {
                 error(format!("not a directory: {}", args.input.display()));
             }
 
+            let mut cfg = Config::new(&args.input);
+
             create_output_dir(&args.output);
 
             let mut tag_target = BuildTag::Debug;
@@ -395,8 +399,10 @@ fn process_command(cmd: &Command) {
                 port: args.server.port.to_owned(),
             };
 
+            cfg.for_build(opts);
+
             let now = SystemTime::now();
-            if let Err(e) = hypertext::build(opts) {
+            if let Err(e) = hypertext::build(cfg) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {
