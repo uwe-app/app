@@ -2,14 +2,13 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use std::collections::BTreeMap;
 
 use toml::de::Error as TomlError;
 use toml::map::Map as TomlMap;
 use toml::Value as TomlValue;
 use toml::value::Table;
 
-use serde_json::{json, to_value, Map, Value};
+use serde_json::{json, Map, Value};
 
 use log::{warn};
 
@@ -22,8 +21,6 @@ use crate::{
     PARSE_EXTENSIONS,
     DATA_TOML
 };
-
-use super::generator::{Generator, GeneratorReference, ValueIndex};
 
 lazy_static! {
     #[derive(Debug)]
@@ -101,63 +98,6 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     }
 
     map
-}
-
-fn get_index_include_docs(
-    generator: &Generator,
-    idx: &ValueIndex) -> Value {
-    let mut out: Vec<Value> = Vec::new();
-    for doc in &idx.documents {
-        let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
-        if let Some(value) = map.get("value") {
-            if let Some(ref mut items) = value.as_array() {
-                let mut values: Vec<Value> = Vec::new();
-                for item in items.iter() {
-                    let mut new_item = Map::new();
-                    if let Some(id) = item.get("id").and_then(Value::as_str) {
-                        new_item.insert("id".to_string(), json!(id));
-                        if let Some(doc) = generator.find_by_id(id) {
-                            new_item.insert("document".to_string(), json!(doc));
-                        } else {
-                            // Something very wrong if we make it here!
-                            warn!("Failed to include document for index with id {}", id);
-                        }
-                    }
-                    values.push(json!(new_item));
-                }
-
-                map.insert("value".to_string(), json!(values));
-            }
-        }
-        out.push(to_value(map).unwrap());
-    }
-
-    return json!(&out);
-}
-
-pub fn get_generator_index<'a>(
-    generators: &'a BTreeMap<String, Generator>,
-    generator: GeneratorReference) -> Result<Option<Value>, Error> {
-    let name = &generator.name;
-    let idx_name = &generator.index;
-    let include_docs = generator.include_docs.is_some() && generator.include_docs.unwrap();
-    if let Some(generator) = generators.get(name) {
-        if idx_name == "all" {
-            return Ok(Some(json!(&generator.all.documents)));
-        } else {
-            if let Some(idx) = generator.indices.get(idx_name) {
-                if include_docs {
-                    return Ok(Some(get_index_include_docs(generator, idx)));
-                }
-                return Ok(Some(json!(&idx.documents)));
-            } else {
-                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
-            }
-        }
-    } else {
-        return Err(Error::new(format!("Missing generator with name '{}'", name))) 
-    }
-    Ok(None)
 }
 
 pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {

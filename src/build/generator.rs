@@ -6,7 +6,7 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_value, Map, Value};
-use log::{info};
+use log::{info, warn};
 
 use crate::{
     utils,
@@ -230,7 +230,7 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                 }
 
                                 let all = DocumentIndex{documents: Vec::new()};
-                                let mut indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
+                                let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
 
                                 let generator = Generator {
                                     site: opts.source.clone(),
@@ -263,9 +263,9 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
 }
 
 fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
-    for (k, generator) in &mut generators.iter_mut() {
+    for (_, generator) in &mut generators.iter_mut() {
         if let Some(index) = &generator.config.build.index {
-            let mut indices = &mut generator.indices;
+            let indices = &mut generator.indices;
             let all = &generator.all;
 
             // Collect identifiers grouping first by index key
@@ -278,11 +278,11 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
                     let document = &doc.document;
 
                     if let Some(val) = document.get(&key) {
-                        let mut cache = caches.entry(key.clone()).or_insert(BTreeMap::new());
+                        let cache = caches.entry(key.clone()).or_insert(BTreeMap::new());
 
                         // TODO: support grouping on array values
                         if let Some(s) = val.as_str() {
-                            let mut items = cache.entry(s.to_string()).or_insert(Vec::new());
+                            let items = cache.entry(s.to_string()).or_insert(Vec::new());
                             let mut map = Map::new();
                             map.insert("id".to_string(), json!(id));
                             items.push(to_value(map).unwrap());
@@ -314,3 +314,60 @@ pub fn load(opts: &BuildOptions) -> Result<BTreeMap<String, Generator>, Error> {
     build_index(&mut map)?;
     Ok(map)
 }
+
+fn get_index_include_docs(
+    generator: &Generator,
+    idx: &ValueIndex) -> Value {
+    let mut out: Vec<Value> = Vec::new();
+    for doc in &idx.documents {
+        let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
+        if let Some(value) = map.get("value") {
+            if let Some(ref mut items) = value.as_array() {
+                let mut values: Vec<Value> = Vec::new();
+                for item in items.iter() {
+                    let mut new_item = Map::new();
+                    if let Some(id) = item.get("id").and_then(Value::as_str) {
+                        new_item.insert("id".to_string(), json!(id));
+                        if let Some(doc) = generator.find_by_id(id) {
+                            new_item.insert("document".to_string(), json!(doc));
+                        } else {
+                            // Something very wrong if we make it here!
+                            warn!("Failed to include document for index with id {}", id);
+                        }
+                    }
+                    values.push(json!(new_item));
+                }
+
+                map.insert("value".to_string(), json!(values));
+            }
+        }
+        out.push(to_value(map).unwrap());
+    }
+
+    return json!(&out);
+}
+
+pub fn find_generator_index<'a>(
+    generators: &'a BTreeMap<String, Generator>,
+    generator: GeneratorReference) -> Result<Option<Value>, Error> {
+    let name = &generator.name;
+    let idx_name = &generator.index;
+    let include_docs = generator.include_docs.is_some() && generator.include_docs.unwrap();
+    if let Some(generator) = generators.get(name) {
+        if idx_name == "all" {
+            return Ok(Some(json!(&generator.all.documents)));
+        } else {
+            if let Some(idx) = generator.indices.get(idx_name) {
+                if include_docs {
+                    return Ok(Some(get_index_include_docs(generator, idx)));
+                }
+                return Ok(Some(json!(&idx.documents)));
+            } else {
+                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
+            }
+        }
+    } else {
+        return Err(Error::new(format!("Missing generator with name '{}'", name))) 
+    }
+}
+

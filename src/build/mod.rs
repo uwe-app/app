@@ -110,13 +110,13 @@ impl<'a> Builder<'a> {
                     } else {
                         return Err(
                             Error::new(
-                                format!("Generator data parameter should be array or object")));
+                                format!("Generator parameter should be array or object")));
                     }
                 }
 
                 for gen in page_generators {
                     let key = gen.parameter.clone();
-                    let idx = loader::get_generator_index(self.generators, gen)?;
+                    let idx = generator::find_generator_index(self.generators, gen)?;
                     if let Some(val) = idx {
                         data.insert(key, json!(val));
                     }
