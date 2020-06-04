@@ -22,6 +22,7 @@ use super::{
     BuildOptions,
     DOCUMENTS,
     JSON,
+    GENERATOR,
     TEMPLATE,
     TEMPLATE_EXT,
     DATA_TOML,
@@ -416,6 +417,10 @@ impl<'a> Builder<'a> {
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let templates = self.register_templates_directory()?;
 
+        let mut generator = self.options.source.to_path_buf();
+        generator.push(GENERATOR);
+        
+
         if let Err(e) = self.build_generators() {
             return Err(e)
         }
@@ -427,7 +432,7 @@ impl<'a> Builder<'a> {
                 let path = e.path();
 
                 // Ensure the template directory is ignored
-                if path == templates.as_path() {
+                if path == templates.as_path() || path == generator.as_path() {
                     return false;
                 }
                 true

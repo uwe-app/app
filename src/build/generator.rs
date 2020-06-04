@@ -14,7 +14,6 @@ use crate::{
     utils,
     Error,
     BuildOptions,
-    TEMPLATE,
     GENERATOR,
     DOCUMENTS,
     GENERATOR_TOML,
@@ -194,7 +193,6 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
     let mut mapping = GENERATOR_MAPPING.lock().unwrap();
 
     let mut src = opts.source.clone();
-    src.push(TEMPLATE);
     src.push(GENERATOR);
 
     if src.exists() && src.is_dir() {
