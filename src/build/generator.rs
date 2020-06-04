@@ -34,6 +34,14 @@ pub struct GeneratorUrlMapInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratorReference {
+    pub name: String,
+    pub index: String,
+    pub parameter: String,
+    pub include_docs: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorIndexRequest {
     pub name: String,
     pub key: String,

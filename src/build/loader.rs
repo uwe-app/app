@@ -23,8 +23,7 @@ use crate::{
     DATA_TOML
 };
 
-use super::generator::Generator;
-use super::generator::ValueIndex;
+use super::generator::{Generator, GeneratorReference, ValueIndex};
 
 lazy_static! {
     #[derive(Debug)]
@@ -106,9 +105,7 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
 
 fn get_index_include_docs(
     generator: &Generator,
-    name: String,
-    idx: &ValueIndex) -> Result<Option<(String, Value)>, Error> {
-
+    idx: &ValueIndex) -> Value {
     let mut out: Vec<Value> = Vec::new();
     for doc in &idx.documents {
         let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
@@ -123,7 +120,7 @@ fn get_index_include_docs(
                             new_item.insert("document".to_string(), json!(doc));
                         } else {
                             // Something very wrong if we make it here!
-                            warn!("Failed to include document for index {} with id {}", &name, id);
+                            warn!("Failed to include document for index with id {}", id);
                         }
                     }
                     values.push(json!(new_item));
@@ -135,57 +132,31 @@ fn get_index_include_docs(
         out.push(to_value(map).unwrap());
     }
 
-    return Ok(
-        Some(
-            (name, to_value(&out).unwrap())
-        )
-    );
+    return json!(&out);
 }
 
-pub fn find_generator_index<'a>(
+pub fn get_generator_index<'a>(
     generators: &'a BTreeMap<String, Generator>,
-    generator: Option<&Value>) -> Result<Option<(String, Value)>, Error> {
-
-    if let Some(value) = generator {
-        let include_docs = value.get("include_docs").and_then(Value::as_bool);
-
-        if let Some(name) = value.get("name").and_then(Value::as_str) {
-            if let Some(generator) = generators.get(name) {
-                if let Some(idx_name) = value.get("index").and_then(Value::as_str) {
-                    if let Some(as_name) = value.get("as").and_then(Value::as_str) {
-
-                        if idx_name == "all" {
-                            return Ok(
-                                Some(
-                                    (as_name.to_string(), to_value(&generator.all.documents).unwrap())
-                                )
-                            );
-                        } else {
-                            if let Some(idx) = generator.indices.get(idx_name) {
-                                // TODO: handle include_docs cross-references
-                                //
-                                if let Some(include) = include_docs {
-                                    println!("got index ref with include_docs");
-                                    return get_index_include_docs(generator, as_name.to_string(), idx);
-                                }
-                                return Ok(
-                                    Some(
-                                        (as_name.to_string(), to_value(&idx.documents).unwrap())
-                                    )
-                                );
-                            } else {
-                                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
-                            }
-                        }
-
-                    }
+    generator: GeneratorReference) -> Result<Option<Value>, Error> {
+    let name = &generator.name;
+    let idx_name = &generator.index;
+    let include_docs = generator.include_docs.is_some() && generator.include_docs.unwrap();
+    if let Some(generator) = generators.get(name) {
+        if idx_name == "all" {
+            return Ok(Some(json!(&generator.all.documents)));
+        } else {
+            if let Some(idx) = generator.indices.get(idx_name) {
+                if include_docs {
+                    return Ok(Some(get_index_include_docs(generator, idx)));
                 }
+                return Ok(Some(json!(&idx.documents)));
             } else {
-                return Err(Error::new(format!("Missing generator with name '{}'", name))) 
+                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }
         }
+    } else {
+        return Err(Error::new(format!("Missing generator with name '{}'", name))) 
     }
-
     Ok(None)
 }
 
