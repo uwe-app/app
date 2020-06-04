@@ -10,6 +10,7 @@ pub mod json;
 pub mod markdown;
 pub mod parent;
 pub mod random;
+pub mod slug;
 pub mod url;
 
 pub struct BufferedOutput {

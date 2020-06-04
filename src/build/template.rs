@@ -37,6 +37,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("components", Box::new(helpers::url::Components));
         handlebars.register_helper("match", Box::new(helpers::url::Match));
         handlebars.register_helper("random", Box::new(helpers::random::Random));
+        handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
 
         TemplateRender {
             options,
