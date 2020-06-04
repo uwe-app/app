@@ -103,8 +103,8 @@ impl<'a> Builder<'a> {
                     // Multiple array declaration
                     } else if cfg.is_array() {
                         let items = cfg.as_array().unwrap();
-                        for o in items {
-                            let reference: GeneratorReference = from_value(json!(o))?;
+                        for conf in items {
+                            let reference: GeneratorReference = from_value(json!(conf))?;
                             page_generators.push(reference);
                         }
                     } else {

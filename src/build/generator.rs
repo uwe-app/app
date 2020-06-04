@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+use slug;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_value, Map, Value};
 use log::{info, warn};
@@ -155,7 +157,7 @@ impl Generator {
                             let document: Value =
                                 serde_json::from_str(&contents)?;
                             if let Some(stem) = path.file_stem() {
-                                let id = stem.to_string_lossy().into_owned();
+                                let id = slug::slugify(stem.to_string_lossy());
                                 ids.push(id.clone());
                                 self.all.documents.push(SourceDocument{id, document});
                             }
