@@ -9,6 +9,7 @@ use crate::{
 
 use super::matcher::FileType;
 use super::template;
+use super::context::Context;
 
 use serde_json::{Map, Value};
 
@@ -17,8 +18,8 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(options: &'a BuildOptions) -> Self {
-        let render = template::TemplateRender::new(options);
+    pub fn new(context: &'a Context) -> Self {
+        let render = template::TemplateRender::new(context);
         Parser{render}
     }
 

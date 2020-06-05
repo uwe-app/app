@@ -59,7 +59,7 @@ impl<'a> Builder<'a> {
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let parser = Parser::new(&context.options);
+        let parser = Parser::new(&context);
 
         let manifest = Manifest::new();
 

@@ -9,6 +9,7 @@ use chrono::Local;
 
 use log::{warn, debug};
 
+use super::context::Context;
 use super::helpers;
 use crate::{
     Error,
@@ -18,14 +19,14 @@ use crate::{
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
-    options: &'a BuildOptions,
+    context: &'a Context,
     handlebars: Handlebars<'a>,
 }
 
 impl<'a> TemplateRender<'a> {
-    pub fn new(options: &'a BuildOptions) -> Self {
+    pub fn new(context: &'a Context) -> Self {
         let mut handlebars = Handlebars::new();
-        handlebars.set_strict_mode(options.strict);
+        handlebars.set_strict_mode(context.options.strict);
 
         handlebars.register_helper("children", Box::new(helpers::children::Children));
         handlebars.register_helper("html", Box::new(helpers::html::Element));
@@ -40,7 +41,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
 
         TemplateRender {
-            options,
+            context,
             handlebars,
         }
     }
@@ -77,7 +78,8 @@ impl<'a> TemplateRender<'a> {
                 ctx.insert("name".to_string(), json!(stem));
             }
 
-            ctx.insert("options".to_string(), json!(self.options));
+            ctx.insert("options".to_string(), json!(self.context.options));
+            ctx.insert("livereload".to_string(), json!(self.context.livereload));
 
             // TODO: allow using UTC configuration
             let dt = Local::now();
@@ -116,7 +118,7 @@ impl<'a> TemplateRender<'a> {
         let mut layout_path = PathBuf::new();
         if let Some(path) = data.get("layout") {
             if let Some(name) = path.as_str() {
-                layout_path = self.options.source.clone();
+                layout_path = self.context.options.source.clone();
                 layout_path.push(name);
                 if !layout_path.exists() {
                     warn!("missing layout {}", layout_path.display());
@@ -126,7 +128,7 @@ impl<'a> TemplateRender<'a> {
 
         // Use a default layout path
         if layout_path == PathBuf::new() {
-            layout_path = self.options.source.clone();
+            layout_path = self.context.options.source.clone();
             layout_path.push(LAYOUT_HBS);
         }
 
