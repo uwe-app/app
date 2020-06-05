@@ -24,7 +24,7 @@ impl HelperDef for Link{
     ) -> HelperResult {
 
         let base_path = rc
-            .evaluate(ctx, "@root/context.file")?
+            .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
@@ -119,7 +119,7 @@ impl HelperDef for Components{
     ) -> HelperResult {
 
         let base_path = rc
-            .evaluate(ctx, "@root/context.dest")?
+            .evaluate(ctx, "@root/file.target")?
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
@@ -204,7 +204,7 @@ impl HelperDef for Match{
     ) -> HelperResult {
 
         let base_path = rc
-            .evaluate(ctx, "@root/context.dest")?
+            .evaluate(ctx, "@root/file.target")?
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
@@ -221,7 +221,7 @@ impl HelperDef for Match{
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {
-            return Err(RenderError::new("Type error for `is_page`, two parameters expected"))
+            return Err(RenderError::new("Type error for `match`, two parameters expected"))
         }
 
         let mut target: String = "".to_owned();

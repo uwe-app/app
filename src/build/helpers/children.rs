@@ -19,7 +19,7 @@ impl HelperDef for Children {
         out: &mut dyn Output,
     ) -> HelperResult {
         let base_path = rc
-            .evaluate(ctx, "@root/context.file")?
+            .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?

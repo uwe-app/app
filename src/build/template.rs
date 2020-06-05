@@ -68,27 +68,27 @@ impl<'a> TemplateRender<'a> {
         {
             let filepath = input.as_ref().to_str().unwrap().to_string();
             let destpath = output.as_ref().to_str().unwrap().to_string();
-            let mut ctx: Map<String, Value> = Map::new();
-            ctx.insert("file".to_string(), json!(filepath));
-            ctx.insert("dest".to_string(), json!(destpath));
+
+            let mut file_info: Map<String, Value> = Map::new();
+            file_info.insert("source".to_string(), json!(filepath));
+            file_info.insert("target".to_string(), json!(destpath));
 
             if let Some(stem) = input.as_ref().file_stem() {
                 let stem = stem.to_string_lossy().into_owned();
-                ctx.insert("name".to_string(), json!(stem));
+                file_info.insert("name".to_string(), json!(stem));
             }
 
-            ctx.insert("options".to_string(), json!(self.context.options));
-            ctx.insert("livereload".to_string(), json!(self.context.livereload));
-
             // TODO: allow using UTC configuration
+            // TODO: prefer source file modification time
             let dt = Local::now();
             //let modified = dt.format("%a %b %e %T %Y").to_string();
             
             // TODO: allow configuration of format string
             let modified = dt.format("%a %b %e %Y").to_string();
-            ctx.insert("modified".to_string(), json!(modified));
+            file_info.insert("modified".to_string(), json!(modified));
 
-            data.insert("context".to_string(), json!(ctx));
+            data.insert("file".to_string(), json!(file_info));
+            data.insert("context".to_string(), json!(self.context));
 
             debug!("{:?}", data);
 
