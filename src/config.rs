@@ -8,13 +8,14 @@ use toml;
 
 //use crate::command::build::BuildOptions;
 
-use crate::{utils, Error, SITE_TOML};
+use crate::{utils, Error, SITE_TOML, MD, HTML};
 
 use log::debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub build: BuildConfig,
+    pub extensions: Option<ExtensionsConfig>,
     pub serve: ServeConfig,
 }
 
@@ -24,15 +25,54 @@ pub struct BuildConfig {
     pub target: PathBuf,
     pub strict: bool,
     pub html_extension: bool,
-    pub extensions: BTreeMap<String, String>,
     pub follow_links: bool,
     pub max_depth: Option<usize>,
+}
+
+impl BuildConfig {
+    pub fn new() -> Self {
+        BuildConfig {
+            source: Path::new("site").to_path_buf(),
+            target: Path::new("build").to_path_buf(),
+            strict: true,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct ExtensionsConfig {
+    pub parse: Vec<String>,
+    pub map: BTreeMap<String, String>,
+    pub markdown: Vec<String>,
+}
+
+impl ExtensionsConfig {
+    pub fn new() -> Self {
+        let mut ext_map: BTreeMap<String, String> = BTreeMap::new();
+        ext_map.insert(String::from(MD), String::from(HTML));
+
+        ExtensionsConfig {
+            parse: vec![String::from(MD), String::from(HTML)],
+            map: ext_map,
+            markdown: vec![String::from(MD)],
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ServeConfig {
     pub host: String,
     pub port: u16,
+}
+
+impl ServeConfig {
+    pub fn new() -> Self {
+        ServeConfig {
+            host: String::from("localhost"),
+            port: 3000,
+        }
+    }
 }
 
 pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
@@ -57,6 +97,10 @@ pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
                 cfg.build.target = bp;
             }
 
+            if cfg.extensions.is_none() {
+                cfg.extensions = Some(ExtensionsConfig::new());
+            }
+
             return Ok(cfg);
         }
     }
@@ -67,16 +111,9 @@ pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
 impl Config {
     pub fn new() -> Self {
         Config {
-            build: BuildConfig {
-                source: Path::new("site").to_path_buf(),
-                target: Path::new("build").to_path_buf(),
-                strict: true,
-                ..Default::default()
-            },
-            serve: ServeConfig {
-                host: String::from("localhost"),
-                port: 3000,
-            },
+            build: BuildConfig::new(),
+            extensions: Some(ExtensionsConfig::new()),
+            serve: ServeConfig::new(),
         }
     }
 
