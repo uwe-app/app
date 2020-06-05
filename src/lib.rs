@@ -24,7 +24,6 @@ static SITE_TOML: &str = "site.toml";
 static GENERATOR_TOML: &str = "generator.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
-static JSON: &str = "json";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 static ROOT_TABLE_KEY: &str = "site";
 static DRAFT_KEY: &str = "draft";

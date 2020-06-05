@@ -19,8 +19,6 @@ pub mod template;
 use super::{
     utils,
     Error,
-    DOCUMENTS,
-    JSON,
     GENERATOR,
     TEMPLATE,
     TEMPLATE_EXT,
@@ -96,16 +94,20 @@ impl<'a> Builder<'a> {
                         return Err(Error::new(format!("Generator document should be an object")))
                     }
 
-                    // Mock a sorce file to build a destination
+                    // Mock a source file to build a destination
                     // respecting the clean URL setting
                     let mut mock = parent.to_path_buf();
                     mock.push(&id);
+                    if let Some(ext) = file.extension() {
+                        mock.set_extension(ext);
+                    }
 
                     let dest = matcher::destination(
                         &self.context.options.source,
                         &self.context.options.target,
                         &mock,
                         &file_type,
+                        &self.context.config.extensions.as_ref().unwrap(),
                         clean,
                     )?;
 
@@ -221,12 +223,13 @@ impl<'a> Builder<'a> {
                     }
 
                 }
-
+                
                 let dest = matcher::destination(
                     &self.context.options.source,
                     &self.context.options.target,
                     &file.to_path_buf(),
                     &file_type,
+                    &self.context.config.extensions.as_ref().unwrap(),
                     clean,
                 )?;
 
@@ -363,62 +366,6 @@ impl<'a> Builder<'a> {
         Ok(templates)
     }
 
-    pub fn build_generators(&mut self) -> Result<(), Error> {
-        if let Some(generators) = &self.context.generators {
-            for (k, g) in generators.iter() {
-                let all = &g.all;
-                info!("generate {} ({})", k, all.documents.len());
-
-                // Copy over the JSON documents when asked
-                if let Some(json) = &g.config.json {
-
-                    if json.copy {
-                        // Write out the document files
-                        for doc in &all.documents {
-                            let mut file = g.source.clone();
-                            file.push(DOCUMENTS);
-                            file.push(&doc.id);
-                            file.set_extension(JSON);
-
-                            let mut dest = self.context.options.target.clone();
-                            dest.push(&g.config.build.destination);
-                            dest.push(&doc.id);
-                            dest.set_extension(JSON);
-                            debug!("{} -> {}", &file.display(), &dest.display());
-                            utils::copy(&file, &dest).map_err(Error::from)?;
-                        }
-                    }
-
-                    // Write out json index
-                    if let Some(file_name) = &json.index_file {
-                        let mut file = self.context.options.target.clone();
-                        file.push(&g.config.build.destination);
-                        file.push(file_name);
-
-                        // Just write out the identifiers
-                        if json.index_slim {
-                            let list: Vec<&String> = all.documents
-                                .iter()
-                                .map(|d| &d.id)
-                                .collect::<Vec<_>>();
-                            if let Ok(s) = serde_json::to_string(&list) {
-                                info!("json {}", file.display());
-                                utils::write_string(&file, s).map_err(Error::from)?;
-                            }
-                        // Write out identifiers with the document values
-                        } else {
-                            if let Ok(s) = serde_json::to_string(&all.documents) {
-                                info!("json {}", file.display());
-                                utils::write_string(&file, s).map_err(Error::from)?;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
-
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let templates = self.register_templates_directory()?;
@@ -426,11 +373,6 @@ impl<'a> Builder<'a> {
         let mut generator = self.context.options.source.to_path_buf();
         generator.push(GENERATOR);
         
-
-        if let Err(e) = self.build_generators() {
-            return Err(e)
-        }
-
         for result in WalkBuilder::new(&target)
             .follow_links(self.context.config.build.follow_links)
             .max_depth(self.context.config.build.max_depth)

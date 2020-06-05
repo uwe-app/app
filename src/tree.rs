@@ -103,7 +103,8 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
                     this = path == file.as_ref();
 
-                    let file_type = matcher::get_type(path, &ctx.config.extensions.as_ref().unwrap());
+                    let extensions = &ctx.config.extensions.as_ref().unwrap();
+                    let file_type = matcher::get_type(path, extensions);
                     match file_type {
                         FileType::Markdown | FileType::Template => {
                             let mut dest = matcher::destination(
@@ -111,6 +112,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                                 target,
                                 &path.to_path_buf(),
                                 &file_type,
+                                extensions,
                                 ctx.options.clean_url,
                             )?;
                             if let Ok(cleaned) = dest.strip_prefix(target) {
@@ -137,12 +139,14 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
                     for f in candidates {
                         if f.exists() {
-                            let file_type = matcher::get_type(&f, &ctx.config.extensions.as_ref().unwrap());
+                            let extensions = &ctx.config.extensions.as_ref().unwrap();
+                            let file_type = matcher::get_type(&f, extensions);
                             let mut dest = matcher::destination(
                                 source,
                                 target,
                                 &f,
                                 &file_type,
+                                extensions,
                                 ctx.options.clean_url,
                             )?;
 

@@ -30,8 +30,6 @@ lazy_static! {
 pub struct GeneratorUrlMapInfo {
     pub destination: String,
     pub ids: Vec<String>,
-    pub copy_json: bool,
-    pub json_index: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,7 +43,6 @@ pub struct GeneratorReference {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorIndexRequest {
-    pub name: String,
     pub key: String,
 }
 
@@ -53,20 +50,6 @@ pub struct GeneratorIndexRequest {
 pub struct GeneratorBuildConfig {
     // Destination output for generated pages relative to the site
     pub destination: String,
-    // Name of the template used for page generation
-    //pub template: String,
-    pub index: Option<Vec<GeneratorIndexRequest>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GeneratorJsonConfig {
-    // Copy documents to the build
-    pub copy: bool,
-    // Whether the JSON contents just contains
-    // an index pointing to the copied files
-    pub index_slim: bool,
-    // Output file for the index
-    pub index_file: Option<String>,
 }
 
 impl GeneratorBuildConfig {
@@ -85,7 +68,9 @@ impl GeneratorBuildConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
     pub build: GeneratorBuildConfig,
-    pub json: Option<GeneratorJsonConfig>,
+
+    // Name of the template used for page generation
+    pub index: BTreeMap<String, GeneratorIndexRequest>,
 }
 
 impl GeneratorConfig {
@@ -228,13 +213,6 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                     return Err(e) 
                                 }
 
-                                let mut copy_json = false;
-                                let mut json_index = None;
-                                if let Some(json) = &config.json {
-                                    copy_json = json.copy; 
-                                    json_index = json.index_file.clone();
-                                }
-
                                 let all = DocumentIndex{documents: Vec::new()};
                                 let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
 
@@ -249,8 +227,6 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                 let gmi = GeneratorUrlMapInfo {
                                     destination: generator.config.build.destination.clone(),
                                     ids: Vec::new(),
-                                    copy_json,
-                                    json_index,
                                 };
                                 mapping.insert(key.clone(), gmi);
 
@@ -274,66 +250,63 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
         Error::new(format!("Type error building index, keys must be string values")));
 
     for (_, generator) in &mut generators.iter_mut() {
-        if let Some(index) = &generator.config.build.index {
-            let indices = &mut generator.indices;
-            let all = &generator.all;
+        let indices = &mut generator.indices;
+        let all = &generator.all;
 
-            // Collect identifiers grouping first by index key
-            // and then by the values for the referenced fields
-            let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
-            for def in index {
-                let name = &def.name;
-                let key = &def.key;
-                for doc in &all.documents {
-                    let id = doc.id.clone();
-                    let document = &doc.document;
+        // Collect identifiers grouping first by index key
+        // and then by the values for the referenced fields
+        let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
+        for (name, def) in &generator.config.index {
+            let key = &def.key;
+            for doc in &all.documents {
+                let id = doc.id.clone();
+                let document = &doc.document;
 
-                    if let Some(val) = document.get(&key) {
-                        let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
+                if let Some(val) = document.get(&key) {
+                    let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
 
-                        let mut candidates: Vec<&str> = Vec::new();
+                    let mut candidates: Vec<&str> = Vec::new();
 
-                        if !val.is_string() && !val.is_array() {
-                            return type_err
-                        }
+                    if !val.is_string() && !val.is_array() {
+                        return type_err
+                    }
 
-                        if let Some(s) = val.as_str() {
-                            candidates.push(s);
-                        }
+                    if let Some(s) = val.as_str() {
+                        candidates.push(s);
+                    }
 
-                        if let Some(arr) = val.as_array() {
-                            for val in arr {
-                                if let Some(s) = val.as_str() {
-                                    candidates.push(s);
-                                } else {
-                                    return type_err
-                                }
+                    if let Some(arr) = val.as_array() {
+                        for val in arr {
+                            if let Some(s) = val.as_str() {
+                                candidates.push(s);
+                            } else {
+                                return type_err
                             }
                         }
+                    }
 
-                        for s in candidates {
-                            let items = cache.entry(s.to_string()).or_insert(Vec::new());
-                            let mut map = Map::new();
-                            map.insert("id".to_string(), json!(id));
-                            items.push(to_value(map).unwrap());
-                        }
+                    for s in candidates {
+                        let items = cache.entry(s.to_string()).or_insert(Vec::new());
+                        let mut map = Map::new();
+                        map.insert("id".to_string(), json!(id));
+                        items.push(to_value(map).unwrap());
                     }
                 }
             }
-
-            for (k, v) in caches {
-                let mut values = ValueIndex {documents: Vec::new()};
-                for (key, val) in v {
-                    let mut map = Map::new();
-                    map.insert("id".to_string(), json!(slug::slugify(&key)));
-                    map.insert("key".to_string(), json!(key));
-                    map.insert("value".to_string(), json!(val));
-                    values.documents.push(json!(map));
-                }
-                indices.insert(k, values);
-            }
-
         }
+
+        for (k, v) in caches {
+            let mut values = ValueIndex {documents: Vec::new()};
+            for (key, val) in v {
+                let mut map = Map::new();
+                map.insert("id".to_string(), json!(slug::slugify(&key)));
+                map.insert("key".to_string(), json!(key));
+                map.insert("value".to_string(), json!(val));
+                values.documents.push(json!(map));
+            }
+            indices.insert(k, values);
+        }
+
     }
     Ok(())
 }

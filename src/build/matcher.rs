@@ -13,7 +13,6 @@ pub enum FileType {
 use crate::{
     Error,
     HTML,
-    JSON,
     INDEX_HTML,
     INDEX_STEM,
     LAYOUT_HBS,
@@ -73,49 +72,29 @@ pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
     for (_, map) in mapping.iter() {
         let dest = Path::new(&map.destination);
 
-        let is_json = url.ends_with(".json");
-
-        if let Some(idx) = &map.json_index {
-            let mut json_idx = dest.to_path_buf();
-            json_idx.push(&idx);
-            let target = utils::url::to_url_lossy(&json_idx);
-            if target == url {
-                return Some(json_idx)
-            }
-        }
 
         // Now try to match on generated document id
         for id in &map.ids {
             let mut page = dest.to_path_buf();
-            if is_json && map.copy_json {
+            if clean_url {
                 page.push(id);
-                page.set_extension(JSON);
+                let mut target = utils::url::to_url_lossy(&page);
+                if target == url {
+                    return Some(page)
+                }
 
-                let target = utils::url::to_url_lossy(&page);
+                page.push(INDEX_HTML);
+
+                target = utils::url::to_url_lossy(&page);
                 if target == url {
                     return Some(page)
                 }
             } else {
-                if clean_url {
-                    page.push(id);
-                    let mut target = utils::url::to_url_lossy(&page);
-                    if target == url {
-                        return Some(page)
-                    }
-
-                    page.push(INDEX_HTML);
-
-                    target = utils::url::to_url_lossy(&page);
-                    if target == url {
-                        return Some(page)
-                    }
-                } else {
-                    page.push(id);
-                    page.set_extension(HTML);
-                    let target = utils::url::to_url_lossy(&page);
-                    if target == url {
-                        return Some(page)
-                    }
+                page.push(id);
+                page.set_extension(HTML);
+                let target = utils::url::to_url_lossy(&page);
+                if target == url {
+                    return Some(page)
                 }
             }
         }
@@ -321,6 +300,7 @@ pub fn destination<P: AsRef<Path>>(
     target: P,
     file: P,
     file_type: &FileType,
+    extensions: &ExtensionsConfig,
     clean_urls: bool,
 ) -> Result<PathBuf, Error> {
     let pth = file.as_ref().to_path_buf().clone();
@@ -329,12 +309,23 @@ pub fn destination<P: AsRef<Path>>(
         Ok(mut result) => {
             match file_type {
                 FileType::Markdown | FileType::Template => {
-                    result.set_extension(HTML);
+
+                    if let Some(ext) = pth.extension() {
+                        let ext = ext.to_string_lossy().into_owned();
+                        for (k, v) in &extensions.map {
+                            if ext == *k {
+                                result.set_extension(v);
+                                break;
+                            }
+                        }
+                    }
+
                     if clean_urls {
                         if let Some(res) = clean(pth.as_path(), result.as_path()) {
                             result = res;
                         }
                     }
+
                 }
                 _ => {}
             }
