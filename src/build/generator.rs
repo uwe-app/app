@@ -8,7 +8,7 @@ use slug;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_value, Map, Value};
-use log::{info, warn};
+use log::{info};
 
 use crate::{
     utils,
@@ -37,6 +37,7 @@ pub struct GeneratorReference {
     pub index: String,
     pub parameter: Option<String>,
     pub include_docs: Option<bool>,
+    pub keys: Option<bool>,
     pub each: Option<bool>,
 }
 
@@ -44,7 +45,6 @@ pub struct GeneratorReference {
 pub struct GeneratorIndexRequest {
     pub key: String,
     pub map: Option<bool>,
-    pub group: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,8 +69,6 @@ impl GeneratorBuildConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
     pub build: GeneratorBuildConfig,
-
-    // Name of the template used for page generation
     pub index: BTreeMap<String, GeneratorIndexRequest>,
 }
 
@@ -114,32 +112,34 @@ pub struct ValueIndex<'a> {
     pub documents: Vec<IndexDocument<'a>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IndexDocument<'a> {
-    pub def: &'a GeneratorIndexRequest,
-    pub doc: &'a SourceDocument,
-    pub val: Value,
+    pub key: String,
+    pub doc: Vec<&'a SourceDocument>,
 }
 
 impl<'a> ValueIndex<'a> {
-    pub fn to_value_vec(&self) -> Vec<Value> {
+    pub fn to_value_vec(&self, keys: bool, include_docs: bool) -> Vec<Value> {
         return self.documents
             .iter()
-            .map(|v| json!(v.val))
+            .map(|v| {
+                if keys {
+                    return json!(&v.key);
+                }
+
+                let mut m = Map::new();
+                m.insert("key".to_string(), json!(&v.key));
+                if include_docs {
+                    let docs = v.doc.iter().map(|s| &s.document).collect::<Vec<_>>();
+                    m.insert("value".to_string(), json!(&docs));
+                }
+                json!(&m)
+            })
             .collect::<Vec<_>>();
     }
 }
 
 impl<'a> Generator<'a> {
-
-    pub fn find_by_id(&self, id: &str) -> Option<Value> {
-        for doc in &self.all.documents {
-            if doc.id == id {
-                return Some(to_value(&doc.document).unwrap());
-            } 
-        }
-        None
-    }
 
     pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
 
@@ -268,44 +268,23 @@ fn build_index<'a>(generators: &'a mut BTreeMap<String, Generator<'a>>) -> Resul
 
         // Collect identifiers grouping first by index key
         // and then by the values for the referenced fields
-        let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
+        let mut caches: BTreeMap<String, BTreeMap<String, Vec<&SourceDocument>>> = BTreeMap::new();
 
         for (name, def) in &generator.config.index {
-            let mut values: ValueIndex<'a> = ValueIndex{documents: Vec::new()};
+            let values: ValueIndex<'a> = ValueIndex{documents: Vec::new()};
 
             let key = &def.key;
-            let is_group = def.group.is_some() && def.group.unwrap();
-            let is_map = def.map.is_some() && def.map.unwrap();
-
-            println!("idx {:?} is group {:?}, is map {:?}", key, is_group, is_map);
 
             let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
 
-            //if key == "@id" {
-                //let items = cache.entry(key.clone()).or_insert(Vec::new());
-                //for doc in &all.documents {
-                    //let id = slug::slugify(doc.id.clone());
-                    //items.push(json!(id));
-                //}
-                //continue;
-            //}
-
             for doc in &all.documents {
-                let id = doc.id.clone();
                 let document = &doc.document;
 
-                let mut idx = IndexDocument {
-                    def,
-                    doc,
-                    val: json!(doc.id),
-                };
-
-                if is_map && key == "@id" {
-                    values.documents.push(idx);
+                if key == "@id" {
+                    let items = cache.entry(doc.id.clone()).or_insert(Vec::new());
+                    items.push(doc.clone());
                     continue; 
                 }
-
-                //println!("idx {:?}", idx);
 
                 if let Some(val) = document.get(&key) {
                     let mut candidates: Vec<&str> = Vec::new();
@@ -330,88 +309,44 @@ fn build_index<'a>(generators: &'a mut BTreeMap<String, Generator<'a>>) -> Resul
 
                     for s in candidates {
                         let items = cache.entry(s.to_string()).or_insert(Vec::new());
-                        let mut map = Map::new();
-                        map.insert("id".to_string(), json!(id));
-                        items.push(to_value(map).unwrap());
+                        items.push(doc.clone());
                     }
                 }
             }
 
-            //if is_map {
-                //println!("{}", serde_json::to_string_pretty(&values.to_value_vec()).unwrap());
-            //}
-
             generator.indices.insert(name.clone(), values);
         }
 
-        //for (k, v) in vcaches {
-            //let mut values = ValueIndex {documents: v};
-            //generator.indices.insert(k, values);
+        for (k, v) in caches {
+            let idx = generator.indices.get_mut(&k).unwrap();
+            for (key, val) in v {
+                let idx_doc: IndexDocument<'a> = IndexDocument {
+                    key: key,
+                    doc: val,
+                };
+                idx.documents.push(idx_doc);
+            }
+        }
+
+        //for (k, idx) in &generator.indices {
+            //println!("index key {:?}", k);
+            //println!("{}", serde_json::to_string_pretty(&idx.to_value_vec(false, true)).unwrap());
         //}
 
-        //for (k, v) in caches {
-            //let mut values = ValueIndex {documents: Vec::new()};
-            //let def = &generator.config.index.get(&k).unwrap();
-
-            //for (key, val) in v {
-                //if def.map.is_some() {
-                    ////values.documents = val;
-                //} else {
-                    //let mut map = Map::new();
-                    //map.insert("id".to_string(), json!(slug::slugify(&key)));
-                    //map.insert("key".to_string(), json!(key));
-                    //map.insert("value".to_string(), json!(val));
-                    ////values.documents.push(json!(map));
-                //}
-
-            //}
-            //generator.indices.insert(k, values);
-        //}
     }
+
     Ok(())
 }
 
-pub fn load<'a>(source: PathBuf) -> Result<BTreeMap<String, Generator<'a>>, Error> {
+pub fn load<'a>(source: PathBuf, map: &'a mut BTreeMap<String, Generator<'a>>)
+    -> Result<(), Error> {
+
     let mut map: BTreeMap<String, Generator> = BTreeMap::new();
     load_configurations(source, &mut map)?;
     load_documents(&mut map)?;
     build_index(&mut map)?;
-
-    std::process::exit(1);
-
-    Ok(map)
-}
-
-fn get_index_include_docs(
-    generator: &Generator,
-    idx: &ValueIndex) -> Vec<Value> {
-    let mut out: Vec<Value> = Vec::new();
-    for doc in &idx.documents {
-        //let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
-        //if let Some(value) = map.get("value") {
-            //if let Some(ref mut items) = value.as_array() {
-                //let mut values: Vec<Value> = Vec::new();
-                //for item in items.iter() {
-                    //let mut new_item = Map::new();
-                    //if let Some(id) = item.get("id").and_then(Value::as_str) {
-                        //new_item.insert("id".to_string(), json!(id));
-                        //if let Some(doc) = generator.find_by_id(id) {
-                            //new_item.insert("document".to_string(), json!(doc));
-                        //} else {
-                            //// Something very wrong if we make it here!
-                            //warn!("Failed to include document for index with id {}", id);
-                        //}
-                    //}
-                    //values.push(json!(new_item));
-                //}
-
-                //map.insert("value".to_string(), json!(values));
-            //}
-        //}
-        //out.push(to_value(map).unwrap());
-    }
-
-    return out;
+    //Ok(())
+    Ok(())
 }
 
 pub fn find_generator_index<'a>(
@@ -419,16 +354,16 @@ pub fn find_generator_index<'a>(
     generator: &GeneratorReference) -> Result<Vec<Value>, Error> {
     let name = &generator.name;
     let idx_name = &generator.index;
+
     let include_docs = generator.include_docs.is_some() && generator.include_docs.unwrap();
+    let keys = generator.keys.is_some() && generator.keys.unwrap();
+
     if let Some(generator) = generators.get(name) {
         if idx_name == "all" {
             return Ok(generator.all.to_value_vec());
         } else {
             if let Some(idx) = generator.indices.get(idx_name) {
-                if include_docs {
-                    return Ok(get_index_include_docs(generator, idx));
-                }
-                return Ok(idx.to_value_vec());
+                return Ok(idx.to_value_vec(keys, include_docs));
             } else {
                 return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }

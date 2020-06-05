@@ -12,19 +12,18 @@ pub struct Context<'a> {
     pub config: Config,
     pub options: BuildOptions,
     #[serde(skip)]
-    pub generators: Option<BTreeMap<String, Generator<'a>>>,
+    pub generators: BTreeMap<String, Generator<'a>>,
     pub livereload: Option<String>,
 }
 
 impl<'a> Context<'a> {
     pub fn new(
         config: Config,
-        options: BuildOptions,
-        generators: BTreeMap<String, Generator<'a>>) -> Self {
+        options: BuildOptions) -> Self {
         Context {
             config,
             options,
-            generators: Some(generators),
+            generators: BTreeMap::new(),
             livereload: None,
         }
 

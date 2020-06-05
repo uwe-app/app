@@ -193,14 +193,14 @@ impl<'a> Builder<'a> {
                     }
                 }
 
-                if let Some(generators) = &self.context.generators {
+                if !self.context.generators.is_empty() {
                 
                     let mut each_iters: Vec<(GeneratorReference, Vec<Value>)> = Vec::new();
 
                     for gen in page_generators {
                         let each = gen.each.is_some() && gen.each.unwrap();
 
-                        let idx = generator::find_generator_index(&generators, &gen)?;
+                        let idx = generator::find_generator_index(&self.context.generators, &gen)?;
                         if let Some(key) = &gen.parameter {
                             data.insert(key.clone(), json!(idx));
                         }

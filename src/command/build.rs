@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
+use std::collections::BTreeMap;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
@@ -21,6 +22,8 @@ use crate::build::context;
 use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
+
+use crate::build::generator::Generator;
 
 lazy_static! {
     #[derive(Debug)]
@@ -83,9 +86,6 @@ pub fn build(config: Config, options: BuildOptions) -> Result<(), Error> {
     }
 
     let src = options.source.clone();
-    let generators = generator::load(src)?;
-    loader::load(&options)?;
-
     let host = options.host.clone();
     let port = options.port.clone();
     let base_target = options.target.clone();
@@ -96,7 +96,11 @@ pub fn build(config: Config, options: BuildOptions) -> Result<(), Error> {
         target = dir.clone().to_path_buf();
     }
 
-    let mut ctx = context::Context::new(config, options, generators);
+    loader::load(&options)?;
+
+    let mut ctx = context::Context::new(config, options);
+
+    let generators = generator::load(src, &mut ctx.generators)?;
 
     if !live {
         let mut builder = Builder::new(&ctx);
