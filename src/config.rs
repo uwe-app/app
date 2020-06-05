@@ -38,11 +38,27 @@ pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
 
     println!("loading config from {:?}", p.as_ref().display());
 
-    if file.exists() && file.is_file() {
-        let content = utils::read_string(file)?;
-        let cfg: Config = toml::from_str(&content)?;
-        println!("loaded config {:?}", cfg);
-        return Ok(cfg);
+    if let Some(base) = file.parent() {
+        if file.exists() && file.is_file() {
+            let content = utils::read_string(file)?;
+            let mut cfg: Config = toml::from_str(&content)?;
+
+            println!("loaded config {:?}", cfg);
+
+            if cfg.build.source.is_relative() {
+                let mut bp = base.to_path_buf(); 
+                bp.push(&cfg.build.source);
+                cfg.build.source = bp;
+            }
+
+            if cfg.build.target.is_relative() {
+                let mut bp = base.to_path_buf(); 
+                bp.push(&cfg.build.target);
+                cfg.build.target = bp;
+            }
+
+            return Ok(cfg);
+        }
     }
 
     return Ok(Config::new())

@@ -43,25 +43,13 @@ struct BuildOpts {
     #[structopt(short, long)]
     tag: Option<String>,
 
-    /// Follow symbolic links
-    #[structopt(long)]
-    follow_links: bool,
-
     /// Build input sub-directory
     #[structopt(short, long)]
     directory: Option<PathBuf>,
 
-    /// Maximum depth for recursion
-    #[structopt(long)]
-    max_depth: Option<usize>,
-
     /// Use index.html for directory links
     #[structopt(long)]
     index_links: bool,
-
-    /// Disable clean locations
-    #[structopt(long)]
-    html_extension: bool,
 
     /// Enable live reload
     #[structopt(short, long)]
@@ -75,20 +63,12 @@ struct BuildOpts {
     #[structopt(short, long)]
     release: bool,
 
-    /// Disable strict mode
-    #[structopt(long)]
-    loose: bool,
-
     #[structopt(flatten)]
     server: WebServerOpts,
 
     /// Read files from directory
     #[structopt(parse(from_os_str), default_value = "site")]
     input: PathBuf,
-
-    /// Write files to directory
-    #[structopt(parse(from_os_str), default_value = "build")]
-    output: PathBuf,
 }
 
 #[derive(StructOpt,Debug)]
@@ -331,16 +311,18 @@ fn process_command(cmd: &Command) {
         },
 
         Command::Build {ref args} => {
-
-            if !args.input.is_dir() {
-                error(format!("not a directory: {}", args.input.display()));
+            let mut cfg = Config::new();
+            let res = Config::load(&args.input);
+            match res {
+                Ok(conf) => {
+                    cfg = conf;
+                },
+                Err(e) => {
+                    fatal(e);
+                },
             }
 
-            if let Err(e) = Config::load(&args.input) {
-                fatal(e);
-            }
-
-            create_output_dir(&args.output);
+            create_output_dir(&cfg.build.target);
 
             let mut tag_target = BuildTag::Debug;
             if args.release {
@@ -356,8 +338,7 @@ fn process_command(cmd: &Command) {
             let target_dir = tag_target.get_path_name();
             info!("{}", target_dir);
 
-            let mut target = args.output.clone();
-
+            let mut target = cfg.build.target.clone();
             if !target_dir.is_empty() {
                 let mut target_dir_buf = PathBuf::new();
                 target_dir_buf.push(&target_dir);
@@ -374,7 +355,7 @@ fn process_command(cmd: &Command) {
                 if d.is_absolute() {
                     error(format!("directory must be relative {}", d.display()));
                 }
-                let mut src = args.input.clone();
+                let mut src = cfg.build.source.clone();
                 src.push(d);
                 if !src.exists() {
                     error(format!("target directory does not exist {}", src.display()));
@@ -383,23 +364,27 @@ fn process_command(cmd: &Command) {
             }
 
             let opts = BuildOptions {
-                source: args.input.clone(),
+                source: cfg.build.source.clone(),
+                output: cfg.build.target.clone(),
+                max_depth: cfg.build.max_depth,
+                follow_links: cfg.build.follow_links,
+                clean_url: !cfg.build.html_extension,
+                strict: cfg.build.strict,
+                host: cfg.serve.host.to_owned(),
+
+                port: args.server.port.to_owned(),
+
                 target,
-                output: args.output.clone(),
                 directory: dir,
-                max_depth: args.max_depth,
-                follow_links: args.follow_links,
-                clean_url: !args.html_extension,
-                strict: !args.loose,
                 release: args.release,
                 live: args.live,
                 force: args.force,
                 index_links: args.index_links,
                 livereload: None,
                 tag: tag_target,
-                host: args.server.host.to_owned(),
-                port: args.server.port.to_owned(),
             };
+
+            info!("{:?}", cfg);
 
             let now = SystemTime::now();
             if let Err(e) = hypertext::build(opts) {
