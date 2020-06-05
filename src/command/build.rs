@@ -78,9 +78,9 @@ fn get_websocket_url(options: &BuildOptions, addr: SocketAddr, endpoint: &str) -
     format!("ws://{}:{}/{}", options.host, addr.port(), endpoint)
 }
 
-pub fn build(cfg: Config) -> Result<(), Error> {
+pub fn build(mut options: BuildOptions) -> Result<(), Error> {
 
-    let mut options = cfg.build.unwrap();
+    //let mut options = cfg.build.unwrap();
 
     if options.live && options.release {
         return Err(

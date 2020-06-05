@@ -336,7 +336,9 @@ fn process_command(cmd: &Command) {
                 error(format!("not a directory: {}", args.input.display()));
             }
 
-            let mut cfg = Config::new(&args.input);
+            if let Err(e) = Config::load(&args.input) {
+                fatal(e);
+            }
 
             create_output_dir(&args.output);
 
@@ -399,10 +401,8 @@ fn process_command(cmd: &Command) {
                 port: args.server.port.to_owned(),
             };
 
-            cfg.for_build(opts);
-
             let now = SystemTime::now();
-            if let Err(e) = hypertext::build(cfg) {
+            if let Err(e) = hypertext::build(opts) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {
