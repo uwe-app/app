@@ -102,7 +102,9 @@ pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()
 
 pub fn copy_asset_bundle_file(f: &str, template_name: &str, output: &PathBuf) -> Result<PathBuf, Error> {
     let mut s = template_name.clone().to_string();
-    s.push('/');
+    if !template_name.is_empty() {
+        s.push('/');
+    }
     s.push_str(f);
 
     let mut out = output.clone();

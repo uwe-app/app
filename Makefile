@@ -8,17 +8,17 @@ clean:
 init-newcss:
 	@rm -rf ./build/init-newcss
 	@cargo run -- init --template=newcss ./build/init-newcss
-	@cargo run -- build ./build/init-newcss/site ./build/init-newcss/build
+	@cargo run -- build ./build/init-newcss
 
 init-tacit:
 	@rm -rf ./build/init-tacit
 	@cargo run -- init --template=tacit ./build/init-tacit
-	@cargo run -- build ./build/init-tacit/site ./build/init-tacit/build
+	@cargo run -- build ./build/init-tacit
 
 init-bahunya:
 	@rm -rf ./build/init-bahunya
 	@cargo run -- init --template=bahunya ./build/init-bahunya
-	@cargo run -- build ./build/init-bahunya/site ./build/init-bahunya/build
+	@cargo run -- build ./build/init-bahunya
 
 init-newcss-open: init-newcss
 	@(cd ./build/init-newcss && cargo run -- build --live)
@@ -35,15 +35,15 @@ help:
 	@cargo run -- --help > $(SITE_ROOT)/site/help.txt
 
 site:
-	@cargo run -- $(SITE_ROOT)/site $(SITE_ROOT)/build --force
+	@cargo run -- $(SITE_ROOT)/ --force
 
 site-live:
-	@cargo run -- $(SITE_ROOT)/site $(SITE_ROOT)/build --live --force
+	@cargo run -- $(SITE_ROOT)/ --live --force
 
 site-release: install help
 
 dist: site-release
-	@ht $(SITE_ROOT)/site $(SITE_ROOT)/build --release --force --index-links --tag=hypertext-preview
+	@ht $(SITE_ROOT)/ --release --force --index-links --tag=hypertext-preview
 	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
 	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip hypertext-preview/*)
 

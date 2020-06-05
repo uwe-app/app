@@ -66,6 +66,9 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
 
         info!("init {} using {}", target.display(), template_name);
 
+        let pth = utils::copy_asset_bundle_file("site.toml", "", &target)?;
+        info!("copy {}", pth.display());
+
         for f in common_files.iter() {
             let pth = utils::copy_asset_bundle_file(f, common_name, &target)?;
             info!("copy {}", pth.display());

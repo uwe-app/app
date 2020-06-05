@@ -66,9 +66,9 @@ struct BuildOpts {
     #[structopt(flatten)]
     server: WebServerOpts,
 
-    /// Read files from directory
-    #[structopt(parse(from_os_str), default_value = "site")]
-    input: PathBuf,
+    /// Read config from directory
+    #[structopt(parse(from_os_str), default_value = ".")]
+    project: PathBuf,
 }
 
 #[derive(StructOpt,Debug)]
@@ -324,8 +324,9 @@ fn process_command(cmd: &Command) {
         },
 
         Command::Build {ref args} => {
+
             let mut cfg = Config::new();
-            let res = Config::load(&args.input);
+            let res = Config::load(&args.project);
             match res {
                 Ok(conf) => {
                     cfg = conf;
