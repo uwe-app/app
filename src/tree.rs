@@ -105,7 +105,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
 
                     let file_type = matcher::get_type(path);
                     match file_type {
-                        FileType::Markdown | FileType::Html => {
+                        FileType::Markdown | FileType::Template => {
                             let mut dest = matcher::destination(
                                 source,
                                 target,

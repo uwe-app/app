@@ -13,7 +13,6 @@ use super::context::Context;
 use super::helpers;
 use crate::{
     Error,
-    BuildOptions,
     LAYOUT_HBS
 };
 

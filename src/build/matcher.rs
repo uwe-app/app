@@ -5,7 +5,7 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub enum FileType {
     Markdown,
-    Html,
+    Template,
     Private,
     Unknown,
 }
@@ -185,6 +185,7 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
     false
 }
 
+// FIXME: test on extensions
 pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf) {
     let mut other = file.as_ref().to_path_buf(); 
     match file_type {
@@ -192,7 +193,7 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
             other.set_extension(HTML);
             return (other.exists(), other)
         },
-        FileType::Html => {
+        FileType::Template => {
             other.set_extension(MD);
             return (other.exists(), other)
         }
@@ -206,7 +207,7 @@ pub fn get_type_extension<P: AsRef<Path>>(p: P) -> FileType {
         if ext == MD {
             return FileType::Markdown
         } else if ext == HTML {
-            return FileType::Html
+            return FileType::Template
         }
     }
     FileType::Unknown
@@ -323,7 +324,7 @@ pub fn destination<P: AsRef<Path>>(
     match result {
         Ok(mut result) => {
             match file_type {
-                FileType::Markdown | FileType::Html => {
+                FileType::Markdown | FileType::Template => {
                     result.set_extension(HTML);
                     if clean_urls {
                         if let Some(res) = clean(pth.as_path(), result.as_path()) {

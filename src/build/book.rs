@@ -12,7 +12,6 @@ use crate::build::matcher;
 use crate::{
     utils,
     Error,
-    BuildOptions,
     ROOT_TABLE_KEY,
     DRAFT_KEY,
     BOOK_THEME_KEY,

@@ -3,8 +3,7 @@ use std::path::Path;
 
 use crate::{
     Error, 
-    utils,
-    BuildOptions
+    utils
 };
 
 use super::matcher::FileType;
@@ -31,7 +30,7 @@ impl<'a> Parser<'a> {
         self.render.register_templates_directory(ext, dir)
     }
 
-    fn parse_html<P: AsRef<Path>>(
+    fn parse_template<P: AsRef<Path>>(
         &mut self,
         input: P,
         output: P,
@@ -73,8 +72,8 @@ impl<'a> Parser<'a> {
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
         match file_type {
-            FileType::Html => {
-                return self.parse_html(input, output, data)
+            FileType::Template => {
+                return self.parse_template(input, output, data)
             }
             FileType::Markdown => {
                 return self.parse_markdown(input, output, data)

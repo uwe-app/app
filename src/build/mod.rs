@@ -1,6 +1,5 @@
 use std::path::Path;
 use std::path::PathBuf;
-use std::collections::BTreeMap;
 
 use ignore::WalkBuilder;
 use log::{debug, info, error};
@@ -20,7 +19,6 @@ pub mod template;
 use super::{
     utils,
     Error,
-    BuildOptions,
     DOCUMENTS,
     JSON,
     GENERATOR,
@@ -35,7 +33,7 @@ use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
 use manifest::Manifest;
-use generator::{Generator, GeneratorReference};
+use generator::{GeneratorReference};
 
 #[derive(Debug)]
 pub struct Invalidation {
@@ -146,7 +144,7 @@ impl<'a> Builder<'a> {
                     info!("noop {}", file.display());
                 }
             },
-            FileType::Markdown | FileType::Html => {
+            FileType::Markdown | FileType::Template => {
                 let (collides, other) = matcher::collides(file, &file_type);
                 if collides {
                     return Err(
