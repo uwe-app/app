@@ -104,12 +104,12 @@ struct ServeOpts {
 #[derive(StructOpt,Debug)]
 struct WebServerOpts {
     /// The name of the host
-    #[structopt(short, long, default_value = "localhost")]
-    host: String,
+    #[structopt(short, long)]
+    host: Option<String>,
 
     /// The port number
-    #[structopt(short, long, default_value = "3000")]
-    port: String,
+    #[structopt(short, long)]
+    port: Option<u16>,
 }
 
 #[derive(StructOpt,Debug)]
@@ -248,10 +248,23 @@ fn process_command(cmd: &Command) {
         Command::Serve {
             ref args
         } => {
+
+            let cfg = Config::new();
+            let mut host = &cfg.serve.host;
+            let mut port = &cfg.serve.port;
+
+            if let Some(h) = &args.server.host {
+                host = h;
+            }
+
+            if let Some(p) = &args.server.port {
+                port = p;
+            }
+
             let opts = ServeOptions {
                 target: args.target.clone(),
-                host: args.server.host.to_owned(),
-                port: args.server.port.to_owned(),
+                host: host.to_owned(),
+                port: port.to_owned(),
                 open_browser: true,
                 watch: None,
                 endpoint: hypertext::generate_id(16),
@@ -363,6 +376,17 @@ fn process_command(cmd: &Command) {
                 dir = Some(src);
             }
 
+            let mut host = &cfg.serve.host;
+            let mut port = &cfg.serve.port;
+
+            if let Some(h) = &args.server.host {
+                host = h;
+            }
+
+            if let Some(p) = &args.server.port {
+                port = p;
+            }
+
             let opts = BuildOptions {
                 source: cfg.build.source.clone(),
                 output: cfg.build.target.clone(),
@@ -370,9 +394,8 @@ fn process_command(cmd: &Command) {
                 follow_links: cfg.build.follow_links,
                 clean_url: !cfg.build.html_extension,
                 strict: cfg.build.strict,
-                host: cfg.serve.host.to_owned(),
-
-                port: args.server.port.to_owned(),
+                host: host.to_owned(),
+                port: port.to_owned(),
 
                 target,
                 directory: dir,
@@ -384,7 +407,7 @@ fn process_command(cmd: &Command) {
                 tag: tag_target,
             };
 
-            info!("{:?}", cfg);
+            debug!("{:?}", cfg);
 
             let now = SystemTime::now();
             if let Err(e) = hypertext::build(opts) {

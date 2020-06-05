@@ -6,9 +6,11 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use toml;
 
-use crate::command::build::BuildOptions;
+//use crate::command::build::BuildOptions;
 
 use crate::{utils, Error, SITE_TOML};
+
+use log::debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -36,14 +38,12 @@ pub struct ServeConfig {
 pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
     let file = p.as_ref();
 
-    println!("loading config from {:?}", p.as_ref().display());
+    debug!("load {:?}", p.as_ref().display());
 
     if let Some(base) = file.parent() {
         if file.exists() && file.is_file() {
             let content = utils::read_string(file)?;
             let mut cfg: Config = toml::from_str(&content)?;
-
-            println!("loaded config {:?}", cfg);
 
             if cfg.build.source.is_relative() {
                 let mut bp = base.to_path_buf(); 

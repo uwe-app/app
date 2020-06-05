@@ -13,7 +13,6 @@ use warp::ws::Message;
 
 use log::{info, debug, error};
 
-use crate::config::Config;
 use crate::build::Builder;
 use crate::build::loader;
 use crate::build::generator;
@@ -69,7 +68,7 @@ pub struct BuildOptions {
     pub live: bool,
     pub livereload: Option<String>,
     pub host: String,
-    pub port: String,
+    pub port: u16,
     pub force: bool,
     pub index_links: bool,
 }

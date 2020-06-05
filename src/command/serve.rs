@@ -30,7 +30,7 @@ use log::{info, trace, error, debug};
 pub struct ServeOptions {
     pub target: PathBuf,
     pub host: String,
-    pub port: String,
+    pub port: u16,
     pub open_browser: bool,
     pub watch: Option<PathBuf>,
     pub endpoint: String,
