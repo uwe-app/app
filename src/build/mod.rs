@@ -41,7 +41,7 @@ pub struct Invalidation {
 }
 
 pub struct Builder<'a> {
-    context: &'a Context,
+    context: &'a Context<'a>,
     //options: &'a BuildOptions,
     //generators: &'a BTreeMap<String, Generator>,
     book: BookBuilder<'a>,

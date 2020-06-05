@@ -13,7 +13,6 @@ use log::{info, warn};
 use crate::{
     utils,
     Error,
-    BuildOptions,
     GENERATOR,
     DOCUMENTS,
     GENERATOR_TOML,
@@ -45,6 +44,7 @@ pub struct GeneratorReference {
 pub struct GeneratorIndexRequest {
     pub key: String,
     pub map: Option<bool>,
+    pub group: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -80,16 +80,16 @@ impl GeneratorConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Generator {
+#[derive(Debug)]
+pub struct Generator<'a> {
     pub site: PathBuf,
     pub source: PathBuf,
     pub config: GeneratorConfig,
     pub all: DocumentIndex,
-    pub indices: BTreeMap<String, ValueIndex>,
+    pub indices: BTreeMap<String, ValueIndex<'a>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct DocumentIndex{
     pub documents: Vec<SourceDocument>,
 }
@@ -103,24 +103,34 @@ impl DocumentIndex {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ValueIndex{
-    pub documents: Vec<Value>,
-}
-
-impl ValueIndex {
-    pub fn to_value_vec(&self) -> Vec<Value> {
-        return self.documents.clone();
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Default)]
 pub struct SourceDocument {
     pub id: String,
     pub document: Value,
 }
 
-impl Generator {
+#[derive(Debug)]
+pub struct ValueIndex<'a> {
+    pub documents: Vec<IndexDocument<'a>>,
+}
+
+#[derive(Debug)]
+pub struct IndexDocument<'a> {
+    pub def: &'a GeneratorIndexRequest,
+    pub doc: &'a SourceDocument,
+    pub val: Value,
+}
+
+impl<'a> ValueIndex<'a> {
+    pub fn to_value_vec(&self) -> Vec<Value> {
+        return self.documents
+            .iter()
+            .map(|v| json!(v.val))
+            .collect::<Vec<_>>();
+    }
+}
+
+impl<'a> Generator<'a> {
 
     pub fn find_by_id(&self, id: &str) -> Option<Value> {
         for doc in &self.all.documents {
@@ -148,7 +158,8 @@ impl Generator {
                             let document: Value =
                                 serde_json::from_str(&contents)?;
                             if let Some(stem) = path.file_stem() {
-                                let id = slug::slugify(stem.to_string_lossy());
+                                let name = stem.to_string_lossy().into_owned();
+                                let id = slug::slugify(name);
                                 ids.push(id.clone());
                                 self.all.documents.push(SourceDocument{id, document});
                             }
@@ -164,7 +175,7 @@ impl Generator {
     }
 }
 
-fn load_documents(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+fn load_documents<'a>(generators: &mut BTreeMap<String, Generator<'a>>) -> Result<(), Error> {
     let mut mapping = GENERATOR_MAPPING.lock().unwrap();
     for (k, g) in generators.iter_mut() {
         let item = mapping.get_mut(k).unwrap();
@@ -175,10 +186,12 @@ fn load_documents(generators: &mut BTreeMap<String, Generator>) -> Result<(), Er
     Ok(())
 }
 
-fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+fn load_configurations<'a>(
+    source: PathBuf, generators: &mut BTreeMap<String, Generator<'a>>) -> Result<(), Error> {
+
     let mut mapping = GENERATOR_MAPPING.lock().unwrap();
 
-    let mut src = opts.source.clone();
+    let mut src = source.clone();
     src.push(GENERATOR);
 
     if src.exists() && src.is_dir() {
@@ -218,7 +231,7 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
                                 let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
 
                                 let generator = Generator {
-                                    site: opts.source.clone(),
+                                    site: source.clone(),
                                     source: path.to_path_buf(),
                                     all,
                                     indices,
@@ -245,33 +258,54 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
     Ok(())
 }
 
-fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
+fn build_index<'a>(generators: &'a mut BTreeMap<String, Generator<'a>>) -> Result<(), Error> {
+
     let type_err = Err(
         Error::new(format!("Type error building index, keys must be string values")));
 
-    for (_, generator) in &mut generators.iter_mut() {
-        let indices = &mut generator.indices;
+    for (_, generator) in generators.iter_mut() {
         let all = &generator.all;
 
         // Collect identifiers grouping first by index key
         // and then by the values for the referenced fields
         let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
+
         for (name, def) in &generator.config.index {
+            let mut values: ValueIndex<'a> = ValueIndex{documents: Vec::new()};
+
             let key = &def.key;
+            let is_group = def.group.is_some() && def.group.unwrap();
+            let is_map = def.map.is_some() && def.map.unwrap();
+
+            println!("idx {:?} is group {:?}, is map {:?}", key, is_group, is_map);
+
             let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
 
-            if key == ":id" {
-                let items = cache.entry(key.clone()).or_insert(Vec::new());
-                for doc in &all.documents {
-                    let id = slug::slugify(doc.id.clone());
-                    items.push(json!(id));
-                }
-                continue;
-            }
+            //if key == "@id" {
+                //let items = cache.entry(key.clone()).or_insert(Vec::new());
+                //for doc in &all.documents {
+                    //let id = slug::slugify(doc.id.clone());
+                    //items.push(json!(id));
+                //}
+                //continue;
+            //}
 
             for doc in &all.documents {
                 let id = doc.id.clone();
                 let document = &doc.document;
+
+                let mut idx = IndexDocument {
+                    def,
+                    doc,
+                    val: json!(doc.id),
+                };
+
+                if is_map && key == "@id" {
+                    values.documents.push(idx);
+                    continue; 
+                }
+
+                //println!("idx {:?}", idx);
 
                 if let Some(val) = document.get(&key) {
                     let mut candidates: Vec<&str> = Vec::new();
@@ -302,35 +336,49 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
                     }
                 }
             }
+
+            //if is_map {
+                //println!("{}", serde_json::to_string_pretty(&values.to_value_vec()).unwrap());
+            //}
+
+            generator.indices.insert(name.clone(), values);
         }
 
-        for (k, v) in caches {
-            let mut values = ValueIndex {documents: Vec::new()};
-            let def = &generator.config.index.get(&k).unwrap();
+        //for (k, v) in vcaches {
+            //let mut values = ValueIndex {documents: v};
+            //generator.indices.insert(k, values);
+        //}
 
-            for (key, val) in v {
-                if def.map.is_some() {
-                    values.documents = val;
-                } else {
-                    let mut map = Map::new();
-                    map.insert("id".to_string(), json!(slug::slugify(&key)));
-                    map.insert("key".to_string(), json!(key));
-                    map.insert("value".to_string(), json!(val));
-                    values.documents.push(json!(map));
-                }
+        //for (k, v) in caches {
+            //let mut values = ValueIndex {documents: Vec::new()};
+            //let def = &generator.config.index.get(&k).unwrap();
 
-            }
-            indices.insert(k, values);
-        }
+            //for (key, val) in v {
+                //if def.map.is_some() {
+                    ////values.documents = val;
+                //} else {
+                    //let mut map = Map::new();
+                    //map.insert("id".to_string(), json!(slug::slugify(&key)));
+                    //map.insert("key".to_string(), json!(key));
+                    //map.insert("value".to_string(), json!(val));
+                    ////values.documents.push(json!(map));
+                //}
+
+            //}
+            //generator.indices.insert(k, values);
+        //}
     }
     Ok(())
 }
 
-pub fn load(opts: &BuildOptions) -> Result<BTreeMap<String, Generator>, Error> {
+pub fn load<'a>(source: PathBuf) -> Result<BTreeMap<String, Generator<'a>>, Error> {
     let mut map: BTreeMap<String, Generator> = BTreeMap::new();
-    load_configurations(opts, &mut map)?;
+    load_configurations(source, &mut map)?;
     load_documents(&mut map)?;
     build_index(&mut map)?;
+
+    std::process::exit(1);
+
     Ok(map)
 }
 
@@ -339,28 +387,28 @@ fn get_index_include_docs(
     idx: &ValueIndex) -> Vec<Value> {
     let mut out: Vec<Value> = Vec::new();
     for doc in &idx.documents {
-        let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
-        if let Some(value) = map.get("value") {
-            if let Some(ref mut items) = value.as_array() {
-                let mut values: Vec<Value> = Vec::new();
-                for item in items.iter() {
-                    let mut new_item = Map::new();
-                    if let Some(id) = item.get("id").and_then(Value::as_str) {
-                        new_item.insert("id".to_string(), json!(id));
-                        if let Some(doc) = generator.find_by_id(id) {
-                            new_item.insert("document".to_string(), json!(doc));
-                        } else {
-                            // Something very wrong if we make it here!
-                            warn!("Failed to include document for index with id {}", id);
-                        }
-                    }
-                    values.push(json!(new_item));
-                }
+        //let mut map: Map<String, Value> = doc.as_object().unwrap().clone();
+        //if let Some(value) = map.get("value") {
+            //if let Some(ref mut items) = value.as_array() {
+                //let mut values: Vec<Value> = Vec::new();
+                //for item in items.iter() {
+                    //let mut new_item = Map::new();
+                    //if let Some(id) = item.get("id").and_then(Value::as_str) {
+                        //new_item.insert("id".to_string(), json!(id));
+                        //if let Some(doc) = generator.find_by_id(id) {
+                            //new_item.insert("document".to_string(), json!(doc));
+                        //} else {
+                            //// Something very wrong if we make it here!
+                            //warn!("Failed to include document for index with id {}", id);
+                        //}
+                    //}
+                    //values.push(json!(new_item));
+                //}
 
-                map.insert("value".to_string(), json!(values));
-            }
-        }
-        out.push(to_value(map).unwrap());
+                //map.insert("value".to_string(), json!(values));
+            //}
+        //}
+        //out.push(to_value(map).unwrap());
     }
 
     return out;

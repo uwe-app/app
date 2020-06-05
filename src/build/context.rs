@@ -8,19 +8,19 @@ use crate::command::build::BuildOptions;
 use crate::config::Config;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Context {
+pub struct Context<'a> {
     pub config: Config,
     pub options: BuildOptions,
-    #[serde(skip_serializing)]
-    pub generators: Option<BTreeMap<String, Generator>>,
+    #[serde(skip)]
+    pub generators: Option<BTreeMap<String, Generator<'a>>>,
     pub livereload: Option<String>,
 }
 
-impl Context {
+impl<'a> Context<'a> {
     pub fn new(
         config: Config,
         options: BuildOptions,
-        generators: BTreeMap<String, Generator>) -> Self {
+        generators: BTreeMap<String, Generator<'a>>) -> Self {
         Context {
             config,
             options,

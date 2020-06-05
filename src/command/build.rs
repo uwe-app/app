@@ -82,7 +82,8 @@ pub fn build(config: Config, options: BuildOptions) -> Result<(), Error> {
             Error::new("live reload is not available for release builds".to_string()))
     }
 
-    let generators = generator::load(&options)?;
+    let src = options.source.clone();
+    let generators = generator::load(src)?;
     loader::load(&options)?;
 
     let host = options.host.clone();
