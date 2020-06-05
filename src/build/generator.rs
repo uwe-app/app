@@ -44,6 +44,7 @@ pub struct GeneratorReference {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorIndexRequest {
     pub key: String,
+    pub map: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -245,7 +246,6 @@ fn load_configurations(opts: &BuildOptions, generators: &mut BTreeMap<String, Ge
 }
 
 fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error> {
-
     let type_err = Err(
         Error::new(format!("Type error building index, keys must be string values")));
 
@@ -258,13 +258,22 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
         let mut caches: BTreeMap<String, BTreeMap<String, Vec<Value>>> = BTreeMap::new();
         for (name, def) in &generator.config.index {
             let key = &def.key;
+            let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
+
+            if key == ":id" {
+                let items = cache.entry(key.clone()).or_insert(Vec::new());
+                for doc in &all.documents {
+                    let id = slug::slugify(doc.id.clone());
+                    items.push(json!(id));
+                }
+                continue;
+            }
+
             for doc in &all.documents {
                 let id = doc.id.clone();
                 let document = &doc.document;
 
                 if let Some(val) = document.get(&key) {
-                    let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
-
                     let mut candidates: Vec<&str> = Vec::new();
 
                     if !val.is_string() && !val.is_array() {
@@ -297,16 +306,22 @@ fn build_index(generators: &mut BTreeMap<String, Generator>) -> Result<(), Error
 
         for (k, v) in caches {
             let mut values = ValueIndex {documents: Vec::new()};
+            let def = &generator.config.index.get(&k).unwrap();
+
             for (key, val) in v {
-                let mut map = Map::new();
-                map.insert("id".to_string(), json!(slug::slugify(&key)));
-                map.insert("key".to_string(), json!(key));
-                map.insert("value".to_string(), json!(val));
-                values.documents.push(json!(map));
+                if def.map.is_some() {
+                    values.documents = val;
+                } else {
+                    let mut map = Map::new();
+                    map.insert("id".to_string(), json!(slug::slugify(&key)));
+                    map.insert("key".to_string(), json!(key));
+                    map.insert("value".to_string(), json!(val));
+                    values.documents.push(json!(map));
+                }
+
             }
             indices.insert(k, values);
         }
-
     }
     Ok(())
 }
