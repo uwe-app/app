@@ -18,7 +18,7 @@ use crate::{
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
-    context: &'a Context<'a>,
+    context: &'a Context,
     handlebars: Handlebars<'a>,
 }
 

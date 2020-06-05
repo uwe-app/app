@@ -22,7 +22,7 @@ use super::context::Context;
 
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
-    context: &'a Context<'a>,
+    context: &'a Context,
 }
 
 impl<'a> BookBuilder<'a> {
