@@ -19,15 +19,17 @@ use crate::{
     BOOK_TOML
 };
 
+use super::context::Context;
+
 pub struct BookBuilder<'a> {
     books: Vec<PathBuf>,
-    options: &'a BuildOptions,
+    context: &'a Context,
 }
 
 impl<'a> BookBuilder<'a> {
-    pub fn new(options: &'a BuildOptions) -> Self {
+    pub fn new(context: &'a Context) -> Self {
         let books: Vec<PathBuf> = Vec::new();
-        BookBuilder { books, options }
+        BookBuilder { books, context }
     }
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
@@ -62,12 +64,12 @@ impl<'a> BookBuilder<'a> {
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
-        let relative = source_dir.strip_prefix(&self.options.source).unwrap();
-        let mut base = self.options.target.clone();
+        let relative = source_dir.strip_prefix(&self.context.options.source).unwrap();
+        let mut base = self.context.options.target.clone();
         base.push(relative);
 
         for result in WalkBuilder::new(&build_dir)
-            .follow_links(self.options.follow_links)
+            .follow_links(self.context.config.build.follow_links)
             .build()
         {
             match result {
@@ -94,11 +96,11 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&self, p: P, opts: &BuildOptions) -> Result<(), Error> {
+    pub fn build<P: AsRef<Path>>(&self, p: P) -> Result<(), Error> {
         let dir = p.as_ref();
 
         let mut is_draft = false;
-        if opts.release {
+        if self.context.options.release {
             let conf_result = loader::load_toml_to_json(self.get_book_config(&dir));
             match conf_result {
                 Ok(map) => {
@@ -126,7 +128,7 @@ impl<'a> BookBuilder<'a> {
             Ok(mut md) => {
                 //println!("{:?}", md.config);
 
-                let theme_dir = matcher::get_theme_dir(&self.options.source);
+                let theme_dir = matcher::get_theme_dir(&self.context.options.source);
                 if theme_dir.exists() {
                     if let Some(s) = theme_dir.to_str() {
                         if let Err(e) = md.config.set(BOOK_THEME_KEY, s) {

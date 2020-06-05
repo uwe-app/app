@@ -391,10 +391,7 @@ fn process_command(cmd: &Command) {
             let opts = BuildOptions {
                 source: cfg.build.source.clone(),
                 output: cfg.build.target.clone(),
-                max_depth: cfg.build.max_depth,
-                follow_links: cfg.build.follow_links,
                 clean_url: !cfg.build.html_extension,
-                strict: cfg.build.strict,
                 host: host.to_owned(),
                 port: port.to_owned(),
 
@@ -404,7 +401,6 @@ fn process_command(cmd: &Command) {
                 live: args.live,
                 force: args.force,
                 index_links: args.index_links,
-                livereload: None,
                 tag: tag_target,
             };
 

@@ -55,7 +55,7 @@ pub struct Builder<'a> {
 
 impl<'a> Builder<'a> {
     pub fn new(context: &'a Context) -> Self {
-        let book = BookBuilder::new(&context.options);
+        let book = BookBuilder::new(&context);
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
@@ -456,7 +456,7 @@ impl<'a> Builder<'a> {
                         self.book.add(&path);
 
                         // Build the book
-                        if let Err(e) = self.book.build(&path, &self.context.options) {
+                        if let Err(e) = self.book.build(&path) {
                             return Err(e);
                         }
                     } else if path.is_file() {
