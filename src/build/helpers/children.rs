@@ -5,6 +5,7 @@ use serde_json::{json};
 
 use crate::{tree,BuildOptions};
 use crate::tree::*;
+use crate::build::context::{Context as BuildContext};
 
 #[derive(Clone, Copy)]
 pub struct Children;
@@ -25,14 +26,14 @@ impl HelperDef for Children {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let opts = rc
-            .evaluate(ctx, "@root/context.options")?
+        let ctx = rc
+            .evaluate(ctx, "@root/context")?
             .as_json()
             .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
             .to_owned();
 
-        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         // See if we should render a specific directory
@@ -52,7 +53,7 @@ impl HelperDef for Children {
             depth: 1,
         };
 
-        let list_result = tree::listing(&path, &list_opts, &opts);
+        let list_result = tree::listing(&path, &list_opts, &ctx);
         match list_result {
             Ok(entries) => {
                 let template = h.template();

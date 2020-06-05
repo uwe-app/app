@@ -12,7 +12,7 @@ pub struct Context {
     pub config: Config,
     pub options: BuildOptions,
     #[serde(skip_serializing)]
-    pub generators: BTreeMap<String, Generator>,
+    pub generators: Option<BTreeMap<String, Generator>>,
     pub livereload: Option<String>,
 }
 
@@ -24,7 +24,7 @@ impl Context {
         Context {
             config,
             options,
-            generators,
+            generators: Some(generators),
             livereload: None,
         }
 

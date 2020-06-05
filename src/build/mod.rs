@@ -191,31 +191,35 @@ impl<'a> Builder<'a> {
                     }
                 }
 
-                let mut each_iters: Vec<(GeneratorReference, Vec<Value>)> = Vec::new();
+                if let Some(generators) = &self.context.generators {
+                
+                    let mut each_iters: Vec<(GeneratorReference, Vec<Value>)> = Vec::new();
 
-                for gen in page_generators {
-                    let each = gen.each.is_some() && gen.each.unwrap();
+                    for gen in page_generators {
+                        let each = gen.each.is_some() && gen.each.unwrap();
 
-                    let idx = generator::find_generator_index(&self.context.generators, &gen)?;
-                    if let Some(key) = &gen.parameter {
-                        data.insert(key.clone(), json!(idx));
+                        let idx = generator::find_generator_index(&generators, &gen)?;
+                        if let Some(key) = &gen.parameter {
+                            data.insert(key.clone(), json!(idx));
+                        }
+
+                        // Push on to the list of generators to iterate
+                        // over so that we can support the same template
+                        // for multiple generator indices although not sure
+                        // how useful/desirable it is to declare multiple each iterators
+                        // as identifiers may well collide.
+                        if each {
+                            each_iters.push((gen, idx));
+                        }
                     }
 
-                    // Push on to the list of generators to iterate
-                    // over so that we can support the same template
-                    // for multiple generator indices although not sure
-                    // how useful/desirable it is to declare multiple each iterators
-                    // as identifiers may well collide.
-                    if each {
-                        each_iters.push((gen, idx));
+                    if !each_iters.is_empty() {
+                        for (gen, idx) in each_iters {
+                            self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
+                        } 
+                        return Ok(())
                     }
-                }
 
-                if !each_iters.is_empty() {
-                    for (gen, idx) in each_iters {
-                        self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
-                    } 
-                    return Ok(())
                 }
 
                 let dest = matcher::destination(
@@ -330,7 +334,7 @@ impl<'a> Builder<'a> {
         
             for path in invalidation.paths {
                 //println!("process file {:?}", path);
-                let file_type = matcher::get_type(&path);
+                let file_type = matcher::get_type(&path, &self.context.config.extensions.as_ref().unwrap());
                 if let Err(e) = self.process_file(&path, file_type, false) {
                     return Err(e)
                 }
@@ -360,51 +364,53 @@ impl<'a> Builder<'a> {
     }
 
     pub fn build_generators(&mut self) -> Result<(), Error> {
-        for (k, g) in self.context.generators.iter() {
-            let all = &g.all;
-            info!("generate {} ({})", k, all.documents.len());
+        if let Some(generators) = &self.context.generators {
+            for (k, g) in generators.iter() {
+                let all = &g.all;
+                info!("generate {} ({})", k, all.documents.len());
 
-            // Copy over the JSON documents when asked
-            if let Some(json) = &g.config.json {
+                // Copy over the JSON documents when asked
+                if let Some(json) = &g.config.json {
 
-                if json.copy {
-                    // Write out the document files
-                    for doc in &all.documents {
-                        let mut file = g.source.clone();
-                        file.push(DOCUMENTS);
-                        file.push(&doc.id);
-                        file.set_extension(JSON);
+                    if json.copy {
+                        // Write out the document files
+                        for doc in &all.documents {
+                            let mut file = g.source.clone();
+                            file.push(DOCUMENTS);
+                            file.push(&doc.id);
+                            file.set_extension(JSON);
 
-                        let mut dest = self.context.options.target.clone();
-                        dest.push(&g.config.build.destination);
-                        dest.push(&doc.id);
-                        dest.set_extension(JSON);
-                        debug!("{} -> {}", &file.display(), &dest.display());
-                        utils::copy(&file, &dest).map_err(Error::from)?;
-                    }
-                }
-
-                // Write out json index
-                if let Some(file_name) = &json.index_file {
-                    let mut file = self.context.options.target.clone();
-                    file.push(&g.config.build.destination);
-                    file.push(file_name);
-
-                    // Just write out the identifiers
-                    if json.index_slim {
-                        let list: Vec<&String> = all.documents
-                            .iter()
-                            .map(|d| &d.id)
-                            .collect::<Vec<_>>();
-                        if let Ok(s) = serde_json::to_string(&list) {
-                            info!("json {}", file.display());
-                            utils::write_string(&file, s).map_err(Error::from)?;
+                            let mut dest = self.context.options.target.clone();
+                            dest.push(&g.config.build.destination);
+                            dest.push(&doc.id);
+                            dest.set_extension(JSON);
+                            debug!("{} -> {}", &file.display(), &dest.display());
+                            utils::copy(&file, &dest).map_err(Error::from)?;
                         }
-                    // Write out identifiers with the document values
-                    } else {
-                        if let Ok(s) = serde_json::to_string(&all.documents) {
-                            info!("json {}", file.display());
-                            utils::write_string(&file, s).map_err(Error::from)?;
+                    }
+
+                    // Write out json index
+                    if let Some(file_name) = &json.index_file {
+                        let mut file = self.context.options.target.clone();
+                        file.push(&g.config.build.destination);
+                        file.push(file_name);
+
+                        // Just write out the identifiers
+                        if json.index_slim {
+                            let list: Vec<&String> = all.documents
+                                .iter()
+                                .map(|d| &d.id)
+                                .collect::<Vec<_>>();
+                            if let Ok(s) = serde_json::to_string(&list) {
+                                info!("json {}", file.display());
+                                utils::write_string(&file, s).map_err(Error::from)?;
+                            }
+                        // Write out identifiers with the document values
+                        } else {
+                            if let Ok(s) = serde_json::to_string(&all.documents) {
+                                info!("json {}", file.display());
+                                utils::write_string(&file, s).map_err(Error::from)?;
+                            }
                         }
                     }
                 }
@@ -459,7 +465,7 @@ impl<'a> Builder<'a> {
                         }
                     } else if path.is_file() {
                         let file = entry.path().to_path_buf();
-                        let file_type = matcher::get_type(&path);
+                        let file_type = matcher::get_type(&path, &self.context.config.extensions.as_ref().unwrap());
 
                         if let Err(e) = self.process_file(&file, file_type, pages_only) {
                             return Err(e)

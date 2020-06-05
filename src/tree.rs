@@ -7,6 +7,7 @@ use serde_json::{json, Value, Map};
 
 use crate::build::loader;
 use crate::build::matcher;
+use crate::build::context::Context;
 use crate::build::matcher::FileType;
 
 use crate::{
@@ -34,7 +35,7 @@ pub struct ListOptions {
     pub depth: usize,
 }
 
-pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &BuildOptions) -> Result<Vec<ItemData>, Error> {
+pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, ctx: &Context) -> Result<Vec<ItemData>, Error> {
     let mut path: PathBuf = target.as_ref().to_path_buf();
 
     // Resolve using a dir string argument
@@ -43,7 +44,7 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &BuildOption
         // will make the entire path point to "/" and not
         // concatenate the path as expected so we use a
         // string instead
-        let mut dir_target = opts.source.to_string_lossy().to_string();
+        let mut dir_target = ctx.options.source.to_string_lossy().to_string();
         dir_target.push_str(&list.dir);
 
         let dir_dest = Path::new(&dir_target);
@@ -59,17 +60,17 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, opts: &BuildOption
 
     if let Some(parent) = path.parent() {
         //parent.foo();
-        return children(&path, &parent, &list, &opts);
+        return children(&path, &parent, &list, ctx);
     }
 
     Ok(vec![])
 }
 
-fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &BuildOptions) -> Result<Vec<ItemData>, Error> {
+fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Context) -> Result<Vec<ItemData>, Error> {
     let mut entries: Vec<ItemData> = Vec::new();
 
-    let source = &opts.source;
-    let target = &opts.target;
+    let source = &ctx.options.source;
+    let target = &ctx.options.target;
 
     //let p = parent.as_ref();
 
@@ -103,7 +104,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
 
                     this = path == file.as_ref();
 
-                    let file_type = matcher::get_type(path);
+                    let file_type = matcher::get_type(path, &ctx.config.extensions.as_ref().unwrap());
                     match file_type {
                         FileType::Markdown | FileType::Template => {
                             let mut dest = matcher::destination(
@@ -111,7 +112,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                                 target,
                                 &path.to_path_buf(),
                                 &file_type,
-                                opts.clean_url,
+                                ctx.options.clean_url,
                             )?;
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
@@ -137,13 +138,13 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
 
                     for f in candidates {
                         if f.exists() {
-                            let file_type = matcher::get_type(&f);
+                            let file_type = matcher::get_type(&f, &ctx.config.extensions.as_ref().unwrap());
                             let mut dest = matcher::destination(
                                 source,
                                 target,
                                 &f,
                                 &file_type,
-                                opts.clean_url,
+                                ctx.options.clean_url,
                             )?;
 
                             if let Ok(cleaned) = dest.strip_prefix(target) {
@@ -160,12 +161,12 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, opts: &B
                     }
                 }
 
-                if utils::is_draft(&data, &opts) {
+                if utils::is_draft(&data, &ctx.options) {
                     continue
                 }
 
                 if !href.is_empty() {
-                    if opts.clean_url && !opts.index_links {
+                    if ctx.options.clean_url && !ctx.options.index_links {
                         if href.ends_with(INDEX_HTML) {
                             href.truncate(href.len() - INDEX_HTML.len());
                         }

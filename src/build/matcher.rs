@@ -25,6 +25,7 @@ use crate::{
 };
 
 use super::generator;
+use crate::config::ExtensionsConfig;
 use crate::utils;
 
 fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
@@ -201,19 +202,22 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
     }
 }
 
-pub fn get_type_extension<P: AsRef<Path>>(p: P) -> FileType {
+fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionsConfig) -> FileType {
     let file = p.as_ref();
     if let Some(ext) = file.extension() {
-        if ext == MD {
-            return FileType::Markdown
-        } else if ext == HTML {
-            return FileType::Template
+        let ext = ext.to_string_lossy().into_owned();
+        if extensions.parse.contains(&ext) {
+            if extensions.markdown.contains(&ext) {
+                return FileType::Markdown
+            } else {
+                return FileType::Template
+            }
         }
     }
     FileType::Unknown
 }
 
-pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
+pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionsConfig) -> FileType {
     let file = p.as_ref();
     match file.file_name() {
         Some(nm) => {
@@ -221,7 +225,7 @@ pub fn get_type<P: AsRef<Path>>(p: P) -> FileType {
                 if nm == LAYOUT_HBS || nm == DATA_TOML {
                     return FileType::Private
                 } else {
-                    return get_type_extension(p)
+                    return get_type_extension(p, extensions)
                 }
             }
         }
