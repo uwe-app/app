@@ -408,10 +408,10 @@ fn process_command(cmd: &Command) {
                 tag: tag_target,
             };
 
-            debug!("{:?}", cfg);
+            debug!("{:?}", &cfg);
 
             let now = SystemTime::now();
-            if let Err(e) = hypertext::build(opts) {
+            if let Err(e) = hypertext::build(cfg, opts) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {

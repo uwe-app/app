@@ -8,6 +8,7 @@ use log::{debug, info, error};
 use serde_json::{json, from_value, Map, Value};
 
 pub mod book;
+pub mod context;
 pub mod generator;
 pub mod loader;
 pub mod helpers;
@@ -29,6 +30,7 @@ use super::{
     LAYOUT_HBS
 };
 
+use context::Context;
 use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
@@ -43,26 +45,26 @@ pub struct Invalidation {
 }
 
 pub struct Builder<'a> {
-    options: &'a BuildOptions,
-    generators: &'a BTreeMap<String, Generator>,
+    context: &'a Context,
+    //options: &'a BuildOptions,
+    //generators: &'a BTreeMap<String, Generator>,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
     manifest: Manifest,
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(options: &'a BuildOptions, generators: &'a BTreeMap<String, Generator>) -> Self {
-        let book = BookBuilder::new(options);
+    pub fn new(context: &'a Context) -> Self {
+        let book = BookBuilder::new(&context.options);
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let parser = Parser::new(options);
+        let parser = Parser::new(&context.options);
 
         let manifest = Manifest::new();
 
         Builder {
-            options,
-            generators,
+            context,
             book,
             parser,
             manifest,
@@ -102,8 +104,8 @@ impl<'a> Builder<'a> {
                     mock.push(&id);
 
                     let dest = matcher::destination(
-                        &self.options.source,
-                        &self.options.target,
+                        &self.context.options.source,
+                        &self.context.options.target,
                         &mock,
                         &file_type,
                         clean,
@@ -130,12 +132,12 @@ impl<'a> Builder<'a> {
         match file_type {
             FileType::Unknown => {
                 let dest = matcher::direct_destination(
-                    &self.options.source,
-                    &self.options.target,
+                    &self.context.options.source,
+                    &self.context.options.target,
                     &file.to_path_buf(),
                 )?;
 
-                if self.manifest.is_dirty(file, &dest, self.options.force) {
+                if self.manifest.is_dirty(file, &dest, self.context.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let result = utils::copy(file, &dest).map_err(Error::from);
                     self.manifest.touch(file, &dest);
@@ -157,14 +159,14 @@ impl<'a> Builder<'a> {
 
                 let mut data = loader::compute(file);
 
-                let mut clean = self.options.clean_url;
+                let mut clean = self.context.options.clean_url;
                 if let Some(val) = data.get("clean") {
                     if let Some(val) = val.as_bool() {
                         clean = val;
                     }
                 }
 
-                if utils::is_draft(&data, self.options) {
+                if utils::is_draft(&data, &self.context.options) {
                     return Ok(())
                 }
 
@@ -196,7 +198,7 @@ impl<'a> Builder<'a> {
                 for gen in page_generators {
                     let each = gen.each.is_some() && gen.each.unwrap();
 
-                    let idx = generator::find_generator_index(self.generators, &gen)?;
+                    let idx = generator::find_generator_index(&self.context.generators, &gen)?;
                     if let Some(key) = &gen.parameter {
                         data.insert(key.clone(), json!(idx));
                     }
@@ -219,14 +221,14 @@ impl<'a> Builder<'a> {
                 }
 
                 let dest = matcher::destination(
-                    &self.options.source,
-                    &self.options.target,
+                    &self.context.options.source,
+                    &self.context.options.target,
                     &file.to_path_buf(),
                     &file_type,
                     clean,
                 )?;
 
-                if self.manifest.is_dirty(file, &dest, pages_only || self.options.force) {
+                if self.manifest.is_dirty(file, &dest, pages_only || self.context.options.force) {
                     info!("{} -> {}", file.display(), dest.display());
                     let s = self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?;
                     let result = utils::write_string(&dest, s).map_err(Error::from);
@@ -254,11 +256,11 @@ impl<'a> Builder<'a> {
             paths: Vec::new()
         };
 
-        let mut src = self.options.source.clone();
+        let mut src = self.context.options.source.clone();
         if !src.is_absolute() {
             if let Ok(cwd) = std::env::current_dir() {
                 src = cwd.clone();
-                src.push(&self.options.source);
+                src.push(&self.context.options.source);
             }
         }
 
@@ -313,7 +315,7 @@ impl<'a> Builder<'a> {
 
         if invalidation.data {
             info!("reload {}", DATA_TOML);
-            if let Err(e) = loader::reload(&self.options) {
+            if let Err(e) = loader::reload(&self.context.options) {
                 error!("{}", e); 
             } else {
                 all = true;
@@ -343,7 +345,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn get_templates_path(&self) -> PathBuf {
-        let mut templates = self.options.source.clone();
+        let mut templates = self.context.options.source.clone();
         templates.push(TEMPLATE);
         templates
     }
@@ -360,7 +362,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn build_generators(&mut self) -> Result<(), Error> {
-        for (k, g) in self.generators.iter() {
+        for (k, g) in self.context.generators.iter() {
             let all = &g.all;
             info!("generate {} ({})", k, all.documents.len());
 
@@ -375,7 +377,7 @@ impl<'a> Builder<'a> {
                         file.push(&doc.id);
                         file.set_extension(JSON);
 
-                        let mut dest = self.options.target.clone();
+                        let mut dest = self.context.options.target.clone();
                         dest.push(&g.config.build.destination);
                         dest.push(&doc.id);
                         dest.set_extension(JSON);
@@ -386,7 +388,7 @@ impl<'a> Builder<'a> {
 
                 // Write out json index
                 if let Some(file_name) = &json.index_file {
-                    let mut file = self.options.target.clone();
+                    let mut file = self.context.options.target.clone();
                     file.push(&g.config.build.destination);
                     file.push(file_name);
 
@@ -417,7 +419,7 @@ impl<'a> Builder<'a> {
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let templates = self.register_templates_directory()?;
 
-        let mut generator = self.options.source.to_path_buf();
+        let mut generator = self.context.options.source.to_path_buf();
         generator.push(GENERATOR);
         
 
@@ -426,8 +428,8 @@ impl<'a> Builder<'a> {
         }
 
         for result in WalkBuilder::new(&target)
-            .follow_links(self.options.follow_links)
-            .max_depth(self.options.max_depth)
+            .follow_links(self.context.config.build.follow_links)
+            .max_depth(self.context.config.build.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
 
@@ -454,7 +456,7 @@ impl<'a> Builder<'a> {
                         self.book.add(&path);
 
                         // Build the book
-                        if let Err(e) = self.book.build(&path, self.options) {
+                        if let Err(e) = self.book.build(&path, &self.context.options) {
                             return Err(e);
                         }
                     } else if path.is_file() {
@@ -473,7 +475,7 @@ impl<'a> Builder<'a> {
     }
 
     fn get_manifest_file(&self) -> PathBuf {
-        let mut file = self.options.target.clone();
+        let mut file = self.context.options.target.clone();
         let name = file.file_name().unwrap_or(std::ffi::OsStr::new(""))
             .to_string_lossy().into_owned();
         if !name.is_empty() {

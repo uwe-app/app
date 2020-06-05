@@ -13,9 +13,11 @@ use warp::ws::Message;
 
 use log::{info, debug, error};
 
+use crate::config::Config;
 use crate::build::Builder;
 use crate::build::loader;
 use crate::build::generator;
+use crate::build::context;
 use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
@@ -73,13 +75,11 @@ pub struct BuildOptions {
     pub index_links: bool,
 }
 
-fn get_websocket_url(options: &BuildOptions, addr: SocketAddr, endpoint: &str) -> String {
-    format!("ws://{}:{}/{}", options.host, addr.port(), endpoint)
+fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
+    format!("ws://{}:{}/{}", host, addr.port(), endpoint)
 }
 
-pub fn build(mut options: BuildOptions) -> Result<(), Error> {
-
-    //let mut options = cfg.build.unwrap();
+pub fn build(config: Config, options: BuildOptions) -> Result<(), Error> {
 
     if options.live && options.release {
         return Err(
@@ -87,16 +87,22 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
     }
 
     let generators = generator::load(&options)?;
-
     loader::load(&options)?;
+
+    let host = options.host.clone();
+    let port = options.port.clone();
+    let base_target = options.target.clone();
+    let live = options.live.clone();
 
     let mut target = options.source.clone();
     if let Some(dir) = &options.directory {
-        target = dir.clone();
+        target = dir.clone().to_path_buf();
     }
 
-    if !options.live {
-        let mut builder = Builder::new(&options, &generators);
+    let mut ctx = context::Context::new(config, options, generators);
+
+    if !live {
+        let mut builder = Builder::new(&ctx);
         builder.load_manifest()?;
         builder.build(&target, false)?;
         return builder.save_manifest()
@@ -104,10 +110,10 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
         let endpoint = utils::generate_id(16);
 
         let opts = ServeOptions {
-            target: options.target.clone(),
+            target: base_target.to_path_buf(),
             watch: Some(target.clone()),
-            host: options.host.to_owned(),
-            port: options.port.to_owned(),
+            host: host.to_owned(),
+            port: port.to_owned(),
             endpoint: endpoint.clone(),
             open_browser: false,
         };
@@ -121,10 +127,12 @@ pub fn build(mut options: BuildOptions) -> Result<(), Error> {
             // Get the socket address and websocket transmission channel
             let (addr, tx, url) = rx.recv().unwrap();
 
-            options.livereload = Some(get_websocket_url(&options, addr, &endpoint));
+            //options.livereload = Some(get_websocket_url(host, addr, &endpoint));
+
+            ctx.livereload = Some(get_websocket_url(host, addr, &endpoint));
 
             // Do a full build before listening for filesystem changes
-            let mut serve_builder = Builder::new(&options, &generators);
+            let mut serve_builder = Builder::new(&ctx);
             if let Err(e) = serve_builder.register_templates_directory() {
                 error!("{}", e);
                 std::process::exit(1);
