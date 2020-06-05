@@ -3,7 +3,7 @@ use std::path::Path;
 use handlebars::*;
 use serde_json::{json};
 
-use crate::{tree,BuildOptions};
+use crate::{tree};
 use crate::tree::*;
 use crate::build::context::{Context as BuildContext};
 

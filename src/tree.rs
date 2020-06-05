@@ -13,7 +13,6 @@ use crate::build::matcher::FileType;
 use crate::{
     utils,
     Error,
-    BuildOptions,
     HTML,
     INDEX_HTML,
     INDEX_STEM,
