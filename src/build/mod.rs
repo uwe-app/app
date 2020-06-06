@@ -375,7 +375,7 @@ impl<'a> Builder<'a> {
         
         for result in WalkBuilder::new(&target)
             .follow_links(self.context.config.build.follow_links)
-            .max_depth(self.context.config.build.max_depth)
+            .max_depth(self.context.options.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
 

@@ -58,10 +58,19 @@ impl BuildTag {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildOptions {
+    // Root of the input
     pub source: PathBuf,
+    // Root of the output
     pub output: PathBuf,
+    // Target output directory including a build tag
     pub target: PathBuf,
+    // Specific directory relative to source to walk
     pub directory: Option<PathBuf>,
+    // Where to build from either `source` or `directory` relative to `source`
+    pub from: PathBuf,
+
+    pub max_depth: Option<usize>,
+
     pub release: bool,
     pub clean_url: bool,
     pub tag: BuildTag,
@@ -87,33 +96,35 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
     let src = options.source.clone();
     let host = options.host.clone();
     let port = options.port.clone();
-    let base_target = options.target.clone();
     let live = options.live.clone();
 
-    let mut target = options.source.clone();
-    if let Some(dir) = &options.directory {
-        target = dir.clone().to_path_buf();
-    }
+    let base_target = options.target.clone();
+
+    //let mut target = options.source.clone();
+    //if let Some(dir) = &options.directory {
+        //target = dir.clone().to_path_buf();
+    //}
 
     let mut generators = GeneratorMap::new();
     generators.load(src)?;
 
     loader::load(&options)?;
 
+    let from = options.from.clone();
+
     let mut ctx = context::Context::new(config, options, generators);
-    //ctx.load(src)?;
 
     if !live {
         let mut builder = Builder::new(&ctx);
         builder.load_manifest()?;
-        builder.build(&target, false)?;
+        builder.build(&from, false)?;
         return builder.save_manifest()
     } else {
         let endpoint = utils::generate_id(16);
 
         let opts = ServeOptions {
             target: base_target.to_path_buf(),
-            watch: Some(target.clone()),
+            watch: Some(from.clone()),
             host: host.to_owned(),
             port: port.to_owned(),
             endpoint: endpoint.clone(),
@@ -145,7 +156,7 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
 
             if let Err(_) = serve_builder.load_manifest() {}
 
-            let result = serve_builder.build(&target, true);
+            let result = serve_builder.build(&from, true);
 
             match result {
                 Ok(_) => {
@@ -154,12 +165,12 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
                     open::that(&url).map(|_| ()).unwrap_or(());
 
                     #[cfg(feature = "watch")]
-                    trigger_on_change(&target.clone(), move |paths, source_dir| {
+                    trigger_on_change(&from.clone(), move |paths, source_dir| {
                         info!("changed({}) in {}", paths.len(), source_dir.display());
                         debug!("files changed: {:?}", paths);
                         if let Ok(invalidation) = serve_builder.get_invalidation(paths) {
                             debug!("invalidation {:?}", invalidation);
-                            if let Err(e) = serve_builder.invalidate(&target, invalidation) {
+                            if let Err(e) = serve_builder.invalidate(&from, invalidation) {
                                 error!("{}", e);
                             }
                             serve_builder.save_manifest()?;

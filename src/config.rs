@@ -26,7 +26,6 @@ pub struct BuildConfig {
     pub strict: bool,
     pub html_extension: bool,
     pub follow_links: bool,
-    pub max_depth: Option<usize>,
 }
 
 impl BuildConfig {

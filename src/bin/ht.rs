@@ -47,6 +47,10 @@ struct BuildOpts {
     #[structopt(short, long)]
     directory: Option<PathBuf>,
 
+    /// Maximum depth to traverse
+    #[structopt(short, long)]
+    max_depth: Option<usize>,
+
     /// Use index.html for directory links
     #[structopt(long)]
     index_links: bool,
@@ -224,7 +228,7 @@ fn create_output_dir(output: &PathBuf) {
     }
 
     if !output.is_dir() {
-        error(format!("not a directory: {}", output.display()));
+        error(format!("Not a directory: {}", output.display()));
     }
 }
 
@@ -271,7 +275,7 @@ fn process_command(cmd: &Command) {
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {
-                error(format!("directory does not exist: {}", opts.target.display()));
+                error(format!("Directory does not exist: {}", opts.target.display()));
             }
 
             if let Err(e) = hypertext::serve_only(opts) {
@@ -283,7 +287,7 @@ fn process_command(cmd: &Command) {
             ref args
         } => {
             if !args.input.exists() || !args.input.is_dir() {
-                error(format!("directory does not exist: {}", args.input.display()));
+                error(format!("Directory does not exist: {}", args.input.display()));
             }
 
             create_output_dir(&args.output);
@@ -309,7 +313,7 @@ fn process_command(cmd: &Command) {
             ref args
         } => {
             if !args.input.exists() || !args.input.is_dir() {
-                error(format!("directory does not exist: {}", args.input.display()));
+                error(format!("Directory does not exist: {}", args.input.display()));
             }
 
             let opts = ArchiveOptions {
@@ -358,7 +362,7 @@ fn process_command(cmd: &Command) {
                 target_dir_buf.push(&target_dir);
 
                 if target_dir_buf.is_absolute() {
-                    error(format!("build tag may not be an absolute path {}", target_dir));
+                    error(format!("Build tag may not be an absolute path {}", target_dir));
                 }
 
                 target.push(target_dir);
@@ -367,12 +371,12 @@ fn process_command(cmd: &Command) {
             let mut dir = None;
             if let Some(d) = &args.directory {
                 if d.is_absolute() {
-                    error(format!("directory must be relative {}", d.display()));
+                    error(format!("Directory must be relative {}", d.display()));
                 }
                 let mut src = cfg.build.source.clone();
                 src.push(d);
                 if !src.exists() {
-                    error(format!("target directory does not exist {}", src.display()));
+                    error(format!("Target directory does not exist {}", src.display()));
                 }
                 dir = Some(src);
             }
@@ -388,6 +392,11 @@ fn process_command(cmd: &Command) {
                 port = p;
             }
 
+            let mut from = cfg.build.source.clone();
+            if let Some(dir) = &dir {
+                from = dir.clone().to_path_buf();
+            }
+
             let opts = BuildOptions {
                 source: cfg.build.source.clone(),
                 output: cfg.build.target.clone(),
@@ -396,7 +405,9 @@ fn process_command(cmd: &Command) {
                 port: port.to_owned(),
 
                 target,
+                from,
                 directory: dir,
+                max_depth: args.max_depth,
                 release: args.release,
                 live: args.live,
                 force: args.force,
