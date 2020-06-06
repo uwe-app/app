@@ -222,6 +222,7 @@ fn error(s: String) {
 
 fn create_output_dir(output: &PathBuf) {
     if !output.exists() {
+        info!("mkdir {}", output.display());
         if let Err(e) = fs::create_dir(output) {
             fatal(e);
         }
@@ -340,8 +341,6 @@ fn process_command(cmd: &Command) {
                 },
             }
 
-            create_output_dir(&cfg.build.target);
-
             let mut tag_target = BuildTag::Debug;
             if args.release {
                 tag_target = BuildTag::Release;
@@ -367,6 +366,15 @@ fn process_command(cmd: &Command) {
 
                 target.push(target_dir);
             }
+
+            if args.force && target.exists() {
+                info!("rm -rf {}", target.display());
+                if let Err(e) = fs::remove_dir_all(&target) {
+                    fatal(e); 
+                }
+            }
+
+            create_output_dir(&target);
 
             let mut dir = None;
             if let Some(d) = &args.directory {
