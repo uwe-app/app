@@ -90,7 +90,8 @@ impl<'a> Builder<'a> {
                             item_data.insert(k.clone(), json!(v));
                         }
                     } else {
-                        return Err(Error::new(format!("Generator document should be an object")))
+                        return Err(Error::new(
+                            format!("Generator document should be an object")))
                     }
 
                     // Mock a source file to build a destination

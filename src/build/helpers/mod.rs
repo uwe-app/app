@@ -51,10 +51,7 @@ pub fn with_parent_context<'rc>(
     data: &Map<String, Value>) -> Result<Context, RenderError> {
 
     let existing = ctx.data().as_object().unwrap();
-    let mut new_data: Map<String, Value> = Map::new();
-    for (k, v) in existing {
-        new_data.insert(k.clone(), json!(v));
-    }
+    let mut new_data: Map<String, Value> = existing.clone();
     for (k, v) in data {
         new_data.insert(k.clone(), json!(v));
     }
