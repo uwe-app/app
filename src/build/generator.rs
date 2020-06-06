@@ -44,10 +44,10 @@ pub struct GeneratorReference {
     pub each: Option<bool>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GeneratorIndexRequest {
     pub key: String,
-    //pub map: Option<bool>,
+    pub flat: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -95,15 +95,6 @@ pub struct DocumentIndex{
     pub documents: Vec<Box<SourceDocument>>,
 }
 
-//impl DocumentIndex {
-    //pub fn to_value_vec(&self) -> Vec<Value> {
-        //return self.documents
-            //.iter()
-            //.map(|v| json!(v))
-            //.collect::<Vec<_>>();
-    //}
-//}
-
 #[derive(Debug, Serialize, Default, Clone)]
 pub struct SourceDocument {
     pub id: String,
@@ -112,6 +103,7 @@ pub struct SourceDocument {
 
 #[derive(Debug)]
 pub struct ValueIndex {
+    pub request: Box<GeneratorIndexRequest>,
     pub documents: Vec<IndexDocument>,
 }
 
@@ -122,7 +114,11 @@ pub struct IndexDocument {
 }
 
 impl ValueIndex {
-    pub fn to_value_vec(&self, keys: bool, include_docs: bool) -> Vec<Value> {
+    pub fn to_value_vec(
+        &self,
+        keys: bool,
+        include_docs: bool,
+        request: &Box<GeneratorIndexRequest>) -> Vec<Value> {
         return self.documents
             .iter()
             .map(|v| {
@@ -134,17 +130,27 @@ impl ValueIndex {
                 m.insert("id".to_string(), json!(slug::slugify(&v.key)));
                 m.insert("key".to_string(), json!(&v.key));
                 if include_docs {
-                    let docs = v.doc
-                        .iter()
-                        .map(|s| {
-                            let mut m = Map::new();
-                            m.insert("id".to_string(), json!(&s.id));
-                            m.insert("document".to_string(), json!(&s.document));
-                            m
-                        })
-                        .collect::<Vec<_>>();
+                    let flatten = request.flat.is_some() && request.flat.unwrap();
+                    if flatten && v.doc.len() == 1 {
+                        let s = &v.doc[0];
+                        let mut d = Map::new();
+                        d.insert("id".to_string(), json!(&s.id));
+                        d.insert("document".to_string(), json!(&s.document));
+                        m.insert("value".to_string(), json!(&d));
+                    } else {
+                        let docs = v.doc
+                            .iter()
+                            .map(|s| {
+                                let mut m = Map::new();
+                                m.insert("id".to_string(), json!(&s.id));
+                                m.insert("document".to_string(), json!(&s.document));
+                                m
+                            })
+                            .collect::<Vec<_>>();
 
-                    m.insert("value".to_string(), json!(&docs));
+                        m.insert("value".to_string(), json!(&docs));
+                    }
+
                 }
                 json!(&m)
             })
@@ -218,7 +224,7 @@ impl GeneratorMap {
             if let Some(ref mut index) = generator.config.index.as_mut() {
                 index.insert(
                     ALL_INDEX.to_string(),
-                    GeneratorIndexRequest{key: ID_KEY.to_string()});
+                    GeneratorIndexRequest{key: ID_KEY.to_string(), flat: Some(true)});
             }
         }
         Ok(())
@@ -239,9 +245,10 @@ impl GeneratorMap {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
-                let values = ValueIndex{documents: Vec::new()};
                 let key = &def.key;
                 let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
+
+                let values = ValueIndex{documents: Vec::new(), request: Box::new(def.clone())};
 
                 for doc in &all.documents {
                     let document = &doc.document;
@@ -311,7 +318,7 @@ impl GeneratorMap {
 
         if let Some(generator) = self.map.get(name) {
             if let Some(idx) = generator.indices.get(idx_name) {
-                return Ok(idx.to_value_vec(keys, include_docs));
+                return Ok(idx.to_value_vec(keys, include_docs, &idx.request));
             } else {
                 return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }
