@@ -336,7 +336,7 @@ impl<'a> Builder<'a> {
         } else {
         
             for path in invalidation.paths {
-                //println!("process file {:?}", path);
+                println!("process file {:?}", path);
                 let file_type = matcher::get_type(&path, &self.context.config.extensions.as_ref().unwrap());
                 if let Err(e) = self.process_file(&path, file_type, false) {
                     return Err(e)

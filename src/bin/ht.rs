@@ -6,6 +6,7 @@ use log::info;
 use std::env;
 use std::fs;
 use std::time::SystemTime;
+use std::path::Path;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -330,8 +331,21 @@ fn process_command(cmd: &Command) {
 
         Command::Build {ref args} => {
 
+            // NOTE: We want the help output to show "."
+            // NOTE: to indicate that the current working
+            // NOTE: directory is used but the period creates
+            // NOTE: problems with the strip prefix logic for
+            // NOTE: live reload so this converts it to the 
+            // NOTE: empty string.
+            let period = Path::new(".").to_path_buf();
+            let empty = Path::new("").to_path_buf();
+            let mut project = args.project.clone();
+            if project == period {
+                project = empty;
+            }
+
             let mut cfg = Config::new();
-            let res = Config::load(&args.project);
+            let res = Config::load(&project);
             match res {
                 Ok(conf) => {
                     cfg = conf;
