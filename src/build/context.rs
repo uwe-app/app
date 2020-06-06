@@ -1,30 +1,28 @@
-use std::collections::BTreeMap;
-
 use serde::{Deserialize, Serialize};
-
-use super::generator::Generator;
 use crate::command::build::BuildOptions;
-
 use crate::config::Config;
+
+use super::generator::GeneratorMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
     pub config: Config,
     pub options: BuildOptions,
-    #[serde(skip)]
-    pub generators: BTreeMap<String, Generator<'static>>,
     pub livereload: Option<String>,
+    #[serde(skip)]
+    pub generators: GeneratorMap,
 }
 
 impl Context {
     pub fn new(
         config: Config,
-        options: BuildOptions) -> Self {
+        options: BuildOptions,
+        generators: GeneratorMap) -> Self {
         Context {
             config,
             options,
-            generators: BTreeMap::new(),
             livereload: None,
+            generators,
         }
 
     }

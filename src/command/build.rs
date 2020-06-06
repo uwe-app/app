@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
-use std::collections::BTreeMap;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
@@ -16,14 +15,12 @@ use log::{info, debug, error};
 
 use crate::config::Config;
 use crate::build::Builder;
+use crate::build::generator::GeneratorMap;
 use crate::build::loader;
-use crate::build::generator;
 use crate::build::context;
 use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
-
-use crate::build::generator::Generator;
 
 lazy_static! {
     #[derive(Debug)]
@@ -31,6 +28,7 @@ lazy_static! {
         let socket = SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 3000);
         Arc::new(Mutex::new(SocketAddr::V4(socket)))
     };
+
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,11 +76,12 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
 }
 
-pub fn build(config: Config, options: BuildOptions) -> Result<(), Error> {
+pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
 
     if options.live && options.release {
         return Err(
-            Error::new("live reload is not available for release builds".to_string()))
+            Error::new(
+                "Live reload is not available for release builds".to_string()))
     }
 
     let src = options.source.clone();
@@ -96,11 +95,13 @@ pub fn build(config: Config, options: BuildOptions) -> Result<(), Error> {
         target = dir.clone().to_path_buf();
     }
 
+    let mut generators = GeneratorMap::new();
+    generators.load(src)?;
+
     loader::load(&options)?;
 
-    let mut ctx = context::Context::new(config, options);
-
-    let generators = generator::load(src, &mut ctx.generators)?;
+    let mut ctx = context::Context::new(config, options, generators);
+    //ctx.load(src)?;
 
     if !live {
         let mut builder = Builder::new(&ctx);

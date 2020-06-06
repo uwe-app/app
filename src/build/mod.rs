@@ -42,8 +42,6 @@ pub struct Invalidation {
 
 pub struct Builder<'a> {
     context: &'a Context,
-    //options: &'a BuildOptions,
-    //generators: &'a BTreeMap<String, Generator>,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
     manifest: Manifest,
@@ -193,14 +191,16 @@ impl<'a> Builder<'a> {
                     }
                 }
 
-                if !self.context.generators.is_empty() {
+                let generators = &self.context.generators;
+
+                if !generators.map.is_empty() {
                 
                     let mut each_iters: Vec<(GeneratorReference, Vec<Value>)> = Vec::new();
 
                     for gen in page_generators {
                         let each = gen.each.is_some() && gen.each.unwrap();
 
-                        let idx = generator::find_generator_index(&self.context.generators, &gen)?;
+                        let idx = generators.find_generator_index(&gen)?;
                         if let Some(key) = &gen.parameter {
                             data.insert(key.clone(), json!(idx));
                         }
