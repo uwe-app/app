@@ -85,6 +85,7 @@ impl<'a> Builder<'a> {
                 if let Some(id) = id.as_str() {
                     if doc.is_object() {
                         let map = doc.as_object().unwrap(); 
+                        //item_data.append(&mut map);
                         for (k, v) in map {
                             item_data.insert(k.clone(), json!(v));
                         }
@@ -111,11 +112,12 @@ impl<'a> Builder<'a> {
 
                     info!("{} -> {}", &id, &dest.display());
 
+                    //println!("passing item data {:?}", item_data);
+
                     let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut item_data)?;
                     utils::write_string(&dest, s).map_err(Error::from)?;
                 }
             } else {
-                println!("doc {:?}", doc);
                 return Err(Error::new(format!("Generator document must have an id")))
             }
         }
@@ -201,6 +203,9 @@ impl<'a> Builder<'a> {
                         let each = gen.each.is_some() && gen.each.unwrap();
 
                         let idx = generators.find_generator_index(&gen)?;
+
+                        //println!("idx {:?}", idx);
+
                         if let Some(key) = &gen.parameter {
                             data.insert(key.clone(), json!(idx));
                         }

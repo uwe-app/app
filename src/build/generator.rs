@@ -18,6 +18,9 @@ use crate::{
     GENERATOR_TOML,
 };
 
+static ALL_INDEX: &str = "all";
+static ID_KEY: &str = "@id";
+
 lazy_static! {
     #[derive(Debug)]
     pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, GeneratorUrlMapInfo>> = {
@@ -44,7 +47,7 @@ pub struct GeneratorReference {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorIndexRequest {
     pub key: String,
-    pub map: Option<bool>,
+    //pub map: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,7 +72,7 @@ impl GeneratorBuildConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
     pub build: GeneratorBuildConfig,
-    pub index: BTreeMap<String, GeneratorIndexRequest>,
+    pub index: Option<BTreeMap<String, GeneratorIndexRequest>>,
 }
 
 impl GeneratorConfig {
@@ -92,14 +95,14 @@ pub struct DocumentIndex{
     pub documents: Vec<Box<SourceDocument>>,
 }
 
-impl DocumentIndex {
-    pub fn to_value_vec(&self) -> Vec<Value> {
-        return self.documents
-            .iter()
-            .map(|v| json!(v))
-            .collect::<Vec<_>>();
-    }
-}
+//impl DocumentIndex {
+    //pub fn to_value_vec(&self) -> Vec<Value> {
+        //return self.documents
+            //.iter()
+            //.map(|v| json!(v))
+            //.collect::<Vec<_>>();
+    //}
+//}
 
 #[derive(Debug, Serialize, Default, Clone)]
 pub struct SourceDocument {
@@ -201,7 +204,23 @@ impl GeneratorMap {
     pub fn load(&mut self, source: PathBuf) -> Result<(), Error> {
         self.load_configurations(source)?;
         self.load_documents()?;
+        self.configure_default_index()?;
         self.load_index()?;
+        Ok(())
+    }
+
+    // Configure the default all index
+    fn configure_default_index(&mut self) -> Result<(), Error> {
+        for (_, generator) in self.map.iter_mut() {
+            if generator.config.index.is_none() {
+                generator.config.index = Some(BTreeMap::new());
+            }
+            if let Some(ref mut index) = generator.config.index.as_mut() {
+                index.insert(
+                    ALL_INDEX.to_string(),
+                    GeneratorIndexRequest{key: ID_KEY.to_string()});
+            }
+        }
         Ok(())
     }
 
@@ -217,7 +236,9 @@ impl GeneratorMap {
             // and then by the values for the referenced fields
             let mut caches: BTreeMap<String, BTreeMap<String, Vec<Box<SourceDocument>>>> = BTreeMap::new();
 
-            for (name, def) in &generator.config.index {
+            let index = generator.config.index.as_ref().unwrap();
+
+            for (name, def) in index {
                 let values = ValueIndex{documents: Vec::new()};
                 let key = &def.key;
                 let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
@@ -289,14 +310,10 @@ impl GeneratorMap {
         let keys = generator.keys.is_some() && generator.keys.unwrap();
 
         if let Some(generator) = self.map.get(name) {
-            if idx_name == "all" {
-                return Ok(generator.all.to_value_vec());
+            if let Some(idx) = generator.indices.get(idx_name) {
+                return Ok(idx.to_value_vec(keys, include_docs));
             } else {
-                if let Some(idx) = generator.indices.get(idx_name) {
-                    return Ok(idx.to_value_vec(keys, include_docs));
-                } else {
-                    return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
-                }
+                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }
         } else {
             return Err(Error::new(format!("Missing generator with name '{}'", name))) 

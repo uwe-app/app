@@ -18,10 +18,12 @@ impl HelperDef for Random{
         out: &mut dyn Output,
     ) -> HelperResult {
         let type_err = Err(
-            RenderError::new("Type error for `random`, array parameter expected"));
+            RenderError::new(
+                "Type error for `random`, array parameter expected"));
 
         let template_err = Err(
-            RenderError::new("Type error for `random`, inner template expected"));
+            RenderError::new(
+                "Type error for `random`, inner template expected"));
 
         if let Some(p) = h.params().get(0) {
             if !p.is_value_missing() {
@@ -49,7 +51,6 @@ impl HelperDef for Random{
         } else {
             return type_err
         }
-
         Ok(())
     }
 }
