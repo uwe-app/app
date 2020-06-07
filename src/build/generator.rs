@@ -9,6 +9,7 @@ use slug;
 use crate::{
     utils,
     Error,
+    JSON,
     GENERATOR,
     DOCUMENTS,
     GENERATOR_TOML,
@@ -162,14 +163,28 @@ impl Generator {
                     match e {
                         Ok(entry) => {
                             let path = entry.path();
-                            let contents = utils::read_string(&path)?;
-                            let document: Value =
-                                serde_json::from_str(&contents)?;
-                            if let Some(stem) = path.file_stem() {
-                                let name = stem.to_string_lossy().into_owned();
-                                let id = slug::slugify(name);
-                                self.all.insert(id, document);
+
+                            if let Some(ext) = path.extension() {
+                                if ext == JSON {
+                                    let contents = utils::read_string(&path)?;
+                                    let document: Value =
+                                        serde_json::from_str(&contents)?;
+                                    if let Some(stem) = path.file_stem() {
+                                        let name = stem.to_string_lossy().into_owned();
+                                        let id = slug::slugify(&name);
+
+                                        if self.all.contains_key(&id) {
+                                            return Err(
+                                                Error::new(
+                                                    format!(
+                                                        "Duplicate document id {} ({}.json)", &id, &name)));
+                                        }
+
+                                        self.all.insert(id, document);
+                                    }
+                                } 
                             }
+
                         },
                         Err(e) => return Err(Error::from(e))
                     }
