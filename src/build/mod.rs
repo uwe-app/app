@@ -85,7 +85,6 @@ impl<'a> Builder<'a> {
                 if let Some(id) = id.as_str() {
                     if doc.is_object() {
                         let map = doc.as_object().unwrap(); 
-                        //item_data.append(&mut map);
                         for (k, v) in map {
                             item_data.insert(k.clone(), json!(v));
                         }
@@ -207,10 +206,6 @@ impl<'a> Builder<'a> {
 
                         //println!("idx {:?}", idx);
 
-                        if let Some(key) = &gen.parameter {
-                            data.insert(key.clone(), json!(idx));
-                        }
-
                         // Push on to the list of generators to iterate
                         // over so that we can support the same template
                         // for multiple generator indices although not sure
@@ -218,6 +213,8 @@ impl<'a> Builder<'a> {
                         // as identifiers may well collide.
                         if each {
                             each_iters.push((gen, idx));
+                        } else {
+                            data.insert(gen.get_parameter(), json!(idx));
                         }
                     }
 

@@ -15,6 +15,8 @@ use crate::{
 };
 
 static ALL_INDEX: &str = "all";
+static DEFAULT_PARAMETER: &str = "documents";
+static DEFAULT_VALUE_PARAMETER: &str = "value";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
@@ -41,6 +43,23 @@ impl IndexQuery {
     pub fn is_flat(&self) -> bool {
         return self.index == ALL_INDEX.to_string()
             || self.flat.is_some() && self.flat.unwrap();
+    }
+
+    pub fn get_parameter(&self) -> String {
+        if let Some(param) = &self.parameter {
+            return param.clone();
+        }
+        return DEFAULT_PARAMETER.to_string();
+    }
+
+    pub fn get_value_parameter(&self) -> String {
+        let each = self.each.is_some() && self.each.unwrap();
+        if each {
+            if let Some(param) = &self.parameter {
+                return param.clone();
+            }
+        }
+        return DEFAULT_VALUE_PARAMETER.to_string();
     }
 }
 
@@ -95,7 +114,7 @@ impl ValueIndex {
                         } else {
                             warn!("Query missing document for {}", s);
                         }
-                        m.insert("value".to_string(), json!(&d));
+                        m.insert(query.get_value_parameter(), json!(&d));
                     } else {
                         let docs = v
                             .iter()
@@ -111,7 +130,7 @@ impl ValueIndex {
                             })
                             .collect::<Vec<_>>();
 
-                        m.insert("value".to_string(), json!(&docs));
+                        m.insert(query.get_value_parameter(), json!(&docs));
                     }
 
                 }
