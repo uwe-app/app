@@ -30,7 +30,7 @@ pub struct IndexQuery {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IndexRequest {
-    pub key: String,
+    pub key: Option<String>,
     pub flat: Option<bool>,
 }
 
@@ -76,10 +76,13 @@ impl ValueIndex {
             .collect::<Vec<_>>();
     }
 
-    pub fn to_value_vec(
+    pub fn from_query(
         &self,
-        include_docs: bool,
+        query: &IndexQuery,
         request: &Box<IndexRequest>) -> Vec<Value> {
+
+        let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
+
         return self.documents
             .iter()
             .map(|(k, v)| {
@@ -182,10 +185,29 @@ impl GeneratorMap {
             if generator.config.index.is_none() {
                 generator.config.index = Some(BTreeMap::new());
             }
+
+            let index = generator.config.index.as_ref().unwrap();
+
+            // Complain on reserved index name
+            if index.contains_key(ALL_INDEX) {
+                return Err(
+                    Error::new(
+                        "The all index is reserved, choose another index name.".to_string()));
+            }
+
+
             if let Some(ref mut index) = generator.config.index.as_mut() {
+                // Inherit key from index name
+                for (k, v) in index.iter_mut() {
+                    if v.key.is_none() {
+                        v.key = Some(k.clone());
+                    }
+                }
+
+                // Set up default all index
                 index.insert(
                     ALL_INDEX.to_string(),
-                    IndexRequest{key: ID_KEY.to_string(), flat: Some(true)});
+                    IndexRequest{key: Some(ID_KEY.to_string()), flat: Some(true)});
             }
         }
         Ok(())
@@ -206,7 +228,7 @@ impl GeneratorMap {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
-                let key = &def.key;
+                let key = def.key.as_ref().unwrap();
                 let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
 
                 let values = ValueIndex{documents: BTreeMap::new(), request: Box::new(def.clone())};
@@ -272,12 +294,10 @@ impl GeneratorMap {
         Ok(())
     }
 
-    pub fn find_generator_index(&self, generator: &IndexQuery) -> Result<Vec<Value>, Error> {
-        let name = &generator.name;
-        let idx_name = &generator.index;
-
-        let include_docs = generator.include_docs.is_some() && generator.include_docs.unwrap();
-        let keys = generator.keys.is_some() && generator.keys.unwrap();
+    pub fn query_index(&self, query: &IndexQuery) -> Result<Vec<Value>, Error> {
+        let name = &query.name;
+        let idx_name = &query.index;
+        let keys = query.keys.is_some() && query.keys.unwrap();
 
         if let Some(generator) = self.map.get(name) {
 
@@ -285,8 +305,7 @@ impl GeneratorMap {
                 if keys {
                     return Ok(idx.to_keys());
                 }
-
-                return Ok(idx.to_value_vec(include_docs, &idx.request));
+                return Ok(idx.from_query(query, &idx.request));
             } else {
                 return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }

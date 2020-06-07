@@ -203,7 +203,7 @@ impl<'a> Builder<'a> {
                     for gen in page_generators {
                         let each = gen.each.is_some() && gen.each.unwrap();
 
-                        let idx = generators.find_generator_index(&gen)?;
+                        let idx = generators.query_index(&gen)?;
 
                         //println!("idx {:?}", idx);
 
