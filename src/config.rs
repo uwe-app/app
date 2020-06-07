@@ -15,7 +15,7 @@ use log::debug;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub build: BuildConfig,
-    pub extensions: Option<ExtensionsConfig>,
+    pub extension: Option<ExtensionsConfig>,
     pub serve: ServeConfig,
 }
 
@@ -96,8 +96,8 @@ pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
                 cfg.build.target = bp;
             }
 
-            if cfg.extensions.is_none() {
-                cfg.extensions = Some(ExtensionsConfig::new());
+            if cfg.extension.is_none() {
+                cfg.extension = Some(ExtensionsConfig::new());
             }
 
             return Ok(cfg);
@@ -111,7 +111,7 @@ impl Config {
     pub fn new() -> Self {
         Config {
             build: BuildConfig::new(),
-            extensions: Some(ExtensionsConfig::new()),
+            extension: Some(ExtensionsConfig::new()),
             serve: ServeConfig::new(),
         }
     }

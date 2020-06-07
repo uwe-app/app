@@ -107,7 +107,7 @@ impl<'a> Builder<'a> {
                         &self.context.options.target,
                         &mock,
                         &file_type,
-                        &self.context.config.extensions.as_ref().unwrap(),
+                        &self.context.config.extension.as_ref().unwrap(),
                         clean,
                     )?;
 
@@ -235,7 +235,7 @@ impl<'a> Builder<'a> {
                     &self.context.options.target,
                     &file.to_path_buf(),
                     &file_type,
-                    &self.context.config.extensions.as_ref().unwrap(),
+                    &self.context.config.extension.as_ref().unwrap(),
                     clean,
                 )?;
 
@@ -342,8 +342,8 @@ impl<'a> Builder<'a> {
         } else {
         
             for path in invalidation.paths {
-                println!("process file {:?}", path);
-                let file_type = matcher::get_type(&path, &self.context.config.extensions.as_ref().unwrap());
+                //println!("process file {:?}", path);
+                let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
                 if let Err(e) = self.process_file(&path, file_type, false) {
                     return Err(e)
                 }
@@ -413,7 +413,7 @@ impl<'a> Builder<'a> {
                         }
                     } else if path.is_file() {
                         let file = entry.path().to_path_buf();
-                        let file_type = matcher::get_type(&path, &self.context.config.extensions.as_ref().unwrap());
+                        let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
 
                         if let Err(e) = self.process_file(&file, file_type, pages_only) {
                             return Err(e)

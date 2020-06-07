@@ -103,7 +103,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
                     this = path == file.as_ref();
 
-                    let extensions = &ctx.config.extensions.as_ref().unwrap();
+                    let extensions = &ctx.config.extension.as_ref().unwrap();
                     let file_type = matcher::get_type(path, extensions);
                     match file_type {
                         FileType::Markdown | FileType::Template => {
@@ -139,7 +139,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
                     for f in candidates {
                         if f.exists() {
-                            let extensions = &ctx.config.extensions.as_ref().unwrap();
+                            let extensions = &ctx.config.extension.as_ref().unwrap();
                             let file_type = matcher::get_type(&f, extensions);
                             let mut dest = matcher::destination(
                                 source,
