@@ -91,13 +91,7 @@ pub struct SourceDocument {
 #[derive(Debug)]
 pub struct ValueIndex {
     pub request: Box<GeneratorIndexRequest>,
-    pub documents: Vec<IndexDocument>,
-}
-
-#[derive(Debug, Clone)]
-pub struct IndexDocument {
-    pub key: String,
-    pub doc: Vec<Box<SourceDocument>>,
+    pub documents: BTreeMap<String, Vec<Box<SourceDocument>>>
 }
 
 impl ValueIndex {
@@ -108,27 +102,27 @@ impl ValueIndex {
         request: &Box<GeneratorIndexRequest>) -> Vec<Value> {
         return self.documents
             .iter()
-            .map(|v| {
+            .map(|(k, v)| {
                 if keys {
-                    return json!(&v.key);
+                    return json!(&k);
                 }
 
-                let id = slug::slugify(&v.key);
+                let id = slug::slugify(&k);
                 let mut m = Map::new();
 
                 m.insert("id".to_string(), json!(&id));
-                m.insert("key".to_string(), json!(&v.key));
+                m.insert("key".to_string(), json!(&k));
 
                 if include_docs {
                     let flatten = request.flat.is_some() && request.flat.unwrap();
-                    if flatten && v.doc.len() == 1 {
-                        let s = &v.doc[0];
+                    if flatten && v.len() == 1 {
+                        let s = &v[0];
                         let mut d = Map::new();
                         d.insert("id".to_string(), json!(&s.id));
                         d.insert("document".to_string(), json!(&s.document));
                         m.insert("value".to_string(), json!(&d));
                     } else {
-                        let docs = v.doc
+                        let docs = v
                             .iter()
                             .map(|s| {
                                 let mut m = Map::new();
@@ -239,7 +233,7 @@ impl GeneratorMap {
                 let key = &def.key;
                 let cache = caches.entry(name.clone()).or_insert(BTreeMap::new());
 
-                let values = ValueIndex{documents: Vec::new(), request: Box::new(def.clone())};
+                let values = ValueIndex{documents: BTreeMap::new(), request: Box::new(def.clone())};
 
                 for doc in &all.documents {
                     let document = &doc.document;
@@ -284,11 +278,13 @@ impl GeneratorMap {
             for (k, v) in caches {
                 let idx = generator.indices.get_mut(&k).unwrap();
                 for (key, val) in v {
-                    let idx_doc = IndexDocument {
-                        key: key,
-                        doc: val,
-                    };
-                    idx.documents.push(idx_doc);
+                    //let idx_doc = IndexDocument {
+                        //key: key,
+                        //doc: val,
+                    //};
+                    //idx.documents.push(idx_doc);
+
+                    idx.documents.insert(key.clone(), val);
                 }
             }
 
