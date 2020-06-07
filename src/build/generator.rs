@@ -95,18 +95,23 @@ pub struct ValueIndex {
 }
 
 impl ValueIndex {
+
+    pub fn to_keys(&self) -> Vec<Value> {
+        return self.documents
+            .keys()
+            .map(|k| {
+                return json!(&k);
+            })
+            .collect::<Vec<_>>();
+    }
+
     pub fn to_value_vec(
         &self,
-        keys: bool,
         include_docs: bool,
         request: &Box<GeneratorIndexRequest>) -> Vec<Value> {
         return self.documents
             .iter()
             .map(|(k, v)| {
-                if keys {
-                    return json!(&k);
-                }
-
                 let id = slug::slugify(&k);
                 let mut m = Map::new();
 
@@ -304,8 +309,13 @@ impl GeneratorMap {
         let keys = generator.keys.is_some() && generator.keys.unwrap();
 
         if let Some(generator) = self.map.get(name) {
+
             if let Some(idx) = generator.indices.get(idx_name) {
-                return Ok(idx.to_value_vec(keys, include_docs, &idx.request));
+                if keys {
+                    return Ok(idx.to_keys());
+                }
+
+                return Ok(idx.to_value_vec(include_docs, &idx.request));
             } else {
                 return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }
