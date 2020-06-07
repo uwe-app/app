@@ -171,7 +171,7 @@ impl<'a> Builder<'a> {
                     return Ok(())
                 }
 
-                let generator_config = data.get("generator");
+                let generator_config = data.get("query");
                 let mut page_generators: Vec<IndexQuery> = Vec::new();
 
                 if let Some(cfg) = generator_config {
