@@ -32,11 +32,12 @@ pub struct IndexRequest {
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
-    pub flat: Option<bool>,
     pub parameter: Option<String>,
     pub include_docs: Option<bool>,
-    pub keys: Option<bool>,
     pub each: Option<bool>,
+    pub keys: Option<bool>,
+    pub values: Option<bool>,
+    pub flat: Option<bool>,
 }
 
 impl IndexQuery {
@@ -84,6 +85,15 @@ impl ValueIndex {
             .keys()
             .map(|k| {
                 return json!(&k);
+            })
+            .collect::<Vec<_>>();
+    }
+
+    pub fn to_values(&self) -> Vec<Value> {
+        return self.documents
+            .values()
+            .map(|v| {
+                return json!(&v);
             })
             .collect::<Vec<_>>();
     }
@@ -288,11 +298,14 @@ impl GeneratorMap {
         let name = &query.name;
         let idx_name = &query.index;
         let keys = query.keys.is_some() && query.keys.unwrap();
+        let values = query.values.is_some() && query.values.unwrap();
 
         if let Some(generator) = self.map.get(name) {
             if let Some(idx) = generator.indices.get(idx_name) {
                 if keys {
                     return Ok(idx.to_keys());
+                } else if values {
+                    return Ok(idx.to_values());
                 }
                 return Ok(idx.from_query(query, &generator.all));
             } else {
