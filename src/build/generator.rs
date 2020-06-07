@@ -1,11 +1,10 @@
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 
-use slug;
-
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
+use serde::{Deserialize, Serialize};
 use log::{info, warn};
+use slug;
 
 use crate::{
     utils,
@@ -25,17 +24,24 @@ pub struct GeneratorConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IndexRequest {
     pub key: Option<String>,
-    pub flat: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
+    pub flat: Option<bool>,
     pub parameter: Option<String>,
     pub include_docs: Option<bool>,
     pub keys: Option<bool>,
     pub each: Option<bool>,
+}
+
+impl IndexQuery {
+    pub fn is_flat(&self) -> bool {
+        return self.index == ALL_INDEX.to_string()
+            || self.flat.is_some() && self.flat.unwrap();
+    }
 }
 
 #[derive(Debug)]
@@ -49,7 +55,6 @@ pub struct Generator {
 
 #[derive(Debug)]
 pub struct ValueIndex {
-    pub request: Box<IndexRequest>,
     pub documents: BTreeMap<String, Vec<String>>,
 }
 
@@ -67,7 +72,6 @@ impl ValueIndex {
     pub fn from_query(
         &self,
         query: &IndexQuery,
-        request: &Box<IndexRequest>,
         docs: &BTreeMap<String, Value>) -> Vec<Value> {
 
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
@@ -82,8 +86,7 @@ impl ValueIndex {
                 m.insert("key".to_string(), json!(&k));
 
                 if include_docs {
-                    let flatten = request.flat.is_some() && request.flat.unwrap();
-                    if flatten && v.len() == 1 {
+                    if query.is_flat() && v.len() == 1 {
                         let s = &v[0];
                         let mut d = Map::new();
                         d.insert("id".to_string(), json!(s));
@@ -198,7 +201,7 @@ impl GeneratorMap {
                 // Set up default all index
                 index.insert(
                     ALL_INDEX.to_string(),
-                    IndexRequest{key: Some(ALL_INDEX.to_string()), flat: Some(true)});
+                    IndexRequest{key: Some(ALL_INDEX.to_string())});
             }
         }
         Ok(())
@@ -213,7 +216,7 @@ impl GeneratorMap {
 
             for (name, def) in index {
                 let key = def.key.as_ref().unwrap();
-                let mut values = ValueIndex{documents: BTreeMap::new(), request: Box::new(def.clone())};
+                let mut values = ValueIndex{documents: BTreeMap::new()};
 
                 for (id, document) in &generator.all {
                     if name == ALL_INDEX {
@@ -272,7 +275,7 @@ impl GeneratorMap {
                 if keys {
                     return Ok(idx.to_keys());
                 }
-                return Ok(idx.from_query(query, &idx.request, &generator.all));
+                return Ok(idx.from_query(query, &generator.all));
             } else {
                 return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
             }

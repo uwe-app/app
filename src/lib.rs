@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate lazy_static;
-extern crate open;
 
 mod asset;
 mod build;

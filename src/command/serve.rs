@@ -4,8 +4,6 @@
 // Modified to gracefully handle ephemeral port.
 
 #[cfg(feature = "watch")]
-use std::convert::Infallible;
-use crate::{open};
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -13,11 +11,13 @@ use tokio::sync::broadcast;
 use warp::http::StatusCode;
 use warp::{Filter, Reply, Rejection};
 
+use std::convert::Infallible;
+use open;
+
 use serde::{Serialize};
 
 use tokio::sync::broadcast::Sender as TokioSender;
 use warp::ws::Message;
-
 
 use std::convert::AsRef;
 
@@ -264,6 +264,5 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
     }
 
     response = warp::reply::html(message.to_string());
-
     Ok(warp::reply::with_status(response, code))
 }
