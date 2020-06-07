@@ -1,8 +1,5 @@
-use std::convert::AsRef;
-use std::path::Path;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
-//use std::sync::Mutex;
 
 use slug;
 
@@ -38,34 +35,8 @@ pub struct IndexRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GeneratorBuildConfig {
-    // Destination output for generated pages relative to the site
-    pub destination: String,
-}
-
-impl GeneratorBuildConfig {
-    pub fn validate<P: AsRef<Path>>(&self, _dir: P) -> Result<(), Error> {
-        let dest = Path::new(&self.destination);
-        if dest.is_absolute() {
-            return Err(
-                Error::new(
-                    format!("Generator destination '{}' must be relative path", self.destination)))
-        }
-
-        Ok(())
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
-    pub build: GeneratorBuildConfig,
     pub index: Option<BTreeMap<String, IndexRequest>>,
-}
-
-impl GeneratorConfig {
-    pub fn validate<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
-        self.build.validate(dir)
-    }
 }
 
 #[derive(Debug)]
@@ -150,10 +121,10 @@ impl ValueIndex {
 
 impl Generator {
 
-    pub fn load(&mut self) -> Result<(), Error> {
+    pub fn load(&mut self, name: &str) -> Result<(), Error> {
 
         let mut site_dir = self.site.clone();
-        site_dir.push(&self.config.build.destination);
+        site_dir.push(name);
 
         let mut data_dir = self.source.clone();
         data_dir.push(DOCUMENTS);
@@ -327,7 +298,7 @@ impl GeneratorMap {
     fn load_documents(&mut self) -> Result<(), Error> {
         for (k, g) in self.map.iter_mut() {
             info!("{} < {}", k, g.source.display());
-            g.load()?;
+            g.load(k)?;
         }
         Ok(())
     }
@@ -364,10 +335,6 @@ impl GeneratorMap {
 
                                     let contents = utils::read_string(conf)?;
                                     let config: GeneratorConfig = toml::from_str(&contents)?;
-
-                                    if let Err(e) = config.validate(&path) {
-                                        return Err(e) 
-                                    }
 
                                     let all = DocumentIndex{documents: Vec::new()};
                                     let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
