@@ -185,7 +185,7 @@ fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionsConfig) -> Fi
     let file = p.as_ref();
     if let Some(ext) = file.extension() {
         let ext = ext.to_string_lossy().into_owned();
-        if extensions.parse.contains(&ext) {
+        if extensions.render.contains(&ext) {
             if extensions.markdown.contains(&ext) {
                 return FileType::Markdown
             } else {

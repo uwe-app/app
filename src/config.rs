@@ -41,7 +41,7 @@ impl BuildConfig {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ExtensionsConfig {
-    pub parse: Vec<String>,
+    pub render: Vec<String>,
     pub map: BTreeMap<String, String>,
     pub markdown: Vec<String>,
 }
@@ -52,7 +52,7 @@ impl ExtensionsConfig {
         ext_map.insert(String::from(MD), String::from(HTML));
 
         ExtensionsConfig {
-            parse: vec![String::from(MD), String::from(HTML)],
+            render: vec![String::from(MD), String::from(HTML)],
             map: ext_map,
             markdown: vec![String::from(MD)],
         }

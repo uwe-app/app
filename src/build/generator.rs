@@ -126,9 +126,12 @@ impl ValueIndex {
                     return json!(&v.key);
                 }
 
+                let id = slug::slugify(&v.key);
                 let mut m = Map::new();
-                m.insert("id".to_string(), json!(slug::slugify(&v.key)));
+
+                m.insert("id".to_string(), json!(&id));
                 m.insert("key".to_string(), json!(&v.key));
+
                 if include_docs {
                     let flatten = request.flat.is_some() && request.flat.unwrap();
                     if flatten && v.doc.len() == 1 {
@@ -152,6 +155,7 @@ impl ValueIndex {
                     }
 
                 }
+
                 json!(&m)
             })
             .collect::<Vec<_>>();
