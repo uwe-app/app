@@ -4,15 +4,20 @@
 // Modified to gracefully handle ephemeral port.
 
 #[cfg(feature = "watch")]
+use std::convert::Infallible;
 use crate::{open};
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use std::net::{SocketAddr, ToSocketAddrs};
 use tokio::sync::broadcast;
-use warp::Filter;
+use warp::http::StatusCode;
+use warp::{Filter, Reply, Rejection};
+
+use serde::{Serialize};
 
 use tokio::sync::broadcast::Sender as TokioSender;
 use warp::ws::Message;
+
 
 use std::convert::AsRef;
 
@@ -23,7 +28,7 @@ use std::sync::mpsc::Sender;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::{Error};
+use crate::{utils, Error};
 use log::{info, trace, error, debug};
 
 #[derive(Debug)]
@@ -193,7 +198,12 @@ async fn serve_web(
         })
         .with(&cors);
 
-    let static_route = warp::fs::dir(build_dir);
+    let root = build_dir.clone();
+
+    let static_route = warp::fs::dir(build_dir)
+        .recover(move |e| handle_rejection(e, root.clone()));
+        //.with(warp::log("static"));
+
     let routes = livereload.or(static_route);
 
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);
@@ -210,4 +220,50 @@ async fn serve_web(
             std::process::exit(1);
         }
     }
+}
+
+// An API error serializable to JSON.
+#[derive(Serialize)]
+struct ErrorMessage {
+    code: u16,
+    message: String,
+}
+
+// This function receives a `Rejection` and tries to return a custom
+// value, otherwise simply passes the rejection along.
+async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, Infallible> {
+    let mut code;
+    let mut message;
+
+    if err.is_not_found() {
+        code = StatusCode::NOT_FOUND;
+        message = "NOT_FOUND";
+    } else if let Some(_) = err.find::<warp::reject::MethodNotAllowed>() {
+        // We can handle a specific error, here METHOD_NOT_ALLOWED,
+        // and render it however we want
+        code = StatusCode::METHOD_NOT_ALLOWED;
+        message = "METHOD_NOT_ALLOWED";
+    } else {
+        // We should have expected this... Just log and say its a 500
+        eprintln!("unhandled rejection: {:?}", err);
+        code = StatusCode::INTERNAL_SERVER_ERROR;
+        message = "UNHANDLED_REJECTION";
+    }
+
+    let mut error_file = root.clone();
+    error_file.push(format!("{}.html", code.as_u16()));
+    let response;
+    if error_file.exists() {
+        if let Ok(content) = utils::read_string(&error_file) {
+            return Ok(warp::reply::with_status(warp::reply::html(content), code))
+        } else {
+            code = StatusCode::INTERNAL_SERVER_ERROR;
+            message = "ERROR_FILE_READ";
+        }
+
+    }
+
+    response = warp::reply::html(message.to_string());
+
+    Ok(warp::reply::with_status(response, code))
 }
