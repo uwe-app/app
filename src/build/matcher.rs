@@ -13,7 +13,6 @@ pub enum FileType {
 use crate::{
     Error,
     HTML,
-    INDEX_HTML,
     INDEX_STEM,
     LAYOUT_HBS,
     DATA_TOML,
@@ -23,7 +22,7 @@ use crate::{
     THEME,
 };
 
-use super::generator;
+//use super::generator;
 use crate::config::ExtensionsConfig;
 use crate::utils;
 
@@ -57,50 +56,50 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
 }
 
 // Try to find a generator file for the given URL
-pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
-    let mut url = href.to_string().clone();
-    url = utils::url::trim_slash(&url).to_owned();
+//pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
+    //let mut url = href.to_string().clone();
+    //url = utils::url::trim_slash(&url).to_owned();
 
-    // Try to match against generated output files.
-    //
-    // For these cases there are no source files on disc with 
-    // a direct mapping to output files as they are generated
-    // and this code can be called (via the `link` helper) before
-    // output has been generated so we cannot compare to output
-    // destination files.
-    let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
-    for (_, map) in mapping.iter() {
-        let dest = Path::new(&map.destination);
+    //// Try to match against generated output files.
+    ////
+    //// For these cases there are no source files on disc with 
+    //// a direct mapping to output files as they are generated
+    //// and this code can be called (via the `link` helper) before
+    //// output has been generated so we cannot compare to output
+    //// destination files.
+    //let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
+    //for (_, map) in mapping.iter() {
+        //let dest = Path::new(&map.destination);
 
 
-        // Now try to match on generated document id
-        for id in &map.ids {
-            let mut page = dest.to_path_buf();
-            if clean_url {
-                page.push(id);
-                let mut target = utils::url::to_url_lossy(&page);
-                if target == url {
-                    return Some(page)
-                }
+        //// Now try to match on generated document id
+        //for id in &map.ids {
+            //let mut page = dest.to_path_buf();
+            //if clean_url {
+                //page.push(id);
+                //let mut target = utils::url::to_url_lossy(&page);
+                //if target == url {
+                    //return Some(page)
+                //}
 
-                page.push(INDEX_HTML);
+                //page.push(INDEX_HTML);
 
-                target = utils::url::to_url_lossy(&page);
-                if target == url {
-                    return Some(page)
-                }
-            } else {
-                page.push(id);
-                page.set_extension(HTML);
-                let target = utils::url::to_url_lossy(&page);
-                if target == url {
-                    return Some(page)
-                }
-            }
-        }
-    }
-    None
-}
+                //target = utils::url::to_url_lossy(&page);
+                //if target == url {
+                    //return Some(page)
+                //}
+            //} else {
+                //page.push(id);
+                //page.set_extension(HTML);
+                //let target = utils::url::to_url_lossy(&page);
+                //if target == url {
+                    //return Some(page)
+                //}
+            //}
+        //}
+    //}
+    //None
+//}
 
 // Try to find a source file for the given URL
 pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
@@ -146,7 +145,8 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
 }
 
 pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
-    lookup(&base, href, clean_url).is_some() || lookup_generator(href, clean_url).is_some()
+    //lookup(&base, href, clean_url).is_some() || lookup_generator(href, clean_url).is_some()
+    lookup(&base, href, clean_url).is_some()
 }
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {

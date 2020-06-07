@@ -2,7 +2,7 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
-use std::sync::Mutex;
+//use std::sync::Mutex;
 
 use slug;
 
@@ -20,19 +20,6 @@ use crate::{
 
 static ALL_INDEX: &str = "all";
 static ID_KEY: &str = "@id";
-
-lazy_static! {
-    #[derive(Debug)]
-    pub static ref GENERATOR_MAPPING: Mutex<BTreeMap<String, GeneratorUrlMapInfo>> = {
-        Mutex::new(BTreeMap::new())
-    };
-}
-
-#[derive(Debug)]
-pub struct GeneratorUrlMapInfo {
-    pub destination: String,
-    pub ids: Vec<String>,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorReference {
@@ -164,13 +151,14 @@ impl ValueIndex {
 
 impl Generator {
 
-    pub fn load(&mut self, ids: &mut Vec<String>) -> Result<(), Error> {
+    pub fn load(&mut self) -> Result<(), Error> {
 
         let mut site_dir = self.site.clone();
         site_dir.push(&self.config.build.destination);
 
         let mut data_dir = self.source.clone();
         data_dir.push(DOCUMENTS);
+
         match data_dir.read_dir() {
             Ok(contents) => {
                 for e in contents {
@@ -183,7 +171,6 @@ impl Generator {
                             if let Some(stem) = path.file_stem() {
                                 let name = stem.to_string_lossy().into_owned();
                                 let id = slug::slugify(name);
-                                ids.push(id.clone());
                                 self.all.documents.push(Box::new(SourceDocument{id, document}));
                             }
                         },
@@ -332,19 +319,14 @@ impl GeneratorMap {
     }
 
     fn load_documents(&mut self) -> Result<(), Error> {
-        let mut mapping = GENERATOR_MAPPING.lock().unwrap();
         for (k, g) in self.map.iter_mut() {
-            let item = mapping.get_mut(k).unwrap();
-            let mut ids = &mut item.ids;
-            g.load(&mut ids)?;
             info!("{} < {}", k, g.source.display());
+            g.load()?;
         }
         Ok(())
     }
 
     fn load_configurations(&mut self, source: PathBuf) -> Result<(), Error> {
-        let mut mapping = GENERATOR_MAPPING.lock().unwrap();
-
         let mut src = source.clone();
         src.push(GENERATOR);
 
@@ -391,12 +373,6 @@ impl GeneratorMap {
                                         indices,
                                         config,
                                     };
-
-                                    let gmi = GeneratorUrlMapInfo {
-                                        destination: generator.config.build.destination.clone(),
-                                        ids: Vec::new(),
-                                    };
-                                    mapping.insert(key.clone(), gmi);
 
                                     self.map.insert(key, generator);
 
