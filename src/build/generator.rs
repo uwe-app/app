@@ -22,7 +22,7 @@ static ALL_INDEX: &str = "all";
 static ID_KEY: &str = "@id";
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GeneratorReference {
+pub struct IndexQuery {
     pub name: String,
     pub index: String,
     pub parameter: Option<String>,
@@ -32,7 +32,7 @@ pub struct GeneratorReference {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GeneratorIndexRequest {
+pub struct IndexRequest {
     pub key: String,
     pub flat: Option<bool>,
 }
@@ -59,7 +59,7 @@ impl GeneratorBuildConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
     pub build: GeneratorBuildConfig,
-    pub index: Option<BTreeMap<String, GeneratorIndexRequest>>,
+    pub index: Option<BTreeMap<String, IndexRequest>>,
 }
 
 impl GeneratorConfig {
@@ -90,7 +90,7 @@ pub struct SourceDocument {
 
 #[derive(Debug)]
 pub struct ValueIndex {
-    pub request: Box<GeneratorIndexRequest>,
+    pub request: Box<IndexRequest>,
     pub documents: BTreeMap<String, Vec<Box<SourceDocument>>>
 }
 
@@ -108,7 +108,7 @@ impl ValueIndex {
     pub fn to_value_vec(
         &self,
         include_docs: bool,
-        request: &Box<GeneratorIndexRequest>) -> Vec<Value> {
+        request: &Box<IndexRequest>) -> Vec<Value> {
         return self.documents
             .iter()
             .map(|(k, v)| {
@@ -214,7 +214,7 @@ impl GeneratorMap {
             if let Some(ref mut index) = generator.config.index.as_mut() {
                 index.insert(
                     ALL_INDEX.to_string(),
-                    GeneratorIndexRequest{key: ID_KEY.to_string(), flat: Some(true)});
+                    IndexRequest{key: ID_KEY.to_string(), flat: Some(true)});
             }
         }
         Ok(())
@@ -301,7 +301,7 @@ impl GeneratorMap {
         Ok(())
     }
 
-    pub fn find_generator_index(&self, generator: &GeneratorReference) -> Result<Vec<Value>, Error> {
+    pub fn find_generator_index(&self, generator: &IndexQuery) -> Result<Vec<Value>, Error> {
         let name = &generator.name;
         let idx_name = &generator.index;
 

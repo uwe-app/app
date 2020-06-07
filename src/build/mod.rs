@@ -31,7 +31,7 @@ use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
 use manifest::Manifest;
-use generator::{GeneratorReference};
+use generator::{IndexQuery};
 
 #[derive(Debug)]
 pub struct Invalidation {
@@ -70,7 +70,7 @@ impl<'a> Builder<'a> {
         p: P,
         file_type: &FileType,
         data: &Map<String, Value>,
-        _reference: GeneratorReference,
+        _reference: IndexQuery,
         values: Vec<Value>,
         clean: bool) -> Result<(), Error> {
 
@@ -172,19 +172,19 @@ impl<'a> Builder<'a> {
                 }
 
                 let generator_config = data.get("generator");
-                let mut page_generators: Vec<GeneratorReference> = Vec::new();
+                let mut page_generators: Vec<IndexQuery> = Vec::new();
 
                 if let Some(cfg) = generator_config {
                     // Single object declaration
                     if cfg.is_object() {
                         let conf = cfg.as_object().unwrap();
-                        let reference: GeneratorReference = from_value(json!(conf))?;
+                        let reference: IndexQuery = from_value(json!(conf))?;
                         page_generators.push(reference);
                     // Multiple array declaration
                     } else if cfg.is_array() {
                         let items = cfg.as_array().unwrap();
                         for conf in items {
-                            let reference: GeneratorReference = from_value(json!(conf))?;
+                            let reference: IndexQuery = from_value(json!(conf))?;
                             page_generators.push(reference);
                         }
                     } else {
@@ -198,7 +198,7 @@ impl<'a> Builder<'a> {
 
                 if !generators.map.is_empty() {
                 
-                    let mut each_iters: Vec<(GeneratorReference, Vec<Value>)> = Vec::new();
+                    let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
 
                     for gen in page_generators {
                         let each = gen.each.is_some() && gen.each.unwrap();
