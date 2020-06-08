@@ -19,9 +19,10 @@ use log::debug;
 pub struct Config {
     pub file: Option<PathBuf>,
     pub build: BuildConfig,
-    pub serve: ServeConfig,
+    pub serve: Option<ServeConfig>,
     pub book: Option<BookConfig>,
     pub extension: Option<ExtensionConfig>,
+    pub hook: Option<BTreeMap<String, HookConfig>>,
 }
 
 impl Config {
@@ -32,7 +33,8 @@ impl Config {
             build: BuildConfig::new(),
             extension: Some(ExtensionConfig::new()),
             book: None,
-            serve: ServeConfig::new(),
+            serve: Some(ServeConfig::new()),
+            hook: None,
         }
     }
 
@@ -78,8 +80,20 @@ impl Config {
                     cfg.build.clean_url= Some(true);
                 }
 
+                if cfg.serve.is_none() {
+                    cfg.serve = Some(ServeConfig::new());
+                }
+
                 if cfg.extension.is_none() {
                     cfg.extension = Some(ExtensionConfig::new());
+                }
+
+                if let Some(hooks) = cfg.hook.as_mut() {
+                    for (k, v) in hooks.iter_mut() {
+                        if v.path.is_none() {
+                            v.path = Some(k.clone());
+                        } 
+                    }
                 }
 
                 return Ok(cfg);
@@ -102,6 +116,15 @@ impl Config {
         } 
         Err(Error::new(
             format!("No configuration found for {}", pth.display())))
+    }
+
+    pub fn get_project(&self) -> Option<PathBuf> {
+        if let Some(file) = &self.file {
+            if let Some(p) = file.parent() {
+                return Some(p.to_path_buf());
+            } 
+        }   
+        None
     }
 
     pub fn get_partial_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
@@ -202,3 +225,9 @@ impl ExtensionConfig {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct HookConfig {
+    pub path: Option<String>,
+    pub args: Option<Vec<String>>,
+    pub source: Option<PathBuf>,
+}

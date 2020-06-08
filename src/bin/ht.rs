@@ -256,8 +256,9 @@ fn process_command(cmd: &Command) {
         } => {
 
             let cfg = Config::new();
-            let mut host = &cfg.serve.host;
-            let mut port = &cfg.serve.port;
+            let serve = cfg.serve.as_ref().unwrap();
+            let mut host = &serve.host;
+            let mut port = &serve.port;
 
             if let Some(h) = &args.server.host {
                 host = h;
@@ -403,8 +404,9 @@ fn process_command(cmd: &Command) {
                 dir = Some(src);
             }
 
-            let mut host = &cfg.serve.host;
-            let mut port = &cfg.serve.port;
+            let serve = cfg.serve.as_ref().unwrap();
+            let mut host = &serve.host;
+            let mut port = &serve.port;
 
             if let Some(h) = &args.server.host {
                 host = h;

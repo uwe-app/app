@@ -1,7 +1,3 @@
 [build]
 source = "site"
 target = "build"
-
-[serve]
-host = "localhost"
-port = 3000

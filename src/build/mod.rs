@@ -9,6 +9,7 @@ use serde_json::{json, from_value, Map, Value};
 pub mod book;
 pub mod context;
 pub mod generator;
+pub mod hook;
 pub mod loader;
 pub mod helpers;
 pub mod manifest;
@@ -381,6 +382,10 @@ impl<'a> Builder<'a> {
             && self.context.config.build.follow_links.unwrap();
 
         resource::link(self.context)?;
+
+        if let Some(hooks) = &self.context.config.hook {
+            hook::run(&self.context, hooks)?;
+        }
         
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)
