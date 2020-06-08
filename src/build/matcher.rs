@@ -18,7 +18,7 @@ use crate::{
     DATA_TOML,
     MD,
     PARSE_EXTENSIONS,
-    TEMPLATE,
+    PARTIAL,
     THEME,
 };
 
@@ -151,7 +151,7 @@ pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bo
 
 pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
     let mut root_theme = base.as_ref().to_path_buf();
-    root_theme.push(TEMPLATE);
+    root_theme.push(PARTIAL);
     root_theme.push(THEME);
     root_theme
 }

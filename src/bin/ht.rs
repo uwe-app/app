@@ -224,7 +224,7 @@ fn error(s: String) {
 fn create_output_dir(output: &PathBuf) {
     if !output.exists() {
         info!("mkdir {}", output.display());
-        if let Err(e) = fs::create_dir(output) {
+        if let Err(e) = fs::create_dir_all(output) {
             fatal(e);
         }
     }

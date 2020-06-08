@@ -106,7 +106,7 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
     //}
 
     let mut generators = GeneratorMap::new();
-    generators.load(src)?;
+    generators.load(src, &config)?;
 
     loader::load(&options)?;
 

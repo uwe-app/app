@@ -10,10 +10,11 @@ use crate::{
     utils,
     Error,
     JSON,
-    GENERATOR,
     DOCUMENTS,
     GENERATOR_TOML,
 };
+
+use crate::config::Config;
 
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
@@ -209,8 +210,8 @@ impl GeneratorMap {
         } 
     }
 
-    pub fn load(&mut self, source: PathBuf) -> Result<(), Error> {
-        self.load_configurations(source)?;
+    pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
+        self.load_configurations(source, config)?;
         self.load_documents()?;
         self.configure_default_index()?;
         self.load_index()?;
@@ -339,9 +340,8 @@ impl GeneratorMap {
         Ok(())
     }
 
-    fn load_configurations(&mut self, source: PathBuf) -> Result<(), Error> {
-        let mut src = source.clone();
-        src.push(GENERATOR);
+    fn load_configurations(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
+        let src = config.get_generator_path(&source);
 
         if src.exists() && src.is_dir() {
             let result = src.read_dir();

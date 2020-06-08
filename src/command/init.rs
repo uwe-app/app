@@ -48,8 +48,8 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         "site/index.md",
         "site/data.toml",
         "site/layout.hbs",
-        "site/template/header.hbs",
-        "site/template/footer.hbs",
+        "site/partial/header.hbs",
+        "site/partial/footer.hbs",
     ];
 
     let template_files = vec![

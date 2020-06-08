@@ -19,8 +19,6 @@ pub mod template;
 use super::{
     utils,
     Error,
-    GENERATOR,
-    TEMPLATE,
     TEMPLATE_EXT,
     DATA_TOML,
     LAYOUT_HBS
@@ -352,14 +350,10 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    pub fn get_templates_path(&self) -> PathBuf {
-        let mut templates = self.context.options.source.clone();
-        templates.push(TEMPLATE);
-        templates
-    }
-
     pub fn register_templates_directory(&mut self) -> Result<PathBuf, Error> {
-        let templates = self.get_templates_path();
+        let templates = self.context.config.get_partial_path(
+            &self.context.options.source);
+
         if let Err(e) = self
             .parser
             .register_templates_directory(TEMPLATE_EXT, templates.as_path())
@@ -371,10 +365,10 @@ impl<'a> Builder<'a> {
 
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
-        let templates = self.register_templates_directory()?;
+        let partials = self.register_templates_directory()?;
 
-        let mut generator = self.context.options.source.to_path_buf();
-        generator.push(GENERATOR);
+        let generator = self.context.config.get_generator_path(
+            &self.context.options.source);
 
         let follow_links = self.context.config.build.follow_links.is_some()
             && self.context.config.build.follow_links.unwrap();
@@ -385,8 +379,8 @@ impl<'a> Builder<'a> {
             .filter_entry(move |e| {
                 let path = e.path();
 
-                // Ensure the template directory is ignored
-                if path == templates.as_path() || path == generator.as_path() {
+                // Never enter these paths
+                if path == partials.as_path() || path == generator.as_path() {
                     return false;
                 }
                 true

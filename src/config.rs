@@ -6,9 +6,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use toml;
 
-//use crate::command::build::BuildOptions;
-
-use crate::{utils, Error, SITE_TOML, MD, HTML};
+use crate::{utils, Error, SITE_TOML, MD, HTML, PARTIAL, GENERATOR};
 
 use log::debug;
 
@@ -17,6 +15,28 @@ pub struct Config {
     pub build: BuildConfig,
     pub extension: Option<ExtensionsConfig>,
     pub serve: ServeConfig,
+}
+
+impl Config {
+    pub fn get_partial_path(&self, source: &PathBuf) -> PathBuf {
+        let partial = self.build.partial.as_ref().unwrap();
+        if partial.is_absolute() {
+            return partial.clone();
+        }
+        let mut templates = source.clone();
+        templates.push(partial);
+        templates
+    }
+
+    pub fn get_generator_path(&self, source: &PathBuf) -> PathBuf {
+        let generator = self.build.generator.as_ref().unwrap();
+        if generator.is_absolute() {
+            return generator.clone();
+        }
+        let mut templates = source.clone();
+        templates.push(generator);
+        templates
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -36,6 +56,8 @@ impl BuildConfig {
             source: Path::new("site").to_path_buf(),
             target: Path::new("build").to_path_buf(),
             strict: true,
+            partial: Some(Path::new(PARTIAL).to_path_buf()),
+            generator: Some(Path::new(GENERATOR).to_path_buf()),
             clean_url: Some(true),
             ..Default::default()
         }
@@ -97,6 +119,14 @@ pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
                 let mut bp = base.to_path_buf(); 
                 bp.push(&cfg.build.target);
                 cfg.build.target = bp;
+            }
+
+            if cfg.build.partial.is_none() {
+                cfg.build.partial = Some(Path::new(PARTIAL).to_path_buf());
+            }
+
+            if cfg.build.generator.is_none() {
+                cfg.build.generator = Some(Path::new(GENERATOR).to_path_buf());
             }
 
             if cfg.build.clean_url.is_none() {
