@@ -43,7 +43,7 @@ impl Config {
 pub struct BuildConfig {
     pub source: PathBuf,
     pub target: PathBuf,
-    pub strict: bool,
+    pub strict: Option<bool>,
     pub partial: Option<PathBuf>,
     pub generator: Option<PathBuf>,
     pub clean_url: Option<bool>,
@@ -55,7 +55,7 @@ impl BuildConfig {
         BuildConfig {
             source: Path::new("site").to_path_buf(),
             target: Path::new("build").to_path_buf(),
-            strict: true,
+            strict: Some(true),
             partial: Some(Path::new(PARTIAL).to_path_buf()),
             generator: Some(Path::new(GENERATOR).to_path_buf()),
             clean_url: Some(true),
@@ -119,6 +119,10 @@ pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Config, Error> {
                 let mut bp = base.to_path_buf(); 
                 bp.push(&cfg.build.target);
                 cfg.build.target = bp;
+            }
+
+            if cfg.build.strict.is_none() {
+                cfg.build.strict = Some(true);
             }
 
             if cfg.build.partial.is_none() {

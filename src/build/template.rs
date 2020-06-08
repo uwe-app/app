@@ -25,7 +25,11 @@ pub struct TemplateRender<'a> {
 impl<'a> TemplateRender<'a> {
     pub fn new(context: &'a Context) -> Self {
         let mut handlebars = Handlebars::new();
-        handlebars.set_strict_mode(context.config.build.strict);
+
+        let strict = context.config.build.strict.is_some()
+            && context.config.build.strict.unwrap();
+
+        handlebars.set_strict_mode(strict);
 
         handlebars.register_helper("children", Box::new(helpers::children::Children));
         handlebars.register_helper("html", Box::new(helpers::html::Element));

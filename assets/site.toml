@@ -1,7 +1,6 @@
 [build]
 source = "site"
 target = "build"
-strict = true
 
 [serve]
 host = "localhost"
