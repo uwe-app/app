@@ -419,13 +419,16 @@ fn process_command(cmd: &Command) {
                 from = dir.clone().to_path_buf();
             }
 
+            let clean_url = cfg.build.clean_url.is_some()
+                && cfg.build.clean_url.unwrap();
+
             let opts = BuildOptions {
                 source: cfg.build.source.clone(),
                 output: cfg.build.target.clone(),
-                clean_url: !cfg.build.html_extension,
                 host: host.to_owned(),
                 port: port.to_owned(),
 
+                clean_url,
                 target,
                 from,
                 directory: dir,
