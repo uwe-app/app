@@ -6,6 +6,7 @@ use log::debug;
 
 use crate::build::matcher;
 use crate::build::loader;
+use crate::build::context::{Context as BuildContext};
 use crate::BuildOptions;
 
 use crate::{INDEX_HTML};
@@ -30,14 +31,15 @@ impl HelperDef for Link{
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let opts = rc
-            .evaluate(ctx, "@root/context.options")?
+        let cfg = rc
+            .evaluate(ctx, "@root/context")?
             .as_json()
             .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
             .to_owned();
 
-        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
+        let opts = &ctx.options;
         let path = Path::new(&base_path);
 
         let mut input: String = "".to_string();
@@ -66,14 +68,17 @@ impl HelperDef for Link{
                 input = input.trim_start_matches("/").to_owned();
             }
 
-            let exists = matcher::source_exists(&opts.source, &input, opts.clean_url);
+            //let exists = matcher::source_exists(
+                //&opts.source, &input, opts.clean_url);
+
+            let exists = matcher::source_exists(&ctx, &input);
 
             if !exists {
                 return Err(
                     RenderError::new(format!("Type error for `link`, missing url {}", input)))
             }
 
-            if let Ok(rel) = path.strip_prefix(opts.source) {
+            if let Ok(rel) = path.strip_prefix(opts.source.clone()) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
                     if opts.clean_url && matcher::is_clean(&path) {
@@ -125,14 +130,15 @@ impl HelperDef for Components{
             .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
             .replace("\"", "");
 
-        let opts = rc
-            .evaluate(ctx, "@root/context.options")?
+        let ctx = rc
+            .evaluate(ctx, "@root/context")?
             .as_json()
             .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
             .to_owned();
 
-        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
+        let opts = &ctx.options;
         let path = Path::new(&base_path).to_path_buf();
 
         let template = h.template();
@@ -167,8 +173,7 @@ impl HelperDef for Components{
                             url.push_str(INDEX_HTML);
                         }
 
-                        if let Some(src) = matcher::lookup(
-                            &opts.source, &href, opts.clean_url) {
+                        if let Some(src) = matcher::lookup(&ctx, &href) {
                             let mut data = loader::compute(src);
                             data.insert("first".to_string(), json!(first));
                             data.insert("last".to_string(), json!(last));

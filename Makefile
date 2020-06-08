@@ -58,14 +58,14 @@ build-release:
 	@cargo build --release
 
 copy-release:
-	@rm -rf $(SITE_ROOT)/site/files/ht-gnu-linux-x86_64
-	@mkdir -p $(SITE_ROOT)/site/files/ht-gnu-linux-x86_64
-	@cp -f target/release/ht $(SITE_ROOT)/site/files/ht-gnu-linux-x86_64/ht
+	@rm -rf $(SITE_ROOT)/site/resource/files/ht-gnu-linux-x86_64
+	@mkdir -p $(SITE_ROOT)/site/resource/files/ht-gnu-linux-x86_64
+	@cp -f target/release/ht $(SITE_ROOT)/site/resource/files/ht-gnu-linux-x86_64/ht
 
 copy-release-darwin:
-	@rm -rf $(SITE_ROOT)/site/files/ht-darwin-x86_64
-	@mkdir -p $(SITE_ROOT)/site/files/ht-darwin-x86_64
-	@cp -f target/release/ht $(SITE_ROOT)/site/files/ht-darwin-x86_64/ht
+	@rm -rf $(SITE_ROOT)/site/resource/files/ht-darwin-x86_64
+	@mkdir -p $(SITE_ROOT)/site/resource/files/ht-darwin-x86_64
+	@cp -f target/release/ht $(SITE_ROOT)/site/resource/files/ht-darwin-x86_64/ht
 
 release: build-release copy-release
 release-darwin: build-release copy-release-darwin

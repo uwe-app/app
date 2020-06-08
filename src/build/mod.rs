@@ -371,6 +371,8 @@ impl<'a> Builder<'a> {
         let partials = self.register_templates_directory()?;
         let generator = self.context.config.get_generator_path(
             &self.context.options.source);
+        let resource = self.context.config.get_resource_path(
+            &self.context.options.source);
         let theme = self.context.config.get_book_theme_path(
             &self.context.options.source);
 
@@ -396,7 +398,8 @@ impl<'a> Builder<'a> {
                 }
 
                 if path == partials.as_path()
-                    || path == generator.as_path() {
+                    || path == generator.as_path()
+                    || path == resource.as_path() {
                     return false;
                 }
                 true

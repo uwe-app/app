@@ -11,6 +11,7 @@ use crate::{utils, Error, MD, HTML};
 static SITE_TOML: &str = "site.toml";
 static PARTIAL: &str = "partial";
 static GENERATOR: &str = "generator";
+static RESOURCE: &str = "resource";
 
 use log::debug;
 
@@ -69,6 +70,10 @@ impl Config {
                     cfg.build.generator = Some(Path::new(GENERATOR).to_path_buf());
                 }
 
+                if cfg.build.resource.is_none() {
+                    cfg.build.resource = Some(Path::new(RESOURCE).to_path_buf());
+                }
+
                 if cfg.build.clean_url.is_none() {
                     cfg.build.clean_url= Some(true);
                 }
@@ -113,13 +118,19 @@ impl Config {
         pth 
     }
 
+    pub fn get_resource_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let resource = self.build.resource.as_ref().unwrap();
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(resource);
+        pth 
+    }
+
     pub fn get_book_theme_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
         if let Some(book) = &self.book {
             let mut pth = source.as_ref().to_path_buf();
             pth.push(book.theme.clone());
             return Some(pth);
         }
-
         None
     }
 
@@ -132,6 +143,7 @@ pub struct BuildConfig {
     pub strict: Option<bool>,
     pub partial: Option<PathBuf>,
     pub generator: Option<PathBuf>,
+    pub resource: Option<PathBuf>,
     pub clean_url: Option<bool>,
     pub follow_links: Option<bool>,
 }
@@ -144,6 +156,7 @@ impl BuildConfig {
             strict: Some(true),
             partial: Some(Path::new(PARTIAL).to_path_buf()),
             generator: Some(Path::new(GENERATOR).to_path_buf()),
+            resource: Some(Path::new(RESOURCE).to_path_buf()),
             clean_url: Some(true),
             ..Default::default()
         }

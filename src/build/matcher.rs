@@ -24,6 +24,8 @@ use crate::{
 use crate::config::ExtensionConfig;
 use crate::utils;
 
+use crate::build::context::Context;
+
 fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     let mut buf = file.as_ref().to_path_buf();
     buf.push(INDEX_STEM);
@@ -100,14 +102,15 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
 //}
 
 // Try to find a source file for the given URL
-pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<PathBuf> {
+pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf> {
+    let clean_url = context.options.clean_url;
 
     let mut url = href.to_string().clone();
     url = utils::url::trim_slash(&url).to_owned();
 
     let is_dir = utils::url::is_dir(&url);
 
-    let mut buf = base.as_ref().to_path_buf();
+    let mut buf = base.clone();
     buf.push(&utils::url::to_path_separator(&url));
 
     // Check if the file exists directly
@@ -117,7 +120,7 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
 
     // Check index pages
     if is_dir {
-        let mut idx = base.as_ref().to_path_buf();
+        let mut idx = base.clone();
         idx.push(&utils::url::to_path_separator(&url));
         idx.push(INDEX_STEM);
         for ext in PARSE_EXTENSIONS.iter() {
@@ -142,9 +145,27 @@ pub fn lookup<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> Option<Pa
     None
 }
 
-pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bool {
+// Try to find a source file for the given URL
+pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
+    let base = &context.options.source;
+
+    // Try to find a direct corresponding source file
+    if let Some(source) = lookup_in(base, context, href) {
+        return Some(source);
+    }
+
+    // Try to find a resource
+    let resource = context.config.get_resource_path(base);
+    if let Some(resource) = lookup_in(&resource, context, href) {
+        return Some(resource);
+    }
+
+    None
+}
+
+pub fn source_exists(context: &Context, href: &str) -> bool {
     //lookup(&base, href, clean_url).is_some() || lookup_generator(href, clean_url).is_some()
-    lookup(&base, href, clean_url).is_some()
+    lookup(context, href).is_some()
 }
 
 pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
