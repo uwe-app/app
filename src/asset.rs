@@ -1,6 +1,6 @@
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
-#[folder = "bundle"]
+#[folder = "assets"]
 pub struct Asset;
 
