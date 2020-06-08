@@ -93,6 +93,12 @@ impl Config {
                         if v.path.is_none() {
                             v.path = Some(k.clone());
                         } 
+                        if v.stdout.is_none() {
+                            v.stdout = Some(true);
+                        }
+                        if v.stderr.is_none() {
+                            v.stderr = Some(true);
+                        }
                     }
                 }
 
@@ -230,4 +236,6 @@ pub struct HookConfig {
     pub path: Option<String>,
     pub args: Option<Vec<String>>,
     pub source: Option<PathBuf>,
+    pub stdout: Option<bool>,
+    pub stderr: Option<bool>,
 }
