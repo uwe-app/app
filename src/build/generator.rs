@@ -10,12 +10,12 @@ use crate::{
     utils,
     Error,
     JSON,
-    DOCUMENTS,
     GENERATOR_TOML,
 };
 
 use crate::config::Config;
 
+static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";

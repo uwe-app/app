@@ -18,12 +18,10 @@ use crate::{
     DATA_TOML,
     MD,
     PARSE_EXTENSIONS,
-    PARTIAL,
-    THEME,
 };
 
 //use super::generator;
-use crate::config::ExtensionsConfig;
+use crate::config::ExtensionConfig;
 use crate::utils;
 
 fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
@@ -149,13 +147,6 @@ pub fn source_exists<P: AsRef<Path>>(base: P, href: &str, clean_url: bool) -> bo
     lookup(&base, href, clean_url).is_some()
 }
 
-pub fn get_theme_dir<P: AsRef<Path>>(base: P) -> PathBuf {
-    let mut root_theme = base.as_ref().to_path_buf();
-    root_theme.push(PARTIAL);
-    root_theme.push(THEME);
-    root_theme
-}
-
 pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
     if let Some(nm) = file.as_ref().file_stem() {
         if nm == INDEX_STEM {
@@ -181,7 +172,7 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
     }
 }
 
-fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionsConfig) -> FileType {
+fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
     let file = p.as_ref();
     if let Some(ext) = file.extension() {
         let ext = ext.to_string_lossy().into_owned();
@@ -196,7 +187,7 @@ fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionsConfig) -> Fi
     FileType::Unknown
 }
 
-pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionsConfig) -> FileType {
+pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
     let file = p.as_ref();
     match file.file_name() {
         Some(nm) => {
@@ -300,7 +291,7 @@ pub fn destination<P: AsRef<Path>>(
     target: P,
     file: P,
     file_type: &FileType,
-    extensions: &ExtensionsConfig,
+    extensions: &ExtensionConfig,
     clean_urls: bool,
 ) -> Result<PathBuf, Error> {
     let pth = file.as_ref().to_path_buf().clone();

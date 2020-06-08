@@ -7,7 +7,6 @@ use log::{debug, info, warn};
 use mdbook::MDBook;
 
 use crate::build::loader;
-use crate::build::matcher;
 
 use crate::{
     utils,
@@ -128,14 +127,18 @@ impl<'a> BookBuilder<'a> {
         let result = MDBook::load(dir);
         match result {
             Ok(mut md) => {
-                //println!("{:?}", md.config);
+                let theme = self.context.config.get_book_theme_path(
+                    &self.context.options.source);
 
-                let theme_dir = matcher::get_theme_dir(&self.context.options.source);
-                if theme_dir.exists() {
-                    if let Some(s) = theme_dir.to_str() {
-                        if let Err(e) = md.config.set(BOOK_THEME_KEY, s) {
-                            warn!("cannot set book theme {}", e);
+                if let Some(theme_dir) = theme {
+                    if theme_dir.exists() && theme_dir.is_dir() {
+                        if let Some(s) = theme_dir.to_str() {
+                            if let Err(e) = md.config.set(BOOK_THEME_KEY, s) {
+                                warn!("Cannot set book theme {}", e);
+                            }
                         }
+                    } else {
+                        warn!("Missing book theme directory '{}'", theme_dir.display());
                     }
                 }
 

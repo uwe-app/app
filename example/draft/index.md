@@ -1,6 +1,6 @@
 ## Draft
 
-This is a home page for a draft example.
+This is a home page for a draft example with a [book](/draft-book/) that uses a custom theme.
 
 <li>
 {{#children}}

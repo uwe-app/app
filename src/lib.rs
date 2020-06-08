@@ -12,23 +12,20 @@ mod utils;
 
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
-static PARTIAL: &str = "partial";
-static GENERATOR: &str = "generator";
-static DOCUMENTS: &str = "documents";
 static TEMPLATE_EXT: &str = ".hbs";
-static THEME: &str = "theme";
 static LAYOUT_HBS: &str = "layout.hbs";
 static DATA_TOML: &str = "data.toml";
-static SITE_TOML: &str = "site.toml";
 static GENERATOR_TOML: &str = "generator.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
 static JSON: &str = "json";
-static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 static ROOT_TABLE_KEY: &str = "site";
 static DRAFT_KEY: &str = "draft";
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
+
+// FIXME: remove these and their usages
+static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 
 pub use crate::config::Config;
 pub use crate::error::Error;

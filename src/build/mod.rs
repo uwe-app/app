@@ -365,9 +365,13 @@ impl<'a> Builder<'a> {
 
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
-        let partials = self.register_templates_directory()?;
 
+        let config_file = self.context.config.file.clone();
+
+        let partials = self.register_templates_directory()?;
         let generator = self.context.config.get_generator_path(
+            &self.context.options.source);
+        let theme = self.context.config.get_book_theme_path(
             &self.context.options.source);
 
         let follow_links = self.context.config.build.follow_links.is_some()
@@ -379,8 +383,20 @@ impl<'a> Builder<'a> {
             .filter_entry(move |e| {
                 let path = e.path();
 
-                // Never enter these paths
-                if path == partials.as_path() || path == generator.as_path() {
+                if let Some(config_file) = &config_file {
+                    if path == config_file.as_path() {
+                        return false;
+                    }
+                }
+
+                if let Some(theme) = &theme {
+                    if path == theme.as_path() {
+                        return false;
+                    }
+                }
+
+                if path == partials.as_path()
+                    || path == generator.as_path() {
                     return false;
                 }
                 true

@@ -48,8 +48,8 @@ dist: site-release
 	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip hypertext-preview/*)
 
 example: install
-	@ht example/layout --tag=layout-example
-	@ht example/draft --tag=draft-example
+	@ht example/layout
+	@ht example/draft
 
 fmt:
 	@cargo fmt
