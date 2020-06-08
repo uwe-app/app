@@ -381,9 +381,29 @@ impl<'a> Builder<'a> {
         let follow_links = self.context.config.build.follow_links.is_some()
             && self.context.config.build.follow_links.unwrap();
 
+        let mut filters: Vec<PathBuf> = Vec::new();
+        filters.push(partials);
+        filters.push(generator);
+        filters.push(resource);
+
+        if let Some(config_file) = &config_file {
+            filters.push(config_file.clone());
+        }
+
+        if let Some(theme) = &theme {
+            filters.push(theme.clone());
+        }
+
         resource::link(self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
+            for (_, v) in hooks {
+                if let Some(source) = &v.source {
+                    let mut buf = self.context.options.source.clone();
+                    buf.push(source);
+                    filters.push(buf);
+                } 
+            }
             hook::run(&self.context, hooks)?;
         }
         
@@ -392,22 +412,8 @@ impl<'a> Builder<'a> {
             .max_depth(self.context.options.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
-
-                if let Some(config_file) = &config_file {
-                    if path == config_file.as_path() {
-                        return false;
-                    }
-                }
-
-                if let Some(theme) = &theme {
-                    if path == theme.as_path() {
-                        return false;
-                    }
-                }
-
-                if path == partials.as_path()
-                    || path == generator.as_path()
-                    || path == resource.as_path() {
+                if filters.contains(&path.to_path_buf()) {
+                    debug!("SKIP {}", path.display());
                     return false;
                 }
                 true
