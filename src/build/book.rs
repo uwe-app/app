@@ -67,8 +67,11 @@ impl<'a> BookBuilder<'a> {
         let mut base = self.context.options.target.clone();
         base.push(relative);
 
+        let follow_links = self.context.config.build.follow_links.is_some()
+            && self.context.config.build.follow_links.unwrap();
+
         for result in WalkBuilder::new(&build_dir)
-            .follow_links(self.context.config.build.follow_links)
+            .follow_links(follow_links)
             .build()
         {
             match result {

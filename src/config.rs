@@ -25,7 +25,7 @@ pub struct BuildConfig {
     pub target: PathBuf,
     pub strict: bool,
     pub html_extension: bool,
-    pub follow_links: bool,
+    pub follow_links: Option<bool>,
 }
 
 impl BuildConfig {

@@ -375,9 +375,12 @@ impl<'a> Builder<'a> {
 
         let mut generator = self.context.options.source.to_path_buf();
         generator.push(GENERATOR);
+
+        let follow_links = self.context.config.build.follow_links.is_some()
+            && self.context.config.build.follow_links.unwrap();
         
         for result in WalkBuilder::new(&target)
-            .follow_links(self.context.config.build.follow_links)
+            .follow_links(follow_links)
             .max_depth(self.context.options.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
