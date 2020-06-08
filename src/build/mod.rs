@@ -14,6 +14,7 @@ pub mod helpers;
 pub mod manifest;
 pub mod matcher;
 pub mod parser;
+pub mod resource;
 pub mod template;
 
 use super::{
@@ -378,6 +379,8 @@ impl<'a> Builder<'a> {
 
         let follow_links = self.context.config.build.follow_links.is_some()
             && self.context.config.build.follow_links.unwrap();
+
+        resource::link(self.context)?;
         
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)

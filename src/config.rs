@@ -63,15 +63,15 @@ impl Config {
                 }
 
                 if cfg.build.partial.is_none() {
-                    cfg.build.partial = Some(Path::new(PARTIAL).to_path_buf());
+                    cfg.build.partial = Some(PathBuf::from(PARTIAL));
                 }
 
                 if cfg.build.generator.is_none() {
-                    cfg.build.generator = Some(Path::new(GENERATOR).to_path_buf());
+                    cfg.build.generator = Some(PathBuf::from(GENERATOR));
                 }
 
                 if cfg.build.resource.is_none() {
-                    cfg.build.resource = Some(Path::new(RESOURCE).to_path_buf());
+                    cfg.build.resource = Some(PathBuf::from(RESOURCE));
                 }
 
                 if cfg.build.clean_url.is_none() {
@@ -151,12 +151,12 @@ pub struct BuildConfig {
 impl BuildConfig {
     pub fn new() -> Self {
         BuildConfig {
-            source: Path::new("site").to_path_buf(),
-            target: Path::new("build").to_path_buf(),
+            source: PathBuf::from("site"),
+            target: PathBuf::from("build"),
             strict: Some(true),
-            partial: Some(Path::new(PARTIAL).to_path_buf()),
-            generator: Some(Path::new(GENERATOR).to_path_buf()),
-            resource: Some(Path::new(RESOURCE).to_path_buf()),
+            partial: Some(PathBuf::from(PARTIAL)),
+            generator: Some(PathBuf::from(GENERATOR)),
+            resource: Some(PathBuf::from(RESOURCE)),
             clean_url: Some(true),
             ..Default::default()
         }
