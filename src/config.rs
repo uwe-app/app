@@ -9,7 +9,7 @@ use toml;
 use crate::{utils, Error, MD, HTML};
 
 static SITE_TOML: &str = "site.toml";
-static PARTIAL: &str = "partial";
+static PARTIAL: &str = "partials";
 static GENERATOR: &str = "generators";
 static RESOURCE: &str = "resources";
 
