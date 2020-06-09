@@ -1,6 +1,7 @@
 use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
+use std::collections::BTreeMap;
 
 use ignore::WalkBuilder;
 use log::{debug, info, warn};
@@ -21,13 +22,14 @@ use super::context::Context;
 
 pub struct BookBuilder<'a> {
     pub books: Vec<PathBuf>,
+    pub references: BTreeMap<PathBuf, MDBook>,
     context: &'a Context,
 }
 
 impl<'a> BookBuilder<'a> {
     pub fn new(context: &'a Context) -> Self {
         let books: Vec<PathBuf> = Vec::new();
-        BookBuilder { books, context }
+        BookBuilder { books, context, references: BTreeMap::new() }
     }
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
@@ -60,7 +62,7 @@ impl<'a> BookBuilder<'a> {
         self.books.push(b.to_path_buf().to_owned());
     }
 
-    fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
+    fn copy_book(&mut self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
         let relative = source_dir.strip_prefix(&self.context.options.source).unwrap();
         let mut base = self.context.options.target.clone();
@@ -97,7 +99,7 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&self, p: P) -> Result<(), Error> {
+    pub fn build<P: AsRef<Path>>(&mut self, p: P) -> Result<(), Error> {
         let dir = p.as_ref();
 
         let mut is_draft = false;
@@ -122,6 +124,8 @@ impl<'a> BookBuilder<'a> {
             return Ok(())
         }
 
+        let directory = dir.to_path_buf();
+
         info!("book {}", dir.display());
 
         let result = MDBook::load(dir);
@@ -145,13 +149,17 @@ impl<'a> BookBuilder<'a> {
                 let built = md.build();
                 match built {
                     Ok(_) => {
-                        let bd = md.config.build.build_dir;
+                        let bd = &md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);
-                        return self.copy_book(dir, src);
+                        let result = self.copy_book(dir, src);
+                        self.references.insert(directory, md);
+                        return result;
                     }
                     Err(e) => return Err(Error::BookError(e)),
                 }
+
+
             }
             Err(e) => return Err(Error::BookError(e)),
         }
