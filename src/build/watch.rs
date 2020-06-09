@@ -10,7 +10,7 @@ use std::time::Duration;
 use crate::Error;
 use crate::callback::ErrorCallback;
 
-use log::{info, error, debug};
+use log::{info, debug};
 
 use notify::RecursiveMode::Recursive;
 use notify::DebouncedEvent::{Create, Write, Remove, Rename};

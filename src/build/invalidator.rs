@@ -1,25 +1,18 @@
 use std::path::PathBuf;
 
+use tokio::sync::broadcast::Sender;
+use warp::ws::Message;
+use log::{info, error};
+
 use super::Builder;
 use super::context::Context;
 use super::loader;
 use super::matcher;
 use super::generator;
 use super::matcher::FileType;
-
-use tokio::sync::broadcast::Sender;
-use warp::ws::Message;
-
-use crate::{
-    Error,
-    DATA_TOML,
-    LAYOUT_HBS
-};
-
-use log::{info, error};
-
 use super::watch;
 
+use crate::Error;
 use crate::callback::ErrorCallback;
 
 /*
@@ -42,7 +35,7 @@ use crate::callback::ErrorCallback;
  *  - BookSource: build the book.
  */
 #[derive(Debug)]
-pub enum InvalidationType {
+enum Action {
     // Because it is valid to configure source = "."
     // in site.toml we need to detect build output and
     // ensure we ignore those files
@@ -70,26 +63,30 @@ pub enum InvalidationType {
 }
 
 #[derive(Debug)]
-pub enum BuildStrategy {
+enum Strategy {
+    // Trigger a full rebuild
     Full,
-    Pages,
-    Single,
+    // Trigger a build of all pages
+    Page,
+    // Iterate and process each action
     Mixed,
 }
 
 #[derive(Debug)]
-pub struct InvalidationRule {
+struct Rule {
+    // Notify connected websocket clients, always true for now
+    notify: bool,
+    // Reload the site data source
     reload: bool,
-    strategy: BuildStrategy,
-    actions: Vec<InvalidationType>,
+    // Build strategy
+    strategy: Strategy,
+    // Actions that are ignored but we track for debugging
+    ignores: Vec<Action>,
+    // Hooks are a special case so we store them separately
+    hooks: Vec<Action>,
+    // List of actions corresponding to the files that changed
+    actions: Vec<Action>,
 }
-
-//#[derive(Debug)]
-//pub struct Invalidation {
-    //data: bool,
-    //layout: bool,
-    //paths: Vec<PathBuf>,
-//}
 
 pub struct Invalidator<'a> {
     context: &'a Context,
@@ -111,7 +108,7 @@ impl<'a> Invalidator<'a> {
                     match self.invalidate(&from, &invalidation) {
                         Ok(_) => {
                             self.builder.save_manifest()?;
-                            if invalidation.reload {
+                            if invalidation.notify {
                                 let _ = tx.send(Message::text("reload"));
                             }
                             Ok(())
@@ -143,11 +140,14 @@ impl<'a> Invalidator<'a> {
         src
     }
 
-    fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<InvalidationRule, Error> {
+    fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
 
-        let mut rule = InvalidationRule{
-            reload: true,
-            strategy: BuildStrategy::Mixed,
+        let mut rule = Rule{
+            notify: true,
+            reload: false,
+            strategy: Strategy::Mixed,
+            ignores: Vec::new(),
+            hooks: Vec::new(),
             actions: Vec::new(),
         };
 
@@ -213,8 +213,8 @@ impl<'a> Invalidator<'a> {
                                 hook.get_source_path(
                                     &self.context.options.source).unwrap());
                             if path.starts_with(hook_base) {
-                                rule.actions.push(
-                                    InvalidationType::Hook(k.clone(), path));
+                                rule.hooks.push(
+                                    Action::Hook(k.clone(), path));
                                 continue 'paths;
                             }
                         }
@@ -223,7 +223,7 @@ impl<'a> Invalidator<'a> {
                     for book_path in &books {
                         let cfg = self.builder.book.get_book_config(book_path);
                         if path == cfg {
-                            rule.actions.push(InvalidationType::BookConfig(book_path.clone(), path));
+                            rule.actions.push(Action::BookConfig(book_path.clone(), path));
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
@@ -233,7 +233,7 @@ impl<'a> Invalidator<'a> {
                                 buf.push(src);
                                 if path.starts_with(buf) {
                                     rule.actions.push(
-                                        InvalidationType::BookSource(book_path.clone(), path));
+                                        Action::BookSource(book_path.clone(), path));
                                     continue 'paths;
                                 }
 
@@ -244,46 +244,51 @@ impl<'a> Invalidator<'a> {
                     if let Some(theme) = &book_theme {
                         if path.starts_with(theme) {
                             rule.actions.push(
-                                InvalidationType::BookTheme(theme.clone(), path));
+                                Action::BookTheme(theme.clone(), path));
                             continue 'paths;
                         }
                     }
 
                     if path == cfg_file {
-                        rule.actions.push(InvalidationType::SiteConfig(path));
+                        rule.ignores.push(Action::SiteConfig(path));
                     } else if path == data_file {
-                        rule.actions.push(InvalidationType::DataConfig(path));
+                        rule.reload = true;
+                        rule.strategy = Strategy::Page;
+                        rule.ignores.push(Action::DataConfig(path));
                     } else if path == layout_file {
-                        rule.actions.push(InvalidationType::Layout(path));
+                        rule.strategy = Strategy::Page;
+                        rule.ignores.push(Action::Layout(path));
                     } else if path.starts_with(&build_output) {
-                        rule.actions.push(InvalidationType::BuildOutput(path));
+                        rule.ignores.push(Action::BuildOutput(path));
                     } else if path.starts_with(&assets) {
-                        rule.actions.push(InvalidationType::Asset(path));
+                        rule.strategy = Strategy::Full;
+                        rule.actions.push(Action::Asset(path));
                     } else if path.starts_with(&partials) {
-                        rule.actions.push(InvalidationType::Partial(path));
+                        rule.strategy = Strategy::Page;
+                        rule.ignores.push(Action::Partial(path));
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
                             let cfg = self.context.generators.get_generator_config_path(p);
                             let documents = generator::get_generator_documents_path(p);
                             if path == cfg {
-                                rule.actions.push(InvalidationType::GeneratorConfig(path));
+                                rule.actions.push(Action::GeneratorConfig(path));
                                 break;
                             } else if path.starts_with(documents) {
-                                rule.actions.push(InvalidationType::GeneratorDocument(path));
+                                rule.actions.push(Action::GeneratorDocument(path));
                                 break;
                             }
                         }
                     } else if path.starts_with(&resources) {
-                        rule.actions.push(InvalidationType::Resource(path));
+                        rule.ignores.push(Action::Resource(path));
                     } else {
                         let extensions = &self.context.config.extension.as_ref().unwrap();
                         let file_type = matcher::get_type_extension(&path, extensions);
                         match file_type {
                             FileType::Unknown => {
-                                rule.actions.push(InvalidationType::File(path));
+                                rule.actions.push(Action::File(path));
                             },
                             _ => {
-                                rule.actions.push(InvalidationType::Page(path));
+                                rule.actions.push(Action::Page(path));
                             }
                         }
                     }
@@ -294,84 +299,38 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    /*
-    fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
-        let types = self.get_path_types(&paths)?;
-        println!("Types {:?}", types);
-
-        let mut invalidation = Invalidation{
-            layout: false,
-            data: false,
-            paths: Vec::new()
-        };
-
-        let mut src = self.context.options.source.clone();
-        if !src.is_absolute() {
-            if let Ok(cwd) = std::env::current_dir() {
-                src = cwd.clone();
-                src.push(&self.context.options.source);
-            }
-        }
-
-        // TODO: handle data.toml files???
-        // TODO: handle layout file change - find dependents???
-        // TODO: handle partial file changes - find dependents???
-
-        let mut data_file = src.clone();
-        data_file.push(DATA_TOML);
-
-        let mut layout_file = src.clone();
-        layout_file.push(LAYOUT_HBS);
-
-        for path in paths {
-            if path == data_file {
-                invalidation.data = true;
-            }else if path == layout_file {
-                invalidation.layout = true;
-            } else {
-                if let Some(name) = path.file_name() {
-                    let nm = name.to_string_lossy().into_owned();
-                    if nm.starts_with(".") {
-                        continue;
-                    }
-                }
-
-                // Prefer relative paths, makes the output much
-                // easier to read
-                if let Ok(cwd) = std::env::current_dir() {
-                    //if let Ok(p) = path.strip_prefix(cwd) {
-                        //invalidation.paths.push((*p).to_path_buf());
-                    //} else {
-                        //invalidation.paths.push(path);
-                    //}
-                } else {
-                    invalidation.paths.push(path);
-                }
-            }
-        }
-
-        Ok(invalidation)
-    }
-    */
-
-    fn invalidate(&mut self, target: &PathBuf, rule: &InvalidationRule) -> Result<(), Error> {
+    fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
 
         println!("do the invalidation");
 
         // FIXME: find out which section of the data.toml changed
         // FIXME: and ensure only those pages are invalidated
 
-        // Should we invalidate everything?
-        //let mut all = false;
 
-        //if invalidation.data {
-            //info!("reload {}", DATA_TOML);
-            //if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
-                //error!("{}", e);
-            //} else {
-                //all = true;
-            //}
-        //}
+        // Reload the data source
+        if rule.reload {
+            if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
+                error!("{}", e);
+            }
+        }
+
+        for hook in &rule.hooks {
+            if let Action::Hook(id, path) = hook {
+                println!("Got hook to run {} {:?}", id, path);
+            }
+        }
+
+        match rule.strategy {
+            Strategy::Full => {
+                return self.builder.build(target, false);
+            },
+            Strategy::Page => {
+                return self.builder.build(target, true);
+            },
+            _ => {
+                println!("Handle mixed build strategy");
+            }
+        }
 
         //if invalidation.layout {
             //all = true;
