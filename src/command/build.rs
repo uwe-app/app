@@ -161,7 +161,7 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
                     open::that(&url).map(|_| ()).unwrap_or(());
 
                     #[cfg(feature = "watch")]
-                    watch::start(&from.clone(), move |paths, source_dir| {
+                    let watch_result = watch::start(&from.clone(), move |paths, source_dir| {
                         info!("changed({}) in {}", paths.len(), source_dir.display());
                         debug!("files changed: {:?}", paths);
                         if let Ok(invalidation) = invalidator.get_invalidation(paths) {
@@ -175,6 +175,11 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
 
                         Ok(())
                     });
+
+                    if let Err(e) = watch_result {
+                        error!("{}", e);
+                        std::process::exit(1);
+                    }
                 },
                 Err(e) => {
                     error!("{}", e);

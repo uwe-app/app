@@ -10,8 +10,7 @@ use std::time::Duration;
 use crate::Error;
 use log::{info, error, debug};
 
-
-pub fn start<P, F>(dir: P, mut closure: F)
+pub fn start<P, F>(dir: P, mut closure: F) -> Result<(), Error>
 where
     P: AsRef<Path>,
     F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
@@ -24,18 +23,14 @@ where
 
     let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
         Ok(w) => w,
-        Err(e) => {
-            error!("Error while trying to watch the files:\n\n\t{:?}", e);
-            std::process::exit(1)
-        }
+        Err(e) => return Err(crate::Error::from(e)),
     };
 
     // FIXME: if --directory we must also watch data.toml and layout.hbs
 
     // Add the source directory to the watcher
     if let Err(e) = watcher.watch(&dir, Recursive) {
-        error!("Error while watching {:?}:\n    {:?}", dir.as_ref().display(), e);
-        std::process::exit(1);
+        return Err(crate::Error::from(e));
     };
 
     //let _ = watcher.watch(book.theme_dir(), Recursive);
@@ -54,9 +49,6 @@ where
         let paths = all_events
             .filter_map(|event| {
                 debug!("Received filesystem event: {:?}", event);
-
-                //event.foo();
-
                 match event {
                     Create(path) | Write(path) | Remove(path) | Rename(_, path) => Some(path),
                     _ => None,

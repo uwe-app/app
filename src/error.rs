@@ -16,6 +16,7 @@ pub enum Error {
     TomlDeserError(toml::de::Error),
     ZipResultError(zip::result::ZipError),
     JsonError(serde_json::error::Error),
+    NotifyError(notify::Error),
 }
 
 impl Error {
@@ -73,6 +74,12 @@ impl From<serde_json::error::Error> for Error {
     }
 }
 
+impl From<notify::Error> for Error {
+    fn from(error: notify::Error) -> Self {
+        Error::NotifyError(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -86,6 +93,7 @@ impl fmt::Display for Error {
             Error::TomlDeserError(ref e) => e.fmt(f),
             Error::ZipResultError(ref e) => e.fmt(f),
             Error::JsonError(ref e) => e.fmt(f),
+            Error::NotifyError(ref e) => e.fmt(f),
         }
     }
 }
@@ -102,6 +110,7 @@ impl error::Error for Error {
             Error::TomlDeserError(ref e) => Some(e),
             Error::ZipResultError(ref e) => Some(e),
             Error::JsonError(ref e) => Some(e),
+            Error::NotifyError(ref e) => Some(e),
             _ => None,
         }
     }
