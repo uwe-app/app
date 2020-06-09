@@ -14,7 +14,6 @@ static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
 static TEMPLATE_EXT: &str = ".hbs";
 static LAYOUT_HBS: &str = "layout.hbs";
-static GENERATOR_TOML: &str = "generator.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
 static JSON: &str = "json";

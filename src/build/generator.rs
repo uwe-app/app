@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 
@@ -10,15 +11,21 @@ use crate::{
     utils,
     Error,
     JSON,
-    GENERATOR_TOML,
 };
 
 use crate::config::Config;
 
+static GENERATOR_TOML: &str = "generator.toml";
 static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";
+
+pub fn get_generator_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
+    let mut pth = source.as_ref().to_path_buf();
+    pth.push(DOCUMENTS);
+    pth
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfig {
@@ -156,9 +163,8 @@ impl ValueIndex {
 impl Generator {
 
     pub fn load(&mut self) -> Result<(), Error> {
-        let mut data_dir = self.source.clone();
-        data_dir.push(DOCUMENTS);
-        match data_dir.read_dir() {
+        let documents = get_generator_documents_path(&self.source);
+        match documents.read_dir() {
             Ok(contents) => {
                 for e in contents {
                     match e {
@@ -183,13 +189,13 @@ impl Generator {
 
                                         self.all.insert(id, document);
                                     }
-                                } 
+                                }
                             }
 
                         },
                         Err(e) => return Err(Error::from(e))
                     }
-                } 
+                }
             },
             Err(e) => return Err(Error::from(e))
         }
@@ -207,7 +213,13 @@ impl GeneratorMap {
         let map: BTreeMap<String, Generator> = BTreeMap::new();
         GeneratorMap {
             map,
-        } 
+        }
+    }
+
+    pub fn get_generator_config_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(GENERATOR_TOML);
+        pth
     }
 
     pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
@@ -267,7 +279,7 @@ impl GeneratorMap {
                     if name == ALL_INDEX {
                         let items = values.documents.entry(id.clone()).or_insert(Vec::new());
                         items.push(id.clone());
-                        continue; 
+                        continue;
                     }
 
                     if let Some(val) = document.get(&key) {
@@ -325,15 +337,16 @@ impl GeneratorMap {
                 }
                 return Ok(idx.from_query(query, &generator.all));
             } else {
-                return Err(Error::new(format!("Missing generator index '{}'", idx_name))) 
+                return Err(Error::new(format!("Missing generator index '{}'", idx_name)))
             }
         } else {
-            return Err(Error::new(format!("Missing generator with name '{}'", name))) 
+            return Err(Error::new(format!("Missing generator with name '{}'", name)))
         }
     }
 
     fn load_documents(&mut self) -> Result<(), Error> {
         for (k, g) in self.map.iter_mut() {
+            //let pth = self.get_generator_documents_path(&g.source);
             info!("{} < {}", k, g.source.display());
             g.load()?;
         }
@@ -344,7 +357,6 @@ impl GeneratorMap {
         let src = config.get_generators_path(&source);
 
         if src.exists() && src.is_dir() {
-            println!("about to read dir");
             let result = src.read_dir();
             match result {
                 Ok(contents) => {
@@ -353,9 +365,8 @@ impl GeneratorMap {
                             let path = entry.path();
                             if path.is_dir() {
                                 if let Some(nm) = path.file_name() {
-                                    let key = nm.to_string_lossy().into_owned(); 
-                                    let mut conf = path.to_path_buf().clone();
-                                    conf.push(GENERATOR_TOML);
+                                    let key = nm.to_string_lossy().into_owned();
+                                    let conf = self.get_generator_config_path(&path);
                                     if !conf.exists() || !conf.is_file() {
                                         return Err(
                                             Error::new(

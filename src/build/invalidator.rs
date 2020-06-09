@@ -4,6 +4,8 @@ use super::Builder;
 use super::context::Context;
 use super::loader;
 use super::matcher;
+use super::generator;
+use super::matcher::FileType;
 
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
@@ -25,6 +27,25 @@ pub struct Invalidation {
     paths: Vec<PathBuf>,
 }
 
+/*
+ *  Invalidation rules.
+ *
+ *  - BuildOutput: directory is ignored.
+ *  - SiteConfig: (site.toml) is ignored.
+ *  - DataConfig: (data.toml) trigger a build of all pages.
+ *  - Partial: trigger a build of all pages.
+ *  - Layout: trigger a build of all pages.
+ *  - Asset: trigger a full build.
+ *  - Page: rebuild the page.
+ *  - File: copy the file to build.
+ *  - Resource: ignored as they are symbolically linked.
+ *  - Hook: execute the hook.
+ *  - GeneratorConfig: TODO.
+ *  - GeneratorDocument: TODO.
+ *  - BookTheme: build all books.
+ *  - BookConfig: TODO.
+ *  - BookSource: build the book.
+ */
 #[derive(Debug)]
 pub enum InvalidationType {
     // Because it is valid to configure source = "."
@@ -39,10 +60,10 @@ pub enum InvalidationType {
     DataConfig(PathBuf),
     Partial(PathBuf),
     Layout(PathBuf),
-    Resource(PathBuf),
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
+    Resource(PathBuf),
     Hook(String, PathBuf),
     GeneratorConfig(PathBuf),
     GeneratorDocument(PathBuf),
@@ -53,14 +74,6 @@ pub enum InvalidationType {
     BookSource(PathBuf, PathBuf),
 }
 
-/*
- *  Invalidation rules.
- *
- *  1) Resources are ignored as they are symbolically linked.
- *  2) Assets trigger a copy of the changed asset and a rebuild of all pages.
- *  3) Changes to data.toml trigger a rebuild of all pages.
- *  4) Changes to files in a `source` directory for a hook should run the hook again.
- */
 pub struct Invalidator<'a> {
     context: &'a Context,
     builder: Builder<'a>,
@@ -114,7 +127,7 @@ impl<'a> Invalidator<'a> {
 
         let build_output = self.canonical(self.context.options.output.clone());
 
-        // NOTE: these files are all optional so we cannot error on the
+        // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
         let data_file = self.canonical(
             self.context.config.get_data_path(
@@ -149,12 +162,12 @@ impl<'a> Invalidator<'a> {
             .map(|p| self.canonical(p.to_path_buf()))
             .collect::<Vec<_>>();
 
+        let generator_paths: Vec<PathBuf> = self.context.generators.map
+            .values()
+            .map(|g| self.canonical(g.source.clone()))
+            .collect::<Vec<_>>();
+
         // TODO: recognise custom layouts (layout = )
-        //
-        // TODO: Page
-        // TODO: File
-        // TODO: GeneratorConfig
-        // TODO: GeneratorDocument
 
         'paths: for path in paths {
             match path.canonicalize() {
@@ -215,9 +228,30 @@ impl<'a> Invalidator<'a> {
                     } else if path.starts_with(&partials) {
                         out.push(InvalidationType::Partial(path));
                     } else if path.starts_with(&generators) {
-                        // TODO: handle generator changes
+                        for p in &generator_paths {
+                            let cfg = self.context.generators.get_generator_config_path(p);
+                            let documents = generator::get_generator_documents_path(p);
+                            if path == cfg {
+                                out.push(InvalidationType::GeneratorConfig(path));
+                                break;
+                            } else if path.starts_with(documents) {
+                                out.push(InvalidationType::GeneratorDocument(path));
+                                break;
+                            }
+                        }
                     } else if path.starts_with(&resources) {
                         out.push(InvalidationType::Resource(path));
+                    } else {
+                        let extensions = &self.context.config.extension.as_ref().unwrap();
+                        let file_type = matcher::get_type_extension(&path, extensions);
+                        match file_type {
+                            FileType::Unknown => {
+                                out.push(InvalidationType::File(path));
+                            },
+                            _ => {
+                                out.push(InvalidationType::Page(path));
+                            }
+                        }
                     }
                 },
                 Err(e) => return Err(Error::from(e)),
@@ -227,9 +261,7 @@ impl<'a> Invalidator<'a> {
     }
 
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
-
         let types = self.get_path_types(&paths)?;
-
         println!("Types {:?}", types);
 
         let mut invalidation = Invalidation{

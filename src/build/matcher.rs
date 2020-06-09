@@ -62,7 +62,7 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
 
     //// Try to match against generated output files.
     ////
-    //// For these cases there are no source files on disc with 
+    //// For these cases there are no source files on disc with
     //// a direct mapping to output files as they are generated
     //// and this code can be called (via the `link` helper) before
     //// output has been generated so we cannot compare to output
@@ -131,7 +131,7 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
         }
     }
 
-    // Check for lower-level files that could map 
+    // Check for lower-level files that could map
     // to index pages
     if clean_url && is_dir {
         for ext in PARSE_EXTENSIONS.iter() {
@@ -140,7 +140,7 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
                 return Some(buf)
             }
         }
-    } 
+    }
 
     None
 }
@@ -179,7 +179,7 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
 
 // FIXME: test on extensions
 pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf) {
-    let mut other = file.as_ref().to_path_buf(); 
+    let mut other = file.as_ref().to_path_buf();
     match file_type {
         FileType::Markdown => {
             other.set_extension(HTML);
@@ -193,7 +193,7 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
     }
 }
 
-fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
+pub fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
     let file = p.as_ref();
     if let Some(ext) = file.extension() {
         let ext = ext.to_string_lossy().into_owned();
