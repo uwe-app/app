@@ -18,6 +18,7 @@ use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
 use crate::build::loader;
 use crate::build::context;
+use crate::build::invalidator::Invalidator;
 use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
@@ -100,11 +101,6 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
 
     let base_target = options.target.clone();
 
-    //let mut target = options.source.clone();
-    //if let Some(dir) = &options.directory {
-        //target = dir.clone().to_path_buf();
-    //}
-
     let mut generators = GeneratorMap::new();
     generators.load(src, &config)?;
 
@@ -120,6 +116,7 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
         builder.build(&from, false)?;
         return builder.save_manifest()
     } else {
+
         let endpoint = utils::generate_id(16);
 
         let opts = ServeOptions {
@@ -137,25 +134,23 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
         // Spawn a thread to receive a notification on the `rx` channel
         // once the server has bound to a port
         std::thread::spawn(move || {
+
             // Get the socket address and websocket transmission channel
             let (addr, tx, url) = rx.recv().unwrap();
 
-            //options.livereload = Some(get_websocket_url(host, addr, &endpoint));
-
             ctx.livereload = Some(get_websocket_url(host, addr, &endpoint));
 
-            // Do a full build before listening for filesystem changes
+            let invalidator = Invalidator::new(&ctx);
             let mut serve_builder = Builder::new(&ctx);
             if let Err(e) = serve_builder.register_templates_directory() {
                 error!("{}", e);
                 std::process::exit(1);
             }
 
-            // WARN: must not load_manifest() here otherwise we can have
-            // WARN: stale livereload endpoint URLs!
-
+            // Prepare for incremental builds
             if let Err(_) = serve_builder.load_manifest() {}
 
+            // Do a full build before listening for filesystem changes
             let result = serve_builder.build(&from, true);
 
             match result {
@@ -168,9 +163,9 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
                     trigger_on_change(&from.clone(), move |paths, source_dir| {
                         info!("changed({}) in {}", paths.len(), source_dir.display());
                         debug!("files changed: {:?}", paths);
-                        if let Ok(invalidation) = serve_builder.get_invalidation(paths) {
+                        if let Ok(invalidation) = invalidator.get_invalidation(paths) {
                             debug!("invalidation {:?}", invalidation);
-                            if let Err(e) = serve_builder.invalidate(&from, invalidation) {
+                            if let Err(e) = invalidator.invalidate(&mut serve_builder, &from, invalidation) {
                                 error!("{}", e);
                             }
                             serve_builder.save_manifest()?;
