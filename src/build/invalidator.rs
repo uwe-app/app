@@ -20,12 +20,7 @@ use log::{info, error};
 
 use super::watch;
 
-#[derive(Debug)]
-pub struct Invalidation {
-    data: bool,
-    layout: bool,
-    paths: Vec<PathBuf>,
-}
+use crate::callback::ErrorCallback;
 
 /*
  *  Invalidation rules.
@@ -74,6 +69,28 @@ pub enum InvalidationType {
     BookSource(PathBuf, PathBuf),
 }
 
+#[derive(Debug)]
+pub enum BuildStrategy {
+    Full,
+    Pages,
+    Single,
+    Mixed,
+}
+
+#[derive(Debug)]
+pub struct InvalidationRule {
+    reload: bool,
+    strategy: BuildStrategy,
+    actions: Vec<InvalidationType>,
+}
+
+//#[derive(Debug)]
+//pub struct Invalidation {
+    //data: bool,
+    //layout: bool,
+    //paths: Vec<PathBuf>,
+//}
+
 pub struct Invalidator<'a> {
     context: &'a Context,
     builder: Builder<'a>,
@@ -84,21 +101,30 @@ impl<'a> Invalidator<'a> {
         Self { context, builder }
     }
 
-    pub fn start(&mut self, from: PathBuf, tx: Sender<Message>) -> Result<(), Error> {
+    pub fn start(&mut self, from: PathBuf, tx: Sender<Message>, error_cb: &ErrorCallback) -> Result<(), Error> {
         #[cfg(feature = "watch")]
-        let watch_result = watch::start(&from.clone(), move |paths, source_dir| {
+        let watch_result = watch::start(&from.clone(), error_cb, move |paths, source_dir| {
             info!("changed({}) in {}", paths.len(), source_dir.display());
-            if let Ok(invalidation) = self.get_invalidation(paths) {
-                if let Err(e) = self.invalidate(&from, invalidation) {
-                    error!("{}", e);
-                }
-                self.builder.save_manifest()?;
-                let _ = tx.send(Message::text("reload"));
-            } else {
-                error!("Error creating invalidation rules!");
-            }
 
-            Ok(())
+            match self.get_invalidation(paths) {
+                Ok(invalidation) => {
+                    match self.invalidate(&from, &invalidation) {
+                        Ok(_) => {
+                            self.builder.save_manifest()?;
+                            if invalidation.reload {
+                                let _ = tx.send(Message::text("reload"));
+                            }
+                            Ok(())
+                        },
+                        Err(e) => {
+                            return Err(e)
+                        },
+                    }
+                },
+                Err(e) => {
+                    return Err(e)
+                }
+            }
         });
 
         if let Err(e) = watch_result {
@@ -117,8 +143,13 @@ impl<'a> Invalidator<'a> {
         src
     }
 
-    fn get_path_types(&mut self, paths: &Vec<PathBuf>) -> Result<Vec<InvalidationType>, Error> {
-        let mut out: Vec<InvalidationType> = Vec::new();
+    fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<InvalidationRule, Error> {
+
+        let mut rule = InvalidationRule{
+            reload: true,
+            strategy: BuildStrategy::Mixed,
+            actions: Vec::new(),
+        };
 
         let config_file = &self.context.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
@@ -182,7 +213,8 @@ impl<'a> Invalidator<'a> {
                                 hook.get_source_path(
                                     &self.context.options.source).unwrap());
                             if path.starts_with(hook_base) {
-                                out.push(InvalidationType::Hook(k.clone(), path));
+                                rule.actions.push(
+                                    InvalidationType::Hook(k.clone(), path));
                                 continue 'paths;
                             }
                         }
@@ -191,7 +223,7 @@ impl<'a> Invalidator<'a> {
                     for book_path in &books {
                         let cfg = self.builder.book.get_book_config(book_path);
                         if path == cfg {
-                            out.push(InvalidationType::BookConfig(book_path.clone(), path));
+                            rule.actions.push(InvalidationType::BookConfig(book_path.clone(), path));
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
@@ -200,7 +232,8 @@ impl<'a> Invalidator<'a> {
                                 let mut buf = book_path.clone();
                                 buf.push(src);
                                 if path.starts_with(buf) {
-                                    out.push(InvalidationType::BookSource(book_path.clone(), path));
+                                    rule.actions.push(
+                                        InvalidationType::BookSource(book_path.clone(), path));
                                     continue 'paths;
                                 }
 
@@ -210,46 +243,47 @@ impl<'a> Invalidator<'a> {
 
                     if let Some(theme) = &book_theme {
                         if path.starts_with(theme) {
-                            out.push(InvalidationType::BookTheme(theme.clone(), path));
+                            rule.actions.push(
+                                InvalidationType::BookTheme(theme.clone(), path));
                             continue 'paths;
                         }
                     }
 
                     if path == cfg_file {
-                        out.push(InvalidationType::SiteConfig(path));
+                        rule.actions.push(InvalidationType::SiteConfig(path));
                     } else if path == data_file {
-                        out.push(InvalidationType::DataConfig(path));
+                        rule.actions.push(InvalidationType::DataConfig(path));
                     } else if path == layout_file {
-                        out.push(InvalidationType::Layout(path));
+                        rule.actions.push(InvalidationType::Layout(path));
                     } else if path.starts_with(&build_output) {
-                        out.push(InvalidationType::BuildOutput(path));
+                        rule.actions.push(InvalidationType::BuildOutput(path));
                     } else if path.starts_with(&assets) {
-                        out.push(InvalidationType::Asset(path));
+                        rule.actions.push(InvalidationType::Asset(path));
                     } else if path.starts_with(&partials) {
-                        out.push(InvalidationType::Partial(path));
+                        rule.actions.push(InvalidationType::Partial(path));
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
                             let cfg = self.context.generators.get_generator_config_path(p);
                             let documents = generator::get_generator_documents_path(p);
                             if path == cfg {
-                                out.push(InvalidationType::GeneratorConfig(path));
+                                rule.actions.push(InvalidationType::GeneratorConfig(path));
                                 break;
                             } else if path.starts_with(documents) {
-                                out.push(InvalidationType::GeneratorDocument(path));
+                                rule.actions.push(InvalidationType::GeneratorDocument(path));
                                 break;
                             }
                         }
                     } else if path.starts_with(&resources) {
-                        out.push(InvalidationType::Resource(path));
+                        rule.actions.push(InvalidationType::Resource(path));
                     } else {
                         let extensions = &self.context.config.extension.as_ref().unwrap();
                         let file_type = matcher::get_type_extension(&path, extensions);
                         match file_type {
                             FileType::Unknown => {
-                                out.push(InvalidationType::File(path));
+                                rule.actions.push(InvalidationType::File(path));
                             },
                             _ => {
-                                out.push(InvalidationType::Page(path));
+                                rule.actions.push(InvalidationType::Page(path));
                             }
                         }
                     }
@@ -257,9 +291,10 @@ impl<'a> Invalidator<'a> {
                 Err(e) => return Err(Error::from(e)),
             }
         }
-        Ok(out)
+        Ok(rule)
     }
 
+    /*
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
         let types = self.get_path_types(&paths)?;
         println!("Types {:?}", types);
@@ -317,40 +352,44 @@ impl<'a> Invalidator<'a> {
 
         Ok(invalidation)
     }
+    */
 
-    fn invalidate(&mut self, target: &PathBuf, invalidation: Invalidation) -> Result<(), Error> {
+    fn invalidate(&mut self, target: &PathBuf, rule: &InvalidationRule) -> Result<(), Error> {
+
+        println!("do the invalidation");
+
         // FIXME: find out which section of the data.toml changed
         // FIXME: and ensure only those pages are invalidated
 
         // Should we invalidate everything?
-        let mut all = false;
+        //let mut all = false;
 
-        if invalidation.data {
-            info!("reload {}", DATA_TOML);
-            if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
-                error!("{}", e);
-            } else {
-                all = true;
-            }
-        }
+        //if invalidation.data {
+            //info!("reload {}", DATA_TOML);
+            //if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
+                //error!("{}", e);
+            //} else {
+                //all = true;
+            //}
+        //}
 
-        if invalidation.layout {
-            all = true;
-        }
+        //if invalidation.layout {
+            //all = true;
+        //}
 
-        if all {
-            println!("build all");
-            return self.builder.build(target, true);
-        } else {
+        //if all {
+            //println!("build all");
+            //return self.builder.build(target, true);
+        //} else {
 
-            for path in invalidation.paths {
-                let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
-                println!("build one");
-                if let Err(e) = self.builder.process_file(&path, file_type, false) {
-                    return Err(e)
-                }
-            }
-        }
+            //for path in invalidation.paths {
+                //let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
+                //println!("build one");
+                //if let Err(e) = self.builder.process_file(&path, file_type, false) {
+                    //return Err(e)
+                //}
+            //}
+        //}
         Ok(())
     }
 }

@@ -8,12 +8,14 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use crate::Error;
+use crate::callback::ErrorCallback;
+
 use log::{info, error, debug};
 
 use notify::RecursiveMode::Recursive;
 use notify::DebouncedEvent::{Create, Write, Remove, Rename};
 
-pub fn start<P, F>(dir: P, mut closure: F) -> Result<(), Error>
+pub fn start<P, F>(dir: P, error_cb: &ErrorCallback, mut closure: F) -> Result<(), Error>
 where
     P: AsRef<Path>,
     F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
@@ -57,9 +59,8 @@ where
             .collect::<Vec<_>>();
 
         if !paths.is_empty() {
-            println!("calling closure");
             if let Err(e) = closure(paths, &dir.as_ref()) {
-                error!("{}", e);
+                error_cb(e);
             }
         }
     }

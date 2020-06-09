@@ -21,6 +21,8 @@ use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
 
+use crate::callback::ErrorCallback;
+
 lazy_static! {
     #[derive(Debug)]
     pub static ref ADDR: Arc<Mutex<SocketAddr>> = {
@@ -29,8 +31,6 @@ lazy_static! {
     };
 
 }
-
-type ErrorCallback = fn(Error);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildTag {
@@ -159,7 +159,7 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
                     // notifications and sending messages over the `tx` channel
                     // to connected websockets when necessary
                     let mut invalidator = Invalidator::new(&ctx, serve_builder);
-                    if let Err(e) = invalidator.start(from, tx) {
+                    if let Err(e) = invalidator.start(from, tx, &error_cb) {
                         error_cb(e);
                     }
                 },

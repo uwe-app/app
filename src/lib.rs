@@ -3,6 +3,7 @@ extern crate lazy_static;
 
 mod asset;
 mod build;
+pub mod callback;
 mod config;
 mod bundle;
 mod error;
