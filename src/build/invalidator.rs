@@ -32,7 +32,10 @@ pub enum InvalidationType {
     // ensure we ignore those files
     BuildOutput(PathBuf),
 
+    // This is not used at the moment but we detect it;
+    // it corresponds to the site.toml file.
     SiteConfig(PathBuf),
+
     DataConfig(PathBuf),
     Partial(PathBuf),
     Layout(PathBuf),
@@ -43,9 +46,9 @@ pub enum InvalidationType {
     Hook(String, PathBuf),
     GeneratorConfig(PathBuf),
     GeneratorDocument(PathBuf),
-    BookTheme(PathBuf),
-    // NOTE: The first path is the book directory
+    // NOTE: The first path is the root directory
     // NOTE: and the second is the matched file.
+    BookTheme(PathBuf, PathBuf),
     BookConfig(PathBuf, PathBuf),
     BookSource(PathBuf, PathBuf),
 }
@@ -137,7 +140,8 @@ impl<'a> Invalidator<'a> {
             self.context.config.get_resources_path(
                 &self.context.options.source));
 
-        //let references = &self.builder.book.references;
+        let book_theme = self.context.config.get_book_theme_path(
+            &self.context.options.source).map(|v| self.canonical(v));
 
         let books: Vec<PathBuf> = self.builder.book.books
             .clone()
@@ -151,22 +155,32 @@ impl<'a> Invalidator<'a> {
         // TODO: File
         // TODO: GeneratorConfig
         // TODO: GeneratorDocument
-        // TODO: BookTheme
-        // TODO: BookConfig
 
         'paths: for path in paths {
             match path.canonicalize() {
                 Ok(path) => {
 
+                    // NOTE: must test for hooks first as they can
+                    // NOTE: point anywhere in the source directory
+                    // NOTE: and should take precedence
+                    for (k, hook) in hooks {
+                        if hook.source.is_some() {
+                            let hook_base = self.canonical(
+                                hook.get_source_path(
+                                    &self.context.options.source).unwrap());
+                            if path.starts_with(hook_base) {
+                                out.push(InvalidationType::Hook(k.clone(), path));
+                                continue 'paths;
+                            }
+                        }
+                    }
+
                     for book_path in &books {
-
                         let cfg = self.builder.book.get_book_config(book_path);
-
                         if path == cfg {
                             out.push(InvalidationType::BookConfig(book_path.clone(), path));
                             continue 'paths;
                         }
-
                         if path.starts_with(book_path) {
                             if let Some(book) = self.builder.book.references.get(book_path) {
                                 let src = &book.config.book.src;
@@ -181,18 +195,10 @@ impl<'a> Invalidator<'a> {
                         }
                     }
 
-                    // NOTE: must test for hooks first as they can
-                    // NOTE: point anywhere in the source directory
-                    // NOTE: and should take precedence
-                    for (k, hook) in hooks {
-                        if hook.source.is_some() {
-                            let hook_base = self.canonical(
-                                hook.get_source_path(
-                                    &self.context.options.source).unwrap());
-                            if path.starts_with(hook_base) {
-                                out.push(InvalidationType::Hook(k.clone(), path));
-                                continue 'paths;
-                            }
+                    if let Some(theme) = &book_theme {
+                        if path.starts_with(theme) {
+                            out.push(InvalidationType::BookTheme(theme.clone(), path));
+                            continue 'paths;
                         }
                     }
 
