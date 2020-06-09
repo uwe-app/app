@@ -6,6 +6,7 @@ use log::{info, error};
 
 use super::Builder;
 use super::context::Context;
+use super::hook;
 use super::loader;
 use super::matcher;
 use super::generator;
@@ -223,10 +224,12 @@ impl<'a> Invalidator<'a> {
                     for book_path in &books {
                         let cfg = self.builder.book.get_book_config(book_path);
                         if path == cfg {
+                            // TODO: book config reload and build
                             rule.actions.push(Action::BookConfig(book_path.clone(), path));
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
+                            // TODO: book build
                             if let Some(book) = self.builder.book.references.get(book_path) {
                                 let src = &book.config.book.src;
                                 let mut buf = book_path.clone();
@@ -242,6 +245,7 @@ impl<'a> Invalidator<'a> {
                     }
 
                     if let Some(theme) = &book_theme {
+                        // TODO: build all books
                         if path.starts_with(theme) {
                             rule.actions.push(
                                 Action::BookTheme(theme.clone(), path));
@@ -252,6 +256,8 @@ impl<'a> Invalidator<'a> {
                     if path == cfg_file {
                         rule.ignores.push(Action::SiteConfig(path));
                     } else if path == data_file {
+                        // FIXME: find out which section of the data.toml changed
+                        // FIXME: and ensure only those pages are invalidated
                         rule.reload = true;
                         rule.strategy = Strategy::Page;
                         rule.ignores.push(Action::DataConfig(path));
@@ -300,13 +306,6 @@ impl<'a> Invalidator<'a> {
     }
 
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
-
-        println!("do the invalidation");
-
-        // FIXME: find out which section of the data.toml changed
-        // FIXME: and ensure only those pages are invalidated
-
-
         // Reload the data source
         if rule.reload {
             if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
@@ -316,7 +315,9 @@ impl<'a> Invalidator<'a> {
 
         for hook in &rule.hooks {
             if let Action::Hook(id, path) = hook {
-                println!("Got hook to run {} {:?}", id, path);
+                if let Some(hook_config) = &self.context.config.hook.as_ref().unwrap().get(id) {
+                    hook::exec(&self.context, hook_config)?;
+                }
             }
         }
 
@@ -328,27 +329,22 @@ impl<'a> Invalidator<'a> {
                 return self.builder.build(target, true);
             },
             _ => {
-                println!("Handle mixed build strategy");
+                for action in &rule.actions {
+                    match action {
+                        Action::Page(path) | Action::File(path) => {
+                            let extensions = &self.context.config.extension.as_ref().unwrap();
+                            let file_type = matcher::get_type(path, extensions);
+                            if let Err(e) = self.builder.process_file(path, file_type, false) {
+                                return Err(e)
+                            }
+                        },
+                        _ => {
+                            return Err(Error::new("Invalidation action not handled".to_string()));
+                        }
+                    }
+                }
             }
         }
-
-        //if invalidation.layout {
-            //all = true;
-        //}
-
-        //if all {
-            //println!("build all");
-            //return self.builder.build(target, true);
-        //} else {
-
-            //for path in invalidation.paths {
-                //let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
-                //println!("build one");
-                //if let Err(e) = self.builder.process_file(&path, file_type, false) {
-                    //return Err(e)
-                //}
-            //}
-        //}
         Ok(())
     }
 }

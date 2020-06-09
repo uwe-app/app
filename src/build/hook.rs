@@ -7,7 +7,7 @@ use crate::Error;
 use crate::config::HookConfig;
 use super::context::Context;
 
-fn run_hook(context: &Context, hook: &HookConfig) -> Result<(), Error> {
+pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     let root = context.config.get_project().unwrap();
     if let Ok(root) = root.canonicalize() {
         let mut cmd = hook.path.as_ref().unwrap().clone();
@@ -52,7 +52,7 @@ fn run_hook(context: &Context, hook: &HookConfig) -> Result<(), Error> {
 pub fn run(context: &Context, hooks: &BTreeMap<String, HookConfig>) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
-        run_hook(context, hook)?;
+        exec(context, hook)?;
     }
     Ok(())
 }
