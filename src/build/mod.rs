@@ -393,7 +393,11 @@ impl<'a> Builder<'a> {
             filters.push(theme.clone());
         }
 
+        println!("loading resources");
+
         resource::link(self.context)?;
+
+        println!("after link resources");
 
         if let Some(hooks) = &self.context.config.hook {
             for (_, v) in hooks {

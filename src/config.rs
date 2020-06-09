@@ -10,7 +10,7 @@ use crate::{utils, Error, MD, HTML};
 
 static SITE_TOML: &str = "site.toml";
 static PARTIAL: &str = "partial";
-static GENERATOR: &str = "generator";
+static GENERATOR: &str = "generators";
 static RESOURCE: &str = "resources";
 
 use log::debug;

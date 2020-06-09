@@ -344,6 +344,7 @@ impl GeneratorMap {
         let src = config.get_generator_path(&source);
 
         if src.exists() && src.is_dir() {
+            println!("about to read dir");
             let result = src.read_dir();
             match result {
                 Ok(contents) => {

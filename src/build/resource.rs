@@ -1,3 +1,4 @@
+use std::io::ErrorKind;
 use std::path::Path;
 use std::convert::AsRef;
 
@@ -54,13 +55,18 @@ pub fn link(ctx: &Context) -> Result<(), Error> {
                 }
             }
         },
-        Err(e) => return Err(Error::from(e))
+        Err(e) => {
+            match e.kind() {
+                 ErrorKind::NotFound => {
+                    // It is fine for the resource directory not to exist
+                    // as we set a default value and it may not be in use
+                 },
+                 _ => {
+                    return Err(Error::from(e))
+                 }
+            }
+        }
     }
-
-
-    //if resource.is_relative() {
-        //println!("Resource canonical {:?}", resource.canonicalize()) ;
-    //}
 
     Ok(())
 }
