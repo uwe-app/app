@@ -104,7 +104,7 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
     let mut generators = GeneratorMap::new();
     generators.load(src, &config)?;
 
-    loader::load(&options)?;
+    loader::load(&config, &options.source)?;
 
     let from = options.from.clone();
 

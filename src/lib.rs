@@ -14,7 +14,6 @@ static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
 static TEMPLATE_EXT: &str = ".hbs";
 static LAYOUT_HBS: &str = "layout.hbs";
-static DATA_TOML: &str = "data.toml";
 static GENERATOR_TOML: &str = "generator.toml";
 static MD: &str = "md";
 static HTML: &str = "html";
@@ -26,6 +25,7 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 
 // FIXME: remove these and their usages
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
+static DATA_TOML: &str = "data.toml";
 
 pub use crate::config::Config;
 pub use crate::error::Error;

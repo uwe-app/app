@@ -15,12 +15,12 @@ use log::{warn};
 use crate::{
     utils,
     Error,
-    BuildOptions,
     INDEX_STEM,
     ROOT_TABLE_KEY,
-    PARSE_EXTENSIONS,
-    DATA_TOML
+    PARSE_EXTENSIONS
 };
+
+use crate::config::Config;
 
 lazy_static! {
     #[derive(Debug)]
@@ -29,7 +29,7 @@ lazy_static! {
     };
 }
 
-fn find_file_for_key(k: &str, opts: &BuildOptions) -> Option<PathBuf> {
+fn find_file_for_key(k: &str, source: &PathBuf) -> Option<PathBuf> {
 
     let mut key = k.to_string().clone();
     if k == "/" {
@@ -39,7 +39,7 @@ fn find_file_for_key(k: &str, opts: &BuildOptions) -> Option<PathBuf> {
     }
 
     let mut pth = PathBuf::new();
-    pth.push(&opts.source);
+    pth.push(source);
     pth.push(&key);
 
     // Key already includes a file extension
@@ -121,14 +121,13 @@ fn clear() {
     data.clear();
 }
 
-pub fn reload(opts: &BuildOptions) -> Result<(), Error> {
+pub fn reload(config: &Config, source: &PathBuf) -> Result<(), Error> {
     clear();
-    load(opts)
+    load(config, source)
 }
 
-pub fn load(opts: &BuildOptions) -> Result<(), Error> {
-    let mut src = opts.source.to_path_buf();
-    src.push(DATA_TOML);
+pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
+    let src = config.get_data_path(source);
 
     if src.exists() {
         let mut data = DATA.lock().unwrap();
@@ -167,7 +166,7 @@ pub fn load(opts: &BuildOptions) -> Result<(), Error> {
                             }
 
                             if let Some(props) = v.as_table() {
-                                let result = find_file_for_key(&k, opts);
+                                let result = find_file_for_key(&k, source);
                                 match result {
                                     Some(f) => {
                                         // Start with the root object properties

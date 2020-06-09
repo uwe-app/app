@@ -9,6 +9,8 @@ use toml;
 use crate::{utils, Error, MD, HTML};
 
 static SITE_TOML: &str = "site.toml";
+static DATA_TOML: &str = "data.toml";
+static LAYOUT_HBS: &str = "layout.hbs";
 static PARTIAL: &str = "partials";
 static GENERATOR: &str = "generators";
 static RESOURCE: &str = "resources";
@@ -131,6 +133,18 @@ impl Config {
             } 
         }   
         None
+    }
+
+    pub fn get_data_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(DATA_TOML);
+        pth 
+    }
+
+    pub fn get_layout_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(LAYOUT_HBS);
+        pth 
     }
 
     pub fn get_partial_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {

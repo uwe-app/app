@@ -25,6 +25,21 @@ pub struct Invalidation {
     paths: Vec<PathBuf>,
 }
 
+#[derive(Debug)]
+pub enum InvalidationType {
+    SiteConfig(PathBuf),
+    DataConfig(PathBuf),
+    Partial(PathBuf),
+    Layout(PathBuf),
+    Resource(PathBuf),
+    Asset(PathBuf),
+    Page(PathBuf),
+    File(PathBuf),
+    Hook(PathBuf),
+    GeneratorConfig(PathBuf),
+    GeneratorDocument(PathBuf),
+}
+
 /*
  *  Invalidation rules.
  *
@@ -55,6 +70,8 @@ impl<'a> Invalidator<'a> {
                 }
                 self.builder.save_manifest()?;
                 let _ = tx.send(Message::text("reload"));
+            } else {
+                error!("Error creating invalidation rules!");
             }
 
             Ok(())
@@ -67,7 +84,74 @@ impl<'a> Invalidator<'a> {
         Ok(())
     }
 
+    fn canonical(&mut self, src: PathBuf) -> PathBuf {
+        if src.exists() {
+            if let Ok(canonical) = src.canonicalize() {
+                return canonical;
+            } 
+        }
+        src
+    }
+
+    fn get_path_types(&mut self, paths: &Vec<PathBuf>) -> Result<Vec<InvalidationType>, Error> {
+        let mut out: Vec<InvalidationType> = Vec::new();
+
+        let config_file = &self.context.config.file.as_ref().unwrap();
+        let cfg_file = config_file.canonicalize()?;
+
+        // NOTE: these files are all optional so we cannot error on the 
+        // NOTE: a call to canonicalize() hence the canonical() helper
+        let data_file = self.canonical(
+            self.context.config.get_data_path(
+                &self.context.options.source));
+
+        let layout_file = self.canonical(
+            self.context.config.get_layout_path(
+                &self.context.options.source));
+
+        let partials = self.canonical(
+            self.context.config.get_partial_path(
+                &self.context.options.source));
+
+        let generators = self.canonical(
+            self.context.config.get_generator_path(
+                &self.context.options.source));
+
+        let resources = self.canonical(
+            self.context.config.get_resource_path(
+                &self.context.options.source));
+
+        for path in paths {
+            if let Ok(path) = path.canonicalize() {
+
+                //println!("getting type for {:?}", path);
+
+                if path == cfg_file {
+                    out.push(InvalidationType::SiteConfig(path));
+                } else if path == data_file {
+                    out.push(InvalidationType::DataConfig(path));
+                } else if path == layout_file {
+                    out.push(InvalidationType::Layout(path));
+                } else if path.starts_with(&partials) {
+                    out.push(InvalidationType::Partial(path));
+                } else if path.starts_with(&generators) {
+                    // TODO: handle generator changes
+                } else if path.starts_with(&resources) {
+                    out.push(InvalidationType::Resource(path));
+                }
+
+            }
+        }
+
+        Ok(out)
+    }
+
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
+
+        let types = self.get_path_types(&paths)?;
+
+        println!("Types {:?}", types);
+
         let mut invalidation = Invalidation{
             layout: false,
             data: false,
@@ -131,7 +215,7 @@ impl<'a> Invalidator<'a> {
 
         if invalidation.data {
             info!("reload {}", DATA_TOML);
-            if let Err(e) = loader::reload(&self.context.options) {
+            if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
                 error!("{}", e); 
             } else {
                 all = true;
