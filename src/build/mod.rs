@@ -112,8 +112,6 @@ impl<'a> Builder<'a> {
 
                     info!("{} -> {}", &id, &dest.display());
 
-                    //println!("passing item data {:?}", item_data);
-
                     let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut item_data)?;
                     utils::write_string(&dest, s).map_err(Error::from)?;
                 }
@@ -203,8 +201,6 @@ impl<'a> Builder<'a> {
                         let each = gen.each.is_some() && gen.each.unwrap();
 
                         let idx = generators.query_index(&gen)?;
-
-                        //println!("idx {:?}", idx);
 
                         // Push on to the list of generators to iterate
                         // over so that we can support the same template
@@ -309,8 +305,6 @@ impl<'a> Builder<'a> {
             }
         }
 
-        //println!("invalidation {:?}", invalidation);
-
         Ok(invalidation)
     }
 
@@ -339,15 +333,12 @@ impl<'a> Builder<'a> {
         } else {
         
             for path in invalidation.paths {
-                //println!("process file {:?}", path);
                 let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
                 if let Err(e) = self.process_file(&path, file_type, false) {
                     return Err(e)
                 }
             }
         }
-
-        //println!("build files {:?}", invalidation.paths);
 
         Ok(())
     }
@@ -393,11 +384,7 @@ impl<'a> Builder<'a> {
             filters.push(theme.clone());
         }
 
-        println!("loading resources");
-
         resource::link(self.context)?;
-
-        println!("after link resources");
 
         if let Some(hooks) = &self.context.config.hook {
             for (_, v) in hooks {

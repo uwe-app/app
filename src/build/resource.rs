@@ -36,8 +36,6 @@ pub fn link(ctx: &Context) -> Result<(), Error> {
         Ok(resource) => {
             if resource.exists() {
                 if resource.is_dir() {
-                    //println!("Linking resources: {:?}", resource);
-                    //println!("Linking resources: {:?}", target);
                     let result = resource.read_dir()?;
                     for res in result {
                         let entry = res?;
