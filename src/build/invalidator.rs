@@ -134,7 +134,13 @@ impl<'a> Invalidator<'a> {
             self.context.config.get_resources_path(
                 &self.context.options.source));
 
-        let books = &self.builder.book.books.clone();
+        //let references = &self.builder.book.references;
+
+        let books: Vec<PathBuf> = self.builder.book.books
+            .clone()
+            .iter()
+            .map(|p| self.canonical(p.to_path_buf()))
+            .collect::<Vec<_>>();
 
         // TODO: recognise custom layouts (layout = )
         //
@@ -149,8 +155,21 @@ impl<'a> Invalidator<'a> {
             match path.canonicalize() {
                 Ok(path) => {
 
-                    for book_path in books {
-                        println!("Testing for book path {:?}", book_path);
+                    for book_path in &books {
+                        if path.starts_with(book_path) {
+                            if let Some(book) = self.builder.book.references.get(book_path) {
+
+                                let src = &book.config.book.src;
+                                let mut buf = book_path.clone();
+                                buf.push(src);
+                                if path.starts_with(buf) {
+                                    println!("FOUND A BOOK SOURCE FILE");
+                                    out.push(InvalidationType::BookSource(path));
+                                    continue 'paths;
+                                }
+
+                            }
+                        }
                     }
 
                     // NOTE: must test for hooks first as they can

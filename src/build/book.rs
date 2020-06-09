@@ -124,7 +124,7 @@ impl<'a> BookBuilder<'a> {
             return Ok(())
         }
 
-        let directory = dir.to_path_buf();
+        let directory = dir.canonicalize()?;
 
         info!("book {}", dir.display());
 
