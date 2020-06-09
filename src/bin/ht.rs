@@ -445,7 +445,7 @@ fn process_command(cmd: &Command) {
             debug!("{:?}", &cfg);
 
             let now = SystemTime::now();
-            if let Err(e) = hypertext::build(cfg, opts) {
+            if let Err(e) = hypertext::build(cfg, opts, fatal) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {

@@ -5,13 +5,18 @@ use super::context::Context;
 use super::loader;
 use super::matcher;
 
+use tokio::sync::broadcast::Sender;
+use warp::ws::Message;
+
 use crate::{
     Error,
     DATA_TOML,
     LAYOUT_HBS
 };
 
-use log::{info, error};
+use log::{info, debug, error};
+
+use super::watch;
 
 #[derive(Debug)]
 pub struct Invalidation {
@@ -30,14 +35,39 @@ pub struct Invalidation {
  */
 pub struct Invalidator<'a> {
     context: &'a Context,
+    builder: Builder<'a>,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(context: &'a Context) -> Self {
-        Self { context }
+    pub fn new(context: &'a Context, builder: Builder<'a>) -> Self {
+        Self { context, builder }
     }
 
-    pub fn get_invalidation(&self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
+    pub fn start(&mut self, from: PathBuf, tx: Sender<Message>) -> Result<(), Error> {
+        #[cfg(feature = "watch")]
+        let watch_result = watch::start(&from.clone(), move |paths, source_dir| {
+            info!("changed({}) in {}", paths.len(), source_dir.display());
+            debug!("files changed: {:?}", paths);
+            if let Ok(invalidation) = self.get_invalidation(paths) {
+                debug!("invalidation {:?}", invalidation);
+                if let Err(e) = self.invalidate(&from, invalidation) {
+                    error!("{}", e);
+                }
+                self.builder.save_manifest()?;
+                let _ = tx.send(Message::text("reload"));
+            }
+
+            Ok(())
+        });
+
+        if let Err(e) = watch_result {
+            return Err(e)
+        }
+
+        Ok(())
+    }
+
+    fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation, Error> {
         let mut invalidation = Invalidation{
             layout: false,
             data: false,
@@ -92,7 +122,7 @@ impl<'a> Invalidator<'a> {
         Ok(invalidation)
     }
 
-    pub fn invalidate(&self, builder: &mut Builder, target: &PathBuf, invalidation: Invalidation) -> Result<(), Error> {
+    fn invalidate(&mut self, target: &PathBuf, invalidation: Invalidation) -> Result<(), Error> {
         // FIXME: find out which section of the data.toml changed
         // FIXME: and ensure only those pages are invalidated
         
@@ -113,18 +143,16 @@ impl<'a> Invalidator<'a> {
         }
 
         if all {
-            return builder.build(target, true);
+            return self.builder.build(target, true);
         } else {
         
             for path in invalidation.paths {
                 let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
-                if let Err(e) = builder.process_file(&path, file_type, false) {
+                if let Err(e) = self.builder.process_file(&path, file_type, false) {
                     return Err(e)
                 }
             }
         }
-
         Ok(())
     }
-
 }

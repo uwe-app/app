@@ -8,17 +8,14 @@ use std::net::Ipv4Addr;
 
 use serde::{Deserialize, Serialize};
 
-use tokio::sync::broadcast::Sender as TokioSender;
+use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
-
-use log::{info, debug, error};
 
 use crate::config::Config;
 use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
 use crate::build::loader;
 use crate::build::context;
-use crate::build::watch;
 use crate::build::invalidator::Invalidator;
 use crate::command::serve::*;
 use crate::{Error};
@@ -32,6 +29,8 @@ lazy_static! {
     };
 
 }
+
+type ErrorCallback = fn(Error);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildTag {
@@ -87,7 +86,7 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
 }
 
-pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
+pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback) -> Result<(), Error> {
 
     if options.live && options.release {
         return Err(
@@ -130,22 +129,19 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
         };
 
         // Create a channel to receive the bind address.
-        let (tx, rx) = channel::<(SocketAddr, TokioSender<Message>, String)>();
+        let (tx, rx) = channel::<(SocketAddr, Sender<Message>, String)>();
 
         // Spawn a thread to receive a notification on the `rx` channel
         // once the server has bound to a port
         std::thread::spawn(move || {
-
             // Get the socket address and websocket transmission channel
             let (addr, tx, url) = rx.recv().unwrap();
 
             ctx.livereload = Some(get_websocket_url(host, addr, &endpoint));
 
-            let invalidator = Invalidator::new(&ctx);
             let mut serve_builder = Builder::new(&ctx);
             if let Err(e) = serve_builder.register_templates_directory() {
-                error!("{}", e);
-                std::process::exit(1);
+                error_cb(e);
             }
 
             // Prepare for incremental builds
@@ -156,34 +152,19 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
 
             match result {
                 Ok(_) => {
-
                     // NOTE: only open the browser if initial build succeeds
                     open::that(&url).map(|_| ()).unwrap_or(());
 
-                    #[cfg(feature = "watch")]
-                    let watch_result = watch::start(&from.clone(), move |paths, source_dir| {
-                        info!("changed({}) in {}", paths.len(), source_dir.display());
-                        debug!("files changed: {:?}", paths);
-                        if let Ok(invalidation) = invalidator.get_invalidation(paths) {
-                            debug!("invalidation {:?}", invalidation);
-                            if let Err(e) = invalidator.invalidate(&mut serve_builder, &from, invalidation) {
-                                error!("{}", e);
-                            }
-                            serve_builder.save_manifest()?;
-                            let _ = tx.send(Message::text("reload"));
-                        }
-
-                        Ok(())
-                    });
-
-                    if let Err(e) = watch_result {
-                        error!("{}", e);
-                        std::process::exit(1);
+                    // Invalidator wraps the builder receiving filesystem change
+                    // notifications and sending messages over the `tx` channel
+                    // to connected websockets when necessary
+                    let mut invalidator = Invalidator::new(&ctx, serve_builder);
+                    if let Err(e) = invalidator.start(from, tx) {
+                        error_cb(e);
                     }
                 },
                 Err(e) => {
-                    error!("{}", e);
-                    std::process::exit(1);
+                    error_cb(e);
                 }
             }
         });
@@ -194,4 +175,3 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
 
     Ok(())
 }
-

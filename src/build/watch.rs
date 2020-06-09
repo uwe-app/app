@@ -10,17 +10,17 @@ use std::time::Duration;
 use crate::Error;
 use log::{info, error, debug};
 
+use notify::RecursiveMode::Recursive;
+use notify::DebouncedEvent::{Create, Write, Remove, Rename};
+
 pub fn start<P, F>(dir: P, mut closure: F) -> Result<(), Error>
 where
     P: AsRef<Path>,
     F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
 {
-    use notify::DebouncedEvent::*;
-    use notify::RecursiveMode::*;
 
     // Create a channel to receive the events.
     let (tx, rx) = channel();
-
     let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
         Ok(w) => w,
         Err(e) => return Err(crate::Error::from(e)),
