@@ -11,9 +11,11 @@ use crate::{utils, Error, MD, HTML};
 static SITE_TOML: &str = "site.toml";
 static DATA_TOML: &str = "data.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
-static PARTIAL: &str = "partials";
-static GENERATOR: &str = "generators";
-static RESOURCE: &str = "resources";
+
+static ASSETS: &str = "assets";
+static PARTIALS: &str = "partials";
+static GENERATORS: &str = "generators";
+static RESOURCES: &str = "resources";
 
 use log::debug;
 
@@ -66,16 +68,20 @@ impl Config {
                     cfg.build.strict = Some(true);
                 }
 
-                if cfg.build.partial.is_none() {
-                    cfg.build.partial = Some(PathBuf::from(PARTIAL));
+                if cfg.build.assets.is_none() {
+                    cfg.build.assets = Some(PathBuf::from(ASSETS));
                 }
 
-                if cfg.build.generator.is_none() {
-                    cfg.build.generator = Some(PathBuf::from(GENERATOR));
+                if cfg.build.partials.is_none() {
+                    cfg.build.partials = Some(PathBuf::from(PARTIALS));
                 }
 
-                if cfg.build.resource.is_none() {
-                    cfg.build.resource = Some(PathBuf::from(RESOURCE));
+                if cfg.build.generators.is_none() {
+                    cfg.build.generators = Some(PathBuf::from(GENERATORS));
+                }
+
+                if cfg.build.resources.is_none() {
+                    cfg.build.resources = Some(PathBuf::from(RESOURCES));
                 }
 
                 if cfg.build.clean_url.is_none() {
@@ -147,22 +153,29 @@ impl Config {
         pth 
     }
 
+    pub fn get_assets_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let assets = self.build.assets.as_ref().unwrap();
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(assets);
+        pth 
+    }
+
     pub fn get_partial_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let partial = self.build.partial.as_ref().unwrap();
+        let partial = self.build.partials.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(partial);
         pth 
     }
 
     pub fn get_generator_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let generator = self.build.generator.as_ref().unwrap();
+        let generator = self.build.generators.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(generator);
         pth 
     }
 
     pub fn get_resource_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let resource = self.build.resource.as_ref().unwrap();
+        let resource = self.build.resources.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(resource);
         pth 
@@ -184,9 +197,10 @@ pub struct BuildConfig {
     pub source: PathBuf,
     pub target: PathBuf,
     pub strict: Option<bool>,
-    pub partial: Option<PathBuf>,
-    pub generator: Option<PathBuf>,
-    pub resource: Option<PathBuf>,
+    pub assets: Option<PathBuf>,
+    pub partials: Option<PathBuf>,
+    pub generators: Option<PathBuf>,
+    pub resources: Option<PathBuf>,
     pub clean_url: Option<bool>,
     pub follow_links: Option<bool>,
 }
@@ -197,9 +211,10 @@ impl BuildConfig {
             source: PathBuf::from("site"),
             target: PathBuf::from("build"),
             strict: Some(true),
-            partial: Some(PathBuf::from(PARTIAL)),
-            generator: Some(PathBuf::from(GENERATOR)),
-            resource: Some(PathBuf::from(RESOURCE)),
+            assets: Some(PathBuf::from(ASSETS)),
+            partials: Some(PathBuf::from(PARTIALS)),
+            generators: Some(PathBuf::from(GENERATORS)),
+            resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
             ..Default::default()
         }
