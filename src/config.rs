@@ -160,21 +160,21 @@ impl Config {
         pth 
     }
 
-    pub fn get_partial_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_partials_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let partial = self.build.partials.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(partial);
         pth 
     }
 
-    pub fn get_generator_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_generators_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let generator = self.build.generators.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(generator);
         pth 
     }
 
-    pub fn get_resource_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_resources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let resource = self.build.resources.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(resource);

@@ -38,6 +38,8 @@ pub enum InvalidationType {
     Hook(PathBuf),
     GeneratorConfig(PathBuf),
     GeneratorDocument(PathBuf),
+    BookTheme(PathBuf),
+    BookSource(PathBuf),
 }
 
 /*
@@ -109,40 +111,47 @@ impl<'a> Invalidator<'a> {
             self.context.config.get_layout_path(
                 &self.context.options.source));
 
+        let assets = self.canonical(
+            self.context.config.get_assets_path(
+                &self.context.options.source));
+
         let partials = self.canonical(
-            self.context.config.get_partial_path(
+            self.context.config.get_partials_path(
                 &self.context.options.source));
 
         let generators = self.canonical(
-            self.context.config.get_generator_path(
+            self.context.config.get_generators_path(
                 &self.context.options.source));
 
         let resources = self.canonical(
-            self.context.config.get_resource_path(
+            self.context.config.get_resources_path(
                 &self.context.options.source));
 
+        // TODO: recognise custom layouts
+        // TODO: recognise generator changes
+
         for path in paths {
-            if let Ok(path) = path.canonicalize() {
-
-                //println!("getting type for {:?}", path);
-
-                if path == cfg_file {
-                    out.push(InvalidationType::SiteConfig(path));
-                } else if path == data_file {
-                    out.push(InvalidationType::DataConfig(path));
-                } else if path == layout_file {
-                    out.push(InvalidationType::Layout(path));
-                } else if path.starts_with(&partials) {
-                    out.push(InvalidationType::Partial(path));
-                } else if path.starts_with(&generators) {
-                    // TODO: handle generator changes
-                } else if path.starts_with(&resources) {
-                    out.push(InvalidationType::Resource(path));
-                }
-
+            match path.canonicalize() {
+                Ok(path) => {
+                    if path == cfg_file {
+                        out.push(InvalidationType::SiteConfig(path));
+                    } else if path == data_file {
+                        out.push(InvalidationType::DataConfig(path));
+                    } else if path == layout_file {
+                        out.push(InvalidationType::Layout(path));
+                    } else if path.starts_with(&assets) {
+                        out.push(InvalidationType::Asset(path));
+                    } else if path.starts_with(&partials) {
+                        out.push(InvalidationType::Partial(path));
+                    } else if path.starts_with(&generators) {
+                        // TODO: handle generator changes
+                    } else if path.starts_with(&resources) {
+                        out.push(InvalidationType::Resource(path));
+                    }
+                },
+                Err(e) => return Err(Error::from(e)),
             }
         }
-
         Ok(out)
     }
 

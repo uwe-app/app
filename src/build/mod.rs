@@ -247,7 +247,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn register_templates_directory(&mut self) -> Result<PathBuf, Error> {
-        let templates = self.context.config.get_partial_path(
+        let templates = self.context.config.get_partials_path(
             &self.context.options.source);
 
         if let Err(e) = self
@@ -264,9 +264,9 @@ impl<'a> Builder<'a> {
         let config_file = self.context.config.file.clone();
 
         let partials = self.register_templates_directory()?;
-        let generator = self.context.config.get_generator_path(
+        let generator = self.context.config.get_generators_path(
             &self.context.options.source);
-        let resource = self.context.config.get_resource_path(
+        let resource = self.context.config.get_resources_path(
             &self.context.options.source);
         let theme = self.context.config.get_book_theme_path(
             &self.context.options.source);
