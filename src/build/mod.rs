@@ -367,7 +367,6 @@ impl<'a> Builder<'a> {
 
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
-
         let config_file = self.context.config.file.clone();
 
         let partials = self.register_templates_directory()?;
