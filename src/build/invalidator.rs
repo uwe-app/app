@@ -44,7 +44,10 @@ pub enum InvalidationType {
     GeneratorConfig(PathBuf),
     GeneratorDocument(PathBuf),
     BookTheme(PathBuf),
-    BookSource(PathBuf),
+    // NOTE: The first path is the book directory
+    // NOTE: and the second is the matched file.
+    BookConfig(PathBuf, PathBuf),
+    BookSource(PathBuf, PathBuf),
 }
 
 /*
@@ -149,22 +152,28 @@ impl<'a> Invalidator<'a> {
         // TODO: GeneratorConfig
         // TODO: GeneratorDocument
         // TODO: BookTheme
-        // TODO: BookSource
+        // TODO: BookConfig
 
         'paths: for path in paths {
             match path.canonicalize() {
                 Ok(path) => {
 
                     for book_path in &books {
+
+                        let cfg = self.builder.book.get_book_config(book_path);
+
+                        if path == cfg {
+                            out.push(InvalidationType::BookConfig(book_path.clone(), path));
+                            continue 'paths;
+                        }
+
                         if path.starts_with(book_path) {
                             if let Some(book) = self.builder.book.references.get(book_path) {
-
                                 let src = &book.config.book.src;
                                 let mut buf = book_path.clone();
                                 buf.push(src);
                                 if path.starts_with(buf) {
-                                    println!("FOUND A BOOK SOURCE FILE");
-                                    out.push(InvalidationType::BookSource(path));
+                                    out.push(InvalidationType::BookSource(book_path.clone(), path));
                                     continue 'paths;
                                 }
 
