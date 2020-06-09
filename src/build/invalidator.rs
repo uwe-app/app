@@ -35,7 +35,7 @@ pub enum InvalidationType {
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
-    Hook(PathBuf),
+    Hook(String, PathBuf),
     GeneratorConfig(PathBuf),
     GeneratorDocument(PathBuf),
     BookTheme(PathBuf),
@@ -90,7 +90,7 @@ impl<'a> Invalidator<'a> {
         if src.exists() {
             if let Ok(canonical) = src.canonicalize() {
                 return canonical;
-            } 
+            }
         }
         src
     }
@@ -101,7 +101,9 @@ impl<'a> Invalidator<'a> {
         let config_file = &self.context.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        // NOTE: these files are all optional so we cannot error on the 
+        let hooks = self.context.config.hook.as_ref().unwrap();
+
+        // NOTE: these files are all optional so we cannot error on the
         // NOTE: a call to canonicalize() hence the canonical() helper
         let data_file = self.canonical(
             self.context.config.get_data_path(
@@ -130,9 +132,21 @@ impl<'a> Invalidator<'a> {
         // TODO: recognise custom layouts
         // TODO: recognise generator changes
 
-        for path in paths {
+        'paths: for path in paths {
             match path.canonicalize() {
                 Ok(path) => {
+
+                    for (k, hook) in hooks {
+                        if let Some(source) = &hook.source {
+                            let hook_base = self.canonical(
+                                hook.get_source_path(&self.context.options.source).unwrap());
+                            if path.starts_with(hook_base) {
+                                out.push(InvalidationType::Hook(k.clone(), path));
+                                continue 'paths;
+                            }
+                        }
+                    }
+
                     if path == cfg_file {
                         out.push(InvalidationType::SiteConfig(path));
                     } else if path == data_file {
@@ -198,7 +212,7 @@ impl<'a> Invalidator<'a> {
                     }
                 }
 
-                // Prefer relative paths, makes the output much 
+                // Prefer relative paths, makes the output much
                 // easier to read
                 if let Ok(cwd) = std::env::current_dir() {
                     if let Ok(p) = path.strip_prefix(cwd) {
@@ -218,14 +232,14 @@ impl<'a> Invalidator<'a> {
     fn invalidate(&mut self, target: &PathBuf, invalidation: Invalidation) -> Result<(), Error> {
         // FIXME: find out which section of the data.toml changed
         // FIXME: and ensure only those pages are invalidated
-        
+
         // Should we invalidate everything?
         let mut all = false;
 
         if invalidation.data {
             info!("reload {}", DATA_TOML);
             if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
-                error!("{}", e); 
+                error!("{}", e);
             } else {
                 all = true;
             }
@@ -238,7 +252,7 @@ impl<'a> Invalidator<'a> {
         if all {
             return self.builder.build(target, true);
         } else {
-        
+
             for path in invalidation.paths {
                 let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
                 if let Err(e) = self.builder.process_file(&path, file_type, false) {

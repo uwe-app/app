@@ -108,6 +108,10 @@ impl Config {
                             v.stderr = Some(true);
                         }
                     }
+                } else {
+                    // Create a default value so we can always
+                    // unwrap()
+                    cfg.hook = Some(BTreeMap::new());
                 }
 
                 return Ok(cfg);
@@ -267,4 +271,15 @@ pub struct HookConfig {
     pub source: Option<PathBuf>,
     pub stdout: Option<bool>,
     pub stderr: Option<bool>,
+}
+
+impl HookConfig {
+    pub fn get_source_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
+        if let Some(src) = self.source.as_ref() {
+            let mut pth = source.as_ref().to_path_buf();
+            pth.push(src);
+            return Some(pth) 
+        }
+        None
+    }
 }

@@ -54,6 +54,5 @@ pub fn run(context: &Context, hooks: &BTreeMap<String, HookConfig>) -> Result<()
         info!("hook {}", k);
         run_hook(context, hook)?;
     }
-    //std::process::exit(1);
     Ok(())
 }
