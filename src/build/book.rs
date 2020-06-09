@@ -20,7 +20,7 @@ use crate::{
 use super::context::Context;
 
 pub struct BookBuilder<'a> {
-    books: Vec<PathBuf>,
+    pub books: Vec<PathBuf>,
     context: &'a Context,
 }
 

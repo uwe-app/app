@@ -57,6 +57,7 @@ where
             .collect::<Vec<_>>();
 
         if !paths.is_empty() {
+            println!("calling closure");
             if let Err(e) = closure(paths, &dir.as_ref()) {
                 error!("{}", e);
             }

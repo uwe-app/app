@@ -27,6 +27,11 @@ pub struct Invalidation {
 
 #[derive(Debug)]
 pub enum InvalidationType {
+    // Because it is valid to configure source = "."
+    // in site.toml we need to detect build output and
+    // ensure we ignore those files
+    BuildOutput(PathBuf),
+
     SiteConfig(PathBuf),
     DataConfig(PathBuf),
     Partial(PathBuf),
@@ -101,6 +106,8 @@ impl<'a> Invalidator<'a> {
 
         let hooks = self.context.config.hook.as_ref().unwrap();
 
+        let build_output = self.canonical(self.context.options.output.clone());
+
         // NOTE: these files are all optional so we cannot error on the
         // NOTE: a call to canonicalize() hence the canonical() helper
         let data_file = self.canonical(
@@ -127,6 +134,8 @@ impl<'a> Invalidator<'a> {
             self.context.config.get_resources_path(
                 &self.context.options.source));
 
+        let books = &self.builder.book.books.clone();
+
         // TODO: recognise custom layouts (layout = )
         //
         // TODO: Page
@@ -139,6 +148,10 @@ impl<'a> Invalidator<'a> {
         'paths: for path in paths {
             match path.canonicalize() {
                 Ok(path) => {
+
+                    for book_path in books {
+                        println!("Testing for book path {:?}", book_path);
+                    }
 
                     // NOTE: must test for hooks first as they can
                     // NOTE: point anywhere in the source directory
@@ -161,6 +174,8 @@ impl<'a> Invalidator<'a> {
                         out.push(InvalidationType::DataConfig(path));
                     } else if path == layout_file {
                         out.push(InvalidationType::Layout(path));
+                    } else if path.starts_with(&build_output) {
+                        out.push(InvalidationType::BuildOutput(path));
                     } else if path.starts_with(&assets) {
                         out.push(InvalidationType::Asset(path));
                     } else if path.starts_with(&partials) {
@@ -223,11 +238,11 @@ impl<'a> Invalidator<'a> {
                 // Prefer relative paths, makes the output much
                 // easier to read
                 if let Ok(cwd) = std::env::current_dir() {
-                    if let Ok(p) = path.strip_prefix(cwd) {
-                        invalidation.paths.push((*p).to_path_buf());
-                    } else {
-                        invalidation.paths.push(path);
-                    }
+                    //if let Ok(p) = path.strip_prefix(cwd) {
+                        //invalidation.paths.push((*p).to_path_buf());
+                    //} else {
+                        //invalidation.paths.push(path);
+                    //}
                 } else {
                     invalidation.paths.push(path);
                 }
@@ -258,11 +273,13 @@ impl<'a> Invalidator<'a> {
         }
 
         if all {
+            println!("build all");
             return self.builder.build(target, true);
         } else {
 
             for path in invalidation.paths {
                 let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
+                println!("build one");
                 if let Err(e) = self.builder.process_file(&path, file_type, false) {
                     return Err(e)
                 }

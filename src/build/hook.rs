@@ -13,7 +13,7 @@ fn run_hook(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         let mut cmd = hook.path.as_ref().unwrap().clone();
         let mut args: Vec<String> = vec![];
         if let Some(arguments) = &hook.args {
-            args = arguments.to_vec(); 
+            args = arguments.to_vec();
         }
 
         // Looks like a relative command, resolve to the project root
@@ -26,7 +26,7 @@ fn run_hook(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         let build_target = context.options.target.to_string_lossy().into_owned();
         info!("{} {}", cmd, args.join(" "));
         let mut command = Command::new(cmd);
-        
+
         command
             .env("BUILD_TARGET", build_target)
             .env("PROJECT_ROOT", root.to_string_lossy().into_owned())
@@ -39,7 +39,7 @@ fn run_hook(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         if hook.stderr.is_some() && hook.stderr.unwrap() {
             command.stderr(Stdio::inherit());
         }
-        
+
         command.output()?;
 
     } else {
