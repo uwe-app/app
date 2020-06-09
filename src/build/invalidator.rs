@@ -14,7 +14,7 @@ use crate::{
     LAYOUT_HBS
 };
 
-use log::{info, debug, error};
+use log::{info, error};
 
 use super::watch;
 
@@ -64,9 +64,7 @@ impl<'a> Invalidator<'a> {
         #[cfg(feature = "watch")]
         let watch_result = watch::start(&from.clone(), move |paths, source_dir| {
             info!("changed({}) in {}", paths.len(), source_dir.display());
-            debug!("files changed: {:?}", paths);
             if let Ok(invalidation) = self.get_invalidation(paths) {
-                debug!("invalidation {:?}", invalidation);
                 if let Err(e) = self.invalidate(&from, invalidation) {
                     error!("{}", e);
                 }
@@ -129,17 +127,27 @@ impl<'a> Invalidator<'a> {
             self.context.config.get_resources_path(
                 &self.context.options.source));
 
-        // TODO: recognise custom layouts
-        // TODO: recognise generator changes
+        // TODO: recognise custom layouts (layout = )
+        //
+        // TODO: Page
+        // TODO: File
+        // TODO: GeneratorConfig
+        // TODO: GeneratorDocument
+        // TODO: BookTheme
+        // TODO: BookSource
 
         'paths: for path in paths {
             match path.canonicalize() {
                 Ok(path) => {
 
+                    // NOTE: must test for hooks first as they can
+                    // NOTE: point anywhere in the source directory
+                    // NOTE: and should take precedence
                     for (k, hook) in hooks {
-                        if let Some(source) = &hook.source {
+                        if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&self.context.options.source).unwrap());
+                                hook.get_source_path(
+                                    &self.context.options.source).unwrap());
                             if path.starts_with(hook_base) {
                                 out.push(InvalidationType::Hook(k.clone(), path));
                                 continue 'paths;
