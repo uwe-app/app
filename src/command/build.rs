@@ -18,6 +18,7 @@ use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
 use crate::build::loader;
 use crate::build::context;
+use crate::build::watch;
 use crate::build::invalidator::Invalidator;
 use crate::command::serve::*;
 use crate::{Error};
@@ -160,7 +161,7 @@ pub fn build<'a>(config: Config, options: BuildOptions) -> Result<(), Error> {
                     open::that(&url).map(|_| ()).unwrap_or(());
 
                     #[cfg(feature = "watch")]
-                    trigger_on_change(&from.clone(), move |paths, source_dir| {
+                    watch::start(&from.clone(), move |paths, source_dir| {
                         info!("changed({}) in {}", paths.len(), source_dir.display());
                         debug!("files changed: {:?}", paths);
                         if let Ok(invalidation) = invalidator.get_invalidation(paths) {

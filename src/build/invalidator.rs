@@ -20,6 +20,14 @@ pub struct Invalidation {
     paths: Vec<PathBuf>,
 }
 
+/*
+ *  Invalidation rules.
+ *
+ *  1) Resources are ignored as they are symbolically linked.
+ *  2) Assets trigger a copy of the changed asset and a rebuild of all pages.
+ *  3) Changes to data.toml trigger a rebuild of all pages.
+ *  4) Changes to files in a `source` directory for a hook should run the hook again.
+ */
 pub struct Invalidator<'a> {
     context: &'a Context,
 }

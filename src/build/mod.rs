@@ -18,6 +18,7 @@ pub mod matcher;
 pub mod parser;
 pub mod resource;
 pub mod template;
+pub mod watch;
 
 use crate::{
     utils,
