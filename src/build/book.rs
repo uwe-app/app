@@ -21,20 +21,19 @@ use crate::{
 use super::context::Context;
 
 pub struct BookBuilder<'a> {
-    pub books: Vec<PathBuf>,
+    //pub books: Vec<PathBuf>,
     pub references: BTreeMap<PathBuf, MDBook>,
     context: &'a Context,
 }
 
 impl<'a> BookBuilder<'a> {
     pub fn new(context: &'a Context) -> Self {
-        let books: Vec<PathBuf> = Vec::new();
-        BookBuilder { books, context, references: BTreeMap::new() }
+        BookBuilder { context, references: BTreeMap::new() }
     }
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
         let f = p.as_ref();
-        for b in self.books.iter() {
+        for b in self.references.keys() {
             if f.starts_with(b.as_path()) {
                 debug!("ignore book file {}", f.display());
                 return true;
@@ -57,10 +56,10 @@ impl<'a> BookBuilder<'a> {
         false
     }
 
-    pub fn add<P: AsRef<Path>>(&mut self, p: P) {
-        let b = p.as_ref();
-        self.books.push(b.to_path_buf().to_owned());
-    }
+    //pub fn add<P: AsRef<Path>>(&mut self, p: P) {
+        //let b = p.as_ref();
+        //self.books.push(b.to_path_buf().to_owned());
+    //}
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
@@ -125,7 +124,7 @@ impl<'a> BookBuilder<'a> {
         let dir = p.as_ref();
         let directory = dir.canonicalize()?;
 
-        info!("book {}", dir.display());
+        info!("load {}", dir.display());
 
         let result = MDBook::load(dir);
         match result {
@@ -162,6 +161,8 @@ impl<'a> BookBuilder<'a> {
                 info!("draft book skipped {}", dir.display());
                 return Ok(())
             }
+
+            info!("build {}", dir.display());
 
             let built = md.build();
             match built {

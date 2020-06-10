@@ -325,7 +325,7 @@ impl<'a> Builder<'a> {
 
                     if path.is_dir() && self.book.is_book_dir(&path) {
                         // Add the book so we can skip processing of descendants
-                        self.book.add(&path);
+                        //self.book.add(&path);
 
                         // Build the book
                         self.book.load(&path)?;

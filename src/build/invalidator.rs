@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::path::PathBuf;
 
 use tokio::sync::broadcast::Sender;
@@ -61,6 +62,7 @@ enum Action {
     BookTheme(PathBuf, PathBuf),
     BookConfig(PathBuf, PathBuf),
     BookSource(PathBuf, PathBuf),
+    BookBuild(PathBuf, PathBuf),
 }
 
 #[derive(Debug)]
@@ -144,13 +146,14 @@ impl<'a> Invalidator<'a> {
         Ok(())
     }
 
-    fn canonical(&mut self, src: PathBuf) -> PathBuf {
-        if src.exists() {
-            if let Ok(canonical) = src.canonicalize() {
+    fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
+        let file = src.as_ref().to_path_buf();
+        if file.exists() {
+            if let Ok(canonical) = file.canonicalize() {
                 return canonical;
             }
         }
-        src
+        file
     }
 
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
@@ -205,10 +208,8 @@ impl<'a> Invalidator<'a> {
         let book_theme = self.context.config.get_book_theme_path(
             &self.context.options.source).map(|v| self.canonical(v));
 
-        let books: Vec<PathBuf> = self.builder.book.books
-            .clone()
-            .iter()
-            .map(|p| self.canonical(p.to_path_buf()))
+        let books: Vec<PathBuf> = self.builder.book.references.keys()
+            .map(|p| p.to_path_buf())
             .collect::<Vec<_>>();
 
         let generator_paths: Vec<PathBuf> = self.context.generators.map
@@ -239,19 +240,31 @@ impl<'a> Invalidator<'a> {
                     }
 
                     for book_path in &books {
-                        let cfg = self.builder.book.get_book_config(book_path);
+                        let book = self.canonical(book_path);
+
+                        let cfg = self.builder.book.get_book_config(&book);
                         if path == cfg {
-                            rule.book.reload.push(Action::BookConfig(book_path.clone(), path));
+                            rule.book.reload.push(Action::BookConfig(book.clone(), path));
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
-                            if let Some(book) = self.builder.book.references.get(book_path) {
-                                let src = &book.config.book.src;
-                                let mut buf = book_path.clone();
-                                buf.push(src);
-                                if path.starts_with(buf) {
+                            if let Some(md) = self.builder.book.references.get(&book) {
+                                let src_dir = &md.config.book.src;
+                                let build_dir = &md.config.build.build_dir;
+
+                                let mut src = book.clone();
+                                src.push(src_dir);
+
+                                let mut build = book.clone();
+                                build.push(build_dir);
+
+                                if path.starts_with(build) {
+                                    rule.ignores.push(
+                                        Action::BookBuild(book.clone(), path));
+                                    continue 'paths;
+                                }else if path.starts_with(src) {
                                     rule.book.source.push(
-                                        Action::BookSource(book_path.clone(), path));
+                                        Action::BookSource(book.clone(), path));
                                     continue 'paths;
                                 }
 
@@ -339,11 +352,9 @@ impl<'a> Invalidator<'a> {
         let book = &rule.book;
 
         if !book.reload.is_empty() {
-            println!("RELOAD BOOK CONFIGURATIONS");
             for action in &book.reload {
                 match action {
                     Action::BookConfig(base, _) => {
-                        println!("Build book with base {:?}", base);
                         self.builder.book.load(base)?;
                     },
                     _ => {},
@@ -364,7 +375,6 @@ impl<'a> Invalidator<'a> {
                             &self.context.options.source,
                             &self.context.options.source)?;
 
-                        println!("Build book with base {:?}", &file);
                         self.builder.book.build(&file)?;
                     },
                     _ => {},
