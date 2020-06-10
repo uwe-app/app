@@ -5,7 +5,7 @@ use std::convert::AsRef;
 use crate::Error;
 use super::context::Context;
 
-use log::info;
+use log::{info, debug};
 
 #[cfg(windows)]
 fn symlink<P: AsRef<Path>>(source: P, target: P) -> Result<(), Error> {
@@ -41,8 +41,14 @@ pub fn link(ctx: &Context) -> Result<(), Error> {
                         let entry = res?;
                         let path = entry.path();
                         if let Some(name) = path.file_name() {
-                            let mut dest = target.clone(); 
+                            let mut dest = target.clone();
                             dest.push(name);
+
+                            if dest.exists() {
+                                debug!("symlink exists ({} -> {})", path.display(), dest.display());
+                                continue;
+                            }
+
                             info!("ln -s {} -> {}", path.display(), dest.display());
                             symlink(&path, &dest)?;
                         }

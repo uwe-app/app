@@ -314,7 +314,7 @@ impl<'a> Invalidator<'a> {
         }
 
         for hook in &rule.hooks {
-            if let Action::Hook(id, path) = hook {
+            if let Action::Hook(id, _path) = hook {
                 if let Some(hook_config) = &self.context.config.hook.as_ref().unwrap().get(id) {
                     hook::exec(&self.context, hook_config)?;
                 }
@@ -332,9 +332,17 @@ impl<'a> Invalidator<'a> {
                 for action in &rule.actions {
                     match action {
                         Action::Page(path) | Action::File(path) => {
+
+                            // Make the path relative to the project source
+                            // as the notify crate gives us an absolute path
+                            let file = matcher::relative_to(
+                                path,
+                                &self.context.options.source,
+                                &self.context.options.source)?;
+
                             let extensions = &self.context.config.extension.as_ref().unwrap();
-                            let file_type = matcher::get_type(path, extensions);
-                            if let Err(e) = self.builder.process_file(path, file_type, false) {
+                            let file_type = matcher::get_type(&file, extensions);
+                            if let Err(e) = self.builder.process_file(&file, file_type, false) {
                                 return Err(e)
                             }
                         },

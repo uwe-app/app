@@ -270,6 +270,19 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
     None
 }
 
+pub fn relative_to<P: AsRef<Path>>(
+    file: P,
+    base: P,
+    target: P,
+) -> Result<PathBuf, Error> {
+    let f = file.as_ref().canonicalize()?;
+    let b = base.as_ref().canonicalize()?;
+    let mut t = target.as_ref().to_path_buf();
+    let relative = f.strip_prefix(b)?;
+    t.push(relative);
+    Ok(t)
+}
+
 // Build the direct destination file path.
 pub fn direct_destination<P: AsRef<Path>>(
     source: P,
@@ -292,18 +305,9 @@ pub fn direct_destination<P: AsRef<Path>>(
         }
     }
 
-    let relative = pth.strip_prefix(src);
-
-    //println!("matcher replacing {}", source.as_ref().display());
-    //println!("matcher relative {:?}", relative);
-
-    match relative {
-        Ok(relative) => {
-            let result = target.as_ref().clone().join(relative);
-            return Ok(result)
-        }
-        Err(e) => return Err(Error::from(e))
-    }
+    let relative = pth.strip_prefix(src)?;
+    let result = target.as_ref().clone().join(relative);
+    return Ok(result)
 }
 
 // Build the destination file path and update the file extension.
