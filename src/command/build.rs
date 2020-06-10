@@ -21,6 +21,8 @@ use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
 
+use crate::server::livereload;
+
 use crate::callback::ErrorCallback;
 
 lazy_static! {
@@ -137,7 +139,14 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
             // Get the socket address and websocket transmission channel
             let (addr, tx, url) = rx.recv().unwrap();
 
-            ctx.livereload = Some(get_websocket_url(host, addr, &endpoint));
+            let ws_url = get_websocket_url(host, addr, &endpoint);
+
+            if let Err(e) = livereload::write_script(&ctx.options.target, &ws_url) {
+                error_cb(e);
+                return
+            }
+
+            ctx.livereload = Some(ws_url);
 
             let mut serve_builder = Builder::new(&ctx);
             if let Err(e) = serve_builder.register_templates_directory() {
