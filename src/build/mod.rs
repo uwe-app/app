@@ -328,7 +328,7 @@ impl<'a> Builder<'a> {
                         //self.book.add(&path);
 
                         // Build the book
-                        self.book.load(&path)?;
+                        self.book.load(&self.context, &path)?;
                         self.book.build(&path)?;
                     } else if path.is_file() {
                         let file = entry.path().to_path_buf();

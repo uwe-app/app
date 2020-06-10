@@ -80,6 +80,12 @@ impl From<notify::Error> for Error {
     }
 }
 
+impl From<mdbook::errors::Error> for Error {
+    fn from(error: mdbook::errors::Error) -> Self {
+        Error::BookError(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

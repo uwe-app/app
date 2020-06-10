@@ -355,7 +355,7 @@ impl<'a> Invalidator<'a> {
             for action in &book.reload {
                 match action {
                     Action::BookConfig(base, _) => {
-                        self.builder.book.load(base)?;
+                        self.builder.book.load(&self.context, base)?;
                     },
                     _ => {},
                 }
@@ -363,7 +363,7 @@ impl<'a> Invalidator<'a> {
         }
 
         if book.all {
-            self.builder.book.all()?;
+            self.builder.book.all(&self.context)?;
         } else {
             for action in &book.source {
                 match action {
@@ -375,7 +375,7 @@ impl<'a> Invalidator<'a> {
                             &self.context.options.source,
                             &self.context.options.source)?;
 
-                        self.builder.book.rebuild(&file)?;
+                        self.builder.book.rebuild(&self.context, &file)?;
                     },
                     _ => {},
                 }

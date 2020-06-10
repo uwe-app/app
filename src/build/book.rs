@@ -122,7 +122,7 @@ impl<'a> BookBuilder<'a> {
         return is_draft;
     }
 
-    pub fn load<P: AsRef<Path>>(&mut self, p: P) -> Result<(), Error> {
+    pub fn load<P: AsRef<Path>>(&mut self, context: &Context, p: P) -> Result<(), Error> {
         let dir = p.as_ref();
         let directory = dir.canonicalize()?;
 
@@ -137,14 +137,18 @@ impl<'a> BookBuilder<'a> {
                 if let Some(theme_dir) = theme {
                     if theme_dir.exists() && theme_dir.is_dir() {
                         if let Some(s) = theme_dir.to_str() {
-                            if let Err(e) = md.config.set(BOOK_THEME_KEY, s) {
-                                warn!("Cannot set book theme {}", e);
-                            }
+                            md.config.set(BOOK_THEME_KEY, s)?;
                         }
                     } else {
                         warn!("Missing book theme directory '{}'", theme_dir.display());
                     }
                 }
+
+                if let Some(ref livereload_url) = context.livereload {
+                    md.config
+                        .set("output.html.livereload-url", livereload_url)?;
+                }
+
 
                 self.references.insert(directory, md);
             }
@@ -181,19 +185,19 @@ impl<'a> BookBuilder<'a> {
         }
     }
 
-    pub fn rebuild<P: AsRef<Path>>(&mut self, p: P) -> Result<(), Error> {
+    pub fn rebuild<P: AsRef<Path>>(&mut self, context: &Context, p: P) -> Result<(), Error> {
         // NOTE: unfortunately mdbook requires a reload before a build
-        self.load(p.as_ref())?;
+        self.load(context, p.as_ref())?;
         self.build(p)
     }
 
-    pub fn all(&mut self) -> Result<(), Error> {
+    pub fn all(&mut self, context: &Context) -> Result<(), Error> {
         let paths = self.references.keys()
             .map(|p| p.clone())
             .collect::<Vec<_>>();
 
         for p in paths {
-            self.rebuild(p)?;
+            self.rebuild(context, p)?;
         }
         Ok(())
     }
