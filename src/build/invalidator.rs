@@ -375,7 +375,7 @@ impl<'a> Invalidator<'a> {
                             &self.context.options.source,
                             &self.context.options.source)?;
 
-                        self.builder.book.build(&file)?;
+                        self.builder.book.rebuild(&file)?;
                     },
                     _ => {},
                 }

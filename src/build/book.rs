@@ -33,10 +33,12 @@ impl<'a> BookBuilder<'a> {
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
         let f = p.as_ref();
-        for b in self.references.keys() {
-            if f.starts_with(b.as_path()) {
-                debug!("ignore book file {}", f.display());
-                return true;
+        if let Ok(c) = f.canonicalize() {
+            for b in self.references.keys() {
+                if c.starts_with(b.as_path()) {
+                    debug!("ignore book file {}", f.display());
+                    return true;
+                }
             }
         }
         false
@@ -179,9 +181,19 @@ impl<'a> BookBuilder<'a> {
         }
     }
 
-    pub fn all(&self) -> Result<(), Error> {
-        for p in self.references.keys() {
-            self.build(p)?;
+    pub fn rebuild<P: AsRef<Path>>(&mut self, p: P) -> Result<(), Error> {
+        // NOTE: unfortunately mdbook requires a reload before a build
+        self.load(p.as_ref())?;
+        self.build(p)
+    }
+
+    pub fn all(&mut self) -> Result<(), Error> {
+        let paths = self.references.keys()
+            .map(|p| p.clone())
+            .collect::<Vec<_>>();
+
+        for p in paths {
+            self.rebuild(p)?;
         }
         Ok(())
     }
