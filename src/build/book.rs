@@ -62,9 +62,9 @@ impl<'a> BookBuilder<'a> {
         self.books.push(b.to_path_buf().to_owned());
     }
 
-    fn copy_book(&mut self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
+    fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
-        let relative = source_dir.strip_prefix(&self.context.options.source).unwrap();
+        let relative = source_dir.strip_prefix(&self.context.options.source)?;
         let mut base = self.context.options.target.clone();
         base.push(relative);
 
@@ -99,9 +99,8 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&mut self, p: P) -> Result<(), Error> {
+    fn is_draft<P: AsRef<Path>>(&self, p: P) -> bool {
         let dir = p.as_ref();
-
         let mut is_draft = false;
         if self.context.options.release {
             let conf_result = loader::load_toml_to_json(self.get_book_config(&dir));
@@ -116,14 +115,14 @@ impl<'a> BookBuilder<'a> {
 
                     }
                 },
-                Err(e) => return Err(e)
+                Err(_) => (),
             }
         }
+        return is_draft;
+    }
 
-        if is_draft {
-            return Ok(())
-        }
-
+    pub fn load<P: AsRef<Path>>(&mut self, p: P) -> Result<(), Error> {
+        let dir = p.as_ref();
         let directory = dir.canonicalize()?;
 
         info!("book {}", dir.display());
@@ -146,22 +145,43 @@ impl<'a> BookBuilder<'a> {
                     }
                 }
 
-                let built = md.build();
-                match built {
-                    Ok(_) => {
-                        let bd = &md.config.build.build_dir;
-                        let mut src = dir.to_path_buf();
-                        src.push(bd);
-                        let result = self.copy_book(dir, src);
-                        self.references.insert(directory, md);
-                        return result;
-                    }
-                    Err(e) => return Err(Error::BookError(e)),
-                }
-
-
+                self.references.insert(directory, md);
             }
             Err(e) => return Err(Error::BookError(e)),
         }
+
+        Ok(())
+    }
+
+    pub fn build<P: AsRef<Path>>(&self, p: P) -> Result<(), Error> {
+        let dir = p.as_ref();
+        let directory = dir.canonicalize()?;
+        if let Some(md) = self.references.get(&directory) {
+
+            if self.is_draft(&dir) {
+                info!("draft book skipped {}", dir.display());
+                return Ok(())
+            }
+
+            let built = md.build();
+            match built {
+                Ok(_) => {
+                    let bd = &md.config.build.build_dir;
+                    let mut src = dir.to_path_buf();
+                    src.push(bd);
+                    self.copy_book(dir, src)
+                }
+                Err(e) => return Err(Error::BookError(e)),
+            }
+        } else {
+            return Err(Error::new(format!("No book found for {}", dir.display())))
+        }
+    }
+
+    pub fn all(&self) -> Result<(), Error> {
+        for p in self.references.keys() {
+            self.build(p)?;
+        }
+        Ok(())
     }
 }

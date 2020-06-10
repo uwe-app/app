@@ -77,7 +77,7 @@ impl<'a> Builder<'a> {
             if let Some(id) = doc.get("id") {
                 if let Some(id) = id.as_str() {
                     if doc.is_object() {
-                        let map = doc.as_object().unwrap(); 
+                        let map = doc.as_object().unwrap();
                         for (k, v) in map {
                             item_data.insert(k.clone(), json!(v));
                         }
@@ -187,7 +187,7 @@ impl<'a> Builder<'a> {
                 let generators = &self.context.generators;
 
                 if !generators.map.is_empty() {
-                
+
                     let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
 
                     for gen in page_generators {
@@ -210,12 +210,12 @@ impl<'a> Builder<'a> {
                     if !each_iters.is_empty() {
                         for (gen, idx) in each_iters {
                             self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
-                        } 
+                        }
                         return Ok(())
                     }
 
                 }
-                
+
                 let dest = matcher::destination(
                     &self.context.options.source,
                     &self.context.options.target,
@@ -295,11 +295,11 @@ impl<'a> Builder<'a> {
                     let mut buf = self.context.options.source.clone();
                     buf.push(source);
                     filters.push(buf);
-                } 
+                }
             }
             hook::run(&self.context, hooks)?;
         }
-        
+
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)
             .max_depth(self.context.options.max_depth)
@@ -328,9 +328,8 @@ impl<'a> Builder<'a> {
                         self.book.add(&path);
 
                         // Build the book
-                        if let Err(e) = self.book.build(&path) {
-                            return Err(e);
-                        }
+                        self.book.load(&path)?;
+                        self.book.build(&path)?;
                     } else if path.is_file() {
                         let file = entry.path().to_path_buf();
                         let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());

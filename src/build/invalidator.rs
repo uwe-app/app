@@ -81,12 +81,24 @@ struct Rule {
     reload: bool,
     // Build strategy
     strategy: Strategy,
+    // Books have their own rules
+    book: BookRule,
     // Actions that are ignored but we track for debugging
     ignores: Vec<Action>,
     // Hooks are a special case so we store them separately
     hooks: Vec<Action>,
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
+}
+
+#[derive(Debug)]
+struct BookRule {
+    // Should we build all books
+    all: bool,
+    // List of books that need their configurations reloaded
+    reload: Vec<Action>,
+    // List of books that have source file changes and should be built
+    source: Vec<Action>,
 }
 
 pub struct Invalidator<'a> {
@@ -149,6 +161,11 @@ impl<'a> Invalidator<'a> {
             strategy: Strategy::Mixed,
             ignores: Vec::new(),
             hooks: Vec::new(),
+            book: BookRule {
+                all: false,
+                reload: Vec::new(),
+                source: Vec::new(),
+            },
             actions: Vec::new(),
         };
 
@@ -224,18 +241,16 @@ impl<'a> Invalidator<'a> {
                     for book_path in &books {
                         let cfg = self.builder.book.get_book_config(book_path);
                         if path == cfg {
-                            // TODO: book config reload and build
-                            rule.actions.push(Action::BookConfig(book_path.clone(), path));
+                            rule.book.reload.push(Action::BookConfig(book_path.clone(), path));
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
-                            // TODO: book build
                             if let Some(book) = self.builder.book.references.get(book_path) {
                                 let src = &book.config.book.src;
                                 let mut buf = book_path.clone();
                                 buf.push(src);
                                 if path.starts_with(buf) {
-                                    rule.actions.push(
+                                    rule.book.source.push(
                                         Action::BookSource(book_path.clone(), path));
                                     continue 'paths;
                                 }
@@ -245,9 +260,9 @@ impl<'a> Invalidator<'a> {
                     }
 
                     if let Some(theme) = &book_theme {
-                        // TODO: build all books
                         if path.starts_with(theme) {
-                            rule.actions.push(
+                            rule.book.all = true;
+                            rule.ignores.push(
                                 Action::BookTheme(theme.clone(), path));
                             continue 'paths;
                         }
@@ -317,6 +332,42 @@ impl<'a> Invalidator<'a> {
             if let Action::Hook(id, _path) = hook {
                 if let Some(hook_config) = &self.context.config.hook.as_ref().unwrap().get(id) {
                     hook::exec(&self.context, hook_config)?;
+                }
+            }
+        }
+
+        let book = &rule.book;
+
+        if !book.reload.is_empty() {
+            println!("RELOAD BOOK CONFIGURATIONS");
+            for action in &book.reload {
+                match action {
+                    Action::BookConfig(base, _) => {
+                        println!("Build book with base {:?}", base);
+                        self.builder.book.load(base)?;
+                    },
+                    _ => {},
+                }
+            }
+        }
+
+        if book.all {
+            self.builder.book.all()?;
+        } else {
+            for action in &book.source {
+                match action {
+                    Action::BookSource(base, _) => {
+                        // Make the path relative to the project source
+                        // as the notify crate gives us an absolute path
+                        let file = matcher::relative_to(
+                            base,
+                            &self.context.options.source,
+                            &self.context.options.source)?;
+
+                        println!("Build book with base {:?}", &file);
+                        self.builder.book.build(&file)?;
+                    },
+                    _ => {},
                 }
             }
         }

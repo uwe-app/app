@@ -1,5 +1,5 @@
 [build]
-source = "."
+source = "site"
 target = "build"
 
 [serve]
