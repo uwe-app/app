@@ -67,7 +67,7 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
                     continue;
                 }
 
-                if !has_front_matter && line.trim() == conf.start {
+                if !has_front_matter && line.trim() == conf.start && content.is_empty() {
                     in_front_matter = true;
                     has_front_matter = true;
                     continue;
