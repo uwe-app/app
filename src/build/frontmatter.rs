@@ -75,6 +75,13 @@ pub fn split<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error>
                     continue;
                 }
 
+                // Always respect bail, it tells us to never read the
+                // actual file content as we only want to extract the 
+                // front matter data
+                if conf.bail {
+                    return Ok((content, has_front_matter, fm))
+                }
+
                 content.push_str(&line);
                 content.push_str(newline);
 
