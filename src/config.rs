@@ -47,10 +47,12 @@ impl Config {
         debug!("load {:?}", p.as_ref().display());
         if let Some(base) = file.parent() {
             if file.exists() && file.is_file() {
+
                 let content = utils::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
 
-                cfg.file = Some(file.to_path_buf());
+                let path = file.canonicalize()?;
+                cfg.file = Some(path.to_path_buf());
 
                 if cfg.build.source.is_relative() {
                     let mut bp = base.to_path_buf(); 
@@ -140,7 +142,11 @@ impl Config {
         if let Some(file) = &self.file {
             if let Some(p) = file.parent() {
                 return Some(p.to_path_buf());
-            } 
+            } else {
+                if let Ok(cwd) = std::env::current_dir() {
+                    return Some(cwd)
+                }
+            }
         }   
         None
     }

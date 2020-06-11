@@ -58,7 +58,7 @@ fn find_file_for_key(k: &str, source: &PathBuf) -> Option<PathBuf> {
     None
 }
 
-fn table_to_json_map(table: &Table) -> Map<String, Value> {
+pub fn table_to_json_map(table: &Table) -> Map<String, Value> {
     let mut map = Map::new();
     for (k, v) in table {
         map.insert(k.to_string(), json!(v));
@@ -100,20 +100,14 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     map
 }
 
+pub fn parse_toml_to_json(s: &str) -> Result<Map<String, Value>, Error> {
+    let config: TomlMap<String, TomlValue> = toml::from_str(s)?;
+    Ok(table_to_json_map(&config))
+}
+
 pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {
-    let res = utils::read_string(f).map_err(Error::from);
-    match res {
-        Ok(s) => {
-            let config: Result<TomlMap<String, TomlValue>, Error> = toml::from_str(&s).map_err(Error::from);
-            match config {
-                Ok(props) => {
-                    return Ok(table_to_json_map(&props))
-                }
-                Err(e) => return Err(e)
-            }
-        },
-        Err(e) => return Err(e)
-    }
+    let res = utils::read_string(f)?;
+    parse_toml_to_json(&res)
 }
 
 fn clear() {

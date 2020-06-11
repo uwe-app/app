@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::process::{Command, Stdio};
 
-use log::info;
+use log::{info, debug};
 
 use crate::Error;
 use crate::config::HookConfig;
@@ -9,6 +9,7 @@ use super::context::Context;
 
 pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     let root = context.config.get_project().unwrap();
+    debug!("hook root {}", root.display());
     if let Ok(root) = root.canonicalize() {
         let mut cmd = hook.path.as_ref().unwrap().clone();
         let mut args: Vec<String> = vec![];

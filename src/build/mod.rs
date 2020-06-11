@@ -8,6 +8,7 @@ use serde_json::{json, Map, Value};
 
 pub mod book;
 pub mod context;
+pub mod frontmatter;
 pub mod generator;
 pub mod hook;
 pub mod invalidator;
@@ -166,7 +167,6 @@ impl<'a> Builder<'a> {
                 let generators = &self.context.generators;
 
                 if !generators.map.is_empty() {
-
                     let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
                     for query in queries {
                         let each = query.each.is_some() && query.each.unwrap();

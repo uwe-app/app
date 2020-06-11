@@ -8,6 +8,7 @@ use crate::{
 
 use super::matcher::FileType;
 use super::template;
+use super::frontmatter;
 use super::context::Context;
 
 use serde_json::{Map, Value};
@@ -36,12 +37,17 @@ impl<'a> Parser<'a> {
         output: P,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
-        let mut result = utils::read_string(&input).map_err(Error::from)?;
-        result = self
+        let (content, has_fm, fm) = frontmatter::split(
+            &input, frontmatter::Config::new_html())?;
+
+        if has_fm {
+            frontmatter::parse_into(fm, data)?;
+        }
+
+        let result = self
             .render
-            .parse_template_string(&input, &output, result, data)?;
-        result = self.render.layout(&input, &output, result, data)?;
-        Ok(result)
+            .parse_template_string(&input, &output, content, data)?;
+        return self.render.layout(&input, &output, result, data);
     }
 
     fn parse_markdown<P: AsRef<Path>>(
@@ -50,18 +56,18 @@ impl<'a> Parser<'a> {
         output: P,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
-        let content = utils::read_string(&input).map_err(Error::from)?;
-        let parsed = self
-            .render
-            .parse_template_string(&input, &output, content, data);
+        let (content, has_fm, fm) = frontmatter::split(
+            &input, frontmatter::Config::new_markdown())?;
 
-        match parsed {
-            Ok(content) => {
-                let markup = utils::render_markdown_string(&content);
-                return self.render.layout(&input, &output, markup, data);
-            }
-            Err(e) => return Err(e),
+        if has_fm {
+            frontmatter::parse_into(fm, data)?;
         }
+
+        let mut result = self
+            .render
+            .parse_template_string(&input, &output, content, data)?;
+        result = utils::render_markdown_string(&result);
+        return self.render.layout(&input, &output, result, data);
     }
 
     pub fn parse<P: AsRef<Path>>(
