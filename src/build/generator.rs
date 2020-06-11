@@ -2,7 +2,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 
-use serde_json::{json, Map, Value};
+use serde_json::{json, from_value, Map, Value};
 use serde::{Deserialize, Serialize};
 use log::{info, warn};
 use slug;
@@ -20,6 +20,35 @@ static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";
+static QUERY_FIELD: &str = "query";
+
+pub fn get_query(data: &Map<String, Value>) -> Result<Vec<IndexQuery>, Error> {
+    let generator_config = data.get(QUERY_FIELD);
+
+    let mut page_generators: Vec<IndexQuery> = Vec::new();
+
+    if let Some(cfg) = generator_config {
+        // Single object declaration
+        if cfg.is_object() {
+            let conf = cfg.as_object().unwrap();
+            let reference: IndexQuery = from_value(json!(conf))?;
+            page_generators.push(reference);
+        // Multiple array declaration
+        } else if cfg.is_array() {
+            let items = cfg.as_array().unwrap();
+            for conf in items {
+                let reference: IndexQuery = from_value(json!(conf))?;
+                page_generators.push(reference);
+            }
+        } else {
+            return Err(
+                Error::new(
+                    format!("Query should be array or object")));
+        }
+    }
+
+    Ok(page_generators)
+}
 
 pub fn get_generator_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();

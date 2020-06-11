@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use log::{debug, info};
 
-use serde_json::{json, from_value, Map, Value};
+use serde_json::{json, Map, Value};
 
 pub mod book;
 pub mod context;
@@ -161,39 +161,16 @@ impl<'a> Builder<'a> {
                     return Ok(())
                 }
 
-                let generator_config = data.get("query");
-                let mut page_generators: Vec<IndexQuery> = Vec::new();
-
-                if let Some(cfg) = generator_config {
-                    // Single object declaration
-                    if cfg.is_object() {
-                        let conf = cfg.as_object().unwrap();
-                        let reference: IndexQuery = from_value(json!(conf))?;
-                        page_generators.push(reference);
-                    // Multiple array declaration
-                    } else if cfg.is_array() {
-                        let items = cfg.as_array().unwrap();
-                        for conf in items {
-                            let reference: IndexQuery = from_value(json!(conf))?;
-                            page_generators.push(reference);
-                        }
-                    } else {
-                        return Err(
-                            Error::new(
-                                format!("Generator parameter should be array or object")));
-                    }
-                }
+                let queries = generator::get_query(&data)?;
 
                 let generators = &self.context.generators;
 
                 if !generators.map.is_empty() {
 
                     let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
-
-                    for gen in page_generators {
-                        let each = gen.each.is_some() && gen.each.unwrap();
-
-                        let idx = generators.query_index(&gen)?;
+                    for query in queries {
+                        let each = query.each.is_some() && query.each.unwrap();
+                        let idx = generators.query_index(&query)?;
 
                         // Push on to the list of generators to iterate
                         // over so that we can support the same template
@@ -201,9 +178,9 @@ impl<'a> Builder<'a> {
                         // how useful/desirable it is to declare multiple each iterators
                         // as identifiers may well collide.
                         if each {
-                            each_iters.push((gen, idx));
+                            each_iters.push((query, idx));
                         } else {
-                            data.insert(gen.get_parameter(), json!(idx));
+                            data.insert(query.get_parameter(), json!(idx));
                         }
                     }
 
@@ -213,7 +190,6 @@ impl<'a> Builder<'a> {
                         }
                         return Ok(())
                     }
-
                 }
 
                 let dest = matcher::destination(
