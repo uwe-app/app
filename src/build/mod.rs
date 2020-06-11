@@ -149,7 +149,12 @@ impl<'a> Builder<'a> {
                         )))
                 }
 
-                let mut data = loader::compute(file);
+                // NOTE: do not load front matter as the parser will
+                // NOTE: take care of it later
+                let mut data = loader::compute(file, false)?;
+
+                // FIXME: cannot declare `clean` in frontmatter
+                // FIXME: cannot declare `draft` in frontmatter
 
                 let mut clean = self.context.options.clean_url;
                 if let Some(val) = data.get("clean") {

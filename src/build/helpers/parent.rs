@@ -6,6 +6,7 @@ use crate::build::loader;
 use crate::build::matcher;
 
 use super::with_parent_context;
+use super::map_render_error;
 
 #[derive(Clone, Copy)]
 pub struct Parent;
@@ -32,7 +33,7 @@ impl HelperDef for Parent{
             let template = h.template();
             match template {
                 Some(t) => {
-                    let data = loader::compute(&parent);
+                    let data = loader::compute(&parent, true).map_err(map_render_error)?;
                     let mut local_rc = rc.clone();
                     let local_ctx = with_parent_context(ctx, &data)?;
                     t.render(r, &local_ctx, &mut local_rc, out)?;

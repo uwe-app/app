@@ -11,6 +11,8 @@ use crate::BuildOptions;
 
 use crate::{INDEX_HTML};
 
+use super::map_render_error;
+
 #[derive(Clone, Copy)]
 pub struct Link;
 
@@ -174,7 +176,7 @@ impl HelperDef for Components{
                         }
 
                         if let Some(src) = matcher::lookup(&ctx, &href) {
-                            let mut data = loader::compute(src);
+                            let mut data = loader::compute(src, true).map_err(map_render_error)?;
                             data.insert("first".to_string(), json!(first));
                             data.insert("last".to_string(), json!(last));
                             data.insert("href".to_string(), json!(url));

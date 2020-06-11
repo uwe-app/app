@@ -3,13 +3,11 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::fs::File;
 
-use serde_json::{Map, Value};
-
 use crate::Error;
-use super::loader;
 
 type ContentResult = (String, bool, String);
 
+#[derive(Debug)]
 pub struct Config {
     pub start: String,
     pub end: String,
@@ -35,7 +33,7 @@ impl Config {
     }
 }
 
-pub fn split<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> {
+pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> {
 
     let mut fm = String::new();
     let mut content = String::new();

@@ -38,7 +38,7 @@ impl<'a> Parser<'a> {
         output: P,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
-        let (content, has_fm, fm) = frontmatter::split(
+        let (content, has_fm, fm) = frontmatter::load(
             &input, frontmatter::Config::new_html(false))?;
 
         if has_fm {
@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
         output: P,
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
-        let (content, has_fm, fm) = frontmatter::split(
+        let (content, has_fm, fm) = frontmatter::load(
             &input, frontmatter::Config::new_markdown(false))?;
 
         if has_fm {

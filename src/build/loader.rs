@@ -15,10 +15,13 @@ use log::{warn};
 use crate::{
     utils,
     Error,
+    MD,
     INDEX_STEM,
     ROOT_TABLE_KEY,
     PARSE_EXTENSIONS
 };
+
+use super::frontmatter;
 
 use crate::config::Config;
 
@@ -66,13 +69,14 @@ pub fn table_to_json_map(table: &Table) -> Map<String, Value> {
     map
 }
 
-pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
+pub fn compute<P: AsRef<Path>>(f: P, frontmatter: bool) -> Result<Map<String, Value>, Error> {
     let mut map: Map<String, Value> = Map::new();
     let data = DATA.lock().unwrap();
 
     // Look for file specific data
     let file_key = f.as_ref().to_path_buf().to_string_lossy().into_owned();
     let file_object = data.get(&file_key);
+
     match file_object {
         // Handle returning file specific data, note that
         // these objects have already inherited root properties
@@ -97,7 +101,21 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
         }
     }
 
-    map
+    if frontmatter {
+        if let Some(ext) = f.as_ref().extension() {
+            let conf = if ext == MD {
+                frontmatter::Config::new_markdown(true)
+            } else {
+                frontmatter::Config::new_html(true)
+            };
+            let (_, has_fm, fm) = frontmatter::load(f.as_ref(), conf)?;
+            if has_fm {
+                parse_into(fm, &mut map)?;
+            }
+        }
+    }
+
+    Ok(map)
 }
 
 pub fn parse_into(source: String, data: &mut Map<String, Value>) -> Result<(), Error> {

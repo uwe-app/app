@@ -3,6 +3,8 @@ use handlebars::*;
 
 use serde_json::{json, Map, Value};
 
+use crate::Error;
+
 pub mod children;
 pub mod html;
 pub mod include;
@@ -13,6 +15,10 @@ pub mod parent;
 pub mod random;
 pub mod slug;
 pub mod url;
+
+pub fn map_render_error(e: Error) -> RenderError {
+    RenderError::new(e.to_string())
+}
 
 pub struct BufferedOutput {
     buffer: String,
