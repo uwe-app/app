@@ -7,6 +7,7 @@ use crate::{
 };
 
 use super::matcher::FileType;
+use super::loader;
 use super::template;
 use super::frontmatter;
 use super::context::Context;
@@ -38,10 +39,10 @@ impl<'a> Parser<'a> {
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
         let (content, has_fm, fm) = frontmatter::split(
-            &input, frontmatter::Config::new_html())?;
+            &input, frontmatter::Config::new_html(false))?;
 
         if has_fm {
-            frontmatter::parse_into(fm, data)?;
+            loader::parse_into(fm, data)?;
         }
 
         let result = self
@@ -57,10 +58,10 @@ impl<'a> Parser<'a> {
         data: &mut Map<String, Value>) -> Result<String, Error> {
 
         let (content, has_fm, fm) = frontmatter::split(
-            &input, frontmatter::Config::new_markdown())?;
+            &input, frontmatter::Config::new_markdown(false))?;
 
         if has_fm {
-            frontmatter::parse_into(fm, data)?;
+            loader::parse_into(fm, data)?;
         }
 
         let mut result = self

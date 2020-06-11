@@ -100,6 +100,12 @@ pub fn compute<P: AsRef<Path>>(f: P) -> Map<String, Value> {
     map
 }
 
+pub fn parse_into(source: String, data: &mut Map<String, Value>) -> Result<(), Error> {
+    let mut res = parse_toml_to_json(&source)?;
+    data.append(&mut res);
+    Ok(())
+}
+
 pub fn parse_toml_to_json(s: &str) -> Result<Map<String, Value>, Error> {
     let config: TomlMap<String, TomlValue> = toml::from_str(s)?;
     Ok(table_to_json_map(&config))

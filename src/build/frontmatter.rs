@@ -18,19 +18,19 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new_markdown() -> Self {
+    pub fn new_markdown(bail: bool) -> Self {
         Self {
             start: String::from("+++"),
             end: String::from("+++"),
-            bail: false,
+            bail,
         }
     }
 
-    pub fn new_html() -> Self {
+    pub fn new_html(bail: bool) -> Self {
         Self {
             start: String::from("<!--"),
             end: String::from("-->"),
-            bail: false,
+            bail,
         }
     }
 }
@@ -99,8 +99,3 @@ pub fn split<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error>
     return Ok((content, has_front_matter, fm))
 }
 
-pub fn parse_into(source: String, data: &mut Map<String, Value>) -> Result<(), Error> {
-    let mut res = loader::parse_toml_to_json(&source)?;
-    data.append(&mut res);
-    Ok(())
-}
