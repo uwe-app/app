@@ -330,6 +330,26 @@ impl<'a> Invalidator<'a> {
                 Err(e) => return Err(Error::from(e)),
             }
         }
+
+        // This is a fix for double location.reload on books,
+        // the `book` build directory is also watched which
+        // would generate a lot of ignores and trigger a 
+        // second websocket notification, this check disables it.
+        //
+        // Once the logic for selecting watch directories is implemented
+        // this can probably be removed.
+        let is_empty = rule.actions.is_empty()
+            && rule.hooks.is_empty()
+            && rule.book.source.is_empty();
+        match rule.strategy {
+            Strategy::Mixed => {
+                if is_empty {
+                    rule.notify = false;
+                } 
+            },
+            _ => {},
+        }
+
         Ok(rule)
     }
 
