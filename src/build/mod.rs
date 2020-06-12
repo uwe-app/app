@@ -247,8 +247,8 @@ impl<'a> Builder<'a> {
         let theme = self.context.config.get_book_theme_path(
             &self.context.options.source);
 
-        let follow_links = self.context.config.build.follow_links.is_some()
-            && self.context.config.build.follow_links.unwrap();
+        let build = self.context.config.build.as_ref().unwrap();
+        let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
         let mut filters: Vec<PathBuf> = Vec::new();
         filters.push(partials);

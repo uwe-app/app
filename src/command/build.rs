@@ -116,17 +116,15 @@ pub fn build_project<P: AsRef<Path>>(
     build_workspaces(spaces, args, error_cb)
 }
 
-pub fn build_workspaces(
+fn build_workspaces(
     spaces: Vec<Workspace>,
     args: &BuildArguments,
     error_cb: ErrorCallback) -> Result<(), Error> {
 
     for space in spaces {
         let opts = workspace::prepare(&space.config, args)?;
-        println!("Build a workspace: {:?}", opts);
         build(space.config, opts, error_cb)?;
     }
-
     Ok(())
 }
 

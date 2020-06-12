@@ -26,9 +26,8 @@ impl<'a> TemplateRender<'a> {
     pub fn new(context: &'a Context) -> Self {
         let mut handlebars = Handlebars::new();
 
-        let strict = context.config.build.strict.is_some()
-            && context.config.build.strict.unwrap();
-
+        let build = context.config.build.as_ref().unwrap();
+        let strict = build.strict.is_some() && build.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
         handlebars.register_helper("children", Box::new(helpers::children::Children));

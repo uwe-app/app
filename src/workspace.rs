@@ -34,6 +34,9 @@ fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
 }
 
 pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
+
+    let build = cfg.build.as_ref().unwrap();
+
     let mut tag_target = BuildTag::Debug;
     if args.release {
         tag_target = BuildTag::Release;
@@ -48,7 +51,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
     let target_dir = tag_target.get_path_name();
     info!("{}", target_dir);
 
-    let mut target = cfg.build.target.clone();
+    let mut target = build.target.clone();
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
 
@@ -63,7 +66,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
 
     if args.force && target.exists() {
         info!("rm -rf {}", target.display());
-        //fs::remove_dir_all(&target)?;
+        fs::remove_dir_all(&target)?;
     }
 
     create_output_dir(&target)?;
@@ -75,7 +78,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
                 Error::new(
                     format!("Directory must be relative {}", d.display())));
         }
-        let mut src = cfg.build.source.clone();
+        let mut src = build.source.clone();
         src.push(d);
         if !src.exists() {
             return Err(
@@ -97,17 +100,17 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
         port = p;
     }
 
-    let mut from = cfg.build.source.clone();
+    let mut from = build.source.clone();
     if let Some(dir) = &dir {
         from = dir.clone().to_path_buf();
     }
 
-    let clean_url = cfg.build.clean_url.is_some()
-        && cfg.build.clean_url.unwrap();
+    let clean_url = build.clean_url.is_some()
+        && build.clean_url.unwrap();
 
     let opts = BuildOptions {
-        source: cfg.build.source.clone(),
-        output: cfg.build.target.clone(),
+        source: build.source.clone(),
+        output: build.target.clone(),
         host: host.to_owned(),
         port: port.to_owned(),
 
@@ -133,8 +136,27 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
     let project = dir.as_ref();
     let cfg = Config::load(&project, walk_ancestors)?;
 
-    if let Some(workspaces) = cfg.workspace {
-        // TODO: iterate and load from workspace members 
+    if let Some(ref workspaces) = &cfg.workspace {
+        for space in &workspaces.members {
+            if let Some(root) = cfg.get_project().as_mut() {
+                root.push(space);
+                if !root.exists() || root.is_file() {
+                    return Err(
+                        Error::new(
+                            format!("Workspace must be a directory")));
+                }
+
+                // TODO: convert back to relative paths!
+
+                // Recursive so that workspaces can reference
+                // other workspaces if they need to
+                load(root, false, spaces)?;
+            } else {
+                return Err(
+                    Error::new(
+                        format!("Could not determine project root")));
+            }
+        }
     } else {
         spaces.push(Workspace::new(cfg)); 
     }

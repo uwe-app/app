@@ -24,11 +24,11 @@ use log::debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    pub host: String,
+    pub host: Option<String>,
     #[serde(skip)]
     pub url: Option<Url>,
     pub file: Option<PathBuf>,
-    pub build: BuildConfig,
+    pub build: Option<BuildConfig>,
     pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
     pub book: Option<BookConfig>,
@@ -45,10 +45,10 @@ impl Config {
 
     pub fn new() -> Self {
         Self {
-            host: String::from(DEFAULT_HOST),
+            host: Some(String::from(DEFAULT_HOST)),
             url: None,
             file: None,
-            build: BuildConfig::new(),
+            build: None,
             workspace: None,
             extension: Some(ExtensionConfig::new()),
             book: None,
@@ -70,50 +70,63 @@ impl Config {
                 let path = file.canonicalize()?;
                 cfg.file = Some(path.to_path_buf());
 
-                let mut host = cfg.host.clone();
-                host = host.trim_start_matches("http://").to_string();
-                host = host.trim_start_matches("https://").to_string();
+                if cfg.workspace.is_none() && cfg.host.is_none() {
+                    cfg.host = Some(String::from(DEFAULT_HOST));
+                }
 
-                let mut url_host = String::from("https://");
-                url_host.push_str(&host);
+                if let Some(host) = cfg.host.as_ref() {
+                    let mut host = host.clone();
+                    host = host.trim_start_matches("http://").to_string();
+                    host = host.trim_start_matches("https://").to_string();
 
-                let url = Url::parse(&url_host)?;
-                cfg.url = Some(url);
+                    let mut url_host = String::from("https://");
+                    url_host.push_str(&host);
 
-                if cfg.build.source.is_relative() {
+                    let url = Url::parse(&url_host)?;
+                    cfg.url = Some(url);
+                }
+
+                // Assume default build settings for the site
+                if cfg.build.is_none() {
+                    cfg.build = Some(BuildConfig::new());
+                }
+
+                let mut build = cfg.build.as_mut().unwrap();
+
+                if build.source.is_relative() {
                     let mut bp = base.to_path_buf(); 
-                    bp.push(&cfg.build.source);
-                    cfg.build.source = bp;
+                    bp.push(&build.source);
+                    build.source = bp;
                 }
 
-                if cfg.build.target.is_relative() {
+                if build.target.is_relative() {
                     let mut bp = base.to_path_buf(); 
-                    bp.push(&cfg.build.target);
-                    cfg.build.target = bp;
+                    bp.push(&build.target);
+                    build.target = bp;
                 }
 
-                if cfg.build.strict.is_none() {
-                    cfg.build.strict = Some(true);
+                if build.strict.is_none() {
+                    build.strict = Some(true);
                 }
 
-                if cfg.build.assets.is_none() {
-                    cfg.build.assets = Some(PathBuf::from(ASSETS));
+                if build.assets.is_none() {
+                    build.assets = Some(PathBuf::from(ASSETS));
                 }
 
-                if cfg.build.partials.is_none() {
-                    cfg.build.partials = Some(PathBuf::from(PARTIALS));
+                if build.partials.is_none() {
+                    build.partials = Some(PathBuf::from(PARTIALS));
                 }
 
-                if cfg.build.generators.is_none() {
-                    cfg.build.generators = Some(PathBuf::from(GENERATORS));
+                if build.generators.is_none() {
+                    build.generators = Some(PathBuf::from(GENERATORS));
                 }
 
-                if cfg.build.resources.is_none() {
-                    cfg.build.resources = Some(PathBuf::from(RESOURCES));
+                if build.resources.is_none() {
+                    build.resources = Some(PathBuf::from(RESOURCES));
                 }
 
-                if cfg.build.clean_url.is_none() {
-                    cfg.build.clean_url= Some(true);
+                if build.clean_url.is_none() {
+                    build.clean_url= Some(true);
                 }
 
                 if cfg.serve.is_none() {
@@ -197,28 +210,32 @@ impl Config {
     }
 
     pub fn get_assets_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let assets = self.build.assets.as_ref().unwrap();
+        let build = self.build.as_ref().unwrap();
+        let assets = build.assets.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(assets);
         pth 
     }
 
     pub fn get_partials_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let partial = self.build.partials.as_ref().unwrap();
+        let build = self.build.as_ref().unwrap();
+        let partial = build.partials.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(partial);
         pth 
     }
 
     pub fn get_generators_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let generator = self.build.generators.as_ref().unwrap();
+        let build = self.build.as_ref().unwrap();
+        let generator = build.generators.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(generator);
         pth 
     }
 
     pub fn get_resources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let resource = self.build.resources.as_ref().unwrap();
+        let build = self.build.as_ref().unwrap();
+        let resource = build.resources.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(resource);
         pth 

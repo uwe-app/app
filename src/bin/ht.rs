@@ -13,10 +13,8 @@ use structopt::StructOpt;
 use hypertext::{
     Config,
     BuildArguments,
-    BuildTag,
     Error,
     ArchiveOptions,
-    BuildOptions,
     BundleOptions,
     ServeOptions,
     InitOptions,
@@ -346,103 +344,6 @@ fn process_command(cmd: &Command) {
                 project = empty;
             }
 
-            let mut cfg = Config::new();
-            let res = Config::load(&project, true);
-            match res {
-                Ok(conf) => {
-                    cfg = conf;
-                },
-                Err(e) => {
-                    fatal(e);
-                },
-            }
-
-            let mut tag_target = BuildTag::Debug;
-            if args.release {
-                tag_target = BuildTag::Release;
-            }
-
-            if let Some(t) = &args.tag {
-                if !t.is_empty() {
-                    tag_target = BuildTag::Custom(t.to_string());
-                }
-            }
-
-            let target_dir = tag_target.get_path_name();
-            info!("{}", target_dir);
-
-            let mut target = cfg.build.target.clone();
-            if !target_dir.is_empty() {
-                let mut target_dir_buf = PathBuf::new();
-                target_dir_buf.push(&target_dir);
-
-                if target_dir_buf.is_absolute() {
-                    error(format!("Build tag may not be an absolute path {}", target_dir));
-                }
-
-                target.push(target_dir);
-            }
-
-            if args.force && target.exists() {
-                info!("rm -rf {}", target.display());
-                if let Err(e) = fs::remove_dir_all(&target) {
-                    fatal(e); 
-                }
-            }
-
-            create_output_dir(&target);
-
-            let mut dir = None;
-            if let Some(d) = &args.directory {
-                if d.is_absolute() {
-                    error(format!("Directory must be relative {}", d.display()));
-                }
-                let mut src = cfg.build.source.clone();
-                src.push(d);
-                if !src.exists() {
-                    error(format!("Target directory does not exist {}", src.display()));
-                }
-                dir = Some(src);
-            }
-
-            let serve = cfg.serve.as_ref().unwrap();
-            let mut host = &serve.host;
-            let mut port = &serve.port;
-
-            if let Some(h) = &args.server.host {
-                host = h;
-            }
-
-            if let Some(p) = &args.server.port {
-                port = p;
-            }
-
-            let mut from = cfg.build.source.clone();
-            if let Some(dir) = &dir {
-                from = dir.clone().to_path_buf();
-            }
-
-            let clean_url = cfg.build.clean_url.is_some()
-                && cfg.build.clean_url.unwrap();
-
-            let opts = BuildOptions {
-                source: cfg.build.source.clone(),
-                output: cfg.build.target.clone(),
-                host: host.to_owned(),
-                port: port.to_owned(),
-
-                clean_url,
-                target,
-                from,
-                directory: dir,
-                max_depth: args.max_depth,
-                release: args.release,
-                live: args.live,
-                force: args.force,
-                index_links: args.index_links,
-                tag: tag_target,
-            };
-
             let build_args = BuildArguments {
                 directory: args.directory.clone(),
                 tag: args.tag.clone(),
@@ -453,13 +354,11 @@ fn process_command(cmd: &Command) {
                 release: args.release,
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
-                //..Default::default() 
             };
 
-            debug!("{:?}", &cfg);
-
             let now = SystemTime::now();
-            if let Err(e) = hypertext::build(cfg, opts, fatal) {
+            //if let Err(e) = hypertext::build(cfg, opts, fatal) {
+            if let Err(e) = hypertext::build_project(&project, &build_args, fatal) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {

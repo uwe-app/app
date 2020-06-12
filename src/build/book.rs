@@ -69,8 +69,8 @@ impl<'a> BookBuilder<'a> {
         let mut base = self.context.options.target.clone();
         base.push(relative);
 
-        let follow_links = self.context.config.build.follow_links.is_some()
-            && self.context.config.build.follow_links.unwrap();
+        let build = self.context.config.build.as_ref().unwrap();
+        let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
         for result in WalkBuilder::new(&build_dir)
             .follow_links(follow_links)
