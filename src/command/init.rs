@@ -46,7 +46,6 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     let common_files: Vec<&str> = vec![
         "site/.gitignore",
         "site/index.md",
-        "site/data.toml",
         "site/layout.hbs",
         "site/partials/header.hbs",
         "site/partials/footer.hbs",

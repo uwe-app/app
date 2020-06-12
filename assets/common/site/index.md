@@ -1,3 +1,7 @@
++++
+title = "Home"
++++
+
 ## {{title}}
 
 Welcome to your new website, time to create some content!

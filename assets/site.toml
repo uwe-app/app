@@ -1,5 +1,5 @@
 host = "localhost"
 
-[build]
-source = "site"
-target = "build"
+[page]
+description = "Website"
+keywords = "Vanilla, Website"

@@ -182,8 +182,7 @@ impl<'a> Invalidator<'a> {
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
         let data_file = self.canonical(
-            self.context.config.get_page_data_path(
-                &self.context.options.source));
+            self.context.config.get_page_data_path());
 
         let layout_file = self.canonical(
             self.context.config.get_layout_path(

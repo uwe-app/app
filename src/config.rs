@@ -14,7 +14,7 @@ use crate::{utils, Error, MD, HTML};
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
 
-static PAGES: &str = "../page.toml";
+static PAGES: &str = "page.toml";
 
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
@@ -228,10 +228,10 @@ impl Config {
         pth 
     }
 
-    pub fn get_page_data_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_page_data_path(&self) -> PathBuf {
         let build = self.build.as_ref().unwrap();
         let pages = build.pages.as_ref().unwrap();
-        let mut pth = source.as_ref().to_path_buf();
+        let mut pth = self.project.as_ref().unwrap().clone();
         pth.push(pages);
         pth 
     }
