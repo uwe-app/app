@@ -11,6 +11,7 @@ mod command;
 mod server;
 mod tree;
 mod utils;
+mod workspace;
 
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";

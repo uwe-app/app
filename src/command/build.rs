@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
@@ -21,6 +22,7 @@ use crate::command::serve::*;
 use crate::{Error};
 use crate::utils;
 
+use crate::workspace::{self, Workspace};
 use crate::server::livereload;
 
 use crate::callback::ErrorCallback;
@@ -59,6 +61,22 @@ impl BuildTag {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct BuildArguments {
+    // Specific directory relative to source to walk
+    pub directory: Option<PathBuf>,
+    pub max_depth: Option<usize>,
+    pub release: bool,
+    pub tag: Option<String>,
+    pub live: bool,
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub force: bool,
+    pub index_links: bool,
+}
+
+// FIXME: re-use the BuildArguments in the BuildOptions!
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildOptions {
     // Root of the input
@@ -67,15 +85,15 @@ pub struct BuildOptions {
     pub output: PathBuf,
     // Target output directory including a build tag
     pub target: PathBuf,
-    // Specific directory relative to source to walk
-    pub directory: Option<PathBuf>,
     // Where to build from either `source` or `directory` relative to `source`
     pub from: PathBuf,
 
-    pub max_depth: Option<usize>,
-
-    pub release: bool,
     pub clean_url: bool,
+
+    // Specific directory relative to source to walk
+    pub directory: Option<PathBuf>,
+    pub max_depth: Option<usize>,
+    pub release: bool,
     pub tag: BuildTag,
     pub live: bool,
     pub host: String,
@@ -86,6 +104,16 @@ pub struct BuildOptions {
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
+}
+
+pub fn build_project<P: AsRef<Path>>(project: P, error_cb: ErrorCallback) -> Result<(), Error> {
+    let spaces = workspace::load(project, error_cb)?;
+    build_workspaces(spaces, error_cb)
+}
+
+pub fn build_workspaces(workspaces: Vec<Workspace>, error_cb: ErrorCallback) -> Result<(), Error> {
+    println!("Build a workspace: ");
+    Ok(())
 }
 
 pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback) -> Result<(), Error> {

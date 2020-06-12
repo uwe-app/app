@@ -29,10 +29,16 @@ pub struct Config {
     pub url: Option<Url>,
     pub file: Option<PathBuf>,
     pub build: BuildConfig,
+    pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
     pub book: Option<BookConfig>,
     pub extension: Option<ExtensionConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkspaceConfig {
+    pub members: Vec<PathBuf>,
 }
 
 impl Config {
@@ -43,6 +49,7 @@ impl Config {
             url: None,
             file: None,
             build: BuildConfig::new(),
+            workspace: None,
             extension: Some(ExtensionConfig::new()),
             book: None,
             serve: Some(ServeConfig::new()),

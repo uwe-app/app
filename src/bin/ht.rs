@@ -12,6 +12,7 @@ use structopt::StructOpt;
 
 use hypertext::{
     Config,
+    BuildArguments,
     BuildTag,
     Error,
     ArchiveOptions,
@@ -440,6 +441,19 @@ fn process_command(cmd: &Command) {
                 force: args.force,
                 index_links: args.index_links,
                 tag: tag_target,
+            };
+
+            let build_args = BuildArguments {
+                directory: args.directory.clone(),
+                tag: args.tag.clone(),
+                max_depth: args.max_depth,
+                index_links: args.index_links,
+                live: args.live,
+                force: args.force,
+                release: args.release,
+                host: args.server.host.clone(),
+                port: args.server.port.clone(),
+                //..Default::default() 
             };
 
             debug!("{:?}", &cfg);
