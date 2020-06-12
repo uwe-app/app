@@ -122,7 +122,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            data = loader::compute(&path, true)?;
+                            data = loader::compute(&path, &ctx.config, true)?;
 
                         }
                         _ => {}
@@ -157,7 +157,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                                 dest = rel.to_path_buf();
                             }
                             href = dest.to_string_lossy().to_string();
-                            data = loader::compute(&f, true)?;
+                            data = loader::compute(&f, &ctx.config, true)?;
 
                             break;
                         }

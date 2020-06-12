@@ -17,7 +17,6 @@ use crate::{
     Error,
     MD,
     INDEX_STEM,
-    ROOT_TABLE_KEY,
     PARSE_EXTENSIONS
 };
 
@@ -69,30 +68,17 @@ pub fn table_to_json_map(table: &Table) -> Map<String, Value> {
     map
 }
 
-pub fn compute<P: AsRef<Path>>(f: P, frontmatter: bool) -> Result<Map<String, Value>, Error> {
-    let mut map: Map<String, Value> = Map::new();
+pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Result<Map<String, Value>, Error> {
+    let mut map: Map<String, Value> = config.page.as_ref().unwrap().clone();
+
     let data = DATA.lock().unwrap();
 
     // Look for file specific data
-    let file_key = f.as_ref().to_path_buf().to_string_lossy().into_owned();
-    let file_object = data.get(&file_key);
-
-    match file_object {
-        // Handle returning file specific data, note that
-        // these objects have already inherited root properties
-        Some(file_object) => {
-            if let Some(d) = file_object.as_object() {
-                map = d.clone()
-            } 
-        },
-        // Otherwise just return the root object
-        None => {
-            if let Some(r) = data.get(ROOT_TABLE_KEY) {
-                if let Some(r) = r.as_object() {
-                    map = r.clone()
-                } 
-            }
-        }
+    let file_key = f.as_ref().to_string_lossy().into_owned();
+    if let Some(file_object) = data.get(&file_key) {
+        if let Some(d) = file_object.as_object() {
+            map.append(&mut d.clone());
+        } 
     }
 
     if let None = map.get("title") {
@@ -146,74 +132,35 @@ pub fn reload(config: &Config, source: &PathBuf) -> Result<(), Error> {
 
 pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
     let src = config.get_data_path(source);
-
     if src.exists() {
         let mut data = DATA.lock().unwrap();
-        let mut root_object = Map::new();
-
         let properties = utils::read_string(src);
         match properties {
             Ok(s) => {
                 let config: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&s);
                 match config {
                     Ok(props) => {
-
-                        let root = props.get(ROOT_TABLE_KEY);
-                        match root {
-                            Some(root) => {
-                                let root_table = root.as_table();
-                                match root_table {
-                                    Some(root) => {
-                                        root_object = table_to_json_map(root); 
-                                        data.insert(ROOT_TABLE_KEY.to_string(), json!(root_object));
-                                    },
-                                    None => {
-                                        data.insert(ROOT_TABLE_KEY.to_string(), json!(Map::new()));
-                                    }
-                                }
-                            },
-                            None => {
-                                data.insert(ROOT_TABLE_KEY.to_string(), json!(Map::new()));
-                            }
-                        }
-
                         for (k, v) in props {
-
-                            if k == ROOT_TABLE_KEY {
-                                continue;
-                            }
-
                             if let Some(props) = v.as_table() {
                                 let result = find_file_for_key(&k, source);
                                 match result {
                                     Some(f) => {
-                                        // Start with the root object properties
-                                        let mut file_map = root_object.clone();
-
-                                        // Merge file specific properties
-                                        for (k, v) in props {
-                                            file_map.insert(k.to_string(), json!(v));
-                                        }
-
                                         // Use the actual file path as the key
                                         // so we can find it easily later
                                         let file_key = f.to_string_lossy().into_owned();
-                                        data.insert(file_key, json!(file_map));
+                                        data.insert(file_key, json!(props));
                                     },
-                                    None => warn!("no file for table: {}", k)
+                                    None => warn!("No file for page table: {}", k)
                                 }
                             }
                         }
                     }
-                    Err(e) => return Err(Error::TomlDeserError(e))
+                    Err(e) => return Err(Error::from(e))
                 }
             }
-            Err(e) => return Err(Error::IoError(e))
+            Err(e) => return Err(Error::from(e))
         }
-    } else {
-        warn!("no data source {}", src.display());
     }
-
     Ok(())
 }
 

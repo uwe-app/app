@@ -12,13 +12,14 @@ use crate::build::loader;
 use crate::{
     utils,
     Error,
-    ROOT_TABLE_KEY,
     DRAFT_KEY,
     BOOK_THEME_KEY,
     BOOK_TOML
 };
 
 use super::context::Context;
+
+static BOOK_SITE_TABLE_KEY: &str = "site";
 
 pub struct BookBuilder<'a> {
     //pub books: Vec<PathBuf>,
@@ -57,11 +58,6 @@ impl<'a> BookBuilder<'a> {
         }
         false
     }
-
-    //pub fn add<P: AsRef<Path>>(&mut self, p: P) {
-        //let b = p.as_ref();
-        //self.books.push(b.to_path_buf().to_owned());
-    //}
 
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
@@ -107,7 +103,7 @@ impl<'a> BookBuilder<'a> {
             let conf_result = loader::load_toml_to_json(self.get_book_config(&dir));
             match conf_result {
                 Ok(map) => {
-                    if let Some(site) = map.get(ROOT_TABLE_KEY) {
+                    if let Some(site) = map.get(BOOK_SITE_TABLE_KEY) {
                         if let Some(draft) = site.get(DRAFT_KEY) {
                             if let Some(val) = draft.as_bool() {
                                 is_draft = val;

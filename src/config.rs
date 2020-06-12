@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use url::Url;
 
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use toml;
 
 use crate::{utils, Error, MD, HTML};
@@ -34,6 +35,7 @@ pub struct Config {
     pub book: Option<BookConfig>,
     pub extension: Option<ExtensionConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
+    pub page: Option<Map<String, Value>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,6 +56,7 @@ impl Config {
             book: None,
             serve: Some(ServeConfig::new()),
             hook: None,
+            page: None,
         }
     }
 
@@ -84,6 +87,10 @@ impl Config {
 
                     let url = Url::parse(&url_host)?;
                     cfg.url = Some(url);
+                }
+
+                if cfg.page.is_none() {
+                    cfg.page = Some(Map::new());
                 }
 
                 // Assume default build settings for the site

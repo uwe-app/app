@@ -149,7 +149,7 @@ impl<'a> Builder<'a> {
                         )))
                 }
 
-                let mut data = loader::compute(file, true)?;
+                let mut data = loader::compute(file, &self.context.config, true)?;
 
                 let mut clean = self.context.options.clean_url;
                 if let Some(val) = data.get("clean") {

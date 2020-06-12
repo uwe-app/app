@@ -20,7 +20,6 @@ static LAYOUT_HBS: &str = "layout.hbs";
 static MD: &str = "md";
 static HTML: &str = "html";
 static JSON: &str = "json";
-static ROOT_TABLE_KEY: &str = "site";
 static DRAFT_KEY: &str = "draft";
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
