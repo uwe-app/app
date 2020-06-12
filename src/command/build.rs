@@ -154,9 +154,9 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
 
     if !live {
         let mut builder = Builder::new(&ctx);
-        builder.load_manifest()?;
+        builder.manifest.load()?;
         builder.build(&from, false)?;
-        return builder.save_manifest()
+        return builder.manifest.save()
     } else {
 
         let endpoint = utils::generate_id(16);
@@ -194,7 +194,7 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
             }
 
             // Prepare for incremental builds
-            if let Err(_) = serve_builder.load_manifest() {}
+            if let Err(_) = serve_builder.manifest.load() {}
 
             // Do a full build before listening for filesystem changes
             let result = serve_builder.build(&from, true);

@@ -38,7 +38,7 @@ pub struct Builder<'a> {
     context: &'a Context,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
-    manifest: Manifest,
+    pub manifest: Manifest<'a>,
 }
 
 impl<'a> Builder<'a> {
@@ -49,7 +49,7 @@ impl<'a> Builder<'a> {
         // template partials can be found
         let parser = Parser::new(&context);
 
-        let manifest = Manifest::new();
+        let manifest = Manifest::new(&context);
 
         Self {
             context,
@@ -321,32 +321,4 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    fn get_manifest_file(&self) -> PathBuf {
-        let mut file = self.context.options.target.clone();
-        let name = file.file_name().unwrap_or(std::ffi::OsStr::new(""))
-            .to_string_lossy().into_owned();
-        if !name.is_empty() {
-            file.set_file_name(format!("{}.json", name));
-        }
-        file
-    }
-
-    pub fn load_manifest(&mut self) -> Result<(), Error> {
-        let file = self.get_manifest_file();
-        if file.exists() && file.is_file() {
-            debug!("manifest {}", file.display());
-            let json = utils::read_string(file)?;
-            self.manifest = serde_json::from_str(&json)?;
-
-        }
-        Ok(())
-    }
-
-    pub fn save_manifest(&self) -> Result<(), Error> {
-        let file = self.get_manifest_file();
-        let json = serde_json::to_string(&self.manifest)?;
-        debug!("manifest {}", file.display());
-        utils::write_string(file, json)?;
-        Ok(())
-    }
 }

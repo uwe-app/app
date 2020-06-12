@@ -122,7 +122,7 @@ impl<'a> Invalidator<'a> {
                 Ok(invalidation) => {
                     match self.invalidate(&from, &invalidation) {
                         Ok(_) => {
-                            self.builder.save_manifest()?;
+                            self.builder.manifest.save()?;
                             if invalidation.notify {
                                 let _ = tx.send(Message::text("reload"));
                             }

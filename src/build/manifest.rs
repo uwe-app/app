@@ -1,23 +1,36 @@
 use std::path::Path;
+use std::path::PathBuf;
 use std::convert::AsRef;
 use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value, Map};
 
+use log::debug;
+
+use crate::{utils, Error};
+
+use super::context::Context;
+
+pub struct Manifest<'a> {
+    file: ManifestFile,
+    context: &'a Context,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ManifestFile {
+    pub map: Map<String, Value>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ManifestEntry {
     modified: SystemTime,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Manifest {
-    pub map: Map<String, Value>
-}
-
-impl Manifest {
-    pub fn new() -> Self {
-        Manifest{map: Map::new()}
+impl<'a> Manifest<'a> {
+    pub fn new(context: &'a Context) -> Self {
+        let file = ManifestFile{map: Map::new()};
+        Manifest{context, file}
     }
 
     fn get_key<P: AsRef<Path>>(&self, file: P) -> String {
@@ -41,11 +54,11 @@ impl Manifest {
         }
 
         let key = self.get_key(file.as_ref());
-        if !self.map.contains_key(&key) {
+        if !self.file.map.contains_key(&key) {
             return true 
         }
 
-        if let Some(entry) = self.map.get(&key) {
+        if let Some(entry) = self.file.map.get(&key) {
             let entry: ManifestEntry = serde_json::from_value(json!(entry)).unwrap();
             if let Some(current) = self.get_entry(file, dest) {
                 if current.modified > entry.modified {
@@ -61,11 +74,40 @@ impl Manifest {
         let key = self.get_key(file.as_ref());
 
         if !file.as_ref().exists() {
-            self.map.remove(&key); 
+            self.file.map.remove(&key); 
         }
 
         if let Some(value) = self.get_entry(file.as_ref(), dest.as_ref()) {
-            self.map.insert(key, json!(value));
+            self.file.map.insert(key, json!(value));
         }
+    }
+
+    fn get_manifest_file(&self) -> PathBuf {
+        let mut file = self.context.options.target.clone();
+        let name = file.file_name().unwrap_or(std::ffi::OsStr::new(""))
+            .to_string_lossy().into_owned();
+        if !name.is_empty() {
+            file.set_file_name(format!("{}.json", name));
+        }
+        file
+    }
+
+    pub fn load(&mut self) -> Result<(), Error> {
+        let file = self.get_manifest_file();
+        if file.exists() && file.is_file() {
+            debug!("manifest {}", file.display());
+            let json = utils::read_string(file)?;
+            self.file = serde_json::from_str(&json)?;
+
+        }
+        Ok(())
+    }
+
+    pub fn save(&self) -> Result<(), Error> {
+        let file = self.get_manifest_file();
+        let json = serde_json::to_string(&self.file)?;
+        debug!("manifest {}", file.display());
+        utils::write_string(file, json)?;
+        Ok(())
     }
 }
