@@ -163,6 +163,10 @@ impl Config {
                     build.clean_url= Some(true);
                 }
 
+                if build.follow_links.is_none() {
+                    build.follow_links = Some(true);
+                }
+
                 if cfg.serve.is_none() {
                     cfg.serve = Some(ServeConfig::new());
                 }
@@ -280,6 +284,7 @@ impl Config {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct BuildConfig {
     pub source: PathBuf,
     pub target: PathBuf,
@@ -304,6 +309,7 @@ impl BuildConfig {
             generators: Some(PathBuf::from(GENERATORS)),
             resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
+            follow_links: Some(true),
             ..Default::default()
         }
     }
