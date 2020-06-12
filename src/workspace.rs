@@ -6,7 +6,6 @@ use log::{info, debug};
 
 use crate::config::Config;
 use crate::Error;
-use crate::callback::ErrorCallback;
 use crate::command::build::{BuildTag, BuildOptions, BuildArguments};
 
 pub struct Workspace {
@@ -34,7 +33,7 @@ fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn get_build_options_for_config(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
+pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
     let mut tag_target = BuildTag::Debug;
     if args.release {
         tag_target = BuildTag::Release;
@@ -64,7 +63,7 @@ pub fn get_build_options_for_config(cfg: &Config, args: &BuildArguments) -> Resu
 
     if args.force && target.exists() {
         info!("rm -rf {}", target.display());
-        fs::remove_dir_all(&target)?;
+        //fs::remove_dir_all(&target)?;
     }
 
     create_output_dir(&target)?;
@@ -129,16 +128,16 @@ pub fn get_build_options_for_config(cfg: &Config, args: &BuildArguments) -> Resu
     Ok(opts)
 }
 
-pub fn load<P: AsRef<Path>>(dir: P, error_cb: ErrorCallback) -> Result<Vec<Workspace>, Error> {
+pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Workspace>) -> Result<(), Error> {
+
     let project = dir.as_ref();
-    let mut out = Vec::new();
-    let cfg = Config::load(&project)?;
+    let cfg = Config::load(&project, walk_ancestors)?;
 
     if let Some(workspaces) = cfg.workspace {
         // TODO: iterate and load from workspace members 
     } else {
-        out.push(Workspace::new(cfg)); 
+        spaces.push(Workspace::new(cfg)); 
     }
 
-    Ok(out)
+    Ok(())
 }

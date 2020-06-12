@@ -148,20 +148,27 @@ impl Config {
         return Ok(Config::new())
     }
 
-    pub fn load<P: AsRef<Path>>(source: P) -> Result<Self, Error> {
-        let pth = source.as_ref().to_path_buf();
-        if pth.ends_with(SITE_TOML) {
+    pub fn load<P: AsRef<Path>>(source: P, walk_ancestors: bool) -> Result<Self, Error> {
+        let mut pth = source.as_ref().to_path_buf();
+        if pth.is_file() && pth.ends_with(SITE_TOML) {
             return Config::load_config(pth)
-        }
-        for p in pth.ancestors() {
-            let mut pb = p.to_path_buf();
-            pb.push(SITE_TOML);
-            if pb.exists() && pb.is_file() {
-                return Config::load_config(pb)
+        } else if pth.is_dir() {
+            pth.push(SITE_TOML);
+            if pth.is_file() && pth.exists() {
+                return Config::load_config(pth)
             }
-        } 
-        Err(Error::new(
-            format!("No configuration found for {}", pth.display())))
+        }
+
+        if walk_ancestors {
+            for p in pth.ancestors() {
+                let mut pb = p.to_path_buf();
+                pb.push(SITE_TOML);
+                if pb.exists() && pb.is_file() {
+                    return Config::load_config(pb)
+                }
+            } 
+        }
+        Err(Error::new(format!("No configuration found for {}", pth.display())))
     }
 
     pub fn get_project(&self) -> Option<PathBuf> {

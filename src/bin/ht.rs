@@ -347,7 +347,7 @@ fn process_command(cmd: &Command) {
             }
 
             let mut cfg = Config::new();
-            let res = Config::load(&project);
+            let res = Config::load(&project, true);
             match res {
                 Ok(conf) => {
                     cfg = conf;
