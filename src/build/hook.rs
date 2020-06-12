@@ -8,7 +8,7 @@ use crate::config::HookConfig;
 use super::context::Context;
 
 pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
-    let root = context.config.get_project().unwrap();
+    let root = context.config.get_project();
     debug!("hook root {}", root.display());
     if let Ok(root) = root.canonicalize() {
         let mut cmd = hook.path.as_ref().unwrap().clone();

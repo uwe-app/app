@@ -131,7 +131,7 @@ pub fn reload(config: &Config, source: &PathBuf) -> Result<(), Error> {
 }
 
 pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
-    let src = config.get_data_path(source);
+    let src = config.get_page_data_path(source);
     if src.exists() {
         let mut data = DATA.lock().unwrap();
         let properties = utils::read_string(src);

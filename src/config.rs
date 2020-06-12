@@ -12,8 +12,9 @@ use toml;
 use crate::{utils, Error, MD, HTML};
 
 static SITE_TOML: &str = "site.toml";
-static DATA_TOML: &str = "data.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
+
+static PAGES: &str = "../page.toml";
 
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
@@ -23,12 +24,23 @@ static DEFAULT_HOST: &str = "localhost";
 
 use log::debug;
 
+fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
+    let file = f.as_ref();
+    if let Some(p) = file.parent() {
+        return Some(p.to_path_buf());
+    } else {
+        if let Ok(cwd) = std::env::current_dir() {
+            return Some(cwd)
+        }
+    }
+    None
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub host: Option<String>,
-    #[serde(skip)]
-    pub url: Option<Url>,
     pub file: Option<PathBuf>,
+    pub project: Option<PathBuf>,
     pub build: Option<BuildConfig>,
     pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
@@ -36,6 +48,9 @@ pub struct Config {
     pub extension: Option<ExtensionConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
     pub page: Option<Map<String, Value>>,
+
+    #[serde(skip)]
+    pub url: Option<Url>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,6 +65,7 @@ impl Config {
             host: Some(String::from(DEFAULT_HOST)),
             url: None,
             file: None,
+            project: None,
             build: None,
             workspace: None,
             extension: Some(ExtensionConfig::new()),
@@ -68,6 +84,13 @@ impl Config {
 
                 let content = utils::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
+
+                cfg.project = resolve_project(&file);
+                if cfg.project.is_none() {
+                    return Err(
+                        Error::new(
+                            format!("Failed to resolve project directory for {}", file.display())));
+                }
 
                 // Must be a canonical path
                 let path = file.canonicalize()?;
@@ -114,6 +137,10 @@ impl Config {
 
                 if build.strict.is_none() {
                     build.strict = Some(true);
+                }
+
+                if build.pages.is_none() {
+                    build.pages = Some(PathBuf::from(PAGES));
                 }
 
                 if build.assets.is_none() {
@@ -191,28 +218,21 @@ impl Config {
         Err(Error::new(format!("No configuration found for {}", pth.display())))
     }
 
-    pub fn get_project(&self) -> Option<PathBuf> {
-        if let Some(file) = &self.file {
-            if let Some(p) = file.parent() {
-                return Some(p.to_path_buf());
-            } else {
-                if let Ok(cwd) = std::env::current_dir() {
-                    return Some(cwd)
-                }
-            }
-        }   
-        None
-    }
-
-    pub fn get_data_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(DATA_TOML);
-        pth 
+    pub fn get_project(&self) -> PathBuf {
+        self.project.as_ref().unwrap().clone()
     }
 
     pub fn get_layout_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let mut pth = source.as_ref().to_path_buf();
         pth.push(LAYOUT_HBS);
+        pth 
+    }
+
+    pub fn get_page_data_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let build = self.build.as_ref().unwrap();
+        let pages = build.pages.as_ref().unwrap();
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(pages);
         pth 
     }
 
@@ -264,6 +284,7 @@ pub struct BuildConfig {
     pub source: PathBuf,
     pub target: PathBuf,
     pub strict: Option<bool>,
+    pub pages: Option<PathBuf>,
     pub assets: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub generators: Option<PathBuf>,

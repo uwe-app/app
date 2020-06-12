@@ -138,24 +138,17 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
 
     if let Some(ref workspaces) = &cfg.workspace {
         for space in &workspaces.members {
-            if let Some(root) = cfg.get_project().as_mut() {
-                root.push(space);
-                if !root.exists() || root.is_file() {
-                    return Err(
-                        Error::new(
-                            format!("Workspace must be a directory")));
-                }
-
-                // TODO: convert back to relative paths!
-
-                // Recursive so that workspaces can reference
-                // other workspaces if they need to
-                load(root, false, spaces)?;
-            } else {
+            let mut root = cfg.get_project();
+            root.push(space);
+            if !root.exists() || root.is_file() {
                 return Err(
                     Error::new(
-                        format!("Could not determine project root")));
+                        format!("Workspace must be a directory")));
             }
+
+            // Recursive so that workspaces can reference
+            // other workspaces if they need to
+            load(root, false, spaces)?;
         }
     } else {
         spaces.push(Workspace::new(cfg)); 
