@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use std::convert::AsRef;
 use std::collections::BTreeMap;
 
+use url::Url;
+
 use serde::{Deserialize, Serialize};
 use toml;
 
@@ -23,6 +25,8 @@ use log::debug;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub host: String,
+    #[serde(skip)]
+    pub url: Option<Url>,
     pub file: Option<PathBuf>,
     pub build: BuildConfig,
     pub serve: Option<ServeConfig>,
@@ -36,6 +40,7 @@ impl Config {
     pub fn new() -> Self {
         Self {
             host: String::from(DEFAULT_HOST),
+            url: None,
             file: None,
             build: BuildConfig::new(),
             extension: Some(ExtensionConfig::new()),
@@ -54,8 +59,19 @@ impl Config {
                 let content = utils::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
 
+                // Must be a canonical path
                 let path = file.canonicalize()?;
                 cfg.file = Some(path.to_path_buf());
+
+                let mut host = cfg.host.clone();
+                host = host.trim_start_matches("http://").to_string();
+                host = host.trim_start_matches("https://").to_string();
+
+                let mut url_host = String::from("https://");
+                url_host.push_str(&host);
+
+                let url = Url::parse(&url_host)?;
+                cfg.url = Some(url);
 
                 if cfg.build.source.is_relative() {
                     let mut bp = base.to_path_buf(); 

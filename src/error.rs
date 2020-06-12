@@ -17,6 +17,7 @@ pub enum Error {
     ZipResultError(zip::result::ZipError),
     JsonError(serde_json::error::Error),
     NotifyError(notify::Error),
+    UrlParseError(url::ParseError),
 }
 
 impl Error {
@@ -62,6 +63,12 @@ impl From<ignore::Error> for Error {
     }
 }
 
+impl From<mdbook::errors::Error> for Error {
+    fn from(error: mdbook::errors::Error) -> Self {
+        Error::BookError(error)
+    }
+}
+
 impl From<zip::result::ZipError> for Error {
     fn from(error: zip::result::ZipError) -> Self {
         Error::ZipResultError(error)
@@ -80,9 +87,9 @@ impl From<notify::Error> for Error {
     }
 }
 
-impl From<mdbook::errors::Error> for Error {
-    fn from(error: mdbook::errors::Error) -> Self {
-        Error::BookError(error)
+impl From<url::ParseError> for Error {
+    fn from(error: url::ParseError) -> Self {
+        Error::UrlParseError(error)
     }
 }
 
@@ -100,6 +107,7 @@ impl fmt::Display for Error {
             Error::ZipResultError(ref e) => e.fmt(f),
             Error::JsonError(ref e) => e.fmt(f),
             Error::NotifyError(ref e) => e.fmt(f),
+            Error::UrlParseError(ref e) => e.fmt(f),
         }
     }
 }
@@ -117,6 +125,7 @@ impl error::Error for Error {
             Error::ZipResultError(ref e) => Some(e),
             Error::JsonError(ref e) => Some(e),
             Error::NotifyError(ref e) => Some(e),
+            Error::UrlParseError(ref e) => Some(e),
             _ => None,
         }
     }
