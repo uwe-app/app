@@ -16,11 +16,13 @@ static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
 static GENERATORS: &str = "generators";
 static RESOURCES: &str = "resources";
+static DEFAULT_HOST: &str = "localhost";
 
 use log::debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    pub host: String,
     pub file: Option<PathBuf>,
     pub build: BuildConfig,
     pub serve: Option<ServeConfig>,
@@ -33,6 +35,7 @@ impl Config {
 
     pub fn new() -> Self {
         Self {
+            host: String::from(DEFAULT_HOST),
             file: None,
             build: BuildConfig::new(),
             extension: Some(ExtensionConfig::new()),
