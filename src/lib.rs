@@ -8,6 +8,7 @@ mod config;
 mod bundle;
 mod error;
 mod command;
+mod locale;
 mod server;
 mod tree;
 mod utils;

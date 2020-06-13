@@ -6,6 +6,8 @@ use serde_json::{json, Map, Value};
 
 use handlebars::Handlebars;
 use chrono::Local;
+use fluent_templates::FluentLoader;
+use unic_langid;
 
 use log::{warn, debug};
 
@@ -15,6 +17,8 @@ use crate::{
     Error,
     LAYOUT_HBS
 };
+
+use crate::locale;
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
@@ -42,6 +46,18 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("match", Box::new(helpers::url::Match));
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
+
+        //let lang = "en";
+        let build = context.config.build.as_ref().unwrap();
+
+        if let Some(locales_dir) = &build.locales {
+            if locales_dir.exists() && locales_dir.is_dir() {
+                println!("has locales");
+                let lang_id = unic_langid::langid!("en");
+                let loader = locale::loader(locales_dir, lang_id);
+                handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader)));
+            }
+        }
 
         TemplateRender {
             context,

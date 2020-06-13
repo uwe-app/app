@@ -22,6 +22,9 @@ static GENERATORS: &str = "generators";
 static RESOURCES: &str = "resources";
 static DEFAULT_HOST: &str = "localhost";
 
+static LANG: &str = "en";
+static LOCALES: &str = "locales";
+
 use log::debug;
 
 fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
@@ -38,6 +41,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    pub lang: Option<String>,
     pub host: Option<String>,
     pub file: Option<PathBuf>,
     pub project: Option<PathBuf>,
@@ -58,10 +62,11 @@ pub struct WorkspaceConfig {
     pub members: Vec<PathBuf>,
 }
 
-impl Config {
+impl Default for Config {
 
-    pub fn new() -> Self {
-        Self {
+    fn default() -> Self {
+        Config {
+            lang: Some(LANG.into()),
             host: Some(String::from(DEFAULT_HOST)),
             url: None,
             file: None,
@@ -73,8 +78,28 @@ impl Config {
             serve: Some(ServeConfig::new()),
             hook: None,
             page: None,
-        }
+        } 
     }
+}
+
+impl Config {
+
+    //pub fn new() -> Self {
+        //Self {
+            //lang: Some(LANG.into()),
+            //host: Some(String::from(DEFAULT_HOST)),
+            //url: None,
+            //file: None,
+            //project: None,
+            //build: None,
+            //workspace: None,
+            //extension: Some(ExtensionConfig::new()),
+            //book: None,
+            //serve: Some(ServeConfig::new()),
+            //hook: None,
+            //page: None,
+        //}
+    //}
 
     pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Self, Error> {
         let file = p.as_ref();
@@ -196,7 +221,7 @@ impl Config {
                 return Ok(cfg);
             }
         }
-        return Ok(Config::new())
+        return Ok(Default::default())
     }
 
     pub fn load<P: AsRef<Path>>(source: P, walk_ancestors: bool) -> Result<Self, Error> {
@@ -290,6 +315,7 @@ pub struct BuildConfig {
     pub target: PathBuf,
     pub strict: Option<bool>,
     pub pages: Option<PathBuf>,
+    pub locales: Option<PathBuf>,
     pub assets: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub generators: Option<PathBuf>,
@@ -304,6 +330,8 @@ impl BuildConfig {
             source: PathBuf::from("site"),
             target: PathBuf::from("build"),
             strict: Some(true),
+            pages: Some(PathBuf::from(PAGES)),
+            locales: Some(PathBuf::from(LOCALES)),
             assets: Some(PathBuf::from(ASSETS)),
             partials: Some(PathBuf::from(PARTIALS)),
             generators: Some(PathBuf::from(GENERATORS)),
@@ -313,6 +341,13 @@ impl BuildConfig {
             ..Default::default()
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct FluentConfig {
+    pub fallback: String,
+    pub locales: Option<PathBuf>,
+    pub core: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

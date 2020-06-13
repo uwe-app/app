@@ -254,7 +254,7 @@ fn process_command(cmd: &Command) {
             ref args
         } => {
 
-            let cfg = Config::new();
+            let cfg: Config = Default::default();
             let serve = cfg.serve.as_ref().unwrap();
             let mut host = &serve.host;
             let mut port = &serve.port;
