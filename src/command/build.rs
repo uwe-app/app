@@ -157,7 +157,8 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
 
     let mut ctx = context::Context::new(config.lang.clone(), config, options, generators);
 
-    ctx.locales.load(&ctx.config, &ctx.options.source);
+    ctx.locales.load(&ctx.config, &ctx.options.source)?;
+
     if let Some(arc) = &ctx.locales.loader {
         let ids = arc.locales()
             .iter()

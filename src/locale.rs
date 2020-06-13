@@ -30,7 +30,8 @@ impl Locales {
             if locales_dir.exists() && locales_dir.is_dir() {
                 let fluent = config.fluent.as_ref().unwrap();
                 // FIXME: catch and return this error
-                self.loader = Some(self.arc(locales_dir, fluent).unwrap());
+                let result = self.arc(locales_dir, fluent)?;
+                self.loader = Some(result);
             }
         }
         Ok(())

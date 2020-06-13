@@ -10,6 +10,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+use std::panic;
+
 use hypertext::{
     Config,
     BuildArguments,
@@ -370,6 +372,14 @@ fn process_command(cmd: &Command) {
 
 fn main() {
     let root_args = Cli::from_args();
+   
+    // Fluent templates panics if an error is caught parsing the 
+    // templates (for example attempting to override from a shared resource)
+    // so we catch it here and push it out via the log
+    panic::set_hook(Box::new(|info| {
+        let message = format!("{}", info);
+        fatal(Error::new(message));
+    }));
 
     match &*root_args.log_level {
         "trace" => env::set_var(LOG_ENV_NAME, &root_args.log_level),

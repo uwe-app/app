@@ -19,6 +19,7 @@ pub enum Error {
     NotifyError(notify::Error),
     UrlParseError(url::ParseError),
     LanguageIdentifierError(unic_langid::LanguageIdentifierError),
+    Boxed(Box<dyn std::error::Error>),
 }
 
 impl Error {
@@ -101,6 +102,11 @@ impl From<unic_langid::LanguageIdentifierError> for Error {
 }
 
 
+impl From<Box<dyn std::error::Error>> for Error {
+    fn from(error: Box<dyn std::error::Error>) -> Self {
+        Error::Boxed(error)
+    }
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -118,6 +124,7 @@ impl fmt::Display for Error {
             Error::NotifyError(ref e) => e.fmt(f),
             Error::UrlParseError(ref e) => e.fmt(f),
             Error::LanguageIdentifierError(ref e) => e.fmt(f),
+            Error::Boxed(ref e) => e.fmt(f),
         }
     }
 }
