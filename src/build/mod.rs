@@ -263,6 +263,10 @@ impl<'a> Builder<'a> {
             filters.push(theme.clone());
         }
 
+        if let Some(locales_dir) = self.context.config.get_locales(&self.context.options.source) {
+            filters.push(locales_dir);
+        }
+
         resource::link(self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
