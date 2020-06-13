@@ -3,6 +3,7 @@ use crate::command::build::BuildOptions;
 use crate::config::Config;
 
 use super::generator::GeneratorMap;
+use crate::locale::Locales;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
@@ -12,6 +13,8 @@ pub struct Context {
     pub livereload: Option<String>,
     #[serde(skip)]
     pub generators: GeneratorMap,
+    #[serde(skip)]
+    pub locales: Locales,
 }
 
 impl Context {
@@ -20,12 +23,16 @@ impl Context {
         config: Config,
         options: BuildOptions,
         generators: GeneratorMap) -> Self {
+
+        let locales: Locales = Default::default();
+
         Context {
             lang,
             config,
             options,
             livereload: None,
             generators,
+            locales,
         }
 
     }

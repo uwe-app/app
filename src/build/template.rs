@@ -17,8 +17,6 @@ use crate::{
     LAYOUT_HBS
 };
 
-use crate::locale;
-
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
     context: &'a Context,
@@ -46,13 +44,8 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
 
-        if let Some(locales_dir) = context.config.get_locales(&context.options.source) {
-            if locales_dir.exists() && locales_dir.is_dir() {
-                let fluent = context.config.fluent.as_ref().unwrap();
-                debug!("{:?}", fluent);
-                let loader = locale::loader(locales_dir, fluent.fallback_id.clone()).unwrap();
-                handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader)));
-            }
+        if let Some(loader) = &context.locales.loader {
+            handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader)));
         }
 
         TemplateRender {

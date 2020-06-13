@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
+use log::info;
+
 use crate::config::Config;
 use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
@@ -24,7 +26,6 @@ use crate::utils;
 
 use crate::workspace::{self, Workspace};
 use crate::server::livereload;
-
 use crate::callback::ErrorCallback;
 
 lazy_static! {
@@ -148,12 +149,23 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
 
     loader::load(&config, &options.source)?;
 
+    // FIXME: build locales here so that we only load locales once
+    // FIXME: and can trap the panic that occurs with bad overrides
+    //let locales_loader = locale::load(&config, &options.source)?;
+
     let from = options.from.clone();
 
     let mut ctx = context::Context::new(config.lang.clone(), config, options, generators);
 
-    // FIXME: build locales here so that we only load locales once
-    // FIXME: and can trap the panic that occurs with bad overrides
+    ctx.locales.load(&ctx.config, &ctx.options.source);
+    if let Some(arc) = &ctx.locales.loader {
+        let ids = arc.locales()
+            .iter()
+            .map(|li| li.to_string())
+            .collect::<Vec<_>>();
+
+        info!("locale {}", ids.join(" | "));
+    }
 
     if !live {
         let mut builder = Builder::new(&ctx);

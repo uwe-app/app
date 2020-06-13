@@ -227,7 +227,6 @@ impl Config {
 
     pub fn get_locales<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
         if let Some(fluent) = &self.fluent {
-            println!("get_locales HAS FLUENT CONFIG {:?}", &fluent.locales);
             if let Some(locales) = &fluent.locales {
                 let mut pth = source.as_ref().to_path_buf();
                 pth.push(locales);
