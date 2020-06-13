@@ -150,7 +150,10 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
 
     let from = options.from.clone();
 
-    let mut ctx = context::Context::new(config, options, generators);
+    let mut ctx = context::Context::new(config.lang.clone(), config, options, generators);
+
+    // FIXME: build locales here so that we only load locales once
+    // FIXME: and can trap the panic that occurs with bad overrides
 
     if !live {
         let mut builder = Builder::new(&ctx);

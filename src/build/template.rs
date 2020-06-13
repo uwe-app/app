@@ -7,7 +7,6 @@ use serde_json::{json, Map, Value};
 use handlebars::Handlebars;
 use chrono::Local;
 use fluent_templates::FluentLoader;
-use unic_langid;
 
 use log::{warn, debug};
 
@@ -47,14 +46,11 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
 
-        //let lang = "en";
-        let build = context.config.build.as_ref().unwrap();
-
-        if let Some(locales_dir) = &build.locales {
+        if let Some(locales_dir) = context.config.get_locales(&context.options.source) {
             if locales_dir.exists() && locales_dir.is_dir() {
-                println!("has locales");
-                let lang_id = unic_langid::langid!("en");
-                let loader = locale::loader(locales_dir, lang_id);
+                let fluent = context.config.fluent.as_ref().unwrap();
+                debug!("{:?}", fluent);
+                let loader = locale::loader(locales_dir, fluent.fallback_id.clone()).unwrap();
                 handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader)));
             }
         }
@@ -107,6 +103,7 @@ impl<'a> TemplateRender<'a> {
             let modified = dt.format("%a %b %e %Y").to_string();
             file_info.insert("modified".to_string(), json!(modified));
 
+            data.insert("lang".to_string(), json!(self.context.lang));
             data.insert("file".to_string(), json!(file_info));
             data.insert("context".to_string(), json!(self.context));
 

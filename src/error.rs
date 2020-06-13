@@ -18,6 +18,7 @@ pub enum Error {
     JsonError(serde_json::error::Error),
     NotifyError(notify::Error),
     UrlParseError(url::ParseError),
+    LanguageIdentifierError(unic_langid::LanguageIdentifierError),
 }
 
 impl Error {
@@ -93,6 +94,14 @@ impl From<url::ParseError> for Error {
     }
 }
 
+impl From<unic_langid::LanguageIdentifierError> for Error {
+    fn from(error: unic_langid::LanguageIdentifierError) -> Self {
+        Error::LanguageIdentifierError(error)
+    }
+}
+
+
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -108,6 +117,7 @@ impl fmt::Display for Error {
             Error::JsonError(ref e) => e.fmt(f),
             Error::NotifyError(ref e) => e.fmt(f),
             Error::UrlParseError(ref e) => e.fmt(f),
+            Error::LanguageIdentifierError(ref e) => e.fmt(f),
         }
     }
 }
@@ -126,6 +136,7 @@ impl error::Error for Error {
             Error::JsonError(ref e) => Some(e),
             Error::NotifyError(ref e) => Some(e),
             Error::UrlParseError(ref e) => Some(e),
+            Error::LanguageIdentifierError(ref e) => Some(e),
             _ => None,
         }
     }

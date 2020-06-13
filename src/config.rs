@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use toml;
 
+use unic_langid::LanguageIdentifier;
+
 use crate::{utils, Error, MD, HTML};
 
 static SITE_TOML: &str = "site.toml";
@@ -20,10 +22,13 @@ static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
 static GENERATORS: &str = "generators";
 static RESOURCES: &str = "resources";
-static DEFAULT_HOST: &str = "localhost";
+
+static HOST: &str = "localhost";
+static PORT: u16 = 3000;
 
 static LANG: &str = "en";
 static LOCALES: &str = "locales";
+
 
 use log::debug;
 
@@ -42,7 +47,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
-    pub lang: Option<String>,
+    pub lang: String,
     pub host: Option<String>,
     pub file: Option<PathBuf>,
     pub project: Option<PathBuf>,
@@ -51,6 +56,7 @@ pub struct Config {
     pub serve: Option<ServeConfig>,
     pub book: Option<BookConfig>,
     pub extension: Option<ExtensionConfig>,
+    pub fluent: Option<FluentConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
     pub page: Option<Map<String, Value>>,
 
@@ -64,19 +70,19 @@ pub struct WorkspaceConfig {
 }
 
 impl Default for Config {
-
     fn default() -> Self {
         Config {
-            lang: Some(LANG.into()),
-            host: Some(String::from(DEFAULT_HOST)),
+            lang: String::from(LANG),
+            host: Some(String::from(HOST)),
             url: None,
             file: None,
             project: None,
             build: None,
             workspace: None,
             extension: Some(Default::default()),
+            fluent: None,
             book: None,
-            serve: Some(ServeConfig::new()),
+            serve: Some(Default::default()),
             hook: None,
             page: None,
         } 
@@ -105,9 +111,9 @@ impl Config {
                 let path = file.canonicalize()?;
                 cfg.file = Some(path.to_path_buf());
 
-                if cfg.workspace.is_none() && cfg.host.is_none() {
-                    cfg.host = Some(String::from(DEFAULT_HOST));
-                }
+                //if cfg.workspace.is_none() && cfg.host.is_none() {
+                    //cfg.host = Some(String::from(HOST));
+                //}
 
                 if let Some(host) = cfg.host.as_ref() {
                     let mut host = host.clone();
@@ -125,9 +131,19 @@ impl Config {
                     cfg.page = Some(Map::new());
                 }
 
+                if cfg.fluent.is_some() {
+                    let mut fluent = cfg.fluent.as_mut().unwrap();
+                    if fluent.fallback.is_some() {
+                        fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
+                    }
+                    if fluent.locales.is_none() {
+                        fluent.locales = Some(PathBuf::from(LOCALES)); 
+                    }
+                }
+
                 // Assume default build settings for the site
                 if cfg.build.is_none() {
-                    cfg.build = Some(BuildConfig::new());
+                    cfg.build = Some(Default::default());
                 }
 
                 let mut build = cfg.build.as_mut().unwrap();
@@ -143,46 +159,6 @@ impl Config {
                     bp.push(&build.target);
                     build.target = bp;
                 }
-
-                if build.strict.is_none() {
-                    build.strict = Some(true);
-                }
-
-                if build.pages.is_none() {
-                    build.pages = Some(PathBuf::from(PAGES));
-                }
-
-                if build.assets.is_none() {
-                    build.assets = Some(PathBuf::from(ASSETS));
-                }
-
-                if build.partials.is_none() {
-                    build.partials = Some(PathBuf::from(PARTIALS));
-                }
-
-                if build.generators.is_none() {
-                    build.generators = Some(PathBuf::from(GENERATORS));
-                }
-
-                if build.resources.is_none() {
-                    build.resources = Some(PathBuf::from(RESOURCES));
-                }
-
-                if build.clean_url.is_none() {
-                    build.clean_url= Some(true);
-                }
-
-                if build.follow_links.is_none() {
-                    build.follow_links = Some(true);
-                }
-
-                if cfg.serve.is_none() {
-                    cfg.serve = Some(ServeConfig::new());
-                }
-
-                //if cfg.extension.is_none() {
-                    //cfg.extension = Some(ExtensionConfig::new());
-                //}
 
                 if let Some(hooks) = cfg.hook.as_mut() {
                     for (k, v) in hooks.iter_mut() {
@@ -249,6 +225,18 @@ impl Config {
         pth 
     }
 
+    pub fn get_locales<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
+        if let Some(fluent) = &self.fluent {
+            println!("get_locales HAS FLUENT CONFIG {:?}", &fluent.locales);
+            if let Some(locales) = &fluent.locales {
+                let mut pth = source.as_ref().to_path_buf();
+                pth.push(locales);
+                return Some(pth) 
+            } 
+        }
+        None
+    }
+
     pub fn get_assets_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let build = self.build.as_ref().unwrap();
         let assets = build.assets.as_ref().unwrap();
@@ -292,14 +280,13 @@ impl Config {
 
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BuildConfig {
     pub source: PathBuf,
     pub target: PathBuf,
     pub strict: Option<bool>,
     pub pages: Option<PathBuf>,
-    pub locales: Option<PathBuf>,
     pub assets: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub generators: Option<PathBuf>,
@@ -308,43 +295,54 @@ pub struct BuildConfig {
     pub follow_links: Option<bool>,
 }
 
-impl BuildConfig {
-    pub fn new() -> Self {
+impl Default for BuildConfig {
+    fn default() -> Self {
         BuildConfig {
             source: PathBuf::from("site"),
             target: PathBuf::from("build"),
             strict: Some(true),
             pages: Some(PathBuf::from(PAGES)),
-            locales: Some(PathBuf::from(LOCALES)),
             assets: Some(PathBuf::from(ASSETS)),
             partials: Some(PathBuf::from(PARTIALS)),
             generators: Some(PathBuf::from(GENERATORS)),
             resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
             follow_links: Some(true),
-            ..Default::default()
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FluentConfig {
-    pub fallback: String,
+    pub fallback: Option<String>,
     pub locales: Option<PathBuf>,
-    pub core: Option<bool>,
+    pub shared: Option<String>,
+    #[serde(skip)]
+    pub fallback_id: LanguageIdentifier,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+impl Default for FluentConfig {
+    fn default() -> Self {
+        Self {
+            fallback: Some(String::from(LANG)),
+            locales: Some(PathBuf::from(LOCALES)),
+            shared: Some(String::from("core.ftl")),
+            fallback_id: String::from(LANG).parse().unwrap(),
+        } 
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ServeConfig {
     pub host: String,
     pub port: u16,
 }
 
-impl ServeConfig {
-    pub fn new() -> Self {
+impl Default for ServeConfig {
+    fn default() -> Self {
         Self {
-            host: String::from("localhost"),
-            port: 3000,
+            host: String::from(HOST),
+            port: PORT,
         }
     }
 }
@@ -354,7 +352,6 @@ pub struct BookConfig {
     pub theme: PathBuf,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExtensionConfig {
     pub render: Vec<String>,
@@ -362,20 +359,7 @@ pub struct ExtensionConfig {
     pub markdown: Vec<String>,
 }
 
-//impl ExtensionConfig {
-    //pub fn new() -> Self {
-        //let mut ext_map: BTreeMap<String, String> = BTreeMap::new();
-        //ext_map.insert(String::from(MD), String::from(HTML));
-        //Self {
-            //render: vec![String::from(MD), String::from(HTML)],
-            //map: ext_map,
-            //markdown: vec![String::from(MD)],
-        //}
-    //}
-//}
-
 impl Default for ExtensionConfig {
-
     fn default() -> Self {
         let mut ext_map: BTreeMap<String, String> = BTreeMap::new();
         ext_map.insert(String::from(MD), String::from(HTML));

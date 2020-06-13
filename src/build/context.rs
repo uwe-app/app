@@ -6,6 +6,7 @@ use super::generator::GeneratorMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
+    pub lang: String,
     pub config: Config,
     pub options: BuildOptions,
     pub livereload: Option<String>,
@@ -15,10 +16,12 @@ pub struct Context {
 
 impl Context {
     pub fn new(
+        lang: String,
         config: Config,
         options: BuildOptions,
         generators: GeneratorMap) -> Self {
         Context {
+            lang,
             config,
             options,
             livereload: None,
