@@ -40,6 +40,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Config {
     pub lang: Option<String>,
     pub host: Option<String>,
@@ -73,7 +74,7 @@ impl Default for Config {
             project: None,
             build: None,
             workspace: None,
-            extension: Some(ExtensionConfig::new()),
+            extension: Some(Default::default()),
             book: None,
             serve: Some(ServeConfig::new()),
             hook: None,
@@ -83,23 +84,6 @@ impl Default for Config {
 }
 
 impl Config {
-
-    //pub fn new() -> Self {
-        //Self {
-            //lang: Some(LANG.into()),
-            //host: Some(String::from(DEFAULT_HOST)),
-            //url: None,
-            //file: None,
-            //project: None,
-            //build: None,
-            //workspace: None,
-            //extension: Some(ExtensionConfig::new()),
-            //book: None,
-            //serve: Some(ServeConfig::new()),
-            //hook: None,
-            //page: None,
-        //}
-    //}
 
     pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Self, Error> {
         let file = p.as_ref();
@@ -196,9 +180,9 @@ impl Config {
                     cfg.serve = Some(ServeConfig::new());
                 }
 
-                if cfg.extension.is_none() {
-                    cfg.extension = Some(ExtensionConfig::new());
-                }
+                //if cfg.extension.is_none() {
+                    //cfg.extension = Some(ExtensionConfig::new());
+                //}
 
                 if let Some(hooks) = cfg.hook.as_mut() {
                     for (k, v) in hooks.iter_mut() {
@@ -366,26 +350,40 @@ impl ServeConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+pub struct BookConfig {
+    pub theme: PathBuf,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExtensionConfig {
     pub render: Vec<String>,
     pub map: BTreeMap<String, String>,
     pub markdown: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct BookConfig {
-    pub theme: PathBuf,
-}
+//impl ExtensionConfig {
+    //pub fn new() -> Self {
+        //let mut ext_map: BTreeMap<String, String> = BTreeMap::new();
+        //ext_map.insert(String::from(MD), String::from(HTML));
+        //Self {
+            //render: vec![String::from(MD), String::from(HTML)],
+            //map: ext_map,
+            //markdown: vec![String::from(MD)],
+        //}
+    //}
+//}
 
-impl ExtensionConfig {
-    pub fn new() -> Self {
+impl Default for ExtensionConfig {
+
+    fn default() -> Self {
         let mut ext_map: BTreeMap<String, String> = BTreeMap::new();
         ext_map.insert(String::from(MD), String::from(HTML));
-        Self {
+        ExtensionConfig {
             render: vec![String::from(MD), String::from(HTML)],
             map: ext_map,
             markdown: vec![String::from(MD)],
-        }
+        } 
     }
 }
 
