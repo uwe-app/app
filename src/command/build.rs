@@ -28,6 +28,8 @@ use crate::workspace::{self, Workspace};
 use crate::server::livereload;
 use crate::callback::ErrorCallback;
 
+use crate::locale::Locales;
+
 lazy_static! {
     #[derive(Debug)]
     pub static ref ADDR: Arc<Mutex<SocketAddr>> = {
@@ -37,7 +39,7 @@ lazy_static! {
 
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum BuildTag {
     Custom(String),
     Debug,
@@ -78,7 +80,7 @@ pub struct BuildArguments {
 
 // FIXME: re-use the BuildArguments in the BuildOptions!
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BuildOptions {
     // Root of the input
     pub source: PathBuf,
@@ -124,12 +126,51 @@ fn build_workspaces(
 
     for space in spaces {
         let opts = workspace::prepare(&space.config, args)?;
-        build(space.config, opts, error_cb)?;
+        let base_target = opts.target.clone();
+
+        let build_config = space.config.build.as_ref().unwrap();
+        let locales_dir = space.config.get_locales(&build_config.source);
+
+        if let Some(_) = &locales_dir {
+
+            let mut locales: Locales = Default::default();
+            locales.load(&space.config, &build_config.source)?;
+
+            if let Some(arc) = &locales.loader {
+                let ids = arc.locales()
+                    .iter()
+                    .map(|li| li.to_string())
+                    .collect::<Vec<_>>();
+
+                for lang in ids {
+                    let mut lang_opts = opts.clone();
+
+                    let mut locale_target = base_target.clone();
+                    locale_target.push(&lang);
+
+                    info!("lang {} -> {}", &lang, locale_target.display());
+
+                    // Configure to write to locale sub-directory
+                    lang_opts.target = locale_target;
+
+                    build(lang, space.config.clone(), lang_opts, error_cb)?;
+                }
+
+            } else {
+                panic!("Failed to load locales");
+            }
+
+        } else {
+            let opts = workspace::prepare(&space.config, args)?;
+            let lang = space.config.lang.clone();
+            build(lang, space.config, opts, error_cb)?;
+        }
     }
+
     Ok(())
 }
 
-pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback) -> Result<(), Error> {
+fn build<'a>(lang: String, config: Config, options: BuildOptions, error_cb: ErrorCallback) -> Result<(), Error> {
 
     if options.live && options.release {
         return Err(
@@ -149,24 +190,11 @@ pub fn build<'a>(config: Config, options: BuildOptions, error_cb: ErrorCallback)
 
     loader::load(&config, &options.source)?;
 
-    // FIXME: build locales here so that we only load locales once
-    // FIXME: and can trap the panic that occurs with bad overrides
-    //let locales_loader = locale::load(&config, &options.source)?;
-
     let from = options.from.clone();
 
-    let mut ctx = context::Context::new(config.lang.clone(), config, options, generators);
+    let mut ctx = context::Context::new(lang, config, options, generators);
 
     ctx.locales.load(&ctx.config, &ctx.options.source)?;
-
-    if let Some(arc) = &ctx.locales.loader {
-        let ids = arc.locales()
-            .iter()
-            .map(|li| li.to_string())
-            .collect::<Vec<_>>();
-
-        info!("locale {}", ids.join(" | "));
-    }
 
     if !live {
         let mut builder = Builder::new(&ctx);

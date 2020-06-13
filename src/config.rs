@@ -44,7 +44,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
     None
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct Config {
     pub lang: String,
@@ -64,7 +64,7 @@ pub struct Config {
     pub url: Option<Url>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceConfig {
     pub members: Vec<PathBuf>,
 }
@@ -111,9 +111,8 @@ impl Config {
                 let path = file.canonicalize()?;
                 cfg.file = Some(path.to_path_buf());
 
-                //if cfg.workspace.is_none() && cfg.host.is_none() {
-                    //cfg.host = Some(String::from(HOST));
-                //}
+                // Ensure that lang is a valid identifier
+                let _: LanguageIdentifier = cfg.lang.parse()?;
 
                 if let Some(host) = cfg.host.as_ref() {
                     let mut host = host.clone();
@@ -279,7 +278,7 @@ impl Config {
 
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BuildConfig {
     pub source: PathBuf,
@@ -311,7 +310,7 @@ impl Default for BuildConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
     pub fallback: Option<String>,
     pub locales: Option<PathBuf>,
@@ -331,7 +330,7 @@ impl Default for FluentConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServeConfig {
     pub host: String,
     pub port: u16,
@@ -346,12 +345,12 @@ impl Default for ServeConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct BookConfig {
     pub theme: PathBuf,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ExtensionConfig {
     pub render: Vec<String>,
     pub map: BTreeMap<String, String>,
@@ -370,7 +369,7 @@ impl Default for ExtensionConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookConfig {
     pub path: Option<String>,
     pub args: Option<Vec<String>>,
