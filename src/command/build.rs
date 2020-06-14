@@ -22,10 +22,9 @@ use crate::{Error};
 use crate::utils;
 
 use crate::workspace::{self, Workspace};
-use crate::server::livereload;
 use crate::callback::ErrorCallback;
 
-use crate::locale::{self, Locales};
+use crate::locale::Locales;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum BuildTag {
@@ -158,7 +157,7 @@ fn build_workspaces(
 
             if let Some(fluent) = &space.config.fluent {
                 if let Some(ref redirect) = fluent.redirect {
-                    locale::write_redirect(redirect, opts.base)?;
+                    crate::content::redirect::write(redirect, opts.base)?;
                 }
             }
         } else {
@@ -226,7 +225,7 @@ fn livereload(
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        if let Err(e) = livereload::write_script(&ctx.options.target, &ws_url) {
+        if let Err(e) = crate::content::livereload::write(&ctx.options.target, &ws_url) {
             error_cb(e);
             return
         }

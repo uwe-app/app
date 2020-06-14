@@ -18,7 +18,7 @@ fn get_script(url: &str) -> String {
     script
 }
 
-pub fn write_script(target: &PathBuf, url: &str) -> Result<(), Error> {
+pub fn write(target: &PathBuf, url: &str) -> Result<(), Error> {
     let mut dest = target.clone();
     dest.push(LIVERELOAD_NAME);
     let script = get_script(url);
