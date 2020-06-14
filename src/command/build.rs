@@ -11,6 +11,7 @@ use warp::ws::Message;
 
 use log::info;
 
+use crate::{utils, Error, INDEX_HTML};
 use crate::config::Config;
 use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
@@ -18,8 +19,6 @@ use crate::build::loader;
 use crate::build::context::Context;
 use crate::build::invalidator::Invalidator;
 use crate::command::serve::*;
-use crate::{Error};
-use crate::utils;
 
 use crate::workspace::{self, Workspace};
 use crate::callback::ErrorCallback;
@@ -157,7 +156,13 @@ fn build_workspaces(
 
             if let Some(fluent) = &space.config.fluent {
                 if let Some(ref redirect) = fluent.redirect {
-                    crate::content::redirect::write(redirect, opts.base)?;
+                    let location = format!("/{}/", redirect);
+                    let mut file = opts.base.clone();
+                    file.push(INDEX_HTML);
+
+                    info!("Redirect {} -> {}", file.display(), &redirect);
+
+                    crate::content::redirect::write(&location, file)?;
                 }
             }
         } else {
