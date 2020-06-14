@@ -44,8 +44,8 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
 
-        if let Some(loader) = &context.locales.loader {
-            handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader)));
+        if let Some(loader) = &context.locales.loader.arc {
+            handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }
 
         TemplateRender {
@@ -96,7 +96,7 @@ impl<'a> TemplateRender<'a> {
             let modified = dt.format("%a %b %e %Y").to_string();
             file_info.insert("modified".to_string(), json!(modified));
 
-            data.insert("lang".to_string(), json!(self.context.lang));
+            data.insert("lang".to_string(), json!(self.context.locales.lang));
             data.insert("file".to_string(), json!(file_info));
             data.insert("context".to_string(), json!(self.context));
 

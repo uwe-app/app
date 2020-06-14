@@ -1,29 +1,86 @@
 use std::path::Path;
 use std::fmt;
+use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
+use unic_langid::LanguageIdentifier;
 use fluent_templates::ArcLoader;
 
 use crate::Config;
 use crate::config::FluentConfig;
 use crate::Error;
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Locales {
-    pub loader: Option<ArcLoader>,
+    pub lang: String,
+    #[serde(skip)]
+    pub map: BTreeMap<String, LanguageIdentifier>,
+    #[serde(skip)]
+    pub loader: LocalesLoader,
 }
 
 impl Default for Locales {
     fn default() -> Self {
-        Self {loader: None}
+        Self {
+            lang: String::from("en"),
+            map: BTreeMap::new(),
+            loader: Default::default(),
+        }
     }
 }
 
-impl fmt::Debug for Locales {
+//impl Clone for Locales {
+    //fn clone(&self) -> Self {
+        //Self {
+            //lang: self.lang.clone(),
+            //map: self.map.clone(),
+            //loader: self.loader.clone(),
+        //}
+    //}
+//}
+
+impl Locales {
+
+    pub fn new(config: &Config) -> Self {
+        Self {
+            lang: config.lang.clone(),
+            ..Default::default()
+        } 
+    }
+
+    pub fn load<P: AsRef<Path>>(&mut self, config: &Config, source: P) -> Result<(), Error> {
+        self.loader.load(config, source)?;
+        if let Some(arc) = &self.loader.arc {
+            let langs = arc.locales();
+            for lang_id in langs {
+                self.map.insert(lang_id.to_string(), lang_id);
+            }
+        } else {
+            let lang_id: LanguageIdentifier = self.lang.parse()?;
+            self.map.insert(self.lang.clone(), lang_id);
+        }
+        Ok(())
+    }
+}
+
+pub struct LocalesLoader {
+    pub arc: Option<Box<ArcLoader>>,
+}
+
+impl Default for LocalesLoader {
+    fn default() -> Self {
+        Self {arc: None}
+    }
+}
+
+impl fmt::Debug for LocalesLoader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("").finish()
     }
 }
 
-impl Locales {
+impl LocalesLoader {
     pub fn load<P: AsRef<Path>>(&mut self, config: &Config, source: P) -> Result<(), Error> {
 
         if let Some(locales_dir) = config.get_locales(source) {
@@ -31,7 +88,7 @@ impl Locales {
                 let fluent = config.fluent.as_ref().unwrap();
                 // FIXME: catch and return this error
                 let result = self.arc(locales_dir, fluent)?;
-                self.loader = Some(result);
+                self.arc = Some(Box::new(result));
             }
         }
         Ok(())

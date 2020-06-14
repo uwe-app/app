@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
@@ -122,46 +123,31 @@ fn build_workspaces(
     for space in spaces {
         let opts = workspace::prepare(&space.config, args)?;
         let base_target = opts.target.clone();
-
         let build_config = space.config.build.as_ref().unwrap();
-        let locales_dir = space.config.get_locales(&build_config.source);
+        
+        let mut locales = Locales::new(&space.config);
+        locales.load(&space.config, &build_config.source)?;
 
-        if let Some(_) = &locales_dir {
+        for lang in locales.map.keys() {
+            let mut lang_opts = opts.clone();
 
-            let mut locales: Locales = Default::default();
-            locales.load(&space.config, &build_config.source)?;
+            let mut locale_target = base_target.clone();
+            locale_target.push(&lang);
 
-            if let Some(arc) = &locales.loader {
-                let ids = arc.locales()
-                    .iter()
-                    .map(|li| li.to_string())
-                    .collect::<Vec<_>>();
+            info!("lang {} -> {}", &lang, locale_target.display());
 
-                for lang in ids {
-                    let mut lang_opts = opts.clone();
-
-                    let mut locale_target = base_target.clone();
-                    locale_target.push(&lang);
-
-                    info!("lang {} -> {}", &lang, locale_target.display());
-
-                    // Configure to write to locale sub-directory
-                    lang_opts.target = locale_target;
-
-                    ctx = load(lang, space.config.clone(), lang_opts)?;
-
-                    build(&ctx)?;
-                }
-
-            } else {
-                return Err(
-                    Error::new(format!("Failed to load locales")));
+            if !locale_target.exists() {
+                fs::create_dir_all(&locale_target)?;
             }
 
-        } else {
-            let opts = workspace::prepare(&space.config, args)?;
-            let lang = space.config.lang.clone();
-            ctx = load(lang, space.config, opts)?;
+            lang_opts.target = locale_target;
+
+            // FIXME: prevent loading all the locales again!?
+            let mut copy = Locales::new(&space.config);
+            copy.load(&space.config, &build_config.source)?;
+            copy.lang = lang.clone();
+
+            ctx = load(copy, space.config.clone(), lang_opts)?;
             build(&ctx)?;
         }
     }
@@ -173,7 +159,7 @@ fn build_workspaces(
     Ok(())
 }
 
-fn load(lang: String, config: Config, options: BuildOptions) -> Result<Context, Error> {
+fn load(locales: Locales, config: Config, options: BuildOptions) -> Result<Context, Error> {
     // Load generators
     let mut generators = GeneratorMap::new();
     generators.load(options.source.clone(), &config)?;
@@ -182,12 +168,7 @@ fn load(lang: String, config: Config, options: BuildOptions) -> Result<Context, 
     loader::load(&config, &options.source)?;
 
     // Set up the context
-    let mut ctx = Context::new(lang, config, options, generators);
-
-    // Load locales
-    ctx.locales.load(&ctx.config, &ctx.options.source)?;
-
-    Ok(ctx)
+    Ok(Context::new(locales, config, options, generators))
 }
 
 fn build(ctx: &Context) -> Result<(), Error> {
