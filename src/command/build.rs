@@ -1,11 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
-use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
-
-use std::net::SocketAddrV4;
-use std::net::Ipv4Addr;
 
 use serde::{Deserialize, Serialize};
 
@@ -29,15 +25,6 @@ use crate::server::livereload;
 use crate::callback::ErrorCallback;
 
 use crate::locale::Locales;
-
-lazy_static! {
-    #[derive(Debug)]
-    pub static ref ADDR: Arc<Mutex<SocketAddr>> = {
-        let socket = SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 3000);
-        Arc::new(Mutex::new(SocketAddr::V4(socket)))
-    };
-
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum BuildTag {
