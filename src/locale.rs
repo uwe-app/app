@@ -103,4 +103,3 @@ impl LocalesLoader {
             //.customize(|bundle| bundle.set_use_isolating(false));
     }
 }
-
