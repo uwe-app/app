@@ -18,7 +18,7 @@ use crate::config::Config;
 use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
 use crate::build::loader;
-use crate::build::context;
+use crate::build::context::Context;
 use crate::build::invalidator::Invalidator;
 use crate::command::serve::*;
 use crate::{Error};
@@ -44,6 +44,12 @@ pub enum BuildTag {
     Custom(String),
     Debug,
     Release
+}
+
+impl Default for BuildTag {
+    fn default() -> Self {
+        BuildTag::Debug
+    }
 }
 
 impl BuildTag {
@@ -80,7 +86,7 @@ pub struct BuildArguments {
 
 // FIXME: re-use the BuildArguments in the BuildOptions!
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct BuildOptions {
     // Root of the input
     pub source: PathBuf,
@@ -124,6 +130,8 @@ fn build_workspaces(
     args: &BuildArguments,
     error_cb: ErrorCallback) -> Result<(), Error> {
 
+    let mut ctx: Context = Default::default();
+
     for space in spaces {
         let opts = workspace::prepare(&space.config, args)?;
         let base_target = opts.target.clone();
@@ -153,118 +161,127 @@ fn build_workspaces(
                     // Configure to write to locale sub-directory
                     lang_opts.target = locale_target;
 
-                    build(lang, space.config.clone(), lang_opts, error_cb)?;
+                    ctx = load(lang, space.config.clone(), lang_opts)?;
+
+                    build(&ctx)?;
                 }
 
             } else {
-                panic!("Failed to load locales");
+                return Err(
+                    Error::new(format!("Failed to load locales")));
             }
 
         } else {
             let opts = workspace::prepare(&space.config, args)?;
             let lang = space.config.lang.clone();
-            build(lang, space.config, opts, error_cb)?;
+            ctx = load(lang, space.config, opts)?;
+            build(&ctx)?;
         }
+    }
+
+    if ctx.options.live {
+        livereload(ctx, error_cb)?;
     }
 
     Ok(())
 }
 
-fn build<'a>(lang: String, config: Config, options: BuildOptions, error_cb: ErrorCallback) -> Result<(), Error> {
-
-    if options.live && options.release {
-        return Err(
-            Error::new(
-                "Live reload is not available for release builds".to_string()))
-    }
-
-    let src = options.source.clone();
-    let host = options.host.clone();
-    let port = options.port.clone();
-    let live = options.live.clone();
-
-    let base_target = options.target.clone();
-
+fn load(lang: String, config: Config, options: BuildOptions) -> Result<Context, Error> {
+    // Load generators
     let mut generators = GeneratorMap::new();
-    generators.load(src, &config)?;
+    generators.load(options.source.clone(), &config)?;
 
+    // Load page template data
     loader::load(&config, &options.source)?;
 
-    let from = options.from.clone();
+    // Set up the context
+    let mut ctx = Context::new(lang, config, options, generators);
 
-    let mut ctx = context::Context::new(lang, config, options, generators);
-
+    // Load locales
     ctx.locales.load(&ctx.config, &ctx.options.source)?;
 
-    if !live {
-        let mut builder = Builder::new(&ctx);
-        builder.manifest.load()?;
-        builder.build(&from, false)?;
-        return builder.manifest.save()
-    } else {
+    Ok(ctx)
+}
 
-        let endpoint = utils::generate_id(16);
+fn build(ctx: &Context) -> Result<(), Error> {
+    let from = ctx.options.from.clone();
+    let mut builder = Builder::new(ctx);
+    builder.manifest.load()?;
+    builder.build(&from, false)?;
+    builder.manifest.save()?;
+    Ok(())
+}
 
-        let opts = ServeOptions {
-            target: base_target.to_path_buf(),
-            watch: Some(from.clone()),
-            host: host.to_owned(),
-            port: port.to_owned(),
-            endpoint: endpoint.clone(),
-            open_browser: false,
-        };
+fn livereload(
+    mut ctx: Context,
+    error_cb: ErrorCallback) -> Result<(), Error> {
 
-        // Create a channel to receive the bind address.
-        let (tx, rx) = channel::<(SocketAddr, Sender<Message>, String)>();
+    let host = ctx.options.host.clone();
+    let port = ctx.options.port.clone();
+    let base_target = ctx.options.target.clone();
 
-        // Spawn a thread to receive a notification on the `rx` channel
-        // once the server has bound to a port
-        std::thread::spawn(move || {
-            // Get the socket address and websocket transmission channel
-            let (addr, tx, url) = rx.recv().unwrap();
+    let from = ctx.options.from.clone();
+    let endpoint = utils::generate_id(16);
 
-            let ws_url = get_websocket_url(host, addr, &endpoint);
+    let opts = ServeOptions {
+        target: base_target.to_path_buf(),
+        watch: Some(from.clone()),
+        host: host.to_owned(),
+        port: port.to_owned(),
+        endpoint: endpoint.clone(),
+        open_browser: false,
+    };
 
-            if let Err(e) = livereload::write_script(&ctx.options.target, &ws_url) {
-                error_cb(e);
-                return
-            }
+    // Create a channel to receive the bind address.
+    let (tx, rx) = channel::<(SocketAddr, Sender<Message>, String)>();
 
-            ctx.livereload = Some(ws_url);
+    // Spawn a thread to receive a notification on the `rx` channel
+    // once the server has bound to a port
+    std::thread::spawn(move || {
+        // Get the socket address and websocket transmission channel
+        let (addr, tx, url) = rx.recv().unwrap();
 
-            let mut serve_builder = Builder::new(&ctx);
-            if let Err(e) = serve_builder.register_templates_directory() {
-                error_cb(e);
-            }
+        let ws_url = get_websocket_url(host, addr, &endpoint);
 
-            // Prepare for incremental builds
-            if let Err(_) = serve_builder.manifest.load() {}
+        if let Err(e) = livereload::write_script(&ctx.options.target, &ws_url) {
+            error_cb(e);
+            return
+        }
 
-            // Do a full build before listening for filesystem changes
-            let result = serve_builder.build(&from, true);
+        ctx.livereload = Some(ws_url);
 
-            match result {
-                Ok(_) => {
-                    // NOTE: only open the browser if initial build succeeds
-                    open::that(&url).map(|_| ()).unwrap_or(());
+        let mut serve_builder = Builder::new(&ctx);
+        if let Err(e) = serve_builder.register_templates_directory() {
+            error_cb(e);
+        }
 
-                    // Invalidator wraps the builder receiving filesystem change
-                    // notifications and sending messages over the `tx` channel
-                    // to connected websockets when necessary
-                    let mut invalidator = Invalidator::new(&ctx, serve_builder);
-                    if let Err(e) = invalidator.start(from, tx, &error_cb) {
-                        error_cb(e);
-                    }
-                },
-                Err(e) => {
+        // Prepare for incremental builds
+        if let Err(_) = serve_builder.manifest.load() {}
+
+        // Do a full build before listening for filesystem changes
+        let result = serve_builder.build(&from, true);
+
+        match result {
+            Ok(_) => {
+                // NOTE: only open the browser if initial build succeeds
+                open::that(&url).map(|_| ()).unwrap_or(());
+
+                // Invalidator wraps the builder receiving filesystem change
+                // notifications and sending messages over the `tx` channel
+                // to connected websockets when necessary
+                let mut invalidator = Invalidator::new(&ctx, serve_builder);
+                if let Err(e) = invalidator.start(from, tx, &error_cb) {
                     error_cb(e);
                 }
+            },
+            Err(e) => {
+                error_cb(e);
             }
-        });
+        }
+    });
 
-        // Start the webserver
-        serve(opts, tx)?;
-    }
+    // Start the webserver
+    serve(opts, tx)?;
 
     Ok(())
 }

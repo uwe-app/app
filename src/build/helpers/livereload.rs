@@ -24,7 +24,7 @@ impl HelperDef for LiveReload{
             .to_owned();
 
         let ctx: BuildContext = from_value(json!(cfg)).unwrap();
-        if ctx.livereload.is_some() {
+        if ctx.options.live {
             let script = "<script src=\"/__livereload.js\"></script>";
             out.write(script)?;
         }

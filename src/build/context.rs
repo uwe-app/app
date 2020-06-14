@@ -26,7 +26,7 @@ impl Context {
 
         let locales: Locales = Default::default();
 
-        Context {
+        Self {
             lang,
             config,
             options,
@@ -35,5 +35,18 @@ impl Context {
             locales,
         }
 
+    }
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self {
+            lang: String::from("en"),
+            config: Default::default(),
+            options: Default::default(),
+            generators: Default::default(),
+            locales: Default::default(),
+            livereload: None,
+        } 
     }
 }

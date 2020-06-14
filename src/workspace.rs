@@ -35,6 +35,12 @@ fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
 
 pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
 
+    if args.live && args.release {
+        return Err(
+            Error::new(
+                "Live reload is not available for release builds".to_string()))
+    }
+
     let build = cfg.build.as_ref().unwrap();
 
     let mut tag_target = BuildTag::Debug;
