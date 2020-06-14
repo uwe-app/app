@@ -12,6 +12,7 @@ use toml;
 use unic_langid::LanguageIdentifier;
 
 use crate::{utils, Error, MD, HTML};
+use crate::build::page::Page;
 
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
@@ -58,7 +59,7 @@ pub struct Config {
     pub extension: Option<ExtensionConfig>,
     pub fluent: Option<FluentConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
-    pub page: Option<Map<String, Value>>,
+    pub page: Option<Page>,
 
     #[serde(skip)]
     pub url: Option<Url>,
@@ -77,14 +78,14 @@ impl Default for Config {
             url: None,
             file: None,
             project: None,
-            build: None,
+            build: Some(Default::default()),
             workspace: None,
             extension: Some(Default::default()),
             fluent: None,
             book: None,
             serve: Some(Default::default()),
             hook: None,
-            page: None,
+            page: Some(Default::default()),
         } 
     }
 }
@@ -126,9 +127,9 @@ impl Config {
                     cfg.url = Some(url);
                 }
 
-                if cfg.page.is_none() {
-                    cfg.page = Some(Map::new());
-                }
+                //if cfg.page.is_none() {
+                    //cfg.page = Some(Default::default());
+                //}
 
                 if cfg.fluent.is_some() {
                     let mut fluent = cfg.fluent.as_mut().unwrap();

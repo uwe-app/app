@@ -2,6 +2,7 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::collections::BTreeMap;
 
 use toml::de::Error as TomlError;
 use toml::map::Map as TomlMap;
@@ -21,13 +22,14 @@ use crate::{
 };
 
 use super::frontmatter;
+use super::page::Page;
 
 use crate::config::Config;
 
 lazy_static! {
     #[derive(Debug)]
-    pub static ref DATA: Mutex<Map<String, Value>> = {
-        Mutex::new(Map::new())
+    pub static ref DATA: Mutex<BTreeMap<String, Page>> = {
+        Mutex::new(BTreeMap::new())
     };
 }
 
@@ -51,6 +53,8 @@ fn find_file_for_key(k: &str, source: &PathBuf) -> Option<PathBuf> {
 
     // Might just have a file stem so try the
     // supported extensions
+    //
+    // FIXME: use the extensions config?
     for ext in &PARSE_EXTENSIONS {
         pth.set_extension(ext);
         if pth.exists() {
@@ -69,23 +73,33 @@ pub fn table_to_json_map(table: &Table) -> Map<String, Value> {
 }
 
 pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Result<Map<String, Value>, Error> {
-    let mut map: Map<String, Value> = config.page.as_ref().unwrap().clone();
+    //let mut map: Map<String, Value> = config.page.as_ref().unwrap().clone();
 
-    let data = DATA.lock().unwrap();
+    let mut data = DATA.lock().unwrap();
+
+    //let mut page: Page = Default::default();
+
+    let mut page = config.page.as_ref().unwrap().clone();
 
     // Look for file specific data
     let file_key = f.as_ref().to_string_lossy().into_owned();
-    if let Some(file_object) = data.get(&file_key) {
-        if let Some(d) = file_object.as_object() {
-            map.append(&mut d.clone());
-        } 
+    if let Some(file_object) = data.get_mut(&file_key) {
+
+        let mut copy = file_object.clone();
+        page.append(&mut copy);
     }
 
-    if let None = map.get("title") {
+    if let None = page.title {
         if let Some(auto) = utils::file_auto_title(&f) {
-            map.insert("title".to_owned(), json!(auto));
+            page.title = Some(auto);
         }
     }
+
+    //if let None = map.get("title") {
+        //if let Some(auto) = utils::file_auto_title(&f) {
+            //map.insert("title".to_owned(), json!(auto));
+        //}
+    //}
 
     if frontmatter {
         if let Some(ext) = f.as_ref().extension() {
@@ -96,17 +110,25 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
             };
             let (_, has_fm, fm) = frontmatter::load(f.as_ref(), conf)?;
             if has_fm {
-                parse_into(fm, &mut map)?;
+                parse_into(fm, &mut page)?;
             }
         }
     }
 
+
+    println!("GOT FILE DATA {:?}", page);
+
+    let map = Map::new();
     Ok(map)
 }
 
-pub fn parse_into(source: String, data: &mut Map<String, Value>) -> Result<(), Error> {
-    let mut res = parse_toml_to_json(&source)?;
-    data.append(&mut res);
+pub fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
+    //let mut res = parse_toml_to_json(&source)?;
+    //data.append(&mut res);
+    //
+
+    let mut page: Page = toml::from_str(&source)?;
+    data.append(&mut page);
     Ok(())
 }
 
@@ -134,6 +156,7 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
     let src = config.get_page_data_path();
     if src.exists() {
         let mut data = DATA.lock().unwrap();
+
         let properties = utils::read_string(src);
         match properties {
             Ok(s) => {
@@ -141,17 +164,16 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
                 match config {
                     Ok(props) => {
                         for (k, v) in props {
-                            if let Some(props) = v.as_table() {
-                                let result = find_file_for_key(&k, source);
-                                match result {
-                                    Some(f) => {
-                                        // Use the actual file path as the key
-                                        // so we can find it easily later
-                                        let file_key = f.to_string_lossy().into_owned();
-                                        data.insert(file_key, json!(props));
-                                    },
-                                    None => warn!("No file for page table: {}", k)
-                                }
+                            let page = v.try_into::<Page>()?;
+                            let result = find_file_for_key(&k, source);
+                            match result {
+                                Some(f) => {
+                                    // Use the actual file path as the key
+                                    // so we can find it easily later
+                                    let file_key = f.to_string_lossy().into_owned();
+                                    data.insert(file_key, page);
+                                },
+                                None => warn!("No file for page table: {}", k)
                             }
                         }
                     }

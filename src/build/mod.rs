@@ -16,6 +16,7 @@ pub mod loader;
 pub mod helpers;
 pub mod manifest;
 pub mod matcher;
+pub mod page;
 pub mod parser;
 pub mod resource;
 pub mod template;
