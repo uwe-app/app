@@ -25,7 +25,7 @@ use crate::workspace::{self, Workspace};
 use crate::server::livereload;
 use crate::callback::ErrorCallback;
 
-use crate::locale::Locales;
+use crate::locale::{self, Locales};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum BuildTag {
@@ -153,6 +153,13 @@ fn build_workspaces(
 
                 ctx = load(copy, space.config.clone(), lang_opts)?;
                 build(&ctx)?;
+            }
+
+
+            if let Some(fluent) = &space.config.fluent {
+                if let Some(ref redirect) = fluent.redirect {
+                    locale::write_redirect(redirect, opts.base)?;
+                }
             }
         } else {
             ctx = load(locales, space.config, opts)?;

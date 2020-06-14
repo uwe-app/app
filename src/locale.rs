@@ -7,9 +7,29 @@ use serde::{Deserialize, Serialize};
 use unic_langid::LanguageIdentifier;
 use fluent_templates::ArcLoader;
 
-use crate::Config;
+use log::info;
+
 use crate::config::FluentConfig;
-use crate::Error;
+use crate::{utils, Config, Error, INDEX_HTML};
+
+pub fn write_redirect<P: AsRef<Path>>(lang: &str, target: P) -> Result<(), Error> {
+    let mut dest = target.as_ref().to_path_buf();
+    dest.push(INDEX_HTML);
+
+    info!("Redirect {} -> {}", dest.display(), &lang);
+
+    let mut content = String::from("<!doctype html>");
+    let body = format!("<body onload=\"document.location.replace('/{}/');\"></body>", lang);
+    let meta = format!("<noscript><meta http-equiv=\"refresh\" content=\"0; /{}/\"></noscript>", lang);
+    content.push_str("<html>");
+    content.push_str("<head>");
+    content.push_str(&meta);
+    content.push_str("</head>");
+    content.push_str(&body);
+    content.push_str("</html>");
+
+    utils::write_string(dest, content).map_err(Error::from)
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Locales {
@@ -54,6 +74,17 @@ impl Locales {
             let lang_id: LanguageIdentifier = self.lang.parse()?;
             self.map.insert(self.lang.clone(), lang_id);
         }
+
+        if let Some(fluent) = &config.fluent {
+            if let Some(ref redirect) = fluent.redirect {
+                if !self.map.contains_key(redirect) {
+                    return Err(
+                        Error::new(
+                            format!("Redirect '{}' is not a valid locale", redirect)));
+                }
+            } 
+        }
+
         Ok(())
     }
 }
