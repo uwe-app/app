@@ -80,7 +80,10 @@ pub struct BuildOptions {
     pub source: PathBuf,
     // Root of the output
     pub output: PathBuf,
-    // Target output directory including a build tag
+    // Target output directory including a build tag 
+    pub base: PathBuf,
+    // Target output directory including a build tag and 
+    // a locale identifier when multilingual
     pub target: PathBuf,
     // Where to build from either `source` or `directory` relative to `source`
     pub from: PathBuf,
@@ -191,13 +194,13 @@ fn livereload(
 
     let host = ctx.options.host.clone();
     let port = ctx.options.port.clone();
-    let base_target = ctx.options.target.clone();
+    //let base_target = ctx.options.target.clone();
 
     let from = ctx.options.from.clone();
     let endpoint = utils::generate_id(16);
 
     let opts = ServeOptions {
-        target: base_target.to_path_buf(),
+        target: ctx.options.base.clone().to_path_buf(),
         watch: Some(from.clone()),
         host: host.to_owned(),
         port: port.to_owned(),

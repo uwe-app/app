@@ -50,7 +50,7 @@ pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Messag
         .next()
         .ok_or_else(|| Error::new(format!("no address found for {}", address)))?;
 
-    let build_dir = options.target.clone();
+    let serve_dir = options.target.clone();
     let host = options.host.clone();
     let serve_host = host.clone();
     let open_browser = options.open_browser;
@@ -81,7 +81,7 @@ pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Messag
     let endpoint = options.endpoint.clone();
     let thread_handle = std::thread::spawn(move || {
         serve_web(
-            build_dir,
+            serve_dir,
             serve_host,
             endpoint,
             sockaddr,
@@ -96,7 +96,7 @@ pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Messag
 
 #[tokio::main]
 async fn serve_web(
-    build_dir: PathBuf,
+    serve_dir: PathBuf,
     host: String,
     endpoint: String,
     address: SocketAddr,
@@ -134,11 +134,11 @@ async fn serve_web(
         })
         .with(&cors);
 
-    let root = build_dir.clone();
+    let root = serve_dir.clone();
 
     // TODO: support server logging!
 
-    let static_route = warp::fs::dir(build_dir)
+    let static_route = warp::fs::dir(serve_dir)
         .recover(move |e| handle_rejection(e, root.clone()));
         //.with(warp::log("static"));
 

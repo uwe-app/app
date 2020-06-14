@@ -117,6 +117,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
     let opts = BuildOptions {
         source: build.source.clone(),
         output: build.target.clone(),
+        base: target.clone(),
         host: host.to_owned(),
         port: port.to_owned(),
 
