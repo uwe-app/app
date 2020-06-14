@@ -30,16 +30,6 @@ impl Default for Locales {
     }
 }
 
-//impl Clone for Locales {
-    //fn clone(&self) -> Self {
-        //Self {
-            //lang: self.lang.clone(),
-            //map: self.map.clone(),
-            //loader: self.loader.clone(),
-        //}
-    //}
-//}
-
 impl Locales {
 
     pub fn new(config: &Config) -> Self {
@@ -47,6 +37,10 @@ impl Locales {
             lang: config.lang.clone(),
             ..Default::default()
         } 
+    }
+
+    pub fn is_multi(&mut self) -> bool {
+        self.map.len() > 1 
     }
 
     pub fn load<P: AsRef<Path>>(&mut self, config: &Config, source: P) -> Result<(), Error> {

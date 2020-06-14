@@ -128,26 +128,31 @@ fn build_workspaces(
         let mut locales = Locales::new(&space.config);
         locales.load(&space.config, &build_config.source)?;
 
-        for lang in locales.map.keys() {
-            let mut lang_opts = opts.clone();
+        if locales.is_multi() {
+            for lang in locales.map.keys() {
+                let mut lang_opts = opts.clone();
 
-            let mut locale_target = base_target.clone();
-            locale_target.push(&lang);
+                let mut locale_target = base_target.clone();
+                locale_target.push(&lang);
 
-            info!("lang {} -> {}", &lang, locale_target.display());
+                info!("lang {} -> {}", &lang, locale_target.display());
 
-            if !locale_target.exists() {
-                fs::create_dir_all(&locale_target)?;
+                if !locale_target.exists() {
+                    fs::create_dir_all(&locale_target)?;
+                }
+
+                lang_opts.target = locale_target;
+
+                // FIXME: prevent loading all the locales again!?
+                let mut copy = Locales::new(&space.config);
+                copy.load(&space.config, &build_config.source)?;
+                copy.lang = lang.clone();
+
+                ctx = load(copy, space.config.clone(), lang_opts)?;
+                build(&ctx)?;
             }
-
-            lang_opts.target = locale_target;
-
-            // FIXME: prevent loading all the locales again!?
-            let mut copy = Locales::new(&space.config);
-            copy.load(&space.config, &build_config.source)?;
-            copy.lang = lang.clone();
-
-            ctx = load(copy, space.config.clone(), lang_opts)?;
+        } else {
+            ctx = load(locales, space.config, opts)?;
             build(&ctx)?;
         }
     }
