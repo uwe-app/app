@@ -258,25 +258,15 @@ fn livereload(
         // Prepare for incremental builds
         if let Err(_) = serve_builder.manifest.load() {}
 
-        // Do a full build before listening for filesystem changes
-        let result = serve_builder.build(&from, true);
+        // NOTE: only open the browser if initial build succeeds
+        open::that(&url).map(|_| ()).unwrap_or(());
 
-        match result {
-            Ok(_) => {
-                // NOTE: only open the browser if initial build succeeds
-                open::that(&url).map(|_| ()).unwrap_or(());
-
-                // Invalidator wraps the builder receiving filesystem change
-                // notifications and sending messages over the `tx` channel
-                // to connected websockets when necessary
-                let mut invalidator = Invalidator::new(&ctx, serve_builder);
-                if let Err(e) = invalidator.start(from, tx, &error_cb) {
-                    error_cb(e);
-                }
-            },
-            Err(e) => {
-                error_cb(e);
-            }
+        // Invalidator wraps the builder receiving filesystem change
+        // notifications and sending messages over the `tx` channel
+        // to connected websockets when necessary
+        let mut invalidator = Invalidator::new(&ctx, serve_builder);
+        if let Err(e) = invalidator.start(from, tx, &error_cb) {
+            error_cb(e);
         }
     });
 
