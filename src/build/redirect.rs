@@ -8,10 +8,13 @@ use crate::content::redirect;
 pub fn write(context: &Context) -> Result<(), Error> {
     if let Some(ref redirect) = context.config.redirect {
         for (k, v) in redirect {
+            // Strip the trailing slash so it is not treated
+            // as an absolute path on UNIX
             let key = k.trim_start_matches("/"); 
+
             let mut buf = context.options.base.clone();
             buf.push(utils::url::to_path_separator(key));
-            if !key.ends_with(".html") {
+            if k.ends_with("/") {
                 buf.push(INDEX_HTML);
             }
             if buf.exists() {
