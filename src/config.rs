@@ -60,7 +60,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
 #[serde(default)]
 pub struct Config {
     pub lang: String,
-    pub host: Option<String>,
+    pub host: String,
     pub build: Option<BuildConfig>,
     pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
@@ -89,7 +89,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             lang: String::from(LANG),
-            host: Some(String::from(HOST)),
+            host: String::from(HOST),
             url: None,
             file: None,
             project: None,
@@ -130,21 +130,15 @@ impl Config {
                 // Ensure that lang is a valid identifier
                 let _: LanguageIdentifier = cfg.lang.parse()?;
 
-                if let Some(host) = cfg.host.as_ref() {
-                    let mut host = host.clone();
-                    host = host.trim_start_matches("http://").to_string();
-                    host = host.trim_start_matches("https://").to_string();
-
-                    let mut url_host = String::from("https://");
-                    url_host.push_str(&host);
-
-                    let url = Url::parse(&url_host)?;
-                    cfg.url = Some(url);
-                }
-
-                //if cfg.page.is_none() {
-                    //cfg.page = Some(Default::default());
-                //}
+                // Check host can be parsed as a valid URL
+                // and store the parsed URL
+                let mut host = cfg.host.clone();
+                host = host.trim_start_matches("http://").to_string();
+                host = host.trim_start_matches("https://").to_string();
+                let mut url_host = String::from("https://");
+                url_host.push_str(&host);
+                let url = Url::parse(&url_host)?;
+                cfg.url = Some(url);
 
                 if cfg.fluent.is_some() {
                     let mut fluent = cfg.fluent.as_mut().unwrap();
