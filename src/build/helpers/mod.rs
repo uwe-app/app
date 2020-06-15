@@ -1,8 +1,7 @@
 use std::io;
 use handlebars::*;
 
-use serde_json::{json, Map, Value};
-
+use crate::build::page::Page;
 use crate::Error;
 
 pub mod children;
@@ -55,14 +54,17 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
 // context
 pub fn with_parent_context<'rc>(
     ctx: &'rc Context,
-    data: &Map<String, Value>) -> Result<Context, RenderError> {
+    mut data: &mut Page) -> Result<Context, RenderError> {
 
-    let existing = ctx.data().as_object().unwrap();
-    let mut new_data: Map<String, Value> = existing.clone();
-    for (k, v) in data {
-        new_data.insert(k.clone(), json!(v));
-    }
+    let mut scope: Page = serde_json::from_value(ctx.data().clone())?;
 
-    return Context::wraps(&new_data);
+    //let mut new_data: Map<String, Value> = existing.clone();
+    //for (k, v) in data {
+        //new_data.insert(k.clone(), json!(v));
+    //}
+    //
+    scope.append(&mut data);
+
+    return Context::wraps(&scope);
 }
 

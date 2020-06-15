@@ -5,8 +5,8 @@ use std::collections::BTreeMap;
 
 use url::Url;
 
+use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use toml;
 
 use unic_langid::LanguageIdentifier;
@@ -45,6 +45,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
     None
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct Config {

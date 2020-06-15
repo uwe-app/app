@@ -1,8 +1,9 @@
 use handlebars::*;
 use rand::seq::SliceRandom;
 
-use serde_json::{json, Map};
+use serde_json::json;
 
+use crate::build::page::Page;
 use super::with_parent_context;
 
 #[derive(Clone, Copy)]
@@ -33,9 +34,9 @@ impl HelperDef for Random{
                     if let Some(element) = value.choose(&mut rand::thread_rng()) {
                         if let Some(t) = h.template() {
                             let mut local_rc = rc.clone();
-                            let mut data = Map::new();
-                            data.insert("entry".to_string(), json!(element));
-                            let local_ctx = with_parent_context(ctx, &data)?;
+                            let mut data: Page = Default::default();
+                            data.vars.insert("entry".to_string(), json!(element));
+                            let local_ctx = with_parent_context(ctx, &mut data)?;
                             t.render(r, &local_ctx, &mut local_rc, out)?;
                             return Ok(());
                         } else {

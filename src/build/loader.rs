@@ -72,12 +72,8 @@ pub fn table_to_json_map(table: &Table) -> Map<String, Value> {
     map
 }
 
-pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Result<Map<String, Value>, Error> {
-    //let mut map: Map<String, Value> = config.page.as_ref().unwrap().clone();
-
+pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Result<Page, Error> {
     let mut data = DATA.lock().unwrap();
-
-    //let mut page: Page = Default::default();
 
     let mut page = config.page.as_ref().unwrap().clone();
 
@@ -95,12 +91,6 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
         }
     }
 
-    //if let None = map.get("title") {
-        //if let Some(auto) = utils::file_auto_title(&f) {
-            //map.insert("title".to_owned(), json!(auto));
-        //}
-    //}
-
     if frontmatter {
         if let Some(ext) = f.as_ref().extension() {
             let conf = if ext == MD {
@@ -113,13 +103,15 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
                 parse_into(fm, &mut page)?;
             }
         }
+
+        // FIXME: ensure frontmatter never defines `query`
+
     }
 
 
-    println!("GOT FILE DATA {:?}", page);
+    //println!("GOT FILE DATA {:?}", page);
 
-    let map = Map::new();
-    Ok(map)
+    Ok(page)
 }
 
 pub fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use log::{debug, info};
 
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 
 pub mod book;
 pub mod context;
@@ -33,7 +33,8 @@ use book::BookBuilder;
 use matcher::FileType;
 use parser::Parser;
 use manifest::Manifest;
-use generator::{IndexQuery};
+use generator::IndexQuery;
+use page::Page;
 
 pub struct Builder<'a> {
     context: &'a Context,
@@ -64,7 +65,7 @@ impl<'a> Builder<'a> {
         &mut self,
         p: P,
         file_type: &FileType,
-        data: &Map<String, Value>,
+        data: &Page,
         _reference: IndexQuery,
         values: Vec<Value>,
         clean: bool) -> Result<(), Error> {
@@ -81,7 +82,7 @@ impl<'a> Builder<'a> {
                     if doc.is_object() {
                         let map = doc.as_object().unwrap();
                         for (k, v) in map {
-                            item_data.insert(k.clone(), json!(v));
+                            item_data.vars.insert(k.clone(), json!(v));
                         }
                     } else {
                         return Err(Error::new(
@@ -153,10 +154,8 @@ impl<'a> Builder<'a> {
                 let mut data = loader::compute(file, &self.context.config, true)?;
 
                 let mut clean = self.context.options.clean_url;
-                if let Some(val) = data.get("clean") {
-                    if let Some(val) = val.as_bool() {
-                        clean = val;
-                    }
+                if let Some(val) = data.clean {
+                    clean = val;
                 }
 
                 if utils::is_draft(&data, &self.context.options) {
@@ -181,7 +180,7 @@ impl<'a> Builder<'a> {
                         if each {
                             each_iters.push((query, idx));
                         } else {
-                            data.insert(query.get_parameter(), json!(idx));
+                            data.vars.insert(query.get_parameter(), json!(idx));
                         }
                     }
 

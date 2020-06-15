@@ -45,9 +45,9 @@ impl HelperDef for Parent{
             let template = h.template();
             match template {
                 Some(t) => {
-                    let data = loader::compute(&parent, &build_ctx.config, true).map_err(map_render_error)?;
+                    let mut data = loader::compute(&parent, &build_ctx.config, true).map_err(map_render_error)?;
                     let mut local_rc = rc.clone();
-                    let local_ctx = with_parent_context(ctx, &data)?;
+                    let local_ctx = with_parent_context(ctx, &mut data)?;
                     t.render(r, &local_ctx, &mut local_rc, out)?;
                     return Ok(());
                 }

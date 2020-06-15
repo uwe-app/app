@@ -10,8 +10,7 @@ use super::matcher::FileType;
 use super::template;
 use super::frontmatter;
 use super::context::Context;
-
-use serde_json::{Map, Value};
+use super::page::Page;
 
 pub struct Parser<'a> {
     render: template::TemplateRender<'a>,
@@ -35,7 +34,7 @@ impl<'a> Parser<'a> {
         &mut self,
         input: P,
         output: P,
-        data: &mut Map<String, Value>) -> Result<String, Error> {
+        data: &mut Page) -> Result<String, Error> {
 
         let (content, _has_fm, _fm) = frontmatter::load(
             &input, frontmatter::Config::new_html(false))?;
@@ -50,7 +49,7 @@ impl<'a> Parser<'a> {
         &mut self,
         input: P,
         output: P,
-        data: &mut Map<String, Value>) -> Result<String, Error> {
+        data: &mut Page) -> Result<String, Error> {
 
         let (content, _has_fm, _fm) = frontmatter::load(
             &input, frontmatter::Config::new_markdown(false))?;
@@ -67,7 +66,7 @@ impl<'a> Parser<'a> {
         input: P,
         output: P,
         file_type: &FileType,
-        data: &mut Map<String, Value>) -> Result<String, Error> {
+        data: &mut Page) -> Result<String, Error> {
 
         match file_type {
             FileType::Template => {

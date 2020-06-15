@@ -10,6 +10,7 @@ use fluent_templates::FluentLoader;
 
 use log::{warn, debug};
 
+use super::page::Page;
 use super::context::Context;
 use super::helpers;
 use crate::{
@@ -67,7 +68,7 @@ impl<'a> TemplateRender<'a> {
         input: P,
         output: P,
         content: String,
-        data: &mut Map<String, Value>,
+        data: &mut Page,
     ) -> Result<String, Error> {
         let name = input.as_ref().to_str().unwrap();
         if self
@@ -96,9 +97,9 @@ impl<'a> TemplateRender<'a> {
             let modified = dt.format("%a %b %e %Y").to_string();
             file_info.insert("modified".to_string(), json!(modified));
 
-            data.insert("lang".to_string(), json!(self.context.locales.lang));
-            data.insert("file".to_string(), json!(file_info));
-            data.insert("context".to_string(), json!(self.context));
+            data.vars.insert("lang".to_string(), json!(self.context.locales.lang));
+            data.vars.insert("file".to_string(), json!(file_info));
+            data.vars.insert("context".to_string(), json!(self.context));
 
             debug!("{:?}", data);
 
@@ -112,12 +113,11 @@ impl<'a> TemplateRender<'a> {
         _input: P,
         _output: P,
         document: String,
-        data: &mut Map<String, Value>,
+        data: &mut Page,
     ) -> Result<String, Error> {
 
         // Skip layout for standalone documents
-        if let Some(val) = data.get("standalone") {
-            let standalone = val.is_boolean() && val.as_bool().unwrap();
+        if let Some(standalone) = data.standalone {
             if standalone {
                 return Ok(document);
             }
@@ -125,14 +125,12 @@ impl<'a> TemplateRender<'a> {
 
         // See if the file has a specific layout
         let mut layout_path = PathBuf::new();
-        if let Some(path) = data.get("layout") {
-            if let Some(name) = path.as_str() {
-                layout_path = self.context.options.source.clone();
-                layout_path.push(name);
-                if !layout_path.exists() {
-                    warn!("missing layout {}", layout_path.display());
-                }
-            } 
+        if let Some(layout) = &data.layout {
+            layout_path = self.context.options.source.clone();
+            layout_path.push(layout);
+            if !layout_path.exists() {
+                warn!("missing layout {}", layout_path.display());
+            }
         }
 
         // Use a default layout path
@@ -156,7 +154,7 @@ impl<'a> TemplateRender<'a> {
 
         // Inject the result into the layout template data
         // re-using the same data object
-        data.insert("template".to_owned(), json!(document));
+        data.vars.insert("template".to_owned(), json!(document));
 
         self.handlebars.render(&layout_name, data).map_err(Error::from)
     }

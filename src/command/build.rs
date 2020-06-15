@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::net::SocketAddr;
 
+use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
 
 use tokio::sync::broadcast::Sender;
@@ -56,6 +57,7 @@ impl BuildTag {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct BuildArguments {
     // Specific directory relative to source to walk
@@ -72,6 +74,7 @@ pub struct BuildArguments {
 
 // FIXME: re-use the BuildArguments in the BuildOptions!
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct BuildOptions {
     // Root of the input

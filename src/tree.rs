@@ -3,12 +3,13 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
-use serde_json::{json, Value, Map};
+use serde_json::json;
 
 use crate::build::loader;
 use crate::build::matcher;
 use crate::build::context::Context;
 use crate::build::matcher::FileType;
+use crate::build::page::Page;
 
 use crate::{
     utils,
@@ -19,7 +20,7 @@ use crate::{
     MD
 };
 
-pub type ItemData = Map<String, Value>;
+pub type ItemData = Page;
 
 #[derive(Debug)]
 pub struct PathAndHref {
@@ -95,7 +96,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                 #[allow(unused_assignments)]
                 let mut this: bool = false;
 
-                let mut data: Map<String, Value> = Map::new();
+                let mut data: Page = Default::default();
 
                 //println!("children {:?}", path);
 
@@ -175,8 +176,8 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                         }
                     }
 
-                    data.insert("href".to_owned(), json!(href));
-                    data.insert("self".to_owned(), json!(this));
+                    data.vars.insert("href".to_owned(), json!(href));
+                    data.vars.insert("self".to_owned(), json!(this));
                     entries.push(data);
                 }
             }
@@ -188,20 +189,13 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
     if list.sort {
         entries.sort_by(|a,b| {
-            let mut s1 = "".to_string();
-            let mut s2 = "".to_string();
-            if let Some(v1) = a.get(&list.sort_key) {
-                if let Some(v2) = b.get(&list.sort_key) {
-                    if let Some(v1) = v1.as_str() {
-                        if let Some(v2) = v2.as_str() {
-                            s1 = v1.to_string();
-                            s2 = v2.to_string();
-                        }
-                    }
-                }
+            let mut s1 = "";
+            let mut s2 = "";
+            if list.sort_key == "title" {
+                s1 = a.title.as_ref().map(|x| &**x).unwrap_or("");
+                s2 = b.title.as_ref().map(|x| &**x).unwrap_or("");
             }
-
-            s1.partial_cmp(&s2).unwrap()
+            s1.partial_cmp(s2).unwrap()
         });
     }
 

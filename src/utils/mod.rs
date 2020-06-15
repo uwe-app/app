@@ -10,12 +10,13 @@ use std::path::PathBuf;
 
 use super::asset::Asset;
 
-use serde_json::{Map, Value};
 use inflector::Inflector;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
 use super::{BuildOptions, Error, INDEX_STEM};
+
+use crate::build::page::Page;
 
 use log::{debug};
 
@@ -30,11 +31,9 @@ pub fn generate_id(len: i32) -> String {
     s
 }
 
-pub fn is_draft(data: &Map<String, Value>, opts: &BuildOptions) -> bool {
+pub fn is_draft(data: &Page, opts: &BuildOptions) -> bool {
     if opts.release {
-        if let Some(val) = data.get("draft") {
-            return val.as_bool().is_some()
-        }
+        return data.draft.is_some() && data.draft.unwrap();
     }
     false
 }

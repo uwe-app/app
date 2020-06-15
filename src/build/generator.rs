@@ -15,19 +15,18 @@ use crate::{
 
 use crate::config::Config;
 
+use super::page::Page;
+
 static GENERATOR_TOML: &str = "generator.toml";
 static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";
-static QUERY_FIELD: &str = "query";
 
-pub fn get_query(data: &Map<String, Value>) -> Result<Vec<IndexQuery>, Error> {
-    let generator_config = data.get(QUERY_FIELD);
-
+pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>, Error> {
+    //let generator_config = data.query;
     let mut page_generators: Vec<IndexQuery> = Vec::new();
-
-    if let Some(cfg) = generator_config {
+    if let Some(cfg) = &data.query {
         // Single object declaration
         if cfg.is_object() {
             let conf = cfg.as_object().unwrap();
