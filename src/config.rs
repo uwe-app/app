@@ -70,6 +70,7 @@ pub struct Config {
     pub hook: Option<BTreeMap<String, HookConfig>>,
     pub page: Option<Page>,
 
+    #[serde(skip)]
     pub file: Option<PathBuf>,
 
     #[serde(skip)]

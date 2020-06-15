@@ -17,8 +17,7 @@ use crate::{
     utils,
     Error,
     MD,
-    INDEX_STEM,
-    PARSE_EXTENSIONS
+    INDEX_STEM
 };
 
 use super::frontmatter;
@@ -33,9 +32,9 @@ lazy_static! {
     };
 }
 
-fn find_file_for_key(k: &str, source: &PathBuf) -> Option<PathBuf> {
+fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathBuf> {
 
-    let mut key = k.to_string().clone();
+    let mut key = utils::url::to_path_separator(k);
     if k == "/" {
         key = INDEX_STEM.to_string().clone(); 
     } else if key.ends_with("/") {
@@ -51,25 +50,39 @@ fn find_file_for_key(k: &str, source: &PathBuf) -> Option<PathBuf> {
         return Some(pth)
     }
 
+    let extensions = &config.extension.as_ref().unwrap();
+
     // Might just have a file stem so try the
     // supported extensions
-    //
-    // FIXME: use the extensions config?
-    for ext in &PARSE_EXTENSIONS {
+    for ext in &extensions.render {
         pth.set_extension(ext);
         if pth.exists() {
             return Some(pth)
         }
     }
+
     None
 }
 
-pub fn table_to_json_map(table: &Table) -> Map<String, Value> {
-    let mut map = Map::new();
-    for (k, v) in table {
-        map.insert(k.to_string(), json!(v));
+fn find_key_for_file<P: AsRef<Path>>(f: P, config: &Config) -> String {
+    let file = f.as_ref();
+    let mut buf = file.to_path_buf();
+
+    if buf.is_dir() {
+        let mut tmp = buf.clone();
+        tmp.push(INDEX_STEM);  
+
+        let extensions = &config.extension.as_ref().unwrap();
+        for ext in &extensions.render {
+            tmp.set_extension(ext);
+            if tmp.exists() {
+                buf = tmp;
+                break;
+            }
+        }
     }
-    map
+
+    buf.to_string_lossy().into_owned()
 }
 
 pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Result<Page, Error> {
@@ -77,10 +90,9 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
 
     let mut page = config.page.as_ref().unwrap().clone();
 
-    // Look for file specific data
-    let file_key = f.as_ref().to_string_lossy().into_owned();
+    // Look for file specific data from page.toml
+    let file_key = find_key_for_file(&f, config);
     if let Some(file_object) = data.get_mut(&file_key) {
-
         let mut copy = file_object.clone();
         page.append(&mut copy);
     }
@@ -105,23 +117,20 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
         }
 
         // FIXME: ensure frontmatter never defines `query`
-
     }
-
-
-    //println!("GOT FILE DATA {:?}", page);
 
     Ok(page)
 }
 
 pub fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
-    //let mut res = parse_toml_to_json(&source)?;
-    //data.append(&mut res);
-    //
-
     let mut page: Page = toml::from_str(&source)?;
     data.append(&mut page);
     Ok(())
+}
+
+pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {
+    let res = utils::read_string(f)?;
+    parse_toml_to_json(&res)
 }
 
 pub fn parse_toml_to_json(s: &str) -> Result<Map<String, Value>, Error> {
@@ -129,9 +138,12 @@ pub fn parse_toml_to_json(s: &str) -> Result<Map<String, Value>, Error> {
     Ok(table_to_json_map(&config))
 }
 
-pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {
-    let res = utils::read_string(f)?;
-    parse_toml_to_json(&res)
+fn table_to_json_map(table: &Table) -> Map<String, Value> {
+    let mut map = Map::new();
+    for (k, v) in table {
+        map.insert(k.to_string(), json!(v));
+    }
+    map
 }
 
 fn clear() {
@@ -152,17 +164,18 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
         let properties = utils::read_string(src);
         match properties {
             Ok(s) => {
-                let config: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&s);
-                match config {
+                let conf: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&s);
+                match conf {
                     Ok(props) => {
                         for (k, v) in props {
                             let page = v.try_into::<Page>()?;
-                            let result = find_file_for_key(&k, source);
+                            let result = find_file_for_key(&k, source, config);
                             match result {
                                 Some(f) => {
                                     // Use the actual file path as the key
                                     // so we can find it easily later
                                     let file_key = f.to_string_lossy().into_owned();
+                                    //println!("Inserting with key {}", &file_key);
                                     data.insert(file_key, page);
                                 },
                                 None => warn!("No file for page table: {}", k)

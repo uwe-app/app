@@ -189,7 +189,8 @@ impl HelperDef for Components{
 
 
             }
-            None => return Err(RenderError::new("Template expected for components helper")),
+            None => return Err(
+                RenderError::new("Template expected for components helper")),
         }
 
         Ok(())
