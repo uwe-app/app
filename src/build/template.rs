@@ -1,15 +1,14 @@
 use std::convert::AsRef;
 use std::path::Path;
 
-use serde_json::{json, Map, Value};
+use serde_json::json;
 
 use handlebars::Handlebars;
-use chrono::Local;
 use fluent_templates::FluentLoader;
 
 use log::{warn, debug};
 
-use super::page::Page;
+use super::page::{Page, FileContext};
 use super::context::Context;
 use super::helpers;
 use crate::{
@@ -43,6 +42,7 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("match", Box::new(helpers::url::Match));
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
+        handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
 
         if let Some(loader) = &context.locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
@@ -75,29 +75,19 @@ impl<'a> TemplateRender<'a> {
             .register_template_string(name, &content)
             .is_ok()
         {
-            let filepath = input.as_ref().to_str().unwrap().to_string();
-            let destpath = output.as_ref().to_str().unwrap().to_string();
+            let mut file_context = FileContext::new(
+                input.as_ref().to_path_buf(),
+                output.as_ref().to_path_buf()
+            );
 
-            let mut file_info: Map<String, Value> = Map::new();
-            file_info.insert("source".to_string(), json!(filepath));
-            file_info.insert("target".to_string(), json!(destpath));
-
-            if let Some(stem) = input.as_ref().file_stem() {
-                let stem = stem.to_string_lossy().into_owned();
-                file_info.insert("name".to_string(), json!(stem));
-            }
-
-            // TODO: allow using UTC configuration
-            // TODO: prefer source file modification time
-            let dt = Local::now();
-            //let modified = dt.format("%a %b %e %T %Y").to_string();
-            
-            // TODO: allow configuration of format string
-            let modified = dt.format("%a %b %e %Y").to_string();
-            file_info.insert("modified".to_string(), json!(modified));
+            file_context.resolve_metadata()?;
 
             data.lang = Some(self.context.locales.lang.clone());
-            data.vars.insert("file".to_string(), json!(file_info));
+            data.file = Some(file_context);
+
+            // NOTE: context must be pushed into the vars otherwise
+            // NOTE: we have a recursive type due to the page data 
+            // NOTE: declared in the root config
             data.vars.insert("context".to_string(), json!(self.context));
 
             debug!("{:?}", data);

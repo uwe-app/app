@@ -6,6 +6,7 @@ use crate::Error;
 
 pub mod children;
 pub mod html;
+pub mod date;
 pub mod include;
 pub mod json;
 pub mod livereload;
@@ -57,14 +58,7 @@ pub fn with_parent_context<'rc>(
     mut data: &mut Page) -> Result<Context, RenderError> {
 
     let mut scope: Page = serde_json::from_value(ctx.data().clone())?;
-
-    //let mut new_data: Map<String, Value> = existing.clone();
-    //for (k, v) in data {
-        //new_data.insert(k.clone(), json!(v));
-    //}
-    //
     scope.append(&mut data);
-
     return Context::wraps(&scope);
 }
 

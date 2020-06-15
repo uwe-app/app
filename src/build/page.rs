@@ -2,8 +2,46 @@ use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use std::mem;
 
+use chrono::Utc;
+use chrono::DateTime;
 use serde_with::skip_serializing_none;
 use serde_json::{Map, Value};
+
+use crate::Error;
+
+#[skip_serializing_none]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FileContext {
+    pub source: PathBuf,
+    pub target: PathBuf,
+    pub name: Option<String>,
+    pub modified: DateTime<Utc>,
+}
+
+impl FileContext {
+    pub fn new(source: PathBuf, target: PathBuf) -> Self {
+        let mut name = None;
+        if let Some(stem) = &source.file_stem() {
+            name = Some(stem.to_string_lossy().into_owned());
+        }
+
+        Self {
+            source,
+            target,
+            name,
+            modified: Utc::now(),
+        } 
+    }
+
+    pub fn resolve_metadata(&mut self) -> Result<(), Error> {
+        if let Ok(ref metadata) = self.source.metadata() {
+            if let Ok(modified) = metadata.modified() {
+                self.modified = DateTime::from(modified);
+            }
+        }
+        Ok(())
+    }
+}
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -21,6 +59,8 @@ pub struct Page {
 
     // Reserved
     pub lang: Option<String>,
+    pub file: Option<FileContext>,
+
     // Layout template data
     pub template: Option<String>,
 
@@ -47,6 +87,7 @@ impl Default for Page {
             vars: Map::new(),
 
             lang: None,
+            file: None,
             template: None,
         }
     }
