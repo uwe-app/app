@@ -20,6 +20,7 @@ pub mod page;
 pub mod parser;
 pub mod resource;
 pub mod template;
+pub mod tree;
 pub mod watch;
 
 use crate::{

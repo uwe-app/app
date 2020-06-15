@@ -3,9 +3,8 @@ use std::path::Path;
 use handlebars::*;
 use serde_json::{json};
 
-use crate::{tree};
-use crate::tree::*;
 use crate::build::context::{Context as BuildContext};
+use crate::build::tree::{self, ListOptions};
 
 #[derive(Clone, Copy)]
 pub struct Children;
