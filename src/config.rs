@@ -15,7 +15,6 @@ use log::debug;
 use crate::{utils, Error, MD, HTML};
 use crate::build::page::Page;
 
-
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
 
@@ -31,6 +30,8 @@ static PORT: u16 = 3000;
 
 static LANG: &str = "en";
 static LOCALES: &str = "locales";
+
+type RedirectConfig = BTreeMap<String, String>;
 
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {
@@ -69,6 +70,7 @@ pub struct Config {
     pub fluent: Option<FluentConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
     pub page: Option<Page>,
+    pub redirect: Option<RedirectConfig>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -101,6 +103,7 @@ impl Default for Config {
             serve: Some(Default::default()),
             hook: None,
             page: Some(Default::default()),
+            redirect: None,
         } 
     }
 }
@@ -130,13 +133,15 @@ impl Config {
                 // Ensure that lang is a valid identifier
                 let _: LanguageIdentifier = cfg.lang.parse()?;
 
+                // It's ok if people want to declare a scheme but we don't
+                // want one for the host
+                cfg.host = cfg.host.trim_start_matches("http://").to_string();
+                cfg.host = cfg.host.trim_start_matches("https://").to_string();
+
                 // Check host can be parsed as a valid URL
                 // and store the parsed URL
-                let mut host = cfg.host.clone();
-                host = host.trim_start_matches("http://").to_string();
-                host = host.trim_start_matches("https://").to_string();
                 let mut url_host = String::from("https://");
-                url_host.push_str(&host);
+                url_host.push_str(&cfg.host);
                 let url = Url::parse(&url_host)?;
                 cfg.url = Some(url);
 
@@ -403,3 +408,4 @@ impl HookConfig {
         None
     }
 }
+
