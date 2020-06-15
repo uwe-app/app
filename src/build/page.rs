@@ -8,6 +8,7 @@ use serde_json::{Map, Value};
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Page {
+    // Configurable
     pub title: Option<String>,
     pub description: Option<String>,
     pub keywords: Option<String>,
@@ -17,6 +18,13 @@ pub struct Page {
     pub standalone: Option<bool>,
     pub query: Option<Value>,
     pub layout: Option<PathBuf>,
+
+    // Reserved
+    pub lang: Option<String>,
+
+    // NOTE: that we do not define `context` as it would
+    // NOTE: create a recursive data type; the template
+    // NOTE: logic should inject it into `vars`
 
     #[serde(flatten)]
     pub vars: Map<String, Value>,
@@ -35,6 +43,8 @@ impl Default for Page {
             query: None,
             layout: None,
             vars: Map::new(),
+
+            lang: None,
         }
     }
 }

@@ -1,6 +1,5 @@
 use std::convert::AsRef;
 use std::path::Path;
-use std::path::PathBuf;
 
 use serde_json::{json, Map, Value};
 
@@ -97,7 +96,7 @@ impl<'a> TemplateRender<'a> {
             let modified = dt.format("%a %b %e %Y").to_string();
             file_info.insert("modified".to_string(), json!(modified));
 
-            data.vars.insert("lang".to_string(), json!(self.context.locales.lang));
+            data.lang = Some(self.context.locales.lang.clone());
             data.vars.insert("file".to_string(), json!(file_info));
             data.vars.insert("context".to_string(), json!(self.context));
 
@@ -124,20 +123,19 @@ impl<'a> TemplateRender<'a> {
         }
 
         // See if the file has a specific layout
-        let mut layout_path = PathBuf::new();
-        if let Some(layout) = &data.layout {
-            layout_path = self.context.options.source.clone();
+        let layout_path = if let Some(layout) = &data.layout {
+            let mut layout_path = self.context.options.source.clone();
             layout_path.push(layout);
             if !layout_path.exists() {
                 warn!("missing layout {}", layout_path.display());
             }
-        }
-
-        // Use a default layout path
-        if layout_path == PathBuf::new() {
-            layout_path = self.context.options.source.clone();
+            layout_path
+        } else {
+            // Use a default layout path
+            let mut layout_path = self.context.options.source.clone();
             layout_path.push(LAYOUT_HBS);
-        }
+            layout_path
+        };
 
         // No layout available so bail
         if !layout_path.exists() {
