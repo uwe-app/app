@@ -7,9 +7,9 @@ use crate::locale::Locales;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
-    //pub lang: String,
     pub config: Config,
     pub options: BuildOptions,
+    #[serde(skip)]
     pub livereload: Option<String>,
     #[serde(skip)]
     pub generators: GeneratorMap,
