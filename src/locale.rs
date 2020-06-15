@@ -53,17 +53,6 @@ impl Locales {
             let lang_id: LanguageIdentifier = self.lang.parse()?;
             self.map.insert(self.lang.clone(), lang_id);
         }
-
-        if let Some(fluent) = &config.fluent {
-            if let Some(ref redirect) = fluent.redirect {
-                if !self.map.contains_key(redirect) {
-                    return Err(
-                        Error::new(
-                            format!("Redirect '{}' is not a valid locale", redirect)));
-                }
-            } 
-        }
-
         Ok(())
     }
 }

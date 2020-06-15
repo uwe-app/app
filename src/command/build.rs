@@ -12,7 +12,7 @@ use warp::ws::Message;
 
 use log::info;
 
-use crate::{utils, Error, INDEX_HTML};
+use crate::{utils, Error};
 use crate::config::Config;
 use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
@@ -155,24 +155,13 @@ fn build_workspaces(
                 ctx = load(copy, space.config.clone(), lang_opts)?;
                 build(&ctx)?;
             }
-
-
-            if let Some(fluent) = &space.config.fluent {
-                if let Some(ref redirect) = fluent.redirect {
-                    let location = format!("/{}/", redirect);
-                    let mut file = opts.base.clone();
-                    file.push(INDEX_HTML);
-
-                    info!("Redirect {} -> {}", file.display(), &redirect);
-
-                    crate::content::redirect::write(&location, file)?;
-                }
-            }
         } else {
             ctx = load(locales, space.config, opts)?;
             build(&ctx)?;
         }
     }
+
+    crate::build::redirect::write(&ctx)?;
 
     if ctx.options.live {
         livereload(ctx, error_cb)?;

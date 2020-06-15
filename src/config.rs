@@ -330,7 +330,6 @@ impl Default for BuildConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
     pub fallback: Option<String>,
-    pub redirect: Option<String>,
     pub locales: Option<PathBuf>,
     pub shared: Option<String>,
     #[serde(skip)]
@@ -341,7 +340,6 @@ impl Default for FluentConfig {
     fn default() -> Self {
         Self {
             fallback: Some(String::from(LANG)),
-            redirect: Some(String::from(LANG)),
             locales: Some(PathBuf::from(LOCALES)),
             shared: Some(String::from("core.ftl")),
             fallback_id: String::from(LANG).parse().unwrap(),
