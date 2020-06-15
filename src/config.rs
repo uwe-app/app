@@ -10,9 +10,11 @@ use serde::{Deserialize, Serialize};
 use toml;
 
 use unic_langid::LanguageIdentifier;
+use log::debug;
 
 use crate::{utils, Error, MD, HTML};
 use crate::build::page::Page;
+
 
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
@@ -30,19 +32,27 @@ static PORT: u16 = 3000;
 static LANG: &str = "en";
 static LOCALES: &str = "locales";
 
-
-use log::debug;
+fn resolve_cwd() -> Option<PathBuf> {
+    if let Ok(cwd) = std::env::current_dir() {
+        return Some(cwd)
+    }
+    return None
+}
 
 fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
     let file = f.as_ref();
     if let Some(p) = file.parent() {
-        return Some(p.to_path_buf());
-    } else {
-        if let Ok(cwd) = std::env::current_dir() {
-            return Some(cwd)
+        // Hooks need a canonical path for resolving relative
+        // executables and if we allow the empty string the
+        // call to canonical() in the hook builder will fail
+        if p == PathBuf::from("") {
+            return resolve_cwd();
         }
+
+        return Some(p.to_path_buf());
     }
-    None
+
+    resolve_cwd()
 }
 
 #[skip_serializing_none]
@@ -51,8 +61,6 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
 pub struct Config {
     pub lang: String,
     pub host: Option<String>,
-    pub file: Option<PathBuf>,
-    pub project: Option<PathBuf>,
     pub build: Option<BuildConfig>,
     pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
@@ -61,6 +69,11 @@ pub struct Config {
     pub fluent: Option<FluentConfig>,
     pub hook: Option<BTreeMap<String, HookConfig>>,
     pub page: Option<Page>,
+
+    pub file: Option<PathBuf>,
+
+    #[serde(skip)]
+    pub project: Option<PathBuf>,
 
     #[serde(skip)]
     pub url: Option<Url>,
@@ -280,6 +293,7 @@ impl Config {
 
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BuildConfig {
@@ -312,6 +326,7 @@ impl Default for BuildConfig {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
     pub fallback: Option<String>,
@@ -373,6 +388,7 @@ impl Default for ExtensionConfig {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookConfig {
     pub path: Option<String>,
