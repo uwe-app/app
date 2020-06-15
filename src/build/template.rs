@@ -152,7 +152,7 @@ impl<'a> TemplateRender<'a> {
 
         // Inject the result into the layout template data
         // re-using the same data object
-        data.vars.insert("template".to_owned(), json!(document));
+        data.template = Some(document);
 
         self.handlebars.render(&layout_name, data).map_err(Error::from)
     }

@@ -21,6 +21,8 @@ pub struct Page {
 
     // Reserved
     pub lang: Option<String>,
+    // Layout template data
+    pub template: Option<String>,
 
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
@@ -45,6 +47,7 @@ impl Default for Page {
             vars: Map::new(),
 
             lang: None,
+            template: None,
         }
     }
 }
