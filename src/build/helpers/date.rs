@@ -1,7 +1,7 @@
 use handlebars::*;
 
 use chrono::{DateTime, Utc, Local};
-use serde_json::{json, from_value};
+use serde_json::from_value;
 
 #[derive(Clone, Copy)]
 pub struct DateFormat;
@@ -32,7 +32,7 @@ impl HelperDef for DateFormat{
             let date: DateTime<Utc> = from_value(dt.clone())?;
             if let Ok(fmt) = fmt {
                 if let Some(fmt) = fmt.as_str() {
-                    let format = if let Some(local) = local {
+                    let format = if let Some(_) = local {
                         let converted: DateTime<Local> = DateTime::from(date);
                         converted.format(fmt).to_string()
                     } else {

@@ -2,7 +2,7 @@ use std::path::Path;
 use std::convert::AsRef;
 use std::path::MAIN_SEPARATOR;
 
-pub fn to_url_lossy<P: AsRef<Path>>(p: P) -> String {
+pub fn to_href_separator<P: AsRef<Path>>(p: P) -> String {
     return p.as_ref()
         .iter()
         .map(|c| c.to_string_lossy().into_owned())

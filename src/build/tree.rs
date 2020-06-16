@@ -122,7 +122,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                             if let Ok(rel) = dest.strip_prefix(rel_base) {
                                 dest = rel.to_path_buf();
                             }
-                            href = dest.to_string_lossy().to_string();
+                            href = dest.to_string_lossy().into();
                             data = loader::compute(&path, &ctx.config, true)?;
 
                         }
@@ -176,7 +176,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                         }
                     }
 
-                    data.vars.insert("href".to_owned(), json!(href));
+                    data.vars.insert("href".to_owned(), json!(utils::url::to_href_separator(href)));
                     data.vars.insert("self".to_owned(), json!(this));
                     entries.push(data);
                 }
