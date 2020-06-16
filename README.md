@@ -2,26 +2,13 @@
 
 Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebars][] and [mdbook][].
 
-
 ```
 ht
 ```
 
-> Process all files in `site` and write the result to `build`.
+## SSL
 
-Get short help with `ht -h` and see more detail with `ht --help`.
-
-## TODO
-
-* Support `ho(1)` for optimization pass to compress HTML etc.
-
-## Notes
-
-Much inspiration lifted from [mdbook][].
-
-## License
-
-See [LICENSE](/LICENSE).
+For libgit2 support (`git2` crate) the SSL development package is required. For Ubunut/Mint I installed with `sudo apt-get install libssl-dev`.
 
 [pulldown-cmark]: https://github.com/raphlinus/pulldown-cmark
 [handlebars]: https://github.com/sunng87/handlebars-rust

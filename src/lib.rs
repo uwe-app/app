@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 mod asset;
+mod blueprint;
 mod build;
 mod content;
 pub mod callback;

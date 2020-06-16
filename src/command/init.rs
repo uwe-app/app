@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+use crate::blueprint;
 use crate::utils;
 use crate::Error;
 
@@ -54,6 +55,29 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     let template_files = vec![
         "site/assets/style.css"
     ];
+
+    blueprint::clone_or_fetch()?;
+
+    //let cache = home::home_dir();
+    //if let Some(ref cache) = cache {
+        //let mut buf = cache.clone();
+        //buf.push(".hypertext");
+        
+        //if !buf.exists() {
+            //println!("Cache blueprints for init {:?}", buf);
+            //std::fs::create_dir_all(&buf)?;
+        //}
+
+        //buf.push("mock-git2-rs");
+
+        //let url = "https://github.com/alexcrichton/git2-rs";
+        //let repo = match Repository::clone(url, buf) {
+            //Ok(repo) => repo,
+            //Err(e) => panic!("failed to clone: {}", e),
+        //};
+
+        //println!("Got repo");
+    //}
 
     if let Some(target) = options.target {
 

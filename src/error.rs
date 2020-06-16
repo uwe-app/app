@@ -19,7 +19,9 @@ pub enum Error {
     NotifyError(notify::Error),
     UrlParseError(url::ParseError),
     LanguageIdentifierError(unic_langid::LanguageIdentifierError),
+    // For fluent template loader
     Boxed(Box<dyn std::error::Error>),
+    Git(git2::Error),
 }
 
 impl Error {
@@ -108,6 +110,12 @@ impl From<Box<dyn std::error::Error>> for Error {
     }
 }
 
+impl From<git2::Error> for Error {
+    fn from(error: git2::Error) -> Self {
+        Error::Git(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -125,6 +133,7 @@ impl fmt::Display for Error {
             Error::UrlParseError(ref e) => e.fmt(f),
             Error::LanguageIdentifierError(ref e) => e.fmt(f),
             Error::Boxed(ref e) => e.fmt(f),
+            Error::Git(ref e) => e.fmt(f),
         }
     }
 }
@@ -144,6 +153,7 @@ impl error::Error for Error {
             Error::NotifyError(ref e) => Some(e),
             Error::UrlParseError(ref e) => Some(e),
             Error::LanguageIdentifierError(ref e) => Some(e),
+            Error::Git(ref e) => Some(e),
             _ => None,
         }
     }
