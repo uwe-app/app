@@ -85,6 +85,13 @@ impl<'a> TemplateRender<'a> {
             data.lang = Some(self.context.locales.lang.clone());
             data.file = Some(file_context);
 
+            // Some useful shortcuts
+            if let Some(ref date) = self.context.config.date {
+                data.vars.insert(
+                    "date-formats".to_string(),
+                    json!(date.formats));
+            }
+
             // NOTE: context must be pushed into the vars otherwise
             // NOTE: we have a recursive type due to the page data 
             // NOTE: declared in the root config

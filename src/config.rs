@@ -430,7 +430,7 @@ impl HookConfig {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DateConfig {
-    formats: HashMap<String, String>,
+    pub formats: HashMap<String, String>,
 }
 
 impl Default for DateConfig {
