@@ -197,19 +197,33 @@ impl Config {
                 if let Some(date) = cfg.date.as_mut() {
                     let mut datetime_formats = HashMap::new();
                     datetime_formats.insert(
-                        "date-short".to_string(),
-                        "%a %b %e %Y".to_string());
+                        "date-short".to_string(), "%F".to_string());
+                    datetime_formats.insert(
+                        "date-medium".to_string(), "%a %b %e %Y".to_string());
+                    datetime_formats.insert(
+                        "date-long".to_string(), "%A %B %e %Y".to_string());
+
+                    datetime_formats.insert(
+                        "time-short".to_string(), "%R".to_string());
+                    datetime_formats.insert(
+                        "time-medium".to_string(), "%X".to_string());
+                    datetime_formats.insert(
+                        "time-long".to_string(), "%r".to_string());
+
+                    datetime_formats.insert(
+                        "datetime-short".to_string(), "%F %R".to_string());
+                    datetime_formats.insert(
+                        "datetime-medium".to_string(), "%a %b %e %Y %X".to_string());
+                    datetime_formats.insert(
+                        "datetime-long".to_string(), "%A %B %e %Y %r".to_string());
 
                     for (k, v) in datetime_formats {
-                        if date.formats.contains_key(&k) {
-                            return Err(
-                                Error::new(
-                                    format!("Date time format name conflict on '{}'", k)));
+                        if !date.formats.contains_key(&k) {
+                            date.formats.insert(k, v);
                         }
-                        date.formats.insert(k, v);
                     }
 
-                    //println!("{:?}", date.formats);
+                    // FIXME: validate data time format specifiers 
                 }
 
                 return Ok(cfg);
