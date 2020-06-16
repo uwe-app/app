@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use git2::Repository;
+use git2::{Repository, Submodule};
 use home;
 use log::info;
 
@@ -27,19 +27,26 @@ fn get_root_dir() -> Result<PathBuf, Error> {
             format!("Could not determine home directory")))
 }
 
-pub fn clone_or_fetch() -> Result<(), Error> {
+pub fn clone_or_fetch<'a>() -> Result<Vec<Box<Submodule<'a>>>, Error> {
     let mut buf = get_root_dir()?;
     buf.push(BLUEPRINT);
     if !buf.exists() {
         let now = SystemTime::now();
         info!("clone {} -> {}", REPO, buf.display());
-        let _ = match Repository::clone_recurse(REPO, buf) {
+        let repo = match Repository::clone_recurse(REPO, buf) {
             Ok(repo) => repo,
             Err(e) => return Err(Error::from(e)),
         };
         if let Ok(t) = now.elapsed() {
             info!("done {:?}", t);
         }
+
+        let modules = repo.submodules()?
+            .into_iter()
+            .map(Box::new)
+            .collect::<Vec<_>>();
+
+        return Ok(modules);
     } else {
         if buf.is_dir() {
             // TODO: support --offline to skip attempting to update
@@ -51,7 +58,7 @@ pub fn clone_or_fetch() -> Result<(), Error> {
             };
 
             let modules = repo.submodules()?;
-            for sub in modules {
+            for sub in &modules {
                 let mut tmp = buf.clone();
                 tmp.push(sub.path());
                 let repo = match Repository::open(tmp) {
@@ -63,10 +70,14 @@ pub fn clone_or_fetch() -> Result<(), Error> {
                 repo.find_remote("origin")?.fetch(&["master"], None, None)?;
             }
 
+            let modules = modules
+                .into_iter()
+                .map(Box::new)
+                .collect::<Vec<_>>();
+
+            return Ok(modules)
         } else {
             return Err(Error::new(format!("Not a directory {}", buf.display())));
         }
     }
-
-    Ok(())
 }

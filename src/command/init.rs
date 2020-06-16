@@ -28,6 +28,8 @@ lazy_static! {
 
 pub fn init(options: InitOptions) -> Result<(), Error> {
 
+    blueprint::clone_or_fetch()?;
+
     let data = DATA.lock().unwrap();
     let template_name = options.template;
 
@@ -55,8 +57,6 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     let template_files = vec![
         "site/assets/style.css"
     ];
-
-    blueprint::clone_or_fetch()?;
 
     if let Some(target) = options.target {
 
