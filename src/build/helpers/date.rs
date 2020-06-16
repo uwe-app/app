@@ -16,12 +16,14 @@ impl HelperDef for DateFormat{
         out: &mut dyn Output,
     ) -> HelperResult {
         // Use local=true to convert to local timezone
+        //
+        // "%a %b %e %Y"
 
         // TODO: support format shortcuts for common formats
         // TODO: support locale aware date/time formats
 
         let dt = h.param(0).map(|v| v.value())
-            .ok_or(RenderError::new("Type error for `date`, first parameter must be date"));
+            .ok_or(RenderError::new("Type error for `date`, first parameter must be datetime"));
 
         let fmt = h.param(1).map(|v| v.value())
             .ok_or(RenderError::new("Type error for `date`, second parameter must be format string"));

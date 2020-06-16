@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
 use log::{info, debug};
@@ -52,7 +52,7 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn run(context: &Context, hooks: &BTreeMap<String, HookConfig>) -> Result<(), Error> {
+pub fn run(context: &Context, hooks: &HashMap<String, HookConfig>) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
         exec(context, hook)?;

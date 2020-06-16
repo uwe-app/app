@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::convert::AsRef;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use url::Url;
 
@@ -31,7 +31,7 @@ static PORT: u16 = 3000;
 static LANG: &str = "en";
 static LOCALES: &str = "locales";
 
-type RedirectConfig = BTreeMap<String, String>;
+type RedirectConfig = HashMap<String, String>;
 
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {
@@ -68,9 +68,10 @@ pub struct Config {
     pub book: Option<BookConfig>,
     pub extension: Option<ExtensionConfig>,
     pub fluent: Option<FluentConfig>,
-    pub hook: Option<BTreeMap<String, HookConfig>>,
+    pub hook: Option<HashMap<String, HookConfig>>,
     pub page: Option<Page>,
     pub redirect: Option<RedirectConfig>,
+    pub date: Option<DateConfig>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -104,6 +105,7 @@ impl Default for Config {
             hook: None,
             page: Some(Default::default()),
             redirect: None,
+            date: Some(Default::default()),
         } 
     }
 }
@@ -189,7 +191,25 @@ impl Config {
                 } else {
                     // Create a default value so we can always
                     // unwrap()
-                    cfg.hook = Some(BTreeMap::new());
+                    cfg.hook = Some(HashMap::new());
+                }
+
+                if let Some(date) = cfg.date.as_mut() {
+                    let mut datetime_formats = HashMap::new();
+                    datetime_formats.insert(
+                        "date-short".to_string(),
+                        "%a %b %e %Y".to_string());
+
+                    for (k, v) in datetime_formats {
+                        if date.formats.contains_key(&k) {
+                            return Err(
+                                Error::new(
+                                    format!("Date time format name conflict on '{}'", k)));
+                        }
+                        date.formats.insert(k, v);
+                    }
+
+                    //println!("{:?}", date.formats);
                 }
 
                 return Ok(cfg);
@@ -370,13 +390,13 @@ pub struct BookConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ExtensionConfig {
     pub render: Vec<String>,
-    pub map: BTreeMap<String, String>,
+    pub map: HashMap<String, String>,
     pub markdown: Vec<String>,
 }
 
 impl Default for ExtensionConfig {
     fn default() -> Self {
-        let mut ext_map: BTreeMap<String, String> = BTreeMap::new();
+        let mut ext_map: HashMap<String, String> = HashMap::new();
         ext_map.insert(String::from(MD), String::from(HTML));
         ExtensionConfig {
             render: vec![String::from(MD), String::from(HTML)],
@@ -407,3 +427,14 @@ impl HookConfig {
     }
 }
 
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DateConfig {
+    formats: HashMap<String, String>,
+}
+
+impl Default for DateConfig {
+    fn default() -> Self {
+        Self {formats: HashMap::new()}
+    }
+}
