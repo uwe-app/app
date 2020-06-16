@@ -8,6 +8,7 @@ use log::info;
 
 use crate::Error;
 
+static REPO: &str = "https://github.com/hypertext-live/blueprint";
 static ROOT_DIR: &str = ".hypertext";
 static BLUEPRINT: &str = "blueprint";
 
@@ -30,10 +31,9 @@ pub fn clone_or_fetch() -> Result<(), Error> {
     let mut buf = get_root_dir()?;
     buf.push(BLUEPRINT);
     if !buf.exists() {
-        let url = "https://github.com/hypertext-live/blueprint";
         let now = SystemTime::now();
-        info!("clone {} -> {}", url, buf.display());
-        let repo = match Repository::clone_recurse(url, buf) {
+        info!("clone {} -> {}", REPO, buf.display());
+        let _ = match Repository::clone_recurse(REPO, buf) {
             Ok(repo) => repo,
             Err(e) => return Err(Error::from(e)),
         };
@@ -41,7 +41,31 @@ pub fn clone_or_fetch() -> Result<(), Error> {
             info!("done {:?}", t);
         }
     } else {
-        println!("TRY TO PULL LATEST BLUEPRINTS");
+        if buf.is_dir() {
+            // TODO: support --offline to skip attempting to update
+            // TODO: support blueprint fetch config: always | never
+            
+            let repo = match Repository::open(&buf) {
+                Ok(repo) => repo,
+                Err(e) => return Err(Error::from(e)),
+            };
+
+            let modules = repo.submodules()?;
+            for sub in modules {
+                let mut tmp = buf.clone();
+                tmp.push(sub.path());
+                let repo = match Repository::open(tmp) {
+                    Ok(repo) => repo,
+                    Err(e) => return Err(Error::from(e)),
+                };
+
+                info!("fetch {} in {}", sub.path().display(), buf.display());
+                repo.find_remote("origin")?.fetch(&["master"], None, None)?;
+            }
+
+        } else {
+            return Err(Error::new(format!("Not a directory {}", buf.display())));
+        }
     }
 
     Ok(())
