@@ -135,14 +135,18 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
                         format!("Target '{}' exists, please move it away", target.display())));
             }
 
+            let repo;
+
             if let Some(ref parent) = target.parent() {
                 if !parent.exists() {
                     fs::create_dir_all(parent)?;
                 }
-                create(target, &options)?;
+                repo = create(target, &options)?;
             } else {
-                create(target, &options)?;
+                repo = create(target, &options)?;
             }
+
+            repo.remote_delete("origin")?;
         } else {
             return Err(Error::new(format!("Target directory is required")));
         }
