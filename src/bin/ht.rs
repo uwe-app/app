@@ -80,10 +80,6 @@ struct BuildOpts {
 #[derive(StructOpt,Debug)]
 struct InitOpts {
 
-    /// The name of a template to use
-    #[structopt(short, long, default_value = "vanilla/newcss")]
-    template: String,
-
     /// Update the blueprint cache
     #[structopt(short, long)]
     fetch: bool,
@@ -92,13 +88,15 @@ struct InitOpts {
     #[structopt(short, long)]
     list: bool,
 
-    /// Target directory to create
-    ///
-    /// The directory cannot already exist.
+    /// Target directory for the project
     #[structopt(parse(from_os_str))]
     // Not that normally we want a path but when --list
     // is given clap will error without the Option
     target: Option<PathBuf>,
+
+    /// The blueprint source path or URL
+    #[structopt(default_value = "vanilla/newcss")]
+    source: String,
 }
 
 #[derive(StructOpt,Debug)]
@@ -179,7 +177,7 @@ struct ArchiveOpts {
 #[derive(StructOpt,Debug)]
 enum Command {
 
-    /// Generate site source files
+    /// Create a new project from a blueprint
     Init {
         #[structopt(flatten)]
         args: InitOpts,
@@ -247,10 +245,10 @@ fn process_command(cmd: &Command) {
         } => {
 
             let opts = InitOptions {
+                source: args.source.clone(),
                 target: args.target.clone(),
-                template: args.template.clone(),
                 list: args.list,
-                fetech: args.fetch,
+                fetch: args.fetch,
             };
 
             if let Err(e) = hypertext::init(opts) {

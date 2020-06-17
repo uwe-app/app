@@ -1,31 +1,55 @@
+use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
-use std::collections::BTreeMap;
-use std::sync::Mutex;
+
+use url::Url;
+use git2::Repository;
+use log::info;
 
 use crate::blueprint;
-use crate::utils;
 use crate::Error;
-
-use log::info;
 
 #[derive(Debug)]
 pub struct InitOptions {
+    pub source: String,
     pub target: Option<PathBuf>,
-    pub template: String,
     pub list: bool,
     pub fetch: bool,
 }
 
-//lazy_static! {
-    //#[derive(Debug)]
-    //pub static ref DATA: Mutex<BTreeMap<String, String>> = {
-        //let mut map = BTreeMap::new();
-        //map.insert("newcss".to_string(), "https://github.com/xz/new.css".to_string());
-        //map.insert("tacit".to_string(), "https://github.com/yegor256/tacit".to_string());
-        //map.insert("bahunya".to_string(), "https://github.com/Kimeiga/bahunya".to_string());
-        //Mutex::new(map)
-    //};
-//}
+fn create<P: AsRef<Path>>(target: P, options: &InitOptions) -> Result<(), Error> {
+    println!("{:?}", options);
+
+    let (repo, base, _cloned) = blueprint::open_or_clone()?;
+    match Url::parse(&options.source) {
+        Ok(_) => {
+            info!("Clone {}", &options.source);
+            info!("   -> {}", target.as_ref().display());
+            Repository::clone(&options.source, target)?;
+            return Ok(())
+        },
+        Err(e) => {
+            let modules = repo.submodules()?;
+            for sub in modules {
+                if sub.path() == Path::new(&options.source) {
+                    let mut tmp = base.clone();
+                    tmp.push(sub.path());
+                    let src = tmp.to_string_lossy();
+                    info!("Clone {}", tmp.display());
+                    info!("   -> {}", target.as_ref().display());
+                    Repository::clone(&src, target)?;
+                    return Ok(())
+                }
+            }
+
+            // Now we have SSH style git@github.com: URLs to deal with
+        }
+    }
+
+    Err(Error::new(format!("Unable to handle source specification")))
+}
+
+// TODO: support [blueprint] default config
 
 pub fn init(options: InitOptions) -> Result<(), Error> {
 
@@ -35,56 +59,26 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     } else if options.fetch {
         blueprint::clone_or_fetch()?;
     } else {
-    
+
+        if let Some(ref target) = options.target {
+            if target.exists() {
+                return Err(
+                    Error::new(
+                        format!("Target '{}' exists, please move it away", target.display())));
+            }
+
+            if let Some(ref parent) = target.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent)?;
+                }
+                create(target, &options)?
+            } else {
+                create(target, &options)?
+            }
+        } else {
+            return Err(Error::new(format!("Target directory is required")));
+        }
     }
-
-    Ok(())
-
-    //let data = DATA.lock().unwrap();
-    //let template_name = options.template;
-
-    //if !data.contains_key(&template_name) {
-        //return Err(Error::new(format!("unknown template {}", &template_name)))
-    //}
-
-    //let common_name = "common";
-
-    //let common_files: Vec<&str> = vec![
-        //"site/.gitignore",
-        //"site/index.md",
-        //"site/layout.hbs",
-        //"site/partials/header.hbs",
-        //"site/partials/footer.hbs",
-    //];
-
-    //let template_files = vec![
-        //"site/assets/style.css"
-    //];
-
-    //if let Some(target) = options.target {
-
-        //if target.exists() {
-            //return Err(
-                //Error::new(format!("directory already exists: {}", target.display())));
-        //}
-
-
-        //info!("init {} using {}", target.display(), template_name);
-
-        //let pth = utils::copy_asset_bundle_file("site.toml", "", &target)?;
-        //info!("copy {}", pth.display());
-
-        //for f in common_files.iter() {
-            //let pth = utils::copy_asset_bundle_file(f, common_name, &target)?;
-            //info!("copy {}", pth.display());
-        //}
-        //for f in template_files.iter() {
-            //let pth = utils::copy_asset_bundle_file(f, &template_name, &target)?;
-            //info!("copy {}", pth.display());
-        //}
-    //} else {
-        //return Err(Error::new("init target was not given".to_string()))
-    //}
 
     Ok(())
 }

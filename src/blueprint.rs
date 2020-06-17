@@ -9,6 +9,9 @@ use log::info;
 
 use crate::Error;
 
+// TODO: support --offline to skip attempting to update
+// TODO: support blueprint fetch config: always | never
+
 static REPO: &str = "https://github.com/hypertext-live/blueprint";
 static ROOT_DIR: &str = ".hypertext";
 static BLUEPRINT: &str = "blueprint";
@@ -28,7 +31,7 @@ fn get_root_dir() -> Result<PathBuf, Error> {
             format!("Could not determine home directory")))
 }
 
-fn get_repo_dir() -> Result<PathBuf, Error> {
+pub fn get_repo_dir() -> Result<PathBuf, Error> {
     let mut buf = get_root_dir()?;
     buf.push(BLUEPRINT);
     Ok(buf)
@@ -91,29 +94,5 @@ pub fn clone_or_fetch() -> Result<(), Error> {
     if !cloned {
         fetch_submodules(repo, base)?
     }
-
-    //let mut buf = get_root_dir()?;
-    //buf.push(BLUEPRINT);
-    //if !buf.exists() {
-        ////let now = SystemTime::now();
-        //info!("clone {} -> {}", REPO, buf.display());
-        //let _ = match Repository::clone_recurse(REPO, buf) {
-            //Ok(repo) => repo,
-            //Err(e) => return Err(Error::from(e)),
-        //};
-        ////if let Ok(t) = now.elapsed() {
-            ////info!("done {:?}", t);
-        ////}
-
-    //} else {
-        //if buf.is_dir() {
-            //// TODO: support --offline to skip attempting to update
-            //// TODO: support blueprint fetch config: always | never
-            //fetch_submodules(&buf)?;
-        //} else {
-            //return Err(Error::new(format!("Not a directory {}", buf.display())));
-        //}
-    //}
-
     Ok(())
 }
