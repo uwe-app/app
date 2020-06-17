@@ -13,6 +13,7 @@ pub enum Error {
     RenderError(handlebars::RenderError),
     IgnoreError(ignore::Error),
     BookError(mdbook::errors::Error),
+    TomlSerError(toml::ser::Error),
     TomlDeserError(toml::de::Error),
     ZipResultError(zip::result::ZipError),
     JsonError(serde_json::error::Error),
@@ -58,6 +59,12 @@ impl From<handlebars::RenderError> for Error {
 impl From<toml::de::Error> for Error {
     fn from(error: toml::de::Error) -> Self {
         Error::TomlDeserError(error)
+    }
+}
+
+impl From<toml::ser::Error> for Error {
+    fn from(error: toml::ser::Error) -> Self {
+        Error::TomlSerError(error)
     }
 }
 
@@ -126,6 +133,7 @@ impl fmt::Display for Error {
             Error::RenderError(ref e) => e.fmt(f),
             Error::IgnoreError(ref e) => e.fmt(f),
             Error::BookError(ref e) => e.fmt(f),
+            Error::TomlSerError(ref e) => e.fmt(f),
             Error::TomlDeserError(ref e) => e.fmt(f),
             Error::ZipResultError(ref e) => e.fmt(f),
             Error::JsonError(ref e) => e.fmt(f),
@@ -147,6 +155,7 @@ impl error::Error for Error {
             Error::RenderError(ref e) => Some(e),
             Error::IgnoreError(ref e) => Some(e),
             Error::BookError(ref e) => Some(e),
+            Error::TomlSerError(ref e) => Some(e),
             Error::TomlDeserError(ref e) => Some(e),
             Error::ZipResultError(ref e) => Some(e),
             Error::JsonError(ref e) => Some(e),

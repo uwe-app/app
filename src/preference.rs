@@ -6,24 +6,46 @@ use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
 
 use crate::Error;
+use crate::utils;
 
 static ROOT_DIR: &str = ".hypertext";
 static PREFERENCES: &str = "preferences.toml";
+static LANG: &str = "en";
+
+// FIXME: use a different framework agnostic default
+static DEFAULT_BLUEPRINT_PATH: &str = "vanilla/newcss";
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct Preferences {
     pub lang: Option<String>,
+    pub blueprint: Option<BlueprintPreferences>,
     pub ssh: Option<SshPreferences>,
 }
 
 impl Default for Preferences {
     fn default() -> Self {
         Self {
-            lang: Some(String::from("en")),
+            lang: Some(String::from(LANG)),
             ssh: None,
+            blueprint: Some(Default::default()),
         } 
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct BlueprintPreferences {
+    pub default_path: Option<PathBuf>,
+}
+
+impl Default for BlueprintPreferences {
+    fn default() -> Self {
+        Self {
+            default_path: Some(PathBuf::from(DEFAULT_BLUEPRINT_PATH))
+        }
     }
 }
 
@@ -60,11 +82,14 @@ pub fn init() -> Result<(), Error> {
     buf.push(PREFERENCES);
 
     if !buf.exists() {
-    
+        let prefs: Preferences = Default::default();
+        let content = toml::to_string(&prefs)?; 
+        utils::write_string(buf, content)?;
     } else {
         return Err(
             Error::new(
-                format!("Preferences file '{}' exists, please move it away", buf.display())))
+                format!(
+                    "Preferences file '{}' exists, please move it away", buf.display())))
     }
 
     Ok(())

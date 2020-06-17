@@ -20,6 +20,7 @@ use hypertext::{
     BundleOptions,
     ServeOptions,
     InitOptions,
+    PrefOptions,
 };
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -101,6 +102,14 @@ struct InitOpts {
     /// The blueprint source path or URL
     #[structopt(default_value = "vanilla/newcss")]
     source: String,
+}
+
+#[derive(StructOpt,Debug)]
+struct PrefOpts {
+
+    /// Create a default preferences file
+    #[structopt(short, long)]
+    init: bool,
 }
 
 #[derive(StructOpt,Debug)]
@@ -204,11 +213,18 @@ enum Command {
         #[structopt(flatten)]
         args: BundleOpts,
     },
+
     /// Create zip archive
     Archive {
         #[structopt(flatten)]
         args: ArchiveOpts,
-    }
+    },
+
+    /// Manage preferences
+    Pref {
+        #[structopt(flatten)]
+        args: PrefOpts,
+    },
 }
 
 impl Command {
@@ -257,6 +273,18 @@ fn process_command(cmd: &Command) {
             };
 
             if let Err(e) = hypertext::init(opts) {
+                fatal(e);
+            }
+        },
+        Command::Pref {
+            ref args
+        } => {
+
+            let opts = PrefOptions {
+                init: args.init,
+            };
+
+            if let Err(e) = hypertext::pref(opts) {
                 fatal(e);
             }
         },
