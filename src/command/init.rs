@@ -11,8 +11,6 @@ use git2::{
     RemoteCallbacks,
     FetchOptions, 
     ErrorClass,
-    Config,
-    Signature,
     Commit,
 };
 use git2::build::RepoBuilder;
@@ -36,8 +34,6 @@ pub struct InitOptions {
 fn fresh<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
     let git_dir = repo.path();
 
-    println!("Fresh {}", git_dir.display());
-
     // Remove the git directory is the easiest
     // way to purge the history
     fs::remove_dir_all(git_dir)?;
@@ -45,60 +41,34 @@ fn fresh<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
     // Create fresh repository
     let new_repo = Repository::init(target)?;
 
-    println!("After init new repo {}", new_repo.path().display());
-
     // Add all the files
     let mut index = new_repo.index()?;
     index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+    // NOTE: must call `write` and `write_tree`
+    index.write()?;
     let oid = index.write_tree()?;
 
-    println!("After adding files to the index");
-
-    let conf = Config::open_default()?;
-
-    println!("Got config");
-
     // TODO: get these from preferences when not setand use defaults otherwise
-    let name = conf.get_string("user.name")?;
-    let email = conf.get_string("user.email")?;
+    //let conf = Config::open_default()?;
+    //let name = conf.get_string("user.name")?;
+    //let email = conf.get_string("user.email")?;
 
-    println!("Got name {}", &name);
-    println!("Got email {}", &email);
-
-    let author = Signature::now(&name, &email)?;
-    let committer = Signature::now(&name, &email)?;
+    let sig = repo.signature()?;
 
     // TODO: allow prefernce for this
     let message = "Initial files.";
 
-    //let head = new_repo.head()?;
+    let tree = new_repo.find_tree(oid)?;
+    let parents: &[&Commit] = &[];
 
-    println!("Got head reference");
-
-    //if let Some(oid) = head.target() {
-
-        println!("Got oid {:?}", oid);
-
-        let tree = new_repo.find_tree(oid)?;
-
-        println!("Found the tree {:?}", tree);
-
-        let parents: &[&Commit] = &[];
-
-        println!("Making the commit to the repo");
-
-        let commit_id = new_repo.commit(
-            None,
-            &author,
-            &committer,
-            message,
-            &tree,
-            parents,
-        )?;
-
-        println!("Got commit it {:?}", commit_id);
-    //}
-
+    let _commit_id = new_repo.commit(
+        Some("HEAD"),
+        &sig,
+        &sig,
+        message,
+        &tree,
+        parents,
+    )?;
 
     Ok(())
 }
