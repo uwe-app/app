@@ -99,26 +99,26 @@ pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()
     write_all(output, content.as_bytes())
 }
 
-pub fn copy_asset_bundle_file(f: &str, template_name: &str, output: &PathBuf) -> Result<PathBuf, Error> {
-    let mut s = template_name.clone().to_string();
-    if !template_name.is_empty() {
-        s.push('/');
-    }
-    s.push_str(f);
+//pub fn copy_asset_bundle_file(f: &str, template_name: &str, output: &PathBuf) -> Result<PathBuf, Error> {
+    //let mut s = template_name.clone().to_string();
+    //if !template_name.is_empty() {
+        //s.push('/');
+    //}
+    //s.push_str(f);
 
-    let mut out = output.clone();
-    out.push(f);
-    debug!("copy {} -> {}", s, out.display());
-    let dir = Asset::get(&s);
-    match dir {
-        Some(f) => {
-            write_all(&out, &f)?;
-        },
-        None  => return Err(
-            Error::new("application bundle source file not found".to_string()))
-    }
-    Ok(out)
-}
+    //let mut out = output.clone();
+    //out.push(f);
+    //debug!("copy {} -> {}", s, out.display());
+    //let dir = Asset::get(&s);
+    //match dir {
+        //Some(f) => {
+            //write_all(&out, &f)?;
+        //},
+        //None  => return Err(
+            //Error::new("application bundle source file not found".to_string()))
+    //}
+    //Ok(out)
+//}
 
 
 //pub fn write_string_minify<P: AsRef<Path>>(output: P, content: String) -> io::Result<()> {

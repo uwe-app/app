@@ -81,10 +81,14 @@ struct BuildOpts {
 struct InitOpts {
 
     /// The name of a template to use
-    #[structopt(short, long, default_value = "newcss")]
+    #[structopt(short, long, default_value = "vanilla/newcss")]
     template: String,
 
-    /// List available templates
+    /// Update the blueprint cache
+    #[structopt(short, long)]
+    fetch: bool,
+
+    /// List available blueprints
     #[structopt(short, long)]
     list: bool,
 
@@ -246,6 +250,7 @@ fn process_command(cmd: &Command) {
                 target: args.target.clone(),
                 template: args.template.clone(),
                 list: args.list,
+                fetech: args.fetch,
             };
 
             if let Err(e) = hypertext::init(opts) {

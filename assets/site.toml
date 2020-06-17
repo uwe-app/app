@@ -1,6 +1,0 @@
-lang = "en"
-host = "localhost"
-
-[page]
-description = "Website"
-keywords = "Vanilla, Website"
