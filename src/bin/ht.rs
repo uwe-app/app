@@ -100,8 +100,8 @@ struct InitOpts {
     target: Option<PathBuf>,
 
     /// The blueprint source path or URL
-    #[structopt(default_value = "vanilla/newcss")]
-    source: String,
+    #[structopt()]
+    source: Option<String>,
 }
 
 #[derive(StructOpt,Debug)]

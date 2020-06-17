@@ -8,13 +8,14 @@ use git2::Repository;
 use log::info;
 
 use crate::blueprint;
+use crate::preference::{self, Preferences};
 use crate::Error;
 
 // TODO: support [blueprint] default config
 
 #[derive(Debug)]
 pub struct InitOptions {
-    pub source: String,
+    pub source: Option<String>,
     pub target: Option<PathBuf>,
     pub list: bool,
     pub fetch: bool,
@@ -22,6 +23,7 @@ pub struct InitOptions {
 }
 
 fn clone_ssh<P: AsRef<Path>>(
+    src: String,
     target: P,
     options: &InitOptions,
     key_file: PathBuf,
@@ -52,7 +54,7 @@ fn clone_ssh<P: AsRef<Path>>(
     builder.fetch_options(fo);
 
     let result = builder.clone(
-        &options.source,
+        &src,
         target.as_ref(),
     );
 
@@ -61,7 +63,7 @@ fn clone_ssh<P: AsRef<Path>>(
             // Sadly cannot find a better way to detect this particular error
             if e.message().contains("Wrong passphrase") {
                 let pass = rpassword::read_password_from_tty(Some("Passphrase: "))?;
-                return clone_ssh(target, options, key_file.clone(), Some(pass));
+                return clone_ssh(src, target, options, key_file.clone(), Some(pass));
             }
         }
     }
@@ -69,19 +71,39 @@ fn clone_ssh<P: AsRef<Path>>(
     result.map_err(Error::from)
 }
 
-fn create<P: AsRef<Path>>(target: P, options: &InitOptions) -> Result<Repository, Error> {
+fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences) -> Result<Repository, Error> {
+    let mut src = "".to_string();
+
+    if let Some(ref source) = options.source {
+        src = source.clone();
+    } else {
+        if let Some(ref source) = prefs.blueprint.as_ref().unwrap().default_path {
+            src = source.clone();
+        }
+    }
+
+    if src.is_empty() {
+        return Err(
+            Error::new(
+                format!("Could not determine default source path")));
+    }
+
+    let src_err = Err(
+        Error::new(
+            format!("Unable to handle source '{}'", &src)));
+
     let (repo, base, _cloned) = blueprint::open_or_clone()?;
-    match Url::parse(&options.source) {
+    match Url::parse(&src) {
         Ok(_) => {
-            info!("Clone {}", &options.source);
+            info!("Clone {}", &src);
             info!("   -> {}", target.as_ref().display());
-            return Repository::clone(&options.source, target)
+            return Repository::clone(&src, target)
                 .map_err(Error::from);
         },
         Err(_) => {
             let modules = repo.submodules()?;
             for sub in modules {
-                if sub.path() == Path::new(&options.source) {
+                if sub.path() == Path::new(&src) {
                     let mut tmp = base.clone();
                     tmp.push(sub.path());
                     let src = tmp.to_string_lossy();
@@ -92,30 +114,48 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions) -> Result<Repository
                 }
             }
 
-            // Now we have SSH style git@github.com: URLs to deal with
-            if let Some(mut key_file) = home::home_dir() {
-                if let Some(ref ssh_key) = options.private_key {
-                    key_file.push(ssh_key);
+            let ssh_req = src.trim_start_matches("ssh://");
+            let ssh_url = format!("ssh://{}", &ssh_req);
 
-                    info!("Private key {}", key_file.display());
-                    info!("Clone {}", &options.source);
-                    info!("   -> {}", target.as_ref().display());
+            match Url::parse(&ssh_url) {
+                Ok(url) => {
+                    if url.username().is_empty() {
+                        log::warn!("No username for source URL");
+                        log::warn!("Perhaps you want a blueprint submodule, try `ht init --list`");
+                        return src_err;
+                    }
 
-                    return clone_ssh(target, options, key_file, None);
-                } else {
-                    return Err(
-                        Error::new(
-                            format!("To use SSH specify the --ssh-key option")))
-                }
+                    // Now we have SSH style git@github.com: URLs to deal with
+                    if let Some(mut key_file) = home::home_dir() {
+                        if let Some(ref ssh_key) = options.private_key {
+                            key_file.push(ssh_key);
+
+                            info!("Private key {}", key_file.display());
+                            info!("Clone {}", &src);
+                            info!("   -> {}", target.as_ref().display());
+
+                            return clone_ssh(src, target, options, key_file, None);
+                        } else {
+                            return Err(
+                                Error::new(
+                                    format!("To use SSH specify the --ssh-key option")))
+                        }
+                    }
+                },
+                Err(_) => {
+                    return src_err
+                },
             }
 
         }
     }
 
-    Err(Error::new(format!("Unable to handle source specification")))
+    src_err
 }
 
 pub fn init(options: InitOptions) -> Result<(), Error> {
+    let prefs = preference::load()?;
+
     let (will_clone, dest, url) = blueprint::will_clone()?;
     if will_clone {
         info!("Clone {} -> {}", url, dest.display());
@@ -141,9 +181,9 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
                 if !parent.exists() {
                     fs::create_dir_all(parent)?;
                 }
-                repo = create(target, &options)?;
+                repo = create(target, &options, &prefs)?;
             } else {
-                repo = create(target, &options)?;
+                repo = create(target, &options, &prefs)?;
             }
 
             repo.remote_delete("origin")?;

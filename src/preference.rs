@@ -38,13 +38,13 @@ impl Default for Preferences {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BlueprintPreferences {
-    pub default_path: Option<PathBuf>,
+    pub default_path: Option<String>,
 }
 
 impl Default for BlueprintPreferences {
     fn default() -> Self {
         Self {
-            default_path: Some(PathBuf::from(DEFAULT_BLUEPRINT_PATH))
+            default_path: Some(String::from(DEFAULT_BLUEPRINT_PATH))
         }
     }
 }
@@ -77,10 +77,24 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
             format!("Could not determine home directory")))
 }
 
-pub fn init() -> Result<(), Error> {
+pub fn get_prefs_file() -> Result<PathBuf, Error> {
     let mut buf = get_root_dir()?;
     buf.push(PREFERENCES);
+    Ok(buf)
+}
 
+pub fn load() -> Result<Preferences, Error> {
+    let buf = get_prefs_file()?;
+    let mut prefs: Preferences = Default::default();
+    if buf.exists() {
+        let content = utils::read_string(&buf)?;
+        prefs = toml::from_str(&content)?;
+    }
+    Ok(prefs)
+}
+
+pub fn init() -> Result<(), Error> {
+    let buf = get_prefs_file()?;
     if !buf.exists() {
         let prefs: Preferences = Default::default();
         let content = toml::to_string(&prefs)?; 
