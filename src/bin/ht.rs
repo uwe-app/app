@@ -88,6 +88,10 @@ struct InitOpts {
     #[structopt(short, long)]
     list: bool,
 
+    /// Private key to use for SSH connections
+    #[structopt(short, long)]
+    private_key: Option<PathBuf>,
+
     /// Target directory for the project
     #[structopt(parse(from_os_str))]
     // Not that normally we want a path but when --list
@@ -249,6 +253,7 @@ fn process_command(cmd: &Command) {
                 target: args.target.clone(),
                 list: args.list,
                 fetch: args.fetch,
+                private_key: args.private_key.clone(),
             };
 
             if let Err(e) = hypertext::init(opts) {
