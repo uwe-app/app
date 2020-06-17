@@ -31,7 +31,7 @@ pub struct InitOptions {
     pub private_key: Option<PathBuf>,
 }
 
-fn fresh<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
+fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
     let git_dir = repo.path();
 
     // Remove the git directory is the easiest
@@ -227,7 +227,6 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
             }
 
             let repo;
-            let fresh_target = target.clone();
 
             if let Some(ref parent) = target.parent() {
                 if !parent.exists() {
@@ -240,7 +239,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
 
             //repo.remote_delete("origin")?;
 
-            fresh(&fresh_target, repo)?;
+            detached(target, repo)?;
         } else {
             return Err(Error::new(format!("Target directory is required")));
         }
