@@ -78,6 +78,11 @@ pub fn list_submodules(repo: Repository) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn will_clone() -> Result<(bool, PathBuf, String), Error> {
+    let buf = get_repo_dir()?;
+    Ok((!buf.exists(), buf, REPO.to_string()))
+}
+
 pub fn open_or_clone() -> Result<(Repository, PathBuf, bool), Error> {
     let buf = get_repo_dir()?;
     if !buf.exists() {

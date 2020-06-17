@@ -10,6 +10,8 @@ use log::info;
 use crate::blueprint;
 use crate::Error;
 
+// TODO: support [blueprint] default config
+
 #[derive(Debug)]
 pub struct InitOptions {
     pub source: String,
@@ -68,8 +70,6 @@ fn clone_ssh<P: AsRef<Path>>(
 }
 
 fn create<P: AsRef<Path>>(target: P, options: &InitOptions) -> Result<Repository, Error> {
-    println!("{:?}", options);
-
     let (repo, base, _cloned) = blueprint::open_or_clone()?;
     match Url::parse(&options.source) {
         Ok(_) => {
@@ -93,7 +93,6 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions) -> Result<Repository
             }
 
             // Now we have SSH style git@github.com: URLs to deal with
-            
             if let Some(mut key_file) = home::home_dir() {
                 if let Some(ref ssh_key) = options.private_key {
                     key_file.push(ssh_key);
@@ -116,9 +115,11 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions) -> Result<Repository
     Err(Error::new(format!("Unable to handle source specification")))
 }
 
-// TODO: support [blueprint] default config
-
 pub fn init(options: InitOptions) -> Result<(), Error> {
+    let (will_clone, dest, url) = blueprint::will_clone()?;
+    if will_clone {
+        info!("Clone {} -> {}", url, dest.display());
+    }
 
     if options.list {
         let (repo, _base, _cloned) = blueprint::open_or_clone()?;

@@ -7,18 +7,13 @@ clean:
 
 init-newcss:
 	@rm -rf ./build/init-newcss
-	@cargo run -- init --template=newcss ./build/init-newcss
+	@cargo run -- init ./build/init-newcss vanilla/newcss
 	@cargo run -- build ./build/init-newcss
 
 init-tacit:
 	@rm -rf ./build/init-tacit
-	@cargo run -- init --template=tacit ./build/init-tacit
+	@cargo run -- init ./build/init-tacit vanilla/tacit
 	@cargo run -- build ./build/init-tacit
-
-init-bahunya:
-	@rm -rf ./build/init-bahunya
-	@cargo run -- init --template=bahunya ./build/init-bahunya
-	@cargo run -- build ./build/init-bahunya
 
 init-newcss-open: init-newcss
 	@(cd ./build/init-newcss && cargo run -- build --live)
@@ -26,10 +21,7 @@ init-newcss-open: init-newcss
 init-tacit-open: init-tacit
 	@(cd ./build/init-tacit && cargo run -- build --live)
 
-init-bahunya-open: init-bahunya
-	@(cd ./build/init-bahunya && cargo run -- build --live)
-
-init: init-newcss init-tacit init-bahunya
+init: init-newcss init-tacit
 
 help:
 	@cargo run -- --help > $(SITE_ROOT)/site/help.txt
