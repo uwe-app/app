@@ -1,38 +1,21 @@
-use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 //use std::time::SystemTime;
 
 use git2::Repository;
-use home;
 use log::info;
 
 use crate::Error;
+use crate::preference;
 
 // TODO: support --offline to skip attempting to update
 // TODO: support blueprint fetch config: always | never
 
 static REPO: &str = "https://github.com/hypertext-live/blueprint";
-static ROOT_DIR: &str = ".hypertext";
 static BLUEPRINT: &str = "blueprint";
 
-fn get_root_dir() -> Result<PathBuf, Error> {
-    let cache = home::home_dir();
-    if let Some(ref cache) = cache {
-        let mut buf = cache.clone();
-        buf.push(ROOT_DIR);
-        if !buf.exists() {
-            fs::create_dir_all(&buf)?;
-        }
-        return Ok(buf);
-    }
-    Err(
-        Error::new(
-            format!("Could not determine home directory")))
-}
-
 pub fn get_repo_dir() -> Result<PathBuf, Error> {
-    let mut buf = get_root_dir()?;
+    let mut buf = preference::get_root_dir()?;
     buf.push(BLUEPRINT);
     Ok(buf)
 }

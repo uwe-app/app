@@ -72,7 +72,6 @@ pub struct Config {
     pub page: Option<Page>,
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
-    //pub ssh: Option<SshConfig>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -107,7 +106,6 @@ impl Default for Config {
             page: Some(Default::default()),
             redirect: None,
             date: Some(Default::default()),
-            //ssh: None,
         } 
     }
 }
@@ -455,17 +453,3 @@ impl Default for DateConfig {
     }
 }
 
-/*
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default, rename_all = "kebab-case")]
-pub struct SshConfig {
-    pub default_key: Option<PathBuf>,
-}
-
-impl Default for SshConfig {
-    fn default() -> Self {
-        Self {default_key: None}
-    }
-}
-*/
