@@ -20,6 +20,7 @@ use crate::build::page::Page;
 
 use log::{debug};
 
+pub mod git;
 pub mod url;
 
 pub fn generate_id(len: i32) -> String {
