@@ -118,6 +118,8 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
         return Some(buf)
     }
 
+    // FIXME: use ExtensionConfig
+
     // Check index pages
     if is_dir {
         let mut idx = base.clone();
@@ -145,6 +147,23 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
     None
 }
 
+
+pub fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf> {
+    if let Some(ref link) = context.config.link {
+        if let Some(ref allow) = link.allow {
+            for link in allow {
+                let url = link.trim_start_matches("/");
+                if url == href {
+                    let mut buf = base.clone();
+                    buf.push(url);
+                    return Some(buf)
+                }
+            }
+        } 
+    }
+    None
+}
+
 // Try to find a source file for the given URL
 pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
     let base = &context.options.source;
@@ -158,6 +177,11 @@ pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
     let resource = context.config.get_resources_path(base);
     if let Some(resource) = lookup_in(&resource, context, href) {
         return Some(resource);
+    }
+
+    // Explicit allow list in site.toml
+    if let Some(source) = lookup_allow(base, context, href) {
+        return Some(source);
     }
 
     None

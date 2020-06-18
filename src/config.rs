@@ -72,6 +72,7 @@ pub struct Config {
     pub page: Option<Page>,
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
+    pub link: Option<LinkConfig>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -106,6 +107,7 @@ impl Default for Config {
             page: Some(Default::default()),
             redirect: None,
             date: Some(Default::default()),
+            link: Some(Default::default()),
         } 
     }
 }
@@ -460,3 +462,8 @@ impl Default for DateConfig {
     }
 }
 
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct LinkConfig {
+    pub allow: Option<Vec<String>>,
+}
