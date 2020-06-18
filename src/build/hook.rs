@@ -7,6 +7,11 @@ use crate::Error;
 use crate::config::HookConfig;
 use super::context::Context;
 
+pub enum Phase {
+    Before,
+    After,
+}
+
 pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     let root = context.config.get_project();
     debug!("hook root {}", root.display());
@@ -57,10 +62,27 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn run(context: &Context, hooks: &HashMap<String, HookConfig>) -> Result<(), Error> {
+pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase) -> Vec<(String, HookConfig)> {
+    hooks
+        .into_iter()
+        .filter(|(_, v)| {
+            let result = match phase {
+                Phase::Before => {
+                    v.after.is_none()
+                },
+                Phase::After => {
+                    v.after.is_some() && v.after.unwrap()
+                }
+            };
+            result
+        })
+        .collect::<Vec<_>>()
+}
+
+pub fn run(context: &Context, hooks: Vec<(String, HookConfig)>) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
-        exec(context, hook)?;
+        exec(context, &hook)?;
     }
     Ok(())
 }

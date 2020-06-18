@@ -432,6 +432,9 @@ pub struct HookConfig {
     // Allow custom mappings for NODE_ENV
     pub debug: Option<String>,
     pub release: Option<String>,
+
+    // Marks the hook to run after a build
+    pub after: Option<bool>,
 }
 
 impl HookConfig {

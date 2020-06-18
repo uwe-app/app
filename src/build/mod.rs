@@ -279,7 +279,7 @@ impl<'a> Builder<'a> {
                     filters.push(buf);
                 }
             }
-            hook::run(&self.context, hooks)?;
+            hook::run(&self.context, hook::collect(hooks.clone(), hook::Phase::Before))?;
         }
 
         for result in WalkBuilder::new(&target)
@@ -323,6 +323,10 @@ impl<'a> Builder<'a> {
                 }
                 Err(e) => return Err(Error::IgnoreError(e)),
             }
+        }
+
+        if let Some(hooks) = &self.context.config.hook {
+            hook::run(&self.context, hook::collect(hooks.clone(), hook::Phase::After))?;
         }
 
         Ok(())
