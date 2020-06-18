@@ -69,6 +69,7 @@ pub struct Config {
     pub extension: Option<ExtensionConfig>,
     pub fluent: Option<FluentConfig>,
     pub hook: Option<HashMap<String, HookConfig>>,
+    pub node: Option<NodeConfig>,
     pub page: Option<Page>,
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
@@ -104,6 +105,7 @@ impl Default for Config {
             book: None,
             serve: Some(Default::default()),
             hook: None,
+            node: Some(Default::default()),
             page: Some(Default::default()),
             redirect: None,
             date: Some(Default::default()),
@@ -430,11 +432,6 @@ pub struct HookConfig {
     pub source: Option<PathBuf>,
     pub stdout: Option<bool>,
     pub stderr: Option<bool>,
-
-    // Allow custom mappings for NODE_ENV
-    pub debug: Option<String>,
-    pub release: Option<String>,
-
     // Marks the hook to run after a build
     pub after: Option<bool>,
 }
@@ -448,6 +445,14 @@ impl HookConfig {
         }
         None
     }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct NodeConfig {
+    // Allow custom mappings for NODE_ENV
+    pub debug: Option<String>,
+    pub release: Option<String>,
 }
 
 #[skip_serializing_none]

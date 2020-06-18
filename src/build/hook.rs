@@ -34,8 +34,8 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         let mut command = Command::new(cmd);
 
         let node_env = context.options.tag.get_node_env(
-            hook.debug.clone(),
-            hook.release.clone());
+            context.config.node.as_ref().unwrap().debug.clone(),
+            context.config.node.as_ref().unwrap().release.clone());
 
         command
             .env("NODE_ENV", node_env)
