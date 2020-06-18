@@ -10,6 +10,7 @@ mod command;
 mod config;
 mod content;
 mod error;
+mod git;
 mod locale;
 mod preference;
 mod server;

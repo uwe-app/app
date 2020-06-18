@@ -9,8 +9,7 @@ use log::info;
 
 use crate::blueprint;
 use crate::preference::{self, Preferences};
-use crate::Error;
-use crate::utils;
+use crate::{git, Error};
 
 // TODO: support [blueprint] default config
 
@@ -86,7 +85,7 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
                             info!("Clone {}", &src);
                             info!("   -> {}", target.as_ref().display());
 
-                            return utils::git::clone_ssh(src, target, key_file, None);
+                            return git::clone_ssh(src, target, key_file, None);
                         } else {
                             return Err(
                                 Error::new(
@@ -140,7 +139,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
 
             //repo.remote_delete("origin")?;
 
-            utils::git::detached(target, repo)?;
+            git::detached(target, repo)?;
         } else {
             return Err(Error::new(format!("Target directory is required")));
         }

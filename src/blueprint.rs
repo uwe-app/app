@@ -6,8 +6,7 @@ use git2::{Repository, ErrorClass, ErrorCode};
 use log::info;
 
 use crate::Error;
-use crate::preference;
-use crate::utils;
+use crate::{git, preference};
 
 // TODO: support --offline to skip attempting to update
 // TODO: support blueprint fetch config: always | never
@@ -109,7 +108,7 @@ pub fn clone_or_fetch() -> Result<(), Error> {
         //fetch(&repo, &base)?;
         // FIXME: merge from origin/master
         //
-        utils::git_pull::pull(&base, None, None)?;
+        git::pull::pull(&base, None, None)?;
 
         fetch_submodules(&repo, &base)?
     }

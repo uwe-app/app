@@ -15,6 +15,8 @@ use git2::build::RepoBuilder;
 
 use crate::Error;
 
+pub mod pull;
+
 // TODO: support [blueprint] default config
 
 pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {

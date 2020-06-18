@@ -1,4 +1,3 @@
-
 /*
  * libgit2 "pull" example - shows how to pull remote data into a local branch.
  *
@@ -15,7 +14,7 @@
 
 use std::path::Path;
 use git2::Repository;
-use std::io::{self, Write};
+//use std::io::{self, Write};
 use std::str;
 
 use log::info;
@@ -28,7 +27,7 @@ fn do_fetch<'a>(
     let mut cb = git2::RemoteCallbacks::new();
 
     // Print out our transfer progress.
-    cb.transfer_progress(|stats| {
+    cb.transfer_progress(|_stats| {
         //if stats.received_objects() == stats.total_objects() {
             //print!(
                 //"Resolving deltas {}/{}\r",
@@ -58,7 +57,7 @@ fn do_fetch<'a>(
 
     // If there are local objects (we got a thin pack), then tell the user
     // how many objects we saved from having to cross the network.
-    let stats = remote.stats();
+    let _stats = remote.stats();
     //if stats.local_objects() > 0 {
         //info!(
             //"\rReceived {}/{} objects in {} bytes (used {} local \
