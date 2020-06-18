@@ -11,7 +11,7 @@ use crate::utils;
 static ROOT_DIR: &str = ".hypertext";
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
-static DEFAULT_BLUEPRINT_PATH: &str = "vanilla/normalize";
+static DEFAULT_BLUEPRINT_PATH: &str = "style/normalize";
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
