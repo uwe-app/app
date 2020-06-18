@@ -109,7 +109,8 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
 
     let (will_clone, dest, url) = blueprint::will_clone()?;
     if will_clone {
-        info!("Clone {} -> {}", url, dest.display());
+        info!("Clone {}", url);
+        info!("   -> {}", dest.display());
     }
 
     if options.list {
