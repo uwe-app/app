@@ -28,7 +28,12 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         info!("{} {}", cmd, args.join(" "));
         let mut command = Command::new(cmd);
 
+        let node_env = context.options.tag.get_node_env(
+            hook.debug.clone(),
+            hook.release.clone());
+
         command
+            .env("NODE_ENV", node_env)
             .env("BUILD_TARGET", build_target)
             .env("PROJECT_ROOT", root.to_string_lossy().into_owned())
             .args(args);

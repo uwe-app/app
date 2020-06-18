@@ -428,6 +428,10 @@ pub struct HookConfig {
     pub source: Option<PathBuf>,
     pub stdout: Option<bool>,
     pub stderr: Option<bool>,
+
+    // Allow custom mappings for NODE_ENV
+    pub debug: Option<String>,
+    pub release: Option<String>,
 }
 
 impl HookConfig {

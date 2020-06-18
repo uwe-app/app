@@ -11,9 +11,7 @@ use crate::utils;
 static ROOT_DIR: &str = ".hypertext";
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
-
-// FIXME: use a different framework agnostic default
-static DEFAULT_BLUEPRINT_PATH: &str = "vanilla/newcss";
+static DEFAULT_BLUEPRINT_PATH: &str = "vanilla/normalize";
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
