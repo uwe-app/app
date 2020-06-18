@@ -83,7 +83,7 @@ struct InitOpts {
 
     /// Update the blueprint cache
     #[structopt(short, long)]
-    fetch: bool,
+    update: bool,
 
     /// List available blueprints
     #[structopt(short, long)]
@@ -268,7 +268,7 @@ fn process_command(cmd: &Command) {
                 source: args.source.clone(),
                 target: args.target.clone(),
                 list: args.list,
-                fetch: args.fetch,
+                update: args.update,
                 private_key: args.private_key.clone(),
             };
 

@@ -18,7 +18,7 @@ pub struct InitOptions {
     pub source: Option<String>,
     pub target: Option<PathBuf>,
     pub list: bool,
-    pub fetch: bool,
+    pub update: bool,
     pub private_key: Option<PathBuf>,
 }
 
@@ -116,7 +116,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     if options.list {
         let (repo, _base, _cloned) = blueprint::open_or_clone()?;
         blueprint::list_submodules(repo)?;
-    } else if options.fetch {
+    } else if options.update {
         blueprint::clone_or_fetch()?;
     } else {
 
