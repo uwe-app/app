@@ -10,18 +10,10 @@ init-newcss:
 	@cargo run -- init ./build/init-newcss vanilla/newcss
 	@cargo run -- build ./build/init-newcss
 
-init-tacit:
-	@rm -rf ./build/init-tacit
-	@cargo run -- init ./build/init-tacit vanilla/tacit
-	@cargo run -- build ./build/init-tacit
-
 init-newcss-open: init-newcss
 	@(cd ./build/init-newcss && cargo run -- build --live)
 
-init-tacit-open: init-tacit
-	@(cd ./build/init-tacit && cargo run -- build --live)
-
-init: init-newcss init-tacit
+init: init-newcss
 
 help:
 	@cargo run -- --help > $(SITE_ROOT)/site/help.txt
