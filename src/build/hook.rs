@@ -33,9 +33,10 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         info!("{} {}", cmd, args.join(" "));
         let mut command = Command::new(cmd);
 
+        let node = context.config.node.as_ref().unwrap();
         let node_env = context.options.tag.get_node_env(
-            context.config.node.as_ref().unwrap().debug.clone(),
-            context.config.node.as_ref().unwrap().release.clone());
+            node.debug.clone(),
+            node.release.clone());
 
         command
             .env("NODE_ENV", node_env)
