@@ -170,7 +170,7 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
 
         let mut dirs: Vec<PathBuf> = Vec::new();
 
-        for result in WalkBuilder::new(source).build() {
+        for result in WalkBuilder::new(source).follow_links(true).build() {
             match result {
                 Ok(entry) => {
                     if let Ok(meta) = entry.metadata() {
@@ -221,6 +221,11 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
             for entry in fs::read_dir(dir)? {
                 let entry = entry?;
                 let path = entry.path();
+                if let Some(name) = path.file_name() {
+                    if name.to_string_lossy().starts_with(".") {
+                        continue;
+                    }
+                }
                 let (_, key) = self.get_key(source, &path)?;
                 s.push_str(&self.get_dir_index_entry(&key));
             }
