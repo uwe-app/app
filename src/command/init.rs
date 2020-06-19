@@ -7,9 +7,21 @@ use url::Url;
 use git2::Repository;
 use log::info;
 
-use crate::blueprint;
 use crate::preference::{self, Preferences};
-use crate::{git, Error};
+use crate::{cache, git, Error};
+
+static REPO: &str = "https://github.com/hypertext-live/blueprint";
+static BLUEPRINT: &str = "blueprint";
+
+pub fn get_repo_url() -> String {
+    REPO.to_string()
+}
+
+pub fn get_repo_dir() -> Result<PathBuf, Error> {
+    let mut buf = cache::get_root_dir()?;
+    buf.push(BLUEPRINT);
+    Ok(buf)
+}
 
 // TODO: support [blueprint] default config
 
@@ -43,8 +55,8 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
         Error::new(
             format!("Unable to handle source '{}'", &src)));
 
-    let repo_url = blueprint::get_repo_url();
-    let repo_dir = blueprint::get_repo_dir()?;
+    let repo_url = get_repo_url();
+    let repo_dir = get_repo_dir()?;
     let (repo, _cloned) = git::open_or_clone(&repo_url, &repo_dir)?;
     match Url::parse(&src) {
         Ok(_) => {
@@ -109,8 +121,8 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
 pub fn init(options: InitOptions) -> Result<(), Error> {
     let prefs = preference::load()?;
 
-    let url = blueprint::get_repo_url();
-    let blueprint_cache_dir = blueprint::get_repo_dir()?;
+    let url = get_repo_url();
+    let blueprint_cache_dir = get_repo_dir()?;
 
     if !blueprint_cache_dir.exists() {
         info!("Clone {}", url);
@@ -119,9 +131,9 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
 
     if options.list {
         let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir)?;
-        blueprint::list_submodules(repo)?;
+        git::list_submodules(repo)?;
     } else if options.update {
-        blueprint::clone_or_fetch()?;
+        git::clone_or_fetch(&url, &blueprint_cache_dir, true)?;
     } else {
 
         if let Some(ref target) = options.target {

@@ -9,15 +9,18 @@ use git2::{
     RemoteCallbacks,
     FetchOptions, 
     ErrorClass,
+    ErrorCode,
     Commit,
 };
 use git2::build::RepoBuilder;
+
+use log::info;
 
 use crate::Error;
 
 pub mod pull;
 
-// TODO: support [blueprint] default config
+static ORIGIN: &str = "origin";
 
 pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
     let git_dir = repo.path();
@@ -109,6 +112,54 @@ pub fn clone_ssh<P: AsRef<Path>>(
     result.map_err(Error::from)
 }
 
+fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
+    let modules = repo.submodules()?;
+    for mut sub in modules {
+
+        sub.sync()?;
+
+        let mut tmp = base.as_ref().to_path_buf();
+        tmp.push(sub.path());
+
+        //println!("Trying to fetch with {:?}", sub.url());
+        //println!("Trying to fetch with {:?}", tmp.display());
+        //println!("Trying to fetch with {:?}", tmp.exists());
+
+        match sub.open() {
+            Ok(repo) => {
+                fetch(&repo, sub.path())?;
+            },
+            Err(e) => {
+                if let ErrorClass::Os = e.class() {
+                    if let ErrorCode::NotFound = e.code() {
+                        if let Some(ref url) = sub.url() {
+                            info!("Clone {}", url);
+                            info!("   -> {}", tmp.display());
+                            Repository::clone(url, tmp)?;
+                        }
+
+                    }
+                }
+                return Err(Error::from(e));
+            },
+        };
+    }
+    Ok(())
+}
+
+fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
+    info!("fetch {}", base.as_ref().display());
+    repo.find_remote(ORIGIN)?.fetch(&["master"], None, None).map_err(Error::from)
+}
+
+pub fn list_submodules(repo: Repository) -> Result<(), Error> {
+    let modules = repo.submodules()?;
+    for sub in &modules {
+        info!("{}", sub.path().display());
+    }
+    Ok(())
+}
+
 pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
     let repo = match Repository::open(dir) {
         Ok(repo) => repo,
@@ -125,8 +176,8 @@ pub fn clone_repo<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, Erro
     Ok(repo)
 }
 
-pub fn open_or_clone(from: &str, to: &PathBuf) -> Result<(Repository, bool), Error> {
-    if !to.exists() {
+pub fn open_or_clone<P: AsRef<Path>>(from: &str, to: P) -> Result<(Repository, bool), Error> {
+    if !to.as_ref().exists() {
         let repo = clone_repo(from, to)?;
         return Ok((repo, true))
     } else {
@@ -135,3 +186,17 @@ pub fn open_or_clone(from: &str, to: &PathBuf) -> Result<(Repository, bool), Err
     }
 }
 
+pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Result<(), Error> {
+    //let dir = get_repo_dir()?;
+    let (repo, cloned) = open_or_clone(from, to.as_ref())?;
+    if !cloned {
+        //fetch(&repo, &base)?;
+        // FIXME: merge from origin/master
+        //
+        pull::pull(to.as_ref(), None, None)?;
+        if submodules {
+            fetch_submodules(&repo, to.as_ref())?
+        }
+    }
+    Ok(())
+}
