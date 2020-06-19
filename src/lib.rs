@@ -40,4 +40,5 @@ pub use crate::command::bundle::*;
 pub use crate::command::init::*;
 pub use crate::command::pref::*;
 pub use crate::command::serve::*;
+pub use crate::command::update::*;
 pub use crate::utils::generate_id;

@@ -17,7 +17,6 @@ pub struct InitOptions {
     pub source: Option<String>,
     pub target: Option<PathBuf>,
     pub list: bool,
-    pub update: bool,
     pub private_key: Option<PathBuf>,
 }
 
@@ -116,9 +115,6 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     if options.list {
         let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir)?;
         git::list_submodules(repo)?;
-    } else if options.update {
-        let components: Vec<cache::CacheComponent> = vec![cache::CacheComponent::Blueprint];
-        cache::update(&prefs, components)?;
     } else {
         if let Some(ref target) = options.target {
             if target.exists() {

@@ -21,6 +21,7 @@ use hypertext::{
     ServeOptions,
     InitOptions,
     PrefOptions,
+    UpdateOptions,
 };
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -80,11 +81,6 @@ struct BuildOpts {
 
 #[derive(StructOpt,Debug)]
 struct InitOpts {
-
-    /// Update the blueprint cache
-    #[structopt(short, long)]
-    update: bool,
-
     /// List available blueprints
     #[structopt(short, long)]
     list: bool,
@@ -102,6 +98,18 @@ struct InitOpts {
     /// The blueprint source path or URL
     #[structopt()]
     source: Option<String>,
+}
+
+#[derive(StructOpt,Debug)]
+struct UpdateOpts {
+
+    /// Update the blueprint cache
+    #[structopt(short, long)]
+    blueprint: bool,
+
+    /// Update the standalone cache
+    #[structopt(short, long)]
+    standalone: bool,
 }
 
 #[derive(StructOpt,Debug)]
@@ -225,6 +233,12 @@ enum Command {
         #[structopt(flatten)]
         args: PrefOpts,
     },
+
+    /// Update cached repositories
+    Update {
+        #[structopt(flatten)]
+        args: UpdateOpts,
+    },
 }
 
 impl Command {
@@ -268,11 +282,23 @@ fn process_command(cmd: &Command) {
                 source: args.source.clone(),
                 target: args.target.clone(),
                 list: args.list,
-                update: args.update,
                 private_key: args.private_key.clone(),
             };
 
             if let Err(e) = hypertext::init(opts) {
+                fatal(e);
+            }
+        },
+        Command::Update {
+            ref args
+        } => {
+
+            let opts = UpdateOptions {
+                blueprint: args.blueprint,
+                standalone: args.standalone,
+            };
+
+            if let Err(e) = hypertext::update(opts) {
                 fatal(e);
             }
         },

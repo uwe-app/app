@@ -191,7 +191,10 @@ pub fn open_or_clone<P: AsRef<Path>>(from: &str, to: P) -> Result<(Repository, b
 }
 
 pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Result<(), Error> {
-    //let dir = get_repo_dir()?;
+    if !to.as_ref().exists() {
+        print_clone(from, to.as_ref().clone());
+    }
+
     let (repo, cloned) = open_or_clone(from, to.as_ref())?;
     if !cloned {
         //fetch(&repo, &base)?;
