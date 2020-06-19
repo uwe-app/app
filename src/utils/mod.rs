@@ -6,15 +6,12 @@ use std::io::Write;
 
 use std::convert::AsRef;
 use std::path::Path;
-use std::path::PathBuf;
-
-use super::asset::Asset;
 
 use inflector::Inflector;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
-use super::{BuildOptions, Error, INDEX_STEM};
+use super::{BuildOptions, INDEX_STEM};
 
 use crate::build::page::Page;
 
@@ -98,41 +95,6 @@ pub fn write_all<P: AsRef<Path>>(output: P, content: &[u8]) -> io::Result<()> {
 pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()> {
     write_all(output, content.as_bytes())
 }
-
-/*
-pub fn copy_asset_bundle_file(f: &str, template_name: &str, output: &PathBuf) -> Result<PathBuf, Error> {
-    let mut s = template_name.clone().to_string();
-    if !template_name.is_empty() {
-        s.push('/');
-    }
-    s.push_str(f);
-
-    let mut out = output.clone();
-    out.push(f);
-    debug!("copy {} -> {}", s, out.display());
-    let dir = Asset::get(&s);
-    match dir {
-        Some(f) => {
-            write_all(&out, &f)?;
-        },
-        None  => return Err(
-            Error::new("Application bundle source file not found".to_string()))
-    }
-    Ok(out)
-}
-*/
-
-//pub fn write_string_minify<P: AsRef<Path>>(output: P, content: String) -> io::Result<()> {
-    //let o = output.as_ref();
-    //if let Some(parent) = o.parent() {
-        //std::fs::create_dir_all(parent)?;
-    //}
-
-    //let mut file = File::create(o)?;
-    //minify::minify(&mut content.as_bytes(), &mut file)
-
-    ////write_all(output, content.as_bytes())
-//}
 
 // Convert a file name to title case
 pub fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {

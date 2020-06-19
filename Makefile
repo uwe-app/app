@@ -7,7 +7,7 @@ clean:
 
 init-newcss:
 	@rm -rf ./build/init-newcss
-	@cargo run -- init ./build/init-newcss vanilla/newcss
+	@cargo run -- init ./build/init-newcss style/newcss
 	@cargo run -- build ./build/init-newcss
 
 init-newcss-open: init-newcss
