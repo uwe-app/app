@@ -14,67 +14,33 @@
 
 use std::path::Path;
 use git2::Repository;
-//use std::io::{self, Write};
 use std::str;
 
 use log::info;
+use super::progress;
 
 fn do_fetch<'a>(
     repo: &'a git2::Repository,
     refs: &[&str],
     remote: &'a mut git2::Remote,
 ) -> Result<git2::AnnotatedCommit<'a>, git2::Error> {
-    let mut cb = git2::RemoteCallbacks::new();
 
-    // Print out our transfer progress.
-    cb.transfer_progress(|_stats| {
-        //if stats.received_objects() == stats.total_objects() {
-            //print!(
-                //"Resolving deltas {}/{}\r",
-                //stats.indexed_deltas(),
-                //stats.total_deltas()
-            //);
-        //} else if stats.total_objects() > 0 {
-            //print!(
-                //"Received {}/{} objects ({}) in {} bytes\r",
-                //stats.received_objects(),
-                //stats.total_objects(),
-                //stats.indexed_objects(),
-                //stats.received_bytes()
-            //);
-        //}
-        //io::stdout().flush().unwrap();
-        true
-    });
+    let mut cb = git2::RemoteCallbacks::new();
+    progress::add_progress_callbacks(&mut cb);
 
     let mut fo = git2::FetchOptions::new();
     fo.remote_callbacks(cb);
+
     // Always fetch all tags.
     // Perform a download and also update tips
     fo.download_tags(git2::AutotagOption::All);
-    info!("Fetching {} for repo", remote.name().unwrap());
+    info!("Fetching {}", remote.name().unwrap());
     remote.fetch(refs, Some(&mut fo), None)?;
 
     // If there are local objects (we got a thin pack), then tell the user
     // how many objects we saved from having to cross the network.
-    let _stats = remote.stats();
-    //if stats.local_objects() > 0 {
-        //info!(
-            //"\rReceived {}/{} objects in {} bytes (used {} local \
-             //objects)",
-            //stats.indexed_objects(),
-            //stats.total_objects(),
-            //stats.received_bytes(),
-            //stats.local_objects()
-        //);
-    //} else {
-        //info!(
-            //"\rReceived {}/{} objects in {} bytes",
-            //stats.indexed_objects(),
-            //stats.total_objects(),
-            //stats.received_bytes()
-        //);
-    //}
+    let stats = remote.stats();
+    progress::print_stats(stats);
 
     let fetch_head = repo.find_reference("FETCH_HEAD")?;
     Ok(repo.reference_to_annotated_commit(&fetch_head)?)
@@ -189,6 +155,12 @@ fn do_merge<'a>(
 pub fn pull<P: AsRef<Path>>(path: P, remote: Option<String>, branch: Option<String>) -> Result<(), git2::Error> {
     let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or("origin");
     let remote_branch = branch.as_ref().map(|s| &s[..]).unwrap_or("master");
+
+    info!("Pull {}/{} in {}", 
+          remote_name,
+          remote_branch,
+          path.as_ref().display());
+
     let repo = Repository::open(path)?;
     let mut remote = repo.find_remote(remote_name)?;
     let fetch_commit = do_fetch(&repo, &[remote_branch], &mut remote)?;

@@ -43,7 +43,7 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
 
     let repo_url = cache::get_blueprint_url(prefs);
     let repo_dir = cache::get_blueprint_dir()?;
-    let (repo, _cloned) = git::open_or_clone(&repo_url, &repo_dir)?;
+    let (repo, _cloned) = git::open_or_clone(&repo_url, &repo_dir, true)?;
     match Url::parse(&src) {
         Ok(_) => {
             git::print_clone(&src, target.as_ref().clone());
@@ -113,7 +113,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     }
 
     if options.list {
-        let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir)?;
+        let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir, true)?;
         git::list_submodules(repo)?;
     } else {
         if let Some(ref target) = options.target {
