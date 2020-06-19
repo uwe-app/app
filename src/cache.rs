@@ -3,10 +3,20 @@ use std::path::PathBuf;
 
 use home;
 use crate::Error;
+use crate::git;
+use crate::preference::{self, Preferences};
 
 static ROOT_DIR: &str = ".hypertext";
-static REPO: &str = "https://github.com/hypertext-live/blueprint";
-static BLUEPRINT: &str = "blueprint";
+
+static BLUEPRINT_NAME: &str = "blueprint";
+
+static STANDALONE_REPO: &str = "https://github.com/hypertext-live/standalone";
+static STANDALONE_NAME: &str = "standalone";
+
+pub enum CacheComponent {
+    Blueprint,
+    Standalone,
+}
 
 pub fn get_root_dir() -> Result<PathBuf, Error> {
     let cache = home::home_dir();
@@ -23,14 +33,50 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
             format!("Could not determine home directory")))
 }
 
-pub fn get_blueprint_url() -> String {
-    REPO.to_string()
+pub fn get_blueprint_url(prefs: &Preferences) -> String {
+    if let Some(ref blueprint) = prefs.blueprint {
+        if let Some(ref url) = blueprint.url {
+            return url.clone();
+        }
+    }
+    return preference::BLUEPRINT_URL.to_string();
+    //BLUEPRINT_REPO.to_string()
 }
 
 pub fn get_blueprint_dir() -> Result<PathBuf, Error> {
     let mut buf = get_root_dir()?;
-    buf.push(BLUEPRINT);
+    buf.push(BLUEPRINT_NAME);
     Ok(buf)
 }
 
+pub fn get_standalone_url() -> String {
+    STANDALONE_REPO.to_string()
+}
 
+pub fn get_standalone_dir() -> Result<PathBuf, Error> {
+    let mut buf = get_root_dir()?;
+    buf.push(STANDALONE_NAME);
+    Ok(buf)
+}
+
+pub fn update(
+    prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
+
+    // TODO: respect a blueprint.url preference
+
+    for c in components {
+        match c {
+            CacheComponent::Blueprint => {
+                let url = get_blueprint_url(prefs);
+                let dir = get_blueprint_dir()?;
+                git::clone_or_fetch(&url, &dir, true)?;
+            },
+            CacheComponent::Standalone => {
+                let url = get_standalone_url();
+                let dir = get_standalone_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            },
+        }
+    }
+    Ok(())
+}

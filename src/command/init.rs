@@ -42,7 +42,7 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
         Error::new(
             format!("Unable to handle source '{}'", &src)));
 
-    let repo_url = cache::get_blueprint_url();
+    let repo_url = cache::get_blueprint_url(prefs);
     let repo_dir = cache::get_blueprint_dir()?;
     let (repo, _cloned) = git::open_or_clone(&repo_url, &repo_dir)?;
     match Url::parse(&src) {
@@ -106,7 +106,7 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
 pub fn init(options: InitOptions) -> Result<(), Error> {
     let prefs = preference::load()?;
 
-    let url = cache::get_blueprint_url();
+    let url = cache::get_blueprint_url(&prefs);
     let blueprint_cache_dir = cache::get_blueprint_dir()?;
 
     if !blueprint_cache_dir.exists() {
@@ -117,9 +117,9 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir)?;
         git::list_submodules(repo)?;
     } else if options.update {
-        git::clone_or_fetch(&url, &blueprint_cache_dir, true)?;
+        let components: Vec<cache::CacheComponent> = vec![cache::CacheComponent::Blueprint];
+        cache::update(&prefs, components)?;
     } else {
-
         if let Some(ref target) = options.target {
             if target.exists() {
                 return Err(
@@ -128,7 +128,6 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
             }
 
             let repo;
-
             if let Some(ref parent) = target.parent() {
                 if !parent.exists() {
                     fs::create_dir_all(parent)?;
@@ -140,6 +139,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
 
             //repo.remote_delete("origin")?;
 
+            // FIXME: support tracking upstream blueprint
             git::detached(target, repo)?;
         } else {
             return Err(Error::new(format!("Target directory is required")));

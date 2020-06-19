@@ -10,6 +10,8 @@ static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
 static DEFAULT_BLUEPRINT_PATH: &str = "style/normalize";
 
+pub static BLUEPRINT_URL: &str = "https://github.com/hypertext-live/blueprint";
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -33,12 +35,14 @@ impl Default for Preferences {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BlueprintPreferences {
+    pub url: Option<String>,
     pub default_path: Option<String>,
 }
 
 impl Default for BlueprintPreferences {
     fn default() -> Self {
         Self {
+            url: Some(String::from(BLUEPRINT_URL)),
             default_path: Some(String::from(DEFAULT_BLUEPRINT_PATH))
         }
     }
