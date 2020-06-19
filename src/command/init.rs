@@ -43,7 +43,9 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
         Error::new(
             format!("Unable to handle source '{}'", &src)));
 
-    let (repo, base, _cloned) = blueprint::open_or_clone()?;
+    let repo_url = blueprint::get_repo_url();
+    let repo_dir = blueprint::get_repo_dir()?;
+    let (repo, _cloned) = git::open_or_clone(&repo_url, &repo_dir)?;
     match Url::parse(&src) {
         Ok(_) => {
             info!("Clone {}", &src);
@@ -55,7 +57,7 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
             let modules = repo.submodules()?;
             for sub in modules {
                 if sub.path() == Path::new(&src) {
-                    let mut tmp = base.clone();
+                    let mut tmp = repo_dir.clone();
                     tmp.push(sub.path());
                     let src = tmp.to_string_lossy();
                     info!("Clone {}", tmp.display());
@@ -107,14 +109,16 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
 pub fn init(options: InitOptions) -> Result<(), Error> {
     let prefs = preference::load()?;
 
-    let (will_clone, dest, url) = blueprint::will_clone()?;
-    if will_clone {
+    let url = blueprint::get_repo_url();
+    let blueprint_cache_dir = blueprint::get_repo_dir()?;
+
+    if !blueprint_cache_dir.exists() {
         info!("Clone {}", url);
-        info!("   -> {}", dest.display());
+        info!("   -> {}", blueprint_cache_dir.display());
     }
 
     if options.list {
-        let (repo, _base, _cloned) = blueprint::open_or_clone()?;
+        let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir)?;
         blueprint::list_submodules(repo)?;
     } else if options.update {
         blueprint::clone_or_fetch()?;

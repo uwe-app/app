@@ -15,26 +15,14 @@ static REPO: &str = "https://github.com/hypertext-live/blueprint";
 static BLUEPRINT: &str = "blueprint";
 static ORIGIN: &str = "origin";
 
+pub fn get_repo_url() -> String {
+    REPO.to_string()
+}
+
 pub fn get_repo_dir() -> Result<PathBuf, Error> {
     let mut buf = cache::get_root_dir()?;
     buf.push(BLUEPRINT);
     Ok(buf)
-}
-
-fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
-    let repo = match Repository::open(dir) {
-        Ok(repo) => repo,
-        Err(e) => return Err(Error::from(e)),
-    };
-    Ok(repo)
-}
-
-fn clone_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
-    let repo = match Repository::clone_recurse(REPO, dir) {
-        Ok(repo) => repo,
-        Err(e) => return Err(Error::from(e)),
-    };
-    Ok(repo)
 }
 
 fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
@@ -86,31 +74,16 @@ pub fn list_submodules(repo: Repository) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn will_clone() -> Result<(bool, PathBuf, String), Error> {
-    let buf = get_repo_dir()?;
-    Ok((!buf.exists(), buf, REPO.to_string()))
-}
-
-pub fn open_or_clone() -> Result<(Repository, PathBuf, bool), Error> {
-    let buf = get_repo_dir()?;
-    if !buf.exists() {
-        let repo = clone_repo(&buf)?;
-        return Ok((repo, buf, true))
-    } else {
-        let repo = open_repo(&buf)?;
-        return Ok((repo, buf, false))
-    }
-}
-
 pub fn clone_or_fetch() -> Result<(), Error> {
-    let (repo, base, cloned) = open_or_clone()?;
+    let dir = get_repo_dir()?;
+    let (repo, cloned) = git::open_or_clone(REPO, &dir)?;
     if !cloned {
         //fetch(&repo, &base)?;
         // FIXME: merge from origin/master
         //
-        git::pull::pull(&base, None, None)?;
+        git::pull::pull(&dir, None, None)?;
 
-        fetch_submodules(&repo, &base)?
+        fetch_submodules(&repo, &dir)?
     }
     Ok(())
 }

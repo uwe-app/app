@@ -109,3 +109,29 @@ pub fn clone_ssh<P: AsRef<Path>>(
     result.map_err(Error::from)
 }
 
+pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
+    let repo = match Repository::open(dir) {
+        Ok(repo) => repo,
+        Err(e) => return Err(Error::from(e)),
+    };
+    Ok(repo)
+}
+
+pub fn clone_repo<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, Error> {
+    let repo = match Repository::clone_recurse(from, dir) {
+        Ok(repo) => repo,
+        Err(e) => return Err(Error::from(e)),
+    };
+    Ok(repo)
+}
+
+pub fn open_or_clone(from: &str, to: &PathBuf) -> Result<(Repository, bool), Error> {
+    if !to.exists() {
+        let repo = clone_repo(from, to)?;
+        return Ok((repo, true))
+    } else {
+        let repo = open_repo(to)?;
+        return Ok((repo, false))
+    }
+}
+
