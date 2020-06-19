@@ -10,19 +10,6 @@ use log::info;
 use crate::preference::{self, Preferences};
 use crate::{cache, git, Error};
 
-static REPO: &str = "https://github.com/hypertext-live/blueprint";
-static BLUEPRINT: &str = "blueprint";
-
-pub fn get_repo_url() -> String {
-    REPO.to_string()
-}
-
-pub fn get_repo_dir() -> Result<PathBuf, Error> {
-    let mut buf = cache::get_root_dir()?;
-    buf.push(BLUEPRINT);
-    Ok(buf)
-}
-
 // TODO: support [blueprint] default config
 
 #[derive(Debug)]
@@ -55,13 +42,12 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
         Error::new(
             format!("Unable to handle source '{}'", &src)));
 
-    let repo_url = get_repo_url();
-    let repo_dir = get_repo_dir()?;
+    let repo_url = cache::get_blueprint_url();
+    let repo_dir = cache::get_blueprint_dir()?;
     let (repo, _cloned) = git::open_or_clone(&repo_url, &repo_dir)?;
     match Url::parse(&src) {
         Ok(_) => {
-            info!("Clone {}", &src);
-            info!("   -> {}", target.as_ref().display());
+            git::print_clone(&src, target.as_ref().clone());
             return Repository::clone(&src, target)
                 .map_err(Error::from);
         },
@@ -71,9 +57,8 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
                 if sub.path() == Path::new(&src) {
                     let mut tmp = repo_dir.clone();
                     tmp.push(sub.path());
-                    let src = tmp.to_string_lossy();
-                    info!("Clone {}", tmp.display());
-                    info!("   -> {}", target.as_ref().display());
+                    let src = tmp.to_string_lossy().into_owned();
+                    git::print_clone(&src, target.as_ref().clone());
                     return Repository::clone(&src, target)
                         .map_err(Error::from);
                 }
@@ -96,8 +81,8 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
                             key_file.push(ssh_key);
 
                             info!("Private key {}", key_file.display());
-                            info!("Clone {}", &src);
-                            info!("   -> {}", target.as_ref().display());
+
+                            git::print_clone(&src, target.as_ref().clone());
 
                             return git::clone_ssh(src, target, key_file, None);
                         } else {
@@ -121,12 +106,11 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
 pub fn init(options: InitOptions) -> Result<(), Error> {
     let prefs = preference::load()?;
 
-    let url = get_repo_url();
-    let blueprint_cache_dir = get_repo_dir()?;
+    let url = cache::get_blueprint_url();
+    let blueprint_cache_dir = cache::get_blueprint_dir()?;
 
     if !blueprint_cache_dir.exists() {
-        info!("Clone {}", url);
-        info!("   -> {}", blueprint_cache_dir.display());
+        git::print_clone(&url, &blueprint_cache_dir);
     }
 
     if options.list {

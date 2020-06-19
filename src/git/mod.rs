@@ -133,8 +133,7 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Er
                 if let ErrorClass::Os = e.class() {
                     if let ErrorCode::NotFound = e.code() {
                         if let Some(ref url) = sub.url() {
-                            info!("Clone {}", url);
-                            info!("   -> {}", tmp.display());
+                            print_clone(&url, &tmp);
                             Repository::clone(url, tmp)?;
                         }
 
@@ -150,6 +149,11 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Er
 fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
     info!("fetch {}", base.as_ref().display());
     repo.find_remote(ORIGIN)?.fetch(&["master"], None, None).map_err(Error::from)
+}
+
+pub fn print_clone<P: AsRef<Path>>(from: &str, to: P) {
+    info!("Clone {}", from);
+    info!("   -> {}", to.as_ref().display());
 }
 
 pub fn list_submodules(repo: Repository) -> Result<(), Error> {

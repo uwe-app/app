@@ -5,6 +5,8 @@ use home;
 use crate::Error;
 
 static ROOT_DIR: &str = ".hypertext";
+static REPO: &str = "https://github.com/hypertext-live/blueprint";
+static BLUEPRINT: &str = "blueprint";
 
 pub fn get_root_dir() -> Result<PathBuf, Error> {
     let cache = home::home_dir();
@@ -20,4 +22,15 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
         Error::new(
             format!("Could not determine home directory")))
 }
+
+pub fn get_blueprint_url() -> String {
+    REPO.to_string()
+}
+
+pub fn get_blueprint_dir() -> Result<PathBuf, Error> {
+    let mut buf = get_root_dir()?;
+    buf.push(BLUEPRINT);
+    Ok(buf)
+}
+
 
