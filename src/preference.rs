@@ -1,14 +1,11 @@
-use std::fs;
 use std::path::PathBuf;
 
-use home;
 use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
 
 use crate::Error;
-use crate::utils;
+use crate::{cache, utils};
 
-static ROOT_DIR: &str = ".hypertext";
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
 static DEFAULT_BLUEPRINT_PATH: &str = "style/normalize";
@@ -60,23 +57,8 @@ impl Default for SshPreferences {
     }
 }
 
-pub fn get_root_dir() -> Result<PathBuf, Error> {
-    let cache = home::home_dir();
-    if let Some(ref cache) = cache {
-        let mut buf = cache.clone();
-        buf.push(ROOT_DIR);
-        if !buf.exists() {
-            fs::create_dir_all(&buf)?;
-        }
-        return Ok(buf);
-    }
-    Err(
-        Error::new(
-            format!("Could not determine home directory")))
-}
-
 pub fn get_prefs_file() -> Result<PathBuf, Error> {
-    let mut buf = get_root_dir()?;
+    let mut buf = cache::get_root_dir()?;
     buf.push(PREFERENCES);
     Ok(buf)
 }

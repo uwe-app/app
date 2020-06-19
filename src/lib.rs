@@ -5,6 +5,7 @@ mod asset;
 mod blueprint;
 mod build;
 mod bundle;
+mod cache;
 pub mod callback;
 mod command;
 mod config;

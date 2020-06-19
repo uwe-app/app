@@ -6,7 +6,7 @@ use git2::{Repository, ErrorClass, ErrorCode};
 use log::info;
 
 use crate::Error;
-use crate::{git, preference};
+use crate::{cache, git};
 
 // TODO: support --offline to skip attempting to update
 // TODO: support blueprint fetch config: always | never
@@ -16,7 +16,7 @@ static BLUEPRINT: &str = "blueprint";
 static ORIGIN: &str = "origin";
 
 pub fn get_repo_dir() -> Result<PathBuf, Error> {
-    let mut buf = preference::get_root_dir()?;
+    let mut buf = cache::get_root_dir()?;
     buf.push(BLUEPRINT);
     Ok(buf)
 }
