@@ -104,6 +104,7 @@ impl HelperDef for Link{
                 if opts.index_links && (value.ends_with("/") || value == "") {
                     value.push_str(INDEX_HTML);
                 }
+
                 debug!("link {:?}", value);
 
                 out.write(&value)?;

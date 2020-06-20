@@ -39,7 +39,7 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
             node.release.clone());
 
         command
-            .current_dir(&context.options.source)
+            .current_dir(context.config.get_project())
             .env("NODE_ENV", node_env)
             .env("BUILD_TARGET", build_target)
             .env("PROJECT_ROOT", root.to_string_lossy().into_owned())
