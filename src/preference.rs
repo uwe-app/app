@@ -27,7 +27,7 @@ impl Default for Preferences {
             lang: Some(String::from(LANG)),
             ssh: None,
             blueprint: Some(Default::default()),
-        } 
+        }
     }
 }
 
@@ -67,28 +67,39 @@ pub fn get_prefs_file() -> Result<PathBuf, Error> {
     Ok(buf)
 }
 
+pub fn load_file() -> Result<String, Error> {
+    let buf = get_prefs_file()?;
+    utils::read_string(&buf).map_err(Error::from)
+}
+
 pub fn load() -> Result<Preferences, Error> {
     let buf = get_prefs_file()?;
     let mut prefs: Preferences = Default::default();
     if buf.exists() {
-        let content = utils::read_string(&buf)?;
+        let content = load_file()?;
         prefs = toml::from_str(&content)?;
     }
     Ok(prefs)
 }
 
-pub fn init() -> Result<(), Error> {
+pub fn init_if_none() -> Result<(), Error> {
     let buf = get_prefs_file()?;
     if !buf.exists() {
         let prefs: Preferences = Default::default();
-        let content = toml::to_string(&prefs)?; 
+        let content = toml::to_string(&prefs)?;
         utils::write_string(buf, content)?;
-    } else {
-        return Err(
-            Error::new(
-                format!(
-                    "Preferences file '{}' exists, please move it away", buf.display())))
     }
-
     Ok(())
 }
+
+//pub fn init() -> Result<(), Error> {
+    //let buf = get_prefs_file()?;
+    //if !buf.exists() {
+        //return init_if_none();
+    //} else {
+        //return Err(
+            //Error::new(
+                //format!(
+                    //"Preferences file '{}' exists, please move it away", buf.display())))
+    //}
+//}

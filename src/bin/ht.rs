@@ -113,10 +113,9 @@ struct UpdateOpts {
 
 #[derive(StructOpt,Debug)]
 struct PrefOpts {
-
-    /// Create a default preferences file
+    /// Edit the preferences file
     #[structopt(short, long)]
-    init: bool,
+    edit: bool,
 }
 
 #[derive(StructOpt,Debug)]
@@ -281,7 +280,7 @@ fn process_command(cmd: &Command) {
         } => {
 
             let opts = PrefOptions {
-                init: args.init,
+                edit: args.edit,
             };
 
             if let Err(e) = hypertext::pref(opts) {
