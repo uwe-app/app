@@ -33,7 +33,6 @@ static DATA_TOML: &str = "data.toml";
 
 pub use crate::config::Config;
 pub use crate::error::Error;
-pub use crate::command::archive::*;
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;
 pub use crate::command::init::*;

@@ -16,7 +16,6 @@ use hypertext::{
     Config,
     BuildArguments,
     Error,
-    ArchiveOptions,
     BundleOptions,
     ServeOptions,
     InitOptions,
@@ -167,7 +166,7 @@ struct BundleOpts {
     #[structopt(short, long)]
     archive: bool,
 
-    /// The name of the generated bundle 
+    /// The name of the generated bundle
     #[structopt(short, long)]
     name: Option<String>,
 
@@ -178,21 +177,6 @@ struct BundleOpts {
     /// Generate bundle executables in directory
     #[structopt(parse(from_os_str), default_value = "build")]
     output: PathBuf,
-}
-
-#[derive(StructOpt,Debug)]
-struct ArchiveOpts {
-    /// Force overwrite an existing archive
-    #[structopt(long)]
-    force: bool,
-
-    /// Archive source directory
-    #[structopt(parse(from_os_str))]
-    input: PathBuf,
-
-    /// Archive file destination
-    #[structopt(parse(from_os_str))]
-    output: Option<PathBuf>,
 }
 
 #[derive(StructOpt,Debug)]
@@ -220,12 +204,6 @@ enum Command {
     Bundle {
         #[structopt(flatten)]
         args: BundleOpts,
-    },
-
-    /// Create zip archive
-    Archive {
-        #[structopt(flatten)]
-        args: ArchiveOpts,
     },
 
     /// Manage preferences
@@ -375,31 +353,13 @@ fn process_command(cmd: &Command) {
             }
         },
 
-        Command::Archive {
-            ref args
-        } => {
-            if !args.input.exists() || !args.input.is_dir() {
-                error(format!("Directory does not exist: {}", args.input.display()));
-            }
-
-            let opts = ArchiveOptions {
-                source: args.input.clone(),
-                target: args.output.clone(),
-                force: args.force,
-            };
-
-            if let Err(e) = hypertext::archive(opts) {
-                fatal(e);
-            }
-        },
-
         Command::Build {ref args} => {
 
             // NOTE: We want the help output to show "."
             // NOTE: to indicate that the current working
             // NOTE: directory is used but the period creates
             // NOTE: problems with the strip prefix logic for
-            // NOTE: live reload so this converts it to the 
+            // NOTE: live reload so this converts it to the
             // NOTE: empty string.
             let period = Path::new(".").to_path_buf();
             let empty = Path::new("").to_path_buf();
@@ -434,8 +394,8 @@ fn process_command(cmd: &Command) {
 
 fn main() {
     let root_args = Cli::from_args();
-   
-    // Fluent templates panics if an error is caught parsing the 
+
+    // Fluent templates panics if an error is caught parsing the
     // templates (for example attempting to override from a shared resource)
     // so we catch it here and push it out via the log
     panic::set_hook(Box::new(|info| {
@@ -459,7 +419,7 @@ fn main() {
     }
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-    
+
     match &root_args.cmd {
         Some(cmd) => {
             process_command(cmd);

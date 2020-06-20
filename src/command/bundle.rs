@@ -65,7 +65,7 @@ fn prepare(options: &BundleOptions) -> Result<Vec<PathBuf>, Error> {
             if !name.ends_with(".go") {
                 if path.is_file() {
                     fs::remove_file(path)?;
-                }    
+                }
             } else if name == ASSETS.to_string() {
                 fs::remove_file(path)?;
             } else {
@@ -138,6 +138,7 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         }
     }
 
+    // FIXME: remove archive option?
     if options.archive {
         for exe in executables {
             let mut zip = exe.clone();
