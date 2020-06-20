@@ -56,7 +56,7 @@ struct BuildOpts {
 
     /// Use index.html for directory links
     #[structopt(long)]
-    index_links: bool,
+    include_index: bool,
 
     /// Enable live reload
     #[structopt(short, long)]
@@ -367,7 +367,7 @@ fn process_command(cmd: &Command) {
                 directory: args.directory.clone(),
                 tag: args.tag.clone(),
                 max_depth: args.max_depth,
-                index_links: args.index_links,
+                include_index: args.include_index,
                 live: args.live,
                 force: args.force,
                 release: args.release,

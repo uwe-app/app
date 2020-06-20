@@ -70,7 +70,7 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
         target.push(target_dir);
     }
 
-    if args.index_links {
+    if args.include_index {
         let link = cfg.link.as_mut().unwrap();
         if let Some(ref mut include_index) = link.include_index {
             *include_index = true;

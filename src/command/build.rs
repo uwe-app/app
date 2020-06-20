@@ -87,7 +87,7 @@ pub struct BuildArguments {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub force: bool,
-    pub index_links: bool,
+    pub include_index: bool,
 }
 
 // FIXME: re-use the BuildArguments in the BuildOptions!
