@@ -27,7 +27,7 @@ site-live:
 site-release: install help
 
 dist: site-release
-	@ht $(SITE_ROOT)/ --release --force --index-links --tag=hypertext-preview
+	@ht $(SITE_ROOT)/ --release --force --include-index --tag=hypertext-preview
 	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
 	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip hypertext-preview/*)
 
