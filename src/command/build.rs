@@ -118,7 +118,6 @@ pub struct BuildOptions {
     pub host: String,
     pub port: u16,
     pub force: bool,
-    pub index_links: bool,
 }
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
@@ -142,8 +141,8 @@ fn build_workspaces(
 
     let mut ctx: Context = Default::default();
 
-    for space in spaces {
-        let opts = workspace::prepare(&space.config, args)?;
+    for mut space in spaces {
+        let opts = workspace::prepare(&mut space.config, args)?;
         let base_target = opts.target.clone();
         let build_config = space.config.build.as_ref().unwrap();
 

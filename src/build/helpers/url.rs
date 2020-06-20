@@ -48,13 +48,14 @@ impl HelperDef for Link{
 
         if let Some(p) = h.params().get(0) {
             let link_config = build_ctx.config.link.as_ref().unwrap();
+            let include_index = link_config.include_index.unwrap();
 
             if !p.is_value_missing() {
                 input = p.value().as_str().unwrap_or("").to_string();
             }
 
             if input.is_empty() {
-                return Err(RenderError::new("Type error for `link`, expected string parameter")) 
+                return Err(RenderError::new("Type error for `link`, expected string parameter"))
             }
 
             // Check config first
@@ -67,7 +68,7 @@ impl HelperDef for Link{
 
             if passthrough {
                 out.write(&input)?;
-                if opts.index_links && (input == "." || input == "..") {
+                if include_index && (input == "." || input == "..") {
                     out.write("/")?;
                     out.write(INDEX_HTML)?;
                 }
@@ -101,7 +102,7 @@ impl HelperDef for Link{
                 }
 
                 value.push_str(&input);
-                if opts.index_links && (value.ends_with("/") || value == "") {
+                if include_index && (value.ends_with("/") || value == "") {
                     value.push_str(INDEX_HTML);
                 }
 
@@ -110,12 +111,12 @@ impl HelperDef for Link{
                 out.write(&value)?;
 
             } else {
-                return Err(RenderError::new("Type error for `link`, file is outside source!")) 
+                return Err(RenderError::new("Type error for `link`, file is outside source!"))
             }
 
 
         } else {
-            return Err(RenderError::new("Type error for `link`, expected string parameter")) 
+            return Err(RenderError::new("Type error for `link`, expected string parameter"))
         }
         Ok(())
     }
@@ -157,6 +158,9 @@ impl HelperDef for Components{
         match template {
             Some(t) => {
 
+                let link_config = build_ctx.config.link.as_ref().unwrap();
+                let include_index = link_config.include_index.unwrap();
+
                 if let Ok(rel) = path.strip_prefix(&opts.target) {
                     let mut buf = rel.to_path_buf();
                     if buf.ends_with(INDEX_HTML) {
@@ -181,7 +185,7 @@ impl HelperDef for Components{
                             href.push_str(&name);
                         }
                         let mut url = up.repeat(amount);
-                        if opts.index_links {
+                        if include_index {
                             url.push_str(INDEX_HTML);
                         }
 

@@ -14,7 +14,7 @@ pub struct Workspace {
 
 impl Workspace {
     pub fn new(config: Config) -> Self {
-        Self {config} 
+        Self {config}
     }
 }
 
@@ -33,7 +33,7 @@ fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
+pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
 
     if args.live && args.release {
         return Err(
@@ -68,6 +68,13 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
         }
 
         target.push(target_dir);
+    }
+
+    if args.index_links {
+        let link = cfg.link.as_mut().unwrap();
+        if let Some(ref mut include_index) = link.include_index {
+            *include_index = true;
+        }
     }
 
     if args.force && target.exists() {
@@ -129,7 +136,6 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<BuildOptions, Erro
         release: args.release,
         live: args.live,
         force: args.force,
-        index_links: args.index_links,
         tag: tag_target,
     };
 
@@ -158,7 +164,7 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
             load(root, false, spaces)?;
         }
     } else {
-        spaces.push(Workspace::new(cfg)); 
+        spaces.push(Workspace::new(cfg));
     }
 
     Ok(())

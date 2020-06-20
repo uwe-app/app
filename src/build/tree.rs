@@ -91,7 +91,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                 let mut href = "".to_string();
 
                 // NOTE: there is an invalid lint warning on this
-                // NOTE: saying it is not used but we pass it to 
+                // NOTE: saying it is not used but we pass it to
                 // NOTE: the json!() macro later
                 #[allow(unused_assignments)]
                 let mut this: bool = false;
@@ -170,7 +170,10 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                 }
 
                 if !href.is_empty() {
-                    if ctx.options.clean_url && !ctx.options.index_links {
+                    let link_config = ctx.config.link.as_ref().unwrap();
+                    let include_index = link_config.include_index.unwrap();
+
+                    if ctx.options.clean_url && !include_index {
                         if href.ends_with(INDEX_HTML) {
                             href.truncate(href.len() - INDEX_HTML.len());
                         }

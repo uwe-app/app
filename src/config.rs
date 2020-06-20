@@ -110,7 +110,7 @@ impl Default for Config {
             redirect: None,
             date: Some(Default::default()),
             link: Some(Default::default()),
-        } 
+        }
     }
 }
 
@@ -157,7 +157,7 @@ impl Config {
                         fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
                     }
                     if fluent.locales.is_none() {
-                        fluent.locales = Some(PathBuf::from(LOCALES)); 
+                        fluent.locales = Some(PathBuf::from(LOCALES));
                     }
                 }
 
@@ -169,13 +169,13 @@ impl Config {
                 let mut build = cfg.build.as_mut().unwrap();
 
                 if build.source.is_relative() {
-                    let mut bp = base.to_path_buf(); 
+                    let mut bp = base.to_path_buf();
                     bp.push(&build.source);
                     build.source = bp;
                 }
 
                 if build.target.is_relative() {
-                    let mut bp = base.to_path_buf(); 
+                    let mut bp = base.to_path_buf();
                     bp.push(&build.target);
                     build.target = bp;
                 }
@@ -184,7 +184,7 @@ impl Config {
                     for (k, v) in hooks.iter_mut() {
                         if v.path.is_none() {
                             v.path = Some(k.clone());
-                        } 
+                        }
                         if v.stdout.is_none() {
                             v.stdout = Some(true);
                         }
@@ -227,7 +227,7 @@ impl Config {
                         }
                     }
 
-                    // FIXME: validate data time format specifiers 
+                    // FIXME: validate data time format specifiers
                 }
 
                 return Ok(cfg);
@@ -254,7 +254,7 @@ impl Config {
                 if pb.exists() && pb.is_file() {
                     return Config::load_config(pb)
                 }
-            } 
+            }
         }
         Err(Error::new(format!("No configuration found for {}", pth.display())))
     }
@@ -266,7 +266,7 @@ impl Config {
     pub fn get_layout_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let mut pth = source.as_ref().to_path_buf();
         pth.push(LAYOUT_HBS);
-        pth 
+        pth
     }
 
     pub fn get_page_data_path(&self) -> PathBuf {
@@ -274,7 +274,7 @@ impl Config {
         let pages = build.pages.as_ref().unwrap();
         let mut pth = self.project.as_ref().unwrap().clone();
         pth.push(pages);
-        pth 
+        pth
     }
 
     pub fn get_locales<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
@@ -282,8 +282,8 @@ impl Config {
             if let Some(locales) = &fluent.locales {
                 let mut pth = source.as_ref().to_path_buf();
                 pth.push(locales);
-                return Some(pth) 
-            } 
+                return Some(pth)
+            }
         }
         None
     }
@@ -293,7 +293,7 @@ impl Config {
         let assets = build.assets.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(assets);
-        pth 
+        pth
     }
 
     pub fn get_partials_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
@@ -301,7 +301,7 @@ impl Config {
         let partial = build.partials.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(partial);
-        pth 
+        pth
     }
 
     pub fn get_generators_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
@@ -309,7 +309,7 @@ impl Config {
         let generator = build.generators.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(generator);
-        pth 
+        pth
     }
 
     pub fn get_resources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
@@ -317,7 +317,7 @@ impl Config {
         let resource = build.resources.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(resource);
-        pth 
+        pth
     }
 
     pub fn get_book_theme_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
@@ -381,7 +381,7 @@ impl Default for FluentConfig {
             locales: Some(PathBuf::from(LOCALES)),
             shared: Some(String::from("core.ftl")),
             fallback_id: String::from(LANG).parse().unwrap(),
-        } 
+        }
     }
 }
 
@@ -420,7 +420,7 @@ impl Default for ExtensionConfig {
             render: vec![String::from(MD), String::from(HTML)],
             map: ext_map,
             markdown: vec![String::from(MD)],
-        } 
+        }
     }
 }
 
@@ -441,7 +441,7 @@ impl HookConfig {
         if let Some(src) = self.source.as_ref() {
             let mut pth = source.as_ref().to_path_buf();
             pth.push(src);
-            return Some(pth) 
+            return Some(pth)
         }
         None
     }
@@ -488,7 +488,7 @@ impl Default for LinkConfig {
             allow: None,
             verify: Some(true),
             relative: Some(true),
-            include_index: None,
-        } 
+            include_index: Some(false),
+        }
     }
 }
