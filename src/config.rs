@@ -469,6 +469,15 @@ impl Default for DateConfig {
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct LinkConfig {
+    /// Explicit list of paths that are allowed, should
+    /// not begin with a forward slash
     pub allow: Option<Vec<String>>,
+    /// The link helper should verify links
+    pub verify: Option<bool>,
+    /// The link helper should make links relative
+    pub relative: Option<bool>,
+    /// Links to directories should include index.html
+    pub include_index: Option<bool>,
 }
