@@ -13,9 +13,9 @@ pub enum Phase {
 }
 
 pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
-    let root = context.config.get_project();
-    debug!("hook root {}", root.display());
-    if let Ok(root) = root.canonicalize() {
+    let project_root = context.config.get_project();
+    debug!("hook root {}", project_root.display());
+    if let Ok(root) = project_root.canonicalize() {
         let mut cmd = hook.path.as_ref().unwrap().clone();
         let mut args: Vec<String> = vec![];
         if let Some(arguments) = &hook.args {
@@ -29,7 +29,9 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
-        let build_target = context.options.target.to_string_lossy().into_owned();
+        let mut build_target = context.options.target.clone();
+        build_target = build_target.strip_prefix(&project_root)?.to_path_buf();
+
         info!("{} {}", cmd, args.join(" "));
         let mut command = Command::new(cmd);
 
@@ -39,9 +41,9 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
             node.release.clone());
 
         command
-            .current_dir(context.config.get_project())
+            .current_dir(&root)
             .env("NODE_ENV", node_env)
-            .env("BUILD_TARGET", build_target)
+            .env("BUILD_TARGET", build_target.to_string_lossy().into_owned())
             .env("PROJECT_ROOT", root.to_string_lossy().into_owned())
             .args(args);
 
@@ -58,7 +60,7 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     } else {
         return Err(
             Error::new(
-                format!("Failed to get canonical path for project root '{}'", root.display())))
+                format!("Failed to get canonical path for project root '{}'", project_root.display())))
     }
 
     Ok(())
