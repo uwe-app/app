@@ -15,7 +15,6 @@ pub enum Error {
     BookError(mdbook::errors::Error),
     TomlSerError(toml::ser::Error),
     TomlDeserError(toml::de::Error),
-    ZipResultError(zip::result::ZipError),
     JsonError(serde_json::error::Error),
     NotifyError(notify::Error),
     UrlParseError(url::ParseError),
@@ -80,12 +79,6 @@ impl From<mdbook::errors::Error> for Error {
     }
 }
 
-impl From<zip::result::ZipError> for Error {
-    fn from(error: zip::result::ZipError) -> Self {
-        Error::ZipResultError(error)
-    }
-}
-
 impl From<serde_json::error::Error> for Error {
     fn from(error: serde_json::error::Error) -> Self {
         Error::JsonError(error)
@@ -135,7 +128,6 @@ impl fmt::Display for Error {
             Error::BookError(ref e) => e.fmt(f),
             Error::TomlSerError(ref e) => e.fmt(f),
             Error::TomlDeserError(ref e) => e.fmt(f),
-            Error::ZipResultError(ref e) => e.fmt(f),
             Error::JsonError(ref e) => e.fmt(f),
             Error::NotifyError(ref e) => e.fmt(f),
             Error::UrlParseError(ref e) => e.fmt(f),
@@ -157,7 +149,6 @@ impl error::Error for Error {
             Error::BookError(ref e) => Some(e),
             Error::TomlSerError(ref e) => Some(e),
             Error::TomlDeserError(ref e) => Some(e),
-            Error::ZipResultError(ref e) => Some(e),
             Error::JsonError(ref e) => Some(e),
             Error::NotifyError(ref e) => Some(e),
             Error::UrlParseError(ref e) => Some(e),

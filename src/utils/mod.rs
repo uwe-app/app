@@ -35,23 +35,6 @@ pub fn is_draft(data: &Page, opts: &BuildOptions) -> bool {
     false
 }
 
-pub fn zip_from_file<P: AsRef<Path>>(archive: P, file: P, prefix: P) -> zip::result::ZipResult<()> {
-
-    if let Ok(rel) = file.as_ref().strip_prefix(prefix) {
-        let w = File::create(archive)?;
-        let mut zip = zip::ZipWriter::new(w);
-        let options = zip::write::FileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored);
-        let bytes = read_bytes(file.as_ref())?;
-        let rel_name = rel.to_string_lossy().into_owned();
-        zip.start_file(rel_name, options)?;
-        zip.write(&bytes)?;
-        zip.finish()?;
-    }
-
-    Ok(())
-}
-
 pub fn read_bytes<P: AsRef<Path>>(input: P) -> io::Result<Vec<u8>> {
     let mut file = File::open(input)?;
     let mut buffer = Vec::new();

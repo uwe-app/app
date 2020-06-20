@@ -63,7 +63,7 @@ impl BuildTag {
                 return "production".to_string()
             }
             BuildTag::Custom(s) => return s.to_string()
-        } 
+        }
     }
 
     pub fn clone(&self) -> Self {
@@ -99,9 +99,9 @@ pub struct BuildOptions {
     pub source: PathBuf,
     // Root of the output
     pub output: PathBuf,
-    // Target output directory including a build tag 
+    // Target output directory including a build tag
     pub base: PathBuf,
-    // Target output directory including a build tag and 
+    // Target output directory including a build tag and
     // a locale identifier when multilingual
     pub target: PathBuf,
     // Where to build from either `source` or `directory` relative to `source`
@@ -146,7 +146,7 @@ fn build_workspaces(
         let opts = workspace::prepare(&space.config, args)?;
         let base_target = opts.target.clone();
         let build_config = space.config.build.as_ref().unwrap();
-        
+
         let mut locales = Locales::new(&space.config);
         locales.load(&space.config, &build_config.source)?;
 

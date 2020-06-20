@@ -22,7 +22,6 @@ pub struct BundleOptions {
     pub linux: bool,
     pub mac: bool,
     pub windows: bool,
-    pub archive: bool,
 }
 
 fn prepare(options: &BundleOptions) -> Result<Vec<PathBuf>, Error> {
@@ -138,24 +137,8 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
         }
     }
 
-    // FIXME: remove archive option?
-    if options.archive {
-        for exe in executables {
-            let mut zip = exe.clone();
-            zip.set_extension("zip");
-
-            if let Ok(_) = utils::zip_from_file(zip.as_path(), exe.as_path(), options.target.as_path()) {
-                debug!("rm {}", exe.display());
-                std::fs::remove_file(exe)?;
-                info!("{}", zip.display());
-            } else {
-                return Err(Error::new(format!("failed to create archive {}", zip.display())))
-            }
-        }
-    } else {
-        for exe in executables {
-            info!("{}", exe.display());
-        }
+    for exe in executables {
+        info!("{}", exe.display());
     }
 
     Ok(())
