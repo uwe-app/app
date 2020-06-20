@@ -468,7 +468,7 @@ impl Default for DateConfig {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct LinkConfig {
     /// Explicit list of paths that are allowed, should
@@ -480,4 +480,15 @@ pub struct LinkConfig {
     pub relative: Option<bool>,
     /// Links to directories should include index.html
     pub include_index: Option<bool>,
+}
+
+impl Default for LinkConfig {
+    fn default() -> Self {
+        Self {
+            allow: None,
+            verify: Some(true),
+            relative: Some(true),
+            include_index: None,
+        } 
+    }
 }

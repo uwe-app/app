@@ -73,11 +73,15 @@ impl HelperDef for Link{
             //let exists = matcher::source_exists(
                 //&opts.source, &input, opts.clean_url);
 
-            let exists = matcher::source_exists(&ctx, &input);
-
-            if !exists {
-                return Err(
-                    RenderError::new(format!("Type error for `link`, missing url {}", input)))
+            if let Some(verify) = ctx.config.link.as_ref().unwrap().verify {
+                if verify {
+                    let exists = matcher::source_exists(&ctx, &input);
+                    if !exists {
+                        return Err(
+                            RenderError::new(
+                                format!("Type error for `link`, missing url {}", input)))
+                    }
+                }
             }
 
             if let Ok(rel) = path.strip_prefix(opts.source.clone()) {
