@@ -40,13 +40,15 @@ impl HelperDef for Link{
             .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
             .to_owned();
 
-        let ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
-        let opts = &ctx.options;
+        let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
+        let opts = &build_ctx.options;
         let path = Path::new(&base_path);
 
         let mut input: String = "".to_string();
 
         if let Some(p) = h.params().get(0) {
+            let link_config = build_ctx.config.link.as_ref().unwrap();
+
             if !p.is_value_missing() {
                 input = p.value().as_str().unwrap_or("").to_string();
             }
@@ -55,7 +57,14 @@ impl HelperDef for Link{
                 return Err(RenderError::new("Type error for `link`, expected string parameter")) 
             }
 
-            let passthrough = !input.starts_with("/") || input.starts_with("http:") || input.starts_with("https:");
+            // Check config first
+            let enabled = link_config.relative.is_some() && link_config.relative.unwrap();
+
+            let passthrough = !enabled
+                || !input.starts_with("/")
+                || input.starts_with("http:")
+                || input.starts_with("https:");
+
             if passthrough {
                 out.write(&input)?;
                 if opts.index_links && (input == "." || input == "..") {
@@ -70,13 +79,9 @@ impl HelperDef for Link{
                 input = input.trim_start_matches("/").to_owned();
             }
 
-            //let exists = matcher::source_exists(
-                //&opts.source, &input, opts.clean_url);
-
-            if let Some(verify) = ctx.config.link.as_ref().unwrap().verify {
+            if let Some(verify) = link_config.verify {
                 if verify {
-                    let exists = matcher::source_exists(&ctx, &input);
-                    if !exists {
+                    if !matcher::source_exists(&build_ctx, &input) {
                         return Err(
                             RenderError::new(
                                 format!("Type error for `link`, missing url {}", input)))
@@ -143,8 +148,8 @@ impl HelperDef for Components{
             .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
             .to_owned();
 
-        let ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
-        let opts = &ctx.options;
+        let build_ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
+        let opts = &build_ctx.options;
         let path = Path::new(&base_path).to_path_buf();
 
         let template = h.template();
@@ -179,8 +184,8 @@ impl HelperDef for Components{
                             url.push_str(INDEX_HTML);
                         }
 
-                        if let Some(src) = matcher::lookup(&ctx, &href) {
-                            let mut data = loader::compute(src, &ctx.config, true).map_err(map_render_error)?;
+                        if let Some(src) = matcher::lookup(&build_ctx, &href) {
+                            let mut data = loader::compute(src, &build_ctx.config, true).map_err(map_render_error)?;
                             data.vars.insert("first".to_string(), json!(first));
                             data.vars.insert("last".to_string(), json!(last));
                             data.vars.insert("href".to_string(), json!(url));
