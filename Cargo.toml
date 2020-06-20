@@ -51,3 +51,6 @@ serve = ["futures-util", "tokio", "warp"]
 [profile.release]
 lto = true
 codegen-units = 1
+
+[package.metadata.bundle]
+identifier = "live.hypertext"

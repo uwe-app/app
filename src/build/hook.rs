@@ -29,16 +29,20 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
-        let mut build_target = context.options.target.clone();
-        build_target = build_target.strip_prefix(&project_root)?.to_path_buf();
-
-        info!("{} {}", cmd, args.join(" "));
-        let mut command = Command::new(cmd);
+        let mut build_target = context.options.target.clone().canonicalize()?;
+        build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
         let node = context.config.node.as_ref().unwrap();
         let node_env = context.options.tag.get_node_env(
             node.debug.clone(),
             node.release.clone());
+
+        info!("{} {}", cmd, args.join(" "));
+        debug!("PROJECT_ROOT {}", root.display());
+        debug!("BUILD_TARGET {}", build_target.display());
+        debug!("NODE_ENV {}", &node_env);
+
+        let mut command = Command::new(cmd);
 
         command
             .current_dir(&root)
