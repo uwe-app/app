@@ -1,6 +1,6 @@
 SITE_ROOT = "../website"
 
-all: init example site-release
+all: init site-release
 
 clean:
 	@rm -rf ./target
@@ -30,10 +30,6 @@ dist: site-release
 	@ht $(SITE_ROOT)/ --release --force --tag=dist
 	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
 	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip dist/*)
-
-example: install
-	@ht example/layout
-	@ht example/draft
 
 fmt:
 	@cargo fmt

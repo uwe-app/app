@@ -1,8 +1,0 @@
-[site]
-keywords = "draft, document, keywords"
-
-["/"]
-title = "Home"
-
-["in-progress"]
-draft = true
