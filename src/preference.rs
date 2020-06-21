@@ -19,6 +19,7 @@ pub struct Preferences {
     pub lang: Option<String>,
     pub blueprint: Option<BlueprintPreferences>,
     pub ssh: Option<SshPreferences>,
+    pub docs: Option<DocsPreferences>
 }
 
 impl Default for Preferences {
@@ -27,6 +28,7 @@ impl Default for Preferences {
             lang: Some(String::from(LANG)),
             ssh: None,
             blueprint: Some(Default::default()),
+            docs: Some(Default::default()),
         }
     }
 }
@@ -58,6 +60,22 @@ pub struct SshPreferences {
 impl Default for SshPreferences {
     fn default() -> Self {
         Self {default_key: None}
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DocsPreferences {
+    pub host: String,
+    pub port: u16,
+}
+
+impl Default for DocsPreferences {
+    fn default() -> Self {
+        Self {
+            host: String::from("localhost"),
+            port: 0,
+        }
     }
 }
 

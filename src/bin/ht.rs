@@ -149,10 +149,7 @@ struct WebServerOpts {
 }
 
 #[derive(StructOpt,Debug)]
-struct DocsOpts {
-    #[structopt(flatten)]
-    server: WebServerOpts,
-}
+struct DocsOpts {}
 
 #[derive(StructOpt,Debug)]
 struct BundleOpts {
@@ -311,27 +308,9 @@ fn process_command(cmd: &Command) {
         },
 
         Command::Docs {
-            ref args
+            ..
         } => {
-
-            let cfg: Config = Default::default();
-            let serve = cfg.serve.as_ref().unwrap();
-            let mut host = &serve.host;
-            let mut port = &serve.port;
-
-            if let Some(h) = &args.server.host {
-                host = h;
-            }
-
-            if let Some(p) = &args.server.port {
-                port = p;
-            }
-
-            let opts = DocsOptions {
-                host: host.to_owned(),
-                port: port.to_owned(),
-            };
-
+            let opts = DocsOptions {};
             if let Err(e) = hypertext::docs(opts) {
                 fatal(e);
             }

@@ -1,15 +1,35 @@
 use crate::preference;
 use crate::cache::{self, CacheComponent};
-use crate::Error;
+use crate::{utils, Error};
+
+use super::serve::{self, ServeOptions};
+
+static DOCS_DIR: &str = "docs";
 
 #[derive(Debug)]
-pub struct DocsOptions {
-    pub host: String,
-    pub port: u16,
-}
+pub struct DocsOptions {}
 
-pub fn docs(options: DocsOptions) -> Result<(), Error> {
-    println!("Cache docs repository");
-    println!("Serve docs directory");
-    Ok(())
+pub fn docs(_: DocsOptions) -> Result<(), Error> {
+    let prefs = preference::load()?;
+    let docs_prefs = prefs.docs.as_ref().unwrap();
+
+    // Served from a sub-directory
+    let mut target = cache::get_docs_dir()?;
+
+    if !target.exists() {
+        cache::update(&prefs, vec![CacheComponent::Documentation])?;
+    }
+
+    target.push(DOCS_DIR);
+
+    let opts = ServeOptions {
+        target,
+        host: docs_prefs.host.clone(),
+        port: docs_prefs.port.clone(),
+        open_browser: true,
+        watch: None,
+        endpoint: utils::generate_id(16),
+    };
+
+    serve::serve_only(opts)
 }
