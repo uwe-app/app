@@ -127,7 +127,7 @@ fn build_workspaces(
     let mut ctx: Context = Default::default();
 
     for mut space in spaces {
-        let opts = workspace::prepare(&mut space.config, args)?;
+        let opts = workspace::prepare(&mut space.config, &args)?;
         let base_target = opts.target.clone();
         let build_config = space.config.build.as_ref().unwrap();
 

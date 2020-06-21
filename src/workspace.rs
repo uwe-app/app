@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use log::{info, debug};
 
 use crate::config::{Config, BuildArguments};
-use crate::Error;
+use crate::{utils, Error};
 use crate::command::build::{BuildTag, BuildOptions};
 
 pub struct Workspace {
@@ -33,29 +33,12 @@ fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
-
-    if args.live && args.release {
-        return Err(
-            Error::new(
-                "Live reload is not available for release builds".to_string()))
-    }
+fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
 
     let build = cfg.build.as_ref().unwrap();
+    let release = args.release.is_some() && args.release.unwrap();
 
-    let mut tag_target = BuildTag::Debug;
-    if args.release {
-        tag_target = BuildTag::Release;
-    }
-
-    if let Some(t) = &args.tag {
-        if !t.is_empty() {
-            tag_target = BuildTag::Custom(t.to_string());
-        }
-    }
-
-    let target_dir = tag_target.get_path_name();
-    info!("{}", target_dir);
+    let (tag_target, target_dir) = get_tag_info(args);
 
     let mut target = build.target.clone();
     if !target_dir.is_empty() {
@@ -68,14 +51,24 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
         target.push(target_dir);
     }
 
-    if args.include_index {
+    let live = args.live.is_some() && args.live.unwrap();
+    let force = args.force.is_some() && args.force.unwrap();
+    let include_index = args.include_index.is_some() && args.include_index.unwrap();
+
+    if live && release {
+        return Err(
+            Error::new(
+                "Live reload is not available for release builds".to_string()))
+    }
+
+    if include_index {
         let link = cfg.link.as_mut().unwrap();
         if let Some(ref mut include_index) = link.include_index {
             *include_index = true;
         }
     }
 
-    if args.force && target.exists() {
+    if force && target.exists() {
         info!("rm -rf {}", target.display());
         fs::remove_dir_all(&target)?;
     }
@@ -131,15 +124,33 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
         from,
         directory: dir,
         max_depth: args.max_depth,
-        release: args.release,
-        live: args.live,
-        force: args.force,
+        release: release,
+        live: live,
+        force: force,
         tag: tag_target,
     };
 
     debug!("{:?}", &cfg);
 
     Ok(opts)
+}
+
+fn get_tag_info(args: &BuildArguments) -> (BuildTag, String) {
+    let release = args.release.is_some() && args.release.unwrap();
+
+    let mut tag_target = BuildTag::Debug;
+    if release {
+        tag_target = BuildTag::Release;
+    }
+
+    if let Some(t) = &args.tag {
+        if !t.is_empty() {
+            tag_target = BuildTag::Custom(t.to_string());
+        }
+    }
+
+    let target_dir = tag_target.get_path_name();
+    (tag_target, target_dir)
 }
 
 pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Workspace>) -> Result<(), Error> {
@@ -166,4 +177,25 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
     }
 
     Ok(())
+}
+
+pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
+    let (_, target_dir) = get_tag_info(args);
+
+    // Handle profiles, eg: [profile.dist] that mutate the 
+    // arguments from config declarations
+    let profiles = cfg.profile.as_ref().unwrap();
+    if let Some(ref profile) = profiles.get(&target_dir) {
+
+        if profile.tag.is_some() {
+            return Err(
+                Error::new(
+                    format!("Profiles may not define a build tag, please remove it")));
+        }
+
+        let merged = utils::merge::map::<BuildArguments>(profile, args)?;
+        return with(cfg, &merged);
+    }
+
+    with(cfg, args)
 }

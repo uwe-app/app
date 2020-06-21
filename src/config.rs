@@ -74,6 +74,7 @@ pub struct Config {
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
     pub link: Option<LinkConfig>,
+    pub profile: Option<HashMap<String, BuildArguments>>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -110,6 +111,7 @@ impl Default for Config {
             redirect: None,
             date: Some(Default::default()),
             link: Some(Default::default()),
+            profile: Some(Default::default()),
         }
     }
 }
@@ -227,7 +229,7 @@ impl Config {
                         }
                     }
 
-                    // FIXME: validate data time format specifiers
+                    // FIXME: validate date time format specifiers
                 }
 
                 return Ok(cfg);
@@ -365,18 +367,19 @@ impl Default for BuildConfig {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct BuildArguments {
     // Specific directory relative to source to walk
     pub directory: Option<PathBuf>,
     pub max_depth: Option<usize>,
-    pub release: bool,
     pub tag: Option<String>,
-    pub live: bool,
     pub host: Option<String>,
     pub port: Option<u16>,
-    pub force: bool,
-    pub include_index: bool,
+    pub live: Option<bool>,
+    pub release: Option<bool>,
+    pub force: Option<bool>,
+    pub include_index: Option<bool>,
 }
 
 #[skip_serializing_none]
