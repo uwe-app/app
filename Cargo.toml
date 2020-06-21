@@ -53,4 +53,5 @@ lto = true
 codegen-units = 1
 
 [package.metadata.bundle]
+name = "ht"
 identifier = "live.hypertext"

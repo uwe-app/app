@@ -2,7 +2,7 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use toml::de::Error as TomlError;
 use toml::map::Map as TomlMap;
@@ -27,8 +27,8 @@ use crate::config::Config;
 
 lazy_static! {
     #[derive(Debug)]
-    pub static ref DATA: Mutex<BTreeMap<String, Page>> = {
-        Mutex::new(BTreeMap::new())
+    pub static ref DATA: Mutex<HashMap<String, Page>> = {
+        Mutex::new(HashMap::new())
     };
 }
 

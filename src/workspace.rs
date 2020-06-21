@@ -60,13 +60,11 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
     let mut target = build.target.clone();
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
-
         if target_dir_buf.is_absolute() {
             return Err(
                 Error::new(
                     format!("Build tag may not be an absolute path {}", target_dir)));
         }
-
         target.push(target_dir);
     }
 
