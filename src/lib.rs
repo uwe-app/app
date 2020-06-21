@@ -31,7 +31,7 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 static DATA_TOML: &str = "data.toml";
 
-pub use crate::config::Config;
+pub use crate::config::{Config, BuildArguments};
 pub use crate::error::Error;
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;

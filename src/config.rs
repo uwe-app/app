@@ -365,6 +365,21 @@ impl Default for BuildConfig {
 }
 
 #[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct BuildArguments {
+    // Specific directory relative to source to walk
+    pub directory: Option<PathBuf>,
+    pub max_depth: Option<usize>,
+    pub release: bool,
+    pub tag: Option<String>,
+    pub live: bool,
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub force: bool,
+    pub include_index: bool,
+}
+
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
     pub fallback: Option<String>,

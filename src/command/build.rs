@@ -13,7 +13,7 @@ use warp::ws::Message;
 use log::info;
 
 use crate::{utils, Error};
-use crate::config::Config;
+use crate::config::{Config, BuildArguments};
 use crate::build::Builder;
 use crate::build::generator::GeneratorMap;
 use crate::build::loader;
@@ -73,21 +73,6 @@ impl BuildTag {
             BuildTag::Custom(s) => return BuildTag::Custom(s.to_string())
         }
     }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct BuildArguments {
-    // Specific directory relative to source to walk
-    pub directory: Option<PathBuf>,
-    pub max_depth: Option<usize>,
-    pub release: bool,
-    pub tag: Option<String>,
-    pub live: bool,
-    pub host: Option<String>,
-    pub port: Option<u16>,
-    pub force: bool,
-    pub include_index: bool,
 }
 
 // FIXME: re-use the BuildArguments in the BuildOptions!

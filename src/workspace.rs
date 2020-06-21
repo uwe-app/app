@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 use log::{info, debug};
 
-use crate::config::Config;
+use crate::config::{Config, BuildArguments};
 use crate::Error;
-use crate::command::build::{BuildTag, BuildOptions, BuildArguments};
+use crate::command::build::{BuildTag, BuildOptions};
 
 pub struct Workspace {
     pub config: Config
