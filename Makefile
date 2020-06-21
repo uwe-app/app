@@ -1,4 +1,5 @@
 SITE_ROOT = "../website"
+DOCS_ROOT = "../documentation"
 
 all: init site-release
 
@@ -25,6 +26,12 @@ site-live:
 	@cargo run -- $(SITE_ROOT)/ --live --force
 
 site-release: install help
+
+docs:
+	@ht $(SITE_ROOT)/ --release --force --tag=docs
+	@rm -f $(DOCS_ROOT)/docs
+	@cp -rf $(SITE_ROOT)/build/docs $(DOCS_ROOT)
+	@(cd $(DOCS_ROOT) && git add . && git commit -m "Update docs." && git push origin master)
 
 dist: site-release
 	@ht $(SITE_ROOT)/ --release --force --tag=dist
