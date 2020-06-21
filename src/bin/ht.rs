@@ -50,6 +50,10 @@ struct BuildOpts {
     #[structopt(short, long)]
     directory: Option<PathBuf>,
 
+    /// Set the default layout file
+    #[structopt(long)]
+    layout: Option<PathBuf>,
+
     /// Maximum depth to traverse
     #[structopt(short, long)]
     max_depth: Option<usize>,
@@ -372,6 +376,7 @@ fn process_command(cmd: &Command) {
                 release: Some(args.release),
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
+                layout: args.layout.clone(),
             };
 
             let now = SystemTime::now();

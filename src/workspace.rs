@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use log::{info, debug};
 
 use crate::config::{Config, BuildArguments};
-use crate::{utils, Error};
+use crate::{utils, Error, LAYOUT_HBS};
 use crate::command::build::{BuildTag, BuildOptions};
 
 pub struct Workspace {
@@ -109,6 +109,19 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         from = dir.clone().to_path_buf();
     }
 
+    let mut layout = build.source.clone();
+    if let Some(ref custom_layout) = args.layout {
+        layout.push(custom_layout);
+    } else {
+        layout.push(LAYOUT_HBS);
+    };
+
+    if !layout.exists() {
+        return Err(
+            Error::new(
+                format!("Missing layout file '{}'", layout.display())));
+    }
+
     let clean_url = build.clean_url.is_some()
         && build.clean_url.unwrap();
 
@@ -122,6 +135,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         clean_url,
         target,
         from,
+        layout,
         directory: dir,
         max_depth: args.max_depth,
         release: release,

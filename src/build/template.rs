@@ -11,10 +11,7 @@ use log::{warn, debug};
 use super::page::{Page, FileContext};
 use super::context::Context;
 use super::helpers;
-use crate::{
-    Error,
-    LAYOUT_HBS
-};
+use crate::Error;
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
@@ -128,10 +125,7 @@ impl<'a> TemplateRender<'a> {
             }
             layout_path
         } else {
-            // Use a default layout path
-            let mut layout_path = self.context.options.source.clone();
-            layout_path.push(LAYOUT_HBS);
-            layout_path
+            self.context.options.layout.clone()
         };
 
         // No layout available so bail

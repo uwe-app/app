@@ -380,6 +380,7 @@ pub struct BuildArguments {
     pub release: Option<bool>,
     pub force: Option<bool>,
     pub include_index: Option<bool>,
+    pub layout: Option<PathBuf>,
 }
 
 #[skip_serializing_none]
