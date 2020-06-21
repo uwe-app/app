@@ -114,6 +114,10 @@ struct UpdateOpts {
     /// Update the standalone cache
     #[structopt(short, long)]
     standalone: bool,
+
+    /// Update the documentation cache
+    #[structopt(short, long)]
+    documentation: bool,
 }
 
 #[derive(StructOpt,Debug)]
@@ -286,6 +290,7 @@ fn process_command(cmd: &Command) {
             let opts = UpdateOptions {
                 blueprint: args.blueprint,
                 standalone: args.standalone,
+                documentation: args.documentation,
             };
 
             if let Err(e) = hypertext::update(opts) {

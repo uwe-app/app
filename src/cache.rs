@@ -13,9 +13,13 @@ static BLUEPRINT_NAME: &str = "blueprint";
 static STANDALONE_REPO: &str = "https://github.com/hypertext-live/standalone";
 static STANDALONE_NAME: &str = "standalone";
 
+static DOCUMENTATION_REPO: &str = "https://github.com/hypertext-live/documentation";
+static DOCUMENTATION_NAME: &str = "documentation";
+
 pub enum CacheComponent {
     Blueprint,
     Standalone,
+    Documentation,
 }
 
 pub fn get_root_dir() -> Result<PathBuf, Error> {
@@ -40,7 +44,6 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
         }
     }
     return preference::BLUEPRINT_URL.to_string();
-    //BLUEPRINT_REPO.to_string()
 }
 
 pub fn get_blueprint_dir() -> Result<PathBuf, Error> {
@@ -59,11 +62,17 @@ pub fn get_standalone_dir() -> Result<PathBuf, Error> {
     Ok(buf)
 }
 
-pub fn update(
-    prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
+pub fn get_docs_url() -> String {
+    DOCUMENTATION_REPO.to_string()
+}
 
-    // TODO: respect a blueprint.url preference
+pub fn get_docs_dir() -> Result<PathBuf, Error> {
+    let mut buf = get_root_dir()?;
+    buf.push(DOCUMENTATION_NAME);
+    Ok(buf)
+}
 
+pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
     for c in components {
         match c {
             CacheComponent::Blueprint => {
@@ -74,6 +83,11 @@ pub fn update(
             CacheComponent::Standalone => {
                 let url = get_standalone_url();
                 let dir = get_standalone_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            },
+            CacheComponent::Documentation => {
+                let url = get_docs_url();
+                let dir = get_docs_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             },
         }
