@@ -29,7 +29,7 @@ site-release: install help
 
 docs:
 	@ht $(SITE_ROOT)/ --release --force --tag=docs
-	@rm -f $(DOCS_ROOT)/docs
+	@rm -rf $(DOCS_ROOT)/docs
 	@cp -rf $(SITE_ROOT)/build/docs $(DOCS_ROOT)
 	@(cd $(DOCS_ROOT) && git add . && git commit -m "Update docs." && git push origin master)
 
