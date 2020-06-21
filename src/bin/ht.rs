@@ -75,6 +75,10 @@ struct BuildOpts {
     #[structopt(short, long)]
     release: bool,
 
+    /// Copy over these paths
+    #[structopt(long)]
+    copy: Option<Vec<String>>,
+
     #[structopt(flatten)]
     server: WebServerOpts,
 
@@ -402,6 +406,7 @@ fn process_command(cmd: &Command) {
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
                 layout: args.layout.clone(),
+                copy: args.copy.clone(),
             };
 
             let now = SystemTime::now();

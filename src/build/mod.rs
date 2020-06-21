@@ -237,6 +237,50 @@ impl<'a> Builder<'a> {
         Ok(templates)
     }
 
+    pub fn copy(&mut self, paths: &Vec<String>) -> Result<(), Error> {
+        // Make all the paths relative to site
+        let site_paths = paths
+            .iter()
+            .map(|p| {
+                let mut pth = self.context.options.source.clone();
+                pth.push(p);
+                pth
+            })
+            .collect::<Vec<_>>();
+
+        let site_files = site_paths
+            .iter()
+            .filter(|p| p.is_file())
+            .collect::<Vec<_>>();
+
+        let site_dirs = site_paths
+            .iter()
+            .filter(|p| p.is_dir())
+            .collect::<Vec<_>>();
+
+        // Files can just be processed directly
+        for path in &site_files {
+            info!("Copy {}", path.display());
+            self.process_file(path, FileType::Unknown, false)?; 
+        }
+
+        for f in &site_dirs {
+            // Recurse each directory copying as we go
+            for result in WalkBuilder::new(&f)
+                .follow_links(true)
+                .build() {
+                let entry = result?;
+                let path = entry.path();
+                if path.is_file() {
+                    info!("Copy {}", path.display());
+                    self.process_file(path, FileType::Unknown, false)?; 
+                } 
+            }
+        }
+
+        Ok(())
+    }
+
     // Find files and process each entry.
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let config_file = self.context.config.file.clone();

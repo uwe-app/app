@@ -142,6 +142,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         live: live,
         force: force,
         tag: tag_target,
+        copy: args.copy.clone(),
     };
 
     debug!("{:?}", &cfg);

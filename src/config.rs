@@ -381,6 +381,7 @@ pub struct BuildArguments {
     pub force: Option<bool>,
     pub include_index: Option<bool>,
     pub layout: Option<PathBuf>,
+    pub copy: Option<Vec<String>>,
 }
 
 #[skip_serializing_none]

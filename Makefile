@@ -31,6 +31,7 @@ docs:
 	@ht $(SITE_ROOT)/ --release --force --tag=docs
 	@rm -rf $(DOCS_ROOT)/docs
 	@cp -rf $(SITE_ROOT)/build/docs $(DOCS_ROOT)
+	@rm $(DOCS_ROOT)/docs/files
 	@(cd $(DOCS_ROOT) && git add . && git commit -m "Update docs." && git push origin master)
 
 dist: site-release
