@@ -35,6 +35,7 @@ pub use crate::config::{Config, BuildArguments};
 pub use crate::error::Error;
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;
+pub use crate::command::docs::*;
 pub use crate::command::init::*;
 pub use crate::command::pref::*;
 pub use crate::command::serve::*;

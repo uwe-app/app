@@ -14,12 +14,13 @@ use std::panic;
 
 use hypertext::{
     Config,
-    BuildArguments,
     Error,
+    BuildArguments,
     BundleOptions,
-    ServeOptions,
+    DocsOptions,
     InitOptions,
     PrefOptions,
+    ServeOptions,
     UpdateOptions,
 };
 
@@ -144,6 +145,12 @@ struct WebServerOpts {
 }
 
 #[derive(StructOpt,Debug)]
+struct DocsOpts {
+    #[structopt(flatten)]
+    server: WebServerOpts,
+}
+
+#[derive(StructOpt,Debug)]
 struct BundleOpts {
     /// Force overwrite generated files
     #[structopt(long)]
@@ -197,6 +204,12 @@ enum Command {
     Serve {
         #[structopt(flatten)]
         args: ServeOpts,
+    },
+
+    /// Browse the documentation
+    Docs {
+        #[structopt(flatten)]
+        args: DocsOpts,
     },
 
     /// Bundle a site into executables (requires Go)
@@ -291,6 +304,34 @@ fn process_command(cmd: &Command) {
                 fatal(e);
             }
         },
+
+        Command::Docs {
+            ref args
+        } => {
+
+            let cfg: Config = Default::default();
+            let serve = cfg.serve.as_ref().unwrap();
+            let mut host = &serve.host;
+            let mut port = &serve.port;
+
+            if let Some(h) = &args.server.host {
+                host = h;
+            }
+
+            if let Some(p) = &args.server.port {
+                port = p;
+            }
+
+            let opts = DocsOptions {
+                host: host.to_owned(),
+                port: port.to_owned(),
+            };
+
+            if let Err(e) = hypertext::docs(opts) {
+                fatal(e);
+            }
+        },
+
         Command::Serve {
             ref args
         } => {
