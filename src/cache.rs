@@ -16,10 +16,13 @@ static STANDALONE_NAME: &str = "standalone";
 static DOCUMENTATION_REPO: &str = "https://github.com/hypertext-live/documentation";
 static DOCUMENTATION_NAME: &str = "documentation";
 
+static RELEASE_NAME: &str = "release";
+
 pub enum CacheComponent {
     Blueprint,
     Standalone,
     Documentation,
+    Release,
 }
 
 pub fn get_root_dir() -> Result<PathBuf, Error> {
@@ -72,6 +75,27 @@ pub fn get_docs_dir() -> Result<PathBuf, Error> {
     Ok(buf)
 }
 
+#[cfg(target_os = "windows")]
+pub fn get_release_url() -> String {
+    String::from("https://github.com/hypertext-live/release-windows")
+}
+
+#[cfg(target_os = "macos")]
+pub fn get_release_url() -> String {
+    String::from("https://github.com/hypertext-live/release-macos")
+}
+
+#[cfg(target_os = "linux")]
+pub fn get_release_url() -> String {
+    String::from("https://github.com/hypertext-live/release-linux")
+}
+
+pub fn get_release_dir() -> Result<PathBuf, Error> {
+    let mut buf = get_root_dir()?;
+    buf.push(RELEASE_NAME);
+    Ok(buf)
+}
+
 pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
     for c in components {
         match c {
@@ -88,6 +112,11 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
             CacheComponent::Documentation => {
                 let url = get_docs_url();
                 let dir = get_docs_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            },
+            CacheComponent::Release => {
+                let url = get_release_url();
+                let dir = get_release_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             },
         }

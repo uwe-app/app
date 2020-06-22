@@ -7,6 +7,7 @@ pub struct UpdateOptions {
     pub blueprint: bool,
     pub standalone: bool,
     pub documentation: bool,
+    pub release: bool,
 }
 
 pub fn update(options: UpdateOptions) -> Result<(), Error> {
@@ -16,9 +17,10 @@ pub fn update(options: UpdateOptions) -> Result<(), Error> {
         CacheComponent::Blueprint,
         CacheComponent::Standalone,
         CacheComponent::Documentation,
+        CacheComponent::Release,
     ];
 
-    if options.blueprint || options.standalone || options.documentation {
+    if options.blueprint || options.standalone || options.documentation || options.release {
         components = Vec::new();
         if options.blueprint {
             components.push(CacheComponent::Blueprint);
@@ -28,6 +30,9 @@ pub fn update(options: UpdateOptions) -> Result<(), Error> {
         }
         if options.documentation {
             components.push(CacheComponent::Documentation);
+        }
+        if options.release {
+            components.push(CacheComponent::Release);
         }
     }
 
