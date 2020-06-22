@@ -90,7 +90,20 @@ impl HelperDef for Link{
                 }
             }
 
-            if let Ok(rel) = path.strip_prefix(opts.source.clone()) {
+            let mut base = opts.source.clone();
+
+            if let Some(ref href_path) = opts.base_href {
+                //println!("Adding base_href {:?}", href_path);
+                base.push(href_path); 
+                
+                if input.starts_with(href_path) {
+                    input = input.trim_start_matches(href_path).to_owned();
+                    input = input.trim_start_matches("/").to_owned();
+                }
+
+            }
+
+            if let Ok(rel) = path.strip_prefix(base) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
                     if opts.clean_url && matcher::is_clean(&path) {
