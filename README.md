@@ -37,7 +37,7 @@ To create bundles for various platforms install latest cargo-bundle:
 cargo install cargo-bundle --git https://github.com/burtonageo/cargo-bundle
 ```
 
-Then run `cargo bundle` or for a release build `cargo bundle --release`.
+Then run `cargo bundle --bin=ht` or for a release build `cargo bundle --release --bin=ht`.
 
 ## SSL
 

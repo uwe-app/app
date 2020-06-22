@@ -52,6 +52,6 @@ serve = ["futures-util", "tokio", "warp"]
 lto = true
 codegen-units = 1
 
-[package.metadata.bundle]
+[package.metadata.bundle.bin.ht]
 name = "ht"
 identifier = "live.hypertext"
