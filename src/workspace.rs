@@ -68,8 +68,10 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         }
     }
 
-    if force && target.exists() {
-        info!("rm -rf {}", target.display());
+    // TODO: do not do this when incremental is enabled
+    // TODO: once incremental is behind a feature flag
+    if target.exists() {
+        info!("clean {}", target.display());
         fs::remove_dir_all(&target)?;
     }
 

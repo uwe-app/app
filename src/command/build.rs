@@ -94,9 +94,6 @@ pub struct BuildOptions {
 
     pub clean_url: bool,
 
-    // Default layout file to use
-    pub layout: PathBuf,
-
     // Specific directory relative to source to walk
     pub directory: Option<PathBuf>,
     pub max_depth: Option<usize>,
@@ -106,6 +103,10 @@ pub struct BuildOptions {
     pub host: String,
     pub port: u16,
     pub force: bool,
+
+    // Default layout file to use
+    pub layout: PathBuf,
+
     pub paths: Option<Vec<PathBuf>>,
 }
 
