@@ -23,6 +23,7 @@ fn do_fetch<'a>(
     repo: &'a git2::Repository,
     refs: &[&str],
     remote: &'a mut git2::Remote,
+    remote_name: &'a str,
 ) -> Result<git2::AnnotatedCommit<'a>, git2::Error> {
 
     let mut cb = git2::RemoteCallbacks::new();
@@ -42,7 +43,10 @@ fn do_fetch<'a>(
     let stats = remote.stats();
     progress::print_stats(stats);
 
-    let fetch_head = repo.find_reference("FETCH_HEAD")?;
+    //let fetch_head = repo.find_reference("FETCH_HEAD")?;
+    //
+    let fetch_ref = format!("refs/remotes/{}/{}", remote_name, refs[0]);
+    let fetch_head = repo.find_reference(&fetch_ref)?;
     Ok(repo.reference_to_annotated_commit(&fetch_head)?)
 }
 
@@ -163,7 +167,7 @@ pub fn pull<P: AsRef<Path>>(path: P, remote: Option<String>, branch: Option<Stri
 
     let repo = Repository::open(path)?;
     let mut remote = repo.find_remote(remote_name)?;
-    let fetch_commit = do_fetch(&repo, &[remote_branch], &mut remote)?;
+    let fetch_commit = do_fetch(&repo, &[remote_branch], &mut remote, &remote_name)?;
     do_merge(&repo, &remote_branch, fetch_commit)
 }
 

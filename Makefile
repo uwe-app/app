@@ -1,14 +1,16 @@
-SITE_ROOT = "../website"
-DOCS_ROOT = "../documentation"
+SITE_ROOT = ../website
+DOCS_ROOT = ../documentation
 
-OS ?= "linux"
-RELEASE_ROOT = "../release"
+OS ?= linux
+RELEASE_ROOT = ../release
 RELEASE_REPO = $(RELEASE_ROOT)/$(OS)
 
 VERSION_INFO := $(shell cargo run -- --version)
 VERSION := $(subst hypertext ,,$(VERSION_INFO))
 VERSION_TAG := "v$(VERSION)"
 VERSION_FILE = $(RELEASE_REPO)/version.toml
+
+SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(OS)
 
 all: init site-release
 
@@ -54,12 +56,17 @@ fmt:
 build-release:
 	@cargo build --release
 
+build-release-installer:
+	@cargo build --release --bin=hypertext-installer
+	@cp -f target/release/hypertext-installer $(SITE_RELEASE)
+
 info:
 	@echo $(VERSION_INFO)
 	@echo $(VERSION)
 	@echo $(VERSION_TAG)
 	@echo $(OS)
 	@echo $(RELEASE_REPO)
+	@echo $(SITE_RELEASE)
 
 current:
 	@printf "" > $(VERSION_FILE)

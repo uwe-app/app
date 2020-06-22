@@ -8,6 +8,7 @@ use crate::preference::{self, Preferences};
 
 static ROOT_DIR: &str = ".hypertext";
 static BIN: &str = "bin";
+static ENV: &str = "env";
 
 static BLUEPRINT_NAME: &str = "blueprint";
 
@@ -39,6 +40,12 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
     Err(
         Error::new(
             format!("Could not determine home directory")))
+}
+
+pub fn get_env_file() -> Result<PathBuf, Error> {
+    let mut env = get_root_dir()?;
+    env.push(ENV);
+    Ok(env)
 }
 
 pub fn get_bin_dir() -> Result<PathBuf, Error> {

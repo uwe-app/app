@@ -42,3 +42,5 @@ pub use crate::command::pref::*;
 pub use crate::command::serve::*;
 pub use crate::command::update::*;
 pub use crate::utils::generate_id;
+
+type Result<T> = std::result::Result<T, crate::error::Error>;

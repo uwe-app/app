@@ -29,6 +29,14 @@ The release task will:
 
 Note that if the release tag already exists it is overwritten.
 
+## Installer
+
+To run the installer locally:
+
+```
+cargo run --bin=hypertext-installer --
+```
+
 ## Cargo Bundle
 
 To create bundles for various platforms install latest cargo-bundle:
