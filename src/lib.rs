@@ -15,6 +15,7 @@ mod preference;
 mod server;
 mod utils;
 mod workspace;
+pub mod updater;
 
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";

@@ -8,6 +8,7 @@ RELEASE_REPO = $(RELEASE_ROOT)/$(OS)
 VERSION_INFO := $(shell cargo run -- --version)
 VERSION := $(subst hypertext ,,$(VERSION_INFO))
 VERSION_TAG := "v$(VERSION)"
+VERSION_FILE = $(RELEASE_REPO)/version.toml
 
 all: init site-release
 
@@ -60,7 +61,11 @@ info:
 	@echo $(OS)
 	@echo $(RELEASE_REPO)
 
-release: build-release
+current:
+	@printf "" > $(VERSION_FILE)
+	@echo "version = \"$(VERSION)\"" >> $(VERSION_FILE)
+
+release: build-release current
 	@cp -f target/release/ht $(RELEASE_REPO)/bin/ht
 	@(cd $(RELEASE_REPO) && git add . && git commit -m "Update release." || true)
 	@(cd $(RELEASE_REPO) && git tag -f $(VERSION_TAG) && git push origin master --tags)

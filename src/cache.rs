@@ -7,6 +7,7 @@ use crate::git;
 use crate::preference::{self, Preferences};
 
 static ROOT_DIR: &str = ".hypertext";
+static BIN: &str = "bin";
 
 static BLUEPRINT_NAME: &str = "blueprint";
 
@@ -38,6 +39,15 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
     Err(
         Error::new(
             format!("Could not determine home directory")))
+}
+
+pub fn get_bin_dir() -> Result<PathBuf, Error> {
+    let mut bin = get_root_dir()?;
+    bin.push(BIN);
+    if !bin.exists() {
+        fs::create_dir(&bin)?;
+    }
+    Ok(bin)
 }
 
 pub fn get_blueprint_url(prefs: &Preferences) -> String {
@@ -93,6 +103,12 @@ pub fn get_release_url() -> String {
 pub fn get_release_dir() -> Result<PathBuf, Error> {
     let mut buf = get_root_dir()?;
     buf.push(RELEASE_NAME);
+    Ok(buf)
+}
+
+pub fn get_release_bin_dir() -> Result<PathBuf, Error> {
+    let mut buf = get_release_dir()?;
+    buf.push(BIN);
     Ok(buf)
 }
 

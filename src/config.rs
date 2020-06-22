@@ -258,7 +258,17 @@ impl Config {
                 }
             }
         }
-        Err(Error::new(format!("No configuration found for {}", pth.display())))
+
+        // Better error message when looking in the cwd
+        if pth == PathBuf::from("") {
+            if let Some(cwd) = resolve_cwd() {
+                pth = cwd; 
+            }
+        }
+
+        Err(
+            Error::new(
+                format!("No site configuration in {}", pth.display())))
     }
 
     pub fn get_project(&self) -> PathBuf {

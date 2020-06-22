@@ -5,6 +5,7 @@ authors = ["muji <muji@tmpfs.org>"]
 description = "Fast and lean static site generator"
 repository = "https://github.com/tmpfs/hypertext"
 edition = "2018"
+default-run = "ht"
 
 [dependencies]
 rand = "0.7.3"
