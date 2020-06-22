@@ -28,7 +28,7 @@ site-live:
 site-release: install help
 
 docs:
-	@ht $(SITE_ROOT)/ --release --force --tag=docs
+	@cargo run -- $(SITE_ROOT) --release --force --tag=docs
 	@rm -rf $(DOCS_ROOT)/docs
 	@cp -rf $(SITE_ROOT)/build/docs $(DOCS_ROOT)
 	@rm $(DOCS_ROOT)/docs/files

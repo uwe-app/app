@@ -232,8 +232,10 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
             profile.paths = Some(paths);
         }
 
-        let mut merged = utils::merge::map::<BuildArguments>(profile, args)?;
+        let merged = utils::merge::map::<BuildArguments>(profile, args)?;
 
+        // Always update base to use the path separator. The declaration is 
+        // a URL path but internally we treat as a filesystem path.
         if let Some(ref base) = merged.base {
             profile.base = Some(utils::url::to_path_separator(base));
         }
