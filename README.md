@@ -1,10 +1,33 @@
 # Hyper Text
 
-Super fast, opinionated, site generator combining [pulldown-cmark][], [handlebars][] and [mdbook][].
+## Release
+
+To prepare a release for the target platform run the appropriate release make task, eg:
 
 ```
-ht
+make release OS=linux
+make release OS=macos
+make release OS=windows
 ```
+
+The release repositories must be in a `release` folder that is a sibling of this repo, eg:
+
+```
+release
+├── linux
+├── macos
+└── windows
+```
+
+The release task will:
+
+1) Build the executable for the current platform
+2) Copy it to the release repository bin folder
+3) Commit and push the release repository
+4) Create a tag with the release version
+5) Push the tags
+
+Note that if the release tag already exists it is overwritten.
 
 ## Cargo Bundle
 

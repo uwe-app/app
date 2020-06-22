@@ -1,6 +1,14 @@
 SITE_ROOT = "../website"
 DOCS_ROOT = "../documentation"
 
+OS ?= "linux"
+RELEASE_ROOT = "../release"
+RELEASE_REPO = $(RELEASE_ROOT)/$(OS)
+
+VERSION_INFO := $(shell cargo run -- --version)
+VERSION := $(subst hypertext ,,$(VERSION_INFO))
+VERSION_TAG := "v$(VERSION)"
+
 all: init site-release
 
 clean:
@@ -34,8 +42,8 @@ docs:
 	@rm $(DOCS_ROOT)/docs/files
 	@(cd $(DOCS_ROOT) && git add . && git commit -m "Update docs." && git push origin master)
 
-dist: site-release
-	@ht $(SITE_ROOT)/ --release --force --tag=dist
+website-dist:
+	@cargo run -- $(SITE_ROOT)/ --release --force --tag=dist
 	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
 	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip dist/*)
 
@@ -45,18 +53,17 @@ fmt:
 build-release:
 	@cargo build --release
 
-copy-release:
-	@rm -rf $(SITE_ROOT)/site/resources/files/ht-gnu-linux-x86_64
-	@mkdir -p $(SITE_ROOT)/site/resources/files/ht-gnu-linux-x86_64
-	@cp -f target/release/ht $(SITE_ROOT)/site/resources/files/ht-gnu-linux-x86_64/ht
+info:
+	@echo $(VERSION_INFO)
+	@echo $(VERSION)
+	@echo $(VERSION_TAG)
+	@echo $(OS)
+	@echo $(RELEASE_REPO)
 
-copy-release-darwin:
-	@rm -rf $(SITE_ROOT)/site/resources/files/ht-darwin-x86_64
-	@mkdir -p $(SITE_ROOT)/site/resources/files/ht-darwin-x86_64
-	@cp -f target/release/ht $(SITE_ROOT)/site/resources/files/ht-darwin-x86_64/ht
-
-release: build-release copy-release
-release-darwin: build-release copy-release-darwin
+release: build-release
+	@cp -f target/release/ht $(RELEASE_REPO)/bin/ht
+	@(cd $(RELEASE_REPO) && git add . && git commit -m "Update release." || true)
+	@(cd $(RELEASE_REPO) && git tag -f $(VERSION_TAG) && git push origin master --tags)
 
 check:
 	@cargo check
