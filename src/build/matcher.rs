@@ -312,6 +312,7 @@ pub fn direct_destination<P: AsRef<Path>>(
     source: P,
     target: P,
     file: P,
+    base_href: &Option<String>,
 ) -> Result<PathBuf, Error> {
 
     let pth = file.as_ref();
@@ -329,7 +330,14 @@ pub fn direct_destination<P: AsRef<Path>>(
         }
     }
 
-    let relative = pth.strip_prefix(src)?;
+    let mut relative = pth.strip_prefix(src)?;
+
+    if let Some(ref base) = base_href {
+        if relative.starts_with(base) {
+            relative = relative.strip_prefix(base)?;
+        }
+    }
+
     let result = target.as_ref().clone().join(relative);
     return Ok(result)
 }
@@ -342,9 +350,10 @@ pub fn destination<P: AsRef<Path>>(
     file_type: &FileType,
     extensions: &ExtensionConfig,
     clean_urls: bool,
+    base_href: &Option<String>,
 ) -> Result<PathBuf, Error> {
     let pth = file.as_ref().to_path_buf().clone();
-    let result = direct_destination(source, target, file);
+    let result = direct_destination(source, target, file, base_href);
     match result {
         Ok(mut result) => {
             match file_type {

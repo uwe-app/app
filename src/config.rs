@@ -380,6 +380,11 @@ pub struct BuildArguments {
     pub release: Option<bool>,
     pub force: Option<bool>,
     pub include_index: Option<bool>,
+
+    // Base URL to strip when building links etc
+    pub base: Option<String>,
+
+    // Specific layout to use
     pub layout: Option<PathBuf>,
 
     // Specific set of paths to build

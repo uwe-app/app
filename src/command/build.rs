@@ -107,6 +107,10 @@ pub struct BuildOptions {
     // Default layout file to use
     pub layout: PathBuf,
 
+    // A base URL to strip from links
+    pub base_href: Option<String>,
+
+    // Specific paths to compile
     pub paths: Option<Vec<PathBuf>>,
 }
 
@@ -201,15 +205,12 @@ fn build(ctx: &Context) -> Result<(), Error> {
         for p in paths {
             targets.push(p.clone());
         }
-
-        println!("Collected {:?}", targets);
     } else {
         targets.push(from.clone());
     }
 
     builder.all(targets, false)?;
 
-    //builder.build(&from, false)?;
     builder.manifest.save()?;
     Ok(())
 }

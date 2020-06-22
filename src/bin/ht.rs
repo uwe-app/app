@@ -402,6 +402,7 @@ fn process_command(cmd: &Command) {
             };
 
             let build_args = BuildArguments {
+                paths,
                 directory: args.directory.clone(),
                 tag: args.tag.clone(),
                 max_depth: args.max_depth,
@@ -412,7 +413,7 @@ fn process_command(cmd: &Command) {
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
                 layout: args.layout.clone(),
-                paths,
+                base: None,
             };
 
             let now = SystemTime::now();

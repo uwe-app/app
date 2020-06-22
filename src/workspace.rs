@@ -145,6 +145,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         force: force,
         tag: tag_target,
         paths: args.paths.clone(),
+        base_href: args.base.clone(),
     };
 
     debug!("{:?}", &cfg);
@@ -231,7 +232,12 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
             profile.paths = Some(paths);
         }
 
-        let merged = utils::merge::map::<BuildArguments>(profile, args)?;
+        let mut merged = utils::merge::map::<BuildArguments>(profile, args)?;
+
+        if let Some(ref base) = merged.base {
+            profile.base = Some(utils::url::to_path_separator(base));
+        }
+
         return with(cfg, &merged);
     }
 

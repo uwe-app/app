@@ -106,6 +106,7 @@ impl<'a> Builder<'a> {
                         &file_type,
                         &self.context.config.extension.as_ref().unwrap(),
                         clean,
+                        &self.context.options.base_href,
                     )?;
 
                     info!("{} -> {}", &id, &dest.display());
@@ -131,6 +132,7 @@ impl<'a> Builder<'a> {
                     &self.context.options.source,
                     &self.context.options.target,
                     &file.to_path_buf(),
+                    &self.context.options.base_href,
                 )?;
 
                 if self.manifest.is_dirty(file, &dest, self.context.options.force) {
@@ -201,6 +203,7 @@ impl<'a> Builder<'a> {
                     &file_type,
                     &self.context.config.extension.as_ref().unwrap(),
                     clean,
+                    &self.context.options.base_href,
                 )?;
 
                 if self.manifest.is_dirty(file, &dest, pages_only || self.context.options.force) {
