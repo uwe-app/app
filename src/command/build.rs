@@ -106,7 +106,7 @@ pub struct BuildOptions {
     pub host: String,
     pub port: u16,
     pub force: bool,
-    pub copy: Option<Vec<String>>,
+    pub paths: Option<Vec<PathBuf>>,
 }
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
@@ -192,10 +192,23 @@ fn build(ctx: &Context) -> Result<(), Error> {
     let from = ctx.options.from.clone();
     let mut builder = Builder::new(ctx);
     builder.manifest.load()?;
-    if let Some(ref copy) = ctx.options.copy {
-        builder.copy(copy)?;
+
+    let mut targets: Vec<PathBuf> = Vec::new();
+
+    if let Some(ref paths) = ctx.options.paths {
+        builder.verify(paths)?;
+        for p in paths {
+            targets.push(p.clone());
+        }
+
+        println!("Collected {:?}", targets);
+    } else {
+        targets.push(from.clone());
     }
-    builder.build(&from, false)?;
+
+    builder.all(targets, false)?;
+
+    //builder.build(&from, false)?;
     builder.manifest.save()?;
     Ok(())
 }

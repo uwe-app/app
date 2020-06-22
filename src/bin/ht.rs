@@ -75,16 +75,16 @@ struct BuildOpts {
     #[structopt(short, long)]
     release: bool,
 
-    /// Copy over these paths
-    #[structopt(long)]
-    copy: Option<Vec<String>>,
-
     #[structopt(flatten)]
     server: WebServerOpts,
 
     /// Read config from directory
     #[structopt(parse(from_os_str), default_value = ".")]
     project: PathBuf,
+
+    /// Just process these paths
+    #[structopt(parse(from_os_str))]
+    paths: Vec<PathBuf>,
 }
 
 #[derive(StructOpt,Debug)]
@@ -395,6 +395,12 @@ fn process_command(cmd: &Command) {
                 project = empty;
             }
 
+            let paths = if args.paths.len() > 0 {
+                Some(args.paths.clone()) 
+            } else {
+                None
+            };
+
             let build_args = BuildArguments {
                 directory: args.directory.clone(),
                 tag: args.tag.clone(),
@@ -406,7 +412,7 @@ fn process_command(cmd: &Command) {
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
                 layout: args.layout.clone(),
-                copy: args.copy.clone(),
+                paths,
             };
 
             let now = SystemTime::now();

@@ -237,51 +237,38 @@ impl<'a> Builder<'a> {
         Ok(templates)
     }
 
-    pub fn copy(&mut self, paths: &Vec<String>) -> Result<(), Error> {
-        // Make all the paths relative to site
-        let site_paths = paths
-            .iter()
-            .map(|p| {
-                let mut pth = self.context.options.source.clone();
-                pth.push(p);
-                pth
-            })
-            .collect::<Vec<_>>();
-
-        let site_files = site_paths
-            .iter()
-            .filter(|p| p.is_file())
-            .collect::<Vec<_>>();
-
-        let site_dirs = site_paths
-            .iter()
-            .filter(|p| p.is_dir())
-            .collect::<Vec<_>>();
-
-        // Files can just be processed directly
-        for path in &site_files {
-            info!("Copy {}", path.display());
-            self.process_file(path, FileType::Unknown, false)?; 
-        }
-
-        for f in &site_dirs {
-            // Recurse each directory copying as we go
-            for result in WalkBuilder::new(&f)
-                .follow_links(true)
-                .build() {
-                let entry = result?;
-                let path = entry.path();
-                if path.is_file() {
-                    info!("Copy {}", path.display());
-                    self.process_file(path, FileType::Unknown, false)?; 
-                } 
+    // Verify the paths are within the site source
+    pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<(), Error> {
+        for p in paths {
+            if !p.starts_with(&self.context.options.source) {
+                return Err(
+                    Error::new(
+                        format!("Path '{}' is outside the site source", p.display())))
             }
         }
-
         Ok(())
     }
 
-    // Find files and process each entry.
+    // Build all target paths
+    pub fn all(&mut self, targets: Vec<PathBuf>, pages_only: bool) -> Result<(), Error> {
+        for p in targets {
+            if p.is_file() {
+                self.one(&p, pages_only)?;
+            } else {
+                self.build(&p, pages_only)?;
+            }
+        }
+        Ok(())
+    }
+
+    // Build a single file
+    pub fn one(&mut self, file: &PathBuf, pages_only: bool) -> Result<(), Error> {
+        let extensions = &self.context.config.extension.as_ref().unwrap();
+        let file_type = matcher::get_type(file, extensions);
+        self.process_file(file, file_type, pages_only)
+    }
+
+    // Recursively walk and build files in a directory
     pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
         let config_file = self.context.config.file.clone();
 
@@ -357,12 +344,8 @@ impl<'a> Builder<'a> {
                         self.book.load(&self.context, &path)?;
                         self.book.build(&path)?;
                     } else if path.is_file() {
-                        let file = entry.path().to_path_buf();
-                        let file_type = matcher::get_type(&path, &self.context.config.extension.as_ref().unwrap());
-
-                        if let Err(e) = self.process_file(&file, file_type, pages_only) {
-                            return Err(e)
-                        }
+                        let file = path.to_path_buf();
+                        self.one(&file, pages_only)?
                     }
                 }
                 Err(e) => return Err(Error::IgnoreError(e)),

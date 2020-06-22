@@ -381,7 +381,9 @@ pub struct BuildArguments {
     pub force: Option<bool>,
     pub include_index: Option<bool>,
     pub layout: Option<PathBuf>,
-    pub copy: Option<Vec<String>>,
+
+    // Specific set of paths to build
+    pub paths: Option<Vec<PathBuf>>,
 }
 
 #[skip_serializing_none]

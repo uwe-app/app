@@ -142,7 +142,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         live: live,
         force: force,
         tag: tag_target,
-        copy: args.copy.clone(),
+        paths: args.paths.clone(),
     };
 
     debug!("{:?}", &cfg);
@@ -194,18 +194,39 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
     Ok(())
 }
 
+// Map a set of paths making them relative to the source, used when
+// paths are defined in the `paths` definition of a profile in the configuration.
+//
+// When we get paths from the command line there is no need to prefix them.
+fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
+    paths.iter()
+        .map(|p| {
+            let mut pth = source.clone();
+            pth.push(p);
+            pth
+        })
+        .collect::<Vec<_>>()
+}
+
 pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
     let (_, target_dir) = get_tag_info(args);
 
     // Handle profiles, eg: [profile.dist] that mutate the 
     // arguments from config declarations
-    let profiles = cfg.profile.as_ref().unwrap();
-    if let Some(ref profile) = profiles.get(&target_dir) {
+    let profiles = cfg.profile.as_mut().unwrap();
+    if let Some(ref mut profile) = profiles.get_mut(&target_dir) {
 
         if profile.tag.is_some() {
             return Err(
                 Error::new(
                     format!("Profiles may not define a build tag, please remove it")));
+        }
+
+        if let Some(ref paths) = profile.paths {
+            let build = cfg.build.as_ref().unwrap();
+            let paths = prefix(&build.source, paths);
+            debug!("profile paths {:?}", &paths);
+            profile.paths = Some(paths);
         }
 
         let merged = utils::merge::map::<BuildArguments>(profile, args)?;
