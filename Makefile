@@ -1,16 +1,25 @@
 SITE_ROOT = ../website
 DOCS_ROOT = ../documentation
 
-OS ?= linux
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+    HOST_OS := windows
+else
+    HOST_OS := $(shell uname | tr A-Z a-z)  # same as "uname -s"
+endif
+
+ifeq ($(HOST_OS),darwin)
+	HOST_OS = macos
+endif
+
 RELEASE_ROOT = ../release
-RELEASE_REPO = $(RELEASE_ROOT)/$(OS)
+RELEASE_REPO = $(RELEASE_ROOT)/$(HOST_OS)
 
 VERSION_INFO := $(shell cargo run -- --version)
 VERSION := $(subst hypertext ,,$(VERSION_INFO))
 VERSION_TAG := "v$(VERSION)"
 VERSION_FILE = $(RELEASE_REPO)/version.toml
 
-SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(OS)
+SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
 all: init site-release
 
@@ -61,10 +70,10 @@ build-release-installer:
 	@cp -fv target/release/hypertext-installer $(SITE_RELEASE)
 
 info:
+	@echo $(HOST_OS)
 	@echo $(VERSION_INFO)
 	@echo $(VERSION)
 	@echo $(VERSION_TAG)
-	@echo $(OS)
 	@echo $(RELEASE_REPO)
 	@echo $(SITE_RELEASE)
 

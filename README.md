@@ -2,12 +2,10 @@
 
 ## Release
 
-To prepare a release for the target platform run the appropriate release make task, eg:
+To prepare a release for the current platform run the release task:
 
 ```
-make release OS=linux
-make release OS=macos
-make release OS=windows
+make release
 ```
 
 The release repositories must be in a `release` folder that is a sibling of this repo, eg:
