@@ -75,7 +75,7 @@ struct BuildOpts {
     #[structopt(parse(from_os_str), default_value = ".")]
     project: PathBuf,
 
-    /// Just process these paths
+    /// Compile only these paths
     #[structopt(parse(from_os_str))]
     paths: Vec<PathBuf>,
 }
@@ -233,7 +233,7 @@ enum Command {
         args: UpdateOpts,
     },
 
-    /// Upgrade to latest hypertext
+    /// Upgrade to latest
     Upgrade {
         #[structopt(flatten)]
         args: UpgradeOpts,
