@@ -85,12 +85,6 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         //}
         //let mut src = build.source.clone();
         //src.push(d);
-        //if !src.exists() {
-            //return Err(Error::new(format!(
-                //"Target directory does not exist {}",
-                //src.display()
-            //)));
-        //}
         //dir = Some(src);
     //}
 
@@ -106,10 +100,12 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         port = p;
     }
 
-    let mut from = build.source.clone();
-    //if let Some(dir) = &dir {
-        //from = dir.clone().to_path_buf();
-    //}
+    if !build.source.exists() {
+        return Err(Error::new(format!(
+            "Source directory does not exist {}",
+            build.source.display()
+        )));
+    }
 
     let mut layout = build.source.clone();
     if let Some(ref custom_layout) = args.layout {
@@ -136,7 +132,6 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
 
         clean_url,
         target,
-        from,
         layout,
         max_depth: args.max_depth,
         release: release,

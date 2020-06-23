@@ -89,8 +89,6 @@ pub struct BuildOptions {
     // Target output directory including a build tag and
     // a locale identifier when multilingual
     pub target: PathBuf,
-    // Where to build from either `source` or `directory` relative to `source`
-    pub from: PathBuf,
 
     pub clean_url: bool,
 
@@ -192,7 +190,7 @@ fn load(locales: Locales, config: Config, options: BuildOptions) -> Result<Conte
 }
 
 fn build(ctx: &Context) -> Result<(), Error> {
-    let from = ctx.options.from.clone();
+
     let mut builder = Builder::new(ctx);
     builder.manifest.load()?;
 
@@ -204,7 +202,7 @@ fn build(ctx: &Context) -> Result<(), Error> {
             targets.push(p.clone());
         }
     } else {
-        targets.push(from.clone());
+        targets.push(ctx.options.source.clone());
     }
 
     builder.all(targets, false)?;
@@ -216,14 +214,13 @@ fn build(ctx: &Context) -> Result<(), Error> {
 fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
     let host = ctx.options.host.clone();
     let port = ctx.options.port.clone();
-    //let base_target = ctx.options.target.clone();
 
-    let from = ctx.options.from.clone();
+    let source = ctx.options.source.clone();
     let endpoint = utils::generate_id(16);
 
     let opts = ServeOptions {
         target: ctx.options.base.clone().to_path_buf(),
-        watch: Some(from.clone()),
+        watch: Some(source.clone()),
         host: host.to_owned(),
         port: port.to_owned(),
         endpoint: endpoint.clone(),
@@ -263,7 +260,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
         // notifications and sending messages over the `tx` channel
         // to connected websockets when necessary
         let mut invalidator = Invalidator::new(&ctx, serve_builder);
-        if let Err(e) = invalidator.start(from, tx, &error_cb) {
+        if let Err(e) = invalidator.start(source, tx, &error_cb) {
             error_cb(e);
         }
     });
