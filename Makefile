@@ -85,7 +85,7 @@ current:
 release: build-release current
 	@cp -f target/release/ht $(RELEASE_REPO)/bin/ht
 	@(cd $(RELEASE_REPO) && git add . && git commit -m "Update release." || true)
-	@(cd $(RELEASE_REPO) && git tag -f $(VERSION_TAG) && git push origin master --tags)
+	@(cd $(RELEASE_REPO) && git tag -f $(VERSION_TAG) && git push origin master --tags --force)
 
 check:
 	@cargo check

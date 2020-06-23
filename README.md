@@ -1,6 +1,21 @@
 # Hyper Text
 
-Repositories must be siblings and the release repositories take the following form; they must be in a `release` folder that is a sibling of this repo, eg:
+Repositories must be siblings:
+
+```
+.
+├── blueprint
+├── documentation
+├── hypertext
+├── release
+├── standalone
+└── website
+
+7 directories, 0 files
+⚡
+```
+
+The release repositories take the following form; they must be in a `release` folder that is a sibling of this repo, eg:
 
 ```
 release
