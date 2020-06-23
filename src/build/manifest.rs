@@ -15,6 +15,7 @@ use super::context::Context;
 pub struct Manifest<'a> {
     file: ManifestFile,
     context: &'a Context,
+    incremental: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -28,9 +29,9 @@ pub struct ManifestEntry {
 }
 
 impl<'a> Manifest<'a> {
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(context: &'a Context, incremental: bool) -> Self {
         let file = ManifestFile { map: Map::new() };
-        Manifest { context, file }
+        Manifest { context, file, incremental }
     }
 
     fn get_key<P: AsRef<Path>>(&self, file: P) -> String {
@@ -47,7 +48,7 @@ impl<'a> Manifest<'a> {
     }
 
     pub fn is_dirty<P: AsRef<Path>>(&self, file: P, dest: P, force: bool) -> bool {
-        if force || !dest.as_ref().exists() {
+        if !self.incremental || force || !dest.as_ref().exists() {
             return true;
         }
 
