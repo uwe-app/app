@@ -58,7 +58,7 @@ build-release:
 
 build-release-installer:
 	@cargo build --release --bin=hypertext-installer
-	@cp -f target/release/hypertext-installer $(SITE_RELEASE)
+	@cp -fv target/release/hypertext-installer $(SITE_RELEASE)
 
 info:
 	@echo $(VERSION_INFO)
