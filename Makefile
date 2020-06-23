@@ -11,6 +11,7 @@ ifeq ($(HOST_OS),darwin)
 	HOST_OS = macos
 endif
 
+INSTALLER_BIN = hypertext-installer
 RELEASE_ROOT = ../release
 RELEASE_REPO = $(RELEASE_ROOT)/$(HOST_OS)
 
@@ -66,8 +67,9 @@ build-release:
 	@cargo build --release
 
 release-installer:
-	@cargo build --release --bin=hypertext-installer
-	@cp -fv target/release/hypertext-installer $(SITE_RELEASE)
+	@cargo build --release --bin=$(INSTALLER_BIN)
+	@mkdir -p $(SITE_RELEASE)
+	@cp -fv target/release/$(INSTALLER_BIN) $(SITE_RELEASE)/$(INSTALLER_BIN)
 
 info:
 	@echo $(HOST_OS)
