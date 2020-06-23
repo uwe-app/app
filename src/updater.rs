@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use home;
-use log::{info, warn};
+use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
 use crate::cache::{self, CacheComponent};
@@ -56,10 +56,16 @@ pub fn write_env(bin_dir: &PathBuf) -> Result<()> {
     Ok(())
 }
 
+// TODO: support more shells
 pub fn source_env(_bin_dir: &PathBuf) -> Result<(bool, bool, String, PathBuf)> {
     let mut files: HashMap<String, Vec<String>> = HashMap::new();
-    files.insert(BASH.to_string(), vec![".bashrc".to_string()]);
-    files.insert(ZSH.to_string(), vec![".zshrc".to_string()]);
+    files.insert(BASH.to_string(), vec![".profile".to_string(), ".bashrc".to_string()]);
+    files.insert(ZSH.to_string(), vec![".profile".to_string(), ".zshrc".to_string()]);
+
+    let mut shell_ok = false;
+    let mut shell_write = false;
+    let mut shell_name = String::from("");
+    let mut shell_file = PathBuf::from("");
 
     if let Some(home_dir) = home::home_dir() {
         let source_path = get_source_env();
@@ -67,24 +73,40 @@ pub fn source_env(_bin_dir: &PathBuf) -> Result<(bool, bool, String, PathBuf)> {
             let shell_path = PathBuf::from(shell);
             if let Some(name) = shell_path.file_name() {
                 let name = name.to_string_lossy().into_owned();
+                shell_name = name.to_string();
+
                 if let Some(entries) = files.get(&name) {
                     for f in entries {
                         let mut file = home_dir.clone();
                         file.push(f);
-                        let mut contents = utils::read_string(&file)?;
-                        if !contents.contains(&source_path) {
-                            contents.push_str(&source_path);
-                            utils::write_string(&file, contents)?;
-                            return Ok((true, true, name.to_string(), file));
+                        if file.exists() {
+                            let mut contents = utils::read_string(&file)?;
+                            if !contents.contains(&source_path) {
+                                contents.push_str(&source_path);
+                                utils::write_string(&file, contents)?;
+                                shell_write = true;
+                            }
+                            shell_ok = true;
+                            shell_file = file;
                         }
-                        return Ok((true, false, name.to_string(), file));
                     }
                 }
             }
         }
     }
 
-    Ok((false, false, String::from(""), PathBuf::from("")))
+    // TODO: handle shells with no profile files yet!
+
+    Ok((shell_ok, shell_write, shell_name, shell_file))
+}
+
+pub fn load_remote_version() -> Result<VersionInfo> {
+    let repo_version_file = cache::get_release_version();
+    debug!("{}", &repo_version_file);
+    let resp = reqwest::blocking::get(&repo_version_file)?.text()?;
+    debug!("{}", &resp);
+    let remote_info: VersionInfo = toml::from_str(&resp)?;
+    Ok(remote_info)
 }
 
 pub fn install() -> Result<()> {

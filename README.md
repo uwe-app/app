@@ -53,7 +53,7 @@ cargo run --bin=hypertext-installer --
 To build the installer and copy the files to the website:
 
 ```
-make release-installer
+make installer
 ```
 
 ## Cargo Bundle

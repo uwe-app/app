@@ -18,6 +18,9 @@ static STANDALONE_NAME: &str = "standalone";
 static DOCUMENTATION_REPO: &str = "https://github.com/hypertext-live/documentation";
 static DOCUMENTATION_NAME: &str = "documentation";
 
+static VERSION_BASE: &str = "https://raw.githubusercontent.com/hypertext-live/release-";
+static VERSION_FILE: &str = "/master/version.toml";
+
 static RELEASE_NAME: &str = "release";
 
 pub enum CacheComponent {
@@ -88,6 +91,21 @@ pub fn get_docs_dir() -> Result<PathBuf, Error> {
     let mut buf = get_root_dir()?;
     buf.push(DOCUMENTATION_NAME);
     Ok(buf)
+}
+
+#[cfg(target_os = "windows")]
+pub fn get_release_version() -> String {
+    format!("{}{}{}", VERSION_BASE, "windows", VERSION_FILE)
+}
+
+#[cfg(target_os = "macos")]
+pub fn get_release_version() -> String {
+    format!("{}{}{}", VERSION_BASE, "macos", VERSION_FILE)
+}
+
+#[cfg(target_os = "linux")]
+pub fn get_release_version() -> String {
+    format!("{}{}{}", VERSION_BASE, "linux", VERSION_FILE)
 }
 
 #[cfg(target_os = "windows")]

@@ -39,6 +39,7 @@ pub use crate::command::init::*;
 pub use crate::command::pref::*;
 pub use crate::command::serve::*;
 pub use crate::command::update::*;
+pub use crate::command::upgrade::*;
 pub use crate::config::{BuildArguments, Config};
 pub use crate::error::Error;
 pub use crate::utils::generate_id;

@@ -66,7 +66,7 @@ fmt:
 build-release:
 	@cargo build --release
 
-release-installer:
+installer:
 	@cargo build --release --bin=$(INSTALLER_BIN)
 	@mkdir -p $(SITE_RELEASE)
 	@cp -fv target/release/$(INSTALLER_BIN) $(SITE_RELEASE)/$(INSTALLER_BIN)

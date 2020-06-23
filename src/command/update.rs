@@ -1,6 +1,6 @@
 use crate::cache::{self, CacheComponent};
 use crate::preference;
-use crate::Error;
+use crate::Result;
 
 #[derive(Debug)]
 pub struct UpdateOptions {
@@ -10,7 +10,7 @@ pub struct UpdateOptions {
     pub release: bool,
 }
 
-pub fn update(options: UpdateOptions) -> Result<(), Error> {
+pub fn update(options: UpdateOptions) -> Result<()> {
     let prefs = preference::load()?;
 
     let mut components: Vec<CacheComponent> = vec![

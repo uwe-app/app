@@ -14,7 +14,7 @@ use std::panic;
 
 use hypertext::{
     BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions,
-    ServeOptions, UpdateOptions,
+    ServeOptions, UpdateOptions, UpgradeOptions,
 };
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -119,6 +119,9 @@ struct UpdateOpts {
     #[structopt(short, long)]
     release: bool,
 }
+
+#[derive(StructOpt, Debug)]
+struct UpgradeOpts {}
 
 #[derive(StructOpt, Debug)]
 struct PrefOpts {
@@ -229,6 +232,12 @@ enum Command {
         #[structopt(flatten)]
         args: UpdateOpts,
     },
+
+    /// Upgrade to latest hypertext
+    Upgrade {
+        #[structopt(flatten)]
+        args: UpgradeOpts,
+    },
 }
 
 impl Command {
@@ -284,6 +293,12 @@ fn process_command(cmd: &Command) {
             };
 
             if let Err(e) = hypertext::update(opts) {
+                fatal(e);
+            }
+        }
+        Command::Upgrade { .. } => {
+            let opts = UpgradeOptions {};
+            if let Err(e) = hypertext::upgrade(opts) {
                 fatal(e);
             }
         }

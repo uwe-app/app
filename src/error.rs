@@ -22,6 +22,8 @@ pub enum Error {
     // For fluent template loader
     Boxed(Box<dyn std::error::Error>),
     Git(git2::Error),
+    Semver(semver::SemVerError),
+    HttpClient(reqwest::Error),
 }
 
 impl Error {
@@ -114,6 +116,18 @@ impl From<git2::Error> for Error {
     }
 }
 
+impl From<semver::SemVerError> for Error {
+    fn from(error: semver::SemVerError) -> Self {
+        Error::Semver(error)
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(error: reqwest::Error) -> Self {
+        Error::HttpClient(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -132,6 +146,8 @@ impl fmt::Display for Error {
             Error::LanguageIdentifierError(ref e) => e.fmt(f),
             Error::Boxed(ref e) => e.fmt(f),
             Error::Git(ref e) => e.fmt(f),
+            Error::Semver(ref e) => e.fmt(f),
+            Error::HttpClient(ref e) => e.fmt(f),
         }
     }
 }
@@ -152,6 +168,8 @@ impl error::Error for Error {
             Error::UrlParseError(ref e) => Some(e),
             Error::LanguageIdentifierError(ref e) => Some(e),
             Error::Git(ref e) => Some(e),
+            Error::Semver(ref e) => Some(e),
+            Error::HttpClient(ref e) => Some(e),
             _ => None,
         }
     }
