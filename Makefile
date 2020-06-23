@@ -4,7 +4,7 @@ DOCS_ROOT = ../documentation
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     HOST_OS := windows
 else
-    HOST_OS := $(shell uname | tr A-Z a-z)  # same as "uname -s"
+    HOST_OS := $(strip $(shell uname | tr A-Z a-z))
 endif
 
 ifeq ($(HOST_OS),darwin)
@@ -74,6 +74,7 @@ info:
 	@echo $(VERSION_INFO)
 	@echo $(VERSION)
 	@echo $(VERSION_TAG)
+	@echo $(VERSION_FILE)
 	@echo $(RELEASE_REPO)
 	@echo $(SITE_RELEASE)
 
