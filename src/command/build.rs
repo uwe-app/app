@@ -94,8 +94,6 @@ pub struct BuildOptions {
 
     pub clean_url: bool,
 
-    // Specific directory relative to source to walk
-    pub directory: Option<PathBuf>,
     pub max_depth: Option<usize>,
     pub release: bool,
     pub tag: BuildTag,

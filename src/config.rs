@@ -372,8 +372,6 @@ impl Default for BuildConfig {
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BuildArguments {
-    // Specific directory relative to source to walk
-    pub directory: Option<PathBuf>,
     pub max_depth: Option<usize>,
     pub tag: Option<String>,
     pub host: Option<String>,

@@ -75,24 +75,24 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
 
     create_output_dir(&target)?;
 
-    let mut dir = None;
-    if let Some(d) = &args.directory {
-        if d.is_absolute() {
-            return Err(Error::new(format!(
-                "Directory must be relative {}",
-                d.display()
-            )));
-        }
-        let mut src = build.source.clone();
-        src.push(d);
-        if !src.exists() {
-            return Err(Error::new(format!(
-                "Target directory does not exist {}",
-                src.display()
-            )));
-        }
-        dir = Some(src);
-    }
+    //let mut dir = None;
+    //if let Some(d) = &args.directory {
+        //if d.is_absolute() {
+            //return Err(Error::new(format!(
+                //"Directory must be relative {}",
+                //d.display()
+            //)));
+        //}
+        //let mut src = build.source.clone();
+        //src.push(d);
+        //if !src.exists() {
+            //return Err(Error::new(format!(
+                //"Target directory does not exist {}",
+                //src.display()
+            //)));
+        //}
+        //dir = Some(src);
+    //}
 
     let serve = cfg.serve.as_ref().unwrap();
     let mut host = &serve.host;
@@ -107,9 +107,9 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     }
 
     let mut from = build.source.clone();
-    if let Some(dir) = &dir {
-        from = dir.clone().to_path_buf();
-    }
+    //if let Some(dir) = &dir {
+        //from = dir.clone().to_path_buf();
+    //}
 
     let mut layout = build.source.clone();
     if let Some(ref custom_layout) = args.layout {
@@ -138,7 +138,6 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         target,
         from,
         layout,
-        directory: dir,
         max_depth: args.max_depth,
         release: release,
         live: live,
