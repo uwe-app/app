@@ -349,8 +349,6 @@ pub struct BuildConfig {
     pub resources: Option<PathBuf>,
     pub clean_url: Option<bool>,
     pub follow_links: Option<bool>,
-    pub pristine: Option<bool>,
-    pub incremental: Option<bool>,
 }
 
 impl Default for BuildConfig {
@@ -366,14 +364,12 @@ impl Default for BuildConfig {
             resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
             follow_links: Some(true),
-            pristine: Some(true),
-            incremental: Some(false),
         }
     }
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct BuildArguments {
     pub max_depth: Option<usize>,
@@ -382,8 +378,11 @@ pub struct BuildArguments {
     pub port: Option<u16>,
     pub live: Option<bool>,
     pub release: Option<bool>,
-    pub force: Option<bool>,
     pub include_index: Option<bool>,
+
+    pub incremental: Option<bool>,
+    pub pristine: Option<bool>,
+    pub force: Option<bool>,
 
     // Base URL to strip when building links etc
     pub base: Option<String>,
@@ -393,6 +392,26 @@ pub struct BuildArguments {
 
     // Specific set of paths to build
     pub paths: Option<Vec<PathBuf>>,
+}
+
+impl Default for BuildArguments {
+    fn default() -> Self {
+        Self {
+            max_depth: None,
+            tag: None,
+            host: None,
+            port: None,
+            live: None,
+            release: None,
+            include_index: None,
+            incremental: Some(false),
+            pristine: Some(true),
+            force: None,
+            base: None,
+            layout: None,
+            paths: None,
+        }
+    }
 }
 
 #[skip_serializing_none]

@@ -108,6 +108,8 @@ pub struct BuildOptions {
 
     // Specific paths to compile
     pub paths: Option<Vec<PathBuf>>,
+
+    pub incremental: bool,
 }
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {

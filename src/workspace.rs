@@ -53,9 +53,10 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         }
     }
 
-    let pristine = build.pristine.is_some() && build.pristine.unwrap();
+    let incremental = args.incremental.is_some() && args.incremental.unwrap();
+    let pristine = args.pristine.is_some() && args.pristine.unwrap();
 
-    if pristine && target.exists() {
+    if (pristine || force) && target.exists() {
         info!("clean {}", target.display());
         fs::remove_dir_all(&target)?;
     }
@@ -114,6 +115,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         tag: tag_target,
         paths: args.paths.clone(),
         base_href: args.base.clone(),
+        incremental,
     };
 
     debug!("{:?}", &cfg);

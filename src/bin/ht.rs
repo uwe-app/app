@@ -396,6 +396,8 @@ fn process_command(cmd: &Command) {
                 port: args.server.port.clone(),
                 layout: args.layout.clone(),
                 base: None,
+                incremental: None,
+                pristine: None,
             };
 
             let now = SystemTime::now();

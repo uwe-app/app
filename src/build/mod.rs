@@ -49,10 +49,7 @@ impl<'a> Builder<'a> {
         // template partials can be found
         let parser = Parser::new(&context);
 
-        let build = context.config.build.as_ref().unwrap();
-        let incremental = build.incremental.is_some() && build.incremental.unwrap();
-
-        let manifest = Manifest::new(&context, incremental);
+        let manifest = Manifest::new(&context);
 
         Self {
             context,
