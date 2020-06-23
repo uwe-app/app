@@ -21,7 +21,7 @@ use crate::command::serve::*;
 use crate::config::{BuildArguments, Config};
 use crate::{utils, Error};
 
-use crate::callback::ErrorCallback;
+use crate::ErrorCallback;
 use crate::workspace::{self, Workspace};
 
 use crate::locale::Locales;

@@ -14,7 +14,7 @@ use super::matcher::FileType;
 use super::watch;
 use super::Builder;
 
-use crate::callback::ErrorCallback;
+use crate::ErrorCallback;
 use crate::Error;
 
 /*

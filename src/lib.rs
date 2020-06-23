@@ -4,7 +4,6 @@ extern crate lazy_static;
 mod build;
 mod bundle;
 mod cache;
-pub mod callback;
 mod command;
 mod config;
 mod content;
@@ -44,4 +43,5 @@ pub use crate::config::{BuildArguments, Config};
 pub use crate::error::Error;
 pub use crate::utils::generate_id;
 
-type Result<T> = std::result::Result<T, crate::error::Error>;
+pub type ErrorCallback = fn(Error);
+pub type Result<T> = std::result::Result<T, crate::error::Error>;
