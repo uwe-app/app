@@ -4,7 +4,6 @@ extern crate log;
 
 use log::info;
 use std::env;
-use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::SystemTime;
@@ -16,6 +15,8 @@ use hypertext::{
     BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions,
     ServeOptions, UpdateOptions, UpgradeOptions,
 };
+
+use hypertext::utils;
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -253,19 +254,6 @@ fn error(s: String) {
     fatal(Error::new(s));
 }
 
-fn create_output_dir(output: &PathBuf) {
-    if !output.exists() {
-        info!("mkdir {}", output.display());
-        if let Err(e) = fs::create_dir_all(output) {
-            fatal(e);
-        }
-    }
-
-    if !output.is_dir() {
-        error(format!("Not a directory: {}", output.display()));
-    }
-}
-
 fn process_command(cmd: &Command) {
     match cmd {
         Command::Init { ref args } => {
@@ -356,7 +344,9 @@ fn process_command(cmd: &Command) {
                 ));
             }
 
-            create_output_dir(&args.output);
+            if let Err(e) = utils::require_output_dir(&args.output) {
+                fatal(e);
+            }
 
             let opts = BundleOptions {
                 source: args.input.clone(),

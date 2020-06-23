@@ -349,6 +349,7 @@ pub struct BuildConfig {
     pub resources: Option<PathBuf>,
     pub clean_url: Option<bool>,
     pub follow_links: Option<bool>,
+    pub pristine: Option<bool>,
     pub incremental: Option<bool>,
 }
 
@@ -365,6 +366,7 @@ impl Default for BuildConfig {
             resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
             follow_links: Some(true),
+            pristine: Some(true),
             incremental: Some(false),
         }
     }

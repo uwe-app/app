@@ -18,19 +18,6 @@ impl Workspace {
     }
 }
 
-fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
-    if !output.exists() {
-        info!("mkdir {}", output.display());
-        fs::create_dir_all(output)?;
-    }
-
-    if !output.is_dir() {
-        return Err(Error::new(format!("Not a directory: {}", output.display())));
-    }
-
-    Ok(())
-}
-
 fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
@@ -66,27 +53,14 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         }
     }
 
-    // TODO: do not do this when incremental is enabled
-    // TODO: once incremental is behind a feature flag
-    if target.exists() {
+    let pristine = build.pristine.is_some() && build.pristine.unwrap();
+
+    if pristine && target.exists() {
         info!("clean {}", target.display());
         fs::remove_dir_all(&target)?;
     }
 
-    create_output_dir(&target)?;
-
-    //let mut dir = None;
-    //if let Some(d) = &args.directory {
-        //if d.is_absolute() {
-            //return Err(Error::new(format!(
-                //"Directory must be relative {}",
-                //d.display()
-            //)));
-        //}
-        //let mut src = build.source.clone();
-        //src.push(d);
-        //dir = Some(src);
-    //}
+    utils::require_output_dir(&target)?;
 
     let serve = cfg.serve.as_ref().unwrap();
     let mut host = &serve.host;

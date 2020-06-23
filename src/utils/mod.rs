@@ -1,21 +1,21 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::Write;
 
-use std::convert::AsRef;
 use std::path::Path;
+use std::path::PathBuf;
 
 use inflector::Inflector;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
+use crate::{Result, Error};
+use crate::build::page::Page;
 use super::{BuildOptions, INDEX_STEM};
 
-use crate::build::page::Page;
-
-use log::debug;
+use log::{info, debug};
 
 pub mod merge;
 pub mod symlink;
@@ -28,6 +28,21 @@ pub fn generate_id(len: i32) -> String {
         s.push_str(&format!("{:x}", x));
     }
     s
+}
+
+pub fn require_output_dir(output: &PathBuf) -> Result<()> {
+    if !output.exists() {
+        info!("mkdir {}", output.display());
+        fs::create_dir_all(output)?;
+    }
+
+    if !output.is_dir() {
+        return Err(
+            Error::new(
+                format!("Not a directory: {}", output.display())));
+    }
+
+    Ok(())
 }
 
 pub fn is_draft(data: &Page, opts: &BuildOptions) -> bool {

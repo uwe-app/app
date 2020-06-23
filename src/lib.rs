@@ -14,7 +14,7 @@ mod locale;
 mod preference;
 mod server;
 pub mod updater;
-mod utils;
+pub mod utils;
 mod workspace;
 
 static INDEX_STEM: &str = "index";
