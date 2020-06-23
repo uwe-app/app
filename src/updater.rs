@@ -1,16 +1,16 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
+use home;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use home;
 
-use crate::Result;
-use crate::utils;
 use crate::cache::{self, CacheComponent};
 use crate::preference;
+use crate::utils;
 use crate::utils::symlink;
+use crate::Result;
 
 static BASH: &str = "bash";
 static ZSH: &str = "zsh";
@@ -101,7 +101,7 @@ pub fn install() -> Result<()> {
                     info!("Updated {} at {}", shell_name, shell_file.display());
                 }
             } else {
-                warn!(""); 
+                warn!("");
                 warn!("Update your PATH to include {}", bin_dir.display());
             }
 
@@ -116,13 +116,13 @@ pub fn install() -> Result<()> {
             info!("");
 
             info!("Installed {}@{} to {}", name, info.version, bin.display());
-        },
+        }
         Err(e) => return Err(e),
     }
     Ok(())
 }
 
-pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)>  {
+pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let prefs = preference::load()?;
     let components = vec![CacheComponent::Release];
     cache::update(&prefs, components)?;
@@ -139,7 +139,7 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)>  {
         std::fs::remove_file(&bin)?;
     }
 
-    symlink::soft(&release_bin, &bin)?; 
+    symlink::soft(&release_bin, &bin)?;
 
     // Copy the version file so we know which version
     // was installed the last time that update() was run

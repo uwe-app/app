@@ -1,19 +1,19 @@
+use std::collections::HashMap;
+use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
-use std::convert::AsRef;
-use std::collections::HashMap;
 
 use url::Url;
 
-use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use toml;
 
-use unic_langid::LanguageIdentifier;
 use log::debug;
+use unic_langid::LanguageIdentifier;
 
-use crate::{utils, Error, MD, HTML};
 use crate::build::page::Page;
+use crate::{utils, Error, HTML, MD};
 
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
@@ -35,9 +35,9 @@ type RedirectConfig = HashMap<String, String>;
 
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {
-        return Some(cwd)
+        return Some(cwd);
     }
-    return None
+    return None;
 }
 
 fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
@@ -117,21 +117,20 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Self, Error> {
         let file = p.as_ref();
         debug!("load {:?}", p.as_ref().display());
         if let Some(base) = file.parent() {
             if file.exists() && file.is_file() {
-
                 let content = utils::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
 
                 cfg.project = resolve_project(&file);
                 if cfg.project.is_none() {
-                    return Err(
-                        Error::new(
-                            format!("Failed to resolve project directory for {}", file.display())));
+                    return Err(Error::new(format!(
+                        "Failed to resolve project directory for {}",
+                        file.display()
+                    )));
                 }
 
                 // Must be a canonical path
@@ -202,26 +201,19 @@ impl Config {
 
                 if let Some(date) = cfg.date.as_mut() {
                     let mut datetime_formats = HashMap::new();
-                    datetime_formats.insert(
-                        "date-short".to_string(), "%F".to_string());
-                    datetime_formats.insert(
-                        "date-medium".to_string(), "%a %b %e %Y".to_string());
-                    datetime_formats.insert(
-                        "date-long".to_string(), "%A %B %e %Y".to_string());
+                    datetime_formats.insert("date-short".to_string(), "%F".to_string());
+                    datetime_formats.insert("date-medium".to_string(), "%a %b %e %Y".to_string());
+                    datetime_formats.insert("date-long".to_string(), "%A %B %e %Y".to_string());
 
-                    datetime_formats.insert(
-                        "time-short".to_string(), "%R".to_string());
-                    datetime_formats.insert(
-                        "time-medium".to_string(), "%X".to_string());
-                    datetime_formats.insert(
-                        "time-long".to_string(), "%r".to_string());
+                    datetime_formats.insert("time-short".to_string(), "%R".to_string());
+                    datetime_formats.insert("time-medium".to_string(), "%X".to_string());
+                    datetime_formats.insert("time-long".to_string(), "%r".to_string());
 
-                    datetime_formats.insert(
-                        "datetime-short".to_string(), "%F %R".to_string());
-                    datetime_formats.insert(
-                        "datetime-medium".to_string(), "%a %b %e %Y %X".to_string());
-                    datetime_formats.insert(
-                        "datetime-long".to_string(), "%A %B %e %Y %r".to_string());
+                    datetime_formats.insert("datetime-short".to_string(), "%F %R".to_string());
+                    datetime_formats
+                        .insert("datetime-medium".to_string(), "%a %b %e %Y %X".to_string());
+                    datetime_formats
+                        .insert("datetime-long".to_string(), "%A %B %e %Y %r".to_string());
 
                     for (k, v) in datetime_formats {
                         if !date.formats.contains_key(&k) {
@@ -235,17 +227,17 @@ impl Config {
                 return Ok(cfg);
             }
         }
-        return Ok(Default::default())
+        return Ok(Default::default());
     }
 
     pub fn load<P: AsRef<Path>>(source: P, walk_ancestors: bool) -> Result<Self, Error> {
         let mut pth = source.as_ref().to_path_buf();
         if pth.is_file() && pth.ends_with(SITE_TOML) {
-            return Config::load_config(pth)
+            return Config::load_config(pth);
         } else if pth.is_dir() {
             pth.push(SITE_TOML);
             if pth.is_file() && pth.exists() {
-                return Config::load_config(pth)
+                return Config::load_config(pth);
             }
         }
 
@@ -254,7 +246,7 @@ impl Config {
                 let mut pb = p.to_path_buf();
                 pb.push(SITE_TOML);
                 if pb.exists() && pb.is_file() {
-                    return Config::load_config(pb)
+                    return Config::load_config(pb);
                 }
             }
         }
@@ -262,13 +254,14 @@ impl Config {
         // Better error message when looking in the cwd
         if pth == PathBuf::from("") {
             if let Some(cwd) = resolve_cwd() {
-                pth = cwd; 
+                pth = cwd;
             }
         }
 
-        Err(
-            Error::new(
-                format!("No site configuration in {}", pth.display())))
+        Err(Error::new(format!(
+            "No site configuration in {}",
+            pth.display()
+        )))
     }
 
     pub fn get_project(&self) -> PathBuf {
@@ -294,7 +287,7 @@ impl Config {
             if let Some(locales) = &fluent.locales {
                 let mut pth = source.as_ref().to_path_buf();
                 pth.push(locales);
-                return Some(pth)
+                return Some(pth);
             }
         }
         None
@@ -340,7 +333,6 @@ impl Config {
         }
         None
     }
-
 }
 
 #[skip_serializing_none]
@@ -478,7 +470,7 @@ impl HookConfig {
         if let Some(src) = self.source.as_ref() {
             let mut pth = source.as_ref().to_path_buf();
             pth.push(src);
-            return Some(pth)
+            return Some(pth);
         }
         None
     }
@@ -500,7 +492,9 @@ pub struct DateConfig {
 
 impl Default for DateConfig {
     fn default() -> Self {
-        Self {formats: HashMap::new()}
+        Self {
+            formats: HashMap::new(),
+        }
     }
 }
 

@@ -12,12 +12,12 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-use std::path::Path;
 use git2::Repository;
+use std::path::Path;
 use std::str;
 
-use log::info;
 use super::progress;
+use log::info;
 
 fn do_fetch<'a>(
     repo: &'a git2::Repository,
@@ -25,7 +25,6 @@ fn do_fetch<'a>(
     remote: &'a mut git2::Remote,
     remote_name: &'a str,
 ) -> Result<git2::AnnotatedCommit<'a>, git2::Error> {
-
     let mut cb = git2::RemoteCallbacks::new();
     progress::add_progress_callbacks(&mut cb);
 
@@ -156,18 +155,23 @@ fn do_merge<'a>(
     Ok(())
 }
 
-pub fn pull<P: AsRef<Path>>(path: P, remote: Option<String>, branch: Option<String>) -> Result<(), git2::Error> {
+pub fn pull<P: AsRef<Path>>(
+    path: P,
+    remote: Option<String>,
+    branch: Option<String>,
+) -> Result<(), git2::Error> {
     let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or("origin");
     let remote_branch = branch.as_ref().map(|s| &s[..]).unwrap_or("master");
 
-    info!("Pull {}/{} in {}", 
-          remote_name,
-          remote_branch,
-          path.as_ref().display());
+    info!(
+        "Pull {}/{} in {}",
+        remote_name,
+        remote_branch,
+        path.as_ref().display()
+    );
 
     let repo = Repository::open(path)?;
     let mut remote = repo.find_remote(remote_name)?;
     let fetch_commit = do_fetch(&repo, &[remote_branch], &mut remote, &remote_name)?;
     do_merge(&repo, &remote_branch, fetch_commit)
 }
-

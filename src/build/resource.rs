@@ -1,17 +1,20 @@
 use std::io::ErrorKind;
 
-use crate::Error;
-use crate::utils::symlink;
 use super::context::Context;
+use crate::utils::symlink;
+use crate::Error;
 
-use log::{info, debug};
+use log::{debug, info};
 
 pub fn link(ctx: &Context) -> Result<(), Error> {
     let target = &ctx.options.target;
 
     // The resource path must be absolute for links to work
     // regardless of where the executable is run from
-    let result = ctx.config.get_resources_path(&ctx.options.source).canonicalize();
+    let result = ctx
+        .config
+        .get_resources_path(&ctx.options.source)
+        .canonicalize();
 
     match result {
         Ok(resource) => {
@@ -34,21 +37,18 @@ pub fn link(ctx: &Context) -> Result<(), Error> {
                             symlink::soft(&path, &dest)?;
                         }
                     }
-
                 } else {
                     return Err(Error::new("Resources must be a directory".to_string()));
                 }
             }
-        },
+        }
         Err(e) => {
             match e.kind() {
-                 ErrorKind::NotFound => {
+                ErrorKind::NotFound => {
                     // It is fine for the resource directory not to exist
                     // as we set a default value and it may not be in use
-                 },
-                 _ => {
-                    return Err(Error::from(e))
-                 }
+                }
+                _ => return Err(Error::from(e)),
             }
         }
     }

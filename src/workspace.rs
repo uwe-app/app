@@ -2,19 +2,19 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
-use log::{info, debug};
+use log::{debug, info};
 
-use crate::config::{Config, BuildArguments};
+use crate::command::build::{BuildOptions, BuildTag};
+use crate::config::{BuildArguments, Config};
 use crate::{utils, Error, LAYOUT_HBS};
-use crate::command::build::{BuildTag, BuildOptions};
 
 pub struct Workspace {
-    pub config: Config
+    pub config: Config,
 }
 
 impl Workspace {
     pub fn new(config: Config) -> Self {
-        Self {config}
+        Self { config }
     }
 }
 
@@ -25,16 +25,13 @@ fn create_output_dir(output: &PathBuf) -> Result<(), Error> {
     }
 
     if !output.is_dir() {
-        return Err(
-            Error::new(
-                format!("Not a directory: {}", output.display())));
+        return Err(Error::new(format!("Not a directory: {}", output.display())));
     }
 
     Ok(())
 }
 
 fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
-
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
 
@@ -44,9 +41,10 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
         if target_dir_buf.is_absolute() {
-            return Err(
-                Error::new(
-                    format!("Build tag may not be an absolute path {}", target_dir)));
+            return Err(Error::new(format!(
+                "Build tag may not be an absolute path {}",
+                target_dir
+            )));
         }
         target.push(target_dir);
     }
@@ -56,9 +54,9 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     let include_index = args.include_index.is_some() && args.include_index.unwrap();
 
     if live && release {
-        return Err(
-            Error::new(
-                "Live reload is not available for release builds".to_string()))
+        return Err(Error::new(
+            "Live reload is not available for release builds".to_string(),
+        ));
     }
 
     if include_index {
@@ -80,16 +78,18 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     let mut dir = None;
     if let Some(d) = &args.directory {
         if d.is_absolute() {
-            return Err(
-                Error::new(
-                    format!("Directory must be relative {}", d.display())));
+            return Err(Error::new(format!(
+                "Directory must be relative {}",
+                d.display()
+            )));
         }
         let mut src = build.source.clone();
         src.push(d);
         if !src.exists() {
-            return Err(
-                Error::new(
-                    format!("Target directory does not exist {}", src.display())));
+            return Err(Error::new(format!(
+                "Target directory does not exist {}",
+                src.display()
+            )));
         }
         dir = Some(src);
     }
@@ -119,13 +119,13 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     };
 
     if !layout.exists() {
-        return Err(
-            Error::new(
-                format!("Missing layout file '{}'", layout.display())));
+        return Err(Error::new(format!(
+            "Missing layout file '{}'",
+            layout.display()
+        )));
     }
 
-    let clean_url = build.clean_url.is_some()
-        && build.clean_url.unwrap();
+    let clean_url = build.clean_url.is_some() && build.clean_url.unwrap();
 
     let opts = BuildOptions {
         source: build.source.clone(),
@@ -171,8 +171,11 @@ fn get_tag_info(args: &BuildArguments) -> (BuildTag, String) {
     (tag_target, target_dir)
 }
 
-pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Workspace>) -> Result<(), Error> {
-
+pub fn load<P: AsRef<Path>>(
+    dir: P,
+    walk_ancestors: bool,
+    spaces: &mut Vec<Workspace>,
+) -> Result<(), Error> {
     let project = dir.as_ref();
     let cfg = Config::load(&project, walk_ancestors)?;
 
@@ -181,9 +184,7 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
             let mut root = cfg.get_project();
             root.push(space);
             if !root.exists() || root.is_file() {
-                return Err(
-                    Error::new(
-                        format!("Workspace must be a directory")));
+                return Err(Error::new(format!("Workspace must be a directory")));
             }
 
             // Recursive so that workspaces can reference
@@ -202,7 +203,8 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Works
 //
 // When we get paths from the command line there is no need to prefix them.
 fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
-    paths.iter()
+    paths
+        .iter()
         .map(|p| {
             let mut pth = source.clone();
             pth.push(p);
@@ -214,15 +216,14 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
 pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> {
     let (_, target_dir) = get_tag_info(args);
 
-    // Handle profiles, eg: [profile.dist] that mutate the 
+    // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
     let profiles = cfg.profile.as_mut().unwrap();
     if let Some(ref mut profile) = profiles.get_mut(&target_dir) {
-
         if profile.tag.is_some() {
-            return Err(
-                Error::new(
-                    format!("Profiles may not define a build tag, please remove it")));
+            return Err(Error::new(format!(
+                "Profiles may not define a build tag, please remove it"
+            )));
         }
 
         if let Some(ref paths) = profile.paths {
@@ -234,7 +235,7 @@ pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, 
 
         let merged = utils::merge::map::<BuildArguments>(profile, args)?;
 
-        // Always update base to use the path separator. The declaration is 
+        // Always update base to use the path separator. The declaration is
         // a URL path but internally we treat as a filesystem path.
         if let Some(ref base) = merged.base {
             profile.base = Some(utils::url::to_path_separator(base));

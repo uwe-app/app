@@ -1,12 +1,12 @@
 use handlebars::*;
 
-use crate::utils;
 use super::render_buffer;
+use crate::utils;
 
 #[derive(Clone, Copy)]
 pub struct Markdown;
 
-impl HelperDef for Markdown{
+impl HelperDef for Markdown {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -20,12 +20,9 @@ impl HelperDef for Markdown{
             Ok(ref md) => {
                 let result = utils::render_markdown_string(md);
                 out.write(&result)?;
-            },
-            Err(e) => {
-                return Err(e)
             }
+            Err(e) => return Err(e),
         }
         Ok(())
     }
 }
-

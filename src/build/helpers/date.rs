@@ -1,12 +1,12 @@
 use handlebars::*;
 
-use chrono::{DateTime, Utc, Local};
+use chrono::{DateTime, Local, Utc};
 use serde_json::from_value;
 
 #[derive(Clone, Copy)]
 pub struct DateFormat;
 
-impl HelperDef for DateFormat{
+impl HelperDef for DateFormat {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -22,11 +22,13 @@ impl HelperDef for DateFormat{
         // TODO: support format shortcuts for common formats
         // TODO: support locale aware date/time formats
 
-        let dt = h.param(0).map(|v| v.value())
-            .ok_or(RenderError::new("Type error for `date`, first parameter must be datetime"));
+        let dt = h.param(0).map(|v| v.value()).ok_or(RenderError::new(
+            "Type error for `date`, first parameter must be datetime",
+        ));
 
-        let fmt = h.param(1).map(|v| v.value())
-            .ok_or(RenderError::new("Type error for `date`, second parameter must be format string"));
+        let fmt = h.param(1).map(|v| v.value()).ok_or(RenderError::new(
+            "Type error for `date`, second parameter must be format string",
+        ));
 
         let local = h.hash_get("local").map(|v| v.value());
 
@@ -48,4 +50,3 @@ impl HelperDef for DateFormat{
         Ok(())
     }
 }
-

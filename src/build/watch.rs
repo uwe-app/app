@@ -7,20 +7,19 @@ use std::sync::mpsc::channel;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::Error;
 use crate::callback::ErrorCallback;
+use crate::Error;
 
-use log::{info, debug};
+use log::{debug, info};
 
+use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
-use notify::DebouncedEvent::{Create, Write, Remove, Rename};
 
 pub fn start<P, F>(dir: P, error_cb: &ErrorCallback, mut closure: F) -> Result<(), Error>
 where
     P: AsRef<Path>,
     F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error>,
 {
-
     // Create a channel to receive the events.
     let (tx, rx) = channel();
     let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {

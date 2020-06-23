@@ -54,7 +54,6 @@ impl From<handlebars::RenderError> for Error {
     }
 }
 
-
 impl From<toml::de::Error> for Error {
     fn from(error: toml::de::Error) -> Self {
         Error::TomlDeserError(error)
@@ -102,7 +101,6 @@ impl From<unic_langid::LanguageIdentifierError> for Error {
         Error::LanguageIdentifierError(error)
     }
 }
-
 
 impl From<Box<dyn std::error::Error>> for Error {
     fn from(error: Box<dyn std::error::Error>) -> Self {

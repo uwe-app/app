@@ -1,10 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 
-use home;
-use crate::Error;
 use crate::git;
 use crate::preference::{self, Preferences};
+use crate::Error;
+use home;
 
 static ROOT_DIR: &str = ".hypertext";
 static BIN: &str = "bin";
@@ -37,9 +37,7 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
         }
         return Ok(buf);
     }
-    Err(
-        Error::new(
-            format!("Could not determine home directory")))
+    Err(Error::new(format!("Could not determine home directory")))
 }
 
 pub fn get_env_file() -> Result<PathBuf, Error> {
@@ -126,22 +124,22 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
                 let url = get_blueprint_url(prefs);
                 let dir = get_blueprint_dir()?;
                 git::clone_or_fetch(&url, &dir, true)?;
-            },
+            }
             CacheComponent::Standalone => {
                 let url = get_standalone_url();
                 let dir = get_standalone_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
-            },
+            }
             CacheComponent::Documentation => {
                 let url = get_docs_url();
                 let dir = get_docs_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
-            },
+            }
             CacheComponent::Release => {
                 let url = get_release_url();
                 let dir = get_release_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
-            },
+            }
         }
     }
     Ok(())

@@ -5,7 +5,7 @@ use serde_json::{to_string, to_string_pretty};
 #[derive(Clone, Copy)]
 pub struct Debug;
 
-impl HelperDef for Debug{
+impl HelperDef for Debug {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -14,7 +14,6 @@ impl HelperDef for Debug{
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let mut compact = false;
         let mut val = ctx.data();
 
@@ -44,4 +43,3 @@ impl HelperDef for Debug{
         Ok(())
     }
 }
-

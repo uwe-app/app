@@ -1,10 +1,16 @@
-use std::path::Path;
 use crate::{utils, Error};
+use std::path::Path;
 
 pub fn write<P: AsRef<Path>>(location: &str, target: P) -> Result<(), Error> {
     let mut content = String::from("<!doctype html>");
-    let body = format!("<body onload=\"document.location.replace('{}');\"></body>", location);
-    let meta = format!("<noscript><meta http-equiv=\"refresh\" content=\"0; {}\"></noscript>", location);
+    let body = format!(
+        "<body onload=\"document.location.replace('{}');\"></body>",
+        location
+    );
+    let meta = format!(
+        "<noscript><meta http-equiv=\"refresh\" content=\"0; {}\"></noscript>",
+        location
+    );
     content.push_str("<html>");
     content.push_str("<head>");
     content.push_str(&meta);

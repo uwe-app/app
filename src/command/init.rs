@@ -2,10 +2,10 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
-use home;
-use url::Url;
 use git2::Repository;
+use home;
 use log::info;
+use url::Url;
 
 use crate::preference::{self, Preferences};
 use crate::{cache, git, Error};
@@ -20,7 +20,11 @@ pub struct InitOptions {
     pub private_key: Option<PathBuf>,
 }
 
-fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences) -> Result<Repository, Error> {
+fn create<P: AsRef<Path>>(
+    target: P,
+    options: &InitOptions,
+    prefs: &Preferences,
+) -> Result<Repository, Error> {
     let mut src = "".to_string();
 
     if let Some(ref source) = options.source {
@@ -32,14 +36,12 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
     }
 
     if src.is_empty() {
-        return Err(
-            Error::new(
-                format!("Could not determine default source path")));
+        return Err(Error::new(format!(
+            "Could not determine default source path"
+        )));
     }
 
-    let src_err = Err(
-        Error::new(
-            format!("Unable to handle source '{}'", &src)));
+    let src_err = Err(Error::new(format!("Unable to handle source '{}'", &src)));
 
     let repo_url = cache::get_blueprint_url(prefs);
     let repo_dir = cache::get_blueprint_dir()?;
@@ -47,9 +49,8 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
     match Url::parse(&src) {
         Ok(_) => {
             git::print_clone(&src, target.as_ref().clone());
-            return Repository::clone(&src, target)
-                .map_err(Error::from);
-        },
+            return Repository::clone(&src, target).map_err(Error::from);
+        }
         Err(_) => {
             let modules = repo.submodules()?;
             for sub in modules {
@@ -58,8 +59,7 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
                     tmp.push(sub.path());
                     let src = tmp.to_string_lossy().into_owned();
                     git::print_clone(&src, target.as_ref().clone());
-                    return Repository::clone(&src, target)
-                        .map_err(Error::from);
+                    return Repository::clone(&src, target).map_err(Error::from);
                 }
             }
 
@@ -85,17 +85,14 @@ fn create<P: AsRef<Path>>(target: P, options: &InitOptions, prefs: &Preferences)
 
                             return git::clone_ssh(src, target, key_file, None);
                         } else {
-                            return Err(
-                                Error::new(
-                                    format!("To use SSH specify the --ssh-key option")))
+                            return Err(Error::new(format!(
+                                "To use SSH specify the --ssh-key option"
+                            )));
                         }
                     }
-                },
-                Err(_) => {
-                    return src_err
-                },
+                }
+                Err(_) => return src_err,
             }
-
         }
     }
 
@@ -118,9 +115,10 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     } else {
         if let Some(ref target) = options.target {
             if target.exists() {
-                return Err(
-                    Error::new(
-                        format!("Target '{}' exists, please move it away", target.display())));
+                return Err(Error::new(format!(
+                    "Target '{}' exists, please move it away",
+                    target.display()
+                )));
             }
 
             let repo;

@@ -2,17 +2,10 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
-use git2::{
-    Repository,
-    IndexAddOption,
-    Cred,
-    RemoteCallbacks,
-    FetchOptions, 
-    ErrorClass,
-    ErrorCode,
-    Commit,
-};
 use git2::build::RepoBuilder;
+use git2::{
+    Commit, Cred, ErrorClass, ErrorCode, FetchOptions, IndexAddOption, RemoteCallbacks, Repository,
+};
 
 use log::info;
 
@@ -53,14 +46,7 @@ pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error
     let tree = new_repo.find_tree(oid)?;
     let parents: &[&Commit] = &[];
 
-    let _commit_id = new_repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        message,
-        &tree,
-        parents,
-    )?;
+    let _commit_id = new_repo.commit(Some("HEAD"), &sig, &sig, message, &tree, parents)?;
 
     Ok(())
 }
@@ -69,10 +55,10 @@ pub fn clone_ssh<P: AsRef<Path>>(
     src: String,
     target: P,
     key_file: PathBuf,
-    password: Option<String>) -> Result<Repository, Error> {
-
+    password: Option<String>,
+) -> Result<Repository, Error> {
     let passphrase = if let Some(ref phrase) = password {
-        Some(phrase.as_str()) 
+        Some(phrase.as_str())
     } else {
         None
     };
@@ -82,12 +68,7 @@ pub fn clone_ssh<P: AsRef<Path>>(
     let mut callbacks = RemoteCallbacks::new();
     progress::add_progress_callbacks(&mut callbacks);
     callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        Cred::ssh_key(
-            username_from_url.unwrap(),
-            None,
-            private_key,
-            passphrase,
-        )
+        Cred::ssh_key(username_from_url.unwrap(), None, private_key, passphrase)
     });
 
     let mut fo = FetchOptions::new();
@@ -96,10 +77,7 @@ pub fn clone_ssh<P: AsRef<Path>>(
     let mut builder = RepoBuilder::new();
     builder.fetch_options(fo);
 
-    let result = builder.clone(
-        &src,
-        target.as_ref(),
-    );
+    let result = builder.clone(&src, target.as_ref());
 
     if let Err(ref e) = result {
         if let ErrorClass::Ssh = e.class() {
@@ -114,9 +92,7 @@ pub fn clone_ssh<P: AsRef<Path>>(
     result.map_err(Error::from)
 }
 
-
 pub fn clone_standard<P: AsRef<Path>>(src: &str, target: P) -> Result<Repository, Error> {
-
     let mut callbacks = RemoteCallbacks::new();
     progress::add_progress_callbacks(&mut callbacks);
 
@@ -126,16 +102,12 @@ pub fn clone_standard<P: AsRef<Path>>(src: &str, target: P) -> Result<Repository
     let mut builder = RepoBuilder::new();
     builder.fetch_options(fo);
 
-    builder.clone(
-        src,
-        target.as_ref(),
-    ).map_err(Error::from)
+    builder.clone(src, target.as_ref()).map_err(Error::from)
 }
 
 fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
     let modules = repo.submodules()?;
     for mut sub in modules {
-
         sub.sync()?;
 
         let mut tmp = base.as_ref().to_path_buf();
@@ -148,7 +120,7 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Er
         match sub.open() {
             Ok(repo) => {
                 fetch(&repo, sub.path())?;
-            },
+            }
             Err(e) => {
                 if let ErrorClass::Os = e.class() {
                     if let ErrorCode::NotFound = e.code() {
@@ -156,11 +128,10 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Er
                             print_clone(&url, &tmp);
                             Repository::clone(url, tmp)?;
                         }
-
                     }
                 }
                 return Err(Error::from(e));
-            },
+            }
         };
     }
     Ok(())
@@ -168,7 +139,9 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Er
 
 fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
     info!("fetch {}", base.as_ref().display());
-    repo.find_remote(ORIGIN)?.fetch(&["master"], None, None).map_err(Error::from)
+    repo.find_remote(ORIGIN)?
+        .fetch(&["master"], None, None)
+        .map_err(Error::from)
 }
 
 pub fn print_clone<P: AsRef<Path>>(from: &str, to: P) {
@@ -193,11 +166,11 @@ pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
 }
 
 //pub fn clone_repo<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, Error> {
-    //let repo = match Repository::clone(from, dir) {
-        //Ok(repo) => repo,
-        //Err(e) => return Err(Error::from(e)),
-    //};
-    //Ok(repo)
+//let repo = match Repository::clone(from, dir) {
+//Ok(repo) => repo,
+//Err(e) => return Err(Error::from(e)),
+//};
+//Ok(repo)
 //}
 
 pub fn clone_recurse<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, Error> {
@@ -208,17 +181,21 @@ pub fn clone_recurse<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, E
     Ok(repo)
 }
 
-pub fn open_or_clone<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Result<(Repository, bool), Error> {
+pub fn open_or_clone<P: AsRef<Path>>(
+    from: &str,
+    to: P,
+    submodules: bool,
+) -> Result<(Repository, bool), Error> {
     if !to.as_ref().exists() {
         let repo = if submodules {
             clone_recurse(from, to)?
         } else {
             clone_standard(from, to)?
         };
-        return Ok((repo, true))
+        return Ok((repo, true));
     } else {
         let repo = open_repo(to)?;
-        return Ok((repo, false))
+        return Ok((repo, false));
     }
 }
 
@@ -231,7 +208,7 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Re
     if !cloned {
         //fetch(&repo, &base)?;
         // FIXME: merge from origin/master
-        
+
         pull::pull(to.as_ref(), None, None)?;
         if submodules {
             fetch_submodules(&repo, to.as_ref())?

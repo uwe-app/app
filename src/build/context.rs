@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::command::build::BuildOptions;
 use crate::config::Config;
+use serde::{Deserialize, Serialize};
 
 use super::generator::GeneratorMap;
 use crate::locale::Locales;
@@ -22,8 +22,8 @@ impl Context {
         locales: Locales,
         config: Config,
         options: BuildOptions,
-        generators: GeneratorMap) -> Self {
-
+        generators: GeneratorMap,
+    ) -> Self {
         Self {
             locales,
             config,
@@ -31,7 +31,6 @@ impl Context {
             livereload: None,
             generators,
         }
-
     }
 }
 
@@ -44,6 +43,6 @@ impl Default for Context {
             generators: Default::default(),
             locales: Default::default(),
             livereload: None,
-        } 
+        }
     }
 }

@@ -3,14 +3,14 @@ use std::path::Path;
 
 use serde_json::json;
 
-use handlebars::Handlebars;
 use fluent_templates::FluentLoader;
+use handlebars::Handlebars;
 
-use log::{warn, debug};
+use log::{debug, warn};
 
-use super::page::{Page, FileContext};
 use super::context::Context;
 use super::helpers;
+use super::page::{FileContext, Page};
 use crate::Error;
 
 // Render templates using handlebars.
@@ -56,7 +56,9 @@ impl<'a> TemplateRender<'a> {
         ext: &'static str,
         dir: P,
     ) -> Result<(), Error> {
-        self.handlebars.register_templates_directory(ext, dir).map_err(Error::from)
+        self.handlebars
+            .register_templates_directory(ext, dir)
+            .map_err(Error::from)
     }
 
     pub fn parse_template_string<P: AsRef<Path>>(
@@ -72,10 +74,8 @@ impl<'a> TemplateRender<'a> {
             .register_template_string(name, &content)
             .is_ok()
         {
-            let mut file_context = FileContext::new(
-                input.as_ref().to_path_buf(),
-                output.as_ref().to_path_buf()
-            );
+            let mut file_context =
+                FileContext::new(input.as_ref().to_path_buf(), output.as_ref().to_path_buf());
 
             file_context.resolve_metadata()?;
 
@@ -84,19 +84,18 @@ impl<'a> TemplateRender<'a> {
 
             // Some useful shortcuts
             if let Some(ref date) = self.context.config.date {
-                data.vars.insert(
-                    "date-formats".to_string(),
-                    json!(date.formats));
+                data.vars
+                    .insert("date-formats".to_string(), json!(date.formats));
             }
 
             // NOTE: context must be pushed into the vars otherwise
-            // NOTE: we have a recursive type due to the page data 
+            // NOTE: we have a recursive type due to the page data
             // NOTE: declared in the root config
             data.vars.insert("context".to_string(), json!(self.context));
 
             debug!("{:?}", data);
 
-            return self.handlebars.render(name, data).map_err(Error::from)
+            return self.handlebars.render(name, data).map_err(Error::from);
         }
         Ok(content)
     }
@@ -108,7 +107,6 @@ impl<'a> TemplateRender<'a> {
         document: String,
         data: &mut Page,
     ) -> Result<String, Error> {
-
         // Skip layout for standalone documents
         if let Some(standalone) = data.standalone {
             if standalone {
@@ -136,8 +134,11 @@ impl<'a> TemplateRender<'a> {
         let layout_name = layout_path.to_string_lossy().into_owned();
 
         if !self.handlebars.has_template(&layout_name) {
-            if let Err(e) = self.handlebars.register_template_file(&layout_name, &layout_path) {
-                return Err(Error::from(e))
+            if let Err(e) = self
+                .handlebars
+                .register_template_file(&layout_name, &layout_path)
+            {
+                return Err(Error::from(e));
             }
         }
 
@@ -145,6 +146,8 @@ impl<'a> TemplateRender<'a> {
         // re-using the same data object
         data.template = Some(document);
 
-        self.handlebars.render(&layout_name, data).map_err(Error::from)
+        self.handlebars
+            .render(&layout_name, data)
+            .map_err(Error::from)
     }
 }

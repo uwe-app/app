@@ -5,23 +5,16 @@ extern crate log;
 use log::info;
 use std::env;
 use std::fs;
-use std::time::SystemTime;
 use std::path::Path;
 use std::path::PathBuf;
+use std::time::SystemTime;
 use structopt::StructOpt;
 
 use std::panic;
 
 use hypertext::{
-    Config,
-    Error,
-    BuildArguments,
-    BundleOptions,
-    DocsOptions,
-    InitOptions,
-    PrefOptions,
-    ServeOptions,
-    UpdateOptions,
+    BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions,
+    ServeOptions, UpdateOptions,
 };
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -41,7 +34,7 @@ struct Cli {
     build_opts: BuildOpts,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct BuildOpts {
     /// Build tag name
     #[structopt(short, long)]
@@ -87,7 +80,7 @@ struct BuildOpts {
     paths: Vec<PathBuf>,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct InitOpts {
     /// List available blueprints
     #[structopt(short, long)]
@@ -108,9 +101,8 @@ struct InitOpts {
     source: Option<String>,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct UpdateOpts {
-
     /// Update the blueprint cache
     #[structopt(short, long)]
     blueprint: bool,
@@ -128,14 +120,14 @@ struct UpdateOpts {
     release: bool,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct PrefOpts {
     /// Edit the preferences file
     #[structopt(short, long)]
     edit: bool,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct ServeOpts {
     #[structopt(flatten)]
     server: WebServerOpts,
@@ -145,7 +137,7 @@ struct ServeOpts {
     target: PathBuf,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct WebServerOpts {
     /// The name of the host
     #[structopt(short, long)]
@@ -156,10 +148,10 @@ struct WebServerOpts {
     port: Option<u16>,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct DocsOpts {}
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 struct BundleOpts {
     /// Force overwrite generated files
     #[structopt(long)]
@@ -194,9 +186,8 @@ struct BundleOpts {
     output: PathBuf,
 }
 
-#[derive(StructOpt,Debug)]
+#[derive(StructOpt, Debug)]
 enum Command {
-
     /// Create a new project from a blueprint
     Init {
         #[structopt(flatten)]
@@ -243,7 +234,7 @@ enum Command {
 impl Command {
     fn default(cli: Cli) -> Self {
         Command::Build {
-            args: cli.build_opts
+            args: cli.build_opts,
         }
     }
 }
@@ -271,12 +262,8 @@ fn create_output_dir(output: &PathBuf) {
 }
 
 fn process_command(cmd: &Command) {
-
     match cmd {
-        Command::Init {
-            ref args
-        } => {
-
+        Command::Init { ref args } => {
             let opts = InitOptions {
                 source: args.source.clone(),
                 target: args.target.clone(),
@@ -287,11 +274,8 @@ fn process_command(cmd: &Command) {
             if let Err(e) = hypertext::init(opts) {
                 fatal(e);
             }
-        },
-        Command::Update {
-            ref args
-        } => {
-
+        }
+        Command::Update { ref args } => {
             let opts = UpdateOptions {
                 blueprint: args.blueprint,
                 standalone: args.standalone,
@@ -302,33 +286,23 @@ fn process_command(cmd: &Command) {
             if let Err(e) = hypertext::update(opts) {
                 fatal(e);
             }
-        },
-        Command::Pref {
-            ref args
-        } => {
-
-            let opts = PrefOptions {
-                edit: args.edit,
-            };
+        }
+        Command::Pref { ref args } => {
+            let opts = PrefOptions { edit: args.edit };
 
             if let Err(e) = hypertext::pref(opts) {
                 fatal(e);
             }
-        },
+        }
 
-        Command::Docs {
-            ..
-        } => {
+        Command::Docs { .. } => {
             let opts = DocsOptions {};
             if let Err(e) = hypertext::docs(opts) {
                 fatal(e);
             }
-        },
+        }
 
-        Command::Serve {
-            ref args
-        } => {
-
+        Command::Serve { ref args } => {
             let cfg: Config = Default::default();
             let serve = cfg.serve.as_ref().unwrap();
             let mut host = &serve.host;
@@ -352,19 +326,23 @@ fn process_command(cmd: &Command) {
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {
-                error(format!("Directory does not exist: {}", opts.target.display()));
+                error(format!(
+                    "Directory does not exist: {}",
+                    opts.target.display()
+                ));
             }
 
             if let Err(e) = hypertext::serve_only(opts) {
                 fatal(e);
             }
-        },
+        }
 
-        Command::Bundle {
-            ref args
-        } => {
+        Command::Bundle { ref args } => {
             if !args.input.exists() || !args.input.is_dir() {
-                error(format!("Directory does not exist: {}", args.input.display()));
+                error(format!(
+                    "Directory does not exist: {}",
+                    args.input.display()
+                ));
             }
 
             create_output_dir(&args.output);
@@ -383,10 +361,9 @@ fn process_command(cmd: &Command) {
             if let Err(e) = hypertext::bundle(opts) {
                 fatal(e);
             }
-        },
+        }
 
-        Command::Build {ref args} => {
-
+        Command::Build { ref args } => {
             // NOTE: We want the help output to show "."
             // NOTE: to indicate that the current working
             // NOTE: directory is used but the period creates
@@ -401,7 +378,7 @@ fn process_command(cmd: &Command) {
             }
 
             let paths = if args.paths.len() > 0 {
-                Some(args.paths.clone()) 
+                Some(args.paths.clone())
             } else {
                 None
             };
@@ -464,7 +441,7 @@ fn main() {
     match &root_args.cmd {
         Some(cmd) => {
             process_command(cmd);
-        },
+        }
         None => {
             process_command(&Command::default(root_args));
         }

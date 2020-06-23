@@ -1,5 +1,5 @@
-extern crate pretty_env_logger;
 extern crate log;
+extern crate pretty_env_logger;
 
 use log::error;
 use structopt::StructOpt;

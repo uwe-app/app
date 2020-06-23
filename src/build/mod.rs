@@ -10,10 +10,10 @@ pub mod book;
 pub mod context;
 pub mod frontmatter;
 pub mod generator;
+pub mod helpers;
 pub mod hook;
 pub mod invalidator;
 pub mod loader;
-pub mod helpers;
 pub mod manifest;
 pub mod matcher;
 pub mod page;
@@ -24,19 +24,15 @@ pub mod template;
 pub mod tree;
 pub mod watch;
 
-use crate::{
-    utils,
-    Error,
-    TEMPLATE_EXT
-};
+use crate::{utils, Error, TEMPLATE_EXT};
 
-use context::Context;
 use book::BookBuilder;
-use matcher::FileType;
-use parser::Parser;
-use manifest::Manifest;
+use context::Context;
 use generator::IndexQuery;
+use manifest::Manifest;
+use matcher::FileType;
 use page::Page;
+use parser::Parser;
 
 pub struct Builder<'a> {
     context: &'a Context,
@@ -70,8 +66,8 @@ impl<'a> Builder<'a> {
         data: &Page,
         _reference: IndexQuery,
         values: Vec<Value>,
-        clean: bool) -> Result<(), Error> {
-
+        clean: bool,
+    ) -> Result<(), Error> {
         let file = p.as_ref();
         let parent = file.parent().unwrap();
 
@@ -87,8 +83,9 @@ impl<'a> Builder<'a> {
                             item_data.vars.insert(k.clone(), json!(v));
                         }
                     } else {
-                        return Err(Error::new(
-                            format!("Generator document should be an object")))
+                        return Err(Error::new(format!(
+                            "Generator document should be an object"
+                        )));
                     }
 
                     // Mock a source file to build a destination
@@ -111,11 +108,13 @@ impl<'a> Builder<'a> {
 
                     info!("{} -> {}", &id, &dest.display());
 
-                    let s = self.parser.parse(&file, &dest.as_path(), file_type, &mut item_data)?;
+                    let s = self
+                        .parser
+                        .parse(&file, &dest.as_path(), file_type, &mut item_data)?;
                     utils::write_string(&dest, s).map_err(Error::from)?;
                 }
             } else {
-                return Err(Error::new(format!("Generator document must have an id")))
+                return Err(Error::new(format!("Generator document must have an id")));
             }
         }
 
@@ -123,8 +122,11 @@ impl<'a> Builder<'a> {
     }
 
     pub fn process_file<P: AsRef<Path>>(
-        &mut self, p: P, file_type: FileType, pages_only: bool) -> Result<(), Error> {
-
+        &mut self,
+        p: P,
+        file_type: FileType,
+        pages_only: bool,
+    ) -> Result<(), Error> {
         let file = p.as_ref();
         match file_type {
             FileType::Unknown => {
@@ -135,24 +137,26 @@ impl<'a> Builder<'a> {
                     &self.context.options.base_href,
                 )?;
 
-                if self.manifest.is_dirty(file, &dest, self.context.options.force) {
+                if self
+                    .manifest
+                    .is_dirty(file, &dest, self.context.options.force)
+                {
                     info!("{} -> {}", file.display(), dest.display());
                     let result = utils::copy(file, &dest).map_err(Error::from);
                     self.manifest.touch(file, &dest);
-                    return result
+                    return result;
                 } else {
                     info!("noop {}", file.display());
                 }
-            },
+            }
             FileType::Markdown | FileType::Template => {
                 let (collides, other) = matcher::collides(file, &file_type);
                 if collides {
-                    return Err(
-                        Error::new(
-                            format!("file name collision {} with {}",
-                                file.display(),
-                                other.display()
-                        )))
+                    return Err(Error::new(format!(
+                        "file name collision {} with {}",
+                        file.display(),
+                        other.display()
+                    )));
                 }
 
                 let mut data = loader::compute(file, &self.context.config, true)?;
@@ -163,7 +167,7 @@ impl<'a> Builder<'a> {
                 }
 
                 if utils::is_draft(&data, &self.context.options) {
-                    return Ok(())
+                    return Ok(());
                 }
 
                 let queries = generator::get_query(&data)?;
@@ -192,7 +196,7 @@ impl<'a> Builder<'a> {
                         for (gen, idx) in each_iters {
                             self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
                         }
-                        return Ok(())
+                        return Ok(());
                     }
                 }
 
@@ -206,16 +210,20 @@ impl<'a> Builder<'a> {
                     &self.context.options.base_href,
                 )?;
 
-                if self.manifest.is_dirty(file, &dest, pages_only || self.context.options.force) {
+                if self
+                    .manifest
+                    .is_dirty(file, &dest, pages_only || self.context.options.force)
+                {
                     info!("{} -> {}", file.display(), dest.display());
-                    let s = self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?;
+                    let s = self
+                        .parser
+                        .parse(&file, &dest.as_path(), &file_type, &mut data)?;
                     let result = utils::write_string(&dest, s).map_err(Error::from);
                     self.manifest.touch(file, &dest);
-                    return result
+                    return result;
                 } else {
                     info!("noop {}", file.display());
                 }
-
             }
             FileType::Private => {
                 // Ignore templates here as they are located and
@@ -228,8 +236,10 @@ impl<'a> Builder<'a> {
     }
 
     pub fn register_templates_directory(&mut self) -> Result<PathBuf, Error> {
-        let templates = self.context.config.get_partials_path(
-            &self.context.options.source);
+        let templates = self
+            .context
+            .config
+            .get_partials_path(&self.context.options.source);
 
         if let Err(e) = self
             .parser
@@ -244,9 +254,10 @@ impl<'a> Builder<'a> {
     pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<(), Error> {
         for p in paths {
             if !p.starts_with(&self.context.options.source) {
-                return Err(
-                    Error::new(
-                        format!("Path '{}' is outside the site source", p.display())))
+                return Err(Error::new(format!(
+                    "Path '{}' is outside the site source",
+                    p.display()
+                )));
             }
         }
         Ok(())
@@ -276,12 +287,18 @@ impl<'a> Builder<'a> {
         let config_file = self.context.config.file.clone();
 
         let partials = self.register_templates_directory()?;
-        let generator = self.context.config.get_generators_path(
-            &self.context.options.source);
-        let resource = self.context.config.get_resources_path(
-            &self.context.options.source);
-        let theme = self.context.config.get_book_theme_path(
-            &self.context.options.source);
+        let generator = self
+            .context
+            .config
+            .get_generators_path(&self.context.options.source);
+        let resource = self
+            .context
+            .config
+            .get_resources_path(&self.context.options.source);
+        let theme = self
+            .context
+            .config
+            .get_book_theme_path(&self.context.options.source);
 
         let build = self.context.config.build.as_ref().unwrap();
         let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
@@ -299,7 +316,11 @@ impl<'a> Builder<'a> {
             filters.push(theme.clone());
         }
 
-        if let Some(locales_dir) = self.context.config.get_locales(&self.context.options.source) {
+        if let Some(locales_dir) = self
+            .context
+            .config
+            .get_locales(&self.context.options.source)
+        {
             filters.push(locales_dir);
         }
 
@@ -313,7 +334,10 @@ impl<'a> Builder<'a> {
                     filters.push(buf);
                 }
             }
-            hook::run(&self.context, hook::collect(hooks.clone(), hook::Phase::Before))?;
+            hook::run(
+                &self.context,
+                hook::collect(hooks.clone(), hook::Phase::Before),
+            )?;
         }
 
         for result in WalkBuilder::new(&target)
@@ -356,10 +380,12 @@ impl<'a> Builder<'a> {
         }
 
         if let Some(hooks) = &self.context.config.hook {
-            hook::run(&self.context, hook::collect(hooks.clone(), hook::Phase::After))?;
+            hook::run(
+                &self.context,
+                hook::collect(hooks.clone(), hook::Phase::After),
+            )?;
         }
 
         Ok(())
     }
-
 }

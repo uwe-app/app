@@ -1,24 +1,19 @@
+use std::collections::HashMap;
 use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use std::collections::HashMap;
 
 use toml::de::Error as TomlError;
 use toml::map::Map as TomlMap;
-use toml::Value as TomlValue;
 use toml::value::Table;
+use toml::Value as TomlValue;
 
 use serde_json::{json, Map, Value};
 
-use log::{warn};
+use log::warn;
 
-use crate::{
-    utils,
-    Error,
-    MD,
-    INDEX_STEM
-};
+use crate::{utils, Error, INDEX_STEM, MD};
 
 use super::frontmatter;
 use super::page::Page;
@@ -33,10 +28,9 @@ lazy_static! {
 }
 
 fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathBuf> {
-
     let mut key = utils::url::to_path_separator(k);
     if k == "/" {
-        key = INDEX_STEM.to_string().clone(); 
+        key = INDEX_STEM.to_string().clone();
     } else if key.ends_with("/") {
         key.push_str(INDEX_STEM);
     }
@@ -47,7 +41,7 @@ fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathB
 
     // Key already includes a file extension
     if pth.exists() {
-        return Some(pth)
+        return Some(pth);
     }
 
     let extensions = &config.extension.as_ref().unwrap();
@@ -57,7 +51,7 @@ fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathB
     for ext in &extensions.render {
         pth.set_extension(ext);
         if pth.exists() {
-            return Some(pth)
+            return Some(pth);
         }
     }
 
@@ -70,7 +64,7 @@ fn find_key_for_file<P: AsRef<Path>>(f: P, config: &Config) -> String {
 
     if buf.is_dir() {
         let mut tmp = buf.clone();
-        tmp.push(INDEX_STEM);  
+        tmp.push(INDEX_STEM);
 
         let extensions = &config.extension.as_ref().unwrap();
         for ext in &extensions.render {
@@ -177,17 +171,16 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
                                     let file_key = f.to_string_lossy().into_owned();
                                     //println!("Inserting with key {}", &file_key);
                                     data.insert(file_key, page);
-                                },
-                                None => warn!("No file for page table: {}", k)
+                                }
+                                None => warn!("No file for page table: {}", k),
                             }
                         }
                     }
-                    Err(e) => return Err(Error::from(e))
+                    Err(e) => return Err(Error::from(e)),
                 }
             }
-            Err(e) => return Err(Error::from(e))
+            Err(e) => return Err(Error::from(e)),
         }
     }
     Ok(())
 }
-

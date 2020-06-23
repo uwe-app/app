@@ -3,13 +3,13 @@ use rand::seq::SliceRandom;
 
 use serde_json::json;
 
-use crate::build::page::Page;
 use super::with_parent_context;
+use crate::build::page::Page;
 
 #[derive(Clone, Copy)]
 pub struct Random;
 
-impl HelperDef for Random{
+impl HelperDef for Random {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -18,17 +18,17 @@ impl HelperDef for Random{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let type_err = Err(
-            RenderError::new(
-                "Type error for `random`, array parameter expected"));
+        let type_err = Err(RenderError::new(
+            "Type error for `random`, array parameter expected",
+        ));
 
-        let template_err = Err(
-            RenderError::new(
-                "Type error for `random`, inner template expected"));
+        let template_err = Err(RenderError::new(
+            "Type error for `random`, inner template expected",
+        ));
 
         if let Some(p) = h.params().get(0) {
             if !p.is_value_missing() {
-                let value = p.value(); 
+                let value = p.value();
                 if value.is_array() {
                     let value = value.as_array().unwrap();
                     if let Some(element) = value.choose(&mut rand::thread_rng()) {
@@ -40,19 +40,18 @@ impl HelperDef for Random{
                             t.render(r, &local_ctx, &mut local_rc, out)?;
                             return Ok(());
                         } else {
-                            return template_err
+                            return template_err;
                         }
                     }
                 } else {
-                    return type_err
+                    return type_err;
                 }
             } else {
-                return type_err
+                return type_err;
             }
         } else {
-            return type_err
+            return type_err;
         }
         Ok(())
     }
 }
-

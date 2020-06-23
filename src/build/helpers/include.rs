@@ -3,13 +3,13 @@ use std::path::Path;
 use handlebars::*;
 
 use crate::utils;
-use log::{debug};
+use log::debug;
 //use super::render_buffer;
 
 #[derive(Clone, Copy)]
 pub struct Include;
 
-impl HelperDef for Include{
+impl HelperDef for Include {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -40,11 +40,12 @@ impl HelperDef for Include{
                     match result {
                         Ok(s) => {
                             out.write(&s)?;
-                        },
+                        }
                         Err(_) => {
-                            return Err(
-                                RenderError::new(
-                                    format!("Failed to read from include file: {}", buf.display())))
+                            return Err(RenderError::new(format!(
+                                "Failed to read from include file: {}",
+                                buf.display()
+                            )))
                         }
                     }
                 }
@@ -54,4 +55,3 @@ impl HelperDef for Include{
         Ok(())
     }
 }
-

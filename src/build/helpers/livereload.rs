@@ -1,12 +1,12 @@
 use handlebars::*;
-use serde_json::{json, from_value};
+use serde_json::{from_value, json};
 
-use crate::build::context::{Context as BuildContext};
+use crate::build::context::Context as BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct LiveReload;
 
-impl HelperDef for LiveReload{
+impl HelperDef for LiveReload {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,
@@ -15,7 +15,6 @@ impl HelperDef for LiveReload{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let cfg = rc
             .evaluate(ctx, "@root/context")?
             .as_json()

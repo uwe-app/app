@@ -1,5 +1,5 @@
-use crate::{utils, Error};
 use crate::preference::{self, Preferences};
+use crate::{utils, Error};
 
 use log::warn;
 
@@ -22,18 +22,18 @@ fn edit(content: Option<String>) -> Result<(), Error> {
     match valid {
         Ok(_new_prefs) => {
             utils::write_string(preference::get_prefs_file()?, result)?;
-            return Ok(())
-        },
+            return Ok(());
+        }
         Err(e) => {
             warn!("{}", e);
             return edit(Some(result));
-        },
+        }
     }
 }
 
 pub fn pref(options: PrefOptions) -> Result<(), Error> {
     if options.edit {
-        return edit(None)
+        return edit(None);
     }
     Ok(())
 }

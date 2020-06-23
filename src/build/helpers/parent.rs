@@ -6,15 +6,15 @@ use serde_json::json;
 use crate::build::loader;
 use crate::build::matcher;
 
-use crate::build::context::{Context as BuildContext};
+use crate::build::context::Context as BuildContext;
 
-use super::with_parent_context;
 use super::map_render_error;
+use super::with_parent_context;
 
 #[derive(Clone, Copy)]
 pub struct Parent;
 
-impl HelperDef for Parent{
+impl HelperDef for Parent {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -45,7 +45,8 @@ impl HelperDef for Parent{
             let template = h.template();
             match template {
                 Some(t) => {
-                    let mut data = loader::compute(&parent, &build_ctx.config, true).map_err(map_render_error)?;
+                    let mut data = loader::compute(&parent, &build_ctx.config, true)
+                        .map_err(map_render_error)?;
                     let mut local_rc = rc.clone();
                     let local_ctx = with_parent_context(ctx, &mut data)?;
                     t.render(r, &local_ctx, &mut local_rc, out)?;
@@ -57,4 +58,3 @@ impl HelperDef for Parent{
         Ok(())
     }
 }
-

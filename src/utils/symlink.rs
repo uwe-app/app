@@ -6,11 +6,9 @@ use crate::Error;
 pub fn soft<P: AsRef<Path>>(source: P, target: P) -> Result<(), Error> {
     let path = source.as_ref();
     if path.is_dir() {
-        return std::os::windows::fs::symlink_dir(source, target)
-            .map_err(Error::from);
+        return std::os::windows::fs::symlink_dir(source, target).map_err(Error::from);
     } else if path.is_file() {
-        return std::os::windows::fs::symlink_file(source, target)
-            .map_err(Error::from);
+        return std::os::windows::fs::symlink_file(source, target).map_err(Error::from);
     }
     Ok(())
 }

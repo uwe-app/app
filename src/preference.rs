@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 use crate::Error;
 use crate::{cache, utils};
@@ -19,7 +19,7 @@ pub struct Preferences {
     pub lang: Option<String>,
     pub blueprint: Option<BlueprintPreferences>,
     pub ssh: Option<SshPreferences>,
-    pub docs: Option<DocsPreferences>
+    pub docs: Option<DocsPreferences>,
 }
 
 impl Default for Preferences {
@@ -45,7 +45,7 @@ impl Default for BlueprintPreferences {
     fn default() -> Self {
         Self {
             url: Some(String::from(BLUEPRINT_URL)),
-            default_path: Some(String::from(DEFAULT_BLUEPRINT_PATH))
+            default_path: Some(String::from(DEFAULT_BLUEPRINT_PATH)),
         }
     }
 }
@@ -59,7 +59,7 @@ pub struct SshPreferences {
 
 impl Default for SshPreferences {
     fn default() -> Self {
-        Self {default_key: None}
+        Self { default_key: None }
     }
 }
 
@@ -111,13 +111,13 @@ pub fn init_if_none() -> Result<(), Error> {
 }
 
 //pub fn init() -> Result<(), Error> {
-    //let buf = get_prefs_file()?;
-    //if !buf.exists() {
-        //return init_if_none();
-    //} else {
-        //return Err(
-            //Error::new(
-                //format!(
-                    //"Preferences file '{}' exists, please move it away", buf.display())))
-    //}
+//let buf = get_prefs_file()?;
+//if !buf.exists() {
+//return init_if_none();
+//} else {
+//return Err(
+//Error::new(
+//format!(
+//"Preferences file '{}' exists, please move it away", buf.display())))
+//}
 //}

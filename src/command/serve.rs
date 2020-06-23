@@ -7,12 +7,12 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 
-use log::{info, error};
+use log::{error, info};
 
 use open;
 
-use crate::Error;
 use crate::server::serve_static;
+use crate::Error;
 
 #[derive(Debug)]
 pub struct ServeOptions {
@@ -29,9 +29,10 @@ pub fn serve_only(options: ServeOptions) -> Result<(), Error> {
     serve(options, tx)
 }
 
-pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Message>, String)>) -> Result<(), Error>
-    {
-
+pub fn serve(
+    options: ServeOptions,
+    bind: Sender<(SocketAddr, TokioSender<Message>, String)>,
+) -> Result<(), Error> {
     let address = format!("{}:{}", options.host, options.port);
     let sockaddr: SocketAddr = address
         .to_socket_addrs()?
@@ -69,13 +70,7 @@ pub fn serve(options: ServeOptions, bind: Sender<(SocketAddr, TokioSender<Messag
 
     let endpoint = options.endpoint.clone();
     let thread_handle = std::thread::spawn(move || {
-        serve_static::serve(
-            serve_dir,
-            serve_host,
-            endpoint,
-            sockaddr,
-            ctx,
-            reload_tx);
+        serve_static::serve(serve_dir, serve_host, endpoint, sockaddr, ctx, reload_tx);
     });
 
     let _ = thread_handle.join();

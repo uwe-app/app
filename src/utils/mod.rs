@@ -15,7 +15,7 @@ use super::{BuildOptions, INDEX_STEM};
 
 use crate::build::page::Page;
 
-use log::{debug};
+use log::debug;
 
 pub mod merge;
 pub mod symlink;

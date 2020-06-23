@@ -1,7 +1,7 @@
-use std::path::Path;
+use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::fs::File;
+use std::path::Path;
 
 use crate::Error;
 
@@ -34,7 +34,6 @@ impl Config {
 }
 
 pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> {
-
     let mut fm = String::new();
     let mut content = String::new();
     let mut in_front_matter = false;
@@ -43,26 +42,21 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
     let f = File::open(p.as_ref())?;
     let reader = BufReader::new(f);
 
-    let newline = if cfg!(windows) {
-        "\r\n"
-    } else {
-        "\n"
-    };
+    let newline = if cfg!(windows) { "\r\n" } else { "\n" };
 
     for line in reader.lines() {
         match line {
             Ok(line) => {
-
                 if in_front_matter && line.trim() == conf.end {
                     in_front_matter = false;
                     if conf.bail {
-                        return Ok((content, has_front_matter, fm))
+                        return Ok((content, has_front_matter, fm));
                     }
                     continue;
                 }
 
                 if in_front_matter {
-                    fm.push_str(&line); 
+                    fm.push_str(&line);
                     fm.push_str(newline);
                     continue;
                 }
@@ -74,26 +68,22 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
                 }
 
                 // Always respect bail, it tells us to never read the
-                // actual file content as we only want to extract the 
+                // actual file content as we only want to extract the
                 // front matter data
                 if conf.bail {
-                    return Ok((content, has_front_matter, fm))
+                    return Ok((content, has_front_matter, fm));
                 }
 
                 content.push_str(&line);
                 content.push_str(newline);
-
-            },
+            }
             Err(e) => return Err(Error::from(e)),
         }
     }
 
     if in_front_matter {
-        return Err(
-            Error::new(
-                format!("Front matter was not terminated")));
+        return Err(Error::new(format!("Front matter was not terminated")));
     }
 
-    return Ok((content, has_front_matter, fm))
+    return Ok((content, has_front_matter, fm));
 }
-

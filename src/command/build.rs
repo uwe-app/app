@@ -1,28 +1,28 @@
 use std::fs;
+use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
-use std::net::SocketAddr;
 
-use serde_with::skip_serializing_none;
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
 use log::info;
 
-use crate::{utils, Error};
-use crate::config::{Config, BuildArguments};
-use crate::build::Builder;
-use crate::build::generator::GeneratorMap;
-use crate::build::loader;
 use crate::build::context::Context;
+use crate::build::generator::GeneratorMap;
 use crate::build::invalidator::Invalidator;
+use crate::build::loader;
+use crate::build::Builder;
 use crate::command::serve::*;
+use crate::config::{BuildArguments, Config};
+use crate::{utils, Error};
 
-use crate::workspace::{self, Workspace};
 use crate::callback::ErrorCallback;
+use crate::workspace::{self, Workspace};
 
 use crate::locale::Locales;
 
@@ -30,7 +30,7 @@ use crate::locale::Locales;
 pub enum BuildTag {
     Custom(String),
     Debug,
-    Release
+    Release,
 }
 
 impl Default for BuildTag {
@@ -44,7 +44,7 @@ impl BuildTag {
         match self {
             BuildTag::Debug => return "debug".to_string(),
             BuildTag::Release => return "release".to_string(),
-            BuildTag::Custom(s) => return s.to_string()
+            BuildTag::Custom(s) => return s.to_string(),
         }
     }
 
@@ -54,15 +54,15 @@ impl BuildTag {
                 if let Some(env) = debug {
                     return env;
                 }
-                return "development".to_string()
-            },
+                return "development".to_string();
+            }
             BuildTag::Release => {
                 if let Some(env) = release {
                     return env;
                 }
-                return "production".to_string()
+                return "production".to_string();
             }
-            BuildTag::Custom(s) => return s.to_string()
+            BuildTag::Custom(s) => return s.to_string(),
         }
     }
 
@@ -70,7 +70,7 @@ impl BuildTag {
         match self {
             BuildTag::Debug => return BuildTag::Debug,
             BuildTag::Release => return BuildTag::Release,
-            BuildTag::Custom(s) => return BuildTag::Custom(s.to_string())
+            BuildTag::Custom(s) => return BuildTag::Custom(s.to_string()),
         }
     }
 }
@@ -121,8 +121,8 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
 pub fn build_project<P: AsRef<Path>>(
     project: P,
     args: &BuildArguments,
-    error_cb: ErrorCallback) -> Result<(), Error> {
-
+    error_cb: ErrorCallback,
+) -> Result<(), Error> {
     let mut spaces: Vec<Workspace> = Vec::new();
     workspace::load(project, true, &mut spaces)?;
     build_workspaces(spaces, args, error_cb)
@@ -131,8 +131,8 @@ pub fn build_project<P: AsRef<Path>>(
 fn build_workspaces(
     spaces: Vec<Workspace>,
     args: &BuildArguments,
-    error_cb: ErrorCallback) -> Result<(), Error> {
-
+    error_cb: ErrorCallback,
+) -> Result<(), Error> {
     let mut ctx: Context = Default::default();
 
     for mut space in spaces {
@@ -215,10 +215,7 @@ fn build(ctx: &Context) -> Result<(), Error> {
     Ok(())
 }
 
-fn livereload(
-    mut ctx: Context,
-    error_cb: ErrorCallback) -> Result<(), Error> {
-
+fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
     let host = ctx.options.host.clone();
     let port = ctx.options.port.clone();
     //let base_target = ctx.options.target.clone();
@@ -248,7 +245,7 @@ fn livereload(
 
         if let Err(e) = crate::content::livereload::write(&ctx.options.target, &ws_url) {
             error_cb(e);
-            return
+            return;
         }
 
         ctx.livereload = Some(ws_url);

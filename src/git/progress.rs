@@ -1,5 +1,5 @@
+use git2::{Progress, RemoteCallbacks};
 use std::io::{self, Write};
-use git2::{RemoteCallbacks, Progress};
 
 use log::info;
 

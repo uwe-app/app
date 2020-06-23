@@ -10,15 +10,7 @@ pub enum FileType {
     Unknown,
 }
 
-use crate::{
-    Error,
-    HTML,
-    INDEX_STEM,
-    LAYOUT_HBS,
-    DATA_TOML,
-    MD,
-    PARSE_EXTENSIONS,
-};
+use crate::{Error, DATA_TOML, HTML, INDEX_STEM, LAYOUT_HBS, MD, PARSE_EXTENSIONS};
 
 //use super::generator;
 use crate::config::ExtensionConfig;
@@ -32,7 +24,7 @@ fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     for ext in PARSE_EXTENSIONS.iter() {
         buf.set_extension(ext);
         if buf.exists() {
-            return Some(buf)
+            return Some(buf);
         }
     }
     None
@@ -40,7 +32,6 @@ fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
 
 pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     if let Some(parent) = file.as_ref().parent() {
-
         // Not an index file so a single level is sufficient
         if !is_index(&file) {
             return resolve_dir_index(&parent);
@@ -50,55 +41,53 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
                 return resolve_dir_index(&parent);
             }
         }
-
     }
     None
 }
 
 // Try to find a generator file for the given URL
 //pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
-    //let mut url = href.to_string().clone();
-    //url = utils::url::trim_slash(&url).to_owned();
+//let mut url = href.to_string().clone();
+//url = utils::url::trim_slash(&url).to_owned();
 
-    //// Try to match against generated output files.
-    ////
-    //// For these cases there are no source files on disc with
-    //// a direct mapping to output files as they are generated
-    //// and this code can be called (via the `link` helper) before
-    //// output has been generated so we cannot compare to output
-    //// destination files.
-    //let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
-    //for (_, map) in mapping.iter() {
-        //let dest = Path::new(&map.destination);
+//// Try to match against generated output files.
+////
+//// For these cases there are no source files on disc with
+//// a direct mapping to output files as they are generated
+//// and this code can be called (via the `link` helper) before
+//// output has been generated so we cannot compare to output
+//// destination files.
+//let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
+//for (_, map) in mapping.iter() {
+//let dest = Path::new(&map.destination);
 
+//// Now try to match on generated document id
+//for id in &map.ids {
+//let mut page = dest.to_path_buf();
+//if clean_url {
+//page.push(id);
+//let mut target = utils::url::to_url_lossy(&page);
+//if target == url {
+//return Some(page)
+//}
 
-        //// Now try to match on generated document id
-        //for id in &map.ids {
-            //let mut page = dest.to_path_buf();
-            //if clean_url {
-                //page.push(id);
-                //let mut target = utils::url::to_url_lossy(&page);
-                //if target == url {
-                    //return Some(page)
-                //}
+//page.push(INDEX_HTML);
 
-                //page.push(INDEX_HTML);
-
-                //target = utils::url::to_url_lossy(&page);
-                //if target == url {
-                    //return Some(page)
-                //}
-            //} else {
-                //page.push(id);
-                //page.set_extension(HTML);
-                //let target = utils::url::to_url_lossy(&page);
-                //if target == url {
-                    //return Some(page)
-                //}
-            //}
-        //}
-    //}
-    //None
+//target = utils::url::to_url_lossy(&page);
+//if target == url {
+//return Some(page)
+//}
+//} else {
+//page.push(id);
+//page.set_extension(HTML);
+//let target = utils::url::to_url_lossy(&page);
+//if target == url {
+//return Some(page)
+//}
+//}
+//}
+//}
+//None
 //}
 
 // Try to find a source file for the given URL
@@ -115,7 +104,7 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
 
     // Check if the file exists directly
     if buf.exists() {
-        return Some(buf)
+        return Some(buf);
     }
 
     // FIXME: use ExtensionConfig
@@ -128,7 +117,7 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
         for ext in PARSE_EXTENSIONS.iter() {
             idx.set_extension(ext);
             if idx.exists() {
-                return Some(buf)
+                return Some(buf);
             }
         }
     }
@@ -139,14 +128,13 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
         for ext in PARSE_EXTENSIONS.iter() {
             buf.set_extension(ext);
             if buf.exists() {
-                return Some(buf)
+                return Some(buf);
             }
         }
     }
 
     None
 }
-
 
 pub fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf> {
     if let Some(ref link) = context.config.link {
@@ -156,10 +144,10 @@ pub fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<Pat
                 if url == href {
                     let mut buf = base.clone();
                     buf.push(url);
-                    return Some(buf)
+                    return Some(buf);
                 }
             }
-        } 
+        }
     }
     None
 }
@@ -207,13 +195,13 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
     match file_type {
         FileType::Markdown => {
             other.set_extension(HTML);
-            return (other.exists(), other)
-        },
+            return (other.exists(), other);
+        }
         FileType::Template => {
             other.set_extension(MD);
-            return (other.exists(), other)
+            return (other.exists(), other);
         }
-        _ => return (false, Path::new("").to_path_buf())
+        _ => return (false, Path::new("").to_path_buf()),
     }
 }
 
@@ -223,9 +211,9 @@ pub fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) ->
         let ext = ext.to_string_lossy().into_owned();
         if extensions.render.contains(&ext) {
             if extensions.markdown.contains(&ext) {
-                return FileType::Markdown
+                return FileType::Markdown;
             } else {
-                return FileType::Template
+                return FileType::Template;
             }
         }
     }
@@ -238,9 +226,9 @@ pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType 
         Some(nm) => {
             if let Some(nm) = nm.to_str() {
                 if nm == LAYOUT_HBS || nm == DATA_TOML {
-                    return FileType::Private
+                    return FileType::Private;
                 } else {
-                    return get_type_extension(p, extensions)
+                    return get_type_extension(p, extensions);
                 }
             }
         }
@@ -294,11 +282,7 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
     None
 }
 
-pub fn relative_to<P: AsRef<Path>>(
-    file: P,
-    base: P,
-    target: P,
-) -> Result<PathBuf, Error> {
+pub fn relative_to<P: AsRef<Path>>(file: P, base: P, target: P) -> Result<PathBuf, Error> {
     let f = file.as_ref().canonicalize()?;
     let b = base.as_ref().canonicalize()?;
     let mut t = target.as_ref().to_path_buf();
@@ -314,7 +298,6 @@ pub fn direct_destination<P: AsRef<Path>>(
     file: P,
     base_href: &Option<String>,
 ) -> Result<PathBuf, Error> {
-
     let pth = file.as_ref();
 
     // NOTE: When watching files we can get absolute
@@ -339,7 +322,7 @@ pub fn direct_destination<P: AsRef<Path>>(
     }
 
     let result = target.as_ref().clone().join(relative);
-    return Ok(result)
+    return Ok(result);
 }
 
 // Build the destination file path and update the file extension.
@@ -358,7 +341,6 @@ pub fn destination<P: AsRef<Path>>(
         Ok(mut result) => {
             match file_type {
                 FileType::Markdown | FileType::Template => {
-
                     if let Some(ext) = pth.extension() {
                         let ext = ext.to_string_lossy().into_owned();
                         for (k, v) in &extensions.map {
@@ -374,13 +356,11 @@ pub fn destination<P: AsRef<Path>>(
                             result = res;
                         }
                     }
-
                 }
                 _ => {}
             }
-            return Ok(result)
-        },
-        Err(e) => return Err(e)
+            return Ok(result);
+        }
+        Err(e) => return Err(e),
     }
-
 }

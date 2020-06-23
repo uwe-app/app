@@ -1,21 +1,21 @@
 use std::path::Path;
 use std::path::PathBuf;
 
+use log::{error, info};
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
-use log::{info, error};
 
-use super::Builder;
 use super::context::Context;
+use super::generator;
 use super::hook;
 use super::loader;
 use super::matcher;
-use super::generator;
 use super::matcher::FileType;
 use super::watch;
+use super::Builder;
 
-use crate::Error;
 use crate::callback::ErrorCallback;
+use crate::Error;
 
 /*
  *  Invalidation rules.
@@ -113,34 +113,33 @@ impl<'a> Invalidator<'a> {
         Self { context, builder }
     }
 
-    pub fn start(&mut self, from: PathBuf, tx: Sender<Message>, error_cb: &ErrorCallback) -> Result<(), Error> {
+    pub fn start(
+        &mut self,
+        from: PathBuf,
+        tx: Sender<Message>,
+        error_cb: &ErrorCallback,
+    ) -> Result<(), Error> {
         #[cfg(feature = "watch")]
         let watch_result = watch::start(&from.clone(), error_cb, move |paths, source_dir| {
             info!("changed({}) in {}", paths.len(), source_dir.display());
 
             match self.get_invalidation(paths) {
-                Ok(invalidation) => {
-                    match self.invalidate(&from, &invalidation) {
-                        Ok(_) => {
-                            self.builder.manifest.save()?;
-                            if invalidation.notify {
-                                let _ = tx.send(Message::text("reload"));
-                            }
-                            Ok(())
-                        },
-                        Err(e) => {
-                            return Err(e)
-                        },
+                Ok(invalidation) => match self.invalidate(&from, &invalidation) {
+                    Ok(_) => {
+                        self.builder.manifest.save()?;
+                        if invalidation.notify {
+                            let _ = tx.send(Message::text("reload"));
+                        }
+                        Ok(())
                     }
+                    Err(e) => return Err(e),
                 },
-                Err(e) => {
-                    return Err(e)
-                }
+                Err(e) => return Err(e),
             }
         });
 
         if let Err(e) = watch_result {
-            return Err(e)
+            return Err(e);
         }
 
         Ok(())
@@ -157,8 +156,7 @@ impl<'a> Invalidator<'a> {
     }
 
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
-
-        let mut rule = Rule{
+        let mut rule = Rule {
             notify: true,
             reload: false,
             strategy: Strategy::Mixed,
@@ -181,37 +179,56 @@ impl<'a> Invalidator<'a> {
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let data_file = self.canonical(
-            self.context.config.get_page_data_path());
+        let data_file = self.canonical(self.context.config.get_page_data_path());
 
         let layout_file = self.canonical(
-            self.context.config.get_layout_path(
-                &self.context.options.source));
+            self.context
+                .config
+                .get_layout_path(&self.context.options.source),
+        );
 
         let assets = self.canonical(
-            self.context.config.get_assets_path(
-                &self.context.options.source));
+            self.context
+                .config
+                .get_assets_path(&self.context.options.source),
+        );
 
         let partials = self.canonical(
-            self.context.config.get_partials_path(
-                &self.context.options.source));
+            self.context
+                .config
+                .get_partials_path(&self.context.options.source),
+        );
 
         let generators = self.canonical(
-            self.context.config.get_generators_path(
-                &self.context.options.source));
+            self.context
+                .config
+                .get_generators_path(&self.context.options.source),
+        );
 
         let resources = self.canonical(
-            self.context.config.get_resources_path(
-                &self.context.options.source));
+            self.context
+                .config
+                .get_resources_path(&self.context.options.source),
+        );
 
-        let book_theme = self.context.config.get_book_theme_path(
-            &self.context.options.source).map(|v| self.canonical(v));
+        let book_theme = self
+            .context
+            .config
+            .get_book_theme_path(&self.context.options.source)
+            .map(|v| self.canonical(v));
 
-        let books: Vec<PathBuf> = self.builder.book.references.keys()
+        let books: Vec<PathBuf> = self
+            .builder
+            .book
+            .references
+            .keys()
             .map(|p| p.to_path_buf())
             .collect::<Vec<_>>();
 
-        let generator_paths: Vec<PathBuf> = self.context.generators.map
+        let generator_paths: Vec<PathBuf> = self
+            .context
+            .generators
+            .map
             .values()
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();
@@ -221,18 +238,16 @@ impl<'a> Invalidator<'a> {
         'paths: for path in paths {
             match path.canonicalize() {
                 Ok(path) => {
-
                     // NOTE: must test for hooks first as they can
                     // NOTE: point anywhere in the source directory
                     // NOTE: and should take precedence
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(
-                                    &self.context.options.source).unwrap());
+                                hook.get_source_path(&self.context.options.source).unwrap(),
+                            );
                             if path.starts_with(hook_base) {
-                                rule.hooks.push(
-                                    Action::Hook(k.clone(), path));
+                                rule.hooks.push(Action::Hook(k.clone(), path));
                                 continue 'paths;
                             }
                         }
@@ -243,7 +258,9 @@ impl<'a> Invalidator<'a> {
 
                         let cfg = self.builder.book.get_book_config(&book);
                         if path == cfg {
-                            rule.book.reload.push(Action::BookConfig(book.clone(), path));
+                            rule.book
+                                .reload
+                                .push(Action::BookConfig(book.clone(), path));
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
@@ -258,15 +275,14 @@ impl<'a> Invalidator<'a> {
                                 build.push(build_dir);
 
                                 if path.starts_with(build) {
-                                    rule.ignores.push(
-                                        Action::BookBuild(book.clone(), path));
+                                    rule.ignores.push(Action::BookBuild(book.clone(), path));
                                     continue 'paths;
-                                }else if path.starts_with(src) {
-                                    rule.book.source.push(
-                                        Action::BookSource(book.clone(), path));
+                                } else if path.starts_with(src) {
+                                    rule.book
+                                        .source
+                                        .push(Action::BookSource(book.clone(), path));
                                     continue 'paths;
                                 }
-
                             }
                         }
                     }
@@ -274,8 +290,7 @@ impl<'a> Invalidator<'a> {
                     if let Some(theme) = &book_theme {
                         if path.starts_with(theme) {
                             rule.book.all = true;
-                            rule.ignores.push(
-                                Action::BookTheme(theme.clone(), path));
+                            rule.ignores.push(Action::BookTheme(theme.clone(), path));
                             continue 'paths;
                         }
                     }
@@ -319,34 +334,33 @@ impl<'a> Invalidator<'a> {
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
-                            },
+                            }
                             _ => {
                                 rule.actions.push(Action::Page(path));
                             }
                         }
                     }
-                },
+                }
                 Err(e) => return Err(Error::from(e)),
             }
         }
 
         // This is a fix for double location.reload on books,
         // the `book` build directory is also watched which
-        // would generate a lot of ignores and trigger a 
+        // would generate a lot of ignores and trigger a
         // second websocket notification, this check disables it.
         //
         // Once the logic for selecting watch directories is implemented
         // this can probably be removed.
-        let is_empty = rule.actions.is_empty()
-            && rule.hooks.is_empty()
-            && rule.book.source.is_empty();
+        let is_empty =
+            rule.actions.is_empty() && rule.hooks.is_empty() && rule.book.source.is_empty();
         match rule.strategy {
             Strategy::Mixed => {
                 if is_empty {
                     rule.notify = false;
-                } 
-            },
-            _ => {},
+                }
+            }
+            _ => {}
         }
 
         Ok(rule)
@@ -375,8 +389,8 @@ impl<'a> Invalidator<'a> {
                 match action {
                     Action::BookConfig(base, _) => {
                         self.builder.book.load(&self.context, base)?;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }
@@ -392,11 +406,12 @@ impl<'a> Invalidator<'a> {
                         let file = matcher::relative_to(
                             base,
                             &self.context.options.source,
-                            &self.context.options.source)?;
+                            &self.context.options.source,
+                        )?;
 
                         self.builder.book.rebuild(&self.context, &file)?;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }
@@ -404,28 +419,28 @@ impl<'a> Invalidator<'a> {
         match rule.strategy {
             Strategy::Full => {
                 return self.builder.build(target, false);
-            },
+            }
             Strategy::Page => {
                 return self.builder.build(target, true);
-            },
+            }
             _ => {
                 for action in &rule.actions {
                     match action {
                         Action::Page(path) | Action::File(path) => {
-
                             // Make the path relative to the project source
                             // as the notify crate gives us an absolute path
                             let file = matcher::relative_to(
                                 path,
                                 &self.context.options.source,
-                                &self.context.options.source)?;
+                                &self.context.options.source,
+                            )?;
 
                             let extensions = &self.context.config.extension.as_ref().unwrap();
                             let file_type = matcher::get_type(&file, extensions);
                             if let Err(e) = self.builder.process_file(&file, file_type, false) {
-                                return Err(e)
+                                return Err(e);
                             }
-                        },
+                        }
                         _ => {
                             return Err(Error::new("Invalidation action not handled".to_string()));
                         }

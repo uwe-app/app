@@ -1,11 +1,11 @@
-use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::mem;
+use std::path::PathBuf;
 
-use chrono::Utc;
 use chrono::DateTime;
-use serde_with::skip_serializing_none;
+use chrono::Utc;
 use serde_json::{Map, Value};
+use serde_with::skip_serializing_none;
 
 use crate::Error;
 
@@ -30,7 +30,7 @@ impl FileContext {
             target,
             name,
             modified: Utc::now(),
-        } 
+        }
     }
 
     pub fn resolve_metadata(&mut self) -> Result<(), Error> {
@@ -67,7 +67,6 @@ pub struct Page {
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
     // NOTE: logic should inject it into `vars`
-
     #[serde(flatten)]
     pub vars: Map<String, Value>,
 }
@@ -75,7 +74,7 @@ pub struct Page {
 impl Default for Page {
     fn default() -> Self {
         Self {
-            title: None, 
+            title: None,
             description: None,
             keywords: None,
             author: None,
@@ -95,7 +94,6 @@ impl Default for Page {
 
 impl Page {
     pub fn append(&mut self, other: &mut Self) {
-
         if let Some(title) = other.title.as_mut() {
             self.title = Some(mem::take(title));
         }
@@ -135,14 +133,13 @@ impl Page {
         self.vars.append(&mut other.vars);
 
         //if let Some(vars) = other.vars.as_mut() {
-            //if let Some(self_vars) = self.vars.as_mut() {
-                //self_vars.append(vars);
-            //} else {
-                //self.vars = Some(vars);
-            //}
-
+        //if let Some(self_vars) = self.vars.as_mut() {
+        //self_vars.append(vars);
+        //} else {
+        //self.vars = Some(vars);
         //}
 
+        //}
     }
 }
 

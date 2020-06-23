@@ -1,16 +1,13 @@
 use std::convert::AsRef;
 use std::path::Path;
 
-use crate::{
-    Error, 
-    utils
-};
+use crate::{utils, Error};
 
-use super::matcher::FileType;
-use super::template;
-use super::frontmatter;
 use super::context::Context;
+use super::frontmatter;
+use super::matcher::FileType;
 use super::page::Page;
+use super::template;
 
 pub struct Parser<'a> {
     render: template::TemplateRender<'a>,
@@ -19,7 +16,7 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(context: &'a Context) -> Self {
         let render = template::TemplateRender::new(context);
-        Parser{render}
+        Parser { render }
     }
 
     pub fn register_templates_directory<P: AsRef<Path>>(
@@ -34,10 +31,10 @@ impl<'a> Parser<'a> {
         &mut self,
         input: P,
         output: P,
-        data: &mut Page) -> Result<String, Error> {
-
-        let (content, _has_fm, _fm) = frontmatter::load(
-            &input, frontmatter::Config::new_html(false))?;
+        data: &mut Page,
+    ) -> Result<String, Error> {
+        let (content, _has_fm, _fm) =
+            frontmatter::load(&input, frontmatter::Config::new_html(false))?;
 
         let result = self
             .render
@@ -49,10 +46,10 @@ impl<'a> Parser<'a> {
         &mut self,
         input: P,
         output: P,
-        data: &mut Page) -> Result<String, Error> {
-
-        let (content, _has_fm, _fm) = frontmatter::load(
-            &input, frontmatter::Config::new_markdown(false))?;
+        data: &mut Page,
+    ) -> Result<String, Error> {
+        let (content, _has_fm, _fm) =
+            frontmatter::load(&input, frontmatter::Config::new_markdown(false))?;
 
         let mut result = self
             .render
@@ -66,16 +63,12 @@ impl<'a> Parser<'a> {
         input: P,
         output: P,
         file_type: &FileType,
-        data: &mut Page) -> Result<String, Error> {
-
+        data: &mut Page,
+    ) -> Result<String, Error> {
         match file_type {
-            FileType::Template => {
-                return self.parse_template(input, output, data)
-            }
-            FileType::Markdown => {
-                return self.parse_markdown(input, output, data)
-            },
-            _ => Err(Error::new("parser got invalid file type".to_string()))
+            FileType::Template => return self.parse_template(input, output, data),
+            FileType::Markdown => return self.parse_markdown(input, output, data),
+            _ => Err(Error::new("parser got invalid file type".to_string())),
         }
     }
 }

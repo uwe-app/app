@@ -5,20 +5,13 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use serde_json::json;
 
+use crate::build::context::Context;
 use crate::build::loader;
 use crate::build::matcher;
-use crate::build::context::Context;
 use crate::build::matcher::FileType;
 use crate::build::page::Page;
 
-use crate::{
-    utils,
-    Error,
-    HTML,
-    INDEX_HTML,
-    INDEX_STEM,
-    MD
-};
+use crate::{utils, Error, HTML, INDEX_HTML, INDEX_STEM, MD};
 
 pub type ItemData = Page;
 
@@ -35,7 +28,11 @@ pub struct ListOptions {
     pub depth: usize,
 }
 
-pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, ctx: &Context) -> Result<Vec<ItemData>, Error> {
+pub fn listing<P: AsRef<Path>>(
+    target: P,
+    list: &ListOptions,
+    ctx: &Context,
+) -> Result<Vec<ItemData>, Error> {
     let mut path: PathBuf = target.as_ref().to_path_buf();
 
     // Resolve using a dir string argument
@@ -49,7 +46,9 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, ctx: &Context) -> 
 
         let dir_dest = Path::new(&dir_target);
         if !dir_dest.exists() || !dir_dest.is_dir() {
-            return Err(Error::new("Path parameter for listing does not resolve to a directory".to_string()));
+            return Err(Error::new(
+                "Path parameter for listing does not resolve to a directory".to_string(),
+            ));
         }
 
         // Later we find the parent so this makes it consistent
@@ -66,7 +65,12 @@ pub fn listing<P: AsRef<Path>>(target: P, list: &ListOptions, ctx: &Context) -> 
     Ok(vec![])
 }
 
-fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Context) -> Result<Vec<ItemData>, Error> {
+fn children<P: AsRef<Path>>(
+    file: P,
+    parent: &Path,
+    list: &ListOptions,
+    ctx: &Context,
+) -> Result<Vec<ItemData>, Error> {
     let mut entries: Vec<ItemData> = Vec::new();
 
     let source = &ctx.options.source;
@@ -74,9 +78,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
     //let p = parent.as_ref();
 
-    let rel_base = parent
-        .strip_prefix(source)
-        .unwrap_or(Path::new(""));
+    let rel_base = parent.strip_prefix(source).unwrap_or(Path::new(""));
 
     for result in WalkBuilder::new(parent).max_depth(Some(list.depth)).build() {
         match result {
@@ -101,7 +103,6 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                 //println!("children {:?}", path);
 
                 if path.is_file() {
-
                     this = path == file.as_ref();
 
                     let extensions = &ctx.config.extension.as_ref().unwrap();
@@ -125,7 +126,6 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                             }
                             href = dest.to_string_lossy().into();
                             data = loader::compute(&path, &ctx.config, true)?;
-
                         }
                         _ => {}
                     }
@@ -168,7 +168,7 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                 }
 
                 if utils::is_draft(&data, &ctx.options) {
-                    continue
+                    continue;
                 }
 
                 if !href.is_empty() {
@@ -187,14 +187,12 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
                     entries.push(data);
                 }
             }
-            Err(e) => {
-                return Err(Error::from(e))
-            }
+            Err(e) => return Err(Error::from(e)),
         }
     }
 
     if list.sort {
-        entries.sort_by(|a,b| {
+        entries.sort_by(|a, b| {
             let mut s1 = "";
             let mut s2 = "";
             if list.sort_key == "title" {
@@ -207,4 +205,3 @@ fn children<P: AsRef<Path>>(file: P, parent: &Path, list: &ListOptions, ctx: &Co
 
     Ok(entries)
 }
-

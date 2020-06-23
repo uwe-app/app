@@ -1,17 +1,13 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::path::PathBuf;
-use std::collections::BTreeMap;
 
-use serde_json::{json, from_value, Map, Value};
-use serde::{Deserialize, Serialize};
 use log::{info, warn};
+use serde::{Deserialize, Serialize};
+use serde_json::{from_value, json, Map, Value};
 use slug;
 
-use crate::{
-    utils,
-    Error,
-    JSON,
-};
+use crate::{utils, Error, JSON};
 
 use crate::config::Config;
 
@@ -40,9 +36,7 @@ pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>, Error> {
                 page_generators.push(reference);
             }
         } else {
-            return Err(
-                Error::new(
-                    format!("Query should be array or object")));
+            return Err(Error::new(format!("Query should be array or object")));
         }
     }
 
@@ -79,8 +73,7 @@ pub struct IndexQuery {
 
 impl IndexQuery {
     pub fn is_flat(&self) -> bool {
-        return self.index == ALL_INDEX.to_string()
-            || self.flat.is_some() && self.flat.unwrap();
+        return self.index == ALL_INDEX.to_string() || self.flat.is_some() && self.flat.unwrap();
     }
 
     pub fn get_parameter(&self) -> String {
@@ -116,9 +109,9 @@ pub struct ValueIndex {
 }
 
 impl ValueIndex {
-
     pub fn to_keys(&self) -> Vec<Value> {
-        return self.documents
+        return self
+            .documents
             .keys()
             .map(|k| {
                 return json!(&k);
@@ -127,7 +120,8 @@ impl ValueIndex {
     }
 
     pub fn to_values(&self) -> Vec<Value> {
-        return self.documents
+        return self
+            .documents
             .values()
             .map(|v| {
                 return json!(&v);
@@ -135,14 +129,11 @@ impl ValueIndex {
             .collect::<Vec<_>>();
     }
 
-    pub fn from_query(
-        &self,
-        query: &IndexQuery,
-        docs: &BTreeMap<String, Value>) -> Vec<Value> {
-
+    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<Value> {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
 
-        return self.documents
+        return self
+            .documents
             .iter()
             .map(|(k, v)| {
                 let id = slug::slugify(&k);
@@ -179,7 +170,6 @@ impl ValueIndex {
 
                         m.insert(query.get_value_parameter(), json!(&docs));
                     }
-
                 }
 
                 json!(&m)
@@ -189,7 +179,6 @@ impl ValueIndex {
 }
 
 impl Generator {
-
     pub fn load(&mut self) -> Result<(), Error> {
         let documents = get_generator_documents_path(&self.source);
         match documents.read_dir() {
@@ -202,30 +191,28 @@ impl Generator {
                             if let Some(ext) = path.extension() {
                                 if ext == JSON {
                                     let contents = utils::read_string(&path)?;
-                                    let document: Value =
-                                        serde_json::from_str(&contents)?;
+                                    let document: Value = serde_json::from_str(&contents)?;
                                     if let Some(stem) = path.file_stem() {
                                         let name = stem.to_string_lossy().into_owned();
                                         let id = slug::slugify(&name);
 
                                         if self.all.contains_key(&id) {
-                                            return Err(
-                                                Error::new(
-                                                    format!(
-                                                        "Duplicate document id {} ({}.json)", &id, &name)));
+                                            return Err(Error::new(format!(
+                                                "Duplicate document id {} ({}.json)",
+                                                &id, &name
+                                            )));
                                         }
 
                                         self.all.insert(id, document);
                                     }
                                 }
                             }
-
-                        },
-                        Err(e) => return Err(Error::from(e))
+                        }
+                        Err(e) => return Err(Error::from(e)),
                     }
                 }
-            },
-            Err(e) => return Err(Error::from(e))
+            }
+            Err(e) => return Err(Error::from(e)),
         }
         Ok(())
     }
@@ -239,9 +226,7 @@ pub struct GeneratorMap {
 impl GeneratorMap {
     pub fn new() -> Self {
         let map: BTreeMap<String, Generator> = BTreeMap::new();
-        GeneratorMap {
-            map,
-        }
+        GeneratorMap { map }
     }
 
     pub fn get_generator_config_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
@@ -269,11 +254,10 @@ impl GeneratorMap {
 
             // Complain on reserved index name
             if index.contains_key(ALL_INDEX) {
-                return Err(
-                    Error::new(
-                        "The all index is reserved, choose another index name.".to_string()));
+                return Err(Error::new(
+                    "The all index is reserved, choose another index name.".to_string(),
+                ));
             }
-
 
             if let Some(ref mut index) = generator.config.index.as_mut() {
                 // Inherit key from index name
@@ -286,22 +270,28 @@ impl GeneratorMap {
                 // Set up default all index
                 index.insert(
                     ALL_INDEX.to_string(),
-                    IndexRequest{key: Some(ALL_INDEX.to_string())});
+                    IndexRequest {
+                        key: Some(ALL_INDEX.to_string()),
+                    },
+                );
             }
         }
         Ok(())
     }
 
     fn load_index(&mut self) -> Result<(), Error> {
-        let type_err = Err(
-            Error::new(format!("Type error building index, keys must be string values")));
+        let type_err = Err(Error::new(format!(
+            "Type error building index, keys must be string values"
+        )));
 
         for (_, generator) in self.map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
                 let key = def.key.as_ref().unwrap();
-                let mut values = ValueIndex{documents: BTreeMap::new()};
+                let mut values = ValueIndex {
+                    documents: BTreeMap::new(),
+                };
 
                 for (id, document) in &generator.all {
                     if name == ALL_INDEX {
@@ -314,7 +304,7 @@ impl GeneratorMap {
                         let mut candidates: Vec<&str> = Vec::new();
 
                         if !val.is_string() && !val.is_array() {
-                            return type_err
+                            return type_err;
                         }
 
                         if let Some(s) = val.as_str() {
@@ -326,7 +316,7 @@ impl GeneratorMap {
                                 if let Some(s) = val.as_str() {
                                     candidates.push(s);
                                 } else {
-                                    return type_err
+                                    return type_err;
                                 }
                             }
                         }
@@ -342,8 +332,8 @@ impl GeneratorMap {
             }
 
             //for (k, idx) in &generator.indices {
-                //println!("index key {:?}", k);
-                //println!("{}", serde_json::to_string_pretty(&idx.to_keys()).unwrap());
+            //println!("index key {:?}", k);
+            //println!("{}", serde_json::to_string_pretty(&idx.to_keys()).unwrap());
             //}
         }
         //std::process::exit(1);
@@ -365,10 +355,16 @@ impl GeneratorMap {
                 }
                 return Ok(idx.from_query(query, &generator.all));
             } else {
-                return Err(Error::new(format!("Missing generator index '{}'", idx_name)))
+                return Err(Error::new(format!(
+                    "Missing generator index '{}'",
+                    idx_name
+                )));
             }
         } else {
-            return Err(Error::new(format!("Missing generator with name '{}'", name)))
+            return Err(Error::new(format!(
+                "Missing generator with name '{}'",
+                name
+            )));
         }
     }
 
@@ -396,17 +392,19 @@ impl GeneratorMap {
                                     let key = nm.to_string_lossy().into_owned();
                                     let conf = self.get_generator_config_path(&path);
                                     if !conf.exists() || !conf.is_file() {
-                                        return Err(
-                                            Error::new(
-                                                format!("No {} for generator {}", GENERATOR_TOML, key)));
+                                        return Err(Error::new(format!(
+                                            "No {} for generator {}",
+                                            GENERATOR_TOML, key
+                                        )));
                                     }
 
                                     let mut data = path.to_path_buf().clone();
                                     data.push(DOCUMENTS);
                                     if !data.exists() || !data.is_dir() {
-                                        return Err(
-                                            Error::new(
-                                                format!("No {} directory for generator {}", DOCUMENTS, key)));
+                                        return Err(Error::new(format!(
+                                            "No {} directory for generator {}",
+                                            DOCUMENTS, key
+                                        )));
                                     }
 
                                     let contents = utils::read_string(conf)?;
@@ -428,11 +426,10 @@ impl GeneratorMap {
                             }
                         }
                     }
-                },
-                Err(e) => return Err(Error::from(e))
+                }
+                Err(e) => return Err(Error::from(e)),
             }
         }
         Ok(())
     }
-
 }

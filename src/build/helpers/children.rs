@@ -1,9 +1,9 @@
 use std::path::Path;
 
 use handlebars::*;
-use serde_json::{json};
+use serde_json::json;
 
-use crate::build::context::{Context as BuildContext};
+use crate::build::context::Context as BuildContext;
 use crate::build::tree::{self, ListOptions};
 
 #[derive(Clone, Copy)]
@@ -45,7 +45,7 @@ impl HelperDef for Children {
             }
         }
 
-        let list_opts = ListOptions{
+        let list_opts = ListOptions {
             sort: true,
             sort_key: "title".to_string(),
             dir: dir.to_owned(),
@@ -67,10 +67,10 @@ impl HelperDef for Children {
                     }
                     None => return Ok(()),
                 }
-            },
+            }
             // FIXME: find a better way to convert these errors
             // SEE: https://stackoverflow.com/a/58337971/7625589
-            Err(e) => return Err(RenderError::new(e.to_string()))
+            Err(e) => return Err(RenderError::new(e.to_string())),
         }
     }
 }

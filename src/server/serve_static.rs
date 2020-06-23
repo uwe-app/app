@@ -6,22 +6,22 @@
 #[cfg(feature = "watch")]
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
-use std::net::{SocketAddr};
+use std::net::SocketAddr;
 use tokio::sync::broadcast;
 use warp::http::StatusCode;
-use warp::{Filter, Reply, Rejection};
+use warp::{Filter, Rejection, Reply};
 
 use std::convert::Infallible;
 
-use serde::{Serialize};
+use serde::Serialize;
 
 use warp::ws::Message;
 
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 
-use crate::{utils};
-use log::{trace, error};
+use crate::utils;
+use log::{error, trace};
 
 #[tokio::main]
 pub async fn serve(
@@ -30,8 +30,8 @@ pub async fn serve(
     endpoint: String,
     address: SocketAddr,
     bind_tx: Sender<SocketAddr>,
-    reload_tx: broadcast::Sender<Message>) {
-
+    reload_tx: broadcast::Sender<Message>,
+) {
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
     // receive reload messages.
     let sender = warp::any().map(move || reload_tx.subscribe());
@@ -51,25 +51,26 @@ pub async fn serve(
     let livereload = warp::path(endpoint)
         .and(warp::ws())
         .and(sender)
-        .map(move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
-            ws.on_upgrade(move |ws| async move {
-                let (mut user_ws_tx, _user_ws_rx) = ws.split();
-                trace!("websocket got connection");
-                if let Ok(m) = rx.recv().await {
-                    trace!("notify of reload");
-                    let _ = user_ws_tx.send(m).await;
-                }
-            })
-        })
+        .map(
+            move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
+                ws.on_upgrade(move |ws| async move {
+                    let (mut user_ws_tx, _user_ws_rx) = ws.split();
+                    trace!("websocket got connection");
+                    if let Ok(m) = rx.recv().await {
+                        trace!("notify of reload");
+                        let _ = user_ws_tx.send(m).await;
+                    }
+                })
+            },
+        )
         .with(&cors);
 
     let root = serve_dir.clone();
 
     // TODO: support server logging!
 
-    let static_route = warp::fs::dir(serve_dir)
-        .recover(move |e| handle_rejection(e, root.clone()));
-        //.with(warp::log("static"));
+    let static_route = warp::fs::dir(serve_dir).recover(move |e| handle_rejection(e, root.clone()));
+    //.with(warp::log("static"));
 
     let routes = livereload.or(static_route);
 
@@ -81,7 +82,7 @@ pub async fn serve(
                 std::process::exit(1);
             }
             future.await;
-        },
+        }
         Err(e) => {
             error!("{}", e);
             std::process::exit(1);
@@ -122,12 +123,11 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
     let response;
     if error_file.exists() {
         if let Ok(content) = utils::read_string(&error_file) {
-            return Ok(warp::reply::with_status(warp::reply::html(content), code))
+            return Ok(warp::reply::with_status(warp::reply::html(content), code));
         } else {
             code = StatusCode::INTERNAL_SERVER_ERROR;
             message = "ERROR_FILE_READ";
         }
-
     }
 
     response = warp::reply::html(message.to_string());

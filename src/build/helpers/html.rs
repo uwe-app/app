@@ -1,12 +1,12 @@
 use handlebars::*;
 
-use crate::utils;
 use super::render_buffer;
+use crate::utils;
 
 #[derive(Clone, Copy)]
 pub struct Element;
 
-impl HelperDef for Element{
+impl HelperDef for Element {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -15,7 +15,7 @@ impl HelperDef for Element{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let params = h.params(); 
+        let params = h.params();
 
         // TODO: error on element that may not contain children
 
@@ -55,4 +55,3 @@ impl HelperDef for Element{
         Ok(())
     }
 }
-

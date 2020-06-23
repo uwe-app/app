@@ -1,6 +1,6 @@
-use std::path::PathBuf;
-use crate::Error;
 use crate::utils;
+use crate::Error;
+use std::path::PathBuf;
 
 use log::debug;
 

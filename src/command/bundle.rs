@@ -1,14 +1,14 @@
+use crate::Error;
 use std::fs;
 use std::path::PathBuf;
-use crate::Error;
 
+use crate::bundle::*;
 use crate::cache;
 use crate::git;
 use crate::preference;
 use crate::utils;
-use crate::bundle::*;
 
-use log::{info, debug};
+use log::{debug, info};
 
 static ASSETS: &str = "assets.go";
 
@@ -32,10 +32,10 @@ fn prepare(options: &BundleOptions) -> Result<Vec<PathBuf>, Error> {
             info!("rm -rf {}", options.target.display());
             fs::remove_dir_all(&options.target)?;
         } else {
-            return Err(
-                Error::new(
-                    format!(
-                        "{} already exists, use --force to overwrite", options.target.display())))
+            return Err(Error::new(format!(
+                "{} already exists, use --force to overwrite",
+                options.target.display()
+            )));
         }
     }
 
@@ -93,12 +93,16 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
 
     let bundler = Bundler::new();
     if let Err(_) = bundler.version() {
-        return Err(
-            Error::new(
-                "could not execute 'go version', install from https://golang.org/dl/".to_string()))
+        return Err(Error::new(
+            "could not execute 'go version', install from https://golang.org/dl/".to_string(),
+        ));
     }
 
-    info!("bundle {} -> {}", options.source.display(), options.target.display());
+    info!(
+        "bundle {} -> {}",
+        options.source.display(),
+        options.target.display()
+    );
 
     let mut dest = options.target.clone();
     dest.push("assets.go");
@@ -113,19 +117,30 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
 
     // No flags given so build all target platforms
     if !linux && !mac && !windows {
-        linux = true; mac = true; windows = true;
+        linux = true;
+        mac = true;
+        windows = true;
     }
 
     // Set up default targets
     let mut targets: Vec<Target> = Vec::new();
     if linux {
-        targets.push(Target{platform: Platform::linux(), arch: Arch::amd64()});
+        targets.push(Target {
+            platform: Platform::linux(),
+            arch: Arch::amd64(),
+        });
     }
     if mac {
-        targets.push(Target{platform: Platform::darwin(), arch: Arch::amd64()});
+        targets.push(Target {
+            platform: Platform::darwin(),
+            arch: Arch::amd64(),
+        });
     }
     if windows {
-        targets.push(Target{platform: Platform::windows(), arch: Arch::amd64()});
+        targets.push(Target {
+            platform: Platform::windows(),
+            arch: Arch::amd64(),
+        });
     }
 
     let executables = bundler.compile(&options.target, &name, targets)?;

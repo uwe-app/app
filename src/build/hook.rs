@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
-use log::{info, debug};
+use log::{debug, info};
 
-use crate::Error;
-use crate::config::HookConfig;
 use super::context::Context;
+use crate::config::HookConfig;
+use crate::Error;
 
 pub enum Phase {
     Before,
@@ -33,9 +33,10 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
         let node = context.config.node.as_ref().unwrap();
-        let node_env = context.options.tag.get_node_env(
-            node.debug.clone(),
-            node.release.clone());
+        let node_env = context
+            .options
+            .tag
+            .get_node_env(node.debug.clone(), node.release.clone());
 
         info!("{} {}", cmd, args.join(" "));
         debug!("PROJECT_ROOT {}", root.display());
@@ -60,11 +61,11 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         }
 
         command.output()?;
-
     } else {
-        return Err(
-            Error::new(
-                format!("Failed to get canonical path for project root '{}'", project_root.display())))
+        return Err(Error::new(format!(
+            "Failed to get canonical path for project root '{}'",
+            project_root.display()
+        )));
     }
 
     Ok(())
@@ -75,12 +76,8 @@ pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase) -> Vec<(String,
         .into_iter()
         .filter(|(_, v)| {
             let result = match phase {
-                Phase::Before => {
-                    v.after.is_none()
-                },
-                Phase::After => {
-                    v.after.is_some() && v.after.unwrap()
-                }
+                Phase::Before => v.after.is_none(),
+                Phase::After => v.after.is_some() && v.after.unwrap(),
             };
             result
         })

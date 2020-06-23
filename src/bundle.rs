@@ -1,25 +1,25 @@
 use std::fs;
 
-use std::process::{Command, Stdio};
+use std::convert::AsRef;
+use std::fs::Metadata;
 use std::path::Path;
 use std::path::PathBuf;
-use std::fs::Metadata;
-use std::convert::AsRef;
+use std::process::{Command, Stdio};
 use std::time::SystemTime;
 
 use ignore::WalkBuilder;
 
 use human_bytes::human_bytes;
 
-use crate::Error;
 use crate::utils;
+use crate::Error;
 
 use log::info;
 
 pub enum Platform {
     Linux(String),
     Darwin(String),
-    Windows(String)
+    Windows(String),
 }
 
 impl Platform {
@@ -45,7 +45,7 @@ impl Platform {
 }
 
 pub enum Arch {
-    Amd64(String)
+    Amd64(String),
 }
 
 impl Arch {
@@ -78,7 +78,7 @@ pub struct Bundler;
 
 impl Bundler {
     pub fn new() -> Self {
-        Bundler{}
+        Bundler {}
     }
 
     fn get_file_prefix(&self) -> &str {
@@ -88,11 +88,11 @@ import (
 	\"time\"
 )
 type FileInfo = os.FileInfo
-var fs = &EmbeddedFileSystem{assets: AssetMap {\n" 
+var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
     }
 
     fn get_file_suffix(&self) -> &str {
-        "}};\n" 
+        "}};\n"
     }
 
     fn get_init_prefix(&self) -> &str {
@@ -110,7 +110,10 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
 
     fn get_dir_entry(&self, name: String, key: &str, _path: &Path, meta: Metadata) -> String {
         let mod_time = self.get_mod_time(&meta);
-        format!("\"{}\": &DirInfo{{name:\"{}\", modTime: {}}},\n", key, name, mod_time)
+        format!(
+            "\"{}\": &DirInfo{{name:\"{}\", modTime: {}}},\n",
+            key, name, mod_time
+        )
     }
 
     fn get_file_content(&self, path: &Path) -> Result<String, Error> {
@@ -124,19 +127,30 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
         Ok(s)
     }
 
-    fn get_file_entry(&self, name: String, key: &str, path: &Path, meta: Metadata) -> Result<String, Error> {
+    fn get_file_entry(
+        &self,
+        name: String,
+        key: &str,
+        path: &Path,
+        meta: Metadata,
+    ) -> Result<String, Error> {
         let mod_time = self.get_mod_time(&meta);
         let content = self.get_file_content(path)?;
-        Ok(format!("\"{}\": &AssetFile{{name:\"{}\", modTime: {}, size: {}, content: {}}},\n",
+        Ok(format!(
+            "\"{}\": &AssetFile{{name:\"{}\", modTime: {}, size: {}, content: {}}},\n",
             key,
             name,
             mod_time,
             meta.len(),
-            content))
+            content
+        ))
     }
 
     fn get_dir_start(&self, key: &str) -> String {
-        format!("\nfs.assets[\"{}\"].(*DirInfo).entries = []FileInfo{{\n", key)
+        format!(
+            "\nfs.assets[\"{}\"].(*DirInfo).entries = []FileInfo{{\n",
+            key
+        )
     }
 
     fn get_dir_index_entry(&self, key: &str) -> String {
@@ -193,24 +207,19 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
                             } else if path.is_file() {
                                 s.push_str(&self.get_file_entry(nm, &key, &path, meta)?);
                             } else {
-                                return Err(
-                                    Error::new("unknown path type encountered".to_string()))
+                                return Err(Error::new("unknown path type encountered".to_string()));
                             }
                         } else {
-                            return Err(
-                                Error::new("failed to determine file name".to_string()))
+                            return Err(Error::new("failed to determine file name".to_string()));
                         }
                     } else {
-                        return Err(
-                            Error::new("failed to get file meta data".to_string()))
+                        return Err(Error::new("failed to get file meta data".to_string()));
                     }
-
-                },
-                Err(e) => return Err(Error::from(e))
+                }
+                Err(e) => return Err(Error::from(e)),
             }
         }
 
-        
         s.push_str(self.get_file_suffix());
         s.push_str(self.get_init_prefix());
 
@@ -242,19 +251,27 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
             .arg("version")
             .stdout(Stdio::null())
             .spawn()?;
-        Ok(()) 
+        Ok(())
     }
 
-    pub fn compile<P: AsRef<Path>>(&self, path: P, name: &str, targets: Vec<Target>) 
-        -> Result<Vec<PathBuf>, Error> {
+    pub fn compile<P: AsRef<Path>>(
+        &self,
+        path: P,
+        name: &str,
+        targets: Vec<Target>,
+    ) -> Result<Vec<PathBuf>, Error> {
         let mut result: Vec<PathBuf> = Vec::new();
         info!("compile {}", path.as_ref().display());
         for target in targets {
             let name = target.get_binary_name(name);
             let mut dest = path.as_ref().to_path_buf();
             dest.push(&name);
-            info!("{} ({} {})",
-                &name, target.platform.to_string(), target.arch.to_string());
+            info!(
+                "{} ({} {})",
+                &name,
+                target.platform.to_string(),
+                target.arch.to_string()
+            );
             let now = SystemTime::now();
             Command::new("go")
                 .current_dir(path.as_ref())
@@ -272,6 +289,6 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
                 }
             }
         }
-        Ok(result) 
+        Ok(result)
     }
 }

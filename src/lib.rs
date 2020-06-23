@@ -13,9 +13,9 @@ mod git;
 mod locale;
 mod preference;
 mod server;
+pub mod updater;
 mod utils;
 mod workspace;
-pub mod updater;
 
 static INDEX_STEM: &str = "index";
 static INDEX_HTML: &str = "index.html";
@@ -32,8 +32,6 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 static DATA_TOML: &str = "data.toml";
 
-pub use crate::config::{Config, BuildArguments};
-pub use crate::error::Error;
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;
 pub use crate::command::docs::*;
@@ -41,6 +39,8 @@ pub use crate::command::init::*;
 pub use crate::command::pref::*;
 pub use crate::command::serve::*;
 pub use crate::command::update::*;
+pub use crate::config::{BuildArguments, Config};
+pub use crate::error::Error;
 pub use crate::utils::generate_id;
 
 type Result<T> = std::result::Result<T, crate::error::Error>;

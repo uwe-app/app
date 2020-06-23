@@ -1,7 +1,7 @@
+use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
-use std::collections::BTreeMap;
 
 use ignore::WalkBuilder;
 use log::{debug, info, warn};
@@ -9,13 +9,7 @@ use mdbook::MDBook;
 
 use crate::build::loader;
 
-use crate::{
-    utils,
-    Error,
-    DRAFT_KEY,
-    BOOK_THEME_KEY,
-    BOOK_TOML
-};
+use crate::{utils, Error, BOOK_THEME_KEY, BOOK_TOML, DRAFT_KEY};
 
 use super::context::Context;
 
@@ -29,7 +23,10 @@ pub struct BookBuilder<'a> {
 
 impl<'a> BookBuilder<'a> {
     pub fn new(context: &'a Context) -> Self {
-        BookBuilder { context, references: BTreeMap::new() }
+        BookBuilder {
+            context,
+            references: BTreeMap::new(),
+        }
     }
 
     pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
@@ -109,9 +106,8 @@ impl<'a> BookBuilder<'a> {
                                 is_draft = val;
                             }
                         }
-
                     }
-                },
+                }
                 Err(_) => (),
             }
         }
@@ -127,8 +123,10 @@ impl<'a> BookBuilder<'a> {
         let result = MDBook::load(dir);
         match result {
             Ok(mut md) => {
-                let theme = self.context.config.get_book_theme_path(
-                    &self.context.options.source);
+                let theme = self
+                    .context
+                    .config
+                    .get_book_theme_path(&self.context.options.source);
 
                 if let Some(theme_dir) = theme {
                     if theme_dir.exists() && theme_dir.is_dir() {
@@ -145,7 +143,6 @@ impl<'a> BookBuilder<'a> {
                         .set("output.html.livereload-url", livereload_url)?;
                 }
 
-
                 self.references.insert(directory, md);
             }
             Err(e) => return Err(Error::BookError(e)),
@@ -158,10 +155,9 @@ impl<'a> BookBuilder<'a> {
         let dir = p.as_ref();
         let directory = dir.canonicalize()?;
         if let Some(md) = self.references.get(&directory) {
-
             if self.is_draft(&dir) {
                 info!("draft book skipped {}", dir.display());
-                return Ok(())
+                return Ok(());
             }
 
             info!("build {}", dir.display());
@@ -177,7 +173,7 @@ impl<'a> BookBuilder<'a> {
                 Err(e) => return Err(Error::BookError(e)),
             }
         } else {
-            return Err(Error::new(format!("No book found for {}", dir.display())))
+            return Err(Error::new(format!("No book found for {}", dir.display())));
         }
     }
 
@@ -188,7 +184,9 @@ impl<'a> BookBuilder<'a> {
     }
 
     pub fn all(&mut self, context: &Context) -> Result<(), Error> {
-        let paths = self.references.keys()
+        let paths = self
+            .references
+            .keys()
             .map(|p| p.clone())
             .collect::<Vec<_>>();
 

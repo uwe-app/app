@@ -1,22 +1,22 @@
 use std::path::Path;
 
 use handlebars::*;
-use serde_json::json;
 use log::debug;
+use serde_json::json;
 
-use crate::build::matcher;
+use crate::build::context::Context as BuildContext;
 use crate::build::loader;
-use crate::build::context::{Context as BuildContext};
+use crate::build::matcher;
 use crate::BuildOptions;
 
-use crate::{INDEX_HTML};
+use crate::INDEX_HTML;
 
 use super::map_render_error;
 
 #[derive(Clone, Copy)]
 pub struct Link;
 
-impl HelperDef for Link{
+impl HelperDef for Link {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -25,7 +25,6 @@ impl HelperDef for Link{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -55,7 +54,9 @@ impl HelperDef for Link{
             }
 
             if input.is_empty() {
-                return Err(RenderError::new("Type error for `link`, expected string parameter"))
+                return Err(RenderError::new(
+                    "Type error for `link`, expected string parameter",
+                ));
             }
 
             // Check config first
@@ -72,7 +73,7 @@ impl HelperDef for Link{
                     out.write("/")?;
                     out.write(INDEX_HTML)?;
                 }
-                return Ok(())
+                return Ok(());
             }
 
             // Strip the leading slash
@@ -83,9 +84,10 @@ impl HelperDef for Link{
             if let Some(verify) = link_config.verify {
                 if verify {
                     if !matcher::source_exists(&build_ctx, &input) {
-                        return Err(
-                            RenderError::new(
-                                format!("Type error for `link`, missing url {}", input)))
+                        return Err(RenderError::new(format!(
+                            "Type error for `link`, missing url {}",
+                            input
+                        )));
                     }
                 }
             }
@@ -94,13 +96,12 @@ impl HelperDef for Link{
 
             if let Some(ref href_path) = opts.base_href {
                 //println!("Adding base_href {:?}", href_path);
-                base.push(href_path); 
-                
+                base.push(href_path);
+
                 if input.starts_with(href_path) {
                     input = input.trim_start_matches(href_path).to_owned();
                     input = input.trim_start_matches("/").to_owned();
                 }
-
             }
 
             if let Ok(rel) = path.strip_prefix(base) {
@@ -122,24 +123,24 @@ impl HelperDef for Link{
                 debug!("link {:?}", value);
 
                 out.write(&value)?;
-
             } else {
-                return Err(RenderError::new("Type error for `link`, file is outside source!"))
+                return Err(RenderError::new(
+                    "Type error for `link`, file is outside source!",
+                ));
             }
-
-
         } else {
-            return Err(RenderError::new("Type error for `link`, expected string parameter"))
+            return Err(RenderError::new(
+                "Type error for `link`, expected string parameter",
+            ));
         }
         Ok(())
     }
 }
 
-
 #[derive(Clone, Copy)]
 pub struct Components;
 
-impl HelperDef for Components{
+impl HelperDef for Components {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -148,7 +149,6 @@ impl HelperDef for Components{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.target")?
             .as_json()
@@ -170,7 +170,6 @@ impl HelperDef for Components{
         let template = h.template();
         match template {
             Some(t) => {
-
                 let link_config = build_ctx.config.link.as_ref().unwrap();
                 let include_index = link_config.include_index.unwrap();
 
@@ -180,7 +179,8 @@ impl HelperDef for Components{
                         buf.pop();
                     }
 
-                    let mut parts: Vec<String> = buf.iter()
+                    let mut parts: Vec<String> = buf
+                        .iter()
                         .map(|part| part.to_string_lossy().into_owned())
                         .collect();
 
@@ -203,7 +203,8 @@ impl HelperDef for Components{
                         }
 
                         if let Some(src) = matcher::lookup(&build_ctx, &href) {
-                            let mut data = loader::compute(src, &build_ctx.config, true).map_err(map_render_error)?;
+                            let mut data = loader::compute(src, &build_ctx.config, true)
+                                .map_err(map_render_error)?;
                             data.vars.insert("first".to_string(), json!(first));
                             data.vars.insert("last".to_string(), json!(last));
                             data.vars.insert("href".to_string(), json!(url));
@@ -213,22 +214,18 @@ impl HelperDef for Components{
                         }
                     }
                 }
-
-
             }
-            None => return Err(
-                RenderError::new("Template expected for components helper")),
+            None => return Err(RenderError::new("Template expected for components helper")),
         }
 
         Ok(())
     }
 }
 
-
 #[derive(Clone, Copy)]
 pub struct Match;
 
-impl HelperDef for Match{
+impl HelperDef for Match {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -237,7 +234,6 @@ impl HelperDef for Match{
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.target")?
             .as_json()
@@ -256,7 +252,9 @@ impl HelperDef for Match{
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {
-            return Err(RenderError::new("Type error for `match`, two parameters expected"))
+            return Err(RenderError::new(
+                "Type error for `match`, two parameters expected",
+            ));
         }
 
         let mut target: String = "".to_owned();
@@ -265,7 +263,7 @@ impl HelperDef for Match{
 
         if let Some(p) = h.params().get(0) {
             if !p.is_value_missing() {
-                target= p.value().as_str().unwrap_or("").to_string();
+                target = p.value().as_str().unwrap_or("").to_string();
             }
         }
 
