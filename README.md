@@ -1,20 +1,20 @@
 # Hyper Text
 
-## Release
-
-To prepare a release for the current platform run the release task:
-
-```
-make release
-```
-
-The release repositories must be in a `release` folder that is a sibling of this repo, eg:
+Repositories must be siblings and the release repositories take the following form; they must be in a `release` folder that is a sibling of this repo, eg:
 
 ```
 release
 ├── linux
 ├── macos
 └── windows
+```
+
+## Release
+
+To prepare a release for the current platform run the release task:
+
+```
+make release
 ```
 
 The release task will:
@@ -33,6 +33,12 @@ To run the installer locally:
 
 ```
 cargo run --bin=hypertext-installer --
+```
+
+To build the installer and copy the files to the website:
+
+```
+make release-installer
 ```
 
 ## Cargo Bundle

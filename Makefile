@@ -65,7 +65,7 @@ fmt:
 build-release:
 	@cargo build --release
 
-build-release-installer:
+release-installer:
 	@cargo build --release --bin=hypertext-installer
 	@cp -fv target/release/hypertext-installer $(SITE_RELEASE)
 
