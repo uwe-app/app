@@ -4,5 +4,6 @@ pub mod docs;
 pub mod init;
 pub mod pref;
 pub mod serve;
+pub mod site;
 pub mod update;
 pub mod upgrade;

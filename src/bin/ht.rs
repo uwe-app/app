@@ -16,6 +16,7 @@ use hypertext::{
     ServeOptions, UpdateOptions, UpgradeOptions,
 };
 
+use hypertext::site;
 use hypertext::utils;
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
@@ -186,6 +187,7 @@ struct BundleOpts {
     output: PathBuf,
 }
 
+
 #[derive(StructOpt, Debug)]
 enum Command {
     /// Create a new project from a blueprint
@@ -235,6 +237,10 @@ enum Command {
         #[structopt(flatten)]
         args: UpgradeOpts,
     },
+    Site {
+        #[structopt(flatten)]
+        action: Site,
+    },
 }
 
 impl Command {
@@ -244,6 +250,29 @@ impl Command {
         }
     }
 }
+
+#[derive(StructOpt, Debug)]
+enum Site {
+    /// Add a site
+    Add {
+        /// The project name
+        name: String,
+
+        /// Project folder
+        #[structopt(parse(from_os_str))]
+        project: PathBuf,
+    },
+    /// Remove a site
+    #[structopt(alias="rm")]
+    Remove {
+        /// The project name
+        name: String,
+    },
+    /// List sites
+    #[structopt(alias="ls")]
+    List {},
+}
+
 
 fn fatal(e: impl std::error::Error) {
     error!("{}", e);
@@ -363,6 +392,34 @@ fn process_command(cmd: &Command) {
                 fatal(e);
             }
         }
+
+        Command::Site { ref action } => {
+            match action {
+                Site::Add { ref name, ref project } => {
+                    let opts = site::AddOptions {
+                        name: name.to_string(),
+                        project: project.clone(),
+                    };
+                    if let Err(e) = site::add(opts) {
+                        fatal(e); 
+                    }
+                },
+                Site::Remove { ref name } => {
+                    let opts = site::RemoveOptions {
+                        name: name.to_string(),
+                    };
+                    if let Err(e) = site::remove(opts) {
+                        fatal(e); 
+                    }
+                },
+                Site::List { .. } => {
+                    let opts = site::ListOptions{};
+                    if let Err(e) = site::list(opts) {
+                        fatal(e); 
+                    }
+                },
+            }
+        },
 
         Command::Build { ref args } => {
             // NOTE: We want the help output to show "."
