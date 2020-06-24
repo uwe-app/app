@@ -1,22 +1,24 @@
 use std::path::PathBuf;
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use log::info;
+use log::{info, warn};
 
 use crate::cache;
+use crate::config::Config;
+use crate::Error;
 use crate::Result;
 use crate::utils;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct SiteManifest {
-    pub sites: Vec<SiteManifestEntry>,
+    pub sites: HashMap<String, SiteManifestEntry>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct SiteManifestEntry {
-    pub name: String,
     pub project: PathBuf,
 }
 
@@ -44,13 +46,79 @@ fn load() -> Result<SiteManifest> {
     Ok(manifest)
 }
 
+fn save(manifest: SiteManifest) -> Result<()> {
+    let file = cache::get_workspace_manifest()?;
+    let content = toml::to_string(&manifest)?;
+    utils::write_string(file, content)?;
+    Ok(())
+}
+
 pub fn add(options: AddOptions) -> Result<()> {
-    println!("Add site: {:?}", options);
+    let mut manifest = load()?;
+
+    // Must have a valid config
+    let config = Config::load(&options.project, false)?;
+    let project = config.get_project();
+
+    // Use specific name or infer from the directory name
+    let mut name = "".to_string();
+    if let Some(ref project_name) = options.name {
+        name = project_name.to_string()
+    } else {
+        if let Some(ref file_name) = project.file_name() {
+            name = file_name.to_string_lossy().into_owned();
+        }
+    }
+
+    if name.is_empty() {
+        return Err(
+            Error::new(format!("Could not determine site name")));
+    }
+
+    if manifest.sites.contains_key(&name) {
+        return Err(
+            Error::new(format!("Site '{}' already exists", name)));
+    }
+
+    let mut link_target = cache::get_workspace_dir()?;
+    link_target.push(&name);
+
+    if link_target.exists() {
+        std::fs::remove_file(&link_target)?;
+    }
+
+    utils::symlink::soft(&project, &link_target)?;
+
+    let entry = SiteManifestEntry { project };
+    manifest.sites.insert(name.clone(), entry);
+    save(manifest)?;
+
+    info!("Added {}", &name);
+
     Ok(())
 }
 
 pub fn remove(options: RemoveOptions) -> Result<()> {
-    println!("Remove site: {:?}", options);
+    let mut manifest = load()?;
+
+    if !manifest.sites.contains_key(&options.name) {
+        return Err(
+            Error::new(format!("Site '{}' does not exist", &options.name)));
+    }
+
+    // Remove the symlink
+    let mut link_target = cache::get_workspace_dir()?;
+    link_target.push(&options.name);
+    if let Err(e) = std::fs::remove_file(&link_target) {
+        warn!("Unable to remove symlink: {}", e);
+    }
+
+    // Update the manifest
+    manifest.sites.remove(&options.name);
+    save(manifest)?;
+
+    info!("Removed {}", &options.name);
+
     Ok(())
 }
 
@@ -59,8 +127,8 @@ pub fn list(_options: ListOptions) -> Result<()> {
     if manifest.sites.is_empty() {
         info!("No sites yet");
     } else {
-        for site in manifest.sites {
-            info!("Site {} -> {}", site.name, site.project.display());
+        for (name, site) in manifest.sites {
+            info!("{} -> {}", name, site.project.display());
         } 
     }
     Ok(())

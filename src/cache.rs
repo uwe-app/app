@@ -55,7 +55,7 @@ pub fn get_workspace_dir() -> Result<PathBuf, Error> {
 }
 
 pub fn get_workspace_manifest() -> Result<PathBuf, Error> {
-    let mut file = get_workspace_dir()?;
+    let mut file = get_root_dir()?;
     file.push(WORKSPACE_FILE);
     Ok(file)
 }
