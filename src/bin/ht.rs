@@ -12,8 +12,10 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions, PublishOptions, PublishProvider, ServeOptions, UpdateOptions, UpgradeOptions,
+    BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions, PublishOptions, ServeOptions, UpdateOptions, UpgradeOptions,
 };
+
+use hypertext::publisher::PublishProvider;
 
 use hypertext::site;
 use hypertext::utils;
@@ -122,6 +124,10 @@ struct UpgradeOpts {}
 
 #[derive(StructOpt, Debug)]
 struct PublishOpts {
+    /// Project path
+    #[structopt(parse(from_os_str))]
+    project: PathBuf,
+
     /// Publish profile name
     #[structopt()]
     profile: String,
@@ -410,6 +416,7 @@ fn process_command(cmd: &Command) {
         Command::Publish { ref args } => {
             let opts = PublishOptions {
                 provider: PublishProvider::Aws,
+                project: args.project.clone(),
                 profile: args.profile.clone(),
             };
 

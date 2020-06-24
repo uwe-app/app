@@ -75,6 +75,7 @@ pub struct Config {
     pub date: Option<DateConfig>,
     pub link: Option<LinkConfig>,
     pub profile: Option<HashMap<String, BuildArguments>>,
+    pub publish: Option<PublishConfig>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -112,6 +113,7 @@ impl Default for Config {
             date: Some(Default::default()),
             link: Some(Default::default()),
             profile: Some(Default::default()),
+            publish: Some(Default::default()),
         }
     }
 }
@@ -222,6 +224,17 @@ impl Config {
                     }
 
                     // FIXME: validate date time format specifiers
+                }
+
+                // Set up AWS publish configs to have a bucket that points
+                // to the host name by default
+                if let Some(ref mut publish) = cfg.publish {
+                    for (_, v) in publish.aws.iter_mut() {
+                        if v.bucket.is_none() {
+                            v.bucket = Some(cfg.host.clone());
+
+                        }
+                    }
                 }
 
                 return Ok(cfg);
@@ -543,4 +556,16 @@ impl Default for LinkConfig {
             include_index: Some(false),
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct PublishConfig {
+    pub aws: HashMap<String, AwsPublishConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AwsPublishConfig {
+    pub bucket: Option<String>,
+    pub credentials: String,
+    pub path: String,
 }
