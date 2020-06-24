@@ -128,8 +128,7 @@ pub fn list(_options: ListOptions) -> Result<()> {
         info!("No sites yet");
     } else {
         for (name, site) in manifest.sites {
-            let ok = Config::load(&site.project, false).is_ok();
-            if ok {
+            if Config::load(&site.project, false).is_ok() {
                 info!("{} -> {}", name, site.project.display());
             } else {
                 error!("{} -> {} [invalid]", name, site.project.display());
