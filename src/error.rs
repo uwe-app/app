@@ -128,6 +128,7 @@ impl From<reqwest::Error> for Error {
     }
 }
 
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -174,3 +175,50 @@ impl error::Error for Error {
         }
     }
 }
+
+
+#[derive(Debug)]
+pub enum AwsError {
+    Tls(rusoto_core::request::TlsError),
+    Credentials(rusoto_core::credential::CredentialsError),
+    HeadBucket(rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
+}
+
+impl From<rusoto_core::request::TlsError> for AwsError {
+    fn from(error: rusoto_core::request::TlsError) -> Self {
+        AwsError::Tls(error)
+    }
+}
+
+impl From<rusoto_core::credential::CredentialsError> for AwsError {
+    fn from(error: rusoto_core::credential::CredentialsError) -> Self {
+        AwsError::Credentials(error)
+    }
+}
+
+impl From<rusoto_core::RusotoError<rusoto_s3::HeadBucketError>> for AwsError {
+    fn from(error: rusoto_core::RusotoError<rusoto_s3::HeadBucketError>) -> Self {
+        AwsError::HeadBucket(error)
+    }
+}
+
+impl fmt::Display for AwsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            AwsError::Tls(ref e) => e.fmt(f),
+            AwsError::Credentials(ref e) => e.fmt(f),
+            AwsError::HeadBucket(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl error::Error for AwsError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match *self {
+            AwsError::Tls(ref e) => Some(e),
+            AwsError::Credentials(ref e) => Some(e),
+            AwsError::HeadBucket(ref e) => Some(e),
+        }
+    }
+}
+

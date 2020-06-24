@@ -12,8 +12,7 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions,
-    ServeOptions, UpdateOptions, UpgradeOptions,
+    BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions, PublishOptions, PublishProvider, ServeOptions, UpdateOptions, UpgradeOptions,
 };
 
 use hypertext::site;
@@ -120,6 +119,13 @@ struct UpdateOpts {
 
 #[derive(StructOpt, Debug)]
 struct UpgradeOpts {}
+
+#[derive(StructOpt, Debug)]
+struct PublishOpts {
+    /// Publish profile name
+    #[structopt()]
+    profile: String,
+}
 
 #[derive(StructOpt, Debug)]
 struct PrefOpts {
@@ -237,6 +243,14 @@ enum Command {
         #[structopt(flatten)]
         args: UpgradeOpts,
     },
+
+    /// Publish a site
+    Publish {
+        #[structopt(flatten)]
+        args: PublishOpts,
+    },
+
+    /// Manage sites
     Site {
         #[structopt(flatten)]
         action: Site,
@@ -389,6 +403,18 @@ fn process_command(cmd: &Command) {
             };
 
             if let Err(e) = hypertext::bundle(opts) {
+                fatal(e);
+            }
+        }
+
+        Command::Publish { ref args } => {
+            let opts = PublishOptions {
+                provider: PublishProvider::Aws,
+                profile: args.profile.clone(),
+            };
+
+            if let Err(e) = hypertext::publish(opts) {
+                println!("Error {:?}", e);
                 fatal(e);
             }
         }

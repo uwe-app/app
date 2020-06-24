@@ -3,6 +3,7 @@ pub mod bundle;
 pub mod docs;
 pub mod init;
 pub mod pref;
+pub mod publish;
 pub mod serve;
 pub mod site;
 pub mod update;

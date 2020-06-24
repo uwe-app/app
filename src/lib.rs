@@ -36,6 +36,7 @@ pub use crate::command::bundle::*;
 pub use crate::command::docs::*;
 pub use crate::command::init::*;
 pub use crate::command::pref::*;
+pub use crate::command::publish::*;
 pub use crate::command::serve::*;
 pub use crate::command::site;
 pub use crate::command::update::*;
@@ -46,3 +47,4 @@ pub use crate::utils::generate_id;
 
 pub type ErrorCallback = fn(Error);
 pub type Result<T> = std::result::Result<T, crate::error::Error>;
+pub type AwsResult<T> = std::result::Result<T, crate::error::AwsError>;

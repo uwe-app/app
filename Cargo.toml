@@ -37,6 +37,9 @@ edit = "0.1"
 semver = "0.10"
 reqwest = { version = "0.10", features = ["blocking", "json"] }
 
+rusoto_core = "0.44.0"
+rusoto_s3 = "0.44.0"
+
 # Watch feature
 notify = { version = "4.0.0", optional = true }
 # gitignore = { version = "1.0", optional = true }
