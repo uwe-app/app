@@ -24,6 +24,7 @@ pub enum Error {
     Git(git2::Error),
     Semver(semver::SemVerError),
     HttpClient(reqwest::Error),
+    Region(rusoto_signature::region::ParseRegionError),
 }
 
 impl Error {
@@ -128,6 +129,11 @@ impl From<reqwest::Error> for Error {
     }
 }
 
+impl From<rusoto_signature::region::ParseRegionError> for Error {
+    fn from(error: rusoto_signature::region::ParseRegionError) -> Self {
+        Error::Region(error)
+    }
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -149,6 +155,7 @@ impl fmt::Display for Error {
             Error::Git(ref e) => e.fmt(f),
             Error::Semver(ref e) => e.fmt(f),
             Error::HttpClient(ref e) => e.fmt(f),
+            Error::Region(ref e) => e.fmt(f),
         }
     }
 }
@@ -171,6 +178,7 @@ impl error::Error for Error {
             Error::Git(ref e) => Some(e),
             Error::Semver(ref e) => Some(e),
             Error::HttpClient(ref e) => Some(e),
+            Error::Region(ref e) => Some(e),
             _ => None,
         }
     }

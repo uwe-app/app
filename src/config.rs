@@ -229,10 +229,9 @@ impl Config {
                 // Set up AWS publish configs to have a bucket that points
                 // to the host name by default
                 if let Some(ref mut publish) = cfg.publish {
-                    for (_, v) in publish.aws.iter_mut() {
-                        if v.bucket.is_none() {
-                            v.bucket = Some(cfg.host.clone());
-
+                    if let Some(ref mut aws) = publish.aws {
+                        if aws.bucket.is_none() {
+                            aws.bucket = Some(cfg.host.clone());
                         }
                     }
                 }
@@ -560,12 +559,13 @@ impl Default for LinkConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct PublishConfig {
-    pub aws: HashMap<String, AwsPublishConfig>,
+    pub aws: Option<AwsPublishConfig>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AwsPublishConfig {
-    pub bucket: Option<String>,
     pub credentials: String,
-    pub path: String,
+    pub region: String,
+    pub bucket: Option<String>,
+    pub paths: HashMap<String, String>
 }

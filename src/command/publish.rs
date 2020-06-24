@@ -1,9 +1,7 @@
 use std::path::PathBuf;
 
-use rusoto_core::request::HttpClient;
-use rusoto_core::credential;
 use rusoto_core::Region;
-use rusoto_s3::*;
+use std::str::FromStr;
 
 use crate::Error;
 use crate::Result;
@@ -14,59 +12,57 @@ use crate::publisher::{self, PublishRequest, PublishProvider};
 #[derive(Debug)]
 pub struct PublishOptions {
     pub project: PathBuf,
-    pub profile: String,
+    pub path: Option<String>,
     pub provider: PublishProvider,
 }
 
-fn find_aws_config<'a>(config: &'a Config, name: &str) -> Option<&'a AwsPublishConfig> {
-    if let Some(ref publish) = config.publish {
-        return publish.aws.get(name);
+fn find_aws_path<'a>(config: &'a AwsPublishConfig, name: &str) -> String {
+    if config.paths.contains_key(name) {
+        return config.paths.get(name).unwrap().to_string();
     }
-    None
+    String::from("")
 }
 
 #[tokio::main]
 pub async fn publish(options: PublishOptions) -> Result<()> {
     let config = Config::load(&options.project, false)?;
 
+    let publish = config.publish.as_ref().unwrap();
+
     match options.provider {
         PublishProvider::Aws => {
 
-            if let Some(publish_config) = find_aws_config(&config, &options.profile) {
+            if let Some(ref publish_config) = publish.aws {
+
+                let mut path = String::from("");
+
+                if let Some(ref target_path) = options.path {
+                    path = find_aws_path(&publish_config, target_path);
+                    if !target_path.is_empty() && path.is_empty() {
+                        return Err(
+                            Error::new(
+                                format!("Unknown remote path '{}', check the publish configuration", target_path)))
+                    }
+                }
+
+                let region = Region::from_str(&publish_config.region)?;
+
                 let request = PublishRequest {
                     profile_name: publish_config.credentials.clone(),
-                    // TODO: get a region
-                    region: Region::ApSoutheast1,
+                    region,
                     bucket: publish_config.bucket.as_ref().unwrap().clone(),
+                    path,
                 };
 
                 println!("Trying to publish");
 
                 publisher::publish(request).await;
             } else {
-                return Err(Error::new(format!("Unknown publish profile {}", &options.profile)))
+                return Err(Error::new(format!("No publish configuration")))
             }
 
         },
     }
-
-    //let mut provider = credential::ProfileProvider::new()?;
-    //provider.set_profile("tmpfs".to_string());
-
-    //let dispatcher = HttpClient::new()?;
-
-    ////let region = Region::default();
-    //let region = Region::ApSoutheast1;
-    //let client = S3Client::new_with(dispatcher, provider, region);
-
-    //let req = HeadBucketRequest {
-        //bucket: "tmpfs.org".to_string()
-    //};
-
-    //let result = client.head_bucket(req).await?;
-
-
-    //result.foo();
 
     Ok(())
 }

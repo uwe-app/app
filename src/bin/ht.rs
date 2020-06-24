@@ -128,9 +128,9 @@ struct PublishOpts {
     #[structopt(parse(from_os_str))]
     project: PathBuf,
 
-    /// Publish profile name
+    /// Remote publish path
     #[structopt()]
-    profile: String,
+    path: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
@@ -417,7 +417,7 @@ fn process_command(cmd: &Command) {
             let opts = PublishOptions {
                 provider: PublishProvider::Aws,
                 project: args.project.clone(),
-                profile: args.profile.clone(),
+                path: args.path.clone(),
             };
 
             if let Err(e) = hypertext::publish(opts) {
