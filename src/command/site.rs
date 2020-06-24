@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use log::{info, warn};
+use log::{info, warn, error};
 
 use crate::cache;
 use crate::config::Config;
@@ -58,7 +58,7 @@ pub fn add(options: AddOptions) -> Result<()> {
 
     // Must have a valid config
     let config = Config::load(&options.project, false)?;
-    let project = config.get_project();
+    let project = config.get_project().canonicalize()?;
 
     // Use specific name or infer from the directory name
     let mut name = "".to_string();
@@ -128,7 +128,12 @@ pub fn list(_options: ListOptions) -> Result<()> {
         info!("No sites yet");
     } else {
         for (name, site) in manifest.sites {
-            info!("{} -> {}", name, site.project.display());
+            let ok = Config::load(&site.project, false).is_ok();
+            if ok {
+                info!("{} -> {}", name, site.project.display());
+            } else {
+                error!("{} -> {} [invalid]", name, site.project.display());
+            }
         } 
     }
     Ok(())
