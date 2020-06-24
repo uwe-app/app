@@ -255,12 +255,12 @@ impl Command {
 enum Site {
     /// Add a site
     Add {
-        /// The project name
-        name: String,
-
         /// Project folder
         #[structopt(parse(from_os_str))]
         project: PathBuf,
+
+        /// Project name
+        name: Option<String>,
     },
     /// Remove a site
     #[structopt(alias="rm")]
@@ -397,8 +397,8 @@ fn process_command(cmd: &Command) {
             match action {
                 Site::Add { ref name, ref project } => {
                     let opts = site::AddOptions {
-                        name: name.to_string(),
                         project: project.clone(),
+                        name: name.clone(),
                     };
                     if let Err(e) = site::add(opts) {
                         fatal(e); 

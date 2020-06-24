@@ -11,6 +11,8 @@ static BIN: &str = "bin";
 static ENV: &str = "env";
 
 static BLUEPRINT_NAME: &str = "blueprint";
+static WORKSPACE_NAME: &str = "workspace";
+static WORKSPACE_FILE: &str = "workspace.toml";
 
 static STANDALONE_REPO: &str = "https://github.com/hypertext-live/standalone";
 static STANDALONE_NAME: &str = "standalone";
@@ -41,6 +43,21 @@ pub fn get_root_dir() -> Result<PathBuf, Error> {
         return Ok(buf);
     }
     Err(Error::new(format!("Could not determine home directory")))
+}
+
+pub fn get_workspace_dir() -> Result<PathBuf, Error> {
+    let mut bin = get_root_dir()?;
+    bin.push(WORKSPACE_NAME);
+    if !bin.exists() {
+        fs::create_dir(&bin)?;
+    }
+    Ok(bin)
+}
+
+pub fn get_workspace_manifest() -> Result<PathBuf, Error> {
+    let mut file = get_workspace_dir()?;
+    file.push(WORKSPACE_FILE);
+    Ok(file)
 }
 
 pub fn get_env_file() -> Result<PathBuf, Error> {
