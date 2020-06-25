@@ -12,7 +12,7 @@ use super::loader;
 use super::matcher;
 use super::matcher::FileType;
 use super::watch;
-use super::Builder;
+use super::compiler::Builder;
 
 use crate::ErrorCallback;
 use crate::Error;
