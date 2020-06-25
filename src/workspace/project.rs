@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::Path;
 use std::path::PathBuf;
 
 use log::{debug, info};
@@ -8,8 +7,6 @@ use crate::{Error, Result};
 use crate::build::{CompilerOptions, BuildTag};
 use crate::config::{BuildArguments, Config};
 use crate::{utils, LAYOUT_HBS};
-
-use super::Workspace;
 
 fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let build = cfg.build.as_ref().unwrap();

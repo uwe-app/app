@@ -1,48 +1,28 @@
 use std::fs;
-use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::mpsc::channel;
-
-use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
-
-use tokio::sync::broadcast::Sender;
-use warp::ws::Message;
 
 use log::info;
 
 use crate::build::context::Context;
 use crate::build::generator::GeneratorMap;
-use crate::build::invalidator::Invalidator;
 use crate::build::loader;
 use crate::build::compiler::Compiler;
-use crate::build::report::FileBuilder;
 use crate::build::CompilerOptions;
-use crate::command::serve::*;
 use crate::config::{BuildArguments, Config};
-use crate::{utils, Error};
 
-use crate::ErrorCallback;
+use crate::Result;
 use crate::locale::Locales;
 
 use super::Workspace;
 
-pub fn compile<P: AsRef<Path>>(
-    project: P,
-    args: &BuildArguments,
-    error_cb: ErrorCallback,
-) -> Result<(), Error> {
+pub fn compile<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
     let mut spaces: Vec<Workspace> = Vec::new();
     super::finder::find(project, true, &mut spaces)?;
-    compile_workspaces(spaces, args, error_cb)
+    compile_workspaces(spaces, args)
 }
 
-fn compile_workspaces(
-    spaces: Vec<Workspace>,
-    args: &BuildArguments,
-    error_cb: ErrorCallback,
-) -> Result<(), Error> {
+fn compile_workspaces(spaces: Vec<Workspace>, args: &BuildArguments) -> Result<Context> {
     let mut ctx: Context = Default::default();
 
     for mut space in spaces {
@@ -84,16 +64,10 @@ fn compile_workspaces(
 
     crate::build::redirect::write(&ctx)?;
 
-    // FIXME: restore this
-
-    //if ctx.options.live {
-        //livereload(ctx, error_cb)?;
-    //}
-
-    Ok(())
+    Ok(ctx)
 }
 
-fn load(locales: Locales, config: Config, options: CompilerOptions) -> Result<Context, Error> {
+fn load(locales: Locales, config: Config, options: CompilerOptions) -> Result<Context> {
     // Load generators
     let mut generators = GeneratorMap::new();
     generators.load(options.source.clone(), &config)?;
@@ -105,7 +79,7 @@ fn load(locales: Locales, config: Config, options: CompilerOptions) -> Result<Co
     Ok(Context::new(locales, config, options, generators))
 }
 
-fn build(ctx: &Context) -> Result<(), Error> {
+fn build(ctx: &Context) -> Result<()> {
     let mut builder = Compiler::new(ctx);
     builder.manifest.load()?;
 
