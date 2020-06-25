@@ -124,7 +124,7 @@ pub fn build_project<P: AsRef<Path>>(
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
     let mut spaces: Vec<Workspace> = Vec::new();
-    workspace::load(project, true, &mut spaces)?;
+    workspace::finder::find(project, true, &mut spaces)?;
     build_workspaces(spaces, args, error_cb)
 }
 
@@ -136,7 +136,7 @@ fn build_workspaces(
     let mut ctx: Context = Default::default();
 
     for mut space in spaces {
-        let opts = workspace::prepare(&mut space.config, &args)?;
+        let opts = workspace::project::prepare(&mut space.config, &args)?;
         let base_target = opts.target.clone();
         let build_config = space.config.build.as_ref().unwrap();
 
