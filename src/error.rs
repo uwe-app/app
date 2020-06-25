@@ -25,6 +25,7 @@ pub enum Error {
     Semver(semver::SemVerError),
     HttpClient(reqwest::Error),
     Region(rusoto_signature::region::ParseRegionError),
+    Aws(AwsError),
 }
 
 impl Error {
@@ -135,6 +136,12 @@ impl From<rusoto_signature::region::ParseRegionError> for Error {
     }
 }
 
+impl From<AwsError> for Error {
+    fn from(error: AwsError) -> Self {
+        Error::Aws(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -156,6 +163,7 @@ impl fmt::Display for Error {
             Error::Semver(ref e) => e.fmt(f),
             Error::HttpClient(ref e) => e.fmt(f),
             Error::Region(ref e) => e.fmt(f),
+            Error::Aws(ref e) => e.fmt(f),
         }
     }
 }
@@ -179,6 +187,7 @@ impl error::Error for Error {
             Error::Semver(ref e) => Some(e),
             Error::HttpClient(ref e) => Some(e),
             Error::Region(ref e) => Some(e),
+            Error::Aws(ref e) => Some(e),
             _ => None,
         }
     }

@@ -56,7 +56,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
 
                 println!("Trying to publish");
 
-                publisher::publish(request).await;
+                publisher::publish(request).await?;
             } else {
                 return Err(Error::new(format!("No publish configuration")))
             }
