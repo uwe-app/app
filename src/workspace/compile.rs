@@ -16,53 +16,61 @@ use crate::locale::Locales;
 
 use super::Workspace;
 
-pub fn compile<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
+pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
     let mut spaces: Vec<Workspace> = Vec::new();
     super::finder::find(project, true, &mut spaces)?;
-    compile_workspaces(spaces, args)
-}
 
-fn compile_workspaces(spaces: Vec<Workspace>, args: &BuildArguments) -> Result<Context> {
     let mut ctx: Context = Default::default();
-
     for mut space in spaces {
-        let opts = super::project::prepare(&mut space.config, &args)?;
-        let base_target = opts.target.clone();
-        let build_config = space.config.build.as_ref().unwrap();
-
-        let mut locales = Locales::new(&space.config);
-        locales.load(&space.config, &build_config.source)?;
-
-        if locales.is_multi() {
-            for lang in locales.map.keys() {
-                let mut lang_opts = opts.clone();
-
-                let mut locale_target = base_target.clone();
-                locale_target.push(&lang);
-
-                info!("lang {} -> {}", &lang, locale_target.display());
-
-                if !locale_target.exists() {
-                    fs::create_dir_all(&locale_target)?;
-                }
-
-                lang_opts.target = locale_target;
-
-                // FIXME: prevent loading all the locales again!?
-                let mut copy = Locales::new(&space.config);
-                copy.load(&space.config, &build_config.source)?;
-                copy.lang = lang.clone();
-
-                ctx = load(copy, space.config.clone(), lang_opts)?;
-                build(&ctx)?;
-            }
-        } else {
-            ctx = load(locales, space.config, opts)?;
-            build(&ctx)?;
-        }
+        ctx = compile_from(&mut space.config, &args)?;
     }
 
     crate::build::redirect::write(&ctx)?;
+
+    Ok(ctx)
+}
+
+pub fn compile_from(mut config: &mut Config, args: &BuildArguments) -> Result<Context> {
+    let opts = super::project::prepare(&mut config, &args)?;
+    compile(&config, opts)
+}
+
+pub fn compile(config: &Config, opts: CompilerOptions) -> Result<Context> {
+    let mut ctx: Context = Default::default();
+    //let opts = super::project::prepare(&mut config, &args)?;
+    let base_target = opts.target.clone();
+    let build_config = config.build.as_ref().unwrap();
+
+    let mut locales = Locales::new(&config);
+    locales.load(&config, &build_config.source)?;
+
+    if locales.is_multi() {
+        for lang in locales.map.keys() {
+            let mut lang_opts = opts.clone();
+
+            let mut locale_target = base_target.clone();
+            locale_target.push(&lang);
+
+            info!("lang {} -> {}", &lang, locale_target.display());
+
+            if !locale_target.exists() {
+                fs::create_dir_all(&locale_target)?;
+            }
+
+            lang_opts.target = locale_target;
+
+            // FIXME: prevent loading all the locales again!?
+            let mut copy = Locales::new(&config);
+            copy.load(&config, &build_config.source)?;
+            copy.lang = lang.clone();
+
+            ctx = load(copy, config.clone(), lang_opts)?;
+            build(&ctx)?;
+        }
+    } else {
+        ctx = load(locales, config.clone(), opts)?;
+        build(&ctx)?;
+    }
 
     Ok(ctx)
 }

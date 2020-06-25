@@ -1,5 +1,6 @@
 use crate::config::Config;
 
+#[derive(Clone)]
 pub struct Workspace {
     pub config: Config,
 }

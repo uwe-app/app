@@ -5,7 +5,8 @@ use std::str::FromStr;
 
 use crate::Error;
 use crate::Result;
-use crate::config::{Config, AwsPublishConfig};
+use crate::config::{Config, AwsPublishConfig, BuildArguments};
+use crate::workspace::{self, Workspace};
 
 use crate::publisher::{self, PublishRequest, PublishProvider};
 
@@ -23,9 +24,21 @@ fn find_aws_path<'a>(config: &'a AwsPublishConfig, name: &str) -> String {
     String::from("")
 }
 
+pub fn publish(options: PublishOptions) -> Result<()> {
+    let mut spaces: Vec<Workspace> = Vec::new();
+    workspace::find(&options.project, true, &mut spaces)?;
+    for mut space in spaces {
+        publish_one(&options, &mut space.config)?;
+    }
+    Ok(())
+}
+
 #[tokio::main]
-pub async fn publish(options: PublishOptions) -> Result<()> {
-    let config = Config::load(&options.project, false)?;
+async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Result<()> {
+
+    let mut args: BuildArguments = Default::default();
+    args.release = Some(true);
+    let _ = workspace::compile_from(&mut config, &args)?;
 
     let publish = config.publish.as_ref().unwrap();
 

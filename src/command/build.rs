@@ -24,7 +24,7 @@ pub fn build_project<P: AsRef<Path>>(
     args: &BuildArguments,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-    let ctx = workspace::compile(project, args)?;
+    let ctx = workspace::compile_project(project, args)?;
     if ctx.options.live {
         livereload(ctx, error_cb)?;
     }
