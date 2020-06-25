@@ -125,7 +125,6 @@ impl<'a> Builder<'a> {
         &mut self,
         p: P,
         file_type: FileType,
-        pages_only: bool,
     ) -> Result<(), Error> {
         let file = p.as_ref();
         match file_type {
@@ -212,7 +211,7 @@ impl<'a> Builder<'a> {
 
                 if self
                     .manifest
-                    .is_dirty(file, &dest, pages_only || self.context.options.force)
+                    .is_dirty(file, &dest, self.context.options.force)
                 {
                     info!("{} -> {}", file.display(), dest.display());
                     let s = self
@@ -264,26 +263,26 @@ impl<'a> Builder<'a> {
     }
 
     // Build all target paths
-    pub fn all(&mut self, targets: Vec<PathBuf>, pages_only: bool) -> Result<(), Error> {
+    pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<(), Error> {
         for p in targets {
             if p.is_file() {
-                self.one(&p, pages_only)?;
+                self.one(&p)?;
             } else {
-                self.build(&p, pages_only)?;
+                self.build(&p)?;
             }
         }
         Ok(())
     }
 
     // Build a single file
-    pub fn one(&mut self, file: &PathBuf, pages_only: bool) -> Result<(), Error> {
+    pub fn one(&mut self, file: &PathBuf) -> Result<(), Error> {
         let extensions = &self.context.config.extension.as_ref().unwrap();
         let file_type = matcher::get_type(file, extensions);
-        self.process_file(file, file_type, pages_only)
+        self.process_file(file, file_type)
     }
 
     // Recursively walk and build files in a directory
-    pub fn build(&mut self, target: &PathBuf, pages_only: bool) -> Result<(), Error> {
+    pub fn build(&mut self, target: &PathBuf) -> Result<(), Error> {
         let config_file = self.context.config.file.clone();
 
         let partials = self.register_templates_directory()?;
@@ -372,7 +371,7 @@ impl<'a> Builder<'a> {
                         self.book.build(&path)?;
                     } else if path.is_file() {
                         let file = path.to_path_buf();
-                        self.one(&file, pages_only)?
+                        self.one(&file)?
                     }
                 }
                 Err(e) => return Err(Error::IgnoreError(e)),

@@ -418,10 +418,10 @@ impl<'a> Invalidator<'a> {
 
         match rule.strategy {
             Strategy::Full => {
-                return self.builder.build(target, false);
+                return self.builder.build(target);
             }
             Strategy::Page => {
-                return self.builder.build(target, true);
+                return self.builder.build(target);
             }
             _ => {
                 for action in &rule.actions {
@@ -435,9 +435,7 @@ impl<'a> Invalidator<'a> {
                                 &self.context.options.source,
                             )?;
 
-                            let extensions = &self.context.config.extension.as_ref().unwrap();
-                            let file_type = matcher::get_type(&file, extensions);
-                            if let Err(e) = self.builder.process_file(&file, file_type, false) {
+                            if let Err(e) = self.builder.one(&file) {
                                 return Err(e);
                             }
                         }

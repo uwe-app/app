@@ -207,7 +207,7 @@ fn build(ctx: &Context) -> Result<(), Error> {
         targets.push(ctx.options.source.clone());
     }
 
-    builder.all(targets, false)?;
+    builder.all(targets)?;
 
     builder.manifest.save()?;
     Ok(())
