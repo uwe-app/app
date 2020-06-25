@@ -7,7 +7,7 @@ use serde_json::json;
 use crate::build::context::Context as BuildContext;
 use crate::build::loader;
 use crate::build::matcher;
-use crate::BuildOptions;
+use crate::build::CompilerOptions;
 
 use crate::INDEX_HTML;
 
@@ -248,7 +248,7 @@ impl HelperDef for Match {
             .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
             .to_owned();
 
-        let opts: BuildOptions = serde_json::from_value(json!(opts)).unwrap();
+        let opts: CompilerOptions = serde_json::from_value(json!(opts)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {

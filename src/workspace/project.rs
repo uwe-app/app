@@ -5,13 +5,13 @@ use std::path::PathBuf;
 use log::{debug, info};
 
 use crate::{Error, Result};
-use crate::command::build::{BuildOptions, BuildTag};
+use crate::build::{CompilerOptions, BuildTag};
 use crate::config::{BuildArguments, Config};
 use crate::{utils, LAYOUT_HBS};
 
 use super::Workspace;
 
-fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions> {
+fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
 
@@ -97,7 +97,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions> {
 
     let clean_url = build.clean_url.is_some() && build.clean_url.unwrap();
 
-    let opts = BuildOptions {
+    let opts = CompilerOptions {
         source: build.source.clone(),
         output: build.target.clone(),
         base: target.clone(),
@@ -155,7 +155,7 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
         .collect::<Vec<_>>()
 }
 
-pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions> {
+pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let (_, target_dir) = get_tag_info(args);
 
     // Handle profiles, eg: [profile.dist] that mutate the

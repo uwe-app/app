@@ -13,7 +13,9 @@ use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
 use crate::{Result, Error};
 use crate::build::page::Page;
-use super::{BuildOptions, INDEX_STEM};
+use super::{INDEX_STEM};
+
+use crate::build::CompilerOptions;
 
 use log::{info, debug};
 
@@ -45,7 +47,7 @@ pub fn require_output_dir(output: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub fn is_draft(data: &Page, opts: &BuildOptions) -> bool {
+pub fn is_draft(data: &Page, opts: &CompilerOptions) -> bool {
     if opts.release {
         return data.draft.is_some() && data.draft.unwrap();
     }

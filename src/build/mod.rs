@@ -16,4 +16,7 @@ pub mod report;
 pub mod resource;
 pub mod template;
 pub mod tree;
+mod types;
 pub mod watch;
+
+pub use types::*;

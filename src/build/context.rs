@@ -1,14 +1,15 @@
-use crate::command::build::BuildOptions;
 use crate::config::Config;
 use serde::{Deserialize, Serialize};
 
 use super::generator::GeneratorMap;
 use crate::locale::Locales;
 
+use super::CompilerOptions;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
     pub config: Config,
-    pub options: BuildOptions,
+    pub options: CompilerOptions,
     #[serde(skip)]
     pub livereload: Option<String>,
     #[serde(skip)]
@@ -21,7 +22,7 @@ impl Context {
     pub fn new(
         locales: Locales,
         config: Config,
-        options: BuildOptions,
+        options: CompilerOptions,
         generators: GeneratorMap,
     ) -> Self {
         Self {
