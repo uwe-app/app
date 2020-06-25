@@ -105,9 +105,6 @@ fn build(ctx: &Context) -> Result<()> {
     builder.all(targets)?;
     builder.manifest.save()?;
 
-    //let mut file_builder = FileBuilder::new(true, ctx.options.base.clone(), true, true, None);
-    //file_builder.walk()?;
-
     Ok(())
 }
 

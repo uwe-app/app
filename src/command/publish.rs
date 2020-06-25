@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use crate::Error;
 use crate::Result;
+use crate::build::report::FileBuilder;
 use crate::config::{Config, AwsPublishConfig, BuildArguments};
 use crate::workspace::{self, Workspace};
 
@@ -15,13 +16,6 @@ pub struct PublishOptions {
     pub project: PathBuf,
     pub path: Option<String>,
     pub provider: PublishProvider,
-}
-
-fn find_aws_path<'a>(config: &'a AwsPublishConfig, name: &str) -> String {
-    if config.paths.contains_key(name) {
-        return config.paths.get(name).unwrap().to_string();
-    }
-    String::from("")
 }
 
 pub fn publish(options: PublishOptions) -> Result<()> {
@@ -36,10 +30,6 @@ pub fn publish(options: PublishOptions) -> Result<()> {
 #[tokio::main]
 async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Result<()> {
 
-    let mut args: BuildArguments = Default::default();
-    args.release = Some(true);
-    let _ = workspace::compile_from(&mut config, &args)?;
-
     let publish = config.publish.as_ref().unwrap();
 
     match options.provider {
@@ -47,16 +37,27 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
 
             if let Some(ref publish_config) = publish.aws {
 
-                let mut path = String::from("");
+                let path = get_aws_path(publish_config, &options.path)?;
 
-                if let Some(ref target_path) = options.path {
-                    path = find_aws_path(&publish_config, target_path);
-                    if !target_path.is_empty() && path.is_empty() {
-                        return Err(
-                            Error::new(
-                                format!("Unknown remote path '{}', check the publish configuration", target_path)))
-                    }
-                }
+                let prefix = if path.is_empty() {
+                    None
+                } else {
+                    Some(path)
+                };
+
+                // Compile a pristine release
+                let mut args: BuildArguments = Default::default();
+                args.release = Some(true);
+                let ctx = workspace::compile_from(&mut config, &args)?;
+
+                // Create the list of local build files
+                let mut file_builder = FileBuilder::new(ctx.options.base.clone(), prefix);
+                file_builder.walk()?;
+
+                println!("Got builder files {:?}", file_builder.paths);
+
+                std::process::exit(1);
+
 
                 let region = Region::from_str(&publish_config.region)?;
 
@@ -78,4 +79,26 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
     }
 
     Ok(())
+}
+
+fn get_aws_path<'a>(config: &'a AwsPublishConfig, req_path: &Option<String>) -> Result<String> {
+    let mut path = String::from("");
+
+    if let Some(ref target_path) = req_path {
+        path = find_aws_path(config, target_path);
+        if !target_path.is_empty() && path.is_empty() {
+            return Err(
+                Error::new(
+                    format!("Unknown remote path '{}', check the publish configuration", target_path)))
+        }
+    }
+
+    Ok(path)
+}
+
+fn find_aws_path<'a>(config: &'a AwsPublishConfig, name: &str) -> String {
+    if config.paths.contains_key(name) {
+        return config.paths.get(name).unwrap().to_string();
+    }
+    String::from("")
 }

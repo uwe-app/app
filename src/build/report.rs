@@ -11,19 +11,13 @@ use crate::{Error, Result};
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ResultFile {
     pub path: PathBuf,
-    pub e_tag: Option<String>,
+    pub e_tag: String,
 }
 
 #[derive(Debug)]
 pub struct FileBuilder {
-    // Whether to collect output paths
-    pub enabled: bool,
     // A base path all files must be relative to
     pub base: PathBuf,
-    // When relative we strip the base path 
-    pub relative: bool,
-    // Whether to compute MD5 digests
-    pub digest: bool,
     // When specified this prefix is appended before the path
     pub prefix: Option<String>,
     // The list of collected paths when enabled
@@ -32,16 +26,10 @@ pub struct FileBuilder {
 
 impl FileBuilder {
     pub fn new(
-        enabled: bool,
         base: PathBuf,
-        relative: bool,
-        digest: bool,
         prefix: Option<String>) -> Self {
         Self {
-            enabled,
             base,
-            relative,
-            digest,
             prefix,
             paths: HashSet::new(),
         }
@@ -62,30 +50,19 @@ impl FileBuilder {
     }
 
     fn add<P: AsRef<Path>>(&mut self, raw: P) -> Result<()> {
-        if self.enabled {
-            let e_tag = if self.digest {
-                Some(self.digest_path(&raw)?)
-            } else {
-                None
-            };
+        let e_tag = self.digest_path(&raw)?;
 
-            let mut path = if !self.relative {
-                raw.as_ref().to_path_buf()
-            } else {
-                raw.as_ref().strip_prefix(&self.base)?.to_path_buf()
-            };
+        let mut path = raw.as_ref().strip_prefix(&self.base)?.to_path_buf();
+        path = if let Some(ref prefix) = self.prefix {
+            let mut tmp = PathBuf::from(prefix);
+            tmp.push(path);
+            tmp
+        } else {
+            path
+        };
 
-            path = if let Some(ref prefix) = self.prefix {
-                let mut tmp = PathBuf::from(prefix);
-                tmp.push(path);
-                tmp
-            } else {
-                path
-            };
-
-            let result = ResultFile { path, e_tag };
-            self.paths.insert(result);
-        }
+        let result = ResultFile { path, e_tag };
+        self.paths.insert(result);
 
         Ok(())
     }
@@ -94,7 +71,6 @@ impl FileBuilder {
         for result in WalkBuilder::new(&self.base)
             .follow_links(true)
             .build() {
-
             match result {
                 Ok(entry) => {
                     let path = entry.path();
