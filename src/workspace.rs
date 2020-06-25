@@ -37,7 +37,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     }
 
     let live = args.live.is_some() && args.live.unwrap();
-    let force = args.force.is_some() && args.force.unwrap();
+    let mut force = args.force.is_some() && args.force.unwrap();
     let include_index = args.include_index.is_some() && args.include_index.unwrap();
 
     if live && release {
@@ -59,6 +59,12 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
     if (pristine || force) && target.exists() {
         info!("clean {}", target.display());
         fs::remove_dir_all(&target)?;
+    }
+
+    // Force is implied when live and incremental, the live
+    // setting overrides the incremental behavior
+    if live && incremental && !force {
+       force = true;  
     }
 
     utils::require_output_dir(&target)?;
@@ -109,9 +115,9 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<BuildOptions, Error> 
         target,
         layout,
         max_depth: args.max_depth,
-        release: release,
-        live: live,
-        force: force,
+        release,
+        live,
+        force,
         tag: tag_target,
         paths: args.paths.clone(),
         base_href: args.base.clone(),
