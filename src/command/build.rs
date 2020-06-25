@@ -17,7 +17,7 @@ use crate::build::generator::GeneratorMap;
 use crate::build::invalidator::Invalidator;
 use crate::build::loader;
 use crate::build::Builder;
-use crate::build::BuildFiles;
+use crate::build::files::FileBuilder;
 use crate::command::serve::*;
 use crate::config::{BuildArguments, Config};
 use crate::{utils, Error};
@@ -195,9 +195,7 @@ fn load(locales: Locales, config: Config, options: BuildOptions) -> Result<Conte
 
 fn build(ctx: &Context) -> Result<(), Error> {
 
-    let build_files = Some(BuildFiles::new(true, ctx.options.base.clone(), true, true, None));
-
-    let mut builder = Builder::new(ctx, build_files);
+    let mut builder = Builder::new(ctx);
     builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
@@ -214,6 +212,10 @@ fn build(ctx: &Context) -> Result<(), Error> {
     builder.all(targets)?;
 
     builder.manifest.save()?;
+
+    //let mut file_builder = FileBuilder::new(true, ctx.options.base.clone(), true, true, None);
+    //file_builder.walk()?;
+
     Ok(())
 }
 
@@ -251,7 +253,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         ctx.livereload = Some(ws_url);
 
-        let mut serve_builder = Builder::new(&ctx, None);
+        let mut serve_builder = Builder::new(&ctx);
         if let Err(e) = serve_builder.register_templates_directory() {
             error_cb(e);
         }

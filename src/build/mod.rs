@@ -1,17 +1,14 @@
-use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
-use std::collections::HashSet;
 
 use ignore::WalkBuilder;
 use log::{debug, info};
 
 use serde_json::{json, Value};
 
-use md5::{Md5, Digest};
-
 pub mod book;
 pub mod context;
+pub mod files;
 pub mod frontmatter;
 pub mod generator;
 pub mod helpers;
@@ -38,111 +35,15 @@ use matcher::FileType;
 use page::Page;
 use parser::Parser;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ResultFile {
-    pub path: PathBuf,
-    pub e_tag: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct BuildFiles {
-    // Whether to collect output paths
-    pub enabled: bool,
-    // A base path all files must be relative to
-    pub base: PathBuf,
-    // When relative we strip the base path 
-    pub relative: bool,
-    // Whether to compute MD5 digests
-    pub digest: bool,
-    // When specified this prefix is appended before the path
-    pub prefix: Option<String>,
-    // The list of collected paths when enabled
-    pub paths: HashSet<ResultFile>,
-}
-
-impl BuildFiles {
-    pub fn new(
-        enabled: bool,
-        base: PathBuf,
-        relative: bool,
-        digest: bool,
-        prefix: Option<String>) -> Self {
-        Self {
-            enabled,
-            base,
-            relative,
-            digest,
-            prefix,
-            paths: HashSet::new(),
-        }
-    }
-
-    // Compute a digest from the file on disc
-    fn digest_path<P: AsRef<Path>>(&mut self, path: P) -> Result<String> {
-        let mut file = std::fs::File::open(path)?;
-        let chunk_size = 16_000;
-        let mut hasher = Md5::new();
-        loop {
-            let mut chunk = Vec::with_capacity(chunk_size);
-            let n = file.by_ref().take(chunk_size as u64).read_to_end(&mut chunk)?;
-            hasher.update(chunk);
-            if n == 0 || n < chunk_size { break; }
-        }
-        Ok(format!("{:x}", hasher.finalize()))
-    }
-
-    // Compute a digest from in-memory content
-    fn digest_content(&mut self, content: String) -> Result<String> {
-        let mut hasher = Md5::new();
-        hasher.update(content.as_bytes());
-        Ok(format!("{:x}", hasher.finalize()))
-    }
-
-    fn add<P: AsRef<Path>>(&mut self, raw: P, content: Option<String>) -> Result<()> {
-        if self.enabled {
-            let mut e_tag = None;
-
-            if self.digest {
-                if let Some(content) = content {
-                    e_tag = Some(self.digest_content(content)?);
-                } else {
-                    e_tag = Some(self.digest_path(&raw)?);
-                }
-            }
-
-            let mut path = if !self.relative {
-                raw.as_ref().to_path_buf()
-            } else {
-                raw.as_ref().strip_prefix(&self.base)?.to_path_buf()
-            };
-
-            path = if let Some(ref prefix) = self.prefix {
-                let mut tmp = PathBuf::from(prefix);
-                tmp.push(path);
-                tmp
-            } else {
-                path
-            };
-
-            let result = ResultFile { path, e_tag };
-            println!("Add to paths {}", result.path.display());
-            self.paths.insert(result);
-        }
-
-        Ok(())
-    }
-}
-
 pub struct Builder<'a> {
     context: &'a Context,
     book: BookBuilder<'a>,
     parser: Parser<'a>,
     pub manifest: Manifest<'a>,
-    pub build_files: Option<BuildFiles>,
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(context: &'a Context, build_files: Option<BuildFiles>) -> Self {
+    pub fn new(context: &'a Context) -> Self {
         let book = BookBuilder::new(&context);
 
         // Parser must exist for the entire lifetime so that
@@ -156,7 +57,6 @@ impl<'a> Builder<'a> {
             book,
             parser,
             manifest,
-            build_files,
         }
     }
 
@@ -214,11 +114,6 @@ impl<'a> Builder<'a> {
                         .parse(&file, &dest.as_path(), file_type, &mut item_data)?;
 
                     utils::write_string(&dest, &s)?;
-
-                    if let Some(ref mut build_files) = self.build_files.as_mut() {
-                        build_files.add(dest, Some(s))?;
-                    }
-
                 }
             } else {
                 return Err(Error::new(format!("Generator document must have an id")));
@@ -234,9 +129,6 @@ impl<'a> Builder<'a> {
         file_type: FileType,
     ) -> Result<()> {
         let file = p.as_ref();
-
-        let mut destination: Option<PathBuf> = None;
-        let mut destination_content: Option<String> = None;
 
         match file_type {
             FileType::Unknown => {
@@ -257,8 +149,6 @@ impl<'a> Builder<'a> {
                 } else {
                     info!("noop {}", file.display());
                 }
-
-                destination = Some(dest);
             }
             FileType::Markdown | FileType::Template => {
                 let (collides, other) = matcher::collides(file, &file_type);
@@ -329,20 +219,12 @@ impl<'a> Builder<'a> {
                             .parse(&file, &dest.as_path(), &file_type, &mut data)?;
                         utils::write_string(&dest, &s)?;
                         self.manifest.touch(file, &dest);
-                        destination_content = Some(s);
                     } else {
                         info!("noop {}", file.display());
                     }
 
-                    destination = Some(dest);
                 }
 
-            }
-        }
-
-        if let Some(dest) = destination {
-            if let Some(ref mut build_files) = self.build_files.as_mut() {
-                build_files.add(dest, destination_content)?;
             }
         }
 
@@ -442,7 +324,7 @@ impl<'a> Builder<'a> {
             filters.push(locales_dir);
         }
 
-        resource::link(self.context, &mut self.build_files)?;
+        resource::link(self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
             for (_, v) in hooks {
