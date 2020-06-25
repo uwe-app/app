@@ -92,8 +92,8 @@ pub fn write_all<P: AsRef<Path>>(output: P, content: &[u8]) -> io::Result<()> {
     file.write_all(content)
 }
 
-pub fn write_string<P: AsRef<Path>>(output: P, content: String) -> io::Result<()> {
-    write_all(output, content.as_bytes())
+pub fn write_string<P: AsRef<Path>, S: AsRef<str>>(output: P, content: S) -> io::Result<()> {
+    write_all(output, content.as_ref().as_bytes())
 }
 
 // Convert a file name to title case

@@ -17,6 +17,7 @@ use crate::build::generator::GeneratorMap;
 use crate::build::invalidator::Invalidator;
 use crate::build::loader;
 use crate::build::Builder;
+use crate::build::BuildFiles;
 use crate::command::serve::*;
 use crate::config::{BuildArguments, Config};
 use crate::{utils, Error};
@@ -110,6 +111,7 @@ pub struct BuildOptions {
     pub paths: Option<Vec<PathBuf>>,
 
     pub incremental: bool,
+
 }
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
@@ -193,7 +195,9 @@ fn load(locales: Locales, config: Config, options: BuildOptions) -> Result<Conte
 
 fn build(ctx: &Context) -> Result<(), Error> {
 
-    let mut builder = Builder::new(ctx);
+    let build_files = Some(BuildFiles::new(true, ctx.options.base.clone(), true, true, None));
+
+    let mut builder = Builder::new(ctx, build_files);
     builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
@@ -247,7 +251,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         ctx.livereload = Some(ws_url);
 
-        let mut serve_builder = Builder::new(&ctx);
+        let mut serve_builder = Builder::new(&ctx, None);
         if let Err(e) = serve_builder.register_templates_directory() {
             error_cb(e);
         }

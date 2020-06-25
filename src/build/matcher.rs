@@ -6,11 +6,10 @@ use std::path::PathBuf;
 pub enum FileType {
     Markdown,
     Template,
-    Private,
     Unknown,
 }
 
-use crate::{Error, DATA_TOML, HTML, INDEX_STEM, LAYOUT_HBS, MD, PARSE_EXTENSIONS};
+use crate::{Error, HTML, INDEX_STEM, MD, PARSE_EXTENSIONS};
 
 //use super::generator;
 use crate::config::ExtensionConfig;
@@ -221,20 +220,20 @@ pub fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) ->
 }
 
 pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
-    let file = p.as_ref();
-    match file.file_name() {
-        Some(nm) => {
-            if let Some(nm) = nm.to_str() {
-                if nm == LAYOUT_HBS || nm == DATA_TOML {
-                    return FileType::Private;
-                } else {
-                    return get_type_extension(p, extensions);
-                }
-            }
-        }
-        _ => {}
-    }
-    FileType::Unknown
+    return get_type_extension(p, extensions);
+    //let file = p.as_ref();
+    //match file.file_name() {
+        //Some(nm) => {
+            //if let Some(nm) = nm.to_str() {
+                //if nm == LAYOUT_HBS {
+                    //return FileType::Private;
+                //} else {
+                //}
+            //}
+        //}
+        //_ => {}
+    //}
+    //FileType::Unknown
 }
 
 pub fn has_parse_file_match<P: AsRef<Path>>(file: P) -> bool {

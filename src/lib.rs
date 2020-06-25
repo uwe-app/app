@@ -30,7 +30,6 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 
 // FIXME: remove these and their usages
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
-static DATA_TOML: &str = "data.toml";
 
 pub use crate::command::build::*;
 pub use crate::command::bundle::*;
