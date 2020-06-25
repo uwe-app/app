@@ -19,14 +19,14 @@ use super::hook;
 use super::resource;
 use super::loader;
 
-pub struct Builder<'a> {
+pub struct Compiler<'a> {
     context: &'a Context,
     parser: Parser<'a>,
     pub book: BookBuilder<'a>,
     pub manifest: Manifest<'a>,
 }
 
-impl<'a> Builder<'a> {
+impl<'a> Compiler<'a> {
     pub fn new(context: &'a Context) -> Self {
         let book = BookBuilder::new(&context);
 

@@ -16,7 +16,7 @@ use crate::build::context::Context;
 use crate::build::generator::GeneratorMap;
 use crate::build::invalidator::Invalidator;
 use crate::build::loader;
-use crate::build::compiler::Builder;
+use crate::build::compiler::Compiler;
 use crate::build::report::FileBuilder;
 use crate::command::serve::*;
 use crate::config::{BuildArguments, Config};
@@ -195,7 +195,7 @@ fn load(locales: Locales, config: Config, options: BuildOptions) -> Result<Conte
 
 fn build(ctx: &Context) -> Result<(), Error> {
 
-    let mut builder = Builder::new(ctx);
+    let mut builder = Compiler::new(ctx);
     builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
@@ -253,7 +253,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         ctx.livereload = Some(ws_url);
 
-        let mut serve_builder = Builder::new(&ctx);
+        let mut serve_builder = Compiler::new(&ctx);
         if let Err(e) = serve_builder.register_templates_directory() {
             error_cb(e);
         }

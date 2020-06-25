@@ -12,7 +12,7 @@ use super::loader;
 use super::matcher;
 use super::matcher::FileType;
 use super::watch;
-use super::compiler::Builder;
+use super::compiler::Compiler;
 
 use crate::ErrorCallback;
 use crate::Error;
@@ -105,11 +105,11 @@ struct BookRule {
 
 pub struct Invalidator<'a> {
     context: &'a Context,
-    builder: Builder<'a>,
+    builder: Compiler<'a>,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(context: &'a Context, builder: Builder<'a>) -> Self {
+    pub fn new(context: &'a Context, builder: Compiler<'a>) -> Self {
         Self { context, builder }
     }
 
