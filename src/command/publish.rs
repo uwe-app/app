@@ -51,7 +51,7 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
                     Some(path.clone())
                 };
 
-                info!("Building local file list...");
+                info!("Building local file list");
 
                 // Create the list of local build files
                 let mut file_builder = FileBuilder::new(ctx.options.base.clone(), prefix.clone());
@@ -68,19 +68,15 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
                     prefix,
                 };
 
-                info!("Building remote file list...");
+                info!("Building remote file list");
 
                 let mut remote: HashSet<String> = HashSet::new();
                 let mut etags: HashMap<String, String> = HashMap::new();
                 publisher::list_remote(&request, &mut remote, &mut etags).await?;
 
-                //println!("Got local list {:?}", file_builder.paths);
-                //println!("Got remote list {:?}", remote);
-
                 info!("Remote objects {}", remote.len());
 
                 let diff = publisher::diff(&file_builder, &remote, &etags)?;
-
                 publisher::publish(&request, file_builder, diff).await?;
             } else {
                 return Err(Error::new(format!("No publish configuration")))

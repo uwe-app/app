@@ -42,7 +42,7 @@ pub use crate::command::site;
 pub use crate::command::update::*;
 pub use crate::command::upgrade::*;
 pub use crate::config::{BuildArguments, Config};
-pub use crate::error::Error;
+pub use crate::error::{AwsError, Error};
 pub use crate::utils::generate_id;
 
 pub type ErrorCallback = fn(Error);

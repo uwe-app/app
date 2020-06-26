@@ -13,10 +13,10 @@ use rusoto_core::Region;
 use rusoto_s3::*;
 use rusoto_core::ByteStream;
 
-use log::{info, debug};
+use log::{info, debug, error};
 
 use crate::build::report::FileBuilder;
-use crate::{AwsResult, Result};
+use crate::{AwsError, AwsResult, Result};
 
 // The folder delimiter
 static DELIMITER: &str = "/";
@@ -166,7 +166,7 @@ pub async fn list_remote(
     Ok(())
 }
 
-async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, file: P) -> AwsResult<()> {
+async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, file: P) -> AwsResult<PutObjectOutput> {
     info!("Upload {}", file.as_ref().display());
     info!("    -> {}", key.as_ref());
 
@@ -179,12 +179,34 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: Put
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);
-    client.put_object(req).await?;
+    Ok(client.put_object(req).await?)
+}
 
-    Ok(())
+async fn delete_object<S: AsRef<str>>(client: &S3Client, req: DeleteObjectRequest, key: S) -> AwsResult<DeleteObjectOutput> {
+    info!("Delete {}", key.as_ref());
+    Ok(client.delete_object(req).await?)
 }
 
 pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffReport) -> AwsResult<()> {
+
+    if diff.upload.is_empty()
+        && diff.changed.is_empty()
+        && diff.deleted.is_empty() {
+        info!("Site is up to date!");
+        return Ok(())
+    }
+
+    let delimiter = "-".repeat(20);
+
+    info!("{}", delimiter);
+    info!("New {}", diff.upload.len());
+    info!("Update {}", diff.changed.len());
+    info!("Delete {}", diff.deleted.len());
+    info!("{}", delimiter);
+
+    let mut errors: Vec<AwsError>= Vec::new();
+    let mut uploaded: u64 = 0;
+    let mut deleted: u64 = 0;
     let client = get_client(request)?;
 
     let push: HashSet<_> = diff.upload.union(&diff.changed).collect();
@@ -195,17 +217,39 @@ pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffR
             key: k.clone(),
             ..Default::default()
         };
-        put_file(&client, req, &k, &local_path).await?;
+        if let Err(e) = put_file(&client, req, &k, &local_path).await {
+            errors.push(e);
+        } else {
+            uploaded += 1;
+        }
     }
 
     for k in &diff.deleted {
-        info!("Delete {}", k);
+        let req = DeleteObjectRequest {
+            bucket: request.bucket.clone(),
+            key: k.clone(),
+            ..Default::default()
+        };
+        if let Err(e) = delete_object(&client, req, &k).await {
+            errors.push(e);
+        } else {
+            deleted += 1;
+        }
     }
 
     //info!("Ok (up to date) {}", diff.same.len());
-    info!("New {}", diff.upload.len());
-    info!("Update {}", diff.changed.len());
-    info!("Delete {}", diff.deleted.len());
+
+    info!("{}", delimiter);
+    info!("Uploads {}", uploaded);
+    info!("Deleted {}", deleted);
+    info!("{}", delimiter);
+
+    if !errors.is_empty() {
+        for e in &errors {
+            error!("{}", e);
+        }
+        error!("Errors {}", errors.len());
+    }
 
     Ok(())
 }

@@ -201,6 +201,7 @@ pub enum AwsError {
     Credentials(rusoto_core::credential::CredentialsError),
     HeadBucket(rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
     PutObject(rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
+    DeleteObject(rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>),
     ListObjects(rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
 }
 
@@ -234,6 +235,12 @@ impl From<rusoto_core::RusotoError<rusoto_s3::PutObjectError>> for AwsError {
     }
 }
 
+impl From<rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>> for AwsError {
+    fn from(error: rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>) -> Self {
+        AwsError::DeleteObject(error)
+    }
+}
+
 impl From<rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>> for AwsError {
     fn from(error: rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>) -> Self {
         AwsError::ListObjects(error)
@@ -248,6 +255,7 @@ impl fmt::Display for AwsError {
             AwsError::Credentials(ref e) => e.fmt(f),
             AwsError::HeadBucket(ref e) => e.fmt(f),
             AwsError::PutObject(ref e) => e.fmt(f),
+            AwsError::DeleteObject(ref e) => e.fmt(f),
             AwsError::ListObjects(ref e) => e.fmt(f),
         }
     }
@@ -261,6 +269,7 @@ impl error::Error for AwsError {
             AwsError::Credentials(ref e) => Some(e),
             AwsError::HeadBucket(ref e) => Some(e),
             AwsError::PutObject(ref e) => Some(e),
+            AwsError::DeleteObject(ref e) => Some(e),
             AwsError::ListObjects(ref e) => Some(e),
         }
     }
