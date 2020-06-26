@@ -166,11 +166,11 @@ pub async fn list_remote(
     Ok(())
 }
 
-async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, file: P) -> AwsResult<PutObjectOutput> {
-    info!("Upload {}", file.as_ref().display());
+async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, path: P) -> AwsResult<PutObjectOutput> {
+    info!("Upload {}", path.as_ref().display());
     info!("    -> {}", key.as_ref());
 
-    let file = std::fs::File::open(file)?;
+    let file = std::fs::File::open(&path)?;
     let size = file.metadata()?.len();
 
     let tokio_file = tokio::fs::File::from_std(file);
@@ -179,6 +179,8 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: Put
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);
+    req.content_type = Some(
+        mime_guess::from_path(path).first_or_octet_stream().to_string());
     Ok(client.put_object(req).await?)
 }
 
