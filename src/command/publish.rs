@@ -1,7 +1,10 @@
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use rusoto_core::Region;
-use std::str::FromStr;
+
+use log::info;
 
 use crate::Error;
 use crate::Result;
@@ -30,6 +33,11 @@ pub fn publish(options: PublishOptions) -> Result<()> {
 #[tokio::main]
 async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Result<()> {
 
+    // Compile a pristine release
+    let mut args: BuildArguments = Default::default();
+    args.release = Some(true);
+    let ctx = workspace::compile_from(&mut config, &args)?;
+
     let publish = config.publish.as_ref().unwrap();
 
     match options.provider {
@@ -42,22 +50,19 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
                 let prefix = if path.is_empty() {
                     None
                 } else {
-                    Some(path)
+                    Some(path.clone())
                 };
 
-                // Compile a pristine release
-                let mut args: BuildArguments = Default::default();
-                args.release = Some(true);
-                let ctx = workspace::compile_from(&mut config, &args)?;
+                info!("Building local file list...");
 
                 // Create the list of local build files
-                let mut file_builder = FileBuilder::new(ctx.options.base.clone(), prefix);
+                let mut file_builder = FileBuilder::new(ctx.options.base.clone(), prefix.clone());
                 file_builder.walk()?;
 
-                println!("Got builder files {:?}", file_builder.paths);
+                info!("Local objects {}", file_builder.keys.len());
 
-                std::process::exit(1);
-
+                //println!("Got builder files {:?}", file_builder.paths);
+                //std::process::exit(1);
 
                 let region = Region::from_str(&publish_config.region)?;
 
@@ -65,12 +70,38 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
                     profile_name: publish_config.credentials.clone(),
                     region,
                     bucket: publish_config.bucket.as_ref().unwrap().clone(),
-                    path,
+                    prefix,
                 };
 
-                println!("Trying to publish");
+                info!("Building remote file list...");
 
-                publisher::publish(&request).await?;
+                //let local = &file_builder.paths;
+                let mut remote: HashSet<String> = HashSet::new();
+                let mut etags: HashMap<String, String> = HashMap::new();
+                publisher::list_remote(&request, &mut remote, &mut etags).await?;
+
+                //println!("Got local list {:?}", file_builder.paths);
+                //println!("Got remote list {:?}", remote);
+
+                info!("Remote objects {}", remote.len());
+
+                let diff = publisher::diff(&file_builder, &remote, &etags)?;
+
+                let push: HashSet<_> = diff.upload.union(&diff.changed).collect();
+                for k in push {
+                    info!("Upload {}", k);
+                }
+
+                for k in &diff.deleted {
+                    info!("Delete {}", k);
+                }
+
+                //info!("Ok (up to date) {}", diff.same.len());
+                info!("New {}", diff.upload.len());
+                info!("Update {}", diff.changed.len());
+                info!("Delete {}", diff.deleted.len());
+
+                //publisher::publish(&request).await?;
             } else {
                 return Err(Error::new(format!("No publish configuration")))
             }

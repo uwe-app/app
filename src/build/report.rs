@@ -1,17 +1,16 @@
 use std::collections::HashSet;
-use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
-use md5::{Md5, Digest};
 
 use crate::{Error, Result};
+use crate::utils;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct ResultFile {
-    pub path: PathBuf,
-    pub e_tag: String,
+    pub key: Option<String>,
+    pub e_tag: Option<String>,
 }
 
 #[derive(Debug)]
@@ -20,8 +19,8 @@ pub struct FileBuilder {
     pub base: PathBuf,
     // When specified this prefix is appended before the path
     pub prefix: Option<String>,
-    // The list of collected paths when enabled
-    pub paths: HashSet<ResultFile>,
+    // List of file keys
+    pub keys: HashSet<String>,
 }
 
 impl FileBuilder {
@@ -31,40 +30,38 @@ impl FileBuilder {
         Self {
             base,
             prefix,
-            paths: HashSet::new(),
+            keys: HashSet::new(),
         }
-    }
-
-    // Compute a digest from the file on disc
-    fn digest_path<P: AsRef<Path>>(&mut self, path: P) -> Result<String> {
-        let mut file = std::fs::File::open(path)?;
-        let chunk_size = 16_000;
-        let mut hasher = Md5::new();
-        loop {
-            let mut chunk = Vec::with_capacity(chunk_size);
-            let n = file.by_ref().take(chunk_size as u64).read_to_end(&mut chunk)?;
-            hasher.update(chunk);
-            if n == 0 || n < chunk_size { break; }
-        }
-        Ok(format!("{:x}", hasher.finalize()))
     }
 
     fn add<P: AsRef<Path>>(&mut self, raw: P) -> Result<()> {
-        let e_tag = self.digest_path(&raw)?;
-
-        let mut path = raw.as_ref().strip_prefix(&self.base)?.to_path_buf();
-        path = if let Some(ref prefix) = self.prefix {
+        let mut key = raw.as_ref().strip_prefix(&self.base)?.to_path_buf();
+        key = if let Some(ref prefix) = self.prefix {
             let mut tmp = PathBuf::from(prefix);
-            tmp.push(path);
+            tmp.push(key);
             tmp
         } else {
-            path
+            key
         };
 
-        let result = ResultFile { path, e_tag };
-        self.paths.insert(result);
-
+        let key_str = key.to_string_lossy().into_owned();
+        // Assuming we will compare with s3 using a slash as the folder delimiter
+        self.keys.insert(utils::url::to_href_separator(key_str));
         Ok(())
+    }
+
+    pub fn from_key<S: AsRef<str>>(&self, key: S) -> PathBuf {
+        let mut pth = self.base.clone(); 
+
+        if let Some(ref prefix) = self.prefix {
+            let mut tmp = key.as_ref().trim_start_matches(prefix);
+            tmp = tmp.trim_start_matches("/");
+            pth.push(tmp); 
+        } else {
+            pth.push(key.as_ref());
+        }
+
+        pth
     }
 
     pub fn walk(&mut self) -> Result<()> {

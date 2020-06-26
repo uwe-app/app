@@ -1,25 +1,56 @@
-extern crate futures;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate tokio_core;
+use std::io::Read;
+use std::path::Path;
+use std::collections::{HashMap, HashSet};
+
+use md5::{Md5, Digest};
 
 use rusoto_core::request::HttpClient;
 use rusoto_core::credential;
 use rusoto_core::Region;
-use rusoto_s3::{
-    S3Client, S3, ListObjectsV2Request, ListObjectsV2Output, ListObjectsV2Error, HeadBucketRequest};
+use rusoto_s3::*;
 
-use crate::AwsResult;
+use log::debug;
 
-use futures::future::Future;
-use tokio_core::reactor::Core;
+use crate::build::report::FileBuilder;
+use crate::{AwsResult, Result};
+
+// The folder delimiter
+static DELIMITER: &str = "/";
+
+// Compute a digest from the file on disc and return it in
+// an etag format.
+fn get_file_etag<P: AsRef<Path>>(path: P) -> Result<String> {
+    let mut file = std::fs::File::open(path)?;
+    let chunk_size = 16_000;
+    let mut hasher = Md5::new();
+    loop {
+        let mut chunk = Vec::with_capacity(chunk_size);
+        let n = file.by_ref().take(chunk_size as u64).read_to_end(&mut chunk)?;
+        hasher.update(chunk);
+        if n == 0 || n < chunk_size { break; }
+    }
+    Ok(format!("\"{:x}\"", hasher.finalize()))
+}
+
+#[derive(Debug)]
+pub struct DiffReport {
+    // Files that have the same checksums (etag)
+    pub same: HashSet<String>,
+    // New files that should be uploaded
+    pub upload: HashSet<String>,
+    // Files that exist in remote but have changed or new files
+    // that should be uploaded
+    pub changed: HashSet<String>,
+    // Files that exist on remote but no longer exist locally
+    pub deleted: HashSet<String>,
+}
 
 #[derive(Debug)]
 pub struct PublishRequest {
     pub profile_name: String,
     pub region: Region,
     pub bucket: String, 
-    pub path: String,
+    pub prefix: Option<String>,
 }
 
 #[derive(Debug)]
@@ -35,43 +66,103 @@ fn get_client(request: &PublishRequest) -> AwsResult<S3Client> {
     Ok(client)
 }
 
-pub async fn list_bucket_keys(client: &S3Client, request: &PublishRequest) -> impl Future<Item = ListObjectsV2Output, Error = ListObjectsV2Error> {
+pub fn diff(
+    builder: &FileBuilder,
+    remote: &HashSet<String>,
+    etags: &HashMap<String, String>) -> Result<DiffReport> {
 
-    println!("Publisher request {:?}", request);
+    let local = &builder.keys;
 
-    //let client = get_client(request)?;
+    let mut same = HashSet::new();
+    let mut upload = HashSet::new();
+    let mut changed = HashSet::new();
+    let mut deleted = HashSet::new();
+
+    for k in local.intersection(&remote) {
+        if let Some(etag) = etags.get(k) {
+            let local_path = builder.from_key(&k);
+            let local_etag = get_file_etag(&local_path)?;
+            if etag == &local_etag {
+                debug!("Checksum match {} {}", etag, local_path.display());
+                same.insert(k.clone());
+                continue;
+            }
+        }
+
+        changed.insert(k.clone());
+    }
+
+    for k in local.difference(&remote) {
+        upload.insert(k.clone());
+    }
+
+    for k in remote.difference(&local) {
+        deleted.insert(k.clone());
+    }
+
+    Ok(DiffReport {same, upload, changed, deleted})
+}
+
+async fn list_bucket_remote(
+    client: &S3Client,
+    request: &PublishRequest,
+    continuation_token: Option<String>) -> AwsResult<ListObjectsV2Output> {
+
+    debug!("List bucket token {:?}", continuation_token);
 
     let req = ListObjectsV2Request {
         bucket: request.bucket.clone(),
+        prefix: request.prefix.clone(),
+        continuation_token,
         ..Default::default()
     };
 
-    client.list_objects_v2(req)
+    Ok(client.list_objects_v2(req).await?)
 }
 
-//fn head_bucket(request: &PublishRequest, client: &S3Client) -> impl Future<()> {
-    ////let client = get_client(request)?;
-    //let req = HeadBucketRequest {
-        //bucket: request.bucket.clone(),
-    //};
-    //client.head_bucket(req)
-//}
+async fn fetch_bucket_remote(
+    client: &S3Client,
+    request: &PublishRequest,
+    remote: &mut HashSet<String>,
+    etags: &mut HashMap<String, String>) -> AwsResult<()> {
+
+    let mut continuation_token = None;
+    loop {
+        let result = list_bucket_remote(client, request, continuation_token).await?;
+        if let Some(contents) = result.contents {
+            debug!("List bucket contents length {}", contents.len());
+            for obj in contents {
+                if let Some(key) = obj.key {
+                    if let Some(etag) = obj.e_tag {
+                        etags.insert(key.clone(), etag);
+                    }
+                    // Do not include folder objects
+                    if !key.ends_with(DELIMITER) {
+                        remote.insert(key);
+                    }
+                }
+            } 
+        }
+        let is_truncated = result.is_truncated.is_some() && result.is_truncated.unwrap();
+        if !is_truncated {
+            break;
+        } else {
+            continuation_token = result.next_continuation_token;
+        }
+    }
+    Ok(())
+}
+
+pub async fn list_remote(
+    request: &PublishRequest,
+    remote: &mut HashSet<String>,
+    etags: &mut HashMap<String, String>) -> AwsResult<()> {
+    let client = get_client(request)?;
+    fetch_bucket_remote(&client, &request, remote, etags).await?;
+    Ok(())
+}
 
 pub async fn publish(request: &PublishRequest) -> AwsResult<()> {
-
     println!("Publisher head request {:?}", request);
-
-    let client = get_client(request)?;
-
-    //let head = head_bucket(&request, &client);
-
-    //let req = HeadBucketRequest {
-        //bucket: request.bucket.clone(),
-    //};
-
-    //let result = client.head_bucket(req);
-        //.await?;
-    //println!("Publisher result {:?}", result);
-
     Ok(())
 }
