@@ -199,6 +199,7 @@ pub enum AwsError {
     Tls(rusoto_core::request::TlsError),
     Credentials(rusoto_core::credential::CredentialsError),
     HeadBucket(rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
+    ListObjects(rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
 }
 
 impl From<rusoto_core::request::TlsError> for AwsError {
@@ -219,12 +220,19 @@ impl From<rusoto_core::RusotoError<rusoto_s3::HeadBucketError>> for AwsError {
     }
 }
 
+impl From<rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>> for AwsError {
+    fn from(error: rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>) -> Self {
+        AwsError::ListObjects(error)
+    }
+}
+
 impl fmt::Display for AwsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             AwsError::Tls(ref e) => e.fmt(f),
             AwsError::Credentials(ref e) => e.fmt(f),
             AwsError::HeadBucket(ref e) => e.fmt(f),
+            AwsError::ListObjects(ref e) => e.fmt(f),
         }
     }
 }
@@ -235,6 +243,7 @@ impl error::Error for AwsError {
             AwsError::Tls(ref e) => Some(e),
             AwsError::Credentials(ref e) => Some(e),
             AwsError::HeadBucket(ref e) => Some(e),
+            AwsError::ListObjects(ref e) => Some(e),
         }
     }
 }

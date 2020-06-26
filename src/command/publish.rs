@@ -70,7 +70,7 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
 
                 println!("Trying to publish");
 
-                publisher::publish(request).await?;
+                publisher::publish(&request).await?;
             } else {
                 return Err(Error::new(format!("No publish configuration")))
             }
