@@ -42,9 +42,7 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
 
     match options.provider {
         PublishProvider::Aws => {
-
             if let Some(ref publish_config) = publish.aws {
-
                 let path = get_aws_path(publish_config, &options.path)?;
 
                 let prefix = if path.is_empty() {
@@ -61,9 +59,6 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
 
                 info!("Local objects {}", file_builder.keys.len());
 
-                //println!("Got builder files {:?}", file_builder.paths);
-                //std::process::exit(1);
-
                 let region = Region::from_str(&publish_config.region)?;
 
                 let request = PublishRequest {
@@ -75,7 +70,6 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
 
                 info!("Building remote file list...");
 
-                //let local = &file_builder.paths;
                 let mut remote: HashSet<String> = HashSet::new();
                 let mut etags: HashMap<String, String> = HashMap::new();
                 publisher::list_remote(&request, &mut remote, &mut etags).await?;
@@ -87,21 +81,7 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
 
                 let diff = publisher::diff(&file_builder, &remote, &etags)?;
 
-                let push: HashSet<_> = diff.upload.union(&diff.changed).collect();
-                for k in push {
-                    info!("Upload {}", k);
-                }
-
-                for k in &diff.deleted {
-                    info!("Delete {}", k);
-                }
-
-                //info!("Ok (up to date) {}", diff.same.len());
-                info!("New {}", diff.upload.len());
-                info!("Update {}", diff.changed.len());
-                info!("Delete {}", diff.deleted.len());
-
-                //publisher::publish(&request).await?;
+                publisher::publish(&request, file_builder, diff).await?;
             } else {
                 return Err(Error::new(format!("No publish configuration")))
             }

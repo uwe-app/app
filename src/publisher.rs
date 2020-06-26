@@ -4,12 +4,16 @@ use std::collections::{HashMap, HashSet};
 
 use md5::{Md5, Digest};
 
+use futures_util::TryStreamExt;
+use tokio_util::codec;
+
 use rusoto_core::request::HttpClient;
 use rusoto_core::credential;
 use rusoto_core::Region;
 use rusoto_s3::*;
+use rusoto_core::ByteStream;
 
-use log::debug;
+use log::{info, debug};
 
 use crate::build::report::FileBuilder;
 use crate::{AwsResult, Result};
@@ -162,7 +166,46 @@ pub async fn list_remote(
     Ok(())
 }
 
-pub async fn publish(request: &PublishRequest) -> AwsResult<()> {
-    println!("Publisher head request {:?}", request);
+async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, file: P) -> AwsResult<()> {
+    info!("Upload {}", file.as_ref().display());
+    info!("    -> {}", key.as_ref());
+
+    let file = std::fs::File::open(file)?;
+    let size = file.metadata()?.len();
+
+    let tokio_file = tokio::fs::File::from_std(file);
+    let stream = codec::FramedRead::new(tokio_file, codec::BytesCodec::new())
+        .map_ok(|r| r.freeze());
+
+    let body = ByteStream::new_with_size(stream, size as usize);
+    req.body = Some(body);
+    client.put_object(req).await?;
+
+    Ok(())
+}
+
+pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffReport) -> AwsResult<()> {
+    let client = get_client(request)?;
+
+    let push: HashSet<_> = diff.upload.union(&diff.changed).collect();
+    for k in push {
+        let local_path = builder.from_key(&k);
+        let req = PutObjectRequest {
+            bucket: request.bucket.clone(),
+            key: k.clone(),
+            ..Default::default()
+        };
+        put_file(&client, req, &k, &local_path).await?;
+    }
+
+    for k in &diff.deleted {
+        info!("Delete {}", k);
+    }
+
+    //info!("Ok (up to date) {}", diff.same.len());
+    info!("New {}", diff.upload.len());
+    info!("Update {}", diff.changed.len());
+    info!("Delete {}", diff.deleted.len());
+
     Ok(())
 }
