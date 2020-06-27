@@ -9,7 +9,7 @@ use log::info;
 use crate::Error;
 use crate::Result;
 use crate::build::report::FileBuilder;
-use crate::config::{Config, AwsPublishConfig, BuildArguments};
+use crate::config::{Config, BuildArguments};
 use crate::workspace::{self, Workspace};
 
 use crate::publisher::{self, PublishRequest, PublishProvider};
@@ -17,7 +17,7 @@ use crate::publisher::{self, PublishRequest, PublishProvider};
 #[derive(Debug)]
 pub struct PublishOptions {
     pub project: PathBuf,
-    pub path: Option<String>,
+    pub env: Option<String>,
     pub provider: PublishProvider,
 }
 
@@ -32,24 +32,43 @@ pub fn publish(options: PublishOptions) -> Result<()> {
 
 #[tokio::main]
 async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Result<()> {
-
-    // Compile a pristine release
-    let mut args: BuildArguments = Default::default();
-    args.release = Some(true);
-    let ctx = workspace::compile_from(&mut config, &args)?;
-
-    let publish = config.publish.as_ref().unwrap();
-
     match options.provider {
         PublishProvider::Aws => {
-            if let Some(ref publish_config) = publish.aws {
-                let path = get_aws_path(publish_config, &options.path)?;
+            if let Some(ref publish_config) = config.publish.as_mut().unwrap().aws {
 
-                let prefix = if path.is_empty() {
-                    None
-                } else {
-                    Some(path.clone())
+                let mut env = Default::default();
+                if let Some(ref env_name) = options.env {
+                    env = publish_config.environments.get(env_name);
+                    if env.is_none() {
+                        return Err(
+                            Error::new(
+                                format!(
+                                    "Unknown publish environment '{}'", env_name)))
+                    }
+                }
+
+                let mut prefix = None;
+                if let Some(environ) = env {
+                    prefix = if !environ.prefix.is_empty() {
+                        Some(environ.prefix.clone())
+                    } else {
+                        None
+                    };
+                }
+
+                let region = Region::from_str(&publish_config.region)?;
+
+                let request = PublishRequest {
+                    region,
+                    profile_name: publish_config.credentials.clone(),
+                    bucket: publish_config.bucket.as_ref().unwrap().clone(),
+                    prefix: prefix.clone(),
                 };
+
+                // Compile a pristine release
+                let mut args: BuildArguments = Default::default();
+                args.release = Some(true);
+                let ctx = workspace::compile_from(&mut config, &args)?;
 
                 info!("Building local file list");
 
@@ -58,15 +77,6 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
                 file_builder.walk()?;
 
                 info!("Local objects {}", file_builder.keys.len());
-
-                let region = Region::from_str(&publish_config.region)?;
-
-                let request = PublishRequest {
-                    profile_name: publish_config.credentials.clone(),
-                    region,
-                    bucket: publish_config.bucket.as_ref().unwrap().clone(),
-                    prefix,
-                };
 
                 info!("Building remote file list");
 
@@ -86,26 +96,4 @@ async fn publish_one(options: &PublishOptions, mut config: &mut Config) -> Resul
     }
 
     Ok(())
-}
-
-fn get_aws_path<'a>(config: &'a AwsPublishConfig, req_path: &Option<String>) -> Result<String> {
-    let mut path = String::from("");
-
-    if let Some(ref target_path) = req_path {
-        path = find_aws_path(config, target_path);
-        if !target_path.is_empty() && path.is_empty() {
-            return Err(
-                Error::new(
-                    format!("Unknown remote path '{}', check the publish configuration", target_path)))
-        }
-    }
-
-    Ok(path)
-}
-
-fn find_aws_path<'a>(config: &'a AwsPublishConfig, name: &str) -> String {
-    if config.paths.contains_key(name) {
-        return config.paths.get(name).unwrap().to_string();
-    }
-    String::from("")
 }

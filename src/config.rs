@@ -567,5 +567,10 @@ pub struct AwsPublishConfig {
     pub credentials: String,
     pub region: String,
     pub bucket: Option<String>,
-    pub paths: HashMap<String, String>
+    pub environments: HashMap<String, AwsPublishEnvironment>
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct AwsPublishEnvironment {
+    pub prefix: String,
 }
