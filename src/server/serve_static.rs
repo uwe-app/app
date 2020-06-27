@@ -16,12 +16,32 @@ use std::convert::Infallible;
 use serde::Serialize;
 
 use warp::ws::Message;
+use warp::path::FullPath;
 
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 
 use crate::utils;
 use log::{error, trace};
+
+async fn redirect_trailing_slash(root: PathBuf, path: FullPath) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+    let mut req = path.as_str();
+    if req != "/" && !req.ends_with("/") {
+        // Need to remove the trailing slash so the path
+        // is not treated as absolute
+        req = req.trim_start_matches("/");
+
+        // Convert to file system path separators
+        let file_path = utils::url::to_path_separator(req);
+        let mut buf = root.clone();
+        buf.push(file_path);
+        if buf.is_dir() {
+            let location = format!("{}/", path.as_str()).parse::<warp::http::Uri>().unwrap();
+            return Ok(Box::new(warp::redirect(location)))
+        }
+    }
+    Err(warp::reject())
+}
 
 #[tokio::main]
 pub async fn serve(
@@ -67,12 +87,25 @@ pub async fn serve(
 
     let root = serve_dir.clone();
 
-    // TODO: support server logging!
+    let state = serve_dir.clone();
+    let with_state = warp::any().map(move || state.clone());
 
-    let static_route = warp::fs::dir(serve_dir).recover(move |e| handle_rejection(e, root.clone()));
+
+    let file_server = warp::fs::dir(serve_dir)
+        .recover(move |e| handle_rejection(e, root.clone()));
+
+    let slash_redirect = warp::get()
+        .and(with_state)
+        .and(warp::path::full())
+        .and_then(redirect_trailing_slash)
+        .or(file_server);
+
+    // TODO: support server logging!
     //.with(warp::log("static"));
 
-    let routes = livereload.or(static_route);
+    //let static_routes = livereload.or(static_route);
+
+    let routes = livereload.or(slash_redirect);
 
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);
     match bind_result {
