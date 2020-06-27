@@ -1,11 +1,14 @@
 use log::info;
 use std::fs;
+use std::collections::HashMap;
 
 use super::context::Context;
 use crate::content::redirect;
-use crate::{utils, Error, INDEX_HTML};
+use crate::{utils, Result, Error, INDEX_HTML};
 
-pub fn write(context: &Context) -> Result<(), Error> {
+static MAX_REDIRECTS: i32 = 4;
+
+pub fn write(context: &Context) -> Result<()> {
     if let Some(ref redirect) = context.config.redirect {
         for (k, v) in redirect {
             // Strip the trailing slash so it is not treated
@@ -31,6 +34,27 @@ pub fn write(context: &Context) -> Result<(), Error> {
             }
             redirect::write(&v, &buf)?;
         }
+    }
+    Ok(())
+}
+
+pub fn validate(map: &HashMap<String, String>) -> Result<()> {
+    for (k, v) in map {
+        validate_redirect(k, v, map, 1)?;
+    }
+    Ok(())
+}
+
+fn validate_redirect<S: AsRef<str>>(k: S, v: S, map: &HashMap<String, String>, count: i32) -> Result<()> {
+
+    if count > MAX_REDIRECTS {
+        return Err(
+            Error::new(
+                format!("Too many redirects, limit is {}", MAX_REDIRECTS)));
+    }
+
+    if let Some(value) = map.get(v.as_ref()) {
+        return validate_redirect(v.as_ref(), value, map, count + 1); 
     }
     Ok(())
 }

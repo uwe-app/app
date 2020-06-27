@@ -5,6 +5,7 @@ use log::{debug, info};
 
 use crate::{Error, Result};
 use crate::build::{CompilerOptions, BuildTag};
+use crate::build::redirect;
 use crate::config::{BuildArguments, Config};
 use crate::{utils, LAYOUT_HBS};
 
@@ -40,6 +41,12 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
         let link = cfg.link.as_mut().unwrap();
         if let Some(ref mut include_index) = link.include_index {
             *include_index = true;
+        }
+    }
+
+    if let Some(ref redirects) = cfg.redirect {
+        if let Err(e) = redirect::validate(redirects) {
+            return Err(e);
         }
     }
 
