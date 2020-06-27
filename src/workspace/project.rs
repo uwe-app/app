@@ -49,7 +49,6 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
             return Err(e);
         }
 
-        cfg.redirect_uris = redirect::collect(redirects)?;
     }
 
     let incremental = args.incremental.is_some() && args.incremental.unwrap();

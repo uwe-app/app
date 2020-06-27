@@ -371,6 +371,7 @@ fn process_command(cmd: &Command) {
                 open_browser: true,
                 watch: None,
                 endpoint: hypertext::generate_id(16),
+                redirects: None,
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {

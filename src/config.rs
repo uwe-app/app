@@ -12,8 +12,6 @@ use toml;
 use log::debug;
 use unic_langid::LanguageIdentifier;
 
-use warp::http::Uri;
-
 use crate::build::page::Page;
 use crate::{utils, Error, HTML, MD};
 
@@ -87,9 +85,6 @@ pub struct Config {
 
     #[serde(skip)]
     pub url: Option<Url>,
-
-    #[serde(skip)]
-    pub redirect_uris: HashMap<String, Uri>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -119,7 +114,6 @@ impl Default for Config {
             link: Some(Default::default()),
             profile: Some(Default::default()),
             publish: Some(Default::default()),
-            redirect_uris: Default::default(),
         }
     }
 }

@@ -1,9 +1,3 @@
-// Code derived from: https://github.com/rust-lang/mdBook/blob/master/src/cmd/serve.rs
-// Respect to the original authors.
-//
-// Modified to gracefully handle ephemeral port.
-
-#[cfg(feature = "watch")]
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use std::net::SocketAddr;
@@ -11,12 +5,14 @@ use tokio::sync::broadcast;
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
+use std::collections::HashMap;
 use std::convert::Infallible;
 
 use serde::Serialize;
 
 use warp::ws::Message;
 use warp::path::FullPath;
+use warp::http::Uri;
 
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
@@ -24,15 +20,39 @@ use std::sync::mpsc::Sender;
 use crate::utils;
 use log::{error, trace};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WebServerOptions {
     pub serve_dir: PathBuf,
     pub host: String,
     pub endpoint: String,
     pub address: SocketAddr,
+    // TODO: support conditional logging
+    pub log: bool,
+
+    pub temporary_redirect: bool,
+    pub redirects: Option<HashMap<String, Uri>>,
 }
 
-async fn redirect_trailing_slash(root: PathBuf, path: FullPath) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+async fn redirect_map(
+    path: FullPath,
+    opts: WebServerOptions) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+    if let Some(ref redirects) = opts.redirects {
+        if let Some(uri) = redirects.get(path.as_str()) {
+            let location = uri.to_string().parse::<Uri>().unwrap();
+            return if opts.temporary_redirect {
+                Ok(Box::new(warp::redirect::temporary(location)))
+            } else {
+                Ok(Box::new(warp::redirect(location)))
+            }
+        }
+    }
+    Err(warp::reject())
+}
+
+async fn redirect_trailing_slash(
+    path: FullPath,
+    root: PathBuf) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+
     let mut req = path.as_str();
     if req != "/" && !req.ends_with("/") {
         // Need to remove the trailing slash so the path
@@ -44,7 +64,7 @@ async fn redirect_trailing_slash(root: PathBuf, path: FullPath) -> Result<Box<dy
         let mut buf = root.clone();
         buf.push(file_path);
         if buf.is_dir() {
-            let location = format!("{}/", path.as_str()).parse::<warp::http::Uri>().unwrap();
+            let location = format!("{}/", path.as_str()).parse::<Uri>().unwrap();
             return Ok(Box::new(warp::redirect(location)))
         }
     }
@@ -61,7 +81,7 @@ pub async fn serve(
     // receive reload messages.
     let sender = warp::any().map(move || reload_tx.subscribe());
 
-    let port = opts.address.port();
+    let port = opts.address.clone().port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
         let origin = format!("http://{}:{}", opts.host, port);
@@ -73,16 +93,16 @@ pub async fn serve(
     // A warp Filter to handle the livereload endpoint. This upgrades to a
     // websocket, and then waits for any filesystem change notifications, and
     // relays them over the websocket.
-    let livereload = warp::path(opts.endpoint)
+    let livereload = warp::path(opts.endpoint.clone())
         .and(warp::ws())
         .and(sender)
         .map(
             move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
                 ws.on_upgrade(move |ws| async move {
                     let (mut user_ws_tx, _user_ws_rx) = ws.split();
-                    trace!("websocket got connection");
+                    trace!("Websocket got connection");
                     if let Ok(m) = rx.recv().await {
-                        trace!("notify of reload");
+                        trace!("Notify of reload");
                         let _ = user_ws_tx.send(m).await;
                     }
                 })
@@ -90,28 +110,36 @@ pub async fn serve(
         )
         .with(&cors);
 
+    let address = opts.address.clone();
     let root = opts.serve_dir.clone();
     let state = opts.serve_dir.clone();
 
-    let with_state = warp::any().map(move || state.clone());
+    //let redirects = opts.redirects.clone();
 
-    let file_server = warp::fs::dir(&opts.serve_dir)
+    let file_server = warp::fs::dir(opts.serve_dir.clone())
         .recover(move |e| handle_rejection(e, root.clone()));
 
-    let slash_redirect = warp::get()
-        .and(with_state)
+    let with_state = warp::any().map(move || state.clone());
+    let with_options = warp::any().map(move || opts.clone());
+
+    let redirect_handler = warp::get()
         .and(warp::path::full())
+        .and(with_options)
+        .and_then(redirect_map);
+
+    let slash_redirect = warp::get()
+        .and(warp::path::full())
+        .and(with_state)
         .and_then(redirect_trailing_slash)
         .or(file_server);
 
-    // TODO: support server logging!
-    //.with(warp::log("static"));
+    let routes = livereload.or(redirect_handler.or(slash_redirect));
 
-    //let static_routes = livereload.or(static_route);
+    //if opts.log {
+        //routes = routes.with(warp::log("static"));
+    //}
 
-    let routes = livereload.or(slash_redirect);
-
-    let bind_result = warp::serve(routes).try_bind_ephemeral(opts.address);
+    let bind_result = warp::serve(routes).try_bind_ephemeral(address);
     match bind_result {
         Ok((addr, future)) => {
             if let Err(e) = bind_tx.send(addr) {

@@ -1,11 +1,13 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
+
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use tokio::sync::broadcast::Sender as TokioSender;
 use warp::ws::Message;
-
-use std::path::PathBuf;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::Sender;
+use warp::http::Uri;
 
 use log::{error, info};
 
@@ -22,6 +24,7 @@ pub struct ServeOptions {
     pub open_browser: bool,
     pub watch: Option<PathBuf>,
     pub endpoint: String,
+    pub redirects: Option<HashMap<String, Uri>>,
 }
 
 pub fn serve_only(options: ServeOptions) -> Result<(), Error> {
@@ -73,6 +76,9 @@ pub fn serve(
         endpoint: options.endpoint.clone(),
         host: serve_host,
         address: sockaddr,
+        redirects: options.redirects,
+        log: true,
+        temporary_redirect: true,
     };
 
     let thread_handle = std::thread::spawn(move || {

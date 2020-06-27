@@ -8,6 +8,7 @@ use warp::ws::Message;
 use crate::build::context::Context;
 use crate::build::invalidator::Invalidator;
 use crate::build::compiler::Compiler;
+use crate::build::redirect;
 use crate::command::serve::*;
 use crate::config::BuildArguments;
 use crate::{utils, Error};
@@ -38,6 +39,12 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
     let source = ctx.options.source.clone();
     let endpoint = utils::generate_id(16);
 
+    let mut redirect_uris = None;
+
+    if let Some(ref redirects) = ctx.config.redirect {
+        redirect_uris = Some(redirect::collect(redirects)?);
+    }
+
     let opts = ServeOptions {
         target: ctx.options.base.clone().to_path_buf(),
         watch: Some(source.clone()),
@@ -45,6 +52,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
         port: port.to_owned(),
         endpoint: endpoint.clone(),
         open_browser: false,
+        redirects: redirect_uris,
     };
 
     // Create a channel to receive the bind address.

@@ -29,6 +29,7 @@ pub fn docs(_: DocsOptions) -> Result<(), Error> {
         open_browser: true,
         watch: None,
         endpoint: utils::generate_id(16),
+        redirects: None,
     };
 
     serve::serve_only(opts)
