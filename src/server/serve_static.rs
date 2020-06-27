@@ -24,6 +24,14 @@ use std::sync::mpsc::Sender;
 use crate::utils;
 use log::{error, trace};
 
+#[derive(Debug)]
+pub struct WebServerOptions {
+    pub serve_dir: PathBuf,
+    pub host: String,
+    pub endpoint: String,
+    pub address: SocketAddr,
+}
+
 async fn redirect_trailing_slash(root: PathBuf, path: FullPath) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     let mut req = path.as_str();
     if req != "/" && !req.ends_with("/") {
@@ -45,10 +53,7 @@ async fn redirect_trailing_slash(root: PathBuf, path: FullPath) -> Result<Box<dy
 
 #[tokio::main]
 pub async fn serve(
-    serve_dir: PathBuf,
-    host: String,
-    endpoint: String,
-    address: SocketAddr,
+    opts: WebServerOptions,
     bind_tx: Sender<SocketAddr>,
     reload_tx: broadcast::Sender<Message>,
 ) {
@@ -56,10 +61,10 @@ pub async fn serve(
     // receive reload messages.
     let sender = warp::any().map(move || reload_tx.subscribe());
 
-    let port = address.port();
+    let port = opts.address.port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
-        let origin = format!("http://{}:{}", host, port);
+        let origin = format!("http://{}:{}", opts.host, port);
         cors = warp::cors()
             .allow_origin(origin.as_str())
             .allow_methods(vec!["GET"]);
@@ -68,7 +73,7 @@ pub async fn serve(
     // A warp Filter to handle the livereload endpoint. This upgrades to a
     // websocket, and then waits for any filesystem change notifications, and
     // relays them over the websocket.
-    let livereload = warp::path(endpoint)
+    let livereload = warp::path(opts.endpoint)
         .and(warp::ws())
         .and(sender)
         .map(
@@ -85,13 +90,12 @@ pub async fn serve(
         )
         .with(&cors);
 
-    let root = serve_dir.clone();
+    let root = opts.serve_dir.clone();
+    let state = opts.serve_dir.clone();
 
-    let state = serve_dir.clone();
     let with_state = warp::any().map(move || state.clone());
 
-
-    let file_server = warp::fs::dir(serve_dir)
+    let file_server = warp::fs::dir(&opts.serve_dir)
         .recover(move |e| handle_rejection(e, root.clone()));
 
     let slash_redirect = warp::get()
@@ -107,7 +111,7 @@ pub async fn serve(
 
     let routes = livereload.or(slash_redirect);
 
-    let bind_result = warp::serve(routes).try_bind_ephemeral(address);
+    let bind_result = warp::serve(routes).try_bind_ephemeral(opts.address);
     match bind_result {
         Ok((addr, future)) => {
             if let Err(e) = bind_tx.send(addr) {

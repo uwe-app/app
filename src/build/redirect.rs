@@ -6,6 +6,8 @@ use super::context::Context;
 use crate::content::redirect;
 use crate::{utils, Result, Error, INDEX_HTML};
 
+use warp::http::Uri;
+
 static MAX_REDIRECTS: usize = 4;
 
 pub fn write(context: &Context) -> Result<()> {
@@ -36,6 +38,14 @@ pub fn write(context: &Context) -> Result<()> {
         }
     }
     Ok(())
+}
+
+pub fn collect(items: &HashMap<String, String>) -> Result<HashMap<String, Uri>> {
+    let mut map: HashMap<String, Uri> = HashMap::new();
+    for (k, v) in items {
+        map.insert(k.clone(), v.as_str().parse::<Uri>()?);
+    }
+    Ok(map)
 }
 
 pub fn validate(map: &HashMap<String, String>) -> Result<()> {

@@ -11,7 +11,7 @@ use log::{error, info};
 
 use open;
 
-use crate::server::serve_static;
+use crate::server::{serve_static, WebServerOptions};
 use crate::Error;
 
 #[derive(Debug)]
@@ -68,9 +68,15 @@ pub fn serve(
         }
     });
 
-    let endpoint = options.endpoint.clone();
+    let web_server_opts = WebServerOptions {
+        serve_dir,
+        endpoint: options.endpoint.clone(),
+        host: serve_host,
+        address: sockaddr,
+    };
+
     let thread_handle = std::thread::spawn(move || {
-        serve_static::serve(serve_dir, serve_host, endpoint, sockaddr, ctx, reload_tx);
+        serve_static::serve(web_server_opts, ctx, reload_tx);
     });
 
     let _ = thread_handle.join();

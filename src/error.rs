@@ -3,10 +3,12 @@ use std::{error, fmt, io, path};
 use handlebars;
 use ignore;
 use mdbook;
+use warp::http;
 
 #[derive(Debug)]
 pub enum Error {
     Message(String),
+    Uri(http::uri::InvalidUri),
     IoError(io::Error),
     StripPrefixError(path::StripPrefixError),
     TemplateFileError(handlebars::TemplateFileError),
@@ -31,6 +33,13 @@ pub enum Error {
 impl Error {
     pub fn new(s: String) -> Self {
         Error::Message(s)
+    }
+}
+
+
+impl From<http::uri::InvalidUri> for Error {
+    fn from(error: http::uri::InvalidUri) -> Self {
+        Error::Uri(error)
     }
 }
 
@@ -146,6 +155,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Message(ref s) => write!(f, "{}", s),
+            Error::Uri(ref e) => e.fmt(f),
             Error::IoError(ref e) => e.fmt(f),
             Error::StripPrefixError(ref e) => e.fmt(f),
             Error::TemplateFileError(ref e) => e.fmt(f),
@@ -172,6 +182,7 @@ impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::IoError(ref e) => Some(e),
+            Error::Uri(ref e) => Some(e),
             Error::StripPrefixError(ref e) => Some(e),
             Error::TemplateFileError(ref e) => Some(e),
             Error::RenderError(ref e) => Some(e),
