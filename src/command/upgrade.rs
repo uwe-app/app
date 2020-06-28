@@ -20,8 +20,7 @@ pub fn upgrade(_options: UpgradeOptions) -> Result<()> {
     if current == installed {
         info!("Hypertext is up to date (v{})", current_version);
     } else {
-        let (_name, _info, _bin, _bin_dir) = updater::update()?;
-        let (_, info) = updater::version()?;
+        let (_name, info, _bin, _bin_dir) = updater::update()?;
         info!("Upgraded to {}", info.version);
     }
 

@@ -147,7 +147,7 @@ pub fn install() -> Result<()> {
 pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let prefs = preference::load()?;
 
-    let (version_file, info) = version()?;
+    let (version_file, _) = version()?;
 
     let bin_dir = cache::get_bin_dir()?;
     let mut bin = bin_dir.clone();
@@ -155,6 +155,7 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     bin.push(NAME);
     release_bin.push(NAME);
 
+    // Remove the symlink before we pull (see #39)
     if bin.exists() {
         std::fs::remove_file(&bin)?;
     }
@@ -170,5 +171,7 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     dest_version.push(VERSION_FILE);
     fs::copy(version_file, dest_version)?;
 
+    // Get latest version info
+    let (_, info) = version()?;
     Ok((NAME.to_string(), info, bin, bin_dir))
 }
