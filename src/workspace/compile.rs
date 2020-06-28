@@ -25,8 +25,10 @@ pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Res
         ctx = compile_from(&mut space.config, &args)?;
     }
 
-    // TODO: restore this behind a flag write-redirects
-    //crate::build::redirect::write(&ctx)?;
+    let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
+    if write_redirects {
+        crate::build::redirect::write(&ctx)?;
+    }
 
     Ok(ctx)
 }

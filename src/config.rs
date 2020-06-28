@@ -396,6 +396,8 @@ pub struct BuildArguments {
     pub pristine: Option<bool>,
     pub force: Option<bool>,
 
+    pub write_redirects: Option<bool>,
+
     // Base URL to strip when building links etc
     pub base: Option<String>,
 
@@ -419,6 +421,7 @@ impl Default for BuildArguments {
             incremental: Some(false),
             pristine: Some(true),
             force: None,
+            write_redirects: None,
             base: None,
             layout: None,
             paths: None,
