@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use crate::cache::{self, CacheComponent};
 use crate::preference;
 use crate::utils;
-use crate::utils::symlink;
 use crate::Result;
 
 static BASH: &str = "bash";
@@ -155,15 +154,13 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     bin.push(NAME);
     release_bin.push(NAME);
 
-    // Remove the symlink before we pull (see #39)
-    if bin.exists() {
-        std::fs::remove_file(&bin)?;
-    }
-
     let components = vec![CacheComponent::Release];
     cache::update(&prefs, components)?;
 
-    symlink::soft(&release_bin, &bin)?;
+    if bin.exists() {
+        std::fs::remove_file(&bin)?;
+    }
+    fs::copy(&release_bin, &bin)?;
 
     // Copy the version file so we know which version
     // was installed the last time that update() was run
