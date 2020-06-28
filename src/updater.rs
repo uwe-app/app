@@ -146,8 +146,6 @@ pub fn install() -> Result<()> {
 
 pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let prefs = preference::load()?;
-    let components = vec![CacheComponent::Release];
-    cache::update(&prefs, components)?;
 
     let (version_file, info) = version()?;
 
@@ -160,6 +158,9 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     if bin.exists() {
         std::fs::remove_file(&bin)?;
     }
+
+    let components = vec![CacheComponent::Release];
+    cache::update(&prefs, components)?;
 
     symlink::soft(&release_bin, &bin)?;
 
