@@ -145,17 +145,16 @@ pub fn install() -> Result<()> {
 
 pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let prefs = preference::load()?;
-
     let (version_file, _) = version()?;
+
+    let components = vec![CacheComponent::Release];
+    cache::update(&prefs, components)?;
 
     let bin_dir = cache::get_bin_dir()?;
     let mut bin = bin_dir.clone();
     let mut release_bin = cache::get_release_bin_dir()?;
     bin.push(NAME);
     release_bin.push(NAME);
-
-    let components = vec![CacheComponent::Release];
-    cache::update(&prefs, components)?;
 
     if bin.exists() {
         std::fs::remove_file(&bin)?;
