@@ -23,9 +23,14 @@ pub struct VersionInfo {
     pub version: String,
 }
 
-pub fn version() -> Result<(PathBuf, VersionInfo)> {
+pub fn get_version_file() -> Result<PathBuf> {
     let mut version_file = cache::get_release_dir()?;
     version_file.push(VERSION_FILE);
+    Ok(version_file)
+}
+
+pub fn version() -> Result<(PathBuf, VersionInfo)> {
+    let version_file = get_version_file()?;
     let content = utils::read_string(&version_file)?;
     let info: VersionInfo = toml::from_str(&content)?;
     Ok((version_file, info))
@@ -145,7 +150,7 @@ pub fn install() -> Result<()> {
 
 pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let prefs = preference::load()?;
-    let (version_file, _) = version()?;
+    let version_file = get_version_file()?;
 
     let components = vec![CacheComponent::Release];
     cache::update(&prefs, components)?;
