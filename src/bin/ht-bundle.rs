@@ -49,7 +49,7 @@ struct Cli {
     input: PathBuf,
 
     /// Generate bundle executables in directory
-    #[structopt(parse(from_os_str), default_value = "build")]
+    #[structopt(parse(from_os_str), default_value = "build/bundle")]
     output: PathBuf,
 }
 
