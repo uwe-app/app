@@ -12,13 +12,11 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, BundleOptions, Config, DocsOptions, Error, InitOptions, PrefOptions, PublishOptions, ServeOptions, UpdateOptions, UpgradeOptions,
+    BuildArguments, Config, DocsOptions, Error, InitOptions, PrefOptions, PublishOptions, ServeOptions, UpdateOptions, UpgradeOptions,
 };
 
 use hypertext::publisher::PublishProvider;
-
 use hypertext::site;
-use hypertext::utils;
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
@@ -178,41 +176,6 @@ struct WebServerOpts {
 struct DocsOpts {}
 
 #[derive(StructOpt, Debug)]
-struct BundleOpts {
-    /// Force overwrite generated files
-    #[structopt(long)]
-    force: bool,
-
-    /// Keep intermediary source files
-    #[structopt(short, long)]
-    keep: bool,
-
-    /// Bundle for Linux
-    #[structopt(short, long)]
-    linux: bool,
-
-    /// Bundle for MacOs
-    #[structopt(short, long)]
-    mac: bool,
-
-    /// Bundle for Windows
-    #[structopt(short, long)]
-    windows: bool,
-
-    /// The name of the generated bundle
-    #[structopt(short, long)]
-    name: Option<String>,
-
-    /// Directory containing website files to bundle
-    #[structopt(parse(from_os_str))]
-    input: PathBuf,
-
-    /// Generate bundle executables in directory
-    #[structopt(parse(from_os_str), default_value = "build")]
-    output: PathBuf,
-}
-
-#[derive(StructOpt, Debug)]
 enum Command {
     /// Create a new project from a blueprint
     Init {
@@ -236,12 +199,6 @@ enum Command {
     Docs {
         #[structopt(flatten)]
         args: DocsOpts,
-    },
-
-    /// Bundle a site into executables (requires Go)
-    Bundle {
-        #[structopt(flatten)]
-        args: BundleOpts,
     },
 
     /// Manage preferences
@@ -394,34 +351,6 @@ fn process_command(cmd: &Command) {
             }
 
             if let Err(e) = hypertext::serve_only(opts) {
-                fatal(e);
-            }
-        }
-
-        Command::Bundle { ref args } => {
-            if !args.input.exists() || !args.input.is_dir() {
-                error(format!(
-                    "Directory does not exist: {}",
-                    args.input.display()
-                ));
-            }
-
-            if let Err(e) = utils::require_output_dir(&args.output) {
-                fatal(e);
-            }
-
-            let opts = BundleOptions {
-                source: args.input.clone(),
-                target: args.output.clone(),
-                force: args.force,
-                keep: args.keep,
-                linux: args.linux,
-                mac: args.mac,
-                windows: args.windows,
-                name: args.name.clone(),
-            };
-
-            if let Err(e) = hypertext::bundle(opts) {
                 fatal(e);
             }
         }
