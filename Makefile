@@ -12,6 +12,7 @@ ifeq ($(HOST_OS),darwin)
 endif
 
 INSTALLER_BIN = hypertext-installer
+BUNDLER_BIN = ht-bundle
 RELEASE_ROOT = ../release
 RELEASE_REPO = $(RELEASE_ROOT)/$(HOST_OS)
 
@@ -70,6 +71,10 @@ installer:
 	@cargo build --release --bin=$(INSTALLER_BIN)
 	@mkdir -p $(SITE_RELEASE)
 	@cp -fv target/release/$(INSTALLER_BIN) $(SITE_RELEASE)/$(INSTALLER_BIN)
+
+bundler:
+	@cargo build --release --bin=$(BUNDLER_BIN)
+	@cp -f target/release/$(BUNDLER_BIN) $(HOME)/.hypertext/bin
 
 info:
 	@echo $(HOST_OS)
