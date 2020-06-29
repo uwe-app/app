@@ -43,6 +43,8 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
                         config.host.clone()   
                     };
 
+                    info!("Bucket {}", &bucket);
+
                     let region = Region::from_str(&publish_config.region)?;
 
                     let request = PublishRequest {

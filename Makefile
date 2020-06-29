@@ -64,7 +64,7 @@ fmt:
 	@cargo fmt
 
 build-release:
-	@cargo build --release
+	@cargo build --release --bin=ht
 
 installer:
 	@cargo build --release --bin=$(INSTALLER_BIN)
@@ -92,10 +92,12 @@ release: build-release current
 check:
 	@cargo check
 
-install: release
-	@cp -f target/release/ht $(HOME)/bin
+install: build-release
+	@mkdir -p $(HOME)/.hypertext/bin
+	@cp -f target/release/ht $(HOME)/.hypertext/bin
 
 install-darwin: release-darwin
-	@cp -f target/release/ht $(HOME)/bin
+	@mkdir -p $(HOME)/.hypertext/bin
+	@cp -f target/release/ht $(HOME)/.hypertext/bin
 
 .PHONY: all site site-release checksum clean install
