@@ -138,7 +138,7 @@ impl<'a> Compiler<'a> {
                 let (collides, other) = matcher::collides(file, &file_type);
                 if collides {
                     return Err(Error::new(format!(
-                        "file name collision {} with {}",
+                        "File name collision {} with {}",
                         file.display(),
                         other.display()
                     )));
@@ -181,34 +181,33 @@ impl<'a> Compiler<'a> {
                         for (gen, idx) in each_iters {
                             self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
                         }
+                        return Ok(())
                     }
-                } else {
-                    let dest = matcher::destination(
-                        &self.context.options.source,
-                        &self.context.options.target,
-                        &file.to_path_buf(),
-                        &file_type,
-                        &self.context.config.extension.as_ref().unwrap(),
-                        clean,
-                        &self.context.options.base_href,
-                    )?;
-
-                    if self
-                        .manifest
-                        .is_dirty(file, &dest, self.context.options.force)
-                    {
-                        info!("{} -> {}", file.display(), dest.display());
-                        let s = self
-                            .parser
-                            .parse(&file, &dest.as_path(), &file_type, &mut data)?;
-                        utils::write_string(&dest, &s)?;
-                        self.manifest.touch(file, &dest);
-                    } else {
-                        info!("noop {}", file.display());
-                    }
-
                 }
 
+                let dest = matcher::destination(
+                    &self.context.options.source,
+                    &self.context.options.target,
+                    &file.to_path_buf(),
+                    &file_type,
+                    &self.context.config.extension.as_ref().unwrap(),
+                    clean,
+                    &self.context.options.base_href,
+                )?;
+
+                if self
+                    .manifest
+                    .is_dirty(file, &dest, self.context.options.force)
+                {
+                    info!("{} -> {}", file.display(), dest.display());
+                    let s = self
+                        .parser
+                        .parse(&file, &dest.as_path(), &file_type, &mut data)?;
+                    utils::write_string(&dest, &s)?;
+                    self.manifest.touch(file, &dest);
+                } else {
+                    info!("noop {}", file.display());
+                }
             }
         }
 
