@@ -22,6 +22,23 @@ use hypertext::utils;
 
 const LOG_ENV_NAME: &'static str = "HYPER_LOG";
 
+fn get_project_path(input: PathBuf) -> PathBuf {
+
+    // NOTE: We want the help output to show "."
+    // NOTE: to indicate that the current working
+    // NOTE: directory is used but the period creates
+    // NOTE: problems with the strip prefix logic for
+    // NOTE: live reload so this converts it to the
+    // NOTE: empty string.
+    let period = Path::new(".").to_path_buf();
+    let empty = Path::new("").to_path_buf();
+    let mut project = input.clone();
+    if project == period {
+        project = empty;
+    }
+    project
+}
+
 #[derive(Debug, StructOpt)]
 /// Fast and elegant site generator
 #[structopt(name = "hypertext")]
@@ -50,10 +67,6 @@ struct BuildOpts {
     /// Maximum depth to traverse
     #[structopt(short, long)]
     max_depth: Option<usize>,
-
-    /// Use index.html for directory links
-    #[structopt(long)]
-    include_index: bool,
 
     /// Enable live reload
     #[structopt(short, long)]
@@ -124,13 +137,13 @@ struct UpgradeOpts {}
 
 #[derive(StructOpt, Debug)]
 struct PublishOpts {
-    /// Project path
-    #[structopt(parse(from_os_str))]
-    project: PathBuf,
-
     /// Publish environment
     #[structopt()]
-    env: Option<String>,
+    env: String,
+
+    /// Project path
+    #[structopt(parse(from_os_str), default_value = ".")]
+    project: PathBuf,
 }
 
 #[derive(StructOpt, Debug)]
@@ -198,7 +211,6 @@ struct BundleOpts {
     #[structopt(parse(from_os_str), default_value = "build")]
     output: PathBuf,
 }
-
 
 #[derive(StructOpt, Debug)]
 enum Command {
@@ -415,10 +427,12 @@ fn process_command(cmd: &Command) {
         }
 
         Command::Publish { ref args } => {
+            let project = get_project_path(args.project.clone());
+
             let opts = PublishOptions {
                 provider: PublishProvider::Aws,
-                project: args.project.clone(),
                 env: args.env.clone(),
+                project,
             };
 
             if let Err(e) = hypertext::publish(opts) {
@@ -455,18 +469,7 @@ fn process_command(cmd: &Command) {
         },
 
         Command::Build { ref args } => {
-            // NOTE: We want the help output to show "."
-            // NOTE: to indicate that the current working
-            // NOTE: directory is used but the period creates
-            // NOTE: problems with the strip prefix logic for
-            // NOTE: live reload so this converts it to the
-            // NOTE: empty string.
-            let period = Path::new(".").to_path_buf();
-            let empty = Path::new("").to_path_buf();
-            let mut project = args.project.clone();
-            if project == period {
-                project = empty;
-            }
+            let project = get_project_path(args.project.clone());
 
             let paths = if args.paths.len() > 0 {
                 Some(args.paths.clone())
@@ -478,7 +481,6 @@ fn process_command(cmd: &Command) {
                 paths,
                 tag: args.tag.clone(),
                 max_depth: args.max_depth,
-                include_index: Some(args.include_index),
                 live: Some(args.live),
                 force: Some(args.force),
                 release: Some(args.release),

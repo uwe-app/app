@@ -88,5 +88,6 @@ pub struct CompilerOptions {
 
     pub incremental: bool,
 
+    pub include_index: bool,
 }
 

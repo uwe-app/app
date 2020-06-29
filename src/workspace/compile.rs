@@ -33,9 +33,9 @@ pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Res
     Ok(ctx)
 }
 
-pub fn compile_from(mut config: &mut Config, args: &BuildArguments) -> Result<Context> {
-    let opts = super::project::prepare(&mut config, &args)?;
-    compile(&config, opts)
+pub fn compile_from(config: &Config, args: &BuildArguments) -> Result<Context> {
+    let opts = super::project::prepare(config, args)?;
+    compile(config, opts)
 }
 
 pub fn compile(config: &Config, opts: CompilerOptions) -> Result<Context> {

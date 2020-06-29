@@ -9,7 +9,7 @@ use crate::build::redirect;
 use crate::config::{BuildArguments, Config};
 use crate::{utils, LAYOUT_HBS};
 
-fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
+fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
 
@@ -29,6 +29,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
 
     let live = args.live.is_some() && args.live.unwrap();
     let mut force = args.force.is_some() && args.force.unwrap();
+
     let include_index = args.include_index.is_some() && args.include_index.unwrap();
 
     if live && release {
@@ -37,12 +38,13 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
         ));
     }
 
-    if include_index {
-        let link = cfg.link.as_mut().unwrap();
-        if let Some(ref mut include_index) = link.include_index {
-            *include_index = true;
-        }
-    }
+    // FIXME: restore this as a computation
+    //if include_index {
+        //let link = cfg.link.as_mut().unwrap();
+        //if let Some(ref mut include_index) = link.include_index {
+            //*include_index = true;
+        //}
+    //}
 
     if let Some(ref redirects) = cfg.redirect {
         if let Err(e) = redirect::validate(redirects) {
@@ -120,6 +122,7 @@ fn with(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
         paths: args.paths.clone(),
         base_href: args.base.clone(),
         incremental,
+        include_index,
     };
 
     debug!("{:?}", &cfg);
@@ -160,32 +163,35 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
         .collect::<Vec<_>>()
 }
 
-pub fn prepare(cfg: &mut Config, args: &BuildArguments) -> Result<CompilerOptions> {
+pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let (_, target_dir) = get_tag_info(args);
 
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
-    let profiles = cfg.profile.as_mut().unwrap();
-    if let Some(ref mut profile) = profiles.get_mut(&target_dir) {
+    let profiles = cfg.profile.as_ref().unwrap();
+    if let Some(profile) = profiles.get(&target_dir) {
+
+        let mut use_profile = profile.clone();
+
         if profile.tag.is_some() {
             return Err(Error::new(format!(
                 "Profiles may not define a build tag, please remove it"
             )));
         }
 
-        if let Some(ref paths) = profile.paths {
+        if let Some(ref mut paths) = use_profile.paths.as_mut() {
             let build = cfg.build.as_ref().unwrap();
             let paths = prefix(&build.source, paths);
             debug!("profile paths {:?}", &paths);
-            profile.paths = Some(paths);
+            use_profile.paths = Some(paths);
         }
 
-        let merged = utils::merge::map::<BuildArguments>(profile, args)?;
+        let mut merged = utils::merge::map::<BuildArguments>(&use_profile, args)?;
 
         // Always update base to use the path separator. The declaration is
         // a URL path but internally we treat as a filesystem path.
         if let Some(ref base) = merged.base {
-            profile.base = Some(utils::url::to_path_separator(base));
+            merged.base = Some(utils::url::to_path_separator(base));
         }
 
         return with(cfg, &merged);

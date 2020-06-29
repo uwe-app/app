@@ -172,10 +172,7 @@ fn children<P: AsRef<Path>>(
                 }
 
                 if !href.is_empty() {
-                    let link_config = ctx.config.link.as_ref().unwrap();
-                    let include_index = link_config.include_index.unwrap();
-
-                    if ctx.options.clean_url && !include_index {
+                    if ctx.options.clean_url && !ctx.options.include_index {
                         if href.ends_with(INDEX_HTML) {
                             href.truncate(href.len() - INDEX_HTML.len());
                         }

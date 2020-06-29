@@ -228,13 +228,13 @@ impl Config {
 
                 // Set up AWS publish configs to have a bucket that points
                 // to the host name by default
-                if let Some(ref mut publish) = cfg.publish {
-                    if let Some(ref mut aws) = publish.aws {
-                        if aws.bucket.is_none() {
-                            aws.bucket = Some(cfg.host.clone());
-                        }
-                    }
-                }
+                //if let Some(ref mut publish) = cfg.publish {
+                    //if let Some(ref mut aws) = publish.aws {
+                        //if aws.bucket.is_none() {
+                            //aws.bucket = Some(cfg.host.clone());
+                        //}
+                    //}
+                //}
 
                 return Ok(cfg);
             }
@@ -545,8 +545,6 @@ pub struct LinkConfig {
     pub verify: Option<bool>,
     /// The link helper should make links relative
     pub relative: Option<bool>,
-    /// Links to directories should include index.html
-    pub include_index: Option<bool>,
 }
 
 impl Default for LinkConfig {
@@ -555,7 +553,6 @@ impl Default for LinkConfig {
             allow: None,
             verify: Some(true),
             relative: Some(true),
-            include_index: Some(false),
         }
     }
 }
@@ -569,11 +566,11 @@ pub struct PublishConfig {
 pub struct AwsPublishConfig {
     pub credentials: String,
     pub region: String,
-    pub bucket: Option<String>,
     pub environments: HashMap<String, AwsPublishEnvironment>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct AwsPublishEnvironment {
-    pub prefix: String,
+    pub prefix: Option<String>,
+    pub bucket: Option<String>,
 }

@@ -47,7 +47,7 @@ impl HelperDef for Link {
 
         if let Some(p) = h.params().get(0) {
             let link_config = build_ctx.config.link.as_ref().unwrap();
-            let include_index = link_config.include_index.unwrap();
+            let include_index = opts.include_index;
 
             if !p.is_value_missing() {
                 input = p.value().as_str().unwrap_or("").to_string();
@@ -170,8 +170,7 @@ impl HelperDef for Components {
         let template = h.template();
         match template {
             Some(t) => {
-                let link_config = build_ctx.config.link.as_ref().unwrap();
-                let include_index = link_config.include_index.unwrap();
+                let include_index = opts.include_index;
 
                 if let Ok(rel) = path.strip_prefix(&opts.target) {
                     let mut buf = rel.to_path_buf();
