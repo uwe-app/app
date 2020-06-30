@@ -29,7 +29,6 @@ pub enum Error {
     GitLib(GitError),
     Git(git2::Error),
     Semver(semver::SemVerError),
-    HttpClient(reqwest::Error),
     Preference(preference::PreferenceError),
     Cache(cache::CacheError),
     Updater(updater::UpdaterError),
@@ -147,12 +146,6 @@ impl From<semver::SemVerError> for Error {
     }
 }
 
-impl From<reqwest::Error> for Error {
-    fn from(error: reqwest::Error) -> Self {
-        Error::HttpClient(error)
-    }
-}
-
 impl From<preference::PreferenceError> for Error {
     fn from(error: preference::PreferenceError) -> Self {
         Error::Preference(error)
@@ -214,7 +207,6 @@ impl fmt::Display for Error {
             Error::Cache(ref e) => e.fmt(f),
             Error::Updater(ref e) => e.fmt(f),
             Error::Config(ref e) => e.fmt(f),
-            Error::HttpClient(ref e) => e.fmt(f),
             Error::Region(ref e) => e.fmt(f),
             Error::Aws(ref e) => e.fmt(f),
         }
@@ -244,7 +236,6 @@ impl error::Error for Error {
             Error::Cache(ref e) => Some(e),
             Error::Updater(ref e) => Some(e),
             Error::Config(ref e) => Some(e),
-            Error::HttpClient(ref e) => Some(e),
             Error::Region(ref e) => Some(e),
             Error::Aws(ref e) => Some(e),
             _ => None,
