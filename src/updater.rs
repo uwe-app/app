@@ -6,6 +6,7 @@ use home;
 use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
+use dirs;
 use utils;
 
 use crate::cache::{self, CacheComponent};
@@ -169,7 +170,7 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
 
     // Copy the version file so we know which version
     // was installed the last time that update() was run
-    let mut dest_version = cache::get_root_dir()?;
+    let mut dest_version = dirs::get_root_dir()?;
     dest_version.push(VERSION_FILE);
     fs::copy(version_file, dest_version)?;
 

@@ -10,6 +10,7 @@ default-run = "ht"
 [workspace]
 members = [
   "components/content",
+  "components/dirs",
   "components/git",
   "components/server",
   "components/utils",
@@ -17,6 +18,7 @@ members = [
 
 [dependencies]
 content = {version = "0.1", path = "components/content" }
+dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
 server = {version = "0.1", path = "components/server" }
 utils = {version = "0.1", path = "components/utils" }

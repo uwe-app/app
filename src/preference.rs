@@ -3,10 +3,10 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use dirs;
 use utils;
 
 use crate::Error;
-use crate::cache;
 
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
@@ -82,7 +82,7 @@ impl Default for DocsPreferences {
 }
 
 pub fn get_prefs_file() -> Result<PathBuf, Error> {
-    let mut buf = cache::get_root_dir()?;
+    let mut buf = dirs::get_root_dir()?;
     buf.push(PREFERENCES);
     Ok(buf)
 }

@@ -1,13 +1,12 @@
 use std::fs;
 use std::path::PathBuf;
 
+use dirs;
 use git;
-use home;
 
 use crate::preference::{self, Preferences};
 use crate::Error;
 
-static ROOT_DIR: &str = ".hypertext";
 static BIN: &str = "bin";
 static ENV: &str = "env";
 
@@ -33,21 +32,8 @@ pub enum CacheComponent {
     Release,
 }
 
-pub fn get_root_dir() -> Result<PathBuf, Error> {
-    let cache = home::home_dir();
-    if let Some(ref cache) = cache {
-        let mut buf = cache.clone();
-        buf.push(ROOT_DIR);
-        if !buf.exists() {
-            fs::create_dir(&buf)?;
-        }
-        return Ok(buf);
-    }
-    Err(Error::new(format!("Could not determine home directory")))
-}
-
 pub fn get_workspace_dir() -> Result<PathBuf, Error> {
-    let mut bin = get_root_dir()?;
+    let mut bin = dirs::get_root_dir()?;
     bin.push(WORKSPACE_NAME);
     if !bin.exists() {
         fs::create_dir(&bin)?;
@@ -56,19 +42,19 @@ pub fn get_workspace_dir() -> Result<PathBuf, Error> {
 }
 
 pub fn get_workspace_manifest() -> Result<PathBuf, Error> {
-    let mut file = get_root_dir()?;
+    let mut file = dirs::get_root_dir()?;
     file.push(WORKSPACE_FILE);
     Ok(file)
 }
 
 pub fn get_env_file() -> Result<PathBuf, Error> {
-    let mut env = get_root_dir()?;
+    let mut env = dirs::get_root_dir()?;
     env.push(ENV);
     Ok(env)
 }
 
 pub fn get_bin_dir() -> Result<PathBuf, Error> {
-    let mut bin = get_root_dir()?;
+    let mut bin = dirs::get_root_dir()?;
     bin.push(BIN);
     if !bin.exists() {
         fs::create_dir(&bin)?;
@@ -86,7 +72,7 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
 }
 
 pub fn get_blueprint_dir() -> Result<PathBuf, Error> {
-    let mut buf = get_root_dir()?;
+    let mut buf = dirs::get_root_dir()?;
     buf.push(BLUEPRINT_NAME);
     Ok(buf)
 }
@@ -96,7 +82,7 @@ pub fn get_standalone_url() -> String {
 }
 
 pub fn get_standalone_dir() -> Result<PathBuf, Error> {
-    let mut buf = get_root_dir()?;
+    let mut buf = dirs::get_root_dir()?;
     buf.push(STANDALONE_NAME);
     Ok(buf)
 }
@@ -106,7 +92,7 @@ pub fn get_docs_url() -> String {
 }
 
 pub fn get_docs_dir() -> Result<PathBuf, Error> {
-    let mut buf = get_root_dir()?;
+    let mut buf = dirs::get_root_dir()?;
     buf.push(DOCUMENTATION_NAME);
     Ok(buf)
 }
@@ -142,7 +128,7 @@ pub fn get_release_url() -> String {
 }
 
 pub fn get_release_dir() -> Result<PathBuf, Error> {
-    let mut buf = get_root_dir()?;
+    let mut buf = dirs::get_root_dir()?;
     buf.push(RELEASE_NAME);
     Ok(buf)
 }
