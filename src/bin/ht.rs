@@ -12,13 +12,22 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, Config, DocsOptions, Error, InitOptions, PrefOptions, PublishOptions, ServeOptions, UpdateOptions, UpgradeOptions,
+    BuildArguments, Config, DocsOptions, Error, PrefOptions, PublishOptions, ServeOptions, UpdateOptions, UpgradeOptions,
 };
 
 use hypertext::publisher::PublishProvider;
 use hypertext::site;
 
-const LOG_ENV_NAME: &'static str = "HYPER_LOG";
+const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
+
+fn fatal(e: impl std::error::Error) {
+    error!("{}", e);
+    std::process::exit(1);
+}
+
+fn error(s: String) {
+    fatal(Error::new(s));
+}
 
 fn get_project_path(input: PathBuf) -> PathBuf {
 
@@ -92,9 +101,9 @@ struct BuildOpts {
 
 #[derive(StructOpt, Debug)]
 struct InitOpts {
-    /// List available blueprints
-    #[structopt(short, long)]
-    list: bool,
+
+    #[structopt(subcommand)]
+    action: Option<InitCommands>,
 
     /// Private key to use for SSH connections
     #[structopt(short, long)]
@@ -109,6 +118,13 @@ struct InitOpts {
     /// The blueprint source path or URL
     #[structopt()]
     source: Option<String>,
+}
+
+#[derive(StructOpt, Debug)]
+enum InitCommands {
+    /// List available blueprints
+    #[structopt(alias="ls")]
+    List {},
 }
 
 #[derive(StructOpt, Debug)]
@@ -176,6 +192,28 @@ struct WebServerOpts {
 struct DocsOpts {}
 
 #[derive(StructOpt, Debug)]
+enum Site {
+    /// Add a site
+    Add {
+        /// Project folder
+        #[structopt(parse(from_os_str))]
+        project: PathBuf,
+
+        /// Project name
+        name: Option<String>,
+    },
+    /// Remove a site
+    #[structopt(alias="rm")]
+    Remove {
+        /// The project name
+        name: String,
+    },
+    /// List sites
+    #[structopt(alias="ls")]
+    List {},
+}
+
+#[derive(StructOpt, Debug)]
 enum Command {
     /// Create a new project from a blueprint
     Init {
@@ -240,51 +278,29 @@ impl Command {
     }
 }
 
-#[derive(StructOpt, Debug)]
-enum Site {
-    /// Add a site
-    Add {
-        /// Project folder
-        #[structopt(parse(from_os_str))]
-        project: PathBuf,
-
-        /// Project name
-        name: Option<String>,
-    },
-    /// Remove a site
-    #[structopt(alias="rm")]
-    Remove {
-        /// The project name
-        name: String,
-    },
-    /// List sites
-    #[structopt(alias="ls")]
-    List {},
-}
-
-
-fn fatal(e: impl std::error::Error) {
-    error!("{}", e);
-    std::process::exit(1);
-}
-
-fn error(s: String) {
-    fatal(Error::new(s));
-}
-
 fn process_command(cmd: &Command) {
     match cmd {
         Command::Init { ref args } => {
-            let opts = InitOptions {
+            let opts = hypertext::blueprint::InitOptions {
                 source: args.source.clone(),
                 target: args.target.clone(),
-                list: args.list,
                 private_key: args.private_key.clone(),
             };
 
-            if let Err(e) = hypertext::init(opts) {
-                fatal(e);
+            if let Some(ref action) = args.action {
+                match action {
+                    InitCommands::List {} => {
+                        if let Err(e) = hypertext::blueprint::list() {
+                            fatal(e);
+                        }
+                    },
+                }
+            } else {
+                if let Err(e) = hypertext::blueprint::init(opts) {
+                    fatal(e);
+                }
             }
+
         }
         Command::Update { ref args } => {
             let opts = UpdateOptions {

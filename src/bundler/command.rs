@@ -2,7 +2,7 @@ use crate::Error;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::bundle::*;
+use super::bundler::*;
 use crate::cache;
 use crate::git;
 use crate::preference;

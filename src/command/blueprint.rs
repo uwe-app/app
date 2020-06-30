@@ -10,13 +10,10 @@ use url::Url;
 use crate::preference::{self, Preferences};
 use crate::{cache, git, Error};
 
-// TODO: support [blueprint] default config
-
 #[derive(Debug)]
 pub struct InitOptions {
     pub source: Option<String>,
     pub target: Option<PathBuf>,
-    pub list: bool,
     pub private_key: Option<PathBuf>,
 }
 
@@ -99,6 +96,22 @@ fn create<P: AsRef<Path>>(
     src_err
 }
 
+pub fn list() -> Result<(), Error> {
+    let prefs = preference::load()?;
+
+    let url = cache::get_blueprint_url(&prefs);
+    let blueprint_cache_dir = cache::get_blueprint_dir()?;
+
+    if !blueprint_cache_dir.exists() {
+        git::print_clone(&url, &blueprint_cache_dir);
+    }
+
+    let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir, true)?;
+    git::list_submodules(repo)?;
+
+    Ok(())
+}
+
 pub fn init(options: InitOptions) -> Result<(), Error> {
     let prefs = preference::load()?;
 
@@ -109,10 +122,10 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         git::print_clone(&url, &blueprint_cache_dir);
     }
 
-    if options.list {
-        let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir, true)?;
-        git::list_submodules(repo)?;
-    } else {
+    //if options.list {
+        //let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir, true)?;
+        //git::list_submodules(repo)?;
+    //} else {
         if let Some(ref target) = options.target {
             if target.exists() {
                 return Err(Error::new(format!(
@@ -138,7 +151,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         } else {
             return Err(Error::new(format!("Target directory is required")));
         }
-    }
+    //}
 
     Ok(())
 }

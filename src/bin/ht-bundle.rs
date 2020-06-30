@@ -6,7 +6,9 @@ use std::path::PathBuf;
 use log::error;
 use structopt::StructOpt;
 
-use hypertext::{BundleOptions, Error};
+use hypertext::{Error};
+
+use hypertext::bundler::BundleOptions;
 
 fn fatal(e: impl std::error::Error) {
     error!("{}", e);
@@ -76,7 +78,7 @@ fn main() {
         name: args.name.clone(),
     };
 
-    if let Err(e) = hypertext::bundle(opts) {
+    if let Err(e) = hypertext::bundler::bundle(opts) {
         fatal(e);
     }
 }

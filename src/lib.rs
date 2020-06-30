@@ -1,8 +1,9 @@
 #[macro_use]
 extern crate lazy_static;
 
+pub mod bundler;
+
 mod build;
-mod bundle;
 mod cache;
 mod command;
 mod config;
@@ -32,15 +33,16 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 
 pub use crate::command::build::*;
-pub use crate::command::bundle::*;
 pub use crate::command::docs::*;
-pub use crate::command::init::*;
 pub use crate::command::pref::*;
 pub use crate::command::publish::*;
 pub use crate::command::serve::*;
-pub use crate::command::site;
 pub use crate::command::update::*;
 pub use crate::command::upgrade::*;
+
+pub use crate::command::blueprint;
+pub use crate::command::site;
+
 pub use crate::config::{BuildArguments, Config};
 pub use crate::error::{AwsError, Error};
 pub use crate::utils::generate_id;
