@@ -1,6 +1,6 @@
+use cache::{self, CacheComponent};
 use preference;
 
-use crate::cache::{self, CacheComponent};
 use crate::Result;
 
 #[derive(Debug)]

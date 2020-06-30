@@ -5,12 +5,12 @@ use std::path::PathBuf;
 use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
+use cache::{self, CacheComponent};
 use dirs;
 use dirs::home;
 use preference;
 use utils;
 
-use crate::cache::{self, CacheComponent};
 use crate::Result;
 
 static BASH: &str = "bash";

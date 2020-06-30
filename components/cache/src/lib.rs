@@ -1,11 +1,20 @@
+use std::io;
 use std::fs;
 use std::path::PathBuf;
+
+use thiserror::Error;
 
 use dirs;
 use git;
 use preference::{self, Preferences};
 
-use crate::Error;
+#[derive(Error, Debug)]
+pub enum CacheError {
+    #[error(transparent)]
+    Git(#[from] git::error::GitError),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+}
 
 static BIN: &str = "bin";
 static ENV: &str = "env";
@@ -32,7 +41,7 @@ pub enum CacheComponent {
     Release,
 }
 
-pub fn get_workspace_dir() -> Result<PathBuf, Error> {
+pub fn get_workspace_dir() -> io::Result<PathBuf> {
     let mut bin = dirs::get_root_dir()?;
     bin.push(WORKSPACE_NAME);
     if !bin.exists() {
@@ -41,19 +50,19 @@ pub fn get_workspace_dir() -> Result<PathBuf, Error> {
     Ok(bin)
 }
 
-pub fn get_workspace_manifest() -> Result<PathBuf, Error> {
+pub fn get_workspace_manifest() -> io::Result<PathBuf> {
     let mut file = dirs::get_root_dir()?;
     file.push(WORKSPACE_FILE);
     Ok(file)
 }
 
-pub fn get_env_file() -> Result<PathBuf, Error> {
+pub fn get_env_file() -> io::Result<PathBuf> {
     let mut env = dirs::get_root_dir()?;
     env.push(ENV);
     Ok(env)
 }
 
-pub fn get_bin_dir() -> Result<PathBuf, Error> {
+pub fn get_bin_dir() -> io::Result<PathBuf> {
     let mut bin = dirs::get_root_dir()?;
     bin.push(BIN);
     if !bin.exists() {
@@ -71,7 +80,7 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
     return preference::BLUEPRINT_URL.to_string();
 }
 
-pub fn get_blueprint_dir() -> Result<PathBuf, Error> {
+pub fn get_blueprint_dir() -> io::Result<PathBuf> {
     let mut buf = dirs::get_root_dir()?;
     buf.push(BLUEPRINT_NAME);
     Ok(buf)
@@ -81,7 +90,7 @@ pub fn get_standalone_url() -> String {
     STANDALONE_REPO.to_string()
 }
 
-pub fn get_standalone_dir() -> Result<PathBuf, Error> {
+pub fn get_standalone_dir() -> io::Result<PathBuf> {
     let mut buf = dirs::get_root_dir()?;
     buf.push(STANDALONE_NAME);
     Ok(buf)
@@ -91,7 +100,7 @@ pub fn get_docs_url() -> String {
     DOCUMENTATION_REPO.to_string()
 }
 
-pub fn get_docs_dir() -> Result<PathBuf, Error> {
+pub fn get_docs_dir() -> io::Result<PathBuf> {
     let mut buf = dirs::get_root_dir()?;
     buf.push(DOCUMENTATION_NAME);
     Ok(buf)
@@ -127,19 +136,19 @@ pub fn get_release_url() -> String {
     String::from("https://github.com/hypertext-live/release-linux")
 }
 
-pub fn get_release_dir() -> Result<PathBuf, Error> {
+pub fn get_release_dir() -> io::Result<PathBuf> {
     let mut buf = dirs::get_root_dir()?;
     buf.push(RELEASE_NAME);
     Ok(buf)
 }
 
-pub fn get_release_bin_dir() -> Result<PathBuf, Error> {
+pub fn get_release_bin_dir() -> io::Result<PathBuf> {
     let mut buf = get_release_dir()?;
     buf.push(BIN);
     Ok(buf)
 }
 
-pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
+pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), CacheError> {
     for c in components {
         match c {
             CacheComponent::Blueprint => {
@@ -166,3 +175,11 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
     }
     Ok(())
 }
+
+//#[cfg(test)]
+//mod tests {
+    //#[test]
+    //fn it_works() {
+        //assert_eq!(2 + 2, 4);
+    //}
+//}

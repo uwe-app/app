@@ -1,14 +1,14 @@
-use crate::Error;
 use std::fs;
 use std::path::PathBuf;
 
 use log::{debug, info};
 
+use cache;
 use git;
 use preference;
 use utils;
 
-use crate::cache;
+use crate::Error;
 
 use super::bundler::*;
 

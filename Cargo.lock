@@ -188,6 +188,16 @@ version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "cache"
+version = "0.1.0"
+dependencies = [
+ "dirs 0.1.0",
+ "git 0.1.0",
+ "preference 0.1.0",
+ "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -939,6 +949,7 @@ version = "0.17.4"
 dependencies = [
  "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cache 0.1.0",
  "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "content 0.1.0",
  "dirs 0.1.0",

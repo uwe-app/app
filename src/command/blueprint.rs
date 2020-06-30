@@ -6,11 +6,12 @@ use git2::Repository;
 use log::info;
 use url::Url;
 
+use cache;
 use git;
 use dirs::home;
 use preference::{self, Preferences};
 
-use crate::{cache, Error};
+use crate::{Error};
 
 #[derive(Debug)]
 pub struct InitOptions {

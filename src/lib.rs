@@ -4,7 +4,6 @@ extern crate lazy_static;
 pub mod bundler;
 
 mod build;
-mod cache;
 mod command;
 mod config;
 mod error;

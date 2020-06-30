@@ -4,9 +4,9 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use log::{info, warn, error};
 
+use cache;
 use utils;
 
-use crate::cache;
 use crate::config::Config;
 use crate::Error;
 use crate::Result;
