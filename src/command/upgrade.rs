@@ -4,10 +4,7 @@ use log::info;
 use crate::Result;
 use crate::updater;
 
-#[derive(Debug)]
-pub struct UpgradeOptions {}
-
-pub fn upgrade(_options: UpgradeOptions) -> Result<()> {
+pub fn try_upgrade() -> Result<()> {
     let (_, info) = updater::version()?;
     let installed_version = &info.version;
 

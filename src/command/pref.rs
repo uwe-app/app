@@ -8,7 +8,7 @@ pub struct PrefOptions {
     pub edit: bool,
 }
 
-fn edit(content: Option<String>) -> Result<(), Error> {
+pub fn edit(content: Option<String>) -> Result<(), Error> {
     preference::init_if_none()?;
 
     let prefs = if let Some(file_content) = content {

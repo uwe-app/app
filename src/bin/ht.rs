@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, Config, DocsOptions, Error, PrefOptions, PublishOptions, UpgradeOptions,
+    BuildArguments, Config, Error,
 };
 
 use hypertext::publisher::PublishProvider;
@@ -161,10 +161,9 @@ struct PublishOpts {
 }
 
 #[derive(StructOpt, Debug)]
-struct PrefOpts {
+enum PrefCommand {
     /// Edit the preferences file
-    #[structopt(short, long)]
-    edit: bool,
+    Edit
 }
 
 #[derive(StructOpt, Debug)]
@@ -215,7 +214,7 @@ enum Site {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    /// Create a new project from a blueprint
+    /// Create a new project
     Init {
         #[structopt(flatten)]
         args: InitOpts,
@@ -241,8 +240,8 @@ enum Command {
 
     /// Manage preferences
     Pref {
-        #[structopt(flatten)]
-        args: PrefOpts,
+        #[structopt(subcommand)]
+        action: PrefCommand,
     },
 
     /// Update cached repositories
@@ -315,22 +314,23 @@ fn process_command(cmd: &Command) {
             }
         }
         Command::Upgrade { .. } => {
-            let opts = UpgradeOptions {};
-            if let Err(e) = hypertext::upgrade(opts) {
+            if let Err(e) = hypertext::upgrade::try_upgrade() {
                 fatal(e);
             }
         }
-        Command::Pref { ref args } => {
-            let opts = PrefOptions { edit: args.edit };
 
-            if let Err(e) = hypertext::pref(opts) {
-                fatal(e);
+        Command::Pref { ref action } => {
+            match action {
+                PrefCommand::Edit => {
+                    if let Err(e) = hypertext::pref::edit(None) {
+                        fatal(e);
+                    }
+                }
             }
         }
 
         Command::Docs { .. } => {
-            let opts = DocsOptions {};
-            if let Err(e) = hypertext::docs(opts) {
+            if let Err(e) = hypertext::docs::open() {
                 fatal(e);
             }
         }
@@ -374,13 +374,13 @@ fn process_command(cmd: &Command) {
         Command::Publish { ref args } => {
             let project = get_project_path(args.project.clone());
 
-            let opts = PublishOptions {
+            let opts = hypertext::publish::PublishOptions {
                 provider: PublishProvider::Aws,
                 env: args.env.clone(),
                 project,
             };
 
-            if let Err(e) = hypertext::publish(opts) {
+            if let Err(e) = hypertext::publish::publish(opts) {
                 fatal(e);
             }
         }

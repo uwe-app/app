@@ -6,10 +6,7 @@ use super::run::{self, ServeOptions};
 
 static DOCS_DIR: &str = "docs";
 
-#[derive(Debug)]
-pub struct DocsOptions {}
-
-pub fn docs(_: DocsOptions) -> Result<(), Error> {
+pub fn open() -> Result<(), Error> {
     let prefs = preference::load()?;
     let docs_prefs = prefs.docs.as_ref().unwrap();
 

@@ -33,15 +33,15 @@ static BOOK_THEME_KEY: &str = "output.html.theme";
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 
 pub use crate::command::build::*;
-pub use crate::command::docs::*;
-pub use crate::command::pref::*;
-pub use crate::command::publish::*;
-pub use crate::command::upgrade::*;
 
 pub use crate::command::blueprint;
+pub use crate::command::docs;
 pub use crate::command::fetch;
 pub use crate::command::run;
+pub use crate::command::pref;
+pub use crate::command::publish;
 pub use crate::command::site;
+pub use crate::command::upgrade;
 
 pub use crate::config::{BuildArguments, Config};
 pub use crate::error::{AwsError, Error};
