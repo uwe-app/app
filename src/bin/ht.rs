@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, Config, DocsOptions, Error, PrefOptions, PublishOptions, ServeOptions, UpgradeOptions,
+    BuildArguments, Config, DocsOptions, Error, PrefOptions, PublishOptions, UpgradeOptions,
 };
 
 use hypertext::publisher::PublishProvider;
@@ -168,7 +168,7 @@ struct PrefOpts {
 }
 
 #[derive(StructOpt, Debug)]
-struct ServeOpts {
+struct RunOpts {
     #[structopt(flatten)]
     server: WebServerOpts,
 
@@ -228,9 +228,9 @@ enum Command {
     },
 
     /// Serve site files
-    Serve {
+    Run {
         #[structopt(flatten)]
-        args: ServeOpts,
+        args: RunOpts,
     },
 
     /// Browse the documentation
@@ -335,7 +335,7 @@ fn process_command(cmd: &Command) {
             }
         }
 
-        Command::Serve { ref args } => {
+        Command::Run { ref args } => {
             let cfg: Config = Default::default();
             let serve = cfg.serve.as_ref().unwrap();
             let mut host = &serve.host;
@@ -349,7 +349,7 @@ fn process_command(cmd: &Command) {
                 port = p;
             }
 
-            let opts = ServeOptions {
+            let opts = hypertext::run::ServeOptions {
                 target: args.target.clone(),
                 host: host.to_owned(),
                 port: port.to_owned(),
@@ -366,7 +366,7 @@ fn process_command(cmd: &Command) {
                 ));
             }
 
-            if let Err(e) = hypertext::serve_only(opts) {
+            if let Err(e) = hypertext::run::serve_only(opts) {
                 fatal(e);
             }
         }

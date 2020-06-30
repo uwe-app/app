@@ -9,9 +9,11 @@ use crate::build::context::Context;
 use crate::build::invalidator::Invalidator;
 use crate::build::compiler::Compiler;
 use crate::build::redirect;
-use crate::command::serve::*;
 use crate::config::BuildArguments;
 use crate::{utils, Error};
+
+
+use crate::command::run::{self, ServeOptions};
 
 use crate::ErrorCallback;
 use crate::workspace;
@@ -94,7 +96,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
     });
 
     // Start the webserver
-    serve(opts, tx)?;
+    run::serve(opts, tx)?;
 
     Ok(())
 }

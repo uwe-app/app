@@ -4,6 +4,6 @@ pub mod docs;
 pub mod fetch;
 pub mod pref;
 pub mod publish;
-pub mod serve;
+pub mod run;
 pub mod site;
 pub mod upgrade;

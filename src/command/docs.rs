@@ -2,7 +2,7 @@ use crate::cache::{self, CacheComponent};
 use crate::preference;
 use crate::{utils, Error};
 
-use super::serve::{self, ServeOptions};
+use super::run::{self, ServeOptions};
 
 static DOCS_DIR: &str = "docs";
 
@@ -32,5 +32,5 @@ pub fn docs(_: DocsOptions) -> Result<(), Error> {
         redirects: None,
     };
 
-    serve::serve_only(opts)
+    run::serve_only(opts)
 }
