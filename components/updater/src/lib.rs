@@ -144,6 +144,8 @@ pub fn install() -> Result<()> {
             // Write out the env file
             write_env(&bin_dir)?;
 
+            preference::init_if_none()?;
+
             // Try to configure the shell paths
             let (shell_ok, shell_write, shell_name, shell_file) = source_env(&bin_dir)?;
             if shell_ok {
