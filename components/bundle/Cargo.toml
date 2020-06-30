@@ -1,0 +1,17 @@
+[package]
+name = "bundle"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+bundler = { version = "0.1", path = "../bundler" }
+
+structopt = "*"
+log = "*"
+pretty_env_logger = "*"
+
+[[bin]]
+path = "src/main.rs"
+name = "ht-bundle"
+

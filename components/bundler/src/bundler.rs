@@ -1,21 +1,17 @@
-use std::fs;
-
+use std::fs::{self, Metadata};
 use std::convert::AsRef;
-use std::fs::Metadata;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::SystemTime;
 
 use ignore::WalkBuilder;
-
 use human_bytes::human_bytes;
+use log::info;
 
 use utils;
 
-use crate::Error;
-
-use log::info;
+use crate::{BundleError as Error};
 
 pub enum Platform {
     Linux(String),

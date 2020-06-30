@@ -173,6 +173,30 @@ version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "bundle"
+version = "0.1.0"
+dependencies = [
+ "bundler 0.1.0",
+ "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pretty_env_logger 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "bundler"
+version = "0.1.0"
+dependencies = [
+ "cache 0.1.0",
+ "git 0.1.0",
+ "human_bytes 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ignore 0.4.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "preference 0.1.0",
+ "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "utils 0.1.0",
+]
+
+[[package]]
 name = "byte-tools"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
 
-pub mod bundler;
-
 mod build;
 mod command;
 mod config;

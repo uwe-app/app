@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate log;
 extern crate pretty_env_logger;
 
@@ -6,9 +7,9 @@ use std::path::PathBuf;
 use log::error;
 use structopt::StructOpt;
 
-use hypertext::{Error};
+//use hypertext::{Error};
 
-use hypertext::bundler::BundleOptions;
+use bundler::{BundleOptions, BundleError};
 
 fn fatal(e: impl std::error::Error) {
     error!("{}", e);
@@ -16,7 +17,7 @@ fn fatal(e: impl std::error::Error) {
 }
 
 fn error(s: String) {
-    fatal(Error::new(s));
+    fatal(BundleError::new(s));
 }
 
 #[derive(Debug, StructOpt)]
@@ -78,7 +79,7 @@ fn main() {
         name: args.name.clone(),
     };
 
-    if let Err(e) = hypertext::bundler::bundle(opts) {
+    if let Err(e) = bundler::bundle(opts) {
         fatal(e);
     }
 }
