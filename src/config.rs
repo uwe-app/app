@@ -124,7 +124,7 @@ impl Config {
         debug!("load {:?}", p.as_ref().display());
         if let Some(base) = file.parent() {
             if file.exists() && file.is_file() {
-                let content = utils::read_string(file)?;
+                let content = utils::fs::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
 
                 cfg.project = resolve_project(&file);

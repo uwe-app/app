@@ -11,7 +11,7 @@ use crate::build::matcher;
 use crate::build::matcher::FileType;
 use crate::build::page::Page;
 
-use crate::{utils, Error, HTML, INDEX_HTML, INDEX_STEM, MD};
+use crate::{Error, HTML, INDEX_HTML, INDEX_STEM, MD};
 
 pub type ItemData = Page;
 
@@ -167,7 +167,7 @@ fn children<P: AsRef<Path>>(
                     }
                 }
 
-                if utils::is_draft(&data, &ctx.options) {
+                if super::draft::is_draft(&data, &ctx.options) {
                     continue;
                 }
 

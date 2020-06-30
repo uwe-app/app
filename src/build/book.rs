@@ -84,7 +84,7 @@ impl<'a> BookBuilder<'a> {
                         // TODO: minify files with HTML file extension
 
                         // Copy the file content
-                        if let Err(e) = utils::copy(file, output) {
+                        if let Err(e) = utils::fs::copy(file, output) {
                             return Err(Error::IoError(e));
                         }
                     }

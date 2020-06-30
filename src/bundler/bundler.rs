@@ -119,7 +119,7 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
     fn get_file_content(&self, path: &Path) -> Result<String, Error> {
         let mut s = "".to_owned();
         s.push_str("[]byte(\"");
-        let data = utils::read_bytes(path)?;
+        let data = utils::fs::read_bytes(path)?;
         for b in data {
             s.push_str(&format!("\\x{:02x}", b));
         }

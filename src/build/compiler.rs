@@ -97,7 +97,7 @@ impl<'a> Compiler<'a> {
                         .parser
                         .parse(&file, &dest.as_path(), file_type, &mut item_data)?;
 
-                    utils::write_string(&dest, &s)?;
+                    utils::fs::write_string(&dest, &s)?;
                 }
             } else {
                 return Err(Error::new(format!("Generator document must have an id")));
@@ -128,7 +128,7 @@ impl<'a> Compiler<'a> {
                     .is_dirty(file, &dest, self.context.options.force)
                 {
                     info!("{} -> {}", file.display(), dest.display());
-                    utils::copy(file, &dest)?;
+                    utils::fs::copy(file, &dest)?;
                     self.manifest.touch(file, &dest);
                 } else {
                     info!("noop {}", file.display());
@@ -151,7 +151,7 @@ impl<'a> Compiler<'a> {
                     clean = val;
                 }
 
-                if utils::is_draft(&data, &self.context.options) {
+                if super::draft::is_draft(&data, &self.context.options) {
                     return Ok(());
                 }
 
@@ -203,7 +203,7 @@ impl<'a> Compiler<'a> {
                     let s = self
                         .parser
                         .parse(&file, &dest.as_path(), &file_type, &mut data)?;
-                    utils::write_string(&dest, &s)?;
+                    utils::fs::write_string(&dest, &s)?;
                     self.manifest.touch(file, &dest);
                 } else {
                     info!("noop {}", file.display());

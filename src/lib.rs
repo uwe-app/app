@@ -11,6 +11,7 @@ mod content;
 mod error;
 mod git;
 mod locale;
+mod markdown;
 mod preference;
 pub mod publisher;
 mod server;

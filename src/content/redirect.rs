@@ -17,5 +17,5 @@ pub fn write<P: AsRef<Path>>(location: &str, target: P) -> Result<(), Error> {
     content.push_str("</head>");
     content.push_str(&body);
     content.push_str("</html>");
-    utils::write_string(target, content).map_err(Error::from)
+    utils::fs::write_string(target, content).map_err(Error::from)
 }

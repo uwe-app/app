@@ -98,7 +98,7 @@ impl<'a> Manifest<'a> {
         let file = self.get_manifest_file();
         if file.exists() && file.is_file() {
             debug!("manifest {}", file.display());
-            let json = utils::read_string(file)?;
+            let json = utils::fs::read_string(file)?;
             self.file = serde_json::from_str(&json)?;
         }
         Ok(())
@@ -108,7 +108,7 @@ impl<'a> Manifest<'a> {
         let file = self.get_manifest_file();
         let json = serde_json::to_string(&self.file)?;
         debug!("manifest {}", file.display());
-        utils::write_string(file, json)?;
+        utils::fs::write_string(file, json)?;
         Ok(())
     }
 }

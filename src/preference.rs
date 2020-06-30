@@ -87,7 +87,7 @@ pub fn get_prefs_file() -> Result<PathBuf, Error> {
 
 pub fn load_file() -> Result<String, Error> {
     let buf = get_prefs_file()?;
-    utils::read_string(&buf).map_err(Error::from)
+    utils::fs::read_string(&buf).map_err(Error::from)
 }
 
 pub fn load() -> Result<Preferences, Error> {
@@ -105,7 +105,7 @@ pub fn init_if_none() -> Result<(), Error> {
     if !buf.exists() {
         let prefs: Preferences = Default::default();
         let content = toml::to_string(&prefs)?;
-        utils::write_string(buf, content)?;
+        utils::fs::write_string(buf, content)?;
     }
     Ok(())
 }

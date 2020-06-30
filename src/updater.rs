@@ -31,7 +31,7 @@ pub fn get_version_file() -> Result<PathBuf> {
 
 pub fn version() -> Result<(PathBuf, VersionInfo)> {
     let version_file = get_version_file()?;
-    let content = utils::read_string(&version_file)?;
+    let content = utils::fs::read_string(&version_file)?;
     let info: VersionInfo = toml::from_str(&content)?;
     Ok((version_file, info))
 }
@@ -56,7 +56,7 @@ pub fn get_env_content(bin_dir: &PathBuf) -> String {
 pub fn write_env(bin_dir: &PathBuf) -> Result<()> {
     let content = get_env_content(bin_dir);
     let env = cache::get_env_file()?;
-    utils::write_string(env, content)?;
+    utils::fs::write_string(env, content)?;
     Ok(())
 }
 
@@ -84,10 +84,10 @@ pub fn source_env(_bin_dir: &PathBuf) -> Result<(bool, bool, String, PathBuf)> {
                         let mut file = home_dir.clone();
                         file.push(f);
                         if file.exists() {
-                            let mut contents = utils::read_string(&file)?;
+                            let mut contents = utils::fs::read_string(&file)?;
                             if !contents.contains(&source_path) {
                                 contents.push_str(&source_path);
-                                utils::write_string(&file, contents)?;
+                                utils::fs::write_string(&file, contents)?;
                                 shell_write = true;
                             }
                             shell_ok = true;

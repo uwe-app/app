@@ -1,6 +1,7 @@
 pub mod book;
 pub mod compiler;
 pub mod context;
+pub mod draft;
 pub mod frontmatter;
 pub mod generator;
 pub mod helpers;

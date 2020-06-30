@@ -41,7 +41,7 @@ fn load() -> Result<SiteManifest> {
     if !file.exists() {
         return Ok(Default::default());
     }
-    let contents = utils::read_string(file)?;
+    let contents = utils::fs::read_string(file)?;
     let manifest: SiteManifest = toml::from_str(&contents)?;
     Ok(manifest)
 }
@@ -49,7 +49,7 @@ fn load() -> Result<SiteManifest> {
 fn save(manifest: SiteManifest) -> Result<()> {
     let file = cache::get_workspace_manifest()?;
     let content = toml::to_string(&manifest)?;
-    utils::write_string(file, content)?;
+    utils::fs::write_string(file, content)?;
     Ok(())
 }
 

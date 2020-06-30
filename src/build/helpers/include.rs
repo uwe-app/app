@@ -36,7 +36,7 @@ impl HelperDef for Include {
                 if let Some(val) = req.relative_path() {
                     buf.push(val);
                     debug!("include {}", buf.display());
-                    let result = utils::read_string(&buf);
+                    let result = utils::fs::read_string(&buf);
                     match result {
                         Ok(s) => {
                             out.write(&s)?;

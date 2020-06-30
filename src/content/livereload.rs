@@ -24,5 +24,5 @@ pub fn write(target: &PathBuf, url: &str) -> Result<(), Error> {
     let script = get_script(url);
     debug!("{} {}", dest.display(), url);
     debug!("{}", script);
-    utils::write_string(dest, script).map_err(Error::from)
+    utils::fs::write_string(dest, script).map_err(Error::from)
 }

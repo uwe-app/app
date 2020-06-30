@@ -43,13 +43,13 @@ impl BuildTag {
         }
     }
 
-    pub fn clone(&self) -> Self {
-        match self {
-            BuildTag::Debug => return BuildTag::Debug,
-            BuildTag::Release => return BuildTag::Release,
-            BuildTag::Custom(s) => return BuildTag::Custom(s.to_string()),
-        }
-    }
+    //pub fn clone(&self) -> Self {
+        //match self {
+            //BuildTag::Debug => return BuildTag::Debug,
+            //BuildTag::Release => return BuildTag::Release,
+            //BuildTag::Custom(s) => return BuildTag::Custom(s.to_string()),
+        //}
+    //}
 }
 
 // FIXME: re-use the BuildArguments in the CompilerOptions!

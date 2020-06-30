@@ -21,7 +21,7 @@ pub fn edit(content: Option<String>) -> Result<(), Error> {
     let valid = toml::from_str::<Preferences>(&result);
     match valid {
         Ok(_new_prefs) => {
-            utils::write_string(preference::get_prefs_file()?, result)?;
+            utils::fs::write_string(preference::get_prefs_file()?, result)?;
             return Ok(());
         }
         Err(e) => {

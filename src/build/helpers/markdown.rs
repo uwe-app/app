@@ -1,7 +1,7 @@
 use handlebars::*;
-
 use super::render_buffer;
-use crate::utils;
+
+use crate::markdown::render_markdown_string;
 
 #[derive(Clone, Copy)]
 pub struct Markdown;
@@ -18,7 +18,7 @@ impl HelperDef for Markdown {
         let result = render_buffer(h, r, ctx, rc);
         match result {
             Ok(ref md) => {
-                let result = utils::render_markdown_string(md);
+                let result = render_markdown_string(md);
                 out.write(&result)?;
             }
             Err(e) => return Err(e),

@@ -9,6 +9,22 @@ use crate::build::redirect;
 use crate::config::{BuildArguments, Config};
 use crate::{utils, LAYOUT_HBS};
 
+fn require_output_dir(output: &PathBuf) -> Result<()> {
+    if !output.exists() {
+        info!("mkdir {}", output.display());
+        std::fs::create_dir_all(output)?;
+    }
+
+    if !output.is_dir() {
+        return Err(
+            Error::new(
+                format!("Not a directory: {}", output.display())));
+    }
+
+    Ok(())
+}
+
+
 fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
@@ -38,14 +54,6 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         ));
     }
 
-    // FIXME: restore this as a computation
-    //if include_index {
-        //let link = cfg.link.as_mut().unwrap();
-        //if let Some(ref mut include_index) = link.include_index {
-            //*include_index = true;
-        //}
-    //}
-
     if let Some(ref redirects) = cfg.redirect {
         if let Err(e) = redirect::validate(redirects) {
             return Err(e);
@@ -67,7 +75,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
        force = true;  
     }
 
-    utils::require_output_dir(&target)?;
+    require_output_dir(&target)?;
 
     let serve = cfg.serve.as_ref().unwrap();
     let mut host = &serve.host;

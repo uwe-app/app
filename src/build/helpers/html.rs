@@ -1,7 +1,7 @@
 use handlebars::*;
-
 use super::render_buffer;
-use crate::utils;
+
+use crate::markdown::render_markdown_string;
 
 #[derive(Clone, Copy)]
 pub struct Element;
@@ -43,7 +43,7 @@ impl HelperDef for Element {
                     }
 
                     if let Ok(ref md) = render_buffer(h, r, ctx, rc) {
-                        let result = utils::render_markdown_string(md);
+                        let result = render_markdown_string(md);
                         out.write(&result)?;
                     }
 

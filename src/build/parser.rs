@@ -1,7 +1,9 @@
 use std::convert::AsRef;
 use std::path::Path;
 
-use crate::{utils, Error};
+use crate::{Error};
+
+use crate::markdown::render_markdown_string;
 
 use super::context::Context;
 use super::frontmatter;
@@ -54,7 +56,7 @@ impl<'a> Parser<'a> {
         let mut result = self
             .render
             .parse_template_string(&input, &output, content, data)?;
-        result = utils::render_markdown_string(&result);
+        result = render_markdown_string(&result);
         return self.render.layout(&input, &output, result, data);
     }
 

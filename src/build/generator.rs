@@ -190,7 +190,7 @@ impl Generator {
 
                             if let Some(ext) = path.extension() {
                                 if ext == JSON {
-                                    let contents = utils::read_string(&path)?;
+                                    let contents = utils::fs::read_string(&path)?;
                                     let document: Value = serde_json::from_str(&contents)?;
                                     if let Some(stem) = path.file_stem() {
                                         let name = stem.to_string_lossy().into_owned();
@@ -407,7 +407,7 @@ impl GeneratorMap {
                                         )));
                                     }
 
-                                    let contents = utils::read_string(conf)?;
+                                    let contents = utils::fs::read_string(conf)?;
                                     let config: GeneratorConfig = toml::from_str(&contents)?;
 
                                     let all: BTreeMap<String, Value> = BTreeMap::new();

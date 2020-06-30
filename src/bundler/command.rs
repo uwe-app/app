@@ -109,7 +109,7 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
     sources.push(dest.clone());
 
     let content = bundler.generate(&options.source)?;
-    utils::write_string(dest, content)?;
+    utils::fs::write_string(dest, content)?;
 
     let mut linux = options.linux;
     let mut mac = options.mac;

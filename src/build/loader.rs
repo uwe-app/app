@@ -11,6 +11,8 @@ use toml::Value as TomlValue;
 
 use serde_json::{json, Map, Value};
 
+use inflector::Inflector;
+
 use log::warn;
 
 use crate::{utils, Error, INDEX_STEM, MD};
@@ -25,6 +27,25 @@ lazy_static! {
     pub static ref DATA: Mutex<HashMap<String, Page>> = {
         Mutex::new(HashMap::new())
     };
+}
+
+// Convert a file name to title case
+fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
+    let i = input.as_ref();
+    if let Some(nm) = i.file_stem() {
+        // If the file is an index file, try to get the name
+        // from a parent directory
+        if nm == INDEX_STEM {
+            if let Some(p) = i.parent() {
+                return file_auto_title(&p.to_path_buf());
+            }
+        } else {
+            let auto = nm.to_str().unwrap().to_string();
+            let capitalized = auto.to_title_case();
+            return Some(capitalized);
+        }
+    }
+    None
 }
 
 fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathBuf> {
@@ -92,7 +113,7 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
     }
 
     if let None = page.title {
-        if let Some(auto) = utils::file_auto_title(&f) {
+        if let Some(auto) = file_auto_title(&f) {
             page.title = Some(auto);
         }
     }
@@ -123,7 +144,7 @@ pub fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
 }
 
 pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {
-    let res = utils::read_string(f)?;
+    let res = utils::fs::read_string(f)?;
     parse_toml_to_json(&res)
 }
 
@@ -155,7 +176,7 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
     if src.exists() {
         let mut data = DATA.lock().unwrap();
 
-        let properties = utils::read_string(src);
+        let properties = utils::fs::read_string(src);
         match properties {
             Ok(s) => {
                 let conf: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&s);

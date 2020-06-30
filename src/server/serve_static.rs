@@ -187,7 +187,7 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
     error_file.push(format!("{}.html", code.as_u16()));
     let response;
     if error_file.exists() {
-        if let Ok(content) = utils::read_string(&error_file) {
+        if let Ok(content) = utils::fs::read_string(&error_file) {
             return Ok(warp::reply::with_status(warp::reply::html(content), code));
         } else {
             code = StatusCode::INTERNAL_SERVER_ERROR;
