@@ -5,6 +5,8 @@ use ignore;
 use mdbook;
 use warp::http;
 
+use git::error::GitError;
+
 #[derive(Debug)]
 pub enum Error {
     Message(String),
@@ -23,6 +25,7 @@ pub enum Error {
     LanguageIdentifierError(unic_langid::LanguageIdentifierError),
     // For fluent template loader
     Boxed(Box<dyn std::error::Error>),
+    GitLib(GitError),
     Git(git2::Error),
     Semver(semver::SemVerError),
     HttpClient(reqwest::Error),
@@ -127,6 +130,12 @@ impl From<git2::Error> for Error {
     }
 }
 
+impl From<GitError> for Error {
+    fn from(error: GitError) -> Self {
+        Error::GitLib(error)
+    }
+}
+
 impl From<semver::SemVerError> for Error {
     fn from(error: semver::SemVerError) -> Self {
         Error::Semver(error)
@@ -170,6 +179,7 @@ impl fmt::Display for Error {
             Error::LanguageIdentifierError(ref e) => e.fmt(f),
             Error::Boxed(ref e) => e.fmt(f),
             Error::Git(ref e) => e.fmt(f),
+            Error::GitLib(ref e) => e.fmt(f),
             Error::Semver(ref e) => e.fmt(f),
             Error::HttpClient(ref e) => e.fmt(f),
             Error::Region(ref e) => e.fmt(f),
@@ -195,6 +205,7 @@ impl error::Error for Error {
             Error::UrlParseError(ref e) => Some(e),
             Error::LanguageIdentifierError(ref e) => Some(e),
             Error::Git(ref e) => Some(e),
+            Error::GitLib(ref e) => Some(e),
             Error::Semver(ref e) => Some(e),
             Error::HttpClient(ref e) => Some(e),
             Error::Region(ref e) => Some(e),

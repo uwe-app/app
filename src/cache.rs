@@ -1,10 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::git;
+use git;
+use home;
+
 use crate::preference::{self, Preferences};
 use crate::Error;
-use home;
 
 static ROOT_DIR: &str = ".hypertext";
 static BIN: &str = "bin";

@@ -10,14 +10,18 @@ default-run = "ht"
 [workspace]
 members = [
   "components/content",
+  "components/git",
   "components/server",
   "components/utils",
 ]
 
 [dependencies]
 content = {version = "0.1", path = "components/content" }
+git = {version = "0.1", path = "components/git" }
 server = {version = "0.1", path = "components/server" }
 utils = {version = "0.1", path = "components/utils" }
+
+thiserror = "1"
 
 rand = "0.7.3"
 url = "2"

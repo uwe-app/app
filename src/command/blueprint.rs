@@ -7,8 +7,10 @@ use home;
 use log::info;
 use url::Url;
 
+use git;
+
 use crate::preference::{self, Preferences};
-use crate::{cache, git, Error};
+use crate::{cache, Error};
 
 #[derive(Debug)]
 pub struct InitOptions {
@@ -72,7 +74,7 @@ fn create<P: AsRef<Path>>(
 
                     git::print_clone(&src, target.as_ref().clone());
 
-                    return git::clone_ssh(src, target, key_file, None);
+                    return git::clone_ssh(src, target, key_file, None).map_err(Error::from);
                 } else {
                     return Err(Error::new(format!(
                         "To use SSH specify the --private-key option"

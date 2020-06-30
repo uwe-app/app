@@ -2,14 +2,15 @@ use crate::Error;
 use std::fs;
 use std::path::PathBuf;
 
-use super::bundler::*;
-use crate::cache;
-use crate::git;
-use crate::preference;
+use log::{debug, info};
 
+use git;
 use utils;
 
-use log::{debug, info};
+use crate::cache;
+use crate::preference;
+
+use super::bundler::*;
 
 static ASSETS: &str = "assets.go";
 

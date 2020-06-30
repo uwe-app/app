@@ -8,7 +8,6 @@ mod cache;
 mod command;
 mod config;
 mod error;
-mod git;
 mod locale;
 mod markdown;
 mod preference;

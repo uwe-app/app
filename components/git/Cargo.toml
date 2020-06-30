@@ -1,0 +1,11 @@
+[package]
+name = "git"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+thiserror = "1"
+git2 = "0.13"
+log = "*"
+rpassword = "4.0"

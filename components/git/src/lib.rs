@@ -9,10 +9,13 @@ use git2::{
 
 use log::info;
 
-use crate::Error;
+//use crate::Error;
 
 pub mod progress;
 pub mod pull;
+pub mod error;
+
+use error::{GitError as Error};
 
 static ORIGIN: &str = "origin";
 
@@ -216,3 +219,11 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Re
     }
     Ok(())
 }
+
+//#[cfg(test)]
+//mod tests {
+    //#[test]
+    //fn it_works() {
+        //assert_eq!(2 + 2, 4);
+    //}
+//}

@@ -111,15 +111,3 @@ pub fn init_if_none() -> Result<(), Error> {
     }
     Ok(())
 }
-
-//pub fn init() -> Result<(), Error> {
-//let buf = get_prefs_file()?;
-//if !buf.exists() {
-//return init_if_none();
-//} else {
-//return Err(
-//Error::new(
-//format!(
-//"Preferences file '{}' exists, please move it away", buf.display())))
-//}
-//}
