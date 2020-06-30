@@ -163,12 +163,6 @@ struct PublishOpts {
 }
 
 #[derive(StructOpt, Debug)]
-enum PrefCommand {
-    /// Edit the preferences file
-    Edit
-}
-
-#[derive(StructOpt, Debug)]
 struct RunOpts {
     #[structopt(flatten)]
     server: WebServerOpts,
@@ -238,12 +232,6 @@ enum Command {
     Docs {
         #[structopt(flatten)]
         args: DocsOpts,
-    },
-
-    /// Manage preferences
-    Pref {
-        #[structopt(subcommand)]
-        action: PrefCommand,
     },
 
     /// Update cached repositories
@@ -318,16 +306,6 @@ fn process_command(cmd: &Command) {
         Command::Upgrade { .. } => {
             if let Err(e) = hypertext::upgrade::try_upgrade() {
                 fatal(e);
-            }
-        }
-
-        Command::Pref { ref action } => {
-            match action {
-                PrefCommand::Edit => {
-                    if let Err(e) = hypertext::pref::edit(None) {
-                        fatal(e);
-                    }
-                }
             }
         }
 

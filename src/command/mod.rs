@@ -2,7 +2,6 @@ pub mod blueprint;
 pub mod build;
 pub mod docs;
 pub mod fetch;
-pub mod pref;
 pub mod publish;
 pub mod run;
 pub mod site;

@@ -27,7 +27,6 @@ pub use crate::command::build::build_project;
 pub use crate::command::docs;
 pub use crate::command::fetch;
 pub use crate::command::run;
-pub use crate::command::pref;
 pub use crate::command::publish;
 pub use crate::command::site;
 pub use crate::command::upgrade;
