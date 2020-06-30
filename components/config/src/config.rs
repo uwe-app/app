@@ -14,8 +14,13 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
-use crate::build::page::Page;
-use crate::{Error, HTML, MD};
+use super::page::Page;
+use super::{ConfigError as Error};
+
+//use crate::{Error};
+
+static MD: &str = "md";
+static HTML: &str = "html";
 
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";

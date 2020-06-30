@@ -4,12 +4,13 @@ use std::path::PathBuf;
 
 use log::info;
 
+use config::{BuildArguments, Config};
+
 use crate::build::context::Context;
 use crate::build::generator::GeneratorMap;
 use crate::build::loader;
 use crate::build::compiler::Compiler;
 use crate::build::CompilerOptions;
-use crate::config::{BuildArguments, Config};
 
 use crate::Result;
 use crate::locale::Locales;

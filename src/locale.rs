@@ -7,8 +7,9 @@ use serde::{Deserialize, Serialize};
 use fluent_templates::ArcLoader;
 use unic_langid::LanguageIdentifier;
 
-use crate::config::FluentConfig;
-use crate::{Config, Error};
+use config::{Config, FluentConfig};
+
+use crate::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Locales {

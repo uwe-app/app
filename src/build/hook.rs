@@ -3,8 +3,9 @@ use std::process::{Command, Stdio};
 
 use log::{debug, info};
 
+use config::HookConfig;
+
 use super::context::Context;
-use crate::config::HookConfig;
 use crate::Error;
 
 pub enum Phase {

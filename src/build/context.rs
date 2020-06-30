@@ -1,5 +1,6 @@
-use crate::config::Config;
 use serde::{Deserialize, Serialize};
+
+use config::Config;
 
 use super::generator::GeneratorMap;
 use crate::locale::Locales;

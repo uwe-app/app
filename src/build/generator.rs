@@ -7,13 +7,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_value, json, Map, Value};
 use slug;
 
+use config::Config;
+use config::page::Page;
 use utils;
 
 use crate::{Error, JSON};
-
-use crate::config::Config;
-
-use super::page::Page;
 
 static GENERATOR_TOML: &str = "generator.toml";
 static DOCUMENTS: &str = "documents";

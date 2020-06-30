@@ -8,9 +8,10 @@ use handlebars::Handlebars;
 
 use log::{debug, warn};
 
+use config::page::{FileContext, Page};
+
 use super::context::Context;
 use super::helpers;
-use super::page::{FileContext, Page};
 use crate::Error;
 
 // Render templates using handlebars.

@@ -8,6 +8,7 @@ use serde_json::{json, Value};
 
 use crate::{Result, Error, TEMPLATE_EXT};
 
+use config::page::Page;
 use utils;
 
 use super::book::BookBuilder;
@@ -15,7 +16,6 @@ use super::context::Context;
 use super::generator::{self, IndexQuery};
 use super::manifest::Manifest;
 use super::matcher::{self, FileType};
-use super::page::Page;
 use super::parser::Parser;
 use super::hook;
 use super::resource;

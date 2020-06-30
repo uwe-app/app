@@ -1,7 +1,8 @@
 use std::path::Path;
 
+use config::Config;
+
 use crate::{Error, Result};
-use crate::config::Config;
 
 use super::Workspace;
 

@@ -10,7 +10,6 @@ pub mod invalidator;
 pub mod loader;
 pub mod manifest;
 pub mod matcher;
-pub mod page;
 pub mod parser;
 pub mod redirect;
 pub mod report;

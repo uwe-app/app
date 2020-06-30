@@ -1,7 +1,7 @@
 use handlebars::*;
 use std::io;
 
-use crate::build::page::Page;
+use config::page::Page;
 use crate::Error;
 
 pub mod children;

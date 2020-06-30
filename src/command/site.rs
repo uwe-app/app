@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use log::{info, warn, error};
 
 use cache;
+use config::Config;
 use utils;
 
-use crate::config::Config;
 use crate::Error;
 use crate::Result;
 

@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 mod build;
 mod command;
-mod config;
+//mod config;
 mod error;
 mod locale;
 mod markdown;
@@ -31,7 +31,7 @@ pub use crate::command::publish;
 pub use crate::command::site;
 pub use crate::command::upgrade;
 
-pub use crate::config::{BuildArguments, Config};
+pub use config::{BuildArguments, Config};
 pub use crate::error::{AwsError, Error};
 
 pub type ErrorCallback = fn(Error);

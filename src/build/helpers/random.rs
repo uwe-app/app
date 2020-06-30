@@ -3,8 +3,9 @@ use rand::seq::SliceRandom;
 
 use serde_json::json;
 
+use config::page::Page;
+
 use super::with_parent_context;
-use crate::build::page::Page;
 
 #[derive(Clone, Copy)]
 pub struct Random;

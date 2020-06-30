@@ -1,6 +1,8 @@
 use std::convert::AsRef;
 use std::path::Path;
 
+use config::page::Page;
+
 use crate::{Error};
 
 use crate::markdown::render_markdown_string;
@@ -8,7 +10,6 @@ use crate::markdown::render_markdown_string;
 use super::context::Context;
 use super::frontmatter;
 use super::matcher::FileType;
-use super::page::Page;
 use super::template;
 
 pub struct Parser<'a> {

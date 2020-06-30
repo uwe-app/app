@@ -33,6 +33,7 @@ pub enum Error {
     Preference(preference::PreferenceError),
     Cache(cache::CacheError),
     Updater(updater::UpdaterError),
+    Config(config::ConfigError),
     Region(rusoto_signature::region::ParseRegionError),
     Aws(AwsError),
 }
@@ -170,6 +171,12 @@ impl From<updater::UpdaterError> for Error {
     }
 }
 
+impl From<config::ConfigError> for Error {
+    fn from(error: config::ConfigError) -> Self {
+        Error::Config(error)
+    }
+}
+
 impl From<rusoto_signature::region::ParseRegionError> for Error {
     fn from(error: rusoto_signature::region::ParseRegionError) -> Self {
         Error::Region(error)
@@ -206,6 +213,7 @@ impl fmt::Display for Error {
             Error::Preference(ref e) => e.fmt(f),
             Error::Cache(ref e) => e.fmt(f),
             Error::Updater(ref e) => e.fmt(f),
+            Error::Config(ref e) => e.fmt(f),
             Error::HttpClient(ref e) => e.fmt(f),
             Error::Region(ref e) => e.fmt(f),
             Error::Aws(ref e) => e.fmt(f),
@@ -235,6 +243,7 @@ impl error::Error for Error {
             Error::Preference(ref e) => Some(e),
             Error::Cache(ref e) => Some(e),
             Error::Updater(ref e) => Some(e),
+            Error::Config(ref e) => Some(e),
             Error::HttpClient(ref e) => Some(e),
             Error::Region(ref e) => Some(e),
             Error::Aws(ref e) => Some(e),

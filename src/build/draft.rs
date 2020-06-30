@@ -1,4 +1,5 @@
-use crate::build::page::Page;
+use config::page::Page;
+
 use crate::build::CompilerOptions;
 
 pub fn is_draft(data: &Page, opts: &CompilerOptions) -> bool {

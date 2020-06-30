@@ -1,4 +1,4 @@
-use crate::config::Config;
+use config::Config;
 
 #[derive(Clone)]
 pub struct Workspace {

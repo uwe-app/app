@@ -12,6 +12,7 @@ members = [
   "components/extras/bundle",
   "components/extras/bundler",
   "components/cache",
+  "components/config",
   "components/content",
   "components/dirs",
   "components/git",
@@ -24,6 +25,7 @@ members = [
 
 [dependencies]
 cache = {version = "0.1", path = "components/cache" }
+config = {version = "0.1", path = "components/config" }
 content = {version = "0.1", path = "components/content" }
 dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
