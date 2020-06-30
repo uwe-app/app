@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::{
-    BuildArguments, Config, DocsOptions, Error, PrefOptions, PublishOptions, ServeOptions, UpdateOptions, UpgradeOptions,
+    BuildArguments, Config, DocsOptions, Error, PrefOptions, PublishOptions, ServeOptions, UpgradeOptions,
 };
 
 use hypertext::publisher::PublishProvider;
@@ -128,7 +128,7 @@ enum InitCommands {
 }
 
 #[derive(StructOpt, Debug)]
-struct UpdateOpts {
+struct FetchOpts {
     /// Update the blueprint cache
     #[structopt(short, long)]
     blueprint: bool,
@@ -246,9 +246,9 @@ enum Command {
     },
 
     /// Update cached repositories
-    Update {
+    Fetch {
         #[structopt(flatten)]
-        args: UpdateOpts,
+        args: FetchOpts,
     },
 
     /// Upgrade to latest
@@ -302,15 +302,15 @@ fn process_command(cmd: &Command) {
             }
 
         }
-        Command::Update { ref args } => {
-            let opts = UpdateOptions {
+        Command::Fetch { ref args } => {
+            let opts = hypertext::fetch::FetchOptions {
                 blueprint: args.blueprint,
                 standalone: args.standalone,
                 documentation: args.documentation,
                 release: args.release,
             };
 
-            if let Err(e) = hypertext::update(opts) {
+            if let Err(e) = hypertext::fetch::update(opts) {
                 fatal(e);
             }
         }

@@ -3,14 +3,14 @@ use crate::preference;
 use crate::Result;
 
 #[derive(Debug)]
-pub struct UpdateOptions {
+pub struct FetchOptions {
     pub blueprint: bool,
     pub standalone: bool,
     pub documentation: bool,
     pub release: bool,
 }
 
-pub fn update(options: UpdateOptions) -> Result<()> {
+pub fn update(options: FetchOptions) -> Result<()> {
     let prefs = preference::load()?;
 
     let mut components: Vec<CacheComponent> = vec![

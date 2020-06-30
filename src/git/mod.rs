@@ -138,7 +138,7 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Er
 }
 
 fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
-    info!("fetch {}", base.as_ref().display());
+    info!("Fetch {}", base.as_ref().display());
     repo.find_remote(ORIGIN)?
         .fetch(&["master"], None, None)
         .map_err(Error::from)

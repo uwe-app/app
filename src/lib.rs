@@ -37,10 +37,10 @@ pub use crate::command::docs::*;
 pub use crate::command::pref::*;
 pub use crate::command::publish::*;
 pub use crate::command::serve::*;
-pub use crate::command::update::*;
 pub use crate::command::upgrade::*;
 
 pub use crate::command::blueprint;
+pub use crate::command::fetch;
 pub use crate::command::site;
 
 pub use crate::config::{BuildArguments, Config};
