@@ -19,6 +19,8 @@ pub struct InitOptions {
     pub private_key: Option<PathBuf>,
 }
 
+// FIXME: move this logic to the git workspace module!
+
 fn create<P: AsRef<Path>>(
     target: P,
     options: &InitOptions,
@@ -50,7 +52,7 @@ fn create<P: AsRef<Path>>(
     match Url::parse(&src) {
         Ok(_) => {
             git::print_clone(&src, target.as_ref().clone());
-            return Repository::clone(&src, target).map_err(Error::from);
+            return git::clone_standard(&src, target).map_err(Error::from);
         }
         Err(_) => {
             // Look for a submodule path
@@ -61,7 +63,7 @@ fn create<P: AsRef<Path>>(
                     tmp.push(sub.path());
                     let src = tmp.to_string_lossy().into_owned();
                     git::print_clone(&src, target.as_ref().clone());
-                    return Repository::clone(&src, target).map_err(Error::from);
+                    return git::clone_standard(&src, target).map_err(Error::from);
                 }
             }
 
