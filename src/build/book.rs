@@ -9,7 +9,10 @@ use mdbook::MDBook;
 
 use crate::build::loader;
 
-use crate::{utils, Error, BOOK_THEME_KEY, BOOK_TOML, DRAFT_KEY};
+static BOOK_TOML: &str = "book.toml";
+static BOOK_THEME_KEY: &str = "output.html.theme";
+
+use crate::{utils, Error, DRAFT_KEY};
 
 use super::context::Context;
 

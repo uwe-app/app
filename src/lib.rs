@@ -26,15 +26,12 @@ static MD: &str = "md";
 static HTML: &str = "html";
 static JSON: &str = "json";
 static DRAFT_KEY: &str = "draft";
-static BOOK_TOML: &str = "book.toml";
-static BOOK_THEME_KEY: &str = "output.html.theme";
 
 // FIXME: remove these and their usages
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 
-pub use crate::command::build::*;
-
 pub use crate::command::blueprint;
+pub use crate::command::build::build_project;
 pub use crate::command::docs;
 pub use crate::command::fetch;
 pub use crate::command::run;
