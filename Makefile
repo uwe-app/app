@@ -73,7 +73,7 @@ installer:
 	@cp -fv target/release/$(INSTALLER_BIN) $(SITE_RELEASE)/$(INSTALLER_BIN)
 
 bundler:
-	@cargo build --release --bin=$(BUNDLER_BIN)
+	@(cd components/extras/bundle && cargo build --release --bin=$(BUNDLER_BIN))
 	@cp -f target/release/$(BUNDLER_BIN) $(HOME)/.hypertext/bin
 
 info:
