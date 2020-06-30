@@ -15,6 +15,7 @@ members = [
   "components/content",
   "components/dirs",
   "components/git",
+  "components/installer",
   "components/preference",
   "components/server",
   "components/updater",

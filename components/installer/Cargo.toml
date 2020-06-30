@@ -1,0 +1,16 @@
+[package]
+name = "installer"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+updater = {version = "0.1", path = "../updater" }
+
+log = "*"
+pretty_env_logger = "*"
+structopt = "*"
+
+[[bin]]
+path = "src/main.rs"
+name = "hypertext-installer"
