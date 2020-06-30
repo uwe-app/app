@@ -1014,6 +1014,7 @@ dependencies = [
  "tokio-util 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "unic-langid 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "updater 0.1.0",
  "url 2.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "utils 0.1.0",
  "warp 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2808,6 +2809,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "updater"
+version = "0.1.0"
+dependencies = [
+ "cache 0.1.0",
+ "dirs 0.1.0",
+ "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "preference 0.1.0",
+ "reqwest 0.10.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "utils 0.1.0",
+]
 
 [[package]]
 name = "url"

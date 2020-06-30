@@ -8,7 +8,6 @@ mod error;
 mod locale;
 mod markdown;
 pub mod publisher;
-pub mod updater;
 mod workspace;
 
 static INDEX_STEM: &str = "index";

@@ -32,6 +32,7 @@ pub enum Error {
     HttpClient(reqwest::Error),
     Preference(preference::PreferenceError),
     Cache(cache::CacheError),
+    Updater(updater::UpdaterError),
     Region(rusoto_signature::region::ParseRegionError),
     Aws(AwsError),
 }
@@ -163,6 +164,12 @@ impl From<cache::CacheError> for Error {
     }
 }
 
+impl From<updater::UpdaterError> for Error {
+    fn from(error: updater::UpdaterError) -> Self {
+        Error::Updater(error)
+    }
+}
+
 impl From<rusoto_signature::region::ParseRegionError> for Error {
     fn from(error: rusoto_signature::region::ParseRegionError) -> Self {
         Error::Region(error)
@@ -198,6 +205,7 @@ impl fmt::Display for Error {
             Error::Semver(ref e) => e.fmt(f),
             Error::Preference(ref e) => e.fmt(f),
             Error::Cache(ref e) => e.fmt(f),
+            Error::Updater(ref e) => e.fmt(f),
             Error::HttpClient(ref e) => e.fmt(f),
             Error::Region(ref e) => e.fmt(f),
             Error::Aws(ref e) => e.fmt(f),
@@ -226,6 +234,7 @@ impl error::Error for Error {
             Error::Semver(ref e) => Some(e),
             Error::Preference(ref e) => Some(e),
             Error::Cache(ref e) => Some(e),
+            Error::Updater(ref e) => Some(e),
             Error::HttpClient(ref e) => Some(e),
             Error::Region(ref e) => Some(e),
             Error::Aws(ref e) => Some(e),

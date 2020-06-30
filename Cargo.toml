@@ -17,6 +17,7 @@ members = [
   "components/git",
   "components/preference",
   "components/server",
+  "components/updater",
   "components/utils",
 ]
 
@@ -27,6 +28,7 @@ dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
 preference = {version = "0.1", path = "components/preference" }
 server = {version = "0.1", path = "components/server" }
+updater = {version = "0.1", path = "components/updater" }
 utils = {version = "0.1", path = "components/utils" }
 
 thiserror = "1"

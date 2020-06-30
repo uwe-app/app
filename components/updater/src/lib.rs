@@ -1,7 +1,12 @@
+#[macro_use]
+extern crate log;
+
+use std::io;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use thiserror::Error;
 use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +16,25 @@ use dirs::home;
 use preference;
 use utils;
 
-use crate::Result;
+#[derive(Error, Debug)]
+pub enum UpdaterError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Request(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    TomlDeser(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    Cache(#[from] cache::CacheError),
+
+    #[error(transparent)]
+    Preference(#[from] preference::PreferenceError),
+}
+
+type Result<T> = std::result::Result<T, UpdaterError>;
 
 static BASH: &str = "bash";
 static ZSH: &str = "zsh";
@@ -25,7 +48,7 @@ pub struct VersionInfo {
     pub version: String,
 }
 
-pub fn get_version_file() -> Result<PathBuf> {
+pub fn get_version_file() -> io::Result<PathBuf> {
     let mut version_file = cache::get_release_dir()?;
     version_file.push(VERSION_FILE);
     Ok(version_file)
@@ -178,3 +201,11 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let (_, info) = version()?;
     Ok((NAME.to_string(), info, bin, bin_dir))
 }
+
+//#[cfg(test)]
+//mod tests {
+    //#[test]
+    //fn it_works() {
+        //assert_eq!(2 + 2, 4);
+    //}
+//}

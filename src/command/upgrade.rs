@@ -1,8 +1,9 @@
 use semver::Version;
 use log::info;
 
+use updater;
+
 use crate::Result;
-use crate::updater;
 
 pub fn try_upgrade() -> Result<()> {
     let (_, info) = updater::version()?;

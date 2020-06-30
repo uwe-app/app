@@ -4,7 +4,7 @@ extern crate pretty_env_logger;
 use log::error;
 use structopt::StructOpt;
 
-use hypertext::updater;
+use updater;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "hypertext-installer", version = "1.0.0")]
