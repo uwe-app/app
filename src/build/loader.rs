@@ -15,7 +15,9 @@ use inflector::Inflector;
 
 use log::warn;
 
-use crate::{utils, Error, INDEX_STEM, MD};
+use crate::{Error, INDEX_STEM, MD};
+
+use utils;
 
 use super::frontmatter;
 use super::page::Page;

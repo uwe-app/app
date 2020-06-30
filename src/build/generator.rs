@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_value, json, Map, Value};
 use slug;
 
-use crate::{utils, Error, JSON};
+use utils;
+
+use crate::{Error, JSON};
 
 use crate::config::Config;
 

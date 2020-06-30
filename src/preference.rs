@@ -3,8 +3,10 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use utils;
+
 use crate::Error;
-use crate::{cache, utils};
+use crate::cache;
 
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";

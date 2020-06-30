@@ -4,8 +4,9 @@ use std::path::PathBuf;
 
 use ignore::WalkBuilder;
 
+use utils;
+
 use crate::{Error, Result};
-use crate::utils;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct ResultFile {

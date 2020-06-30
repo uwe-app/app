@@ -6,7 +6,8 @@ use super::bundler::*;
 use crate::cache;
 use crate::git;
 use crate::preference;
-use crate::utils;
+
+use utils;
 
 use log::{debug, info};
 

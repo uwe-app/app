@@ -12,8 +12,10 @@ use toml;
 use log::debug;
 use unic_langid::LanguageIdentifier;
 
+use utils;
+
 use crate::build::page::Page;
-use crate::{utils, Error, HTML, MD};
+use crate::{Error, HTML, MD};
 
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";

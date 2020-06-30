@@ -1,6 +1,8 @@
+use utils;
+
 use crate::cache::{self, CacheComponent};
 use crate::preference;
-use crate::{utils, Error};
+use crate::Error;
 
 use super::run::{self, ServeOptions};
 

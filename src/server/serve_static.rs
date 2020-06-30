@@ -17,8 +17,9 @@ use warp::http::Uri;
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 
-use crate::utils;
 use log::{error, trace};
+
+use utils;
 
 #[derive(Debug, Clone)]
 pub struct WebServerOptions {

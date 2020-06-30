@@ -2,9 +2,11 @@ use log::info;
 use std::fs;
 use std::collections::HashMap;
 
+use utils;
+
 use super::context::Context;
 use crate::content::redirect;
-use crate::{utils, Result, Error, INDEX_HTML};
+use crate::{Result, Error, INDEX_HTML};
 
 use warp::http::Uri;
 

@@ -4,11 +4,12 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use log::{info, warn, error};
 
+use utils;
+
 use crate::cache;
 use crate::config::Config;
 use crate::Error;
 use crate::Result;
-use crate::utils;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]

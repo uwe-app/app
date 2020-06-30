@@ -1,11 +1,12 @@
 use std::io::ErrorKind;
 
+use log::{debug, info};
+
+use utils::symlink;
+
 use crate::Result;
 use crate::Error;
 use super::context::Context;
-use crate::utils::symlink;
-
-use log::{debug, info};
 
 pub fn link(ctx: &Context) -> Result<()> {
     let target = &ctx.options.target;

@@ -1,5 +1,7 @@
-use crate::{utils, Error};
 use std::path::Path;
+
+use utils;
+use crate::Error;
 
 pub fn write<P: AsRef<Path>>(location: &str, target: P) -> Result<(), Error> {
     let mut content = String::from("<!doctype html>");

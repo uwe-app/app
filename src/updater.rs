@@ -6,9 +6,10 @@ use home;
 use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
+use utils;
+
 use crate::cache::{self, CacheComponent};
 use crate::preference;
-use crate::utils;
 use crate::Result;
 
 static BASH: &str = "bash";

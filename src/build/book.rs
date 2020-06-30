@@ -12,7 +12,9 @@ use crate::build::loader;
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
-use crate::{utils, Error, DRAFT_KEY};
+use crate::{Error, DRAFT_KEY};
+
+use utils;
 
 use super::context::Context;
 

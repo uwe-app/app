@@ -9,11 +9,12 @@ pub enum FileType {
     Unknown,
 }
 
+use utils;
+
 use crate::{Error, HTML, INDEX_STEM, MD, PARSE_EXTENSIONS};
 
 //use super::generator;
 use crate::config::ExtensionConfig;
-use crate::utils;
 
 use crate::build::context::Context;
 

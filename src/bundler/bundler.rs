@@ -11,7 +11,8 @@ use ignore::WalkBuilder;
 
 use human_bytes::human_bytes;
 
-use crate::utils;
+use utils;
+
 use crate::Error;
 
 use log::info;

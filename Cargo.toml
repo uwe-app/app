@@ -7,14 +7,14 @@ repository = "https://github.com/hypertext-live/hypertext"
 edition = "2018"
 default-run = "ht"
 
-#[workspace]
-#members = [
-  #"components/bundler",
-  #"components/core",
-  #"components/ht-bundle",
-#]
+[workspace]
+members = [
+  "components/utils",
+]
 
 [dependencies]
+utils = {version = "0.1", path = "components/utils" }
+
 rand = "0.7.3"
 url = "2"
 home = "0.5"

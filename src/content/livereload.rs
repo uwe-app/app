@@ -1,8 +1,8 @@
-use crate::utils;
-use crate::Error;
 use std::path::PathBuf;
-
 use log::debug;
+
+use utils;
+use crate::Error;
 
 static LIVERELOAD_NAME: &str = "__livereload.js";
 

@@ -355,7 +355,7 @@ fn process_command(cmd: &Command) {
                 port: port.to_owned(),
                 open_browser: true,
                 watch: None,
-                endpoint: hypertext::generate_id(16),
+                endpoint: utils::generate_id(16),
                 redirects: None,
             };
 

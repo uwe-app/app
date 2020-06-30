@@ -3,11 +3,12 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use crate::{Error, Result};
+use utils;
+
+use crate::{Error, Result, LAYOUT_HBS};
 use crate::build::{CompilerOptions, BuildTag};
 use crate::build::redirect;
 use crate::config::{BuildArguments, Config};
-use crate::{utils, LAYOUT_HBS};
 
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {

@@ -1,5 +1,7 @@
+use utils;
+
 use crate::preference::{self, Preferences};
-use crate::{utils, Error};
+use crate::Error;
 
 use log::warn;
 

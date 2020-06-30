@@ -16,7 +16,7 @@ mod preference;
 pub mod publisher;
 mod server;
 pub mod updater;
-pub mod utils;
+//pub mod utils;
 mod workspace;
 
 static INDEX_STEM: &str = "index";
@@ -43,7 +43,6 @@ pub use crate::command::upgrade;
 
 pub use crate::config::{BuildArguments, Config};
 pub use crate::error::{AwsError, Error};
-pub use crate::utils::generate_id;
 
 pub type ErrorCallback = fn(Error);
 pub type Result<T> = std::result::Result<T, crate::error::Error>;

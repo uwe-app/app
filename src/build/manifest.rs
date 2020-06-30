@@ -8,7 +8,9 @@ use serde_json::{json, Map, Value};
 
 use log::debug;
 
-use crate::{utils, Error};
+use utils;
+
+use crate::{Error};
 
 use super::context::Context;
 

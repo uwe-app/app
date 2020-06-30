@@ -6,7 +6,9 @@ use log::{debug, info};
 
 use serde_json::{json, Value};
 
-use crate::{utils, Result, Error, TEMPLATE_EXT};
+use crate::{Result, Error, TEMPLATE_EXT};
+
+use utils;
 
 use super::book::BookBuilder;
 use super::context::Context;
