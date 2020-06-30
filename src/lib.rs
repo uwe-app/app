@@ -10,7 +10,6 @@ mod config;
 mod error;
 mod locale;
 mod markdown;
-mod preference;
 pub mod publisher;
 pub mod updater;
 mod workspace;

@@ -12,6 +12,7 @@ members = [
   "components/content",
   "components/dirs",
   "components/git",
+  "components/preference",
   "components/server",
   "components/utils",
 ]
@@ -20,6 +21,7 @@ members = [
 content = {version = "0.1", path = "components/content" }
 dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
+preference = {version = "0.1", path = "components/preference" }
 server = {version = "0.1", path = "components/server" }
 utils = {version = "0.1", path = "components/utils" }
 

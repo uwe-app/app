@@ -8,8 +8,8 @@ use log::info;
 use url::Url;
 
 use git;
+use preference::{self, Preferences};
 
-use crate::preference::{self, Preferences};
 use crate::{cache, Error};
 
 #[derive(Debug)]

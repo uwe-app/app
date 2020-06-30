@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use dirs;
 use git;
+use preference::{self, Preferences};
 
-use crate::preference::{self, Preferences};
 use crate::Error;
 
 static BIN: &str = "bin";

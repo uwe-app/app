@@ -29,6 +29,7 @@ pub enum Error {
     Git(git2::Error),
     Semver(semver::SemVerError),
     HttpClient(reqwest::Error),
+    Preference(preference::PreferenceError),
     Region(rusoto_signature::region::ParseRegionError),
     Aws(AwsError),
 }
@@ -148,6 +149,12 @@ impl From<reqwest::Error> for Error {
     }
 }
 
+impl From<preference::PreferenceError> for Error {
+    fn from(error: preference::PreferenceError) -> Self {
+        Error::Preference(error)
+    }
+}
+
 impl From<rusoto_signature::region::ParseRegionError> for Error {
     fn from(error: rusoto_signature::region::ParseRegionError) -> Self {
         Error::Region(error)
@@ -181,6 +188,7 @@ impl fmt::Display for Error {
             Error::Git(ref e) => e.fmt(f),
             Error::GitLib(ref e) => e.fmt(f),
             Error::Semver(ref e) => e.fmt(f),
+            Error::Preference(ref e) => e.fmt(f),
             Error::HttpClient(ref e) => e.fmt(f),
             Error::Region(ref e) => e.fmt(f),
             Error::Aws(ref e) => e.fmt(f),
@@ -207,6 +215,7 @@ impl error::Error for Error {
             Error::Git(ref e) => Some(e),
             Error::GitLib(ref e) => Some(e),
             Error::Semver(ref e) => Some(e),
+            Error::Preference(ref e) => Some(e),
             Error::HttpClient(ref e) => Some(e),
             Error::Region(ref e) => Some(e),
             Error::Aws(ref e) => Some(e),

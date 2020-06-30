@@ -7,10 +7,10 @@ use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
 use dirs;
+use preference;
 use utils;
 
 use crate::cache::{self, CacheComponent};
-use crate::preference;
 use crate::Result;
 
 static BASH: &str = "bash";

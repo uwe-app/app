@@ -1,18 +1,28 @@
+use std::io;
 use std::path::PathBuf;
 
+use thiserror::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use dirs;
 use utils;
 
-use crate::Error;
-
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
 static DEFAULT_BLUEPRINT_PATH: &str = "style/normalize";
 
 pub static BLUEPRINT_URL: &str = "https://github.com/hypertext-live/blueprint";
+
+#[derive(Error, Debug)]
+pub enum PreferenceError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    TomlSer(#[from] toml::ser::Error),
+    #[error(transparent)]
+    TomlDeser(#[from] toml::de::Error),
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -81,18 +91,18 @@ impl Default for DocsPreferences {
     }
 }
 
-pub fn get_prefs_file() -> Result<PathBuf, Error> {
+pub fn get_prefs_file() -> io::Result<PathBuf> {
     let mut buf = dirs::get_root_dir()?;
     buf.push(PREFERENCES);
     Ok(buf)
 }
 
-pub fn load_file() -> Result<String, Error> {
+pub fn load_file() -> io::Result<String> {
     let buf = get_prefs_file()?;
-    utils::fs::read_string(&buf).map_err(Error::from)
+    utils::fs::read_string(&buf)
 }
 
-pub fn load() -> Result<Preferences, Error> {
+pub fn load() -> Result<Preferences, PreferenceError> {
     let buf = get_prefs_file()?;
     let mut prefs: Preferences = Default::default();
     if buf.exists() {
@@ -102,7 +112,7 @@ pub fn load() -> Result<Preferences, Error> {
     Ok(prefs)
 }
 
-pub fn init_if_none() -> Result<(), Error> {
+pub fn init_if_none() -> Result<(), PreferenceError> {
     let buf = get_prefs_file()?;
     if !buf.exists() {
         let prefs: Preferences = Default::default();
@@ -111,3 +121,11 @@ pub fn init_if_none() -> Result<(), Error> {
     }
     Ok(())
 }
+
+//#[cfg(test)]
+//mod tests {
+    //#[test]
+    //fn it_works() {
+        //assert_eq!(2 + 2, 4);
+    //}
+//}

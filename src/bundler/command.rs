@@ -5,10 +5,10 @@ use std::path::PathBuf;
 use log::{debug, info};
 
 use git;
+use preference;
 use utils;
 
 use crate::cache;
-use crate::preference;
 
 use super::bundler::*;
 
