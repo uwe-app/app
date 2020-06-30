@@ -106,7 +106,7 @@ struct InitOpts {
     action: Option<InitCommands>,
 
     /// Private key to use for SSH connections
-    #[structopt(short, long)]
+    #[structopt(short, long, env = "HT_SSH_PRIVATE_KEY", hide_env_values = true)]
     private_key: Option<PathBuf>,
 
     /// Target directory for the project
