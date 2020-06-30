@@ -1,13 +1,13 @@
-use serde::{Deserialize, Serialize};
+use std::io;
 use std::mem;
 use std::path::PathBuf;
 
 use chrono::DateTime;
 use chrono::Utc;
+
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
-
-use crate::Error;
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -33,7 +33,7 @@ impl FileContext {
         }
     }
 
-    pub fn resolve_metadata(&mut self) -> Result<(), Error> {
+    pub fn resolve_metadata(&mut self) -> io::Result<()> {
         if let Ok(ref metadata) = self.source.metadata() {
             if let Ok(modified) = metadata.modified() {
                 self.modified = DateTime::from(modified);
