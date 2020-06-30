@@ -172,7 +172,7 @@ struct RunOpts {
     #[structopt(flatten)]
     server: WebServerOpts,
 
-    /// Target directory to serve files from
+    /// Directory to serve files from
     #[structopt(parse(from_os_str))]
     target: PathBuf,
 }
@@ -361,7 +361,7 @@ fn process_command(cmd: &Command) {
 
             if !opts.target.exists() || !opts.target.is_dir() {
                 error(format!(
-                    "Directory does not exist: {}",
+                    "Not a directory '{}'",
                     opts.target.display()
                 ));
             }
