@@ -119,7 +119,6 @@ impl<'a> Invalidator<'a> {
         tx: Sender<Message>,
         error_cb: &ErrorCallback,
     ) -> Result<(), Error> {
-        #[cfg(feature = "watch")]
         let watch_result = watch::start(&from.clone(), error_cb, move |paths, source_dir| {
             info!("changed({}) in {}", paths.len(), source_dir.display());
 

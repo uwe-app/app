@@ -11,6 +11,8 @@ use structopt::StructOpt;
 
 use std::panic;
 
+use utils;
+
 use hypertext::{
     BuildArguments, Config, Error,
 };

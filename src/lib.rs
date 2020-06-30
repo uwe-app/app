@@ -14,9 +14,7 @@ mod locale;
 mod markdown;
 mod preference;
 pub mod publisher;
-mod server;
 pub mod updater;
-//pub mod utils;
 mod workspace;
 
 static INDEX_STEM: &str = "index";

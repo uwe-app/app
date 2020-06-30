@@ -13,7 +13,8 @@ use log::{error, info};
 
 use open;
 
-use crate::server::{serve_static, WebServerOptions};
+use server::{serve_static, WebServerOptions};
+
 use crate::Error;
 
 #[derive(Debug)]

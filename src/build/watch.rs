@@ -1,4 +1,3 @@
-#[cfg(feature = "watch")]
 use std::convert::AsRef;
 
 use notify::Watcher;
