@@ -29,7 +29,6 @@ thiserror = "1"
 
 rand = "0.7.3"
 url = "2"
-home = "0.5"
 git2 = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
 open = "1.1"

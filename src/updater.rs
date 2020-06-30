@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use home;
 use log::{info, warn, debug};
 use serde::{Deserialize, Serialize};
 
 use dirs;
+use dirs::home;
 use preference;
 use utils;
 

@@ -948,7 +948,6 @@ dependencies = [
  "git 0.1.0",
  "git2 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "handlebars 3.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "home 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "human_bytes 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ignore 0.4.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",

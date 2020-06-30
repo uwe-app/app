@@ -3,11 +3,11 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use git2::Repository;
-use home;
 use log::info;
 use url::Url;
 
 use git;
+use dirs::home;
 use preference::{self, Preferences};
 
 use crate::{cache, Error};
