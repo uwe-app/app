@@ -6,6 +6,7 @@ use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
 use utils;
+use content;
 
 use crate::build::context::Context;
 use crate::build::invalidator::Invalidator;
@@ -70,8 +71,8 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        if let Err(e) = crate::content::livereload::write(&ctx.options.target, &ws_url) {
-            error_cb(e);
+        if let Err(e) = content::livereload::write(&ctx.options.target, &ws_url) {
+            error_cb(Error::from(e));
             return;
         }
 

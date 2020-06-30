@@ -1,9 +1,8 @@
 use std::path::Path;
 
 use utils;
-use crate::Error;
 
-pub fn write<P: AsRef<Path>>(location: &str, target: P) -> Result<(), Error> {
+pub fn write<P: AsRef<Path>>(location: &str, target: P) -> std::io::Result<()> {
     let mut content = String::from("<!doctype html>");
     let body = format!(
         "<body onload=\"document.location.replace('{}');\"></body>",
@@ -19,5 +18,5 @@ pub fn write<P: AsRef<Path>>(location: &str, target: P) -> Result<(), Error> {
     content.push_str("</head>");
     content.push_str(&body);
     content.push_str("</html>");
-    utils::fs::write_string(target, content).map_err(Error::from)
+    utils::fs::write_string(target, content)
 }

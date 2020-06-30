@@ -9,11 +9,13 @@ default-run = "ht"
 
 [workspace]
 members = [
+  "components/content",
   "components/server",
   "components/utils",
 ]
 
 [dependencies]
+content = {version = "0.1", path = "components/content" }
 server = {version = "0.1", path = "components/server" }
 utils = {version = "0.1", path = "components/utils" }
 

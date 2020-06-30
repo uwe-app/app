@@ -1,0 +1,8 @@
+[package]
+name = "content"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+utils = { version = "0.1", path = "../utils" }

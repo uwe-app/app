@@ -1,8 +1,6 @@
 use std::path::PathBuf;
-use log::debug;
 
 use utils;
-use crate::Error;
 
 static LIVERELOAD_NAME: &str = "__livereload.js";
 
@@ -18,11 +16,9 @@ fn get_script(url: &str) -> String {
     script
 }
 
-pub fn write(target: &PathBuf, url: &str) -> Result<(), Error> {
+pub fn write(target: &PathBuf, url: &str) -> std::io::Result<()> {
     let mut dest = target.clone();
     dest.push(LIVERELOAD_NAME);
     let script = get_script(url);
-    debug!("{} {}", dest.display(), url);
-    debug!("{}", script);
-    utils::fs::write_string(dest, script).map_err(Error::from)
+    utils::fs::write_string(dest, script)
 }

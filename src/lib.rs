@@ -7,7 +7,6 @@ mod build;
 mod cache;
 mod command;
 mod config;
-mod content;
 mod error;
 mod git;
 mod locale;
