@@ -23,6 +23,8 @@ VERSION_FILE = $(RELEASE_REPO)/version.toml
 
 SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
+COMMAND_DOCS = build docs fetch init publish run site upgrade
+
 all: init site-release
 
 clean:
@@ -39,7 +41,9 @@ init-newcss-open: init-newcss
 init: init-newcss
 
 help:
-	@cargo run -- --help > $(SITE_ROOT)/site/help.txt
+	for cmd in $(COMMAND_DOCS); do \
+		cargo run -- help $$cmd > ../website/site/command-help/$$cmd.txt; \
+	done;
 
 site:
 	@cargo run -- $(SITE_ROOT)/ --force
@@ -105,4 +109,4 @@ install-darwin: release-darwin
 	@mkdir -p $(HOME)/.hypertext/bin
 	@cp -f target/release/ht $(HOME)/.hypertext/bin
 
-.PHONY: all site site-release checksum clean install
+.PHONY: all help site site-release checksum clean install

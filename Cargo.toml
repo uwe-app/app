@@ -82,7 +82,3 @@ warp = { version = "0.2.2", default-features = false, features = ["websocket"] }
 [profile.release]
 lto = true
 codegen-units = 1
-
-[package.metadata.bundle.bin.ht]
-name = "ht"
-identifier = "live.hypertext"

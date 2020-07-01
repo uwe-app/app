@@ -56,16 +56,6 @@ To build the installer and copy the files to the website:
 make installer
 ```
 
-## Cargo Bundle
-
-To create bundles for various platforms install latest cargo-bundle:
-
-```
-cargo install cargo-bundle --git https://github.com/burtonageo/cargo-bundle
-```
-
-Then run `cargo bundle --bin=ht` or for a release build `cargo bundle --release --bin=ht`.
-
 ## SSL
 
 For libgit2 support (`git2` crate) the SSL development package is required. For Ubunut/Mint I installed with `sudo apt-get install libssl-dev`.
