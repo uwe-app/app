@@ -1,6 +1,6 @@
 use config::page::Page;
 
-use crate::build::CompilerOptions;
+use super::CompilerOptions;
 
 pub fn is_draft(data: &Page, opts: &CompilerOptions) -> bool {
     if opts.release {

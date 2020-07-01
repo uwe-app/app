@@ -419,7 +419,7 @@ fn process_command(cmd: &Command) {
 
             let now = SystemTime::now();
             //if let Err(e) = hypertext::build(cfg, opts, fatal) {
-            if let Err(e) = hypertext::build_project(&project, &build_args, fatal) {
+            if let Err(e) = hypertext::build::compile(&project, &build_args, fatal) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {

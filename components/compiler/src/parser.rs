@@ -5,7 +5,7 @@ use config::page::Page;
 
 use crate::{Error};
 
-use crate::markdown::render_markdown_string;
+use super::markdown::render_markdown_string;
 
 use super::context::Context;
 use super::frontmatter;

@@ -1,0 +1,34 @@
+[package]
+name = "compiler"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+config = {version = "0.1", path = "../config" }
+content = {version = "0.1", path = "../content" }
+locale = {version = "0.1", path = "../locale" }
+utils = {version = "0.1", path = "../utils" }
+
+thiserror = "1"
+log = "0.4.8"
+serde = { version = "1.0", features = ["derive"] }
+#serde_derive = "1"
+serde_with = "1.4"
+serde_json = "1"
+ignore = "0.4"
+lazy_static = "1"
+toml = "0.5"
+Inflector = "0.11"
+handlebars = {version = "3.0", default-features = true, features = [ "dir_source" ] }
+slug = "0.1.4"
+rand = "0.7.3"
+chrono = { version = "0.4", features = ["serde"] }
+mdbook = { version = "0.3.7", default-features = false, features = [ "output" ] }
+pulldown-cmark = { version = "0.6.1", default-features = false, features = ["simd"] }
+fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
+
+notify = { version = "4.0.0" }
+futures-util = { version = "0.3.4" }
+tokio = { version = "0.2.18", features = ["macros"] }
+warp = { version = "0.2.2", default-features = false, features = ["websocket"] }

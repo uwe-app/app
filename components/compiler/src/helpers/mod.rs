@@ -2,6 +2,7 @@ use handlebars::*;
 use std::io;
 
 use config::page::Page;
+
 use crate::Error;
 
 pub mod children;

@@ -4,8 +4,6 @@ use log::debug;
 
 use utils;
 
-//use super::render_buffer;
-
 #[derive(Clone, Copy)]
 pub struct Include;
 

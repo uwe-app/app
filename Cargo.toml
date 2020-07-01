@@ -12,11 +12,13 @@ members = [
   "components/extras/bundle",
   "components/extras/bundler",
   "components/cache",
+  "components/compiler",
   "components/config",
   "components/content",
   "components/dirs",
   "components/git",
   "components/installer",
+  "components/locale",
   "components/preference",
   "components/publisher",
   "components/report",
@@ -27,10 +29,12 @@ members = [
 
 [dependencies]
 cache = {version = "0.1", path = "components/cache" }
+compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
 content = {version = "0.1", path = "components/content" }
 dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
+locale = {version = "0.1", path = "components/locale" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 report = {version = "0.1", path = "components/report" }
@@ -58,12 +62,9 @@ toml = "0.5"
 human_bytes = "0.2.1"
 slug = "0.1.4"
 lazy_static = "1"
-mdbook = { version = "0.3.7", default-features = false, features = [ "output" ] }
-pulldown-cmark = { version = "0.6.1", default-features = false, features = ["simd"] }
-fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
 unic-langid = "0.9.0"
 semver = "0.10"
-notify = { version = "4.0.0" }
+
 futures-util = { version = "0.3.4" }
 tokio = { version = "0.2.18", features = ["macros"] }
 warp = { version = "0.2.2", default-features = false, features = ["websocket"] }

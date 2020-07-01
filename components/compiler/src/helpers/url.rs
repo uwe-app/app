@@ -4,10 +4,10 @@ use handlebars::*;
 use log::debug;
 use serde_json::json;
 
-use crate::build::context::Context as BuildContext;
-use crate::build::loader;
-use crate::build::matcher;
-use crate::build::CompilerOptions;
+use super::super::context::Context as BuildContext;
+use super::super::loader;
+use super::super::matcher;
+use super::super::CompilerOptions;
 
 use crate::INDEX_HTML;
 

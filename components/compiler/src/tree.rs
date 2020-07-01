@@ -7,10 +7,10 @@ use serde_json::json;
 
 use config::page::Page;
 
-use crate::build::context::Context;
-use crate::build::loader;
-use crate::build::matcher;
-use crate::build::matcher::FileType;
+use super::context::Context;
+use super::loader;
+use super::matcher;
+use super::matcher::FileType;
 
 use crate::{Error, HTML, INDEX_HTML, INDEX_STEM, MD};
 

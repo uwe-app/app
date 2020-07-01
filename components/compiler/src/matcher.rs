@@ -16,7 +16,7 @@ use crate::{Error, HTML, INDEX_STEM, MD, PARSE_EXTENSIONS};
 
 //use super::generator;
 
-use crate::build::context::Context;
+use super::context::Context;
 
 fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     let mut buf = file.as_ref().to_path_buf();

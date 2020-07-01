@@ -1,7 +1,7 @@
 use handlebars::*;
 use super::render_buffer;
 
-use crate::markdown::render_markdown_string;
+use super::super::markdown::render_markdown_string;
 
 #[derive(Clone, Copy)]
 pub struct Element;

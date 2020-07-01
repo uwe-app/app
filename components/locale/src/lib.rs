@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::Path;
 
+use thiserror::Error;
 use serde::{Deserialize, Serialize};
 
 use fluent_templates::ArcLoader;
@@ -9,7 +10,14 @@ use unic_langid::LanguageIdentifier;
 
 use config::{Config, FluentConfig};
 
-use crate::Error;
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
+    // For fluent template loader
+    #[error(transparent)]
+    Boxed(#[from] Box<dyn std::error::Error>),
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Locales {
@@ -104,3 +112,4 @@ impl LocalesLoader {
         //.customize(|bundle| bundle.set_use_isolating(false));
     }
 }
+

@@ -9,23 +9,23 @@ use config::BuildArguments;
 use content;
 use utils;
 
-use crate::build::context::Context;
-use crate::build::invalidator::Invalidator;
-use crate::build::compiler::Compiler;
-use crate::build::redirect;
-use crate::{Error};
+use compiler::context::Context;
+use compiler::invalidator::Invalidator;
+use compiler::Compiler;
+use compiler::redirect;
+use compiler::ErrorCallback;
 
+use crate::{Error};
 
 use crate::command::run::{self, ServeOptions};
 
-use crate::ErrorCallback;
 use crate::workspace;
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
 }
 
-pub fn build_project<P: AsRef<Path>>(
+pub fn compile<P: AsRef<Path>>(
     project: P,
     args: &BuildArguments,
     error_cb: ErrorCallback,
@@ -72,7 +72,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
         if let Err(e) = content::livereload::write(&ctx.options.target, &ws_url) {
-            error_cb(Error::from(e));
+            error_cb(compiler::Error::from(e));
             return;
         }
 

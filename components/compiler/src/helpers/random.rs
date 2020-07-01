@@ -1,6 +1,5 @@
 use handlebars::*;
 use rand::seq::SliceRandom;
-
 use serde_json::json;
 
 use config::page::Page;

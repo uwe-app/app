@@ -6,9 +6,11 @@ use log::{debug, info};
 use config::{BuildArguments, Config};
 use utils;
 
-use crate::{Error, Result, LAYOUT_HBS};
-use crate::build::{CompilerOptions, BuildTag};
-use crate::build::redirect;
+use crate::{Error, Result};
+use compiler::{CompilerOptions, BuildTag};
+use compiler::redirect;
+
+static LAYOUT_HBS: &str = "layout.hbs";
 
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {
@@ -56,10 +58,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     }
 
     if let Some(ref redirects) = cfg.redirect {
-        if let Err(e) = redirect::validate(redirects) {
-            return Err(e);
-        }
-
+        redirect::validate(redirects)?;
     }
 
     let incremental = args.incremental.is_some() && args.incremental.unwrap();

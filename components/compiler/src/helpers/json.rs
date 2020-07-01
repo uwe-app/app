@@ -1,5 +1,4 @@
 use handlebars::*;
-
 use serde_json::{to_string, to_string_pretty};
 
 #[derive(Clone, Copy)]

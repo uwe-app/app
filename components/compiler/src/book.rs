@@ -7,7 +7,7 @@ use ignore::WalkBuilder;
 use log::{debug, info, warn};
 use mdbook::MDBook;
 
-use crate::build::loader;
+use super::loader;
 
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";

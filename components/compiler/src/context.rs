@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use config::Config;
 
-use super::generator::GeneratorMap;
-use crate::locale::Locales;
+use locale::Locales;
 
+use super::generator::GeneratorMap;
 use super::CompilerOptions;
 
 #[derive(Debug, Serialize, Deserialize)]

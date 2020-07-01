@@ -1,7 +1,7 @@
 use handlebars::*;
 use serde_json::{from_value, json};
 
-use crate::build::context::Context as BuildContext;
+use super::super::context::Context as BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct LiveReload;

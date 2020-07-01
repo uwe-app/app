@@ -3,13 +3,13 @@ use std::path::Path;
 use handlebars::*;
 use serde_json::json;
 
-use crate::build::loader;
-use crate::build::matcher;
-
-use crate::build::context::Context as BuildContext;
-
 use super::map_render_error;
 use super::with_parent_context;
+
+use super::super::loader;
+use super::super::matcher;
+
+use super::super::context::Context as BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct Parent;

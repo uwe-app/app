@@ -5,17 +5,17 @@ use std::path::PathBuf;
 use log::info;
 
 use config::{BuildArguments, Config};
-
-use crate::build::context::Context;
-use crate::build::generator::GeneratorMap;
-use crate::build::loader;
-use crate::build::compiler::Compiler;
-use crate::build::CompilerOptions;
-
-use crate::Result;
-use crate::locale::Locales;
+use compiler::context::Context;
+use compiler::generator::GeneratorMap;
+use compiler::loader;
+use compiler::Compiler;
+use compiler::CompilerOptions;
+use locale::Locales;
 
 use super::Workspace;
+
+use crate::Result;
+
 
 pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
     let mut spaces: Vec<Workspace> = Vec::new();
@@ -28,7 +28,7 @@ pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Res
 
     let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
     if write_redirects {
-        crate::build::redirect::write(&ctx)?;
+        compiler::redirect::write(&ctx)?;
     }
 
     Ok(ctx)
