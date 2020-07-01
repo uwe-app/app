@@ -25,7 +25,7 @@ static HTML: &str = "html";
 static SITE_TOML: &str = "site.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
 
-static PAGES: &str = "page.toml";
+static PAGE_DATA: &str = "page.toml";
 
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
@@ -386,7 +386,7 @@ impl Default for BuildConfig {
             source: PathBuf::from("site"),
             target: PathBuf::from("build"),
             strict: Some(true),
-            pages: Some(PathBuf::from(PAGES)),
+            pages: Some(PathBuf::from(PAGE_DATA)),
             assets: Some(PathBuf::from(ASSETS)),
             includes: Some(PathBuf::from(INCLUDES)),
             partials: Some(PathBuf::from(PARTIALS)),
