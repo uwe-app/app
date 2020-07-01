@@ -18,6 +18,7 @@ members = [
   "components/git",
   "components/installer",
   "components/preference",
+  "components/report",
   "components/server",
   "components/updater",
   "components/utils",
@@ -30,6 +31,7 @@ content = {version = "0.1", path = "components/content" }
 dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
 preference = {version = "0.1", path = "components/preference" }
+report = {version = "0.1", path = "components/report" }
 server = {version = "0.1", path = "components/server" }
 updater = {version = "0.1", path = "components/updater" }
 utils = {version = "0.1", path = "components/utils" }

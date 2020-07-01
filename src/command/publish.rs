@@ -7,10 +7,10 @@ use rusoto_core::Region;
 use log::info;
 
 use config::{Config, BuildArguments};
+use report::FileBuilder;
 
 use crate::Error;
 use crate::Result;
-use crate::build::report::FileBuilder;
 use crate::workspace::{self, Workspace};
 
 use crate::publisher::{self, PublishRequest, PublishProvider};

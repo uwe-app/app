@@ -1,3 +1,4 @@
+use std::io;
 use std::io::Read;
 use std::path::Path;
 use std::collections::{HashMap, HashSet};
@@ -15,15 +16,16 @@ use rusoto_core::ByteStream;
 
 use log::{info, debug, error};
 
-use crate::build::report::FileBuilder;
-use crate::{AwsError, AwsResult, Result};
+use report::FileBuilder;
+
+use crate::{AwsError, AwsResult};
 
 // The folder delimiter
 static DELIMITER: &str = "/";
 
 // Compute a digest from the file on disc and return it in
 // an etag format.
-fn get_file_etag<P: AsRef<Path>>(path: P) -> Result<String> {
+fn get_file_etag<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let mut file = std::fs::File::open(path)?;
     let chunk_size = 16_000;
     let mut hasher = Md5::new();
@@ -73,7 +75,7 @@ fn get_client(request: &PublishRequest) -> AwsResult<S3Client> {
 pub fn diff(
     builder: &FileBuilder,
     remote: &HashSet<String>,
-    etags: &HashMap<String, String>) -> Result<DiffReport> {
+    etags: &HashMap<String, String>) -> io::Result<DiffReport> {
 
     let local = &builder.keys;
 

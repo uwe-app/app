@@ -2,11 +2,20 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
 
+use thiserror::Error;
 use ignore::WalkBuilder;
 
 use utils;
 
-use crate::{Error, Result};
+#[derive(Error, Debug)]
+pub enum ReportError {
+    #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+    #[error(transparent)]
+    Ignore(#[from] ignore::Error),
+}
+
+type Result<T> = std::result::Result<T, ReportError>;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct ResultFile {
@@ -76,10 +85,18 @@ impl FileBuilder {
                         self.add(&path)?;
                     }
                 }
-                Err(e) => return Err(Error::from(e)),
+                Err(e) => return Err(ReportError::from(e)),
             }
         }
         Ok(())
     }
 }
 
+
+//#[cfg(test)]
+//mod tests {
+    //#[test]
+    //fn it_works() {
+        //assert_eq!(2 + 2, 4);
+    //}
+//}

@@ -12,7 +12,6 @@ pub mod manifest;
 pub mod matcher;
 pub mod parser;
 pub mod redirect;
-pub mod report;
 pub mod resource;
 pub mod template;
 pub mod tree;
