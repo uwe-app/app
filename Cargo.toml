@@ -25,6 +25,7 @@ members = [
   "components/server",
   "components/updater",
   "components/utils",
+  "components/workspace",
 ]
 
 [dependencies]
@@ -41,6 +42,7 @@ report = {version = "0.1", path = "components/report" }
 server = {version = "0.1", path = "components/server" }
 updater = {version = "0.1", path = "components/updater" }
 utils = {version = "0.1", path = "components/utils" }
+workspace = {version = "0.1", path = "components/workspace" }
 
 thiserror = "1"
 url = "2"

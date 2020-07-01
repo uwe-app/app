@@ -7,9 +7,10 @@ use config::{Config, BuildArguments};
 use report::FileBuilder;
 use publisher::{self, PublishRequest, PublishProvider};
 
+use workspace::{self, Workspace};
+
 use crate::Error;
 use crate::Result;
-use crate::workspace::{self, Workspace};
 
 #[derive(Debug)]
 pub struct PublishOptions {

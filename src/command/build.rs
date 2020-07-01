@@ -5,21 +5,18 @@ use std::sync::mpsc::channel;
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
-use config::BuildArguments;
-use content;
-use utils;
-
 use compiler::context::Context;
 use compiler::invalidator::Invalidator;
 use compiler::Compiler;
 use compiler::redirect;
 use compiler::ErrorCallback;
+use config::BuildArguments;
+use content;
+use utils;
+use workspace;
 
-use crate::{Error};
-
+use crate::Error;
 use crate::command::run::{self, ServeOptions};
-
-use crate::workspace;
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)

@@ -16,7 +16,6 @@ use super::Workspace;
 
 use crate::Result;
 
-
 pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
     let mut spaces: Vec<Workspace> = Vec::new();
     super::finder::find(project, true, &mut spaces)?;

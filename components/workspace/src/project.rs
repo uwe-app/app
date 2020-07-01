@@ -3,12 +3,12 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
+use compiler::{CompilerOptions, BuildTag};
+use compiler::redirect;
 use config::{BuildArguments, Config};
 use utils;
 
 use crate::{Error, Result};
-use compiler::{CompilerOptions, BuildTag};
-use compiler::redirect;
 
 static LAYOUT_HBS: &str = "layout.hbs";
 

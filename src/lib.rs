@@ -24,9 +24,13 @@ pub enum Error {
     Semver(#[from] semver::SemVerError),
 
     #[error(transparent)]
+    Config(#[from] config::Error),
+    #[error(transparent)]
     Compiler(#[from] compiler::Error),
     #[error(transparent)]
     Locale(#[from] locale::Error),
+    #[error(transparent)]
+    Workspace(#[from] workspace::Error),
     #[error(transparent)]
     GitLib(#[from] git::Error),
     #[error(transparent)]
@@ -35,8 +39,6 @@ pub enum Error {
     Cache(#[from] cache::Error),
     #[error(transparent)]
     Updater(#[from] updater::Error),
-    #[error(transparent)]
-    Config(#[from] config::Error),
     #[error(transparent)]
     Report(#[from] report::Error),
     #[error(transparent)]
@@ -52,7 +54,6 @@ impl Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 mod command;
-mod workspace;
 
 pub use crate::command::blueprint;
 pub use crate::command::build;
