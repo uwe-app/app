@@ -15,7 +15,7 @@ static DEFAULT_BLUEPRINT_PATH: &str = "style/normalize";
 pub static BLUEPRINT_URL: &str = "https://github.com/hypertext-live/blueprint";
 
 #[derive(Error, Debug)]
-pub enum PreferenceError {
+pub enum Error {
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
@@ -23,6 +23,8 @@ pub enum PreferenceError {
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
 }
+
+type Result<T> = std::result::Result<T, Error>;
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -102,7 +104,7 @@ pub fn load_file() -> io::Result<String> {
     utils::fs::read_string(&buf)
 }
 
-pub fn load() -> Result<Preferences, PreferenceError> {
+pub fn load() -> Result<Preferences> {
     let buf = get_prefs_file()?;
     let mut prefs: Preferences = Default::default();
     if buf.exists() {
@@ -112,7 +114,7 @@ pub fn load() -> Result<Preferences, PreferenceError> {
     Ok(prefs)
 }
 
-pub fn init_if_none() -> Result<(), PreferenceError> {
+pub fn init_if_none() -> Result<()> {
     let buf = get_prefs_file()?;
     if !buf.exists() {
         let prefs: Preferences = Default::default();
@@ -122,10 +124,3 @@ pub fn init_if_none() -> Result<(), PreferenceError> {
     Ok(())
 }
 
-//#[cfg(test)]
-//mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
-//}

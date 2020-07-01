@@ -28,7 +28,7 @@ pub enum UpdaterError {
     Cache(#[from] cache::CacheError),
 
     #[error(transparent)]
-    Preference(#[from] preference::PreferenceError),
+    Preference(#[from] preference::Error),
 }
 
 type Result<T> = std::result::Result<T, UpdaterError>;
