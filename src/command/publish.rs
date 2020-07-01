@@ -7,7 +7,7 @@ use config::{Config, BuildArguments};
 use report::FileBuilder;
 use publisher::{self, PublishRequest, PublishProvider};
 
-use workspace::{self, Workspace};
+use workspace;
 
 use crate::Error;
 use crate::Result;
@@ -20,10 +20,10 @@ pub struct PublishOptions {
 }
 
 pub fn publish(options: PublishOptions) -> Result<()> {
-    let mut spaces: Vec<Workspace> = Vec::new();
+    let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
     for space in spaces {
-        publish_one(&options, &space.config)?;
+        publish_one(&options, &space)?;
     }
     Ok(())
 }

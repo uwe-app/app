@@ -4,12 +4,10 @@ use config::Config;
 
 use crate::{Error, Result};
 
-use super::Workspace;
-
 pub fn find<P: AsRef<Path>>(
     dir: P,
     walk_ancestors: bool,
-    spaces: &mut Vec<Workspace>) -> Result<()> {
+    spaces: &mut Vec<Config>) -> Result<()> {
 
     let project = dir.as_ref();
     let cfg = Config::load(&project, walk_ancestors)?;
@@ -27,7 +25,7 @@ pub fn find<P: AsRef<Path>>(
             find(root, false, spaces)?;
         }
     } else {
-        spaces.push(Workspace::new(cfg));
+        spaces.push(cfg);
     }
 
     Ok(())

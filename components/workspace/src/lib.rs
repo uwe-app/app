@@ -1,5 +1,4 @@
 use thiserror::Error;
-use config::Config;
 
 mod compile;
 mod finder;
@@ -32,17 +31,6 @@ impl Error {
 }
 
 type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Clone)]
-pub struct Workspace {
-    pub config: Config,
-}
-
-impl Workspace {
-    pub fn new(config: Config) -> Self {
-        Self { config }
-    }
-}
 
 pub use finder::find;
 pub use compile::compile;

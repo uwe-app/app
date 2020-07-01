@@ -12,17 +12,15 @@ use compiler::Compiler;
 use compiler::CompilerOptions;
 use locale::Locales;
 
-use super::Workspace;
-
 use crate::Result;
 
 pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
-    let mut spaces: Vec<Workspace> = Vec::new();
+    let mut spaces: Vec<Config> = Vec::new();
     super::finder::find(project, true, &mut spaces)?;
 
     let mut ctx: Context = Default::default();
     for mut space in spaces {
-        ctx = compile_from(&mut space.config, &args)?;
+        ctx = compile_from(&mut space, &args)?;
     }
 
     let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
