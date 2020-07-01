@@ -1,5 +1,4 @@
 pub mod fs;
-pub mod merge;
 pub mod symlink;
 pub mod url;
 

@@ -12,6 +12,7 @@ use crate::{Error, Result};
 
 static LAYOUT_HBS: &str = "layout.hbs";
 
+
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {
         info!("mkdir {}", output.display());
@@ -194,7 +195,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
             use_profile.paths = Some(paths);
         }
 
-        let mut merged = utils::merge::map::<BuildArguments>(&use_profile, args)?;
+        let mut merged = super::merge::map::<BuildArguments>(&use_profile, args)?;
 
         // Always update base to use the path separator. The declaration is
         // a URL path but internally we treat as a filesystem path.

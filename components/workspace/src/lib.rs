@@ -3,6 +3,7 @@ use config::Config;
 
 mod compile;
 mod finder;
+mod merge;
 pub mod project;
 
 #[derive(Error, Debug)]

@@ -7,15 +7,11 @@ pub enum Error {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error(transparent)]
-    Ignore(#[from] ignore::Error),
+
     #[error(transparent)]
     TomlSer(#[from] toml::ser::Error),
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
-
-    #[error(transparent)]
-    Json(#[from] serde_json::error::Error),
 
     #[error(transparent)]
     Git(#[from] git2::Error),
