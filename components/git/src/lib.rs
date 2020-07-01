@@ -1,8 +1,8 @@
-extern crate log;
-
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+
+use url::Url;
 
 use git2::build::RepoBuilder;
 use git2::{
@@ -10,15 +10,24 @@ use git2::{
 };
 
 use log::info;
-
 use thiserror::Error;
+
+use dirs::home;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("{0}")]
+    Message(String),
     #[error(transparent)]
     Git(#[from] git2::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+}
+
+impl Error {
+    pub fn new(s: String) -> Self {
+        Error::Message(s)
+    }
 }
 
 pub mod progress;
@@ -226,6 +235,61 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Re
     }
     Ok(())
 }
+
+// Create from a blueprint template
+pub fn create<P: AsRef<Path>>(
+    src: String,
+    target: P,
+    key: Option<PathBuf>,
+    repo_url: String,
+    repo_dir: PathBuf,
+) -> Result<Repository, Error> {
+
+    let src_err = Err(Error::new(format!("Unable to handle source '{}'", &src)));
+
+    let (repo, _cloned) = open_or_clone(&repo_url, &repo_dir, true)?;
+
+    // Try a https: URL first
+    match Url::parse(&src) {
+        Ok(_) => {
+            print_clone(&src, target.as_ref().clone());
+            return clone_standard(&src, target).map_err(Error::from);
+        }
+        Err(_) => {
+            // Look for a submodule path
+            let modules = repo.submodules()?;
+            for sub in modules {
+                if sub.path() == Path::new(&src) {
+                    let mut tmp = repo_dir.clone();
+                    tmp.push(sub.path());
+                    let src = tmp.to_string_lossy().into_owned();
+                    print_clone(&src, target.as_ref().clone());
+                    return clone_standard(&src, target).map_err(Error::from);
+                }
+            }
+
+            // Now we have SSH style git@github.com: URLs to deal with
+            if let Some(mut key_file) = home::home_dir() {
+                if let Some(ref ssh_key) = key {
+                    key_file.push(ssh_key);
+
+                    info!("Private key {}", key_file.display());
+
+                    print_clone(&src, target.as_ref().clone());
+
+                    return clone_ssh(src, target, key_file, None).map_err(Error::from);
+                } else {
+                    return Err(Error::new(format!(
+                        "To use SSH specify the --private-key option"
+                    )));
+                }
+            }
+        }
+    }
+
+    src_err
+}
+
 
 //#[cfg(test)]
 //mod tests {

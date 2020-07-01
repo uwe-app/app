@@ -45,8 +45,6 @@ utils = {version = "0.1", path = "components/utils" }
 workspace = {version = "0.1", path = "components/workspace" }
 
 thiserror = "1"
-url = "2"
-git2 = "0.13"
 open = "1.1"
 structopt = "0.3"
 log = "0.4.8"

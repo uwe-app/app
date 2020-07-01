@@ -14,9 +14,6 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
-    Git(#[from] git2::Error),
-
-    #[error(transparent)]
     Semver(#[from] semver::SemVerError),
 
     #[error(transparent)]
