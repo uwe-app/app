@@ -1,13 +1,17 @@
 #[macro_use]
 extern crate lazy_static;
 
+//#[macro_use]
+//extern crate serde_json;
+
+//#[macro_use]
+//extern crate unic_langid;
+
 mod build;
 mod command;
-//mod config;
 mod error;
 mod locale;
 mod markdown;
-//pub mod publisher;
 mod workspace;
 
 static INDEX_STEM: &str = "index";

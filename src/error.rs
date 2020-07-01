@@ -1,8 +1,5 @@
 use std::{error, fmt, io, path};
 
-use handlebars;
-use ignore;
-use mdbook;
 use warp::http;
 
 use cache;

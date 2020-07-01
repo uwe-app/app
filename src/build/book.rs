@@ -87,11 +87,11 @@ impl<'a> BookBuilder<'a> {
 
                         // Copy the file content
                         if let Err(e) = utils::fs::copy(file, output) {
-                            return Err(Error::IoError(e));
+                            return Err(Error::from(e));
                         }
                     }
                 }
-                Err(e) => return Err(Error::IgnoreError(e)),
+                Err(e) => return Err(Error::from(e)),
             }
         }
 
@@ -150,7 +150,7 @@ impl<'a> BookBuilder<'a> {
 
                 self.references.insert(directory, md);
             }
-            Err(e) => return Err(Error::BookError(e)),
+            Err(e) => return Err(Error::from(e)),
         }
 
         Ok(())
@@ -175,7 +175,7 @@ impl<'a> BookBuilder<'a> {
                     src.push(bd);
                     self.copy_book(dir, src)
                 }
-                Err(e) => return Err(Error::BookError(e)),
+                Err(e) => return Err(Error::from(e)),
             }
         } else {
             return Err(Error::new(format!("No book found for {}", dir.display())));
