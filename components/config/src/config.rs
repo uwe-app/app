@@ -15,9 +15,7 @@ use unic_langid::LanguageIdentifier;
 use utils;
 
 use super::page::Page;
-use super::{ConfigError as Error};
-
-//use crate::{Error};
+use super::Error;
 
 static MD: &str = "md";
 static HTML: &str = "html";

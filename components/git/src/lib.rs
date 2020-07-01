@@ -11,13 +11,18 @@ use git2::{
 
 use log::info;
 
-//use crate::Error;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    Git(#[from] git2::Error),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
 
 pub mod progress;
 pub mod pull;
-pub mod error;
-
-use error::{GitError as Error};
 
 static ORIGIN: &str = "origin";
 

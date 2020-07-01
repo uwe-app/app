@@ -23,7 +23,7 @@ use log::{info, debug, error};
 use report::FileBuilder;
 
 #[derive(Error, Debug)]
-pub enum AwsError {
+pub enum Error {
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
@@ -42,7 +42,7 @@ pub enum AwsError {
     ListObjects(#[from] rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
 }
 
-pub type Result<T> = std::result::Result<T, AwsError>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 // The folder delimiter
 static DELIMITER: &str = "/";
@@ -236,7 +236,7 @@ pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffR
     info!("Delete {}", diff.deleted.len());
     info!("{}", delimiter);
 
-    let mut errors: Vec<AwsError>= Vec::new();
+    let mut errors: Vec<Error>= Vec::new();
     let mut uploaded: u64 = 0;
     let mut deleted: u64 = 0;
     let client = get_client(request)?;

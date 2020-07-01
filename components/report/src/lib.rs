@@ -8,14 +8,14 @@ use ignore::WalkBuilder;
 use utils;
 
 #[derive(Error, Debug)]
-pub enum ReportError {
+pub enum Error {
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
     #[error(transparent)]
     Ignore(#[from] ignore::Error),
 }
 
-type Result<T> = std::result::Result<T, ReportError>;
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct ResultFile {
@@ -85,7 +85,7 @@ impl FileBuilder {
                         self.add(&path)?;
                     }
                 }
-                Err(e) => return Err(ReportError::from(e)),
+                Err(e) => return Err(Error::from(e)),
             }
         }
         Ok(())

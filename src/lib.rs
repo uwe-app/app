@@ -7,10 +7,8 @@ pub enum Error {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
-
     #[error(transparent)]
     Ignore(#[from] ignore::Error),
-
     #[error(transparent)]
     TomlSer(#[from] toml::ser::Error),
     #[error(transparent)]
@@ -29,21 +27,20 @@ pub enum Error {
     Compiler(#[from] compiler::Error),
     #[error(transparent)]
     Locale(#[from] locale::Error),
-
     #[error(transparent)]
-    GitLib(#[from] git::error::GitError),
+    GitLib(#[from] git::Error),
     #[error(transparent)]
     Preference(#[from] preference::Error),
     #[error(transparent)]
-    Cache(#[from] cache::CacheError),
+    Cache(#[from] cache::Error),
     #[error(transparent)]
-    Updater(#[from] updater::UpdaterError),
+    Updater(#[from] updater::Error),
     #[error(transparent)]
-    Config(#[from] config::ConfigError),
+    Config(#[from] config::Error),
     #[error(transparent)]
-    Report(#[from] report::ReportError),
+    Report(#[from] report::Error),
     #[error(transparent)]
-    Aws(#[from] publisher::AwsError),
+    Publish(#[from] publisher::Error),
 }
 
 impl Error {

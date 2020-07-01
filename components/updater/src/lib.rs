@@ -14,7 +14,7 @@ use preference;
 use utils;
 
 #[derive(Error, Debug)]
-pub enum UpdaterError {
+pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -25,13 +25,13 @@ pub enum UpdaterError {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
-    Cache(#[from] cache::CacheError),
+    Cache(#[from] cache::Error),
 
     #[error(transparent)]
     Preference(#[from] preference::Error),
 }
 
-type Result<T> = std::result::Result<T, UpdaterError>;
+type Result<T> = std::result::Result<T, Error>;
 
 static BASH: &str = "bash";
 static ZSH: &str = "zsh";

@@ -9,9 +9,9 @@ use git;
 use preference::{self, Preferences};
 
 #[derive(Error, Debug)]
-pub enum CacheError {
+pub enum Error {
     #[error(transparent)]
-    Git(#[from] git::error::GitError),
+    Git(#[from] git::Error),
     #[error(transparent)]
     Io(#[from] io::Error),
 }
@@ -148,7 +148,7 @@ pub fn get_release_bin_dir() -> io::Result<PathBuf> {
     Ok(buf)
 }
 
-pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), CacheError> {
+pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
     for c in components {
         match c {
             CacheComponent::Blueprint => {

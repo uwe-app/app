@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum ConfigError {
+pub enum Error {
     #[error("{0}")]
     Message(String),
 
@@ -18,9 +18,9 @@ pub enum ConfigError {
     Lang(#[from] unic_langid::LanguageIdentifierError),
 }
 
-impl ConfigError {
+impl Error {
     pub fn new(s: String) -> Self {
-        ConfigError::Message(s)
+        Error::Message(s)
     }
 }
 
