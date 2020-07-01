@@ -196,7 +196,12 @@ pub async fn list_remote(
     Ok(())
 }
 
-async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, path: P) -> Result<PutObjectOutput> {
+async fn put_file<S: AsRef<str>, P: AsRef<Path>>(
+    client: &S3Client,
+    mut req: PutObjectRequest,
+    key: S,
+    path: P) -> Result<PutObjectOutput> {
+
     info!("Upload {}", path.as_ref().display());
     info!("    -> {}", key.as_ref());
 
@@ -214,7 +219,11 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: Put
     Ok(client.put_object(req).await?)
 }
 
-async fn delete_object<S: AsRef<str>>(client: &S3Client, req: DeleteObjectRequest, key: S) -> Result<DeleteObjectOutput> {
+async fn delete_object<S: AsRef<str>>(
+    client: &S3Client,
+    req: DeleteObjectRequest,
+    key: S) -> Result<DeleteObjectOutput> {
+
     info!("Delete {}", key.as_ref());
     Ok(client.delete_object(req).await?)
 }

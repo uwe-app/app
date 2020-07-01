@@ -24,8 +24,6 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 }
 
-type Result<T> = std::result::Result<T, Error>;
-
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -104,7 +102,7 @@ pub fn load_file() -> io::Result<String> {
     utils::fs::read_string(&buf)
 }
 
-pub fn load() -> Result<Preferences> {
+pub fn load() -> Result<Preferences, Error> {
     let buf = get_prefs_file()?;
     let mut prefs: Preferences = Default::default();
     if buf.exists() {
@@ -114,7 +112,7 @@ pub fn load() -> Result<Preferences> {
     Ok(prefs)
 }
 
-pub fn init_if_none() -> Result<()> {
+pub fn init_if_none() -> Result<(), Error> {
     let buf = get_prefs_file()?;
     if !buf.exists() {
         let prefs: Preferences = Default::default();

@@ -15,8 +15,6 @@ pub enum Error {
     Ignore(#[from] ignore::Error),
 }
 
-type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct ResultFile {
     pub key: Option<String>,
@@ -44,7 +42,7 @@ impl FileBuilder {
         }
     }
 
-    fn add<P: AsRef<Path>>(&mut self, raw: P) -> Result<()> {
+    fn add<P: AsRef<Path>>(&mut self, raw: P) -> Result<(), Error> {
         let mut key = raw.as_ref().strip_prefix(&self.base)?.to_path_buf();
         key = if let Some(ref prefix) = self.prefix {
             let mut tmp = PathBuf::from(prefix);
@@ -74,7 +72,7 @@ impl FileBuilder {
         pth
     }
 
-    pub fn walk(&mut self) -> Result<()> {
+    pub fn walk(&mut self) -> Result<(), Error> {
         for result in WalkBuilder::new(&self.base)
             .follow_links(true)
             .build() {

@@ -8,14 +8,6 @@ use dirs;
 use git;
 use preference::{self, Preferences};
 
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error(transparent)]
-    Git(#[from] git::Error),
-    #[error(transparent)]
-    Io(#[from] io::Error),
-}
-
 static BIN: &str = "bin";
 static ENV: &str = "env";
 
@@ -33,6 +25,14 @@ static VERSION_BASE: &str = "https://raw.githubusercontent.com/hypertext-live/re
 static VERSION_FILE: &str = "/master/version.toml";
 
 static RELEASE_NAME: &str = "release";
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    Git(#[from] git::Error),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+}
 
 pub enum CacheComponent {
     Blueprint,
