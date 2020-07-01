@@ -4,12 +4,9 @@ use thiserror::Error;
 pub enum Error {
     #[error("{0}")]
     Message(String),
-    #[error(transparent)]
-    InvalidUri(#[from] warp::http::uri::InvalidUri),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error(transparent)]
-    StripPrefix(#[from] std::path::StripPrefixError),
 
     #[error(transparent)]
     Ignore(#[from] ignore::Error),
@@ -18,17 +15,13 @@ pub enum Error {
     TomlSer(#[from] toml::ser::Error),
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
+
     #[error(transparent)]
     Json(#[from] serde_json::error::Error),
 
     #[error(transparent)]
-    UrlParse(#[from] url::ParseError),
-
-    #[error(transparent)]
-    LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
-
-    #[error(transparent)]
     Git(#[from] git2::Error),
+
     #[error(transparent)]
     Semver(#[from] semver::SemVerError),
 
