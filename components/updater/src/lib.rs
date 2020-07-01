@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use std::io;
 use std::collections::HashMap;
 use std::fs;

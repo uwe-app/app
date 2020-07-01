@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use std::io;
 use std::io::Read;
 use std::path::Path;
@@ -25,9 +22,6 @@ use log::{info, debug, error};
 
 use report::FileBuilder;
 
-//pub use rusoto_core::Region;
-//pub use rusoto_signature::region::ParseRegionError;
-
 #[derive(Error, Debug)]
 pub enum AwsError {
     #[error(transparent)]
@@ -48,9 +42,7 @@ pub enum AwsError {
     ListObjects(#[from] rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
 }
 
-//use crate::{AwsError, AwsResult};
-
-pub type AwsResult<T> = std::result::Result<T, AwsError>;
+pub type Result<T> = std::result::Result<T, AwsError>;
 
 // The folder delimiter
 static DELIMITER: &str = "/";
@@ -70,7 +62,7 @@ fn get_file_etag<P: AsRef<Path>>(path: P) -> io::Result<String> {
     Ok(format!("\"{:x}\"", hasher.finalize()))
 }
 
-pub fn parse_region<S: AsRef<str>>(s: S) -> AwsResult<Region> {
+pub fn parse_region<S: AsRef<str>>(s: S) -> Result<Region> {
     Ok(Region::from_str(s.as_ref())?)
 }
 
@@ -100,7 +92,7 @@ pub enum PublishProvider {
     Aws,
 }
 
-fn get_client(request: &PublishRequest) -> AwsResult<S3Client> {
+fn get_client(request: &PublishRequest) -> Result<S3Client> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(&request.profile_name);
     let dispatcher = HttpClient::new()?;
@@ -148,7 +140,7 @@ pub fn diff(
 async fn list_bucket_remote(
     client: &S3Client,
     request: &PublishRequest,
-    continuation_token: Option<String>) -> AwsResult<ListObjectsV2Output> {
+    continuation_token: Option<String>) -> Result<ListObjectsV2Output> {
 
     debug!("List bucket token {:?}", continuation_token);
 
@@ -166,7 +158,7 @@ async fn fetch_bucket_remote(
     client: &S3Client,
     request: &PublishRequest,
     remote: &mut HashSet<String>,
-    etags: &mut HashMap<String, String>) -> AwsResult<()> {
+    etags: &mut HashMap<String, String>) -> Result<()> {
 
     let mut continuation_token = None;
     loop {
@@ -198,13 +190,13 @@ async fn fetch_bucket_remote(
 pub async fn list_remote(
     request: &PublishRequest,
     remote: &mut HashSet<String>,
-    etags: &mut HashMap<String, String>) -> AwsResult<()> {
+    etags: &mut HashMap<String, String>) -> Result<()> {
     let client = get_client(request)?;
     fetch_bucket_remote(&client, &request, remote, etags).await?;
     Ok(())
 }
 
-async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, path: P) -> AwsResult<PutObjectOutput> {
+async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: PutObjectRequest, key: S, path: P) -> Result<PutObjectOutput> {
     info!("Upload {}", path.as_ref().display());
     info!("    -> {}", key.as_ref());
 
@@ -222,12 +214,12 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(client: &S3Client, mut req: Put
     Ok(client.put_object(req).await?)
 }
 
-async fn delete_object<S: AsRef<str>>(client: &S3Client, req: DeleteObjectRequest, key: S) -> AwsResult<DeleteObjectOutput> {
+async fn delete_object<S: AsRef<str>>(client: &S3Client, req: DeleteObjectRequest, key: S) -> Result<DeleteObjectOutput> {
     info!("Delete {}", key.as_ref());
     Ok(client.delete_object(req).await?)
 }
 
-pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffReport) -> AwsResult<()> {
+pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffReport) -> Result<()> {
 
     if diff.upload.is_empty()
         && diff.changed.is_empty()

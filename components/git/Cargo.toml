@@ -7,5 +7,5 @@ edition = "2018"
 [dependencies]
 thiserror = "1"
 git2 = "0.13"
-log = "*"
+log = "0.4.8"
 rpassword = "4.0"

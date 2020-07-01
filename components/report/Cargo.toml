@@ -8,4 +8,4 @@ edition = "2018"
 utils = { version = "0.1", path = "../utils" }
 
 thiserror = "1"
-ignore = "*"
+ignore = "0.4"

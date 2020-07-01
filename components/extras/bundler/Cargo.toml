@@ -11,6 +11,6 @@ preference = { version = "0.1", path = "../../preference" }
 utils = { version = "0.1", path = "../../utils" }
 
 thiserror = "1"
-log = "*"
+log = "0.4.8"
 ignore = "0.4"
 human_bytes = "0.2.1"

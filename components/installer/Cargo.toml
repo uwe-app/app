@@ -7,9 +7,9 @@ edition = "2018"
 [dependencies]
 updater = {version = "0.1", path = "../updater" }
 
-log = "*"
-pretty_env_logger = "*"
-structopt = "*"
+log = "0.4.8"
+pretty_env_logger = "0.4"
+structopt = "0.3"
 
 [[bin]]
 path = "src/main.rs"

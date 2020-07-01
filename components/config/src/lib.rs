@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use thiserror::Error;
 
 #[derive(Error, Debug)]
