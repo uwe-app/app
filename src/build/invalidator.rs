@@ -329,7 +329,7 @@ impl<'a> Invalidator<'a> {
                         rule.ignores.push(Action::Resource(path));
                     } else {
                         let extensions = &self.context.config.extension.as_ref().unwrap();
-                        let file_type = matcher::get_type_extension(&path, extensions);
+                        let file_type = matcher::get_type(&path, extensions);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));

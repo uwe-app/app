@@ -205,7 +205,7 @@ pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf
     }
 }
 
-pub fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
+pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
     let file = p.as_ref();
     if let Some(ext) = file.extension() {
         let ext = ext.to_string_lossy().into_owned();
@@ -218,23 +218,6 @@ pub fn get_type_extension<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) ->
         }
     }
     FileType::Unknown
-}
-
-pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
-    return get_type_extension(p, extensions);
-    //let file = p.as_ref();
-    //match file.file_name() {
-        //Some(nm) => {
-            //if let Some(nm) = nm.to_str() {
-                //if nm == LAYOUT_HBS {
-                    //return FileType::Private;
-                //} else {
-                //}
-            //}
-        //}
-        //_ => {}
-    //}
-    //FileType::Unknown
 }
 
 pub fn has_parse_file_match<P: AsRef<Path>>(file: P) -> bool {
