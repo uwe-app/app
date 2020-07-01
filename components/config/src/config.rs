@@ -29,6 +29,7 @@ static PAGES: &str = "page.toml";
 
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
+static INCLUDES: &str = "includes";
 static GENERATORS: &str = "generators";
 static RESOURCES: &str = "resources";
 
@@ -320,6 +321,14 @@ impl Config {
         pth
     }
 
+    pub fn get_includes_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+        let build = self.build.as_ref().unwrap();
+        let partial = build.includes.as_ref().unwrap();
+        let mut pth = source.as_ref().to_path_buf();
+        pth.push(partial);
+        pth
+    }
+
     pub fn get_partials_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let build = self.build.as_ref().unwrap();
         let partial = build.partials.as_ref().unwrap();
@@ -363,6 +372,7 @@ pub struct BuildConfig {
     pub strict: Option<bool>,
     pub pages: Option<PathBuf>,
     pub assets: Option<PathBuf>,
+    pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub generators: Option<PathBuf>,
     pub resources: Option<PathBuf>,
@@ -378,6 +388,7 @@ impl Default for BuildConfig {
             strict: Some(true),
             pages: Some(PathBuf::from(PAGES)),
             assets: Some(PathBuf::from(ASSETS)),
+            includes: Some(PathBuf::from(INCLUDES)),
             partials: Some(PathBuf::from(PARTIALS)),
             generators: Some(PathBuf::from(GENERATORS)),
             resources: Some(PathBuf::from(RESOURCES)),

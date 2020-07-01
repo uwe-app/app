@@ -269,6 +269,10 @@ impl<'a> Compiler<'a> {
         let config_file = self.context.config.file.clone();
 
         let partials = self.register_templates_directory()?;
+        let includes = self
+            .context
+            .config
+            .get_includes_path(&self.context.options.source);
         let generator = self
             .context
             .config
@@ -287,6 +291,7 @@ impl<'a> Compiler<'a> {
 
         let mut filters: Vec<PathBuf> = Vec::new();
         filters.push(partials);
+        filters.push(includes);
         filters.push(generator);
         filters.push(resource);
 
