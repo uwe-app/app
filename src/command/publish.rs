@@ -1,19 +1,15 @@
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::str::FromStr;
-
-use rusoto_core::Region;
 
 use log::info;
 
 use config::{Config, BuildArguments};
 use report::FileBuilder;
+use publisher::{self, PublishRequest, PublishProvider};
 
 use crate::Error;
 use crate::Result;
 use crate::workspace::{self, Workspace};
-
-use crate::publisher::{self, PublishRequest, PublishProvider};
 
 #[derive(Debug)]
 pub struct PublishOptions {
@@ -46,7 +42,7 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
 
                     info!("Bucket {}", &bucket);
 
-                    let region = Region::from_str(&publish_config.region)?;
+                    let region = publisher::parse_region(&publish_config.region)?;
 
                     let request = PublishRequest {
                         region,

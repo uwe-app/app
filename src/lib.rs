@@ -7,7 +7,7 @@ mod command;
 mod error;
 mod locale;
 mod markdown;
-pub mod publisher;
+//pub mod publisher;
 mod workspace;
 
 static INDEX_STEM: &str = "index";
@@ -32,8 +32,7 @@ pub use crate::command::site;
 pub use crate::command::upgrade;
 
 pub use config::{BuildArguments, Config};
-pub use crate::error::{AwsError, Error};
+pub use crate::error::Error;
 
 pub type ErrorCallback = fn(Error);
 pub type Result<T> = std::result::Result<T, crate::error::Error>;
-pub type AwsResult<T> = std::result::Result<T, crate::error::AwsError>;

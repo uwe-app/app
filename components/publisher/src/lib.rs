@@ -1,7 +1,14 @@
+#[macro_use]
+extern crate log;
+
 use std::io;
 use std::io::Read;
 use std::path::Path;
 use std::collections::{HashMap, HashSet};
+
+use std::str::FromStr;
+
+use thiserror::Error;
 
 use md5::{Md5, Digest};
 
@@ -18,7 +25,32 @@ use log::{info, debug, error};
 
 use report::FileBuilder;
 
-use crate::{AwsError, AwsResult};
+//pub use rusoto_core::Region;
+//pub use rusoto_signature::region::ParseRegionError;
+
+#[derive(Error, Debug)]
+pub enum AwsError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Tls(#[from] rusoto_core::request::TlsError),
+    #[error(transparent)]
+    ParseRegion(#[from] rusoto_signature::region::ParseRegionError),
+    #[error(transparent)]
+    Credentials(#[from] rusoto_core::credential::CredentialsError),
+    #[error(transparent)]
+    HeadBucket(#[from] rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
+    #[error(transparent)]
+    PutObject(#[from] rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
+    #[error(transparent)]
+    DeleteObject(#[from] rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>),
+    #[error(transparent)]
+    ListObjects(#[from] rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
+}
+
+//use crate::{AwsError, AwsResult};
+
+pub type AwsResult<T> = std::result::Result<T, AwsError>;
 
 // The folder delimiter
 static DELIMITER: &str = "/";
@@ -36,6 +68,10 @@ fn get_file_etag<P: AsRef<Path>>(path: P) -> io::Result<String> {
         if n == 0 || n < chunk_size { break; }
     }
     Ok(format!("\"{:x}\"", hasher.finalize()))
+}
+
+pub fn parse_region<S: AsRef<str>>(s: S) -> AwsResult<Region> {
+    Ok(Region::from_str(s.as_ref())?)
 }
 
 #[derive(Debug)]
@@ -257,3 +293,11 @@ pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffR
 
     Ok(())
 }
+
+//#[cfg(test)]
+//mod tests {
+    //#[test]
+    //fn it_works() {
+        //assert_eq!(2 + 2, 4);
+    //}
+//}

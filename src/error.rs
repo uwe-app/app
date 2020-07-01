@@ -8,6 +8,8 @@ use warp::http;
 use cache;
 use git::error::GitError;
 
+use publisher::AwsError;
+
 #[derive(Debug)]
 pub enum Error {
     Message(String),
@@ -34,7 +36,6 @@ pub enum Error {
     Updater(updater::UpdaterError),
     Config(config::ConfigError),
     Report(report::ReportError),
-    Region(rusoto_signature::region::ParseRegionError),
     Aws(AwsError),
 }
 
@@ -177,12 +178,6 @@ impl From<report::ReportError> for Error {
     }
 }
 
-impl From<rusoto_signature::region::ParseRegionError> for Error {
-    fn from(error: rusoto_signature::region::ParseRegionError) -> Self {
-        Error::Region(error)
-    }
-}
-
 impl From<AwsError> for Error {
     fn from(error: AwsError) -> Self {
         Error::Aws(error)
@@ -215,7 +210,6 @@ impl fmt::Display for Error {
             Error::Updater(ref e) => e.fmt(f),
             Error::Config(ref e) => e.fmt(f),
             Error::Report(ref e) => e.fmt(f),
-            Error::Region(ref e) => e.fmt(f),
             Error::Aws(ref e) => e.fmt(f),
         }
     }
@@ -245,92 +239,90 @@ impl error::Error for Error {
             Error::Updater(ref e) => Some(e),
             Error::Config(ref e) => Some(e),
             Error::Report(ref e) => Some(e),
-            Error::Region(ref e) => Some(e),
             Error::Aws(ref e) => Some(e),
             _ => None,
         }
     }
 }
 
+//#[derive(Debug)]
+//pub enum AwsError {
+    //Io(io::Error),
+    //Tls(rusoto_core::request::TlsError),
+    //Credentials(rusoto_core::credential::CredentialsError),
+    //HeadBucket(rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
+    //PutObject(rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
+    //DeleteObject(rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>),
+    //ListObjects(rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
+//}
 
-#[derive(Debug)]
-pub enum AwsError {
-    Io(io::Error),
-    Tls(rusoto_core::request::TlsError),
-    Credentials(rusoto_core::credential::CredentialsError),
-    HeadBucket(rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
-    PutObject(rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
-    DeleteObject(rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>),
-    ListObjects(rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
-}
+//impl From<io::Error> for AwsError {
+    //fn from(error: io::Error) -> Self {
+        //AwsError::Io(error)
+    //}
+//}
 
-impl From<io::Error> for AwsError {
-    fn from(error: io::Error) -> Self {
-        AwsError::Io(error)
-    }
-}
+//impl From<rusoto_core::request::TlsError> for AwsError {
+    //fn from(error: rusoto_core::request::TlsError) -> Self {
+        //AwsError::Tls(error)
+    //}
+//}
 
-impl From<rusoto_core::request::TlsError> for AwsError {
-    fn from(error: rusoto_core::request::TlsError) -> Self {
-        AwsError::Tls(error)
-    }
-}
+//impl From<rusoto_core::credential::CredentialsError> for AwsError {
+    //fn from(error: rusoto_core::credential::CredentialsError) -> Self {
+        //AwsError::Credentials(error)
+    //}
+//}
 
-impl From<rusoto_core::credential::CredentialsError> for AwsError {
-    fn from(error: rusoto_core::credential::CredentialsError) -> Self {
-        AwsError::Credentials(error)
-    }
-}
+//impl From<rusoto_core::RusotoError<rusoto_s3::HeadBucketError>> for AwsError {
+    //fn from(error: rusoto_core::RusotoError<rusoto_s3::HeadBucketError>) -> Self {
+        //AwsError::HeadBucket(error)
+    //}
+//}
 
-impl From<rusoto_core::RusotoError<rusoto_s3::HeadBucketError>> for AwsError {
-    fn from(error: rusoto_core::RusotoError<rusoto_s3::HeadBucketError>) -> Self {
-        AwsError::HeadBucket(error)
-    }
-}
+//impl From<rusoto_core::RusotoError<rusoto_s3::PutObjectError>> for AwsError {
+    //fn from(error: rusoto_core::RusotoError<rusoto_s3::PutObjectError>) -> Self {
+        //AwsError::PutObject(error)
+    //}
+//}
 
-impl From<rusoto_core::RusotoError<rusoto_s3::PutObjectError>> for AwsError {
-    fn from(error: rusoto_core::RusotoError<rusoto_s3::PutObjectError>) -> Self {
-        AwsError::PutObject(error)
-    }
-}
+//impl From<rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>> for AwsError {
+    //fn from(error: rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>) -> Self {
+        //AwsError::DeleteObject(error)
+    //}
+//}
 
-impl From<rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>> for AwsError {
-    fn from(error: rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>) -> Self {
-        AwsError::DeleteObject(error)
-    }
-}
+//impl From<rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>> for AwsError {
+    //fn from(error: rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>) -> Self {
+        //AwsError::ListObjects(error)
+    //}
+//}
 
-impl From<rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>> for AwsError {
-    fn from(error: rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>) -> Self {
-        AwsError::ListObjects(error)
-    }
-}
+//impl fmt::Display for AwsError {
+    //fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        //match *self {
+            //AwsError::Io(ref e) => e.fmt(f),
+            //AwsError::Tls(ref e) => e.fmt(f),
+            //AwsError::Credentials(ref e) => e.fmt(f),
+            //AwsError::HeadBucket(ref e) => e.fmt(f),
+            //AwsError::PutObject(ref e) => e.fmt(f),
+            //AwsError::DeleteObject(ref e) => e.fmt(f),
+            //AwsError::ListObjects(ref e) => e.fmt(f),
+        //}
+    //}
+//}
 
-impl fmt::Display for AwsError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            AwsError::Io(ref e) => e.fmt(f),
-            AwsError::Tls(ref e) => e.fmt(f),
-            AwsError::Credentials(ref e) => e.fmt(f),
-            AwsError::HeadBucket(ref e) => e.fmt(f),
-            AwsError::PutObject(ref e) => e.fmt(f),
-            AwsError::DeleteObject(ref e) => e.fmt(f),
-            AwsError::ListObjects(ref e) => e.fmt(f),
-        }
-    }
-}
-
-impl error::Error for AwsError {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match *self {
-            AwsError::Io(ref e) => Some(e),
-            AwsError::Tls(ref e) => Some(e),
-            AwsError::Credentials(ref e) => Some(e),
-            AwsError::HeadBucket(ref e) => Some(e),
-            AwsError::PutObject(ref e) => Some(e),
-            AwsError::DeleteObject(ref e) => Some(e),
-            AwsError::ListObjects(ref e) => Some(e),
-        }
-    }
-}
+//impl error::Error for AwsError {
+    //fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        //match *self {
+            //AwsError::Io(ref e) => Some(e),
+            //AwsError::Tls(ref e) => Some(e),
+            //AwsError::Credentials(ref e) => Some(e),
+            //AwsError::HeadBucket(ref e) => Some(e),
+            //AwsError::PutObject(ref e) => Some(e),
+            //AwsError::DeleteObject(ref e) => Some(e),
+            //AwsError::ListObjects(ref e) => Some(e),
+        //}
+    //}
+//}
 

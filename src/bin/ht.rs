@@ -17,7 +17,8 @@ use hypertext::{
     BuildArguments, Config, Error,
 };
 
-use hypertext::publisher::PublishProvider;
+use publisher::PublishProvider;
+
 use hypertext::site;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
