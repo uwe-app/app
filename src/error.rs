@@ -1,18 +1,11 @@
-use std::{error, fmt, io, path};
-
-use warp::http;
-
-use cache;
-use git::error::GitError;
-
-use publisher::AwsError;
+use std::fmt;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     Message(String),
-    Uri(http::uri::InvalidUri),
-    IoError(io::Error),
-    StripPrefixError(path::StripPrefixError),
+    Uri(warp::http::uri::InvalidUri),
+    IoError(std::io::Error),
+    StripPrefixError(std::path::StripPrefixError),
     TemplateFileError(handlebars::TemplateFileError),
     RenderError(handlebars::RenderError),
     IgnoreError(ignore::Error),
@@ -25,7 +18,7 @@ pub enum Error {
     LanguageIdentifierError(unic_langid::LanguageIdentifierError),
     // For fluent template loader
     Boxed(Box<dyn std::error::Error>),
-    GitLib(GitError),
+    GitLib(git::error::GitError),
     Git(git2::Error),
     Semver(semver::SemVerError),
     Preference(preference::PreferenceError),
@@ -33,7 +26,7 @@ pub enum Error {
     Updater(updater::UpdaterError),
     Config(config::ConfigError),
     Report(report::ReportError),
-    Aws(AwsError),
+    Aws(publisher::AwsError),
 }
 
 impl Error {
@@ -43,20 +36,20 @@ impl Error {
 }
 
 
-impl From<http::uri::InvalidUri> for Error {
-    fn from(error: http::uri::InvalidUri) -> Self {
+impl From<warp::http::uri::InvalidUri> for Error {
+    fn from(error: warp::http::uri::InvalidUri) -> Self {
         Error::Uri(error)
     }
 }
 
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Self {
         Error::IoError(error)
     }
 }
 
-impl From<path::StripPrefixError> for Error {
-    fn from(error: path::StripPrefixError) -> Self {
+impl From<std::path::StripPrefixError> for Error {
+    fn from(error: std::path::StripPrefixError) -> Self {
         Error::StripPrefixError(error)
     }
 }
@@ -133,8 +126,8 @@ impl From<git2::Error> for Error {
     }
 }
 
-impl From<GitError> for Error {
-    fn from(error: GitError) -> Self {
+impl From<git::error::GitError> for Error {
+    fn from(error: git::error::GitError) -> Self {
         Error::GitLib(error)
     }
 }
@@ -175,8 +168,8 @@ impl From<report::ReportError> for Error {
     }
 }
 
-impl From<AwsError> for Error {
-    fn from(error: AwsError) -> Self {
+impl From<publisher::AwsError> for Error {
+    fn from(error: publisher::AwsError) -> Self {
         Error::Aws(error)
     }
 }
@@ -211,3 +204,4 @@ impl fmt::Display for Error {
         }
     }
 }
+
