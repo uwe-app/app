@@ -117,7 +117,7 @@ impl BookCompiler {
         }
     }
 
-    fn build<P: AsRef<Path>>(
+    fn compile<P: AsRef<Path>>(
         &self, config: &Config, md: MDBook, rel: P, p: P) -> Result<(), Error> {
         let dir = p.as_ref();
         if let Some(ref book) = config.book {
@@ -148,7 +148,7 @@ impl BookCompiler {
         Ok(())
     }
 
-    pub fn rebuild<P: AsRef<Path>>(
+    pub fn build<P: AsRef<Path>>(
         &mut self,
         config: &Config,
         base: P,
@@ -159,7 +159,7 @@ impl BookCompiler {
         let rel = pth.strip_prefix(base.as_ref())?;
         // NOTE: mdbook requires a reload before a build
         let book = self.load(config, base, p, livereload)?;
-        self.build(config, book, rel, &pth)
+        self.compile(config, book, rel, &pth)
     }
 
     pub fn all<P: AsRef<Path>>(
@@ -171,7 +171,7 @@ impl BookCompiler {
         if let Some(ref book) = config.book {
             let paths = book.get_paths(base.as_ref());
             for p in paths {
-                self.rebuild(config, base.as_ref(), &p, livereload.clone())?;
+                self.build(config, base.as_ref(), &p, livereload.clone())?;
             }
         }
         Ok(())
