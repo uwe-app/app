@@ -23,7 +23,7 @@ VERSION_FILE = $(RELEASE_REPO)/version.toml
 
 SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
-COMMAND_DOCS = build docs fetch init publish run site upgrade
+COMMAND_DOCS = book build docs fetch init publish run site upgrade
 
 all: init site-release
 
@@ -42,7 +42,7 @@ init: init-newcss
 
 help:
 	for cmd in $(COMMAND_DOCS); do \
-		cargo run -- help $$cmd > ../website/site/command-help/$$cmd.txt; \
+		cargo run -- help $$cmd > ../website/site/includes/help/$$cmd.txt; \
 	done;
 
 site:
