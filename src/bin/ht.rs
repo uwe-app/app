@@ -66,13 +66,6 @@ struct Cli {
 }
 
 #[derive(StructOpt, Debug)]
-struct BookOpts {
-    /// Read config from directory
-    #[structopt(parse(from_os_str), default_value = ".")]
-    project: PathBuf,
-}
-
-#[derive(StructOpt, Debug)]
 enum Book {
     /// Add a book
     Add {
@@ -94,8 +87,12 @@ enum Book {
     /// Build books
     Build {
         /// Project folder
-        #[structopt(parse(from_os_str), default_value = ".")]
+        #[structopt(parse(from_os_str))]
         project: PathBuf,
+
+        /// Target book to build
+        #[structopt(parse(from_os_str))]
+        target: Vec<PathBuf>,
     },
 }
 
@@ -318,13 +315,22 @@ fn process_command(cmd: &Command) {
                     // TODO
                 },
                 Book::List { ref project } => {
-                    let opts = command::book::BookOptions{ project: project.clone() };
+                    let opts = command::book::BookOptions{
+                        project: project.clone(),
+                        ..Default::default()
+                    };
                     if let Err(e) = command::book::list(opts) {
-                        fatal(e); 
+                        fatal(e);
                     }
                 },
-                Book::Build{ ref project } => {
-                    // TODO
+                Book::Build{ ref project, ref target } => {
+                    let opts = command::book::BookOptions{
+                        project: project.clone(),
+                        target: target.clone(),
+                    };
+                    if let Err(e) = command::book::build(opts) {
+                        fatal(e);
+                    }
                 },
             }
         },
@@ -433,7 +439,7 @@ fn process_command(cmd: &Command) {
                         name: name.clone(),
                     };
                     if let Err(e) = command::site::add(opts) {
-                        fatal(e); 
+                        fatal(e);
                     }
                 },
                 Site::Remove { ref name } => {
@@ -441,13 +447,13 @@ fn process_command(cmd: &Command) {
                         name: name.to_string(),
                     };
                     if let Err(e) = command::site::remove(opts) {
-                        fatal(e); 
+                        fatal(e);
                     }
                 },
                 Site::List { .. } => {
                     let opts = command::site::ListOptions{};
                     if let Err(e) = command::site::list(opts) {
-                        fatal(e); 
+                        fatal(e);
                     }
                 },
             }

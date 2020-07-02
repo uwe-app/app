@@ -386,7 +386,6 @@ impl<'a> Invalidator<'a> {
                     Action::BookConfig(base, _) => {
                         self.builder.book.load(
                             &self.context.config,
-                            &self.context.options.source,
                             base,
                             self.context.livereload.clone())?;
                     }
@@ -398,7 +397,6 @@ impl<'a> Invalidator<'a> {
         if book.all {
             self.builder.book.all(
                 &self.context.config,
-                &self.context.options.source,
                 self.context.livereload.clone())?;
         } else {
             for action in &book.source {
@@ -414,7 +412,6 @@ impl<'a> Invalidator<'a> {
 
                         self.builder.book.build(
                             &self.context.config,
-                            &self.context.options.source,
                             &file,
                             self.context.livereload.clone())?;
                     }

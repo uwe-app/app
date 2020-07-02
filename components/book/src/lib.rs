@@ -1,7 +1,7 @@
+use std::path::Path;
+
 use thiserror::Error;
-
 use config::Config;
-
 use log::info;
 
 pub mod compiler;
@@ -51,6 +51,29 @@ pub fn list(config: &Config) -> Result<()> {
 
 // Create a new book
 pub fn add(config: &Config) -> Result<()> {
+    Ok(())
+}
+
+// Build a book, if path is none then build all books
+// defined in the config.
+pub fn build<P: AsRef<Path>>(config: &Config, path: Vec<P>, release: bool) -> Result<()> {
+    let build_config = config.build.as_ref().unwrap();
+    let compiler = compiler::BookCompiler::new(
+        build_config.source.clone(),
+        build_config.target.clone(),
+        release
+    );
+
+    // Build all the books in the config
+    if path.is_empty() {
+        compiler.all(config, None)?;
+    } else {
+        //let root = config.get_project().canonicalize()?;
+        //println!("Build specific book! {:?}", root);
+        for p in path {
+            compiler.build(config, p, None)?;
+        }
+    }
     Ok(())
 }
 

@@ -384,7 +384,6 @@ impl<'a> Compiler<'a> {
         if let Some(ref _book) = self.context.config.book {
             self.book.all(
                 &self.context.config,
-                &self.context.options.source,
                 self.context.livereload.clone())?;
         }
 

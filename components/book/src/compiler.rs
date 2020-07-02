@@ -10,7 +10,7 @@ use ignore::WalkBuilder;
 use config::Config;
 use utils;
 
-use super::Error;
+use super::{Result, Error};
 
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
@@ -36,7 +36,7 @@ impl BookCompiler {
         book
     }
 
-    fn copy_book(&self, config: &Config, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
+    fn copy_book(&self, config: &Config, source_dir: &Path, build_dir: PathBuf) -> Result<()> {
         // Jump some hoops to bypass the book build_dir
         let relative = source_dir.strip_prefix(&self.source)?;
         let mut base = self.target.clone();
@@ -74,9 +74,8 @@ impl BookCompiler {
     }
 
     pub fn locate<P: AsRef<Path>>(&self, config: &Config, p: P) -> Option<MDBook> {
-        let base = self.source.clone();
         let pth = p.as_ref().to_path_buf();
-        if let Ok(md) = self.load(config, &base, &pth, None) {
+        if let Ok(md) = self.load(config, &pth, None) {
             return Some(md)
         }
         None
@@ -85,9 +84,8 @@ impl BookCompiler {
     pub fn load<P: AsRef<Path>>(
         &self,
         config: &Config,
-        base:P,
         p: P,
-        livereload: Option<String>) -> Result<MDBook, Error> {
+        livereload: Option<String>) -> Result<MDBook> {
 
         let dir = p.as_ref().to_path_buf();
         info!("load {}", dir.display());
@@ -95,7 +93,7 @@ impl BookCompiler {
         let result = MDBook::load(dir);
         match result {
             Ok(mut md) => {
-                let theme = config.get_book_theme_path(base.as_ref());
+                let theme = config.get_book_theme_path(&self.source);
                 if let Some(theme_dir) = theme {
                     if theme_dir.exists() && theme_dir.is_dir() {
                         if let Some(s) = theme_dir.to_str() {
@@ -118,7 +116,7 @@ impl BookCompiler {
     }
 
     fn compile<P: AsRef<Path>>(
-        &self, config: &Config, md: MDBook, rel: P, p: P) -> Result<(), Error> {
+        &self, config: &Config, md: MDBook, rel: P, p: P) -> Result<()> {
         let dir = p.as_ref();
         if let Some(ref book) = config.book {
             if let Some(cfg) = book.find(rel.as_ref()) {
@@ -149,29 +147,20 @@ impl BookCompiler {
     }
 
     pub fn build<P: AsRef<Path>>(
-        &mut self,
-        config: &Config,
-        base: P,
-        p: P,
-        livereload: Option<String>) -> Result<(), Error> {
+        &self, config: &Config, p: P, livereload: Option<String>) -> Result<()> {
 
         let pth = p.as_ref().to_path_buf().clone();
-        let rel = pth.strip_prefix(base.as_ref())?;
+        let rel = pth.strip_prefix(&self.source)?;
         // NOTE: mdbook requires a reload before a build
-        let book = self.load(config, base, p, livereload)?;
+        let book = self.load(config, p, livereload)?;
         self.compile(config, book, rel, &pth)
     }
 
-    pub fn all<P: AsRef<Path>>(
-        &mut self,
-        config: &Config,
-        base: P,
-        livereload: Option<String>) -> Result<(), Error> {
-
+    pub fn all(&self, config: &Config, livereload: Option<String>) -> Result<()> {
         if let Some(ref book) = config.book {
-            let paths = book.get_paths(base.as_ref());
+            let paths = book.get_paths(&self.source);
             for p in paths {
-                self.build(config, base.as_ref(), &p, livereload.clone())?;
+                self.build(config, &p, livereload.clone())?;
             }
         }
         Ok(())
