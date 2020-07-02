@@ -216,13 +216,17 @@ impl<'a> Invalidator<'a> {
             .get_book_theme_path(&self.context.options.source)
             .map(|v| self.canonical(v));
 
-        let books: Vec<PathBuf> = self
-            .builder
-            .book
-            .references
-            .keys()
-            .map(|p| p.to_path_buf())
-            .collect::<Vec<_>>();
+        let mut books: Vec<PathBuf> = Vec::new();
+        if let Some(ref book) = self.context.config.book {
+            books = book.get_paths(&self.context.options.source);
+        }
+
+            //.context
+            //.book
+            //.references
+            //.keys()
+            //.map(|p| p.to_path_buf())
+            //.collect::<Vec<_>>();
 
         let generator_paths: Vec<PathBuf> = self
             .context
@@ -263,26 +267,29 @@ impl<'a> Invalidator<'a> {
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
-                            if let Some(md) = self.builder.book.references.get(&book) {
-                                let src_dir = &md.config.book.src;
-                                let build_dir = &md.config.build.build_dir;
 
-                                let mut src = book.clone();
-                                src.push(src_dir);
+                            // FIXME: restore this
 
-                                let mut build = book.clone();
-                                build.push(build_dir);
+                            //if let Some(md) = self.builder.book.references.get(&book) {
+                                //let src_dir = &md.config.book.src;
+                                //let build_dir = &md.config.build.build_dir;
 
-                                if path.starts_with(build) {
-                                    rule.ignores.push(Action::BookBuild(book.clone(), path));
-                                    continue 'paths;
-                                } else if path.starts_with(src) {
-                                    rule.book
-                                        .source
-                                        .push(Action::BookSource(book.clone(), path));
-                                    continue 'paths;
-                                }
-                            }
+                                //let mut src = book.clone();
+                                //src.push(src_dir);
+
+                                //let mut build = book.clone();
+                                //build.push(build_dir);
+
+                                //if path.starts_with(build) {
+                                    //rule.ignores.push(Action::BookBuild(book.clone(), path));
+                                    //continue 'paths;
+                                //} else if path.starts_with(src) {
+                                    //rule.book
+                                        //.source
+                                        //.push(Action::BookSource(book.clone(), path));
+                                    //continue 'paths;
+                                //}
+                            //}
                         }
                     }
 
@@ -387,7 +394,11 @@ impl<'a> Invalidator<'a> {
             for action in &book.reload {
                 match action {
                     Action::BookConfig(base, _) => {
-                        self.builder.book.load(&self.context, base)?;
+                        self.builder.book.load(
+                            &self.context.config,
+                            &self.context.options.source,
+                            base,
+                            self.context.livereload.clone())?;
                     }
                     _ => {}
                 }
@@ -395,7 +406,10 @@ impl<'a> Invalidator<'a> {
         }
 
         if book.all {
-            self.builder.book.all(&self.context)?;
+            self.builder.book.all(
+                &self.context.config,
+                &self.context.options.source,
+                self.context.livereload.clone())?;
         } else {
             for action in &book.source {
                 match action {
@@ -408,7 +422,11 @@ impl<'a> Invalidator<'a> {
                             &self.context.options.source,
                         )?;
 
-                        self.builder.book.rebuild(&self.context, &file)?;
+                        self.builder.book.rebuild(
+                            &self.context.config,
+                            &self.context.options.source,
+                            &file,
+                            self.context.livereload.clone())?;
                     }
                     _ => {}
                 }

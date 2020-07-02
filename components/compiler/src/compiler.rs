@@ -30,7 +30,11 @@ pub struct Compiler<'a> {
 
 impl<'a> Compiler<'a> {
     pub fn new(context: &'a Context) -> Self {
-        let book = BookBuilder::new(&context);
+        let book = BookBuilder::new(
+            &context.config,
+            &context.options.source,
+            &context.options.target,
+            context.options.release);
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
@@ -306,6 +310,12 @@ impl<'a> Compiler<'a> {
             filters.push(theme.clone());
         }
 
+        // All books must be ignored they are built separately
+        if let Some(ref book) = self.context.config.book {
+            let mut paths = book.get_paths(&self.context.options.source);
+            filters.append(&mut paths);
+        }
+
         if let Some(locales_dir) = self
             .context
             .config
@@ -349,24 +359,34 @@ impl<'a> Compiler<'a> {
 
                     // If a file or directory is a descendant of
                     // a book directory we do not process it
-                    if self.book.contains_file(&path) {
-                        continue;
-                    }
+                    //if self.book.contains_file(&path) {
+                        //continue;
+                    //}
 
-                    if path.is_dir() && self.book.is_book_dir(&path) {
-                        // Add the book so we can skip processing of descendants
-                        //self.book.add(&path);
+                    //if path.is_dir() && self.book.is_book_dir(&path) {
+                        //// Add the book so we can skip processing of descendants
+                        ////self.book.add(&path);
 
-                        // Build the book
-                        self.book.load(&self.context, &path)?;
-                        self.book.build(&path)?;
-                    } else if path.is_file() {
+                        //// Build the book
+                        //self.book.load(&self.context, &path)?;
+                        //self.book.build(&path)?;
+                    //} else
+                    //
+                    if path.is_file() {
                         let file = path.to_path_buf();
                         self.one(&file)?
                     }
                 }
                 Err(e) => return Err(Error::from(e)),
             }
+        }
+
+        // Now compile the books
+        if let Some(ref _book) = self.context.config.book {
+            self.book.all(
+                &self.context.config,
+                &self.context.options.source,
+                self.context.livereload.clone())?;
         }
 
         if let Some(hooks) = &self.context.config.hook {

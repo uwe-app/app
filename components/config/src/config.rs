@@ -21,6 +21,7 @@ static MD: &str = "md";
 static HTML: &str = "html";
 
 static SITE_TOML: &str = "site.toml";
+static BOOK_TOML: &str = "book.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
 
 static PAGE_DATA: &str = "page.toml";
@@ -182,6 +183,24 @@ impl Config {
                     let mut bp = base.to_path_buf();
                     bp.push(&build.target);
                     build.target = bp;
+                }
+
+                if let Some(ref book) = cfg.book {
+                    let book_paths = book.get_paths(&build.source);
+                    for mut p in book_paths {
+                        if !p.exists() || !p.is_dir() {
+                            return Err(
+                                Error::new(
+                                    format!("Not a directory {}", p.display())));
+                        }
+
+                        p.push(BOOK_TOML);
+                        if !p.exists() || !p.is_file() {
+                            return Err(
+                                Error::new(
+                                    format!("Missing book configuration {}", p.display())));
+                        }
+                    }
                 }
 
                 if let Some(hooks) = cfg.hook.as_mut() {
@@ -441,6 +460,33 @@ pub struct BookConfig {
     //pub groups: Vec<String>,
     #[serde(flatten)]
     pub members: HashMap<String, HashMap<String, BookItem>>,
+}
+
+impl BookConfig {
+    pub fn get_paths<P: AsRef<Path>>(&self, base: P) -> Vec<PathBuf> {
+        let mut out: Vec<PathBuf> = Vec::new();
+        let source = base.as_ref().to_path_buf();
+        for (_, map) in &self.members {
+            for (_, value) in map {
+                let mut tmp = source.clone();
+                tmp.push(value.path.clone());
+                out.push(tmp);
+            }
+        }
+        out
+    }
+
+    pub fn find<P: AsRef<Path>>(&self, path: P) -> Option<BookItem> {
+        let needle = path.as_ref().to_path_buf();
+        for (_, map) in &self.members {
+            for (_, value) in map {
+                if value.path == needle {
+                    return Some(value.clone());
+                }
+            }
+        }
+        None
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]

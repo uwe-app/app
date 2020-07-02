@@ -1,50 +1,34 @@
-use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
-use log::{debug, info, warn};
+use log::{info, warn};
 use mdbook::MDBook;
-
-use super::loader;
 
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
-use crate::{Error, DRAFT_KEY};
-
+use config::Config;
 use utils;
 
-use super::context::Context;
-
-static BOOK_SITE_TABLE_KEY: &str = "site";
+use crate::{Error};
 
 pub struct BookBuilder<'a> {
-    //pub books: Vec<PathBuf>,
-    pub references: BTreeMap<PathBuf, MDBook>,
-    context: &'a Context,
+    config: &'a Config,
+    source: &'a PathBuf,
+    target: &'a PathBuf,
+    release: bool,
 }
 
 impl<'a> BookBuilder<'a> {
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(config: &'a Config, source: &'a PathBuf, target: &'a PathBuf, release: bool) -> Self {
         BookBuilder {
-            context,
-            references: BTreeMap::new(),
+            config,
+            source,
+            target,
+            release,
         }
-    }
-
-    pub fn contains_file<P: AsRef<Path>>(&self, p: P) -> bool {
-        let f = p.as_ref();
-        if let Ok(c) = f.canonicalize() {
-            for b in self.references.keys() {
-                if c.starts_with(b.as_path()) {
-                    debug!("ignore book file {}", f.display());
-                    return true;
-                }
-            }
-        }
-        false
     }
 
     pub fn get_book_config<P: AsRef<Path>>(&self, p: P) -> PathBuf {
@@ -53,21 +37,13 @@ impl<'a> BookBuilder<'a> {
         book
     }
 
-    pub fn is_book_dir<P: AsRef<Path>>(&self, p: P) -> bool {
-        let book = self.get_book_config(p);
-        if book.exists() {
-            return true;
-        }
-        false
-    }
-
     fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
-        let relative = source_dir.strip_prefix(&self.context.options.source)?;
-        let mut base = self.context.options.target.clone();
+        let relative = source_dir.strip_prefix(self.source)?;
+        let mut base = self.target.clone();
         base.push(relative);
 
-        let build = self.context.config.build.as_ref().unwrap();
+        let build = self.config.build.as_ref().unwrap();
         let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
         for result in WalkBuilder::new(&build_dir)
@@ -98,41 +74,20 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    fn is_draft<P: AsRef<Path>>(&self, p: P) -> bool {
-        let dir = p.as_ref();
-        let mut is_draft = false;
-        if self.context.options.release {
-            let conf_result = loader::load_toml_to_json(self.get_book_config(&dir));
-            match conf_result {
-                Ok(map) => {
-                    if let Some(site) = map.get(BOOK_SITE_TABLE_KEY) {
-                        if let Some(draft) = site.get(DRAFT_KEY) {
-                            if let Some(val) = draft.as_bool() {
-                                is_draft = val;
-                            }
-                        }
-                    }
-                }
-                Err(_) => (),
-            }
-        }
-        return is_draft;
-    }
+    pub fn load<P: AsRef<Path>>(
+        &mut self,
+        config: &Config,
+        base:P,
+        p: P,
+        livereload: Option<String>) -> Result<MDBook, Error> {
 
-    pub fn load<P: AsRef<Path>>(&mut self, context: &Context, p: P) -> Result<(), Error> {
         let dir = p.as_ref();
-        let directory = dir.canonicalize()?;
-
         info!("load {}", dir.display());
 
         let result = MDBook::load(dir);
         match result {
             Ok(mut md) => {
-                let theme = self
-                    .context
-                    .config
-                    .get_book_theme_path(&self.context.options.source);
-
+                let theme = config.get_book_theme_path(base);
                 if let Some(theme_dir) = theme {
                     if theme_dir.exists() && theme_dir.is_dir() {
                         if let Some(s) = theme_dir.to_str() {
@@ -142,62 +97,77 @@ impl<'a> BookBuilder<'a> {
                         warn!("Missing book theme directory '{}'", theme_dir.display());
                     }
                 }
-
-                if let Some(ref livereload_url) = context.livereload {
+                if let Some(ref livereload_url) = livereload {
                     md.config
                         .set("output.html.livereload-url", livereload_url)?;
                 }
 
-                self.references.insert(directory, md);
+                Ok(md)
+
             }
             Err(e) => return Err(Error::from(e)),
         }
+    }
 
+    fn build<P: AsRef<Path>>(
+        &self, config: &Config, md: MDBook, rel: P, p: P) -> Result<(), Error> {
+        let dir = p.as_ref();
+        if let Some(ref book) = config.book {
+            if let Some(cfg) = book.find(rel.as_ref()) {
+                info!("build {}", dir.display());
+
+                let draft = cfg.draft.is_some() && cfg.draft.unwrap();
+                if draft && self.release {
+                    return Ok(())
+                }
+
+                let built = md.build();
+                match built {
+                    Ok(_) => {
+                        let bd = &md.config.build.build_dir;
+                        let mut src = dir.to_path_buf();
+                        src.push(bd);
+                        return self.copy_book(dir, src)
+                    }
+                    Err(e) => return Err(Error::from(e)),
+                }
+            } else {
+                return Err(
+                    Error::new(
+                        format!("No book found for {}", dir.display())))
+            }
+        }
         Ok(())
     }
 
-    pub fn build<P: AsRef<Path>>(&self, p: P) -> Result<(), Error> {
-        let dir = p.as_ref();
-        let directory = dir.canonicalize()?;
-        if let Some(md) = self.references.get(&directory) {
-            if self.is_draft(&dir) {
-                info!("draft book skipped {}", dir.display());
-                return Ok(());
-            }
+    pub fn rebuild<P: AsRef<Path>>(
+        &mut self,
+        config: &Config,
+        base: P,
+        p: P,
+        livereload: Option<String>) -> Result<(), Error> {
+        let pth = p.as_ref().to_path_buf().clone();
+        let rel = pth.strip_prefix(base.as_ref())?;
 
-            info!("build {}", dir.display());
+        // NOTE: mdbook requires a reload before a build
+        let book = self.load(config, base, p, livereload)?;
 
-            let built = md.build();
-            match built {
-                Ok(_) => {
-                    let bd = &md.config.build.build_dir;
-                    let mut src = dir.to_path_buf();
-                    src.push(bd);
-                    self.copy_book(dir, src)
-                }
-                Err(e) => return Err(Error::from(e)),
-            }
-        } else {
-            return Err(Error::new(format!("No book found for {}", dir.display())));
-        }
+        self.build(config, book, rel, &pth)
     }
 
-    pub fn rebuild<P: AsRef<Path>>(&mut self, context: &Context, p: P) -> Result<(), Error> {
-        // NOTE: unfortunately mdbook requires a reload before a build
-        self.load(context, p.as_ref())?;
-        self.build(p)
-    }
+    pub fn all<P: AsRef<Path>>(
+        &mut self,
+        config: &Config,
+        base: P,
+        livereload: Option<String>) -> Result<(), Error> {
 
-    pub fn all(&mut self, context: &Context) -> Result<(), Error> {
-        let paths = self
-            .references
-            .keys()
-            .map(|p| p.clone())
-            .collect::<Vec<_>>();
-
-        for p in paths {
-            self.rebuild(context, p)?;
+        if let Some(ref book) = config.book {
+            let paths = book.get_paths(base.as_ref());
+            for p in paths {
+                self.rebuild(config, base.as_ref(), &p, livereload.clone())?;
+            }
         }
+
         Ok(())
     }
 }

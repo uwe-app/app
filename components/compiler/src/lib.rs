@@ -46,7 +46,6 @@ impl Error {
 type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);
 
-static DRAFT_KEY: &str = "draft";
 static TEMPLATE_EXT: &str = ".hbs";
 static JSON: &str = "json";
 static INDEX_HTML: &str = "index.html";
