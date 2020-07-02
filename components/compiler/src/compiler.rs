@@ -8,10 +8,10 @@ use serde_json::{json, Value};
 
 use crate::{Result, Error, TEMPLATE_EXT};
 
+use book::compiler::BookCompiler;
 use config::page::Page;
 use utils;
 
-use super::book::BookCompiler;
 use super::context::Context;
 use super::generator::{self, IndexQuery};
 use super::manifest::Manifest;

@@ -24,9 +24,6 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
-    Book(#[from] mdbook::errors::Error),
-
-    #[error(transparent)]
     Notify(#[from] notify::Error),
     #[error(transparent)]
     Ignore(#[from] ignore::Error),
@@ -35,6 +32,9 @@ pub enum Error {
     TemplateFile(#[from] handlebars::TemplateFileError),
     #[error(transparent)]
     Render(#[from] handlebars::RenderError),
+
+    #[error(transparent)]
+    Book(#[from] book::Error),
 }
 
 impl Error {
@@ -56,7 +56,6 @@ static HTML: &str = "html";
 // FIXME: remove these and their usages
 static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
 
-pub mod book;
 pub mod compiler;
 pub mod context;
 pub mod draft;

@@ -4,10 +4,21 @@ use config::Config;
 
 use log::info;
 
+pub mod compiler;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("{0}")]
     Message(String),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
+    Ignore(#[from] ignore::Error),
 
     #[error(transparent)]
     Book(#[from] mdbook::errors::Error),

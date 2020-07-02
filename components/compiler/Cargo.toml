@@ -5,6 +5,7 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
+book = {version = "0.1", path = "../book" }
 config = {version = "0.1", path = "../config" }
 content = {version = "0.1", path = "../content" }
 locale = {version = "0.1", path = "../locale" }
@@ -23,7 +24,6 @@ handlebars = {version = "3.0", default-features = true, features = [ "dir_source
 slug = "0.1.4"
 rand = "0.7.3"
 chrono = { version = "0.4", features = ["serde"] }
-mdbook = { version = "0.3.7", default-features = false, features = [ "output" ] }
 pulldown-cmark = { version = "0.6.1", default-features = false, features = ["simd"] }
 fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
 

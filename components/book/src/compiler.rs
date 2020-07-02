@@ -10,7 +10,7 @@ use ignore::WalkBuilder;
 use config::Config;
 use utils;
 
-use crate::{Error};
+use super::Error;
 
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
