@@ -24,7 +24,7 @@ handlebars = {version = "3.0", default-features = true, features = [ "dir_source
 slug = "0.1.4"
 rand = "0.7.3"
 chrono = { version = "0.4", features = ["serde"] }
-pulldown-cmark = { version = "0.6.1", default-features = false, features = ["simd"] }
+pulldown-cmark = { version = "0.7", default-features = false, features = ["simd"] }
 fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
 
 notify = { version = "4.0.0" }

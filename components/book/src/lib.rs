@@ -4,6 +4,8 @@ use thiserror::Error;
 use config::Config;
 use log::info;
 
+use mdbook::MDBook;
+
 pub mod compiler;
 
 #[derive(Error, Debug)]
@@ -50,8 +52,36 @@ pub fn list(config: &Config) -> Result<()> {
 }
 
 // Create a new book
-pub fn add(config: &Config) -> Result<()> {
-    Ok(())
+pub fn add<P: AsRef<Path>>(
+    config: &Config,
+    dir: P,
+    title: Option<String>,
+    authors: Option<Vec<String>>) -> Result<MDBook> {
+
+    let build_config = config.build.as_ref().unwrap();
+    let mut book_dir = build_config.source.clone();
+    book_dir.push(dir);
+
+    if book_dir.exists() {
+        return Err(
+            Error::new(
+                format!("Book path exists {}", book_dir.display())))
+    }
+
+    // create a default config and change a couple things
+    let mut cfg = mdbook::Config::default();
+    cfg.book.title = title;
+    if let Some(authors) = authors {
+        for a in authors {
+            cfg.book.authors.push(a);
+        }
+    }
+
+
+    Ok(MDBook::init(book_dir)
+        .create_gitignore(true)
+        .with_config(cfg)
+        .build()?)
 }
 
 // Build a book, if path is none then build all books
@@ -76,11 +106,3 @@ pub fn build<P: AsRef<Path>>(config: &Config, path: Vec<P>, release: bool) -> Re
     }
     Ok(())
 }
-
-//#[cfg(test)]
-//mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
-//}

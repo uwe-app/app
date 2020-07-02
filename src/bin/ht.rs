@@ -69,13 +69,13 @@ struct Cli {
 enum Book {
     /// Add a book
     Add {
+        /// Project folder
+        #[structopt(parse(from_os_str))]
+        project: PathBuf,
+
         /// Book path relative to project
         #[structopt(parse(from_os_str))]
         path: PathBuf,
-
-        /// Project folder
-        #[structopt(parse(from_os_str), default_value = ".")]
-        project: PathBuf,
     },
     /// List books
     #[structopt(alias="ls")]
@@ -311,8 +311,15 @@ fn process_command(cmd: &Command) {
     match cmd {
         Command::Book{ ref action } => {
             match action {
-                Book::Add { ref path, ref project } => {
-                    // TODO
+                Book::Add { ref project, ref path } => {
+                    let opts = command::book::BookOptions{
+                        project: project.clone(),
+                        path: Some(path.clone()),
+                        ..Default::default()
+                    };
+                    if let Err(e) = command::book::add(opts) {
+                        fatal(e);
+                    }
                 },
                 Book::List { ref project } => {
                     let opts = command::book::BookOptions{
@@ -327,6 +334,7 @@ fn process_command(cmd: &Command) {
                     let opts = command::book::BookOptions{
                         project: project.clone(),
                         target: target.clone(),
+                        ..Default::default()
                     };
                     if let Err(e) = command::book::build(opts) {
                         fatal(e);
