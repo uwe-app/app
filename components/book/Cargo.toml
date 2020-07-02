@@ -11,4 +11,4 @@ utils = {version = "0.1", path = "../utils" }
 thiserror = "1"
 log = "0.4.8"
 ignore = "0.4"
-mdbook = { version = "0.4" }
+mdbook = { version = "0.4", default-features = false }
