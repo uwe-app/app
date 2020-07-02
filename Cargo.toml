@@ -9,6 +9,7 @@ default-run = "ht"
 
 [workspace]
 members = [
+  "components/book",
   "components/extras/bundle",
   "components/extras/bundler",
   "components/cache",
@@ -29,6 +30,7 @@ members = [
 ]
 
 [dependencies]
+book = {version = "0.1", path = "components/book" }
 cache = {version = "0.1", path = "components/cache" }
 compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }

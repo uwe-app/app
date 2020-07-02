@@ -151,6 +151,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "book"
+version = "0.1.0"
+dependencies = [
+ "config 0.1.0",
+ "mdbook 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "bstr"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1010,6 +1019,7 @@ dependencies = [
 name = "hypertext"
 version = "0.17.5"
 dependencies = [
+ "book 0.1.0",
  "cache 0.1.0",
  "compiler 0.1.0",
  "config 0.1.0",

@@ -18,9 +18,9 @@ use hypertext::{
     BuildArguments, Config, Error,
 };
 
-use publisher::PublishProvider;
+use hypertext::command;
 
-use hypertext::site;
+use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
 
@@ -63,6 +63,40 @@ struct Cli {
 
     #[structopt(flatten)]
     build_opts: BuildOpts,
+}
+
+#[derive(StructOpt, Debug)]
+struct BookOpts {
+    /// Read config from directory
+    #[structopt(parse(from_os_str), default_value = ".")]
+    project: PathBuf,
+}
+
+#[derive(StructOpt, Debug)]
+enum Book {
+    /// Add a book
+    Add {
+        /// Book path relative to project
+        #[structopt(parse(from_os_str))]
+        path: PathBuf,
+
+        /// Project folder
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
+    },
+    /// List books
+    #[structopt(alias="ls")]
+    List {
+        /// Project folder
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
+    },
+    /// Build books
+    Build {
+        /// Project folder
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
+    },
 }
 
 #[derive(StructOpt, Debug)]
@@ -212,6 +246,13 @@ enum Site {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+
+    /// Create, list and build books
+    Book {
+        #[structopt(flatten)]
+        action: Book,
+    },
+
     /// Create a new project
     Init {
         #[structopt(flatten)]
@@ -271,8 +312,25 @@ impl Command {
 
 fn process_command(cmd: &Command) {
     match cmd {
+        Command::Book{ ref action } => {
+            match action {
+                Book::Add { ref path, ref project } => {
+                    // TODO
+                },
+                Book::List { ref project } => {
+                    let opts = command::book::BookOptions{ project: project.clone() };
+                    if let Err(e) = command::book::list(opts) {
+                        fatal(e); 
+                    }
+                },
+                Book::Build{ ref project } => {
+                    // TODO
+                },
+            }
+        },
+
         Command::Init { ref args } => {
-            let opts = hypertext::blueprint::InitOptions {
+            let opts = command::blueprint::InitOptions {
                 source: args.source.clone(),
                 target: args.target.clone(),
                 private_key: args.private_key.clone(),
@@ -281,38 +339,38 @@ fn process_command(cmd: &Command) {
             if let Some(ref action) = args.action {
                 match action {
                     InitCommands::List {} => {
-                        if let Err(e) = hypertext::blueprint::list() {
+                        if let Err(e) = command::blueprint::list() {
                             fatal(e);
                         }
                     },
                 }
             } else {
-                if let Err(e) = hypertext::blueprint::init(opts) {
+                if let Err(e) = command::blueprint::init(opts) {
                     fatal(e);
                 }
             }
 
         }
         Command::Fetch { ref args } => {
-            let opts = hypertext::fetch::FetchOptions {
+            let opts = command::fetch::FetchOptions {
                 blueprint: args.blueprint,
                 standalone: args.standalone,
                 documentation: args.documentation,
                 release: args.release,
             };
 
-            if let Err(e) = hypertext::fetch::update(opts) {
+            if let Err(e) = command::fetch::update(opts) {
                 fatal(e);
             }
         }
         Command::Upgrade { .. } => {
-            if let Err(e) = hypertext::upgrade::try_upgrade() {
+            if let Err(e) = command::upgrade::try_upgrade() {
                 fatal(e);
             }
         }
 
         Command::Docs { .. } => {
-            if let Err(e) = hypertext::docs::open() {
+            if let Err(e) = command::docs::open() {
                 fatal(e);
             }
         }
@@ -331,7 +389,7 @@ fn process_command(cmd: &Command) {
                 port = p;
             }
 
-            let opts = hypertext::run::ServeOptions {
+            let opts = command::run::ServeOptions {
                 target: args.target.clone(),
                 host: host.to_owned(),
                 port: port.to_owned(),
@@ -348,7 +406,7 @@ fn process_command(cmd: &Command) {
                 ));
             }
 
-            if let Err(e) = hypertext::run::serve_only(opts) {
+            if let Err(e) = command::run::serve_only(opts) {
                 fatal(e);
             }
         }
@@ -356,13 +414,13 @@ fn process_command(cmd: &Command) {
         Command::Publish { ref args } => {
             let project = get_project_path(args.project.clone());
 
-            let opts = hypertext::publish::PublishOptions {
+            let opts = command::publish::PublishOptions {
                 provider: PublishProvider::Aws,
                 env: args.env.clone(),
                 project,
             };
 
-            if let Err(e) = hypertext::publish::publish(opts) {
+            if let Err(e) = command::publish::publish(opts) {
                 fatal(e);
             }
         }
@@ -370,25 +428,25 @@ fn process_command(cmd: &Command) {
         Command::Site { ref action } => {
             match action {
                 Site::Add { ref name, ref project } => {
-                    let opts = site::AddOptions {
+                    let opts = command::site::AddOptions {
                         project: project.clone(),
                         name: name.clone(),
                     };
-                    if let Err(e) = site::add(opts) {
+                    if let Err(e) = command::site::add(opts) {
                         fatal(e); 
                     }
                 },
                 Site::Remove { ref name } => {
-                    let opts = site::RemoveOptions {
+                    let opts = command::site::RemoveOptions {
                         name: name.to_string(),
                     };
-                    if let Err(e) = site::remove(opts) {
+                    if let Err(e) = command::site::remove(opts) {
                         fatal(e); 
                     }
                 },
                 Site::List { .. } => {
-                    let opts = site::ListOptions{};
-                    if let Err(e) = site::list(opts) {
+                    let opts = command::site::ListOptions{};
+                    if let Err(e) = command::site::list(opts) {
                         fatal(e); 
                     }
                 },
@@ -419,7 +477,7 @@ fn process_command(cmd: &Command) {
 
             let now = SystemTime::now();
             //if let Err(e) = hypertext::build(cfg, opts, fatal) {
-            if let Err(e) = hypertext::build::compile(&project, &build_args, fatal) {
+            if let Err(e) = command::build::compile(&project, &build_args, fatal) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {

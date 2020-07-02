@@ -19,6 +19,8 @@ pub enum Error {
     #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
+    Book(#[from] book::Error),
+    #[error(transparent)]
     Compiler(#[from] compiler::Error),
     #[error(transparent)]
     Locale(#[from] locale::Error),
@@ -46,15 +48,6 @@ impl Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-mod command;
-
-pub use crate::command::blueprint;
-pub use crate::command::build;
-pub use crate::command::docs;
-pub use crate::command::fetch;
-pub use crate::command::run;
-pub use crate::command::publish;
-pub use crate::command::site;
-pub use crate::command::upgrade;
+pub mod command;
 
 pub use config::{BuildArguments, Config};
