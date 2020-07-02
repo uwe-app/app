@@ -260,7 +260,7 @@ impl<'a> Invalidator<'a> {
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
-                            if let Some(md) = self.builder.book.locate(&book) {
+                            if let Some(md) = self.builder.book.locate(&self.context.config, &book) {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
 

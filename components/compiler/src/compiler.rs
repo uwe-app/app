@@ -11,7 +11,7 @@ use crate::{Result, Error, TEMPLATE_EXT};
 use config::page::Page;
 use utils;
 
-use super::book::BookBuilder;
+use super::book::BookCompiler;
 use super::context::Context;
 use super::generator::{self, IndexQuery};
 use super::manifest::Manifest;
@@ -24,16 +24,15 @@ use super::loader;
 pub struct Compiler<'a> {
     context: &'a Context,
     parser: Parser<'a>,
-    pub book: BookBuilder<'a>,
+    pub book: BookCompiler,
     pub manifest: Manifest<'a>,
 }
 
 impl<'a> Compiler<'a> {
     pub fn new(context: &'a Context) -> Self {
-        let book = BookBuilder::new(
-            &context.config,
-            &context.options.source,
-            &context.options.target,
+        let book = BookCompiler::new(
+            context.options.source.clone(),
+            context.options.target.clone(),
             context.options.release);
 
         // Parser must exist for the entire lifetime so that

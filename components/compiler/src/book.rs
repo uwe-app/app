@@ -15,17 +15,15 @@ use crate::{Error};
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
-pub struct BookBuilder<'a> {
-    config: &'a Config,
-    source: &'a PathBuf,
-    target: &'a PathBuf,
+pub struct BookCompiler {
+    source: PathBuf,
+    target: PathBuf,
     release: bool,
 }
 
-impl<'a> BookBuilder<'a> {
-    pub fn new(config: &'a Config, source: &'a PathBuf, target: &'a PathBuf, release: bool) -> Self {
-        BookBuilder {
-            config,
+impl BookCompiler {
+    pub fn new(source: PathBuf, target: PathBuf, release: bool) -> Self {
+        BookCompiler {
             source,
             target,
             release,
@@ -38,13 +36,13 @@ impl<'a> BookBuilder<'a> {
         book
     }
 
-    fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
+    fn copy_book(&self, config: &Config, source_dir: &Path, build_dir: PathBuf) -> Result<(), Error> {
         // Jump some hoops to bypass the book build_dir
-        let relative = source_dir.strip_prefix(self.source)?;
+        let relative = source_dir.strip_prefix(&self.source)?;
         let mut base = self.target.clone();
         base.push(relative);
 
-        let build = self.config.build.as_ref().unwrap();
+        let build = config.build.as_ref().unwrap();
         let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
         for result in WalkBuilder::new(&build_dir)
@@ -75,10 +73,10 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
-    pub fn locate<P: AsRef<Path>>(&self, p: P) -> Option<MDBook> {
+    pub fn locate<P: AsRef<Path>>(&self, config: &Config, p: P) -> Option<MDBook> {
         let base = self.source.clone();
         let pth = p.as_ref().to_path_buf();
-        if let Ok(md) = self.load(self.config, &base, &pth, None) {
+        if let Ok(md) = self.load(config, &base, &pth, None) {
             return Some(md)
         }
         None
@@ -137,7 +135,7 @@ impl<'a> BookBuilder<'a> {
                         let bd = &md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);
-                        return self.copy_book(dir, src)
+                        return self.copy_book(config, dir, src)
                     }
                     Err(e) => return Err(Error::from(e)),
                 }
