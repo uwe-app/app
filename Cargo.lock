@@ -155,6 +155,7 @@ name = "book"
 version = "0.1.0"
 dependencies = [
  "config 0.1.0",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "mdbook 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

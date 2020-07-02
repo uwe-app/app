@@ -12,8 +12,8 @@ pub struct BookOptions {
 pub fn list(options: BookOptions) -> Result<()> {
     let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
-    for space in spaces {
-        book::list(&space)?;
+    for config in spaces {
+        book::list(&config)?;
     }
     Ok(())
 }

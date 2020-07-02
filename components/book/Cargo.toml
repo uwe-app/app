@@ -8,4 +8,5 @@ edition = "2018"
 config = {version = "0.1", path = "../config" }
 
 thiserror = "1"
+log = "0.4.8"
 mdbook = { version = "0.3.7", default-features = false, features = [ "output" ] }

@@ -93,11 +93,6 @@ pub struct Config {
     pub url: Option<Url>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct WorkspaceConfig {
-    pub members: Vec<PathBuf>,
-}
-
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -232,16 +227,6 @@ impl Config {
                     // FIXME: validate date time format specifiers
                 }
 
-                // Set up AWS publish configs to have a bucket that points
-                // to the host name by default
-                //if let Some(ref mut publish) = cfg.publish {
-                    //if let Some(ref mut aws) = publish.aws {
-                        //if aws.bucket.is_none() {
-                            //aws.bucket = Some(cfg.host.clone());
-                        //}
-                    //}
-                //}
-
                 return Ok(cfg);
             }
         }
@@ -361,6 +346,11 @@ impl Config {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WorkspaceConfig {
+    pub members: Vec<PathBuf>,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
@@ -445,6 +435,20 @@ impl Default for BuildArguments {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BookConfig {
+    pub theme: PathBuf,
+    //pub groups: Vec<String>,
+    #[serde(flatten)]
+    pub members: HashMap<String, HashMap<String, BookItem>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct BookItem {
+    pub path: PathBuf,
+    pub draft: Option<bool>,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
@@ -479,11 +483,6 @@ impl Default for ServeConfig {
             port: PORT,
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub struct BookConfig {
-    pub theme: PathBuf,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
