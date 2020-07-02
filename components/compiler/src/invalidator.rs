@@ -221,13 +221,6 @@ impl<'a> Invalidator<'a> {
             books = book.get_paths(&self.context.options.source);
         }
 
-            //.context
-            //.book
-            //.references
-            //.keys()
-            //.map(|p| p.to_path_buf())
-            //.collect::<Vec<_>>();
-
         let generator_paths: Vec<PathBuf> = self
             .context
             .generators
@@ -267,29 +260,26 @@ impl<'a> Invalidator<'a> {
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
+                            if let Some(md) = self.builder.book.locate(&book) {
+                                let src_dir = &md.config.book.src;
+                                let build_dir = &md.config.build.build_dir;
 
-                            // FIXME: restore this
+                                let mut src = book.clone();
+                                src.push(src_dir);
 
-                            //if let Some(md) = self.builder.book.references.get(&book) {
-                                //let src_dir = &md.config.book.src;
-                                //let build_dir = &md.config.build.build_dir;
+                                let mut build = book.clone();
+                                build.push(build_dir);
 
-                                //let mut src = book.clone();
-                                //src.push(src_dir);
-
-                                //let mut build = book.clone();
-                                //build.push(build_dir);
-
-                                //if path.starts_with(build) {
-                                    //rule.ignores.push(Action::BookBuild(book.clone(), path));
-                                    //continue 'paths;
-                                //} else if path.starts_with(src) {
-                                    //rule.book
-                                        //.source
-                                        //.push(Action::BookSource(book.clone(), path));
-                                    //continue 'paths;
-                                //}
-                            //}
+                                if path.starts_with(build) {
+                                    rule.ignores.push(Action::BookBuild(book.clone(), path));
+                                    continue 'paths;
+                                } else if path.starts_with(src) {
+                                    rule.book
+                                        .source
+                                        .push(Action::BookSource(book.clone(), path));
+                                    continue 'paths;
+                                }
+                            }
                         }
                     }
 

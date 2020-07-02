@@ -2,17 +2,18 @@ use std::convert::AsRef;
 use std::path::Path;
 use std::path::PathBuf;
 
-use ignore::WalkBuilder;
 use log::{info, warn};
 use mdbook::MDBook;
 
-static BOOK_TOML: &str = "book.toml";
-static BOOK_THEME_KEY: &str = "output.html.theme";
+use ignore::WalkBuilder;
 
 use config::Config;
 use utils;
 
 use crate::{Error};
+
+static BOOK_TOML: &str = "book.toml";
+static BOOK_THEME_KEY: &str = "output.html.theme";
 
 pub struct BookBuilder<'a> {
     config: &'a Config,
@@ -74,20 +75,29 @@ impl<'a> BookBuilder<'a> {
         Ok(())
     }
 
+    pub fn locate<P: AsRef<Path>>(&self, p: P) -> Option<MDBook> {
+        let base = self.source.clone();
+        let pth = p.as_ref().to_path_buf();
+        if let Ok(md) = self.load(self.config, &base, &pth, None) {
+            return Some(md)
+        }
+        None
+    }
+
     pub fn load<P: AsRef<Path>>(
-        &mut self,
+        &self,
         config: &Config,
         base:P,
         p: P,
         livereload: Option<String>) -> Result<MDBook, Error> {
 
-        let dir = p.as_ref();
+        let dir = p.as_ref().to_path_buf();
         info!("load {}", dir.display());
 
         let result = MDBook::load(dir);
         match result {
             Ok(mut md) => {
-                let theme = config.get_book_theme_path(base);
+                let theme = config.get_book_theme_path(base.as_ref());
                 if let Some(theme_dir) = theme {
                     if theme_dir.exists() && theme_dir.is_dir() {
                         if let Some(s) = theme_dir.to_str() {
@@ -146,12 +156,11 @@ impl<'a> BookBuilder<'a> {
         base: P,
         p: P,
         livereload: Option<String>) -> Result<(), Error> {
+
         let pth = p.as_ref().to_path_buf().clone();
         let rel = pth.strip_prefix(base.as_ref())?;
-
         // NOTE: mdbook requires a reload before a build
         let book = self.load(config, base, p, livereload)?;
-
         self.build(config, book, rel, &pth)
     }
 
@@ -167,7 +176,6 @@ impl<'a> BookBuilder<'a> {
                 self.rebuild(config, base.as_ref(), &p, livereload.clone())?;
             }
         }
-
         Ok(())
     }
 }
