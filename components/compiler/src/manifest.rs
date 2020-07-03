@@ -10,7 +10,7 @@ use log::debug;
 
 use utils;
 
-use crate::{Error};
+use crate::Error;
 
 use super::context::Context;
 
@@ -33,7 +33,11 @@ pub struct ManifestEntry {
 impl<'a> Manifest<'a> {
     pub fn new(context: &'a Context) -> Self {
         let file = ManifestFile { map: Map::new() };
-        Manifest { context, file, incremental: context.options.incremental }
+        Manifest {
+            context,
+            file,
+            incremental: context.options.incremental,
+        }
     }
 
     fn get_key<P: AsRef<Path>>(&self, file: P) -> String {

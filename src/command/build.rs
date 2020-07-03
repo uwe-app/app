@@ -7,16 +7,16 @@ use warp::ws::Message;
 
 use compiler::context::Context;
 use compiler::invalidator::Invalidator;
-use compiler::Compiler;
 use compiler::redirect;
+use compiler::Compiler;
 use compiler::ErrorCallback;
 use config::BuildArguments;
 use content;
 use utils;
 use workspace;
 
-use crate::Error;
 use crate::command::run::{self, ServeOptions};
+use crate::Error;
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)

@@ -1,9 +1,9 @@
 use std::io;
 use std::path::PathBuf;
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use thiserror::Error;
 
 use dirs;
 use utils;
@@ -121,4 +121,3 @@ pub fn init_if_none() -> Result<(), Error> {
     }
     Ok(())
 }
-

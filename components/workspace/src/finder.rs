@@ -4,11 +4,7 @@ use config::Config;
 
 use crate::{Error, Result};
 
-pub fn find<P: AsRef<Path>>(
-    dir: P,
-    walk_ancestors: bool,
-    spaces: &mut Vec<Config>) -> Result<()> {
-
+pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Config>) -> Result<()> {
     let project = dir.as_ref();
     let cfg = Config::load(&project, walk_ancestors)?;
 

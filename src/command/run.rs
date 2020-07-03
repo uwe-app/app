@@ -6,8 +6,8 @@ use std::sync::mpsc::Sender;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use tokio::sync::broadcast::Sender as TokioSender;
-use warp::ws::Message;
 use warp::http::Uri;
+use warp::ws::Message;
 
 use log::{error, info};
 

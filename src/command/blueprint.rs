@@ -5,7 +5,7 @@ use cache;
 use git;
 use preference::{self, Preferences};
 
-use crate::{Error};
+use crate::Error;
 
 #[derive(Debug)]
 pub struct InitOptions {
@@ -68,9 +68,21 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
             if !parent.exists() {
                 fs::create_dir_all(parent)?;
             }
-            repo = git::create(source, target, options.private_key.clone(), repo_url, repo_dir)?;
+            repo = git::create(
+                source,
+                target,
+                options.private_key.clone(),
+                repo_url,
+                repo_dir,
+            )?;
         } else {
-            repo = git::create(source, target, options.private_key.clone(), repo_url, repo_dir)?;
+            repo = git::create(
+                source,
+                target,
+                options.private_key.clone(),
+                repo_url,
+                repo_dir,
+            )?;
         }
 
         //repo.remote_delete("origin")?;

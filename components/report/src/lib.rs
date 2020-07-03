@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
 
-use thiserror::Error;
 use ignore::WalkBuilder;
+use thiserror::Error;
 
 use utils;
 
@@ -32,9 +32,7 @@ pub struct FileBuilder {
 }
 
 impl FileBuilder {
-    pub fn new(
-        base: PathBuf,
-        prefix: Option<String>) -> Self {
+    pub fn new(base: PathBuf, prefix: Option<String>) -> Self {
         Self {
             base,
             prefix,
@@ -59,12 +57,12 @@ impl FileBuilder {
     }
 
     pub fn from_key<S: AsRef<str>>(&self, key: S) -> PathBuf {
-        let mut pth = self.base.clone(); 
+        let mut pth = self.base.clone();
 
         if let Some(ref prefix) = self.prefix {
             let mut tmp = key.as_ref().trim_start_matches(prefix);
             tmp = tmp.trim_start_matches("/");
-            pth.push(tmp); 
+            pth.push(tmp);
         } else {
             pth.push(key.as_ref());
         }
@@ -73,9 +71,7 @@ impl FileBuilder {
     }
 
     pub fn walk(&mut self) -> Result<(), Error> {
-        for result in WalkBuilder::new(&self.base)
-            .follow_links(true)
-            .build() {
+        for result in WalkBuilder::new(&self.base).follow_links(true).build() {
             match result {
                 Ok(entry) => {
                     let path = entry.path();
@@ -90,11 +86,10 @@ impl FileBuilder {
     }
 }
 
-
 //#[cfg(test)]
 //mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
+//#[test]
+//fn it_works() {
+//assert_eq!(2 + 2, 4);
+//}
 //}

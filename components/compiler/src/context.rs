@@ -4,8 +4,8 @@ use config::Config;
 
 use locale::Locales;
 
-use datasource::DataSourceMap;
 use super::CompilerOptions;
+use datasource::DataSourceMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {

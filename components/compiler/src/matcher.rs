@@ -28,7 +28,10 @@ fn resolve_dir_index<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> O
     None
 }
 
-pub fn resolve_parent_index<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
+pub fn resolve_parent_index<P: AsRef<Path>>(
+    file: P,
+    extensions: &ExtensionConfig,
+) -> Option<PathBuf> {
     if let Some(parent) = file.as_ref().parent() {
         // Not an index file so a single level is sufficient
         if !is_index(&file) {
@@ -89,7 +92,12 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P, extensions: &ExtensionConfi
 //}
 
 // Try to find a source file for the given URL
-pub fn lookup_in(base: &PathBuf, context: &Context, href: &str, extensions: &ExtensionConfig) -> Option<PathBuf> {
+pub fn lookup_in(
+    base: &PathBuf,
+    context: &Context,
+    href: &str,
+    extensions: &ExtensionConfig,
+) -> Option<PathBuf> {
     let clean_url = context.options.clean_url;
 
     let mut url = href.to_string().clone();

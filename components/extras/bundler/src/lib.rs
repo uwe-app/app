@@ -4,8 +4,8 @@ extern crate log;
 mod bundler;
 mod command;
 
-pub use command::BundleOptions;
 pub use command::bundle;
+pub use command::BundleOptions;
 
 use thiserror::Error;
 
@@ -35,15 +35,14 @@ pub enum BundleError {
 
 impl BundleError {
     pub fn new(s: String) -> Self {
-        BundleError::Message(s) 
+        BundleError::Message(s)
     }
 }
 
-
 //#[cfg(test)]
 //mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
+//#[test]
+//fn it_works() {
+//assert_eq!(2 + 2, 4);
+//}
 //}

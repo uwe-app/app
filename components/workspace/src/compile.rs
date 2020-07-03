@@ -4,11 +4,11 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::{BuildArguments, Config};
 use compiler::context::Context;
 use compiler::loader;
 use compiler::Compiler;
 use compiler::CompilerOptions;
+use config::{BuildArguments, Config};
 use datasource::DataSourceMap;
 use locale::Locales;
 
@@ -108,4 +108,3 @@ fn build(ctx: &Context) -> Result<()> {
 
     Ok(())
 }
-

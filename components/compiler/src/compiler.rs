@@ -6,7 +6,7 @@ use log::{debug, info};
 
 use serde_json::{json, Value};
 
-use crate::{Result, Error, TEMPLATE_EXT};
+use crate::{Error, Result, TEMPLATE_EXT};
 
 use book::compiler::BookCompiler;
 use config::page::Page;
@@ -14,12 +14,12 @@ use datasource::{self, IndexQuery};
 use utils;
 
 use super::context::Context;
+use super::hook;
+use super::loader;
 use super::manifest::Manifest;
 use super::matcher::{self, FileType};
 use super::parser::Parser;
-use super::hook;
 use super::resource;
-use super::loader;
 
 pub struct Compiler<'a> {
     context: &'a Context,
@@ -33,7 +33,8 @@ impl<'a> Compiler<'a> {
         let book = BookCompiler::new(
             context.options.source.clone(),
             context.options.target.clone(),
-            context.options.release);
+            context.options.release,
+        );
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
@@ -112,11 +113,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    pub fn process_file<P: AsRef<Path>>(
-        &mut self,
-        p: P,
-        file_type: FileType,
-    ) -> Result<()> {
+    pub fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<()> {
         let file = p.as_ref();
 
         match file_type {
@@ -186,7 +183,7 @@ impl<'a> Compiler<'a> {
                         for (gen, idx) in each_iters {
                             self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
                         }
-                        return Ok(())
+                        return Ok(());
                     }
                 }
 
@@ -249,7 +246,6 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
-
         for p in targets {
             if p.is_file() {
                 self.one(&p)?;
@@ -359,16 +355,16 @@ impl<'a> Compiler<'a> {
                     // If a file or directory is a descendant of
                     // a book directory we do not process it
                     //if self.book.contains_file(&path) {
-                        //continue;
+                    //continue;
                     //}
 
                     //if path.is_dir() && self.book.is_book_dir(&path) {
-                        //// Add the book so we can skip processing of descendants
-                        ////self.book.add(&path);
+                    //// Add the book so we can skip processing of descendants
+                    ////self.book.add(&path);
 
-                        //// Build the book
-                        //self.book.load(&self.context, &path)?;
-                        //self.book.build(&path)?;
+                    //// Build the book
+                    //self.book.load(&self.context, &path)?;
+                    //self.book.build(&path)?;
                     //} else
                     //
                     if path.is_file() {
@@ -382,9 +378,8 @@ impl<'a> Compiler<'a> {
 
         // Now compile the books
         if let Some(ref _book) = self.context.config.book {
-            self.book.all(
-                &self.context.config,
-                self.context.livereload.clone())?;
+            self.book
+                .all(&self.context.config, self.context.livereload.clone())?;
         }
 
         if let Some(hooks) = &self.context.config.hook {

@@ -10,7 +10,7 @@ use ignore::WalkBuilder;
 use config::Config;
 use utils;
 
-use super::{Result, Error};
+use super::{Error, Result};
 
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
@@ -76,7 +76,7 @@ impl BookCompiler {
     pub fn locate<P: AsRef<Path>>(&self, config: &Config, p: P) -> Option<MDBook> {
         let pth = p.as_ref().to_path_buf();
         if let Ok(md) = self.load(config, &pth, None) {
-            return Some(md)
+            return Some(md);
         }
         None
     }
@@ -85,8 +85,8 @@ impl BookCompiler {
         &self,
         config: &Config,
         p: P,
-        livereload: Option<String>) -> Result<MDBook> {
-
+        livereload: Option<String>,
+    ) -> Result<MDBook> {
         let dir = p.as_ref().to_path_buf();
         info!("Load {}", dir.display());
 
@@ -109,14 +109,12 @@ impl BookCompiler {
                 }
 
                 Ok(md)
-
             }
             Err(e) => return Err(Error::from(e)),
         }
     }
 
-    fn compile<P: AsRef<Path>>(
-        &self, config: &Config, md: MDBook, rel: P, p: P) -> Result<()> {
+    fn compile<P: AsRef<Path>>(&self, config: &Config, md: MDBook, rel: P, p: P) -> Result<()> {
         let dir = p.as_ref();
         if let Some(ref book) = config.book {
             if let Some(cfg) = book.find(rel.as_ref()) {
@@ -124,7 +122,7 @@ impl BookCompiler {
 
                 let draft = cfg.draft.is_some() && cfg.draft.unwrap();
                 if draft && self.release {
-                    return Ok(())
+                    return Ok(());
                 }
 
                 let built = md.build();
@@ -133,22 +131,23 @@ impl BookCompiler {
                         let bd = &md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);
-                        return self.copy_book(config, dir, src)
+                        return self.copy_book(config, dir, src);
                     }
                     Err(e) => return Err(Error::from(e)),
                 }
             } else {
-                return Err(
-                    Error::new(
-                        format!("No book found for {}", dir.display())))
+                return Err(Error::new(format!("No book found for {}", dir.display())));
             }
         }
         Ok(())
     }
 
     pub fn build<P: AsRef<Path>>(
-        &self, config: &Config, p: P, livereload: Option<String>) -> Result<()> {
-
+        &self,
+        config: &Config,
+        p: P,
+        livereload: Option<String>,
+    ) -> Result<()> {
         let pth = p.as_ref().to_path_buf().clone();
         let rel = pth.strip_prefix(&self.source)?;
         // NOTE: mdbook requires a reload before a build

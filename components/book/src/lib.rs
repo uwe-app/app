@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use thiserror::Error;
 use config::Config;
 use log::info;
+use thiserror::Error;
 
 use mdbook::MDBook;
 
@@ -44,7 +44,7 @@ pub fn list(config: &Config) -> Result<()> {
                     info!("{}.{} -> {}", group, name, cfg.path.display());
                 }
             }
-            return Ok(())
+            return Ok(());
         }
     }
     info!("No books yet");
@@ -56,16 +56,17 @@ pub fn add<P: AsRef<Path>>(
     config: &Config,
     dir: P,
     title: Option<String>,
-    authors: Option<Vec<String>>) -> Result<MDBook> {
-
+    authors: Option<Vec<String>>,
+) -> Result<MDBook> {
     let build_config = config.build.as_ref().unwrap();
     let mut book_dir = build_config.source.clone();
     book_dir.push(dir);
 
     if book_dir.exists() {
-        return Err(
-            Error::new(
-                format!("Book path exists {}", book_dir.display())))
+        return Err(Error::new(format!(
+            "Book path exists {}",
+            book_dir.display()
+        )));
     }
 
     // create a default config and change a couple things
@@ -76,7 +77,6 @@ pub fn add<P: AsRef<Path>>(
             cfg.book.authors.push(a);
         }
     }
-
 
     Ok(MDBook::init(book_dir)
         .create_gitignore(true)
@@ -91,7 +91,7 @@ pub fn build<P: AsRef<Path>>(config: &Config, path: Vec<P>, release: bool) -> Re
     let compiler = compiler::BookCompiler::new(
         build_config.source.clone(),
         build_config.target.clone(),
-        release
+        release,
     );
 
     // Build all the books in the config

@@ -1,5 +1,4 @@
 SITE_ROOT = ../website
-DOCS_ROOT = ../documentation
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     HOST_OS := windows
@@ -23,8 +22,6 @@ VERSION_FILE = $(RELEASE_REPO)/version.toml
 
 SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
-COMMAND_DOCS = book build docs fetch init publish run site upgrade
-
 all: init site-release
 
 clean:
@@ -40,11 +37,6 @@ init-newcss-open: init-newcss
 
 init: init-newcss
 
-help:
-	for cmd in $(COMMAND_DOCS); do \
-		cargo run -- help $$cmd > ../website/site/includes/help/$$cmd.txt; \
-	done;
-
 site:
 	@cargo run -- $(SITE_ROOT)/ --force
 
@@ -53,20 +45,10 @@ site-live:
 
 site-release: install help
 
-docs:
-	@cargo run -- $(SITE_ROOT) --release --force --tag=docs
-	@rm -rf $(DOCS_ROOT)/docs
-	@cp -rf $(SITE_ROOT)/build/docs $(DOCS_ROOT)
-	@rm $(DOCS_ROOT)/docs/files
-	@(cd $(DOCS_ROOT) && git add . && git commit -m "Update docs." && git push origin master)
-
 website-dist:
 	@cargo run -- $(SITE_ROOT)/ --release --force --tag=dist
 	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
 	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip dist/*)
-
-fmt:
-	@cargo fmt
 
 build-release:
 	@cargo build --release --bin=ht
@@ -109,4 +91,4 @@ install-darwin: release-darwin
 	@mkdir -p $(HOME)/.hypertext/bin
 	@cp -f target/release/ht $(HOME)/.hypertext/bin
 
-.PHONY: all help site site-release checksum clean install
+.PHONY: all site site-release clean install

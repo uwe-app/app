@@ -6,8 +6,8 @@ use std::sync::mpsc::channel;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::ErrorCallback;
 use crate::Error;
+use crate::ErrorCallback;
 
 use log::{debug, info};
 

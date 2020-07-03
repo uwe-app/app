@@ -44,11 +44,11 @@ impl BuildTag {
     }
 
     //pub fn clone(&self) -> Self {
-        //match self {
-            //BuildTag::Debug => return BuildTag::Debug,
-            //BuildTag::Release => return BuildTag::Release,
-            //BuildTag::Custom(s) => return BuildTag::Custom(s.to_string()),
-        //}
+    //match self {
+    //BuildTag::Debug => return BuildTag::Debug,
+    //BuildTag::Release => return BuildTag::Release,
+    //BuildTag::Custom(s) => return BuildTag::Custom(s.to_string()),
+    //}
     //}
 }
 
@@ -90,4 +90,3 @@ pub struct CompilerOptions {
 
     pub include_index: bool,
 }
-

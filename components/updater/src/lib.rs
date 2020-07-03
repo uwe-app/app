@@ -1,11 +1,11 @@
-use std::io;
 use std::collections::HashMap;
 use std::fs;
+use std::io;
 use std::path::PathBuf;
 
-use thiserror::Error;
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use cache::{self, CacheComponent};
 use dirs;
@@ -85,8 +85,14 @@ pub fn write_env(bin_dir: &PathBuf) -> Result<()> {
 // TODO: support more shells
 pub fn source_env(_bin_dir: &PathBuf) -> Result<(bool, bool, String, PathBuf)> {
     let mut files: HashMap<String, Vec<String>> = HashMap::new();
-    files.insert(BASH.to_string(), vec![".profile".to_string(), ".bashrc".to_string()]);
-    files.insert(ZSH.to_string(), vec![".profile".to_string(), ".zshrc".to_string()]);
+    files.insert(
+        BASH.to_string(),
+        vec![".profile".to_string(), ".bashrc".to_string()],
+    );
+    files.insert(
+        ZSH.to_string(),
+        vec![".profile".to_string(), ".zshrc".to_string()],
+    );
 
     let mut shell_ok = false;
     let mut shell_write = false;
@@ -203,8 +209,8 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
 
 //#[cfg(test)]
 //mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
+//#[test]
+//fn it_works() {
+//assert_eq!(2 + 2, 4);
+//}
 //}

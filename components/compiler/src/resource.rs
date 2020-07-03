@@ -4,9 +4,9 @@ use log::{debug, info};
 
 use utils::symlink;
 
-use crate::Result;
-use crate::Error;
 use super::context::Context;
+use crate::Error;
+use crate::Result;
 
 pub fn link(ctx: &Context) -> Result<()> {
     let target = &ctx.options.target;

@@ -1,5 +1,5 @@
-use semver::Version;
 use log::info;
+use semver::Version;
 
 use updater;
 

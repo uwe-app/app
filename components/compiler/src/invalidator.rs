@@ -7,16 +7,16 @@ use warp::ws::Message;
 
 use datasource;
 
+use super::compiler::Compiler;
 use super::context::Context;
 use super::hook;
 use super::loader;
 use super::matcher;
 use super::matcher::FileType;
 use super::watch;
-use super::compiler::Compiler;
 
-use crate::ErrorCallback;
 use crate::Error;
+use crate::ErrorCallback;
 
 /*
  *  Invalidation rules.
@@ -261,7 +261,8 @@ impl<'a> Invalidator<'a> {
                             continue 'paths;
                         }
                         if path.starts_with(book_path) {
-                            if let Some(md) = self.builder.book.locate(&self.context.config, &book) {
+                            if let Some(md) = self.builder.book.locate(&self.context.config, &book)
+                            {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
 
@@ -388,7 +389,8 @@ impl<'a> Invalidator<'a> {
                         self.builder.book.load(
                             &self.context.config,
                             base,
-                            self.context.livereload.clone())?;
+                            self.context.livereload.clone(),
+                        )?;
                     }
                     _ => {}
                 }
@@ -396,9 +398,9 @@ impl<'a> Invalidator<'a> {
         }
 
         if book.all {
-            self.builder.book.all(
-                &self.context.config,
-                self.context.livereload.clone())?;
+            self.builder
+                .book
+                .all(&self.context.config, self.context.livereload.clone())?;
         } else {
             for action in &book.source {
                 match action {
@@ -414,7 +416,8 @@ impl<'a> Invalidator<'a> {
                         self.builder.book.build(
                             &self.context.config,
                             &file,
-                            self.context.livereload.clone())?;
+                            self.context.livereload.clone(),
+                        )?;
                     }
                     _ => {}
                 }

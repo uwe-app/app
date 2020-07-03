@@ -1,17 +1,17 @@
-use std::fs::{self, Metadata};
 use std::convert::AsRef;
+use std::fs::{self, Metadata};
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::SystemTime;
 
-use ignore::WalkBuilder;
 use human_bytes::human_bytes;
+use ignore::WalkBuilder;
 use log::info;
 
 use utils;
 
-use crate::{BundleError as Error};
+use crate::BundleError as Error;
 
 pub enum Platform {
     Linux(String),
@@ -204,7 +204,9 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
                             } else if path.is_file() {
                                 s.push_str(&self.get_file_entry(nm, &key, &path, meta)?);
                             } else {
-                                return Err(Error::new("unknown path type encountered".to_string()));
+                                return Err(Error::new(
+                                    "unknown path type encountered".to_string(),
+                                ));
                             }
                         } else {
                             return Err(Error::new("failed to determine file name".to_string()));

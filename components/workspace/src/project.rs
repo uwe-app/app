@@ -3,15 +3,14 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use compiler::{CompilerOptions, BuildTag};
 use compiler::redirect;
+use compiler::{BuildTag, CompilerOptions};
 use config::{BuildArguments, Config};
 use utils;
 
 use crate::{Error, Result};
 
 static LAYOUT_HBS: &str = "layout.hbs";
-
 
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {
@@ -20,14 +19,11 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
     }
 
     if !output.is_dir() {
-        return Err(
-            Error::new(
-                format!("Not a directory: {}", output.display())));
+        return Err(Error::new(format!("Not a directory: {}", output.display())));
     }
 
     Ok(())
 }
-
 
 fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let build = cfg.build.as_ref().unwrap();
@@ -73,7 +69,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     // Force is implied when live and incremental, the live
     // setting overrides the incremental behavior
     if live && incremental && !force {
-       force = true;  
+        force = true;
     }
 
     require_output_dir(&target)?;
@@ -179,7 +175,6 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     // arguments from config declarations
     let profiles = cfg.profile.as_ref().unwrap();
     if let Some(profile) = profiles.get(&target_dir) {
-
         let mut use_profile = profile.clone();
 
         if profile.tag.is_some() {

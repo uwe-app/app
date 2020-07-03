@@ -9,7 +9,7 @@ use structopt::StructOpt;
 
 //use hypertext::{Error};
 
-use bundler::{BundleOptions, BundleError};
+use bundler::{BundleError, BundleOptions};
 
 fn fatal(e: impl std::error::Error) {
     error!("{}", e);

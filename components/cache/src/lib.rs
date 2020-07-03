@@ -1,5 +1,5 @@
-use std::io;
 use std::fs;
+use std::io;
 use std::path::PathBuf;
 
 use thiserror::Error;
@@ -178,8 +178,8 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
 
 //#[cfg(test)]
 //mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
+//#[test]
+//fn it_works() {
+//assert_eq!(2 + 2, 4);
+//}
 //}

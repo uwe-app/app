@@ -1,24 +1,24 @@
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::io::Read;
 use std::path::Path;
-use std::collections::{HashMap, HashSet};
 
 use std::str::FromStr;
 
 use thiserror::Error;
 
-use md5::{Md5, Digest};
+use md5::{Digest, Md5};
 
 use futures_util::TryStreamExt;
 use tokio_util::codec;
 
-use rusoto_core::request::HttpClient;
 use rusoto_core::credential;
+use rusoto_core::request::HttpClient;
+use rusoto_core::ByteStream;
 use rusoto_core::Region;
 use rusoto_s3::*;
-use rusoto_core::ByteStream;
 
-use log::{info, debug, error};
+use log::{debug, error, info};
 
 use report::FileBuilder;
 
@@ -55,9 +55,14 @@ fn get_file_etag<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let mut hasher = Md5::new();
     loop {
         let mut chunk = Vec::with_capacity(chunk_size);
-        let n = file.by_ref().take(chunk_size as u64).read_to_end(&mut chunk)?;
+        let n = file
+            .by_ref()
+            .take(chunk_size as u64)
+            .read_to_end(&mut chunk)?;
         hasher.update(chunk);
-        if n == 0 || n < chunk_size { break; }
+        if n == 0 || n < chunk_size {
+            break;
+        }
     }
     Ok(format!("\"{:x}\"", hasher.finalize()))
 }
@@ -83,7 +88,7 @@ pub struct DiffReport {
 pub struct PublishRequest {
     pub profile_name: String,
     pub region: Region,
-    pub bucket: String, 
+    pub bucket: String,
     pub prefix: Option<String>,
 }
 
@@ -103,8 +108,8 @@ fn get_client(request: &PublishRequest) -> Result<S3Client> {
 pub fn diff(
     builder: &FileBuilder,
     remote: &HashSet<String>,
-    etags: &HashMap<String, String>) -> io::Result<DiffReport> {
-
+    etags: &HashMap<String, String>,
+) -> io::Result<DiffReport> {
     let local = &builder.keys;
 
     let mut same = HashSet::new();
@@ -134,14 +139,19 @@ pub fn diff(
         deleted.insert(k.clone());
     }
 
-    Ok(DiffReport {same, upload, changed, deleted})
+    Ok(DiffReport {
+        same,
+        upload,
+        changed,
+        deleted,
+    })
 }
 
 async fn list_bucket_remote(
     client: &S3Client,
     request: &PublishRequest,
-    continuation_token: Option<String>) -> Result<ListObjectsV2Output> {
-
+    continuation_token: Option<String>,
+) -> Result<ListObjectsV2Output> {
     debug!("List bucket token {:?}", continuation_token);
 
     let req = ListObjectsV2Request {
@@ -158,8 +168,8 @@ async fn fetch_bucket_remote(
     client: &S3Client,
     request: &PublishRequest,
     remote: &mut HashSet<String>,
-    etags: &mut HashMap<String, String>) -> Result<()> {
-
+    etags: &mut HashMap<String, String>,
+) -> Result<()> {
     let mut continuation_token = None;
     loop {
         let result = list_bucket_remote(client, request, continuation_token).await?;
@@ -175,7 +185,7 @@ async fn fetch_bucket_remote(
                         remote.insert(key);
                     }
                 }
-            } 
+            }
         }
         let is_truncated = result.is_truncated.is_some() && result.is_truncated.unwrap();
         if !is_truncated {
@@ -190,7 +200,8 @@ async fn fetch_bucket_remote(
 pub async fn list_remote(
     request: &PublishRequest,
     remote: &mut HashSet<String>,
-    etags: &mut HashMap<String, String>) -> Result<()> {
+    etags: &mut HashMap<String, String>,
+) -> Result<()> {
     let client = get_client(request)?;
     fetch_bucket_remote(&client, &request, remote, etags).await?;
     Ok(())
@@ -200,8 +211,8 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(
     client: &S3Client,
     mut req: PutObjectRequest,
     key: S,
-    path: P) -> Result<PutObjectOutput> {
-
+    path: P,
+) -> Result<PutObjectOutput> {
     info!("Upload {}", path.as_ref().display());
     info!("    -> {}", key.as_ref());
 
@@ -209,32 +220,36 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(
     let size = file.metadata()?.len();
 
     let tokio_file = tokio::fs::File::from_std(file);
-    let stream = codec::FramedRead::new(tokio_file, codec::BytesCodec::new())
-        .map_ok(|r| r.freeze());
+    let stream =
+        codec::FramedRead::new(tokio_file, codec::BytesCodec::new()).map_ok(|r| r.freeze());
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);
     req.content_type = Some(
-        mime_guess::from_path(path).first_or_octet_stream().to_string());
+        mime_guess::from_path(path)
+            .first_or_octet_stream()
+            .to_string(),
+    );
     Ok(client.put_object(req).await?)
 }
 
 async fn delete_object<S: AsRef<str>>(
     client: &S3Client,
     req: DeleteObjectRequest,
-    key: S) -> Result<DeleteObjectOutput> {
-
+    key: S,
+) -> Result<DeleteObjectOutput> {
     info!("Delete {}", key.as_ref());
     Ok(client.delete_object(req).await?)
 }
 
-pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffReport) -> Result<()> {
-
-    if diff.upload.is_empty()
-        && diff.changed.is_empty()
-        && diff.deleted.is_empty() {
+pub async fn publish(
+    request: &PublishRequest,
+    builder: FileBuilder,
+    diff: DiffReport,
+) -> Result<()> {
+    if diff.upload.is_empty() && diff.changed.is_empty() && diff.deleted.is_empty() {
         info!("Site is up to date!");
-        return Ok(())
+        return Ok(());
     }
 
     let delimiter = "-".repeat(20);
@@ -245,7 +260,7 @@ pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffR
     info!("Delete {}", diff.deleted.len());
     info!("{}", delimiter);
 
-    let mut errors: Vec<Error>= Vec::new();
+    let mut errors: Vec<Error> = Vec::new();
     let mut uploaded: u64 = 0;
     let mut deleted: u64 = 0;
     let client = get_client(request)?;
@@ -297,8 +312,8 @@ pub async fn publish(request: &PublishRequest, builder: FileBuilder, diff: DiffR
 
 //#[cfg(test)]
 //mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
+//#[test]
+//fn it_works() {
+//assert_eq!(2 + 2, 4);
+//}
 //}

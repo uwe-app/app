@@ -1,12 +1,12 @@
 use log::info;
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
 
-use utils;
 use content::redirect;
+use utils;
 
 use super::context::Context;
-use crate::{Result, Error, INDEX_HTML};
+use crate::{Error, Result, INDEX_HTML};
 
 use warp::http::Uri;
 
@@ -61,34 +61,42 @@ pub fn validate(map: &HashMap<String, String>) -> Result<()> {
 // FIXME: improve this redirect validation logic to handle
 // FIXME: trailing slashes on sources and targets better
 
-fn validate_redirect<S: AsRef<str>>(k: S, v: S, map: &HashMap<String, String>, stack: &mut Vec<String>) -> Result<()> {
+fn validate_redirect<S: AsRef<str>>(
+    k: S,
+    v: S,
+    map: &HashMap<String, String>,
+    stack: &mut Vec<String>,
+) -> Result<()> {
     if stack.len() >= MAX_REDIRECTS {
-        return Err(
-            Error::new(
-                format!("Too many redirects, limit is {}", MAX_REDIRECTS)));
+        return Err(Error::new(format!(
+            "Too many redirects, limit is {}",
+            MAX_REDIRECTS
+        )));
     }
 
     let mut key = k.as_ref().to_string().clone();
     key = key.trim_end_matches("/").to_string();
 
     if stack.contains(&key) {
-        return Err(
-            Error::new(
-                format!("Cyclic redirect: {} <-> {}", stack.join(" <-> "), &key)));
+        return Err(Error::new(format!(
+            "Cyclic redirect: {} <-> {}",
+            stack.join(" <-> "),
+            &key
+        )));
     }
 
     stack.push(key);
 
     // Check raw value first
     if let Some(value) = map.get(v.as_ref()) {
-        return validate_redirect(v.as_ref(), value, map, stack); 
+        return validate_redirect(v.as_ref(), value, map, stack);
     }
 
     // Try with a trailing slash removed
     let mut val_key = v.as_ref().to_string();
     val_key = val_key.trim_end_matches("/").to_string();
     if let Some(value) = map.get(&val_key) {
-        return validate_redirect(&val_key, value, map, stack); 
+        return validate_redirect(&val_key, value, map, stack);
     }
 
     Ok(())

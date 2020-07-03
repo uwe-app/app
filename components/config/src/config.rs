@@ -189,16 +189,15 @@ impl Config {
                     let book_paths = book.get_paths(&build.source);
                     for mut p in book_paths {
                         if !p.exists() || !p.is_dir() {
-                            return Err(
-                                Error::new(
-                                    format!("Not a directory {}", p.display())));
+                            return Err(Error::new(format!("Not a directory {}", p.display())));
                         }
 
                         p.push(BOOK_TOML);
                         if !p.exists() || !p.is_file() {
-                            return Err(
-                                Error::new(
-                                    format!("Missing book configuration {}", p.display())));
+                            return Err(Error::new(format!(
+                                "Missing book configuration {}",
+                                p.display()
+                            )));
                         }
                     }
                 }
@@ -627,7 +626,7 @@ pub struct PublishConfig {
 pub struct AwsPublishConfig {
     pub credentials: String,
     pub region: String,
-    pub environments: HashMap<String, AwsPublishEnvironment>
+    pub environments: HashMap<String, AwsPublishEnvironment>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

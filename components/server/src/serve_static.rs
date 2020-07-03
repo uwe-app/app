@@ -10,9 +10,9 @@ use std::convert::Infallible;
 
 use serde::Serialize;
 
-use warp::ws::Message;
-use warp::path::FullPath;
 use warp::http::Uri;
+use warp::path::FullPath;
+use warp::ws::Message;
 
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
@@ -36,7 +36,8 @@ pub struct WebServerOptions {
 
 async fn redirect_map(
     path: FullPath,
-    opts: WebServerOptions) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+    opts: WebServerOptions,
+) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if let Some(ref redirects) = opts.redirects {
         if let Some(uri) = redirects.get(path.as_str()) {
             let location = uri.to_string().parse::<Uri>().unwrap();
@@ -44,7 +45,7 @@ async fn redirect_map(
                 Ok(Box::new(warp::redirect::temporary(location)))
             } else {
                 Ok(Box::new(warp::redirect(location)))
-            }
+            };
         }
     }
     Err(warp::reject())
@@ -52,8 +53,8 @@ async fn redirect_map(
 
 async fn redirect_trailing_slash(
     path: FullPath,
-    root: PathBuf) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-
+    root: PathBuf,
+) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     let mut req = path.as_str();
     if req != "/" && !req.ends_with("/") {
         // Need to remove the trailing slash so the path
@@ -66,7 +67,7 @@ async fn redirect_trailing_slash(
         buf.push(file_path);
         if buf.is_dir() {
             let location = format!("{}/", path.as_str()).parse::<Uri>().unwrap();
-            return Ok(Box::new(warp::redirect(location)))
+            return Ok(Box::new(warp::redirect(location)));
         }
     }
     Err(warp::reject())
@@ -117,8 +118,8 @@ pub async fn serve(
 
     //let redirects = opts.redirects.clone();
 
-    let file_server = warp::fs::dir(opts.serve_dir.clone())
-        .recover(move |e| handle_rejection(e, root.clone()));
+    let file_server =
+        warp::fs::dir(opts.serve_dir.clone()).recover(move |e| handle_rejection(e, root.clone()));
 
     let with_state = warp::any().map(move || state.clone());
     let with_options = warp::any().map(move || opts.clone());
@@ -137,7 +138,7 @@ pub async fn serve(
     let routes = livereload.or(redirect_handler.or(slash_redirect));
 
     //if opts.log {
-        //routes = routes.with(warp::log("static"));
+    //routes = routes.with(warp::log("static"));
     //}
 
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);

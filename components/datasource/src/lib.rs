@@ -1,16 +1,16 @@
-use std::fs::ReadDir;
 use std::collections::BTreeMap;
+use std::fs::ReadDir;
 use std::path::Path;
 use std::path::PathBuf;
 
-use thiserror::Error;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_value, json, Map, Value};
 use slug;
+use thiserror::Error;
 
-use config::Config;
 use config::page::Page;
+use config::Config;
 use utils;
 
 #[derive(Error, Debug)]

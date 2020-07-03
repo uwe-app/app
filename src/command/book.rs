@@ -17,20 +17,23 @@ pub struct BookOptions {
 
 pub fn add(options: BookOptions) -> Result<()> {
     if options.path.is_none() {
-        return Err(
-            Error::new(
-                format!("Book creation requires a path")));
+        return Err(Error::new(format!("Book creation requires a path")));
     }
 
     let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
     if spaces.len() != 1 {
-        return Err(
-            Error::new(
-                format!("Book creation requires a project not a workspace")));
+        return Err(Error::new(format!(
+            "Book creation requires a project not a workspace"
+        )));
     }
 
-    book::add(&spaces[0], options.path.unwrap(), options.title, options.authors)?;
+    book::add(
+        &spaces[0],
+        options.path.unwrap(),
+        options.title,
+        options.authors,
+    )?;
 
     Ok(())
 }

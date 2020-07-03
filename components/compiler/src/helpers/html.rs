@@ -1,5 +1,5 @@
-use handlebars::*;
 use super::render_buffer;
+use handlebars::*;
 
 use super::super::markdown::render_markdown_string;
 

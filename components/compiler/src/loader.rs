@@ -15,12 +15,12 @@ use inflector::Inflector;
 
 use log::warn;
 
-use config::Config;
 use config::page::Page;
+use config::Config;
 use utils;
 
-use crate::{Error, INDEX_STEM, MD};
 use super::frontmatter;
+use crate::{Error, INDEX_STEM, MD};
 
 lazy_static! {
     #[derive(Debug)]

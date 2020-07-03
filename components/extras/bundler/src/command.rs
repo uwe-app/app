@@ -8,7 +8,7 @@ use git;
 use preference;
 use utils;
 
-use crate::{BundleError as Error};
+use crate::BundleError as Error;
 
 use super::bundler::*;
 

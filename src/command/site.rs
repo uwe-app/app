@@ -1,8 +1,8 @@
-use std::path::PathBuf;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use log::{info, warn, error};
 
 use cache;
 use config::Config;
@@ -72,13 +72,11 @@ pub fn add(options: AddOptions) -> Result<()> {
     }
 
     if name.is_empty() {
-        return Err(
-            Error::new(format!("Could not determine site name")));
+        return Err(Error::new(format!("Could not determine site name")));
     }
 
     if manifest.sites.contains_key(&name) {
-        return Err(
-            Error::new(format!("Site '{}' already exists", name)));
+        return Err(Error::new(format!("Site '{}' already exists", name)));
     }
 
     let mut link_target = cache::get_workspace_dir()?;
@@ -103,8 +101,10 @@ pub fn remove(options: RemoveOptions) -> Result<()> {
     let mut manifest = load()?;
 
     if !manifest.sites.contains_key(&options.name) {
-        return Err(
-            Error::new(format!("Site '{}' does not exist", &options.name)));
+        return Err(Error::new(format!(
+            "Site '{}' does not exist",
+            &options.name
+        )));
     }
 
     // Remove the symlink
@@ -134,7 +134,7 @@ pub fn list(_options: ListOptions) -> Result<()> {
             } else {
                 error!("{} -> {} [invalid]", name, site.project.display());
             }
-        } 
+        }
     }
     Ok(())
 }

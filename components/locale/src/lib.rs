@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::Path;
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use fluent_templates::ArcLoader;
 use unic_langid::LanguageIdentifier;
@@ -112,4 +112,3 @@ impl LocalesLoader {
         //.customize(|bundle| bundle.set_use_isolating(false));
     }
 }
-

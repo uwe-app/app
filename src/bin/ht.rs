@@ -14,9 +14,7 @@ use std::panic;
 
 use utils;
 
-use hypertext::{
-    BuildArguments, Config, Error,
-};
+use hypertext::{BuildArguments, Config, Error};
 
 use hypertext::command;
 
@@ -34,7 +32,6 @@ fn error(s: String) {
 }
 
 fn get_project_path(input: PathBuf) -> PathBuf {
-
     // NOTE: We want the help output to show "."
     // NOTE: to indicate that the current working
     // NOTE: directory is used but the period creates
@@ -78,7 +75,7 @@ enum Book {
         path: PathBuf,
     },
     /// List books
-    #[structopt(alias="ls")]
+    #[structopt(alias = "ls")]
     List {
         /// Project folder
         #[structopt(parse(from_os_str), default_value = ".")]
@@ -136,7 +133,6 @@ struct BuildOpts {
 
 #[derive(StructOpt, Debug)]
 struct InitOpts {
-
     #[structopt(subcommand)]
     action: Option<InitCommands>,
 
@@ -158,7 +154,7 @@ struct InitOpts {
 #[derive(StructOpt, Debug)]
 enum InitCommands {
     /// List available blueprints
-    #[structopt(alias="ls")]
+    #[structopt(alias = "ls")]
     List {},
 }
 
@@ -231,19 +227,18 @@ enum Site {
         name: Option<String>,
     },
     /// Remove a site
-    #[structopt(alias="rm")]
+    #[structopt(alias = "rm")]
     Remove {
         /// The project name
         name: String,
     },
     /// List sites
-    #[structopt(alias="ls")]
+    #[structopt(alias = "ls")]
     List {},
 }
 
 #[derive(StructOpt, Debug)]
 enum Command {
-
     /// Create, list and build books
     Book {
         #[structopt(flatten)]
@@ -309,37 +304,41 @@ impl Command {
 
 fn process_command(cmd: &Command) {
     match cmd {
-        Command::Book{ ref action } => {
-            match action {
-                Book::Add { ref project, ref path } => {
-                    let opts = command::book::BookOptions{
-                        project: project.clone(),
-                        path: Some(path.clone()),
-                        ..Default::default()
-                    };
-                    if let Err(e) = command::book::add(opts) {
-                        fatal(e);
-                    }
-                },
-                Book::List { ref project } => {
-                    let opts = command::book::BookOptions{
-                        project: project.clone(),
-                        ..Default::default()
-                    };
-                    if let Err(e) = command::book::list(opts) {
-                        fatal(e);
-                    }
-                },
-                Book::Build{ ref project, ref target } => {
-                    let opts = command::book::BookOptions{
-                        project: project.clone(),
-                        target: target.clone(),
-                        ..Default::default()
-                    };
-                    if let Err(e) = command::book::build(opts) {
-                        fatal(e);
-                    }
-                },
+        Command::Book { ref action } => match action {
+            Book::Add {
+                ref project,
+                ref path,
+            } => {
+                let opts = command::book::BookOptions {
+                    project: project.clone(),
+                    path: Some(path.clone()),
+                    ..Default::default()
+                };
+                if let Err(e) = command::book::add(opts) {
+                    fatal(e);
+                }
+            }
+            Book::List { ref project } => {
+                let opts = command::book::BookOptions {
+                    project: project.clone(),
+                    ..Default::default()
+                };
+                if let Err(e) = command::book::list(opts) {
+                    fatal(e);
+                }
+            }
+            Book::Build {
+                ref project,
+                ref target,
+            } => {
+                let opts = command::book::BookOptions {
+                    project: project.clone(),
+                    target: target.clone(),
+                    ..Default::default()
+                };
+                if let Err(e) = command::book::build(opts) {
+                    fatal(e);
+                }
             }
         },
 
@@ -356,14 +355,13 @@ fn process_command(cmd: &Command) {
                         if let Err(e) = command::blueprint::list() {
                             fatal(e);
                         }
-                    },
+                    }
                 }
             } else {
                 if let Err(e) = command::blueprint::init(opts) {
                     fatal(e);
                 }
             }
-
         }
         Command::Fetch { ref args } => {
             let opts = command::fetch::FetchOptions {
@@ -414,10 +412,7 @@ fn process_command(cmd: &Command) {
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {
-                error(format!(
-                    "Not a directory '{}'",
-                    opts.target.display()
-                ));
+                error(format!("Not a directory '{}'", opts.target.display()));
             }
 
             if let Err(e) = command::run::serve_only(opts) {
@@ -439,31 +434,32 @@ fn process_command(cmd: &Command) {
             }
         }
 
-        Command::Site { ref action } => {
-            match action {
-                Site::Add { ref name, ref project } => {
-                    let opts = command::site::AddOptions {
-                        project: project.clone(),
-                        name: name.clone(),
-                    };
-                    if let Err(e) = command::site::add(opts) {
-                        fatal(e);
-                    }
-                },
-                Site::Remove { ref name } => {
-                    let opts = command::site::RemoveOptions {
-                        name: name.to_string(),
-                    };
-                    if let Err(e) = command::site::remove(opts) {
-                        fatal(e);
-                    }
-                },
-                Site::List { .. } => {
-                    let opts = command::site::ListOptions{};
-                    if let Err(e) = command::site::list(opts) {
-                        fatal(e);
-                    }
-                },
+        Command::Site { ref action } => match action {
+            Site::Add {
+                ref name,
+                ref project,
+            } => {
+                let opts = command::site::AddOptions {
+                    project: project.clone(),
+                    name: name.clone(),
+                };
+                if let Err(e) = command::site::add(opts) {
+                    fatal(e);
+                }
+            }
+            Site::Remove { ref name } => {
+                let opts = command::site::RemoveOptions {
+                    name: name.to_string(),
+                };
+                if let Err(e) = command::site::remove(opts) {
+                    fatal(e);
+                }
+            }
+            Site::List { .. } => {
+                let opts = command::site::ListOptions {};
+                if let Err(e) = command::site::list(opts) {
+                    fatal(e);
+                }
             }
         },
 

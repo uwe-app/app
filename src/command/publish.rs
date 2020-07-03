@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::{Config, BuildArguments};
+use config::{BuildArguments, Config};
+use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
-use publisher::{self, PublishRequest, PublishProvider};
 
 use workspace;
 
@@ -34,11 +34,10 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
         PublishProvider::Aws => {
             if let Some(ref publish_config) = config.publish.as_ref().unwrap().aws {
                 if let Some(ref env) = publish_config.environments.get(&options.env) {
-
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
-                        config.host.clone()   
+                        config.host.clone()
                     };
 
                     info!("Bucket {}", &bucket);
@@ -60,7 +59,8 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
                     info!("Building local file list");
 
                     // Create the list of local build files
-                    let mut file_builder = FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
+                    let mut file_builder =
+                        FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
                     file_builder.walk()?;
 
                     info!("Local objects {}", file_builder.keys.len());
@@ -75,20 +75,16 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
 
                     let diff = publisher::diff(&file_builder, &remote, &etags)?;
                     publisher::publish(&request, file_builder, diff).await?;
-
-
                 } else {
-                    return Err(
-                        Error::new(
-                            format!(
-                                "Unknown publish environment '{}'", &options.env)))
+                    return Err(Error::new(format!(
+                        "Unknown publish environment '{}'",
+                        &options.env
+                    )));
                 }
-
             } else {
-                return Err(Error::new(format!("No publish configuration")))
+                return Err(Error::new(format!("No publish configuration")));
             }
-
-        },
+        }
     }
 
     Ok(())

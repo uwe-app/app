@@ -244,7 +244,6 @@ pub fn create<P: AsRef<Path>>(
     repo_url: String,
     repo_dir: PathBuf,
 ) -> Result<Repository, Error> {
-
     let src_err = Err(Error::new(format!("Unable to handle source '{}'", &src)));
 
     let (repo, _cloned) = open_or_clone(&repo_url, &repo_dir, true)?;
@@ -290,11 +289,10 @@ pub fn create<P: AsRef<Path>>(
     src_err
 }
 
-
 //#[cfg(test)]
 //mod tests {
-    //#[test]
-    //fn it_works() {
-        //assert_eq!(2 + 2, 4);
-    //}
+//#[test]
+//fn it_works() {
+//assert_eq!(2 + 2, 4);
+//}
 //}

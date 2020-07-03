@@ -3,7 +3,7 @@ use std::path::Path;
 
 use config::page::Page;
 
-use crate::{Error};
+use crate::Error;
 
 use super::markdown::render_markdown_string;
 
