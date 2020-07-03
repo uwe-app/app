@@ -6,10 +6,10 @@ use log::info;
 
 use config::{BuildArguments, Config};
 use compiler::context::Context;
-use compiler::generator::GeneratorMap;
 use compiler::loader;
 use compiler::Compiler;
 use compiler::CompilerOptions;
+use datasource::DataSourceMap;
 use locale::Locales;
 
 use crate::Result;
@@ -78,14 +78,14 @@ pub fn compile(config: &Config, opts: CompilerOptions) -> Result<Context> {
 
 fn load(locales: Locales, config: Config, options: CompilerOptions) -> Result<Context> {
     // Load generators
-    let mut generators = GeneratorMap::new();
-    generators.load(options.source.clone(), &config)?;
+    let mut datasources = DataSourceMap::new();
+    datasources.load(options.source.clone(), &config)?;
 
     // Load page template data
     loader::load(&config, &options.source)?;
 
     // Set up the context
-    Ok(Context::new(locales, config, options, generators))
+    Ok(Context::new(locales, config, options, datasources))
 }
 
 fn build(ctx: &Context) -> Result<()> {

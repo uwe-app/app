@@ -4,7 +4,7 @@ use config::Config;
 
 use locale::Locales;
 
-use super::generator::GeneratorMap;
+use datasource::DataSourceMap;
 use super::CompilerOptions;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,7 +14,7 @@ pub struct Context {
     #[serde(skip)]
     pub livereload: Option<String>,
     #[serde(skip)]
-    pub generators: GeneratorMap,
+    pub datasource: DataSourceMap,
     #[serde(skip)]
     pub locales: Locales,
 }
@@ -24,14 +24,14 @@ impl Context {
         locales: Locales,
         config: Config,
         options: CompilerOptions,
-        generators: GeneratorMap,
+        datasource: DataSourceMap,
     ) -> Self {
         Self {
             locales,
             config,
             options,
             livereload: None,
-            generators,
+            datasource,
         }
     }
 }
@@ -42,7 +42,7 @@ impl Default for Context {
             //lang: String::from("en"),
             config: Default::default(),
             options: Default::default(),
-            generators: Default::default(),
+            datasource: Default::default(),
             locales: Default::default(),
             livereload: None,
         }

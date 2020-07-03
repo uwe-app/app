@@ -22,6 +22,8 @@ pub enum Error {
     Compiler(#[from] compiler::Error),
     #[error(transparent)]
     Locale(#[from] locale::Error),
+    #[error(transparent)]
+    DataSource(#[from] datasource::Error),
 }
 
 impl Error {

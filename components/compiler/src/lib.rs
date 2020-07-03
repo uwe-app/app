@@ -35,6 +35,8 @@ pub enum Error {
 
     #[error(transparent)]
     Book(#[from] book::Error),
+    #[error(transparent)]
+    DataSource(#[from] datasource::Error),
 }
 
 impl Error {
@@ -47,7 +49,6 @@ type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);
 
 static TEMPLATE_EXT: &str = ".hbs";
-static JSON: &str = "json";
 static INDEX_HTML: &str = "index.html";
 static INDEX_STEM: &str = "index";
 static MD: &str = "md";
@@ -60,7 +61,7 @@ pub mod compiler;
 pub mod context;
 pub mod draft;
 pub mod frontmatter;
-pub mod generator;
+//pub mod generator;
 pub mod helpers;
 pub mod hook;
 pub mod invalidator;

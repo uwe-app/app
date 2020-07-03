@@ -5,8 +5,9 @@ use log::{error, info};
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
+use datasource;
+
 use super::context::Context;
-use super::generator;
 use super::hook;
 use super::loader;
 use super::matcher;
@@ -30,8 +31,8 @@ use crate::Error;
  *  - File: copy the file to build.
  *  - Resource: ignored as they are symbolically linked.
  *  - Hook: execute the hook.
- *  - GeneratorConfig: TODO.
- *  - GeneratorDocument: TODO.
+ *  - DataSourceConfig: TODO.
+ *  - DataSourceDocument: TODO.
  *  - BookTheme: build all books.
  *  - BookConfig: TODO.
  *  - BookSource: build the book.
@@ -55,8 +56,8 @@ enum Action {
     File(PathBuf),
     Resource(PathBuf),
     Hook(String, PathBuf),
-    GeneratorConfig(PathBuf),
-    GeneratorDocument(PathBuf),
+    DataSourceConfig(PathBuf),
+    DataSourceDocument(PathBuf),
     // NOTE: The first path is the root directory
     // NOTE: and the second is the matched file.
     BookTheme(PathBuf, PathBuf),
@@ -223,7 +224,7 @@ impl<'a> Invalidator<'a> {
 
         let generator_paths: Vec<PathBuf> = self
             .context
-            .generators
+            .datasource
             .map
             .values()
             .map(|g| self.canonical(g.source.clone()))
@@ -312,13 +313,13 @@ impl<'a> Invalidator<'a> {
                         rule.ignores.push(Action::Partial(path));
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
-                            let cfg = self.context.generators.get_generator_config_path(p);
-                            let documents = generator::get_generator_documents_path(p);
+                            let cfg = self.context.datasource.get_datasource_config_path(p);
+                            let documents = datasource::get_datasource_documents_path(p);
                             if path == cfg {
-                                rule.actions.push(Action::GeneratorConfig(path));
+                                rule.actions.push(Action::DataSourceConfig(path));
                                 break;
                             } else if path.starts_with(documents) {
-                                rule.actions.push(Action::GeneratorDocument(path));
+                                rule.actions.push(Action::DataSourceDocument(path));
                                 break;
                             }
                         }

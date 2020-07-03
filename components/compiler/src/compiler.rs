@@ -10,10 +10,10 @@ use crate::{Result, Error, TEMPLATE_EXT};
 
 use book::compiler::BookCompiler;
 use config::page::Page;
+use datasource::{self, IndexQuery};
 use utils;
 
 use super::context::Context;
-use super::generator::{self, IndexQuery};
 use super::manifest::Manifest;
 use super::matcher::{self, FileType};
 use super::parser::Parser;
@@ -160,15 +160,15 @@ impl<'a> Compiler<'a> {
                     return Ok(());
                 }
 
-                let queries = generator::get_query(&data)?;
+                let queries = datasource::get_query(&data)?;
 
-                let generators = &self.context.generators;
+                let datasource = &self.context.datasource;
 
-                if !generators.map.is_empty() {
+                if !datasource.map.is_empty() {
                     let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
                     for query in queries {
                         let each = query.each.is_some() && query.each.unwrap();
-                        let idx = generators.query_index(&query)?;
+                        let idx = datasource.query_index(&query)?;
 
                         // Push on to the list of generators to iterate
                         // over so that we can support the same template

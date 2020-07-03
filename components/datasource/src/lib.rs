@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::path::PathBuf;
 
+use thiserror::Error;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_value, json, Map, Value};
@@ -11,13 +12,33 @@ use config::Config;
 use config::page::Page;
 use utils;
 
-use crate::{Error, JSON};
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("{0}")]
+    Message(String),
 
-static GENERATOR_TOML: &str = "generator.toml";
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Json(#[from] serde_json::error::Error),
+
+    #[error(transparent)]
+    TomlDeser(#[from] toml::de::Error),
+}
+
+impl Error {
+    pub fn new(s: String) -> Self {
+        Error::Message(s)
+    }
+}
+
+static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";
+static JSON: &str = "json";
 
 pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>, Error> {
     //let generator_config = data.query;
@@ -43,14 +64,14 @@ pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>, Error> {
     Ok(page_generators)
 }
 
-pub fn get_generator_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
+pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
     pth.push(DOCUMENTS);
     pth
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GeneratorConfig {
+pub struct DataSourceConfig {
     pub index: Option<BTreeMap<String, IndexRequest>>,
 }
 
@@ -95,10 +116,10 @@ impl IndexQuery {
 }
 
 #[derive(Debug)]
-pub struct Generator {
+pub struct DataSource {
     pub site: PathBuf,
     pub source: PathBuf,
-    pub config: GeneratorConfig,
+    pub config: DataSourceConfig,
     pub all: BTreeMap<String, Value>,
     pub indices: BTreeMap<String, ValueIndex>,
 }
@@ -178,9 +199,9 @@ impl ValueIndex {
     }
 }
 
-impl Generator {
+impl DataSource {
     pub fn load(&mut self) -> Result<(), Error> {
-        let documents = get_generator_documents_path(&self.source);
+        let documents = get_datasource_documents_path(&self.source);
         match documents.read_dir() {
             Ok(contents) => {
                 for e in contents {
@@ -219,19 +240,19 @@ impl Generator {
 }
 
 #[derive(Debug, Default)]
-pub struct GeneratorMap {
-    pub map: BTreeMap<String, Generator>,
+pub struct DataSourceMap {
+    pub map: BTreeMap<String, DataSource>,
 }
 
-impl GeneratorMap {
+impl DataSourceMap {
     pub fn new() -> Self {
-        let map: BTreeMap<String, Generator> = BTreeMap::new();
-        GeneratorMap { map }
+        let map: BTreeMap<String, DataSource> = BTreeMap::new();
+        DataSourceMap { map }
     }
 
-    pub fn get_generator_config_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_datasource_config_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let mut pth = source.as_ref().to_path_buf();
-        pth.push(GENERATOR_TOML);
+        pth.push(DATASOURCE_TOML);
         pth
     }
 
@@ -384,11 +405,11 @@ impl GeneratorMap {
                 if path.is_dir() {
                     if let Some(nm) = path.file_name() {
                         let key = nm.to_string_lossy().into_owned();
-                        let conf = self.get_generator_config_path(&path);
+                        let conf = self.get_datasource_config_path(&path);
                         if !conf.exists() || !conf.is_file() {
                             return Err(Error::new(format!(
                                 "No {} for generator {}",
-                                GENERATOR_TOML, key
+                                DATASOURCE_TOML, key
                             )));
                         }
 
@@ -402,12 +423,12 @@ impl GeneratorMap {
                         }
 
                         let contents = utils::fs::read_string(conf)?;
-                        let config: GeneratorConfig = toml::from_str(&contents)?;
+                        let config: DataSourceConfig = toml::from_str(&contents)?;
 
                         let all: BTreeMap<String, Value> = BTreeMap::new();
                         let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
 
-                        let generator = Generator {
+                        let generator = DataSource {
                             site: source.clone(),
                             source: path.to_path_buf(),
                             all,
@@ -435,5 +456,13 @@ impl GeneratorMap {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
     }
 }
