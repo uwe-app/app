@@ -555,7 +555,7 @@ impl Default for ExtensionConfig {
         let mut ext_map: HashMap<String, String> = HashMap::new();
         ext_map.insert(String::from(MD), String::from(HTML));
         ExtensionConfig {
-            render: vec![String::from(MD), String::from(HTML)],
+            render: vec![String::from(MD)],
             map: ext_map,
             markdown: vec![String::from(MD)],
         }
