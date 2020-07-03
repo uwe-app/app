@@ -33,7 +33,7 @@ static DATASOURCES: &str = "data-sources";
 static RESOURCES: &str = "resources";
 
 static HOST: &str = "localhost";
-static PORT: u16 = 3000;
+static PORT: u16 = 8888;
 
 static LANG: &str = "en";
 static LOCALES: &str = "locales";
