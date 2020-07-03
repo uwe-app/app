@@ -88,7 +88,7 @@ impl BookCompiler {
         livereload: Option<String>) -> Result<MDBook> {
 
         let dir = p.as_ref().to_path_buf();
-        info!("load {}", dir.display());
+        info!("Load {}", dir.display());
 
         let result = MDBook::load(dir);
         match result {
@@ -120,7 +120,7 @@ impl BookCompiler {
         let dir = p.as_ref();
         if let Some(ref book) = config.book {
             if let Some(cfg) = book.find(rel.as_ref()) {
-                info!("build {}", dir.display());
+                info!("Build {}", dir.display());
 
                 let draft = cfg.draft.is_some() && cfg.draft.unwrap();
                 if draft && self.release {
