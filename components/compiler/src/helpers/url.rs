@@ -40,6 +40,7 @@ impl HelperDef for Link {
             .to_owned();
 
         let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
+        let extensions = build_ctx.config.extension.as_ref().unwrap();
         let opts = &build_ctx.options;
         let path = Path::new(&base_path);
 
@@ -107,7 +108,7 @@ impl HelperDef for Link {
             if let Ok(rel) = path.strip_prefix(base) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
-                    if opts.clean_url && matcher::is_clean(&path) {
+                    if opts.clean_url && matcher::is_clean(&path, extensions) {
                         value.push_str("../");
                     }
                     for _ in p.components() {

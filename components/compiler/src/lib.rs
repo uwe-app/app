@@ -54,14 +54,10 @@ static INDEX_STEM: &str = "index";
 static MD: &str = "md";
 static HTML: &str = "html";
 
-// FIXME: remove these and their usages
-static PARSE_EXTENSIONS: [&str; 2] = [HTML, MD];
-
 pub mod compiler;
 pub mod context;
 pub mod draft;
 pub mod frontmatter;
-//pub mod generator;
 pub mod helpers;
 pub mod hook;
 pub mod invalidator;

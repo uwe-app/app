@@ -12,16 +12,14 @@ pub enum FileType {
 use config::ExtensionConfig;
 use utils;
 
-use crate::{Error, HTML, INDEX_STEM, MD, PARSE_EXTENSIONS};
-
-//use super::generator;
+use crate::{Error, HTML, INDEX_STEM, MD};
 
 use super::context::Context;
 
-fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
+fn resolve_dir_index<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
     let mut buf = file.as_ref().to_path_buf();
     buf.push(INDEX_STEM);
-    for ext in PARSE_EXTENSIONS.iter() {
+    for ext in extensions.render.iter() {
         buf.set_extension(ext);
         if buf.exists() {
             return Some(buf);
@@ -30,15 +28,15 @@ fn resolve_dir_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
     None
 }
 
-pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
+pub fn resolve_parent_index<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
     if let Some(parent) = file.as_ref().parent() {
         // Not an index file so a single level is sufficient
         if !is_index(&file) {
-            return resolve_dir_index(&parent);
+            return resolve_dir_index(&parent, extensions);
         // Otherwise go back down one more level
         } else {
             if let Some(parent) = parent.parent() {
-                return resolve_dir_index(&parent);
+                return resolve_dir_index(&parent, extensions);
             }
         }
     }
@@ -91,7 +89,7 @@ pub fn resolve_parent_index<P: AsRef<Path>>(file: P) -> Option<PathBuf> {
 //}
 
 // Try to find a source file for the given URL
-pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf> {
+pub fn lookup_in(base: &PathBuf, context: &Context, href: &str, extensions: &ExtensionConfig) -> Option<PathBuf> {
     let clean_url = context.options.clean_url;
 
     let mut url = href.to_string().clone();
@@ -114,7 +112,7 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
         let mut idx = base.clone();
         idx.push(&utils::url::to_path_separator(&url));
         idx.push(INDEX_STEM);
-        for ext in PARSE_EXTENSIONS.iter() {
+        for ext in extensions.render.iter() {
             idx.set_extension(ext);
             if idx.exists() {
                 return Some(buf);
@@ -125,7 +123,7 @@ pub fn lookup_in(base: &PathBuf, context: &Context, href: &str) -> Option<PathBu
     // Check for lower-level files that could map
     // to index pages
     if clean_url && is_dir {
-        for ext in PARSE_EXTENSIONS.iter() {
+        for ext in extensions.render.iter() {
             buf.set_extension(ext);
             if buf.exists() {
                 return Some(buf);
@@ -156,14 +154,16 @@ pub fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<Pat
 pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
     let base = &context.options.source;
 
+    let extensions = context.config.extension.as_ref().unwrap();
+
     // Try to find a direct corresponding source file
-    if let Some(source) = lookup_in(base, context, href) {
+    if let Some(source) = lookup_in(base, context, href, extensions) {
         return Some(source);
     }
 
     // Try to find a resource
     let resource = context.config.get_resources_path(base);
-    if let Some(resource) = lookup_in(&resource, context, href) {
+    if let Some(resource) = lookup_in(&resource, context, href, extensions) {
         return Some(resource);
     }
 
@@ -220,10 +220,10 @@ pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType 
     FileType::Unknown
 }
 
-pub fn has_parse_file_match<P: AsRef<Path>>(file: P) -> bool {
+fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
     let path = file.as_ref();
     let mut copy = path.to_path_buf();
-    for ext in PARSE_EXTENSIONS.iter() {
+    for ext in extensions.render.iter() {
         copy.set_extension(ext);
         if copy.exists() {
             return true;
@@ -232,13 +232,13 @@ pub fn has_parse_file_match<P: AsRef<Path>>(file: P) -> bool {
     false
 }
 
-pub fn is_clean<P: AsRef<Path>>(file: P) -> bool {
+pub fn is_clean<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
     let target = file.as_ref().to_path_buf();
     let result = target.clone();
-    return clean(target, result).is_some();
+    return clean(target, result, extensions).is_some();
 }
 
-pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
+pub fn clean<P: AsRef<Path>>(file: P, result: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
     let clean_target = file.as_ref();
     if !is_index(&clean_target) {
         if let Some(parent) = clean_target.parent() {
@@ -247,7 +247,7 @@ pub fn clean<P: AsRef<Path>>(file: P, result: P) -> Option<PathBuf> {
                 target.push(stem);
                 target.push(INDEX_STEM);
 
-                if !has_parse_file_match(&target) {
+                if !has_parse_file_match(&target, extensions) {
                     let clean_result = result.as_ref().clone();
                     if let Some(parent) = clean_result.parent() {
                         if let Some(stem) = clean_result.file_stem() {
@@ -335,7 +335,7 @@ pub fn destination<P: AsRef<Path>>(
                     }
 
                     if clean_urls {
-                        if let Some(res) = clean(pth.as_path(), result.as_path()) {
+                        if let Some(res) = clean(pth.as_path(), result.as_path(), extensions) {
                             result = res;
                         }
                     }
