@@ -424,7 +424,7 @@ impl GeneratorMap {
     }
 
     fn load_configurations(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
-        let src = config.get_generators_path(&source);
+        let src = config.get_datasources_path(&source);
         if src.exists() && src.is_dir() {
             let result = src.read_dir();
             match result {

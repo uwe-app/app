@@ -201,7 +201,7 @@ impl<'a> Invalidator<'a> {
         let generators = self.canonical(
             self.context
                 .config
-                .get_generators_path(&self.context.options.source),
+                .get_datasources_path(&self.context.options.source),
         );
 
         let resources = self.canonical(

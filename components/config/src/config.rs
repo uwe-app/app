@@ -29,7 +29,7 @@ static PAGE_DATA: &str = "page.toml";
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
 static INCLUDES: &str = "includes";
-static GENERATORS: &str = "generators";
+static DATASOURCES: &str = "datasources";
 static RESOURCES: &str = "resources";
 
 static HOST: &str = "localhost";
@@ -339,11 +339,11 @@ impl Config {
         pth
     }
 
-    pub fn get_generators_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_datasources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let build = self.build.as_ref().unwrap();
-        let generator = build.generators.as_ref().unwrap();
+        let datasources = build.datasources.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
-        pth.push(generator);
+        pth.push(datasources);
         pth
     }
 
@@ -381,7 +381,7 @@ pub struct BuildConfig {
     pub assets: Option<PathBuf>,
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
-    pub generators: Option<PathBuf>,
+    pub datasources: Option<PathBuf>,
     pub resources: Option<PathBuf>,
     pub clean_url: Option<bool>,
     pub follow_links: Option<bool>,
@@ -397,7 +397,7 @@ impl Default for BuildConfig {
             assets: Some(PathBuf::from(ASSETS)),
             includes: Some(PathBuf::from(INCLUDES)),
             partials: Some(PathBuf::from(PARTIALS)),
-            generators: Some(PathBuf::from(GENERATORS)),
+            datasources: Some(PathBuf::from(DATASOURCES)),
             resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
             follow_links: Some(true),

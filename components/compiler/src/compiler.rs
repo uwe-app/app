@@ -279,7 +279,7 @@ impl<'a> Compiler<'a> {
         let generator = self
             .context
             .config
-            .get_generators_path(&self.context.options.source);
+            .get_datasources_path(&self.context.options.source);
         let resource = self
             .context
             .config
