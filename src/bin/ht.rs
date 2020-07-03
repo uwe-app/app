@@ -144,6 +144,10 @@ struct InitOpts {
     #[structopt(short, long)]
     host: Option<String>,
 
+    /// Set multiple languages (comma delimited)
+    #[structopt(short="L", long)]
+    locales: Option<String>,
+
     /// Private key to use for SSH connections
     #[structopt(short, long, env = "HT_SSH_PRIVATE_KEY", hide_env_values = true)]
     private_key: Option<PathBuf>,
@@ -355,6 +359,7 @@ fn process_command(cmd: &Command) {
                 private_key: args.private_key.clone(),
                 language: args.language.clone(),
                 host: args.host.clone(),
+                locales: args.locales.clone(),
             };
 
             if let Some(ref action) = args.action {

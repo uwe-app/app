@@ -17,7 +17,18 @@ use utils;
 use super::page::Page;
 use super::Error;
 
+pub static SITE: &str = "site";
+pub static BUILD: &str = "build";
+pub static LOCALES: &str = "locales";
+pub static CORE_FTL: &str = "core.ftl";
+pub static MAIN_FTL: &str = "main.ftl";
 pub static SITE_TOML: &str = "site.toml";
+pub static LANG_KEY: &str = "lang";
+pub static HOST_KEY: &str = "host";
+pub static FLUENT_KEY: &str = "fluent";
+pub static FALLBACK_KEY: &str = "fallback";
+pub static SHARED_KEY: &str = "shared";
+pub static REDIRECT_KEY: &str = "redirect";
 
 static MD: &str = "md";
 static HTML: &str = "html";
@@ -32,7 +43,6 @@ static RESOURCES: &str = "resources";
 static HOST: &str = "localhost";
 static PORT: u16 = 8888;
 static LANG: &str = "en";
-static LOCALES: &str = "locales";
 
 type RedirectConfig = HashMap<String, String>;
 
@@ -392,8 +402,8 @@ pub struct BuildConfig {
 impl Default for BuildConfig {
     fn default() -> Self {
         BuildConfig {
-            source: PathBuf::from("site"),
-            target: PathBuf::from("build"),
+            source: PathBuf::from(SITE),
+            target: PathBuf::from(BUILD),
             strict: Some(true),
             pages: Some(PathBuf::from(PAGE_DATA)),
             assets: Some(PathBuf::from(ASSETS)),
@@ -512,7 +522,7 @@ impl Default for FluentConfig {
         Self {
             fallback: Some(String::from(LANG)),
             locales: Some(PathBuf::from(LOCALES)),
-            shared: Some(String::from("core.ftl")),
+            shared: Some(String::from(CORE_FTL)),
             fallback_id: String::from(LANG).parse().unwrap(),
         }
     }
