@@ -1,3 +1,4 @@
+use std::fs::ReadDir;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -33,6 +34,8 @@ impl Error {
     }
 }
 
+type Result<T> = std::result::Result<T, Error>;
+
 static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
@@ -40,7 +43,7 @@ static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";
 static JSON: &str = "json";
 
-pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>, Error> {
+pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>> {
     //let generator_config = data.query;
     let mut page_generators: Vec<IndexQuery> = Vec::new();
     if let Some(cfg) = &data.query {
@@ -200,40 +203,30 @@ impl ValueIndex {
 }
 
 impl DataSource {
-    pub fn load(&mut self) -> Result<(), Error> {
+    pub fn load(&mut self) -> Result<()> {
         let documents = get_datasource_documents_path(&self.source);
-        match documents.read_dir() {
-            Ok(contents) => {
-                for e in contents {
-                    match e {
-                        Ok(entry) => {
-                            let path = entry.path();
+        let contents = documents.read_dir()?;
+        for entry in contents {
+            let path = entry?.path();
+            if let Some(ext) = path.extension() {
+                if ext == JSON {
+                    let contents = utils::fs::read_string(&path)?;
+                    let document: Value = serde_json::from_str(&contents)?;
+                    if let Some(stem) = path.file_stem() {
+                        let name = stem.to_string_lossy().into_owned();
+                        let id = slug::slugify(&name);
 
-                            if let Some(ext) = path.extension() {
-                                if ext == JSON {
-                                    let contents = utils::fs::read_string(&path)?;
-                                    let document: Value = serde_json::from_str(&contents)?;
-                                    if let Some(stem) = path.file_stem() {
-                                        let name = stem.to_string_lossy().into_owned();
-                                        let id = slug::slugify(&name);
-
-                                        if self.all.contains_key(&id) {
-                                            return Err(Error::new(format!(
-                                                "Duplicate document id {} ({}.json)",
-                                                &id, &name
-                                            )));
-                                        }
-
-                                        self.all.insert(id, document);
-                                    }
-                                }
-                            }
+                        if self.all.contains_key(&id) {
+                            return Err(Error::new(format!(
+                                "Duplicate document id {} ({}.json)",
+                                &id, &name
+                            )));
                         }
-                        Err(e) => return Err(Error::from(e)),
+
+                        self.all.insert(id, document);
                     }
                 }
             }
-            Err(e) => return Err(Error::from(e)),
         }
         Ok(())
     }
@@ -256,7 +249,7 @@ impl DataSourceMap {
         pth
     }
 
-    pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
+    pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<()> {
         self.load_configurations(source, config)?;
         self.load_documents()?;
         self.configure_default_index()?;
@@ -265,7 +258,7 @@ impl DataSourceMap {
     }
 
     // Configure the default all index
-    fn configure_default_index(&mut self) -> Result<(), Error> {
+    fn configure_default_index(&mut self) -> Result<()> {
         for (_, generator) in self.map.iter_mut() {
             if generator.config.index.is_none() {
                 generator.config.index = Some(BTreeMap::new());
@@ -300,7 +293,7 @@ impl DataSourceMap {
         Ok(())
     }
 
-    fn load_index(&mut self) -> Result<(), Error> {
+    fn load_index(&mut self) -> Result<()> {
         let type_err = Err(Error::new(format!(
             "Type error building index, keys must be string values"
         )));
@@ -357,11 +350,10 @@ impl DataSourceMap {
             //println!("{}", serde_json::to_string_pretty(&idx.to_keys()).unwrap());
             //}
         }
-        //std::process::exit(1);
         Ok(())
     }
 
-    pub fn query_index(&self, query: &IndexQuery) -> Result<Vec<Value>, Error> {
+    pub fn query_index(&self, query: &IndexQuery) -> Result<Vec<Value>> {
         let name = &query.name;
         let idx_name = &query.index;
         let keys = query.keys.is_some() && query.keys.unwrap();
@@ -389,80 +381,64 @@ impl DataSourceMap {
         }
     }
 
-    fn load_documents(&mut self) -> Result<(), Error> {
+    fn load_documents(&mut self) -> Result<()> {
         for (k, g) in self.map.iter_mut() {
-            //let pth = self.get_generator_documents_path(&g.source);
             info!("{} < {}", k, g.source.display());
             g.load()?;
         }
         Ok(())
     }
 
-    fn load_config(&mut self, source: PathBuf, dir: std::fs::ReadDir) -> Result<(), Error> {
+    fn load_config(&mut self, source: PathBuf, dir: ReadDir) -> Result<()> {
         for f in dir {
-            if let Ok(entry) = f {
-                let path = entry.path();
-                if path.is_dir() {
-                    if let Some(nm) = path.file_name() {
-                        let key = nm.to_string_lossy().into_owned();
-                        let conf = self.get_datasource_config_path(&path);
-                        if !conf.exists() || !conf.is_file() {
-                            return Err(Error::new(format!(
-                                "No {} for generator {}",
-                                DATASOURCE_TOML, key
-                            )));
-                        }
-
-                        let mut data = path.to_path_buf().clone();
-                        data.push(DOCUMENTS);
-                        if !data.exists() || !data.is_dir() {
-                            return Err(Error::new(format!(
-                                "No {} directory for generator {}",
-                                DOCUMENTS, key
-                            )));
-                        }
-
-                        let contents = utils::fs::read_string(conf)?;
-                        let config: DataSourceConfig = toml::from_str(&contents)?;
-
-                        let all: BTreeMap<String, Value> = BTreeMap::new();
-                        let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
-
-                        let generator = DataSource {
-                            site: source.clone(),
-                            source: path.to_path_buf(),
-                            all,
-                            indices,
-                            config,
-                        };
-
-                        self.map.insert(key, generator);
+            let path = f?.path();
+            if path.is_dir() {
+                if let Some(nm) = path.file_name() {
+                    let key = nm.to_string_lossy().into_owned();
+                    let conf = self.get_datasource_config_path(&path);
+                    if !conf.exists() || !conf.is_file() {
+                        return Err(Error::new(format!(
+                            "No {} for generator {}",
+                            DATASOURCE_TOML, key
+                        )));
                     }
+
+                    let mut data = path.to_path_buf().clone();
+                    data.push(DOCUMENTS);
+                    if !data.exists() || !data.is_dir() {
+                        return Err(Error::new(format!(
+                            "No {} directory for generator {}",
+                            DOCUMENTS, key
+                        )));
+                    }
+
+                    let contents = utils::fs::read_string(conf)?;
+                    let config: DataSourceConfig = toml::from_str(&contents)?;
+
+                    let all: BTreeMap<String, Value> = BTreeMap::new();
+                    let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
+
+                    let generator = DataSource {
+                        site: source.clone(),
+                        source: path.to_path_buf(),
+                        all,
+                        indices,
+                        config,
+                    };
+
+                    self.map.insert(key, generator);
                 }
             }
         }
         Ok(())
     }
 
-    fn load_configurations(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
+    fn load_configurations(&mut self, source: PathBuf, config: &Config) -> Result<()> {
         let src = config.get_datasources_path(&source);
         if src.exists() && src.is_dir() {
-            let result = src.read_dir();
-            match result {
-                Ok(contents) => {
-                    self.load_config(source, contents)?;
-                }
-                Err(e) => return Err(Error::from(e)),
-            }
+            let contents = src.read_dir()?;
+            self.load_config(source, contents)?;
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
     }
 }
