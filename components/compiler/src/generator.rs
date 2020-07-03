@@ -377,55 +377,59 @@ impl GeneratorMap {
         Ok(())
     }
 
+    fn load_config(&mut self, source: PathBuf, dir: std::fs::ReadDir) -> Result<(), Error> {
+        for f in dir {
+            if let Ok(entry) = f {
+                let path = entry.path();
+                if path.is_dir() {
+                    if let Some(nm) = path.file_name() {
+                        let key = nm.to_string_lossy().into_owned();
+                        let conf = self.get_generator_config_path(&path);
+                        if !conf.exists() || !conf.is_file() {
+                            return Err(Error::new(format!(
+                                "No {} for generator {}",
+                                GENERATOR_TOML, key
+                            )));
+                        }
+
+                        let mut data = path.to_path_buf().clone();
+                        data.push(DOCUMENTS);
+                        if !data.exists() || !data.is_dir() {
+                            return Err(Error::new(format!(
+                                "No {} directory for generator {}",
+                                DOCUMENTS, key
+                            )));
+                        }
+
+                        let contents = utils::fs::read_string(conf)?;
+                        let config: GeneratorConfig = toml::from_str(&contents)?;
+
+                        let all: BTreeMap<String, Value> = BTreeMap::new();
+                        let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
+
+                        let generator = Generator {
+                            site: source.clone(),
+                            source: path.to_path_buf(),
+                            all,
+                            indices,
+                            config,
+                        };
+
+                        self.map.insert(key, generator);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn load_configurations(&mut self, source: PathBuf, config: &Config) -> Result<(), Error> {
         let src = config.get_generators_path(&source);
-
         if src.exists() && src.is_dir() {
             let result = src.read_dir();
             match result {
                 Ok(contents) => {
-                    for f in contents {
-                        if let Ok(entry) = f {
-                            let path = entry.path();
-                            if path.is_dir() {
-                                if let Some(nm) = path.file_name() {
-                                    let key = nm.to_string_lossy().into_owned();
-                                    let conf = self.get_generator_config_path(&path);
-                                    if !conf.exists() || !conf.is_file() {
-                                        return Err(Error::new(format!(
-                                            "No {} for generator {}",
-                                            GENERATOR_TOML, key
-                                        )));
-                                    }
-
-                                    let mut data = path.to_path_buf().clone();
-                                    data.push(DOCUMENTS);
-                                    if !data.exists() || !data.is_dir() {
-                                        return Err(Error::new(format!(
-                                            "No {} directory for generator {}",
-                                            DOCUMENTS, key
-                                        )));
-                                    }
-
-                                    let contents = utils::fs::read_string(conf)?;
-                                    let config: GeneratorConfig = toml::from_str(&contents)?;
-
-                                    let all: BTreeMap<String, Value> = BTreeMap::new();
-                                    let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
-
-                                    let generator = Generator {
-                                        site: source.clone(),
-                                        source: path.to_path_buf(),
-                                        all,
-                                        indices,
-                                        config,
-                                    };
-
-                                    self.map.insert(key, generator);
-                                }
-                            }
-                        }
-                    }
+                    self.load_config(source, contents)?;
                 }
                 Err(e) => return Err(Error::from(e)),
             }
