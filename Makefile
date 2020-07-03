@@ -1,6 +1,5 @@
-SITE_ROOT = ../website
-
-ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+# Windows_NT on XP, 2000, 7, Vista, 10 etc.
+ifeq ($(OS),Windows_NT) 
     HOST_OS := windows
 else
     HOST_OS := $(strip $(shell uname | tr A-Z a-z))
@@ -20,12 +19,10 @@ VERSION := $(subst hypertext ,,$(VERSION_INFO))
 VERSION_TAG := "v$(VERSION)"
 VERSION_FILE = $(RELEASE_REPO)/version.toml
 
+SITE_ROOT = ../website
 SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
 all: init site-release
-
-clean:
-	@rm -rf ./target
 
 init-newcss:
 	@rm -rf ./build/init-newcss
@@ -36,19 +33,6 @@ init-newcss-open: init-newcss
 	@(cd ./build/init-newcss && cargo run -- build --live)
 
 init: init-newcss
-
-site:
-	@cargo run -- $(SITE_ROOT)/ --force
-
-site-live:
-	@cargo run -- $(SITE_ROOT)/ --live --force
-
-site-release: install help
-
-website-dist:
-	@cargo run -- $(SITE_ROOT)/ --release --force --tag=dist
-	@rm -f $(SITE_ROOT)/build/hypertext-preview.zip
-	@(cd $(SITE_ROOT)/build && zip -r hypertext-preview.zip dist/*)
 
 build-release:
 	@cargo build --release --bin=ht
@@ -80,9 +64,6 @@ release: build-release current
 	@(cd $(RELEASE_REPO) && git add . && git commit -m "Update release to $(VERSION_TAG)." || true)
 	@(cd $(RELEASE_REPO) && git tag -f $(VERSION_TAG) && git push origin master --tags --force)
 
-check:
-	@cargo check
-
 install: build-release
 	@mkdir -p $(HOME)/.hypertext/bin
 	@cp -f target/release/ht $(HOME)/.hypertext/bin
@@ -91,4 +72,4 @@ install-darwin: release-darwin
 	@mkdir -p $(HOME)/.hypertext/bin
 	@cp -f target/release/ht $(HOME)/.hypertext/bin
 
-.PHONY: all site site-release clean install
+.PHONY: all site-release install release
