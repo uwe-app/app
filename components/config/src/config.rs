@@ -341,7 +341,7 @@ impl Config {
 
     pub fn get_datasources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
         let build = self.build.as_ref().unwrap();
-        let datasources = build.datasources.as_ref().unwrap();
+        let datasources = build.data_sources.as_ref().unwrap();
         let mut pth = source.as_ref().to_path_buf();
         pth.push(datasources);
         pth
@@ -381,7 +381,7 @@ pub struct BuildConfig {
     pub assets: Option<PathBuf>,
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
-    pub datasources: Option<PathBuf>,
+    pub data_sources: Option<PathBuf>,
     pub resources: Option<PathBuf>,
     pub clean_url: Option<bool>,
     pub follow_links: Option<bool>,
@@ -397,7 +397,7 @@ impl Default for BuildConfig {
             assets: Some(PathBuf::from(ASSETS)),
             includes: Some(PathBuf::from(INCLUDES)),
             partials: Some(PathBuf::from(PARTIALS)),
-            datasources: Some(PathBuf::from(DATASOURCES)),
+            data_sources: Some(PathBuf::from(DATASOURCES)),
             resources: Some(PathBuf::from(RESOURCES)),
             clean_url: Some(true),
             follow_links: Some(true),
