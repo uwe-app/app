@@ -136,17 +136,23 @@ struct InitOpts {
     #[structopt(subcommand)]
     action: Option<InitCommands>,
 
+    /// Language for the new project
+    #[structopt(short, long)]
+    language: Option<String>,
+
+    /// Host name for the new project
+    #[structopt(short, long)]
+    host: Option<String>,
+
     /// Private key to use for SSH connections
     #[structopt(short, long, env = "HT_SSH_PRIVATE_KEY", hide_env_values = true)]
     private_key: Option<PathBuf>,
 
-    /// Target directory for the project
+    /// Output directory for the project
     #[structopt(parse(from_os_str))]
-    // Not that normally we want a path but when --list
-    // is given clap will error without the Option
     target: Option<PathBuf>,
 
-    /// The blueprint source path or URL
+    /// A blueprint source path or URL
     #[structopt()]
     source: Option<String>,
 }
@@ -347,6 +353,8 @@ fn process_command(cmd: &Command) {
                 source: args.source.clone(),
                 target: args.target.clone(),
                 private_key: args.private_key.clone(),
+                language: args.language.clone(),
+                host: args.host.clone(),
             };
 
             if let Some(ref action) = args.action {

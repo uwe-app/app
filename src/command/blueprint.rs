@@ -12,9 +12,10 @@ pub struct InitOptions {
     pub source: Option<String>,
     pub target: Option<PathBuf>,
     pub private_key: Option<PathBuf>,
-}
 
-// FIXME: move this logic to the git workspace module!
+    pub language: Option<String>,
+    pub host: Option<String>,
+}
 
 fn prepare() -> Result<(Preferences, String, PathBuf), Error> {
     let prefs = preference::load()?;

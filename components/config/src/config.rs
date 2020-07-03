@@ -63,6 +63,26 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
     resolve_cwd()
 }
 
+fn parse_language<S: AsRef<str>>(lang: S) -> Result<LanguageIdentifier, Error> {
+    let id: LanguageIdentifier = lang.as_ref().parse()?;
+    Ok(id)
+}
+
+fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
+    let mut src = host.as_ref().clone().to_string();
+    // It's ok if people want to declare a scheme but we don't
+    // want one for the host
+    src = src
+        .trim_start_matches("http://")
+        .trim_start_matches("https://")
+        .to_string();
+
+    // Check host can be parsed as a valid URL
+    // and return the parsed URL
+    let url_host = format!("https://{}", src);
+    Ok(Url::parse(&url_host)?)
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -89,9 +109,6 @@ pub struct Config {
 
     #[serde(skip)]
     pub project: Option<PathBuf>,
-
-    #[serde(skip)]
-    pub url: Option<Url>,
 }
 
 impl Default for Config {
@@ -99,7 +116,6 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
-            url: None,
             file: None,
             project: None,
             build: Some(Default::default()),
@@ -142,19 +158,10 @@ impl Config {
                 cfg.file = Some(path.to_path_buf());
 
                 // Ensure that lang is a valid identifier
-                let _: LanguageIdentifier = cfg.lang.parse()?;
+                parse_language(&cfg.lang)?;
 
-                // It's ok if people want to declare a scheme but we don't
-                // want one for the host
-                cfg.host = cfg.host.trim_start_matches("http://").to_string();
-                cfg.host = cfg.host.trim_start_matches("https://").to_string();
-
-                // Check host can be parsed as a valid URL
-                // and store the parsed URL
-                let mut url_host = String::from("https://");
-                url_host.push_str(&cfg.host);
-                let url = Url::parse(&url_host)?;
-                cfg.url = Some(url);
+                // Ensure the host is a valid Url
+                parse_host(&cfg.host)?;
 
                 if cfg.fluent.is_some() {
                     let mut fluent = cfg.fluent.as_mut().unwrap();
