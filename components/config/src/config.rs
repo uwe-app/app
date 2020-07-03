@@ -17,24 +17,20 @@ use utils;
 use super::page::Page;
 use super::Error;
 
+pub static SITE_TOML: &str = "site.toml";
+
 static MD: &str = "md";
 static HTML: &str = "html";
-
-static SITE_TOML: &str = "site.toml";
 static BOOK_TOML: &str = "book.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
-
 static PAGE_DATA: &str = "page.toml";
-
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
 static INCLUDES: &str = "includes";
 static DATASOURCES: &str = "data-sources";
 static RESOURCES: &str = "resources";
-
 static HOST: &str = "localhost";
 static PORT: u16 = 8888;
-
 static LANG: &str = "en";
 static LOCALES: &str = "locales";
 
@@ -63,12 +59,12 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
     resolve_cwd()
 }
 
-fn parse_language<S: AsRef<str>>(lang: S) -> Result<LanguageIdentifier, Error> {
+pub fn parse_language<S: AsRef<str>>(lang: S) -> Result<LanguageIdentifier, Error> {
     let id: LanguageIdentifier = lang.as_ref().parse()?;
     Ok(id)
 }
 
-fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
+pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
     let mut src = host.as_ref().clone().to_string();
     // It's ok if people want to declare a scheme but we don't
     // want one for the host

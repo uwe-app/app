@@ -2,8 +2,10 @@ use std::fs;
 use std::path::PathBuf;
 
 use cache;
+use config;
 use git;
 use preference::{self, Preferences};
+use utils;
 
 use crate::Error;
 
@@ -36,6 +38,17 @@ pub fn list() -> Result<(), Error> {
 
 pub fn init(options: InitOptions) -> Result<(), Error> {
     let (prefs, _url, _blueprint_cache_dir) = prepare()?;
+
+    let mut language = prefs.lang.clone();
+
+    if let Some(ref lang) = options.language {
+        config::parse_language(lang)?;
+        language = options.language.clone();
+    }
+
+    if let Some(ref host) = options.host {
+        config::parse_host(host)?;
+    }
 
     if let Some(ref target) = options.target {
         if target.exists() {
@@ -86,9 +99,22 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
             )?;
         }
 
-        //repo.remote_delete("origin")?;
+        // Read, modify and write the site configuration
+        // with options for language and host
+        let mut config_file = target.clone();
+        config_file.push(config::SITE_TOML);
+        let mut site_config: toml::value::Table = toml::from_str(&utils::fs::read_string(&config_file)?)?;
+        if let Some(lang) = language {
+            site_config.insert("lang".to_string(), toml::Value::String(lang));
+        }
+        if let Some(host) = options.host {
+            site_config.insert("host".to_string(), toml::Value::String(host));
+        }
+        utils::fs::write_string(&config_file, toml::to_string(&site_config)?)?;
 
+        // Finalize the git repo
         // FIXME: support tracking upstream blueprint
+        //repo.remote_delete("origin")?;
         git::detached(target, repo)?;
     } else {
         return Err(Error::new(format!("Target directory is required")));
