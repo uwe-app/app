@@ -29,7 +29,7 @@ static PAGE_DATA: &str = "page.toml";
 static ASSETS: &str = "assets";
 static PARTIALS: &str = "partials";
 static INCLUDES: &str = "includes";
-static DATASOURCES: &str = "datasources";
+static DATASOURCES: &str = "data-sources";
 static RESOURCES: &str = "resources";
 
 static HOST: &str = "localhost";
