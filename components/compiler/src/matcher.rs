@@ -46,51 +46,6 @@ pub fn resolve_parent_index<P: AsRef<Path>>(
     None
 }
 
-// Try to find a generator file for the given URL
-//pub fn lookup_generator(href: &str, clean_url: bool) -> Option<PathBuf> {
-//let mut url = href.to_string().clone();
-//url = utils::url::trim_slash(&url).to_owned();
-
-//// Try to match against generated output files.
-////
-//// For these cases there are no source files on disc with
-//// a direct mapping to output files as they are generated
-//// and this code can be called (via the `link` helper) before
-//// output has been generated so we cannot compare to output
-//// destination files.
-//let mapping = generator::GENERATOR_MAPPING.lock().unwrap();
-//for (_, map) in mapping.iter() {
-//let dest = Path::new(&map.destination);
-
-//// Now try to match on generated document id
-//for id in &map.ids {
-//let mut page = dest.to_path_buf();
-//if clean_url {
-//page.push(id);
-//let mut target = utils::url::to_url_lossy(&page);
-//if target == url {
-//return Some(page)
-//}
-
-//page.push(INDEX_HTML);
-
-//target = utils::url::to_url_lossy(&page);
-//if target == url {
-//return Some(page)
-//}
-//} else {
-//page.push(id);
-//page.set_extension(HTML);
-//let target = utils::url::to_url_lossy(&page);
-//if target == url {
-//return Some(page)
-//}
-//}
-//}
-//}
-//None
-//}
-
 // Try to find a source file for the given URL
 pub fn lookup_in(
     base: &PathBuf,
@@ -98,7 +53,8 @@ pub fn lookup_in(
     href: &str,
     extensions: &ExtensionConfig,
 ) -> Option<PathBuf> {
-    let clean_url = context.options.clean_url;
+
+    let rewrite_index = context.options.rewrite_index;
 
     let mut url = href.to_string().clone();
     url = utils::url::trim_slash(&url).to_owned();
@@ -130,7 +86,7 @@ pub fn lookup_in(
 
     // Check for lower-level files that could map
     // to index pages
-    if clean_url && is_dir {
+    if rewrite_index && is_dir {
         for ext in extensions.render.iter() {
             buf.set_extension(ext);
             if buf.exists() {

@@ -116,7 +116,7 @@ fn children<P: AsRef<Path>>(
                                 &path.to_path_buf(),
                                 &file_type,
                                 extensions,
-                                ctx.options.clean_url,
+                                ctx.options.rewrite_index,
                                 &None,
                             )?;
                             if let Ok(cleaned) = dest.strip_prefix(target) {
@@ -150,7 +150,7 @@ fn children<P: AsRef<Path>>(
                                 &f,
                                 &file_type,
                                 extensions,
-                                ctx.options.clean_url,
+                                ctx.options.rewrite_index,
                                 &None,
                             )?;
 
@@ -173,7 +173,7 @@ fn children<P: AsRef<Path>>(
                 }
 
                 if !href.is_empty() {
-                    if ctx.options.clean_url && !ctx.options.include_index {
+                    if ctx.options.rewrite_index && !ctx.options.include_index {
                         if href.ends_with(INDEX_HTML) {
                             href.truncate(href.len() - INDEX_HTML.len());
                         }

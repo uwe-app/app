@@ -107,7 +107,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         )));
     }
 
-    let clean_url = build.rewrite_index.is_some() && build.rewrite_index.unwrap();
+    let rewrite_index = build.rewrite_index.is_some() && build.rewrite_index.unwrap();
 
     let opts = CompilerOptions {
         source: build.source.clone(),
@@ -116,7 +116,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         host: host.to_owned(),
         port: port.to_owned(),
 
-        clean_url,
+        rewrite_index,
         target,
         layout,
         max_depth: args.max_depth,

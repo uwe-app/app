@@ -42,14 +42,6 @@ impl BuildTag {
             BuildTag::Custom(s) => return s.to_string(),
         }
     }
-
-    //pub fn clone(&self) -> Self {
-    //match self {
-    //BuildTag::Debug => return BuildTag::Debug,
-    //BuildTag::Release => return BuildTag::Release,
-    //BuildTag::Custom(s) => return BuildTag::Custom(s.to_string()),
-    //}
-    //}
 }
 
 // FIXME: re-use the BuildArguments in the CompilerOptions!
@@ -67,7 +59,9 @@ pub struct CompilerOptions {
     // a locale identifier when multilingual
     pub target: PathBuf,
 
-    pub clean_url: bool,
+    // Rewrite output destinations to a directory
+    // with an index.html file
+    pub rewrite_index: bool,
 
     pub max_depth: Option<usize>,
     pub release: bool,

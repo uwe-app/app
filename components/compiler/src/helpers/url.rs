@@ -108,7 +108,7 @@ impl HelperDef for Link {
             if let Ok(rel) = path.strip_prefix(base) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
-                    if opts.clean_url && matcher::is_clean(&path, extensions) {
+                    if opts.rewrite_index && matcher::is_clean(&path, extensions) {
                         value.push_str("../");
                     }
                     for _ in p.components() {

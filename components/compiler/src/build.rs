@@ -148,7 +148,9 @@ impl<'a> Compiler<'a> {
 
                 let mut data = loader::compute(file, &self.context.config, true)?;
 
-                let mut clean = self.context.options.clean_url;
+                let mut clean = self.context.options.rewrite_index;
+
+                // TODO: use rewrite-index page option
                 if let Some(val) = data.clean {
                     clean = val;
                 }
