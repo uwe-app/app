@@ -38,6 +38,8 @@ pub enum Error {
     Report(#[from] report::Error),
     #[error(transparent)]
     Publish(#[from] publisher::Error),
+    #[error(transparent)]
+    Site(#[from] site::Error),
 }
 
 impl Error {

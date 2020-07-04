@@ -1,6 +1,6 @@
 [package]
 name = "hypertext"
-version = "0.17.6"
+version = "0.17.7"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Fast and lean static site generator"
 repository = "https://github.com/hypertext-live/hypertext"
@@ -25,6 +25,7 @@ members = [
   "components/publisher",
   "components/report",
   "components/server",
+  "components/site",
   "components/updater",
   "components/utils",
   "components/workspace",
@@ -43,6 +44,7 @@ preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 report = {version = "0.1", path = "components/report" }
 server = {version = "0.1", path = "components/server" }
+site = {version = "0.1", path = "components/site" }
 updater = {version = "0.1", path = "components/updater" }
 utils = {version = "0.1", path = "components/utils" }
 workspace = {version = "0.1", path = "components/workspace" }

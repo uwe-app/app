@@ -938,7 +938,7 @@ dependencies = [
 
 [[package]]
 name = "hypertext"
-version = "0.17.6"
+version = "0.17.7"
 dependencies = [
  "book 0.1.0",
  "cache 0.1.0",
@@ -957,6 +957,7 @@ dependencies = [
  "semver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "server 0.1.0",
+ "site 0.1.0",
  "structopt 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2229,6 +2230,19 @@ dependencies = [
 name = "siphasher"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "site"
+version = "0.1.0"
+dependencies = [
+ "cache 0.1.0",
+ "config 0.1.0",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "utils 0.1.0",
+]
 
 [[package]]
 name = "slab"

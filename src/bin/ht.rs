@@ -469,8 +469,7 @@ fn process_command(cmd: &Command) {
                 }
             }
             Site::List { .. } => {
-                let opts = command::site::ListOptions {};
-                if let Err(e) = command::site::list(opts) {
+                if let Err(e) = command::site::list() {
                     fatal(e);
                 }
             }
