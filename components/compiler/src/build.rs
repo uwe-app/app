@@ -353,22 +353,6 @@ impl<'a> Compiler<'a> {
             match result {
                 Ok(entry) => {
                     let path = entry.path();
-
-                    // If a file or directory is a descendant of
-                    // a book directory we do not process it
-                    //if self.book.contains_file(&path) {
-                    //continue;
-                    //}
-
-                    //if path.is_dir() && self.book.is_book_dir(&path) {
-                    //// Add the book so we can skip processing of descendants
-                    ////self.book.add(&path);
-
-                    //// Build the book
-                    //self.book.load(&self.context, &path)?;
-                    //self.book.build(&path)?;
-                    //} else
-                    //
                     if path.is_file() {
                         let file = path.to_path_buf();
                         self.one(&file)?
