@@ -45,13 +45,14 @@ impl FileContext {
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct Page {
     // Configurable
     pub title: Option<String>,
     pub description: Option<String>,
     pub keywords: Option<String>,
     pub author: Option<Author>,
-    pub clean: Option<bool>,
+    pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
     pub query: Option<Value>,
@@ -78,7 +79,7 @@ impl Default for Page {
             description: None,
             keywords: None,
             author: None,
-            clean: None,
+            rewrite_index: None,
             draft: Some(false),
             standalone: Some(false),
             query: None,
@@ -110,8 +111,8 @@ impl Page {
             self.author = Some(mem::take(author));
         }
 
-        if let Some(clean) = other.clean.as_mut() {
-            self.clean = Some(mem::take(clean));
+        if let Some(rewrite_index) = other.rewrite_index.as_mut() {
+            self.rewrite_index = Some(mem::take(rewrite_index));
         }
 
         if let Some(draft) = other.draft.as_mut() {

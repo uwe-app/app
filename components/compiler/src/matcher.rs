@@ -199,10 +199,10 @@ fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -
 pub fn is_clean<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
     let target = file.as_ref().to_path_buf();
     let result = target.clone();
-    return clean(target, result, extensions).is_some();
+    return rewrite_index_file(target, result, extensions).is_some();
 }
 
-pub fn clean<P: AsRef<Path>>(file: P, result: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
+fn rewrite_index_file<P: AsRef<Path>>(file: P, result: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
     let clean_target = file.as_ref();
     if !is_index(&clean_target) {
         if let Some(parent) = clean_target.parent() {
@@ -279,7 +279,7 @@ pub fn destination<P: AsRef<Path>>(
     file: P,
     file_type: &FileType,
     extensions: &ExtensionConfig,
-    clean_urls: bool,
+    rewrite_index: bool,
     base_href: &Option<String>,
 ) -> Result<PathBuf, Error> {
     let pth = file.as_ref().to_path_buf().clone();
@@ -298,8 +298,8 @@ pub fn destination<P: AsRef<Path>>(
                         }
                     }
 
-                    if clean_urls {
-                        if let Some(res) = clean(pth.as_path(), result.as_path(), extensions) {
+                    if rewrite_index {
+                        if let Some(res) = rewrite_index_file(pth.as_path(), result.as_path(), extensions) {
                             result = res;
                         }
                     }

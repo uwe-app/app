@@ -57,7 +57,7 @@ impl<'a> Compiler<'a> {
         data: &Page,
         _reference: IndexQuery,
         values: Vec<Value>,
-        clean: bool,
+        rewrite_index: bool,
     ) -> Result<()> {
         let file = p.as_ref();
         let parent = file.parent().unwrap();
@@ -93,7 +93,7 @@ impl<'a> Compiler<'a> {
                         &mock,
                         &file_type,
                         &self.context.config.extension.as_ref().unwrap(),
-                        clean,
+                        rewrite_index,
                         &self.context.options.base_href,
                     )?;
 
@@ -148,11 +148,11 @@ impl<'a> Compiler<'a> {
 
                 let mut data = loader::compute(file, &self.context.config, true)?;
 
-                let mut clean = self.context.options.rewrite_index;
+                let mut rewrite_index = self.context.options.rewrite_index;
 
                 // TODO: use rewrite-index page option
-                if let Some(val) = data.clean {
-                    clean = val;
+                if let Some(val) = data.rewrite_index {
+                    rewrite_index = val;
                 }
 
                 if super::draft::is_draft(&data, &self.context.options) {
@@ -183,7 +183,7 @@ impl<'a> Compiler<'a> {
 
                     if !each_iters.is_empty() {
                         for (gen, idx) in each_iters {
-                            self.each_generator(&p, &file_type, &data, gen, idx, clean)?;
+                            self.each_generator(&p, &file_type, &data, gen, idx, rewrite_index)?;
                         }
                         return Ok(());
                     }
@@ -195,7 +195,7 @@ impl<'a> Compiler<'a> {
                     &file.to_path_buf(),
                     &file_type,
                     &self.context.config.extension.as_ref().unwrap(),
-                    clean,
+                    rewrite_index,
                     &self.context.options.base_href,
                 )?;
 
