@@ -54,7 +54,7 @@ static INDEX_STEM: &str = "index";
 static MD: &str = "md";
 static HTML: &str = "html";
 
-pub mod compiler;
+pub mod build;
 pub mod context;
 pub mod draft;
 pub mod frontmatter;
@@ -73,5 +73,5 @@ pub mod tree;
 mod types;
 pub mod watch;
 
-pub use compiler::Compiler;
+pub use build::Compiler;
 pub use types::*;
