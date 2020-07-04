@@ -16,6 +16,6 @@ pub fn get_root_dir() -> io::Result<PathBuf> {
     }
     Err(io::Error::new(
         io::ErrorKind::NotFound,
-        format!("Could not determine home directory"),
+        "Could not determine home directory".to_string(),
     ))
 }

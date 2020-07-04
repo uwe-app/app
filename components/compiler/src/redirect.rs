@@ -25,10 +25,7 @@ pub fn write(context: &Context) -> Result<()> {
                 buf.push(INDEX_HTML);
             }
             if buf.exists() {
-                return Err(Error::new(format!(
-                    "Redirect file '{}' exists",
-                    buf.display()
-                )));
+                return Err(Error::RedirectFileExists(buf));
             }
 
             let short = buf.strip_prefix(&context.options.base)?;
@@ -68,21 +65,14 @@ fn validate_redirect<S: AsRef<str>>(
     stack: &mut Vec<String>,
 ) -> Result<()> {
     if stack.len() >= MAX_REDIRECTS {
-        return Err(Error::new(format!(
-            "Too many redirects, limit is {}",
-            MAX_REDIRECTS
-        )));
+        return Err(Error::TooManyRedirects(MAX_REDIRECTS));
     }
 
     let mut key = k.as_ref().to_string().clone();
     key = key.trim_end_matches("/").to_string();
 
     if stack.contains(&key) {
-        return Err(Error::new(format!(
-            "Cyclic redirect: {} <-> {}",
-            stack.join(" <-> "),
-            &key
-        )));
+        return Err(Error::CyclicRedirect {stack: stack.join(" <-> "), key: key.clone()});
     }
 
     stack.push(key);

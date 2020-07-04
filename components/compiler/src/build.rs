@@ -74,9 +74,7 @@ impl<'a> Compiler<'a> {
                             item_data.vars.insert(k.clone(), json!(v));
                         }
                     } else {
-                        return Err(Error::new(format!(
-                            "Generator document should be an object"
-                        )));
+                        return Err(Error::DataSourceDocumentNotAnObject);
                     }
 
                     // Mock a source file to build a destination
@@ -106,7 +104,7 @@ impl<'a> Compiler<'a> {
                     utils::fs::write_string(&dest, &s)?;
                 }
             } else {
-                return Err(Error::new(format!("Data source document must have an id")));
+                return Err(Error::DataSourceDocumentNoId);
             }
         }
 
@@ -137,15 +135,6 @@ impl<'a> Compiler<'a> {
                 }
             }
             FileType::Markdown | FileType::Template => {
-                let (collides, other) = matcher::collides(file, &file_type);
-                if collides {
-                    return Err(Error::new(format!(
-                        "File name collision {} with {}",
-                        file.display(),
-                        other.display()
-                    )));
-                }
-
                 let mut data = loader::compute(file, &self.context.config, true)?;
 
                 let mut rewrite_index = self.context.options.rewrite_index;
@@ -237,10 +226,7 @@ impl<'a> Compiler<'a> {
     pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
             if !p.starts_with(&self.context.options.source) {
-                return Err(Error::new(format!(
-                    "Path '{}' is outside the site source",
-                    p.display()
-                )));
+                return Err(Error::OutsideSourceTree(p.clone()));
             }
         }
         Ok(())

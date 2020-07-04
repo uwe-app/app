@@ -63,10 +63,7 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
 
         command.output()?;
     } else {
-        return Err(Error::new(format!(
-            "Failed to get canonical path for project root '{}'",
-            project_root.display()
-        )));
+        return Err(Error::CanonicalProjectRoot(project_root));
     }
 
     Ok(())

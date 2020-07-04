@@ -47,9 +47,7 @@ pub fn listing<P: AsRef<Path>>(
 
         let dir_dest = Path::new(&dir_target);
         if !dir_dest.exists() || !dir_dest.is_dir() {
-            return Err(Error::new(
-                "Path parameter for listing does not resolve to a directory".to_string(),
-            ));
+            return Err(Error::ListingNotDirectory(dir_dest.to_path_buf()));
         }
 
         // Later we find the parent so this makes it consistent

@@ -41,7 +41,7 @@ pub fn link(ctx: &Context) -> Result<()> {
                         }
                     }
                 } else {
-                    return Err(Error::new("Resources must be a directory".to_string()));
+                    return Err(Error::ResourceNotDirectory(resource));
                 }
             }
         }

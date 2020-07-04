@@ -1,12 +1,47 @@
 #[macro_use]
 extern crate lazy_static;
 
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
-    Message(String),
+    #[error("Path {0} is outside the site source")]
+    OutsideSourceTree(PathBuf),
+
+    #[error("Data source document should be an object")]
+    DataSourceDocumentNotAnObject,
+
+    #[error("Data source document must have an id")]
+    DataSourceDocumentNoId,
+
+    #[error("Parser got invalid file type")]
+    ParserFileType,
+
+    #[error("Invalidation action not handled")]
+    InvalidationActionNotHandled,
+
+    #[error("Failed to get canonical path for project root {0}")]
+    CanonicalProjectRoot(PathBuf),
+
+    #[error("Path parameter for listing is not a directory {0}")]
+    ListingNotDirectory(PathBuf),
+
+    #[error("Redirect file {0} already exists")]
+    RedirectFileExists(PathBuf),
+
+    #[error("Too many redirects, limit is {0}")]
+    TooManyRedirects(usize),
+
+    #[error("Cyclic redirect: {stack} <-> {key}")]
+    CyclicRedirect{ stack: String, key: String },
+
+    #[error("Resources not a directory {0}")]
+    ResourceNotDirectory(PathBuf),
+
+    #[error("Front matter was not terminated in {0}")]
+    FrontMatterNotTerminated(PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -37,12 +72,6 @@ pub enum Error {
     Book(#[from] book::Error),
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
-}
-
-impl Error {
-    pub fn new(s: String) -> Self {
-        Error::Message(s)
-    }
 }
 
 type Result<T> = std::result::Result<T, Error>;

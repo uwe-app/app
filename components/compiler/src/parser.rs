@@ -71,7 +71,7 @@ impl<'a> Parser<'a> {
         match file_type {
             FileType::Template => return self.parse_template(input, output, data),
             FileType::Markdown => return self.parse_markdown(input, output, data),
-            _ => Err(Error::new("parser got invalid file type".to_string())),
+            _ => Err(Error::ParserFileType),
         }
     }
 }

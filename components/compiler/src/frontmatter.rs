@@ -82,7 +82,7 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
     }
 
     if in_front_matter {
-        return Err(Error::new(format!("Front matter was not terminated")));
+        return Err(Error::FrontMatterNotTerminated(p.as_ref().to_path_buf()));
     }
 
     return Ok((content, has_front_matter, fm));

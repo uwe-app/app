@@ -452,7 +452,7 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                         _ => {
-                            return Err(Error::new("Invalidation action not handled".to_string()));
+                            return Err(Error::InvalidationActionNotHandled);
                         }
                     }
                 }
