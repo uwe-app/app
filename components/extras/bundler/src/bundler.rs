@@ -204,15 +204,13 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
                             } else if path.is_file() {
                                 s.push_str(&self.get_file_entry(nm, &key, &path, meta)?);
                             } else {
-                                return Err(Error::new(
-                                    "unknown path type encountered".to_string(),
-                                ));
+                                return Err(Error::UnknownPathType);
                             }
                         } else {
-                            return Err(Error::new("failed to determine file name".to_string()));
+                            return Err(Error::NoFileName);
                         }
                     } else {
-                        return Err(Error::new("failed to get file meta data".to_string()));
+                        return Err(Error::NoFileMetaData);
                     }
                 }
                 Err(e) => return Err(Error::from(e)),

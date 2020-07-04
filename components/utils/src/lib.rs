@@ -10,11 +10,3 @@ pub fn generate_id(len: i32) -> String {
     }
     s
 }
-
-//#[cfg(test)]
-//mod tests {
-//#[test]
-//fn it_works() {
-//assert_eq!(2 + 2, 4);
-//}
-//}

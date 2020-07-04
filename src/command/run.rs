@@ -41,7 +41,7 @@ pub fn serve(
     let sockaddr: SocketAddr = address
         .to_socket_addrs()?
         .next()
-        .ok_or_else(|| Error::new(format!("No address found for {}", address)))?;
+        .ok_or_else(|| Error::NoSocketAddress(address))?;
 
     let serve_dir = options.target.clone();
     let host = options.host.clone();

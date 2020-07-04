@@ -16,18 +16,16 @@ use dirs::home;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
-    Message(String),
+    #[error("Unable to handle source {0}")]
+    BadSource(String),
+
+    #[error("To use SSH specify the --private-key option")]
+    PrivateKeyRequired,
+
     #[error(transparent)]
     Git(#[from] git2::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
-}
-
-impl Error {
-    pub fn new(s: String) -> Self {
-        Error::Message(s)
-    }
 }
 
 pub mod progress;
@@ -244,7 +242,7 @@ pub fn create<P: AsRef<Path>>(
     repo_url: String,
     repo_dir: PathBuf,
 ) -> Result<Repository, Error> {
-    let src_err = Err(Error::new(format!("Unable to handle source '{}'", &src)));
+    let src_err = Err(Error::BadSource(src.clone()));
 
     let (repo, _cloned) = open_or_clone(&repo_url, &repo_dir, true)?;
 
@@ -278,9 +276,7 @@ pub fn create<P: AsRef<Path>>(
 
                     return clone_ssh(src, target, key_file, None).map_err(Error::from);
                 } else {
-                    return Err(Error::new(format!(
-                        "To use SSH specify the --private-key option"
-                    )));
+                    return Err(Error::PrivateKeyRequired);
                 }
             }
         }

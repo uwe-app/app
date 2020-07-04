@@ -140,19 +140,14 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         if let Some(ref lang) = language {
             if !locale_ids.contains(lang) {
                 return Err(
-                    Error::new(
-                        format!(
-                            "Language '{}' does not exist in the locales '{}'", lang, locale_ids.join(","))));
+                    Error::LanguageMissingFromLocales(lang.clone(), locale_ids.join(",")));
             }
         }
     }
 
     if let Some(ref target) = options.target {
         if target.exists() {
-            return Err(Error::new(format!(
-                "Target '{}' exists, please move it away",
-                target.display()
-            )));
+            return Err(Error::TargetExists(target.clone()));
         }
 
         let repo;
@@ -170,9 +165,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         };
 
         if source.is_empty() {
-            return Err(Error::new(format!(
-                "Could not determine default source path"
-            )));
+            return Err(Error::SourceEmpty);
         }
 
         if let Some(ref parent) = target.parent() {
@@ -203,7 +196,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         //repo.remote_delete("origin")?;
         git::detached(target, repo)?;
     } else {
-        return Err(Error::new(format!("Target directory is required")));
+        return Err(Error::TargetRequired);
     }
 
     Ok(())

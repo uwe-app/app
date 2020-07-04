@@ -1,9 +1,23 @@
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
-    Message(String),
+    #[error("Not a directory {0}")]
+    NotDirectory(PathBuf),
+
+    #[error("Build tag may not be an absolute path {0}")]
+    BuildTagAbsolute(String),
+
+    #[error("Live reload is not available for release builds")]
+    LiveReloadRelease,
+
+    #[error("Missing layout file {0}")]
+    NoLayout(PathBuf),
+
+    #[error("Profiles may not define a build tag, please remove it")]
+    NoProfileBuildTag,
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -19,12 +33,6 @@ pub enum Error {
     Locale(#[from] locale::Error),
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
-}
-
-impl Error {
-    pub fn new(s: String) -> Self {
-        Error::Message(s)
-    }
 }
 
 type Result<T> = std::result::Result<T, Error>;

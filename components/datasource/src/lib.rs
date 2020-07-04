@@ -15,8 +15,29 @@ use utils;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
-    Message(String),
+    #[error("Query should be array or object")]
+    QueryType,
+
+    #[error("Duplicate document id {id} ({name}.json)")]
+    DuplicateId {id: String, name: String},
+
+    #[error("The all index is reserved, choose another index name")]
+    AllIndexReserved,
+
+    #[error("Type error building index, keys must be string values")]
+    IndexKeyType,
+
+    #[error("No data source with name {0}")]
+    NoDataSource(String),
+
+    #[error("No index with name {0}")]
+    NoIndex(String),
+
+    #[error("No configuration {conf} for data source {key}")]
+    NoDataSourceConf {conf: String, key: String},
+
+    #[error("No {docs} directory for data source {key}")]
+    NoDataSourceDocuments {docs: String, key: String},
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -26,12 +47,6 @@ pub enum Error {
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
-}
-
-impl Error {
-    pub fn new(s: String) -> Self {
-        Error::Message(s)
-    }
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -60,7 +75,7 @@ pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>> {
                 page_generators.push(reference);
             }
         } else {
-            return Err(Error::new(format!("Query should be array or object")));
+            return Err(Error::QueryType);
         }
     }
 
@@ -215,14 +230,9 @@ impl DataSource {
                     if let Some(stem) = path.file_stem() {
                         let name = stem.to_string_lossy().into_owned();
                         let id = slug::slugify(&name);
-
                         if self.all.contains_key(&id) {
-                            return Err(Error::new(format!(
-                                "Duplicate document id {} ({}.json)",
-                                &id, &name
-                            )));
+                            return Err(Error::DuplicateId {id, name});
                         }
-
                         self.all.insert(id, document);
                     }
                 }
@@ -268,9 +278,7 @@ impl DataSourceMap {
 
             // Complain on reserved index name
             if index.contains_key(ALL_INDEX) {
-                return Err(Error::new(
-                    "The all index is reserved, choose another index name.".to_string(),
-                ));
+                return Err(Error::AllIndexReserved);
             }
 
             if let Some(ref mut index) = generator.config.index.as_mut() {
@@ -294,9 +302,7 @@ impl DataSourceMap {
     }
 
     fn load_index(&mut self) -> Result<()> {
-        let type_err = Err(Error::new(format!(
-            "Type error building index, keys must be string values"
-        )));
+        let type_err = Err(Error::IndexKeyType);
 
         for (_, generator) in self.map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
@@ -368,17 +374,12 @@ impl DataSourceMap {
                 }
                 return Ok(idx.from_query(query, &generator.all));
             } else {
-                return Err(Error::new(format!(
-                    "Missing generator index '{}'",
-                    idx_name
-                )));
+                return Err(Error::NoIndex(idx_name.to_string()));
             }
         } else {
-            return Err(Error::new(format!(
-                "Missing generator with name '{}'",
-                name
-            )));
+            return Err(Error::NoDataSource(name.to_string()));
         }
+        
     }
 
     fn load_documents(&mut self) -> Result<()> {
@@ -397,19 +398,19 @@ impl DataSourceMap {
                     let key = nm.to_string_lossy().into_owned();
                     let conf = self.get_datasource_config_path(&path);
                     if !conf.exists() || !conf.is_file() {
-                        return Err(Error::new(format!(
-                            "No {} for generator {}",
-                            DATASOURCE_TOML, key
-                        )));
+                        return Err(Error::NoDataSourceConf {
+                            conf: DATASOURCE_TOML.to_string(),
+                            key
+                        });
                     }
 
                     let mut data = path.to_path_buf().clone();
                     data.push(DOCUMENTS);
                     if !data.exists() || !data.is_dir() {
-                        return Err(Error::new(format!(
-                            "No {} directory for generator {}",
-                            DOCUMENTS, key
-                        )));
+                        return Err(Error::NoDataSourceDocuments {
+                            docs: DOCUMENTS.to_string(),
+                            key
+                        });
                     }
 
                     let contents = utils::fs::read_string(conf)?;

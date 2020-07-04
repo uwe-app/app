@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::path::PathBuf;
 
 use config::Config;
 use log::info;
@@ -10,8 +11,11 @@ pub mod compiler;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
-    Message(String),
+    #[error("No book found for {0}")]
+    NoBookFound(PathBuf),
+
+    #[error("Book path exists {0}")]
+    BookPathExists(PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -24,12 +28,6 @@ pub enum Error {
 
     #[error(transparent)]
     Book(#[from] mdbook::errors::Error),
-}
-
-impl Error {
-    pub fn new(s: String) -> Self {
-        Error::Message(s)
-    }
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -63,10 +61,7 @@ pub fn add<P: AsRef<Path>>(
     book_dir.push(dir);
 
     if book_dir.exists() {
-        return Err(Error::new(format!(
-            "Book path exists {}",
-            book_dir.display()
-        )));
+        return Err(Error::BookPathExists(book_dir));
     }
 
     // create a default config and change a couple things
@@ -98,8 +93,6 @@ pub fn build<P: AsRef<Path>>(config: &Config, path: Vec<P>, release: bool) -> Re
     if path.is_empty() {
         compiler.all(config, None)?;
     } else {
-        //let root = config.get_project().canonicalize()?;
-        //println!("Build specific book! {:?}", root);
         for p in path {
             compiler.build(config, p, None)?;
         }

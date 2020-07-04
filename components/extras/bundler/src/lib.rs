@@ -1,18 +1,26 @@
-#[macro_use]
-extern crate log;
-
-mod bundler;
-mod command;
-
-pub use command::bundle;
-pub use command::BundleOptions;
+use std::path::PathBuf;
 
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum BundleError {
-    #[error("{0}")]
-    Message(String),
+    #[error("Not a directory {0}")]
+    NotDirectory(PathBuf),
+
+    #[error("Unknown path type")]
+    UnknownPathType,
+
+    #[error("Failed to determine file name")]
+    NoFileName,
+
+    #[error("Failed to get file meta data")]
+    NoFileMetaData,
+
+    #[error("Bundle {0} already exists, use --force to overwrite")]
+    BundleExists(PathBuf),
+
+    #[error("Could not execute 'go version', install from https://golang.org/dl/")]
+    NoToolChain,
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -24,25 +32,17 @@ pub enum BundleError {
     Ignore(#[from] ignore::Error),
 
     #[error(transparent)]
-    Git(#[from] git::error::GitError),
+    Git(#[from] git::Error),
 
     #[error(transparent)]
-    Cache(#[from] cache::CacheError),
+    Cache(#[from] cache::Error),
 
     #[error(transparent)]
-    Preference(#[from] preference::PreferenceError),
+    Preference(#[from] preference::Error),
 }
 
-impl BundleError {
-    pub fn new(s: String) -> Self {
-        BundleError::Message(s)
-    }
-}
+mod bundler;
+mod command;
 
-//#[cfg(test)]
-//mod tests {
-//#[test]
-//fn it_works() {
-//assert_eq!(2 + 2, 4);
-//}
-//}
+pub use command::bundle;
+pub use command::BundleOptions;

@@ -106,7 +106,7 @@ impl<'a> Compiler<'a> {
                     utils::fs::write_string(&dest, &s)?;
                 }
             } else {
-                return Err(Error::new(format!("Generator document must have an id")));
+                return Err(Error::new(format!("Data source document must have an id")));
             }
         }
 

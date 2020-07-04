@@ -12,8 +12,8 @@ pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Confi
         for space in &workspaces.members {
             let mut root = cfg.get_project();
             root.push(space);
-            if !root.exists() || root.is_file() {
-                return Err(Error::new(format!("Workspace must be a directory")));
+            if !root.exists() || !root.is_dir() {
+                return Err(Error::NotDirectory(root));
             }
 
             // Recursive so that workspaces can reference

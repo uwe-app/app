@@ -76,13 +76,10 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
                     let diff = publisher::diff(&file_builder, &remote, &etags)?;
                     publisher::publish(&request, file_builder, diff).await?;
                 } else {
-                    return Err(Error::new(format!(
-                        "Unknown publish environment '{}'",
-                        &options.env
-                    )));
+                    return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
                 }
             } else {
-                return Err(Error::new(format!("No publish configuration")));
+                return Err(Error::NoPublishConfiguration);
             }
         }
     }

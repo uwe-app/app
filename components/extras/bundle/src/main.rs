@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate log;
 extern crate pretty_env_logger;
 
@@ -7,17 +6,11 @@ use std::path::PathBuf;
 use log::error;
 use structopt::StructOpt;
 
-//use hypertext::{Error};
-
 use bundler::{BundleError, BundleOptions};
 
 fn fatal(e: impl std::error::Error) {
     error!("{}", e);
     std::process::exit(1);
-}
-
-fn error(s: String) {
-    fatal(BundleError::new(s));
 }
 
 #[derive(Debug, StructOpt)]
@@ -62,10 +55,8 @@ fn main() {
     pretty_env_logger::init();
 
     if !args.input.exists() || !args.input.is_dir() {
-        error(format!(
-            "Directory does not exist: {}",
-            args.input.display()
-        ));
+        fatal(BundleError::NotDirectory(args.input));
+        return;
     }
 
     let opts = BundleOptions {

@@ -134,7 +134,7 @@ impl BookCompiler {
                     Err(e) => return Err(Error::from(e)),
                 }
             } else {
-                return Err(Error::new(format!("No book found for {}", dir.display())));
+                return Err(Error::NoBookFound(dir.to_path_buf()));
             }
         }
         Ok(())

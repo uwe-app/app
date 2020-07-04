@@ -19,7 +19,7 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
     }
 
     if !output.is_dir() {
-        return Err(Error::new(format!("Not a directory: {}", output.display())));
+        return Err(Error::NotDirectory(output.clone()));
     }
 
     Ok(())
@@ -35,10 +35,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
         if target_dir_buf.is_absolute() {
-            return Err(Error::new(format!(
-                "Build tag may not be an absolute path {}",
-                target_dir
-            )));
+            return Err(Error::BuildTagAbsolute(target_dir));
         }
         target.push(target_dir);
     }
@@ -49,9 +46,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     let include_index = args.include_index.is_some() && args.include_index.unwrap();
 
     if live && release {
-        return Err(Error::new(
-            "Live reload is not available for release builds".to_string(),
-        ));
+        return Err(Error::LiveReloadRelease);
     }
 
     if let Some(ref redirects) = cfg.redirect {
@@ -86,11 +81,8 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         port = p;
     }
 
-    if !build.source.exists() {
-        return Err(Error::new(format!(
-            "Source directory does not exist {}",
-            build.source.display()
-        )));
+    if !build.source.exists() || !build.source.is_dir() {
+        return Err(Error::NotDirectory(build.source.clone()));
     }
 
     let mut layout = build.source.clone();
@@ -101,10 +93,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     };
 
     if !layout.exists() {
-        return Err(Error::new(format!(
-            "Missing layout file '{}'",
-            layout.display()
-        )));
+        return Err(Error::NoLayout(layout));
     }
 
     let rewrite_index = build.rewrite_index.is_some() && build.rewrite_index.unwrap();
@@ -178,9 +167,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         let mut use_profile = profile.clone();
 
         if profile.tag.is_some() {
-            return Err(Error::new(format!(
-                "Profiles may not define a build tag, please remove it"
-            )));
+            return Err(Error::NoProfileBuildTag);
         }
 
         if let Some(ref mut paths) = use_profile.paths.as_mut() {

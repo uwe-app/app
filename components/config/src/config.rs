@@ -153,10 +153,7 @@ impl Config {
 
                 cfg.project = resolve_project(&file);
                 if cfg.project.is_none() {
-                    return Err(Error::new(format!(
-                        "Failed to resolve project directory for {}",
-                        file.display()
-                    )));
+                    return Err(Error::ProjectResolve(file.to_path_buf()));
                 }
 
                 // Must be a canonical path
@@ -202,15 +199,12 @@ impl Config {
                     let book_paths = book.get_paths(&build.source);
                     for mut p in book_paths {
                         if !p.exists() || !p.is_dir() {
-                            return Err(Error::new(format!("Not a directory {}", p.display())));
+                            return Err(Error::NotDirectory(p));
                         }
 
                         p.push(BOOK_TOML);
                         if !p.exists() || !p.is_file() {
-                            return Err(Error::new(format!(
-                                "Missing book configuration {}",
-                                p.display()
-                            )));
+                            return Err(Error::NoBookConfig(p));
                         }
                     }
                 }
@@ -292,10 +286,7 @@ impl Config {
             }
         }
 
-        Err(Error::new(format!(
-            "No site configuration in {}",
-            pth.display()
-        )))
+        Err(Error::NoSiteConfig(pth))
     }
 
     pub fn get_project(&self) -> PathBuf {

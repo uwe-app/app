@@ -1,9 +1,20 @@
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
-    Message(String),
+    #[error("Failed to resolve project directory for {0}")]
+    ProjectResolve(PathBuf),
+
+    #[error("Not a directory {0}")]
+    NotDirectory(PathBuf),
+
+    #[error("Missing book configuration {0}")]
+    NoBookConfig(PathBuf),
+
+    #[error("No site configuration in {0}")]
+    NoSiteConfig(PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -16,12 +27,6 @@ pub enum Error {
 
     #[error(transparent)]
     Lang(#[from] unic_langid::LanguageIdentifierError),
-}
-
-impl Error {
-    pub fn new(s: String) -> Self {
-        Error::Message(s)
-    }
 }
 
 pub mod config;

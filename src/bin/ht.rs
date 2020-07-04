@@ -27,10 +27,6 @@ fn fatal(e: impl std::error::Error) {
     std::process::exit(1);
 }
 
-fn error(s: String) {
-    fatal(Error::new(s));
-}
-
 fn get_project_path(input: PathBuf) -> PathBuf {
     // NOTE: We want the help output to show "."
     // NOTE: to indicate that the current working
@@ -425,7 +421,8 @@ fn process_command(cmd: &Command) {
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {
-                error(format!("Not a directory '{}'", opts.target.display()));
+                fatal(Error::NotDirectory(opts.target));
+                return;
             }
 
             if let Err(e) = command::run::serve_only(opts) {
@@ -517,7 +514,7 @@ fn main() {
     // so we catch it here and push it out via the log
     panic::set_hook(Box::new(|info| {
         let message = format!("{}", info);
-        fatal(Error::new(message));
+        fatal(Error::Panic(message));
     }));
 
     match &*root_args.log_level {
@@ -531,7 +528,8 @@ fn main() {
             let level = &root_args.log_level;
             env::set_var(LOG_ENV_NAME, "error");
             pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-            error(format!("unknown log level: {}", level));
+            fatal(Error::UnknownLogLevel(level.to_string()));
+            return;
         }
     }
 

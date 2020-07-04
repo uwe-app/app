@@ -19,11 +19,3 @@ pub fn get_root_dir() -> io::Result<PathBuf> {
         format!("Could not determine home directory"),
     ))
 }
-
-//#[cfg(test)]
-//mod tests {
-//#[test]
-//fn it_works() {
-//assert_eq!(2 + 2, 4);
-//}
-//}

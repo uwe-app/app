@@ -34,10 +34,7 @@ fn prepare(options: &BundleOptions) -> Result<Vec<PathBuf>, Error> {
             info!("rm -rf {}", options.target.display());
             fs::remove_dir_all(&options.target)?;
         } else {
-            return Err(Error::new(format!(
-                "{} already exists, use --force to overwrite",
-                options.target.display()
-            )));
+            return Err(Error::BundleExists(options.target.clone()));
         }
     }
 
@@ -95,9 +92,7 @@ pub fn bundle(options: BundleOptions) -> Result<(), Error> {
 
     let bundler = Bundler::new();
     if let Err(_) = bundler.version() {
-        return Err(Error::new(
-            "could not execute 'go version', install from https://golang.org/dl/".to_string(),
-        ));
+        return Err(Error::NoToolChain);
     }
 
     info!(
