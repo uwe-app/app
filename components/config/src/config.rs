@@ -411,7 +411,7 @@ impl Default for BuildConfig {
             partials: Some(PathBuf::from(PARTIALS)),
             data_sources: Some(PathBuf::from(DATASOURCES)),
             resources: Some(PathBuf::from(RESOURCES)),
-            rewrite_index: Some(true),
+            rewrite_index: Some(false),
             follow_links: Some(true),
         }
     }
