@@ -54,7 +54,7 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
                     // Compile a pristine release
                     let mut args: BuildArguments = Default::default();
                     args.release = Some(true);
-                    let ctx = workspace::compile_from(&config, &args)?;
+                    let ctx = workspace::compile(&config, &args, false)?;
 
                     info!("Building local file list");
 

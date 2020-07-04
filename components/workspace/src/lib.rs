@@ -1,10 +1,5 @@
 use thiserror::Error;
 
-mod compile;
-mod finder;
-mod merge;
-pub mod project;
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("{0}")]
@@ -34,7 +29,12 @@ impl Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub use compile::compile;
-pub use compile::compile_from;
+mod compile;
+mod finder;
+mod merge;
+pub mod project;
+
 pub use compile::compile_project;
+pub use compile::compile;
+pub use compile::build;
 pub use finder::find;

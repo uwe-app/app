@@ -14,29 +14,41 @@ use locale::Locales;
 
 use crate::Result;
 
-pub fn compile_project<P: AsRef<Path>>(project: P, args: &BuildArguments) -> Result<Context> {
+pub fn compile_project<P: AsRef<Path>>(
+    project: P,
+    args: &BuildArguments,
+    skip_last: bool) -> Result<Context> {
+
     let mut spaces: Vec<Config> = Vec::new();
     super::finder::find(project, true, &mut spaces)?;
 
-    let mut ctx: Context = Default::default();
-    for mut space in spaces {
-        ctx = compile_from(&mut space, &args)?;
-    }
+    let length = spaces.len();
 
-    let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
-    if write_redirects {
-        compiler::redirect::write(&ctx)?;
+    let mut ctx: Context = Default::default();
+    for (i, config) in spaces.into_iter().enumerate() {
+        let mut dry_run = false;
+
+        if skip_last && i == (length - 1) {
+            dry_run = true;
+        }
+
+        ctx = compile(&config, &args, dry_run)?;
+
+        let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
+        if write_redirects {
+            compiler::redirect::write(&ctx)?;
+        }
     }
 
     Ok(ctx)
 }
 
-pub fn compile_from(config: &Config, args: &BuildArguments) -> Result<Context> {
+pub fn compile(config: &Config, args: &BuildArguments, dry_run: bool) -> Result<Context> {
     let opts = super::project::prepare(config, args)?;
-    compile(config, opts)
+    compile_one(config, opts, dry_run)
 }
 
-pub fn compile(config: &Config, opts: CompilerOptions) -> Result<Context> {
+fn compile_one(config: &Config, opts: CompilerOptions, dry_run: bool) -> Result<Context> {
     let mut ctx: Context = Default::default();
     //let opts = super::project::prepare(&mut config, &args)?;
     let base_target = opts.target.clone();
@@ -66,13 +78,16 @@ pub fn compile(config: &Config, opts: CompilerOptions) -> Result<Context> {
             copy.lang = lang.clone();
 
             ctx = load(copy, config.clone(), lang_opts)?;
-            build(&ctx)?;
+            if !dry_run {
+                build(&ctx)?;
+            }
         }
     } else {
         ctx = load(locales, config.clone(), opts)?;
-        build(&ctx)?;
+        if !dry_run {
+            build(&ctx)?;
+        }
     }
-
     Ok(ctx)
 }
 
@@ -88,7 +103,7 @@ fn load(locales: Locales, config: Config, options: CompilerOptions) -> Result<Co
     Ok(Context::new(locales, config, options, datasources))
 }
 
-fn build(ctx: &Context) -> Result<()> {
+pub fn build(ctx: &Context) -> std::result::Result<Compiler, compiler::Error> {
     let mut builder = Compiler::new(ctx);
     builder.manifest.load()?;
 
@@ -106,5 +121,5 @@ fn build(ctx: &Context) -> Result<()> {
     builder.all(targets)?;
     builder.manifest.save()?;
 
-    Ok(())
+    Ok(builder)
 }

@@ -219,7 +219,10 @@ impl<'a> Invalidator<'a> {
 
         let mut books: Vec<PathBuf> = Vec::new();
         if let Some(ref book) = self.context.config.book {
-            books = book.get_paths(&self.context.options.source);
+            books = book.get_paths(&self.context.options.source)
+                .iter()
+                .map(|p| self.canonical(p))
+                .collect::<Vec<_>>();
         }
 
         let generator_paths: Vec<PathBuf> = self
@@ -260,6 +263,7 @@ impl<'a> Invalidator<'a> {
                                 .push(Action::BookConfig(book.clone(), path));
                             continue 'paths;
                         }
+
                         if path.starts_with(book_path) {
                             if let Some(md) = self.builder.book.locate(&self.context.config, &book)
                             {

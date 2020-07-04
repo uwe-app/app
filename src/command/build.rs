@@ -8,7 +8,6 @@ use warp::ws::Message;
 use compiler::context::Context;
 use compiler::invalidator::Invalidator;
 use compiler::redirect;
-use compiler::Compiler;
 use compiler::ErrorCallback;
 use config::BuildArguments;
 use content;
@@ -27,8 +26,11 @@ pub fn compile<P: AsRef<Path>>(
     args: &BuildArguments,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-    let ctx = workspace::compile_project(project, args)?;
-    if ctx.options.live {
+
+    let live = args.live.is_some() && args.live.unwrap();
+    let ctx = workspace::compile_project(project, args, live)?;
+
+    if live {
         livereload(ctx, error_cb)?;
     }
     Ok(())
@@ -75,24 +77,34 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         ctx.livereload = Some(ws_url);
 
-        let mut serve_builder = Compiler::new(&ctx);
-        if let Err(e) = serve_builder.register_templates_directory() {
-            error_cb(e);
+        let built = workspace::build(&ctx);
+        match built {
+            Ok(mut compiler) => {
+                //let mut serve_builder = workspace::build(&ctx);
+                if let Err(e) = compiler.register_templates_directory() {
+                    error_cb(e);
+                }
+
+                // Prepare for incremental builds
+                if let Err(_) = compiler.manifest.load() {}
+
+                // NOTE: only open the browser if initial build succeeds
+                open::that(&url).map(|_| ()).unwrap_or(());
+
+                // Invalidator wraps the builder receiving filesystem change
+                // notifications and sending messages over the `tx` channel
+                // to connected websockets when necessary
+                let mut invalidator = Invalidator::new(&ctx, compiler);
+                if let Err(e) = invalidator.start(source, tx, &error_cb) {
+                    error_cb(e);
+                }
+            
+            },
+            Err(e) => {
+                error_cb(e);
+            }
         }
 
-        // Prepare for incremental builds
-        if let Err(_) = serve_builder.manifest.load() {}
-
-        // NOTE: only open the browser if initial build succeeds
-        open::that(&url).map(|_| ()).unwrap_or(());
-
-        // Invalidator wraps the builder receiving filesystem change
-        // notifications and sending messages over the `tx` channel
-        // to connected websockets when necessary
-        let mut invalidator = Invalidator::new(&ctx, serve_builder);
-        if let Err(e) = invalidator.start(source, tx, &error_cb) {
-            error_cb(e);
-        }
     });
 
     // Start the webserver
