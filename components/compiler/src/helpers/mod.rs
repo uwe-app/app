@@ -11,7 +11,6 @@ pub mod html;
 pub mod include;
 pub mod json;
 pub mod livereload;
-pub mod markdown;
 pub mod parent;
 pub mod random;
 pub mod slug;
