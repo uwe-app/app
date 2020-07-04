@@ -107,7 +107,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         )));
     }
 
-    let clean_url = build.clean_url.is_some() && build.clean_url.unwrap();
+    let clean_url = build.rewrite_index.is_some() && build.rewrite_index.unwrap();
 
     let opts = CompilerOptions {
         source: build.source.clone(),

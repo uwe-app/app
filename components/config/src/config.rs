@@ -395,7 +395,7 @@ pub struct BuildConfig {
     pub partials: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
     pub resources: Option<PathBuf>,
-    pub clean_url: Option<bool>,
+    pub rewrite_index: Option<bool>,
     pub follow_links: Option<bool>,
 }
 
@@ -411,7 +411,7 @@ impl Default for BuildConfig {
             partials: Some(PathBuf::from(PARTIALS)),
             data_sources: Some(PathBuf::from(DATASOURCES)),
             resources: Some(PathBuf::from(RESOURCES)),
-            clean_url: Some(true),
+            rewrite_index: Some(true),
             follow_links: Some(true),
         }
     }
