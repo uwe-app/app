@@ -12,7 +12,7 @@ pub enum FileType {
 use config::ExtensionConfig;
 use utils;
 
-use crate::{Error, HTML, INDEX_STEM, MD};
+use crate::{Error, HTML, INDEX_STEM};
 
 use super::context::Context;
 
@@ -151,22 +151,6 @@ pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
         }
     }
     false
-}
-
-// FIXME: test on extensions
-pub fn collides<P: AsRef<Path>>(file: P, file_type: &FileType) -> (bool, PathBuf) {
-    let mut other = file.as_ref().to_path_buf();
-    match file_type {
-        FileType::Markdown => {
-            other.set_extension(HTML);
-            return (other.exists(), other);
-        }
-        FileType::Template => {
-            other.set_extension(MD);
-            return (other.exists(), other);
-        }
-        _ => return (false, Path::new("").to_path_buf()),
-    }
 }
 
 pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
