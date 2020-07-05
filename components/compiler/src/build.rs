@@ -11,12 +11,11 @@ use crate::{Error, Result, TEMPLATE_EXT};
 use book::compiler::BookCompiler;
 use config::page::Page;
 use datasource::{self, IndexQuery};
-use utils;
+use matcher::{self, FileType};
 
 use super::context::Context;
 use super::hook;
 use super::manifest::Manifest;
-use super::matcher::{self, FileType};
 use super::parser::Parser;
 use super::resource;
 

@@ -143,7 +143,6 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
                 parse_into(fm, &mut page)?;
             }
         }
-
         // FIXME: ensure frontmatter never defines `query`
     }
 

@@ -23,6 +23,7 @@ members = [
   "components/installer",
   "components/loader",
   "components/locale",
+  "components/matcher",
   "components/preference",
   "components/publisher",
   "components/report",

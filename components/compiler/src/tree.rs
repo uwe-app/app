@@ -6,11 +6,9 @@ use ignore::WalkBuilder;
 use serde_json::json;
 
 use config::page::Page;
+use matcher::FileType;
 
 use super::context::Context;
-use super::matcher;
-use super::matcher::FileType;
-
 use crate::{Error, HTML, INDEX_HTML, INDEX_STEM, MD};
 
 pub type ItemData = Page;

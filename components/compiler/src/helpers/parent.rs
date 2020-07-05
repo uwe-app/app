@@ -6,8 +6,6 @@ use serde_json::json;
 use super::map_render_error;
 use super::with_parent_context;
 
-use super::super::matcher;
-
 use super::super::context::Context as BuildContext;
 
 #[derive(Clone, Copy)]

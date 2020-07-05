@@ -1,0 +1,10 @@
+[package]
+name = "matcher"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+config = {version = "0.1", path = "../config" }
+
+thiserror = "1"

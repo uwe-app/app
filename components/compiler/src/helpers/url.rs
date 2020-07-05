@@ -5,7 +5,7 @@ use log::debug;
 use serde_json::json;
 
 use super::super::context::Context as BuildContext;
-use super::super::matcher;
+use super::super::lookup;
 use super::super::CompilerOptions;
 
 use crate::INDEX_HTML;
@@ -83,7 +83,7 @@ impl HelperDef for Link {
 
             if let Some(verify) = link_config.verify {
                 if verify {
-                    if !matcher::source_exists(&build_ctx, &input) {
+                    if !lookup::source_exists(&build_ctx, &input) {
                         return Err(RenderError::new(format!(
                             "Type error for `link`, missing url {}",
                             input
@@ -201,7 +201,7 @@ impl HelperDef for Components {
                             url.push_str(INDEX_HTML);
                         }
 
-                        if let Some(src) = matcher::lookup(&build_ctx, &href) {
+                        if let Some(src) = lookup::lookup(&build_ctx, &href) {
                             let mut data = loader::compute(src, &build_ctx.config, true)
                                 .map_err(map_render_error)?;
                             data.vars.insert("first".to_string(), json!(first));

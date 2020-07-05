@@ -6,12 +6,11 @@ use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
 use datasource;
+use matcher::FileType;
 
 use super::Compiler;
 use super::context::Context;
 use super::hook;
-use super::matcher;
-use super::matcher::FileType;
 use super::watch;
 
 use crate::Error;

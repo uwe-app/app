@@ -2,13 +2,13 @@ use std::convert::AsRef;
 use std::path::Path;
 
 use config::page::Page;
+use matcher::FileType;
 
 use crate::Error;
 
 use super::markdown::render_markdown_string;
 
 use super::context::Context;
-use super::matcher::FileType;
 use super::template;
 
 pub struct Parser<'a> {

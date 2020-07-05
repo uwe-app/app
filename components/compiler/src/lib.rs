@@ -70,6 +70,8 @@ pub enum Error {
     FrontMatter(#[from] frontmatter::Error),
     #[error(transparent)]
     Loader(#[from] loader::Error),
+    #[error(transparent)]
+    Matcher(#[from] matcher::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -87,9 +89,9 @@ pub mod draft;
 pub mod helpers;
 pub mod hook;
 pub mod invalidator;
+pub mod lookup;
 pub mod manifest;
 pub mod markdown;
-pub mod matcher;
 pub mod parser;
 pub mod redirect;
 pub mod resource;
