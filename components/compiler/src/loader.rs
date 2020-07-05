@@ -19,7 +19,6 @@ use config::page::Page;
 use config::Config;
 use utils;
 
-use super::frontmatter;
 use crate::{Error, INDEX_STEM, MD};
 
 lazy_static! {

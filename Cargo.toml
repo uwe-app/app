@@ -18,6 +18,7 @@ members = [
   "components/content",
   "components/datasource",
   "components/dirs",
+  "components/frontmatter",
   "components/git",
   "components/installer",
   "components/locale",

@@ -8,7 +8,6 @@ use crate::Error;
 use super::markdown::render_markdown_string;
 
 use super::context::Context;
-use super::frontmatter;
 use super::matcher::FileType;
 use super::template;
 

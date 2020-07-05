@@ -2,8 +2,18 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
+use std::path::PathBuf;
 
-use crate::Error;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error("Front matter was not terminated in {0}")]
+    NotTerminated(PathBuf),
+}
 
 type ContentResult = (String, bool, String);
 
@@ -82,7 +92,7 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
     }
 
     if in_front_matter {
-        return Err(Error::FrontMatterNotTerminated(p.as_ref().to_path_buf()));
+        return Err(Error::NotTerminated(p.as_ref().to_path_buf()));
     }
 
     return Ok((content, has_front_matter, fm));

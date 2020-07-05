@@ -9,6 +9,7 @@ book = {version = "0.1", path = "../book" }
 config = {version = "0.1", path = "../config" }
 content = {version = "0.1", path = "../content" }
 datasource = {version = "0.1", path = "../datasource" }
+frontmatter = {version = "0.1", path = "../frontmatter" }
 locale = {version = "0.1", path = "../locale" }
 utils = {version = "0.1", path = "../utils" }
 

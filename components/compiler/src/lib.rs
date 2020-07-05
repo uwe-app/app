@@ -40,9 +40,6 @@ pub enum Error {
     #[error("Resources not a directory {0}")]
     ResourceNotDirectory(PathBuf),
 
-    #[error("Front matter was not terminated in {0}")]
-    FrontMatterNotTerminated(PathBuf),
-
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -72,6 +69,8 @@ pub enum Error {
     Book(#[from] book::Error),
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
+    #[error(transparent)]
+    FrontMatter(#[from] frontmatter::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -86,7 +85,6 @@ static HTML: &str = "html";
 pub mod build;
 pub mod context;
 pub mod draft;
-pub mod frontmatter;
 pub mod helpers;
 pub mod hook;
 pub mod invalidator;
