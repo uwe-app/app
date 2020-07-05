@@ -244,10 +244,85 @@ impl DataSourceMap {
     }
 
     pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<()> {
-        self.load_configurations(source, config)?;
-        self.load_documents(config)?;
+        self.load_configurations(&source, config)?;
+        self.load_documents(&source, config)?;
         self.configure_default_index()?;
         self.load_index()?;
+        Ok(())
+    }
+
+    fn load_configurations(&mut self, source: &PathBuf, config: &Config) -> Result<()> {
+        let src = config.get_datasources_path(&source);
+        if src.exists() && src.is_dir() {
+            let contents = src.read_dir()?;
+            self.load_config(source, contents)?;
+        }
+        Ok(())
+    }
+
+    fn load_config(&mut self, source: &PathBuf, dir: ReadDir) -> Result<()> {
+        for f in dir {
+            let path = f?.path();
+            if path.is_dir() {
+                if let Some(nm) = path.file_name() {
+                    let key = nm.to_string_lossy().into_owned();
+                    let conf = self.get_datasource_config_path(&path);
+                    if !conf.exists() || !conf.is_file() {
+                        return Err(Error::NoDataSourceConf {
+                            conf: DATASOURCE_TOML.to_string(),
+                            key
+                        });
+                    }
+
+                    let contents = utils::fs::read_string(conf)?;
+                    let config: DataSourceConfig = toml::from_str(&contents)?;
+
+                    // For document providers there must be a documents directory
+                    if let SourceProvider::Documents = config.provider {
+                        let mut data = path.to_path_buf().clone();
+                        data.push(DOCUMENTS);
+                        if !data.exists() || !data.is_dir() {
+                            return Err(Error::NoDataSourceDocuments {
+                                docs: DOCUMENTS.to_string(),
+                                key
+                            });
+                        }
+                    }
+
+                    let all: BTreeMap<String, Value> = BTreeMap::new();
+                    let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
+
+                    let generator = DataSource {
+                        site: source.clone(),
+                        source: path.to_path_buf(),
+                        all,
+                        indices,
+                        config,
+                    };
+
+                    self.map.insert(key, generator);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn load_documents(&mut self, source: &PathBuf, config: &Config) -> Result<()> {
+        for (k, g) in self.map.iter_mut() {
+            info!("{} < {}", k, g.source.display());
+
+            let documents = get_datasource_documents_path(&g.source);
+            let req = provider::LoadRequest {
+                id: Box::new(identifier::FileNameIdentifier{}),
+                kind: g.config.kind.clone(),
+                provider: g.config.provider.clone(),
+                source,
+                documents,
+                config,
+            };
+
+            g.all = provider::Provider::load(req)?;
+        }
         Ok(())
     }
 
@@ -366,77 +441,4 @@ impl DataSourceMap {
         
     }
 
-    fn load_documents(&mut self, config: &Config) -> Result<()> {
-        for (k, g) in self.map.iter_mut() {
-            info!("{} < {}", k, g.source.display());
-
-            let documents = get_datasource_documents_path(&g.source);
-            let req = provider::LoadRequest {
-                id: Box::new(identifier::FileNameIdentifier{}),
-                kind: g.config.kind.clone(),
-                provider: g.config.provider.clone(),
-                documents,
-                config,
-            };
-
-            g.all = provider::Provider::load(req)?;
-        }
-        Ok(())
-    }
-
-    fn load_config(&mut self, source: PathBuf, dir: ReadDir) -> Result<()> {
-        for f in dir {
-            let path = f?.path();
-            if path.is_dir() {
-                if let Some(nm) = path.file_name() {
-                    let key = nm.to_string_lossy().into_owned();
-                    let conf = self.get_datasource_config_path(&path);
-                    if !conf.exists() || !conf.is_file() {
-                        return Err(Error::NoDataSourceConf {
-                            conf: DATASOURCE_TOML.to_string(),
-                            key
-                        });
-                    }
-
-                    let contents = utils::fs::read_string(conf)?;
-                    let config: DataSourceConfig = toml::from_str(&contents)?;
-
-                    // For document providers there must be a documents directory
-                    if let SourceProvider::Documents = config.provider {
-                        let mut data = path.to_path_buf().clone();
-                        data.push(DOCUMENTS);
-                        if !data.exists() || !data.is_dir() {
-                            return Err(Error::NoDataSourceDocuments {
-                                docs: DOCUMENTS.to_string(),
-                                key
-                            });
-                        }
-                    }
-
-                    let all: BTreeMap<String, Value> = BTreeMap::new();
-                    let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
-
-                    let generator = DataSource {
-                        site: source.clone(),
-                        source: path.to_path_buf(),
-                        all,
-                        indices,
-                        config,
-                    };
-
-                    self.map.insert(key, generator);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn load_configurations(&mut self, source: PathBuf, config: &Config) -> Result<()> {
-        let src = config.get_datasources_path(&source);
-        if src.exists() && src.is_dir() {
-            let contents = src.read_dir()?;
-            self.load_config(source, contents)?;
-        }
-        Ok(())
-    }
 }

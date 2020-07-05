@@ -1,8 +1,8 @@
 use std::io;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
-
 use std::pin::Pin;
+use std::result::{Result as StdResult};
 
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
@@ -45,15 +45,15 @@ pub enum SourceProvider {
 }
 
 pub struct LoadRequest<'a> {
+    pub source: &'a PathBuf,
+    pub config: &'a Config,
     pub id: Box<dyn DocumentIdentifier + 'a>,
     pub documents: PathBuf,
     pub kind: SourceType,
     pub provider: SourceProvider,
-    pub config: &'a Config,
 }
 
-pub fn find_files(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
-
+fn find_recursive(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
     async fn one_level(path: PathBuf, to_visit: &mut Vec<PathBuf>) -> io::Result<Vec<DirEntry>> {
         let mut dir = fs::read_dir(path).await?;
         let mut files = Vec::new();
@@ -127,11 +127,9 @@ impl Provider {
                         match result {
                             Ok(document) => {
                                 let key = req.id.identifier(&path, &document);
-
                                 if docs.contains_key(&key) {
                                     return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                                 }
-
                                 docs.insert(key, document);
                             },
                             Err(e) => {
@@ -149,8 +147,10 @@ impl Provider {
         Ok(docs)
     }
 
-    fn find_documents<'a>(req: &'a LoadRequest<'a>) -> Pin<Box<dyn Stream<Item = std::result::Result<DirEntry, Error>> + 'a>> {
-        find_files(&req.documents)
+    fn find_documents<'a>(req: &'a LoadRequest<'a>)
+        -> Pin<Box<dyn Stream<Item = StdResult<DirEntry, Error>> + 'a>> {
+
+        find_recursive(&req.documents)
             .map_err(Error::from)
             .filter(|result| {
                 if let Ok(entry) = result {
@@ -164,4 +164,3 @@ impl Provider {
             .boxed()
     }
 }
-
