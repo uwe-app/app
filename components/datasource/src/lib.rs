@@ -14,7 +14,7 @@ use config::Config;
 use utils;
 
 pub mod identifier;
-pub mod loader;
+pub mod provider;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -50,6 +50,9 @@ pub enum Error {
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    Provider(#[from] provider::DeserializeError),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -91,6 +94,9 @@ pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DataSourceConfig {
+    #[serde(rename = "type")]
+    pub kind: provider::SourceType,
+    pub provider: provider::SourceProvider,
     pub index: Option<BTreeMap<String, IndexRequest>>,
 }
 
@@ -363,12 +369,13 @@ impl DataSourceMap {
             info!("{} < {}", k, g.source.display());
 
             let documents = get_datasource_documents_path(&g.source);
-            let req = loader::LoadRequest {
+            let req = provider::LoadRequest {
                 id: Box::new(identifier::FileNameIdentifier{}),
+                kind: g.config.kind.clone(),
                 documents,
             };
 
-            g.all = loader::DocumentsLoader::load(req)?;
+            g.all = provider::Provider::load(req)?;
         }
         Ok(())
     }

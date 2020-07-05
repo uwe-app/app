@@ -49,7 +49,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn each_generator<P: AsRef<Path>>(
+    fn data_source_each<P: AsRef<Path>>(
         &mut self,
         p: P,
         file_type: &FileType,
@@ -171,7 +171,7 @@ impl<'a> Compiler<'a> {
 
                     if !each_iters.is_empty() {
                         for (gen, idx) in each_iters {
-                            self.each_generator(&p, &file_type, &data, gen, idx, rewrite_index)?;
+                            self.data_source_each(&p, &file_type, &data, gen, idx, rewrite_index)?;
                         }
                         return Ok(());
                     }

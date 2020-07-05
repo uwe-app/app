@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use std::collections::BTreeMap;
 
 use serde_json::Value;
+use serde::{Deserialize, Serialize};
+
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
@@ -10,6 +12,33 @@ use super::{Result, Error};
 use super::identifier::DocumentIdentifier;
 
 static JSON: &str = "json";
+
+#[derive(thiserror::Error, Debug)]
+pub enum DeserializeError {
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Toml(#[from] toml::de::Error),
+}
+
+type ProviderResult = std::result::Result<Value, DeserializeError>;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum SourceType {
+    #[serde(rename = "json")]
+    Json,
+    #[serde(rename = "toml")]
+    Toml,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum SourceProvider {
+    #[serde(rename = "documents")]
+    Documents,
+    #[serde(rename = "pages")]
+    Pages,
+}
 
 pub fn find_files(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
 
@@ -44,11 +73,23 @@ pub fn find_files(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<Dir
 pub struct LoadRequest {
     pub id: Box<dyn DocumentIdentifier + 'static>,
     pub documents: PathBuf,
+    pub kind: SourceType,
 }
 
-pub struct DocumentsLoader {}
+pub struct Provider {}
 
-impl DocumentsLoader {
+impl Provider {
+
+    fn deserialize<S: AsRef<str>>(kind: &SourceType, content: S) -> ProviderResult {
+        match kind {
+            SourceType::Json => {
+                Ok(serde_json::from_str(content.as_ref())?)
+            },
+            SourceType::Toml => {
+                Ok(toml::from_str(content.as_ref())?)
+            }
+        }  
+    }
 
     #[tokio::main]
     pub async fn load(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
@@ -69,7 +110,7 @@ impl DocumentsLoader {
                 let result = utils::fs::read_string(&path);
                 match result {
                     Ok(content) => {
-                        let result: std::result::Result<Value, serde_json::Error> = serde_json::from_str(&content);
+                        let result = Provider::deserialize(&req.kind, &content);
                         match result {
                             Ok(document) => {
                                 let key = req.id.identifier(&path, &document);
@@ -92,8 +133,6 @@ impl DocumentsLoader {
 
                 future::ok(())
             }).await?;
-
-        //println!("Returning the result {:?}", docs);
         Ok(docs)
     }
 }
