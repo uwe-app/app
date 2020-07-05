@@ -374,6 +374,7 @@ impl DataSourceMap {
             let req = provider::LoadRequest {
                 id: Box::new(identifier::FileNameIdentifier{}),
                 kind: g.config.kind.clone(),
+                provider: g.config.provider.clone(),
                 documents,
                 config,
             };

@@ -2,6 +2,8 @@ use std::io;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 
+use std::pin::Pin;
+
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
 
@@ -34,7 +36,7 @@ pub enum SourceType {
     Toml,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SourceProvider {
     #[serde(rename = "documents")]
     Documents,
@@ -46,6 +48,7 @@ pub struct LoadRequest<'a> {
     pub id: Box<dyn DocumentIdentifier + 'a>,
     pub documents: PathBuf,
     pub kind: SourceType,
+    pub provider: SourceProvider,
     pub config: &'a Config,
 }
 
@@ -94,20 +97,27 @@ impl Provider {
         }  
     }
 
+    pub fn load(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
+        match req.provider {
+            SourceProvider::Documents => {
+                Provider::load_documents(req)
+            },
+            SourceProvider::Pages => {
+                Provider::load_pages(req)
+            }
+        }
+    }
+
     #[tokio::main]
-    pub async fn load(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
+    async fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
-        find_files(&req.documents)
-            .map_err(Error::from)
-            .filter(|result| {
-                if let Ok(entry) = result {
-                    let path = entry.path();
-                    if let Some(ext) = path.extension() {
-                        return future::ready(ext == JSON)
-                    }
-                }
-                future::ready(false)
-            })
+        Ok(docs)
+    }
+
+    #[tokio::main]
+    async fn load_documents(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
+        let mut docs: BTreeMap<String, Value> = BTreeMap::new();
+        Provider::find_documents(&req)
             .try_for_each(|entry| {
                 let path = entry.path();
                 let result = utils::fs::read_string(&path);
@@ -119,7 +129,7 @@ impl Provider {
                                 let key = req.id.identifier(&path, &document);
 
                                 if docs.contains_key(&key) {
-                                    return future::err(Error::DuplicateId {key, path});
+                                    return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                                 }
 
                                 docs.insert(key, document);
@@ -137,6 +147,21 @@ impl Provider {
                 future::ok(())
             }).await?;
         Ok(docs)
+    }
+
+    fn find_documents<'a>(req: &'a LoadRequest<'a>) -> Pin<Box<dyn Stream<Item = std::result::Result<DirEntry, Error>> + 'a>> {
+        find_files(&req.documents)
+            .map_err(Error::from)
+            .filter(|result| {
+                if let Ok(entry) = result {
+                    let path = entry.path();
+                    if let Some(ext) = path.extension() {
+                        return future::ready(ext == JSON)
+                    }
+                }
+                future::ready(false)
+            })
+            .boxed()
     }
 }
 
