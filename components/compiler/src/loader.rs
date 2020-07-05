@@ -6,10 +6,7 @@ use std::sync::Mutex;
 
 use toml::de::Error as TomlError;
 use toml::map::Map as TomlMap;
-use toml::value::Table;
 use toml::Value as TomlValue;
-
-use serde_json::{json, Map, Value};
 
 use inflector::Inflector;
 
@@ -17,9 +14,11 @@ use log::warn;
 
 use config::page::Page;
 use config::Config;
-use utils;
 
-use crate::{Error, INDEX_STEM, MD};
+use crate::{Error};
+
+static INDEX_STEM: &str = "index";
+static MD: &str = "md";
 
 lazy_static! {
     #[derive(Debug)]
@@ -136,28 +135,10 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
     Ok(page)
 }
 
-pub fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
+fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
     let mut page: Page = toml::from_str(&source)?;
     data.append(&mut page);
     Ok(())
-}
-
-pub fn load_toml_to_json<P: AsRef<Path>>(f: P) -> Result<Map<String, Value>, Error> {
-    let res = utils::fs::read_string(f)?;
-    parse_toml_to_json(&res)
-}
-
-pub fn parse_toml_to_json(s: &str) -> Result<Map<String, Value>, Error> {
-    let config: TomlMap<String, TomlValue> = toml::from_str(s)?;
-    Ok(table_to_json_map(&config))
-}
-
-fn table_to_json_map(table: &Table) -> Map<String, Value> {
-    let mut map = Map::new();
-    for (k, v) in table {
-        map.insert(k.to_string(), json!(v));
-    }
-    map
 }
 
 fn clear() {
