@@ -114,6 +114,12 @@ impl Provider {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
 
         let filters = matcher::get_filters(req.source, req.config);
+        let (tx, rx) = flume::unbounded();
+
+        let extensions = req.config.extension.as_ref().unwrap().clone();
+
+        // We use the walk builder so we can respect the way the compiler
+        // ignores and filters files
         WalkBuilder::new(req.source)
             .filter_entry(move |e| {
                 let path = e.path();
@@ -125,11 +131,12 @@ impl Provider {
             .build_parallel()
             .run(|| {
                 Box::new(|result| {
-                    //let tx = tx.clone();
+                    let tx = tx.clone();
                     if let Ok(entry) = result {
                         let path = entry.path();
-                        if path.is_file() {
+                        if path.is_file() && matcher::is_page(&path, &extensions) {
                             println!("Pages walker for file {:?}", path);
+                            let _ = tx.send(path.to_path_buf());
                             //docs.insert("foo".to_string(),serde_json::json!(""));
                         }
                     }
@@ -137,6 +144,10 @@ impl Provider {
                 }
             )
         });
+
+        let paths = &rx.drain().collect::<Vec<_>>();
+
+        //paths.foo();
 
         Ok(docs)
     }

@@ -78,6 +78,15 @@ pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType 
     FileType::Unknown
 }
 
+pub fn is_page<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> bool {
+    match get_type(p, extensions) {
+        FileType::Markdown | FileType::Template => {
+            true
+        },
+        _ => false
+    }
+}
+
 fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
     let path = file.as_ref();
     let mut copy = path.to_path_buf();
