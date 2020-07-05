@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
+use config::Config;
+
 use super::{Result, Error};
 use super::identifier::DocumentIdentifier;
 
@@ -40,6 +42,13 @@ pub enum SourceProvider {
     Pages,
 }
 
+pub struct LoadRequest<'a> {
+    pub id: Box<dyn DocumentIdentifier + 'a>,
+    pub documents: PathBuf,
+    pub kind: SourceType,
+    pub config: &'a Config,
+}
+
 pub fn find_files(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
 
     async fn one_level(path: PathBuf, to_visit: &mut Vec<PathBuf>) -> io::Result<Vec<DirEntry>> {
@@ -68,12 +77,6 @@ pub fn find_files(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<Dir
         }
     })
     .flatten()
-}
-
-pub struct LoadRequest {
-    pub id: Box<dyn DocumentIdentifier + 'static>,
-    pub documents: PathBuf,
-    pub kind: SourceType,
 }
 
 pub struct Provider {}

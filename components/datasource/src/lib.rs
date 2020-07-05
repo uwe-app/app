@@ -245,7 +245,7 @@ impl DataSourceMap {
 
     pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<()> {
         self.load_configurations(source, config)?;
-        self.load_documents()?;
+        self.load_documents(config)?;
         self.configure_default_index()?;
         self.load_index()?;
         Ok(())
@@ -366,7 +366,7 @@ impl DataSourceMap {
         
     }
 
-    fn load_documents(&mut self) -> Result<()> {
+    fn load_documents(&mut self, config: &Config) -> Result<()> {
         for (k, g) in self.map.iter_mut() {
             info!("{} < {}", k, g.source.display());
 
@@ -375,6 +375,7 @@ impl DataSourceMap {
                 id: Box::new(identifier::FileNameIdentifier{}),
                 kind: g.config.kind.clone(),
                 documents,
+                config,
             };
 
             g.all = provider::Provider::load(req)?;
