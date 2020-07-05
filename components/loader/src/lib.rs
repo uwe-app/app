@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::collections::HashMap;
 use std::convert::AsRef;
 use std::path::Path;
@@ -12,10 +15,22 @@ use inflector::Inflector;
 
 use log::warn;
 
+use thiserror::Error;
+
 use config::page::Page;
 use config::Config;
 
-use crate::{Error};
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    TomlDeser(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    FrontMatter(#[from] frontmatter::Error),
+}
 
 static INDEX_STEM: &str = "index";
 static MD: &str = "md";
@@ -155,29 +170,23 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
     let src = config.get_page_data_path();
     if src.exists() {
         let mut data = DATA.lock().unwrap();
-
-        let properties = utils::fs::read_string(src);
-        match properties {
-            Ok(s) => {
-                let conf: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&s);
-                match conf {
-                    Ok(props) => {
-                        for (k, v) in props {
-                            let page = v.try_into::<Page>()?;
-                            let result = find_file_for_key(&k, source, config);
-                            match result {
-                                Some(f) => {
-                                    // Use the actual file path as the key
-                                    // so we can find it easily later
-                                    let file_key = f.to_string_lossy().into_owned();
-                                    //println!("Inserting with key {}", &file_key);
-                                    data.insert(file_key, page);
-                                }
-                                None => warn!("No file for page table: {}", k),
-                            }
+        let properties = utils::fs::read_string(src)?;
+        let conf: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&properties);
+        match conf {
+            Ok(props) => {
+                for (k, v) in props {
+                    let page = v.try_into::<Page>()?;
+                    let result = find_file_for_key(&k, source, config);
+                    match result {
+                        Some(f) => {
+                            // Use the actual file path as the key
+                            // so we can find it easily later
+                            let file_key = f.to_string_lossy().into_owned();
+                            //println!("Inserting with key {}", &file_key);
+                            data.insert(file_key, page);
                         }
+                        None => warn!("No file for page table: {}", k),
                     }
-                    Err(e) => return Err(Error::from(e)),
                 }
             }
             Err(e) => return Err(Error::from(e)),

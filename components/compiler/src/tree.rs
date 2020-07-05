@@ -8,7 +8,6 @@ use serde_json::json;
 use config::page::Page;
 
 use super::context::Context;
-use super::loader;
 use super::matcher;
 use super::matcher::FileType;
 

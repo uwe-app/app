@@ -33,6 +33,8 @@ pub enum Error {
     Locale(#[from] locale::Error),
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
+    #[error(transparent)]
+    Loader(#[from] loader::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

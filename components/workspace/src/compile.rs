@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use log::info;
 
 use compiler::context::Context;
-use compiler::loader;
 use compiler::Compiler;
 use compiler::CompilerOptions;
 use config::{BuildArguments, Config};

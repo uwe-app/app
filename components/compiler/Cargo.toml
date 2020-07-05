@@ -10,6 +10,7 @@ config = {version = "0.1", path = "../config" }
 content = {version = "0.1", path = "../content" }
 datasource = {version = "0.1", path = "../datasource" }
 frontmatter = {version = "0.1", path = "../frontmatter" }
+loader = {version = "0.1", path = "../loader" }
 locale = {version = "0.1", path = "../locale" }
 utils = {version = "0.1", path = "../utils" }
 
@@ -19,9 +20,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_with = "1.4"
 serde_json = "1"
 ignore = "0.4"
-lazy_static = "1"
 toml = "0.5"
-Inflector = "0.11"
 handlebars = {version = "3.0", default-features = true, features = [ "dir_source" ] }
 slug = "0.1.4"
 rand = "0.7.3"

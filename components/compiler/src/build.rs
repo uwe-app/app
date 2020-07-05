@@ -15,7 +15,6 @@ use utils;
 
 use super::context::Context;
 use super::hook;
-use super::loader;
 use super::manifest::Manifest;
 use super::matcher::{self, FileType};
 use super::parser::Parser;

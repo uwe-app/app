@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
-
 use std::path::PathBuf;
 
 use thiserror::Error;
@@ -71,6 +68,8 @@ pub enum Error {
     DataSource(#[from] datasource::Error),
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),
+    #[error(transparent)]
+    Loader(#[from] loader::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -88,7 +87,6 @@ pub mod draft;
 pub mod helpers;
 pub mod hook;
 pub mod invalidator;
-pub mod loader;
 pub mod manifest;
 pub mod markdown;
 pub mod matcher;

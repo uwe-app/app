@@ -3,8 +3,6 @@ use std::io;
 
 use config::page::Page;
 
-use crate::Error;
-
 pub mod children;
 pub mod date;
 pub mod html;
@@ -16,7 +14,7 @@ pub mod random;
 pub mod slug;
 pub mod url;
 
-pub fn map_render_error(e: Error) -> RenderError {
+pub fn map_render_error(e: loader::Error) -> RenderError {
     RenderError::new(e.to_string())
 }
 

@@ -10,7 +10,6 @@ use datasource;
 use super::Compiler;
 use super::context::Context;
 use super::hook;
-use super::loader;
 use super::matcher;
 use super::matcher::FileType;
 use super::watch;
