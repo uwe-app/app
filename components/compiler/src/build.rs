@@ -6,12 +6,12 @@ use log::{debug, info};
 
 use serde_json::{json, Value};
 
-use crate::{Error, Result, TEMPLATE_EXT};
-
 use book::compiler::BookCompiler;
 use config::page::Page;
 use datasource::{self, IndexQuery};
 use matcher::{self, FileType};
+
+use crate::{Error, Result, TEMPLATE_EXT};
 
 use super::context::Context;
 use super::hook;
@@ -251,70 +251,20 @@ impl<'a> Compiler<'a> {
 
     // Recursively walk and build files in a directory
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
-        let config_file = self.context.config.file.clone();
-
-        let partials = self.register_templates_directory()?;
-        let includes = self
-            .context
-            .config
-            .get_includes_path(&self.context.options.source);
-        let generator = self
-            .context
-            .config
-            .get_datasources_path(&self.context.options.source);
-        let resource = self
-            .context
-            .config
-            .get_resources_path(&self.context.options.source);
-        let theme = self
-            .context
-            .config
-            .get_book_theme_path(&self.context.options.source);
+        self.register_templates_directory()?;
 
         let build = self.context.config.build.as_ref().unwrap();
         let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
-        let mut filters: Vec<PathBuf> = Vec::new();
-        filters.push(partials);
-        filters.push(includes);
-        filters.push(generator);
-        filters.push(resource);
+        let mut filters = matcher::get_filters(
+            &self.context.options.source, &self.context.config);
 
         // Always ignore the layout
         filters.push(self.context.options.layout.clone());
 
-        if let Some(config_file) = &config_file {
-            filters.push(config_file.clone());
-        }
-
-        if let Some(theme) = &theme {
-            filters.push(theme.clone());
-        }
-
-        // All books must be ignored they are built separately
-        if let Some(ref book) = self.context.config.book {
-            let mut paths = book.get_paths(&self.context.options.source);
-            filters.append(&mut paths);
-        }
-
-        if let Some(locales_dir) = self
-            .context
-            .config
-            .get_locales(&self.context.options.source)
-        {
-            filters.push(locales_dir);
-        }
-
         resource::link(self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
-            for (_, v) in hooks {
-                if let Some(source) = &v.source {
-                    let mut buf = self.context.options.source.clone();
-                    buf.push(source);
-                    filters.push(buf);
-                }
-            }
             hook::run(
                 &self.context,
                 hook::collect(hooks.clone(), hook::Phase::Before),
