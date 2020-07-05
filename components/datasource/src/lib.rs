@@ -16,6 +16,8 @@ use utils;
 pub mod identifier;
 pub mod provider;
 
+use provider::{SourceType, SourceProvider};
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Query should be array or object")]
@@ -95,8 +97,8 @@ pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DataSourceConfig {
     #[serde(rename = "type")]
-    pub kind: provider::SourceType,
-    pub provider: provider::SourceProvider,
+    pub kind: SourceType,
+    pub provider: SourceProvider,
     pub index: Option<BTreeMap<String, IndexRequest>>,
 }
 
@@ -394,17 +396,20 @@ impl DataSourceMap {
                         });
                     }
 
-                    let mut data = path.to_path_buf().clone();
-                    data.push(DOCUMENTS);
-                    if !data.exists() || !data.is_dir() {
-                        return Err(Error::NoDataSourceDocuments {
-                            docs: DOCUMENTS.to_string(),
-                            key
-                        });
-                    }
-
                     let contents = utils::fs::read_string(conf)?;
                     let config: DataSourceConfig = toml::from_str(&contents)?;
+
+                    // For document providers there must be a documents directory
+                    if let SourceProvider::Documents = config.provider {
+                        let mut data = path.to_path_buf().clone();
+                        data.push(DOCUMENTS);
+                        if !data.exists() || !data.is_dir() {
+                            return Err(Error::NoDataSourceDocuments {
+                                docs: DOCUMENTS.to_string(),
+                                key
+                            });
+                        }
+                    }
 
                     let all: BTreeMap<String, Value> = BTreeMap::new();
                     let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
