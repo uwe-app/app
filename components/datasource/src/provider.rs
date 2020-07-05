@@ -113,35 +113,29 @@ impl Provider {
     async fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
 
+        let filters = matcher::get_filters(req.source, req.config);
         WalkBuilder::new(req.source)
-            
-            .build_parallel().run(|| {
-            Box::new(|result| {
-                //let tx = tx.clone();
-                if let Ok(entry) = result {
-                    let path = entry.path();
-                    if path.is_file() {
-                        println!("Pages walker for file {:?}", path);
-
-                        //docs.insert("foo".to_string(),serde_json::json!(""));
-                    }
-
-                    //if entry
-                        //.file_type()
-                        //.as_ref()
-                        //.map_or(false, fs::FileType::is_file)
-                        //&& entry.path().extension().map_or(false, |e| e == "ftl")
-                    //{
-                        //if let Ok(string) = std::fs::read_to_string(entry.path()) {
-                            //let _ = tx.send(string);
-                        //} else {
-                            //log::warn!("Couldn't read {}", entry.path().display());
-                        //}
-                    //}
+            .filter_entry(move |e| {
+                let path = e.path();
+                if filters.contains(&path.to_path_buf()) {
+                    return false;
                 }
-
-                WalkState::Continue
+                true
             })
+            .build_parallel()
+            .run(|| {
+                Box::new(|result| {
+                    //let tx = tx.clone();
+                    if let Ok(entry) = result {
+                        let path = entry.path();
+                        if path.is_file() {
+                            println!("Pages walker for file {:?}", path);
+                            //docs.insert("foo".to_string(),serde_json::json!(""));
+                        }
+                    }
+                    WalkState::Continue
+                }
+            )
         });
 
         Ok(docs)
