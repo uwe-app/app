@@ -13,13 +13,16 @@ use config::page::Page;
 use config::Config;
 use utils;
 
+pub mod identifier;
+pub mod loader;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Query should be array or object")]
     QueryType,
 
-    #[error("Duplicate document id {id} ({name}.json)")]
-    DuplicateId {id: String, name: String},
+    #[error("Duplicate document id {key} ({path})")]
+    DuplicateId {key: String, path: PathBuf},
 
     #[error("The all index is reserved, choose another index name")]
     AllIndexReserved,
@@ -56,10 +59,8 @@ static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
 static DEFAULT_VALUE_PARAMETER: &str = "value";
-static JSON: &str = "json";
 
 pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>> {
-    //let generator_config = data.query;
     let mut page_generators: Vec<IndexQuery> = Vec::new();
     if let Some(cfg) = &data.query {
         // Single object declaration
@@ -217,31 +218,6 @@ impl ValueIndex {
     }
 }
 
-impl DataSource {
-    pub fn load(&mut self) -> Result<()> {
-        let documents = get_datasource_documents_path(&self.source);
-        let contents = documents.read_dir()?;
-        for entry in contents {
-            let path = entry?.path();
-            if let Some(ext) = path.extension() {
-                if ext == JSON {
-                    let contents = utils::fs::read_string(&path)?;
-                    let document: Value = serde_json::from_str(&contents)?;
-                    if let Some(stem) = path.file_stem() {
-                        let name = stem.to_string_lossy().into_owned();
-                        let id = slug::slugify(&name);
-                        if self.all.contains_key(&id) {
-                            return Err(Error::DuplicateId {id, name});
-                        }
-                        self.all.insert(id, document);
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
-}
-
 #[derive(Debug, Default)]
 pub struct DataSourceMap {
     pub map: BTreeMap<String, DataSource>,
@@ -385,7 +361,14 @@ impl DataSourceMap {
     fn load_documents(&mut self) -> Result<()> {
         for (k, g) in self.map.iter_mut() {
             info!("{} < {}", k, g.source.display());
-            g.load()?;
+
+            let documents = get_datasource_documents_path(&g.source);
+            let req = loader::LoadRequest {
+                id: Box::new(identifier::FileNameIdentifier{}),
+                documents,
+            };
+
+            g.all = loader::DocumentsLoader::load(req)?;
         }
         Ok(())
     }
