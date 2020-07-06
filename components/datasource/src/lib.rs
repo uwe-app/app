@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::fs::ReadDir;
 use std::path::Path;
 use std::path::PathBuf;
@@ -230,6 +231,13 @@ impl DataSourceMap {
 
     pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<()> {
         self.load_configurations(&source, config)?;
+
+        if let Some(pages_source) = config.get_pages_data_source() {
+            let ds = self.to_data_source(&source, &source, pages_source);
+            // TODO: allow the data source name to be configured
+            self.map.insert("pages".to_string(), ds);
+        }
+
         self.load_documents(&source, config)?;
         self.configure_default_index()?;
         self.load_index()?;
@@ -243,6 +251,18 @@ impl DataSourceMap {
             self.load_config(source, contents)?;
         }
         Ok(())
+    }
+
+    fn to_data_source(&mut self, source: &PathBuf, path: &PathBuf, config: DataSourceConfig) -> DataSource {
+        let all: BTreeMap<String, Value> = BTreeMap::new();
+        let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
+        DataSource {
+            site: source.clone(),
+            source: path.to_path_buf(),
+            all,
+            indices,
+            config,
+        }
     }
 
     fn load_config(&mut self, source: &PathBuf, dir: ReadDir) -> Result<()> {
@@ -274,18 +294,8 @@ impl DataSourceMap {
                         }
                     }
 
-                    let all: BTreeMap<String, Value> = BTreeMap::new();
-                    let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
-
-                    let generator = DataSource {
-                        site: source.clone(),
-                        source: path.to_path_buf(),
-                        all,
-                        indices,
-                        config,
-                    };
-
-                    self.map.insert(key, generator);
+                    let data_source = self.to_data_source(source, &path.to_path_buf(), config);
+                    self.map.insert(key, data_source);
                 }
             }
         }
@@ -315,7 +325,7 @@ impl DataSourceMap {
     fn configure_default_index(&mut self) -> Result<()> {
         for (_, generator) in self.map.iter_mut() {
             if generator.config.index.is_none() {
-                generator.config.index = Some(BTreeMap::new());
+                generator.config.index = Some(HashMap::new());
             }
 
             let index = generator.config.index.as_ref().unwrap();
@@ -360,7 +370,10 @@ impl DataSourceMap {
 
                 for (id, document) in &generator.all {
                     if name == ALL_INDEX {
-                        let items = values.documents.entry(id.clone()).or_insert(Vec::new());
+                        let items = values.documents
+                            .entry(id.clone())
+                            .or_insert(Vec::new());
+
                         items.push(id.clone());
                         continue;
                     }
@@ -387,7 +400,10 @@ impl DataSourceMap {
                         }
 
                         for s in candidates {
-                            let items = values.documents.entry(s.to_string()).or_insert(Vec::new());
+                            let items = values.documents
+                                .entry(s.to_string())
+                                .or_insert(Vec::new());
+
                             items.push(id.clone());
                         }
                     }

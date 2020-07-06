@@ -16,6 +16,7 @@ use utils;
 
 use super::page::Page;
 use super::Error;
+use super::indexer::{IndexRequest, SourceType, SourceProvider, DataSource};
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
@@ -109,6 +110,7 @@ pub struct Config {
     pub link: Option<LinkConfig>,
     pub profile: Option<HashMap<String, BuildArguments>>,
     pub publish: Option<PublishConfig>,
+    pub index: Option<HashMap<String, IndexRequest>>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -138,6 +140,7 @@ impl Default for Config {
             link: Some(Default::default()),
             profile: Some(Default::default()),
             publish: Some(Default::default()),
+            index: None,
         }
     }
 }
@@ -287,6 +290,18 @@ impl Config {
         }
 
         Err(Error::NoSiteConfig(pth))
+    }
+
+    pub fn get_pages_data_source(&self) -> Option<DataSource> {
+        if let Some(ref index) = self.index {
+            let data_source = DataSource {
+                kind: SourceType::Toml, 
+                provider: SourceProvider::Pages,
+                index: Some(index.clone()),
+            };
+            return Some(data_source);
+        }
+        None
     }
 
     pub fn get_project(&self) -> PathBuf {

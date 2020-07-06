@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 // This is the configuration option for generating
@@ -26,7 +26,7 @@ pub struct DataSource {
     #[serde(rename = "type")]
     pub kind: SourceType,
     pub provider: SourceProvider,
-    pub index: Option<BTreeMap<String, IndexRequest>>,
+    pub index: Option<HashMap<String, IndexRequest>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
