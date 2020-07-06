@@ -1,19 +1,32 @@
 use std::path::Path;
 use serde_json::Value;
 
-pub trait DocumentIdentifier {
-    fn identifier(&self, path: &Path, document: &Value) -> String;
+pub enum Strategy {
+    FileName,
+    Count,
 }
 
-pub struct FileNameIdentifier {}
+pub struct ComputeIdentifier {}
 
-impl DocumentIdentifier for FileNameIdentifier {
-    fn identifier(&self, path: &Path, _document: &Value) -> String {
-        if let Some(stem) = path.file_stem() {
-            let name = stem.to_string_lossy().into_owned();
-            return slug::slugify(&name)
+impl ComputeIdentifier{
+    pub fn id(
+        strategy: &Strategy,
+        path: &Path,
+        _document: &Value,
+        count: &usize) -> String {
+
+        match strategy {
+            Strategy::FileName => {
+                if let Some(stem) = path.file_stem() {
+                    let name = stem.to_string_lossy().into_owned();
+                    return slug::slugify(&name)
+                }
+            },
+            _ => {
+                return format!("{}", count);
+            }
         }
-        return String::from("")
+        format!("{}", count)
     }
 }
 

@@ -14,7 +14,7 @@ use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 use config::Config;
 
 use super::{Result, Error};
-use super::identifier::DocumentIdentifier;
+use super::identifier::{ComputeIdentifier, Strategy};
 
 static JSON: &str = "json";
 
@@ -48,7 +48,7 @@ pub enum SourceProvider {
 pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,
     pub config: &'a Config,
-    pub id: Box<dyn DocumentIdentifier + 'a>,
+    pub strategy: Strategy,
     pub documents: PathBuf,
     pub kind: SourceType,
     pub provider: SourceProvider,
@@ -109,16 +109,13 @@ impl Provider {
         }
     }
 
-    #[tokio::main]
-    async fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
-        let mut docs: BTreeMap<String, Value> = BTreeMap::new();
-
+    fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
         let filters = matcher::get_filters(req.source, req.config);
         let (tx, rx) = flume::unbounded();
 
         let extensions = req.config.extension.as_ref().unwrap().clone();
 
-        // We use the walk builder so we can respect the way the compiler
+        // Use the walk builder to respect the way the compiler
         // ignores and filters files
         WalkBuilder::new(req.source)
             .filter_entry(move |e| {
@@ -135,9 +132,7 @@ impl Provider {
                     if let Ok(entry) = result {
                         let path = entry.path();
                         if path.is_file() && matcher::is_page(&path, &extensions) {
-                            println!("Pages walker for file {:?}", path);
                             let _ = tx.send(path.to_path_buf());
-                            //docs.insert("foo".to_string(),serde_json::json!(""));
                         }
                     }
                     WalkState::Continue
@@ -145,18 +140,53 @@ impl Provider {
             )
         });
 
-        let paths = &rx.drain().collect::<Vec<_>>();
+        Provider::compute_pages(req, rx.drain().collect::<Vec<_>>())
+    }
 
-        //paths.foo();
+    #[tokio::main]
+    async fn compute_pages(req: LoadRequest, paths: Vec<PathBuf>) -> Result<BTreeMap<String, Value>> {
+        let mut docs: BTreeMap<String, Value> = BTreeMap::new();
+        let limit: usize = 100;
 
+        stream::iter(paths)
+            .enumerate()
+            .map(Ok)
+            .try_for_each_concurrent(limit, |(count, path)| {
+                let result = loader::compute(&path, req.config, true);
+                match result {
+                    Ok(data) => {
+                        let result = serde_json::to_value(data);
+                        match result {
+                            Ok(document) => {
+                                let key = ComputeIdentifier::id(
+                                    &Strategy::Count, &path, &document, &count);
+                                if docs.contains_key(&key) {
+                                    return future::err(Error::DuplicateId {key, path});
+                                }
+                                docs.insert(key, document);
+                            },
+                            Err(e) => {
+                                return future::err(Error::from(e))
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        return future::err(Error::from(e))
+                    }
+                }
+
+                future::ok(())
+            }).await?;
         Ok(docs)
     }
 
     #[tokio::main]
     async fn load_documents(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
+        let limit: usize = 100;
+
         Provider::find_documents(&req)
-            .try_for_each(|entry| {
+            .try_for_each_concurrent(limit, |(count, entry)| {
                 let path = entry.path();
                 let result = utils::fs::read_string(&path);
                 match result {
@@ -164,7 +194,7 @@ impl Provider {
                         let result = Provider::deserialize(&req.kind, &content);
                         match result {
                             Ok(document) => {
-                                let key = req.id.identifier(&path, &document);
+                                let key = ComputeIdentifier::id(&req.strategy, &path, &document, &count);
                                 if docs.contains_key(&key) {
                                     return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                                 }
@@ -186,7 +216,7 @@ impl Provider {
     }
 
     fn find_documents<'a>(req: &'a LoadRequest<'a>)
-        -> Pin<Box<dyn Stream<Item = StdResult<DirEntry, Error>> + 'a>> {
+        -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>> {
 
         find_recursive(&req.documents)
             .map_err(Error::from)
@@ -199,6 +229,8 @@ impl Provider {
                 }
                 future::ready(false)
             })
+            .enumerate()
+            .map(|(c, r)| Ok((c, r.unwrap())))
             .boxed()
     }
 }

@@ -55,6 +55,8 @@ pub enum Error {
 
     #[error(transparent)]
     Provider(#[from] provider::DeserializeError),
+    #[error(transparent)]
+    Loader(#[from] loader::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -313,7 +315,7 @@ impl DataSourceMap {
 
             let documents = get_datasource_documents_path(&g.source);
             let req = provider::LoadRequest {
-                id: Box::new(identifier::FileNameIdentifier{}),
+                strategy: identifier::Strategy::FileName,
                 kind: g.config.kind.clone(),
                 provider: g.config.provider.clone(),
                 source,
@@ -368,6 +370,7 @@ impl DataSourceMap {
 
             for (name, def) in index {
                 let key = def.key.as_ref().unwrap();
+
                 let mut values = ValueIndex {
                     documents: BTreeMap::new(),
                 };
