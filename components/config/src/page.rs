@@ -57,6 +57,7 @@ pub struct Page {
     pub standalone: Option<bool>,
     pub query: Option<Value>,
     pub layout: Option<PathBuf>,
+    pub tags: Option<Vec<String>>,
 
     // Reserved
     pub lang: Option<String>,
@@ -84,6 +85,7 @@ impl Default for Page {
             standalone: Some(false),
             query: None,
             layout: None,
+            tags: None,
             vars: Map::new(),
 
             lang: None,
@@ -129,6 +131,10 @@ impl Page {
 
         if let Some(layout) = other.layout.as_mut() {
             self.layout = Some(mem::take(layout));
+        }
+
+        if let Some(tags) = other.tags.as_mut() {
+            self.tags = Some(mem::take(tags));
         }
 
         self.vars.append(&mut other.vars);
