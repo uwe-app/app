@@ -30,6 +30,9 @@ pub enum Error {
 
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),
+
+    #[error(transparent)]
+    Link(#[from] link::Error),
 }
 
 static INDEX_STEM: &str = "index";
@@ -133,6 +136,9 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
 
     if frontmatter {
         if let Some(ext) = f.as_ref().extension() {
+
+            // FIXME: call matcher::get_type() here
+
             let conf = if ext == MD {
                 frontmatter::Config::new_markdown(true)
             } else {
@@ -145,6 +151,8 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
         }
         // FIXME: ensure frontmatter never defines `query`
     }
+
+    page.href = Some(link::absolute(f.as_ref(), config, Default::default())?);
 
     Ok(page)
 }

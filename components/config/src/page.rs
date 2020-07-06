@@ -60,6 +60,7 @@ pub struct Page {
     pub tags: Option<Vec<String>>,
 
     // Reserved
+    pub href: Option<String>,
     pub lang: Option<String>,
     pub file: Option<FileContext>,
 
@@ -88,6 +89,7 @@ impl Default for Page {
             tags: None,
             vars: Map::new(),
 
+            href: None,
             lang: None,
             file: None,
             template: None,
@@ -137,16 +139,11 @@ impl Page {
             self.tags = Some(mem::take(tags));
         }
 
+        if let Some(href) = other.href.as_mut() {
+            self.href = Some(mem::take(href));
+        }
+
         self.vars.append(&mut other.vars);
-
-        //if let Some(vars) = other.vars.as_mut() {
-        //if let Some(self_vars) = self.vars.as_mut() {
-        //self_vars.append(vars);
-        //} else {
-        //self.vars = Some(vars);
-        //}
-
-        //}
     }
 }
 
