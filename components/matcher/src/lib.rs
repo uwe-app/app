@@ -185,6 +185,7 @@ pub fn destination<P: AsRef<Path>>(
     rewrite_index: bool,
     base_href: &Option<String>,
 ) -> Result<PathBuf, Error> {
+
     let pth = file.as_ref().to_path_buf().clone();
     let result = direct_destination(source, target, file, base_href);
     match result {

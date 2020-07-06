@@ -21,6 +21,7 @@ members = [
   "components/frontmatter",
   "components/git",
   "components/installer",
+  "components/link",
   "components/loader",
   "components/locale",
   "components/matcher",

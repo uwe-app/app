@@ -31,7 +31,8 @@ pub fn listing<P: AsRef<Path>>(
     list: &ListOptions,
     ctx: &Context,
 ) -> Result<Vec<ItemData>, Error> {
-    let mut path: PathBuf = target.as_ref().to_path_buf();
+
+    let mut path = target.as_ref().to_path_buf();
 
     // Resolve using a dir string argument
     if !list.dir.is_empty() {
@@ -54,7 +55,6 @@ pub fn listing<P: AsRef<Path>>(
     }
 
     if let Some(parent) = path.parent() {
-        //parent.foo();
         return children(&path, &parent, &list, ctx);
     }
 
@@ -72,11 +72,14 @@ fn children<P: AsRef<Path>>(
     let source = &ctx.options.source;
     let target = &ctx.options.target;
 
-    //let p = parent.as_ref();
+    let rel_base = parent
+        .strip_prefix(source)
+        .unwrap_or(Path::new(""));
 
-    let rel_base = parent.strip_prefix(source).unwrap_or(Path::new(""));
+    for result in WalkBuilder::new(parent)
+        .max_depth(Some(list.depth))
+        .build() {
 
-    for result in WalkBuilder::new(parent).max_depth(Some(list.depth)).build() {
         match result {
             Ok(entry) => {
                 let path = entry.path();
@@ -92,7 +95,7 @@ fn children<P: AsRef<Path>>(
                 // NOTE: saying it is not used but we pass it to
                 // NOTE: the json!() macro later
                 #[allow(unused_assignments)]
-                let mut this: bool = false;
+                let mut this = false;
 
                 let mut data: Page = Default::default();
 

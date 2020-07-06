@@ -233,9 +233,9 @@ impl DataSourceMap {
         self.load_configurations(&source, config)?;
 
         if let Some(pages_source) = config.get_pages_data_source() {
-            let ds = self.to_data_source(&source, &source, pages_source);
+            let data_source = self.to_data_source(&source, &source, pages_source);
             // TODO: allow the data source name to be configured
-            self.map.insert("pages".to_string(), ds);
+            self.map.insert("pages".to_string(), data_source);
         }
 
         self.load_documents(&source, config)?;
