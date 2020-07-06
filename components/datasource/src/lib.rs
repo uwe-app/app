@@ -6,17 +6,13 @@ use std::path::PathBuf;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_value, json, Map, Value};
-use slug;
 use thiserror::Error;
 
-use config::page::Page;
-use config::Config;
-use utils;
+use config::{Config, Page};
+use config::indexer::{SourceProvider, IndexRequest, DataSource as DataSourceConfig};
 
 pub mod identifier;
 pub mod provider;
-
-use provider::{SourceType, SourceProvider};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -94,19 +90,6 @@ pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
     pth.push(DOCUMENTS);
     pth
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DataSourceConfig {
-    #[serde(rename = "type")]
-    pub kind: SourceType,
-    pub provider: SourceProvider,
-    pub index: Option<BTreeMap<String, IndexRequest>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct IndexRequest {
-    pub key: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

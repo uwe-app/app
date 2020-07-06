@@ -30,6 +30,8 @@ pub enum Error {
 }
 
 pub mod config;
+pub mod indexer;
 pub mod page;
 
 pub use config::*;
+pub use page::Page;

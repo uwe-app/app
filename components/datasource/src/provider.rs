@@ -5,13 +5,13 @@ use std::pin::Pin;
 use std::result::{Result as StdResult};
 
 use serde_json::Value;
-use serde::{Deserialize, Serialize};
 use ignore::{WalkBuilder, WalkState};
 
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
 use config::Config;
+use config::indexer::{SourceType, SourceProvider};
 
 use super::{Result, Error};
 use super::identifier::{ComputeIdentifier, Strategy};
@@ -28,22 +28,6 @@ pub enum DeserializeError {
 }
 
 type ProviderResult = std::result::Result<Value, DeserializeError>;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum SourceType {
-    #[serde(rename = "json")]
-    Json,
-    #[serde(rename = "toml")]
-    Toml,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum SourceProvider {
-    #[serde(rename = "documents")]
-    Documents,
-    #[serde(rename = "pages")]
-    Pages,
-}
 
 pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,

@@ -1,6 +1,8 @@
 use std::path::Path;
 use serde_json::Value;
 
+// TODO: support extracting an `id` field from the document
+
 pub enum Strategy {
     FileName,
     Count,
