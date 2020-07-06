@@ -102,3 +102,4 @@ pub mod watch;
 
 pub use build::Compiler;
 pub use types::*;
+pub use context::Context;

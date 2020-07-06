@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use log::info;
 
 use config::{BuildArguments, Config};
+use config::config::AwsPublishEnvironment;
 use publisher::{self, PublishProvider, PublishRequest};
+use compiler::Context;
 use report::FileBuilder;
 
 use workspace;
@@ -23,17 +25,16 @@ pub fn publish(options: PublishOptions) -> Result<()> {
     let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
     for space in spaces {
-        publish_one(&options, &space)?;
+        build_publish(&options, &space)?;
     }
     Ok(())
 }
 
-#[tokio::main]
-async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
+fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
             if let Some(ref publish_config) = config.publish.as_ref().unwrap().aws {
-                if let Some(ref env) = publish_config.environments.get(&options.env) {
+                if let Some(env) = publish_config.environments.get(&options.env) {
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
@@ -56,25 +57,8 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
                     args.release = Some(true);
                     let ctx = workspace::compile(&config, &args, false)?;
 
-                    info!("Building local file list");
+                    publish_aws(request, ctx, env)?
 
-                    // Create the list of local build files
-                    let mut file_builder =
-                        FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
-                    file_builder.walk()?;
-
-                    info!("Local objects {}", file_builder.keys.len());
-
-                    info!("Building remote file list");
-
-                    let mut remote: HashSet<String> = HashSet::new();
-                    let mut etags: HashMap<String, String> = HashMap::new();
-                    publisher::list_remote(&request, &mut remote, &mut etags).await?;
-
-                    info!("Remote objects {}", remote.len());
-
-                    let diff = publisher::diff(&file_builder, &remote, &etags)?;
-                    publisher::publish(&request, file_builder, diff).await?;
                 } else {
                     return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
                 }
@@ -83,6 +67,35 @@ async fn publish_one(options: &PublishOptions, config: &Config) -> Result<()> {
             }
         }
     }
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn publish_aws(
+    request: PublishRequest,
+    ctx: Context,
+    env: &AwsPublishEnvironment) -> Result<()> {
+
+    info!("Building local file list");
+
+    // Create the list of local build files
+    let mut file_builder =
+        FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
+    file_builder.walk()?;
+
+    info!("Local objects {}", file_builder.keys.len());
+
+    info!("Building remote file list");
+
+    let mut remote: HashSet<String> = HashSet::new();
+    let mut etags: HashMap<String, String> = HashMap::new();
+    publisher::list_remote(&request, &mut remote, &mut etags).await?;
+
+    info!("Remote objects {}", remote.len());
+
+    let diff = publisher::diff(&file_builder, &remote, &etags)?;
+    publisher::publish(&request, file_builder, diff).await?;
 
     Ok(())
 }
