@@ -59,6 +59,9 @@ pub struct Page {
     pub layout: Option<PathBuf>,
     pub tags: Option<Vec<String>>,
 
+    pub scripts: Option<Vec<String>>,
+    pub styles: Option<Vec<String>>,
+
     // Reserved
     pub href: Option<String>,
     pub lang: Option<String>,
@@ -87,6 +90,9 @@ impl Default for Page {
             query: None,
             layout: None,
             tags: None,
+            scripts: None,
+            styles: None,
+
             vars: Map::new(),
 
             href: None,
@@ -137,6 +143,14 @@ impl Page {
 
         if let Some(tags) = other.tags.as_mut() {
             self.tags = Some(mem::take(tags));
+        }
+
+        if let Some(scripts) = other.scripts.as_mut() {
+            self.scripts = Some(mem::take(scripts));
+        }
+
+        if let Some(styles) = other.styles.as_mut() {
+            self.styles = Some(mem::take(styles));
         }
 
         if let Some(href) = other.href.as_mut() {
