@@ -135,6 +135,8 @@ fn children<P: AsRef<Path>>(
                     // file and generate a destination
                     let mut dir_index = path.to_path_buf();
                     dir_index.push(INDEX_STEM);
+
+                    // FIXME: use list of extrensions?
                     let candidates =
                         vec![dir_index.with_extension(MD), dir_index.with_extension(HTML)];
 
@@ -177,8 +179,9 @@ fn children<P: AsRef<Path>>(
                         }
                     }
 
-                    //data.vars.insert("href".to_owned(), json!(utils::url::to_href_separator(href)));
-                    data.extra.insert("href".to_owned(), json!(href));
+                    // NOTE: must override the formal href
+                    data.href = Some(href);
+
                     data.extra.insert("self".to_owned(), json!(this));
                     entries.push(data);
                 }
