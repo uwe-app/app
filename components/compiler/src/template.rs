@@ -84,14 +84,13 @@ impl<'a> TemplateRender<'a> {
 
             // Some useful shortcuts
             if let Some(ref date) = self.context.config.date {
-                data.vars
-                    .insert("date-formats".to_string(), json!(date.formats));
+                data.extra.insert("date-formats".to_string(), json!(date.formats));
             }
 
-            // NOTE: context must be pushed into the vars otherwise
+            // NOTE: context must be pushed into extra otherwise
             // NOTE: we have a recursive type due to the page data
             // NOTE: declared in the root config
-            data.vars.insert("context".to_string(), json!(self.context));
+            data.extra.insert("context".to_string(), json!(self.context));
 
             debug!("{:?}", data);
 

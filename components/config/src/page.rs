@@ -80,19 +80,23 @@ pub struct Page {
     #[serde(deserialize_with = "from_toml_datetime")]
     pub created: Option<DateTime<Utc>>,
 
-    // Reserved
-    pub href: Option<String>,
-    pub lang: Option<String>,
-    pub file: Option<FileContext>,
-
-    // Layout template data
-    pub template: Option<String>,
-
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
     // NOTE: logic should inject it into `vars`
     #[serde(flatten)]
-    pub vars: Map<String, Value>,
+    pub extra: Map<String, Value>,
+
+    // Reserved
+    #[serde(skip_deserializing)]
+    pub href: Option<String>,
+    #[serde(skip_deserializing)]
+    pub lang: Option<String>,
+    #[serde(skip_deserializing)]
+    pub file: Option<FileContext>,
+
+    // Layout template data
+    #[serde(skip_deserializing)]
+    pub template: Option<String>,
 }
 
 impl Default for Page {
@@ -112,7 +116,7 @@ impl Default for Page {
             styles: None,
             created: None,
 
-            vars: Map::new(),
+            extra: Map::new(),
 
             href: None,
             lang: None,
@@ -178,7 +182,7 @@ impl Page {
             self.href = Some(mem::take(href));
         }
 
-        self.vars.append(&mut other.vars);
+        self.extra.append(&mut other.extra);
     }
 }
 

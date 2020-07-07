@@ -69,7 +69,7 @@ impl<'a> Compiler<'a> {
                     if doc.is_object() {
                         let map = doc.as_object().unwrap();
                         for (k, v) in map {
-                            item_data.vars.insert(k.clone(), json!(v));
+                            item_data.extra.insert(k.clone(), json!(v));
                         }
                     } else {
                         return Err(Error::DataSourceDocumentNotAnObject);
@@ -176,7 +176,7 @@ impl<'a> Compiler<'a> {
                         if each {
                             each_iters.push((query, idx));
                         } else {
-                            data.vars.insert(query.get_parameter(), json!(idx));
+                            data.extra.insert(query.get_parameter(), json!(idx));
                         }
                     }
 

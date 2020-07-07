@@ -35,7 +35,7 @@ impl HelperDef for Random {
                         if let Some(t) = h.template() {
                             let mut local_rc = rc.clone();
                             let mut data: Page = Default::default();
-                            data.vars.insert("entry".to_string(), json!(element));
+                            data.extra.insert("entry".to_string(), json!(element));
                             let local_ctx = with_parent_context(ctx, &mut data)?;
                             t.render(r, &local_ctx, &mut local_rc, out)?;
                             return Ok(());

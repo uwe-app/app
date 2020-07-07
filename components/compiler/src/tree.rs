@@ -178,8 +178,8 @@ fn children<P: AsRef<Path>>(
                     }
 
                     //data.vars.insert("href".to_owned(), json!(utils::url::to_href_separator(href)));
-                    data.vars.insert("href".to_owned(), json!(href));
-                    data.vars.insert("self".to_owned(), json!(this));
+                    data.extra.insert("href".to_owned(), json!(href));
+                    data.extra.insert("self".to_owned(), json!(this));
                     entries.push(data);
                 }
             }

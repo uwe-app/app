@@ -204,9 +204,9 @@ impl HelperDef for Components {
                         if let Some(src) = lookup::lookup(&build_ctx, &href) {
                             let mut data = loader::compute(src, &build_ctx.config, true)
                                 .map_err(map_render_error)?;
-                            data.vars.insert("first".to_string(), json!(first));
-                            data.vars.insert("last".to_string(), json!(last));
-                            data.vars.insert("href".to_string(), json!(url));
+                            data.extra.insert("first".to_string(), json!(first));
+                            data.extra.insert("last".to_string(), json!(last));
+                            data.extra.insert("href".to_string(), json!(url));
                             let mut local_rc = rc.clone();
                             let local_ctx = Context::wraps(&data)?;
                             t.render(r, &local_ctx, &mut local_rc, out)?;
