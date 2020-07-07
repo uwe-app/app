@@ -14,7 +14,7 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
-use super::page::Page;
+use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{IndexRequest, SourceType, SourceProvider, DataSource};
 
@@ -112,6 +112,8 @@ pub struct Config {
     pub publish: Option<PublishConfig>,
     pub index: Option<HashMap<String, IndexRequest>>,
 
+    pub authors: Option<HashMap<String, Author>>,
+
     #[serde(skip)]
     pub file: Option<PathBuf>,
 
@@ -141,6 +143,7 @@ impl Default for Config {
             profile: Some(Default::default()),
             publish: Some(Default::default()),
             index: None,
+            authors: None,
         }
     }
 }

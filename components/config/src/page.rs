@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize, Deserializer};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
+use super::Error;
+use super::config::Config;
+
 /// Attribute to convert from TOML date time to chronos UTC variant
 pub fn from_toml_datetime<'de, D>(deserializer: D) 
     -> Result<Option<DateTime<Utc>>, D::Error> where D: Deserializer<'de> {
@@ -72,6 +75,7 @@ pub struct Page {
     pub description: Option<String>,
     pub keywords: Option<String>,
     pub author: Option<Author>,
+    pub author_id: Option<String>,
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
@@ -84,6 +88,9 @@ pub struct Page {
 
     #[serde(deserialize_with = "from_toml_datetime")]
     pub created: Option<DateTime<Utc>>,
+
+    #[serde(deserialize_with = "from_toml_datetime")]
+    pub updated: Option<DateTime<Utc>>,
 
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
@@ -111,6 +118,7 @@ impl Default for Page {
             description: None,
             keywords: None,
             author: None,
+            author_id: None,
             rewrite_index: None,
             draft: Some(false),
             standalone: Some(false),
@@ -120,6 +128,7 @@ impl Default for Page {
             scripts: None,
             styles: None,
             created: None,
+            updated: None,
 
             extra: Map::new(),
 
@@ -132,6 +141,27 @@ impl Default for Page {
 }
 
 impl Page {
+
+    pub fn parse(&mut self, config: &Config) -> Result<(), Error> {
+        // TODO: finalize this page data after computation 
+        // TODO: build dynamic sort keys like date tuple (year, month, day) etc.
+        if let None = self.author {
+            if let Some(ref id) = self.author_id {
+                if let Some(ref authors) = config.authors {
+                    if let Some(author) = authors.get(id) {
+                        self.author = Some(author.clone());
+                    } else {
+                        return Err(Error::NoAuthor(id.to_string()))
+                    }
+                } else {
+                    return Err(Error::NoAuthor(id.to_string()))
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn append(&mut self, other: &mut Self) {
         if let Some(title) = other.title.as_mut() {
             self.title = Some(mem::take(title));
@@ -182,6 +212,7 @@ impl Page {
         }
 
         self.created = other.created.clone();
+        self.updated = other.updated.clone();
 
         if let Some(href) = other.href.as_mut() {
             self.href = Some(mem::take(href));

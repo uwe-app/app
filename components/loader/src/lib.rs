@@ -33,6 +33,8 @@ pub enum Error {
 
     #[error(transparent)]
     Link(#[from] link::Error),
+    #[error(transparent)]
+    Config(#[from] config::Error),
 }
 
 static INDEX_STEM: &str = "index";
@@ -153,6 +155,8 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
     }
 
     page.href = Some(link::absolute(f.as_ref(), config, Default::default())?);
+
+    page.parse(config)?;
 
     Ok(page)
 }
