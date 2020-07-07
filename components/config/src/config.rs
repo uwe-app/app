@@ -198,6 +198,15 @@ impl Config {
                     build.target = bp;
                 }
 
+                // Append render extension shortcuts in [build.render]
+                // to the [extension.render] list
+                if let Some(ref render) = build.render {
+                    let extensions = cfg.extension.as_mut().unwrap(); 
+                    for ext in render {
+                        extensions.render.push(ext.clone());
+                    }
+                }
+
                 if let Some(ref book) = cfg.book {
                     let book_paths = book.get_paths(&build.source);
                     for mut p in book_paths {
@@ -403,6 +412,7 @@ pub struct BuildConfig {
     pub resources: Option<PathBuf>,
     pub rewrite_index: Option<bool>,
     pub follow_links: Option<bool>,
+    pub render: Option<Vec<String>>,
 }
 
 impl Default for BuildConfig {
@@ -419,6 +429,7 @@ impl Default for BuildConfig {
             resources: Some(PathBuf::from(RESOURCES)),
             rewrite_index: Some(false),
             follow_links: Some(true),
+            render: None,
         }
     }
 }
