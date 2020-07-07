@@ -1,6 +1,6 @@
 [package]
 name = "hypertext"
-version = "0.17.9"
+version = "0.18.0"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Fast and lean static site generator"
 repository = "https://github.com/hypertext-live/hypertext"
