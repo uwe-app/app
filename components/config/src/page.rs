@@ -8,18 +8,23 @@ use serde::{Deserialize, Serialize, Deserializer};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
-/// Used as an attribute when we want to convert from TOML to a string date
+/// Attribute to convert from TOML date time to chronos UTC variant
 pub fn from_toml_datetime<'de, D>(deserializer: D) 
     -> Result<Option<DateTime<Utc>>, D::Error> where D: Deserializer<'de> {
 
     toml::value::Datetime::deserialize(deserializer).map(|s| {
-        Some(
-            DateTime::<Utc>::from_utc(
-                NaiveDateTime::parse_from_str(&s.to_string(), "%Y-%m-%d")
-                .unwrap_or(Utc::now().naive_utc()),
-                Utc
-            )
-        )
+        let d = s.to_string();
+        let dt = if d.contains('T') {
+            DateTime::parse_from_rfc3339(&d).ok().map(|s| s.naive_local())
+        } else {
+            NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok().map(|s| s.and_hms(0, 0, 0))
+        };
+
+        if let Some(dt) = dt {
+            return Some(DateTime::<Utc>::from_utc(dt, Utc))
+        }
+
+        None
     })
 }
 
