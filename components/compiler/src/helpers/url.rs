@@ -206,7 +206,9 @@ impl HelperDef for Components {
                                 .map_err(map_render_error)?;
                             data.extra.insert("first".to_string(), json!(first));
                             data.extra.insert("last".to_string(), json!(last));
-                            data.extra.insert("href".to_string(), json!(url));
+
+                            data.href = Some(url);
+
                             let mut local_rc = rc.clone();
                             let local_ctx = Context::wraps(&data)?;
                             t.render(r, &local_ctx, &mut local_rc, out)?;
