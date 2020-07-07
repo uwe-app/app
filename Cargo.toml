@@ -25,6 +25,7 @@ members = [
   "components/loader",
   "components/locale",
   "components/matcher",
+  "components/minify",
   "components/preference",
   "components/publisher",
   "components/report",

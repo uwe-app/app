@@ -11,7 +11,7 @@ use config::page::Page;
 use datasource::{self, IndexQuery};
 use matcher::{self, FileType};
 
-use crate::{Error, Result, TEMPLATE_EXT};
+use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
 use super::context::Context;
 use super::hook;
@@ -95,9 +95,21 @@ impl<'a> Compiler<'a> {
 
                     info!("{} -> {}", &id, &dest.display());
 
-                    let s = self
-                        .parser
-                        .parse(&file, &dest.as_path(), file_type, &mut item_data)?;
+                    // This prevents treating other destination
+                    // file types like json as HTML documents
+                    let mut html_extension = false;
+                    if let Some(ext) = dest.extension() {
+                        html_extension = ext == HTML;
+                    }
+                    let minify_html = self.context.options.release && html_extension;
+
+                    let s = if minify_html {
+                        minify::html(
+                            self.parser.parse(
+                                &file, &dest.as_path(), file_type, &mut item_data)?)
+                    } else {
+                        self.parser.parse(&file, &dest.as_path(), file_type, &mut item_data)?
+                    };
 
                     utils::fs::write_string(&dest, &s)?;
                 }
@@ -191,9 +203,24 @@ impl<'a> Compiler<'a> {
                     .is_dirty(file, &dest, self.context.options.force)
                 {
                     info!("{} -> {}", file.display(), dest.display());
-                    let s = self
-                        .parser
-                        .parse(&file, &dest.as_path(), &file_type, &mut data)?;
+
+                    // This prevents treating other destination
+                    // file types like json as HTML documents
+                    let mut html_extension = false;
+                    if let Some(ext) = dest.extension() {
+                        html_extension = ext == HTML;
+                    }
+
+                    let minify_html = self.context.options.release && html_extension;
+
+                    let s = if minify_html {
+                        minify::html(
+                            self.parser.parse(
+                                &file, &dest.as_path(), &file_type, &mut data)?)
+                    } else {
+                        self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?
+                    };
+
                     utils::fs::write_string(&dest, &s)?;
                     self.manifest.touch(file, &dest);
                 } else {
