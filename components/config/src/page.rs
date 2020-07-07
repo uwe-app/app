@@ -2,12 +2,26 @@ use std::io;
 use std::mem;
 use std::path::PathBuf;
 
-use chrono::DateTime;
-use chrono::Utc;
+use chrono::prelude::*;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
+
+/// Used as an attribute when we want to convert from TOML to a string date
+pub fn from_toml_datetime<'de, D>(deserializer: D) 
+    -> Result<Option<DateTime<Utc>>, D::Error> where D: Deserializer<'de> {
+
+    toml::value::Datetime::deserialize(deserializer).map(|s| {
+        Some(
+            DateTime::<Utc>::from_utc(
+                NaiveDateTime::parse_from_str(&s.to_string(), "%Y-%m-%d")
+                .unwrap_or(Utc::now().naive_utc()),
+                Utc
+            )
+        )
+    })
+}
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -47,6 +61,7 @@ impl FileContext {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct Page {
+
     // Configurable
     pub title: Option<String>,
     pub description: Option<String>,
@@ -61,6 +76,9 @@ pub struct Page {
 
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
+
+    #[serde(deserialize_with = "from_toml_datetime")]
+    pub created: Option<DateTime<Utc>>,
 
     // Reserved
     pub href: Option<String>,
@@ -92,6 +110,7 @@ impl Default for Page {
             tags: None,
             scripts: None,
             styles: None,
+            created: None,
 
             vars: Map::new(),
 
@@ -152,6 +171,8 @@ impl Page {
         if let Some(styles) = other.styles.as_mut() {
             self.styles = Some(mem::take(styles));
         }
+
+        self.created = other.created.clone();
 
         if let Some(href) = other.href.as_mut() {
             self.href = Some(mem::take(href));
