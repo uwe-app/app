@@ -19,11 +19,22 @@ use super::manifest::Manifest;
 use super::parser::Parser;
 use super::resource;
 
-fn should_minify_html<P: AsRef<Path>>(dest: P, _tag: &BuildTag, release: bool, _config: &Config) -> bool {
+fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &BuildTag, release: bool, config: &Config) -> bool {
     let mut html_extension = false;
     if let Some(ext) = dest.as_ref().extension() {
         html_extension = ext == HTML;
     }
+
+    if html_extension {
+        if let Some(ref minify) = config.minify {
+            if let Some(ref html) = minify.html {
+                if !html.profiles.is_empty() {
+                    return html.profiles.contains(tag);
+                }
+            } 
+        }
+    }
+
     release && html_extension
 }
 

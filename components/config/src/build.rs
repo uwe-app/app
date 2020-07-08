@@ -8,7 +8,7 @@ static RELEASE: &str = "release";
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(from = "String")]
 pub enum BuildTag {
     Custom(String),

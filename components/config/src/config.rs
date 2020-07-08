@@ -116,6 +116,8 @@ pub struct Config {
 
     pub collate: Option<HashMap<String, DataSource>>,
 
+    pub minify: Option<MinifyConfig>,
+
     #[serde(skip)]
     pub file: Option<PathBuf>,
 
@@ -147,6 +149,7 @@ impl Default for Config {
             index: None,
             authors: None,
             collate: None,
+            minify: None,
         }
     }
 }
@@ -674,7 +677,7 @@ pub struct MinifyConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyFormat {
-    pub tags: Vec<BuildTag>
+    pub profiles: Vec<BuildTag>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
