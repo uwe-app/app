@@ -197,6 +197,7 @@ impl<'a> Invalidator<'a> {
                 .get_partials_path(&self.context.options.source),
         );
 
+        // FIXME: this does not respect when data sources have a `from` directory configured
         let generators = self.canonical(
             self.context
                 .config
