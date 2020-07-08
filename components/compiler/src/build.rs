@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::page::Page;
+use config::{Config, Page};
 use datasource::{self, IndexQuery};
 use matcher::{self, FileType};
 
@@ -18,6 +18,15 @@ use super::hook;
 use super::manifest::Manifest;
 use super::parser::Parser;
 use super::resource;
+use super::types::BuildTag;
+
+fn should_minify_html<P: AsRef<Path>>(dest: P, _tag: &BuildTag, release: bool, _config: &Config) -> bool {
+    let mut html_extension = false;
+    if let Some(ext) = dest.as_ref().extension() {
+        html_extension = ext == HTML;
+    }
+    release && html_extension
+}
 
 pub struct Compiler<'a> {
     context: &'a Context,
@@ -95,13 +104,11 @@ impl<'a> Compiler<'a> {
 
                     info!("{} -> {}", &id, &dest.display());
 
-                    // This prevents treating other destination
-                    // file types like json as HTML documents
-                    let mut html_extension = false;
-                    if let Some(ext) = dest.extension() {
-                        html_extension = ext == HTML;
-                    }
-                    let minify_html = self.context.options.release && html_extension;
+                    let minify_html = should_minify_html(
+                        &dest,
+                        &self.context.options.tag,
+                        self.context.options.release,
+                        &self.context.config);
 
                     let s = if minify_html {
                         minify::html(
@@ -204,14 +211,11 @@ impl<'a> Compiler<'a> {
                 {
                     info!("{} -> {}", file.display(), dest.display());
 
-                    // This prevents treating other destination
-                    // file types like json as HTML documents
-                    let mut html_extension = false;
-                    if let Some(ext) = dest.extension() {
-                        html_extension = ext == HTML;
-                    }
-
-                    let minify_html = self.context.options.release && html_extension;
+                    let minify_html = should_minify_html(
+                        &dest,
+                        &self.context.options.tag,
+                        self.context.options.release,
+                        &self.context.config);
 
                     let s = if minify_html {
                         minify::html(
