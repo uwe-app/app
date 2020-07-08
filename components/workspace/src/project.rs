@@ -139,7 +139,7 @@ fn get_tag_info(args: &BuildArguments) -> (BuildTag, String) {
         }
     }
 
-    let target_dir = tag_target.get_path_name();
+    let target_dir = tag_target.to_string();
     (tag_target, target_dir)
 }
 
