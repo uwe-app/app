@@ -133,7 +133,7 @@ fn get_tag_info(args: &BuildArguments) -> (BuildTag, String) {
         tag_target = BuildTag::Release;
     }
 
-    if let Some(t) = &args.tag {
+    if let Some(t) = &args.profile {
         if !t.is_empty() {
             tag_target = BuildTag::Custom(t.to_string());
         }
@@ -167,8 +167,8 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     if let Some(profile) = profiles.get(&target_dir) {
         let mut use_profile = profile.clone();
 
-        if profile.tag.is_some() {
-            return Err(Error::NoProfileBuildTag);
+        if profile.profile.is_some() {
+            return Err(Error::NoProfileInProfile);
         }
 
         if let Some(ref mut paths) = use_profile.paths.as_mut() {

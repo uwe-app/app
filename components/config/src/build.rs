@@ -71,7 +71,7 @@ impl BuildTag {
 #[serde(default, rename_all = "kebab-case")]
 pub struct BuildArguments {
     pub max_depth: Option<usize>,
-    pub tag: Option<String>,
+    pub profile: Option<String>,
     pub host: Option<String>,
     pub port: Option<u16>,
     pub live: Option<bool>,
@@ -98,7 +98,7 @@ impl Default for BuildArguments {
     fn default() -> Self {
         Self {
             max_depth: None,
-            tag: None,
+            profile: None,
             host: None,
             port: None,
             live: None,

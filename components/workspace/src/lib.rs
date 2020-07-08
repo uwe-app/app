@@ -16,8 +16,8 @@ pub enum Error {
     #[error("Missing layout file {0}")]
     NoLayout(PathBuf),
 
-    #[error("Profiles may not define a build tag, please remove it")]
-    NoProfileBuildTag,
+    #[error("Profiles may not define a build profile, please remove it")]
+    NoProfileInProfile,
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

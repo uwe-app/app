@@ -91,8 +91,8 @@ enum Book {
 
 #[derive(StructOpt, Debug)]
 struct BuildOpts {
-    /// Build tag name
-    #[structopt(short, long)]
+    /// Build profile name
+    #[structopt(long)]
     profile: Option<String>,
 
     /// Set the default layout file
@@ -483,7 +483,7 @@ fn process_command(cmd: &Command) {
 
             let build_args = BuildArguments {
                 paths,
-                tag: args.profile.clone(),
+                profile: args.profile.clone(),
                 max_depth: args.max_depth,
                 live: Some(args.live),
                 force: Some(args.force),
