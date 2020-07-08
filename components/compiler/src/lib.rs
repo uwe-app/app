@@ -92,14 +92,14 @@ pub mod invalidator;
 pub mod lookup;
 pub mod manifest;
 pub mod markdown;
+mod options;
 pub mod parser;
 pub mod redirect;
 pub mod resource;
 pub mod template;
 pub mod tree;
-mod types;
 pub mod watch;
 
 pub use build::Compiler;
-pub use types::*;
+pub use options::CompilerOptions;
 pub use context::Context;
