@@ -14,6 +14,7 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
+use super::build::BuildTag;
 use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{IndexRequest, DataSource};
@@ -668,12 +669,12 @@ impl Default for LinkConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyConfig {
-    pub html: Option<MinifyTypeConfig>,
+    pub html: Option<MinifyFormat>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct MinifyTypeConfig {
-    //pub tags: Build
+pub struct MinifyFormat {
+    pub tags: Vec<BuildTag>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
