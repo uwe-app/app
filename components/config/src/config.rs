@@ -665,6 +665,17 @@ impl Default for LinkConfig {
     }
 }
 
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct MinifyConfig {
+    pub html: Option<MinifyTypeConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct MinifyTypeConfig {
+    //pub tags: Build
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct PublishConfig {
     pub aws: Option<AwsPublishConfig>,

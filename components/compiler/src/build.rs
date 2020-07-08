@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page};
+use config::{Config, Page, BuildTag};
 use datasource::{self, IndexQuery};
 use matcher::{self, FileType};
 
@@ -18,7 +18,6 @@ use super::hook;
 use super::manifest::Manifest;
 use super::parser::Parser;
 use super::resource;
-use super::types::BuildTag;
 
 fn should_minify_html<P: AsRef<Path>>(dest: P, _tag: &BuildTag, release: bool, _config: &Config) -> bool {
     let mut html_extension = false;

@@ -3,8 +3,9 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
+use config::BuildTag;
 use compiler::redirect;
-use compiler::{BuildTag, CompilerOptions};
+use compiler::CompilerOptions;
 use config::{BuildArguments, Config};
 use utils;
 
