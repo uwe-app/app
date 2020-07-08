@@ -243,5 +243,5 @@ impl Page {
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Author {
     pub name: String,
-    pub url: Option<String>,
+    pub link: Option<String>,
 }
