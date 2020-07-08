@@ -40,6 +40,7 @@ pub struct DataSource {
     pub kind: Option<SourceType>,
     pub provider: Option<SourceProvider>,
     pub from: Option<PathBuf>,
+    #[serde(alias = "on")]
     pub index: Option<HashMap<String, IndexRequest>>,
 }
 
