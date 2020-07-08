@@ -9,6 +9,7 @@ book = {version = "0.1", path = "../book" }
 config = {version = "0.1", path = "../config" }
 datasource = {version = "0.1", path = "../datasource" }
 frontmatter = {version = "0.1", path = "../frontmatter" }
+livereload = {version = "0.1", path = "../livereload" }
 loader = {version = "0.1", path = "../loader" }
 locale = {version = "0.1", path = "../locale" }
 matcher = {version = "0.1", path = "../matcher" }

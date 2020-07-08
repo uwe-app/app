@@ -21,6 +21,7 @@ members = [
   "components/git",
   "components/installer",
   "components/link",
+  "components/livereload",
   "components/loader",
   "components/locale",
   "components/matcher",
@@ -42,6 +43,7 @@ compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
 dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
+livereload = {version = "0.1", path = "components/livereload" }
 locale = {version = "0.1", path = "components/locale" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }

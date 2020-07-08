@@ -1,0 +1,9 @@
+[package]
+name = "livereload"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+config = {version = "0.1", path = "../config" }
+utils = {version = "0.1", path = "../utils" }

@@ -67,7 +67,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        if let Err(e) = crate::livereload::write(&ctx.options.target, &ws_url) {
+        if let Err(e) = livereload::write(&ctx.config, &ctx.options.target, &ws_url) {
             error_cb(compiler::Error::from(e));
             return;
         }
