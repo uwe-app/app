@@ -40,3 +40,4 @@ pub mod page;
 pub use config::*;
 pub use page::Page;
 pub use build::BuildTag;
+pub use indexer::IndexQuery;

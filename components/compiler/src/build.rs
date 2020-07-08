@@ -7,8 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, BuildTag};
-use datasource::{self, IndexQuery};
+use config::{Config, Page, BuildTag, IndexQuery};
 use matcher::{self, FileType};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
@@ -175,33 +174,35 @@ impl<'a> Compiler<'a> {
                     return Ok(());
                 }
 
-                let queries = datasource::get_query(&data)?;
 
-                let datasource = &self.context.datasource;
+                if let Some(ref q) = data.query {
+                    let queries = q.clone().to_vec();
 
-                if !datasource.map.is_empty() {
-                    let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
-                    for query in queries {
-                        let each = query.each.is_some() && query.each.unwrap();
-                        let idx = datasource.query_index(&query)?;
+                    let datasource = &self.context.datasource;
+                    if !datasource.map.is_empty() {
+                        let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
+                        for query in queries {
+                            let each = query.each.is_some() && query.each.unwrap();
+                            let idx = datasource.query_index(&query)?;
 
-                        // Push on to the list of generators to iterate
-                        // over so that we can support the same template
-                        // for multiple generator indices although not sure
-                        // how useful/desirable it is to declare multiple each iterators
-                        // as identifiers may well collide.
-                        if each {
-                            each_iters.push((query, idx));
-                        } else {
-                            data.extra.insert(query.get_parameter(), json!(idx));
+                            // Push on to the list of generators to iterate
+                            // over so that we can support the same template
+                            // for multiple generator indices although not sure
+                            // how useful/desirable it is to declare multiple each iterators
+                            // as identifiers may well collide.
+                            if each {
+                                each_iters.push((query, idx));
+                            } else {
+                                data.extra.insert(query.get_parameter(), json!(idx));
+                            }
                         }
-                    }
 
-                    if !each_iters.is_empty() {
-                        for (gen, idx) in each_iters {
-                            self.data_source_each(&p, &file_type, &data, gen, idx, rewrite_index)?;
+                        if !each_iters.is_empty() {
+                            for (gen, idx) in each_iters {
+                                self.data_source_each(&p, &file_type, &data, gen, idx, rewrite_index)?;
+                            }
+                            return Ok(());
                         }
-                        return Ok(());
                     }
                 }
 

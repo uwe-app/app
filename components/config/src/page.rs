@@ -10,6 +10,7 @@ use serde_with::skip_serializing_none;
 
 use super::Error;
 use super::config::Config;
+use super::indexer::QueryList;
 
 /// Attribute to convert from TOML date time to chronos UTC variant
 pub fn from_toml_datetime<'de, D>(deserializer: D) 
@@ -83,7 +84,9 @@ pub struct Page {
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
-    pub query: Option<Value>,
+
+    pub query: Option<QueryList>,
+
     pub layout: Option<PathBuf>,
     pub tags: Option<Vec<String>>,
 
@@ -245,3 +248,4 @@ pub struct Author {
     pub name: String,
     pub link: Option<String>,
 }
+

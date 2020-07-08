@@ -5,11 +5,10 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use log::{info, warn};
-use serde::{Deserialize, Serialize};
-use serde_json::{from_value, json, Map, Value};
+use serde_json::{json, Map, Value};
 use thiserror::Error;
 
-use config::{Config, Page};
+use config::{Config, IndexQuery};
 use config::indexer::{SourceProvider, IndexRequest, DataSource as DataSourceConfig};
 
 pub mod identifier;
@@ -61,71 +60,11 @@ type Result<T> = std::result::Result<T, Error>;
 static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
 static ALL_INDEX: &str = "all";
-static DEFAULT_PARAMETER: &str = "documents";
-static DEFAULT_VALUE_PARAMETER: &str = "value";
-
-pub fn get_query(data: &Page) -> Result<Vec<IndexQuery>> {
-    let mut page_generators: Vec<IndexQuery> = Vec::new();
-    if let Some(cfg) = &data.query {
-        // Single object declaration
-        if cfg.is_object() {
-            let conf = cfg.as_object().unwrap();
-            let reference: IndexQuery = from_value(json!(conf))?;
-            page_generators.push(reference);
-        // Multiple array declaration
-        } else if cfg.is_array() {
-            let items = cfg.as_array().unwrap();
-            for conf in items {
-                let reference: IndexQuery = from_value(json!(conf))?;
-                page_generators.push(reference);
-            }
-        } else {
-            return Err(Error::QueryType);
-        }
-    }
-
-    Ok(page_generators)
-}
 
 pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
     pth.push(DOCUMENTS);
     pth
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct IndexQuery {
-    pub name: String,
-    pub index: String,
-    pub parameter: Option<String>,
-    pub include_docs: Option<bool>,
-    pub each: Option<bool>,
-    pub keys: Option<bool>,
-    pub values: Option<bool>,
-    pub flat: Option<bool>,
-}
-
-impl IndexQuery {
-    pub fn is_flat(&self) -> bool {
-        return self.index == ALL_INDEX.to_string() || self.flat.is_some() && self.flat.unwrap();
-    }
-
-    pub fn get_parameter(&self) -> String {
-        if let Some(param) = &self.parameter {
-            return param.clone();
-        }
-        return DEFAULT_PARAMETER.to_string();
-    }
-
-    pub fn get_value_parameter(&self) -> String {
-        let each = self.each.is_some() && self.each.unwrap();
-        if each {
-            if let Some(param) = &self.parameter {
-                return param.clone();
-            }
-        }
-        return DEFAULT_VALUE_PARAMETER.to_string();
-    }
 }
 
 #[derive(Debug)]
