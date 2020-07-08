@@ -2,8 +2,6 @@ use std::path::PathBuf;
 
 use config::Config;
 
-static LIVERELOAD_NAME: &str = "__livereload.js";
-
 static SCRIPT: &str = "
 socket.onmessage = (event) => {
 	const el = document.querySelector('#livereload-notification');
@@ -16,7 +14,9 @@ socket.onmessage = (event) => {
 };
 window.onbeforeunload = () => socket.close();";
 
-static STYLE: &str = "#livereload-notification {
+static STYLE: &str = "
+<style>
+#livereload-notification {
     background: black;
     color: white;
     z-index: 999991;
@@ -28,7 +28,12 @@ static STYLE: &str = "#livereload-notification {
     padding: 10px;
     border-top-right-radius: 6px;
     display: none;
-}";
+}
+</style>";
+
+static MARKUP: &str = "
+    <div id='livereload-notification'><span>Building...</span></div>
+";
 
 fn get_script(url: &str) -> String {
     let mut script = String::from(format!("var socket = new WebSocket('{}')\n", url));
@@ -36,17 +41,22 @@ fn get_script(url: &str) -> String {
     script
 }
 
-pub fn embed(_config: &Config) -> String {
+pub fn embed(config: &Config) -> String {
+    let cfg = config.livereload.as_ref().unwrap();
+    let name = cfg.file.as_ref().unwrap().to_string_lossy().into_owned();
+    let href = utils::url::to_href_separator(name);
+
     let mut content = "".to_string();
-    content.push_str(&format!("<style>{}</style>", STYLE));
-    content.push_str("<div id='livereload-notification'><span>Building...</span></div>");
-    content.push_str("<script src=\"/__livereload.js\"></script>");
+    content.push_str(STYLE);
+    content.push_str(MARKUP);
+    content.push_str(&format!("<script src=\"/{}\"></script>", href));
     content
 }
 
-pub fn write(_config: &Config, target: &PathBuf, url: &str) -> std::io::Result<()> {
+pub fn write(config: &Config, target: &PathBuf, url: &str) -> std::io::Result<()> {
+    let cfg = config.livereload.as_ref().unwrap();
     let mut dest = target.clone();
-    dest.push(LIVERELOAD_NAME);
+    dest.push(cfg.file.as_ref().unwrap());
     let script = get_script(url);
     utils::fs::write_string(dest, script)
 }

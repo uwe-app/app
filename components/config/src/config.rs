@@ -46,6 +46,8 @@ static HOST: &str = "localhost";
 static PORT: u16 = 8888;
 static LANG: &str = "en";
 
+static LIVERELOAD_FILE: &str = "__livereload.js";
+
 type RedirectConfig = HashMap<String, String>;
 
 fn resolve_cwd() -> Option<PathBuf> {
@@ -115,8 +117,8 @@ pub struct Config {
     pub authors: Option<HashMap<String, Author>>,
 
     pub collate: Option<HashMap<String, DataSource>>,
-
     pub minify: Option<MinifyConfig>,
+    pub livereload: Option<LiveReload>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -150,6 +152,7 @@ impl Default for Config {
             authors: None,
             collate: None,
             minify: None,
+            livereload: Some(Default::default()),
         }
     }
 }
@@ -629,6 +632,20 @@ pub struct MinifyConfig {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyFormat {
     pub profiles: Vec<BuildTag>
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LiveReload {
+    // This is undocumented but here if it must be used
+    pub file: Option<PathBuf>,
+}
+
+impl Default for LiveReload {
+    fn default() -> Self {
+        Self {
+            file: Some(PathBuf::from(LIVERELOAD_FILE)),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
