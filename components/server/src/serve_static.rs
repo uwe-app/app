@@ -103,9 +103,9 @@ pub async fn serve(
                 ws.on_upgrade(move |ws| async move {
                     let (mut user_ws_tx, _user_ws_rx) = ws.split();
                     trace!("Websocket got connection");
-                    if let Ok(m) = rx.recv().await {
-                        trace!("Notify of reload");
-                        let _ = user_ws_tx.send(m).await;
+                    while let Ok(m) = rx.recv().await {
+                        let _res = user_ws_tx.send(m).await;
+                        //println!("Websocket res {:?}", res);
                     }
                 })
             },

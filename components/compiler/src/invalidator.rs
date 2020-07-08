@@ -121,12 +121,15 @@ impl<'a> Invalidator<'a> {
         let watch_result = watch::start(&from.clone(), error_cb, move |paths, source_dir| {
             info!("changed({}) in {}", paths.len(), source_dir.display());
 
+            let _ = tx.send(Message::text("start"));
+
             match self.get_invalidation(paths) {
                 Ok(invalidation) => match self.invalidate(&from, &invalidation) {
                     Ok(_) => {
                         self.builder.manifest.save()?;
                         if invalidation.notify {
                             let _ = tx.send(Message::text("reload"));
+                            //println!("Got result {:?}", res);
                         }
                         Ok(())
                     }

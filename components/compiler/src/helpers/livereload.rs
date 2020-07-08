@@ -6,6 +6,20 @@ use super::super::context::Context as BuildContext;
 #[derive(Clone, Copy)]
 pub struct LiveReload;
 
+static STYLE: &str = "#livereload-notification {
+    background: black;
+    color: white;
+    z-index: 999991;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    font-family: sans-serif;
+    font-size: 14px;
+    padding: 10px;
+    border-top-right-radius: 6px;
+    display: none;
+}";
+
 impl HelperDef for LiveReload {
     fn call<'reg: 'rc, 'rc>(
         &self,
@@ -24,8 +38,11 @@ impl HelperDef for LiveReload {
 
         let ctx: BuildContext = from_value(json!(cfg)).unwrap();
         if ctx.options.live {
-            let script = "<script src=\"/__livereload.js\"></script>";
-            out.write(script)?;
+            let mut content = "".to_string();
+            content.push_str(&format!("<style>{}</style>", STYLE));
+            content.push_str("<div id='livereload-notification'><span>Building...</span></div>");
+            content.push_str("<script src=\"/__livereload.js\"></script>");
+            out.write(&content)?;
         }
 
         Ok(())

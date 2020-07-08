@@ -4,15 +4,21 @@ use utils;
 
 static LIVERELOAD_NAME: &str = "__livereload.js";
 
+static SCRIPT: &str = "
+socket.onmessage = (event) => {
+	const el = document.querySelector('#livereload-notification');
+	if (event.data === 'start') {
+		if(el) el.style.display = 'block';
+	}else if (event.data === 'reload') {
+		console.log('got reload notification');socket.close();
+		location.reload();
+	}
+};
+window.onbeforeunload = () => socket.close();";
+
 fn get_script(url: &str) -> String {
     let mut script = String::from(format!("var socket = new WebSocket('{}')\n", url));
-    script.push_str("socket.onmessage = (event) => {\n");
-    script.push_str("\tif (event.data === 'reload') {\n");
-    script.push_str("\t\tsocket.close();\n");
-    script.push_str("\t\tlocation.reload();\n");
-    script.push_str("\t}\n");
-    script.push_str("};\n");
-    script.push_str("window.onbeforeunload = () => socket.close();");
+    script.push_str(SCRIPT);
     script
 }
 
