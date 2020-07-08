@@ -232,10 +232,25 @@ impl DataSourceMap {
     pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<()> {
         self.load_configurations(&source, config)?;
 
-        if let Some(pages_source) = config.get_pages_data_source() {
-            let data_source = self.to_data_source(&source, &source, pages_source);
-            // TODO: allow the data source name to be configured
-            self.map.insert("pages".to_string(), data_source);
+        if let Some(ref sources) = config.collate {
+            for (k, v) in sources {
+                let from = if v.from.is_some() {
+                    v.from.as_ref().unwrap().clone()
+                } else {
+                    source.clone() 
+                };
+
+                let mut cfg = v.clone();
+                if cfg.kind.is_none() {
+                    cfg.kind = Some(Default::default());
+                }
+                if cfg.provider.is_none() {
+                    cfg.provider = Some(Default::default());
+                }
+
+                let data_source = self.to_data_source(&source, &from, cfg);
+                self.map.insert(k.to_string(), data_source);
+            }
         }
 
         self.load_documents(&source, config)?;
@@ -283,7 +298,7 @@ impl DataSourceMap {
                     let config: DataSourceConfig = toml::from_str(&contents)?;
 
                     // For document providers there must be a documents directory
-                    if let SourceProvider::Documents = config.provider {
+                    if let Some(SourceProvider::Documents) = config.provider {
                         let mut data = path.to_path_buf().clone();
                         data.push(DOCUMENTS);
                         if !data.exists() || !data.is_dir() {
@@ -309,8 +324,8 @@ impl DataSourceMap {
             let documents = get_datasource_documents_path(&g.source);
             let req = provider::LoadRequest {
                 strategy: identifier::Strategy::FileName,
-                kind: g.config.kind.clone(),
-                provider: g.config.provider.clone(),
+                kind: g.config.kind.as_ref().unwrap().clone(),
+                provider: g.config.provider.as_ref().unwrap().clone(),
                 source,
                 documents,
                 config,
@@ -348,6 +363,7 @@ impl DataSourceMap {
                     ALL_INDEX.to_string(),
                     IndexRequest {
                         key: Some(ALL_INDEX.to_string()),
+                        ..Default::default()
                     },
                 );
             }

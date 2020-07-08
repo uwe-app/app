@@ -16,7 +16,7 @@ use utils;
 
 use super::page::{Author, Page};
 use super::Error;
-use super::indexer::{IndexRequest, SourceType, SourceProvider, DataSource};
+use super::indexer::{IndexRequest, DataSource};
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
@@ -111,8 +111,9 @@ pub struct Config {
     pub profile: Option<HashMap<String, BuildArguments>>,
     pub publish: Option<PublishConfig>,
     pub index: Option<HashMap<String, IndexRequest>>,
-
     pub authors: Option<HashMap<String, Author>>,
+
+    pub collate: Option<HashMap<String, DataSource>>,
 
     #[serde(skip)]
     pub file: Option<PathBuf>,
@@ -144,6 +145,7 @@ impl Default for Config {
             publish: Some(Default::default()),
             index: None,
             authors: None,
+            collate: None,
         }
     }
 }
@@ -304,17 +306,18 @@ impl Config {
         Err(Error::NoSiteConfig(pth))
     }
 
-    pub fn get_pages_data_source(&self) -> Option<DataSource> {
-        if let Some(ref index) = self.index {
-            let data_source = DataSource {
-                kind: SourceType::Toml, 
-                provider: SourceProvider::Pages,
-                index: Some(index.clone()),
-            };
-            return Some(data_source);
-        }
-        None
-    }
+    //pub fn get_collate_data_sources(&self) -> HashMap<String, DataSource> {
+        //let mut out:HashMap<String, DataSource> = HashMap::new();
+        //if let Some(ref index) = self.index {
+            //let data_source = DataSource {
+                //index: Some(index.clone()),
+                //from: Some(self.build.as_ref().unwrap().source.clone()),
+                //..Default::default()
+            //};
+            //out.insert("pages".to_string(), data_source);
+        //}
+        //out
+    //}
 
     pub fn get_project(&self) -> PathBuf {
         self.project.as_ref().unwrap().clone()

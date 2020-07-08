@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +14,12 @@ pub enum SourceType {
     Toml,
 }
 
+impl Default for SourceType {
+    fn default() -> Self {
+        SourceType::Toml
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SourceProvider {
     #[serde(rename = "documents")]
@@ -21,15 +28,22 @@ pub enum SourceProvider {
     Pages,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl Default for SourceProvider {
+    fn default() -> Self {
+        SourceProvider::Pages
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DataSource {
     #[serde(rename = "type")]
-    pub kind: SourceType,
-    pub provider: SourceProvider,
+    pub kind: Option<SourceType>,
+    pub provider: Option<SourceProvider>,
+    pub from: Option<PathBuf>,
     pub index: Option<HashMap<String, IndexRequest>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexRequest {
     pub key: Option<String>,
 }
