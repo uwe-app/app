@@ -33,7 +33,6 @@ pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,
     pub config: &'a Config,
     pub strategy: Strategy,
-    pub documents: PathBuf,
     pub kind: SourceType,
     pub provider: SourceProvider,
 }
@@ -98,6 +97,8 @@ impl Provider {
         let (tx, rx) = flume::unbounded();
 
         let extensions = req.config.extension.as_ref().unwrap().clone();
+
+        println!("DOING THE PAGE WALK IN {:?}", req.source);
 
         // Use the walk builder to respect the way the compiler
         // ignores and filters files
@@ -202,7 +203,7 @@ impl Provider {
     fn find_documents<'a>(req: &'a LoadRequest<'a>)
         -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>> {
 
-        find_recursive(&req.documents)
+        find_recursive(&req.source)
             .map_err(Error::from)
             .filter(|result| {
                 if let Ok(entry) = result {

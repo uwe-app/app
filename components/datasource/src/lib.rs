@@ -39,7 +39,7 @@ pub enum Error {
     NoDataSourceConf {conf: String, key: String},
 
     #[error("No {docs} directory for data source {key}")]
-    NoDataSourceDocuments {docs: String, key: String},
+    NoDataSourceDocuments {docs: PathBuf, key: String},
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -130,7 +130,6 @@ impl IndexQuery {
 
 #[derive(Debug)]
 pub struct DataSource {
-    pub site: PathBuf,
     pub source: PathBuf,
     pub config: DataSourceConfig,
     pub all: BTreeMap<String, Value>,
@@ -248,12 +247,12 @@ impl DataSourceMap {
                     cfg.provider = Some(Default::default());
                 }
 
-                let data_source = self.to_data_source(&source, &from, cfg);
+                let data_source = self.to_data_source(&from, cfg);
                 self.map.insert(k.to_string(), data_source);
             }
         }
 
-        self.load_documents(&source, config)?;
+        self.load_documents(config)?;
         self.configure_default_index()?;
         self.load_index()?;
         Ok(())
@@ -263,16 +262,15 @@ impl DataSourceMap {
         let src = config.get_datasources_path(&source);
         if src.exists() && src.is_dir() {
             let contents = src.read_dir()?;
-            self.load_config(source, contents)?;
+            self.load_config(contents)?;
         }
         Ok(())
     }
 
-    fn to_data_source(&mut self, source: &PathBuf, path: &PathBuf, config: DataSourceConfig) -> DataSource {
+    fn to_data_source(&mut self, path: &PathBuf, config: DataSourceConfig) -> DataSource {
         let all: BTreeMap<String, Value> = BTreeMap::new();
         let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
         DataSource {
-            site: source.clone(),
             source: path.to_path_buf(),
             all,
             indices,
@@ -280,9 +278,9 @@ impl DataSourceMap {
         }
     }
 
-    fn load_config(&mut self, source: &PathBuf, dir: ReadDir) -> Result<()> {
+    fn load_config(&mut self, dir: ReadDir) -> Result<()> {
         for f in dir {
-            let path = f?.path();
+            let mut path = f?.path();
             if path.is_dir() {
                 if let Some(nm) = path.file_name() {
                     let key = nm.to_string_lossy().into_owned();
@@ -299,17 +297,12 @@ impl DataSourceMap {
 
                     // For document providers there must be a documents directory
                     if let Some(SourceProvider::Documents) = config.provider {
-                        let mut data = path.to_path_buf().clone();
-                        data.push(DOCUMENTS);
-                        if !data.exists() || !data.is_dir() {
-                            return Err(Error::NoDataSourceDocuments {
-                                docs: DOCUMENTS.to_string(),
-                                key
-                            });
-                        }
+                        // TODO: support from to set documents directory!
+                        let documents = get_datasource_documents_path(&path);
+                        path = documents;
                     }
 
-                    let data_source = self.to_data_source(source, &path.to_path_buf(), config);
+                    let data_source = self.to_data_source(&path.to_path_buf(), config);
                     self.map.insert(key, data_source);
                 }
             }
@@ -317,17 +310,23 @@ impl DataSourceMap {
         Ok(())
     }
 
-    fn load_documents(&mut self, source: &PathBuf, config: &Config) -> Result<()> {
+    fn load_documents(&mut self, config: &Config) -> Result<()> {
         for (k, g) in self.map.iter_mut() {
+
+            if !g.source.exists() || !g.source.is_dir() {
+                return Err(Error::NoDataSourceDocuments {
+                    docs: g.source.clone(),
+                    key: k.to_string(),
+                });
+            }
+
             info!("{} < {}", k, g.source.display());
 
-            let documents = get_datasource_documents_path(&g.source);
             let req = provider::LoadRequest {
                 strategy: identifier::Strategy::FileName,
                 kind: g.config.kind.as_ref().unwrap().clone(),
                 provider: g.config.provider.as_ref().unwrap().clone(),
-                source,
-                documents,
+                source: &g.source,
                 config,
             };
 

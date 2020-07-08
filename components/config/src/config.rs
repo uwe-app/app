@@ -269,6 +269,18 @@ impl Config {
                     // FIXME: validate date time format specifiers
                 }
 
+                if let Some(collators) = cfg.collate.as_mut() {
+                    for(_, v) in collators {
+                        if let Some(ref from) = v.from {
+                            if from.is_relative() {
+                                let mut tmp = build.source.clone();
+                                tmp.push(from);
+                                v.from = Some(tmp);
+                            }
+                        }
+                    }
+                }
+
                 return Ok(cfg);
             }
         }
