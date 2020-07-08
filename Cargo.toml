@@ -15,7 +15,6 @@ members = [
   "components/cache",
   "components/compiler",
   "components/config",
-  "components/content",
   "components/datasource",
   "components/dirs",
   "components/frontmatter",
@@ -41,7 +40,6 @@ book = {version = "0.1", path = "components/book" }
 cache = {version = "0.1", path = "components/cache" }
 compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
-content = {version = "0.1", path = "components/content" }
 dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
 locale = {version = "0.1", path = "components/locale" }

@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use utils;
-
 static LIVERELOAD_NAME: &str = "__livereload.js";
 
 static SCRIPT: &str = "
@@ -10,7 +8,7 @@ socket.onmessage = (event) => {
 	if (event.data === 'start') {
 		if(el) el.style.display = 'block';
 	}else if (event.data === 'reload') {
-		console.log('got reload notification');socket.close();
+		socket.close();
 		location.reload();
 	}
 };

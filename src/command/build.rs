@@ -10,9 +10,6 @@ use compiler::invalidator::Invalidator;
 use compiler::redirect;
 use compiler::ErrorCallback;
 use config::BuildArguments;
-use content;
-use utils;
-use workspace;
 
 use crate::command::run::{self, ServeOptions};
 use crate::Error;
@@ -70,7 +67,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        if let Err(e) = content::livereload::write(&ctx.options.target, &ws_url) {
+        if let Err(e) = crate::livereload::write(&ctx.options.target, &ws_url) {
             error_cb(compiler::Error::from(e));
             return;
         }

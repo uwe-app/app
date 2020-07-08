@@ -271,7 +271,6 @@ dependencies = [
  "book 0.1.0",
  "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "config 0.1.0",
- "content 0.1.0",
  "datasource 0.1.0",
  "fluent-templates 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "frontmatter 0.1.0",
@@ -317,13 +316,6 @@ dependencies = [
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "content"
-version = "0.1.0"
-dependencies = [
- "utils 0.1.0",
-]
 
 [[package]]
 name = "core-foundation"
@@ -958,7 +950,6 @@ dependencies = [
  "cache 0.1.0",
  "compiler 0.1.0",
  "config 0.1.0",
- "content 0.1.0",
  "dirs 0.1.0",
  "git 0.1.0",
  "locale 0.1.0",
