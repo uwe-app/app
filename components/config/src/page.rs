@@ -70,12 +70,16 @@ impl FileContext {
 #[serde(default, rename_all = "kebab-case")]
 pub struct Page {
 
+    //
     // Configurable
+    // 
     pub title: Option<String>,
     pub description: Option<String>,
     pub keywords: Option<String>,
-    pub author: Option<Author>,
-    pub author_id: Option<String>,
+
+    pub authors: Option<Vec<Author>>,
+    pub byline: Option<Vec<String>>,
+
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
@@ -92,13 +96,9 @@ pub struct Page {
     #[serde(deserialize_with = "from_toml_datetime")]
     pub updated: Option<DateTime<Utc>>,
 
-    // NOTE: that we do not define `context` as it would
-    // NOTE: create a recursive data type; the template
-    // NOTE: logic should inject it into `vars`
-    #[serde(flatten)]
-    pub extra: Map<String, Value>,
-
+    //
     // Reserved
+    // 
     #[serde(skip_deserializing)]
     pub href: Option<String>,
     #[serde(skip_deserializing)]
@@ -109,6 +109,12 @@ pub struct Page {
     // Layout template data
     #[serde(skip_deserializing)]
     pub template: Option<String>,
+
+    // NOTE: that we do not define `context` as it would
+    // NOTE: create a recursive data type; the template
+    // NOTE: logic should inject it into `vars`
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
 }
 
 impl Default for Page {
@@ -117,8 +123,8 @@ impl Default for Page {
             title: None,
             description: None,
             keywords: None,
-            author: None,
-            author_id: None,
+            authors: None,
+            byline: None,
             rewrite_index: None,
             draft: Some(false),
             standalone: Some(false),
@@ -143,13 +149,19 @@ impl Default for Page {
 impl Page {
 
     pub fn parse(&mut self, config: &Config) -> Result<(), Error> {
+        let mut authors_list = if let Some(ref author) = self.authors {
+            author.clone()
+        } else {
+            Vec::new()
+        };
+
         // TODO: finalize this page data after computation 
         // TODO: build dynamic sort keys like date tuple (year, month, day) etc.
-        if let None = self.author {
-            if let Some(ref id) = self.author_id {
+        if let Some(ref list) = self.byline {
+            for id in list {
                 if let Some(ref authors) = config.authors {
                     if let Some(author) = authors.get(id) {
-                        self.author = Some(author.clone());
+                        authors_list.push(author.clone());
                     } else {
                         return Err(Error::NoAuthor(id.to_string()))
                     }
@@ -158,6 +170,8 @@ impl Page {
                 }
             }
         }
+
+        self.authors = Some(authors_list);
 
         Ok(())
     }
@@ -175,8 +189,12 @@ impl Page {
             self.keywords = Some(mem::take(keywords));
         }
 
-        if let Some(author) = other.author.as_mut() {
-            self.author = Some(mem::take(author));
+        if let Some(authors) = other.authors.as_mut() {
+            self.authors = Some(mem::take(authors));
+        }
+
+        if let Some(byline) = other.byline.as_mut() {
+            self.byline = Some(mem::take(byline));
         }
 
         if let Some(rewrite_index) = other.rewrite_index.as_mut() {
