@@ -297,9 +297,14 @@ impl DataSourceMap {
 
                     // For document providers there must be a documents directory
                     if let Some(SourceProvider::Documents) = config.provider {
-                        // TODO: support from to set documents directory!
-                        let documents = get_datasource_documents_path(&path);
-                        path = documents;
+                        // Respect from when set
+                        if let Some(ref from) = config.from {
+                            path.push(from); 
+                        // Otherwise use the documents convention
+                        } else {
+                            let documents = get_datasource_documents_path(&path);
+                            path = documents;
+                        }
                     }
 
                     let data_source = self.to_data_source(&path.to_path_buf(), config);
