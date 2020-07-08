@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use log::info;
 
 use config::{BuildArguments, Config};
-use config::config::AwsPublishEnvironment;
+use config::AwsPublishEnvironment;
 use publisher::{self, PublishProvider, PublishRequest};
 use compiler::Context;
 use report::FileBuilder;

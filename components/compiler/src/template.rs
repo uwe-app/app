@@ -8,7 +8,7 @@ use handlebars::Handlebars;
 
 use log::{debug, warn};
 
-use config::page::{FileContext, Page};
+use config::{FileContext, Page};
 
 use super::context::Context;
 use super::helpers;

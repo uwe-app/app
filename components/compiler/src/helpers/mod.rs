@@ -1,7 +1,7 @@
 use handlebars::*;
 use std::io;
 
-use config::page::Page;
+use config::Page;
 
 pub mod children;
 pub mod date;

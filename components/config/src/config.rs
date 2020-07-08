@@ -14,7 +14,7 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
-use super::build::BuildTag;
+use super::build::{BuildTag, BuildArguments};
 use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{IndexRequest, DataSource};
@@ -452,55 +452,6 @@ impl Default for BuildConfig {
             rewrite_index: Some(false),
             follow_links: Some(true),
             render: None,
-        }
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default, rename_all = "kebab-case")]
-pub struct BuildArguments {
-    pub max_depth: Option<usize>,
-    pub tag: Option<String>,
-    pub host: Option<String>,
-    pub port: Option<u16>,
-    pub live: Option<bool>,
-    pub release: Option<bool>,
-    pub include_index: Option<bool>,
-
-    pub incremental: Option<bool>,
-    pub pristine: Option<bool>,
-    pub force: Option<bool>,
-
-    pub write_redirects: Option<bool>,
-
-    // Base URL to strip when building links etc
-    pub base: Option<String>,
-
-    // Specific layout to use
-    pub layout: Option<PathBuf>,
-
-    // Specific set of paths to build
-    pub paths: Option<Vec<PathBuf>>,
-}
-
-impl Default for BuildArguments {
-    fn default() -> Self {
-        Self {
-            max_depth: None,
-            tag: None,
-            host: None,
-            port: None,
-            live: None,
-            release: None,
-            include_index: None,
-            incremental: Some(false),
-            pristine: Some(true),
-            force: None,
-            write_redirects: None,
-            base: None,
-            layout: None,
-            paths: None,
         }
     }
 }

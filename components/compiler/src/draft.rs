@@ -1,4 +1,4 @@
-use config::page::Page;
+use config::Page;
 
 use super::CompilerOptions;
 

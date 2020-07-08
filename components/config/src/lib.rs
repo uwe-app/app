@@ -32,12 +32,12 @@ pub enum Error {
     Lang(#[from] unic_langid::LanguageIdentifierError),
 }
 
-pub mod build;
-pub mod config;
+mod build;
+mod config;
 pub mod indexer;
-pub mod page;
+mod page;
 
 pub use config::*;
-pub use page::Page;
-pub use build::BuildTag;
+pub use page::{Page, FileContext};
+pub use build::{BuildTag, BuildArguments};
 pub use indexer::IndexQuery;

@@ -17,8 +17,7 @@ use log::warn;
 
 use thiserror::Error;
 
-use config::page::Page;
-use config::Config;
+use config::{Config, Page};
 
 #[derive(Error, Debug)]
 pub enum Error {

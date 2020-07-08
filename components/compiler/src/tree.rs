@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use serde_json::json;
 
-use config::page::Page;
+use config::Page;
 use matcher::FileType;
 
 use super::context::Context;
