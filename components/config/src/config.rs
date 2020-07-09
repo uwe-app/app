@@ -219,6 +219,7 @@ impl Config {
                     }
                 }
 
+
                 if let Some(ref book) = cfg.book {
                     let book_paths = book.get_paths(&build.source);
                     for mut p in book_paths {
@@ -288,6 +289,11 @@ impl Config {
                     }
                 }
 
+                let mut livereload = cfg.livereload.as_mut().unwrap();
+                if livereload.file.is_none() {
+                    livereload.file = Some(PathBuf::from(LIVERELOAD_FILE));
+                }
+
                 return Ok(cfg);
             }
         }
@@ -324,19 +330,6 @@ impl Config {
 
         Err(Error::NoSiteConfig(pth))
     }
-
-    //pub fn get_collate_data_sources(&self) -> HashMap<String, DataSource> {
-        //let mut out:HashMap<String, DataSource> = HashMap::new();
-        //if let Some(ref index) = self.index {
-            //let data_source = DataSource {
-                //index: Some(index.clone()),
-                //from: Some(self.build.as_ref().unwrap().source.clone()),
-                //..Default::default()
-            //};
-            //out.insert("pages".to_string(), data_source);
-        //}
-        //out
-    //}
 
     pub fn get_project(&self) -> PathBuf {
         self.project.as_ref().unwrap().clone()
@@ -636,6 +629,8 @@ pub struct MinifyFormat {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LiveReload {
+    pub notify: Option<bool>,
+
     // This is undocumented but here if it must be used
     pub file: Option<PathBuf>,
 }
@@ -643,6 +638,7 @@ pub struct LiveReload {
 impl Default for LiveReload {
     fn default() -> Self {
         Self {
+            notify: Some(true),
             file: Some(PathBuf::from(LIVERELOAD_FILE)),
         }
     }

@@ -41,9 +41,12 @@ pub fn embed(config: &Config) -> String {
     let cfg = config.livereload.as_ref().unwrap();
     let name = cfg.file.as_ref().unwrap().to_string_lossy().into_owned();
     let href = utils::url::to_href_separator(name);
+    let notify = cfg.notify.is_some() && cfg.notify.unwrap();
 
     let mut content = "".to_string();
-    content.push_str(MARKUP);
+    if notify {
+        content.push_str(MARKUP);
+    }
     content.push_str(&format!("<script src=\"/{}\"></script>", href));
     content
 }
