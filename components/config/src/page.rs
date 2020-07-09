@@ -78,12 +78,13 @@ pub struct Page {
     pub description: Option<String>,
     pub keywords: Option<String>,
 
-    pub authors: Option<Vec<Author>>,
-    pub byline: Option<Vec<String>>,
-
+    pub render: Option<bool>,
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
+
+    pub authors: Option<Vec<Author>>,
+    pub byline: Option<Vec<String>>,
 
     pub query: Option<QueryList>,
 
@@ -129,6 +130,7 @@ impl Default for Page {
             authors: None,
             byline: None,
             rewrite_index: None,
+            render: Some(true),
             draft: Some(false),
             standalone: Some(false),
             query: None,
@@ -192,12 +194,8 @@ impl Page {
             self.keywords = Some(mem::take(keywords));
         }
 
-        if let Some(authors) = other.authors.as_mut() {
-            self.authors = Some(mem::take(authors));
-        }
-
-        if let Some(byline) = other.byline.as_mut() {
-            self.byline = Some(mem::take(byline));
+        if let Some(render) = other.render.as_mut() {
+            self.render = Some(mem::take(render));
         }
 
         if let Some(rewrite_index) = other.rewrite_index.as_mut() {
@@ -210,6 +208,15 @@ impl Page {
 
         if let Some(standalone) = other.standalone.as_mut() {
             self.standalone = Some(mem::take(standalone));
+        }
+
+
+        if let Some(authors) = other.authors.as_mut() {
+            self.authors = Some(mem::take(authors));
+        }
+
+        if let Some(byline) = other.byline.as_mut() {
+            self.byline = Some(mem::take(byline));
         }
 
         if let Some(query) = other.query.as_mut() {

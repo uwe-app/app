@@ -137,114 +137,131 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    pub fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<()> {
+    fn copy_file<P: AsRef<Path>>(&mut self, p: P) -> Result<()> {
         let file = p.as_ref();
 
-        match file_type {
-            FileType::Unknown => {
-                let dest = matcher::direct_destination(
-                    &self.context.options.source,
-                    &self.context.options.target,
-                    &file.to_path_buf(),
-                    &self.context.options.base_href,
-                )?;
+        let dest = matcher::direct_destination(
+            &self.context.options.source,
+            &self.context.options.target,
+            &file.to_path_buf(),
+            &self.context.options.base_href,
+        )?;
 
-                if self
-                    .manifest
-                    .is_dirty(file, &dest, self.context.options.force)
-                {
-                    info!("{} -> {}", file.display(), dest.display());
-                    utils::fs::copy(file, &dest)?;
-                    self.manifest.touch(file, &dest);
-                } else {
-                    info!("noop {}", file.display());
-                }
-            }
-            FileType::Markdown | FileType::Template => {
-                let mut data = loader::compute(file, &self.context.config, true)?;
+        if self
+            .manifest
+            .is_dirty(file, &dest, self.context.options.force)
+        {
+            info!("{} -> {}", file.display(), dest.display());
+            utils::fs::copy(file, &dest)?;
+            self.manifest.touch(file, &dest);
+        } else {
+            info!("noop {}", file.display());
+        }
 
-                let mut rewrite_index = self.context.options.rewrite_index;
+        Ok(())
+    }
 
-                // TODO: use rewrite-index page option
-                if let Some(val) = data.rewrite_index {
-                    rewrite_index = val;
-                }
+    fn parse_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<()> {
+        let file = p.as_ref();
 
-                if super::draft::is_draft(&data, &self.context.options) {
-                    return Ok(());
-                }
+        let mut data = loader::compute(file, &self.context.config, true)?;
+
+        let render = data.render.is_some() && data.render.unwrap();
+
+        if !render {
+            return self.copy_file(p)
+        }
+
+        let mut rewrite_index = self.context.options.rewrite_index;
+        // Override with rewrite-index page level setting
+        if let Some(val) = data.rewrite_index {
+            rewrite_index = val;
+        }
+
+        if super::draft::is_draft(&data, &self.context.options) {
+            return Ok(());
+        }
 
 
-                if let Some(ref q) = data.query {
-                    let queries = q.clone().to_vec();
+        if let Some(ref q) = data.query {
+            let queries = q.clone().to_vec();
 
-                    let datasource = &self.context.datasource;
-                    if !datasource.map.is_empty() {
-                        let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
-                        for query in queries {
-                            let each = query.each.is_some() && query.each.unwrap();
-                            let idx = datasource.query_index(&query)?;
+            let datasource = &self.context.datasource;
+            if !datasource.map.is_empty() {
+                let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
+                for query in queries {
+                    let each = query.each.is_some() && query.each.unwrap();
+                    let idx = datasource.query_index(&query)?;
 
-                            // Push on to the list of generators to iterate
-                            // over so that we can support the same template
-                            // for multiple generator indices although not sure
-                            // how useful/desirable it is to declare multiple each iterators
-                            // as identifiers may well collide.
-                            if each {
-                                each_iters.push((query, idx));
-                            } else {
-                                data.extra.insert(query.get_parameter(), json!(idx));
-                            }
-                        }
-
-                        if !each_iters.is_empty() {
-                            for (gen, idx) in each_iters {
-                                self.data_source_each(&p, &file_type, &data, gen, idx, rewrite_index)?;
-                            }
-                            return Ok(());
-                        }
+                    // Push on to the list of generators to iterate
+                    // over so that we can support the same template
+                    // for multiple generator indices although not sure
+                    // how useful/desirable it is to declare multiple each iterators
+                    // as identifiers may well collide.
+                    if each {
+                        each_iters.push((query, idx));
+                    } else {
+                        data.extra.insert(query.get_parameter(), json!(idx));
                     }
                 }
 
-                let dest = matcher::destination(
-                    &self.context.options.source,
-                    &self.context.options.target,
-                    &file.to_path_buf(),
-                    &file_type,
-                    &self.context.config.extension.as_ref().unwrap(),
-                    rewrite_index,
-                    &self.context.options.base_href,
-                )?;
-
-                if self
-                    .manifest
-                    .is_dirty(file, &dest, self.context.options.force)
-                {
-                    info!("{} -> {}", file.display(), dest.display());
-
-                    let minify_html = should_minify_html(
-                        &dest,
-                        &self.context.options.tag,
-                        self.context.options.release,
-                        &self.context.config);
-
-                    let s = if minify_html {
-                        minify::html(
-                            self.parser.parse(
-                                &file, &dest.as_path(), &file_type, &mut data)?)
-                    } else {
-                        self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?
-                    };
-
-                    utils::fs::write_string(&dest, &s)?;
-                    self.manifest.touch(file, &dest);
-                } else {
-                    info!("noop {}", file.display());
+                if !each_iters.is_empty() {
+                    for (gen, idx) in each_iters {
+                        self.data_source_each(&p, &file_type, &data, gen, idx, rewrite_index)?;
+                    }
+                    return Ok(());
                 }
             }
         }
 
+        let dest = matcher::destination(
+            &self.context.options.source,
+            &self.context.options.target,
+            &file.to_path_buf(),
+            &file_type,
+            &self.context.config.extension.as_ref().unwrap(),
+            rewrite_index,
+            &self.context.options.base_href,
+        )?;
+
+        if self
+            .manifest
+            .is_dirty(file, &dest, self.context.options.force)
+        {
+            info!("{} -> {}", file.display(), dest.display());
+
+            let minify_html = should_minify_html(
+                &dest,
+                &self.context.options.tag,
+                self.context.options.release,
+                &self.context.config);
+
+            let s = if minify_html {
+                minify::html(
+                    self.parser.parse(
+                        &file, &dest.as_path(), &file_type, &mut data)?)
+            } else {
+                self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?
+            };
+
+            utils::fs::write_string(&dest, &s)?;
+            self.manifest.touch(file, &dest);
+        } else {
+            info!("noop {}", file.display());
+        }
+
         Ok(())
+    }
+
+    fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<()> {
+        match file_type {
+            FileType::Unknown => {
+                self.copy_file(p)
+            }
+            FileType::Markdown | FileType::Template => {
+                self.parse_file(p, file_type)
+            }
+        }
     }
 
     pub fn register_templates_directory(&mut self) -> Result<PathBuf> {
