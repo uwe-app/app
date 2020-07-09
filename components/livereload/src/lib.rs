@@ -14,9 +14,9 @@ socket.onmessage = (event) => {
 };
 window.onbeforeunload = () => socket.close();";
 
-static STYLE: &str = "
-<style>
-#livereload-notification {
+static MARKUP: &str = "
+<div id='livereload-notification'
+style='
     background: black;
     color: white;
     z-index: 999991;
@@ -28,12 +28,9 @@ static STYLE: &str = "
     padding: 10px;
     border-top-right-radius: 6px;
     display: none;
-}
-</style>";
-
-static MARKUP: &str = "
-    <div id='livereload-notification'><span>Building...</span></div>
-";
+'>
+<span>Building...</span>
+</div>";
 
 fn get_script(url: &str) -> String {
     let mut script = String::from(format!("var socket = new WebSocket('{}')\n", url));
@@ -47,7 +44,6 @@ pub fn embed(config: &Config) -> String {
     let href = utils::url::to_href_separator(name);
 
     let mut content = "".to_string();
-    content.push_str(STYLE);
     content.push_str(MARKUP);
     content.push_str(&format!("<script src=\"/{}\"></script>", href));
     content
