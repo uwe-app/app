@@ -53,7 +53,7 @@ pub struct IndexRequest {
     pub key: Option<String>,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
@@ -63,6 +63,23 @@ pub struct IndexQuery {
     pub keys: Option<bool>,
     pub values: Option<bool>,
     pub flat: Option<bool>,
+    pub desc: Option<bool>,
+}
+
+impl Default for IndexQuery {
+    fn default() -> Self {
+        Self {
+            name: "".to_string(),
+            index: ALL_INDEX.to_string(),
+            parameter: None,
+            include_docs: Some(false),
+            each: Some(false),
+            keys: Some(false),
+            values: Some(false),
+            flat: Some(false),
+            desc: Some(false),
+        }
+    }
 }
 
 impl IndexQuery {

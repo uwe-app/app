@@ -101,52 +101,64 @@ impl ValueIndex {
             .collect::<Vec<_>>();
     }
 
-    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<Value> {
-        let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
+    fn map_entry(
+        &self, k: &str, v: &Vec<String>,
+        include_docs: bool,
+        docs: &BTreeMap<String, Value>,
+        query: &IndexQuery) -> Value {
 
-        return self
-            .documents
-            .iter()
-            .map(|(k, v)| {
-                let id = slug::slugify(&k);
-                let mut m = Map::new();
+        let id = slug::slugify(&k);
+        let mut m = Map::new();
 
-                m.insert("id".to_string(), json!(&id));
-                m.insert("key".to_string(), json!(&k));
+        m.insert("id".to_string(), json!(&id));
+        m.insert("key".to_string(), json!(&k));
 
-                if include_docs {
-                    if query.is_flat() && v.len() == 1 {
-                        let s = &v[0];
-                        let mut d = Map::new();
-                        d.insert("id".to_string(), json!(s));
+        if include_docs {
+            if query.is_flat() && v.len() == 1 {
+                let s = &v[0];
+                let mut d = Map::new();
+                d.insert("id".to_string(), json!(s));
+                if let Some(doc) = docs.get(s) {
+                    d.insert("document".to_string(), json!(doc));
+                } else {
+                    warn!("Query missing document for {}", s);
+                }
+                m.insert(query.get_value_parameter(), json!(&d));
+            } else {
+                let docs = v
+                    .iter()
+                    .map(|s| {
+                        let mut m = Map::new();
                         if let Some(doc) = docs.get(s) {
-                            d.insert("document".to_string(), json!(doc));
+                            m.insert("id".to_string(), json!(s));
+                            m.insert("document".to_string(), json!(doc));
                         } else {
                             warn!("Query missing document for {}", s);
                         }
-                        m.insert(query.get_value_parameter(), json!(&d));
-                    } else {
-                        let docs = v
-                            .iter()
-                            .map(|s| {
-                                let mut m = Map::new();
-                                if let Some(doc) = docs.get(s) {
-                                    m.insert("id".to_string(), json!(s));
-                                    m.insert("document".to_string(), json!(doc));
-                                } else {
-                                    warn!("Query missing document for {}", s);
-                                }
-                                m
-                            })
-                            .collect::<Vec<_>>();
+                        m
+                    })
+                    .collect::<Vec<_>>();
 
-                        m.insert(query.get_value_parameter(), json!(&docs));
-                    }
-                }
+                m.insert(query.get_value_parameter(), json!(&docs));
+            }
+        }
 
-                json!(&m)
-            })
-            .collect::<Vec<_>>();
+        json!(&m)
+    }
+
+    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<Value> {
+        let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
+        let desc = query.desc.is_some() && query.desc.unwrap();
+
+        if desc {
+            self.documents.iter().rev() 
+                .map(|(k, v)| { self.map_entry(k, v, include_docs, docs, query) })
+                .collect::<Vec<_>>()
+        } else {
+            self.documents.iter()
+                .map(|(k, v)| { self.map_entry(k, v, include_docs, docs, query) })
+                .collect::<Vec<_>>()
+        }
     }
 }
 
