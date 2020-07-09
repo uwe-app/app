@@ -17,9 +17,8 @@ window.onbeforeunload = () => socket.close();";
 static MARKUP: &str = "
 <div id='livereload-notification'
 style='
-    background: black;
-    color: white;
-    z-index: 999991;
+    background: #333;
+    color: #cfcfcf;
     position: fixed;
     bottom: 0;
     left: 0;
