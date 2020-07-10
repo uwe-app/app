@@ -97,9 +97,6 @@ impl Provider {
         let (tx, rx) = flume::unbounded();
 
         let extensions = req.config.extension.as_ref().unwrap().clone();
-
-        println!("DOING THE PAGE WALK IN {:?}", req.source);
-
         // Use the walk builder to respect the way the compiler
         // ignores and filters files
         WalkBuilder::new(req.source)

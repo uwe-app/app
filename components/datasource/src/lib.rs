@@ -149,15 +149,19 @@ impl ValueIndex {
     pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<Value> {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
+        let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
+        let limit = if let Some(ref limit) = query.limit { limit.clone() } else { 0 };
 
-        let offset = 0;
-        let limit: Option<usize> = None;
+        log::info!("QUERY desc: {}", desc);
+        log::info!("QUERY limit: {:?}", query.limit);
 
         let iter: Box<dyn Iterator<Item = (usize, (&String, &Vec<String>))>> = if desc {
+            // Note the enumerate() must be after rev() for the limit logic
+            // to work as expected when DESC is set
             Box::new(self.documents.iter()
+                .rev()
                 .enumerate()
-                .skip(offset)
-                .rev())
+                .skip(offset))
         } else {
             Box::new(self.documents.iter()
                 .enumerate()
@@ -166,12 +170,13 @@ impl ValueIndex {
 
         let mut items: Vec<Value> = Vec::new();
         for (i, (k, v)) in iter {
-            if limit.is_some() && i >= limit.unwrap() {
+            if limit > 0 && i >= limit {
                 break; 
             }
+
             let val = self.map_entry(k, v, include_docs, docs, query);
             items.push(val);
-        } 
+        }
 
         items
     }

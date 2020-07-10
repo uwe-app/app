@@ -64,6 +64,8 @@ pub struct IndexQuery {
     pub values: Option<bool>,
     pub flat: Option<bool>,
     pub desc: Option<bool>,
+    pub offset: Option<usize>,
+    pub limit: Option<usize>,
 }
 
 impl Default for IndexQuery {
@@ -78,6 +80,8 @@ impl Default for IndexQuery {
             values: Some(false),
             flat: Some(false),
             desc: Some(false),
+            offset: Some(0),
+            limit: None,
         }
     }
 }
