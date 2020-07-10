@@ -67,7 +67,7 @@ impl<'a> Compiler<'a> {
 
     fn data_source_each(
         &mut self,
-        info: &FileInfo,
+        info: &mut FileInfo,
         data: &Page,
         _reference: IndexQuery,
         values: Vec<Value>,
@@ -99,7 +99,7 @@ impl<'a> Compiler<'a> {
                         mock.set_extension(ext);
                     }
 
-                    let info = FileInfo::new(
+                    let mut info = FileInfo::new(
                         &self.context.config,
                         &self.context.options.source,
                         &self.context.options.target,
@@ -109,9 +109,11 @@ impl<'a> Compiler<'a> {
                     let file_opts = FileOptions {
                         rewrite_index,
                         base_href: &self.context.options.base_href,
+                        ..Default::default()
                     };
 
-                    let dest = info.destination(&self.context.config, &file_opts)?;
+                    info.destination(&self.context.config, &file_opts)?;
+                    let dest = info.output.clone().unwrap();
 
                     info!("{} -> {}", &id, &dest.display());
 
@@ -122,9 +124,9 @@ impl<'a> Compiler<'a> {
                         &self.context.config);
 
                     let s = if minify_html {
-                        minify::html(self.parser.parse(&info, &dest, &mut item_data)?)
+                        minify::html(self.parser.parse(&mut info, &dest, &mut item_data)?)
                     } else {
-                        self.parser.parse(&info, &dest, &mut item_data)?
+                        self.parser.parse(&mut info, &dest, &mut item_data)?
                     };
 
                     utils::fs::write_string(&dest, &s)?;
@@ -137,13 +139,17 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn copy_file(&mut self, info: FileInfo) -> Result<()> {
+    fn copy_file(&mut self, info: &mut FileInfo) -> Result<()> {
         let file_opts = FileOptions {
+            exact: true,
             base_href: &self.context.options.base_href,
             ..Default::default()
         };
 
-        let dest = info.output(&file_opts)?;
+        info.destination(&self.context.config, &file_opts)?;
+
+        let dest = info.output.as_ref().unwrap();
+
         let file = info.file;
 
         if self
@@ -160,7 +166,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_file(&mut self, info: FileInfo) -> Result<()> {
+    fn parse_file(&mut self, mut info: &mut FileInfo) -> Result<()> {
         let file = info.file;
 
         let mut data = loader::compute(file, &self.context.config, true)?;
@@ -206,7 +212,7 @@ impl<'a> Compiler<'a> {
 
                 if !each_iters.is_empty() {
                     for (gen, idx) in each_iters {
-                        self.data_source_each(&info, &data, gen, idx, rewrite_index)?;
+                        self.data_source_each(info, &data, gen, idx, rewrite_index)?;
                     }
                     return Ok(());
                 }
@@ -216,9 +222,11 @@ impl<'a> Compiler<'a> {
         let file_opts = FileOptions {
             rewrite_index,
             base_href: &self.context.options.base_href,
+            ..Default::default()
         };
 
-        let dest = info.destination(&self.context.config, &file_opts)?;
+        info.destination(&self.context.config, &file_opts)?;
+        let dest = info.output.clone().unwrap();
 
         if self
             .manifest
@@ -233,9 +241,9 @@ impl<'a> Compiler<'a> {
                 &self.context.config);
 
             let s = if minify_html {
-                minify::html(self.parser.parse(&info, &dest, &mut data)?)
+                minify::html(self.parser.parse(&mut info, &dest, &mut data)?)
             } else {
-                self.parser.parse(&info, &dest, &mut data)?
+                self.parser.parse(&mut info, &dest, &mut data)?
             };
 
             utils::fs::write_string(&dest, &s)?;
@@ -247,7 +255,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn process_file(&mut self, info: FileInfo) -> Result<()> {
+    fn process_file(&mut self, info: &mut FileInfo) -> Result<()> {
         match info.file_type {
             FileType::Unknown => {
                 self.copy_file(info)
@@ -297,13 +305,13 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub fn one(&mut self, file: &PathBuf) -> Result<()> {
-        let info = FileInfo::new(
+        let mut info = FileInfo::new(
             &self.context.config,
             &self.context.options.source,
             &self.context.options.target,
             file,
         );
-        self.process_file(info)
+        self.process_file(&mut info)
     }
 
     // Recursively walk and build files in a directory

@@ -5,7 +5,7 @@ use super::config::{Config, ExtensionConfig};
 
 use crate::config::{HTML, INDEX_STEM};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum FileType {
     Markdown,
     Template,
@@ -14,20 +14,25 @@ pub enum FileType {
 
 #[derive(Debug)]
 pub struct FileOptions<'a> {
+    // Request a 1:1 output file
+    pub exact: bool,
+    // Rewrite to directory index.html file
     pub rewrite_index: bool,
+    // A base href used to extract sub-directories
     pub base_href: &'a Option<String>,
 }
 
 impl Default for FileOptions<'_> {
     fn default() -> Self {
         Self {
+            exact: false,
             rewrite_index: false,
             base_href: &None,
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileInfo<'a> {
     // The root of the source files
     pub config: &'a Config,
@@ -39,6 +44,8 @@ pub struct FileInfo<'a> {
     pub file: &'a PathBuf,
     // The file type
     pub file_type: FileType,
+    // An output destination
+    pub output: Option<PathBuf>,
 }
 
 impl<'a> FileInfo<'a> {
@@ -48,7 +55,7 @@ impl<'a> FileInfo<'a> {
         target: &'a PathBuf,
         file: &'a PathBuf) -> Self {
         let file_type = FileInfo::get_type(file,config);
-        Self {config, source, target, file, file_type} 
+        Self {config, source, target, file, file_type, output: None}
     }
 
     fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
@@ -145,7 +152,7 @@ impl<'a> FileInfo<'a> {
     // Does not modify the file extension, rewrite the index of change the slug,
     // this is used when we copy over files with a direct 1:1 correlation.
     //
-    pub fn output(&self, options: &FileOptions) -> Result<PathBuf, Error> {
+    fn output(&self, options: &FileOptions) -> Result<PathBuf, Error> {
         let pth = self.file.clone();
 
         // NOTE: When watching files we can get absolute
@@ -173,31 +180,35 @@ impl<'a> FileInfo<'a> {
     }
 
     // Build the destination file path and update the file extension.
-    pub fn destination(&self, config: &Config, options: &FileOptions) -> Result<PathBuf, Error> {
+    pub fn destination(&mut self, config: &Config, options: &FileOptions) -> Result<(), Error> {
         let pth = self.file.clone();
         let mut result = self.output(options)?;
-        match self.file_type {
-            FileType::Markdown | FileType::Template => {
-                let extensions = &config.extension.as_ref().unwrap();
-                if let Some(ext) = pth.extension() {
-                    let ext = ext.to_string_lossy().into_owned();
-                    for (k, v) in &extensions.map {
-                        if ext == *k {
-                            result.set_extension(v);
-                            break;
+        if !options.exact {
+            match self.file_type {
+                FileType::Markdown | FileType::Template => {
+                    let extensions = &config.extension.as_ref().unwrap();
+                    if let Some(ext) = pth.extension() {
+                        let ext = ext.to_string_lossy().into_owned();
+                        for (k, v) in &extensions.map {
+                            if ext == *k {
+                                result.set_extension(v);
+                                break;
+                            }
+                        }
+                    }
+
+                    if options.rewrite_index {
+                        if let Some(res) = FileInfo::rewrite_index_file(pth.as_path(), result.as_path(), extensions) {
+                            result = res;
                         }
                     }
                 }
-
-                if options.rewrite_index {
-                    if let Some(res) = FileInfo::rewrite_index_file(pth.as_path(), result.as_path(), extensions) {
-                        result = res;
-                    }
-                }
+                _ => {}
             }
-            _ => {}
         }
-        return Ok(result);
+
+        self.output = Some(result);
+        return Ok(());
     }
 }
 

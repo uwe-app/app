@@ -34,9 +34,9 @@ impl<'a> Parser<'a> {
         output: O,
         data: &mut Page,
     ) -> Result<String, Error> {
+
         let (content, _has_fm, _fm) =
             frontmatter::load(&input, frontmatter::Config::new_html(false))?;
-
         let result = self
             .render
             .parse_template_string(&input, &output, content, data)?;
@@ -49,9 +49,9 @@ impl<'a> Parser<'a> {
         output: O,
         data: &mut Page,
     ) -> Result<String, Error> {
+
         let (content, _has_fm, _fm) =
             frontmatter::load(&input, frontmatter::Config::new_markdown(false))?;
-
         let mut result = self
             .render
             .parse_template_string(&input, &output, content, data)?;
@@ -61,7 +61,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse<O: AsRef<Path>>(
         &mut self,
-        info: &FileInfo,
+        info: &mut FileInfo,
         output: O,
         data: &mut Page,
     ) -> Result<String, Error> {

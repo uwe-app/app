@@ -104,7 +104,7 @@ fn children<P: AsRef<Path>>(
                     this = path == file.as_ref();
 
                     let source_file = path.to_path_buf();
-                    let info = FileInfo::new(
+                    let mut info = FileInfo::new(
                         &ctx.config,
                         source,
                         target,
@@ -119,7 +119,9 @@ fn children<P: AsRef<Path>>(
                                 ..Default::default()
                             };
 
-                            let mut dest = info.destination(&ctx.config, &file_opts)?;
+                            info.destination(&ctx.config, &file_opts)?;
+
+                            let mut dest = info.output.unwrap();
 
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
@@ -146,7 +148,7 @@ fn children<P: AsRef<Path>>(
 
                     for f in candidates {
                         if f.exists() {
-                            let info = FileInfo::new(
+                            let mut info = FileInfo::new(
                                 &ctx.config,
                                 source,
                                 target,
@@ -158,7 +160,8 @@ fn children<P: AsRef<Path>>(
                                 ..Default::default()
                             };
 
-                            let mut dest = info.destination(&ctx.config, &file_opts)?;
+                            info.destination(&ctx.config, &file_opts)?;
+                            let mut dest = info.output.unwrap();
 
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
