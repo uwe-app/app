@@ -142,7 +142,7 @@ pub fn relative_to<P: AsRef<Path>>(file: P, base: P, target: P) -> Result<PathBu
 }
 
 // Build the direct destination file path.
-pub fn direct_destination<P: AsRef<Path>>(
+pub fn output<P: AsRef<Path>>(
     source: P,
     target: P,
     file: P,
@@ -187,11 +187,12 @@ pub fn destination<P: AsRef<Path>>(
 ) -> Result<PathBuf, Error> {
 
     let pth = file.as_ref().to_path_buf().clone();
-    let result = direct_destination(source, target, file, base_href);
+    let result = output(source, target, file, base_href);
     match result {
         Ok(mut result) => {
             match file_type {
                 FileType::Markdown | FileType::Template => {
+
                     if let Some(ext) = pth.extension() {
                         let ext = ext.to_string_lossy().into_owned();
                         for (k, v) in &extensions.map {

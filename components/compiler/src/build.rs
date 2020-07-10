@@ -140,7 +140,7 @@ impl<'a> Compiler<'a> {
     fn copy_file<P: AsRef<Path>>(&mut self, p: P) -> Result<()> {
         let file = p.as_ref();
 
-        let dest = matcher::direct_destination(
+        let dest = matcher::output(
             &self.context.options.source,
             &self.context.options.target,
             &file.to_path_buf(),
