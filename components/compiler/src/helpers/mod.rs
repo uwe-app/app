@@ -1,6 +1,8 @@
 use handlebars::*;
 use std::io;
 
+use serde_json::{Value, to_value};
+
 use config::Page;
 
 pub mod children;
@@ -54,9 +56,27 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
 // context
 pub fn with_parent_context<'rc>(
     ctx: &'rc Context,
-    mut data: &mut Page,
+    data: &mut Page,
 ) -> Result<Context, RenderError> {
-    let mut scope: Page = serde_json::from_value(ctx.data().clone())?;
-    scope.append(&mut data);
-    return Context::wraps(&scope);
+    // NOTE: The old version (below) using Context::wraps() breaks data handling
+    // NOTE: by serializing using from_value()
+    let mut local_ctx = ctx.clone();
+    let existing_data = local_ctx.data_mut();
+    match existing_data {
+        Value::Object(ref mut map) => {
+            let mut val = to_value(&data)?;
+            match val {
+                Value::Object(ref mut val) => {
+                    map.append(val);
+                },
+                _ => {}
+            }
+        },
+        _ => {}
+    }
+    Ok(local_ctx)
+
+    //let mut scope: Page = serde_json::from_value(ctx.data().clone())?;
+    //scope.append(&mut data);
+    //return Context::wraps(&scope);
 }

@@ -1,11 +1,10 @@
 use std::io;
 use std::mem;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 use chrono::prelude::*;
 
-use serde::{Deserialize, Serialize, Deserializer, Serializer};
+use serde::{Deserialize, Serialize, Deserializer};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
@@ -34,6 +33,7 @@ pub fn from_toml_datetime<'de, D>(deserializer: D)
     })
 }
 
+/*
 /// Attribute to convert to TOML date time from UTC string variant
 pub fn to_toml_datetime<S>(val: &Option<DateTime<Utc>>, serializer: S) 
     -> Result<S::Ok, S::Error> where S: Serializer {
@@ -43,11 +43,14 @@ pub fn to_toml_datetime<S>(val: &Option<DateTime<Utc>>, serializer: S)
         Utc::now().to_rfc3339()
     };
 
+    serializer.serialize_str(&s)
+
     //println!("Got date time string {:?}", s);
 
-    let dt = toml::value::Datetime::from_str(&s).unwrap();
-    dt.serialize(serializer)
+    //let dt = toml::value::Datetime::from_str(&s).unwrap();
+    //dt.serialize(serializer)
 }
+*/
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -112,10 +115,12 @@ pub struct Page {
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
 
-    #[serde(deserialize_with = "from_toml_datetime", serialize_with = "to_toml_datetime")]
+    //#[serde(deserialize_with = "from_toml_datetime", serialize_with = "to_toml_datetime")]
+    #[serde(deserialize_with = "from_toml_datetime")]
     pub created: Option<DateTime<Utc>>,
 
-    #[serde(deserialize_with = "from_toml_datetime", serialize_with = "to_toml_datetime")]
+    //#[serde(deserialize_with = "from_toml_datetime", serialize_with = "to_toml_datetime")]
+    #[serde(deserialize_with = "from_toml_datetime")]
     pub updated: Option<DateTime<Utc>>,
 
     //
