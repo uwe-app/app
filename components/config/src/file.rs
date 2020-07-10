@@ -5,10 +5,15 @@ use super::config::{Config, ExtensionConfig};
 
 use crate::config::{HTML, INDEX_STEM};
 
+#[derive(Debug)]
+pub enum FileType {
+    Markdown,
+    Template,
+    Unknown,
+}
 
 #[derive(Debug)]
 pub struct FileOptions<'a> {
-    pub file_type: &'a FileType,
     pub rewrite_index: bool,
     pub base_href: &'a Option<String>,
 }
@@ -16,7 +21,6 @@ pub struct FileOptions<'a> {
 impl Default for FileOptions<'_> {
     fn default() -> Self {
         Self {
-            file_type: &FileType::Unknown,
             rewrite_index: false,
             base_href: &None,
         }
@@ -33,6 +37,8 @@ pub struct FileInfo<'a> {
     pub target: &'a PathBuf,
     // A source file path
     pub file: &'a PathBuf,
+    // The file type
+    pub file_type: FileType,
 }
 
 impl<'a> FileInfo<'a> {
@@ -41,7 +47,8 @@ impl<'a> FileInfo<'a> {
         source: &'a PathBuf,
         target: &'a PathBuf,
         file: &'a PathBuf) -> Self {
-        Self {config, source, target, file} 
+        let file_type = FileInfo::get_type(file,config);
+        Self {config, source, target, file, file_type} 
     }
 
     fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
@@ -169,7 +176,7 @@ impl<'a> FileInfo<'a> {
     pub fn destination(&self, config: &Config, options: &FileOptions) -> Result<PathBuf, Error> {
         let pth = self.file.clone();
         let mut result = self.output(options)?;
-        match options.file_type {
+        match self.file_type {
             FileType::Markdown | FileType::Template => {
 
                 let extensions = &config.extension.as_ref().unwrap();
@@ -193,12 +200,5 @@ impl<'a> FileInfo<'a> {
         }
         return Ok(result);
     }
-}
-
-#[derive(Debug)]
-pub enum FileType {
-    Markdown,
-    Template,
-    Unknown,
 }
 

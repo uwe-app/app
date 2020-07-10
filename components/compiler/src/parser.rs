@@ -28,10 +28,10 @@ impl<'a> Parser<'a> {
         self.render.register_templates_directory(ext, dir)
     }
 
-    fn parse_template<P: AsRef<Path>>(
+    fn parse_template<I: AsRef<Path>, O: AsRef<Path>>(
         &mut self,
-        input: P,
-        output: P,
+        input: I,
+        output: O,
         data: &mut Page,
     ) -> Result<String, Error> {
         let (content, _has_fm, _fm) =
@@ -43,10 +43,10 @@ impl<'a> Parser<'a> {
         return self.render.layout(&input, &output, result, data);
     }
 
-    fn parse_markdown<P: AsRef<Path>>(
+    fn parse_markdown<I: AsRef<Path>, O: AsRef<Path>>(
         &mut self,
-        input: P,
-        output: P,
+        input: I,
+        output: O,
         data: &mut Page,
     ) -> Result<String, Error> {
         let (content, _has_fm, _fm) =
@@ -59,10 +59,10 @@ impl<'a> Parser<'a> {
         return self.render.layout(&input, &output, result, data);
     }
 
-    pub fn parse<P: AsRef<Path>>(
+    pub fn parse<I: AsRef<Path>, O: AsRef<Path>>(
         &mut self,
-        input: P,
-        output: P,
+        input: I,
+        output: O,
         file_type: &FileType,
         data: &mut Page,
     ) -> Result<String, Error> {

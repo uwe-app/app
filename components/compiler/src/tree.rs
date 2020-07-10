@@ -116,7 +116,6 @@ fn children<P: AsRef<Path>>(
                             );
 
                             let file_opts = FileOptions {
-                                file_type: &file_type, 
                                 rewrite_index: ctx.options.rewrite_index,
                                 ..Default::default()
                             };
@@ -147,7 +146,6 @@ fn children<P: AsRef<Path>>(
 
                     for f in candidates {
                         if f.exists() {
-                            let file_type = FileInfo::get_type(&f, &ctx.config);
                             let info = FileInfo::new(
                                 &ctx.config,
                                 source,
@@ -156,7 +154,6 @@ fn children<P: AsRef<Path>>(
                             );
 
                             let file_opts = FileOptions {
-                                file_type: &file_type, 
                                 rewrite_index: ctx.options.rewrite_index,
                                 ..Default::default()
                             };

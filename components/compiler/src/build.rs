@@ -108,7 +108,6 @@ impl<'a> Compiler<'a> {
                     );
 
                     let file_opts = FileOptions {
-                        file_type, 
                         rewrite_index,
                         base_href: &self.context.options.base_href,
                     };
@@ -141,22 +140,14 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn copy_file<P: AsRef<Path>>(&mut self, p: P) -> Result<()> {
-        let file = p.as_ref();
-
-        let source_file = file.to_path_buf();
-        let info = FileInfo::new(
-            &self.context.config,
-            &self.context.options.source,
-            &self.context.options.target,
-            &source_file,
-        );
+    fn copy_file(&mut self, info: FileInfo) -> Result<()> {
         let file_opts = FileOptions {
             base_href: &self.context.options.base_href,
             ..Default::default()
         };
 
         let dest = info.output(&file_opts)?;
+        let file = info.file;
 
         if self
             .manifest
@@ -172,15 +163,15 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<()> {
-        let file = p.as_ref();
+    fn parse_file(&mut self, info: FileInfo) -> Result<()> {
+        let file = info.file;
 
         let mut data = loader::compute(file, &self.context.config, true)?;
 
         let render = data.render.is_some() && data.render.unwrap();
 
         if !render {
-            return self.copy_file(p)
+            return self.copy_file(info);
         }
 
         let mut rewrite_index = self.context.options.rewrite_index;
@@ -218,24 +209,14 @@ impl<'a> Compiler<'a> {
 
                 if !each_iters.is_empty() {
                     for (gen, idx) in each_iters {
-                        self.data_source_each(&p, &file_type, &data, gen, idx, rewrite_index)?;
+                        self.data_source_each(file, &info.file_type, &data, gen, idx, rewrite_index)?;
                     }
                     return Ok(());
                 }
             }
         }
 
-        let source_file = file.to_path_buf();
-        let info = FileInfo::new(
-            &self.context.config,
-            &self.context.options.source,
-            &self.context.options.target,
-            &source_file,
-        );
-
-
         let file_opts = FileOptions {
-            file_type: &file_type, 
             rewrite_index,
             base_href: &self.context.options.base_href,
         };
@@ -257,9 +238,9 @@ impl<'a> Compiler<'a> {
             let s = if minify_html {
                 minify::html(
                     self.parser.parse(
-                        &file, &dest.as_path(), &file_type, &mut data)?)
+                        &file, &dest, &info.file_type, &mut data)?)
             } else {
-                self.parser.parse(&file, &dest.as_path(), &file_type, &mut data)?
+                self.parser.parse(&file, &dest, &info.file_type, &mut data)?
             };
 
             utils::fs::write_string(&dest, &s)?;
@@ -271,13 +252,13 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn process_file<P: AsRef<Path>>(&mut self, p: P, file_type: FileType) -> Result<()> {
-        match file_type {
+    fn process_file(&mut self, info: FileInfo) -> Result<()> {
+        match info.file_type {
             FileType::Unknown => {
-                self.copy_file(p)
+                self.copy_file(info)
             }
             FileType::Markdown | FileType::Template => {
-                self.parse_file(p, file_type)
+                self.parse_file(info)
             }
         }
     }
@@ -321,8 +302,13 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub fn one(&mut self, file: &PathBuf) -> Result<()> {
-        let file_type = FileInfo::get_type(file, &self.context.config);
-        self.process_file(file, file_type)
+        let info = FileInfo::new(
+            &self.context.config,
+            &self.context.options.source,
+            &self.context.options.target,
+            file,
+        );
+        self.process_file(info)
     }
 
     // Recursively walk and build files in a directory

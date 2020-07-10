@@ -61,10 +61,10 @@ impl<'a> TemplateRender<'a> {
             .map_err(Error::from)
     }
 
-    pub fn parse_template_string<P: AsRef<Path>>(
+    pub fn parse_template_string<I: AsRef<Path>, O: AsRef<Path>>(
         &mut self,
-        input: P,
-        output: P,
+        input: I,
+        output: O,
         content: String,
         data: &mut Page,
     ) -> Result<String, Error> {
@@ -92,10 +92,10 @@ impl<'a> TemplateRender<'a> {
         Ok(content)
     }
 
-    pub fn layout<P: AsRef<Path>>(
+    pub fn layout<I: AsRef<Path>, O: AsRef<Path>>(
         &mut self,
-        _input: P,
-        _output: P,
+        _input: I,
+        _output: O,
         document: String,
         data: &mut Page,
     ) -> Result<String, Error> {
