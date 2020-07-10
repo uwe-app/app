@@ -109,6 +109,7 @@ fn children<P: AsRef<Path>>(
 
                             let source_file = path.to_path_buf();
                             let info = FileInfo::new(
+                                &ctx.config,
                                 source,
                                 target,
                                 &source_file,
@@ -148,6 +149,7 @@ fn children<P: AsRef<Path>>(
                         if f.exists() {
                             let file_type = FileInfo::get_type(&f, &ctx.config);
                             let info = FileInfo::new(
+                                &ctx.config,
                                 source,
                                 target,
                                 &f,

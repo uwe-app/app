@@ -101,6 +101,7 @@ impl<'a> Compiler<'a> {
                     }
 
                     let info = FileInfo::new(
+                        &self.context.config,
                         &self.context.options.source,
                         &self.context.options.target,
                         &mock,
@@ -145,6 +146,7 @@ impl<'a> Compiler<'a> {
 
         let source_file = file.to_path_buf();
         let info = FileInfo::new(
+            &self.context.config,
             &self.context.options.source,
             &self.context.options.target,
             &source_file,
@@ -225,6 +227,7 @@ impl<'a> Compiler<'a> {
 
         let source_file = file.to_path_buf();
         let info = FileInfo::new(
+            &self.context.config,
             &self.context.options.source,
             &self.context.options.target,
             &source_file,

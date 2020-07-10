@@ -26,6 +26,8 @@ impl Default for FileOptions<'_> {
 #[derive(Debug)]
 pub struct FileInfo<'a> {
     // The root of the source files
+    pub config: &'a Config,
+    // The root of the source files
     pub source: &'a PathBuf,
     // The root of the build target
     pub target: &'a PathBuf,
@@ -34,8 +36,12 @@ pub struct FileInfo<'a> {
 }
 
 impl<'a> FileInfo<'a> {
-    pub fn new(source: &'a PathBuf, target: &'a PathBuf, file: &'a PathBuf) -> Self {
-        Self {source, target, file} 
+    pub fn new(
+        config: &'a Config,
+        source: &'a PathBuf,
+        target: &'a PathBuf,
+        file: &'a PathBuf) -> Self {
+        Self {config, source, target, file} 
     }
 
     fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
