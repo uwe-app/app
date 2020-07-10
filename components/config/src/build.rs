@@ -12,56 +12,56 @@ static PRODUCTION: &str = "production";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(from = "String")]
-pub enum BuildTag {
+pub enum BuildProfile {
     Custom(String),
     Debug,
     Release,
 }
 
-impl Default for BuildTag {
+impl Default for BuildProfile {
     fn default() -> Self {
-        BuildTag::Debug
+        BuildProfile::Debug
     }
 }
 
-impl From<String> for BuildTag {
+impl From<String> for BuildProfile {
     fn from(s: String) -> Self {
         if s == DEBUG {
-            BuildTag::Debug
+            BuildProfile::Debug
         } else if s == RELEASE {
-            BuildTag::Release
+            BuildProfile::Release
         } else {
-            BuildTag::Custom(s) 
+            BuildProfile::Custom(s) 
         }
     }
 }
 
-impl fmt::Display for BuildTag {
+impl fmt::Display for BuildProfile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            BuildTag::Custom(ref val) => write!(f, "{}", val),
-            BuildTag::Debug => write!(f, "{}", DEBUG),
-            BuildTag::Release => write!(f, "{}", RELEASE),
+            BuildProfile::Custom(ref val) => write!(f, "{}", val),
+            BuildProfile::Debug => write!(f, "{}", DEBUG),
+            BuildProfile::Release => write!(f, "{}", RELEASE),
         }
     }
 }
 
-impl BuildTag {
+impl BuildProfile {
     pub fn get_node_env(&self, debug: Option<String>, release: Option<String>) -> String {
         match self {
-            BuildTag::Debug => {
+            BuildProfile::Debug => {
                 if let Some(env) = debug {
                     return env;
                 }
                 return DEVELOPMENT.to_string();
             }
-            BuildTag::Release => {
+            BuildProfile::Release => {
                 if let Some(env) = release {
                     return env;
                 }
                 return PRODUCTION.to_string();
             }
-            BuildTag::Custom(s) => return s.to_string(),
+            BuildProfile::Custom(s) => return s.to_string(),
         }
     }
 }

@@ -52,5 +52,5 @@ mod page;
 pub use config::*;
 pub use page::Page;
 pub use file::{FileType, FileInfo, FileOptions};
-pub use build::{BuildTag, BuildArguments};
+pub use build::{BuildProfile, BuildArguments};
 pub use indexer::IndexQuery;

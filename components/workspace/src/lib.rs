@@ -8,7 +8,7 @@ pub enum Error {
     NotDirectory(PathBuf),
 
     #[error("Build tag may not be an absolute path {0}")]
-    BuildTagAbsolute(String),
+    BuildProfileAbsolute(String),
 
     #[error("Live reload is not available for release builds")]
     LiveReloadRelease,
