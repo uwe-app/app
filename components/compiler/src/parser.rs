@@ -67,8 +67,8 @@ impl<'a> Parser<'a> {
         data: &mut Page,
     ) -> Result<String, Error> {
         match file_type {
-            FileType::Template => return self.parse_template(input, output, data),
-            FileType::Markdown => return self.parse_markdown(input, output, data),
+            FileType::Template => self.parse_template(input, output, data),
+            FileType::Markdown => self.parse_markdown(input, output, data),
             _ => Err(Error::ParserFileType),
         }
     }

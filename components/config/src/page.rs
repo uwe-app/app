@@ -190,6 +190,12 @@ impl Page {
 
         let mut file_context = FileContext::new(p.as_ref().to_path_buf(), o.as_ref().to_path_buf());
         file_context.resolve_metadata()?;
+
+        // TODO: allow setting to control this behavior
+        if self.updated.is_none() {
+            self.updated = Some(file_context.modified.clone());
+        }
+
         self.file = Some(file_context);
 
         // Some useful shortcuts
