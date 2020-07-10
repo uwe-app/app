@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use chrono::prelude::*;
 
 use serde::{Deserialize, Serialize, Deserializer};
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
 use super::Error;
@@ -38,13 +38,13 @@ pub fn from_toml_datetime<'de, D>(deserializer: D)
 }
 
 #[derive(Debug)]
-pub struct FileInfo {
+pub struct FileInfo<'a> {
     // The root of the source files
-    pub source: PathBuf,
+    pub source: &'a PathBuf,
     // The root of the build target
-    pub target: PathBuf,
+    pub target: &'a PathBuf,
     // A source file path
-    pub file: PathBuf,
+    pub file: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -339,13 +339,30 @@ impl Page {
         }
     }
 
+    pub fn finalize<L: AsRef<str>, P: AsRef<Path>,O: AsRef<Path>>(
+        &mut self,
+        lang: L,
+        p: P,
+        o: O,
+        config: &Config) -> Result<(), Error> {
+
+        self.lang = Some(lang.as_ref().to_string());
+
+        let mut file_context = FileContext::new(p.as_ref().to_path_buf(), o.as_ref().to_path_buf());
+        file_context.resolve_metadata()?;
+        self.file = Some(file_context);
+
+        // Some useful shortcuts
+        if let Some(ref date) = config.date {
+            self.extra.insert("date-formats".to_string(), json!(date.formats));
+        }
+
+        Ok(())
+    }
+
     pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config) -> Result<(), Error> {
 
         self.href = Some(link::absolute(p.as_ref(), config, Default::default())?);
-
-        let mut file_context = FileContext::new(p.as_ref().to_path_buf(), PathBuf::from(""));
-        file_context.resolve_metadata()?;
-        self.file = Some(file_context);
 
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
@@ -355,6 +372,7 @@ impl Page {
 
         // TODO: finalize this page data after computation 
         // TODO: build dynamic sort keys like date tuple (year, month, day) etc.
+
         if let Some(ref list) = self.byline {
             for id in list {
                 if let Some(ref authors) = config.authors {

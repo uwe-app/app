@@ -64,7 +64,7 @@ impl<'a> TemplateRender<'a> {
     pub fn parse_template_string<P: AsRef<Path>>(
         &mut self,
         input: P,
-        _output: P,
+        output: P,
         content: String,
         data: &mut Page,
     ) -> Result<String, Error> {
@@ -74,12 +74,11 @@ impl<'a> TemplateRender<'a> {
             .register_template_string(name, &content)
             .is_ok()
         {
-            data.lang = Some(self.context.locales.lang.clone());
-
-            // Some useful shortcuts
-            if let Some(ref date) = self.context.config.date {
-                data.extra.insert("date-formats".to_string(), json!(date.formats));
-            }
+            data.finalize(
+                &self.context.locales.lang,
+                input.as_ref(),
+                output.as_ref(),
+                &self.context.config)?;
 
             // NOTE: context must be pushed into extra otherwise
             // NOTE: we have a recursive type due to the page data
