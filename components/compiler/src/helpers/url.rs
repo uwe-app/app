@@ -4,7 +4,7 @@ use handlebars::*;
 use log::debug;
 use serde_json::json;
 
-use config::Page;
+use config::FileInfo;
 
 use super::super::context::Context as BuildContext;
 use super::super::lookup;
@@ -109,7 +109,7 @@ impl HelperDef for Link {
             if let Ok(rel) = path.strip_prefix(base) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
-                    if opts.rewrite_index && Page::is_clean(&path, extensions) {
+                    if opts.rewrite_index && FileInfo::is_clean(&path, extensions) {
                         value.push_str("../");
                     }
                     for _ in p.components() {

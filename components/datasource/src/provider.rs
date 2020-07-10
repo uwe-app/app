@@ -10,7 +10,7 @@ use ignore::{WalkBuilder, WalkState};
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
-use config::{Config, Page};
+use config::{Config, FileInfo};
 use config::indexer::{SourceType, SourceProvider};
 
 use super::{Result, Error};
@@ -96,7 +96,6 @@ impl Provider {
         let filters = config::filter::get_filters(req.source, req.config);
         let (tx, rx) = flume::unbounded();
 
-        let extensions = req.config.extension.as_ref().unwrap().clone();
         // Use the walk builder to respect the way the compiler
         // ignores and filters files
         WalkBuilder::new(req.source)
@@ -113,7 +112,7 @@ impl Provider {
                     let tx = tx.clone();
                     if let Ok(entry) = result {
                         let path = entry.path();
-                        if path.is_file() && Page::is_page(&path, &extensions) {
+                        if path.is_file() && FileInfo::is_page(&path, req.config) {
                             let _ = tx.send(path.to_path_buf());
                         }
                     }

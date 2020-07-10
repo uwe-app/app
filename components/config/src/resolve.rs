@@ -2,7 +2,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use super::config::ExtensionConfig;
-use super::Page;
+use super::file::FileInfo;
 
 static INDEX_STEM: &str = "index";
 
@@ -24,7 +24,7 @@ pub fn resolve_parent_index<P: AsRef<Path>>(
 ) -> Option<PathBuf> {
     if let Some(parent) = file.as_ref().parent() {
         // Not an index file so a single level is sufficient
-        if !Page::is_index(&file) {
+        if !FileInfo::is_index(&file) {
             return resolve_dir_index(&parent, extensions);
         // Otherwise go back down one more level
         } else {

@@ -32,8 +32,10 @@ pub static FALLBACK_KEY: &str = "fallback";
 pub static SHARED_KEY: &str = "shared";
 pub static REDIRECT_KEY: &str = "redirect";
 
-static MD: &str = "md";
 pub static HTML: &str = "html";
+pub static INDEX_STEM: &str = "index";
+
+static MD: &str = "md";
 static BOOK_TOML: &str = "book.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
 static PAGE_DATA: &str = "page.toml";

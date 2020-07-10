@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, FileInfo, FileType, BuildTag, IndexQuery};
+use config::{Config, Page, FileInfo, FileType, FileOptions, BuildTag, IndexQuery};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -106,13 +106,13 @@ impl<'a> Compiler<'a> {
                         &mock,
                     );
 
-                    let dest = Page::destination(
-                        &info,
-                        &file_type,
-                        &self.context.config.extension.as_ref().unwrap(),
+                    let file_opts = FileOptions {
+                        file_type, 
                         rewrite_index,
-                        &self.context.options.base_href,
-                    )?;
+                        base_href: &self.context.options.base_href,
+                    };
+
+                    let dest = info.destination(&self.context.config, &file_opts)?;
 
                     info!("{} -> {}", &id, &dest.display());
 
@@ -143,12 +143,18 @@ impl<'a> Compiler<'a> {
     fn copy_file<P: AsRef<Path>>(&mut self, p: P) -> Result<()> {
         let file = p.as_ref();
 
-        let dest = Page::output(
+        let source_file = file.to_path_buf();
+        let info = FileInfo::new(
             &self.context.options.source,
             &self.context.options.target,
-            &file.to_path_buf(),
-            &self.context.options.base_href,
-        )?;
+            &source_file,
+        );
+        let file_opts = FileOptions {
+            base_href: &self.context.options.base_href,
+            ..Default::default()
+        };
+
+        let dest = info.output(&file_opts)?;
 
         if self
             .manifest
@@ -217,21 +223,21 @@ impl<'a> Compiler<'a> {
             }
         }
 
-        let target_file = file.to_path_buf();
-
+        let source_file = file.to_path_buf();
         let info = FileInfo::new(
             &self.context.options.source,
             &self.context.options.target,
-            &target_file,
+            &source_file,
         );
 
-        let dest = Page::destination(
-            &info,
-            &file_type,
-            &self.context.config.extension.as_ref().unwrap(),
+
+        let file_opts = FileOptions {
+            file_type: &file_type, 
             rewrite_index,
-            &self.context.options.base_href,
-        )?;
+            base_href: &self.context.options.base_href,
+        };
+
+        let dest = info.destination(&self.context.config, &file_opts)?;
 
         if self
             .manifest
@@ -312,8 +318,7 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub fn one(&mut self, file: &PathBuf) -> Result<()> {
-        let extensions = &self.context.config.extension.as_ref().unwrap();
-        let file_type = Page::get_type(file, extensions);
+        let file_type = FileInfo::get_type(file, &self.context.config);
         self.process_file(file, file_type)
     }
 

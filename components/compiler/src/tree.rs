@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use serde_json::json;
 
-use config::{Page, FileInfo, FileType};
+use config::{Page, FileInfo, FileType, FileOptions};
 
 use super::context::Context;
 use crate::{Error, HTML, INDEX_HTML, INDEX_STEM, MD};
@@ -103,25 +103,24 @@ fn children<P: AsRef<Path>>(
                 if path.is_file() {
                     this = path == file.as_ref();
 
-                    let extensions = &ctx.config.extension.as_ref().unwrap();
-                    let file_type = Page::get_type(path, extensions);
+                    let file_type = FileInfo::get_type(path, &ctx.config);
                     match file_type {
                         FileType::Markdown | FileType::Template => {
 
-                            let target_file = path.to_path_buf();
+                            let source_file = path.to_path_buf();
                             let info = FileInfo::new(
                                 source,
                                 target,
-                                &target_file,
+                                &source_file,
                             );
 
-                            let mut dest = Page::destination(
-                                &info,
-                                &file_type,
-                                extensions,
-                                ctx.options.rewrite_index,
-                                &None,
-                            )?;
+                            let file_opts = FileOptions {
+                                file_type: &file_type, 
+                                rewrite_index: ctx.options.rewrite_index,
+                                ..Default::default()
+                            };
+
+                            let mut dest = info.destination(&ctx.config, &file_opts)?;
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
                             }
@@ -147,20 +146,20 @@ fn children<P: AsRef<Path>>(
 
                     for f in candidates {
                         if f.exists() {
-                            let extensions = &ctx.config.extension.as_ref().unwrap();
-                            let file_type = Page::get_type(&f, extensions);
+                            let file_type = FileInfo::get_type(&f, &ctx.config);
                             let info = FileInfo::new(
                                 source,
                                 target,
                                 &f,
                             );
-                            let mut dest = Page::destination(
-                                &info,
-                                &file_type,
-                                extensions,
-                                ctx.options.rewrite_index,
-                                &None,
-                            )?;
+
+                            let file_opts = FileOptions {
+                                file_type: &file_type, 
+                                rewrite_index: ctx.options.rewrite_index,
+                                ..Default::default()
+                            };
+
+                            let mut dest = info.destination(&ctx.config, &file_opts)?;
 
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
