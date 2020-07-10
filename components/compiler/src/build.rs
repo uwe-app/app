@@ -7,8 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, BuildTag, IndexQuery};
-use matcher::{self, FileType};
+use config::{Config, Page, FileType, BuildTag, IndexQuery};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -101,7 +100,7 @@ impl<'a> Compiler<'a> {
                         mock.set_extension(ext);
                     }
 
-                    let dest = matcher::destination(
+                    let dest = Page::destination(
                         &self.context.options.source,
                         &self.context.options.target,
                         &mock,
@@ -140,7 +139,7 @@ impl<'a> Compiler<'a> {
     fn copy_file<P: AsRef<Path>>(&mut self, p: P) -> Result<()> {
         let file = p.as_ref();
 
-        let dest = matcher::output(
+        let dest = Page::output(
             &self.context.options.source,
             &self.context.options.target,
             &file.to_path_buf(),
@@ -214,7 +213,7 @@ impl<'a> Compiler<'a> {
             }
         }
 
-        let dest = matcher::destination(
+        let dest = Page::destination(
             &self.context.options.source,
             &self.context.options.target,
             &file.to_path_buf(),
@@ -304,7 +303,7 @@ impl<'a> Compiler<'a> {
     // Build a single file
     pub fn one(&mut self, file: &PathBuf) -> Result<()> {
         let extensions = &self.context.config.extension.as_ref().unwrap();
-        let file_type = matcher::get_type(file, extensions);
+        let file_type = Page::get_type(file, extensions);
         self.process_file(file, file_type)
     }
 
@@ -315,7 +314,7 @@ impl<'a> Compiler<'a> {
         let build = self.context.config.build.as_ref().unwrap();
         let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
-        let mut filters = matcher::get_filters(
+        let mut filters = config::filter::get_filters(
             &self.context.options.source, &self.context.config);
 
         // Always ignore the layout

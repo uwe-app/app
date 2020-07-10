@@ -1,8 +1,7 @@
 use std::convert::AsRef;
 use std::path::Path;
 
-use config::Page;
-use matcher::FileType;
+use config::{Page, FileType};
 
 use crate::Error;
 

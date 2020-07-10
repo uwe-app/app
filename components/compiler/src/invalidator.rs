@@ -6,7 +6,7 @@ use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
 use datasource;
-use matcher::FileType;
+use config::{Page, FileType};
 
 use super::Compiler;
 use super::context::Context;
@@ -334,7 +334,7 @@ impl<'a> Invalidator<'a> {
                         rule.ignores.push(Action::Resource(path));
                     } else {
                         let extensions = &self.context.config.extension.as_ref().unwrap();
-                        let file_type = matcher::get_type(&path, extensions);
+                        let file_type = Page::get_type(&path, extensions);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -413,7 +413,7 @@ impl<'a> Invalidator<'a> {
                     Action::BookSource(base, _) => {
                         // Make the path relative to the project source
                         // as the notify crate gives us an absolute path
-                        let file = matcher::relative_to(
+                        let file = Page::relative_to(
                             base,
                             &self.context.options.source,
                             &self.context.options.source,
@@ -443,7 +443,7 @@ impl<'a> Invalidator<'a> {
                         Action::Page(path) | Action::File(path) => {
                             // Make the path relative to the project source
                             // as the notify crate gives us an absolute path
-                            let file = matcher::relative_to(
+                            let file = Page::relative_to(
                                 path,
                                 &self.context.options.source,
                                 &self.context.options.source,

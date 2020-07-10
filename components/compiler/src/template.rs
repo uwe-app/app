@@ -8,7 +8,7 @@ use handlebars::Handlebars;
 
 use log::{debug, warn};
 
-use config::{FileContext, Page};
+use config::Page;
 
 use super::context::Context;
 use super::helpers;
@@ -64,7 +64,7 @@ impl<'a> TemplateRender<'a> {
     pub fn parse_template_string<P: AsRef<Path>>(
         &mut self,
         input: P,
-        output: P,
+        _output: P,
         content: String,
         data: &mut Page,
     ) -> Result<String, Error> {
@@ -74,13 +74,7 @@ impl<'a> TemplateRender<'a> {
             .register_template_string(name, &content)
             .is_ok()
         {
-            let mut file_context =
-                FileContext::new(input.as_ref().to_path_buf(), output.as_ref().to_path_buf());
-
-            file_context.resolve_metadata()?;
-
             data.lang = Some(self.context.locales.lang.clone());
-            data.file = Some(file_context);
 
             // Some useful shortcuts
             if let Some(ref date) = self.context.config.date {

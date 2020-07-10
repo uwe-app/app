@@ -12,7 +12,6 @@ frontmatter = {version = "0.1", path = "../frontmatter" }
 livereload = {version = "0.1", path = "../livereload" }
 loader = {version = "0.1", path = "../loader" }
 locale = {version = "0.1", path = "../locale" }
-matcher = {version = "0.1", path = "../matcher" }
 minify = {version = "0.1", path = "../minify" }
 utils = {version = "0.1", path = "../utils" }
 

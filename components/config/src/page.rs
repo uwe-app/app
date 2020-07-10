@@ -10,8 +10,12 @@ use serde_with::skip_serializing_none;
 
 use super::Error;
 use super::link;
-use super::config::Config;
+use super::config::{Config, ExtensionConfig};
 use super::indexer::QueryList;
+
+use crate::config::HTML;
+
+static INDEX_STEM: &str = "index";
 
 /// Attribute to convert from TOML date time to chronos UTC variant
 pub fn from_toml_datetime<'de, D>(deserializer: D) 
@@ -31,6 +35,23 @@ pub fn from_toml_datetime<'de, D>(deserializer: D)
 
         None
     })
+}
+
+#[derive(Debug)]
+pub struct FileInfo {
+    // The root of the source files
+    pub source: PathBuf,
+    // The root of the build target
+    pub target: PathBuf,
+    // A source file path
+    pub file: PathBuf,
+}
+
+#[derive(Debug)]
+pub enum FileType {
+    Markdown,
+    Template,
+    Unknown,
 }
 
 #[skip_serializing_none]
@@ -141,7 +162,7 @@ impl Default for Page {
             styles: None,
 
             created: None,
-            updated: Some(Utc::now()),
+            updated: None,
 
             extra: Map::new(),
 
@@ -155,9 +176,176 @@ impl Default for Page {
 
 impl Page {
 
+    pub fn is_clean<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
+        let target = file.as_ref().to_path_buf();
+        let result = target.clone();
+        return Page::rewrite_index_file(target, result, extensions).is_some();
+    }
+
+    pub fn is_page<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> bool {
+        match Page::get_type(p, extensions) {
+            FileType::Markdown | FileType::Template => {
+                true
+            },
+            _ => false
+        }
+    }
+
+    pub fn relative_to<P: AsRef<Path>>(file: P, base: P, target: P) -> Result<PathBuf, Error> {
+        let f = file.as_ref().canonicalize()?;
+        let b = base.as_ref().canonicalize()?;
+        let mut t = target.as_ref().to_path_buf();
+        let relative = f.strip_prefix(b)?;
+        t.push(relative);
+        Ok(t)
+    }
+
+    pub fn get_type<P: AsRef<Path>>(p: P, extensions: &ExtensionConfig) -> FileType {
+        let file = p.as_ref();
+        if let Some(ext) = file.extension() {
+            let ext = ext.to_string_lossy().into_owned();
+            if extensions.render.contains(&ext) {
+                if extensions.markdown.contains(&ext) {
+                    return FileType::Markdown;
+                } else {
+                    return FileType::Template;
+                }
+            }
+        }
+        FileType::Unknown
+    }
+
+    pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
+        if let Some(nm) = file.as_ref().file_stem() {
+            if nm == INDEX_STEM {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
+        let path = file.as_ref();
+        let mut copy = path.to_path_buf();
+        for ext in extensions.render.iter() {
+            copy.set_extension(ext);
+            if copy.exists() {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn rewrite_index_file<P: AsRef<Path>>(file: P, result: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
+        let clean_target = file.as_ref();
+        if !Page::is_index(&clean_target) {
+            if let Some(parent) = clean_target.parent() {
+                if let Some(stem) = clean_target.file_stem() {
+                    let mut target = parent.to_path_buf();
+                    target.push(stem);
+                    target.push(INDEX_STEM);
+
+                    if !Page::has_parse_file_match(&target, extensions) {
+                        let clean_result = result.as_ref().clone();
+                        if let Some(parent) = clean_result.parent() {
+                            if let Some(stem) = clean_result.file_stem() {
+                                let mut res = parent.to_path_buf();
+                                res.push(stem);
+                                res.push(INDEX_STEM);
+                                res.set_extension(HTML);
+                                return Some(res);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    // Build the direct destination file path.
+    pub fn output<P: AsRef<Path>>(
+        source: P,
+        target: P,
+        file: P,
+        base_href: &Option<String>,
+    ) -> Result<PathBuf, Error> {
+        let pth = file.as_ref();
+
+        // NOTE: When watching files we can get absolute
+        // NOTE: paths passed for `file` even when `source`
+        // NOTE: is relative. This handles that case by making
+        // NOTE: the `source` absolute based on the current working
+        // NOTE: directory.
+        let mut src: PathBuf = source.as_ref().to_path_buf();
+        if pth.is_absolute() && src.is_relative() {
+            if let Ok(cwd) = std::env::current_dir() {
+                src = cwd.clone();
+                src.push(source.as_ref())
+            }
+        }
+
+        let mut relative = pth.strip_prefix(src)?;
+
+        if let Some(ref base) = base_href {
+            if relative.starts_with(base) {
+                relative = relative.strip_prefix(base)?;
+            }
+        }
+
+        let result = target.as_ref().clone().join(relative);
+        return Ok(result);
+    }
+
+    // Build the destination file path and update the file extension.
+    pub fn destination<P: AsRef<Path>>(
+        source: P,
+        target: P,
+        file: P,
+        file_type: &FileType,
+        extensions: &ExtensionConfig,
+        rewrite_index: bool,
+        base_href: &Option<String>,
+    ) -> Result<PathBuf, Error> {
+
+        let pth = file.as_ref().to_path_buf().clone();
+        let result = Page::output(source, target, file, base_href);
+        match result {
+            Ok(mut result) => {
+                match file_type {
+                    FileType::Markdown | FileType::Template => {
+
+                        if let Some(ext) = pth.extension() {
+                            let ext = ext.to_string_lossy().into_owned();
+                            for (k, v) in &extensions.map {
+                                if ext == *k {
+                                    result.set_extension(v);
+                                    break;
+                                }
+                            }
+                        }
+
+                        if rewrite_index {
+                            if let Some(res) = Page::rewrite_index_file(pth.as_path(), result.as_path(), extensions) {
+                                result = res;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+                return Ok(result);
+            }
+            Err(e) => return Err(e),
+        }
+    }
+
     pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config) -> Result<(), Error> {
 
         self.href = Some(link::absolute(p.as_ref(), config, Default::default())?);
+
+        let mut file_context = FileContext::new(p.as_ref().to_path_buf(), PathBuf::from(""));
+        file_context.resolve_metadata()?;
+        self.file = Some(file_context);
 
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()

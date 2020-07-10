@@ -39,7 +39,7 @@ impl HelperDef for Parent {
 
         let path = Path::new(&base_path).to_path_buf();
 
-        if let Some(parent) = matcher::resolve_parent_index(&path, extensions) {
+        if let Some(parent) = config::resolve::resolve_parent_index(&path, extensions) {
             let template = h.template();
             match template {
                 Some(t) => {

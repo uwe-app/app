@@ -43,10 +43,12 @@ type Result<T> = std::result::Result<T, Error>;
 mod build;
 mod config;
 pub mod indexer;
+pub mod filter;
 pub mod link;
+pub mod resolve;
 mod page;
 
 pub use config::*;
-pub use page::{Page, FileContext};
+pub use page::{Page, FileType};
 pub use build::{BuildTag, BuildArguments};
 pub use indexer::IndexQuery;

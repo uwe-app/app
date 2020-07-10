@@ -71,7 +71,7 @@ pub enum Error {
     #[error(transparent)]
     Loader(#[from] loader::Error),
     #[error(transparent)]
-    Matcher(#[from] matcher::Error),
+    Config(#[from] config::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

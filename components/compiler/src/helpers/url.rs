@@ -4,6 +4,8 @@ use handlebars::*;
 use log::debug;
 use serde_json::json;
 
+use config::Page;
+
 use super::super::context::Context as BuildContext;
 use super::super::lookup;
 use super::super::CompilerOptions;
@@ -107,7 +109,7 @@ impl HelperDef for Link {
             if let Ok(rel) = path.strip_prefix(base) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
-                    if opts.rewrite_index && matcher::is_clean(&path, extensions) {
+                    if opts.rewrite_index && Page::is_clean(&path, extensions) {
                         value.push_str("../");
                     }
                     for _ in p.components() {
@@ -153,7 +155,7 @@ impl HelperDef for Components {
             .evaluate(ctx, "@root/file.target")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
         let ctx = rc
@@ -239,7 +241,7 @@ impl HelperDef for Match {
             .evaluate(ctx, "@root/file.target")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `dest`, string expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
         let opts = rc

@@ -10,7 +10,7 @@ use ignore::{WalkBuilder, WalkState};
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
-use config::Config;
+use config::{Config, Page};
 use config::indexer::{SourceType, SourceProvider};
 
 use super::{Result, Error};
@@ -93,7 +93,7 @@ impl Provider {
     }
 
     fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
-        let filters = matcher::get_filters(req.source, req.config);
+        let filters = config::filter::get_filters(req.source, req.config);
         let (tx, rx) = flume::unbounded();
 
         let extensions = req.config.extension.as_ref().unwrap().clone();
@@ -113,7 +113,7 @@ impl Provider {
                     let tx = tx.clone();
                     if let Ok(entry) = result {
                         let path = entry.path();
-                        if path.is_file() && matcher::is_page(&path, &extensions) {
+                        if path.is_file() && Page::is_page(&path, &extensions) {
                             let _ = tx.send(path.to_path_buf());
                         }
                     }

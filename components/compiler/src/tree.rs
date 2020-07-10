@@ -5,8 +5,7 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use serde_json::json;
 
-use config::Page;
-use matcher::FileType;
+use config::{Page, FileType};
 
 use super::context::Context;
 use crate::{Error, HTML, INDEX_HTML, INDEX_STEM, MD};
@@ -105,10 +104,10 @@ fn children<P: AsRef<Path>>(
                     this = path == file.as_ref();
 
                     let extensions = &ctx.config.extension.as_ref().unwrap();
-                    let file_type = matcher::get_type(path, extensions);
+                    let file_type = Page::get_type(path, extensions);
                     match file_type {
                         FileType::Markdown | FileType::Template => {
-                            let mut dest = matcher::destination(
+                            let mut dest = Page::destination(
                                 source,
                                 target,
                                 &path.to_path_buf(),
@@ -143,8 +142,8 @@ fn children<P: AsRef<Path>>(
                     for f in candidates {
                         if f.exists() {
                             let extensions = &ctx.config.extension.as_ref().unwrap();
-                            let file_type = matcher::get_type(&f, extensions);
-                            let mut dest = matcher::destination(
+                            let file_type = Page::get_type(&f, extensions);
+                            let mut dest = Page::destination(
                                 source,
                                 target,
                                 &f,
