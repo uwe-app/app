@@ -44,7 +44,13 @@ pub struct FileInfo<'a> {
     // The root of the build target
     pub target: &'a PathBuf,
     // A source file path
-    pub file: Option<PathBuf>,
+    pub file: &'a PathBuf,
+}
+
+impl<'a> FileInfo<'a> {
+    pub fn new(source: &'a PathBuf, target: &'a PathBuf, file: &'a PathBuf) -> Self {
+        Self {source, target, file} 
+    }
 }
 
 #[derive(Debug)]
@@ -298,18 +304,19 @@ impl Page {
     }
 
     // Build the destination file path and update the file extension.
-    pub fn destination<P: AsRef<Path>>(
-        source: P,
-        target: P,
-        file: P,
+    pub fn destination(
+        info: &FileInfo,
+        //source: P,
+        //target: P,
+        //file: P,
         file_type: &FileType,
         extensions: &ExtensionConfig,
         rewrite_index: bool,
         base_href: &Option<String>,
     ) -> Result<PathBuf, Error> {
 
-        let pth = file.as_ref().to_path_buf().clone();
-        let result = Page::output(source, target, file, base_href);
+        let pth = info.file.clone();
+        let result = Page::output(info.source, info.target, info.file, base_href);
         match result {
             Ok(mut result) => {
                 match file_type {

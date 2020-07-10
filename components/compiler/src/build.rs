@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, FileType, BuildTag, IndexQuery};
+use config::{Config, Page, FileInfo, FileType, BuildTag, IndexQuery};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -100,10 +100,14 @@ impl<'a> Compiler<'a> {
                         mock.set_extension(ext);
                     }
 
-                    let dest = Page::destination(
+                    let info = FileInfo::new(
                         &self.context.options.source,
                         &self.context.options.target,
                         &mock,
+                    );
+
+                    let dest = Page::destination(
+                        &info,
                         &file_type,
                         &self.context.config.extension.as_ref().unwrap(),
                         rewrite_index,
@@ -213,10 +217,16 @@ impl<'a> Compiler<'a> {
             }
         }
 
-        let dest = Page::destination(
+        let target_file = file.to_path_buf();
+
+        let info = FileInfo::new(
             &self.context.options.source,
             &self.context.options.target,
-            &file.to_path_buf(),
+            &target_file,
+        );
+
+        let dest = Page::destination(
+            &info,
             &file_type,
             &self.context.config.extension.as_ref().unwrap(),
             rewrite_index,

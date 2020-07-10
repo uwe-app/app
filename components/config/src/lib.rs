@@ -49,6 +49,6 @@ pub mod resolve;
 mod page;
 
 pub use config::*;
-pub use page::{Page, FileType};
+pub use page::{Page, FileType, FileInfo};
 pub use build::{BuildTag, BuildArguments};
 pub use indexer::IndexQuery;
