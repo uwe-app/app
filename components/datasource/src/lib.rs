@@ -150,15 +150,30 @@ impl ValueIndex {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
 
-        if desc {
-            self.documents.iter().rev() 
-                .map(|(k, v)| { self.map_entry(k, v, include_docs, docs, query) })
-                .collect::<Vec<_>>()
+        let offset = 0;
+        let limit: Option<usize> = None;
+
+        let iter: Box<dyn Iterator<Item = (usize, (&String, &Vec<String>))>> = if desc {
+            Box::new(self.documents.iter()
+                .enumerate()
+                .skip(offset)
+                .rev())
         } else {
-            self.documents.iter()
-                .map(|(k, v)| { self.map_entry(k, v, include_docs, docs, query) })
-                .collect::<Vec<_>>()
-        }
+            Box::new(self.documents.iter()
+                .enumerate()
+                .skip(offset))
+        };
+
+        let mut items: Vec<Value> = Vec::new();
+        for (i, (k, v)) in iter {
+            if limit.is_some() && i >= limit.unwrap() {
+                break; 
+            }
+            let val = self.map_entry(k, v, include_docs, docs, query);
+            items.push(val);
+        } 
+
+        items
     }
 }
 
