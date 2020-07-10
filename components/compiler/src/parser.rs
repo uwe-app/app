@@ -5,18 +5,17 @@ use config::{Page, FileType, FileInfo};
 
 use crate::Error;
 
-use super::markdown::render_markdown_string;
-
 use super::context::Context;
-use super::template;
+use super::markdown::render_markdown_string;
+use super::template::TemplateRender;
 
 pub struct Parser<'a> {
-    render: template::TemplateRender<'a>,
+    render: TemplateRender<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(context: &'a Context) -> Self {
-        let render = template::TemplateRender::new(context);
+        let render = TemplateRender::new(context);
         Parser { render }
     }
 
@@ -28,46 +27,29 @@ impl<'a> Parser<'a> {
         self.render.register_templates_directory(ext, dir)
     }
 
-    fn parse_template<I: AsRef<Path>, O: AsRef<Path>>(
-        &mut self,
-        input: I,
-        output: O,
-        data: &mut Page,
-    ) -> Result<String, Error> {
-
+    fn parse_template(&mut self, info: &FileInfo, data: &mut Page) -> Result<String, Error> {
         let (content, _has_fm, _fm) =
-            frontmatter::load(&input, frontmatter::Config::new_html(false))?;
+            frontmatter::load(info.file, frontmatter::Config::new_html(false))?;
         let result = self
             .render
-            .parse_template_string(&input, &output, content, data)?;
+            .parse_template_string(info, content, data)?;
         return self.render.layout(result, data);
     }
 
-    fn parse_markdown<I: AsRef<Path>, O: AsRef<Path>>(
-        &mut self,
-        input: I,
-        output: O,
-        data: &mut Page,
-    ) -> Result<String, Error> {
-
+    fn parse_markdown(&mut self, info: &FileInfo, data: &mut Page) -> Result<String, Error> {
         let (content, _has_fm, _fm) =
-            frontmatter::load(&input, frontmatter::Config::new_markdown(false))?;
+            frontmatter::load(info.file, frontmatter::Config::new_markdown(false))?;
         let mut result = self
             .render
-            .parse_template_string(&input, &output, content, data)?;
+            .parse_template_string(info, content, data)?;
         result = render_markdown_string(&result);
         return self.render.layout(result, data);
     }
 
-    pub fn parse<O: AsRef<Path>>(
-        &mut self,
-        info: &mut FileInfo,
-        output: O,
-        data: &mut Page,
-    ) -> Result<String, Error> {
+    pub fn parse(&mut self,info: &FileInfo, data: &mut Page) -> Result<String, Error> {
         match info.file_type {
-            FileType::Template => self.parse_template(info.file, output, data),
-            FileType::Markdown => self.parse_markdown(info.file, output, data),
+            FileType::Template => self.parse_template(info, data),
+            FileType::Markdown => self.parse_markdown(info, data),
             _ => Err(Error::ParserFileType),
         }
     }

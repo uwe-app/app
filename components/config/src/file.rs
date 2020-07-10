@@ -44,6 +44,8 @@ pub struct FileInfo<'a> {
     pub file: &'a PathBuf,
     // The file type
     pub file_type: FileType,
+    // Whether this file is synthetic (dynamically generated)
+    pub synthetic: bool,
     // An output destination
     pub output: Option<PathBuf>,
 }
@@ -53,9 +55,10 @@ impl<'a> FileInfo<'a> {
         config: &'a Config,
         source: &'a PathBuf,
         target: &'a PathBuf,
-        file: &'a PathBuf) -> Self {
+        file: &'a PathBuf,
+        synthetic: bool) -> Self {
         let file_type = FileInfo::get_type(file,config);
-        Self {config, source, target, file, file_type, output: None}
+        Self {config, source, target, file, file_type, synthetic, output: None}
     }
 
     fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {

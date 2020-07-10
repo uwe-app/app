@@ -8,7 +8,7 @@ use handlebars::Handlebars;
 
 use log::{debug, warn};
 
-use config::Page;
+use config::{Page, FileInfo};
 
 use super::context::Context;
 use super::helpers;
@@ -61,24 +61,20 @@ impl<'a> TemplateRender<'a> {
             .map_err(Error::from)
     }
 
-    pub fn parse_template_string<I: AsRef<Path>, O: AsRef<Path>>(
+    pub fn parse_template_string(
         &mut self,
-        input: I,
-        output: O,
+        info: &FileInfo,
         content: String,
         data: &mut Page,
     ) -> Result<String, Error> {
-        let name = input.as_ref().to_str().unwrap();
+        let name = info.file.to_str().unwrap();
+
         if self
             .handlebars
             .register_template_string(name, &content)
             .is_ok()
         {
-            data.finalize(
-                &self.context.locales.lang,
-                input.as_ref(),
-                output.as_ref(),
-                &self.context.config)?;
+            data.finalize(&self.context.locales.lang, info, &self.context.config)?;
 
             // NOTE: context must be pushed into extra otherwise
             // NOTE: we have a recursive type due to the page data
@@ -105,7 +101,7 @@ impl<'a> TemplateRender<'a> {
             let mut layout_path = self.context.options.source.clone();
             layout_path.push(layout);
             if !layout_path.exists() {
-                warn!("missing layout {}", layout_path.display());
+                warn!("Missing layout {}", layout_path.display());
             }
             layout_path
         } else {

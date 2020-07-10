@@ -109,6 +109,7 @@ fn children<P: AsRef<Path>>(
                         source,
                         target,
                         &source_file,
+                        false,
                     );
 
                     match info.file_type {
@@ -153,6 +154,7 @@ fn children<P: AsRef<Path>>(
                                 source,
                                 target,
                                 &f,
+                                false,
                             );
 
                             let file_opts = FileOptions {

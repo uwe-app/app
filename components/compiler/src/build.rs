@@ -99,11 +99,12 @@ impl<'a> Compiler<'a> {
                         mock.set_extension(ext);
                     }
 
-                    let mut info = FileInfo::new(
+                    let mut file_info = FileInfo::new(
                         &self.context.config,
                         &self.context.options.source,
                         &self.context.options.target,
                         &mock,
+                        true,
                     );
 
                     let file_opts = FileOptions {
@@ -112,8 +113,11 @@ impl<'a> Compiler<'a> {
                         ..Default::default()
                     };
 
-                    info.destination(&self.context.config, &file_opts)?;
-                    let dest = info.output.clone().unwrap();
+                    file_info.destination(&self.context.config, &file_opts)?;
+                    let dest = file_info.output.clone().unwrap();
+
+                    // Must inherit the real input template file
+                    file_info.file = info.file;
 
                     info!("{} -> {}", &id, &dest.display());
 
@@ -124,9 +128,9 @@ impl<'a> Compiler<'a> {
                         &self.context.config);
 
                     let s = if minify_html {
-                        minify::html(self.parser.parse(&mut info, &dest, &mut item_data)?)
+                        minify::html(self.parser.parse(&file_info, &mut item_data)?)
                     } else {
-                        self.parser.parse(&mut info, &dest, &mut item_data)?
+                        self.parser.parse(&file_info, &mut item_data)?
                     };
 
                     utils::fs::write_string(&dest, &s)?;
@@ -241,9 +245,9 @@ impl<'a> Compiler<'a> {
                 &self.context.config);
 
             let s = if minify_html {
-                minify::html(self.parser.parse(&mut info, &dest, &mut data)?)
+                minify::html(self.parser.parse(&mut info, &mut data)?)
             } else {
-                self.parser.parse(&mut info, &dest, &mut data)?
+                self.parser.parse(&mut info, &mut data)?
             };
 
             utils::fs::write_string(&dest, &s)?;
@@ -310,6 +314,7 @@ impl<'a> Compiler<'a> {
             &self.context.options.source,
             &self.context.options.target,
             file,
+            false,
         );
         self.process_file(&mut info)
     }

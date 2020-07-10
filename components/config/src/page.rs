@@ -11,7 +11,7 @@ use serde_with::skip_serializing_none;
 
 use super::Error;
 use super::link;
-use super::config::Config;
+use super::{Config, FileInfo};
 use super::indexer::QueryList;
 
 /// Attribute to convert from TOML date time to chronos UTC variant
@@ -179,16 +179,12 @@ impl Default for Page {
 
 impl Page {
 
-    pub fn finalize<L: AsRef<str>, P: AsRef<Path>,O: AsRef<Path>>(
-        &mut self,
-        lang: L,
-        p: P,
-        o: O,
-        config: &Config) -> Result<(), Error> {
+    pub fn finalize<L: AsRef<str>>(&mut self, lang: L, info: &FileInfo, config: &Config) -> Result<(), Error> {
+        let output = info.output.as_ref().unwrap();
 
         self.lang = Some(lang.as_ref().to_string());
 
-        let mut file_context = FileContext::new(p.as_ref().to_path_buf(), o.as_ref().to_path_buf());
+        let mut file_context = FileContext::new(info.file.clone(), output.clone());
         file_context.resolve_metadata()?;
 
         // TODO: allow setting to control this behavior
