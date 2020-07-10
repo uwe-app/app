@@ -91,6 +91,7 @@ pub struct Page {
 
     pub layout: Option<PathBuf>,
     pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
 
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
@@ -137,6 +138,7 @@ impl Default for Page {
             query: None,
             layout: None,
             tags: None,
+            categories: None,
             scripts: None,
             styles: None,
 
@@ -256,6 +258,10 @@ impl Page {
 
         if let Some(tags) = other.tags.as_mut() {
             self.tags = Some(mem::take(tags));
+        }
+
+        if let Some(categories) = other.categories.as_mut() {
+            self.categories = Some(mem::take(categories));
         }
 
         if let Some(scripts) = other.scripts.as_mut() {
