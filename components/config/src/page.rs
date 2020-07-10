@@ -1,6 +1,7 @@
 use std::io;
 use std::mem;
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 
 use chrono::prelude::*;
 
@@ -110,7 +111,7 @@ pub struct Page {
 
     pub layout: Option<PathBuf>,
     pub tags: Option<Vec<String>>,
-    pub categories: Option<Vec<String>>,
+    pub meta: Option<HashMap<String, Vec<String>>>,
 
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
@@ -159,7 +160,7 @@ impl Default for Page {
             query: None,
             layout: None,
             tags: None,
-            categories: None,
+            meta: None,
             scripts: None,
             styles: None,
 
@@ -281,8 +282,8 @@ impl Page {
             self.tags = Some(mem::take(tags));
         }
 
-        if let Some(categories) = other.categories.as_mut() {
-            self.categories = Some(mem::take(categories));
+        if let Some(meta) = other.meta.as_mut() {
+            self.meta = Some(mem::take(meta));
         }
 
         if let Some(scripts) = other.scripts.as_mut() {
