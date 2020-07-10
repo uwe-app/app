@@ -92,13 +92,7 @@ impl<'a> TemplateRender<'a> {
         Ok(content)
     }
 
-    pub fn layout<I: AsRef<Path>, O: AsRef<Path>>(
-        &mut self,
-        _input: I,
-        _output: O,
-        document: String,
-        data: &mut Page,
-    ) -> Result<String, Error> {
+    pub fn layout(&mut self, document: String, data: &mut Page) -> Result<String, Error> {
         // Skip layout for standalone documents
         if let Some(standalone) = data.standalone {
             if standalone {

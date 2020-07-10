@@ -178,7 +178,6 @@ impl<'a> FileInfo<'a> {
         let mut result = self.output(options)?;
         match self.file_type {
             FileType::Markdown | FileType::Template => {
-
                 let extensions = &config.extension.as_ref().unwrap();
                 if let Some(ext) = pth.extension() {
                     let ext = ext.to_string_lossy().into_owned();

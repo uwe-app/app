@@ -65,16 +65,15 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn data_source_each<P: AsRef<Path>>(
+    fn data_source_each(
         &mut self,
-        p: P,
-        file_type: &FileType,
+        info: &FileInfo,
         data: &Page,
         _reference: IndexQuery,
         values: Vec<Value>,
         rewrite_index: bool,
     ) -> Result<()> {
-        let file = p.as_ref();
+        let file = info.file;
         let parent = file.parent().unwrap();
 
         // Write out the document files
@@ -123,11 +122,9 @@ impl<'a> Compiler<'a> {
                         &self.context.config);
 
                     let s = if minify_html {
-                        minify::html(
-                            self.parser.parse(
-                                &file, &dest.as_path(), file_type, &mut item_data)?)
+                        minify::html(self.parser.parse(&info, &dest, &mut item_data)?)
                     } else {
-                        self.parser.parse(&file, &dest.as_path(), file_type, &mut item_data)?
+                        self.parser.parse(&info, &dest, &mut item_data)?
                     };
 
                     utils::fs::write_string(&dest, &s)?;
@@ -209,7 +206,7 @@ impl<'a> Compiler<'a> {
 
                 if !each_iters.is_empty() {
                     for (gen, idx) in each_iters {
-                        self.data_source_each(file, &info.file_type, &data, gen, idx, rewrite_index)?;
+                        self.data_source_each(&info, &data, gen, idx, rewrite_index)?;
                     }
                     return Ok(());
                 }
@@ -236,11 +233,9 @@ impl<'a> Compiler<'a> {
                 &self.context.config);
 
             let s = if minify_html {
-                minify::html(
-                    self.parser.parse(
-                        &file, &dest, &info.file_type, &mut data)?)
+                minify::html(self.parser.parse(&info, &dest, &mut data)?)
             } else {
-                self.parser.parse(&file, &dest, &info.file_type, &mut data)?
+                self.parser.parse(&info, &dest, &mut data)?
             };
 
             utils::fs::write_string(&dest, &s)?;

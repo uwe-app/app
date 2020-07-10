@@ -1,7 +1,7 @@
 use std::convert::AsRef;
 use std::path::Path;
 
-use config::{Page, FileType};
+use config::{Page, FileType, FileInfo};
 
 use crate::Error;
 
@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
         let result = self
             .render
             .parse_template_string(&input, &output, content, data)?;
-        return self.render.layout(&input, &output, result, data);
+        return self.render.layout(result, data);
     }
 
     fn parse_markdown<I: AsRef<Path>, O: AsRef<Path>>(
@@ -56,19 +56,18 @@ impl<'a> Parser<'a> {
             .render
             .parse_template_string(&input, &output, content, data)?;
         result = render_markdown_string(&result);
-        return self.render.layout(&input, &output, result, data);
+        return self.render.layout(result, data);
     }
 
-    pub fn parse<I: AsRef<Path>, O: AsRef<Path>>(
+    pub fn parse<O: AsRef<Path>>(
         &mut self,
-        input: I,
+        info: &FileInfo,
         output: O,
-        file_type: &FileType,
         data: &mut Page,
     ) -> Result<String, Error> {
-        match file_type {
-            FileType::Template => self.parse_template(input, output, data),
-            FileType::Markdown => self.parse_markdown(input, output, data),
+        match info.file_type {
+            FileType::Template => self.parse_template(info.file, output, data),
+            FileType::Markdown => self.parse_markdown(info.file, output, data),
             _ => Err(Error::ParserFileType),
         }
     }

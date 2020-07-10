@@ -103,17 +103,16 @@ fn children<P: AsRef<Path>>(
                 if path.is_file() {
                     this = path == file.as_ref();
 
-                    let file_type = FileInfo::get_type(path, &ctx.config);
-                    match file_type {
-                        FileType::Markdown | FileType::Template => {
+                    let source_file = path.to_path_buf();
+                    let info = FileInfo::new(
+                        &ctx.config,
+                        source,
+                        target,
+                        &source_file,
+                    );
 
-                            let source_file = path.to_path_buf();
-                            let info = FileInfo::new(
-                                &ctx.config,
-                                source,
-                                target,
-                                &source_file,
-                            );
+                    match info.file_type {
+                        FileType::Markdown | FileType::Template => {
 
                             let file_opts = FileOptions {
                                 rewrite_index: ctx.options.rewrite_index,
@@ -121,6 +120,7 @@ fn children<P: AsRef<Path>>(
                             };
 
                             let mut dest = info.destination(&ctx.config, &file_opts)?;
+
                             if let Ok(cleaned) = dest.strip_prefix(target) {
                                 dest = cleaned.to_path_buf();
                             }
