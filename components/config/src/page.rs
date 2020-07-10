@@ -139,8 +139,9 @@ impl Default for Page {
             tags: None,
             scripts: None,
             styles: None,
+
             created: None,
-            updated: None,
+            updated: Some(Utc::now()),
 
             extra: Map::new(),
 
