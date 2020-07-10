@@ -19,6 +19,12 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
+    #[error("Page {0} is outside the source directory {1}")]
+    PageOutsideSource(PathBuf, PathBuf),
+
+    #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -32,9 +38,12 @@ pub enum Error {
     Lang(#[from] unic_langid::LanguageIdentifierError),
 }
 
+type Result<T> = std::result::Result<T, Error>;
+
 mod build;
 mod config;
 pub mod indexer;
+pub mod link;
 mod page;
 
 pub use config::*;

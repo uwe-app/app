@@ -152,9 +152,6 @@ impl ValueIndex {
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
         let limit = if let Some(ref limit) = query.limit { limit.clone() } else { 0 };
 
-        log::info!("QUERY desc: {}", desc);
-        log::info!("QUERY limit: {:?}", query.limit);
-
         let iter: Box<dyn Iterator<Item = (usize, (&String, &Vec<String>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set

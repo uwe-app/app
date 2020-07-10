@@ -1,20 +1,6 @@
 use std::path::Path;
-use std::path::PathBuf;
 
-use thiserror::Error;
-
-use config::Config;
-
-#[derive(Error, Debug, PartialEq)]
-pub enum Error {
-    #[error("Page {0} is outside the source directory {1}")]
-    PageOutsideSource(PathBuf, PathBuf),
-
-    #[error(transparent)]
-    StripPrefix(#[from] std::path::StripPrefixError),
-}
-
-type Result<T> = std::result::Result<T, Error>;
+use super::{Config, Error, Result};
 
 static INDEX_HTML: &str = "index.html";
 

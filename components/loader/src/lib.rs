@@ -30,8 +30,9 @@ pub enum Error {
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),
 
-    #[error(transparent)]
-    Link(#[from] link::Error),
+    //#[error(transparent)]
+    //Link(#[from] link::Error),
+
     #[error(transparent)]
     Config(#[from] config::Error),
 }
@@ -153,9 +154,7 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
         // FIXME: ensure frontmatter never defines `query`
     }
 
-    page.href = Some(link::absolute(f.as_ref(), config, Default::default())?);
-
-    page.parse(config)?;
+    page.compute(f, config)?;
 
     Ok(page)
 }

@@ -1,6 +1,6 @@
 use std::io;
 use std::mem;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use chrono::prelude::*;
 
@@ -9,6 +9,7 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use super::Error;
+use super::link;
 use super::config::Config;
 use super::indexer::QueryList;
 
@@ -153,7 +154,10 @@ impl Default for Page {
 
 impl Page {
 
-    pub fn parse(&mut self, config: &Config) -> Result<(), Error> {
+    pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config) -> Result<(), Error> {
+
+        self.href = Some(link::absolute(p.as_ref(), config, Default::default())?);
+
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
         } else {
