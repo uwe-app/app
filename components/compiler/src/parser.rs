@@ -27,9 +27,19 @@ impl<'a> Parser<'a> {
         self.render.register_templates_directory(ext, dir)
     }
 
+    fn get_front_matter_config(&mut self, info: &FileInfo) -> frontmatter::Config {
+        if let Some(ext) = info.source.extension() {
+            if ext == config::HTML {
+                return frontmatter::Config::new_html(false)
+            } 
+        }
+        frontmatter::Config::new_markdown(false)
+    }
+
     fn parse_template(&mut self, info: &FileInfo, data: &mut Page) -> Result<String, Error> {
         let (content, _has_fm, _fm) =
-            frontmatter::load(info.file, frontmatter::Config::new_html(false))?;
+            frontmatter::load(info.file, self.get_front_matter_config(info))?;
+
         let result = self
             .render
             .parse_template_string(info, content, data)?;

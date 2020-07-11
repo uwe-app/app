@@ -34,7 +34,7 @@ impl Default for FileOptions<'_> {
 
 #[derive(Debug, Clone)]
 pub struct FileInfo<'a> {
-    // The root of the source files
+    // The settings configuration
     pub config: &'a Config,
     // The root of the source files
     pub source: &'a PathBuf,
@@ -58,7 +58,15 @@ impl<'a> FileInfo<'a> {
         file: &'a PathBuf,
         synthetic: bool) -> Self {
         let file_type = FileInfo::get_type(file,config);
-        Self {config, source, target, file, file_type, synthetic, output: None}
+        Self {
+            config,
+            source,
+            target,
+            file,
+            file_type,
+            synthetic,
+            output: None
+        }
     }
 
     fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {

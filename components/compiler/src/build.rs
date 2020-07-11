@@ -191,7 +191,6 @@ impl<'a> Compiler<'a> {
             return Ok(());
         }
 
-
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
 
