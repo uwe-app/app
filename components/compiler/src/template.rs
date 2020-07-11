@@ -29,7 +29,6 @@ impl<'a> TemplateRender<'a> {
         handlebars.set_strict_mode(strict);
 
         handlebars.register_helper("children", Box::new(helpers::children::Children));
-        handlebars.register_helper("html", Box::new(helpers::html::Element));
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("livereload", Box::new(helpers::livereload::LiveReload));
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
