@@ -93,7 +93,8 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
         layout.push(LAYOUT_HBS);
     };
 
-    if !layout.exists() {
+    let use_layout = build.use_layout.is_some() && build.use_layout.unwrap();
+    if use_layout && !layout.exists() {
         return Err(Error::NoLayout(layout));
     }
 

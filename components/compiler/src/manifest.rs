@@ -111,10 +111,12 @@ impl<'a> Manifest<'a> {
     }
 
     pub fn save(&self) -> Result<(), Error> {
-        let file = self.get_manifest_file();
-        let json = serde_json::to_string(&self.file)?;
-        debug!("manifest {}", file.display());
-        utils::fs::write_string(file, json)?;
+        if self.context.options.incremental {
+            let file = self.get_manifest_file();
+            let json = serde_json::to_string(&self.file)?;
+            debug!("manifest {}", file.display());
+            utils::fs::write_string(file, json)?;
+        }
         Ok(())
     }
 }

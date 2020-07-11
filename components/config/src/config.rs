@@ -36,6 +36,7 @@ pub static HTML: &str = "html";
 pub static INDEX_STEM: &str = "index";
 
 static MD: &str = "md";
+static TOML: &str = "toml";
 static BOOK_TOML: &str = "book.toml";
 static LAYOUT_HBS: &str = "layout.hbs";
 static PAGE_DATA: &str = "page.toml";
@@ -313,6 +314,12 @@ impl Config {
         let mut pth = source.as_ref().to_path_buf();
         if pth.is_file() && pth.ends_with(SITE_TOML) {
             return Config::load_config(pth);
+        } else if pth.is_file() {
+            if let Some(ext) = pth.extension() {
+                if ext == TOML {
+                    return Config::load_config(pth);
+                } 
+            }
         } else if pth.is_dir() {
             pth.push(SITE_TOML);
             if pth.is_file() && pth.exists() {
@@ -440,6 +447,7 @@ pub struct BuildConfig {
     pub rewrite_index: Option<bool>,
     pub follow_links: Option<bool>,
     pub render: Option<Vec<String>>,
+    pub use_layout: Option<bool>,
 }
 
 impl Default for BuildConfig {
@@ -457,6 +465,7 @@ impl Default for BuildConfig {
             rewrite_index: Some(false),
             follow_links: Some(true),
             render: None,
+            use_layout: Some(true),
         }
     }
 }
