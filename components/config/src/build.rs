@@ -1,7 +1,7 @@
 use std::fmt;
 use std::path::PathBuf;
 use std::convert::From;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
 static DEBUG: &str = "debug";
@@ -10,12 +10,29 @@ static RELEASE: &str = "release";
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(from = "String")]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[serde(from = "String", untagged)]
 pub enum BuildProfile {
-    Custom(String),
     Debug,
     Release,
+    Custom(String),
+}
+
+impl Serialize for BuildProfile {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: Serializer {
+        match *self {
+            BuildProfile::Debug => {
+                serializer.serialize_str(DEBUG)
+            },
+            BuildProfile::Release => {
+                serializer.serialize_str(RELEASE)
+            },
+            BuildProfile::Custom(ref val) => {
+                serializer.serialize_str(val)
+            },
+        }
+    }
 }
 
 impl Default for BuildProfile {
