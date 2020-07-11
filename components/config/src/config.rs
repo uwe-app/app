@@ -221,7 +221,6 @@ impl Config {
                     }
                 }
 
-
                 if let Some(ref book) = cfg.book {
                     let book_paths = book.get_paths(&build.source);
                     for mut p in book_paths {
@@ -294,6 +293,14 @@ impl Config {
                 let mut livereload = cfg.livereload.as_mut().unwrap();
                 if livereload.file.is_none() {
                     livereload.file = Some(PathBuf::from(LIVERELOAD_FILE));
+                }
+
+                let mut link = cfg.link.as_mut().unwrap();
+                if let Some(ref catalog) = link.catalog {
+                    let catalog_path = build.source.clone().join(catalog);
+                    let content = utils::fs::read_string(&catalog_path)
+                        .map_err(|_| Error::LinkCatalog(catalog_path))?;
+                    link.catalog_content = Some(content);
                 }
 
                 return Ok(cfg);
@@ -597,7 +604,6 @@ impl Default for DateConfig {
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default, rename_all = "kebab-case")]
 pub struct LinkConfig {
     /// Explicit list of paths that are allowed, should
     /// not begin with a forward slash
@@ -606,6 +612,10 @@ pub struct LinkConfig {
     pub verify: Option<bool>,
     /// The link helper should make links relative
     pub relative: Option<bool>,
+    /// Catalog for markdown documents
+    pub catalog: Option<PathBuf>,
+    #[serde(skip)]
+    pub catalog_content: Option<String>,
 }
 
 impl Default for LinkConfig {
@@ -614,6 +624,8 @@ impl Default for LinkConfig {
             allow: None,
             verify: Some(true),
             relative: Some(true),
+            catalog: None,
+            catalog_content: None,
         }
     }
 }

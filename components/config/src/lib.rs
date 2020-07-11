@@ -22,6 +22,9 @@ pub enum Error {
     #[error("Page {0} is outside the source directory {1}")]
     PageOutsideSource(PathBuf, PathBuf),
 
+    #[error("Failed to read link catalog {0}")]
+    LinkCatalog(PathBuf),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 

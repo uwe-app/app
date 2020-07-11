@@ -1,4 +1,4 @@
-use std::convert::AsRef;
+use std::borrow::Cow;
 use std::path::Path;
 
 use config::{Page, FileType, FileInfo};
@@ -39,11 +39,13 @@ impl<'a> Parser<'a> {
     fn parse_markdown(&mut self, info: &FileInfo, data: &mut Page) -> Result<String, Error> {
         let (content, _has_fm, _fm) =
             frontmatter::load(info.file, frontmatter::Config::new_markdown(false))?;
-        let mut result = self
+        let mut result = Cow::from(self
             .render
-            .parse_template_string(info, content, data)?;
-        result = render_markdown_string(&result);
-        return self.render.layout(result, data);
+            .parse_template_string(info, content, data)?);
+
+        let parsed = render_markdown_string(&mut result, info.config);
+
+        return self.render.layout(parsed, data);
     }
 
     pub fn parse(&mut self,info: &FileInfo, data: &mut Page) -> Result<String, Error> {

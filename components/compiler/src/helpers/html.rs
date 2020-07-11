@@ -43,8 +43,11 @@ impl HelperDef for Element {
                     }
 
                     if let Ok(ref md) = render_buffer(h, r, ctx, rc) {
-                        let result = render_markdown_string(md);
-                        out.write(&result)?;
+
+                        // FIXME: restore this or remove this helper?
+
+                        //let result = render_markdown_string(md);
+                        //out.write(&result)?;
                     }
 
                     out.write(&format!("</{}>", name))?;
