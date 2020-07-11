@@ -34,25 +34,6 @@ pub fn from_toml_datetime<'de, D>(deserializer: D)
     })
 }
 
-/*
-/// Attribute to convert to TOML date time from UTC string variant
-pub fn to_toml_datetime<S>(val: &Option<DateTime<Utc>>, serializer: S) 
-    -> Result<S::Ok, S::Error> where S: Serializer {
-    let s = if let Some(val) = val {
-        val.to_rfc3339()
-    } else {
-        Utc::now().to_rfc3339()
-    };
-
-    serializer.serialize_str(&s)
-
-    //println!("Got date time string {:?}", s);
-
-    //let dt = toml::value::Datetime::from_str(&s).unwrap();
-    //dt.serialize(serializer)
-}
-*/
-
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileContext {
@@ -103,6 +84,7 @@ pub struct Page {
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
+    pub listing: Option<bool>,
 
     pub authors: Option<Vec<Author>>,
     pub byline: Option<Vec<String>>,
@@ -157,6 +139,7 @@ impl Default for Page {
             render: Some(true),
             draft: Some(false),
             standalone: Some(false),
+            listing: Some(true),
             query: None,
             layout: None,
             tags: None,
@@ -263,6 +246,9 @@ impl Page {
             self.standalone = Some(mem::take(standalone));
         }
 
+        if let Some(listing) = other.listing.as_mut() {
+            self.listing = Some(mem::take(listing));
+        }
 
         if let Some(authors) = other.authors.as_mut() {
             self.authors = Some(mem::take(authors));

@@ -79,125 +79,122 @@ fn children<P: AsRef<Path>>(
         .max_depth(Some(list.depth))
         .build() {
 
-        match result {
-            Ok(entry) => {
-                let path = entry.path();
+        let entry = result?;
+        let path = entry.path();
 
-                // Prevent duplicate index on /folder/ and /folder/index.md
-                if path == parent {
-                    continue;
+        // Prevent duplicate index on /folder/ and /folder/index.md
+        if path == parent {
+            continue;
+        }
+
+        let mut href = "".to_string();
+
+        // NOTE: there is an invalid lint warning on this
+        // NOTE: saying it is not used but we pass it to
+        // NOTE: the json!() macro later
+        #[allow(unused_assignments)]
+        let mut this = false;
+
+        let mut data: Page = Default::default();
+
+        //println!("children {:?}", path);
+
+        if path.is_file() {
+            this = path == file.as_ref();
+
+            let source_file = path.to_path_buf();
+            let mut info = FileInfo::new(
+                &ctx.config,
+                source,
+                target,
+                &source_file,
+                false,
+            );
+
+            match info.file_type {
+                FileType::Markdown | FileType::Template => {
+
+                    let file_opts = FileOptions {
+                        rewrite_index: ctx.options.rewrite_index,
+                        ..Default::default()
+                    };
+
+                    info.destination(&ctx.config, &file_opts)?;
+
+                    let mut dest = info.output.unwrap();
+
+                    if let Ok(cleaned) = dest.strip_prefix(target) {
+                        dest = cleaned.to_path_buf();
+                    }
+                    if let Ok(rel) = dest.strip_prefix(rel_base) {
+                        dest = rel.to_path_buf();
+                    }
+                    href = dest.to_string_lossy().into();
+                    data = loader::compute(&path, &ctx.config, true)?;
                 }
+                _ => {}
+            }
+        } else {
+            this = path == parent;
 
-                let mut href = "".to_string();
+            // For directories try to find a potential index
+            // file and generate a destination
+            let mut dir_index = path.to_path_buf();
+            dir_index.push(INDEX_STEM);
 
-                // NOTE: there is an invalid lint warning on this
-                // NOTE: saying it is not used but we pass it to
-                // NOTE: the json!() macro later
-                #[allow(unused_assignments)]
-                let mut this = false;
+            // FIXME: use list of extrensions?
+            let candidates =
+                vec![dir_index.with_extension(MD), dir_index.with_extension(HTML)];
 
-                let mut data: Page = Default::default();
-
-                //println!("children {:?}", path);
-
-                if path.is_file() {
-                    this = path == file.as_ref();
-
-                    let source_file = path.to_path_buf();
+            for f in candidates {
+                if f.exists() {
                     let mut info = FileInfo::new(
                         &ctx.config,
                         source,
                         target,
-                        &source_file,
+                        &f,
                         false,
                     );
 
-                    match info.file_type {
-                        FileType::Markdown | FileType::Template => {
+                    let file_opts = FileOptions {
+                        rewrite_index: ctx.options.rewrite_index,
+                        ..Default::default()
+                    };
 
-                            let file_opts = FileOptions {
-                                rewrite_index: ctx.options.rewrite_index,
-                                ..Default::default()
-                            };
+                    info.destination(&ctx.config, &file_opts)?;
+                    let mut dest = info.output.unwrap();
 
-                            info.destination(&ctx.config, &file_opts)?;
-
-                            let mut dest = info.output.unwrap();
-
-                            if let Ok(cleaned) = dest.strip_prefix(target) {
-                                dest = cleaned.to_path_buf();
-                            }
-                            if let Ok(rel) = dest.strip_prefix(rel_base) {
-                                dest = rel.to_path_buf();
-                            }
-                            href = dest.to_string_lossy().into();
-                            data = loader::compute(&path, &ctx.config, true)?;
-                        }
-                        _ => {}
+                    if let Ok(cleaned) = dest.strip_prefix(target) {
+                        dest = cleaned.to_path_buf();
                     }
-                } else {
-                    this = path == parent;
-
-                    // For directories try to find a potential index
-                    // file and generate a destination
-                    let mut dir_index = path.to_path_buf();
-                    dir_index.push(INDEX_STEM);
-
-                    // FIXME: use list of extrensions?
-                    let candidates =
-                        vec![dir_index.with_extension(MD), dir_index.with_extension(HTML)];
-
-                    for f in candidates {
-                        if f.exists() {
-                            let mut info = FileInfo::new(
-                                &ctx.config,
-                                source,
-                                target,
-                                &f,
-                                false,
-                            );
-
-                            let file_opts = FileOptions {
-                                rewrite_index: ctx.options.rewrite_index,
-                                ..Default::default()
-                            };
-
-                            info.destination(&ctx.config, &file_opts)?;
-                            let mut dest = info.output.unwrap();
-
-                            if let Ok(cleaned) = dest.strip_prefix(target) {
-                                dest = cleaned.to_path_buf();
-                            }
-                            if let Ok(rel) = dest.strip_prefix(rel_base) {
-                                dest = rel.to_path_buf();
-                            }
-                            href = dest.to_string_lossy().to_string();
-                            data = loader::compute(&f, &ctx.config, true)?;
-
-                            break;
-                        }
+                    if let Ok(rel) = dest.strip_prefix(rel_base) {
+                        dest = rel.to_path_buf();
                     }
-                }
+                    href = dest.to_string_lossy().to_string();
+                    data = loader::compute(&f, &ctx.config, true)?;
 
-                if super::draft::is_draft(&data, &ctx.options) {
-                    continue;
-                }
-
-                if !href.is_empty() {
-                    if ctx.options.rewrite_index && !ctx.options.include_index {
-                        if href.ends_with(INDEX_HTML) {
-                            href.truncate(href.len() - INDEX_HTML.len());
-                        }
-                    }
-
-                    // NOTE: must override the formal href
-                    data.href = Some(href);
-
-                    data.extra.insert("self".to_owned(), json!(this));
-                    entries.push(data);
+                    break;
                 }
             }
-            Err(e) => return Err(Error::from(e)),
+        }
+
+        let ignore_listing = data.listing.is_some() && !data.listing.unwrap();
+        if ignore_listing || super::draft::is_draft(&data, &ctx.options) {
+            continue;
+        }
+
+        if !href.is_empty() {
+            if ctx.options.rewrite_index && !ctx.options.include_index {
+                if href.ends_with(INDEX_HTML) {
+                    href.truncate(href.len() - INDEX_HTML.len());
+                }
+            }
+
+            // NOTE: must override the formal href
+            data.href = Some(href);
+
+            data.extra.insert("self".to_owned(), json!(this));
+            entries.push(data);
         }
     }
 
