@@ -41,6 +41,8 @@ impl<'a> TemplateRender<'a> {
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
         handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
 
+        handlebars.register_helper("md", Box::new(helpers::md::Markdown));
+
         if let Some(loader) = &context.locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }

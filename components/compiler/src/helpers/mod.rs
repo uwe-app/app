@@ -11,6 +11,7 @@ pub mod html;
 pub mod include;
 pub mod json;
 pub mod livereload;
+pub mod md;
 pub mod parent;
 pub mod random;
 pub mod slug;
@@ -48,7 +49,7 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
             Err(e) => return Err(RenderError::new(e.to_string())),
         }
     }
-    Err(RenderError::new("no template for render buffer"))
+    Err(RenderError::new("No template for render buffer"))
 }
 
 // This dance keeps the parent context data intact
