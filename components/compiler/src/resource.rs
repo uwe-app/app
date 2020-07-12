@@ -13,10 +13,7 @@ pub fn link(ctx: &Context) -> Result<()> {
 
     // The resource path must be absolute for links to work
     // regardless of where the executable is run from
-    let result = ctx
-        .config
-        .get_resources_path(&ctx.options.source)
-        .canonicalize();
+    let result = ctx.options.get_resources_path().canonicalize();
 
     match result {
         Ok(resource) => {

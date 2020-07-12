@@ -338,20 +338,6 @@ impl Config {
         self.project.as_ref().unwrap().clone()
     }
 
-    pub fn get_layout_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(LAYOUT_HBS);
-        pth
-    }
-
-    pub fn get_page_data_path(&self) -> PathBuf {
-        let build = self.build.as_ref().unwrap();
-        let pages = build.pages.as_ref().unwrap();
-        let mut pth = self.project.as_ref().unwrap().clone();
-        pth.push(pages);
-        pth
-    }
-
     pub fn get_locales<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
         if let Some(fluent) = &self.fluent {
             if let Some(locales) = &fluent.locales {
@@ -361,46 +347,6 @@ impl Config {
             }
         }
         None
-    }
-
-    pub fn get_assets_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let build = self.build.as_ref().unwrap();
-        let assets = build.assets.as_ref().unwrap();
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(assets);
-        pth
-    }
-
-    pub fn get_includes_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let build = self.build.as_ref().unwrap();
-        let partial = build.includes.as_ref().unwrap();
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(partial);
-        pth
-    }
-
-    pub fn get_partials_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let build = self.build.as_ref().unwrap();
-        let partial = build.partials.as_ref().unwrap();
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(partial);
-        pth
-    }
-
-    pub fn get_datasources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let build = self.build.as_ref().unwrap();
-        let datasources = build.data_sources.as_ref().unwrap();
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(datasources);
-        pth
-    }
-
-    pub fn get_resources_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
-        let build = self.build.as_ref().unwrap();
-        let resource = build.resources.as_ref().unwrap();
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(resource);
-        pth
     }
 
     pub fn get_book_theme_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {

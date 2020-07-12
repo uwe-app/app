@@ -23,7 +23,6 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
 }
 
 fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
-
     let project = cfg.get_project();
 
     let source = get_profile_source(cfg, args);
@@ -106,6 +105,7 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
     }
 
     let opts = RuntimeOptions {
+        project,
         source,
         output: args.target.clone(),
         base: target.clone(),

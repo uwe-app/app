@@ -271,19 +271,14 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub fn register_templates_directory(&mut self) -> Result<PathBuf> {
-        let templates = self
-            .context
-            .config
-            .get_partials_path(&self.context.options.source);
-
-        if let Err(e) = self
-            .parser
-            .register_templates_directory(TEMPLATE_EXT, templates.as_path())
-        {
-            return Err(e);
+    pub fn register_templates_directory(&mut self) -> Result<()> {
+        let templates = self.context.options.get_partials_path();
+        if templates.exists() {
+            self.parser
+                .register_templates_directory(
+                    TEMPLATE_EXT, templates.as_path())?;
         }
-        Ok(templates)
+        Ok(())
     }
 
     // Verify the paths are within the site source
@@ -358,8 +353,7 @@ impl<'a> Compiler<'a> {
         let build = self.context.config.build.as_ref().unwrap();
         let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
 
-        let mut filters = config::filter::get_filters(
-            &self.context.options.source, &self.context.config);
+        let mut filters = config::filter::get_filters(&self.context.options, &self.context.config);
 
         // Always ignore the layout
         if let Some(ref layout) = self.context.options.settings.layout {

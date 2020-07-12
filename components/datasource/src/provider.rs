@@ -94,7 +94,7 @@ impl Provider {
     }
 
     fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
-        let filters = config::filter::get_filters(req.source, req.config);
+        let filters = config::filter::get_filters(req.options, req.config);
         let (tx, rx) = flume::unbounded();
 
         // Use the walk builder to respect the way the compiler

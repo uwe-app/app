@@ -96,17 +96,22 @@ pub struct ProfileSettings {
 
     pub source: PathBuf,
     pub target: PathBuf,
+
     pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
+
     pub pages: Option<PathBuf>,
     pub assets: Option<PathBuf>,
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
     pub resources: Option<PathBuf>,
+    pub layout: Option<PathBuf>,
 
-    //pub rewrite_index: Option<bool>,
+    #[serde(skip)]
     pub follow_links: Option<bool>,
+
+    // FIXME: refactor to HTML flag
     pub render: Option<Vec<String>>,
 
     pub max_depth: Option<usize>,
@@ -129,9 +134,6 @@ pub struct ProfileSettings {
 
     // Base URL to strip when building links etc
     pub base: Option<String>,
-
-    // Specific layout to use
-    pub layout: Option<PathBuf>,
 
     // Specific set of paths to build
     pub paths: Option<Vec<PathBuf>>,
@@ -238,12 +240,15 @@ impl ProfileSettings {
     pub fn should_rewrite_index(&self) -> bool {
         self.rewrite_index.is_some() && self.rewrite_index.unwrap()
     }
+
 }
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RuntimeOptions {
-    // Root of the input
+    // Project root
+    pub project: PathBuf,
+    // Root for the input source files
     pub source: PathBuf,
     // Root of the output
     pub output: PathBuf,
@@ -254,6 +259,36 @@ pub struct RuntimeOptions {
     pub target: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
+}
+
+impl RuntimeOptions {
+    pub fn get_page_data_path(&self) -> PathBuf {
+        self.project.join(self.settings.pages.as_ref().unwrap())
+    }
+
+    pub fn get_layout_path(&self) -> PathBuf {
+        self.source.join(self.settings.layout.as_ref().unwrap())
+    }
+
+    pub fn get_assets_path(&self) -> PathBuf {
+        self.source.join(self.settings.assets.as_ref().unwrap())
+    }
+
+    pub fn get_includes_path(&self) -> PathBuf {
+        self.source.join(self.settings.includes.as_ref().unwrap())
+    }
+
+    pub fn get_partials_path(&self) -> PathBuf {
+        self.source.join(self.settings.partials.as_ref().unwrap())
+    }
+
+    pub fn get_data_sources_path(&self) -> PathBuf {
+        self.source.join(self.settings.data_sources.as_ref().unwrap())
+    }
+
+    pub fn get_resources_path(&self) -> PathBuf {
+        self.source.join(self.settings.resources.as_ref().unwrap())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

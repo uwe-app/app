@@ -197,7 +197,7 @@ impl DataSourceMap {
     }
 
     pub fn load(&mut self, source: PathBuf, config: &Config, options: &RuntimeOptions) -> Result<()> {
-        self.load_configurations(&source, config)?;
+        self.load_configurations(options)?;
 
         if options.settings.should_collate() {
             if let Some(ref sources) = config.collate {
@@ -228,8 +228,8 @@ impl DataSourceMap {
         Ok(())
     }
 
-    fn load_configurations(&mut self, source: &PathBuf, config: &Config) -> Result<()> {
-        let src = config.get_datasources_path(&source);
+    fn load_configurations(&mut self, options: &RuntimeOptions) -> Result<()> {
+        let src = options.get_data_sources_path();
         if src.exists() && src.is_dir() {
             let contents = src.read_dir()?;
             self.load_config(contents)?;

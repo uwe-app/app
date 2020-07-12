@@ -1,20 +1,20 @@
 use std::path::PathBuf;
 
-use super::Config;
+use super::{RuntimeOptions, Config};
 
-pub fn get_filters(source: &PathBuf, config: &Config) -> Vec<PathBuf> {
+pub fn get_filters(options: &RuntimeOptions, config: &Config) -> Vec<PathBuf> {
+
+    let source = &options.source;
+
     let mut filters: Vec<PathBuf> = Vec::new();
 
     let config_file = config.file.clone();
 
-    let partials = config
-        .get_partials_path(source);
-    let includes = config
-        .get_includes_path(source);
-    let generator = config
-        .get_datasources_path(source);
-    let resource = config
-        .get_resources_path(source);
+    let partials = options.get_partials_path();
+    let includes = options.get_includes_path();
+    let generator = options.get_data_sources_path();
+    let resource = options.get_resources_path();
+
     let theme = config
         .get_book_theme_path(source);
 

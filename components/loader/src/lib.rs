@@ -176,13 +176,13 @@ fn clear() {
     data.clear();
 }
 
-pub fn reload(config: &Config, options: &RuntimeOptions, source: &PathBuf) -> Result<(), Error> {
+pub fn reload(options: &RuntimeOptions) -> Result<(), Error> {
     clear();
-    load(config, options, source)
+    load(options)
 }
 
-pub fn load(config: &Config, options: &RuntimeOptions, source: &PathBuf) -> Result<(), Error> {
-    let src = config.get_page_data_path();
+pub fn load(options: &RuntimeOptions) -> Result<(), Error> {
+    let src = options.get_page_data_path();
     if src.exists() {
         let mut data = DATA.lock().unwrap();
         let properties = utils::fs::read_string(src)?;
@@ -191,7 +191,7 @@ pub fn load(config: &Config, options: &RuntimeOptions, source: &PathBuf) -> Resu
             Ok(props) => {
                 for (k, v) in props {
                     let page = v.try_into::<Page>()?;
-                    let result = find_file_for_key(&k, source, options);
+                    let result = find_file_for_key(&k, &options.source, options);
                     match result {
                         Some(f) => {
                             // Use the actual file path as the key

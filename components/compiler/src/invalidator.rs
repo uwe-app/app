@@ -180,42 +180,21 @@ impl<'a> Invalidator<'a> {
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let data_file = self.canonical(self.context.config.get_page_data_path());
+        let data_file = self.canonical(
+            self.context.options.get_page_data_path());
 
-        let layout_file = self.canonical(
-            self.context
-                .config
-                .get_layout_path(&self.context.options.source),
-        );
-
-        let assets = self.canonical(
-            self.context
-                .config
-                .get_assets_path(&self.context.options.source),
-        );
-
-        let partials = self.canonical(
-            self.context
-                .config
-                .get_partials_path(&self.context.options.source),
-        );
+        let layout_file = self.canonical(self.context.options.get_layout_path());
+        let assets = self.canonical(self.context.options.get_assets_path());
+        let partials = self.canonical(self.context.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators = self.canonical(
-            self.context
-                .config
-                .get_datasources_path(&self.context.options.source),
+            self.context.options.get_data_sources_path()
         );
 
-        let resources = self.canonical(
-            self.context
-                .config
-                .get_resources_path(&self.context.options.source),
-        );
+        let resources = self.canonical(self.context.options.get_resources_path());
 
-        let book_theme = self
-            .context
-            .config
+        let book_theme = self.context.config
             .get_book_theme_path(&self.context.options.source)
             .map(|v| self.canonical(v));
 
@@ -227,10 +206,7 @@ impl<'a> Invalidator<'a> {
                 .collect::<Vec<_>>();
         }
 
-        let generator_paths: Vec<PathBuf> = self
-            .context
-            .datasource
-            .map
+        let generator_paths: Vec<PathBuf> = self.context.datasource.map
             .values()
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();
@@ -372,7 +348,7 @@ impl<'a> Invalidator<'a> {
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         // Reload the data source
         if rule.reload {
-            if let Err(e) = loader::reload(&self.context.config, &self.context.options, &self.context.options.source) {
+            if let Err(e) = loader::reload(&self.context.options) {
                 error!("{}", e);
             }
         }

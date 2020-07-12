@@ -83,7 +83,7 @@ pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
     }
 
     // Try to find a resource
-    let resource = context.config.get_resources_path(base);
+    let resource = context.options.get_resources_path();
     if let Some(resource) = lookup_in(&resource, context, href, types) {
         return Some(resource);
     }
