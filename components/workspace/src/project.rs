@@ -3,9 +3,8 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::ProfileName;
+use config::{ProfileName, RuntimeOptions};
 use compiler::redirect;
-use compiler::RuntimeOptions;
 use config::{ProfileSettings, Config};
 use utils;
 

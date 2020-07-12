@@ -5,10 +5,10 @@ use log::debug;
 use serde_json::json;
 
 use config::FileInfo;
+use config::RuntimeOptions;
 
 use super::super::context::Context as BuildContext;
 use super::super::lookup;
-use super::super::RuntimeOptions;
 
 use crate::INDEX_HTML;
 

@@ -6,8 +6,7 @@ use log::info;
 
 use compiler::context::Context;
 use compiler::Compiler;
-use compiler::RuntimeOptions;
-use config::{ProfileSettings, Config};
+use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
 use locale::Locales;
 

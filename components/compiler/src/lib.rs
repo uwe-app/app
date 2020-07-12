@@ -92,7 +92,6 @@ pub mod invalidator;
 pub mod lookup;
 pub mod manifest;
 pub mod markdown;
-mod options;
 pub mod parser;
 pub mod redirect;
 pub mod resource;
@@ -101,5 +100,4 @@ pub mod tree;
 pub mod watch;
 
 pub use build::Compiler;
-pub use options::RuntimeOptions;
 pub use context::Context;

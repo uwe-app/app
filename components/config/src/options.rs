@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use config::ProfileName;
+use super::ProfileName;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;

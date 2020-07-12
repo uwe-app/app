@@ -1,6 +1,6 @@
 use config::Page;
 
-use super::RuntimeOptions;
+use config::RuntimeOptions;
 
 pub fn is_draft(data: &Page, opts: &RuntimeOptions) -> bool {
     if opts.release {

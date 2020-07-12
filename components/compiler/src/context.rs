@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use config::Config;
+use config::RuntimeOptions;
 
 use locale::Locales;
 
-use super::RuntimeOptions;
 use datasource::DataSourceMap;
 
 #[derive(Debug, Serialize, Deserialize)]

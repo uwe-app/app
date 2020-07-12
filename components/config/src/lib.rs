@@ -49,6 +49,7 @@ mod file;
 pub mod filter;
 pub mod link;
 pub mod resolve;
+mod options;
 mod page;
 mod profile;
 
@@ -57,3 +58,4 @@ pub use page::Page;
 pub use file::{FileType, FileInfo, FileOptions};
 pub use profile::{ProfileName, ProfileSettings};
 pub use indexer::IndexQuery;
+pub use options::RuntimeOptions;
