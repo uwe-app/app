@@ -199,24 +199,26 @@ impl DataSourceMap {
     pub fn load(&mut self, source: PathBuf, config: &Config, options: &RuntimeOptions) -> Result<()> {
         self.load_configurations(&source, config)?;
 
-        if let Some(ref sources) = config.collate {
-            for (k, v) in sources {
-                let from = if v.from.is_some() {
-                    v.from.as_ref().unwrap().clone()
-                } else {
-                    source.clone() 
-                };
+        if options.settings.should_collate() {
+            if let Some(ref sources) = config.collate {
+                for (k, v) in sources {
+                    let from = if v.from.is_some() {
+                        v.from.as_ref().unwrap().clone()
+                    } else {
+                        source.clone() 
+                    };
 
-                let mut cfg = v.clone();
-                if cfg.kind.is_none() {
-                    cfg.kind = Some(Default::default());
-                }
-                if cfg.provider.is_none() {
-                    cfg.provider = Some(Default::default());
-                }
+                    let mut cfg = v.clone();
+                    if cfg.kind.is_none() {
+                        cfg.kind = Some(Default::default());
+                    }
+                    if cfg.provider.is_none() {
+                        cfg.provider = Some(Default::default());
+                    }
 
-                let data_source = self.to_data_source(&from, cfg);
-                self.map.insert(k.to_string(), data_source);
+                    let data_source = self.to_data_source(&from, cfg);
+                    self.map.insert(k.to_string(), data_source);
+                }
             }
         }
 

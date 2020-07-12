@@ -122,6 +122,8 @@ pub struct ProfileSettings {
     pub incremental: Option<bool>,
     pub pristine: Option<bool>,
     pub force: Option<bool>,
+    // Collate page data when defined
+    pub collate: Option<bool>,
 
     pub write_redirects: Option<bool>,
 
@@ -150,12 +152,15 @@ impl Default for ProfileSettings {
             target: PathBuf::from(config::BUILD),
             types: Some(Default::default()),
             strict: Some(true),
+
             pages: Some(PathBuf::from(config::PAGE_DATA)),
             assets: Some(PathBuf::from(config::ASSETS)),
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
             resources: Some(PathBuf::from(config::RESOURCES)),
+            layout: Some(PathBuf::from(config::LAYOUT_HBS)),
+
             rewrite_index: None,
             follow_links: Some(true),
             render: None,
@@ -170,9 +175,9 @@ impl Default for ProfileSettings {
             incremental: Some(false),
             pristine: Some(true),
             force: None,
+            collate: Some(true),
             write_redirects: None,
             base: None,
-            layout: Some(PathBuf::from(config::LAYOUT_HBS)),
             paths: None,
             use_layout: Some(true),
             base_href: None,
@@ -216,6 +221,10 @@ impl ProfileSettings {
 
     pub fn is_pristine(&self) -> bool {
         self.pristine.is_some() && self.pristine.unwrap()
+    }
+
+    pub fn should_collate(&self) -> bool {
+        self.collate.is_some() && self.collate.unwrap()
     }
 
     pub fn should_use_layout(&self) -> bool {
