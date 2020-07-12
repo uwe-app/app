@@ -52,7 +52,7 @@ pub mod resolve;
 mod page;
 mod profile;
 
-pub use config::*;
+pub use crate::config::*;
 pub use page::Page;
 pub use file::{FileType, FileInfo, FileOptions};
 pub use profile::{ProfileName, ProfileSettings, RuntimeOptions};

@@ -23,7 +23,7 @@ impl HelperDef for LiveReload {
             .to_owned();
 
         let ctx: BuildContext = from_value(json!(cfg)).unwrap();
-        if ctx.options.live {
+        if ctx.options.settings.is_live() {
             let content = livereload::embed(&ctx.config);
             out.write(&content)?;
         }

@@ -4,6 +4,8 @@ use std::convert::From;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
+use super::config;
+
 static DEBUG: &str = "debug";
 static RELEASE: &str = "release";
 
@@ -87,12 +89,31 @@ impl ProfileName {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct ProfileSettings {
+    #[serde(skip)]
+    pub name: ProfileName,
+
+    pub source: PathBuf,
+    pub target: PathBuf,
+    pub strict: Option<bool>,
+    pub pages: Option<PathBuf>,
+    pub assets: Option<PathBuf>,
+    pub includes: Option<PathBuf>,
+    pub partials: Option<PathBuf>,
+    pub data_sources: Option<PathBuf>,
+    pub resources: Option<PathBuf>,
+
+    //pub rewrite_index: Option<bool>,
+    pub follow_links: Option<bool>,
+    pub render: Option<Vec<String>>,
+
     pub max_depth: Option<usize>,
     pub profile: Option<String>,
-    pub host: Option<String>,
-    pub port: Option<u16>,
     pub live: Option<bool>,
     pub release: Option<bool>,
+
+    pub use_layout: Option<bool>,
+
+    pub rewrite_index: Option<bool>,
     pub include_index: Option<bool>,
 
     pub incremental: Option<bool>,
@@ -109,15 +130,36 @@ pub struct ProfileSettings {
 
     // Specific set of paths to build
     pub paths: Option<Vec<PathBuf>>,
+
+    // A base URL to strip from links
+    pub base_href: Option<String>,
+
+    pub host: Option<String>,
+    pub port: Option<u16>,
 }
 
 impl Default for ProfileSettings {
     fn default() -> Self {
         Self {
+            name: Default::default(),
+
+            source: PathBuf::from(config::SITE),
+            target: PathBuf::from(config::BUILD),
+            strict: Some(true),
+            pages: Some(PathBuf::from(config::PAGE_DATA)),
+            assets: Some(PathBuf::from(config::ASSETS)),
+            includes: Some(PathBuf::from(config::INCLUDES)),
+            partials: Some(PathBuf::from(config::PARTIALS)),
+            data_sources: Some(PathBuf::from(config::DATASOURCES)),
+            resources: Some(PathBuf::from(config::RESOURCES)),
+            rewrite_index: None,
+            follow_links: Some(true),
+            render: None,
+
             max_depth: None,
             profile: None,
-            host: None,
-            port: None,
+            host: Some(config::HOST.to_string()),
+            port: Some(config::PORT),
             live: None,
             release: None,
             include_index: None,
@@ -126,9 +168,62 @@ impl Default for ProfileSettings {
             force: None,
             write_redirects: None,
             base: None,
-            layout: None,
+            layout: Some(PathBuf::from(config::LAYOUT_HBS)),
             paths: None,
+            use_layout: Some(true),
+            base_href: None,
         }
+    }
+}
+
+impl ProfileSettings {
+
+    pub fn get_host(&self) -> String {
+        if let Some(ref host) = self.host {
+            host.clone() 
+        } else {
+            config::HOST.to_string()
+        }
+    }
+
+    pub fn get_port(&self) -> u16 {
+        if let Some(ref port) = self.port {
+            port.clone()
+        } else {
+            config::PORT
+        }
+    }
+
+    pub fn is_live(&self) -> bool {
+        self.live.is_some() && self.live.unwrap()
+    }
+
+    pub fn is_release(&self) -> bool {
+        self.release.is_some() && self.release.unwrap()
+    }
+
+    pub fn is_force(&self) -> bool {
+        self.force.is_some() && self.force.unwrap()
+    }
+
+    pub fn is_incremental(&self) -> bool {
+        self.incremental.is_some() && self.incremental.unwrap()
+    }
+
+    pub fn is_pristine(&self) -> bool {
+        self.pristine.is_some() && self.pristine.unwrap()
+    }
+
+    pub fn should_use_layout(&self) -> bool {
+        self.use_layout.is_some() && self.use_layout.unwrap()
+    }
+
+    pub fn should_include_index(&self) -> bool {
+        self.include_index.is_some() && self.include_index.unwrap()
+    }
+
+    pub fn should_rewrite_index(&self) -> bool {
+        self.rewrite_index.is_some() && self.rewrite_index.unwrap()
     }
 }
 
@@ -144,29 +239,6 @@ pub struct RuntimeOptions {
     // Target output directory including a build tag and
     // a locale identifier when multilingual
     pub target: PathBuf,
-
-    // Rewrite output destinations to a directory
-    // with an index.html file
-    pub rewrite_index: bool,
-
-    pub max_depth: Option<usize>,
-    pub release: bool,
-    pub tag: ProfileName,
-    pub live: bool,
-    pub host: String,
-    pub port: u16,
-    pub force: bool,
-
-    // Default layout file to use
-    pub layout: PathBuf,
-
-    // A base URL to strip from links
-    pub base_href: Option<String>,
-
-    // Specific paths to compile
-    pub paths: Option<Vec<PathBuf>>,
-
-    pub incremental: bool,
-
-    pub include_index: bool,
+    // The computed profile to use
+    pub settings: ProfileSettings,
 }

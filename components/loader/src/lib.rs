@@ -17,7 +17,7 @@ use log::warn;
 
 use thiserror::Error;
 
-use config::{Config, Page};
+use config::{Config, Page, RuntimeOptions};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -118,7 +118,7 @@ fn find_key_for_file<P: AsRef<Path>>(f: P, config: &Config) -> String {
     buf.to_string_lossy().into_owned()
 }
 
-pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Result<Page, Error> {
+pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, frontmatter: bool) -> Result<Page, Error> {
     let mut data = DATA.lock().unwrap();
 
     let mut page = config.page.as_ref().unwrap().clone();
@@ -154,7 +154,7 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, frontmatter: bool) -> Resu
         // FIXME: ensure frontmatter never defines `query`
     }
 
-    page.compute(f, config)?;
+    page.compute(f, config, opts)?;
 
     Ok(page)
 }

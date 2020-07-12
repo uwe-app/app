@@ -14,7 +14,7 @@ use crate::Result;
 
 pub fn compile_project<P: AsRef<Path>>(
     project: P,
-    args: &ProfileSettings,
+    args: &mut ProfileSettings,
     skip_last: bool) -> Result<Context> {
 
     let mut spaces: Vec<Config> = Vec::new();
@@ -30,7 +30,7 @@ pub fn compile_project<P: AsRef<Path>>(
             dry_run = true;
         }
 
-        ctx = compile(&config, &args, dry_run)?;
+        ctx = compile(&config, args, dry_run)?;
 
         let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
         if write_redirects {
@@ -41,7 +41,7 @@ pub fn compile_project<P: AsRef<Path>>(
     Ok(ctx)
 }
 
-pub fn compile(config: &Config, args: &ProfileSettings, dry_run: bool) -> Result<Context> {
+pub fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Result<Context> {
     let opts = super::project::prepare(config, args)?;
     compile_one(config, opts, dry_run)
 }
@@ -54,6 +54,9 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
 
     let mut locales = Locales::new(&config);
     locales.load(&config, &build_config.source)?;
+
+    //println!("Is multi {:?}", locales.is_multi());
+    //println!("Is dry run {:?}", dry_run);
 
     if locales.is_multi() {
         for lang in locales.map.keys() {
@@ -75,10 +78,17 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
             copy.load(&config, &build_config.source)?;
             copy.lang = lang.clone();
 
+            //println!("Build for lang {:?}", copy.lang);
+
             ctx = load(copy, config.clone(), lang_opts)?;
-            if !dry_run {
+
+            // NOTE: this old conditional will break multi-lingual builds
+            // NOTE: when live reload is enabled. We need to find a better
+            // NOTE: way to handle workspace builds with live reload and multi-lingual sites
+
+            //if !dry_run {
                 build(&ctx)?;
-            }
+            //}
         }
     } else {
         ctx = load(locales, config.clone(), opts)?;
@@ -107,7 +117,7 @@ pub fn build(ctx: &Context) -> std::result::Result<Compiler, compiler::Error> {
 
     let mut targets: Vec<PathBuf> = Vec::new();
 
-    if let Some(ref paths) = ctx.options.paths {
+    if let Some(ref paths) = ctx.options.settings.paths {
         builder.verify(paths)?;
         for p in paths {
             targets.push(p.clone());

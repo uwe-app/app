@@ -11,7 +11,7 @@ use serde_with::skip_serializing_none;
 
 use super::Error;
 use super::link;
-use super::{Config, FileInfo};
+use super::{Config, FileInfo, RuntimeOptions};
 use super::indexer::QueryList;
 
 /// Attribute to convert from TOML date time to chronos UTC variant
@@ -185,9 +185,9 @@ impl Page {
         Ok(())
     }
 
-    pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config) -> Result<(), Error> {
+    pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config, opts: &RuntimeOptions) -> Result<(), Error> {
 
-        self.href = Some(link::absolute(p.as_ref(), config, Default::default())?);
+        self.href = Some(link::absolute(p.as_ref(), config, opts, Default::default())?);
 
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()

@@ -36,7 +36,7 @@ impl<'a> Manifest<'a> {
         Manifest {
             context,
             file,
-            incremental: context.options.incremental,
+            incremental: context.options.settings.is_incremental(),
         }
     }
 
@@ -111,7 +111,7 @@ impl<'a> Manifest<'a> {
     }
 
     pub fn save(&self) -> Result<(), Error> {
-        if self.context.options.incremental {
+        if self.context.options.settings.is_incremental() {
             let file = self.get_manifest_file();
             let json = serde_json::to_string(&self.file)?;
             debug!("manifest {}", file.display());

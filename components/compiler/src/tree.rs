@@ -115,7 +115,7 @@ fn children<P: AsRef<Path>>(
                 FileType::Markdown | FileType::Template => {
 
                     let file_opts = FileOptions {
-                        rewrite_index: ctx.options.rewrite_index,
+                        rewrite_index: ctx.options.settings.should_rewrite_index(),
                         ..Default::default()
                     };
 
@@ -130,7 +130,7 @@ fn children<P: AsRef<Path>>(
                         dest = rel.to_path_buf();
                     }
                     href = dest.to_string_lossy().into();
-                    data = loader::compute(&path, &ctx.config, true)?;
+                    data = loader::compute(&path, &ctx.config, &ctx.options, true)?;
                 }
                 _ => {}
             }
@@ -157,7 +157,7 @@ fn children<P: AsRef<Path>>(
                     );
 
                     let file_opts = FileOptions {
-                        rewrite_index: ctx.options.rewrite_index,
+                        rewrite_index: ctx.options.settings.should_rewrite_index(),
                         ..Default::default()
                     };
 
@@ -171,7 +171,7 @@ fn children<P: AsRef<Path>>(
                         dest = rel.to_path_buf();
                     }
                     href = dest.to_string_lossy().to_string();
-                    data = loader::compute(&f, &ctx.config, true)?;
+                    data = loader::compute(&f, &ctx.config, &ctx.options, true)?;
 
                     break;
                 }
@@ -184,7 +184,9 @@ fn children<P: AsRef<Path>>(
         }
 
         if !href.is_empty() {
-            if ctx.options.rewrite_index && !ctx.options.include_index {
+            if ctx.options.settings.should_rewrite_index()
+                && !ctx.options.settings.should_include_index() {
+
                 if href.ends_with(INDEX_HTML) {
                     href.truncate(href.len() - INDEX_HTML.len());
                 }

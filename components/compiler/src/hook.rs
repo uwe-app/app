@@ -34,9 +34,7 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
         let node = context.config.node.as_ref().unwrap();
-        let node_env = context
-            .options
-            .tag
+        let node_env = context.options.settings.name
             .get_node_env(node.debug.clone(), node.release.clone());
 
         info!("{} {}", cmd, args.join(" "));

@@ -43,7 +43,7 @@ impl HelperDef for Parent {
             let template = h.template();
             match template {
                 Some(t) => {
-                    let mut data = loader::compute(&parent, &build_ctx.config, true)
+                    let mut data = loader::compute(&parent, &build_ctx.config, &build_ctx.options, true)
                         .map_err(map_render_error)?;
                     let mut local_rc = rc.clone();
                     let local_ctx = with_parent_context(ctx, &mut data)?;

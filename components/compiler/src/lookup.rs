@@ -14,7 +14,7 @@ pub fn lookup_in(
     extensions: &ExtensionConfig,
 ) -> Option<PathBuf> {
 
-    let rewrite_index = context.options.rewrite_index;
+    let rewrite_index = context.options.settings.should_rewrite_index();
 
     let mut url = href.to_string().clone();
     url = utils::url::trim_slash(&url).to_owned();

@@ -20,7 +20,7 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
 
 pub fn compile<P: AsRef<Path>>(
     project: P,
-    args: &ProfileSettings,
+    args: &mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
 
@@ -34,8 +34,8 @@ pub fn compile<P: AsRef<Path>>(
 }
 
 fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
-    let host = ctx.options.host.clone();
-    let port = ctx.options.port.clone();
+    let host = ctx.options.settings.get_host();
+    let port = ctx.options.settings.get_port();
 
     let source = ctx.options.source.clone();
     let endpoint = utils::generate_id(16);
@@ -46,8 +46,10 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
         redirect_uris = Some(redirect::collect(redirects)?);
     }
 
+    let target = ctx.options.base.clone().to_path_buf();
+
     let opts = ServeOptions {
-        target: ctx.options.base.clone().to_path_buf(),
+        target,
         watch: Some(source.clone()),
         host: host.to_owned(),
         port: port.to_owned(),

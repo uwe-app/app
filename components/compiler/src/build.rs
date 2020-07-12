@@ -48,7 +48,8 @@ impl<'a> Compiler<'a> {
         let book = BookCompiler::new(
             context.options.source.clone(),
             context.options.target.clone(),
-            context.options.release,
+            context.options.settings.is_release(),
+            //context.options.release,
         );
 
         // Parser must exist for the entire lifetime so that
@@ -109,7 +110,7 @@ impl<'a> Compiler<'a> {
 
                     let file_opts = FileOptions {
                         rewrite_index,
-                        base_href: &self.context.options.base_href,
+                        base_href: &self.context.options.settings.base_href,
                         ..Default::default()
                     };
 
@@ -123,8 +124,8 @@ impl<'a> Compiler<'a> {
 
                     let minify_html = should_minify_html(
                         &dest,
-                        &self.context.options.tag,
-                        self.context.options.release,
+                        &self.context.options.settings.name,
+                        self.context.options.settings.is_release(),
                         &self.context.config);
 
                     let s = if minify_html {
@@ -146,7 +147,7 @@ impl<'a> Compiler<'a> {
     fn copy_file(&mut self, info: &mut FileInfo) -> Result<()> {
         let file_opts = FileOptions {
             exact: true,
-            base_href: &self.context.options.base_href,
+            base_href: &self.context.options.settings.base_href,
             ..Default::default()
         };
 
@@ -158,7 +159,7 @@ impl<'a> Compiler<'a> {
 
         if self
             .manifest
-            .is_dirty(file, &dest, self.context.options.force)
+            .is_dirty(file, &dest, self.context.options.settings.is_force())
         {
             info!("{} -> {}", file.display(), dest.display());
             utils::fs::copy(file, &dest)?;
@@ -173,7 +174,7 @@ impl<'a> Compiler<'a> {
     fn parse_file(&mut self, mut info: &mut FileInfo) -> Result<()> {
         let file = info.file;
 
-        let mut data = loader::compute(file, &self.context.config, true)?;
+        let mut data = loader::compute(file, &self.context.config, &self.context.options, true)?;
 
         let render = data.render.is_some() && data.render.unwrap();
 
@@ -181,7 +182,7 @@ impl<'a> Compiler<'a> {
             return self.copy_file(info);
         }
 
-        let mut rewrite_index = self.context.options.rewrite_index;
+        let mut rewrite_index = self.context.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
         if let Some(val) = data.rewrite_index {
             rewrite_index = val;
@@ -224,7 +225,7 @@ impl<'a> Compiler<'a> {
 
         let file_opts = FileOptions {
             rewrite_index,
-            base_href: &self.context.options.base_href,
+            base_href: &self.context.options.settings.base_href,
             ..Default::default()
         };
 
@@ -233,14 +234,14 @@ impl<'a> Compiler<'a> {
 
         if self
             .manifest
-            .is_dirty(file, &dest, self.context.options.force)
+            .is_dirty(file, &dest, self.context.options.settings.is_force())
         {
             info!("{} -> {}", file.display(), dest.display());
 
             let minify_html = should_minify_html(
                 &dest,
-                &self.context.options.tag,
-                self.context.options.release,
+                &self.context.options.settings.name,
+                self.context.options.settings.is_release(),
                 &self.context.config);
 
             let s = if minify_html {
@@ -329,7 +330,9 @@ impl<'a> Compiler<'a> {
             &self.context.options.source, &self.context.config);
 
         // Always ignore the layout
-        filters.push(self.context.options.layout.clone());
+        if let Some(ref layout) = self.context.options.settings.layout {
+            filters.push(layout.clone());
+        }
 
         resource::link(self.context)?;
 
@@ -342,7 +345,7 @@ impl<'a> Compiler<'a> {
 
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)
-            .max_depth(self.context.options.max_depth)
+            .max_depth(self.context.options.settings.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
                 if filters.contains(&path.to_path_buf()) {

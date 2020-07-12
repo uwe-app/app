@@ -49,7 +49,7 @@ impl HelperDef for Link {
 
         if let Some(p) = h.params().get(0) {
             let link_config = build_ctx.config.link.as_ref().unwrap();
-            let include_index = opts.include_index;
+            let include_index = opts.settings.should_include_index();
 
             if !p.is_value_missing() {
                 input = p.value().as_str().unwrap_or("").to_string();
@@ -96,7 +96,7 @@ impl HelperDef for Link {
 
             let mut base = opts.source.clone();
 
-            if let Some(ref href_path) = opts.base_href {
+            if let Some(ref href_path) = opts.settings.base_href {
                 //println!("Adding base_href {:?}", href_path);
                 base.push(href_path);
 
@@ -109,7 +109,7 @@ impl HelperDef for Link {
             if let Ok(rel) = path.strip_prefix(base) {
                 let mut value: String = "".to_string();
                 if let Some(p) = rel.parent() {
-                    if opts.rewrite_index && FileInfo::is_clean(&path, extensions) {
+                    if opts.settings.should_rewrite_index() && FileInfo::is_clean(&path, extensions) {
                         value.push_str("../");
                     }
                     for _ in p.components() {
@@ -172,7 +172,7 @@ impl HelperDef for Components {
         let template = h.template();
         match template {
             Some(t) => {
-                let include_index = opts.include_index;
+                let include_index = opts.settings.should_include_index();
 
                 if let Ok(rel) = path.strip_prefix(&opts.target) {
                     let mut buf = rel.to_path_buf();
@@ -204,7 +204,7 @@ impl HelperDef for Components {
                         }
 
                         if let Some(src) = lookup::lookup(&build_ctx, &href) {
-                            let mut data = loader::compute(src, &build_ctx.config, true)
+                            let mut data = loader::compute(src, &build_ctx.config, &build_ctx.options, true)
                                 .map_err(map_render_error)?;
                             data.extra.insert("first".to_string(), json!(first));
                             data.extra.insert("last".to_string(), json!(last));

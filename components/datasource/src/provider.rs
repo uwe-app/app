@@ -10,7 +10,7 @@ use ignore::{WalkBuilder, WalkState};
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
-use config::{Config, FileInfo};
+use config::{Config, FileInfo, RuntimeOptions};
 use config::indexer::{SourceType, SourceProvider};
 
 use super::{Result, Error};
@@ -133,7 +133,8 @@ impl Provider {
             .enumerate()
             .map(Ok)
             .try_for_each_concurrent(limit, |(count, path)| {
-                let result = loader::compute(&path, req.config, true);
+                let opts: RuntimeOptions = Default::default();
+                let result = loader::compute(&path, req.config, &opts, true);
                 match result {
                     Ok(data) => {
                         let result = serde_json::to_value(data);

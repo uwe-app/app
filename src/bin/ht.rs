@@ -95,10 +95,6 @@ struct BuildOpts {
     #[structopt(long)]
     profile: Option<String>,
 
-    /// Set the default layout file
-    #[structopt(long)]
-    layout: Option<PathBuf>,
-
     /// Maximum depth to traverse
     #[structopt(short, long)]
     max_depth: Option<usize>,
@@ -106,10 +102,6 @@ struct BuildOpts {
     /// Enable live reload
     #[structopt(short, long)]
     live: bool,
-
-    /// Disable incremental build
-    #[structopt(long)]
-    force: bool,
 
     /// Generate a release build
     #[structopt(short, long)]
@@ -481,22 +473,20 @@ fn process_command(cmd: &Command) {
                 None
             };
 
-            let build_args = ProfileSettings {
+            let mut build_args = ProfileSettings {
                 paths,
                 profile: args.profile.clone(),
                 max_depth: args.max_depth,
                 live: Some(args.live),
-                force: Some(args.force),
                 release: Some(args.release),
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
-                layout: args.layout.clone(),
                 ..Default::default()
             };
 
             let now = SystemTime::now();
             //if let Err(e) = hypertext::build(cfg, opts, fatal) {
-            if let Err(e) = command::build::compile(&project, &build_args, fatal) {
+            if let Err(e) = command::build::compile(&project, &mut build_args, fatal) {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {

@@ -31,25 +31,23 @@ pub static FLUENT_KEY: &str = "fluent";
 pub static FALLBACK_KEY: &str = "fallback";
 pub static SHARED_KEY: &str = "shared";
 pub static REDIRECT_KEY: &str = "redirect";
-
 pub static HTML: &str = "html";
 pub static INDEX_STEM: &str = "index";
+pub static LAYOUT_HBS: &str = "layout.hbs";
+pub static MD: &str = "md";
+pub static TOML: &str = "toml";
+pub static BOOK_TOML: &str = "book.toml";
+pub static PAGE_DATA: &str = "page.toml";
+pub static ASSETS: &str = "assets";
+pub static PARTIALS: &str = "partials";
+pub static INCLUDES: &str = "includes";
+pub static DATASOURCES: &str = "data-sources";
+pub static RESOURCES: &str = "resources";
+pub static LANG: &str = "en";
+pub static LIVERELOAD_FILE: &str = "__livereload.js";
 
-static MD: &str = "md";
-static TOML: &str = "toml";
-static BOOK_TOML: &str = "book.toml";
-static LAYOUT_HBS: &str = "layout.hbs";
-static PAGE_DATA: &str = "page.toml";
-static ASSETS: &str = "assets";
-static PARTIALS: &str = "partials";
-static INCLUDES: &str = "includes";
-static DATASOURCES: &str = "data-sources";
-static RESOURCES: &str = "resources";
-static HOST: &str = "localhost";
-static PORT: u16 = 8888;
-static LANG: &str = "en";
-
-static LIVERELOAD_FILE: &str = "__livereload.js";
+pub static HOST: &str = "localhost";
+pub static PORT: u16 = 8888;
 
 type RedirectConfig = HashMap<String, String>;
 
@@ -102,7 +100,7 @@ pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
 pub struct Config {
     pub lang: String,
     pub host: String,
-    pub build: Option<BuildConfig>,
+    pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
     pub book: Option<BookConfig>,
@@ -431,44 +429,42 @@ pub struct WorkspaceConfig {
     pub members: Vec<PathBuf>,
 }
 
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default, rename_all = "kebab-case")]
-pub struct BuildConfig {
-    pub source: PathBuf,
-    pub target: PathBuf,
-    pub strict: Option<bool>,
-    pub pages: Option<PathBuf>,
-    pub assets: Option<PathBuf>,
-    pub includes: Option<PathBuf>,
-    pub partials: Option<PathBuf>,
-    pub data_sources: Option<PathBuf>,
-    pub resources: Option<PathBuf>,
-    pub rewrite_index: Option<bool>,
-    pub follow_links: Option<bool>,
-    pub render: Option<Vec<String>>,
-    pub use_layout: Option<bool>,
-}
+//#[skip_serializing_none]
+//#[derive(Debug, Serialize, Deserialize, Clone)]
+//#[serde(default, rename_all = "kebab-case")]
+//pub struct BuildConfig {
+    //pub source: PathBuf,
+    //pub target: PathBuf,
+    //pub strict: Option<bool>,
+    //pub pages: Option<PathBuf>,
+    //pub assets: Option<PathBuf>,
+    //pub includes: Option<PathBuf>,
+    //pub partials: Option<PathBuf>,
+    //pub data_sources: Option<PathBuf>,
+    //pub resources: Option<PathBuf>,
+    //pub rewrite_index: Option<bool>,
+    //pub follow_links: Option<bool>,
+    //pub render: Option<Vec<String>>,
+//}
 
-impl Default for BuildConfig {
-    fn default() -> Self {
-        BuildConfig {
-            source: PathBuf::from(SITE),
-            target: PathBuf::from(BUILD),
-            strict: Some(true),
-            pages: Some(PathBuf::from(PAGE_DATA)),
-            assets: Some(PathBuf::from(ASSETS)),
-            includes: Some(PathBuf::from(INCLUDES)),
-            partials: Some(PathBuf::from(PARTIALS)),
-            data_sources: Some(PathBuf::from(DATASOURCES)),
-            resources: Some(PathBuf::from(RESOURCES)),
-            rewrite_index: Some(false),
-            follow_links: Some(true),
-            render: None,
-            use_layout: Some(true),
-        }
-    }
-}
+//impl Default for BuildConfig {
+    //fn default() -> Self {
+        //BuildConfig {
+            //source: PathBuf::from(SITE),
+            //target: PathBuf::from(BUILD),
+            //strict: Some(true),
+            //pages: Some(PathBuf::from(PAGE_DATA)),
+            //assets: Some(PathBuf::from(ASSETS)),
+            //includes: Some(PathBuf::from(INCLUDES)),
+            //partials: Some(PathBuf::from(PARTIALS)),
+            //data_sources: Some(PathBuf::from(DATASOURCES)),
+            //resources: Some(PathBuf::from(RESOURCES)),
+            //rewrite_index: Some(false),
+            //follow_links: Some(true),
+            //render: None,
+        //}
+    //}
+//}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BookConfig {

@@ -6,11 +6,8 @@ use log::{debug, info};
 use config::{ProfileName, RuntimeOptions};
 use compiler::redirect;
 use config::{ProfileSettings, Config};
-use utils;
 
 use crate::{Error, Result};
-
-static LAYOUT_HBS: &str = "layout.hbs";
 
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {
@@ -25,13 +22,13 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn with(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
-    let build = cfg.build.as_ref().unwrap();
-    let release = args.release.is_some() && args.release.unwrap();
+fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
 
-    let (tag_target, target_dir) = get_tag_info(args);
+    let source = get_profile_source(cfg, args);
+    let release = args.is_release();
 
-    let mut target = build.target.clone();
+    let mut target = args.target.clone();
+    let target_dir = args.name.to_string();
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
         if target_dir_buf.is_absolute() {
@@ -40,10 +37,7 @@ fn with(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
         target.push(target_dir);
     }
 
-    let live = args.live.is_some() && args.live.unwrap();
-    let mut force = args.force.is_some() && args.force.unwrap();
-
-    let include_index = args.include_index.is_some() && args.include_index.unwrap();
+    let live = args.is_live();
 
     if live && release {
         return Err(Error::LiveReloadRelease);
@@ -53,71 +47,57 @@ fn with(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
         redirect::validate(redirects)?;
     }
 
-    let incremental = args.incremental.is_some() && args.incremental.unwrap();
-    let pristine = args.pristine.is_some() && args.pristine.unwrap();
+    let incremental = args.is_incremental();
+    let pristine = args.is_pristine();
 
-    if (pristine || force) && target.exists() {
+    if (pristine || args.is_force()) && target.exists() {
         info!("clean {}", target.display());
         fs::remove_dir_all(&target)?;
     }
 
     // Force is implied when live and incremental, the live
     // setting overrides the incremental behavior
-    if live && incremental && !force {
-        force = true;
+    if live && incremental && !args.is_force() {
+        args.force = Some(true);
     }
 
     require_output_dir(&target)?;
 
     let serve = cfg.serve.as_ref().unwrap();
-    let mut host = &serve.host;
-    let mut port = &serve.port;
-
-    if let Some(h) = &args.host {
-        host = h;
+    if args.host.is_none() {
+        args.host = Some(serve.host.clone()); 
     }
 
-    if let Some(p) = &args.port {
-        port = p;
+    if args.port.is_none() {
+        args.port = Some(serve.port.clone());
     }
 
-    if !build.source.exists() || !build.source.is_dir() {
-        return Err(Error::NotDirectory(build.source.clone()));
+    if !source.exists() || !source.is_dir() {
+        return Err(Error::NotDirectory(source.clone()));
     }
 
-    let mut layout = build.source.clone();
-    if let Some(ref custom_layout) = args.layout {
-        layout.push(custom_layout);
-    } else {
-        layout.push(LAYOUT_HBS);
-    };
-
-    let use_layout = build.use_layout.is_some() && build.use_layout.unwrap();
-    if use_layout && !layout.exists() {
-        return Err(Error::NoLayout(layout));
+    if args.should_use_layout() {
+        if let Some(ref layout) = args.layout {
+            let location = source.clone().join(layout);
+            if !location.exists() || !location.is_file() {
+                return Err(Error::NoLayout(location.to_path_buf()));
+            }
+            args.layout = Some(location);
+        }
     }
 
-    let rewrite_index = build.rewrite_index.is_some() && build.rewrite_index.unwrap();
+    if let Some(ref mut paths) = args.paths.as_mut() {
+        let paths = prefix(&source, paths);
+        debug!("Profile paths {:?}", &paths);
+        args.paths = Some(paths);
+    }
 
     let opts = RuntimeOptions {
-        source: build.source.clone(),
-        output: build.target.clone(),
+        source,
+        output: args.target.clone(),
         base: target.clone(),
-        host: host.to_owned(),
-        port: port.to_owned(),
-
-        rewrite_index,
+        settings: args.clone(),
         target,
-        layout,
-        max_depth: args.max_depth,
-        release,
-        live,
-        force,
-        tag: tag_target,
-        paths: args.paths.clone(),
-        base_href: args.base.clone(),
-        incremental,
-        include_index,
     };
 
     debug!("{:?}", &cfg);
@@ -125,22 +105,22 @@ fn with(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
     Ok(opts)
 }
 
-fn get_tag_info(args: &ProfileSettings) -> (ProfileName, String) {
-    let release = args.release.is_some() && args.release.unwrap();
+fn to_profile(args: &ProfileSettings) -> ProfileName {
+    let release = args.is_release();
 
-    let mut tag_target = ProfileName::Debug;
+    let mut target_profile = ProfileName::Debug;
     if release {
-        tag_target = ProfileName::Release;
+        target_profile = ProfileName::Release;
     }
 
     if let Some(t) = &args.profile {
         if !t.is_empty() {
-            tag_target = ProfileName::Custom(t.to_string());
+            target_profile = ProfileName::from(t.to_string());
         }
     }
 
-    let target_dir = tag_target.to_string();
-    (tag_target, target_dir)
+    //let target_dir = target_profile.to_string();
+    target_profile
 }
 
 // Map a set of paths making them relative to the source, used when
@@ -158,27 +138,37 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
         .collect::<Vec<_>>()
 }
 
-pub fn prepare(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
-    let (_, target_dir) = get_tag_info(args);
+fn get_profile_source(cfg: &Config, args: &ProfileSettings) -> PathBuf {
+    let base_dir = cfg.get_project();
+    base_dir.join(&args.source)
+}
+
+pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
+    let name = to_profile(args);
+
+    // Inherit the profile settings from the root
+    let root = cfg.build.as_ref().unwrap().clone();
 
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
     let profiles = cfg.profile.as_ref().unwrap();
-    if let Some(profile) = profiles.get(&target_dir) {
-        let mut use_profile = profile.clone();
+    if let Some(ref profile) = profiles.get(&name.to_string()) {
+        let mut copy = profile.clone();
+
+        let mut merged = super::merge::map::<ProfileSettings>(&root, &mut copy)?;
 
         if profile.profile.is_some() {
             return Err(Error::NoProfileInProfile);
         }
 
-        if let Some(ref mut paths) = use_profile.paths.as_mut() {
-            let build = cfg.build.as_ref().unwrap();
-            let paths = prefix(&build.source, paths);
-            debug!("profile paths {:?}", &paths);
-            use_profile.paths = Some(paths);
-        }
-
-        let mut merged = super::merge::map::<ProfileSettings>(&use_profile, args)?;
+        // WARN: We cannot merge from args here otherwise we clobber
+        // WARN: other settings from the arg defaults so we 
+        // WARN: manually override from command line arguments.
+        if args.max_depth.is_some() { merged.max_depth = args.max_depth; }
+        if args.live.is_some() { merged.live = args.live; }
+        if args.release.is_some() { merged.release = args.release; }
+        if args.host.is_some() { merged.host = args.host.clone(); }
+        if args.port.is_some() { merged.port = args.port; }
 
         // Always update base to use the path separator. The declaration is
         // a URL path but internally we treat as a filesystem path.
@@ -186,8 +176,11 @@ pub fn prepare(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
             merged.base = Some(utils::url::to_path_separator(base));
         }
 
-        return with(cfg, &merged);
+        merged.name = name.clone();
+        with(cfg, &mut merged)
+    } else {
+        let mut merged = super::merge::map::<ProfileSettings>(&root, args)?;
+        merged.name = name.clone();
+        with(cfg, &mut merged)
     }
-
-    with(cfg, args)
 }

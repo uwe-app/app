@@ -1,5 +1,5 @@
 use std::convert::AsRef;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
@@ -97,6 +97,8 @@ impl<'a> TemplateRender<'a> {
             }
         }
 
+        // FIXME: improve this logic!
+        //
         // See if the file has a specific layout
         let layout_path = if let Some(layout) = &data.layout {
             let mut layout_path = self.context.options.source.clone();
@@ -106,7 +108,12 @@ impl<'a> TemplateRender<'a> {
             }
             layout_path
         } else {
-            self.context.options.layout.clone()
+            //self.context.options.layout.clone()
+            if let Some(ref layout) = self.context.options.settings.layout {
+                layout.clone()
+            } else {
+                PathBuf::from(config::LAYOUT_HBS)
+            }
         };
 
         // No layout available so bail
