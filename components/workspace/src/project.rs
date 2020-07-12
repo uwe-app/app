@@ -149,6 +149,8 @@ pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOption
     // Inherit the profile settings from the root
     let root = cfg.build.as_ref().unwrap().clone();
 
+    //println!("Got settings {:#?}", args);
+
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
     let profiles = cfg.profile.as_ref().unwrap();

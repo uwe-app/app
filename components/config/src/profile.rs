@@ -1,6 +1,8 @@
 use std::fmt;
 use std::path::PathBuf;
 use std::convert::From;
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
@@ -94,6 +96,7 @@ pub struct ProfileSettings {
 
     pub source: PathBuf,
     pub target: PathBuf,
+    pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
     pub pages: Option<PathBuf>,
     pub assets: Option<PathBuf>,
@@ -145,6 +148,7 @@ impl Default for ProfileSettings {
 
             source: PathBuf::from(config::SITE),
             target: PathBuf::from(config::BUILD),
+            types: Some(Default::default()),
             strict: Some(true),
             pages: Some(PathBuf::from(config::PAGE_DATA)),
             assets: Some(PathBuf::from(config::ASSETS)),
@@ -241,4 +245,73 @@ pub struct RuntimeOptions {
     pub target: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RenderTypes {
+    #[serde(flatten)]
+    pub types: HashMap<String, PageType>,
+}
+
+impl Default for RenderTypes {
+    fn default() -> Self {
+        let mut types: HashMap<String, PageType> = HashMap::new();
+        types.insert(
+            config::MD.to_string(), 
+            PageType {
+                markdown: Some(true),
+                ext: Some(config::HTML.to_string()),
+            });
+        Self { types }
+    }
+}
+
+impl RenderTypes {
+
+    // Get list of file extensions to render
+    pub fn get_ext_render(&self) -> Vec<String> {
+        self.types
+            .keys()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>()
+    }
+
+    // Get the extension mapping
+    pub fn get_ext_map(&self) -> HashMap<String, String> {
+        let mut map: HashMap<String, String> = HashMap::new();
+        for (k, v) in self.types.iter() {
+            if let Some(ref ext) = v.ext {
+                map.insert(k.to_string(), ext.to_string());
+            }
+        }
+        map
+    }
+
+    // Get list of extension to parse as markdown
+    pub fn get_ext_markdown(&self) -> Vec<String> {
+        self.types
+            .iter()
+            .filter(|(_k, v)| v.markdown.is_some() && v.markdown.unwrap())
+            .map(|(k, _v)| k.to_string())
+            .collect::<Vec<_>>()
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct PageType {
+    // Map this page type to another extension
+    pub ext: Option<String>,
+    // Parse this page type as markdown
+    pub markdown: Option<bool>,
+}
+
+impl Default for PageType {
+    fn default() -> Self {
+        Self {
+            ext: None,
+            markdown: None,
+        }
+    }
 }
