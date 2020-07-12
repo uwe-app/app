@@ -14,14 +14,18 @@ pub fn get_filters(options: &RuntimeOptions, config: &Config) -> Vec<PathBuf> {
     let includes = options.get_includes_path();
     let generator = options.get_data_sources_path();
     let resource = options.get_resources_path();
+    let locales = options.get_locales();
 
-    let theme = config
-        .get_book_theme_path(source);
+    let theme = config.get_book_theme_path(source);
 
     filters.push(partials);
     filters.push(includes);
     filters.push(generator);
     filters.push(resource);
+
+    if let Some(_) = config.fluent {
+        filters.push(locales);
+    }
 
     if let Some(config_file) = &config_file {
         filters.push(config_file.clone());
@@ -34,10 +38,6 @@ pub fn get_filters(options: &RuntimeOptions, config: &Config) -> Vec<PathBuf> {
 
     if let Some(ref theme) = theme {
         filters.push(theme.clone());
-    }
-
-    if let Some(locales_dir) = config.get_locales(source) {
-        filters.push(locales_dir);
     }
 
     if let Some(ref hooks) = config.hook {

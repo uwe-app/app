@@ -185,9 +185,6 @@ impl Config {
                     if fluent.fallback.is_some() {
                         fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
                     }
-                    if fluent.locales.is_none() {
-                        fluent.locales = Some(PathBuf::from(LOCALES));
-                    }
                 }
 
                 // Assume default build settings for the site
@@ -338,17 +335,6 @@ impl Config {
         self.project.as_ref().unwrap().clone()
     }
 
-    pub fn get_locales<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
-        if let Some(fluent) = &self.fluent {
-            if let Some(locales) = &fluent.locales {
-                let mut pth = source.as_ref().to_path_buf();
-                pth.push(locales);
-                return Some(pth);
-            }
-        }
-        None
-    }
-
     pub fn get_book_theme_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
         if let Some(book) = &self.book {
             let mut pth = source.as_ref().to_path_buf();
@@ -409,7 +395,6 @@ pub struct BookItem {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
     pub fallback: Option<String>,
-    pub locales: Option<PathBuf>,
     pub shared: Option<String>,
     #[serde(skip)]
     pub fallback_id: LanguageIdentifier,
@@ -419,7 +404,6 @@ impl Default for FluentConfig {
     fn default() -> Self {
         Self {
             fallback: Some(String::from(LANG)),
-            locales: Some(PathBuf::from(LOCALES)),
             shared: Some(String::from(CORE_FTL)),
             fallback_id: String::from(LANG).parse().unwrap(),
         }

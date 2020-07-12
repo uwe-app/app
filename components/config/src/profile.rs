@@ -102,6 +102,7 @@ pub struct ProfileSettings {
 
     pub pages: Option<PathBuf>,
     pub assets: Option<PathBuf>,
+    pub locales: Option<PathBuf>,
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
@@ -157,6 +158,7 @@ impl Default for ProfileSettings {
 
             pages: Some(PathBuf::from(config::PAGE_DATA)),
             assets: Some(PathBuf::from(config::ASSETS)),
+            locales: Some(PathBuf::from(config::LOCALES)),
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
@@ -241,6 +243,9 @@ impl ProfileSettings {
         self.rewrite_index.is_some() && self.rewrite_index.unwrap()
     }
 
+    pub fn should_follow_links(&self) -> bool {
+        self.follow_links.is_some() && self.follow_links.unwrap()
+    }
 }
 
 #[skip_serializing_none]
@@ -289,6 +294,11 @@ impl RuntimeOptions {
     pub fn get_resources_path(&self) -> PathBuf {
         self.source.join(self.settings.resources.as_ref().unwrap())
     }
+
+    pub fn get_locales(&self) -> PathBuf {
+        self.source.join(self.settings.locales.as_ref().unwrap())
+    }
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -350,9 +350,7 @@ impl<'a> Compiler<'a> {
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
         self.register_templates_directory()?;
 
-        let build = self.context.config.build.as_ref().unwrap();
-        let follow_links = build.follow_links.is_some() && build.follow_links.unwrap();
-
+        let follow_links = self.context.options.settings.should_follow_links();
         let mut filters = config::filter::get_filters(&self.context.options, &self.context.config);
 
         // Always ignore the layout

@@ -48,12 +48,10 @@ pub fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Re
 
 fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<Context> {
     let mut ctx: Context = Default::default();
-    //let opts = super::project::prepare(&mut config, &args)?;
     let base_target = opts.target.clone();
-    let build_config = config.build.as_ref().unwrap();
 
     let mut locales = Locales::new(&config);
-    locales.load(&config, &build_config.source)?;
+    locales.load(&config, &opts)?;
 
     //println!("Is multi {:?}", locales.is_multi());
     //println!("Is dry run {:?}", dry_run);
@@ -75,7 +73,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
 
             // FIXME: prevent loading all the locales again!?
             let mut copy = Locales::new(&config);
-            copy.load(&config, &build_config.source)?;
+            copy.load(&config, &lang_opts)?;
             copy.lang = lang.clone();
 
             //println!("Build for lang {:?}", copy.lang);

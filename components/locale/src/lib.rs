@@ -8,7 +8,7 @@ use thiserror::Error;
 use fluent_templates::ArcLoader;
 use unic_langid::LanguageIdentifier;
 
-use config::{Config, FluentConfig};
+use config::{Config, FluentConfig, RuntimeOptions};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -50,8 +50,8 @@ impl Locales {
         self.map.len() > 1
     }
 
-    pub fn load<P: AsRef<Path>>(&mut self, config: &Config, source: P) -> Result<(), Error> {
-        self.loader.load(config, source)?;
+    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
+        self.loader.load(config, options)?;
         if let Some(arc) = &self.loader.arc {
             let langs = arc.locales();
             for lang_id in langs {
@@ -82,14 +82,13 @@ impl fmt::Debug for LocalesLoader {
 }
 
 impl LocalesLoader {
-    pub fn load<P: AsRef<Path>>(&mut self, config: &Config, source: P) -> Result<(), Error> {
-        if let Some(locales_dir) = config.get_locales(source) {
-            if locales_dir.exists() && locales_dir.is_dir() {
-                let fluent = config.fluent.as_ref().unwrap();
-                // FIXME: catch and return this error
-                let result = self.arc(locales_dir, fluent)?;
-                self.arc = Some(Box::new(result));
-            }
+    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
+        let locales_dir = options.get_locales();
+        if locales_dir.exists() && locales_dir.is_dir() {
+            let fluent = config.fluent.as_ref().unwrap();
+            // FIXME: catch and return this error
+            let result = self.arc(locales_dir, fluent)?;
+            self.arc = Some(Box::new(result));
         }
         Ok(())
     }
