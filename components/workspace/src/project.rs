@@ -24,6 +24,8 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
 
 fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
 
+    let project = cfg.get_project();
+
     let source = get_profile_source(cfg, args);
     let release = args.is_release();
 
@@ -35,6 +37,7 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
             return Err(Error::ProfileNameAbsolute(target_dir));
         }
         target.push(target_dir);
+        target = project.join(target);
     }
 
     let live = args.is_live();
@@ -116,6 +119,11 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
     Ok(opts)
 }
 
+fn get_profile_source(cfg: &Config, args: &ProfileSettings) -> PathBuf {
+    let base_dir = cfg.get_project();
+    base_dir.join(&args.source)
+}
+
 fn to_profile(args: &ProfileSettings) -> ProfileName {
     let release = args.is_release();
 
@@ -147,11 +155,6 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
             pth
         })
         .collect::<Vec<_>>()
-}
-
-fn get_profile_source(cfg: &Config, args: &ProfileSettings) -> PathBuf {
-    let base_dir = cfg.get_project();
-    base_dir.join(&args.source)
 }
 
 pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {

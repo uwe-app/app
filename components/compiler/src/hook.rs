@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 
 use log::{debug, info};
 
-use config::HookConfig;
+use config::{HookConfig, ProfileName};
 
 use super::context::Context;
 use crate::Error;
@@ -67,7 +67,7 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase) -> Vec<(String, HookConfig)> {
+pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase, name: &ProfileName) -> Vec<(String, HookConfig)> {
     hooks
         .into_iter()
         .filter(|(_, v)| {
@@ -76,6 +76,13 @@ pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase) -> Vec<(String,
                 Phase::After => v.after.is_some() && v.after.unwrap(),
             };
             result
+        })
+        .filter(|(_, v)| {
+            if let Some(ref profiles) = v.profiles {
+                profiles.contains(name) 
+            } else {
+                true
+            }
         })
         .collect::<Vec<_>>()
 }

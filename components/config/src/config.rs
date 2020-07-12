@@ -505,6 +505,8 @@ pub struct HookConfig {
     pub stderr: Option<bool>,
     // Marks the hook to run after a build
     pub after: Option<bool>,
+    // Only run for these profiles
+    pub profiles: Option<Vec<ProfileName>>,
 }
 
 impl HookConfig {

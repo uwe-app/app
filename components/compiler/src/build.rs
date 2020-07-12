@@ -298,6 +298,19 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
+
+        resource::link(self.context)?;
+
+        if let Some(hooks) = &self.context.config.hook {
+            hook::run(
+                &self.context,
+                hook::collect(
+                    hooks.clone(),
+                    hook::Phase::Before,
+                    &self.context.options.settings.name),
+            )?;
+        }
+
         for p in targets {
             if p.is_file() {
                 self.one(&p)?;
@@ -305,6 +318,23 @@ impl<'a> Compiler<'a> {
                 self.build(&p)?;
             }
         }
+
+        // Now compile the books
+        if let Some(ref _book) = self.context.config.book {
+            self.book
+                .all(&self.context.config, self.context.livereload.clone())?;
+        }
+
+        if let Some(hooks) = &self.context.config.hook {
+            hook::run(
+                &self.context,
+                hook::collect(
+                    hooks.clone(),
+                    hook::Phase::After,
+                    &self.context.options.settings.name),
+            )?;
+        }
+
         Ok(())
     }
 
@@ -336,15 +366,6 @@ impl<'a> Compiler<'a> {
             filters.push(layout.clone());
         }
 
-        resource::link(self.context)?;
-
-        if let Some(hooks) = &self.context.config.hook {
-            hook::run(
-                &self.context,
-                hook::collect(hooks.clone(), hook::Phase::Before),
-            )?;
-        }
-
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)
             .max_depth(self.context.options.settings.max_depth)
@@ -368,19 +389,6 @@ impl<'a> Compiler<'a> {
                 }
                 Err(e) => return Err(Error::from(e)),
             }
-        }
-
-        // Now compile the books
-        if let Some(ref _book) = self.context.config.book {
-            self.book
-                .all(&self.context.config, self.context.livereload.clone())?;
-        }
-
-        if let Some(hooks) = &self.context.config.hook {
-            hook::run(
-                &self.context,
-                hook::collect(hooks.clone(), hook::Phase::After),
-            )?;
         }
 
         Ok(())
