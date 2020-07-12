@@ -1,8 +1,8 @@
 use config::Page;
 
-use super::CompilerOptions;
+use super::RuntimeOptions;
 
-pub fn is_draft(data: &Page, opts: &CompilerOptions) -> bool {
+pub fn is_draft(data: &Page, opts: &RuntimeOptions) -> bool {
     if opts.release {
         return data.draft.is_some() && data.draft.unwrap();
     }

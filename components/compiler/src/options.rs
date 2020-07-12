@@ -5,11 +5,11 @@ use config::ProfileName;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-// FIXME: re-use the ProfileSettings in the CompilerOptions!
+// FIXME: re-use the ProfileSettings in the RuntimeOptions!
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct CompilerOptions {
+pub struct RuntimeOptions {
     // Root of the input
     pub source: PathBuf,
     // Root of the output

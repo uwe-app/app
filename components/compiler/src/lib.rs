@@ -101,5 +101,5 @@ pub mod tree;
 pub mod watch;
 
 pub use build::Compiler;
-pub use options::CompilerOptions;
+pub use options::RuntimeOptions;
 pub use context::Context;

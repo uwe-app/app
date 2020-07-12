@@ -5,7 +5,7 @@ use log::{debug, info};
 
 use config::ProfileName;
 use compiler::redirect;
-use compiler::CompilerOptions;
+use compiler::RuntimeOptions;
 use config::{ProfileSettings, Config};
 use utils;
 
@@ -26,7 +26,7 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn with(cfg: &Config, args: &ProfileSettings) -> Result<CompilerOptions> {
+fn with(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
 
@@ -100,7 +100,7 @@ fn with(cfg: &Config, args: &ProfileSettings) -> Result<CompilerOptions> {
 
     let rewrite_index = build.rewrite_index.is_some() && build.rewrite_index.unwrap();
 
-    let opts = CompilerOptions {
+    let opts = RuntimeOptions {
         source: build.source.clone(),
         output: build.target.clone(),
         base: target.clone(),
@@ -159,7 +159,7 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
         .collect::<Vec<_>>()
 }
 
-pub fn prepare(cfg: &Config, args: &ProfileSettings) -> Result<CompilerOptions> {
+pub fn prepare(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
     let (_, target_dir) = get_tag_info(args);
 
     // Handle profiles, eg: [profile.dist] that mutate the

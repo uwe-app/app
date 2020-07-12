@@ -6,7 +6,7 @@ use log::info;
 
 use compiler::context::Context;
 use compiler::Compiler;
-use compiler::CompilerOptions;
+use compiler::RuntimeOptions;
 use config::{ProfileSettings, Config};
 use datasource::DataSourceMap;
 use locale::Locales;
@@ -47,7 +47,7 @@ pub fn compile(config: &Config, args: &ProfileSettings, dry_run: bool) -> Result
     compile_one(config, opts, dry_run)
 }
 
-fn compile_one(config: &Config, opts: CompilerOptions, dry_run: bool) -> Result<Context> {
+fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<Context> {
     let mut ctx: Context = Default::default();
     //let opts = super::project::prepare(&mut config, &args)?;
     let base_target = opts.target.clone();
@@ -90,7 +90,7 @@ fn compile_one(config: &Config, opts: CompilerOptions, dry_run: bool) -> Result<
     Ok(ctx)
 }
 
-fn load(locales: Locales, config: Config, options: CompilerOptions) -> Result<Context> {
+fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Context> {
     // Load generators
     let mut datasources = DataSourceMap::new();
     datasources.load(options.source.clone(), &config)?;
