@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::BuildProfile;
+use config::ProfileName;
 use compiler::redirect;
 use compiler::CompilerOptions;
 use config::{BuildArguments, Config};
@@ -36,7 +36,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
         if target_dir_buf.is_absolute() {
-            return Err(Error::BuildProfileAbsolute(target_dir));
+            return Err(Error::ProfileNameAbsolute(target_dir));
         }
         target.push(target_dir);
     }
@@ -126,17 +126,17 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     Ok(opts)
 }
 
-fn get_tag_info(args: &BuildArguments) -> (BuildProfile, String) {
+fn get_tag_info(args: &BuildArguments) -> (ProfileName, String) {
     let release = args.release.is_some() && args.release.unwrap();
 
-    let mut tag_target = BuildProfile::Debug;
+    let mut tag_target = ProfileName::Debug;
     if release {
-        tag_target = BuildProfile::Release;
+        tag_target = ProfileName::Release;
     }
 
     if let Some(t) = &args.profile {
         if !t.is_empty() {
-            tag_target = BuildProfile::Custom(t.to_string());
+            tag_target = ProfileName::Custom(t.to_string());
         }
     }
 

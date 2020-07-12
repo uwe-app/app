@@ -14,7 +14,7 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
-use super::build::{BuildProfile, BuildArguments};
+use super::build::{ProfileName, BuildArguments};
 use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{IndexRequest, DataSource};
@@ -647,7 +647,7 @@ pub struct MinifyConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyFormat {
-    pub profiles: Vec<BuildProfile>
+    pub profiles: Vec<ProfileName>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

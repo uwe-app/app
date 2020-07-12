@@ -12,73 +12,73 @@ static PRODUCTION: &str = "production";
 
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(from = "String", untagged)]
-pub enum BuildProfile {
+pub enum ProfileName {
     Debug,
     Release,
     Custom(String),
 }
 
-impl Serialize for BuildProfile {
+impl Serialize for ProfileName {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: Serializer {
         match *self {
-            BuildProfile::Debug => {
+            ProfileName::Debug => {
                 serializer.serialize_str(DEBUG)
             },
-            BuildProfile::Release => {
+            ProfileName::Release => {
                 serializer.serialize_str(RELEASE)
             },
-            BuildProfile::Custom(ref val) => {
+            ProfileName::Custom(ref val) => {
                 serializer.serialize_str(val)
             },
         }
     }
 }
 
-impl Default for BuildProfile {
+impl Default for ProfileName {
     fn default() -> Self {
-        BuildProfile::Debug
+        ProfileName::Debug
     }
 }
 
-impl From<String> for BuildProfile {
+impl From<String> for ProfileName {
     fn from(s: String) -> Self {
         if s == DEBUG {
-            BuildProfile::Debug
+            ProfileName::Debug
         } else if s == RELEASE {
-            BuildProfile::Release
+            ProfileName::Release
         } else {
-            BuildProfile::Custom(s) 
+            ProfileName::Custom(s) 
         }
     }
 }
 
-impl fmt::Display for BuildProfile {
+impl fmt::Display for ProfileName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            BuildProfile::Custom(ref val) => write!(f, "{}", val),
-            BuildProfile::Debug => write!(f, "{}", DEBUG),
-            BuildProfile::Release => write!(f, "{}", RELEASE),
+            ProfileName::Custom(ref val) => write!(f, "{}", val),
+            ProfileName::Debug => write!(f, "{}", DEBUG),
+            ProfileName::Release => write!(f, "{}", RELEASE),
         }
     }
 }
 
-impl BuildProfile {
+impl ProfileName {
     pub fn get_node_env(&self, debug: Option<String>, release: Option<String>) -> String {
         match self {
-            BuildProfile::Debug => {
+            ProfileName::Debug => {
                 if let Some(env) = debug {
                     return env;
                 }
                 return DEVELOPMENT.to_string();
             }
-            BuildProfile::Release => {
+            ProfileName::Release => {
                 if let Some(env) = release {
                     return env;
                 }
                 return PRODUCTION.to_string();
             }
-            BuildProfile::Custom(s) => return s.to_string(),
+            ProfileName::Custom(s) => return s.to_string(),
         }
     }
 }

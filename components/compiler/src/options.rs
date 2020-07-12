@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use config::BuildProfile;
+use config::ProfileName;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -26,7 +26,7 @@ pub struct CompilerOptions {
 
     pub max_depth: Option<usize>,
     pub release: bool,
-    pub tag: BuildProfile,
+    pub tag: ProfileName,
     pub live: bool,
     pub host: String,
     pub port: u16,

@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, FileInfo, FileType, FileOptions, BuildProfile, IndexQuery};
+use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQuery};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -17,7 +17,7 @@ use super::manifest::Manifest;
 use super::parser::Parser;
 use super::resource;
 
-fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &BuildProfile, release: bool, config: &Config) -> bool {
+fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool, config: &Config) -> bool {
     let mut html_extension = false;
     if let Some(ext) = dest.as_ref().extension() {
         html_extension = ext == HTML;
