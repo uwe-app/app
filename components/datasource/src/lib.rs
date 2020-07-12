@@ -8,7 +8,7 @@ use log::{info, warn};
 use serde_json::{json, Map, Value};
 use thiserror::Error;
 
-use config::{Config, IndexQuery};
+use config::{Config, IndexQuery, RuntimeOptions};
 use config::indexer::{SourceProvider, IndexRequest, DataSource as DataSourceConfig};
 
 pub mod identifier;
@@ -196,7 +196,7 @@ impl DataSourceMap {
         pth
     }
 
-    pub fn load(&mut self, source: PathBuf, config: &Config) -> Result<()> {
+    pub fn load(&mut self, source: PathBuf, config: &Config, options: &RuntimeOptions) -> Result<()> {
         self.load_configurations(&source, config)?;
 
         if let Some(ref sources) = config.collate {
@@ -220,7 +220,7 @@ impl DataSourceMap {
             }
         }
 
-        self.load_documents(config)?;
+        self.load_documents(config, options)?;
         self.configure_default_index()?;
         self.load_index()?;
         Ok(())
@@ -283,7 +283,7 @@ impl DataSourceMap {
         Ok(())
     }
 
-    fn load_documents(&mut self, config: &Config) -> Result<()> {
+    fn load_documents(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
         for (k, g) in self.map.iter_mut() {
 
             if !g.source.exists() || !g.source.is_dir() {
@@ -301,6 +301,7 @@ impl DataSourceMap {
                 provider: g.config.provider.as_ref().unwrap().clone(),
                 source: &g.source,
                 config,
+                options,
             };
 
             g.all = provider::Provider::load(req)?;

@@ -66,7 +66,7 @@ fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
     None
 }
 
-fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathBuf> {
+fn find_file_for_key(k: &str, source: &PathBuf, opts: &RuntimeOptions) -> Option<PathBuf> {
     let mut key = utils::url::to_path_separator(k);
     if k == "/" {
         key = INDEX_STEM.to_string().clone();
@@ -83,21 +83,23 @@ fn find_file_for_key(k: &str, source: &PathBuf, config: &Config) -> Option<PathB
         return Some(pth);
     }
 
-    let extensions = &config.extension.as_ref().unwrap();
+    //let extensions = &config.extension.as_ref().unwrap();
 
-    // Might just have a file stem so try the
-    // supported extensions
-    for ext in &extensions.render {
-        pth.set_extension(ext);
-        if pth.exists() {
-            return Some(pth);
+    if let Some(ref types) = opts.settings.types {
+        // Might just have a file stem so try the
+        // supported extensions
+        for ext in types.render() {
+            pth.set_extension(ext);
+            if pth.exists() {
+                return Some(pth);
+            }
         }
     }
 
     None
 }
 
-fn find_key_for_file<P: AsRef<Path>>(f: P, config: &Config) -> String {
+fn find_key_for_file<P: AsRef<Path>>(f: P, opts: &RuntimeOptions) -> String {
     let file = f.as_ref();
     let mut buf = file.to_path_buf();
 
@@ -105,14 +107,18 @@ fn find_key_for_file<P: AsRef<Path>>(f: P, config: &Config) -> String {
         let mut tmp = buf.clone();
         tmp.push(INDEX_STEM);
 
-        let extensions = &config.extension.as_ref().unwrap();
-        for ext in &extensions.render {
-            tmp.set_extension(ext);
-            if tmp.exists() {
-                buf = tmp;
-                break;
+        //let extensions = &config.extension.as_ref().unwrap();
+
+        if let Some(ref types) = opts.settings.types {
+            for ext in types.render() {
+                tmp.set_extension(ext);
+                if tmp.exists() {
+                    buf = tmp;
+                    break;
+                }
             }
         }
+
     }
 
     buf.to_string_lossy().into_owned()
@@ -124,7 +130,7 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, fro
     let mut page = config.page.as_ref().unwrap().clone();
 
     // Look for file specific data from page.toml
-    let file_key = find_key_for_file(&f, config);
+    let file_key = find_key_for_file(&f, opts);
     if let Some(file_object) = data.get_mut(&file_key) {
         let mut copy = file_object.clone();
         page.append(&mut copy);
@@ -170,12 +176,12 @@ fn clear() {
     data.clear();
 }
 
-pub fn reload(config: &Config, source: &PathBuf) -> Result<(), Error> {
+pub fn reload(config: &Config, options: &RuntimeOptions, source: &PathBuf) -> Result<(), Error> {
     clear();
-    load(config, source)
+    load(config, options, source)
 }
 
-pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
+pub fn load(config: &Config, options: &RuntimeOptions, source: &PathBuf) -> Result<(), Error> {
     let src = config.get_page_data_path();
     if src.exists() {
         let mut data = DATA.lock().unwrap();
@@ -185,7 +191,7 @@ pub fn load(config: &Config, source: &PathBuf) -> Result<(), Error> {
             Ok(props) => {
                 for (k, v) in props {
                     let page = v.try_into::<Page>()?;
-                    let result = find_file_for_key(&k, source, config);
+                    let result = find_file_for_key(&k, source, options);
                     match result {
                         Some(f) => {
                             // Use the actual file path as the key

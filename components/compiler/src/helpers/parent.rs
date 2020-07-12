@@ -35,11 +35,11 @@ impl HelperDef for Parent {
             .to_owned();
 
         let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
-        let extensions = build_ctx.config.extension.as_ref().unwrap();
+        let types = build_ctx.options.settings.types.as_ref().unwrap();
 
         let path = Path::new(&base_path).to_path_buf();
 
-        if let Some(parent) = config::resolve::resolve_parent_index(&path, extensions) {
+        if let Some(parent) = config::resolve::resolve_parent_index(&path, types) {
             let template = h.template();
             match template {
                 Some(t) => {

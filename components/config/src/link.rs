@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use super::{Config, RuntimeOptions, Error, Result};
+use super::{RuntimeOptions, Error, Result};
 
 static INDEX_HTML: &str = "index.html";
 
@@ -36,7 +36,7 @@ impl Default for LinkOptions {
 // relative to the source. The resulting href  
 // can be passed to the link helper to get a 
 // relative path.
-pub fn absolute<F: AsRef<Path>>(file: F, config: &Config, opts: &RuntimeOptions, options: LinkOptions) -> Result<String> {
+pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOptions) -> Result<String> {
     let src = &opts.source;
     let page = file.as_ref();
     if !page.starts_with(src) {
@@ -55,10 +55,10 @@ pub fn absolute<F: AsRef<Path>>(file: F, config: &Config, opts: &RuntimeOptions,
     }
 
     if options.transpose {
-        if let Some(ref extensions) = config.extension {
+        if let Some(ref types) = opts.settings.types {
             if let Some(ext) = rel.extension() {
                 let ext = ext.to_string_lossy().into_owned();
-                if let Some(ref map_ext) = extensions.map.get(&ext) {
+                if let Some(ref map_ext) = types.map().get(&ext) {
                     rel.set_extension(map_ext);
                 }
             }
@@ -94,12 +94,11 @@ mod tests {
 
     #[test]
     fn outside_source() -> Result<()> {
-        let config: Config = Default::default();
         let mut opts: RuntimeOptions = Default::default();
         let source = PathBuf::from("site");
         opts.source = source.clone();
         let page = PathBuf::from("post/article.md");
-        let result = absolute(&page, &config, &opts, Default::default());
+        let result = absolute(&page, &opts, Default::default());
         // TODO: restore this - requires PartialEq on Error
         //assert_eq!(Some(Error::PageOutsideSource(page, source)), result.err());
         Ok(())
@@ -107,35 +106,32 @@ mod tests {
 
     #[test]
     fn absolute_page_extension_rewrite() -> Result<()> {
-        let config: Config = Default::default();
         let mut opts: RuntimeOptions = Default::default();
         opts.source = PathBuf::from("site");
         let page = PathBuf::from("site/post/article.md");
-        let result = absolute(&page, &config, &opts, Default::default())?;
+        let result = absolute(&page, &opts, Default::default())?;
         assert_eq!("/post/article.html", result);
         Ok(())
     }
 
     #[test]
     fn absolute_page() -> Result<()> {
-        let config: Config = Default::default();
         let mut opts: RuntimeOptions = Default::default();
         opts.source = PathBuf::from("site");
         let page = PathBuf::from("site/post/article.html");
-        let result = absolute(&page, &config, &opts, Default::default())?;
+        let result = absolute(&page, &opts, Default::default())?;
         assert_eq!("/post/article.html", result);
         Ok(())
     }
 
     #[test]
     fn absolute_rewrite() -> Result<()> {
-        let config: Config = Default::default();
         let mut opts: RuntimeOptions = Default::default();
         opts.source = PathBuf::from("site");
         opts.settings.rewrite_index = Some(true);
 
         let page = PathBuf::from("site/post/article.html");
-        let result = absolute(&page, &config, &opts, Default::default())?;
+        let result = absolute(&page, &opts, Default::default())?;
         assert_eq!("/post/article/", result);
         Ok(())
     }

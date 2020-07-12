@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 use super::Error;
 
-use super::config::{Config, ExtensionConfig};
+use super::Config;
+use super::profile::{ProfileSettings, RenderTypes, RuntimeOptions};
 
 use crate::config::{HTML, INDEX_STEM};
 
@@ -34,8 +35,10 @@ impl Default for FileOptions<'_> {
 
 #[derive(Debug, Clone)]
 pub struct FileInfo<'a> {
-    // The settings configuration
+    // The configuration
     pub config: &'a Config,
+    // The runtime options
+    pub options: &'a RuntimeOptions,
     // The root of the source files
     pub source: &'a PathBuf,
     // The root of the build target
@@ -53,13 +56,15 @@ pub struct FileInfo<'a> {
 impl<'a> FileInfo<'a> {
     pub fn new(
         config: &'a Config,
+        options: &'a RuntimeOptions,
         source: &'a PathBuf,
         target: &'a PathBuf,
         file: &'a PathBuf,
         synthetic: bool) -> Self {
-        let file_type = FileInfo::get_type(file,config);
+        let file_type = FileInfo::get_type(file, &options.settings);
         Self {
             config,
+            options,
             source,
             target,
             file,
@@ -69,10 +74,10 @@ impl<'a> FileInfo<'a> {
         }
     }
 
-    fn has_parse_file_match<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
+    fn has_parse_file_match<P: AsRef<Path>>(file: P, types: &RenderTypes) -> bool {
         let path = file.as_ref();
         let mut copy = path.to_path_buf();
-        for ext in extensions.render.iter() {
+        for ext in types.render() {
             copy.set_extension(ext);
             if copy.exists() {
                 return true;
@@ -81,7 +86,7 @@ impl<'a> FileInfo<'a> {
         false
     }
 
-    fn rewrite_index_file<P: AsRef<Path>>(file: P, result: P, extensions: &ExtensionConfig) -> Option<PathBuf> {
+    fn rewrite_index_file<P: AsRef<Path>>(file: P, result: P, types: &RenderTypes) -> Option<PathBuf> {
         let clean_target = file.as_ref();
         if !FileInfo::is_index(&clean_target) {
             if let Some(parent) = clean_target.parent() {
@@ -90,7 +95,7 @@ impl<'a> FileInfo<'a> {
                     target.push(stem);
                     target.push(INDEX_STEM);
 
-                    if !FileInfo::has_parse_file_match(&target, extensions) {
+                    if !FileInfo::has_parse_file_match(&target, types) {
                         let clean_result = result.as_ref().clone();
                         if let Some(parent) = clean_result.parent() {
                             if let Some(stem) = clean_result.file_stem() {
@@ -108,14 +113,14 @@ impl<'a> FileInfo<'a> {
         None
     }
 
-    pub fn is_clean<P: AsRef<Path>>(file: P, extensions: &ExtensionConfig) -> bool {
+    pub fn is_clean<P: AsRef<Path>>(file: P, types: &RenderTypes) -> bool {
         let target = file.as_ref().to_path_buf();
         let result = target.clone();
-        return FileInfo::rewrite_index_file(target, result, extensions).is_some();
+        return FileInfo::rewrite_index_file(target, result, types).is_some();
     }
 
-    pub fn is_page<P: AsRef<Path>>(p: P, config: &Config) -> bool {
-        match FileInfo::get_type(p, config) {
+    pub fn is_page<P: AsRef<Path>>(p: P, options: &RuntimeOptions) -> bool {
+        match FileInfo::get_type(p, &options.settings) {
             FileType::Markdown | FileType::Template => {
                 true
             },
@@ -132,13 +137,13 @@ impl<'a> FileInfo<'a> {
         Ok(t)
     }
 
-    pub fn get_type<P: AsRef<Path>>(p: P, config: &Config) -> FileType {
-        let extensions = &config.extension.as_ref().unwrap();
+    pub fn get_type<P: AsRef<Path>>(p: P, settings: &ProfileSettings) -> FileType {
+        let types = &settings.types.as_ref().unwrap();
         let file = p.as_ref();
         if let Some(ext) = file.extension() {
             let ext = ext.to_string_lossy().into_owned();
-            if extensions.render.contains(&ext) {
-                if extensions.markdown.contains(&ext) {
+            if types.render().contains(&ext) {
+                if types.markdown().contains(&ext) {
                     return FileType::Markdown;
                 } else {
                     return FileType::Template;
@@ -147,7 +152,6 @@ impl<'a> FileInfo<'a> {
         }
         FileType::Unknown
     }
-
 
     pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
         if let Some(nm) = file.as_ref().file_stem() {
@@ -191,16 +195,18 @@ impl<'a> FileInfo<'a> {
     }
 
     // Build the destination file path and update the file extension.
-    pub fn destination(&mut self, config: &Config, options: &FileOptions) -> Result<(), Error> {
+    pub fn destination(&mut self, options: &FileOptions) -> Result<(), Error> {
         let pth = self.file.clone();
         let mut result = self.output(options)?;
         if !options.exact {
             match self.file_type {
                 FileType::Markdown | FileType::Template => {
-                    let extensions = &config.extension.as_ref().unwrap();
+                    let settings = &self.options.settings;
+                    let types = settings.types.as_ref().unwrap();
+
                     if let Some(ext) = pth.extension() {
                         let ext = ext.to_string_lossy().into_owned();
-                        for (k, v) in &extensions.map {
+                        for (k, v) in types.map() {
                             if ext == *k {
                                 result.set_extension(v);
                                 break;
@@ -209,7 +215,7 @@ impl<'a> FileInfo<'a> {
                     }
 
                     if options.rewrite_index {
-                        if let Some(res) = FileInfo::rewrite_index_file(pth.as_path(), result.as_path(), extensions) {
+                        if let Some(res) = FileInfo::rewrite_index_file(pth.as_path(), result.as_path(), types) {
                             result = res;
                         }
                     }

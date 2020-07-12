@@ -92,6 +92,16 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
         args.paths = Some(paths);
     }
 
+    // Append render extension shortcuts in [build.render]
+    // to the [extension.render] list
+    if let Some(type_defs) = args.types.as_mut() {
+        if let Some(ref render) = args.render {
+            for ext in render {
+                type_defs.types.insert(ext.to_string(), Default::default());
+            }
+        }
+    }
+
     let opts = RuntimeOptions {
         source,
         output: args.target.clone(),
@@ -100,6 +110,7 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
         target,
     };
 
+    //println!("Got settings {:#?}", args);
     debug!("{:?}", &cfg);
 
     Ok(opts)
@@ -148,8 +159,6 @@ pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOption
 
     // Inherit the profile settings from the root
     let root = cfg.build.as_ref().unwrap().clone();
-
-    //println!("Got settings {:#?}", args);
 
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations

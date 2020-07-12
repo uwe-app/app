@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
-use config::ExtensionConfig;
-
 use crate::{INDEX_STEM};
+use config::RenderTypes;
 
 use super::context::Context;
 
@@ -11,7 +10,7 @@ pub fn lookup_in(
     base: &PathBuf,
     context: &Context,
     href: &str,
-    extensions: &ExtensionConfig,
+    types: &RenderTypes,
 ) -> Option<PathBuf> {
 
     let rewrite_index = context.options.settings.should_rewrite_index();
@@ -29,14 +28,12 @@ pub fn lookup_in(
         return Some(buf);
     }
 
-    // FIXME: use ExtensionConfig
-
     // Check index pages
     if is_dir {
         let mut idx = base.clone();
         idx.push(&utils::url::to_path_separator(&url));
         idx.push(INDEX_STEM);
-        for ext in extensions.render.iter() {
+        for ext in types.render() {
             idx.set_extension(ext);
             if idx.exists() {
                 return Some(buf);
@@ -47,7 +44,7 @@ pub fn lookup_in(
     // Check for lower-level files that could map
     // to index pages
     if rewrite_index && is_dir {
-        for ext in extensions.render.iter() {
+        for ext in types.render() {
             buf.set_extension(ext);
             if buf.exists() {
                 return Some(buf);
@@ -78,16 +75,16 @@ fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf
 pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
     let base = &context.options.source;
 
-    let extensions = context.config.extension.as_ref().unwrap();
+    let types = context.options.settings.types.as_ref().unwrap();
 
     // Try to find a direct corresponding source file
-    if let Some(source) = lookup_in(base, context, href, extensions) {
+    if let Some(source) = lookup_in(base, context, href, types) {
         return Some(source);
     }
 
     // Try to find a resource
     let resource = context.config.get_resources_path(base);
-    if let Some(resource) = lookup_in(&resource, context, href, extensions) {
+    if let Some(resource) = lookup_in(&resource, context, href, types) {
         return Some(resource);
     }
 

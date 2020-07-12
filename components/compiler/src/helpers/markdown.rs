@@ -37,7 +37,7 @@ impl HelperDef for Markdown {
             .to_owned();
 
         let build_ctx: BuildContext = from_value(json!(cfg)).unwrap();
-        let extensions = build_ctx.config.extension.as_ref().unwrap();
+        let types = build_ctx.options.settings.types.as_ref().unwrap();
 
         let mut buf = BufferedOutput {
             buffer: "".to_owned(),
@@ -96,7 +96,7 @@ impl HelperDef for Markdown {
             let source_buf = PathBuf::from(&source_path);
             if let Some(ext) = source_buf.extension() {
                 let s = ext.to_string_lossy().into_owned();
-                evaluate = !extensions.markdown.contains(&s);
+                evaluate = !types.markdown().contains(&s);
             }
         }
 

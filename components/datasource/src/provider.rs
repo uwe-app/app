@@ -32,6 +32,7 @@ type ProviderResult = std::result::Result<Value, DeserializeError>;
 pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,
     pub config: &'a Config,
+    pub options: &'a RuntimeOptions,
     pub strategy: Strategy,
     pub kind: SourceType,
     pub provider: SourceProvider,
@@ -112,7 +113,7 @@ impl Provider {
                     let tx = tx.clone();
                     if let Ok(entry) = result {
                         let path = entry.path();
-                        if path.is_file() && FileInfo::is_page(&path, req.config) {
+                        if path.is_file() && FileInfo::is_page(&path, req.options) {
                             let _ = tx.send(path.to_path_buf());
                         }
                     }

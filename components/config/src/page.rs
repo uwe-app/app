@@ -187,7 +187,7 @@ impl Page {
 
     pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config, opts: &RuntimeOptions) -> Result<(), Error> {
 
-        self.href = Some(link::absolute(p.as_ref(), config, opts, Default::default())?);
+        self.href = Some(link::absolute(p.as_ref(), opts, Default::default())?);
 
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()

@@ -333,7 +333,7 @@ impl<'a> Invalidator<'a> {
                     } else if path.starts_with(&resources) {
                         rule.ignores.push(Action::Resource(path));
                     } else {
-                        let file_type = FileInfo::get_type(&path, &self.context.config);
+                        let file_type = FileInfo::get_type(&path, &self.context.options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -372,7 +372,7 @@ impl<'a> Invalidator<'a> {
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         // Reload the data source
         if rule.reload {
-            if let Err(e) = loader::reload(&self.context.config, &self.context.options.source) {
+            if let Err(e) = loader::reload(&self.context.config, &self.context.options, &self.context.options.source) {
                 error!("{}", e);
             }
         }

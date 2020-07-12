@@ -267,9 +267,8 @@ impl Default for RenderTypes {
 }
 
 impl RenderTypes {
-
     // Get list of file extensions to render
-    pub fn get_ext_render(&self) -> Vec<String> {
+    pub fn render(&self) -> Vec<String> {
         self.types
             .keys()
             .map(|v| v.to_string())
@@ -277,7 +276,7 @@ impl RenderTypes {
     }
 
     // Get the extension mapping
-    pub fn get_ext_map(&self) -> HashMap<String, String> {
+    pub fn map(&self) -> HashMap<String, String> {
         let mut map: HashMap<String, String> = HashMap::new();
         for (k, v) in self.types.iter() {
             if let Some(ref ext) = v.ext {
@@ -288,7 +287,7 @@ impl RenderTypes {
     }
 
     // Get list of extension to parse as markdown
-    pub fn get_ext_markdown(&self) -> Vec<String> {
+    pub fn markdown(&self) -> Vec<String> {
         self.types
             .iter()
             .filter(|(_k, v)| v.markdown.is_some() && v.markdown.unwrap())

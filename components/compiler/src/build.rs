@@ -102,6 +102,7 @@ impl<'a> Compiler<'a> {
 
                     let mut file_info = FileInfo::new(
                         &self.context.config,
+                        &self.context.options,
                         &self.context.options.source,
                         &self.context.options.target,
                         &mock,
@@ -114,7 +115,7 @@ impl<'a> Compiler<'a> {
                         ..Default::default()
                     };
 
-                    file_info.destination(&self.context.config, &file_opts)?;
+                    file_info.destination(&file_opts)?;
                     let dest = file_info.output.clone().unwrap();
 
                     // Must inherit the real input template file
@@ -151,7 +152,7 @@ impl<'a> Compiler<'a> {
             ..Default::default()
         };
 
-        info.destination(&self.context.config, &file_opts)?;
+        info.destination(&file_opts)?;
 
         let dest = info.output.as_ref().unwrap();
 
@@ -229,7 +230,7 @@ impl<'a> Compiler<'a> {
             ..Default::default()
         };
 
-        info.destination(&self.context.config, &file_opts)?;
+        info.destination(&file_opts)?;
         let dest = info.output.clone().unwrap();
 
         if self
@@ -311,6 +312,7 @@ impl<'a> Compiler<'a> {
     pub fn one(&mut self, file: &PathBuf) -> Result<()> {
         let mut info = FileInfo::new(
             &self.context.config,
+            &self.context.options,
             &self.context.options.source,
             &self.context.options.target,
             file,

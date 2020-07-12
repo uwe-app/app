@@ -104,7 +104,6 @@ pub struct Config {
     pub workspace: Option<WorkspaceConfig>,
     pub serve: Option<ServeConfig>,
     pub book: Option<BookConfig>,
-    pub extension: Option<ExtensionConfig>,
     pub fluent: Option<FluentConfig>,
     pub hook: Option<HashMap<String, HookConfig>>,
     pub node: Option<NodeConfig>,
@@ -137,7 +136,6 @@ impl Default for Config {
             project: None,
             build: Some(Default::default()),
             workspace: None,
-            extension: Some(Default::default()),
             fluent: None,
             book: None,
             serve: Some(Default::default()),
@@ -209,15 +207,6 @@ impl Config {
                     let mut bp = base.to_path_buf();
                     bp.push(&build.target);
                     build.target = bp;
-                }
-
-                // Append render extension shortcuts in [build.render]
-                // to the [extension.render] list
-                if let Some(ref render) = build.render {
-                    let extensions = cfg.extension.as_mut().unwrap(); 
-                    for ext in render {
-                        extensions.render.push(ext.clone());
-                    }
                 }
 
                 if let Some(ref book) = cfg.book {
@@ -429,43 +418,6 @@ pub struct WorkspaceConfig {
     pub members: Vec<PathBuf>,
 }
 
-//#[skip_serializing_none]
-//#[derive(Debug, Serialize, Deserialize, Clone)]
-//#[serde(default, rename_all = "kebab-case")]
-//pub struct BuildConfig {
-    //pub source: PathBuf,
-    //pub target: PathBuf,
-    //pub strict: Option<bool>,
-    //pub pages: Option<PathBuf>,
-    //pub assets: Option<PathBuf>,
-    //pub includes: Option<PathBuf>,
-    //pub partials: Option<PathBuf>,
-    //pub data_sources: Option<PathBuf>,
-    //pub resources: Option<PathBuf>,
-    //pub rewrite_index: Option<bool>,
-    //pub follow_links: Option<bool>,
-    //pub render: Option<Vec<String>>,
-//}
-
-//impl Default for BuildConfig {
-    //fn default() -> Self {
-        //BuildConfig {
-            //source: PathBuf::from(SITE),
-            //target: PathBuf::from(BUILD),
-            //strict: Some(true),
-            //pages: Some(PathBuf::from(PAGE_DATA)),
-            //assets: Some(PathBuf::from(ASSETS)),
-            //includes: Some(PathBuf::from(INCLUDES)),
-            //partials: Some(PathBuf::from(PARTIALS)),
-            //data_sources: Some(PathBuf::from(DATASOURCES)),
-            //resources: Some(PathBuf::from(RESOURCES)),
-            //rewrite_index: Some(false),
-            //follow_links: Some(true),
-            //render: None,
-        //}
-    //}
-//}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BookConfig {
     pub theme: PathBuf,
@@ -539,25 +491,6 @@ impl Default for ServeConfig {
         Self {
             host: String::from(HOST),
             port: PORT,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ExtensionConfig {
-    pub render: Vec<String>,
-    pub map: HashMap<String, String>,
-    pub markdown: Vec<String>,
-}
-
-impl Default for ExtensionConfig {
-    fn default() -> Self {
-        let mut ext_map: HashMap<String, String> = HashMap::new();
-        ext_map.insert(String::from(MD), String::from(HTML));
-        ExtensionConfig {
-            render: vec![String::from(MD)],
-            map: ext_map,
-            markdown: vec![String::from(MD)],
         }
     }
 }
