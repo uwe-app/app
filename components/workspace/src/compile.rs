@@ -7,7 +7,7 @@ use log::info;
 use compiler::context::Context;
 use compiler::Compiler;
 use compiler::CompilerOptions;
-use config::{BuildArguments, Config};
+use config::{ProfileSettings, Config};
 use datasource::DataSourceMap;
 use locale::Locales;
 
@@ -15,7 +15,7 @@ use crate::Result;
 
 pub fn compile_project<P: AsRef<Path>>(
     project: P,
-    args: &BuildArguments,
+    args: &ProfileSettings,
     skip_last: bool) -> Result<Context> {
 
     let mut spaces: Vec<Config> = Vec::new();
@@ -42,7 +42,7 @@ pub fn compile_project<P: AsRef<Path>>(
     Ok(ctx)
 }
 
-pub fn compile(config: &Config, args: &BuildArguments, dry_run: bool) -> Result<Context> {
+pub fn compile(config: &Config, args: &ProfileSettings, dry_run: bool) -> Result<Context> {
     let opts = super::project::prepare(config, args)?;
     compile_one(config, opts, dry_run)
 }

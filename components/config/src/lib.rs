@@ -43,7 +43,6 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-mod build;
 mod config;
 pub mod indexer;
 mod file;
@@ -51,9 +50,10 @@ pub mod filter;
 pub mod link;
 pub mod resolve;
 mod page;
+mod profile;
 
 pub use config::*;
 pub use page::Page;
 pub use file::{FileType, FileInfo, FileOptions};
-pub use build::{ProfileName, BuildArguments};
+pub use profile::{ProfileName, ProfileSettings};
 pub use indexer::IndexQuery;

@@ -86,7 +86,7 @@ impl ProfileName {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
-pub struct BuildArguments {
+pub struct ProfileSettings {
     pub max_depth: Option<usize>,
     pub profile: Option<String>,
     pub host: Option<String>,
@@ -111,7 +111,7 @@ pub struct BuildArguments {
     pub paths: Option<Vec<PathBuf>>,
 }
 
-impl Default for BuildArguments {
+impl Default for ProfileSettings {
     fn default() -> Self {
         Self {
             max_depth: None,

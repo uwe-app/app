@@ -14,7 +14,7 @@ use std::panic;
 
 use utils;
 
-use hypertext::{BuildArguments, Config, Error};
+use hypertext::{ProfileSettings, Config, Error};
 
 use hypertext::command;
 
@@ -481,7 +481,7 @@ fn process_command(cmd: &Command) {
                 None
             };
 
-            let build_args = BuildArguments {
+            let build_args = ProfileSettings {
                 paths,
                 profile: args.profile.clone(),
                 max_depth: args.max_depth,

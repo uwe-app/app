@@ -9,7 +9,7 @@ use compiler::context::Context;
 use compiler::invalidator::Invalidator;
 use compiler::redirect;
 use compiler::ErrorCallback;
-use config::BuildArguments;
+use config::ProfileSettings;
 
 use crate::command::run::{self, ServeOptions};
 use crate::Error;
@@ -20,7 +20,7 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
 
 pub fn compile<P: AsRef<Path>>(
     project: P,
-    args: &BuildArguments,
+    args: &ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
 

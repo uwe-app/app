@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::{BuildArguments, Config};
+use config::{ProfileSettings, Config};
 use config::AwsPublishEnvironment;
 use publisher::{self, PublishProvider, PublishRequest};
 use compiler::Context;
@@ -53,7 +53,7 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
                     };
 
                     // Compile a pristine release
-                    let mut args: BuildArguments = Default::default();
+                    let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
                     let ctx = workspace::compile(&config, &args, false)?;
 

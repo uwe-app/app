@@ -6,7 +6,7 @@ use log::{debug, info};
 use config::ProfileName;
 use compiler::redirect;
 use compiler::CompilerOptions;
-use config::{BuildArguments, Config};
+use config::{ProfileSettings, Config};
 use utils;
 
 use crate::{Error, Result};
@@ -26,7 +26,7 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
+fn with(cfg: &Config, args: &ProfileSettings) -> Result<CompilerOptions> {
     let build = cfg.build.as_ref().unwrap();
     let release = args.release.is_some() && args.release.unwrap();
 
@@ -126,7 +126,7 @@ fn with(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
     Ok(opts)
 }
 
-fn get_tag_info(args: &BuildArguments) -> (ProfileName, String) {
+fn get_tag_info(args: &ProfileSettings) -> (ProfileName, String) {
     let release = args.release.is_some() && args.release.unwrap();
 
     let mut tag_target = ProfileName::Debug;
@@ -159,7 +159,7 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
         .collect::<Vec<_>>()
 }
 
-pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
+pub fn prepare(cfg: &Config, args: &ProfileSettings) -> Result<CompilerOptions> {
     let (_, target_dir) = get_tag_info(args);
 
     // Handle profiles, eg: [profile.dist] that mutate the
@@ -179,7 +179,7 @@ pub fn prepare(cfg: &Config, args: &BuildArguments) -> Result<CompilerOptions> {
             use_profile.paths = Some(paths);
         }
 
-        let mut merged = super::merge::map::<BuildArguments>(&use_profile, args)?;
+        let mut merged = super::merge::map::<ProfileSettings>(&use_profile, args)?;
 
         // Always update base to use the path separator. The declaration is
         // a URL path but internally we treat as a filesystem path.

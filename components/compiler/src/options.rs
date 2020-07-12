@@ -5,7 +5,7 @@ use config::ProfileName;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-// FIXME: re-use the BuildArguments in the CompilerOptions!
+// FIXME: re-use the ProfileSettings in the CompilerOptions!
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

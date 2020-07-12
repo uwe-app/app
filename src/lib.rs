@@ -81,4 +81,4 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub mod command;
 
-pub use config::{BuildArguments, Config};
+pub use config::{ProfileSettings, Config};

@@ -14,7 +14,7 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
-use super::build::{ProfileName, BuildArguments};
+use super::profile::{ProfileName, ProfileSettings};
 use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{IndexRequest, DataSource};
@@ -114,7 +114,7 @@ pub struct Config {
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
     pub link: Option<LinkConfig>,
-    pub profile: Option<HashMap<String, BuildArguments>>,
+    pub profile: Option<HashMap<String, ProfileSettings>>,
     pub publish: Option<PublishConfig>,
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
