@@ -428,11 +428,7 @@ impl DataSourceMap {
                 let key = def.key.as_ref().unwrap();
                 let group = def.group.is_some() && def.group.unwrap();
 
-                //println!("Using the key: {:?}", key);
-
-                let mut values = ValueIndex {
-                    documents: BTreeMap::new(),
-                };
+                let mut values = ValueIndex { documents: BTreeMap::new() };
 
                 for (id, document) in &generator.all {
                     let key_val = if identity {
@@ -440,9 +436,6 @@ impl DataSourceMap {
                     } else {
                         DataSourceMap::find_value_for_key(key, document)
                     };
-
-                    //println!("GOT KEY VALUE: {:?}", key_val);
-                    //println!("GOT KEY VALUE: {:?}", key_val.to_string());
 
                     if let Value::Null = key_val {
                         continue;
@@ -454,11 +447,12 @@ impl DataSourceMap {
                     };
 
                     if !group {
+
                         let items = values.documents
                             .entry(default_key)
                             .or_insert(Vec::new());
-
                         items.push(id.to_string());
+
                     } else {
                         if let Some(val) = document.get(&key) {
                             let mut candidates: Vec<&str> = Vec::new();
