@@ -10,8 +10,8 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
-use config::{Config, IndexQuery, RuntimeOptions, KeyType};
-use config::indexer::{SourceProvider, DataSource as DataSourceConfig};
+use config::{Config, RuntimeOptions};
+use config::indexer::{IndexRequest, IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
 
 pub mod identifier;
 pub mod provider;
@@ -148,7 +148,7 @@ impl ValueIndex {
         m.insert("key".to_string(), json!(&k));
 
         if include_docs {
-            if query.is_flat() && v.len() == 1 {
+            if query.is_unique() && v.len() == 1 {
                 let s = &v[0];
                 let mut d = Map::new();
                 d.insert("id".to_string(), json!(s));
@@ -417,6 +417,10 @@ impl DataSourceMap {
         Value::Null
     }
 
+    fn get_sort_key_for_value<S: AsRef<str>>(req: &IndexRequest, id: S, key_val: &Value) -> String {
+        id.as_ref().to_string()
+    }
+
     fn load_index(&mut self) -> Result<()> {
         let type_err = Err(Error::IndexKeyType);
 
@@ -434,9 +438,6 @@ impl DataSourceMap {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
-
-                        println!("Searching with key {:?} in {:#?}", key, document);
-
                         DataSourceMap::find_value_for_key(key, document)
                     };
 
@@ -445,12 +446,11 @@ impl DataSourceMap {
                     }
 
                     let default_key = IndexKey {
-                        name: id.to_string(),
+                        name: DataSourceMap::get_sort_key_for_value(def, id, &key_val),
                         value: key_val.clone(),
                     };
 
                     if !group {
-
                         let items = values.documents
                             .entry(default_key)
                             .or_insert(Vec::new());

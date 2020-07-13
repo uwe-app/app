@@ -86,7 +86,7 @@ pub struct IndexQuery {
     pub each: Option<bool>,
     pub keys: Option<KeyType>,
     pub values: Option<bool>,
-    pub flat: Option<bool>,
+    pub unique: Option<bool>,
     pub desc: Option<bool>,
     pub offset: Option<usize>,
     pub limit: Option<usize>,
@@ -102,7 +102,7 @@ impl Default for IndexQuery {
             each: Some(false),
             keys: None,
             values: Some(false),
-            flat: Some(false),
+            unique: Some(false),
             desc: Some(false),
             offset: Some(0),
             limit: None,
@@ -111,8 +111,8 @@ impl Default for IndexQuery {
 }
 
 impl IndexQuery {
-    pub fn is_flat(&self) -> bool {
-        return self.index == ALL_INDEX.to_string() || self.flat.is_some() && self.flat.unwrap();
+    pub fn is_unique(&self) -> bool {
+        return self.unique.is_some() && self.unique.unwrap();
     }
 
     pub fn get_parameter(&self) -> String {
