@@ -100,23 +100,36 @@ pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
 pub struct Config {
     pub lang: String,
     pub host: String,
+    #[serde(skip_serializing)]
     pub build: Option<ProfileSettings>,
+    #[serde(skip_serializing)]
     pub workspace: Option<WorkspaceConfig>,
+    #[serde(skip_serializing)]
     pub serve: Option<ServeConfig>,
+    #[serde(skip_serializing)]
     pub book: Option<BookConfig>,
+    #[serde(skip_serializing)]
     pub fluent: Option<FluentConfig>,
+    #[serde(skip_serializing)]
     pub hook: Option<HashMap<String, HookConfig>>,
+    #[serde(skip_serializing)]
     pub node: Option<NodeConfig>,
     pub page: Option<Page>,
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
+    #[serde(skip_serializing)]
     pub link: Option<LinkConfig>,
+    #[serde(skip_serializing)]
     pub profile: Option<HashMap<String, ProfileSettings>>,
+    #[serde(skip_serializing)]
     pub publish: Option<PublishConfig>,
+    #[serde(skip_serializing)]
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
 
+    #[serde(skip_serializing)]
     pub collate: Option<HashMap<String, DataSource>>,
+    #[serde(skip_serializing)]
     pub minify: Option<MinifyConfig>,
     pub livereload: Option<LiveReload>,
 
