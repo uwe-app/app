@@ -31,7 +31,7 @@ impl HelperDef for Link {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let runtime = config::runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         let types = runtime.options.settings.types.as_ref().unwrap();
 
         let opts = &runtime.options;
@@ -149,16 +149,7 @@ impl HelperDef for Components {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        //let ctx = rc
-            //.evaluate(ctx, "@root/context")?
-            //.as_json()
-            //.as_object()
-            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            //.to_owned();
-
-        let runtime = config::runtime::runtime().read().unwrap();
-
-        //let build_ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         let opts = &runtime.options;
         let path = Path::new(&base_path).to_path_buf();
 
@@ -237,7 +228,7 @@ impl HelperDef for Match {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        let runtime = config::runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         let opts = &runtime.options;
         let path = Path::new(&base_path).to_path_buf();
 

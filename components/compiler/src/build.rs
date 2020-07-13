@@ -197,7 +197,9 @@ impl<'a> Compiler<'a> {
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
 
-            let datasource = &self.context.datasource;
+            let runtime = runtime::runtime().read().unwrap();
+            let datasource = &runtime.datasource;
+
             if !datasource.map.is_empty() {
                 let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
                 for query in queries {

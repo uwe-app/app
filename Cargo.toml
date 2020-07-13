@@ -27,6 +27,7 @@ members = [
   "components/preference",
   "components/publisher",
   "components/report",
+  "components/runtime",
   "components/server",
   "components/site",
   "components/updater",

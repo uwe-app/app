@@ -206,7 +206,10 @@ impl<'a> Invalidator<'a> {
                 .collect::<Vec<_>>();
         }
 
-        let generator_paths: Vec<PathBuf> = self.context.datasource.map
+        let runtime = runtime::runtime().read().unwrap();
+        let datasource = &runtime.datasource;
+
+        let generator_paths: Vec<PathBuf> = datasource.map
             .values()
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();

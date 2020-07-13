@@ -99,22 +99,25 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
 
 fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Context> {
 
-    let runtime = config::runtime::runtime();
+    // Load data sources and create indices
+    let datasource = DataSourceMap::load(&config, &options)?;
+
+    let runtime = runtime::runtime();
     let mut data = runtime.write().unwrap();
     // FIXME: remove the clones when migration completed
     data.config = config.clone();
     data.options = options.clone();
+    data.datasource = datasource;
+    //data.locales = locales.clone();
 
     //println!("Using host {:?}", &data.config.host);
 
-    // Load data sources and create indices
-    let datasources = DataSourceMap::load(&config, &options)?;
 
     // Load page template data
     loader::load(&options)?;
 
     // Set up the context
-    Ok(Context::new(locales, config, options, datasources))
+    Ok(Context::new(locales, config, options))
 }
 
 pub fn build(ctx: &Context) -> std::result::Result<Compiler, compiler::Error> {

@@ -23,7 +23,7 @@ impl HelperDef for Children {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let runtime = config::runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         // See if we should render a specific directory

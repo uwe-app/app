@@ -27,7 +27,7 @@ impl HelperDef for Markdown {
             .ok_or_else(|| RenderError::new("Type error in `md` for `file.source`, string expected"))?
             .replace("\"", "");
 
-        let runtime = config::runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         let types = runtime.options.settings.types.as_ref().unwrap();
 
         let mut buf = BufferedOutput {

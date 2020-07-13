@@ -12,7 +12,7 @@ impl HelperDef for LiveReload {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let runtime = config::runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         if runtime.options.settings.is_live() {
             let content = livereload::embed(&runtime.config);
             out.write(&content)?;

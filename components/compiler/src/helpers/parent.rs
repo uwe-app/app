@@ -24,7 +24,7 @@ impl HelperDef for Parent {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let runtime = config::runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         let types = runtime.options.settings.types.as_ref().unwrap();
 
         let path = Path::new(&base_path).to_path_buf();
