@@ -219,62 +219,13 @@ pub struct DataSourceMap {
 }
 
 impl DataSourceMap {
-    pub fn new() -> Self {
-        let map: BTreeMap<String, DataSource> = BTreeMap::new();
-        DataSourceMap { map }
-    }
-
-    pub fn get_datasource_config_path<P: AsRef<Path>>(&self, source: P) -> PathBuf {
+    pub fn get_datasource_config_path<P: AsRef<Path>>(source: P) -> PathBuf {
         let mut pth = source.as_ref().to_path_buf();
         pth.push(DATASOURCE_TOML);
         pth
     }
 
-    pub fn load(&mut self, source: PathBuf, config: &Config, options: &RuntimeOptions) -> Result<()> {
-        self.load_configurations(options)?;
-
-        if options.settings.should_collate() {
-            if let Some(ref sources) = config.collate {
-                for (k, v) in sources {
-                    let from = if v.from.is_some() {
-                        v.from.as_ref().unwrap().clone()
-                    } else {
-                        source.clone() 
-                    };
-
-                    let mut cfg = v.clone();
-                    if cfg.kind.is_none() {
-                        cfg.kind = Some(Default::default());
-                    }
-                    if cfg.provider.is_none() {
-                        cfg.provider = Some(Default::default());
-                    }
-
-                    let data_source = self.to_data_source(&from, cfg);
-                    self.map.insert(k.to_string(), data_source);
-                }
-            }
-        }
-
-        self.load_documents(config, options)?;
-        self.configure_default_index()?;
-        self.load_index()?;
-
-        //std::process::exit(1);
-
-        Ok(())
-    }
-
-    fn load_configurations(&mut self, options: &RuntimeOptions) -> Result<()> {
-        let src = options.get_data_sources_path();
-        if src.exists() && src.is_dir() {
-            let contents = src.read_dir()?;
-            self.load_config(contents)?;
-        }
-        Ok(())
-    }
-
-    fn to_data_source(&mut self, path: &PathBuf, config: DataSourceConfig) -> DataSource {
+    fn to_data_source(path: &PathBuf, config: DataSourceConfig) -> DataSource {
         let all: BTreeMap<String, Value> = BTreeMap::new();
         let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
         DataSource {
@@ -285,13 +236,67 @@ impl DataSourceMap {
         }
     }
 
-    fn load_config(&mut self, dir: ReadDir) -> Result<()> {
+    pub fn load(
+        config: &Config,
+        options: &RuntimeOptions) -> Result<DataSourceMap> {
+
+        let mut map: BTreeMap<String, DataSource> = BTreeMap::new();
+
+        // Load data source configurations
+        DataSourceMap::load_configurations(&mut map, options)?;
+
+        // Map configurations for collations
+        if options.settings.should_collate() {
+            if let Some(ref sources) = config.collate {
+                for (k, v) in sources {
+                    let from = if v.from.is_some() {
+                        v.from.as_ref().unwrap().clone()
+                    } else {
+                        options.source.clone() 
+                    };
+
+                    let mut cfg = v.clone();
+                    if cfg.kind.is_none() {
+                        cfg.kind = Some(Default::default());
+                    }
+                    if cfg.provider.is_none() {
+                        cfg.provider = Some(Default::default());
+                    }
+
+                    let data_source = DataSourceMap::to_data_source(&from, cfg);
+                    map.insert(k.to_string(), data_source);
+                }
+            }
+        }
+
+        // Load the documents for each configuration
+        DataSourceMap::load_documents(&mut map, config, options)?;
+
+        // Configure defaults
+        DataSourceMap::configure_defaults(&mut map)?;
+
+        // Create the indices
+        DataSourceMap::load_index(&mut map)?;
+
+        Ok(DataSourceMap { map })
+    }
+
+    fn load_configurations(map: &mut BTreeMap<String, DataSource>, options: &RuntimeOptions) -> Result<()> {
+        let src = options.get_data_sources_path();
+        if src.exists() && src.is_dir() {
+            let contents = src.read_dir()?;
+            DataSourceMap::load_config(map, contents)?;
+        }
+        Ok(())
+    }
+
+    fn load_config(map: &mut BTreeMap<String, DataSource>, dir: ReadDir) -> Result<()> {
         for f in dir {
             let mut path = f?.path();
             if path.is_dir() {
                 if let Some(nm) = path.file_name() {
                     let key = nm.to_string_lossy().into_owned();
-                    let conf = self.get_datasource_config_path(&path);
+                    let conf = DataSourceMap::get_datasource_config_path(&path);
                     if !conf.exists() || !conf.is_file() {
                         return Err(Error::NoDataSourceConf {
                             conf: DATASOURCE_TOML.to_string(),
@@ -314,17 +319,18 @@ impl DataSourceMap {
                         }
                     }
 
-                    let data_source = self.to_data_source(&path.to_path_buf(), config);
-                    self.map.insert(key, data_source);
+                    let data_source = DataSourceMap::to_data_source(&path.to_path_buf(), config);
+                    map.insert(key, data_source);
                 }
             }
         }
+
         Ok(())
     }
 
-    fn load_documents(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
+    fn load_documents(map: &mut BTreeMap<String, DataSource>, config: &Config, options: &RuntimeOptions) -> Result<()> {
 
-        for (k, g) in self.map.iter_mut() {
+        for (k, g) in map.iter_mut() {
 
             if !g.source.exists() || !g.source.is_dir() {
                 return Err(Error::NoDataSourceDocuments {
@@ -349,9 +355,9 @@ impl DataSourceMap {
         Ok(())
     }
 
-    // Configure the default all index
-    fn configure_default_index(&mut self) -> Result<()> {
-        for (_, generator) in self.map.iter_mut() {
+    // Configure the default keys
+    fn configure_defaults(map: &mut BTreeMap<String, DataSource>) -> Result<()> {
+        for (_, generator) in map.iter_mut() {
             if generator.config.index.is_none() {
                 generator.config.index = Some(HashMap::new());
             }
@@ -417,7 +423,9 @@ impl DataSourceMap {
         Value::Null
     }
 
-    fn get_sort_key_for_value<S: AsRef<str>>(req: &IndexRequest, id: S, key_val: &Value) -> String {
+    fn get_sort_key_for_value<S: AsRef<str>>(
+        req: &IndexRequest, id: S, key_val: &Value) -> String {
+
         match key_val {
             Value::String(ref s) => {
                 return s.to_string() 
@@ -428,10 +436,10 @@ impl DataSourceMap {
         id.as_ref().to_string()
     }
 
-    fn load_index(&mut self) -> Result<()> {
+    fn load_index(map: &mut BTreeMap<String, DataSource>) -> Result<()> {
         let type_err = Err(Error::IndexKeyType);
 
-        for (_, generator) in self.map.iter_mut() {
+        for (_, generator) in map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {

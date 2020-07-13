@@ -5,7 +5,7 @@ use log::{error, info};
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
-use datasource;
+use datasource::{self, DataSourceMap};
 use config::{FileInfo, FileType};
 
 use super::Compiler;
@@ -296,7 +296,7 @@ impl<'a> Invalidator<'a> {
                         rule.ignores.push(Action::Partial(path));
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
-                            let cfg = self.context.datasource.get_datasource_config_path(p);
+                            let cfg = DataSourceMap::get_datasource_config_path(p);
                             let documents = datasource::get_datasource_documents_path(p);
                             if path == cfg {
                                 rule.actions.push(Action::DataSourceConfig(path));

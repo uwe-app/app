@@ -98,9 +98,9 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
 }
 
 fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Context> {
-    // Load generators
-    let mut datasources = DataSourceMap::new();
-    datasources.load(options.source.clone(), &config, &options)?;
+
+    // Load data sources and create indices
+    let datasources = DataSourceMap::load(&config, &options)?;
 
     // Load page template data
     loader::load(&options)?;
