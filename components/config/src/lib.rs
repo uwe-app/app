@@ -51,9 +51,11 @@ pub mod link;
 pub mod resolve;
 mod page;
 mod profile;
+pub mod runtime;
 
 pub use crate::config::*;
 pub use page::Page;
 pub use file::{FileType, FileInfo, FileOptions};
 pub use profile::{ProfileName, ProfileSettings, RuntimeOptions, RenderTypes};
 pub use indexer::{IndexQuery, KeyType};
+pub use runtime::Runtime;

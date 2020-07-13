@@ -80,7 +80,7 @@ impl<'a> TemplateRender<'a> {
             // NOTE: context must be pushed into extra otherwise
             // NOTE: we have a recursive type due to the page data
             // NOTE: declared in the root config
-            data.extra.insert("context".to_string(), json!(self.context));
+            //data.extra.insert("context".to_string(), json!(self.context));
 
             trace!("{:#?}", data);
 

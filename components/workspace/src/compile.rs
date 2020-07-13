@@ -99,6 +99,14 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
 
 fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Context> {
 
+    let runtime = config::runtime::runtime();
+    let mut data = runtime.write().unwrap();
+    // FIXME: remove the clones when migration completed
+    data.config = config.clone();
+    data.options = options.clone();
+
+    //println!("Using host {:?}", &data.config.host);
+
     // Load data sources and create indices
     let datasources = DataSourceMap::load(&config, &options)?;
 

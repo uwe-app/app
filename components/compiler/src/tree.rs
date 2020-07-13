@@ -5,9 +5,8 @@ use std::path::PathBuf;
 use ignore::WalkBuilder;
 use serde_json::json;
 
-use config::{Page, FileInfo, FileType, FileOptions};
+use config::{Config, RuntimeOptions, Page, FileInfo, FileType, FileOptions};
 
-use super::context::Context;
 use crate::{Error, HTML, INDEX_HTML, INDEX_STEM, MD};
 
 pub type ItemData = Page;
@@ -28,7 +27,8 @@ pub struct ListOptions {
 pub fn listing<P: AsRef<Path>>(
     target: P,
     list: &ListOptions,
-    ctx: &Context,
+    config: &Config,
+    options: &RuntimeOptions
 ) -> Result<Vec<ItemData>, Error> {
 
     let mut path = target.as_ref().to_path_buf();
@@ -39,7 +39,7 @@ pub fn listing<P: AsRef<Path>>(
         // will make the entire path point to "/" and not
         // concatenate the path as expected so we use a
         // string instead
-        let mut dir_target = ctx.options.source.to_string_lossy().to_string();
+        let mut dir_target = options.source.to_string_lossy().to_string();
         dir_target.push_str(&list.dir);
 
         let dir_dest = Path::new(&dir_target);
@@ -54,7 +54,7 @@ pub fn listing<P: AsRef<Path>>(
     }
 
     if let Some(parent) = path.parent() {
-        return children(&path, &parent, &list, ctx);
+        return children(&path, &parent, &list, config, options);
     }
 
     Ok(vec![])
@@ -64,12 +64,13 @@ fn children<P: AsRef<Path>>(
     file: P,
     parent: &Path,
     list: &ListOptions,
-    ctx: &Context,
+    config: &Config,
+    options: &RuntimeOptions
 ) -> Result<Vec<ItemData>, Error> {
     let mut entries: Vec<ItemData> = Vec::new();
 
-    let source = &ctx.options.source;
-    let target = &ctx.options.target;
+    let source = &options.source;
+    let target = &options.target;
 
     let rel_base = parent
         .strip_prefix(source)
@@ -104,8 +105,8 @@ fn children<P: AsRef<Path>>(
 
             let source_file = path.to_path_buf();
             let mut info = FileInfo::new(
-                &ctx.config,
-                &ctx.options,
+                &config,
+                &options,
                 source,
                 target,
                 &source_file,
@@ -116,7 +117,7 @@ fn children<P: AsRef<Path>>(
                 FileType::Markdown | FileType::Template => {
 
                     let file_opts = FileOptions {
-                        rewrite_index: ctx.options.settings.should_rewrite_index(),
+                        rewrite_index: options.settings.should_rewrite_index(),
                         ..Default::default()
                     };
 
@@ -131,7 +132,7 @@ fn children<P: AsRef<Path>>(
                         dest = rel.to_path_buf();
                     }
                     href = dest.to_string_lossy().into();
-                    data = loader::compute(&path, &ctx.config, &ctx.options, true)?;
+                    data = loader::compute(&path, &config, &options, true)?;
                 }
                 _ => {}
             }
@@ -150,8 +151,8 @@ fn children<P: AsRef<Path>>(
             for f in candidates {
                 if f.exists() {
                     let mut info = FileInfo::new(
-                        &ctx.config,
-                        &ctx.options,
+                        &config,
+                        &options,
                         source,
                         target,
                         &f,
@@ -159,7 +160,7 @@ fn children<P: AsRef<Path>>(
                     );
 
                     let file_opts = FileOptions {
-                        rewrite_index: ctx.options.settings.should_rewrite_index(),
+                        rewrite_index: options.settings.should_rewrite_index(),
                         ..Default::default()
                     };
 
@@ -173,7 +174,7 @@ fn children<P: AsRef<Path>>(
                         dest = rel.to_path_buf();
                     }
                     href = dest.to_string_lossy().to_string();
-                    data = loader::compute(&f, &ctx.config, &ctx.options, true)?;
+                    data = loader::compute(&f, &config, &options, true)?;
 
                     break;
                 }
@@ -181,13 +182,13 @@ fn children<P: AsRef<Path>>(
         }
 
         let ignore_listing = data.listing.is_some() && !data.listing.unwrap();
-        if ignore_listing || super::draft::is_draft(&data, &ctx.options) {
+        if ignore_listing || super::draft::is_draft(&data, &options) {
             continue;
         }
 
         if !href.is_empty() {
-            if ctx.options.settings.should_rewrite_index()
-                && !ctx.options.settings.should_include_index() {
+            if options.settings.should_rewrite_index()
+                && !options.settings.should_include_index() {
 
                 if href.ends_with(INDEX_HTML) {
                     href.truncate(href.len() - INDEX_HTML.len());

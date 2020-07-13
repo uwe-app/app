@@ -1,19 +1,18 @@
 use std::path::PathBuf;
 
 use crate::{INDEX_STEM};
-use config::RenderTypes;
-
-use super::context::Context;
+use config::{Config, RuntimeOptions, RenderTypes};
 
 // Try to find a source file for the given URL
 pub fn lookup_in(
+    _config: &Config,
+    options: &RuntimeOptions,
     base: &PathBuf,
-    context: &Context,
     href: &str,
     types: &RenderTypes,
 ) -> Option<PathBuf> {
 
-    let rewrite_index = context.options.settings.should_rewrite_index();
+    let rewrite_index = options.settings.should_rewrite_index();
 
     let mut url = href.to_string().clone();
     url = utils::url::trim_slash(&url).to_owned();
@@ -55,8 +54,8 @@ pub fn lookup_in(
     None
 }
 
-fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf> {
-    if let Some(ref link) = context.config.link {
+fn lookup_allow(config: &Config, base: &PathBuf, href: &str) -> Option<PathBuf> {
+    if let Some(ref link) = config.link {
         if let Some(ref allow) = link.allow {
             for link in allow {
                 let url = link.trim_start_matches("/");
@@ -72,32 +71,31 @@ fn lookup_allow(base: &PathBuf, context: &Context, href: &str) -> Option<PathBuf
 }
 
 // Try to find a source file for the given URL
-pub fn lookup(context: &Context, href: &str) -> Option<PathBuf> {
-    let base = &context.options.source;
+pub fn lookup(config: &Config, options: &RuntimeOptions, href: &str) -> Option<PathBuf> {
 
-    let types = context.options.settings.types.as_ref().unwrap();
+    let base = &options.source;
+    let types = options.settings.types.as_ref().unwrap();
 
     // Try to find a direct corresponding source file
-    if let Some(source) = lookup_in(base, context, href, types) {
+    if let Some(source) = lookup_in(config, options, base, href, types) {
         return Some(source);
     }
 
     // Try to find a resource
-    let resource = context.options.get_resources_path();
-    if let Some(resource) = lookup_in(&resource, context, href, types) {
+    let resource = options.get_resources_path();
+    if let Some(resource) = lookup_in(config, options, &resource, href, types) {
         return Some(resource);
     }
 
     // Explicit allow list in site.toml
-    if let Some(source) = lookup_allow(base, context, href) {
+    if let Some(source) = lookup_allow(config, base, href) {
         return Some(source);
     }
 
     None
 }
 
-pub fn source_exists(context: &Context, href: &str) -> bool {
-    //lookup(&base, href, clean_url).is_some() || lookup_generator(href, clean_url).is_some()
-    lookup(context, href).is_some()
+pub fn exists( config: &Config, options: &RuntimeOptions, href: &str) -> bool {
+    lookup(config, options, href).is_some()
 }
 

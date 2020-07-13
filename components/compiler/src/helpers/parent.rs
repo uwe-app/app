@@ -6,7 +6,7 @@ use serde_json::json;
 use super::map_render_error;
 use super::with_parent_context;
 
-use super::super::context::Context as BuildContext;
+//use super::super::context::Context as BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct Parent;
@@ -27,15 +27,19 @@ impl HelperDef for Parent {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let cfg = rc
-            .evaluate(ctx, "@root/context")?
-            .as_json()
-            .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            .to_owned();
+        //let cfg = rc
+            //.evaluate(ctx, "@root/context")?
+            //.as_json()
+            //.as_object()
+            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
+            //.to_owned();
 
-        let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
-        let types = build_ctx.options.settings.types.as_ref().unwrap();
+        let runtime = config::runtime::runtime().read().unwrap();
+        //let runtime = &arc.into_inner().unwrap();
+        //runtime.foo();
+
+        //let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
+        let types = runtime.options.settings.types.as_ref().unwrap();
 
         let path = Path::new(&base_path).to_path_buf();
 
@@ -43,7 +47,7 @@ impl HelperDef for Parent {
             let template = h.template();
             match template {
                 Some(t) => {
-                    let mut data = loader::compute(&parent, &build_ctx.config, &build_ctx.options, true)
+                    let mut data = loader::compute(&parent, &runtime.config, &runtime.options, true)
                         .map_err(map_render_error)?;
                     let mut local_rc = rc.clone();
                     let local_ctx = with_parent_context(ctx, &mut data)?;

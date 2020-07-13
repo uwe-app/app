@@ -7,7 +7,7 @@ use serde_json::json;
 use config::FileInfo;
 use config::RuntimeOptions;
 
-use super::super::context::Context as BuildContext;
+//use super::super::context::Context as BuildContext;
 use super::super::lookup;
 
 use crate::INDEX_HTML;
@@ -33,23 +33,25 @@ impl HelperDef for Link {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let cfg = rc
-            .evaluate(ctx, "@root/context")?
-            .as_json()
-            .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            .to_owned();
+        //let cfg = rc
+            //.evaluate(ctx, "@root/context")?
+            //.as_json()
+            //.as_object()
+            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
+            //.to_owned();
 
-        let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
-        let types = build_ctx.options.settings.types.as_ref().unwrap();
+        let runtime = config::runtime::runtime().read().unwrap();
 
-        let opts = &build_ctx.options;
+        //let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
+        let types = runtime.options.settings.types.as_ref().unwrap();
+
+        let opts = &runtime.options;
         let path = Path::new(&base_path);
 
         let mut input: String = "".to_string();
 
         if let Some(p) = h.params().get(0) {
-            let link_config = build_ctx.config.link.as_ref().unwrap();
+            let link_config = runtime.config.link.as_ref().unwrap();
             let include_index = opts.settings.should_include_index();
 
             if !p.is_value_missing() {
@@ -97,7 +99,7 @@ impl HelperDef for Link {
 
             if let Some(verify) = link_config.verify {
                 if verify {
-                    if !lookup::source_exists(&build_ctx, &input) {
+                    if !lookup::exists(&runtime.config, &runtime.options, &input) {
                         return Err(RenderError::new(format!(
                             "Type error for `link`, missing url {}",
                             input
@@ -158,15 +160,17 @@ impl HelperDef for Components {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        let ctx = rc
-            .evaluate(ctx, "@root/context")?
-            .as_json()
-            .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            .to_owned();
+        //let ctx = rc
+            //.evaluate(ctx, "@root/context")?
+            //.as_json()
+            //.as_object()
+            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
+            //.to_owned();
 
-        let build_ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
-        let opts = &build_ctx.options;
+        let runtime = config::runtime::runtime().read().unwrap();
+
+        //let build_ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
+        let opts = &runtime.options;
         let path = Path::new(&base_path).to_path_buf();
 
         let template = h.template();
@@ -203,8 +207,8 @@ impl HelperDef for Components {
                             url.push_str(INDEX_HTML);
                         }
 
-                        if let Some(src) = lookup::lookup(&build_ctx, &href) {
-                            let mut data = loader::compute(src, &build_ctx.config, &build_ctx.options, true)
+                        if let Some(src) = lookup::lookup(&runtime.config, &runtime.options, &href) {
+                            let mut data = loader::compute(src, &runtime.config, &runtime.options, true)
                                 .map_err(map_render_error)?;
                             data.extra.insert("first".to_string(), json!(first));
                             data.extra.insert("last".to_string(), json!(last));
@@ -244,14 +248,17 @@ impl HelperDef for Match {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        let opts = rc
-            .evaluate(ctx, "@root/context.options")?
-            .as_json()
-            .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
-            .to_owned();
+        //let opts = rc
+            //.evaluate(ctx, "@root/context.options")?
+            //.as_json()
+            //.as_object()
+            //.ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
+            //.to_owned();
 
-        let opts: RuntimeOptions = serde_json::from_value(json!(opts)).unwrap();
+        let runtime = config::runtime::runtime().read().unwrap();
+        let opts = &runtime.options;
+
+        //let opts: RuntimeOptions = serde_json::from_value(json!(opts)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {

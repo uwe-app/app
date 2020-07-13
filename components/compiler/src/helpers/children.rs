@@ -3,7 +3,7 @@ use std::path::Path;
 use handlebars::*;
 use serde_json::json;
 
-use super::super::context::Context as BuildContext;
+//use super::super::context::Context as BuildContext;
 use super::super::tree::{self, ListOptions};
 
 #[derive(Clone, Copy)]
@@ -25,14 +25,16 @@ impl HelperDef for Children {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let ctx = rc
-            .evaluate(ctx, "@root/context")?
-            .as_json()
-            .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            .to_owned();
+        //let ctx = rc
+            //.evaluate(ctx, "@root/context")?
+            //.as_json()
+            //.as_object()
+            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
+            //.to_owned();
 
-        let ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
+        let runtime = config::runtime::runtime().read().unwrap();
+
+        //let ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         // See if we should render a specific directory
@@ -52,7 +54,7 @@ impl HelperDef for Children {
             depth: 1,
         };
 
-        let list_result = tree::listing(&path, &list_opts, &ctx);
+        let list_result = tree::listing(&path, &list_opts, &runtime.config, &runtime.options);
         match list_result {
             Ok(entries) => {
                 let template = h.template();

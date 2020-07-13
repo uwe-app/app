@@ -6,7 +6,7 @@ use handlebars::*;
 use serde_json::{json, from_value};
 
 use super::super::markdown::render_markdown_string;
-use super::super::context::Context as BuildContext;
+//use super::super::context::Context as BuildContext;
 
 use super::BufferedOutput;
 
@@ -29,15 +29,17 @@ impl HelperDef for Markdown {
             .ok_or_else(|| RenderError::new("Type error in `md` for `file.source`, string expected"))?
             .replace("\"", "");
 
-        let cfg = rc
-            .evaluate(ctx, "@root/context")?
-            .as_json()
-            .as_object()
-            .ok_or_else(|| RenderError::new("Type error in `md` for `context`, map expected"))?
-            .to_owned();
+        //let cfg = rc
+            //.evaluate(ctx, "@root/context")?
+            //.as_json()
+            //.as_object()
+            //.ok_or_else(|| RenderError::new("Type error in `md` for `context`, map expected"))?
+            //.to_owned();
 
-        let build_ctx: BuildContext = from_value(json!(cfg)).unwrap();
-        let types = build_ctx.options.settings.types.as_ref().unwrap();
+        let runtime = config::runtime::runtime().read().unwrap();
+
+        //let build_ctx: BuildContext = from_value(json!(cfg)).unwrap();
+        let types = runtime.options.settings.types.as_ref().unwrap();
 
         let mut buf = BufferedOutput {
             buffer: "".to_owned(),
@@ -101,7 +103,7 @@ impl HelperDef for Markdown {
         }
 
         if evaluate {
-            let parsed = render_markdown_string(&mut Cow::from(buf.buffer), &build_ctx.config);
+            let parsed = render_markdown_string(&mut Cow::from(buf.buffer), &runtime.config);
             out.write(&parsed)?;
         } else {
             out.write(&buf.buffer)?;

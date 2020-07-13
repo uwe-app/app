@@ -111,6 +111,8 @@ pub struct Page {
     // Reserved
     // 
     #[serde(skip_deserializing)]
+    pub host: Option<String>,
+    #[serde(skip_deserializing)]
     pub href: Option<String>,
     #[serde(skip_deserializing)]
     pub lang: Option<String>,
@@ -152,6 +154,7 @@ impl Default for Page {
 
             extra: Map::new(),
 
+            host: None,
             href: None,
             lang: None,
             file: None,
@@ -166,6 +169,7 @@ impl Page {
         let output = info.output.as_ref().unwrap();
 
         self.lang = Some(lang.as_ref().to_string());
+        self.host = Some(config.host.clone());
 
         let mut file_context = FileContext::new(info.file.clone(), output.clone());
         file_context.resolve_metadata()?;
