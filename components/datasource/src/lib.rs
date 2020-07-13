@@ -11,7 +11,7 @@ use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
 use config::{Config, IndexQuery, RuntimeOptions, KeyType};
-use config::indexer::{SourceProvider, IndexRequest, DataSource as DataSourceConfig};
+use config::indexer::{SourceProvider, DataSource as DataSourceConfig};
 
 pub mod identifier;
 pub mod provider;
@@ -23,9 +23,6 @@ pub enum Error {
 
     #[error("Duplicate document id {key} ({path})")]
     DuplicateId {key: String, path: PathBuf},
-
-    #[error("The all index is reserved, choose another index name")]
-    AllIndexReserved,
 
     #[error("Type error building index, keys must be string values")]
     IndexKeyType,
@@ -61,7 +58,6 @@ type Result<T> = std::result::Result<T, Error>;
 
 static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
-static ALL_INDEX: &str = "all";
 
 pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
@@ -263,6 +259,9 @@ impl DataSourceMap {
         self.load_documents(config, options)?;
         self.configure_default_index()?;
         self.load_index()?;
+
+        std::process::exit(1);
+
         Ok(())
     }
 
@@ -357,13 +356,6 @@ impl DataSourceMap {
                 generator.config.index = Some(HashMap::new());
             }
 
-            let index = generator.config.index.as_ref().unwrap();
-
-            // Complain on reserved index name
-            if index.contains_key(ALL_INDEX) {
-                return Err(Error::AllIndexReserved);
-            }
-
             if let Some(ref mut index) = generator.config.index.as_mut() {
                 // Inherit key from index name
                 for (k, v) in index.iter_mut() {
@@ -371,15 +363,6 @@ impl DataSourceMap {
                         v.key = Some(k.clone());
                     }
                 }
-
-                // Set up default all index
-                index.insert(
-                    ALL_INDEX.to_string(),
-                    IndexRequest {
-                        key: Some(ALL_INDEX.to_string()),
-                        ..Default::default()
-                    },
-                );
             }
         }
         Ok(())
@@ -441,8 +424,9 @@ impl DataSourceMap {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
-                let all = name == ALL_INDEX;
+                let identity = def.identity.is_some() && def.identity.unwrap();
                 let key = def.key.as_ref().unwrap();
+                let group = def.group.is_some() && def.group.unwrap();
 
                 //println!("Using the key: {:?}", key);
 
@@ -451,7 +435,7 @@ impl DataSourceMap {
                 };
 
                 for (id, document) in &generator.all {
-                    let key_val = if all {
+                    let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
                         DataSourceMap::find_value_for_key(key, document)
@@ -464,65 +448,61 @@ impl DataSourceMap {
                         continue;
                     }
 
-                    if all {
+                    let default_key = IndexKey {
+                        name: id.to_string(),
+                        value: key_val.clone(),
+                    };
 
-                        let index_key = IndexKey {
-                            name: id.to_string(),
-                            value: key_val,
-                        };
-
+                    if !group {
                         let items = values.documents
-                            .entry(index_key)
+                            .entry(default_key)
                             .or_insert(Vec::new());
 
-                        items.push(id.clone());
-                        continue;
-                    }
+                        items.push(id.to_string());
+                    } else {
+                        if let Some(val) = document.get(&key) {
+                            let mut candidates: Vec<&str> = Vec::new();
 
-                    if let Some(val) = document.get(&key) {
-                        let mut candidates: Vec<&str> = Vec::new();
+                            if !val.is_string() && !val.is_array() {
+                                return type_err;
+                            }
 
-                        if !val.is_string() && !val.is_array() {
-                            return type_err;
-                        }
+                            if let Some(s) = val.as_str() {
+                                candidates.push(s);
+                            }
 
-                        if let Some(s) = val.as_str() {
-                            candidates.push(s);
-                        }
-
-                        if let Some(arr) = val.as_array() {
-                            for val in arr {
-                                if let Some(s) = val.as_str() {
-                                    candidates.push(s);
-                                } else {
-                                    return type_err;
+                            if let Some(arr) = val.as_array() {
+                                for val in arr {
+                                    if let Some(s) = val.as_str() {
+                                        candidates.push(s);
+                                    } else {
+                                        return type_err;
+                                    }
                                 }
                             }
-                        }
 
-                        for s in candidates {
-                            let index_key = IndexKey {
-                                name: s.to_string(),
-                                value: key_val.clone(),
-                            };
+                            for s in candidates {
+                                let index_key = IndexKey {
+                                    name: s.to_string(),
+                                    value: key_val.clone(),
+                                };
 
-                            //println!("Creating index entry with key {:?}", s);
-                            let items = values.documents
-                                .entry(index_key)
-                                .or_insert(Vec::new());
+                                //println!("Creating index entry with key {:?}", s);
+                                let items = values.documents
+                                    .entry(index_key)
+                                    .or_insert(Vec::new());
 
-                            items.push(id.clone());
+                                items.push(id.clone());
+                            }
                         }
                     }
                 }
-
                 generator.indices.insert(name.clone(), values);
             }
 
-            //for (k, idx) in &generator.indices {
-            //println!("index key {:?}", k);
-            //println!("{}", serde_json::to_string_pretty(&idx.to_keys()).unwrap());
-            //}
+            for (k, idx) in &generator.indices {
+                println!("Index {:#?} for {:?}", idx, k);
+            }
         }
         Ok(())
     }

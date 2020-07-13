@@ -50,6 +50,14 @@ pub struct DataSource {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexRequest {
+    // Use the id as the value; primarily useful for the 
+    // default all index
+    pub identity: Option<bool>,
+    // Group on the key value, key must point to a string
+    // or array of strings
+    pub group: Option<bool>,
+    // The document key to use for the index, may be dot-delimited
+    // to specify a path to the value
     pub key: Option<String>,
 }
 
