@@ -1,8 +1,6 @@
 use std::convert::AsRef;
 use std::path::{Path, PathBuf};
 
-use serde_json::json;
-
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 

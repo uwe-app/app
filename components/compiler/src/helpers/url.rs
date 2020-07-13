@@ -5,9 +5,7 @@ use log::debug;
 use serde_json::json;
 
 use config::FileInfo;
-use config::RuntimeOptions;
 
-//use super::super::context::Context as BuildContext;
 use super::super::lookup;
 
 use crate::INDEX_HTML;
@@ -33,16 +31,7 @@ impl HelperDef for Link {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        //let cfg = rc
-            //.evaluate(ctx, "@root/context")?
-            //.as_json()
-            //.as_object()
-            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            //.to_owned();
-
         let runtime = config::runtime::runtime().read().unwrap();
-
-        //let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
         let types = runtime.options.settings.types.as_ref().unwrap();
 
         let opts = &runtime.options;
@@ -248,17 +237,8 @@ impl HelperDef for Match {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        //let opts = rc
-            //.evaluate(ctx, "@root/context.options")?
-            //.as_json()
-            //.as_object()
-            //.ok_or_else(|| RenderError::new("Type error for `options`, map expected"))?
-            //.to_owned();
-
         let runtime = config::runtime::runtime().read().unwrap();
         let opts = &runtime.options;
-
-        //let opts: RuntimeOptions = serde_json::from_value(json!(opts)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {

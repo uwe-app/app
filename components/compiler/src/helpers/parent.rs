@@ -1,12 +1,9 @@
 use std::path::Path;
 
 use handlebars::*;
-use serde_json::json;
 
 use super::map_render_error;
 use super::with_parent_context;
-
-//use super::super::context::Context as BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct Parent;
@@ -27,18 +24,7 @@ impl HelperDef for Parent {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        //let cfg = rc
-            //.evaluate(ctx, "@root/context")?
-            //.as_json()
-            //.as_object()
-            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            //.to_owned();
-
         let runtime = config::runtime::runtime().read().unwrap();
-        //let runtime = &arc.into_inner().unwrap();
-        //runtime.foo();
-
-        //let build_ctx: BuildContext = serde_json::from_value(json!(cfg)).unwrap();
         let types = runtime.options.settings.types.as_ref().unwrap();
 
         let path = Path::new(&base_path).to_path_buf();

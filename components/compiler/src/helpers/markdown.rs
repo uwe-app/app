@@ -3,10 +3,8 @@ use std::borrow::Cow;
 
 use handlebars::*;
 
-use serde_json::{json, from_value};
-
+use serde_json::{json};
 use super::super::markdown::render_markdown_string;
-//use super::super::context::Context as BuildContext;
 
 use super::BufferedOutput;
 
@@ -29,16 +27,7 @@ impl HelperDef for Markdown {
             .ok_or_else(|| RenderError::new("Type error in `md` for `file.source`, string expected"))?
             .replace("\"", "");
 
-        //let cfg = rc
-            //.evaluate(ctx, "@root/context")?
-            //.as_json()
-            //.as_object()
-            //.ok_or_else(|| RenderError::new("Type error in `md` for `context`, map expected"))?
-            //.to_owned();
-
         let runtime = config::runtime::runtime().read().unwrap();
-
-        //let build_ctx: BuildContext = from_value(json!(cfg)).unwrap();
         let types = runtime.options.settings.types.as_ref().unwrap();
 
         let mut buf = BufferedOutput {

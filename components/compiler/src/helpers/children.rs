@@ -1,9 +1,7 @@
 use std::path::Path;
 
 use handlebars::*;
-use serde_json::json;
 
-//use super::super::context::Context as BuildContext;
 use super::super::tree::{self, ListOptions};
 
 #[derive(Clone, Copy)]
@@ -25,16 +23,7 @@ impl HelperDef for Children {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        //let ctx = rc
-            //.evaluate(ctx, "@root/context")?
-            //.as_json()
-            //.as_object()
-            //.ok_or_else(|| RenderError::new("Type error for `context`, map expected"))?
-            //.to_owned();
-
         let runtime = config::runtime::runtime().read().unwrap();
-
-        //let ctx: BuildContext = serde_json::from_value(json!(ctx)).unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         // See if we should render a specific directory
