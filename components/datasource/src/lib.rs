@@ -418,6 +418,13 @@ impl DataSourceMap {
     }
 
     fn get_sort_key_for_value<S: AsRef<str>>(req: &IndexRequest, id: S, key_val: &Value) -> String {
+        match key_val {
+            Value::String(ref s) => {
+                return s.to_string() 
+            },
+            _ => {}
+
+        }
         id.as_ref().to_string()
     }
 
