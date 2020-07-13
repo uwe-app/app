@@ -346,6 +346,57 @@ impl DataSourceMap {
         Ok(())
     }
 
+    fn find_field<S: AsRef<str>>(field: S, parent: &Value) -> Value {
+        match parent {
+            Value::Object(ref map) => {
+                if let Some(val) = map.get(field.as_ref()) {
+                    return val.clone();
+                }
+            },
+            Value::Array(ref list) => {
+                if let Ok(index) = field.as_ref().parse::<usize>() {
+                    if !list.is_empty() && index < list.len() {
+                        return list[index].clone();
+                    }
+                }
+            },
+            _ => {}
+        } 
+        Value::Null
+    }
+
+    fn find_value_for_key<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
+        println!("Find in document key: {:?}", needle.as_ref());
+
+        #[allow(unused_assignments)]
+        let mut parent = Value::Null;
+
+        let parts = needle.as_ref()
+            .split(".")
+            .map(|p| p.to_string())
+            .enumerate()
+            .collect::<Vec<_>>();
+
+        match doc {
+            Value::Object(ref _map) => {
+                let mut current: &Value = doc;
+                for (i, part) in parts.iter() {
+                    if *i == parts.len() - 1 {
+                        return DataSourceMap::find_field(&part, current)
+                    } else {
+                        parent = DataSourceMap::find_field(&part, current);
+                        if let Value::Null = parent {
+                            break;
+                        }
+                        current = &parent;
+                    }
+                }
+            },
+            _ => {}
+        }
+        Value::Null
+    }
+
     fn load_index(&mut self) -> Result<()> {
         let type_err = Err(Error::IndexKeyType);
 
@@ -353,13 +404,28 @@ impl DataSourceMap {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
+                let all = name == ALL_INDEX;
                 let key = def.key.as_ref().unwrap();
+
+                //println!("Using the key: {:?}", key);
 
                 let mut values = ValueIndex {
                     documents: BTreeMap::new(),
                 };
 
                 for (id, document) in &generator.all {
+                    let key_val = if all {
+                        Value::String(id.to_string())
+                    } else {
+                        DataSourceMap::find_value_for_key(key, document)
+                    };
+
+                    println!("GOT KEY VALUE: {:?}", key_val);
+
+                    if let Value::Null = key_val {
+                        continue;
+                    }
+
                     if name == ALL_INDEX {
                         let items = values.documents
                             .entry(id.clone())
@@ -391,6 +457,7 @@ impl DataSourceMap {
                         }
 
                         for s in candidates {
+                            //println!("Creating index entry with key {:?}", s);
                             let items = values.documents
                                 .entry(s.to_string())
                                 .or_insert(Vec::new());
