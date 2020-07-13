@@ -54,13 +54,29 @@ pub struct IndexRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum KeyType {
+    #[serde(rename = "full")]
+    Full,
+    #[serde(rename = "name")]
+    Name,
+    #[serde(rename = "value")]
+    Value,
+}
+
+impl Default for KeyType {
+    fn default() -> Self {
+        KeyType::Full
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
     pub parameter: Option<String>,
     pub include_docs: Option<bool>,
     pub each: Option<bool>,
-    pub keys: Option<bool>,
+    pub keys: Option<KeyType>,
     pub values: Option<bool>,
     pub flat: Option<bool>,
     pub desc: Option<bool>,
@@ -76,7 +92,7 @@ impl Default for IndexQuery {
             parameter: None,
             include_docs: Some(false),
             each: Some(false),
-            keys: Some(false),
+            keys: None,
             values: Some(false),
             flat: Some(false),
             desc: Some(false),

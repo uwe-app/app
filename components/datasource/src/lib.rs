@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
-use config::{Config, IndexQuery, RuntimeOptions};
+use config::{Config, IndexQuery, RuntimeOptions, KeyType};
 use config::indexer::{SourceProvider, IndexRequest, DataSource as DataSourceConfig};
 
 pub mod identifier;
@@ -107,11 +107,23 @@ pub struct ValueIndex {
 }
 
 impl ValueIndex {
-    pub fn to_keys(&self) -> Vec<Value> {
+    pub fn to_keys(&self, key_type: &KeyType) -> Vec<Value> {
         return self
             .documents
             .keys()
-            .map(|k| to_value(k).unwrap() )
+            .map(|k| {
+                match key_type {
+                    KeyType::Full => {
+                        to_value(k).unwrap()
+                    },
+                    KeyType::Name => {
+                        to_value(&k.name).unwrap()
+                    },
+                    KeyType::Value => {
+                        to_value(&k.value).unwrap()
+                    }
+                }
+            })
             .collect::<Vec<_>>();
     }
 
@@ -518,13 +530,12 @@ impl DataSourceMap {
     pub fn query_index(&self, query: &IndexQuery) -> Result<Vec<Value>> {
         let name = &query.name;
         let idx_name = &query.index;
-        let keys = query.keys.is_some() && query.keys.unwrap();
         let values = query.values.is_some() && query.values.unwrap();
 
         if let Some(generator) = self.map.get(name) {
             if let Some(idx) = generator.indices.get(idx_name) {
-                if keys {
-                    return Ok(idx.to_keys());
+                if query.keys.is_some() {
+                    return Ok(idx.to_keys(query.keys.as_ref().unwrap()));
                 } else if values {
                     return Ok(idx.to_values());
                 }
