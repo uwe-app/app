@@ -260,7 +260,7 @@ impl DataSourceMap {
         self.configure_default_index()?;
         self.load_index()?;
 
-        std::process::exit(1);
+        //std::process::exit(1);
 
         Ok(())
     }
@@ -434,6 +434,9 @@ impl DataSourceMap {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
+
+                        println!("Searching with key {:?} in {:#?}", key, document);
+
                         DataSourceMap::find_value_for_key(key, document)
                     };
 
@@ -454,49 +457,45 @@ impl DataSourceMap {
                         items.push(id.to_string());
 
                     } else {
-                        if let Some(val) = document.get(&key) {
-                            let mut candidates: Vec<&str> = Vec::new();
+                        let mut candidates: Vec<&str> = Vec::new();
 
-                            if !val.is_string() && !val.is_array() {
-                                return type_err;
-                            }
+                        if !key_val.is_string() && !key_val.is_array() {
+                            return type_err;
+                        }
 
-                            if let Some(s) = val.as_str() {
-                                candidates.push(s);
-                            }
-
-                            if let Some(arr) = val.as_array() {
-                                for val in arr {
-                                    if let Some(s) = val.as_str() {
-                                        candidates.push(s);
-                                    } else {
-                                        return type_err;
-                                    }
+                        if let Some(s) = key_val.as_str() {
+                            candidates.push(s);
+                        }else if let Some(arr) = key_val.as_array() {
+                            for val in arr {
+                                if let Some(s) = val.as_str() {
+                                    candidates.push(s);
+                                } else {
+                                    return type_err;
                                 }
                             }
+                        }
 
-                            for s in candidates {
-                                let index_key = IndexKey {
-                                    name: s.to_string(),
-                                    value: key_val.clone(),
-                                };
+                        for s in candidates {
+                            let index_key = IndexKey {
+                                name: s.to_string(),
+                                value: key_val.clone(),
+                            };
 
-                                //println!("Creating index entry with key {:?}", s);
-                                let items = values.documents
-                                    .entry(index_key)
-                                    .or_insert(Vec::new());
+                            //println!("Creating index entry with key {:?}", s);
+                            let items = values.documents
+                                .entry(index_key)
+                                .or_insert(Vec::new());
 
-                                items.push(id.clone());
-                            }
+                            items.push(id.clone());
                         }
                     }
                 }
                 generator.indices.insert(name.clone(), values);
             }
 
-            for (k, idx) in &generator.indices {
-                println!("Index {:#?} for {:?}", idx, k);
-            }
+            //for (k, idx) in &generator.indices {
+                //println!("Index {:#?} for {:?}", idx, k);
+            //}
         }
         Ok(())
     }
