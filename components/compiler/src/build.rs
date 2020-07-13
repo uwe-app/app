@@ -296,6 +296,7 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
+        //let runtime = runtime::runtime().read().unwrap();
 
         resource::link(self.context)?;
 

@@ -74,6 +74,9 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
             return;
         }
 
+        //let mut runtime = runtime::runtime().write().unwrap();
+        //runtime.livereload = Some(ws_url);
+
         ctx.livereload = Some(ws_url);
 
         let built = workspace::build(&ctx);

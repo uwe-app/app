@@ -157,6 +157,9 @@ impl<'a> Invalidator<'a> {
     }
 
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
+        let runtime = runtime::runtime().read().unwrap();
+        let datasource = &runtime.datasource;
+
         let mut rule = Rule {
             notify: true,
             reload: false,
@@ -205,9 +208,6 @@ impl<'a> Invalidator<'a> {
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
         }
-
-        let runtime = runtime::runtime().read().unwrap();
-        let datasource = &runtime.datasource;
 
         let generator_paths: Vec<PathBuf> = datasource.map
             .values()
@@ -349,16 +349,20 @@ impl<'a> Invalidator<'a> {
     }
 
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
+        let runtime = runtime::runtime().read().unwrap();
+        let config = &runtime.config;
+        let options = &runtime.options;
+
         // Reload the data source
         if rule.reload {
-            if let Err(e) = loader::reload(&self.context.options) {
+            if let Err(e) = loader::reload(options) {
                 error!("{}", e);
             }
         }
 
         for hook in &rule.hooks {
             if let Action::Hook(id, _path) = hook {
-                if let Some(hook_config) = &self.context.config.hook.as_ref().unwrap().get(id) {
+                if let Some(hook_config) = config.hook.as_ref().unwrap().get(id) {
                     hook::exec(&self.context, hook_config)?;
                 }
             }
@@ -371,7 +375,7 @@ impl<'a> Invalidator<'a> {
                 match action {
                     Action::BookConfig(base, _) => {
                         self.builder.book.load(
-                            &self.context.config,
+                            config,
                             base,
                             self.context.livereload.clone(),
                         )?;
@@ -384,7 +388,7 @@ impl<'a> Invalidator<'a> {
         if book.all {
             self.builder
                 .book
-                .all(&self.context.config, self.context.livereload.clone())?;
+                .all(config, self.context.livereload.clone())?;
         } else {
             for action in &book.source {
                 match action {
@@ -393,12 +397,12 @@ impl<'a> Invalidator<'a> {
                         // as the notify crate gives us an absolute path
                         let file = FileInfo::relative_to(
                             base,
-                            &self.context.options.source,
-                            &self.context.options.source,
+                            &options.source,
+                            &options.source,
                         )?;
 
                         self.builder.book.build(
-                            &self.context.config,
+                            config,
                             &file,
                             self.context.livereload.clone(),
                         )?;

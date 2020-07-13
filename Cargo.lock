@@ -962,6 +962,7 @@ dependencies = [
  "pretty_env_logger 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "publisher 0.1.0",
  "report 0.1.0",
+ "runtime 0.1.0",
  "semver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "server 0.1.0",
