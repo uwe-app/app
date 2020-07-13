@@ -110,9 +110,6 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Con
     data.datasource = datasource;
     //data.locales = locales.clone();
 
-    //println!("Using host {:?}", &data.config.host);
-
-
     // Load page template data
     loader::load(&options)?;
 

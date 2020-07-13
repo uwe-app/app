@@ -1980,6 +1980,7 @@ version = "0.1.0"
 dependencies = [
  "config 0.1.0",
  "datasource 0.1.0",
+ "locale 0.1.0",
  "once_cell 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

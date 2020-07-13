@@ -9,6 +9,7 @@ use locale::Locales;
 pub struct Context {
     pub config: Config,
     pub options: RuntimeOptions,
+
     #[serde(skip)]
     pub livereload: Option<String>,
     #[serde(skip)]
