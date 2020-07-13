@@ -94,7 +94,6 @@ pub struct Page {
     pub query: Option<QueryList>,
 
     pub layout: Option<PathBuf>,
-    pub tags: Option<Vec<String>>,
     pub meta: Option<HashMap<String, Vec<String>>>,
 
     pub scripts: Option<Vec<String>>,
@@ -144,7 +143,6 @@ impl Default for Page {
             listing: Some(true),
             query: None,
             layout: None,
-            tags: None,
             meta: None,
             scripts: None,
             styles: None,
@@ -268,10 +266,6 @@ impl Page {
 
         if let Some(layout) = other.layout.as_mut() {
             self.layout = Some(mem::take(layout));
-        }
-
-        if let Some(tags) = other.tags.as_mut() {
-            self.tags = Some(mem::take(tags));
         }
 
         if let Some(meta) = other.meta.as_mut() {
