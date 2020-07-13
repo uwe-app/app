@@ -6,7 +6,8 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use log::{info, warn};
-use serde_json::{json, Map, Value};
+use serde::{Serialize, Deserialize};
+use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
 use config::{Config, IndexQuery, RuntimeOptions};
@@ -76,15 +77,15 @@ pub struct DataSource {
     pub indices: BTreeMap<String, ValueIndex>,
 }
 
-#[derive(Eq, Debug)]
+#[derive(Eq, Debug, Serialize, Deserialize)]
 pub struct IndexKey {
-    pub order: String,
+    pub name: String,
     pub value: Value,
 }
 
 impl Ord for IndexKey {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.order.cmp(&other.order) 
+        self.name.cmp(&other.name) 
     }
 }
 
@@ -96,7 +97,7 @@ impl PartialOrd for IndexKey {
 
 impl PartialEq for IndexKey {
     fn eq(&self, other: &Self) -> bool {
-        self.order == other.order 
+        self.name == other.name 
     }
 }
 
@@ -110,7 +111,7 @@ impl ValueIndex {
         return self
             .documents
             .keys()
-            .map(|k| k.value.clone() )
+            .map(|k| to_value(k).unwrap() )
             .collect::<Vec<_>>();
     }
 
@@ -132,11 +133,11 @@ impl ValueIndex {
         docs: &BTreeMap<String, Value>,
         query: &IndexQuery) -> Value {
 
-        let id = slug::slugify(&k.order);
+        let id = slug::slugify(&k.name);
         let mut m = Map::new();
 
         m.insert("id".to_string(), json!(&id));
-        m.insert("key".to_string(), k.value.clone());
+        m.insert("key".to_string(), json!(&k));
 
         if include_docs {
             if query.is_flat() && v.len() == 1 {
@@ -454,7 +455,7 @@ impl DataSourceMap {
                     if all {
 
                         let index_key = IndexKey {
-                            order: id.to_string(),
+                            name: id.to_string(),
                             value: key_val,
                         };
 
@@ -489,7 +490,7 @@ impl DataSourceMap {
 
                         for s in candidates {
                             let index_key = IndexKey {
-                                order: s.to_string(),
+                                name: s.to_string(),
                                 value: key_val.clone(),
                             };
 
@@ -534,7 +535,5 @@ impl DataSourceMap {
         } else {
             return Err(Error::NoDataSource(name.to_string()));
         }
-        
     }
-
 }

@@ -82,6 +82,7 @@ impl<'a> Compiler<'a> {
             let mut item_data = data.clone();
 
             if let Some(id) = doc.get("id") {
+
                 if let Some(id) = id.as_str() {
                     if doc.is_object() {
                         let map = doc.as_object().unwrap();
