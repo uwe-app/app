@@ -474,6 +474,7 @@ impl Default for DateConfig {
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct LinkConfig {
     /// Explicit list of paths that are allowed, should
     /// not begin with a forward slash

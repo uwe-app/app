@@ -64,7 +64,6 @@ impl HelperDef for Link {
 
             // Check config first
             let enabled = link_config.relative.is_some() && link_config.relative.unwrap();
-
             let passthrough = !enabled
                 || !input.starts_with("/")
                 || input.starts_with("http:")
@@ -84,17 +83,6 @@ impl HelperDef for Link {
                 input = input.trim_start_matches("/").to_owned();
             }
 
-            if let Some(verify) = link_config.verify {
-                if verify {
-                    if !lookup::source_exists(&build_ctx, &input) {
-                        return Err(RenderError::new(format!(
-                            "Type error for `link`, missing url {}",
-                            input
-                        )));
-                    }
-                }
-            }
-
             let mut base = opts.source.clone();
 
             if let Some(ref href_path) = opts.settings.base_href {
@@ -104,6 +92,17 @@ impl HelperDef for Link {
                 if input.starts_with(href_path) {
                     input = input.trim_start_matches(href_path).to_owned();
                     input = input.trim_start_matches("/").to_owned();
+                }
+            }
+
+            if let Some(verify) = link_config.verify {
+                if verify {
+                    if !lookup::source_exists(&build_ctx, &input) {
+                        return Err(RenderError::new(format!(
+                            "Type error for `link`, missing url {}",
+                            input
+                        )));
+                    }
                 }
             }
 
@@ -123,7 +122,7 @@ impl HelperDef for Link {
                     value.push_str(INDEX_HTML);
                 }
 
-                debug!("link {:?}", value);
+                debug!("Link {:?}", value);
 
                 out.write(&value)?;
             } else {

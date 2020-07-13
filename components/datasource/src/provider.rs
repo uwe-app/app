@@ -134,8 +134,7 @@ impl Provider {
             .enumerate()
             .map(Ok)
             .try_for_each_concurrent(limit, |(count, path)| {
-                let opts: RuntimeOptions = Default::default();
-                let result = loader::compute(&path, req.config, &opts, true);
+                let result = loader::compute(&path, req.config, req.options, true);
                 match result {
                     Ok(data) => {
                         let result = serde_json::to_value(data);

@@ -2,6 +2,8 @@ use std::path::Path;
 
 use super::{RuntimeOptions, Error, Result};
 
+use super::config::INDEX_STEM;
+
 static INDEX_HTML: &str = "index.html";
 
 pub struct LinkOptions {
@@ -32,6 +34,18 @@ impl Default for LinkOptions {
     }
 }
 
+fn is_home_index<P: AsRef<Path>>(p: P) -> bool {
+    let rel = p.as_ref();
+    if rel.components().count() == 1 {
+        if let Some(stem) = rel.file_stem() {
+            if stem == INDEX_STEM {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 // Attempt to get an absolute path for a page 
 // relative to the source. The resulting href  
 // can be passed to the link helper to get a 
@@ -45,6 +59,10 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
     }
 
     let mut rel = page.strip_prefix(src)?.to_path_buf();
+
+    if is_home_index(&rel) {
+        return Ok("/".to_string())
+    }
 
     let rewrite_index = opts.settings.should_rewrite_index();
     if options.rewrite && rewrite_index {

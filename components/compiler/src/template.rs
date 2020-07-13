@@ -6,7 +6,7 @@ use serde_json::json;
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
-use log::{debug, warn};
+use log::{trace, warn};
 
 use config::{Page, FileInfo};
 
@@ -82,7 +82,7 @@ impl<'a> TemplateRender<'a> {
             // NOTE: declared in the root config
             data.extra.insert("context".to_string(), json!(self.context));
 
-            debug!("{:?}", data);
+            trace!("{:#?}", data);
 
             return self.handlebars.render(name, data).map_err(Error::from);
         }

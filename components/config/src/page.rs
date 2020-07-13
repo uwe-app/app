@@ -5,6 +5,8 @@ use std::collections::HashMap;
 
 use chrono::prelude::*;
 
+use log::debug;
+
 use serde::{Deserialize, Serialize, Deserializer};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
@@ -188,6 +190,8 @@ impl Page {
     pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config, opts: &RuntimeOptions) -> Result<(), Error> {
 
         self.href = Some(link::absolute(p.as_ref(), opts, Default::default())?);
+
+        debug!("Href: {:?}", self.href);
 
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()

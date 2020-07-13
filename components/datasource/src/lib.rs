@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fs::ReadDir;
@@ -75,9 +76,33 @@ pub struct DataSource {
     pub indices: BTreeMap<String, ValueIndex>,
 }
 
+#[derive(Eq, Debug)]
+pub struct IndexKey {
+    pub order: String,
+    pub value: Value,
+}
+
+impl Ord for IndexKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.order.cmp(&other.order) 
+    }
+}
+
+impl PartialOrd for IndexKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for IndexKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.order == other.order 
+    }
+}
+
 #[derive(Debug)]
 pub struct ValueIndex {
-    pub documents: BTreeMap<String, Vec<String>>,
+    pub documents: BTreeMap<IndexKey, Vec<String>>,
 }
 
 impl ValueIndex {
@@ -85,9 +110,7 @@ impl ValueIndex {
         return self
             .documents
             .keys()
-            .map(|k| {
-                return json!(&k);
-            })
+            .map(|k| k.value.clone() )
             .collect::<Vec<_>>();
     }
 
@@ -102,16 +125,18 @@ impl ValueIndex {
     }
 
     fn map_entry(
-        &self, k: &str, v: &Vec<String>,
+        &self,
+        k: &IndexKey,
+        v: &Vec<String>,
         include_docs: bool,
         docs: &BTreeMap<String, Value>,
         query: &IndexQuery) -> Value {
 
-        let id = slug::slugify(&k);
+        let id = slug::slugify(&k.order);
         let mut m = Map::new();
 
         m.insert("id".to_string(), json!(&id));
-        m.insert("key".to_string(), json!(&k));
+        m.insert("key".to_string(), k.value.clone());
 
         if include_docs {
             if query.is_flat() && v.len() == 1 {
@@ -152,7 +177,7 @@ impl ValueIndex {
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
         let limit = if let Some(ref limit) = query.limit { limit.clone() } else { 0 };
 
-        let iter: Box<dyn Iterator<Item = (usize, (&String, &Vec<String>))>> = if desc {
+        let iter: Box<dyn Iterator<Item = (usize, (&IndexKey, &Vec<String>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set
             Box::new(self.documents.iter()
@@ -286,6 +311,7 @@ impl DataSourceMap {
     }
 
     fn load_documents(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
+
         for (k, g) in self.map.iter_mut() {
 
             if !g.source.exists() || !g.source.is_dir() {
@@ -366,8 +392,6 @@ impl DataSourceMap {
     }
 
     fn find_value_for_key<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
-        println!("Find in document key: {:?}", needle.as_ref());
-
         #[allow(unused_assignments)]
         let mut parent = Value::Null;
 
@@ -420,15 +444,22 @@ impl DataSourceMap {
                         DataSourceMap::find_value_for_key(key, document)
                     };
 
-                    println!("GOT KEY VALUE: {:?}", key_val);
+                    //println!("GOT KEY VALUE: {:?}", key_val);
+                    //println!("GOT KEY VALUE: {:?}", key_val.to_string());
 
                     if let Value::Null = key_val {
                         continue;
                     }
 
-                    if name == ALL_INDEX {
+                    if all {
+
+                        let index_key = IndexKey {
+                            order: id.to_string(),
+                            value: key_val,
+                        };
+
                         let items = values.documents
-                            .entry(id.clone())
+                            .entry(index_key)
                             .or_insert(Vec::new());
 
                         items.push(id.clone());
@@ -457,9 +488,14 @@ impl DataSourceMap {
                         }
 
                         for s in candidates {
+                            let index_key = IndexKey {
+                                order: s.to_string(),
+                                value: key_val.clone(),
+                            };
+
                             //println!("Creating index entry with key {:?}", s);
                             let items = values.documents
-                                .entry(s.to_string())
+                                .entry(index_key)
                                 .or_insert(Vec::new());
 
                             items.push(id.clone());
