@@ -124,7 +124,7 @@ impl<'a> Invalidator<'a> {
             match self.get_invalidation(paths) {
                 Ok(invalidation) => match self.invalidate(&from, &invalidation) {
                     Ok(_) => {
-                        self.builder.manifest.save()?;
+                        self.builder.manifest.save(self.builder.context)?;
                         if invalidation.notify {
                             let _ = tx.send(Message::text("reload"));
                             //println!("Got result {:?}", res);
@@ -366,7 +366,7 @@ impl<'a> Invalidator<'a> {
         for hook in &rule.hooks {
             if let Action::Hook(id, _path) = hook {
                 if let Some(hook_config) = config.hook.as_ref().unwrap().get(id) {
-                    hook::exec(hook_config)?;
+                    hook::exec(self.builder.context, hook_config)?;
                 }
             }
         }

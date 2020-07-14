@@ -302,10 +302,11 @@ impl<'a> Compiler<'a> {
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
         let livereload = runtime::livereload().read().unwrap();
 
-        resource::link()?;
+        resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
             hook::run(
+                self.context,
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::Before,
@@ -329,6 +330,7 @@ impl<'a> Compiler<'a> {
 
         if let Some(hooks) = &self.context.config.hook {
             hook::run(
+                self.context,
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::After,

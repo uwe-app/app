@@ -4,19 +4,16 @@ use std::process::{Command, Stdio};
 use log::{debug, info};
 
 use config::{HookConfig, ProfileName};
-
-use crate::Error;
+use crate::{BuildContext, Error};
 
 pub enum Phase {
     Before,
     After,
 }
 
-pub fn exec(hook: &HookConfig) -> Result<(), Error> {
+pub fn exec(ctx: &BuildContext, hook: &HookConfig) -> Result<(), Error> {
 
-    let runtime = runtime::runtime().read().unwrap();
-
-    let project_root = runtime.config.get_project();
+    let project_root = ctx.config.get_project();
     debug!("hook root {}", project_root.display());
     if let Ok(root) = project_root.canonicalize() {
         let mut cmd = hook.path.as_ref().unwrap().clone();
@@ -32,11 +29,11 @@ pub fn exec(hook: &HookConfig) -> Result<(), Error> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
-        let mut build_target = runtime.options.target.clone().canonicalize()?;
+        let mut build_target = ctx.options.target.clone().canonicalize()?;
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
-        let node = runtime.config.node.as_ref().unwrap();
-        let node_env = runtime.options.settings.name
+        let node = ctx.config.node.as_ref().unwrap();
+        let node_env = ctx.options.settings.name
             .get_node_env(node.debug.clone(), node.release.clone());
 
         info!("{} {}", cmd, args.join(" "));
@@ -89,10 +86,10 @@ pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase, name: &ProfileN
         .collect::<Vec<_>>()
 }
 
-pub fn run(hooks: Vec<(String, HookConfig)>) -> Result<(), Error> {
+pub fn run(ctx: &BuildContext, hooks: Vec<(String, HookConfig)>) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
-        exec(&hook)?;
+        exec(ctx, &hook)?;
     }
     Ok(())
 }

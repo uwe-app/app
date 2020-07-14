@@ -4,17 +4,17 @@ use log::{debug, info};
 
 use utils::symlink;
 
+use super::BuildContext;
+
 use crate::Error;
 use crate::Result;
 
-pub fn link() -> Result<()> {
-    let runtime = runtime::runtime().read().unwrap();
-
-    let target = &runtime.options.target;
+pub fn link(ctx: &BuildContext) -> Result<()> {
+    let target = &ctx.options.target;
 
     // The resource path must be absolute for links to work
     // regardless of where the executable is run from
-    let result = runtime.options.get_resources_path().canonicalize();
+    let result = ctx.options.get_resources_path().canonicalize();
 
     match result {
         Ok(resource) => {

@@ -95,7 +95,7 @@ fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
                 }
 
                 // Prepare for incremental builds
-                if let Err(_) = compiler.manifest.load() {}
+                if let Err(_) = compiler.manifest.load(&ctx) {}
 
                 // NOTE: only open the browser if initial build succeeds
                 open::that(&url).map(|_| ()).unwrap_or(());

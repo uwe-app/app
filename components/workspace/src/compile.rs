@@ -33,7 +33,7 @@ pub fn compile_project<P: AsRef<Path>>(
 
         let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
         if write_redirects {
-            compiler::redirect::write()?;
+            compiler::redirect::write(&ctx)?;
         }
     }
 
@@ -124,7 +124,7 @@ pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Erro
 
     // FIXME: do not pass a clone of the options?
     let mut builder = Compiler::new(ctx, runtime.options.clone());
-    builder.manifest.load()?;
+    builder.manifest.load(ctx)?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
 
@@ -138,7 +138,7 @@ pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Erro
     }
 
     builder.all(targets)?;
-    builder.manifest.save()?;
+    builder.manifest.save(ctx)?;
 
     Ok(builder)
 }

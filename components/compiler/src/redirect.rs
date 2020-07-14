@@ -3,9 +3,9 @@ use log::info;
 use std::collections::HashMap;
 use std::fs;
 
-use crate::{Error, Result, INDEX_HTML};
-
 use warp::http::Uri;
+
+use crate::{BuildContext, Error, Result, INDEX_HTML};
 
 static MAX_REDIRECTS: usize = 4;
 
@@ -28,16 +28,14 @@ fn write_file<P: AsRef<Path>>(location: &str, target: P) -> std::io::Result<()> 
     utils::fs::write_string(target, content)
 }
 
-pub fn write() -> Result<()> {
-    let runtime = runtime::runtime().read().unwrap();
-
-    if let Some(ref redirect) = runtime.config.redirect {
+pub fn write(ctx: &BuildContext) -> Result<()> {
+    if let Some(ref redirect) = ctx.config.redirect {
         for (k, v) in redirect {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX
             let key = k.trim_start_matches("/");
 
-            let mut buf = runtime.options.base.clone();
+            let mut buf = ctx.options.base.clone();
             buf.push(utils::url::to_path_separator(key));
             if k.ends_with("/") {
                 buf.push(INDEX_HTML);
@@ -46,7 +44,7 @@ pub fn write() -> Result<()> {
                 return Err(Error::RedirectFileExists(buf));
             }
 
-            let short = buf.strip_prefix(&runtime.options.base)?;
+            let short = buf.strip_prefix(&ctx.options.base)?;
             info!("{} -> {} as {}", &k, &v, short.display());
             if let Some(ref parent) = buf.parent() {
                 fs::create_dir_all(parent)?;
