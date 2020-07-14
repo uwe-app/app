@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQuery};
+use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQuery, RuntimeOptions};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -44,19 +44,18 @@ pub struct Compiler<'a> {
 }
 
 impl<'a> Compiler<'a> {
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(context: &'a Context, options: RuntimeOptions) -> Self {
         let book = BookCompiler::new(
-            context.options.source.clone(),
-            context.options.target.clone(),
-            context.options.settings.is_release(),
-            //context.options.release,
+            options.source.clone(),
+            options.target.clone(),
+            options.settings.is_release(),
         );
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
         let parser = Parser::new(&context);
 
-        let manifest = Manifest::new(&context);
+        let manifest = Manifest::new(&context, options);
 
         Self {
             context,
@@ -76,6 +75,8 @@ impl<'a> Compiler<'a> {
     ) -> Result<()> {
         let file = info.file;
         let parent = file.parent().unwrap();
+
+        let runtime = runtime::runtime().read().unwrap();
 
         // Write out the document files
         for doc in &values {
@@ -102,17 +103,17 @@ impl<'a> Compiler<'a> {
                     }
 
                     let mut file_info = FileInfo::new(
-                        &self.context.config,
-                        &self.context.options,
-                        &self.context.options.source,
-                        &self.context.options.target,
+                        &runtime.config,
+                        &runtime.options,
+                        &runtime.options.source,
+                        &runtime.options.target,
                         &mock,
                         true,
                     );
 
                     let file_opts = FileOptions {
                         rewrite_index,
-                        base_href: &self.context.options.settings.base_href,
+                        base_href: &runtime.options.settings.base_href,
                         ..Default::default()
                     };
 
@@ -126,9 +127,9 @@ impl<'a> Compiler<'a> {
 
                     let minify_html = should_minify_html(
                         &dest,
-                        &self.context.options.settings.name,
-                        self.context.options.settings.is_release(),
-                        &self.context.config);
+                        &runtime.options.settings.name,
+                        runtime.options.settings.is_release(),
+                        &runtime.config);
 
                     let s = if minify_html {
                         minify::html(self.parser.parse(&file_info, &mut item_data)?)
@@ -147,9 +148,12 @@ impl<'a> Compiler<'a> {
     }
 
     fn copy_file(&mut self, info: &mut FileInfo) -> Result<()> {
+
+        let runtime = runtime::runtime().read().unwrap();
+
         let file_opts = FileOptions {
             exact: true,
-            base_href: &self.context.options.settings.base_href,
+            base_href: &runtime.options.settings.base_href,
             ..Default::default()
         };
 
@@ -161,7 +165,7 @@ impl<'a> Compiler<'a> {
 
         if self
             .manifest
-            .is_dirty(file, &dest, self.context.options.settings.is_force())
+            .is_dirty(file, &dest, runtime.options.settings.is_force())
         {
             info!("{} -> {}", file.display(), dest.display());
             utils::fs::copy(file, &dest)?;
@@ -176,7 +180,9 @@ impl<'a> Compiler<'a> {
     fn parse_file(&mut self, mut info: &mut FileInfo) -> Result<()> {
         let file = info.file;
 
-        let mut data = loader::compute(file, &self.context.config, &self.context.options, true)?;
+        let runtime = runtime::runtime().read().unwrap();
+
+        let mut data = loader::compute(file, &runtime.config, &runtime.options, true)?;
 
         let render = data.render.is_some() && data.render.unwrap();
 
@@ -184,20 +190,19 @@ impl<'a> Compiler<'a> {
             return self.copy_file(info);
         }
 
-        let mut rewrite_index = self.context.options.settings.should_rewrite_index();
+        let mut rewrite_index = runtime.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
         if let Some(val) = data.rewrite_index {
             rewrite_index = val;
         }
 
-        if super::draft::is_draft(&data, &self.context.options) {
+        if super::draft::is_draft(&data, &runtime.options) {
             return Ok(());
         }
 
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
 
-            let runtime = runtime::runtime().read().unwrap();
             let datasource = &runtime.datasource;
 
             if !datasource.map.is_empty() {
@@ -229,7 +234,7 @@ impl<'a> Compiler<'a> {
 
         let file_opts = FileOptions {
             rewrite_index,
-            base_href: &self.context.options.settings.base_href,
+            base_href: &runtime.options.settings.base_href,
             ..Default::default()
         };
 
@@ -238,15 +243,15 @@ impl<'a> Compiler<'a> {
 
         if self
             .manifest
-            .is_dirty(file, &dest, self.context.options.settings.is_force())
+            .is_dirty(file, &dest, runtime.options.settings.is_force())
         {
             info!("{} -> {}", file.display(), dest.display());
 
             let minify_html = should_minify_html(
                 &dest,
-                &self.context.options.settings.name,
-                self.context.options.settings.is_release(),
-                &self.context.config);
+                &runtime.options.settings.name,
+                runtime.options.settings.is_release(),
+                &runtime.config);
 
             let s = if minify_html {
                 minify::html(self.parser.parse(&mut info, &mut data)?)
@@ -275,7 +280,9 @@ impl<'a> Compiler<'a> {
     }
 
     pub fn register_templates_directory(&mut self) -> Result<()> {
-        let templates = self.context.options.get_partials_path();
+        let runtime = runtime::runtime().read().unwrap();
+
+        let templates = runtime.options.get_partials_path();
         if templates.exists() {
             self.parser
                 .register_templates_directory(
@@ -286,8 +293,9 @@ impl<'a> Compiler<'a> {
 
     // Verify the paths are within the site source
     pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
+        let runtime = runtime::runtime().read().unwrap();
         for p in paths {
-            if !p.starts_with(&self.context.options.source) {
+            if !p.starts_with(&runtime.options.source) {
                 return Err(Error::OutsideSourceTree(p.clone()));
             }
         }
@@ -296,17 +304,16 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
-        //let runtime = runtime::runtime().read().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
 
-        resource::link(self.context)?;
+        resource::link()?;
 
-        if let Some(hooks) = &self.context.config.hook {
+        if let Some(hooks) = &runtime.config.hook {
             hook::run(
-                &self.context,
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::Before,
-                    &self.context.options.settings.name),
+                    &runtime.options.settings.name),
             )?;
         }
 
@@ -319,18 +326,17 @@ impl<'a> Compiler<'a> {
         }
 
         // Now compile the books
-        if let Some(ref _book) = self.context.config.book {
+        if let Some(ref _book) = runtime.config.book {
             self.book
-                .all(&self.context.config, self.context.livereload.clone())?;
+                .all(&runtime.config, self.context.livereload.clone())?;
         }
 
-        if let Some(hooks) = &self.context.config.hook {
+        if let Some(hooks) = &runtime.config.hook {
             hook::run(
-                &self.context,
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::After,
-                    &self.context.options.settings.name),
+                    &runtime.options.settings.name),
             )?;
         }
 
@@ -339,11 +345,13 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub fn one(&mut self, file: &PathBuf) -> Result<()> {
+        let runtime = runtime::runtime().read().unwrap();
+
         let mut info = FileInfo::new(
-            &self.context.config,
-            &self.context.options,
-            &self.context.options.source,
-            &self.context.options.target,
+            &runtime.config,
+            &runtime.options,
+            &runtime.options.source,
+            &runtime.options.target,
             file,
             false,
         );
@@ -352,19 +360,21 @@ impl<'a> Compiler<'a> {
 
     // Recursively walk and build files in a directory
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
+        let runtime = runtime::runtime().read().unwrap();
+
         self.register_templates_directory()?;
 
-        let follow_links = self.context.options.settings.should_follow_links();
-        let mut filters = config::filter::get_filters(&self.context.options, &self.context.config);
+        let follow_links = runtime.options.settings.should_follow_links();
+        let mut filters = config::filter::get_filters(&runtime.options, &runtime.config);
 
         // Always ignore the layout
-        if let Some(ref layout) = self.context.options.settings.layout {
+        if let Some(ref layout) = runtime.options.settings.layout {
             filters.push(layout.clone());
         }
 
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)
-            .max_depth(self.context.options.settings.max_depth)
+            .max_depth(runtime.options.settings.max_depth)
             .filter_entry(move |e| {
                 let path = e.path();
                 if filters.contains(&path.to_path_buf()) {

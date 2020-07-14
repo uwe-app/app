@@ -8,11 +8,11 @@ use serde_json::{json, Map, Value};
 
 use log::debug;
 
-use utils;
-
 use crate::Error;
 
 use super::context::Context;
+
+use config::RuntimeOptions;
 
 pub struct Manifest<'a> {
     file: ManifestFile,
@@ -31,12 +31,12 @@ pub struct ManifestEntry {
 }
 
 impl<'a> Manifest<'a> {
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(context: &'a Context, options: RuntimeOptions) -> Self {
         let file = ManifestFile { map: Map::new() };
         Manifest {
             context,
             file,
-            incremental: context.options.settings.is_incremental(),
+            incremental: options.settings.is_incremental(),
         }
     }
 
@@ -88,7 +88,8 @@ impl<'a> Manifest<'a> {
     }
 
     fn get_manifest_file(&self) -> PathBuf {
-        let mut file = self.context.options.target.clone();
+        let runtime = runtime::runtime().read().unwrap();
+        let mut file = runtime.options.target.clone();
         let name = file
             .file_name()
             .unwrap_or(std::ffi::OsStr::new(""))
@@ -111,7 +112,8 @@ impl<'a> Manifest<'a> {
     }
 
     pub fn save(&self) -> Result<(), Error> {
-        if self.context.options.settings.is_incremental() {
+        let runtime = runtime::runtime().read().unwrap();
+        if runtime.options.settings.is_incremental() {
             let file = self.get_manifest_file();
             let json = serde_json::to_string(&self.file)?;
             debug!("manifest {}", file.display());

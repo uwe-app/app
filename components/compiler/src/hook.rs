@@ -13,8 +13,11 @@ pub enum Phase {
     After,
 }
 
-pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
-    let project_root = context.config.get_project();
+pub fn exec(hook: &HookConfig) -> Result<(), Error> {
+
+    let runtime = runtime::runtime().read().unwrap();
+
+    let project_root = runtime.config.get_project();
     debug!("hook root {}", project_root.display());
     if let Ok(root) = project_root.canonicalize() {
         let mut cmd = hook.path.as_ref().unwrap().clone();
@@ -30,11 +33,11 @@ pub fn exec(context: &Context, hook: &HookConfig) -> Result<(), Error> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
-        let mut build_target = context.options.target.clone().canonicalize()?;
+        let mut build_target = runtime.options.target.clone().canonicalize()?;
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
-        let node = context.config.node.as_ref().unwrap();
-        let node_env = context.options.settings.name
+        let node = runtime.config.node.as_ref().unwrap();
+        let node_env = runtime.options.settings.name
             .get_node_env(node.debug.clone(), node.release.clone());
 
         info!("{} {}", cmd, args.join(" "));
@@ -87,10 +90,10 @@ pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase, name: &ProfileN
         .collect::<Vec<_>>()
 }
 
-pub fn run(context: &Context, hooks: Vec<(String, HookConfig)>) -> Result<(), Error> {
+pub fn run(hooks: Vec<(String, HookConfig)>) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
-        exec(context, &hook)?;
+        exec(&hook)?;
     }
     Ok(())
 }

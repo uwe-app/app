@@ -8,7 +8,7 @@ use locale::Locales;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
     pub config: Config,
-    pub options: RuntimeOptions,
+    //pub options: RuntimeOptions,
 
     #[serde(skip)]
     pub livereload: Option<String>,
@@ -20,12 +20,12 @@ impl Context {
     pub fn new(
         locales: Locales,
         config: Config,
-        options: RuntimeOptions,
+        //options: RuntimeOptions,
     ) -> Self {
         Self {
             locales,
             config,
-            options,
+            //options,
             livereload: None,
         }
     }
@@ -35,7 +35,7 @@ impl Default for Context {
     fn default() -> Self {
         Self {
             config: Default::default(),
-            options: Default::default(),
+            //options: Default::default(),
             locales: Default::default(),
             livereload: None,
         }

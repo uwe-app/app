@@ -177,33 +177,33 @@ impl<'a> Invalidator<'a> {
         let config_file = &self.context.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = self.context.config.hook.as_ref().unwrap();
+        let hooks = runtime.config.hook.as_ref().unwrap();
 
-        let build_output = self.canonical(self.context.options.output.clone());
+        let build_output = self.canonical(runtime.options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
         let data_file = self.canonical(
-            self.context.options.get_page_data_path());
+            runtime.options.get_page_data_path());
 
-        let layout_file = self.canonical(self.context.options.get_layout_path());
-        let assets = self.canonical(self.context.options.get_assets_path());
-        let partials = self.canonical(self.context.options.get_partials_path());
+        let layout_file = self.canonical(runtime.options.get_layout_path());
+        let assets = self.canonical(runtime.options.get_assets_path());
+        let partials = self.canonical(runtime.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators = self.canonical(
-            self.context.options.get_data_sources_path()
+            runtime.options.get_data_sources_path()
         );
 
-        let resources = self.canonical(self.context.options.get_resources_path());
+        let resources = self.canonical(runtime.options.get_resources_path());
 
         let book_theme = self.context.config
-            .get_book_theme_path(&self.context.options.source)
+            .get_book_theme_path(&runtime.options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = self.context.config.book {
-            books = book.get_paths(&self.context.options.source)
+        if let Some(ref book) = runtime.config.book {
+            books = book.get_paths(&runtime.options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
@@ -225,7 +225,7 @@ impl<'a> Invalidator<'a> {
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&self.context.options.source).unwrap(),
+                                hook.get_source_path(&runtime.options.source).unwrap(),
                             );
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
@@ -312,7 +312,7 @@ impl<'a> Invalidator<'a> {
                     } else if path.starts_with(&resources) {
                         rule.ignores.push(Action::Resource(path));
                     } else {
-                        let file_type = FileInfo::get_type(&path, &self.context.options.settings);
+                        let file_type = FileInfo::get_type(&path, &runtime.options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -363,7 +363,7 @@ impl<'a> Invalidator<'a> {
         for hook in &rule.hooks {
             if let Action::Hook(id, _path) = hook {
                 if let Some(hook_config) = config.hook.as_ref().unwrap().get(id) {
-                    hook::exec(&self.context, hook_config)?;
+                    hook::exec(hook_config)?;
                 }
             }
         }
@@ -427,8 +427,8 @@ impl<'a> Invalidator<'a> {
                             // as the notify crate gives us an absolute path
                             let file = FileInfo::relative_to(
                                 path,
-                                &self.context.options.source,
-                                &self.context.options.source,
+                                &runtime.options.source,
+                                &runtime.options.source,
                             )?;
 
                             if let Err(e) = self.builder.one(&file) {

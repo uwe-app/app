@@ -34,10 +34,15 @@ pub fn compile<P: AsRef<Path>>(
 }
 
 fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
-    let host = ctx.options.settings.get_host();
-    let port = ctx.options.settings.get_port();
 
-    let source = ctx.options.source.clone();
+    let runtime = runtime::runtime().read().unwrap();
+
+    let options = runtime.options.clone();
+
+    let host = options.settings.get_host();
+    let port = options.settings.get_port();
+
+    let source = options.source.clone();
     let endpoint = utils::generate_id(16);
 
     let mut redirect_uris = None;
@@ -46,7 +51,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
         redirect_uris = Some(redirect::collect(redirects)?);
     }
 
-    let target = ctx.options.base.clone().to_path_buf();
+    let target = options.base.clone().to_path_buf();
 
     let opts = ServeOptions {
         target,
@@ -69,7 +74,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        if let Err(e) = livereload::write(&ctx.config, &ctx.options.target, &ws_url) {
+        if let Err(e) = livereload::write(&ctx.config, &options.target, &ws_url) {
             error_cb(compiler::Error::from(e));
             return;
         }

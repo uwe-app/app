@@ -88,6 +88,8 @@ impl<'a> TemplateRender<'a> {
     }
 
     pub fn layout(&mut self, document: String, data: &mut Page) -> Result<String, Error> {
+        let runtime = runtime::runtime().read().unwrap();
+
         // Skip layout for standalone documents
         if let Some(standalone) = data.standalone {
             if standalone {
@@ -99,7 +101,7 @@ impl<'a> TemplateRender<'a> {
         //
         // See if the file has a specific layout
         let layout_path = if let Some(layout) = &data.layout {
-            let mut layout_path = self.context.options.source.clone();
+            let mut layout_path = runtime.options.source.clone();
             layout_path.push(layout);
             if !layout_path.exists() {
                 warn!("Missing layout {}", layout_path.display());
@@ -107,7 +109,7 @@ impl<'a> TemplateRender<'a> {
             layout_path
         } else {
             //self.context.options.layout.clone()
-            if let Some(ref layout) = self.context.options.settings.layout {
+            if let Some(ref layout) = runtime.options.settings.layout {
                 layout.clone()
             } else {
                 PathBuf::from(config::LAYOUT_HBS)

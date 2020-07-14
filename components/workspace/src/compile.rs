@@ -34,7 +34,7 @@ pub fn compile_project<P: AsRef<Path>>(
 
         let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
         if write_redirects {
-            compiler::redirect::write(&ctx)?;
+            compiler::redirect::write()?;
         }
     }
 
@@ -74,6 +74,8 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
             // FIXME: prevent loading all the locales again!?
             let mut copy = Locales::new(&config);
             copy.load(&config, &lang_opts)?;
+
+            // FIXME: move the lang to RuntimeOptions
             copy.lang = lang.clone();
 
             //println!("Build for lang {:?}", copy.lang);
@@ -102,34 +104,37 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Con
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options)?;
 
-    let runtime = runtime::runtime();
-    let mut data = runtime.write().unwrap();
-    // FIXME: remove the clones when migration completed
-    data.config = config.clone();
-    data.options = options.clone();
-    data.datasource = datasource;
-    //data.locales = locales.clone();
-
     // Load page template data
     loader::load(&options)?;
 
-    // Set up the context
-    Ok(Context::new(locales, config, options))
+    // Set up the real context
+    let ctx = Context::new(locales, config.clone());
+
+    let runtime = runtime::runtime();
+    let mut data = runtime.write().unwrap();
+    data.config = config;
+    data.options = options;
+    data.datasource = datasource;
+
+    Ok(ctx)
 }
 
 pub fn build(ctx: &Context) -> std::result::Result<Compiler, compiler::Error> {
-    let mut builder = Compiler::new(ctx);
+
+    let runtime = runtime::runtime().read().unwrap();
+
+    let mut builder = Compiler::new(ctx, runtime.options.clone());
     builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
 
-    if let Some(ref paths) = ctx.options.settings.paths {
+    if let Some(ref paths) = runtime.options.settings.paths {
         builder.verify(paths)?;
         for p in paths {
             targets.push(p.clone());
         }
     } else {
-        targets.push(ctx.options.source.clone());
+        targets.push(runtime.options.source.clone());
     }
 
     builder.all(targets)?;

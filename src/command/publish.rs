@@ -77,11 +77,13 @@ async fn publish_aws(
     ctx: Context,
     env: &AwsPublishEnvironment) -> Result<()> {
 
+    let runtime = runtime::runtime().read().unwrap();
+
     info!("Building local file list");
 
     // Create the list of local build files
     let mut file_builder =
-        FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
+        FileBuilder::new(runtime.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

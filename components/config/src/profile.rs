@@ -248,8 +248,7 @@ impl ProfileSettings {
     }
 }
 
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct RuntimeOptions {
     // Project root
     pub project: PathBuf,
