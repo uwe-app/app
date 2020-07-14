@@ -277,10 +277,14 @@ impl<'a> Compiler<'a> {
 
     pub fn register_templates_directory(&mut self) -> Result<()> {
         let templates = self.context.options.get_partials_path();
-        if templates.exists() {
-            self.parser
-                .register_templates_directory(
-                    TEMPLATE_EXT, templates.as_path())?;
+        if templates.exists() && templates.is_dir() {
+            self.parser.register_templates_directory(TEMPLATE_EXT, &templates)?;
+        }
+        if self.context.options.settings.should_use_short_codes() {
+            let short_codes = self.context.options.get_short_codes_path();
+            if short_codes.exists() && short_codes.is_dir() {
+                self.parser.register_templates_directory(TEMPLATE_EXT, &short_codes)?;
+            }
         }
         Ok(())
     }

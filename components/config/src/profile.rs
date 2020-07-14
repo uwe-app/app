@@ -120,7 +120,7 @@ pub struct ProfileSettings {
     pub live: Option<bool>,
     pub release: Option<bool>,
 
-    pub shortcodes: Option<bool>,
+    pub short_codes: Option<bool>,
     pub use_layout: Option<bool>,
 
     pub rewrite_index: Option<bool>,
@@ -170,7 +170,7 @@ impl Default for ProfileSettings {
             follow_links: Some(true),
             render: None,
 
-            shortcodes: None,
+            short_codes: None,
 
             max_depth: None,
             profile: None,
@@ -238,6 +238,10 @@ impl ProfileSettings {
         self.use_layout.is_some() && self.use_layout.unwrap()
     }
 
+    pub fn should_use_short_codes(&self) -> bool {
+        self.short_codes.is_some() && self.short_codes.unwrap()
+    }
+
     pub fn should_include_index(&self) -> bool {
         self.include_index.is_some() && self.include_index.unwrap()
     }
@@ -289,6 +293,10 @@ impl RuntimeOptions {
 
     pub fn get_partials_path(&self) -> PathBuf {
         self.source.join(self.settings.partials.as_ref().unwrap())
+    }
+
+    pub fn get_short_codes_path(&self) -> PathBuf {
+        self.source.join(config::SHORT_CODES.to_string())
     }
 
     pub fn get_data_sources_path(&self) -> PathBuf {
