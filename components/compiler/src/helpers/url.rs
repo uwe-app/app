@@ -79,7 +79,6 @@ impl HelperDef for Link<'_> {
             let mut base = opts.source.clone();
 
             if let Some(ref href_path) = opts.settings.base_href {
-                //println!("Adding base_href {:?}", href_path);
                 base.push(href_path);
 
                 if input.starts_with(href_path) {
@@ -162,6 +161,7 @@ impl HelperDef for Components<'_> {
                 let include_index = opts.settings.should_include_index();
 
                 if let Ok(rel) = path.strip_prefix(&opts.target) {
+
                     let mut buf = rel.to_path_buf();
                     if buf.ends_with(INDEX_HTML) {
                         buf.pop();
@@ -193,6 +193,7 @@ impl HelperDef for Components<'_> {
                         if let Some(src) = lookup::lookup(&self.context.config, &self.context.options, &href) {
                             let mut data = loader::compute(src, &self.context.config, &self.context.options, true)
                                 .map_err(map_render_error)?;
+
                             data.extra.insert("first".to_string(), json!(first));
                             data.extra.insert("last".to_string(), json!(last));
 

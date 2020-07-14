@@ -19,11 +19,12 @@ pub fn lookup_in(
 
     let is_dir = utils::url::is_dir(&url);
 
+
     let mut buf = base.clone();
     buf.push(&utils::url::to_path_separator(&url));
 
     // Check if the file exists directly
-    if buf.exists() {
+    if buf.is_file() {
         return Some(buf);
     }
 
@@ -34,8 +35,8 @@ pub fn lookup_in(
         idx.push(INDEX_STEM);
         for ext in types.render() {
             idx.set_extension(ext);
-            if idx.exists() {
-                return Some(buf);
+            if idx.is_file() {
+                return Some(idx);
             }
         }
     }
@@ -45,7 +46,7 @@ pub fn lookup_in(
     if rewrite_index && is_dir {
         for ext in types.render() {
             buf.set_extension(ext);
-            if buf.exists() {
+            if buf.is_file() {
                 return Some(buf);
             }
         }
