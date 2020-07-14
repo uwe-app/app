@@ -102,7 +102,7 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
     loader::load(&options)?;
 
     // Set up the real context
-    let ctx = Context::new(locales);
+    let ctx = Context::new(config.clone(), options.clone(), locales);
 
     let runtime = runtime::runtime();
     let mut data = runtime.write().unwrap();
