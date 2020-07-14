@@ -11,7 +11,7 @@ use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQu
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
-use super::context::Context;
+use super::context::BuildContext;
 use super::hook;
 use super::manifest::Manifest;
 use super::parser::Parser;
@@ -43,7 +43,7 @@ pub struct Compiler<'a> {
 }
 
 impl<'a> Compiler<'a> {
-    pub fn new(context: &'a Context, options: RuntimeOptions) -> Self {
+    pub fn new(context: &'a BuildContext, options: RuntimeOptions) -> Self {
         let book = BookCompiler::new(
             options.source.clone(),
             options.target.clone(),

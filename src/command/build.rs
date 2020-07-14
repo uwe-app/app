@@ -5,7 +5,7 @@ use std::sync::mpsc::channel;
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
-use compiler::context::Context;
+use compiler::BuildContext;
 use compiler::invalidator::Invalidator;
 use compiler::redirect;
 use compiler::ErrorCallback;
@@ -33,7 +33,7 @@ pub fn compile<P: AsRef<Path>>(
     Ok(())
 }
 
-fn livereload(ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
+fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
 
     let runtime = runtime::runtime().read().unwrap();
 

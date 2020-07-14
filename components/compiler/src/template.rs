@@ -8,7 +8,7 @@ use log::{trace, warn};
 
 use config::{Page, FileInfo};
 
-use super::context::Context;
+use super::context::BuildContext;
 use super::helpers;
 use crate::Error;
 
@@ -18,7 +18,7 @@ pub struct TemplateRender<'a> {
 }
 
 impl<'a> TemplateRender<'a> {
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(context: &'a BuildContext) -> Self {
         let runtime = runtime::runtime().read().unwrap();
 
         let mut handlebars = Handlebars::new();

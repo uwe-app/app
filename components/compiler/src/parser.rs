@@ -5,7 +5,7 @@ use config::{Page, FileType, FileInfo};
 
 use crate::Error;
 
-use super::context::Context;
+use super::context::BuildContext;
 use super::markdown::render_markdown_string;
 use super::template::TemplateRender;
 
@@ -14,7 +14,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(context: &'a BuildContext) -> Self {
         let render = TemplateRender::new(context);
         Parser { render }
     }

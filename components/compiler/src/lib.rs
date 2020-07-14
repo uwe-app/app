@@ -100,4 +100,4 @@ pub mod tree;
 pub mod watch;
 
 pub use build::Compiler;
-pub use context::Context;
+pub use context::BuildContext;

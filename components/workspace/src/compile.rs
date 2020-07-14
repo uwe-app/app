@@ -4,8 +4,7 @@ use std::path::PathBuf;
 
 use log::info;
 
-use compiler::context::Context;
-use compiler::Compiler;
+use compiler::{Compiler, BuildContext};
 use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
 use locale::Locales;
@@ -15,14 +14,14 @@ use crate::Result;
 pub fn compile_project<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
-    skip_last: bool) -> Result<Context> {
+    skip_last: bool) -> Result<BuildContext> {
 
     let mut spaces: Vec<Config> = Vec::new();
     super::finder::find(project, true, &mut spaces)?;
 
     let length = spaces.len();
 
-    let mut ctx: Context = Default::default();
+    let mut ctx: BuildContext = Default::default();
     for (i, config) in spaces.into_iter().enumerate() {
         let mut dry_run = false;
 
@@ -41,13 +40,13 @@ pub fn compile_project<P: AsRef<Path>>(
     Ok(ctx)
 }
 
-pub fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Result<Context> {
+pub fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Result<BuildContext> {
     let opts = super::project::prepare(config, args)?;
     compile_one(config, opts, dry_run)
 }
 
-fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<Context> {
-    let mut ctx: Context = Default::default();
+fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<BuildContext> {
+    let mut ctx: BuildContext = Default::default();
     let base_target = opts.target.clone();
 
     let mut locales: Locales = Default::default();
@@ -94,7 +93,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
     Ok(ctx)
 }
 
-fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<String>) -> Result<Context> {
+fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options)?;
 
@@ -102,7 +101,7 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
     loader::load(&options)?;
 
     // Set up the real context
-    let ctx = Context::new(config.clone(), options.clone(), locales);
+    let ctx = BuildContext::new(config.clone(), options.clone(), locales);
 
     let runtime = runtime::runtime();
     let mut data = runtime.write().unwrap();
@@ -120,7 +119,7 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
     Ok(ctx)
 }
 
-pub fn build(ctx: &Context) -> std::result::Result<Compiler, compiler::Error> {
+pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Error> {
     let runtime = runtime::runtime().read().unwrap();
 
     // FIXME: do not pass a clone of the options?
