@@ -5,6 +5,7 @@ use log::info;
 
 use config::{ProfileSettings, Config};
 use config::AwsPublishEnvironment;
+use compiler::BuildContext;
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
@@ -54,9 +55,9 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
                     // Compile a pristine release
                     let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
-                    workspace::compile(&config, &mut args, false)?;
+                    let ctx = workspace::compile(&config, &mut args, false)?;
 
-                    publish_aws(request, env)?
+                    publish_aws(ctx, request, env)?
 
                 } else {
                     return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
@@ -72,16 +73,15 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
 
 #[tokio::main]
 async fn publish_aws(
+    ctx: BuildContext,
     request: PublishRequest,
     env: &AwsPublishEnvironment) -> Result<()> {
-
-    let runtime = runtime::runtime().read().unwrap();
 
     info!("Building local file list");
 
     // Create the list of local build files
     let mut file_builder =
-        FileBuilder::new(runtime.options.base.clone(), env.prefix.clone());
+        FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

@@ -35,10 +35,8 @@ pub fn compile<P: AsRef<Path>>(
 
 fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
 
-    let runtime = runtime::runtime().read().unwrap();
-
-    let options = runtime.options.clone();
-    let config = runtime.config.clone();
+    let options = ctx.options.clone();
+    let config = ctx.config.clone();
 
     let host = options.settings.get_host();
     let port = options.settings.get_port();
