@@ -111,8 +111,7 @@ pub struct ProfileSettings {
     #[serde(skip)]
     pub follow_links: Option<bool>,
 
-    // FIXME: refactor to HTML flag
-    pub render: Option<Vec<String>>,
+    pub extend: Option<Vec<String>>,
 
     pub max_depth: Option<usize>,
     pub profile: Option<String>,
@@ -166,8 +165,7 @@ impl Default for ProfileSettings {
 
             rewrite_index: None,
             follow_links: Some(true),
-            render: None,
-
+            extend: None,
             short_codes: None,
 
             max_depth: None,

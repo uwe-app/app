@@ -94,10 +94,9 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
         args.paths = Some(paths);
     }
 
-    // Append render extension shortcuts in [build.render]
-    // to the [extension.render] list
+    // Append render extension shortcuts to the list of types
     if let Some(type_defs) = args.types.as_mut() {
-        if let Some(ref render) = args.render {
+        if let Some(ref render) = args.extend {
             for ext in render {
                 type_defs.types.insert(ext.to_string(), Default::default());
             }
