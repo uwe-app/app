@@ -4,14 +4,17 @@ use std::borrow::Cow;
 use handlebars::*;
 
 use serde_json::{json};
-use super::super::markdown::render_markdown_string;
 
+use crate::BuildContext;
+use crate::markdown::render_markdown_string;
 use super::BufferedOutput;
 
 #[derive(Clone, Copy)]
-pub struct Markdown;
+pub struct Markdown<'a> {
+    pub context: &'a BuildContext
+}
 
-impl HelperDef for Markdown {
+impl HelperDef for Markdown<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -27,8 +30,7 @@ impl HelperDef for Markdown {
             .ok_or_else(|| RenderError::new("Type error in `md` for `file.source`, string expected"))?
             .replace("\"", "");
 
-        let runtime = runtime::runtime().read().unwrap();
-        let types = runtime.options.settings.types.as_ref().unwrap();
+        let types = self.context.options.settings.types.as_ref().unwrap();
 
         let mut buf = BufferedOutput {
             buffer: "".to_owned(),
@@ -92,7 +94,7 @@ impl HelperDef for Markdown {
         }
 
         if evaluate {
-            let parsed = render_markdown_string(&mut Cow::from(buf.buffer), &runtime.config);
+            let parsed = render_markdown_string(&mut Cow::from(buf.buffer), &self.context.config);
             out.write(&parsed)?;
         } else {
             out.write(&buf.buffer)?;

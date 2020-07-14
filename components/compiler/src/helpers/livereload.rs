@@ -1,9 +1,13 @@
 use handlebars::*;
 
-#[derive(Clone, Copy)]
-pub struct LiveReload;
+use crate::BuildContext;
 
-impl HelperDef for LiveReload {
+#[derive(Clone, Copy)]
+pub struct LiveReload<'a> {
+    pub context: &'a BuildContext
+}
+
+impl HelperDef for LiveReload<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,
@@ -12,9 +16,9 @@ impl HelperDef for LiveReload {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let runtime = runtime::runtime().read().unwrap();
-        if runtime.options.settings.is_live() {
-            let content = livereload::embed(&runtime.config);
+
+        if self.context.options.settings.is_live() {
+            let content = livereload::embed(&self.context.config);
             out.write(&content)?;
         }
         Ok(())

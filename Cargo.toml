@@ -27,7 +27,6 @@ members = [
   "components/preference",
   "components/publisher",
   "components/report",
-  "components/runtime",
   "components/server",
   "components/site",
   "components/updater",
@@ -47,7 +46,6 @@ locale = {version = "0.1", path = "components/locale" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 report = {version = "0.1", path = "components/report" }
-runtime = {version = "0.1", path = "components/runtime" }
 server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }
 updater = {version = "0.1", path = "components/updater" }

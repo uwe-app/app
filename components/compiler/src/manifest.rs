@@ -6,15 +6,13 @@ use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
-use config::RuntimeOptions;
-
-
 use log::debug;
 
 use crate::Error;
 use super::BuildContext;
 
-pub struct Manifest {
+pub struct Manifest<'a> {
+    context: &'a BuildContext,
     file: ManifestFile,
     incremental: bool,
 }
@@ -29,12 +27,13 @@ pub struct ManifestEntry {
     modified: SystemTime,
 }
 
-impl Manifest {
-    pub fn new(options: RuntimeOptions) -> Self {
+impl<'a> Manifest<'a> {
+    pub fn new(context: &'a BuildContext) -> Self {
         let file = ManifestFile { map: Map::new() };
         Manifest {
+            context,
             file,
-            incremental: options.settings.is_incremental(),
+            incremental: context.options.settings.is_incremental(),
         }
     }
 
@@ -85,8 +84,8 @@ impl Manifest {
         }
     }
 
-    fn get_manifest_file(&self, ctx: &BuildContext) -> PathBuf {
-        let mut file = ctx.options.target.clone();
+    fn get_manifest_file(&self) -> PathBuf {
+        let mut file = self.context.options.target.clone();
         let name = file
             .file_name()
             .unwrap_or(std::ffi::OsStr::new(""))
@@ -98,8 +97,8 @@ impl Manifest {
         file
     }
 
-    pub fn load(&mut self, ctx: &BuildContext) -> Result<(), Error> {
-        let file = self.get_manifest_file(ctx);
+    pub fn load(&mut self) -> Result<(), Error> {
+        let file = self.get_manifest_file();
         if file.exists() && file.is_file() {
             debug!("manifest {}", file.display());
             let json = utils::fs::read_string(file)?;
@@ -108,9 +107,9 @@ impl Manifest {
         Ok(())
     }
 
-    pub fn save(&self, ctx: &BuildContext) -> Result<(), Error> {
-        if ctx.options.settings.is_incremental() {
-            let file = self.get_manifest_file(ctx);
+    pub fn save(&self) -> Result<(), Error> {
+        if self.context.options.settings.is_incremental() {
+            let file = self.get_manifest_file();
             let json = serde_json::to_string(&self.file)?;
             debug!("manifest {}", file.display());
             utils::fs::write_string(file, json)?;

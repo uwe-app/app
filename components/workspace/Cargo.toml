@@ -10,7 +10,6 @@ config = {version = "0.1", path = "../config" }
 datasource = {version = "0.1", path = "../datasource" }
 loader = {version = "0.1", path = "../loader" }
 locale = {version = "0.1", path = "../locale" }
-runtime = {version = "0.1", path = "../runtime" }
 utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"

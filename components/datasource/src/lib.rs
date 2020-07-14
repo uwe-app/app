@@ -11,7 +11,7 @@ use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
 use config::{Config, RuntimeOptions};
-use config::indexer::{IndexRequest, IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
+use config::indexer::{IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
 
 pub mod identifier;
 pub mod provider;
@@ -423,9 +423,7 @@ impl DataSourceMap {
         Value::Null
     }
 
-    fn get_sort_key_for_value<S: AsRef<str>>(
-        req: &IndexRequest, id: S, key_val: &Value) -> String {
-
+    fn get_sort_key_for_value<S: AsRef<str>>(id: S, key_val: &Value) -> String {
         match key_val {
             Value::String(ref s) => {
                 return s.to_string() 
@@ -461,7 +459,7 @@ impl DataSourceMap {
                     }
 
                     let default_key = IndexKey {
-                        name: DataSourceMap::get_sort_key_for_value(def, id, &key_val),
+                        name: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
                     };
 

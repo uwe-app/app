@@ -7,7 +7,7 @@ use log::{debug, info};
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQuery, RuntimeOptions};
+use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQuery};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -39,23 +39,23 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
 pub struct Compiler<'a> {
     pub context: &'a BuildContext,
     pub book: BookCompiler,
-    pub manifest: Manifest,
+    pub manifest: Manifest<'a>,
     parser: Parser<'a>,
 }
 
 impl<'a> Compiler<'a> {
-    pub fn new(context: &'a BuildContext, options: RuntimeOptions) -> Self {
+    pub fn new(context: &'a BuildContext) -> Self {
         let book = BookCompiler::new(
-            options.source.clone(),
-            options.target.clone(),
-            options.settings.is_release(),
+            context.options.source.clone(),
+            context.options.target.clone(),
+            context.options.settings.is_release(),
         );
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
         let parser = Parser::new(&context);
 
-        let manifest = Manifest::new(options);
+        let manifest = Manifest::new(&context);
 
         Self {
             context,
@@ -199,10 +199,7 @@ impl<'a> Compiler<'a> {
 
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
-
-            // FIXME: Move data source back to the context
-            let runtime = runtime::runtime().read().unwrap();
-            let datasource = &runtime.datasource;
+            let datasource = &self.context.datasource;
 
             if !datasource.map.is_empty() {
                 let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
@@ -300,7 +297,7 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
-        let livereload = runtime::livereload().read().unwrap();
+        let livereload = crate::context::livereload().read().unwrap();
 
         resource::link(&self.context)?;
 

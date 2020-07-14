@@ -2,12 +2,15 @@ use std::path::Path;
 
 use handlebars::*;
 
-use super::super::tree::{self, ListOptions};
+use crate::BuildContext;
+use crate::tree::{self, ListOptions};
 
 #[derive(Clone, Copy)]
-pub struct Children;
+pub struct Children<'a> {
+    pub context: &'a BuildContext,
+}
 
-impl HelperDef for Children {
+impl HelperDef for Children<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -23,7 +26,6 @@ impl HelperDef for Children {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let runtime = runtime::runtime().read().unwrap();
         let path = Path::new(&base_path).to_path_buf();
 
         // See if we should render a specific directory
@@ -43,7 +45,7 @@ impl HelperDef for Children {
             depth: 1,
         };
 
-        let list_result = tree::listing(&path, &list_opts, &runtime.config, &runtime.options);
+        let list_result = tree::listing(&path, &list_opts, &self.context.config, &self.context.options);
         match list_result {
             Ok(entries) => {
                 let template = h.template();

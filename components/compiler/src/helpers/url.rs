@@ -6,16 +6,19 @@ use serde_json::json;
 
 use config::FileInfo;
 
-use super::super::lookup;
-
 use crate::INDEX_HTML;
+use crate::lookup;
+use crate::BuildContext;
 
 use super::map_render_error;
 
 #[derive(Clone, Copy)]
-pub struct Link;
+pub struct Link<'a> {
+    pub context: &'a BuildContext
+}
 
-impl HelperDef for Link {
+impl HelperDef for Link<'_> {
+
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -31,16 +34,15 @@ impl HelperDef for Link {
             .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
             .replace("\"", "");
 
-        let runtime = runtime::runtime().read().unwrap();
-        let types = runtime.options.settings.types.as_ref().unwrap();
+        let types = self.context.options.settings.types.as_ref().unwrap();
 
-        let opts = &runtime.options;
+        let opts = &self.context.options;
         let path = Path::new(&base_path);
 
         let mut input: String = "".to_string();
 
         if let Some(p) = h.params().get(0) {
-            let link_config = runtime.config.link.as_ref().unwrap();
+            let link_config = self.context.config.link.as_ref().unwrap();
             let include_index = opts.settings.should_include_index();
 
             if !p.is_value_missing() {
@@ -88,7 +90,7 @@ impl HelperDef for Link {
 
             if let Some(verify) = link_config.verify {
                 if verify {
-                    if !lookup::exists(&runtime.config, &runtime.options, &input) {
+                    if !lookup::exists(&self.context.config, &self.context.options, &input) {
                         return Err(RenderError::new(format!(
                             "Type error for `link`, missing url {}",
                             input
@@ -131,9 +133,11 @@ impl HelperDef for Link {
 }
 
 #[derive(Clone, Copy)]
-pub struct Components;
+pub struct Components<'a> {
+    pub context: &'a BuildContext
+}
 
-impl HelperDef for Components {
+impl HelperDef for Components<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -149,8 +153,7 @@ impl HelperDef for Components {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        let runtime = runtime::runtime().read().unwrap();
-        let opts = &runtime.options;
+        let opts = &self.context.options;
         let path = Path::new(&base_path).to_path_buf();
 
         let template = h.template();
@@ -187,8 +190,8 @@ impl HelperDef for Components {
                             url.push_str(INDEX_HTML);
                         }
 
-                        if let Some(src) = lookup::lookup(&runtime.config, &runtime.options, &href) {
-                            let mut data = loader::compute(src, &runtime.config, &runtime.options, true)
+                        if let Some(src) = lookup::lookup(&self.context.config, &self.context.options, &href) {
+                            let mut data = loader::compute(src, &self.context.config, &self.context.options, true)
                                 .map_err(map_render_error)?;
                             data.extra.insert("first".to_string(), json!(first));
                             data.extra.insert("last".to_string(), json!(last));
@@ -210,9 +213,11 @@ impl HelperDef for Components {
 }
 
 #[derive(Clone, Copy)]
-pub struct Match;
+pub struct Match<'a> {
+    pub context: &'a BuildContext
+}
 
-impl HelperDef for Match {
+impl HelperDef for Match<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -228,8 +233,7 @@ impl HelperDef for Match {
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .replace("\"", "");
 
-        let runtime = runtime::runtime().read().unwrap();
-        let opts = &runtime.options;
+        let opts = &self.context.options;
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {

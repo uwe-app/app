@@ -81,7 +81,7 @@ fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
         // Must be in a new scope so the write lock is dropped
         // before compilation and invalidation
         {
-            let mut livereload = runtime::livereload().write().unwrap();
+            let mut livereload = compiler::context::livereload().write().unwrap();
             *livereload = Some(ws_url);
         }
 
@@ -95,7 +95,7 @@ fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
                 }
 
                 // Prepare for incremental builds
-                if let Err(_) = compiler.manifest.load(&ctx) {}
+                if let Err(_) = compiler.manifest.load() {}
 
                 // NOTE: only open the browser if initial build succeeds
                 open::that(&url).map(|_| ()).unwrap_or(());

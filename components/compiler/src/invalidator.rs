@@ -124,7 +124,7 @@ impl<'a> Invalidator<'a> {
             match self.get_invalidation(paths) {
                 Ok(invalidation) => match self.invalidate(&from, &invalidation) {
                     Ok(_) => {
-                        self.builder.manifest.save(self.builder.context)?;
+                        self.builder.manifest.save()?;
                         if invalidation.notify {
                             let _ = tx.send(Message::text("reload"));
                             //println!("Got result {:?}", res);
@@ -157,9 +157,7 @@ impl<'a> Invalidator<'a> {
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
         let ctx = self.builder.context;
 
-        // FIXME: revert to using data source from the context
-        let runtime = runtime::runtime().read().unwrap();
-        let datasource = &runtime.datasource;
+        let datasource = &self.builder.context.datasource;
 
         let mut rule = Rule {
             notify: true,
@@ -351,7 +349,7 @@ impl<'a> Invalidator<'a> {
 
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         let ctx = self.builder.context;
-        let livereload = runtime::livereload().read().unwrap();
+        let livereload = crate::context::livereload().read().unwrap();
 
         let config = &ctx.config;
         let options = &ctx.options;

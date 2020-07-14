@@ -93,52 +93,44 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<B
     Ok(ctx)
 }
 
-fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
+fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options)?;
 
     // Load page template data
     loader::load(&options)?;
 
-    // Set up the real context
-    let ctx = BuildContext::new(config.clone(), options.clone(), locales);
-
-    let runtime = runtime::runtime();
-    let mut data = runtime.write().unwrap();
-    data.config = config;
-    data.options = options;
-    data.datasource = datasource;
-
     // Finalize the language for this pass
-    data.options.lang = if let Some(lang) = lang {
+    options.lang = if let Some(lang) = lang {
         lang
     } else {
-        data.config.lang.clone()
+        config.lang.clone()
     };
+
+    // Set up the real context
+    let ctx = BuildContext::new(config, options, datasource, locales);
 
     Ok(ctx)
 }
 
 pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Error> {
-    let runtime = runtime::runtime().read().unwrap();
-
     // FIXME: do not pass a clone of the options?
-    let mut builder = Compiler::new(ctx, runtime.options.clone());
-    builder.manifest.load(ctx)?;
+    let mut builder = Compiler::new(ctx);
+    builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
 
-    if let Some(ref paths) = runtime.options.settings.paths {
+    if let Some(ref paths) = ctx.options.settings.paths {
         builder.verify(paths)?;
         for p in paths {
             targets.push(p.clone());
         }
     } else {
-        targets.push(runtime.options.source.clone());
+        targets.push(ctx.options.source.clone());
     }
 
     builder.all(targets)?;
-    builder.manifest.save(ctx)?;
+    builder.manifest.save()?;
 
     Ok(builder)
 }

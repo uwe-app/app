@@ -283,9 +283,9 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "minify 0.1.0",
  "notify 4.0.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "once_cell 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pulldown-cmark 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "runtime 0.1.0",
  "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_with 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -962,7 +962,6 @@ dependencies = [
  "pretty_env_logger 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "publisher 0.1.0",
  "report 0.1.0",
- "runtime 0.1.0",
  "semver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "server 0.1.0",
@@ -1972,16 +1971,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.70 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "runtime"
-version = "0.1.0"
-dependencies = [
- "config 0.1.0",
- "datasource 0.1.0",
- "locale 0.1.0",
- "once_cell 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3008,7 +2997,6 @@ dependencies = [
  "loader 0.1.0",
  "locale 0.1.0",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "runtime 0.1.0",
  "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
