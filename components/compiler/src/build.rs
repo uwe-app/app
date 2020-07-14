@@ -37,9 +37,10 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
 }
 
 pub struct Compiler<'a> {
-    parser: Parser<'a>,
+    pub context: &'a BuildContext,
     pub book: BookCompiler,
     pub manifest: Manifest,
+    parser: Parser<'a>,
 }
 
 impl<'a> Compiler<'a> {
@@ -57,9 +58,10 @@ impl<'a> Compiler<'a> {
         let manifest = Manifest::new(options);
 
         Self {
-            parser,
+            context,
             book,
             manifest,
+            parser,
         }
     }
 
