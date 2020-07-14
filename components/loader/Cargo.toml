@@ -12,5 +12,4 @@ utils = {version = "0.1", path = "../utils" }
 thiserror = "1"
 log = "0.4.8"
 Inflector = "0.11"
-lazy_static = "1"
 toml = "0.5"

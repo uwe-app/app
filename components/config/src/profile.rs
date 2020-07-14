@@ -100,7 +100,6 @@ pub struct ProfileSettings {
     pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
 
-    pub pages: Option<PathBuf>,
     pub assets: Option<PathBuf>,
     pub locales: Option<PathBuf>,
     pub includes: Option<PathBuf>,
@@ -157,7 +156,6 @@ impl Default for ProfileSettings {
             types: Some(Default::default()),
             strict: Some(true),
 
-            pages: Some(PathBuf::from(config::PAGE_DATA)),
             assets: Some(PathBuf::from(config::ASSETS)),
             locales: Some(PathBuf::from(config::LOCALES)),
             includes: Some(PathBuf::from(config::INCLUDES)),
@@ -275,10 +273,6 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
-    pub fn get_page_data_path(&self) -> PathBuf {
-        self.project.join(self.settings.pages.as_ref().unwrap())
-    }
-
     pub fn get_layout_path(&self) -> PathBuf {
         self.source.join(self.settings.layout.as_ref().unwrap())
     }

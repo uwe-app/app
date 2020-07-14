@@ -94,11 +94,11 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<B
 }
 
 fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
+
+    loader::verify(&config, &options)?;
+
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options)?;
-
-    // Load page template data
-    loader::load(&options)?;
 
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {
@@ -109,7 +109,6 @@ fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lang: Opt
 
     // Set up the real context
     let ctx = BuildContext::new(config, options, datasource, locales);
-
     Ok(ctx)
 }
 

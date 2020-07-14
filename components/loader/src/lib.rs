@@ -1,26 +1,16 @@
-#[macro_use]
-extern crate lazy_static;
-
-use std::collections::HashMap;
-use std::convert::AsRef;
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Mutex;
-
-use toml::de::Error as TomlError;
-use toml::map::Map as TomlMap;
-use toml::Value as TomlValue;
-
-use inflector::Inflector;
+use std::path::{Path, PathBuf};
 
 use log::warn;
-
+use inflector::Inflector;
 use thiserror::Error;
 
-use config::{Config, Page, RuntimeOptions};
+use config::{Config, Page, RuntimeOptions, FileInfo, FileType};
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("File {0} for page data with key {1} does not exist")]
+    NoPageFile(PathBuf, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -30,21 +20,8 @@ pub enum Error {
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),
 
-    //#[error(transparent)]
-    //Link(#[from] link::Error),
-
     #[error(transparent)]
     Config(#[from] config::Error),
-}
-
-static INDEX_STEM: &str = "index";
-static MD: &str = "md";
-
-lazy_static! {
-    #[derive(Debug)]
-    pub static ref DATA: Mutex<HashMap<String, Page>> = {
-        Mutex::new(HashMap::new())
-    };
 }
 
 // Convert a file name to title case
@@ -53,7 +30,7 @@ fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
     if let Some(nm) = i.file_stem() {
         // If the file is an index file, try to get the name
         // from a parent directory
-        if nm == INDEX_STEM {
+        if nm == config::INDEX_STEM {
             if let Some(p) = i.parent() {
                 return file_auto_title(&p.to_path_buf());
             }
@@ -66,74 +43,24 @@ fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
     None
 }
 
-fn find_file_for_key(k: &str, source: &PathBuf, opts: &RuntimeOptions) -> Option<PathBuf> {
-    let mut key = utils::url::to_path_separator(k);
-    if k == "/" {
-        key = INDEX_STEM.to_string().clone();
-    } else if key.ends_with("/") {
-        key.push_str(INDEX_STEM);
-    }
-
-    let mut pth = PathBuf::new();
-    pth.push(source);
-    pth.push(&key);
-
-    // Key already includes a file extension
-    if pth.exists() {
-        return Some(pth);
-    }
-
-    //let extensions = &config.extension.as_ref().unwrap();
-
-    if let Some(ref types) = opts.settings.types {
-        // Might just have a file stem so try the
-        // supported extensions
-        for ext in types.render() {
-            pth.set_extension(ext);
-            if pth.exists() {
-                return Some(pth);
-            }
-        }
-    }
-
-    None
-}
-
-fn find_key_for_file<P: AsRef<Path>>(f: P, opts: &RuntimeOptions) -> String {
-    let file = f.as_ref();
-    let mut buf = file.to_path_buf();
-
-    if buf.is_dir() {
-        let mut tmp = buf.clone();
-        tmp.push(INDEX_STEM);
-
-        //let extensions = &config.extension.as_ref().unwrap();
-
-        if let Some(ref types) = opts.settings.types {
-            for ext in types.render() {
-                tmp.set_extension(ext);
-                if tmp.exists() {
-                    buf = tmp;
-                    break;
-                }
-            }
-        }
-
-    }
-
-    buf.to_string_lossy().into_owned()
-}
-
 pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, frontmatter: bool) -> Result<Page, Error> {
-    let mut data = DATA.lock().unwrap();
 
+    // Start with the global definition
     let mut page = config.page.as_ref().unwrap().clone();
 
-    // Look for file specific data from page.toml
-    let file_key = find_key_for_file(&f, opts);
-    if let Some(file_object) = data.get_mut(&file_key) {
-        let mut copy = file_object.clone();
-        page.append(&mut copy);
+    // Look for file specific data from pages map
+    if let Some(ref pages) = config.pages {
+        let raw = f.as_ref().to_path_buf();
+        if let Ok(rel) = raw.strip_prefix(&opts.source) {
+            let file_key = utils::url::to_href_separator(rel.to_string_lossy().into_owned());
+            if let Some(file_object) = pages.get(&file_key) {
+                let mut copy = file_object.clone();
+                page.append(&mut copy);
+            }
+        } else {
+            warn!(
+                "Failed to strip prefix for page path {}", f.as_ref().display());
+        }
     }
 
     if let None = page.title {
@@ -143,21 +70,22 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, fro
     }
 
     if frontmatter {
-        if let Some(ext) = f.as_ref().extension() {
-
-            // FIXME: call matcher::get_type() here
-
-            let conf = if ext == MD {
-                frontmatter::Config::new_markdown(true)
-            } else {
-                frontmatter::Config::new_html(true)
-            };
-            let (_, has_fm, fm) = frontmatter::load(f.as_ref(), conf)?;
-            if has_fm {
-                parse_into(fm, &mut page)?;
+        let file_type = FileInfo::get_type(f.as_ref(), &opts.settings);
+        let mut conf: frontmatter::Config = Default::default();
+        match file_type {
+            FileType::Markdown => {
+                conf = frontmatter::Config::new_markdown(true)
             }
+            FileType::Template => {
+                conf = frontmatter::Config::new_html(true)
+            }
+            _ => {}
         }
-        // FIXME: ensure frontmatter never defines `query`
+
+        let (_, has_fm, fm) = frontmatter::load(f.as_ref(), conf)?;
+        if has_fm {
+            parse_into(fm, &mut page)?;
+        }
     }
 
     page.compute(f, config, opts)?;
@@ -171,40 +99,15 @@ fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
     Ok(())
 }
 
-fn clear() {
-    let mut data = DATA.lock().unwrap();
-    data.clear();
-}
-
-pub fn reload(options: &RuntimeOptions) -> Result<(), Error> {
-    clear();
-    load(options)
-}
-
-pub fn load(options: &RuntimeOptions) -> Result<(), Error> {
-    let src = options.get_page_data_path();
-    if src.exists() {
-        let mut data = DATA.lock().unwrap();
-        let properties = utils::fs::read_string(src)?;
-        let conf: Result<TomlMap<String, TomlValue>, TomlError> = toml::from_str(&properties);
-        match conf {
-            Ok(props) => {
-                for (k, v) in props {
-                    let page = v.try_into::<Page>()?;
-                    let result = find_file_for_key(&k, &options.source, options);
-                    match result {
-                        Some(f) => {
-                            // Use the actual file path as the key
-                            // so we can find it easily later
-                            let file_key = f.to_string_lossy().into_owned();
-                            //println!("Inserting with key {}", &file_key);
-                            data.insert(file_key, page);
-                        }
-                        None => warn!("No file for page table: {}", k),
-                    }
-                }
+pub fn verify(config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
+    if let Some(ref pages) = config.pages {
+        for (k, _) in pages {
+            let pth = options.source.join(utils::url::to_path_separator(k));
+            if !pth.exists() || !pth.is_file() {
+                warn!("Check the [pages.\"{}\"] setting references a file", k.clone());
+                warn!("The file {} has probably been moved or renamed", pth.display());
+                return Err(Error::NoPageFile(pth, k.clone()));
             }
-            Err(e) => return Err(Error::from(e)),
         }
     }
     Ok(())

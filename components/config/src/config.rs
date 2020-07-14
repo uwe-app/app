@@ -37,7 +37,6 @@ pub static LAYOUT_HBS: &str = "layout.hbs";
 pub static MD: &str = "md";
 pub static TOML: &str = "toml";
 pub static BOOK_TOML: &str = "book.toml";
-pub static PAGE_DATA: &str = "page.toml";
 pub static ASSETS: &str = "assets";
 pub static PARTIALS: &str = "partials";
 pub static INCLUDES: &str = "includes";
@@ -109,6 +108,7 @@ pub struct Config {
     pub hook: Option<HashMap<String, HookConfig>>,
     pub node: Option<NodeConfig>,
     pub page: Option<Page>,
+    pub pages: Option<HashMap<String, Page>>,
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
     pub link: Option<LinkConfig>,
@@ -142,6 +142,7 @@ impl Default for Config {
             hook: None,
             node: Some(Default::default()),
             page: Some(Default::default()),
+            pages: None,
             redirect: None,
             date: Some(Default::default()),
             link: Some(Default::default()),

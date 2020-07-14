@@ -17,7 +17,7 @@ pub enum Error {
 
 type ContentResult = (String, bool, String);
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Config {
     pub start: String,
     pub end: String,

@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use log::{error, info};
+use log::info;
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
@@ -20,7 +20,6 @@ use crate::ErrorCallback;
  *
  *  - BuildOutput: directory is ignored.
  *  - SiteConfig: (site.toml) is ignored.
- *  - DataConfig: (data.toml) trigger a build of all pages.
  *  - Partial: trigger a build of all pages.
  *  - Layout: trigger a build of all pages.
  *  - Asset: trigger a full build.
@@ -45,7 +44,6 @@ enum Action {
     // it corresponds to the site.toml file.
     SiteConfig(PathBuf),
 
-    DataConfig(PathBuf),
     Partial(PathBuf),
     Layout(PathBuf),
     Asset(PathBuf),
@@ -182,9 +180,6 @@ impl<'a> Invalidator<'a> {
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let data_file = self.canonical(
-            ctx.options.get_page_data_path());
-
         let layout_file = self.canonical(ctx.options.get_layout_path());
         let assets = self.canonical(ctx.options.get_assets_path());
         let partials = self.canonical(ctx.options.get_partials_path());
@@ -279,12 +274,6 @@ impl<'a> Invalidator<'a> {
 
                     if path == cfg_file {
                         rule.ignores.push(Action::SiteConfig(path));
-                    } else if path == data_file {
-                        // FIXME: find out which section of the data.toml changed
-                        // FIXME: and ensure only those pages are invalidated
-                        rule.reload = true;
-                        rule.strategy = Strategy::Page;
-                        rule.ignores.push(Action::DataConfig(path));
                     } else if path == layout_file {
                         rule.strategy = Strategy::Page;
                         rule.ignores.push(Action::Layout(path));
@@ -354,11 +343,12 @@ impl<'a> Invalidator<'a> {
         let config = &ctx.config;
         let options = &ctx.options;
 
-        // Reload the data source
+        // Reload the config data!
         if rule.reload {
-            if let Err(e) = loader::reload(options) {
-                error!("{}", e);
-            }
+            // FIXME: to restore this we need to reload and parse the configuration!
+            //if let Err(e) = loader::reload(config, options) {
+                //error!("{}", e);
+            //}
         }
 
         for hook in &rule.hooks {
