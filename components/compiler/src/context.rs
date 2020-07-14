@@ -1,13 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use config::Config;
-
 use locale::Locales;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
-    pub config: Config,
-
     #[serde(skip)]
     pub livereload: Option<String>,
     #[serde(skip)]
@@ -15,13 +11,9 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(
-        locales: Locales,
-        config: Config,
-    ) -> Self {
+    pub fn new(locales: Locales) -> Self {
         Self {
             locales,
-            config,
             livereload: None,
         }
     }
@@ -30,7 +22,6 @@ impl Context {
 impl Default for Context {
     fn default() -> Self {
         Self {
-            config: Default::default(),
             locales: Default::default(),
             livereload: None,
         }

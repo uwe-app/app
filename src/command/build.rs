@@ -38,6 +38,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
     let runtime = runtime::runtime().read().unwrap();
 
     let options = runtime.options.clone();
+    let config = runtime.config.clone();
 
     let host = options.settings.get_host();
     let port = options.settings.get_port();
@@ -47,7 +48,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
     let mut redirect_uris = None;
 
-    if let Some(ref redirects) = ctx.config.redirect {
+    if let Some(ref redirects) = config.redirect {
         redirect_uris = Some(redirect::collect(redirects)?);
     }
 
@@ -74,7 +75,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        if let Err(e) = livereload::write(&ctx.config, &options.target, &ws_url) {
+        if let Err(e) = livereload::write(&config, &options.target, &ws_url) {
             error_cb(compiler::Error::from(e));
             return;
         }

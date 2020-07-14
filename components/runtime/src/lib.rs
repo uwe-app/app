@@ -15,6 +15,21 @@ pub struct Runtime {
     //pub livereload: Option<String>,
 }
 
+// This logic for a static reference to the configuration settings and 
+// runtime options exists because we need to use this data in the handlebars 
+// helpers. An earlier implementation serialized this data and passed it to 
+// the templates which then deserialized and used it which is a very bad idea 
+// for several reasons not least of which it is very, very slow.
+//
+// We do not use a Mutex otherwise nested handlebars templates will not be 
+// able to acquire a lock if a parent helper has already acquired a lock. In 
+// that situation we get a deadlock and the program hangs. Using a RwLock fixes 
+// the issue given the notes on mutability below.
+//
+// The configuration settings are immutable once Config has loaded 
+// the data and set defaults. The runtime options are mutable up until the point 
+// when a compilation pass beings then they are considered immutable and callers 
+// should only acquire a read lock once the runtime options have been prepared.
 pub fn runtime() -> &'static Arc<RwLock<Runtime>> {
     static INSTANCE: OnceCell<Arc<RwLock<Runtime>>> = OnceCell::new();
     INSTANCE.get_or_init(|| {

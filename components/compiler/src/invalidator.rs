@@ -174,7 +174,7 @@ impl<'a> Invalidator<'a> {
             actions: Vec::new(),
         };
 
-        let config_file = &self.context.config.file.as_ref().unwrap();
+        let config_file = &runtime.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
         let hooks = runtime.config.hook.as_ref().unwrap();
@@ -197,7 +197,7 @@ impl<'a> Invalidator<'a> {
 
         let resources = self.canonical(runtime.options.get_resources_path());
 
-        let book_theme = self.context.config
+        let book_theme = runtime.config
             .get_book_theme_path(&runtime.options.source)
             .map(|v| self.canonical(v));
 
@@ -246,7 +246,7 @@ impl<'a> Invalidator<'a> {
                         }
 
                         if path.starts_with(book_path) {
-                            if let Some(md) = self.builder.book.locate(&self.context.config, &book)
+                            if let Some(md) = self.builder.book.locate(&runtime.config, &book)
                             {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;

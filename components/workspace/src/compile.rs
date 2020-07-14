@@ -104,7 +104,7 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
 
     // Set up the real context
     // FIXME: do not pass a clone of the config
-    let ctx = Context::new(locales, config.clone());
+    let ctx = Context::new(locales);
 
     let runtime = runtime::runtime();
     let mut data = runtime.write().unwrap();

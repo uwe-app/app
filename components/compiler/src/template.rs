@@ -14,15 +14,16 @@ use crate::Error;
 
 // Render templates using handlebars.
 pub struct TemplateRender<'a> {
-    context: &'a Context,
     handlebars: Handlebars<'a>,
 }
 
 impl<'a> TemplateRender<'a> {
     pub fn new(context: &'a Context) -> Self {
+        let runtime = runtime::runtime().read().unwrap();
+
         let mut handlebars = Handlebars::new();
 
-        let build = context.config.build.as_ref().unwrap();
+        let build = runtime.config.build.as_ref().unwrap();
         let strict = build.strict.is_some() && build.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
@@ -44,10 +45,7 @@ impl<'a> TemplateRender<'a> {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }
 
-        TemplateRender {
-            context,
-            handlebars,
-        }
+        TemplateRender { handlebars }
     }
 
     pub fn register_templates_directory<P: AsRef<Path>>(
@@ -74,7 +72,7 @@ impl<'a> TemplateRender<'a> {
             .register_template_string(name, &content)
             .is_ok()
         {
-            data.finalize(&runtime.options.lang, info, &self.context.config)?;
+            data.finalize(&runtime.options.lang, info, &runtime.config)?;
             trace!("{:#?}", data);
             return self.handlebars.render(name, data).map_err(Error::from);
         }
