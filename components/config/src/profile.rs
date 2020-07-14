@@ -318,7 +318,7 @@ impl Default for RenderTypes {
             config::MD.to_string(), 
             PageType {
                 markdown: Some(true),
-                ext: Some(config::HTML.to_string()),
+                map: Some(config::HTML.to_string()),
             });
         Self { types }
     }
@@ -337,7 +337,7 @@ impl RenderTypes {
     pub fn map(&self) -> HashMap<String, String> {
         let mut map: HashMap<String, String> = HashMap::new();
         for (k, v) in self.types.iter() {
-            if let Some(ref ext) = v.ext {
+            if let Some(ref ext) = v.map {
                 map.insert(k.to_string(), ext.to_string());
             }
         }
@@ -359,7 +359,7 @@ impl RenderTypes {
 #[serde(default)]
 pub struct PageType {
     // Map this page type to another extension
-    pub ext: Option<String>,
+    pub map: Option<String>,
     // Parse this page type as markdown
     pub markdown: Option<bool>,
 }
@@ -367,7 +367,7 @@ pub struct PageType {
 impl Default for PageType {
     fn default() -> Self {
         Self {
-            ext: None,
+            map: None,
             markdown: None,
         }
     }
