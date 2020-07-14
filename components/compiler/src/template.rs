@@ -66,22 +66,16 @@ impl<'a> TemplateRender<'a> {
         content: String,
         data: &mut Page,
     ) -> Result<String, Error> {
-        let name = info.file.to_str().unwrap();
 
+        let name = info.file.to_str().unwrap();
+        let runtime = runtime::runtime().read().unwrap();
         if self
             .handlebars
             .register_template_string(name, &content)
             .is_ok()
         {
-            data.finalize(&self.context.locales.lang, info, &self.context.config)?;
-
-            // NOTE: context must be pushed into extra otherwise
-            // NOTE: we have a recursive type due to the page data
-            // NOTE: declared in the root config
-            //data.extra.insert("context".to_string(), json!(self.context));
-
+            data.finalize(&runtime.options.lang, info, &self.context.config)?;
             trace!("{:#?}", data);
-
             return self.handlebars.render(name, data).map_err(Error::from);
         }
         Ok(content)

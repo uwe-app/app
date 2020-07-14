@@ -50,7 +50,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
     let mut ctx: Context = Default::default();
     let base_target = opts.target.clone();
 
-    let mut locales = Locales::new(&config);
+    let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
 
     //println!("Is multi {:?}", locales.is_multi());
@@ -72,12 +72,8 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
             lang_opts.target = locale_target;
 
             // FIXME: prevent loading all the locales again!?
-            let mut copy = Locales::new(&config);
+            let mut copy: Locales = Default::default();
             copy.load(&config, &lang_opts)?;
-
-            // FIXME: move the lang to RuntimeOptions
-            //copy.lang = lang.clone();
-            //println!("Build for lang {:?}", copy.lang);
 
             ctx = load(copy, config.clone(), lang_opts, Some(lang.clone()))?;
 
@@ -107,6 +103,7 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
     loader::load(&options)?;
 
     // Set up the real context
+    // FIXME: do not pass a clone of the config
     let ctx = Context::new(locales, config.clone());
 
     let runtime = runtime::runtime();
@@ -126,9 +123,9 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
 }
 
 pub fn build(ctx: &Context) -> std::result::Result<Compiler, compiler::Error> {
-
     let runtime = runtime::runtime().read().unwrap();
 
+    // FIXME: do not pass a clone of the options?
     let mut builder = Compiler::new(ctx, runtime.options.clone());
     builder.manifest.load()?;
 

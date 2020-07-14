@@ -21,7 +21,6 @@ pub enum Error {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Locales {
-    pub lang: String,
     #[serde(skip)]
     pub map: BTreeMap<String, LanguageIdentifier>,
     #[serde(skip)]
@@ -31,7 +30,6 @@ pub struct Locales {
 impl Default for Locales {
     fn default() -> Self {
         Self {
-            lang: String::from("en"),
             map: BTreeMap::new(),
             loader: Default::default(),
         }
@@ -39,13 +37,6 @@ impl Default for Locales {
 }
 
 impl Locales {
-    pub fn new(config: &Config) -> Self {
-        Self {
-            lang: config.lang.clone(),
-            ..Default::default()
-        }
-    }
-
     pub fn is_multi(&mut self) -> bool {
         self.map.len() > 1
     }
@@ -57,9 +48,6 @@ impl Locales {
             for lang_id in langs {
                 self.map.insert(lang_id.to_string(), lang_id);
             }
-        } else {
-            let lang_id: LanguageIdentifier = self.lang.parse()?;
-            self.map.insert(self.lang.clone(), lang_id);
         }
         Ok(())
     }

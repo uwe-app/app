@@ -7,6 +7,7 @@ use locale::Locales;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
     pub config: Config,
+
     #[serde(skip)]
     pub livereload: Option<String>,
     #[serde(skip)]
