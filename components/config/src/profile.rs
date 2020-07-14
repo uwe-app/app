@@ -120,6 +120,7 @@ pub struct ProfileSettings {
     pub live: Option<bool>,
     pub release: Option<bool>,
 
+    pub shortcodes: Option<bool>,
     pub use_layout: Option<bool>,
 
     pub rewrite_index: Option<bool>,
@@ -168,6 +169,8 @@ impl Default for ProfileSettings {
             rewrite_index: None,
             follow_links: Some(true),
             render: None,
+
+            shortcodes: None,
 
             max_depth: None,
             profile: None,
