@@ -9,6 +9,7 @@ pub struct FetchOptions {
     pub standalone: bool,
     pub documentation: bool,
     pub release: bool,
+    pub short_code: bool,
 }
 
 pub fn update(options: FetchOptions) -> Result<()> {
@@ -19,9 +20,10 @@ pub fn update(options: FetchOptions) -> Result<()> {
         CacheComponent::Standalone,
         CacheComponent::Documentation,
         CacheComponent::Release,
+        CacheComponent::ShortCode,
     ];
 
-    if options.blueprint || options.standalone || options.documentation || options.release {
+    if options.blueprint || options.standalone || options.documentation || options.release || options.short_code {
         components = Vec::new();
         if options.blueprint {
             components.push(CacheComponent::Blueprint);
@@ -34,6 +36,9 @@ pub fn update(options: FetchOptions) -> Result<()> {
         }
         if options.release {
             components.push(CacheComponent::Release);
+        }
+        if options.short_code {
+            components.push(CacheComponent::ShortCode);
         }
     }
 

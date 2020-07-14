@@ -162,10 +162,6 @@ struct FetchOpts {
     #[structopt(short, long)]
     blueprint: bool,
 
-    /// Update the standalone cache
-    #[structopt(short, long)]
-    standalone: bool,
-
     /// Update the documentation cache
     #[structopt(short, long)]
     documentation: bool,
@@ -173,6 +169,14 @@ struct FetchOpts {
     /// Update the release cache
     #[structopt(short, long)]
     release: bool,
+
+    /// Update the short codes cache
+    #[structopt(short, long)]
+    short_code: bool,
+
+    /// Update the standalone cache
+    #[structopt(short = "a", long)]
+    standalone: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -370,6 +374,7 @@ fn process_command(cmd: &Command) {
                 standalone: args.standalone,
                 documentation: args.documentation,
                 release: args.release,
+                short_code: args.short_code,
             };
 
             if let Err(e) = command::fetch::update(opts) {

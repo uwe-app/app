@@ -21,6 +21,9 @@ static STANDALONE_NAME: &str = "standalone";
 static DOCUMENTATION_REPO: &str = "https://github.com/hypertext-live/documentation";
 static DOCUMENTATION_NAME: &str = "documentation";
 
+static SHORT_CODES_REPO: &str = "https://github.com/hypertext-live/shortcodes";
+static SHORT_CODES_NAME: &str = "shortcodes";
+
 static VERSION_BASE: &str = "https://raw.githubusercontent.com/hypertext-live/release-";
 static VERSION_FILE: &str = "/master/version.toml";
 
@@ -39,6 +42,7 @@ pub enum CacheComponent {
     Standalone,
     Documentation,
     Release,
+    ShortCode,
 }
 
 pub fn get_workspace_dir() -> io::Result<PathBuf> {
@@ -106,6 +110,16 @@ pub fn get_docs_dir() -> io::Result<PathBuf> {
     Ok(buf)
 }
 
+pub fn get_short_codes_url() -> String {
+    SHORT_CODES_REPO.to_string()
+}
+
+pub fn get_short_codes_dir() -> io::Result<PathBuf> {
+    let mut buf = dirs::get_root_dir()?;
+    buf.push(SHORT_CODES_NAME);
+    Ok(buf)
+}
+
 #[cfg(target_os = "windows")]
 pub fn get_release_version() -> String {
     format!("{}{}{}", VERSION_BASE, "windows", VERSION_FILE)
@@ -169,6 +183,11 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
             CacheComponent::Release => {
                 let url = get_release_url();
                 let dir = get_release_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            }
+            CacheComponent::ShortCode => {
+                let url = get_short_codes_url();
+                let dir = get_short_codes_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
         }
