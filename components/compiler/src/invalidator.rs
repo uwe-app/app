@@ -155,6 +155,9 @@ impl<'a> Invalidator<'a> {
     }
 
     fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
+        let ctx = self.builder.context;
+
+        // FIXME: revert to using data source from the context
         let runtime = runtime::runtime().read().unwrap();
         let datasource = &runtime.datasource;
 
@@ -172,36 +175,36 @@ impl<'a> Invalidator<'a> {
             actions: Vec::new(),
         };
 
-        let config_file = &runtime.config.file.as_ref().unwrap();
+        let config_file = &ctx.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = runtime.config.hook.as_ref().unwrap();
+        let hooks = ctx.config.hook.as_ref().unwrap();
 
-        let build_output = self.canonical(runtime.options.output.clone());
+        let build_output = self.canonical(ctx.options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
         let data_file = self.canonical(
-            runtime.options.get_page_data_path());
+            ctx.options.get_page_data_path());
 
-        let layout_file = self.canonical(runtime.options.get_layout_path());
-        let assets = self.canonical(runtime.options.get_assets_path());
-        let partials = self.canonical(runtime.options.get_partials_path());
+        let layout_file = self.canonical(ctx.options.get_layout_path());
+        let assets = self.canonical(ctx.options.get_assets_path());
+        let partials = self.canonical(ctx.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators = self.canonical(
-            runtime.options.get_data_sources_path()
+            ctx.options.get_data_sources_path()
         );
 
-        let resources = self.canonical(runtime.options.get_resources_path());
+        let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = runtime.config
-            .get_book_theme_path(&runtime.options.source)
+        let book_theme = ctx.config
+            .get_book_theme_path(&ctx.options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = runtime.config.book {
-            books = book.get_paths(&runtime.options.source)
+        if let Some(ref book) = ctx.config.book {
+            books = book.get_paths(&ctx.options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
@@ -223,7 +226,7 @@ impl<'a> Invalidator<'a> {
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&runtime.options.source).unwrap(),
+                                hook.get_source_path(&ctx.options.source).unwrap(),
                             );
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
@@ -244,7 +247,7 @@ impl<'a> Invalidator<'a> {
                         }
 
                         if path.starts_with(book_path) {
-                            if let Some(md) = self.builder.book.locate(&runtime.config, &book)
+                            if let Some(md) = self.builder.book.locate(&ctx.config, &book)
                             {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
@@ -310,7 +313,7 @@ impl<'a> Invalidator<'a> {
                     } else if path.starts_with(&resources) {
                         rule.ignores.push(Action::Resource(path));
                     } else {
-                        let file_type = FileInfo::get_type(&path, &runtime.options.settings);
+                        let file_type = FileInfo::get_type(&path, &ctx.options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -347,11 +350,11 @@ impl<'a> Invalidator<'a> {
     }
 
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
-        let runtime = runtime::runtime().read().unwrap();
+        let ctx = self.builder.context;
         let livereload = runtime::livereload().read().unwrap();
 
-        let config = &runtime.config;
-        let options = &runtime.options;
+        let config = &ctx.config;
+        let options = &ctx.options;
 
         // Reload the data source
         if rule.reload {
@@ -427,8 +430,8 @@ impl<'a> Invalidator<'a> {
                             // as the notify crate gives us an absolute path
                             let file = FileInfo::relative_to(
                                 path,
-                                &runtime.options.source,
-                                &runtime.options.source,
+                                &ctx.options.source,
+                                &ctx.options.source,
                             )?;
 
                             if let Err(e) = self.builder.one(&file) {

@@ -176,6 +176,7 @@ impl<'a> Compiler<'a> {
 
     fn parse_file(&mut self, mut info: &mut FileInfo) -> Result<()> {
         let file = info.file;
+
         let ctx = self.context;
 
         let mut data = loader::compute(file, &ctx.config, &ctx.options, true)?;
@@ -199,6 +200,7 @@ impl<'a> Compiler<'a> {
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
 
+            // FIXME: Move data source back to the context
             let runtime = runtime::runtime().read().unwrap();
             let datasource = &runtime.datasource;
 
