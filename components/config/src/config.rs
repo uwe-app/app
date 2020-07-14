@@ -43,7 +43,7 @@ pub static PARTIALS: &str = "partials";
 pub static INCLUDES: &str = "includes";
 pub static DATASOURCES: &str = "data-sources";
 pub static RESOURCES: &str = "resources";
-pub static SHORT_CODES: &str = "shortcodes";
+pub static SHORT_CODES: &str = "short-codes";
 pub static LANG: &str = "en";
 pub static LIVERELOAD_FILE: &str = "__livereload.js";
 
