@@ -27,8 +27,9 @@ impl<'a> TemplateRender<'a> {
         let strict = settings.strict.is_some() && settings.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
-        handlebars.register_helper("children", Box::new(helpers::children::Children));
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
+
+        handlebars.register_helper("children", Box::new(helpers::children::Children));
         handlebars.register_helper("livereload", Box::new(helpers::livereload::LiveReload));
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent));
         handlebars.register_helper("include", Box::new(helpers::include::Include));

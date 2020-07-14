@@ -4,7 +4,7 @@ use once_cell::sync::OnceCell;
 use config::{Config, RuntimeOptions};
 
 use datasource::DataSourceMap;
-//use locale::Locales;
+use locale::Locales;
 
 #[derive(Default)]
 pub struct Runtime {
@@ -12,7 +12,6 @@ pub struct Runtime {
     pub options: RuntimeOptions,
     pub datasource: DataSourceMap,
     //pub locales: Locales,
-    //pub livereload: Option<String>,
 }
 
 // This logic for a static reference to the configuration settings and 
@@ -42,5 +41,12 @@ pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {
     static INSTANCE: OnceCell<Arc<RwLock<Option<String>>>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         Arc::new(RwLock::new(None))
+    })
+}
+
+pub fn locales() -> &'static Arc<RwLock<Locales>> {
+    static INSTANCE: OnceCell<Arc<RwLock<Locales>>> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        Arc::new(RwLock::new(Default::default()))
     })
 }
