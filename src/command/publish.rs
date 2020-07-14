@@ -6,7 +6,6 @@ use log::info;
 use config::{ProfileSettings, Config};
 use config::AwsPublishEnvironment;
 use publisher::{self, PublishProvider, PublishRequest};
-use compiler::Context;
 use report::FileBuilder;
 
 use workspace;
@@ -55,9 +54,9 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
                     // Compile a pristine release
                     let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
-                    let ctx = workspace::compile(&config, &mut args, false)?;
+                    workspace::compile(&config, &mut args, false)?;
 
-                    publish_aws(request, ctx, env)?
+                    publish_aws(request, env)?
 
                 } else {
                     return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
@@ -74,7 +73,6 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
 #[tokio::main]
 async fn publish_aws(
     request: PublishRequest,
-    ctx: Context,
     env: &AwsPublishEnvironment) -> Result<()> {
 
     let runtime = runtime::runtime().read().unwrap();

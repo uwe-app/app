@@ -40,7 +40,7 @@ pub struct Compiler<'a> {
     context: &'a Context,
     parser: Parser<'a>,
     pub book: BookCompiler,
-    pub manifest: Manifest<'a>,
+    pub manifest: Manifest,
 }
 
 impl<'a> Compiler<'a> {
@@ -55,7 +55,7 @@ impl<'a> Compiler<'a> {
         // template partials can be found
         let parser = Parser::new(&context);
 
-        let manifest = Manifest::new(&context, options);
+        let manifest = Manifest::new(options);
 
         Self {
             context,

@@ -250,6 +250,8 @@ impl ProfileSettings {
 
 #[derive(Debug, Clone, Default)]
 pub struct RuntimeOptions {
+    // The current language
+    pub lang: String,
     // Project root
     pub project: PathBuf,
     // Root for the input source files

@@ -5,7 +5,6 @@ use log::{debug, info};
 
 use config::{HookConfig, ProfileName};
 
-use super::context::Context;
 use crate::Error;
 
 pub enum Phase {

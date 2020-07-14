@@ -105,6 +105,7 @@ fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
     }
 
     let opts = RuntimeOptions {
+        lang: config::LANG.to_string(),
         project,
         source,
         output: args.target.clone(),

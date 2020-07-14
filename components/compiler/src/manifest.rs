@@ -10,13 +10,10 @@ use log::debug;
 
 use crate::Error;
 
-use super::context::Context;
-
 use config::RuntimeOptions;
 
-pub struct Manifest<'a> {
+pub struct Manifest {
     file: ManifestFile,
-    context: &'a Context,
     incremental: bool,
 }
 
@@ -30,11 +27,10 @@ pub struct ManifestEntry {
     modified: SystemTime,
 }
 
-impl<'a> Manifest<'a> {
-    pub fn new(context: &'a Context, options: RuntimeOptions) -> Self {
+impl Manifest {
+    pub fn new(options: RuntimeOptions) -> Self {
         let file = ManifestFile { map: Map::new() };
         Manifest {
-            context,
             file,
             incremental: options.settings.is_incremental(),
         }

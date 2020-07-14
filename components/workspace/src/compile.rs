@@ -76,11 +76,10 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
             copy.load(&config, &lang_opts)?;
 
             // FIXME: move the lang to RuntimeOptions
-            copy.lang = lang.clone();
-
+            //copy.lang = lang.clone();
             //println!("Build for lang {:?}", copy.lang);
 
-            ctx = load(copy, config.clone(), lang_opts)?;
+            ctx = load(copy, config.clone(), lang_opts, Some(lang.clone()))?;
 
             // NOTE: this old conditional will break multi-lingual builds
             // NOTE: when live reload is enabled. We need to find a better
@@ -91,7 +90,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
             //}
         }
     } else {
-        ctx = load(locales, config.clone(), opts)?;
+        ctx = load(locales, config.clone(), opts, None)?;
         if !dry_run {
             build(&ctx)?;
         }
@@ -99,7 +98,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
     Ok(ctx)
 }
 
-fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Context> {
+fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<String>) -> Result<Context> {
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options)?;
@@ -115,6 +114,13 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions) -> Result<Con
     data.config = config;
     data.options = options;
     data.datasource = datasource;
+
+    // Finalize the language for this pass
+    data.options.lang = if let Some(lang) = lang {
+        lang
+    } else {
+        data.config.lang.clone()
+    };
 
     Ok(ctx)
 }
