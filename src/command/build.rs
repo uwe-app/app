@@ -33,7 +33,7 @@ pub fn compile<P: AsRef<Path>>(
     Ok(())
 }
 
-fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
+fn livereload(ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
 
     let runtime = runtime::runtime().read().unwrap();
 
@@ -80,12 +80,15 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
             return;
         }
 
-        //let mut runtime = runtime::runtime().write().unwrap();
-        //runtime.livereload = Some(ws_url);
-
-        ctx.livereload = Some(ws_url);
+        // Must be in a new scope so the write lock is dropped
+        // before compilation and invalidation
+        {
+            let mut livereload = runtime::livereload().write().unwrap();
+            *livereload = Some(ws_url);
+        }
 
         let built = workspace::build(&ctx);
+
         match built {
             Ok(mut compiler) => {
                 //let mut serve_builder = workspace::build(&ctx);
@@ -102,7 +105,7 @@ fn livereload(mut ctx: Context, error_cb: ErrorCallback) -> Result<(), Error> {
                 // Invalidator wraps the builder receiving filesystem change
                 // notifications and sending messages over the `tx` channel
                 // to connected websockets when necessary
-                let mut invalidator = Invalidator::new(&ctx, compiler);
+                let mut invalidator = Invalidator::new(compiler);
                 if let Err(e) = invalidator.start(source, tx, &error_cb) {
                     error_cb(e);
                 }

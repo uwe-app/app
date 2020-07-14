@@ -37,7 +37,6 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
 }
 
 pub struct Compiler<'a> {
-    context: &'a Context,
     parser: Parser<'a>,
     pub book: BookCompiler,
     pub manifest: Manifest,
@@ -58,7 +57,6 @@ impl<'a> Compiler<'a> {
         let manifest = Manifest::new(options);
 
         Self {
-            context,
             parser,
             book,
             manifest,
@@ -305,6 +303,7 @@ impl<'a> Compiler<'a> {
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
         let runtime = runtime::runtime().read().unwrap();
+        let livereload = runtime::livereload().read().unwrap();
 
         resource::link()?;
 
@@ -328,7 +327,7 @@ impl<'a> Compiler<'a> {
         // Now compile the books
         if let Some(ref _book) = runtime.config.book {
             self.book
-                .all(&runtime.config, self.context.livereload.clone())?;
+                .all(&runtime.config, livereload.clone())?;
         }
 
         if let Some(hooks) = &runtime.config.hook {

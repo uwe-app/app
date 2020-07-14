@@ -9,7 +9,6 @@ use datasource::{self, DataSourceMap};
 use config::{FileInfo, FileType};
 
 use super::Compiler;
-use super::context::Context;
 use super::hook;
 use super::watch;
 
@@ -103,13 +102,12 @@ struct BookRule {
 }
 
 pub struct Invalidator<'a> {
-    context: &'a Context,
     builder: Compiler<'a>,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(context: &'a Context, builder: Compiler<'a>) -> Self {
-        Self { context, builder }
+    pub fn new(builder: Compiler<'a>) -> Self {
+        Self { builder }
     }
 
     pub fn start(
@@ -350,6 +348,8 @@ impl<'a> Invalidator<'a> {
 
     fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         let runtime = runtime::runtime().read().unwrap();
+        let livereload = runtime::livereload().read().unwrap();
+
         let config = &runtime.config;
         let options = &runtime.options;
 
@@ -377,7 +377,7 @@ impl<'a> Invalidator<'a> {
                         self.builder.book.load(
                             config,
                             base,
-                            self.context.livereload.clone(),
+                            livereload.clone(),
                         )?;
                     }
                     _ => {}
@@ -388,7 +388,7 @@ impl<'a> Invalidator<'a> {
         if book.all {
             self.builder
                 .book
-                .all(config, self.context.livereload.clone())?;
+                .all(config, livereload.clone())?;
         } else {
             for action in &book.source {
                 match action {
@@ -404,7 +404,7 @@ impl<'a> Invalidator<'a> {
                         self.builder.book.build(
                             config,
                             &file,
-                            self.context.livereload.clone(),
+                            livereload.clone(),
                         )?;
                     }
                     _ => {}
