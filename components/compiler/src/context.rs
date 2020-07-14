@@ -1,12 +1,8 @@
-use serde::{Deserialize, Serialize};
-
 use locale::Locales;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Context {
-    #[serde(skip)]
     pub livereload: Option<String>,
-    #[serde(skip)]
     pub locales: Locales,
 }
 

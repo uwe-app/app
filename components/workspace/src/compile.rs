@@ -95,7 +95,6 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<C
 }
 
 fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<String>) -> Result<Context> {
-
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options)?;
 
@@ -103,7 +102,6 @@ fn load(locales: Locales, config: Config, options: RuntimeOptions, lang: Option<
     loader::load(&options)?;
 
     // Set up the real context
-    // FIXME: do not pass a clone of the config
     let ctx = Context::new(locales);
 
     let runtime = runtime::runtime();
