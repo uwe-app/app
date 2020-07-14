@@ -23,8 +23,8 @@ impl<'a> TemplateRender<'a> {
 
         let mut handlebars = Handlebars::new();
 
-        let build = runtime.config.build.as_ref().unwrap();
-        let strict = build.strict.is_some() && build.strict.unwrap();
+        let settings = &runtime.options.settings;
+        let strict = settings.strict.is_some() && settings.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
         handlebars.register_helper("children", Box::new(helpers::children::Children));
