@@ -78,15 +78,6 @@ impl HelperDef for Link<'_> {
 
             let mut base = opts.source.clone();
 
-            if let Some(ref href_path) = opts.settings.base_href {
-                base.push(href_path);
-
-                if input.starts_with(href_path) {
-                    input = input.trim_start_matches(href_path).to_owned();
-                    input = input.trim_start_matches("/").to_owned();
-                }
-            }
-
             if let Some(verify) = link_config.verify {
                 if verify {
                     if !lookup::exists(&self.context.config, &self.context.options, &input) {
@@ -95,6 +86,15 @@ impl HelperDef for Link<'_> {
                             input
                         )));
                     }
+                }
+            }
+
+            if let Some(ref href_path) = opts.settings.base_href {
+                base.push(href_path);
+
+                if input.starts_with(href_path) {
+                    input = input.trim_start_matches(href_path).to_owned();
+                    input = input.trim_start_matches("/").to_owned();
                 }
             }
 

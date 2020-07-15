@@ -86,7 +86,10 @@ impl<'a> FileInfo<'a> {
         false
     }
 
-    fn rewrite_index_file<P: AsRef<Path>>(file: P, result: P, types: &RenderTypes) -> Option<PathBuf> {
+    fn rewrite_index_file<
+        P: AsRef<Path>,
+        Q: AsRef<Path>>(file: P, result: Q, types: &RenderTypes) -> Option<PathBuf> {
+
         let clean_target = file.as_ref();
         if !FileInfo::is_index(&clean_target) {
             if let Some(parent) = clean_target.parent() {
@@ -215,7 +218,7 @@ impl<'a> FileInfo<'a> {
                     }
 
                     if options.rewrite_index {
-                        if let Some(res) = FileInfo::rewrite_index_file(pth.as_path(), result.as_path(), types) {
+                        if let Some(res) = FileInfo::rewrite_index_file(pth, &result, types) {
                             result = res;
                         }
                     }
@@ -223,7 +226,6 @@ impl<'a> FileInfo<'a> {
                 _ => {}
             }
         }
-
         self.output = Some(result);
         return Ok(());
     }
