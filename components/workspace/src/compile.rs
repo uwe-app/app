@@ -84,13 +84,13 @@ async fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Re
             // NOTE: way to handle workspace builds with live reload and multi-lingual sites
 
             //if !dry_run {
-                build(&ctx)?;
+                build(&mut ctx)?;
             //}
         }
     } else {
         ctx = load(locales, config.clone(), opts, None).await?;
         if !dry_run {
-            build(&ctx)?;
+            build(&mut ctx)?;
         }
     }
     Ok(ctx)
@@ -132,7 +132,7 @@ async fn load(
     Ok(BuildContext::new(config, options, datasource, locales, info))
 }
 
-pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Error> {
+pub fn build(ctx: &mut BuildContext) -> std::result::Result<Compiler, compiler::Error> {
 
     // FIXME: do not pass a clone of the options?
     let mut builder = Compiler::new(ctx);
