@@ -10,6 +10,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
+use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
 use config::indexer::{IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
 
@@ -238,7 +239,8 @@ impl DataSourceMap {
 
     pub async fn load(
         config: &Config,
-        options: &RuntimeOptions) -> Result<DataSourceMap> {
+        options: &RuntimeOptions,
+        collation: &CollateInfo) -> Result<DataSourceMap> {
 
         let mut map: BTreeMap<String, DataSource> = BTreeMap::new();
 
@@ -270,7 +272,7 @@ impl DataSourceMap {
         }
 
         // Load the documents for each configuration
-        DataSourceMap::load_documents(&mut map, config, options).await?;
+        DataSourceMap::load_documents(&mut map, config, options, collation).await?;
 
         // Configure defaults
         DataSourceMap::configure_defaults(&mut map)?;
@@ -328,7 +330,11 @@ impl DataSourceMap {
         Ok(())
     }
 
-    async fn load_documents(map: &mut BTreeMap<String, DataSource>, config: &Config, options: &RuntimeOptions) -> Result<()> {
+    async fn load_documents(
+        map: &mut BTreeMap<String, DataSource>,
+        config: &Config,
+        options: &RuntimeOptions,
+        collation: &CollateInfo) -> Result<()> {
 
         for (k, g) in map.iter_mut() {
 
@@ -348,6 +354,7 @@ impl DataSourceMap {
                 source: &g.source,
                 config,
                 options,
+                collation,
             };
 
             g.all = provider::Provider::load(req).await?;

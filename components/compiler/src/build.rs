@@ -343,10 +343,7 @@ impl<'a> Compiler<'a> {
         } else {
             let data = self.context.info.all
                 .get(file).unwrap().as_ref().unwrap();
-
-            // FIXME: do not clone() the data here!
             let mut copy = data.clone();
-
             self.parse_file(&mut info, &mut copy)?;
         }
 

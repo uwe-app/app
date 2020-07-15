@@ -5,12 +5,12 @@ use std::pin::Pin;
 use std::result::{Result as StdResult};
 
 use serde_json::Value;
-use ignore::{WalkBuilder, WalkState};
 
 use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 
-use config::{Config, FileInfo, RuntimeOptions};
+use collator::CollateInfo;
+use config::{Config, RuntimeOptions};
 use config::indexer::{SourceType, SourceProvider};
 
 use super::{Result, Error};
@@ -33,6 +33,7 @@ pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,
     pub config: &'a Config,
     pub options: &'a RuntimeOptions,
+    pub collation: &'a CollateInfo,
     pub strategy: Strategy,
     pub kind: SourceType,
     pub provider: SourceProvider,
@@ -94,71 +95,35 @@ impl Provider {
     }
 
     async fn load_pages(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
-        let filters = config::filter::get_filters(req.options, req.config);
-        let (tx, rx) = flume::unbounded();
-
-        // Use the walk builder to respect the way the compiler
-        // ignores and filters files
-        WalkBuilder::new(req.source)
-            .filter_entry(move |e| {
-                let path = e.path();
-                if filters.contains(&path.to_path_buf()) {
-                    return false;
-                }
-                true
-            })
-            .build_parallel()
-            .run(|| {
-                Box::new(|result| {
-                    let tx = tx.clone();
-                    if let Ok(entry) = result {
-                        let path = entry.path();
-                        if path.is_file() && FileInfo::is_page(&path, req.options) {
-                            let _ = tx.send(path.to_path_buf());
-                        }
-                    }
-                    WalkState::Continue
-                }
-            )
-        });
-
-        Provider::compute_pages(req, rx.drain().collect::<Vec<_>>()).await
-    }
-
-    async fn compute_pages(req: LoadRequest<'_>, paths: Vec<PathBuf>) -> Result<BTreeMap<String, Value>> {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
         let limit: usize = 100;
 
-        stream::iter(paths)
+        stream::iter(&req.collation.pages)
+            .filter(|p| future::ready(p.starts_with(req.source)))
             .enumerate()
             .map(Ok)
             .try_for_each_concurrent(limit, |(count, path)| {
-                let result = loader::compute(&path, req.config, req.options, true);
+                // Convert the page data to a Value for indexing
+                let data = req.collation.all
+                    .get(path).unwrap().as_ref().unwrap();
+                let result = serde_json::to_value(data);
                 match result {
-                    Ok(data) => {
-                        let result = serde_json::to_value(data);
-                        match result {
-                            Ok(document) => {
-                                let key = ComputeIdentifier::id(
-                                    &Strategy::Count, &path, &document, &count);
-                                if docs.contains_key(&key) {
-                                    return future::err(Error::DuplicateId {key, path});
-                                }
-                                docs.insert(key, document);
-                            },
-                            Err(e) => {
-                                return future::err(Error::from(e))
-                            }
+                    Ok(document) => {
+                        let key = ComputeIdentifier::id(
+                            &Strategy::Count, &path, &document, &count);
+                        if docs.contains_key(&key) {
+                            return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                         }
+                        docs.insert(key, document);
                     },
                     Err(e) => {
                         return future::err(Error::from(e))
                     }
                 }
-
                 future::ok(())
             }).await?;
-        Ok(docs)
+
+       Ok(docs)
     }
 
     async fn load_documents(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {

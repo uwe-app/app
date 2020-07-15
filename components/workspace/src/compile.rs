@@ -119,7 +119,7 @@ async fn load(
     }
 
     // Load data sources and create indices
-    let datasource = DataSourceMap::load(&config, &options).await?;
+    let datasource = DataSourceMap::load(&config, &options, &info).await?;
 
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {
