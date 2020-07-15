@@ -21,11 +21,12 @@ impl HelperDef for Parent<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .replace("\"", "");
 
         let types = self.context.options.settings.types.as_ref().unwrap();

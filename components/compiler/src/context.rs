@@ -12,7 +12,7 @@ pub struct BuildContext {
     pub options: RuntimeOptions,
     pub datasource: DataSourceMap,
     pub locales: Locales,
-    pub info: CollateInfo,
+    pub collation: CollateInfo,
 }
 
 impl BuildContext {
@@ -21,8 +21,8 @@ impl BuildContext {
         options: RuntimeOptions,
         datasource: DataSourceMap,
         locales: Locales,
-        info: CollateInfo) -> Self {
-        Self { config, options, datasource, locales, info }
+        collation: CollateInfo) -> Self {
+        Self { config, options, datasource, locales, collation }
     }
 }
 

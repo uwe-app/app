@@ -111,15 +111,15 @@ async fn load(
     let mut res = CollateResult::new();
     collator::walk(req, &mut res).await?;
 
-    let mut info: CollateInfo = res.try_into()?;
+    let mut collation: CollateInfo = res.try_into()?;
 
-    if !info.errors.is_empty() {
-        let e = info.errors.swap_remove(0);
+    if !collation.errors.is_empty() {
+        let e = collation.errors.swap_remove(0);
         return Err(Error::Collator(e));
     }
 
     // Load data sources and create indices
-    let datasource = DataSourceMap::load(&config, &options, &info).await?;
+    let datasource = DataSourceMap::load(&config, &options, &collation).await?;
 
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {
@@ -129,7 +129,7 @@ async fn load(
     };
 
     // Set up the real context
-    Ok(BuildContext::new(config, options, datasource, locales, info))
+    Ok(BuildContext::new(config, options, datasource, locales, collation))
 }
 
 pub fn build(ctx: &mut BuildContext) -> std::result::Result<Compiler, compiler::Error> {

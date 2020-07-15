@@ -176,8 +176,6 @@ impl<'a> Compiler<'a> {
 
         let ctx = self.context;
 
-        //let mut data = loader::compute(file, &ctx.config, &ctx.options, true)?;
-
         let render = data.render.is_some() && data.render.unwrap();
 
         if !render {
@@ -341,7 +339,7 @@ impl<'a> Compiler<'a> {
         if !is_page {
             self.copy_file(&mut info)?;
         } else {
-            let data = self.context.info.all
+            let data = self.context.collation.all
                 .get(file).unwrap().as_ref().unwrap();
             let mut copy = data.clone();
             self.parse_file(&mut info, &mut copy)?;
@@ -351,22 +349,22 @@ impl<'a> Compiler<'a> {
     }
 
     pub fn is_page(&mut self, file: &PathBuf) -> bool {
-        self.context.info.pages.contains(&std::sync::Arc::new(file.clone()))
+        self.context.collation.pages.contains(&std::sync::Arc::new(file.clone()))
     }
 
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
         self.register_templates_directory()?;
 
         // Files we should copy over
-        let copy = self.context.info.other.iter()
-            .chain(self.context.info.assets.iter())
+        let copy = self.context.collation.other.iter()
+            .chain(self.context.collation.assets.iter())
             .filter(|p| p.starts_with(target));
 
         for p in copy {
             self.one(p, false)?;
         }
 
-        let pages = self.context.info.pages
+        let pages = self.context.collation.pages
             .iter()
             .filter(|p| p.starts_with(target));
 
