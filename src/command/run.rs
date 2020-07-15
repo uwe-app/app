@@ -28,12 +28,12 @@ pub struct ServeOptions {
     pub redirects: Option<HashMap<String, Uri>>,
 }
 
-pub fn serve_only(options: ServeOptions) -> Result<(), Error> {
+pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
     let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>, String)>();
-    serve(options, tx)
+    serve(options, tx).await
 }
 
-pub fn serve(
+pub async fn serve(
     options: ServeOptions,
     bind: Sender<(SocketAddr, TokioSender<Message>, String)>,
 ) -> Result<(), Error> {
@@ -82,11 +82,7 @@ pub fn serve(
         temporary_redirect: true,
     };
 
-    let thread_handle = std::thread::spawn(move || {
-        serve_static::serve(web_server_opts, ctx, reload_tx);
-    });
-
-    let _ = thread_handle.join();
+    serve_static::serve(web_server_opts, ctx, reload_tx).await;
 
     Ok(())
 }

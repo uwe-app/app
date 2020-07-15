@@ -11,7 +11,7 @@ use locale::Locales;
 
 use crate::Result;
 
-pub fn compile_project<P: AsRef<Path>>(
+pub async fn compile_project<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
     skip_last: bool) -> Result<BuildContext> {
@@ -29,7 +29,7 @@ pub fn compile_project<P: AsRef<Path>>(
             dry_run = true;
         }
 
-        ctx = compile(&config, args, dry_run)?;
+        ctx = compile(&config, args, dry_run).await?;
 
         let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
         if write_redirects {
@@ -40,12 +40,12 @@ pub fn compile_project<P: AsRef<Path>>(
     Ok(ctx)
 }
 
-pub fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Result<BuildContext> {
+pub async fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Result<BuildContext> {
     let opts = super::project::prepare(config, args)?;
-    compile_one(config, opts, dry_run)
+    compile_one(config, opts, dry_run).await
 }
 
-fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<BuildContext> {
+async fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<BuildContext> {
     let mut ctx: BuildContext = Default::default();
     let base_target = opts.target.clone();
 
@@ -74,7 +74,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<B
             let mut copy: Locales = Default::default();
             copy.load(&config, &lang_opts)?;
 
-            ctx = load(copy, config.clone(), lang_opts, Some(lang.clone()))?;
+            ctx = load(copy, config.clone(), lang_opts, Some(lang.clone())).await?;
 
             // NOTE: this old conditional will break multi-lingual builds
             // NOTE: when live reload is enabled. We need to find a better
@@ -85,7 +85,7 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<B
             //}
         }
     } else {
-        ctx = load(locales, config.clone(), opts, None)?;
+        ctx = load(locales, config.clone(), opts, None).await?;
         if !dry_run {
             build(&ctx)?;
         }
@@ -93,12 +93,12 @@ fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<B
     Ok(ctx)
 }
 
-fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
+async fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
 
     loader::verify(&config, &options)?;
 
     // Load data sources and create indices
-    let datasource = DataSourceMap::load(&config, &options)?;
+    let datasource = DataSourceMap::load(&config, &options).await?;
 
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {

@@ -21,16 +21,16 @@ pub struct PublishOptions {
     pub provider: PublishProvider,
 }
 
-pub fn publish(options: PublishOptions) -> Result<()> {
+pub async fn publish(options: PublishOptions) -> Result<()> {
     let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
     for space in spaces {
-        build_publish(&options, &space)?;
+        build_publish(&options, &space).await?;
     }
     Ok(())
 }
 
-fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
+async fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
             if let Some(ref publish_config) = config.publish.as_ref().unwrap().aws {
@@ -55,10 +55,9 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
                     // Compile a pristine release
                     let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
-                    let ctx = workspace::compile(&config, &mut args, false)?;
+                    let ctx = workspace::compile(&config, &mut args, false).await?;
 
-                    publish_aws(ctx, request, env)?
-
+                    publish_aws(ctx, request, env).await?
                 } else {
                     return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
                 }
@@ -71,7 +70,6 @@ fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
 async fn publish_aws(
     ctx: BuildContext,
     request: PublishRequest,

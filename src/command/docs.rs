@@ -8,7 +8,7 @@ use super::run::{self, ServeOptions};
 
 static DOCS_DIR: &str = "docs";
 
-pub fn open() -> Result<(), Error> {
+pub async fn open() -> Result<(), Error> {
     let prefs = preference::load()?;
     let docs_prefs = prefs.docs.as_ref().unwrap();
 
@@ -31,5 +31,5 @@ pub fn open() -> Result<(), Error> {
         redirects: None,
     };
 
-    run::serve_only(opts)
+    run::serve_only(opts).await
 }

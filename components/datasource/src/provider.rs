@@ -82,18 +82,18 @@ impl Provider {
         }  
     }
 
-    pub fn load(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
+    pub async fn load(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
         match req.provider {
             SourceProvider::Documents => {
-                Provider::load_documents(req)
+                Provider::load_documents(req).await
             },
             SourceProvider::Pages => {
-                Provider::load_pages(req)
+                Provider::load_pages(req).await
             }
         }
     }
 
-    fn load_pages(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
+    async fn load_pages(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
         let filters = config::filter::get_filters(req.options, req.config);
         let (tx, rx) = flume::unbounded();
 
@@ -122,11 +122,10 @@ impl Provider {
             )
         });
 
-        Provider::compute_pages(req, rx.drain().collect::<Vec<_>>())
+        Provider::compute_pages(req, rx.drain().collect::<Vec<_>>()).await
     }
 
-    #[tokio::main]
-    async fn compute_pages(req: LoadRequest, paths: Vec<PathBuf>) -> Result<BTreeMap<String, Value>> {
+    async fn compute_pages(req: LoadRequest<'_>, paths: Vec<PathBuf>) -> Result<BTreeMap<String, Value>> {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
         let limit: usize = 100;
 
@@ -162,8 +161,7 @@ impl Provider {
         Ok(docs)
     }
 
-    #[tokio::main]
-    async fn load_documents(req: LoadRequest) -> Result<BTreeMap<String, Value>> {
+    async fn load_documents(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
         let limit: usize = 100;
 

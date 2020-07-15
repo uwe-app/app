@@ -236,7 +236,7 @@ impl DataSourceMap {
         }
     }
 
-    pub fn load(
+    pub async fn load(
         config: &Config,
         options: &RuntimeOptions) -> Result<DataSourceMap> {
 
@@ -270,7 +270,7 @@ impl DataSourceMap {
         }
 
         // Load the documents for each configuration
-        DataSourceMap::load_documents(&mut map, config, options)?;
+        DataSourceMap::load_documents(&mut map, config, options).await?;
 
         // Configure defaults
         DataSourceMap::configure_defaults(&mut map)?;
@@ -328,7 +328,7 @@ impl DataSourceMap {
         Ok(())
     }
 
-    fn load_documents(map: &mut BTreeMap<String, DataSource>, config: &Config, options: &RuntimeOptions) -> Result<()> {
+    async fn load_documents(map: &mut BTreeMap<String, DataSource>, config: &Config, options: &RuntimeOptions) -> Result<()> {
 
         for (k, g) in map.iter_mut() {
 
@@ -350,7 +350,7 @@ impl DataSourceMap {
                 options,
             };
 
-            g.all = provider::Provider::load(req)?;
+            g.all = provider::Provider::load(req).await?;
         }
         Ok(())
     }

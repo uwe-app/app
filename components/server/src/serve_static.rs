@@ -73,7 +73,6 @@ async fn redirect_trailing_slash(
     Err(warp::reject())
 }
 
-#[tokio::main]
 pub async fn serve(
     opts: WebServerOptions,
     bind_tx: Sender<SocketAddr>,

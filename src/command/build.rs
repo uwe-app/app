@@ -18,22 +18,22 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
 }
 
-pub fn compile<P: AsRef<Path>>(
+pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
 
     let live = args.live.is_some() && args.live.unwrap();
-    let ctx = workspace::compile_project(project, args, live)?;
+    let ctx = workspace::compile_project(project, args, live).await?;
 
     if live {
-        livereload(ctx, error_cb)?;
+        livereload(ctx, error_cb).await?;
     }
     Ok(())
 }
 
-fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
+async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
 
     let options = ctx.options.clone();
     let config = ctx.config.clone();
@@ -117,7 +117,7 @@ fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
     });
 
     // Start the webserver
-    run::serve(opts, tx)?;
+    run::serve(opts, tx).await?;
 
     Ok(())
 }

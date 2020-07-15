@@ -304,7 +304,7 @@ impl Command {
     }
 }
 
-fn process_command(cmd: &Command) {
+async fn process_command(cmd: &Command) {
     match cmd {
         Command::Book { ref action } => match action {
             Book::Add {
@@ -388,7 +388,7 @@ fn process_command(cmd: &Command) {
         }
 
         Command::Docs { .. } => {
-            if let Err(e) = command::docs::open() {
+            if let Err(e) = command::docs::open().await {
                 fatal(e);
             }
         }
@@ -422,7 +422,7 @@ fn process_command(cmd: &Command) {
                 return;
             }
 
-            if let Err(e) = command::run::serve_only(opts) {
+            if let Err(e) = command::run::serve_only(opts).await {
                 fatal(e);
             }
         }
@@ -436,7 +436,7 @@ fn process_command(cmd: &Command) {
                 project,
             };
 
-            if let Err(e) = command::publish::publish(opts) {
+            if let Err(e) = command::publish::publish(opts).await {
                 fatal(e);
             }
         }
@@ -491,7 +491,7 @@ fn process_command(cmd: &Command) {
 
             let now = SystemTime::now();
             //if let Err(e) = hypertext::build(cfg, opts, fatal) {
-            if let Err(e) = command::build::compile(&project, &mut build_args, fatal) {
+            if let Err(e) = command::build::compile(&project, &mut build_args, fatal).await {
                 fatal(e);
             }
             if let Ok(t) = now.elapsed() {
@@ -501,7 +501,8 @@ fn process_command(cmd: &Command) {
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let root_args = Cli::from_args();
 
     // Fluent templates panics if an error is caught parsing the
@@ -532,10 +533,10 @@ fn main() {
 
     match &root_args.cmd {
         Some(cmd) => {
-            process_command(cmd);
+            process_command(cmd).await;
         }
         None => {
-            process_command(&Command::default(root_args));
+            process_command(&Command::default(root_args)).await;
         }
     }
 }
