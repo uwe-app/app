@@ -227,6 +227,7 @@ impl HelperDef for Match<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let base_path = rc
             .evaluate(ctx, "@root/file.target")?
             .as_json()
@@ -243,9 +244,9 @@ impl HelperDef for Match<'_> {
             ));
         }
 
-        let mut target: String = "".to_owned();
-        let mut output: String = "".to_owned();
-        let mut exact: bool = false;
+        let mut target = "".to_owned();
+        let mut output = "".to_owned();
+        let mut exact = false;
 
         if let Some(p) = h.params().get(0) {
             if !p.is_value_missing() {

@@ -165,10 +165,10 @@ impl Default for Page {
 
 impl Page {
 
-    pub fn finalize<L: AsRef<str>>(&mut self, lang: L, info: &FileInfo, config: &Config) -> Result<(), Error> {
+    pub fn seal(&mut self, config: &Config, options: &RuntimeOptions, info: &FileInfo) -> Result<(), Error> {
         let output = info.output.as_ref().unwrap();
 
-        self.lang = Some(lang.as_ref().to_string());
+        self.lang = Some(options.lang.clone());
         self.host = Some(config.host.clone());
 
         let mut file_context = FileContext::new(info.file.clone(), output.clone());
