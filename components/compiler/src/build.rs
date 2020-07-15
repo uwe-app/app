@@ -346,6 +346,7 @@ impl<'a> Compiler<'a> {
             self.copy_file(&mut info)?;
         } else {
             let data = self.context.info.all.get(file).unwrap().as_ref().unwrap();
+            // FIXME: do not clone() the data here!
             let mut copy = data.clone();
             self.parse_file(&mut info, &mut copy)?;
         }
@@ -357,27 +358,27 @@ impl<'a> Compiler<'a> {
         self.context.info.pages.contains(&std::sync::Arc::new(file.clone()))
     }
 
-    // Recursively walk and build files in a directory
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
         self.register_templates_directory()?;
 
         // Files we should copy over
         let copy = self.context.info.other.iter()
-            .chain(self.context.info.assets.iter());
+            .chain(self.context.info.assets.iter())
+            .filter(|p| p.starts_with(target));
 
         for p in copy {
-            if p.starts_with(target) {
-                self.one(p, false)?;
-            }
+            self.one(p, false)?;
         }
 
         // TODO: restore max depth support and follow links?
 
+        let pages = self.context.info.pages
+            .iter()
+            .filter(|p| p.starts_with(target));
+
         // Pages to parse
-        for p in self.context.info.pages.iter() {
-            if p.starts_with(target) {
-                self.one(p, true)?;
-            }
+        for p in pages {
+            self.one(p, true)?;
         }
 
         //let follow_links = self.context.options.settings.should_follow_links();
