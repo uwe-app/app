@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 use once_cell::sync::OnceCell;
 
+use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
 use locale::Locales;
 use datasource::DataSourceMap;
@@ -11,6 +12,7 @@ pub struct BuildContext {
     pub options: RuntimeOptions,
     pub datasource: DataSourceMap,
     pub locales: Locales,
+    pub info: CollateInfo,
 }
 
 impl BuildContext {
@@ -18,8 +20,9 @@ impl BuildContext {
         config: Config,
         options: RuntimeOptions,
         datasource: DataSourceMap,
-        locales: Locales) -> Self {
-        Self { config, options, datasource, locales }
+        locales: Locales,
+        info: CollateInfo) -> Self {
+        Self { config, options, datasource, locales, info }
     }
 }
 

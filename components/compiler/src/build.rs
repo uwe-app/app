@@ -1,13 +1,12 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use ignore::WalkBuilder;
-use log::{debug, info};
+use log::info;
 
 use serde_json::{json, Value};
 
 use book::compiler::BookCompiler;
-use config::{Config, Page, FileInfo, FileType, FileOptions, ProfileName, IndexQuery};
+use config::{Config, Page, FileInfo, FileOptions, ProfileName, IndexQuery};
 
 use crate::{Error, Result, HTML, TEMPLATE_EXT};
 
@@ -174,12 +173,12 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_file(&mut self, mut info: &mut FileInfo) -> Result<()> {
+    fn parse_file(&mut self, mut info: &mut FileInfo, mut data: &mut Page) -> Result<()> {
         let file = info.file;
 
         let ctx = self.context;
 
-        let mut data = loader::compute(file, &ctx.config, &ctx.options, true)?;
+        //let mut data = loader::compute(file, &ctx.config, &ctx.options, true)?;
 
         let render = data.render.is_some() && data.render.unwrap();
 
@@ -264,17 +263,6 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn process_file(&mut self, info: &mut FileInfo) -> Result<()> {
-        match info.file_type {
-            FileType::Unknown => {
-                self.copy_file(info)
-            }
-            FileType::Markdown | FileType::Template => {
-                self.parse_file(info)
-            }
-        }
-    }
-
     pub fn register_templates_directory(&mut self) -> Result<()> {
         let templates = self.context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
@@ -317,7 +305,8 @@ impl<'a> Compiler<'a> {
 
         for p in targets {
             if p.is_file() {
-                self.one(&p)?;
+                let is_page = self.is_page(&p);
+                self.one(&p, is_page)?;
             } else {
                 self.build(&p)?;
             }
@@ -343,7 +332,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build a single file
-    pub fn one(&mut self, file: &PathBuf) -> Result<()> {
+    pub fn one(&mut self, file: &PathBuf, is_page: bool) -> Result<()> {
         let mut info = FileInfo::new(
             &self.context.config,
             &self.context.options,
@@ -352,40 +341,72 @@ impl<'a> Compiler<'a> {
             file,
             false,
         );
-        self.process_file(&mut info)
+
+        if !is_page {
+            self.copy_file(&mut info)?;
+        } else {
+            let data = self.context.info.all.get(file).unwrap().as_ref().unwrap();
+            let mut copy = data.clone();
+            self.parse_file(&mut info, &mut copy)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn is_page(&mut self, file: &PathBuf) -> bool {
+        self.context.info.pages.contains(&std::sync::Arc::new(file.clone()))
     }
 
     // Recursively walk and build files in a directory
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
         self.register_templates_directory()?;
 
-        let follow_links = self.context.options.settings.should_follow_links();
-        let filters = config::filter::get_filters(&self.context.options, &self.context.config);
+        // Files we should copy over
+        let copy = self.context.info.other.iter()
+            .chain(self.context.info.assets.iter());
 
-        for result in WalkBuilder::new(&target)
-            .follow_links(follow_links)
-            .max_depth(self.context.options.settings.max_depth)
-            .filter_entry(move |e| {
-                let path = e.path();
-                if filters.contains(&path.to_path_buf()) {
-                    debug!("SKIP {}", path.display());
-                    return false;
-                }
-                true
-            })
-            .build()
-        {
-            match result {
-                Ok(entry) => {
-                    let path = entry.path();
-                    if path.is_file() {
-                        let file = path.to_path_buf();
-                        self.one(&file)?
-                    }
-                }
-                Err(e) => return Err(Error::from(e)),
+        for p in copy {
+            if p.starts_with(target) {
+                self.one(p, false)?;
             }
         }
+
+        // TODO: restore max depth support and follow links?
+
+        // Pages to parse
+        for p in self.context.info.pages.iter() {
+            if p.starts_with(target) {
+                self.one(p, true)?;
+            }
+        }
+
+        //let follow_links = self.context.options.settings.should_follow_links();
+        //let filters = config::filter::get_filters(&self.context.options, &self.context.config);
+
+        //for result in WalkBuilder::new(&target)
+            //.follow_links(follow_links)
+            //.max_depth(self.context.options.settings.max_depth)
+            //.filter_entry(move |e| {
+                //let path = e.path();
+                //if filters.contains(&path.to_path_buf()) {
+                    //debug!("SKIP {}", path.display());
+                    //return false;
+                //}
+                //true
+            //})
+            //.build()
+        //{
+            //match result {
+                //Ok(entry) => {
+                    //let path = entry.path();
+                    //if path.is_file() {
+                        //let file = path.to_path_buf();
+                        //self.one(&file)?
+                    //}
+                //}
+                //Err(e) => return Err(Error::from(e)),
+            //}
+        //}
 
         Ok(())
     }

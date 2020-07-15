@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 book = {version = "0.1", path = "../book" }
+collator = {version = "0.1", path = "../collator" }
 config = {version = "0.1", path = "../config" }
 datasource = {version = "0.1", path = "../datasource" }
 frontmatter = {version = "0.1", path = "../frontmatter" }

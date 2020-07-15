@@ -118,30 +118,30 @@ async fn load(
         return Err(Error::Collator(e));
     }
 
-    for k in info.pages.iter() {
-        println!("Path {}", k.display());
-    }
+    //for k in info.pages.iter() {
+        //println!("Path {}", k.display());
+    //}
 
-    println!("Partials: {}, Includes: {}, Resources: {}, Locales: {}",
-        info.partials.len(),
-        info.includes.len(),
-        info.resources.len(),
-        info.locales.len(),
-    );
+    //println!("Partials: {}, Includes: {}, Resources: {}, Locales: {}",
+        //info.partials.len(),
+        //info.includes.len(),
+        //info.resources.len(),
+        //info.locales.len(),
+    //);
 
-    println!("Data Source: {}, Short Codes: {}",
-        info.data_sources.len(),
-        info.short_codes.len(),
-    );
+    //println!("Data Source: {}, Short Codes: {}",
+        //info.data_sources.len(),
+        //info.short_codes.len(),
+    //);
 
-    println!("Total: {}, Pages: {}, Dirs: {}, Files: {}",
-        info.all.len(),
-        info.pages.len(),
-        info.dirs.len(),
-        info.files.len(),
-    );
+    //println!("Total: {}, Pages: {}, Dirs: {}, Files: {}",
+        //info.all.len(),
+        //info.pages.len(),
+        //info.dirs.len(),
+        //info.files.len(),
+    //);
 
-    std::process::exit(1);
+    //std::process::exit(1);
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options).await?;
@@ -154,7 +154,7 @@ async fn load(
     };
 
     // Set up the real context
-    Ok(BuildContext::new(config, options, datasource, locales))
+    Ok(BuildContext::new(config, options, datasource, locales, info))
 }
 
 pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Error> {

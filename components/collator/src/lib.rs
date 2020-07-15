@@ -27,7 +27,7 @@ pub struct CollateRequest<'a> {
     pub options: &'a RuntimeOptions,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CollateInfo {
     pub errors: Vec<Error>,
     pub all: HashMap<Arc<PathBuf>, Option<Page>>,
@@ -37,6 +37,7 @@ pub struct CollateInfo {
 
     // These are propagated when `filter` on request
     // is `false`
+    pub assets: Vec<Arc<PathBuf>>,
     pub partials: Vec<Arc<PathBuf>>,
     pub includes: Vec<Arc<PathBuf>>,
     pub resources: Vec<Arc<PathBuf>>,
@@ -45,6 +46,9 @@ pub struct CollateInfo {
     pub short_codes: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
+
+    // Unrecognized files that should be copied
+    pub other: Vec<Arc<PathBuf>>,
 }
 
 #[derive(Debug)]
@@ -63,12 +67,15 @@ impl CollateResult {
                     files: Vec::new(),
                     dirs: Vec::new(),
 
+                    assets: Vec::new(),
                     partials: Vec::new(),
                     includes: Vec::new(),
                     resources: Vec::new(),
                     locales: Vec::new(),
                     data_sources: Vec::new(),
                     short_codes: Vec::new(),
+
+                    other: Vec::new(),
                 }
             ))
         }    
@@ -135,7 +142,17 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         info.pages.push(Arc::clone(&key));
                     } else {
                         if !req.filter {
-                            if key.starts_with(req.options.get_partials_path()) {
+
+                            // TODO: store the layout?
+                            if let Some(ref layout) = req.options.settings.layout {
+                                if key.starts_with(layout) {
+                                    return WalkState::Continue;
+                                }
+                            }
+
+                            if key.starts_with(req.options.get_assets_path()) {
+                                info.assets.push(Arc::clone(&key));
+                            } else if key.starts_with(req.options.get_partials_path()) {
                                 info.partials.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_includes_path()) {
                                 info.includes.push(Arc::clone(&key));
@@ -147,6 +164,8 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 info.data_sources.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_short_codes_path()) {
                                 info.short_codes.push(Arc::clone(&key));
+                            } else {
+                                info.other.push(Arc::clone(&key));
                             }
                         }
 
