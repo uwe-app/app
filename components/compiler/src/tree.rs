@@ -107,8 +107,6 @@ fn children<P: AsRef<Path>>(
             let mut info = FileInfo::new(
                 &config,
                 &options,
-                source,
-                target,
                 &source_file,
                 false,
             );
@@ -153,8 +151,6 @@ fn children<P: AsRef<Path>>(
                     let mut info = FileInfo::new(
                         &config,
                         &options,
-                        source,
-                        target,
                         &f,
                         false,
                     );

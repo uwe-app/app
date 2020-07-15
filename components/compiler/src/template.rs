@@ -78,6 +78,7 @@ impl<'a> TemplateRender<'a> {
             .is_ok()
         {
             data.finalize(&self.context.options.lang, info, &self.context.config)?;
+
             trace!("{:#?}", data);
             return self.handlebars.render(name, data).map_err(Error::from);
         }

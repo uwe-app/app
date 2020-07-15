@@ -57,16 +57,14 @@ impl<'a> FileInfo<'a> {
     pub fn new(
         config: &'a Config,
         options: &'a RuntimeOptions,
-        source: &'a PathBuf,
-        target: &'a PathBuf,
         file: &'a PathBuf,
         synthetic: bool) -> Self {
         let file_type = FileInfo::get_type(file, &options.settings);
         Self {
             config,
             options,
-            source,
-            target,
+            source: &options.source,
+            target: &options.target,
             file,
             file_type,
             synthetic,

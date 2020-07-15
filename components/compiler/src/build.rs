@@ -104,8 +104,6 @@ impl<'a> Compiler<'a> {
                     let mut file_info = FileInfo::new(
                         &ctx.config,
                         &ctx.options,
-                        &ctx.options.source,
-                        &ctx.options.target,
                         &mock,
                         true,
                     );
@@ -336,8 +334,6 @@ impl<'a> Compiler<'a> {
         let mut info = FileInfo::new(
             &self.context.config,
             &self.context.options,
-            &self.context.options.source,
-            &self.context.options.target,
             file,
             false,
         );
