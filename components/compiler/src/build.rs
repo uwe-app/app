@@ -369,8 +369,6 @@ impl<'a> Compiler<'a> {
             self.one(p, false)?;
         }
 
-        // TODO: restore max depth support and follow links?
-
         let pages = self.context.info.pages
             .iter()
             .filter(|p| p.starts_with(target));
@@ -379,34 +377,6 @@ impl<'a> Compiler<'a> {
         for p in pages {
             self.one(p, true)?;
         }
-
-        //let follow_links = self.context.options.settings.should_follow_links();
-        //let filters = config::filter::get_filters(&self.context.options, &self.context.config);
-
-        //for result in WalkBuilder::new(&target)
-            //.follow_links(follow_links)
-            //.max_depth(self.context.options.settings.max_depth)
-            //.filter_entry(move |e| {
-                //let path = e.path();
-                //if filters.contains(&path.to_path_buf()) {
-                    //debug!("SKIP {}", path.display());
-                    //return false;
-                //}
-                //true
-            //})
-            //.build()
-        //{
-            //match result {
-                //Ok(entry) => {
-                    //let path = entry.path();
-                    //if path.is_file() {
-                        //let file = path.to_path_buf();
-                        //self.one(&file)?
-                    //}
-                //}
-                //Err(e) => return Err(Error::from(e)),
-            //}
-        //}
 
         Ok(())
     }

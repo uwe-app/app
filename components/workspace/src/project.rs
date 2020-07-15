@@ -178,7 +178,6 @@ pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOption
         // WARN: We cannot merge from args here otherwise we clobber
         // WARN: other settings from the arg defaults so we 
         // WARN: manually override from command line arguments.
-        if args.max_depth.is_some() { merged.max_depth = args.max_depth; }
         if args.live.is_some() { merged.live = args.live; }
         if args.release.is_some() { merged.release = args.release; }
         if args.host.is_some() { merged.host = args.host.clone(); }

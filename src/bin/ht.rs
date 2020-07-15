@@ -95,10 +95,6 @@ struct BuildOpts {
     #[structopt(long)]
     profile: Option<String>,
 
-    /// Maximum depth to traverse
-    #[structopt(short, long)]
-    max_depth: Option<usize>,
-
     /// Enable live reload
     #[structopt(short, long)]
     live: bool,
@@ -481,7 +477,6 @@ async fn process_command(cmd: &Command) {
             let mut build_args = ProfileSettings {
                 paths,
                 profile: args.profile.clone(),
-                max_depth: args.max_depth,
                 live: Some(args.live),
                 release: Some(args.release),
                 host: args.server.host.clone(),

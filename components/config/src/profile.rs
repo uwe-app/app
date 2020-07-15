@@ -113,7 +113,6 @@ pub struct ProfileSettings {
 
     pub extend: Option<Vec<String>>,
 
-    pub max_depth: Option<usize>,
     pub profile: Option<String>,
     pub live: Option<bool>,
     pub release: Option<bool>,
@@ -168,7 +167,6 @@ impl Default for ProfileSettings {
             extend: None,
             short_codes: None,
 
-            max_depth: None,
             profile: None,
             host: Some(config::HOST.to_string()),
             port: Some(config::PORT),
