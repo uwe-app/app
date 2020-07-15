@@ -12,16 +12,18 @@ pub fn get_filters(options: &RuntimeOptions, config: &Config) -> Vec<PathBuf> {
 
     let partials = options.get_partials_path();
     let includes = options.get_includes_path();
-    let generator = options.get_data_sources_path();
+    let data_sources = options.get_data_sources_path();
     let resource = options.get_resources_path();
+    let short_codes = options.get_short_codes_path();
     let locales = options.get_locales();
 
     let theme = config.get_book_theme_path(source);
 
     filters.push(partials);
     filters.push(includes);
-    filters.push(generator);
+    filters.push(data_sources);
     filters.push(resource);
+    filters.push(short_codes);
 
     if let Some(_) = config.fluent {
         filters.push(locales);
@@ -50,8 +52,10 @@ pub fn get_filters(options: &RuntimeOptions, config: &Config) -> Vec<PathBuf> {
         }
     }
 
-    // NOTE: layout comes from the build arguments so callers
-    // NOTE: need to add this to the list of filters if necessary
+    // Always ignore the layout
+    if let Some(ref layout) = options.settings.layout {
+        filters.push(layout.clone());
+    }
 
     filters
 }

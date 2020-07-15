@@ -35,6 +35,8 @@ pub enum Error {
     DataSource(#[from] datasource::Error),
     #[error(transparent)]
     Loader(#[from] loader::Error),
+    #[error(transparent)]
+    Collator(#[from] collator::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

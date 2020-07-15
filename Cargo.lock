@@ -265,6 +265,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "collator"
+version = "0.1.0"
+dependencies = [
+ "config 0.1.0",
+ "futures 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ignore 0.4.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "loader 0.1.0",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "compiler"
 version = "0.1.0"
 dependencies = [
@@ -2990,6 +3003,7 @@ dependencies = [
 name = "workspace"
 version = "0.1.0"
 dependencies = [
+ "collator 0.1.0",
  "compiler 0.1.0",
  "config 0.1.0",
  "datasource 0.1.0",

@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use std::convert::TryInto;
 
 use log::info;
 
@@ -9,7 +10,9 @@ use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
 use locale::Locales;
 
-use crate::Result;
+use collator::{CollateRequest, CollateResult, CollateInfo};
+
+use crate::{Error, Result};
 
 pub async fn compile_project<P: AsRef<Path>>(
     project: P,
@@ -93,9 +96,52 @@ async fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Re
     Ok(ctx)
 }
 
-async fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lang: Option<String>) -> Result<BuildContext> {
+async fn load(
+    locales: Locales,
+    config: Config,
+    mut options: RuntimeOptions,
+    lang: Option<String>) -> Result<BuildContext> {
 
+    // Verify that files referenced by key in the pages
+    // map exist on disc
     loader::verify(&config, &options)?;
+
+    // Collate page data for later usage
+    let req = CollateRequest {filter: false, config: &config, options: &options};
+    let mut res = CollateResult::new();
+    collator::walk(req, &mut res).await?;
+
+    let mut info: CollateInfo = res.try_into()?;
+
+    if !info.errors.is_empty() {
+        let e = info.errors.swap_remove(0);
+        return Err(Error::Collator(e));
+    }
+
+    for k in info.pages.iter() {
+        println!("Path {}", k.display());
+    }
+
+    println!("Partials: {}, Includes: {}, Resources: {}, Locales: {}",
+        info.partials.len(),
+        info.includes.len(),
+        info.resources.len(),
+        info.locales.len(),
+    );
+
+    println!("Data Source: {}, Short Codes: {}",
+        info.data_sources.len(),
+        info.short_codes.len(),
+    );
+
+    println!("Total: {}, Pages: {}, Dirs: {}, Files: {}",
+        info.all.len(),
+        info.pages.len(),
+        info.dirs.len(),
+        info.files.len(),
+    );
+
+    std::process::exit(1);
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options).await?;
@@ -108,8 +154,7 @@ async fn load(locales: Locales, config: Config, mut options: RuntimeOptions, lan
     };
 
     // Set up the real context
-    let ctx = BuildContext::new(config, options, datasource, locales);
-    Ok(ctx)
+    Ok(BuildContext::new(config, options, datasource, locales))
 }
 
 pub fn build(ctx: &BuildContext) -> std::result::Result<Compiler, compiler::Error> {

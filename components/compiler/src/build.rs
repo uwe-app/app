@@ -360,12 +360,7 @@ impl<'a> Compiler<'a> {
         self.register_templates_directory()?;
 
         let follow_links = self.context.options.settings.should_follow_links();
-        let mut filters = config::filter::get_filters(&self.context.options, &self.context.config);
-
-        // Always ignore the layout
-        if let Some(ref layout) = self.context.options.settings.layout {
-            filters.push(layout.clone());
-        }
+        let filters = config::filter::get_filters(&self.context.options, &self.context.config);
 
         for result in WalkBuilder::new(&target)
             .follow_links(follow_links)
