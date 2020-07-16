@@ -71,11 +71,9 @@ impl<'a> Compiler<'a> {
         _reference: IndexQuery,
         values: Vec<Value>,
     ) -> Result<()> {
-        //let file = info.file;
+
         let parent = file.parent().unwrap();
-
         let ctx = self.context;
-
 
         let mut rewrite_index = ctx.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -190,13 +188,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_file(&mut self, file: &PathBuf, data: &mut Page) -> Result<()> {
-        let ctx = self.context;
-
-        if super::draft::is_draft(&data, &ctx.options) {
-            return Ok(());
-        }
-
+    fn parse_query(&mut self, file: &PathBuf, data: &mut Page) -> Result<bool> {
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
             let datasource = &self.context.datasource;
@@ -223,9 +215,23 @@ impl<'a> Compiler<'a> {
                     for (gen, idx) in each_iters {
                         self.data_source_each(file, &data, gen, idx)?;
                     }
-                    return Ok(());
+                    return Ok(true);
                 }
             }
+        }
+        Ok(false)
+    }
+
+    fn parse_file(&mut self, file: &PathBuf, data: &mut Page) -> Result<()> {
+        let ctx = self.context;
+
+        if super::draft::is_draft(&data, &ctx.options) {
+            return Ok(());
+        }
+
+        let quit = self.parse_query(file, data)?;
+        if quit {
+            return Ok(())
         }
 
         let dest = data.file.as_ref().unwrap().target.clone();
