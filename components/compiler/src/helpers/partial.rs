@@ -37,29 +37,23 @@ impl HelperDef for Partial<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .replace("\"", "");
 
-        //println!("Template partial was called");
-        //println!("Got base path {}", source_path);
-
         let types = self.context.options.settings.types.as_ref().unwrap();
-        let mut evaluate = false;
+        let mut parse_markdown = false;
 
         let file = PathBuf::from(&source_path);
         if let Some(ext) = file.extension() {
             let s = ext.to_string_lossy().into_owned();
-            evaluate = types.markdown().contains(&s);
+            parse_markdown = types.markdown().contains(&s);
         }
 
-        // TODO: handle this error
         let (content, _has_fm, _fm) =
-            frontmatter::load(&file, get_front_matter_config(&file)).unwrap();
+            frontmatter::load(&file, get_front_matter_config(&file))
+                .map_err(|_e| RenderError::new(format!("Partial failed to load front matter for {}", &source_path)))?;
 
-        //r.register_template_string(&source_path, content);
+        let result = r.render_template(&content, ctx.data())
+            .map_err(|_e| RenderError::new(format!("Partial failed to render template {}", &source_path)))?;
 
-        let result = r.render_template(&content, ctx.data()).unwrap();
-
-        //println!("Res {}", result);
-
-        if evaluate {
+        if parse_markdown {
             let parsed = render_markdown_string(&mut Cow::from(result), &self.context.config);
             out.write(&parsed)?;
         } else {
