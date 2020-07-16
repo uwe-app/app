@@ -89,7 +89,7 @@ async fn livereload(mut ctx: BuildContext, error_cb: ErrorCallback) -> Result<()
         match built {
             Ok(mut compiler) => {
                 // Prepare for incremental builds
-                if let Err(_) = compiler.manifest.load() {}
+                //if let Err(_) = compiler.manifest.load() {}
 
                 // NOTE: only open the browser if initial build succeeds
                 open::that(&url).map(|_| ()).unwrap_or(());

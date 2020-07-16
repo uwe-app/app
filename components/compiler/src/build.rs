@@ -38,7 +38,7 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
 pub struct Compiler<'a> {
     pub context: &'a BuildContext,
     pub book: BookCompiler,
-    pub manifest: Manifest<'a>,
+    //pub manifest: Manifest<'a>,
     parser: Parser<'a>,
 }
 
@@ -54,12 +54,12 @@ impl<'a> Compiler<'a> {
         // template partials can be found
         let parser = Parser::new(&context)?;
 
-        let manifest = Manifest::new(&context);
+        //let manifest = Manifest::new(&context);
 
         Ok(Self {
             context,
             book,
-            manifest,
+            //manifest,
             parser,
         })
     }
@@ -174,16 +174,16 @@ impl<'a> Compiler<'a> {
 
         let file = info.file;
 
-        if self
-            .manifest
-            .is_dirty(file, &dest, self.context.options.settings.is_force())
-        {
+        //if self
+            //.manifest
+            //.is_dirty(file, &dest, self.context.options.settings.is_force())
+        //{
             info!("{} -> {}", file.display(), dest.display());
             utils::fs::copy(file, &dest)?;
-            self.manifest.touch(file, &dest);
-        } else {
-            info!("noop {}", file.display());
-        }
+            //self.manifest.touch(file, &dest);
+        //} else {
+            //info!("noop {}", file.display());
+        //}
 
         Ok(())
     }
@@ -236,10 +236,10 @@ impl<'a> Compiler<'a> {
 
         let dest = data.file.as_ref().unwrap().target.clone();
 
-        if self
-            .manifest
-            .is_dirty(file, &dest, ctx.options.settings.is_force())
-        {
+        //if self
+            //.manifest
+            //.is_dirty(file, &dest, ctx.options.settings.is_force())
+        //{
             info!("{} -> {}", file.display(), dest.display());
 
             let minify_html = should_minify_html(
@@ -255,10 +255,10 @@ impl<'a> Compiler<'a> {
             };
 
             utils::fs::write_string(&dest, &s)?;
-            self.manifest.touch(file, &dest);
-        } else {
-            info!("noop {}", file.display());
-        }
+            //self.manifest.touch(file, &dest);
+        //} else {
+            //info!("noop {}", file.display());
+        //}
 
         Ok(())
     }

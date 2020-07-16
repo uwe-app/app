@@ -122,7 +122,7 @@ impl<'a> Invalidator<'a> {
             match self.get_invalidation(paths) {
                 Ok(invalidation) => match self.invalidate(&from, &invalidation) {
                     Ok(_) => {
-                        self.builder.manifest.save()?;
+                        //self.builder.manifest.save()?;
                         if invalidation.notify {
                             let _ = tx.send(Message::text("reload"));
                             //println!("Got result {:?}", res);
