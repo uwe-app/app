@@ -1,13 +1,6 @@
 use handlebars::*;
 use serde_json::{to_string, to_string_pretty};
 
-//use super::super::context::{Context as CompilerContext};
-
-//#[derive(Clone, Copy)]
-//pub struct Debug<'a> {
-    //pub context: &'a CompilerContext
-//}
-
 #[derive(Clone, Copy)]
 pub struct Debug;
 

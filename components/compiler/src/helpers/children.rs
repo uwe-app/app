@@ -23,7 +23,7 @@ impl HelperDef for Children<'_> {
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .replace("\"", "");
 
         let path = Path::new(&base_path).to_path_buf();

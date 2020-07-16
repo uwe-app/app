@@ -60,6 +60,8 @@ pub enum Error {
     #[error(transparent)]
     TemplateFile(#[from] handlebars::TemplateFileError),
     #[error(transparent)]
+    Template(#[from] handlebars::TemplateError),
+    #[error(transparent)]
     Render(#[from] handlebars::RenderError),
 
     #[error(transparent)]
@@ -95,7 +97,6 @@ pub mod markdown;
 pub mod parser;
 pub mod redirect;
 pub mod resource;
-pub mod template;
 pub mod tree;
 pub mod watch;
 

@@ -12,6 +12,7 @@ pub mod json;
 pub mod livereload;
 pub mod markdown;
 pub mod parent;
+pub mod partial;
 pub mod random;
 pub mod slug;
 pub mod url;
