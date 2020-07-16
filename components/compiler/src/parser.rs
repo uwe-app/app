@@ -71,7 +71,7 @@ impl<'a> Parser<'a> {
         &mut self,
         file: &PathBuf,
         content: String,
-        data: &mut Page,
+        data: &Page,
     ) -> Result<String, Error> {
         let name = file.to_string_lossy().into_owned();
         if self
@@ -84,7 +84,7 @@ impl<'a> Parser<'a> {
         Ok(content)
     }
 
-    fn resolve(&mut self, data: &mut Page) -> Option<PathBuf> {
+    fn resolve(&mut self, data: &Page) -> Option<PathBuf> {
         // Skip layout for standalone documents
         if let Some(standalone) = data.standalone {
             if standalone { return None }
@@ -117,15 +117,14 @@ impl<'a> Parser<'a> {
     fn standalone(
         &mut self,
         file: &PathBuf,
-        data: &mut Page,
+        data: &Page,
         content: String) -> Result<String, Error> {
-
         return self.parse_template_string(file, content, data)
     }
 
     fn layout(
         &mut self, 
-        _file: &PathBuf, data: &mut Page, layout: &PathBuf) -> Result<String, Error> {
+        _file: &PathBuf, data: &Page, layout: &PathBuf) -> Result<String, Error> {
 
         let layout_name = layout.to_string_lossy().into_owned();
         if !self.handlebars.has_template(&layout_name) {
@@ -149,7 +148,7 @@ impl<'a> Parser<'a> {
         frontmatter::Config::new_markdown(false)
     }
 
-    pub fn parse(&mut self, file: &PathBuf, data: &mut Page) -> Result<String, Error> {
+    pub fn parse(&mut self, file: &PathBuf, data: &Page) -> Result<String, Error> {
         let layout = self.resolve(data);
         if let Some(ref layout_path) = layout {
             self.layout(file, data, layout_path)
