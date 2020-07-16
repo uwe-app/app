@@ -1,12 +1,11 @@
-use std::convert::AsRef;
 use std::path::{Path, PathBuf};
 
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
-use log::{trace, warn};
+use log::warn;
 
-use config::{Page, FileInfo};
+use config::{Page};
 
 use super::context::BuildContext;
 use super::helpers;
@@ -66,23 +65,29 @@ impl<'a> TemplateRender<'a> {
 
     pub fn parse_template_string(
         &mut self,
-        info: &FileInfo,
+        file: &PathBuf,
         content: String,
         data: &mut Page,
     ) -> Result<String, Error> {
 
-        let name = info.file.to_str().unwrap();
+        let name = file.to_string_lossy().into_owned();
+
         if self
             .handlebars
-            .register_template_string(name, &content)
+            .register_template_string(&name, &content)
             .is_ok()
         {
-            data.seal(&self.context.config, &self.context.options, info)?;
-
-            trace!("{:#?}", data);
-            return self.handlebars.render(name, data).map_err(Error::from);
+            return self.handlebars.render(&name, data).map_err(Error::from);
         }
         Ok(content)
+    }
+
+    //fn resolve_layout(data: &mut Page) -> Option<PathBuf> {
+    
+    //}
+
+    pub fn render(&mut self, file: &PathBuf, data: &mut Page) -> Result<(), Error> {
+        Ok(()) 
     }
 
     pub fn layout(&mut self, document: String, data: &mut Page) -> Result<String, Error> {
@@ -93,8 +98,6 @@ impl<'a> TemplateRender<'a> {
             }
         }
 
-        // FIXME: improve this logic!
-        //
         // See if the file has a specific layout
         let layout_path = if let Some(layout) = &data.layout {
             let mut layout_path = self.context.options.source.clone();

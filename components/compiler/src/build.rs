@@ -66,16 +66,22 @@ impl<'a> Compiler<'a> {
 
     fn data_source_each(
         &mut self,
-        info: &mut FileInfo,
+        file: &PathBuf,
         data: &Page,
         _reference: IndexQuery,
         values: Vec<Value>,
-        rewrite_index: bool,
     ) -> Result<()> {
-        let file = info.file;
+        //let file = info.file;
         let parent = file.parent().unwrap();
 
         let ctx = self.context;
+
+
+        let mut rewrite_index = ctx.options.settings.should_rewrite_index();
+        // Override with rewrite-index page level setting
+        if let Some(val) = data.rewrite_index {
+            rewrite_index = val;
+        }
 
         // Write out the document files
         for doc in &values {
@@ -118,7 +124,12 @@ impl<'a> Compiler<'a> {
                     let dest = file_info.output.clone().unwrap();
 
                     // Must inherit the real input template file
-                    file_info.file = info.file;
+                    file_info.file = file;
+
+                    item_data.seal(
+                        &self.context.config,
+                        &self.context.options,
+                        &file_info)?;
 
                     info!("{} -> {}", &id, &dest.display());
 
@@ -129,9 +140,9 @@ impl<'a> Compiler<'a> {
                         &ctx.config);
 
                     let s = if minify_html {
-                        minify::html(self.parser.parse(&file_info, &mut item_data)?)
+                        minify::html(self.parser.parse(&file, &mut item_data)?)
                     } else {
-                        self.parser.parse(&file_info, &mut item_data)?
+                        self.parser.parse(&file, &mut item_data)?
                     };
 
                     utils::fs::write_string(&dest, &s)?;
@@ -144,7 +155,15 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn copy_file(&mut self, info: &mut FileInfo) -> Result<()> {
+    fn copy_file(&mut self, file: &PathBuf) -> Result<()> {
+
+        let mut info = FileInfo::new(
+            &self.context.config,
+            &self.context.options,
+            file,
+            false,
+        );
+
         let file_opts = FileOptions {
             exact: true,
             base_href: &self.context.options.settings.base_href,
@@ -171,22 +190,16 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_file(&mut self, mut info: &mut FileInfo, mut data: &mut Page) -> Result<()> {
-        let file = info.file;
+    fn parse_file(&mut self, file: &PathBuf, mut data: &mut Page) -> Result<()> {
+        //let file = info.file;
 
         let ctx = self.context;
 
-        let render = data.render.is_some() && data.render.unwrap();
-
-        if !render {
-            return self.copy_file(info);
-        }
-
-        let mut rewrite_index = ctx.options.settings.should_rewrite_index();
+        //let mut rewrite_index = ctx.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
-        if let Some(val) = data.rewrite_index {
-            rewrite_index = val;
-        }
+        //if let Some(val) = data.rewrite_index {
+            //rewrite_index = val;
+        //}
 
         if super::draft::is_draft(&data, &ctx.options) {
             return Ok(());
@@ -216,21 +229,22 @@ impl<'a> Compiler<'a> {
 
                 if !each_iters.is_empty() {
                     for (gen, idx) in each_iters {
-                        self.data_source_each(info, &data, gen, idx, rewrite_index)?;
+                        self.data_source_each(file, &data, gen, idx)?;
                     }
                     return Ok(());
                 }
             }
         }
 
-        let file_opts = FileOptions {
-            rewrite_index,
-            base_href: &ctx.options.settings.base_href,
-            ..Default::default()
-        };
+        //let file_opts = FileOptions {
+            //rewrite_index,
+            //base_href: &ctx.options.settings.base_href,
+            //..Default::default()
+        //};
 
-        info.destination(&file_opts)?;
-        let dest = info.output.clone().unwrap();
+        //info.destination(&file_opts)?;
+
+        let dest = data.file.as_ref().unwrap().target.clone();
 
         if self
             .manifest
@@ -245,9 +259,9 @@ impl<'a> Compiler<'a> {
                 &ctx.config);
 
             let s = if minify_html {
-                minify::html(self.parser.parse(&mut info, &mut data)?)
+                minify::html(self.parser.parse(file, &mut data)?)
             } else {
-                self.parser.parse(&mut info, &mut data)?
+                self.parser.parse(file, &mut data)?
             };
 
             utils::fs::write_string(&dest, &s)?;
@@ -329,20 +343,28 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub fn one(&mut self, file: &PathBuf, is_page: bool) -> Result<()> {
-        let mut info = FileInfo::new(
-            &self.context.config,
-            &self.context.options,
-            file,
-            false,
-        );
-
         if !is_page {
-            self.copy_file(&mut info)?;
+            self.copy_file(file)?;
         } else {
-            let data = self.context.collation.all
+
+            //let mut info = FileInfo::new(
+                //&self.context.config,
+                //&self.context.options,
+                //file,
+                //false,
+            //);
+
+            let coll_data = self.context.collation.all
                 .get(file).unwrap().as_ref().unwrap();
-            let mut copy = data.clone();
-            self.parse_file(&mut info, &mut copy)?;
+
+            let mut data = coll_data.clone();
+
+            let render = data.render.is_some() && data.render.unwrap();
+            if !render {
+                return self.copy_file(file);
+            }
+
+            self.parse_file(file, &mut data)?;
         }
 
         Ok(())
