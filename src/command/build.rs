@@ -88,11 +88,6 @@ async fn livereload(mut ctx: BuildContext, error_cb: ErrorCallback) -> Result<()
 
         match built {
             Ok(mut compiler) => {
-                //let mut serve_builder = workspace::build(&ctx);
-                if let Err(e) = compiler.register_templates_directory() {
-                    error_cb(e);
-                }
-
                 // Prepare for incremental builds
                 if let Err(_) = compiler.manifest.load() {}
 

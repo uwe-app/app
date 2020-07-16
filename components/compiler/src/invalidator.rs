@@ -422,8 +422,7 @@ impl<'a> Invalidator<'a> {
                                 &ctx.options.source,
                             )?;
 
-                            let is_page = self.builder.is_page(&file);
-                            if let Err(e) = self.builder.one(&file, is_page) {
+                            if let Err(e) = self.builder.one(&file) {
                                 return Err(e);
                             }
                         }

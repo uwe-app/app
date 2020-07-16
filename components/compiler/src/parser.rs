@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
@@ -7,10 +7,10 @@ use log::warn;
 
 use config::{Page};
 
+use crate::{Error, Result, TEMPLATE_EXT};
+
 use super::context::BuildContext;
 use super::helpers;
-
-use crate::Error;
 
 // Render templates using handlebars.
 pub struct Parser<'a> {
@@ -19,12 +19,23 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(context: &'a BuildContext) -> Self {
+    pub fn new(context: &'a BuildContext) -> Result<Self> {
         let mut handlebars = Handlebars::new();
 
         let settings = &context.options.settings;
         let strict = settings.strict.is_some() && settings.strict.unwrap();
         handlebars.set_strict_mode(strict);
+
+        let templates = context.options.get_partials_path();
+        if templates.exists() && templates.is_dir() {
+            handlebars.register_templates_directory(TEMPLATE_EXT, &templates)?;
+        }
+        if context.options.settings.should_use_short_codes() {
+            let short_codes = context.options.get_short_codes_path();
+            if short_codes.exists() && short_codes.is_dir() {
+                handlebars.register_templates_directory(TEMPLATE_EXT, &short_codes)?;
+            }
+        }
 
         handlebars.register_helper("partial",
             Box::new(helpers::partial::Partial { context }));
@@ -54,37 +65,10 @@ impl<'a> Parser<'a> {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }
 
-        Parser { context, handlebars }
+        Ok(Parser { context, handlebars })
     }
 
-    pub fn register_templates_directory<P: AsRef<Path>>(
-        &mut self,
-        ext: &'static str,
-        dir: P,
-    ) -> Result<(), Error> {
-        self.handlebars
-            .register_templates_directory(ext, dir)
-            .map_err(Error::from)
-    }
-
-    fn parse_template_string(
-        &mut self,
-        file: &PathBuf,
-        content: String,
-        data: &Page,
-    ) -> Result<String, Error> {
-        let name = file.to_string_lossy().into_owned();
-        if self
-            .handlebars
-            .register_template_string(&name, &content)
-            .is_ok()
-        {
-            return self.handlebars.render(&name, data).map_err(Error::from);
-        }
-        Ok(content)
-    }
-
-    fn resolve(&mut self, data: &Page) -> Option<PathBuf> {
+    fn resolve(&self, data: &Page) -> Option<PathBuf> {
         // Skip layout for standalone documents
         if let Some(standalone) = data.standalone {
             if standalone { return None }
@@ -114,17 +98,9 @@ impl<'a> Parser<'a> {
         None
     }
 
-    fn standalone(
-        &mut self,
-        file: &PathBuf,
-        data: &Page,
-        content: String) -> Result<String, Error> {
-        return self.parse_template_string(file, content, data)
-    }
-
     fn layout(
         &mut self, 
-        _file: &PathBuf, data: &Page, layout: &PathBuf) -> Result<String, Error> {
+        _file: &PathBuf, data: &Page, layout: &PathBuf) -> Result<String> {
 
         let layout_name = layout.to_string_lossy().into_owned();
         if !self.handlebars.has_template(&layout_name) {
@@ -135,11 +111,10 @@ impl<'a> Parser<'a> {
                 return Err(Error::from(e));
             }
         }
-        return self.handlebars.render(
-            &layout_name, data).map_err(Error::from)
+        return self.handlebars.render(&layout_name, data).map_err(Error::from)
     }
 
-    fn get_front_matter_config(&mut self, file: &PathBuf) -> frontmatter::Config {
+    fn get_front_matter_config(&self, file: &PathBuf) -> frontmatter::Config {
         if let Some(ext) = file.extension() {
             if ext == config::HTML {
                 return frontmatter::Config::new_html(false)
@@ -148,14 +123,14 @@ impl<'a> Parser<'a> {
         frontmatter::Config::new_markdown(false)
     }
 
-    pub fn parse(&mut self, file: &PathBuf, data: &Page) -> Result<String, Error> {
+    pub fn parse(&mut self, file: &PathBuf, data: &Page) -> Result<String> {
         let layout = self.resolve(data);
         if let Some(ref layout_path) = layout {
             self.layout(file, data, layout_path)
         } else {
             let (content, _has_fm, _fm) =
                 frontmatter::load(file, self.get_front_matter_config(file))?;
-            self.standalone(file, data, content)
+            self.handlebars.render_template(&content, data).map_err(Error::from)
         }
     }
 }

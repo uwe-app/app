@@ -62,6 +62,8 @@ pub enum Error {
     #[error(transparent)]
     Template(#[from] handlebars::TemplateError),
     #[error(transparent)]
+    TemplateRender(#[from] handlebars::TemplateRenderError),
+    #[error(transparent)]
     Render(#[from] handlebars::RenderError),
 
     #[error(transparent)]

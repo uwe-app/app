@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use book::compiler::BookCompiler;
 use config::{Config, Page, FileInfo, FileOptions, ProfileName, IndexQuery};
 
-use crate::{Error, Result, HTML, TEMPLATE_EXT};
+use crate::{Error, Result, HTML};
 
 use super::context::BuildContext;
 use super::hook;
@@ -52,7 +52,7 @@ impl<'a> Compiler<'a> {
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let parser = Parser::new(&context);
+        let parser = Parser::new(&context).unwrap();
 
         let manifest = Manifest::new(&context);
 
@@ -263,20 +263,6 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    pub fn register_templates_directory(&mut self) -> Result<()> {
-        let templates = self.context.options.get_partials_path();
-        if templates.exists() && templates.is_dir() {
-            self.parser.register_templates_directory(TEMPLATE_EXT, &templates)?;
-        }
-        if self.context.options.settings.should_use_short_codes() {
-            let short_codes = self.context.options.get_short_codes_path();
-            if short_codes.exists() && short_codes.is_dir() {
-                self.parser.register_templates_directory(TEMPLATE_EXT, &short_codes)?;
-            }
-        }
-        Ok(())
-    }
-
     // Verify the paths are within the site source
     pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
@@ -305,8 +291,7 @@ impl<'a> Compiler<'a> {
 
         for p in targets {
             if p.is_file() {
-                let is_page = self.is_page(&p);
-                self.one(&p, is_page)?;
+                self.one(&p)?;
             } else {
                 self.build(&p)?;
             }
@@ -332,49 +317,38 @@ impl<'a> Compiler<'a> {
     }
 
     // Build a single file
-    pub fn one(&mut self, file: &PathBuf, is_page: bool) -> Result<()> {
-        if !is_page {
-            self.copy_file(file)?;
-        } else {
-            let coll_data = self.context.collation.all
-                .get(file).unwrap().as_ref().unwrap();
-
-            let mut data = coll_data.clone();
-
+    pub fn one(&mut self, file: &PathBuf) -> Result<()> {
+        if let Some(page) = self.get_page(file) {
+            let mut data = page.clone();
             let render = data.render.is_some() && data.render.unwrap();
             if !render {
                 return self.copy_file(file);
             }
-
             self.parse_file(file, &mut data)?;
+        } else {
+            self.copy_file(file)?;
         }
 
         Ok(())
     }
 
-    pub fn is_page(&mut self, file: &PathBuf) -> bool {
-        self.context.collation.pages.contains(&std::sync::Arc::new(file.clone()))
+    // Try to find page data for a file from the collation
+    fn get_page(&mut self, file: &PathBuf) -> Option<&Page> {
+        if let Some(ref opt) = self.context.collation.all.get(&std::sync::Arc::new(file.clone())) {
+            opt.as_ref()
+        } else {
+            None
+        }
     }
 
     pub fn build(&mut self, target: &PathBuf) -> Result<()> {
-        self.register_templates_directory()?;
-
-        // Files we should copy over
         let copy = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
+            .chain(self.context.collation.pages.iter())
             .filter(|p| p.starts_with(target));
 
         for p in copy {
-            self.one(p, false)?;
-        }
-
-        let pages = self.context.collation.pages
-            .iter()
-            .filter(|p| p.starts_with(target));
-
-        // Pages to parse
-        for p in pages {
-            self.one(p, true)?;
+            self.one(p)?;
         }
 
         Ok(())
