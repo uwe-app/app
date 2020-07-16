@@ -134,8 +134,7 @@ async fn load(
 
 pub fn build(ctx: &mut BuildContext) -> std::result::Result<Compiler, compiler::Error> {
 
-    // FIXME: do not pass a clone of the options?
-    let mut builder = Compiler::new(ctx);
+    let mut builder = Compiler::new(ctx)?;
     builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();

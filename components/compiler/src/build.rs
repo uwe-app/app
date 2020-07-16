@@ -43,7 +43,7 @@ pub struct Compiler<'a> {
 }
 
 impl<'a> Compiler<'a> {
-    pub fn new(context: &'a BuildContext) -> Self {
+    pub fn new(context: &'a BuildContext) -> Result<Self> {
         let book = BookCompiler::new(
             context.options.source.clone(),
             context.options.target.clone(),
@@ -52,16 +52,16 @@ impl<'a> Compiler<'a> {
 
         // Parser must exist for the entire lifetime so that
         // template partials can be found
-        let parser = Parser::new(&context).unwrap();
+        let parser = Parser::new(&context)?;
 
         let manifest = Manifest::new(&context);
 
-        Self {
+        Ok(Self {
             context,
             book,
             manifest,
             parser,
-        }
+        })
     }
 
     fn data_source_each(
