@@ -149,6 +149,7 @@ pub fn build(ctx: &mut BuildContext) -> std::result::Result<Compiler, compiler::
     }
 
     builder.all(targets)?;
+
     builder.manifest.save()?;
 
     Ok(builder)

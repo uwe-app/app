@@ -119,10 +119,6 @@ pub struct Page {
     #[serde(skip_deserializing)]
     pub file: Option<FileContext>,
 
-    // Layout template data
-    #[serde(skip_deserializing)]
-    pub template: Option<String>,
-
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
     // NOTE: logic should inject it into `vars`
@@ -158,7 +154,6 @@ impl Default for Page {
             href: None,
             lang: None,
             file: None,
-            template: None,
         }
     }
 }

@@ -1,5 +1,5 @@
-use std::path::Path;
-use std::path::PathBuf;
+use std::sync::Arc;
+use std::path::{Path, PathBuf};
 
 use log::info;
 
@@ -273,6 +273,44 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
+    // Build a single file
+    pub fn one(&mut self, file: &PathBuf) -> Result<()> {
+        if let Some(page) = self.get_page(file) {
+            let mut data = page.clone();
+            let render = data.render.is_some() && data.render.unwrap();
+            if !render {
+                return self.copy_file(file);
+            }
+            self.parse_file(file, &mut data)?;
+        } else {
+            self.copy_file(file)?;
+        }
+
+        Ok(())
+    }
+
+    // Try to find page data for a file from the collation
+    fn get_page(&mut self, file: &PathBuf) -> Option<&Page> {
+        if let Some(ref opt) = self.context.collation.all.get(&Arc::new(file.clone())) {
+            opt.as_ref()
+        } else {
+            None
+        }
+    }
+
+    pub fn build(&mut self, target: &PathBuf) -> Result<()> {
+        let copy = self.context.collation.other.iter()
+            .chain(self.context.collation.assets.iter())
+            .chain(self.context.collation.pages.iter())
+            .filter(|p| p.starts_with(target));
+
+        for p in copy {
+            self.one(p)?;
+        }
+
+        Ok(())
+    }
+
     // Build all target paths
     pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
         let livereload = crate::context::livereload().read().unwrap();
@@ -316,41 +354,4 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    // Build a single file
-    pub fn one(&mut self, file: &PathBuf) -> Result<()> {
-        if let Some(page) = self.get_page(file) {
-            let mut data = page.clone();
-            let render = data.render.is_some() && data.render.unwrap();
-            if !render {
-                return self.copy_file(file);
-            }
-            self.parse_file(file, &mut data)?;
-        } else {
-            self.copy_file(file)?;
-        }
-
-        Ok(())
-    }
-
-    // Try to find page data for a file from the collation
-    fn get_page(&mut self, file: &PathBuf) -> Option<&Page> {
-        if let Some(ref opt) = self.context.collation.all.get(&std::sync::Arc::new(file.clone())) {
-            opt.as_ref()
-        } else {
-            None
-        }
-    }
-
-    pub fn build(&mut self, target: &PathBuf) -> Result<()> {
-        let copy = self.context.collation.other.iter()
-            .chain(self.context.collation.assets.iter())
-            .chain(self.context.collation.pages.iter())
-            .filter(|p| p.starts_with(target));
-
-        for p in copy {
-            self.one(p)?;
-        }
-
-        Ok(())
-    }
 }

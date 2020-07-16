@@ -72,6 +72,17 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         match result {
                             Ok(mut page_info) => {
 
+                                // Rewrite layouts relative to the source directory
+                                if let Some(ref layout) = page_info.layout {
+                                    let layout_path = req.options.source.join(layout);
+                                    if !layout_path.exists() {
+                                        info.errors.push(Error::NoLayout(layout_path, layout.clone()));
+                                        return WalkState::Continue;
+                                    }
+
+                                    page_info.layout = Some(layout_path);
+                                }
+
                                 let mut file_info = FileInfo::new(
                                     req.config,
                                     req.options,
@@ -115,6 +126,13 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     if key.is_dir() {
                         info.dirs.push(Arc::clone(&key));
                     } else if page.is_some() {
+
+                        let page_info = page.as_ref().unwrap();
+                        if let Some(ref layout) = page_info.layout {
+                            // Register the layout
+                            info.layouts.insert(Arc::clone(&key), layout.clone());
+                        }
+
                         info.pages.push(Arc::clone(&key));
                     } else {
                         if !req.filter {
@@ -122,6 +140,7 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             // TODO: store the layout?
                             if let Some(ref layout) = req.options.settings.layout {
                                 if key.starts_with(layout) {
+                                    info.layout = Some(Arc::clone(&key));
                                     return WalkState::Continue;
                                 }
                             }

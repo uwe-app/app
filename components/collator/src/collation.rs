@@ -19,6 +19,11 @@ pub struct CollateInfo {
     pub dirs: Vec<Arc<PathBuf>>,
     pub files: Vec<Arc<PathBuf>>,
 
+    // Custom page specific layouts
+    pub layouts: HashMap<Arc<PathBuf>, PathBuf>,
+    // The default layout
+    pub layout: Option<Arc<PathBuf>>,
+
     // These are propagated when `filter` on request
     // is `false`
     pub assets: Vec<Arc<PathBuf>>,

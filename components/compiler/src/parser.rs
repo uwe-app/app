@@ -1,9 +1,8 @@
+use std::sync::Arc;
 use std::path::PathBuf;
 
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
-
-use log::warn;
 
 use config::{Page};
 
@@ -26,6 +25,7 @@ impl<'a> Parser<'a> {
         let strict = settings.strict.is_some() && settings.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
+        // Configure partial directories
         let templates = context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
             handlebars.register_templates_directory(TEMPLATE_EXT, &templates)?;
@@ -37,9 +37,9 @@ impl<'a> Parser<'a> {
             }
         }
 
+        // Configure helpers
         handlebars.register_helper("partial",
             Box::new(helpers::partial::Partial { context }));
-
         handlebars.register_helper("children",
             Box::new(helpers::children::Children { context }));
         handlebars.register_helper("livereload",
@@ -65,53 +65,31 @@ impl<'a> Parser<'a> {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }
 
+        // Register the global layout
+        if let Some(ref l) = context.collation.layout {
+            let layout = l.to_path_buf();
+            let layout_name = layout.to_string_lossy().into_owned();
+            handlebars.register_template_file(&layout_name, &layout)?;
+        }
+
+        // Register page-specific layouts
+        for (_, l) in context.collation.layouts.iter() {
+            let layout = l.to_path_buf();
+            let layout_name = layout.to_string_lossy().into_owned();
+            handlebars.register_template_file(&layout_name, &layout)?;
+        }
+
         Ok(Parser { context, handlebars })
     }
 
-    fn resolve(&self, data: &Page) -> Option<PathBuf> {
-        // Skip layout for standalone documents
-        if let Some(standalone) = data.standalone {
-            if standalone { return None }
+    fn resolve(&self, file: &PathBuf) -> Option<&PathBuf> {
+        if let Some(ref layout) = self.context.collation.layouts.get(&Arc::new(file.to_path_buf())) {
+            return Some(layout)
         }
-
-        // See if the file has a specific layout
-        let layout_path = if let Some(layout) = &data.layout {
-            let mut layout_path = self.context.options.source.clone();
-            layout_path.push(layout);
-            if !layout_path.exists() {
-                warn!("Missing layout {}", layout_path.display());
-            }
-            layout_path
-        } else {
-            // Respect the settings for a build profile
-            if let Some(ref layout) = self.context.options.settings.layout {
-                layout.clone()
-            } else {
-                PathBuf::from(config::LAYOUT_HBS)
-            }
-        };
-
-        if layout_path.exists() {
-            return Some(layout_path);
+        if let Some(ref layout) = self.context.collation.layout {
+            return Some(layout)
         }
-
         None
-    }
-
-    fn layout(
-        &mut self, 
-        _file: &PathBuf, data: &Page, layout: &PathBuf) -> Result<String> {
-
-        let layout_name = layout.to_string_lossy().into_owned();
-        if !self.handlebars.has_template(&layout_name) {
-            if let Err(e) = self
-                .handlebars
-                .register_template_file(&layout_name, &layout)
-            {
-                return Err(Error::from(e));
-            }
-        }
-        return self.handlebars.render(&layout_name, data).map_err(Error::from)
     }
 
     fn get_front_matter_config(&self, file: &PathBuf) -> frontmatter::Config {
@@ -123,14 +101,30 @@ impl<'a> Parser<'a> {
         frontmatter::Config::new_markdown(false)
     }
 
-    pub fn parse(&mut self, file: &PathBuf, data: &Page) -> Result<String> {
-        let layout = self.resolve(data);
+    fn layout(&self, data: &Page, layout: &PathBuf) -> Result<String> {
+        let layout_name = layout.to_string_lossy().into_owned();
+        return self.handlebars.render(&layout_name, data).map_err(Error::from)
+    }
+
+    fn standalone(&self, file: &PathBuf, data: &Page) -> Result<String> {
+        let (content, _has_fm, _fm) =
+            frontmatter::load(file, self.get_front_matter_config(file))?;
+        self.handlebars.render_template(&content, data).map_err(Error::from)
+    }
+
+    pub fn parse(&self, file: &PathBuf, data: &Page) -> Result<String> {
+        // Explicitly marked as standalone
+        if let Some(standalone) = data.standalone {
+            if standalone {
+                return self.standalone(file, data)
+            }
+        }
+
+        let layout = self.resolve(file);
         if let Some(ref layout_path) = layout {
-            self.layout(file, data, layout_path)
+            self.layout(data, layout_path)
         } else {
-            let (content, _has_fm, _fm) =
-                frontmatter::load(file, self.get_front_matter_config(file))?;
-            self.handlebars.render_template(&content, data).map_err(Error::from)
+            self.standalone(file, data)
         }
     }
 }
