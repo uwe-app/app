@@ -1,7 +1,10 @@
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
+
 use std::net::SocketAddr;
 use tokio::sync::broadcast;
+use tokio::sync::mpsc;
+
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
@@ -15,7 +18,6 @@ use warp::path::FullPath;
 use warp::ws::Message;
 
 use std::path::PathBuf;
-use std::sync::mpsc::Sender;
 
 use log::{error, trace};
 
@@ -75,7 +77,7 @@ async fn redirect_trailing_slash(
 
 pub async fn serve(
     opts: WebServerOptions,
-    bind_tx: Sender<SocketAddr>,
+    mut bind_tx: mpsc::Sender<SocketAddr>,
     reload_tx: broadcast::Sender<Message>,
 ) {
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
@@ -143,7 +145,7 @@ pub async fn serve(
     let bind_result = warp::serve(routes).try_bind_ephemeral(address);
     match bind_result {
         Ok((addr, future)) => {
-            if let Err(e) = bind_tx.send(addr) {
+            if let Err(e) = bind_tx.try_send(addr) {
                 error!("{}", e);
                 std::process::exit(1);
             }

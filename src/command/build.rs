@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::path::Path;
-use std::sync::mpsc::channel;
 
+use tokio::sync::mpsc::channel;
 use tokio::sync::broadcast::Sender;
 use warp::ws::Message;
 
@@ -32,7 +32,7 @@ pub async fn compile<P: AsRef<Path>>(
     Ok(())
 }
 
-async fn livereload(mut ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
+async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
 
     let options = ctx.options.clone();
     let config = ctx.config.clone();
@@ -62,13 +62,13 @@ async fn livereload(mut ctx: BuildContext, error_cb: ErrorCallback) -> Result<()
     };
 
     // Create a channel to receive the bind address.
-    let (tx, rx) = channel::<(SocketAddr, Sender<Message>, String)>();
+    let (tx, mut rx) = channel::<(SocketAddr, Sender<Message>, String)>(100);
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
-    std::thread::spawn(move || {
+    tokio::task::spawn(async move {
         // Get the socket address and websocket transmission channel
-        let (addr, tx, url) = rx.recv().unwrap();
+        let (addr, tx, url) = rx.recv().await.unwrap();
 
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
@@ -84,10 +84,9 @@ async fn livereload(mut ctx: BuildContext, error_cb: ErrorCallback) -> Result<()
             *livereload = Some(ws_url);
         }
 
-        let built = workspace::build(&mut ctx);
-
+        let built = workspace::build(&ctx).await;
         match built {
-            Ok(mut compiler) => {
+            Ok(compiler) => {
                 // Prepare for incremental builds
                 //if let Err(_) = compiler.manifest.load() {}
 

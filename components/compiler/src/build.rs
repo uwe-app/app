@@ -12,7 +12,7 @@ use crate::{Error, Result, HTML};
 
 use super::context::BuildContext;
 use super::hook;
-use super::manifest::Manifest;
+//use super::manifest::Manifest;
 use super::parser::Parser;
 use super::resource;
 
@@ -312,7 +312,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
+    pub async fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
         let livereload = crate::context::livereload().read().unwrap();
 
         resource::link(&self.context)?;

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::Sender;
+
+use tokio::sync::mpsc::channel;
+use tokio::sync::mpsc;
 
 use std::net::{SocketAddr, ToSocketAddrs};
 
@@ -29,14 +30,15 @@ pub struct ServeOptions {
 }
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
-    let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>, String)>();
+    let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>, String)>(100);
     serve(options, tx).await
 }
 
 pub async fn serve(
     options: ServeOptions,
-    bind: Sender<(SocketAddr, TokioSender<Message>, String)>,
+    mut bind: mpsc::Sender<(SocketAddr, TokioSender<Message>, String)>,
 ) -> Result<(), Error> {
+
     let address = format!("{}:{}", options.host, options.port);
     let sockaddr: SocketAddr = address
         .to_socket_addrs()?
@@ -53,10 +55,10 @@ pub async fn serve(
     let reload_tx = tx.clone();
 
     // Create a channel to receive the bind address.
-    let (ctx, crx) = channel::<SocketAddr>();
+    let (ctx, mut crx) = channel::<SocketAddr>(100);
 
-    let _bind_handle = std::thread::spawn(move || {
-        let addr = crx.recv().unwrap();
+    let _bind_handle = tokio::task::spawn(async move {
+        let addr = crx.recv().await.unwrap();
         let url = format!("http://{}:{}", &host, addr.port());
         //serving_url.foo();
         info!("serve {}", url);
@@ -65,7 +67,7 @@ pub async fn serve(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(e) = bind.send((addr, tx, url)) {
+        if let Err(e) = bind.try_send((addr, tx, url)) {
             // FIXME: call out to error_cb
             error!("{}", e);
             std::process::exit(1);
