@@ -65,7 +65,7 @@ impl<'a> Compiler<'a> {
     }
 
     fn data_source_each(
-        &mut self,
+        &self,
         file: &PathBuf,
         data: &Page,
         _reference: IndexQuery,
@@ -153,7 +153,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn copy_file(&mut self, file: &PathBuf) -> Result<()> {
+    fn copy_file(&self, file: &PathBuf) -> Result<()> {
 
         let mut info = FileInfo::new(
             &self.context.config,
@@ -188,7 +188,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_query(&mut self, file: &PathBuf, data: &mut Page) -> Result<bool> {
+    fn parse_query(&self, file: &PathBuf, data: &mut Page) -> Result<bool> {
         if let Some(ref q) = data.query {
             let queries = q.clone().to_vec();
             let datasource = &self.context.datasource;
@@ -222,7 +222,7 @@ impl<'a> Compiler<'a> {
         Ok(false)
     }
 
-    fn parse_file(&mut self, file: &PathBuf, data: &mut Page) -> Result<()> {
+    fn parse_file(&self, file: &PathBuf, data: &mut Page) -> Result<()> {
         let ctx = self.context;
 
         if super::draft::is_draft(&data, &ctx.options) {
@@ -274,7 +274,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build a single file
-    pub fn one(&mut self, file: &PathBuf) -> Result<()> {
+    pub fn one(&self, file: &PathBuf) -> Result<()> {
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
             let render = data.render.is_some() && data.render.unwrap();
@@ -290,7 +290,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Try to find page data for a file from the collation
-    fn get_page(&mut self, file: &PathBuf) -> Option<&Page> {
+    fn get_page(&self, file: &PathBuf) -> Option<&Page> {
         if let Some(ref opt) = self.context.collation.all.get(&Arc::new(file.clone())) {
             opt.as_ref()
         } else {
@@ -298,7 +298,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub fn build(&mut self, target: &PathBuf) -> Result<()> {
+    pub fn build(&self, target: &PathBuf) -> Result<()> {
         let copy = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
             .chain(self.context.collation.pages.iter())
@@ -312,7 +312,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub async fn all(&mut self, targets: Vec<PathBuf>) -> Result<()> {
+    pub async fn all(&self, targets: Vec<PathBuf>) -> Result<()> {
         let livereload = crate::context::livereload().read().unwrap();
 
         resource::link(&self.context)?;

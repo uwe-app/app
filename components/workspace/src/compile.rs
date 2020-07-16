@@ -134,7 +134,7 @@ async fn load(
 
 pub async fn build(ctx: &BuildContext) -> std::result::Result<Compiler<'_>, compiler::Error> {
 
-    let mut builder = Compiler::new(ctx)?;
+    let builder = Compiler::new(ctx)?;
     //builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
