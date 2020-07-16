@@ -190,16 +190,8 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    fn parse_file(&mut self, file: &PathBuf, mut data: &mut Page) -> Result<()> {
-        //let file = info.file;
-
+    fn parse_file(&mut self, file: &PathBuf, data: &mut Page) -> Result<()> {
         let ctx = self.context;
-
-        //let mut rewrite_index = ctx.options.settings.should_rewrite_index();
-        // Override with rewrite-index page level setting
-        //if let Some(val) = data.rewrite_index {
-            //rewrite_index = val;
-        //}
 
         if super::draft::is_draft(&data, &ctx.options) {
             return Ok(());
@@ -236,14 +228,6 @@ impl<'a> Compiler<'a> {
             }
         }
 
-        //let file_opts = FileOptions {
-            //rewrite_index,
-            //base_href: &ctx.options.settings.base_href,
-            //..Default::default()
-        //};
-
-        //info.destination(&file_opts)?;
-
         let dest = data.file.as_ref().unwrap().target.clone();
 
         if self
@@ -259,9 +243,9 @@ impl<'a> Compiler<'a> {
                 &ctx.config);
 
             let s = if minify_html {
-                minify::html(self.parser.parse(file, &mut data)?)
+                minify::html(self.parser.parse(file, &data)?)
             } else {
-                self.parser.parse(file, &mut data)?
+                self.parser.parse(file, &data)?
             };
 
             utils::fs::write_string(&dest, &s)?;
@@ -346,14 +330,6 @@ impl<'a> Compiler<'a> {
         if !is_page {
             self.copy_file(file)?;
         } else {
-
-            //let mut info = FileInfo::new(
-                //&self.context.config,
-                //&self.context.options,
-                //file,
-                //false,
-            //);
-
             let coll_data = self.context.collation.all
                 .get(file).unwrap().as_ref().unwrap();
 
