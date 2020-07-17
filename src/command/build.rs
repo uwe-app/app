@@ -1,18 +1,25 @@
 use std::net::SocketAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use tokio::sync::mpsc::channel;
-use tokio::sync::broadcast::Sender;
+use log::{info, debug};
+
+use tokio::sync::mpsc;
+use tokio::sync::broadcast;
 use warp::ws::Message;
+
+use std::thread::sleep;
+use std::time::Duration;
+use notify::Watcher;
+use notify::DebouncedEvent::{Create, Remove, Rename, Write};
+use notify::RecursiveMode::Recursive;
 
 use compiler::BuildContext;
 use compiler::invalidator::Invalidator;
 use compiler::redirect;
-use compiler::ErrorCallback;
 use config::ProfileSettings;
 
 use crate::command::run::{self, ServeOptions};
-use crate::Error;
+use crate::{Error, ErrorCallback};
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
@@ -62,7 +69,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     };
 
     // Create a channel to receive the bind address.
-    let (tx, rx) = std::sync::mpsc::channel::<(SocketAddr, Sender<Message>, String)>();
+    let (tx, rx) = std::sync::mpsc::channel::<(SocketAddr, broadcast::Sender<Message>, String)>();
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
@@ -73,7 +80,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
         let ws_url = get_websocket_url(host, addr, &endpoint);
 
         if let Err(e) = livereload::write(&config, &options.target, &ws_url) {
-            error_cb(compiler::Error::from(e));
+            error_cb(Error::from(e));
             return;
         }
 
@@ -85,6 +92,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
         }
 
         let built = workspace::build(&ctx);
+
         match built {
             Ok(compiler) => {
                 // Prepare for incremental builds
@@ -97,13 +105,28 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
                 // notifications and sending messages over the `tx` channel
                 // to connected websockets when necessary
                 let mut invalidator = Invalidator::new(compiler);
-                if let Err(e) = invalidator.start(source, tx, &error_cb) {
+
+                let watch_result = watch(&source.clone(), &error_cb, move |paths, source_dir| {
+                    info!("changed({}) in {}", paths.len(), source_dir.display());
+
+                    let _ = tx.send(Message::text("start"));
+
+                    let invalidation = invalidator.get_invalidation(paths)?;
+                    invalidator.invalidate(&source, &invalidation)?;
+                    //self.builder.manifest.save()?;
+                    if invalidation.notify {
+                        let _ = tx.send(Message::text("reload"));
+                        //println!("Got result {:?}", res);
+                    }
+                    Ok(())
+                });
+
+                if let Err(e) = watch_result {
                     error_cb(e);
                 }
-            
             },
             Err(e) => {
-                error_cb(e);
+                error_cb(Error::from(e));
             }
         }
 
@@ -113,4 +136,50 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     run::serve(opts, tx).await?;
 
     Ok(())
+}
+
+fn watch<P, F>(dir: P, error_cb: &ErrorCallback, mut closure: F) -> Result<(), Error>
+where
+    P: AsRef<Path>,
+    F: FnMut(Vec<PathBuf>, &Path) -> Result<(), Error> {
+
+    // Create a channel to receive the events.
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
+        Ok(w) => w,
+        Err(e) => return Err(crate::Error::from(e)),
+    };
+
+    // FIXME: if --directory we must also watch data.toml and layout.hbs
+
+    // Add the source directory to the watcher
+    if let Err(e) = watcher.watch(&dir, Recursive) {
+        return Err(crate::Error::from(e));
+    };
+
+    info!("watch {}", dir.as_ref().display());
+
+    loop {
+        let first_event = rx.recv().unwrap();
+        sleep(Duration::from_millis(50));
+        let other_events = rx.try_iter();
+
+        let all_events = std::iter::once(first_event).chain(other_events);
+
+        let paths = all_events
+            .filter_map(|event| {
+                debug!("Received filesystem event: {:?}", event);
+                match event {
+                    Create(path) | Write(path) | Remove(path) | Rename(_, path) => Some(path),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if !paths.is_empty() {
+            if let Err(e) = closure(paths, &dir.as_ref()) {
+                error_cb(e);
+            }
+        }
+    }
 }

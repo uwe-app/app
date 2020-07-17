@@ -53,8 +53,6 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
-    Notify(#[from] notify::Error),
-    #[error(transparent)]
     Ignore(#[from] ignore::Error),
 
     #[error(transparent)]
@@ -79,7 +77,6 @@ pub enum Error {
 }
 
 type Result<T> = std::result::Result<T, Error>;
-pub type ErrorCallback = fn(Error);
 
 static TEMPLATE_EXT: &str = ".hbs";
 static INDEX_HTML: &str = "index.html";
@@ -100,7 +97,6 @@ pub mod parser;
 pub mod redirect;
 pub mod resource;
 pub mod tree;
-pub mod watch;
 
 pub use build::Compiler;
 pub use context::BuildContext;

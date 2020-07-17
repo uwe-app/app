@@ -1,19 +1,13 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use log::info;
-use tokio::sync::broadcast::Sender;
-use warp::ws::Message;
-
 use datasource::{self, DataSourceMap};
 use config::{FileInfo, FileType};
 
 use super::Compiler;
 use super::hook;
-use super::watch;
 
 use crate::Error;
-use crate::ErrorCallback;
 
 /*
  *  Invalidation rules.
@@ -34,7 +28,7 @@ use crate::ErrorCallback;
  *  - BookSource: build the book.
  */
 #[derive(Debug)]
-enum Action {
+pub enum Action {
     // Because it is valid to configure source = "."
     // in site.toml we need to detect build output and
     // ensure we ignore those files
@@ -62,7 +56,7 @@ enum Action {
 }
 
 #[derive(Debug)]
-enum Strategy {
+pub enum Strategy {
     // Trigger a full rebuild
     Full,
     // Trigger a build of all pages
@@ -72,9 +66,9 @@ enum Strategy {
 }
 
 #[derive(Debug)]
-struct Rule {
+pub struct Rule {
     // Notify connected websocket clients, always true for now
-    notify: bool,
+    pub notify: bool,
     // Reload the site data source
     reload: bool,
     // Build strategy
@@ -90,7 +84,7 @@ struct Rule {
 }
 
 #[derive(Debug)]
-struct BookRule {
+pub struct BookRule {
     // Should we build all books
     all: bool,
     // List of books that need their configurations reloaded
@@ -108,40 +102,6 @@ impl<'a> Invalidator<'a> {
         Self { builder }
     }
 
-    pub fn start(
-        &mut self,
-        from: PathBuf,
-        tx: Sender<Message>,
-        error_cb: &ErrorCallback,
-    ) -> Result<(), Error> {
-        let watch_result = watch::start(&from.clone(), error_cb, move |paths, source_dir| {
-            info!("changed({}) in {}", paths.len(), source_dir.display());
-
-            let _ = tx.send(Message::text("start"));
-
-            match self.get_invalidation(paths) {
-                Ok(invalidation) => match self.invalidate(&from, &invalidation) {
-                    Ok(_) => {
-                        //self.builder.manifest.save()?;
-                        if invalidation.notify {
-                            let _ = tx.send(Message::text("reload"));
-                            //println!("Got result {:?}", res);
-                        }
-                        Ok(())
-                    }
-                    Err(e) => return Err(e),
-                },
-                Err(e) => return Err(e),
-            }
-        });
-
-        if let Err(e) = watch_result {
-            return Err(e);
-        }
-
-        Ok(())
-    }
-
     fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
         let file = src.as_ref().to_path_buf();
         if file.exists() {
@@ -152,7 +112,7 @@ impl<'a> Invalidator<'a> {
         file
     }
 
-    fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
+    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
         let ctx = self.builder.context;
 
         let datasource = &self.builder.context.datasource;
@@ -336,7 +296,7 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
+    pub fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         let ctx = self.builder.context;
         let livereload = crate::context::livereload().read().unwrap();
 

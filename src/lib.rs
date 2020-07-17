@@ -44,6 +44,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
+    Notify(#[from] notify::Error),
+
+    #[error(transparent)]
     TomlSer(#[from] toml::ser::Error),
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
@@ -78,6 +81,7 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+pub type ErrorCallback = fn(Error);
 
 pub mod command;
 
