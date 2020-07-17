@@ -30,6 +30,7 @@ chrono = { version = "0.4", features = ["serde"] }
 pulldown-cmark = { version = "0.7", default-features = false, features = ["simd"] }
 fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
 
+futures = "0.3"
 futures-util = { version = "0.3.4" }
 # TODO: we only need Url!
 warp = { version = "0.2.2", default-features = false, features = ["websocket"] }

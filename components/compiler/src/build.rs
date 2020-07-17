@@ -300,14 +300,17 @@ impl<'a> Compiler<'a> {
     }
 
     pub async fn build(&self, target: &PathBuf) -> Result<()> {
-        let copy = self.context.collation.other.iter()
+        let all = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
             .chain(self.context.collation.pages.iter())
             .filter(|p| p.starts_with(target));
+            //.map(|p| futures::future::lazy( move |_| async move { self.one(p).await } ));
 
-        for p in copy {
+        for p in all {
             self.one(p).await?;
         }
+
+        //futures::future::join_all(all).await;
 
         Ok(())
     }
