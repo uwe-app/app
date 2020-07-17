@@ -97,7 +97,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
                 *livereload = Some(ws_url);
             }
 
-            let built = workspace::build(&ctx);
+            let built = workspace::build(&ctx).await;
 
             match built {
                 Ok(compiler) => {
