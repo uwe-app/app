@@ -148,7 +148,7 @@ pub async fn build(ctx: &BuildContext) -> std::result::Result<Compiler<'_>, comp
         targets.push(ctx.options.source.clone());
     }
 
-    builder.all(targets)?;
+    builder.all(targets).await?;
 
     //builder.manifest.save()?;
 
