@@ -69,67 +69,69 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     };
 
     // Create a channel to receive the bind address.
-    let (tx, rx) = std::sync::mpsc::channel::<(SocketAddr, broadcast::Sender<Message>, String)>();
+    let (tx, mut rx) = mpsc::channel::<(SocketAddr, broadcast::Sender<Message>, String)>(100);
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
     std::thread::spawn(move || {
-        // Get the socket address and websocket transmission channel
-        let (addr, tx, url) = rx.recv().unwrap();
+        let mut rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async move {
 
-        let ws_url = get_websocket_url(host, addr, &endpoint);
+            // Get the socket address and websocket transmission channel
+            let (addr, tx, url) = rx.recv().await.unwrap();
 
-        if let Err(e) = livereload::write(&config, &options.target, &ws_url) {
-            error_cb(Error::from(e));
-            return;
-        }
+            let ws_url = get_websocket_url(host, addr, &endpoint);
 
-        // Must be in a new scope so the write lock is dropped
-        // before compilation and invalidation
-        {
-            let mut livereload = compiler::context::livereload().write().unwrap();
-            *livereload = Some(ws_url);
-        }
-
-        let built = workspace::build(&ctx);
-
-        match built {
-            Ok(compiler) => {
-                // Prepare for incremental builds
-                //if let Err(_) = compiler.manifest.load() {}
-
-                // NOTE: only open the browser if initial build succeeds
-                open::that(&url).map(|_| ()).unwrap_or(());
-
-                // Invalidator wraps the builder receiving filesystem change
-                // notifications and sending messages over the `tx` channel
-                // to connected websockets when necessary
-                let mut invalidator = Invalidator::new(compiler);
-
-                let watch_result = watch(&source.clone(), &error_cb, move |paths, source_dir| {
-                    info!("changed({}) in {}", paths.len(), source_dir.display());
-
-                    let _ = tx.send(Message::text("start"));
-
-                    let invalidation = invalidator.get_invalidation(paths)?;
-                    invalidator.invalidate(&source, &invalidation)?;
-                    //self.builder.manifest.save()?;
-                    if invalidation.notify {
-                        let _ = tx.send(Message::text("reload"));
-                        //println!("Got result {:?}", res);
-                    }
-                    Ok(())
-                });
-
-                if let Err(e) = watch_result {
-                    error_cb(e);
-                }
-            },
-            Err(e) => {
+            if let Err(e) = livereload::write(&config, &options.target, &ws_url) {
                 error_cb(Error::from(e));
+                return;
             }
-        }
 
+            // Must be in a new scope so the write lock is dropped
+            // before compilation and invalidation
+            {
+                let mut livereload = compiler::context::livereload().write().unwrap();
+                *livereload = Some(ws_url);
+            }
+
+            let built = workspace::build(&ctx);
+
+            match built {
+                Ok(compiler) => {
+                    // Prepare for incremental builds
+                    //if let Err(_) = compiler.manifest.load() {}
+
+                    // NOTE: only open the browser if initial build succeeds
+                    open::that(&url).map(|_| ()).unwrap_or(());
+
+                    // Invalidator wraps the builder receiving filesystem change
+                    // notifications and sending messages over the `tx` channel
+                    // to connected websockets when necessary
+                    let mut invalidator = Invalidator::new(compiler);
+
+                    let watch_result = watch(&source.clone(), &error_cb, move |paths, source_dir| {
+                        info!("changed({}) in {}", paths.len(), source_dir.display());
+                        let _ = tx.send(Message::text("start"));
+
+                        let invalidation = invalidator.get_invalidation(paths)?;
+                        invalidator.invalidate(&source, &invalidation)?;
+                        //self.builder.manifest.save()?;
+                        if invalidation.notify {
+                            let _ = tx.send(Message::text("reload"));
+                            //println!("Got result {:?}", res);
+                        }
+                        Ok(())
+                    });
+
+                    if let Err(e) = watch_result {
+                        error_cb(e);
+                    }
+                },
+                Err(e) => {
+                    error_cb(Error::from(e));
+                }
+            }
+        });
     });
 
     // Start the webserver

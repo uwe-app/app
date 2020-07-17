@@ -1,21 +1,16 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::net::{SocketAddr, ToSocketAddrs};
 
 use tokio::sync::mpsc::channel;
 use tokio::sync::mpsc;
-
-use std::net::{SocketAddr, ToSocketAddrs};
-
-use tokio::sync::broadcast::Sender as TokioSender;
+use tokio::sync::broadcast;
 use warp::http::Uri;
 use warp::ws::Message;
 
 use log::{error, info};
 
-use open;
-
 use server::{serve_static, WebServerOptions};
-
 use crate::Error;
 
 #[derive(Debug)]
@@ -30,13 +25,13 @@ pub struct ServeOptions {
 }
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
-    let (tx, _rx) = std::sync::mpsc::channel::<(SocketAddr, TokioSender<Message>, String)>();
+    let (tx, _rx) = mpsc::channel::<(SocketAddr, broadcast::Sender<Message>, String)>(100);
     serve(options, tx).await
 }
 
 pub async fn serve(
     options: ServeOptions,
-    bind: std::sync::mpsc::Sender<(SocketAddr, TokioSender<Message>, String)>,
+    mut bind: mpsc::Sender<(SocketAddr, broadcast::Sender<Message>, String)>,
 ) -> Result<(), Error> {
 
     let address = format!("{}:{}", options.host, options.port);
@@ -51,13 +46,13 @@ pub async fn serve(
     let open_browser = options.open_browser;
 
     // A channel used to broadcast to any websockets to reload when a file changes.
-    let (tx, _rx) = tokio::sync::broadcast::channel::<Message>(100);
+    let (tx, _rx) = broadcast::channel::<Message>(100);
     let reload_tx = tx.clone();
 
     // Create a channel to receive the bind address.
     let (ctx, mut crx) = channel::<SocketAddr>(100);
 
-    let _bind_handle = tokio::task::spawn(async move {
+    let _ = tokio::task::spawn(async move {
         let addr = crx.recv().await.unwrap();
         let url = format!("http://{}:{}", &host, addr.port());
         //serving_url.foo();
@@ -67,7 +62,7 @@ pub async fn serve(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(e) = bind.send((addr, tx, url)) {
+        if let Err(e) = bind.try_send((addr, tx, url)) {
             // FIXME: call out to error_cb
             error!("{}", e);
             std::process::exit(1);
