@@ -312,7 +312,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub async fn all(&self, targets: Vec<PathBuf>) -> Result<()> {
+    pub fn all(&self, targets: Vec<PathBuf>) -> Result<()> {
         let livereload = crate::context::livereload().read().unwrap();
 
         resource::link(&self.context)?;

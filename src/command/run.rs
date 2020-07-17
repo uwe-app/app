@@ -30,13 +30,13 @@ pub struct ServeOptions {
 }
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
-    let (tx, _rx) = channel::<(SocketAddr, TokioSender<Message>, String)>(100);
+    let (tx, _rx) = std::sync::mpsc::channel::<(SocketAddr, TokioSender<Message>, String)>();
     serve(options, tx).await
 }
 
 pub async fn serve(
     options: ServeOptions,
-    mut bind: mpsc::Sender<(SocketAddr, TokioSender<Message>, String)>,
+    bind: std::sync::mpsc::Sender<(SocketAddr, TokioSender<Message>, String)>,
 ) -> Result<(), Error> {
 
     let address = format!("{}:{}", options.host, options.port);
@@ -67,7 +67,7 @@ pub async fn serve(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(e) = bind.try_send((addr, tx, url)) {
+        if let Err(e) = bind.send((addr, tx, url)) {
             // FIXME: call out to error_cb
             error!("{}", e);
             std::process::exit(1);
