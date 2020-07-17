@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 
 use log::{info, debug};
 
-use tokio::sync::mpsc;
 use tokio::sync::broadcast;
+use tokio::sync::oneshot;
 use warp::ws::Message;
 
 use std::thread::sleep;
@@ -69,7 +69,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     };
 
     // Create a channel to receive the bind address.
-    let (tx, mut rx) = mpsc::channel::<(SocketAddr, String)>(100);
+    let (bind_tx, bind_rx) = oneshot::channel::<(SocketAddr, String)>();
 
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
     let reload_tx = ws_tx.clone();
@@ -81,7 +81,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
         rt.block_on(async move {
 
             // Get the socket address and websocket transmission channel
-            let (addr, url) = rx.recv().await.unwrap();
+            let (addr, url) = bind_rx.await.unwrap();
 
             let ws_url = get_websocket_url(host, addr, &endpoint);
 
@@ -138,7 +138,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     });
 
     // Start the webserver
-    run::serve(opts, reload_tx, tx).await?;
+    run::serve(opts, reload_tx, bind_tx).await?;
 
     Ok(())
 }

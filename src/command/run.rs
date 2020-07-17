@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 use tokio::sync::broadcast;
 use warp::http::Uri;
 use warp::ws::Message;
@@ -25,14 +26,14 @@ pub struct ServeOptions {
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-    let (tx, _rx) = mpsc::channel::<(SocketAddr, String)>(100);
+    let (tx, _rx) = oneshot::channel::<(SocketAddr, String)>();
     serve(options, ws_tx, tx).await
 }
 
 pub async fn serve(
     options: ServeOptions,
     ws_notify: broadcast::Sender<Message>,
-    mut bind: mpsc::Sender<(SocketAddr, String)>,
+    bind: oneshot::Sender<(SocketAddr, String)>,
 ) -> Result<(), Error> {
 
     let address = format!("{}:{}", options.host, options.port);
@@ -46,10 +47,6 @@ pub async fn serve(
     let serve_host = host.clone();
     let open_browser = options.open_browser;
 
-    // A channel used to broadcast to any websockets to reload when a file changes.
-    //let (tx, _rx) = broadcast::channel::<Message>(100);
-    //let reload_tx = ws_notify.clone();
-
     // Create a channel to receive the bind address.
     let (ctx, mut crx) = mpsc::channel::<SocketAddr>(100);
 
@@ -60,14 +57,12 @@ pub async fn serve(
         info!("serve {}", url);
 
         if open_browser {
-
             // It is ok if this errors we just don't open a browser window
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(e) = bind.try_send((addr, url)) {
-            // FIXME: call out to error_cb
-            error!("{}", e);
+        if let Err(_) = bind.send((addr, url)) {
+            error!("Failed to notify of server bind event");
             std::process::exit(1);
         }
     });
