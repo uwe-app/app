@@ -296,7 +296,7 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    pub fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
+    pub async fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         let ctx = self.builder.context;
         let livereload = crate::context::livereload().read().unwrap();
 
@@ -365,10 +365,10 @@ impl<'a> Invalidator<'a> {
 
         match rule.strategy {
             Strategy::Full => {
-                return self.builder.build(target);
+                return self.builder.build(target).await;
             }
             Strategy::Page => {
-                return self.builder.build(target);
+                return self.builder.build(target).await;
             }
             _ => {
                 for action in &rule.actions {
@@ -382,9 +382,11 @@ impl<'a> Invalidator<'a> {
                                 &ctx.options.source,
                             )?;
 
-                            if let Err(e) = self.builder.one(&file) {
-                                return Err(e);
-                            }
+                            self.builder.one(&file).await?;
+
+                            //if let Err(e) = self.builder.one(&file).await {
+                                //return Err(e);
+                            //}
                         }
                         _ => {
                             return Err(Error::InvalidationActionNotHandled);

@@ -273,8 +273,18 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
+    // Try to find page data for a file from the collation
+    fn get_page(&self, file: &PathBuf) -> Option<&Page> {
+        if let Some(ref opt) = self.context.collation.all.get(&Arc::new(file.clone())) {
+            opt.as_ref()
+        } else {
+            None
+        }
+    }
+
+
     // Build a single file
-    pub fn one(&self, file: &PathBuf) -> Result<()> {
+    pub async fn one(&self, file: &PathBuf) -> Result<()> {
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
             let render = data.render.is_some() && data.render.unwrap();
@@ -289,23 +299,14 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    // Try to find page data for a file from the collation
-    fn get_page(&self, file: &PathBuf) -> Option<&Page> {
-        if let Some(ref opt) = self.context.collation.all.get(&Arc::new(file.clone())) {
-            opt.as_ref()
-        } else {
-            None
-        }
-    }
-
-    pub fn build(&self, target: &PathBuf) -> Result<()> {
+    pub async fn build(&self, target: &PathBuf) -> Result<()> {
         let copy = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
             .chain(self.context.collation.pages.iter())
             .filter(|p| p.starts_with(target));
 
         for p in copy {
-            self.one(p)?;
+            self.one(p).await?;
         }
 
         Ok(())
@@ -329,9 +330,9 @@ impl<'a> Compiler<'a> {
 
         for p in targets {
             if p.is_file() {
-                self.one(&p)?;
+                self.one(&p).await?;
             } else {
-                self.build(&p)?;
+                self.build(&p).await?;
             }
         }
 

@@ -54,7 +54,7 @@ pub async fn serve(
         let addr = crx.recv().await.unwrap();
         let url = format!("http://{}:{}", &host, addr.port());
 
-        info!("serve {}", url);
+        info!("Serve {}", url);
 
         if open_browser {
             // It is ok if this errors we just don't open a browser window
