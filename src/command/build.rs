@@ -69,7 +69,10 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     };
 
     // Create a channel to receive the bind address.
-    let (tx, mut rx) = mpsc::channel::<(SocketAddr, broadcast::Sender<Message>, String)>(100);
+    let (tx, mut rx) = mpsc::channel::<(SocketAddr, String)>(100);
+
+    let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+    let reload_tx = ws_tx.clone();
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
@@ -78,7 +81,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
         rt.block_on(async move {
 
             // Get the socket address and websocket transmission channel
-            let (addr, tx, url) = rx.recv().await.unwrap();
+            let (addr, url) = rx.recv().await.unwrap();
 
             let ws_url = get_websocket_url(host, addr, &endpoint);
 
@@ -111,13 +114,13 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
 
                     let watch_result = watch(&source.clone(), &error_cb, move |paths, source_dir| {
                         info!("changed({}) in {}", paths.len(), source_dir.display());
-                        let _ = tx.send(Message::text("start"));
+                        let _ = ws_tx.send(Message::text("start"));
 
                         let invalidation = invalidator.get_invalidation(paths)?;
                         invalidator.invalidate(&source, &invalidation)?;
                         //self.builder.manifest.save()?;
                         if invalidation.notify {
-                            let _ = tx.send(Message::text("reload"));
+                            let _ = ws_tx.send(Message::text("reload"));
                             //println!("Got result {:?}", res);
                         }
                         Ok(())
@@ -135,7 +138,7 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
     });
 
     // Start the webserver
-    run::serve(opts, tx).await?;
+    run::serve(opts, reload_tx, tx).await?;
 
     Ok(())
 }
