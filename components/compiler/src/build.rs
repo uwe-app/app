@@ -77,8 +77,6 @@ impl<'a> Compiler<'a> {
     pub async fn build(&self, target: &PathBuf) -> Result<()> {
         let parallel = self.context.options.settings.is_parallel();
 
-        println!("Is parallel {:?}", parallel);
-
         // TODO: support allowing this in the settings
         let fail_fast = false;
 

@@ -102,9 +102,13 @@ async fn load(
     mut options: RuntimeOptions,
     lang: Option<String>) -> Result<BuildContext> {
 
-    // Verify that files referenced by key in the pages
-    // map exist on disc
-    loader::verify(&config, &options)?;
+    let should_collate = options.settings.should_collate();
+
+    if should_collate {
+        // Verify that files referenced by key in the pages
+        // map exist on disc
+        loader::verify(&config, &options)?;
+    }
 
     // Collate page data for later usage
     let req = CollateRequest {filter: false, config: &config, options: &options};
