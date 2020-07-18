@@ -11,6 +11,9 @@ pub enum Error {
     #[error("File {0} for page data with key {1} does not exist")]
     NoPageFile(PathBuf, String),
 
+    #[error("Front matter error in {0} ({1})")]
+    FrontMatterParse(PathBuf, toml::de::Error),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -44,6 +47,8 @@ fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
 }
 
 pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, frontmatter: bool) -> Result<Page, Error> {
+
+    let file = f.as_ref();
 
     // Start with the global definition
     let mut page = config.page.as_ref().unwrap().clone();
@@ -82,19 +87,21 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, fro
             _ => {}
         }
 
-        let (_, has_fm, fm) = frontmatter::load(f.as_ref(), conf)?;
+        let (_, has_fm, fm) = frontmatter::load(file, conf)?;
         if has_fm {
-            parse_into(fm, &mut page)?;
+            parse_into(file, fm, &mut page)?;
         }
     }
 
-    page.compute(f, config, opts)?;
+    page.compute(file, config, opts)?;
 
     Ok(page)
 }
 
-fn parse_into(source: String, data: &mut Page) -> Result<(), Error> {
-    let mut page: Page = toml::from_str(&source)?;
+fn parse_into<P: AsRef<Path>>(file: P, source: String, data: &mut Page) -> Result<(), Error> {
+    let mut page: Page = toml::from_str(&source)
+        .map_err(|e| Error::FrontMatterParse(file.as_ref().to_path_buf(), e))?;
+
     data.append(&mut page);
     Ok(())
 }
