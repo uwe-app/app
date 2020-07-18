@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::path::PathBuf;
 
 use crossbeam::channel;
+use log::error;
 
 use book::compiler::BookCompiler;
 use config::Page;
@@ -60,26 +61,23 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub async fn one(&self, file: &PathBuf) -> Result<()> {
-        self.one_sync(file)?;
-        Ok(())
-    }
-
-    pub fn one_sync(&self, file: &PathBuf) -> Result<()> {
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
             let render = data.render.is_some() && data.render.unwrap();
             if !render {
-                return run::copy(self.context, file)
+                return run::copy(self.context, file).await
             }
-            run::parse(self.context, &self.parser, file, &mut data)?;
+            run::parse(self.context, &self.parser, file, &mut data).await?;
         } else {
-            run::copy(self.context, file)?;
+            run::copy(self.context, file).await?;
         }
         Ok(())
     }
 
     pub async fn build(&self, target: &PathBuf) -> Result<()> {
         let parallel = self.context.options.settings.is_parallel();
+
+        println!("Is parallel {:?}", parallel);
 
         // TODO: support allowing this in the settings
         let fail_fast = false;
@@ -96,13 +94,20 @@ impl<'a> Compiler<'a> {
                 for p in all {
                     let tx = tx.clone();
                     s.spawn(move |_t| {
-                        let res = self.one_sync(p);
-                        if fail_fast && res.is_err() {
-                            log::error!("{}", res.err().unwrap());
-                            panic!("Build failed");
-                        } else {
-                            tx.send(res).unwrap();
-                        }
+                        // NOTE: we pay a price for creating another runtime
+                        // NOTE: inside the rayon thread but it gives us a 
+                        // NOTE: consistent futures based API
+                        let mut rt = tokio::runtime::Runtime::new().unwrap();
+                        rt.block_on(async move {
+                            let res = self.one(p).await;
+                            if fail_fast && res.is_err() {
+                                error!("{}", res.err().unwrap());
+                                panic!("Build failed");
+                            } else {
+                                tx.send(res).unwrap();
+                            }
+                        });
+
                     })
                 }
             });

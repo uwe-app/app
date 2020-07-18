@@ -35,6 +35,8 @@ crossbeam = "0.7"
 
 futures = "0.3"
 futures-util = { version = "0.3.4" }
+tokio = { version = "0.2.18", features = ["macros"] }
+
 # TODO: we only need Url!
 warp = { version = "0.2.2", default-features = false, features = ["websocket"] }
 

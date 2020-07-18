@@ -14,15 +14,22 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
         info!("mkdir {}", output.display());
         std::fs::create_dir_all(output)?;
     }
-
     if !output.is_dir() {
         return Err(Error::NotDirectory(output.clone()));
     }
-
     Ok(())
 }
 
-fn with(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
+fn to_options(name: ProfileName, cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
+    args.name = name.clone();
+    args.set_defaults();
+
+    // Always update base to use the path separator. The declaration is
+    // a URL path but internally we treat as a filesystem path.
+    if let Some(ref base) = args.base {
+        args.base = Some(utils::url::to_path_separator(base));
+    }
+
     let project = cfg.get_project();
 
     let source = get_profile_source(cfg, args);
@@ -149,12 +156,18 @@ fn to_profile(args: &ProfileSettings) -> ProfileName {
 fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
     paths
         .iter()
-        .map(|p| {
-            let mut pth = source.clone();
-            pth.push(p);
-            pth
-        })
+        .map(|p| source.join(p))
         .collect::<Vec<_>>()
+}
+
+fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
+    // WARN: We cannot merge from args here otherwise we clobber
+    // WARN: other settings from the arg defaults so we 
+    // WARN: manually override from command line arguments.
+    if args.live.is_some() { settings.live = args.live; }
+    if args.release.is_some() { settings.release = args.release; }
+    if args.host.is_some() { settings.host = args.host.clone(); }
+    if args.port.is_some() { settings.port = args.port; }
 }
 
 pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
@@ -168,32 +181,17 @@ pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOption
     let profiles = cfg.profile.as_ref().unwrap();
     if let Some(ref profile) = profiles.get(&name.to_string()) {
         let mut copy = profile.clone();
-
         let mut merged = super::merge::map::<ProfileSettings>(&root, &mut copy)?;
 
         if profile.profile.is_some() {
             return Err(Error::NoProfileInProfile);
         }
 
-        // WARN: We cannot merge from args here otherwise we clobber
-        // WARN: other settings from the arg defaults so we 
-        // WARN: manually override from command line arguments.
-        if args.live.is_some() { merged.live = args.live; }
-        if args.release.is_some() { merged.release = args.release; }
-        if args.host.is_some() { merged.host = args.host.clone(); }
-        if args.port.is_some() { merged.port = args.port; }
-
-        // Always update base to use the path separator. The declaration is
-        // a URL path but internally we treat as a filesystem path.
-        if let Some(ref base) = merged.base {
-            merged.base = Some(utils::url::to_path_separator(base));
-        }
-
-        merged.name = name.clone();
-        with(cfg, &mut merged)
+        from_cli(&mut merged, args);
+        to_options(name, cfg, &mut merged)
     } else {
         let mut merged = super::merge::map::<ProfileSettings>(&root, args)?;
-        merged.name = name.clone();
-        with(cfg, &mut merged)
+        from_cli(&mut merged, args);
+        to_options(name, cfg, &mut merged)
     }
 }

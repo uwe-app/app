@@ -109,9 +109,6 @@ pub struct ProfileSettings {
     pub resources: Option<PathBuf>,
     pub layout: Option<PathBuf>,
 
-    #[serde(skip)]
-    pub follow_links: Option<bool>,
-
     pub extend: Option<Vec<String>>,
 
     pub profile: Option<String>,
@@ -143,6 +140,9 @@ pub struct ProfileSettings {
 
     pub host: Option<String>,
     pub port: Option<u16>,
+
+    #[serde(skip)]
+    pub follow_links: Option<bool>,
 }
 
 impl Default for ProfileSettings {
@@ -153,8 +153,8 @@ impl Default for ProfileSettings {
             source: PathBuf::from(config::SITE),
             target: PathBuf::from(config::BUILD),
             types: Some(Default::default()),
-            strict: Some(true),
-            parallel: Some(true),
+            strict: None,
+            parallel: None,
 
             assets: Some(PathBuf::from(config::ASSETS)),
             locales: Some(PathBuf::from(config::LOCALES)),
@@ -165,7 +165,6 @@ impl Default for ProfileSettings {
             layout: Some(PathBuf::from(config::LAYOUT_HBS)),
 
             rewrite_index: None,
-            follow_links: Some(true),
             extend: None,
             short_codes: None,
 
@@ -175,20 +174,32 @@ impl Default for ProfileSettings {
             live: None,
             release: None,
             include_index: None,
-            incremental: Some(false),
-            pristine: Some(true),
+            incremental: None,
+            pristine: None,
             force: None,
-            collate: Some(true),
+            collate: None,
             write_redirects: None,
             base: None,
             paths: None,
-            use_layout: Some(true),
             base_href: None,
+
+            use_layout: Some(true),
+
+            // Private
+            follow_links: Some(true),
         }
     }
 }
 
 impl ProfileSettings {
+
+    pub fn set_defaults(&mut self) {
+        if let None = self.strict { self.strict = Some(true); } 
+        if let None = self.parallel { self.parallel = Some(true); } 
+        if let None = self.pristine { self.pristine = Some(true); } 
+        if let None = self.incremental { self.incremental = Some(false); } 
+        if let None = self.collate { self.collate = Some(true); } 
+    }
 
     pub fn get_host(&self) -> String {
         if let Some(ref host) = self.host {

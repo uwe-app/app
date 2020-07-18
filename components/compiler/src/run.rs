@@ -153,7 +153,7 @@ fn parse_query(ctx: &BuildContext, parser: &Parser, file: &PathBuf, data: &mut P
     Ok(false)
 }
 
-pub fn copy(ctx: &BuildContext, file: &PathBuf) -> Result<()> {
+pub async fn copy(ctx: &BuildContext, file: &PathBuf) -> Result<()> {
 
     let mut info = FileInfo::new(
         &ctx.config,
@@ -181,7 +181,7 @@ pub fn copy(ctx: &BuildContext, file: &PathBuf) -> Result<()> {
 }
 
 
-pub fn parse(ctx: &BuildContext, parser: &Parser, file: &PathBuf, data: &mut Page) -> Result<()> {
+pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data: &mut Page) -> Result<()> {
     if draft::is_draft(&data, &ctx.options) {
         return Ok(());
     }
