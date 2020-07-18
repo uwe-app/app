@@ -37,6 +37,9 @@ pub enum Error {
     #[error("Resources not a directory {0}")]
     ResourceNotDirectory(PathBuf),
 
+    #[error("Multiple build errors")]
+    Multi { errs: Vec<Error> },
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

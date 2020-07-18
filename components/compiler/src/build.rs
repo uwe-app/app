@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::path::{Path, PathBuf};
 
-use log::{error, info};
+use log::info;
 
 use serde_json::{json, Value};
 
@@ -286,17 +286,6 @@ impl<'a> Compiler<'a> {
     // Build a single file
     pub async fn one(&self, file: &PathBuf) -> Result<()> {
         self.one_sync(file)?;
-        //if let Some(page) = self.get_page(file) {
-            //let mut data = page.clone();
-            //let render = data.render.is_some() && data.render.unwrap();
-            //if !render {
-                //return self.copy_file(file);
-            //}
-            //self.parse_file(file, &mut data)?;
-        //} else {
-            //self.copy_file(file)?;
-        //}
-
         Ok(())
     }
 
@@ -314,36 +303,54 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    pub async fn build(&self, target: &PathBuf) -> Result<()> {
+    pub async fn test(&self) -> Result<()> {
+        Ok(())
+    }
 
+    pub async fn build(&self, target: &PathBuf) -> Result<()> {
         let parallel = self.context.options.settings.is_parallel();
+        let fail_fast = false;
 
         let all = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
             .chain(self.context.collation.pages.iter())
             .filter(|p| p.starts_with(target));
-            //.map(|p| futures::future::lazy( move |_| async move { self.one(p).await } ));
-            //
 
         if parallel {
+            let (tx, rx) = crossbeam::channel::unbounded();
             rayon::scope(|s| {
                 for p in all {
+                    let tx = tx.clone();
                     s.spawn(move |_t| {
-                        //println!("Running in task {}", p.display());
-                        //println!("Got context {:?}", self.context.options.source);
-                        if let Err(e) = self.one_sync(p) {
-                            error!("{}", e);
+                        let res = self.one_sync(p);
+                        if fail_fast && res.is_err() {
+                            log::error!("{}", res.err().unwrap());
+                            panic!("Build failed");
+                        } else {
+                            tx.send(res).unwrap();
                         }
                     })
                 }
             });
+
+            drop(tx);
+            let errs: Vec<Error> = rx.iter()
+                .filter(|r| r.is_err())
+                .map(|r| r.err().unwrap())
+                .collect::<Vec<_>>();
+
+            if errs.is_empty() {
+                Ok(())            
+            } else {
+                Err(Error::Multi { errs })
+            }
         } else {
             for p in all {
                 self.one(p).await?;
             }
-        }
 
-        Ok(())
+            Ok(())
+        }
     }
 
     // Build all target paths

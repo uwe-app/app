@@ -12,17 +12,41 @@ use structopt::StructOpt;
 
 use std::panic;
 
-use utils;
-
 use hypertext::{ProfileSettings, Config, Error};
-
 use hypertext::command;
-
 use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
 
-fn fatal(e: impl std::error::Error) {
+fn compiler_error(e: &compiler::Error) {
+    match e {
+        compiler::Error::Multi {ref errs} => {
+            error!("Compile error ({})", errs.len());
+            for e in errs {
+                error!("{}", e);
+            } 
+            std::process::exit(1);
+        }
+        _ => {}
+    }
+
+    error!("{}", e);
+    std::process::exit(1);
+}
+
+fn fatal(e: hypertext::Error) {
+    match e {
+        hypertext::Error::Compiler ( ref e ) => { return compiler_error(e); }
+        hypertext::Error::Workspace ( ref e ) => {
+            match e {
+                workspace::Error::Compiler (ref e) => {
+                    return compiler_error(e); 
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
     error!("{}", e);
     std::process::exit(1);
 }

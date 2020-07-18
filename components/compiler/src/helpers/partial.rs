@@ -48,10 +48,12 @@ impl HelperDef for Partial<'_> {
 
         let (content, _has_fm, _fm) =
             frontmatter::load(&file, get_front_matter_config(&file))
-                .map_err(|_e| RenderError::new(format!("Partial failed to load front matter for {}", &source_path)))?;
+                .map_err(|e| RenderError::new(format!("Partial front matter error {} ({})", &source_path, e)))?;
 
         let result = r.render_template(&content, ctx.data())
-            .map_err(|_e| RenderError::new(format!("Partial failed to render template {}", &source_path)))?;
+            .map_err(|e| RenderError::new(
+                    format!("Partial error {} ({})", &source_path, e)))?;
+            //.map_err(|e| RenderError::new(format!("{}", e)))?;
 
         if parse_markdown {
             let parsed = render_markdown_string(&mut Cow::from(result), &self.context.config);
