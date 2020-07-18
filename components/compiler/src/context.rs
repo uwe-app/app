@@ -26,12 +26,12 @@ impl BuildContext {
     }
 }
 
-pub fn runtime() -> &'static Arc<RwLock<BuildContext>> {
-    static INSTANCE: OnceCell<Arc<RwLock<BuildContext>>> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        Arc::new(RwLock::new(Default::default()))
-    })
-}
+//pub fn runtime() -> &'static Arc<RwLock<BuildContext>> {
+    //static INSTANCE: OnceCell<Arc<RwLock<BuildContext>>> = OnceCell::new();
+    //INSTANCE.get_or_init(|| {
+        //Arc::new(RwLock::new(Default::default()))
+    //})
+//}
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {
     static INSTANCE: OnceCell<Arc<RwLock<Option<String>>>> = OnceCell::new();
