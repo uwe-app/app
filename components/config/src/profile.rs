@@ -99,6 +99,7 @@ pub struct ProfileSettings {
 
     pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
+    pub parallel: Option<bool>,
 
     pub assets: Option<PathBuf>,
     pub locales: Option<PathBuf>,
@@ -153,6 +154,7 @@ impl Default for ProfileSettings {
             target: PathBuf::from(config::BUILD),
             types: Some(Default::default()),
             strict: Some(true),
+            parallel: Some(true),
 
             assets: Some(PathBuf::from(config::ASSETS)),
             locales: Some(PathBuf::from(config::LOCALES)),
@@ -202,6 +204,10 @@ impl ProfileSettings {
         } else {
             config::PORT
         }
+    }
+
+    pub fn is_parallel(&self) -> bool {
+        self.parallel.is_some() && self.parallel.unwrap()
     }
 
     pub fn is_live(&self) -> bool {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::path::{Path, PathBuf};
 
-use log::info;
+use log::{error, info};
 
 use serde_json::{json, Value};
 
@@ -285,6 +285,22 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub async fn one(&self, file: &PathBuf) -> Result<()> {
+        self.one_sync(file)?;
+        //if let Some(page) = self.get_page(file) {
+            //let mut data = page.clone();
+            //let render = data.render.is_some() && data.render.unwrap();
+            //if !render {
+                //return self.copy_file(file);
+            //}
+            //self.parse_file(file, &mut data)?;
+        //} else {
+            //self.copy_file(file)?;
+        //}
+
+        Ok(())
+    }
+
+    pub fn one_sync(&self, file: &PathBuf) -> Result<()> {
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
             let render = data.render.is_some() && data.render.unwrap();
@@ -295,22 +311,37 @@ impl<'a> Compiler<'a> {
         } else {
             self.copy_file(file)?;
         }
-
         Ok(())
     }
 
     pub async fn build(&self, target: &PathBuf) -> Result<()> {
+
+        let parallel = self.context.options.settings.is_parallel();
+
         let all = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
             .chain(self.context.collation.pages.iter())
             .filter(|p| p.starts_with(target));
             //.map(|p| futures::future::lazy( move |_| async move { self.one(p).await } ));
+            //
 
-        for p in all {
-            self.one(p).await?;
+        if parallel {
+            rayon::scope(|s| {
+                for p in all {
+                    s.spawn(move |_t| {
+                        //println!("Running in task {}", p.display());
+                        //println!("Got context {:?}", self.context.options.source);
+                        if let Err(e) = self.one_sync(p) {
+                            error!("{}", e);
+                        }
+                    })
+                }
+            });
+        } else {
+            for p in all {
+                self.one(p).await?;
+            }
         }
-
-        //futures::future::join_all(all).await;
 
         Ok(())
     }
