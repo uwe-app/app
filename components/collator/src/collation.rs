@@ -26,7 +26,7 @@ pub struct CollateInfo {
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
     // Store queries for expansion later
-    pub queries: HashMap<QueryList, Arc<PathBuf>>,
+    pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,

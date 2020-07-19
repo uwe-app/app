@@ -154,6 +154,14 @@ impl QueryList {
         } 
     }
 
+    pub fn to_assign_vec(&self) -> Vec<IndexQuery> {
+        self.to_vec()
+            .iter()
+            .filter(|q| q.each.is_none() || (q.each.is_some() && !q.each.unwrap()))
+            .map(IndexQuery::clone)
+            .collect::<Vec<_>>()
+    }
+
     pub fn to_each_vec(&self) -> Vec<IndexQuery> {
         self.to_vec()
             .iter()

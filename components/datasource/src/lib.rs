@@ -246,6 +246,29 @@ impl DataSourceMap {
         }
     }
 
+    // Assign query results to the page data
+    pub fn assign(
+        _config: &Config,
+        _options: &RuntimeOptions,
+        info: &mut CollateInfo,
+        map: &DataSourceMap) -> Result<()> {
+
+        for (q, p) in info.queries.iter() {
+
+            let queries = q.to_assign_vec();
+            if queries.is_empty() { continue; }
+
+            let page = info.pages.get_mut(p).unwrap();
+            for query in queries.iter() {
+                let idx = map.query_index(query)?;
+                // TODO: error or warn on overwriting existing key
+                page.extra.insert(query.get_parameter(), json!(idx));
+            }
+        }
+
+        Ok(())
+    }
+
     // Expand out queries which generate multiple new pages, these can 
     // be each iterators or pagination queries
     pub fn expand(
@@ -255,11 +278,9 @@ impl DataSourceMap {
         map: &DataSourceMap) -> Result<()> {
 
         for (q, p) in info.queries.iter() {
-            let each = q.to_each_vec();
 
-            if each.is_empty() {
-                continue;
-            }
+            let each = q.to_each_vec();
+            if each.is_empty() { continue; }
 
             // Should have raw page data - note that we remove
             // the page as it is being used as an iterator
@@ -274,11 +295,8 @@ impl DataSourceMap {
             for each_query in each.iter() {
                 let idx = map.query_index(each_query)?;
 
-                //println!("Process each query for file {:?}", p.display());
-
                 for doc in &idx {
                     let mut item_data = page.clone();
-                    //println!("Got document {:?}", doc);
 
                     if let Some(id) = doc.get("id") {
                         if let Some(id) = id.as_str() {

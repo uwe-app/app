@@ -126,6 +126,11 @@ async fn load(
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
 
+    println!("  QUERIES AFTER COLLATION");
+    println!("{:#?}", collation.queries.len());
+    println!("  QUERIES AFTER COLLATION");
+
+    DataSourceMap::assign(&config, &options, &mut collation, &datasource)?;
     DataSourceMap::expand(&config, &options, &mut collation, &datasource)?;
 
     // Finalize the language for this pass

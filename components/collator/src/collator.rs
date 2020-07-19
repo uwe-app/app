@@ -133,8 +133,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             Ok(mut page_info) => {
 
                                 if let Some(ref query) = page_info.query {
-                                    info.queries.entry(query.clone())
-                                        .or_insert(Arc::clone(&key));
+                                    info.queries.push((query.clone(), Arc::clone(&key)));
                                 }
 
                                 // Rewrite layouts relative to the source directory
