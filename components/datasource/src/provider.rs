@@ -98,14 +98,14 @@ impl Provider {
         let mut docs: BTreeMap<String, Value> = BTreeMap::new();
         let limit: usize = 100;
 
-        stream::iter(&req.collation.pages)
+        stream::iter(req.collation.pages.keys())
             .filter(|p| future::ready(p.starts_with(req.source)))
             .enumerate()
             .map(Ok)
             .try_for_each_concurrent(limit, |(count, path)| {
                 // Convert the page data to a Value for indexing
-                let data = req.collation.all
-                    .get(path).unwrap().as_ref().unwrap();
+                let data = req.collation.pages.get(path).unwrap();
+
                 let result = serde_json::to_value(data);
                 match result {
                     Ok(document) => {

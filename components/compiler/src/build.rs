@@ -52,21 +52,19 @@ impl<'a> Compiler<'a> {
 
     // Try to find page data for a file from the collation
     fn get_page(&self, file: &PathBuf) -> Option<&Page> {
-        if let Some(ref opt) = self.context.collation.all.get(&Arc::new(file.clone())) {
-            opt.as_ref()
-        } else {
-            None
-        }
+        self.context.collation.pages.get(&Arc::new(file.clone()))
     }
 
     // Build a single file
     pub async fn one(&self, file: &PathBuf) -> Result<()> {
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
+
             let render = data.render.is_some() && data.render.unwrap();
             if !render {
                 return run::copy(self.context, file).await
             }
+
             run::parse(self.context, &self.parser, file, &mut data).await?;
         } else {
             run::copy(self.context, file).await?;
@@ -82,7 +80,7 @@ impl<'a> Compiler<'a> {
 
         let all = self.context.collation.other.iter()
             .chain(self.context.collation.assets.iter())
-            .chain(self.context.collation.pages.iter())
+            .chain(self.context.collation.pages.keys())
             .filter(|p| p.starts_with(target));
 
         if parallel {

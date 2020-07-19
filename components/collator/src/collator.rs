@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use ignore::{WalkBuilder, WalkState};
 
-use config::{Page, Config, RuntimeOptions, FileInfo, FileOptions};
+use config::{Config, RuntimeOptions, FileInfo, FileOptions};
 
 use super::{Error, Result, CollateInfo};
 
@@ -62,12 +62,16 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                 if let Ok(entry) = result {
                     let path = entry.path();
                     let buf = path.to_path_buf();
-                    let mut page: Option<Page> = None;
 
                     let data = Arc::clone(&res.inner);
                     let mut info = data.lock().unwrap();
 
-                    if buf.is_file() && FileInfo::is_page(&path, req.options) {
+                    let pth = buf.clone();
+                    let key = Arc::new(buf);
+
+                    let is_page = pth.is_file() && FileInfo::is_page(&path, req.options);
+
+                    if is_page {
                         let result = loader::compute(&path, req.config, req.options, true);
                         match result {
                             Ok(mut page_info) => {
@@ -86,7 +90,7 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 let mut file_info = FileInfo::new(
                                     req.config,
                                     req.options,
-                                    &buf,
+                                    &pth,
                                     false,
                                 );
 
@@ -112,7 +116,12 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                     return WalkState::Continue;
                                 }
 
-                                page = Some(page_info);
+                                if let Some(ref layout) = page_info.layout {
+                                    // Register the layout
+                                    info.layouts.insert(Arc::clone(&key), layout.clone());
+                                }
+
+                                info.pages.entry(Arc::clone(&key)).or_insert(page_info);
                             }
                             Err(e) => {
                                 info.errors.push(Error::from(e));
@@ -121,19 +130,8 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         }
                     }
 
-                    let key = Arc::new(buf);
-
                     if key.is_dir() {
                         info.dirs.push(Arc::clone(&key));
-                    } else if page.is_some() {
-
-                        let page_info = page.as_ref().unwrap();
-                        if let Some(ref layout) = page_info.layout {
-                            // Register the layout
-                            info.layouts.insert(Arc::clone(&key), layout.clone());
-                        }
-
-                        info.pages.push(Arc::clone(&key));
                     } else {
                         if !req.filter {
 
@@ -159,7 +157,7 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 info.data_sources.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_short_codes_path()) {
                                 info.short_codes.push(Arc::clone(&key));
-                            } else {
+                            } else if !is_page {
                                 info.other.push(Arc::clone(&key));
                             }
                         }
@@ -167,7 +165,9 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         info.files.push(Arc::clone(&key));
                     }
 
-                    info.all.entry(key).or_insert(page);
+                    info.all.push(key);
+
+                    //info.all.entry(key).or_insert(page);
                 }
                 WalkState::Continue
             }
