@@ -61,7 +61,7 @@ pub struct IndexRequest {
     pub key: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum KeyType {
     #[serde(rename = "full")]
     Full,
@@ -77,7 +77,7 @@ impl Default for KeyType {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
@@ -133,7 +133,7 @@ impl IndexQuery {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
 pub enum QueryList {
     One(IndexQuery),

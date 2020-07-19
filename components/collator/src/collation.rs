@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 
 use config::Page;
+use config::indexer::QueryList;
 
 use super::Error;
 
@@ -23,6 +24,9 @@ pub struct CollateInfo {
     pub pages: HashMap<Arc<PathBuf>, Page>,
     // Assets and other files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
+
+    // Store queries for expansion later
+    pub queries: HashMap<QueryList, Arc<PathBuf>>,
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,

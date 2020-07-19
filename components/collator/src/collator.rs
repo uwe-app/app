@@ -131,6 +131,11 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         match result {
                             Ok(mut page_info) => {
 
+                                if let Some(ref query) = page_info.query {
+                                    info.queries.entry(query.clone())
+                                        .or_insert(Arc::clone(&key));
+                                }
+
                                 // Rewrite layouts relative to the source directory
                                 if let Some(ref layout) = page_info.layout {
                                     let layout_path = req.options.source.join(layout);

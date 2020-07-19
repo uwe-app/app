@@ -237,10 +237,15 @@ impl DataSourceMap {
         }
     }
 
+    pub fn expand(info: &mut CollateInfo, map: &BTreeMap<String, DataSource>) -> Result<()> {
+        println!("Expanding pages for collation in data source {:#?}", info.queries);
+        Ok(())
+    }
+
     pub async fn load(
         config: &Config,
         options: &RuntimeOptions,
-        collation: &CollateInfo) -> Result<DataSourceMap> {
+        collation: &mut CollateInfo) -> Result<DataSourceMap> {
 
         let mut map: BTreeMap<String, DataSource> = BTreeMap::new();
 
@@ -279,6 +284,9 @@ impl DataSourceMap {
 
         // Create the indices
         DataSourceMap::load_index(&mut map)?;
+
+        // Expand out pages
+        DataSourceMap::expand(collation, &map)?;
 
         Ok(DataSourceMap { map })
     }

@@ -124,7 +124,7 @@ async fn load(
     }
 
     // Load data sources and create indices
-    let datasource = DataSourceMap::load(&config, &options, &collation).await?;
+    let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
 
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {
