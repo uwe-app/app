@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -11,7 +12,7 @@ use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
 use collator::CollateInfo;
-use config::{Config, RuntimeOptions};
+use config::{Config, RuntimeOptions, FileInfo, FileOptions};
 use config::indexer::{IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
 
 pub mod identifier;
@@ -27,6 +28,12 @@ pub enum Error {
 
     #[error("Type error building index, keys must be string values")]
     IndexKeyType,
+
+    #[error("Data source document should be an object")]
+    DataSourceDocumentNotAnObject,
+
+    #[error("Data source document must have an id")]
+    DataSourceDocumentNoId,
 
     #[error("No data source with name {0}")]
     NoDataSource(String),
@@ -49,6 +56,8 @@ pub enum Error {
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
 
+    #[error(transparent)]
+    Config(#[from] config::Error),
     #[error(transparent)]
     Provider(#[from] provider::DeserializeError),
     #[error(transparent)]
@@ -237,18 +246,98 @@ impl DataSourceMap {
         }
     }
 
-    pub fn expand(info: &mut CollateInfo, map: &BTreeMap<String, DataSource>) -> Result<()> {
-        let mut each_queries: Vec<(PathBuf, Vec<IndexQuery>)> = Vec::new();
+    // Expand out queries which generate multiple new pages, these can 
+    // be each iterators or pagination queries
+    pub fn expand(
+        config: &Config,
+        options: &RuntimeOptions,
+        info: &mut CollateInfo,
+        map: &DataSourceMap) -> Result<()> {
+
         for (q, p) in info.queries.iter() {
             let each = q.to_each_vec();
-            if !each.is_empty() {
-                println!("Found an each query {:?}", each);
-                each_queries.push((p.to_path_buf(), each));
-            }
-        }
 
-        for (p, queries) in each_queries {
-            println!("Process each query for file {:?}", p.display());
+            if each.is_empty() {
+                continue;
+            }
+
+            // Should have raw page data - note that we remove
+            // the page as it is being used as an iterator
+            let page = info.pages.remove(p).unwrap();
+
+            let mut rewrite_index = options.settings.should_rewrite_index();
+            // Override with rewrite-index page level setting
+            if let Some(val) = page.rewrite_index {
+                rewrite_index = val;
+            }
+
+            for each_query in each.iter() {
+                let idx = map.query_index(each_query)?;
+
+                //println!("Process each query for file {:?}", p.display());
+
+                for doc in &idx {
+                    let mut item_data = page.clone();
+                    //println!("Got document {:?}", doc);
+
+                    if let Some(id) = doc.get("id") {
+                        if let Some(id) = id.as_str() {
+                            if doc.is_object() {
+                                let map = doc.as_object().unwrap();
+                                for (k, v) in map {
+                                    item_data.extra.insert(k.clone(), json!(v));
+                                }
+                            } else {
+                                return Err(Error::DataSourceDocumentNotAnObject);
+                            }
+
+                            // Mock a source file to build a destination
+                            // respecting the clean URL setting
+                            let mut mock = p.parent().unwrap().to_path_buf();
+                            mock.push(&id);
+                            if let Some(ext) = p.extension() {
+                                mock.set_extension(ext);
+                            }
+
+                            let mut file_info = FileInfo::new(
+                                config,
+                                options,
+                                &mock,
+                                true,
+                            );
+
+                            let file_opts = FileOptions {
+                                rewrite_index,
+                                base_href: &options.settings.base_href,
+                                ..Default::default()
+                            };
+
+                            let dest = file_info.destination(&file_opts)?;
+
+                            //info!("{} -> {}", &id, dest.display());
+                            //info!("{} -> {}", mock.display(), &dest.display());
+
+                            item_data.seal(
+                                &dest,
+                                config,
+                                options,
+                                &file_info)?;
+
+                            // Assign the template so it is preferred over the mock
+                            // synthetic path used to generate a destination
+                            let file_ctx = item_data.file.as_mut().unwrap();
+                            file_ctx.source = p.to_path_buf();
+
+                            println!("Adding for mock path {:?}", mock.display());
+                            println!("Using template path {:?}", file_ctx.source.display());
+
+                            info.pages.entry(Arc::new(mock)).or_insert(item_data);
+                        }
+                    } else {
+                        return Err(Error::DataSourceDocumentNoId);
+                    }
+                }
+            }
         }
 
         Ok(())
@@ -296,9 +385,6 @@ impl DataSourceMap {
 
         // Create the indices
         DataSourceMap::load_index(&mut map)?;
-
-        // Expand out pages
-        DataSourceMap::expand(collation, &map)?;
 
         Ok(DataSourceMap { map })
     }

@@ -143,12 +143,12 @@ fn parse_query(ctx: &BuildContext, parser: &Parser, file: &PathBuf, data: &mut P
                 }
             }
 
-            if !each_iters.is_empty() {
-                for (gen, idx) in each_iters {
-                    data_source_each(ctx, parser, file, &data, gen, idx)?;
-                }
-                return Ok(true);
-            }
+            //if !each_iters.is_empty() {
+                //for (gen, idx) in each_iters {
+                    //data_source_each(ctx, parser, file, &data, gen, idx)?;
+                //}
+                //return Ok(true);
+            //}
         }
     }
     Ok(false)

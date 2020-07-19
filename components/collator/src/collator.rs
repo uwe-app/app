@@ -124,7 +124,8 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     let pth = buf.clone();
                     let key = Arc::new(buf);
 
-                    let is_page = pth.is_file() && FileInfo::is_page(&path, req.options);
+                    let is_data_source = key.starts_with(req.options.get_data_sources_path());
+                    let is_page = !is_data_source && pth.is_file() && FileInfo::is_page(&path, req.options);
 
                     if is_page {
                         let result = loader::compute(&path, req.config, req.options, true);

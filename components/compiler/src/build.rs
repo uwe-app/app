@@ -57,6 +57,8 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub async fn one(&self, file: &PathBuf) -> Result<()> {
+        //println!("File {}", file.display());
+
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
 
@@ -78,7 +80,7 @@ impl<'a> Compiler<'a> {
         let parallel = self.context.options.settings.is_parallel();
 
         // TODO: support allowing this in the settings
-        let fail_fast = false;
+        let fail_fast = true;
 
         let all = self.context.collation.other.keys()
             .chain(self.context.collation.pages.keys())
