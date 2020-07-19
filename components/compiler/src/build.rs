@@ -57,18 +57,17 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub async fn one(&self, file: &PathBuf) -> Result<()> {
-        //println!("File {}", file.display());
-
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
-            let file_ctx = page.file.as_ref().unwrap();
+            data.lang = Some(self.context.options.lang.clone());
 
-            let render = data.render.is_some() && data.render.unwrap();
+            let file_ctx = page.file.as_ref().unwrap();
+            let render = page.render.is_some() && page.render.unwrap();
             if !render {
                 return run::copy(file, &file_ctx.target).await
             }
 
-            run::parse(self.context, &self.parser, &file_ctx.source, &mut data).await?;
+            run::parse(self.context, &self.parser, &file_ctx.source, &data).await?;
         } else {
             let target = self.context.collation.other.get(file).unwrap();
             run::copy(file, target).await?;

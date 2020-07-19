@@ -34,7 +34,7 @@ pub async fn copy(file: &PathBuf, dest: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data: &mut Page) -> Result<()> {
+pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data: &Page) -> Result<()> {
     if draft::is_draft(&data, &ctx.options) {
         return Ok(());
     }

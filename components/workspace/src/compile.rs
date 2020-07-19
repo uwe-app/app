@@ -55,9 +55,6 @@ async fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Re
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
 
-    //println!("Is multi {:?}", locales.is_multi());
-    //println!("Is dry run {:?}", dry_run);
-
     if locales.is_multi() {
         for lang in locales.map.keys() {
             let mut lang_opts = opts.clone();
@@ -125,10 +122,6 @@ async fn load(
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
-
-    println!("  QUERIES AFTER COLLATION");
-    println!("{:#?}", collation.queries.len());
-    println!("  QUERIES AFTER COLLATION");
 
     DataSourceMap::assign(&config, &options, &mut collation, &datasource)?;
     DataSourceMap::expand(&config, &options, &mut collation, &datasource)?;
