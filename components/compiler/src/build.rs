@@ -62,12 +62,14 @@ impl<'a> Compiler<'a> {
 
             let render = data.render.is_some() && data.render.unwrap();
             if !render {
-                return run::copy(self.context, file).await
+                let file_ctx = data.file.unwrap();
+                return run::copy(file, &file_ctx.target).await
             }
 
             run::parse(self.context, &self.parser, file, &mut data).await?;
         } else {
-            run::copy(self.context, file).await?;
+            let target = self.context.collation.other.get(file).unwrap();
+            run::copy(file, target).await?;
         }
         Ok(())
     }
@@ -79,7 +81,6 @@ impl<'a> Compiler<'a> {
         let fail_fast = false;
 
         let all = self.context.collation.other.keys()
-            .chain(self.context.collation.assets.keys())
             .chain(self.context.collation.pages.keys())
             .filter(|p| p.starts_with(target));
 

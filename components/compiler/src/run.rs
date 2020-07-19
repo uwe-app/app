@@ -154,26 +154,9 @@ fn parse_query(ctx: &BuildContext, parser: &Parser, file: &PathBuf, data: &mut P
     Ok(false)
 }
 
-pub async fn copy(ctx: &BuildContext, file: &PathBuf) -> Result<()> {
-
-    let mut info = FileInfo::new(
-        &ctx.config,
-        &ctx.options,
-        file,
-        false,
-    );
-
-    let file_opts = FileOptions {
-        exact: true,
-        base_href: &ctx.options.settings.base_href,
-        ..Default::default()
-    };
-
-    let dest = info.destination(&file_opts)?;
-
+pub async fn copy(file: &PathBuf, dest: &PathBuf) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, &dest)?;
-
     Ok(())
 }
 

@@ -17,11 +17,10 @@ pub struct CollateInfo {
     pub all: Vec<Arc<PathBuf>>,
     pub dirs: Vec<Arc<PathBuf>>,
     pub files: Vec<Arc<PathBuf>>,
+    pub assets: Vec<Arc<PathBuf>>,
 
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
-    // Assets to copy
-    pub assets: HashMap<Arc<PathBuf>, PathBuf>,
     // Unrecognized files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 

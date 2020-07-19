@@ -165,21 +165,14 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 }
                             }
 
+                            // This falls through so it is captured as part
+                            // of the other group too but we track these files
+                            // for reporting purposes
                             if key.starts_with(req.options.get_assets_path()) {
-                                //info.assets.push(Arc::clone(&key));
+                                info.assets.push(Arc::clone(&key));
+                            }
 
-                                let res = get_destination(&pth, req.config, req.options);
-                                match res {
-                                    Ok(dest) => {
-                                        info.assets.entry(Arc::clone(&key)).or_insert(dest);
-                                    }
-                                    Err(e) => {
-                                        info.errors.push(e);
-                                        return WalkState::Continue;
-                                    }
-                                }
-
-                            } else if key.starts_with(req.options.get_partials_path()) {
+                            if key.starts_with(req.options.get_partials_path()) {
                                 info.partials.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_includes_path()) {
                                 info.includes.push(Arc::clone(&key));
