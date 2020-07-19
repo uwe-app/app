@@ -80,6 +80,7 @@ impl HelperDef for Link<'_> {
 
             if let Some(verify) = link_config.verify {
                 if verify {
+                    //println!("Verify with input {:?}", &input);
                     if !lookup::exists(self.context, &input) {
                         return Err(RenderError::new(format!(
                             "Type error for `link`, missing url {}",

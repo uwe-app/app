@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{INDEX_STEM};
-use config::{Config, RuntimeOptions, RenderTypes};
+use config::Config;
 
 use crate::BuildContext;
 
@@ -35,11 +34,7 @@ fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
 
 // Try to find a source file for the given URL
 pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
-
     let mut key = normalize(ctx, href);
-
-    //println!("Using the key {:?}", &key);
-
     if let Some(path) = ctx.collation.links.reverse.get(&key) {
         return Some(path.to_path_buf());
     } else {
@@ -50,12 +45,10 @@ pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
 
         if let Some(path) = ctx.collation.links.reverse.get(&key) {
             return Some(path.to_path_buf());
-        //} else {
-            //println!("NOT MATCH FOUND FOR {:?}", &key)
         }
     }
 
-    //println!("Searching for link {:?}", href);
+    // TODO: remove these they should be pre-computed too
     let base = &ctx.options.source;
     // Explicit allow list in site.toml
     if let Some(source) = lookup_allow(&ctx.config, base, href) {

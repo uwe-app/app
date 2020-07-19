@@ -140,9 +140,6 @@ pub struct ProfileSettings {
 
     pub host: Option<String>,
     pub port: Option<u16>,
-
-    #[serde(skip)]
-    pub follow_links: Option<bool>,
 }
 
 impl Default for ProfileSettings {
@@ -184,9 +181,6 @@ impl Default for ProfileSettings {
             base_href: None,
 
             use_layout: Some(true),
-
-            // Private
-            follow_links: Some(true),
         }
     }
 }
@@ -259,10 +253,6 @@ impl ProfileSettings {
 
     pub fn should_rewrite_index(&self) -> bool {
         self.rewrite_index.is_some() && self.rewrite_index.unwrap()
-    }
-
-    pub fn should_follow_links(&self) -> bool {
-        self.follow_links.is_some() && self.follow_links.unwrap()
     }
 }
 

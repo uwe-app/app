@@ -73,15 +73,22 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
     let rewrite_index = opts.settings.should_rewrite_index();
     if options.rewrite && rewrite_index {
         rel.set_extension("");
-        if options.include_index {
-            if let Some(stem) = rel.file_stem() {
+        if let Some(stem) = rel.file_stem() {
+            if options.include_index {
                 if stem == INDEX_STEM {
                     rel.set_extension(crate::HTML);
                 } else {
                     rel.push(crate::INDEX_HTML);
                 }
+            } else {
+                if stem == INDEX_STEM {
+                    if let Some(parent) = rel.parent() {
+                        rel = parent.to_path_buf();
+                    }
+                }
             }
         }
+
     }
 
     if options.transpose {

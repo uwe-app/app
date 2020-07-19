@@ -62,7 +62,7 @@ fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) ->
 }
 
 fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) {
-    println!("Link href {:?}", &href);
+    //println!("Link href {:?}", &href);
     info.links.reverse.entry(Arc::clone(&href)).or_insert(Arc::clone(&source));
     info.links.sources.entry(source).or_insert(href);
 }
@@ -89,6 +89,7 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
             }
             true
         })
+        .follow_links(true)
         .build_parallel()
         .run(|| {
             Box::new(|result| {
