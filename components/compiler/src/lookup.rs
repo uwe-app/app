@@ -1,24 +1,5 @@
 use std::path::PathBuf;
-
-use config::Config;
-
 use crate::BuildContext;
-
-fn lookup_allow(config: &Config, base: &PathBuf, href: &str) -> Option<PathBuf> {
-    if let Some(ref link) = config.link {
-        if let Some(ref allow) = link.allow {
-            for link in allow {
-                let url = link.trim_start_matches("/");
-                if url == href {
-                    let mut buf = base.clone();
-                    buf.push(url);
-                    return Some(buf);
-                }
-            }
-        }
-    }
-    None
-}
 
 fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
     let mut s = s.as_ref().to_string();
@@ -42,17 +23,9 @@ pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
         // so try again with an index page
         key.push('/');
         key.push_str(config::INDEX_HTML);
-
         if let Some(path) = ctx.collation.links.reverse.get(&key) {
             return Some(path.to_path_buf());
         }
-    }
-
-    // TODO: remove these they should be pre-computed too
-    let base = &ctx.options.source;
-    // Explicit allow list in site.toml
-    if let Some(source) = lookup_allow(&ctx.config, base, href) {
-        return Some(source);
     }
 
     None

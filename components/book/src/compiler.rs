@@ -36,13 +36,12 @@ impl BookCompiler {
         book
     }
 
-    fn copy_book(&self, config: &Config, source_dir: &Path, build_dir: PathBuf) -> Result<()> {
+    fn copy_book(&self, source_dir: &Path, build_dir: PathBuf) -> Result<()> {
         // Jump some hoops to bypass the book build_dir
         let relative = source_dir.strip_prefix(&self.source)?;
         let mut base = self.target.clone();
         base.push(relative);
 
-        let build = config.build.as_ref().unwrap();
         for result in WalkBuilder::new(&build_dir)
             .follow_links(true)
             .build()
@@ -127,7 +126,7 @@ impl BookCompiler {
                         let bd = &md.config.build.build_dir;
                         let mut src = dir.to_path_buf();
                         src.push(bd);
-                        return self.copy_book(config, dir, src);
+                        return self.copy_book(dir, src);
                     }
                     Err(e) => return Err(Error::from(e)),
                 }

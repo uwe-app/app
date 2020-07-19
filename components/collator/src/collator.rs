@@ -41,7 +41,28 @@ impl TryInto<CollateInfo> for CollateResult {
 }
 
 pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
-    find(req, res).await?;
+    find(&req, res).await?;
+    compute_links(&req, res)?;
+    Ok(())
+}
+
+fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
+    let data = Arc::clone(&res.inner);
+    let mut info = data.lock().unwrap();
+
+    // Compute explicitly allowed links, typically this would be used 
+    // for synthetic files outside the system such as those generated 
+    // by hooks.
+    if let Some(ref links) = req.config.link {
+         if let Some(ref allow) = links.allow {
+            for s in allow {
+                let s = s.trim_start_matches("/");
+                let src = req.options.source.join(s);
+                let href = href(&src, req, false, None)?;
+                link(&mut info, Arc::new(src), Arc::new(href));
+            }
+        }
+    }
     Ok(())
 }
 
@@ -76,7 +97,7 @@ fn href(file: &PathBuf, req: &CollateRequest, rewrite: bool, strip: Option<PathB
     link::absolute(file, req.options, href_opts).map_err(Error::from)
 }
 
-async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
+async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
     let walk_filters = if req.filter {
         config::filter::get_filters(req.options, req.config)
     } else { Vec::new() };
