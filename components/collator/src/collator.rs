@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use ignore::{WalkBuilder, WalkState};
 
 use config::{Config, RuntimeOptions, FileInfo, FileOptions};
+use config::link::{self, LinkOptions};
 
 use super::{Error, Result, CollateInfo};
 
@@ -58,6 +59,21 @@ fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) ->
         ..Default::default()
     };
     Ok(info.destination(&file_opts)?)
+}
+
+fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) {
+    println!("Link href {:?}", &href);
+    info.links.reverse.entry(Arc::clone(&href)).or_insert(Arc::clone(&source));
+    info.links.sources.entry(source).or_insert(href);
+}
+
+fn href(file: &PathBuf, req: &CollateRequest, rewrite: bool, strip: Option<PathBuf>) -> Result<String> {
+    let mut href_opts: LinkOptions = Default::default();
+    href_opts.strip = strip;
+    href_opts.rewrite = rewrite;
+    href_opts.trailing = false;
+    href_opts.include_index = true;
+    link::absolute(file, req.options, href_opts).map_err(Error::from)
 }
 
 async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
@@ -136,6 +152,17 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                             info.layouts.insert(Arc::clone(&key), layout.clone());
                                         }
 
+                                        let href_res = href(&pth, &req, rewrite_index, None);
+                                        match href_res {
+                                            Ok(href) => {
+                                                link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
+                                            }
+                                            Err(e) => {
+                                                info.errors.push(e);
+                                                return WalkState::Continue;
+                                            }
+                                        }
+
                                         info.pages.entry(Arc::clone(&key)).or_insert(page_info);
                                     }
                                     Err(e) => {
@@ -177,6 +204,17 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             } else if key.starts_with(req.options.get_includes_path()) {
                                 info.includes.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_resources_path()) {
+                                let href_res = href(&pth, &req, false, Some(req.options.get_resources_path()));
+                                match href_res {
+                                    Ok(href) => {
+                                        link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
+                                    }
+                                    Err(e) => {
+                                        info.errors.push(Error::from(e));
+                                        return WalkState::Continue;
+                                    }
+                                }
+
                                 info.resources.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_locales()) {
                                 info.locales.push(Arc::clone(&key));
@@ -185,6 +223,17 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             } else if key.starts_with(req.options.get_short_codes_path()) {
                                 info.short_codes.push(Arc::clone(&key));
                             } else if !is_page {
+                                let href_res = href(&pth, &req, false, None);
+                                match href_res {
+                                    Ok(href) => {
+                                        link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
+                                    }
+                                    Err(e) => {
+                                        info.errors.push(Error::from(e));
+                                        return WalkState::Continue;
+                                    }
+                                }
+
                                 let res = get_destination(&pth, req.config, req.options);
                                 match res {
                                     Ok(dest) => {

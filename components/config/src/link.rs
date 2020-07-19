@@ -1,10 +1,8 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::{RuntimeOptions, Error, Result};
 
 use super::config::INDEX_STEM;
-
-static INDEX_HTML: &str = "index.html";
 
 pub struct LinkOptions {
     // Convert paths to forward slashes
@@ -19,6 +17,8 @@ pub struct LinkOptions {
     pub rewrite: bool,
     // Include index.html when rewrite is active
     pub include_index: bool,
+    // Strip this prefix
+    pub strip: Option<PathBuf>,
 }
 
 impl Default for LinkOptions {
@@ -30,6 +30,7 @@ impl Default for LinkOptions {
             transpose: true,
             rewrite: true,
             include_index: false,
+            strip: None,
         } 
     }
 }
@@ -51,7 +52,12 @@ fn is_home_index<P: AsRef<Path>>(p: P) -> bool {
 // can be passed to the link helper to get a 
 // relative path.
 pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOptions) -> Result<String> {
-    let src = &opts.source;
+    let src = if let Some(ref source) = options.strip {
+        source 
+    } else {
+        &opts.source
+    };
+        
     let page = file.as_ref();
     if !page.starts_with(src) {
         return Err(
@@ -68,7 +74,13 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
     if options.rewrite && rewrite_index {
         rel.set_extension("");
         if options.include_index {
-            rel.push(INDEX_HTML.to_string());
+            if let Some(stem) = rel.file_stem() {
+                if stem == INDEX_STEM {
+                    rel.set_extension(crate::HTML);
+                } else {
+                    rel.push(crate::INDEX_HTML);
+                }
+            }
         }
     }
 

@@ -21,7 +21,7 @@ pub struct CollateInfo {
 
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
-    // Unrecognized files that should be copied
+    // Assets and other files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
     // Custom page specific layouts
@@ -38,5 +38,11 @@ pub struct CollateInfo {
 
     // TODO: books too!
 
+    pub links: LinkMap,
 }
 
+#[derive(Debug, Default)]
+pub struct LinkMap {
+    pub sources: HashMap<Arc<PathBuf>, Arc<String>>,
+    pub reverse: HashMap<Arc<String>, Arc<PathBuf>>
+}

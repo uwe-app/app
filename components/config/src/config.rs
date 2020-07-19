@@ -33,6 +33,7 @@ pub static SHARED_KEY: &str = "shared";
 pub static REDIRECT_KEY: &str = "redirect";
 pub static HTML: &str = "html";
 pub static INDEX_STEM: &str = "index";
+pub static INDEX_HTML: &str = "index.html";
 pub static LAYOUT_HBS: &str = "layout.hbs";
 pub static MD: &str = "md";
 pub static TOML: &str = "toml";

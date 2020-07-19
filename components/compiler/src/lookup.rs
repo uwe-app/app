@@ -3,57 +3,7 @@ use std::path::PathBuf;
 use crate::{INDEX_STEM};
 use config::{Config, RuntimeOptions, RenderTypes};
 
-// Try to find a source file for the given URL
-pub fn lookup_in(
-    _config: &Config,
-    options: &RuntimeOptions,
-    base: &PathBuf,
-    href: &str,
-    types: &RenderTypes,
-) -> Option<PathBuf> {
-
-    let rewrite_index = options.settings.should_rewrite_index();
-
-    let mut url = href.to_string().clone();
-    url = utils::url::trim_slash(&url).to_owned();
-
-    let is_dir = utils::url::is_dir(&url);
-
-
-    let mut buf = base.clone();
-    buf.push(&utils::url::to_path_separator(&url));
-
-    // Check if the file exists directly
-    if buf.is_file() {
-        return Some(buf);
-    }
-
-    // Check index pages
-    if is_dir {
-        let mut idx = base.clone();
-        idx.push(&utils::url::to_path_separator(&url));
-        idx.push(INDEX_STEM);
-        for ext in types.render() {
-            idx.set_extension(ext);
-            if idx.is_file() {
-                return Some(idx);
-            }
-        }
-    }
-
-    // Check for lower-level files that could map
-    // to index pages
-    if rewrite_index && is_dir {
-        for ext in types.render() {
-            buf.set_extension(ext);
-            if buf.is_file() {
-                return Some(buf);
-            }
-        }
-    }
-
-    None
-}
+use crate::BuildContext;
 
 fn lookup_allow(config: &Config, base: &PathBuf, href: &str) -> Option<PathBuf> {
     if let Some(ref link) = config.link {
@@ -71,32 +21,51 @@ fn lookup_allow(config: &Config, base: &PathBuf, href: &str) -> Option<PathBuf> 
     None
 }
 
+fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
+    let mut s = s.as_ref().to_string();
+    if !s.starts_with("/") {
+        s = format!("/{}", s); 
+    }
+    // We got a hint with the trailing slash that we should look for an index page
+    if s != "/" && s.ends_with("/") {
+        s.push_str(config::INDEX_HTML); 
+    }
+    s
+}
+
 // Try to find a source file for the given URL
-pub fn lookup(config: &Config, options: &RuntimeOptions, href: &str) -> Option<PathBuf> {
+pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
 
-    let base = &options.source;
-    let types = options.settings.types.as_ref().unwrap();
+    let mut key = normalize(ctx, href);
 
-    // Try to find a direct corresponding source file
-    if let Some(source) = lookup_in(config, options, base, href, types) {
-        return Some(source);
+    //println!("Using the key {:?}", &key);
+
+    if let Some(path) = ctx.collation.links.reverse.get(&key) {
+        return Some(path.to_path_buf());
+    } else {
+        // Sometimes we have directory references without a trailing slash
+        // so try again with an index page
+        key.push('/');
+        key.push_str(config::INDEX_HTML);
+
+        if let Some(path) = ctx.collation.links.reverse.get(&key) {
+            return Some(path.to_path_buf());
+        //} else {
+            //println!("NOT MATCH FOUND FOR {:?}", &key)
+        }
     }
 
-    // Try to find a resource
-    let resource = options.get_resources_path();
-    if let Some(resource) = lookup_in(config, options, &resource, href, types) {
-        return Some(resource);
-    }
-
+    //println!("Searching for link {:?}", href);
+    let base = &ctx.options.source;
     // Explicit allow list in site.toml
-    if let Some(source) = lookup_allow(config, base, href) {
+    if let Some(source) = lookup_allow(&ctx.config, base, href) {
         return Some(source);
     }
 
     None
 }
 
-pub fn exists( config: &Config, options: &RuntimeOptions, href: &str) -> bool {
-    lookup(config, options, href).is_some()
+pub fn exists(ctx: &BuildContext, href: &str) -> bool {
+    lookup(ctx, href).is_some()
 }
 

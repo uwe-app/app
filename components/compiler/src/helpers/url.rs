@@ -80,7 +80,7 @@ impl HelperDef for Link<'_> {
 
             if let Some(verify) = link_config.verify {
                 if verify {
-                    if !lookup::exists(&self.context.config, &self.context.options, &input) {
+                    if !lookup::exists(self.context, &input) {
                         return Err(RenderError::new(format!(
                             "Type error for `link`, missing url {}",
                             input
@@ -190,7 +190,7 @@ impl HelperDef for Components<'_> {
                             url.push_str(INDEX_HTML);
                         }
 
-                        if let Some(src) = lookup::lookup(&self.context.config, &self.context.options, &href) {
+                        if let Some(src) = lookup::lookup(self.context, &href) {
                             let mut data = loader::compute(src, &self.context.config, &self.context.options, true)
                                 .map_err(map_render_error)?;
 
