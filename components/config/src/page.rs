@@ -160,9 +160,7 @@ impl Default for Page {
 
 impl Page {
 
-    pub fn seal(&mut self, config: &Config, options: &RuntimeOptions, info: &FileInfo) -> Result<(), Error> {
-        let output = info.output.as_ref().unwrap();
-
+    pub fn seal(&mut self, output: &PathBuf, config: &Config, options: &RuntimeOptions, info: &FileInfo) -> Result<(), Error> {
         self.lang = Some(options.lang.clone());
         self.host = Some(config.host.clone());
 

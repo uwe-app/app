@@ -84,16 +84,11 @@ fn data_source_each(
                     ..Default::default()
                 };
 
-                file_info.destination(&file_opts)?;
-                let dest = file_info.output.clone().unwrap();
+                let dest = file_info.destination(&file_opts)?;
+                //let dest = file_info.output.clone().unwrap();
 
                 // Must inherit the real input template file
                 file_info.file = file;
-
-                item_data.seal(
-                    &ctx.config,
-                    &ctx.options,
-                    &file_info)?;
 
                 info!("{} -> {}", &id, &dest.display());
 
@@ -102,6 +97,12 @@ fn data_source_each(
                     &ctx.options.settings.name,
                     ctx.options.settings.is_release(),
                     &ctx.config);
+
+                item_data.seal(
+                    &dest,
+                    &ctx.config,
+                    &ctx.options,
+                    &file_info)?;
 
                 let s = if minify_html {
                     minify::html(parser.parse(&file, &mut item_data)?)
@@ -168,11 +169,7 @@ pub async fn copy(ctx: &BuildContext, file: &PathBuf) -> Result<()> {
         ..Default::default()
     };
 
-    info.destination(&file_opts)?;
-
-    let dest = info.output.as_ref().unwrap();
-
-    //let file = info.file;
+    let dest = info.destination(&file_opts)?;
 
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, &dest)?;

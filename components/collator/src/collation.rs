@@ -21,9 +21,9 @@ pub struct CollateInfo {
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
     // Assets to copy
-    pub assets: Vec<Arc<PathBuf>>,
+    pub assets: HashMap<Arc<PathBuf>, PathBuf>,
     // Unrecognized files that should be copied
-    pub other: Vec<Arc<PathBuf>>,
+    pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,

@@ -49,8 +49,6 @@ pub struct FileInfo<'a> {
     pub file_type: FileType,
     // Whether this file is synthetic (dynamically generated)
     pub synthetic: bool,
-    // An output destination
-    pub output: Option<PathBuf>,
 }
 
 impl<'a> FileInfo<'a> {
@@ -68,7 +66,6 @@ impl<'a> FileInfo<'a> {
             file,
             file_type,
             synthetic,
-            output: None
         }
     }
 
@@ -196,7 +193,7 @@ impl<'a> FileInfo<'a> {
     }
 
     // Build the destination file path and update the file extension.
-    pub fn destination(&mut self, options: &FileOptions) -> Result<(), Error> {
+    pub fn destination(&mut self, options: &FileOptions) -> Result<PathBuf, Error> {
         let pth = self.file.clone();
         let mut result = self.output(options)?;
         if !options.exact {
@@ -224,8 +221,8 @@ impl<'a> FileInfo<'a> {
                 _ => {}
             }
         }
-        self.output = Some(result);
-        return Ok(());
+        //self.output = Some(result);
+        return Ok(result);
     }
 }
 

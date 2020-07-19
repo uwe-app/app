@@ -78,8 +78,8 @@ impl<'a> Compiler<'a> {
         // TODO: support allowing this in the settings
         let fail_fast = false;
 
-        let all = self.context.collation.other.iter()
-            .chain(self.context.collation.assets.iter())
+        let all = self.context.collation.other.keys()
+            .chain(self.context.collation.assets.keys())
             .chain(self.context.collation.pages.keys())
             .filter(|p| p.starts_with(target));
 

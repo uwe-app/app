@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::convert::TryInto;
 use std::sync::{Arc, Mutex};
 
@@ -41,6 +42,22 @@ impl TryInto<CollateInfo> for CollateResult {
 pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
     find(req, res).await?;
     Ok(())
+}
+
+fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) -> Result<PathBuf> {
+    let mut info = FileInfo::new(
+        &config,
+        &options,
+        file,
+        false,
+    );
+
+    let file_opts = FileOptions {
+        exact: true,
+        base_href: &options.settings.base_href,
+        ..Default::default()
+    };
+    Ok(info.destination(&file_opts)?)
 }
 
 async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
@@ -106,22 +123,27 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                     ..Default::default()
                                 };
 
-                                if let Err(e) = file_info.destination(&file_opts) {
-                                    info.errors.push(Error::from(e));
-                                    return WalkState::Continue;
+                                let res = file_info.destination(&file_opts);
+                                match res {
+                                    Ok(dest) => {
+                                        if let Err(e) = page_info.seal(&dest, req.config, req.options, &file_info) {
+                                            info.errors.push(Error::from(e));
+                                            return WalkState::Continue;
+                                        }
+
+                                        if let Some(ref layout) = page_info.layout {
+                                            // Register the layout
+                                            info.layouts.insert(Arc::clone(&key), layout.clone());
+                                        }
+
+                                        info.pages.entry(Arc::clone(&key)).or_insert(page_info);
+                                    }
+                                    Err(e) => {
+                                        info.errors.push(Error::from(e));
+                                        return WalkState::Continue;
+                                    }
                                 }
 
-                                if let Err(e) = page_info.seal(req.config, req.options, &file_info) {
-                                    info.errors.push(Error::from(e));
-                                    return WalkState::Continue;
-                                }
-
-                                if let Some(ref layout) = page_info.layout {
-                                    // Register the layout
-                                    info.layouts.insert(Arc::clone(&key), layout.clone());
-                                }
-
-                                info.pages.entry(Arc::clone(&key)).or_insert(page_info);
                             }
                             Err(e) => {
                                 info.errors.push(Error::from(e));
@@ -144,7 +166,19 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             }
 
                             if key.starts_with(req.options.get_assets_path()) {
-                                info.assets.push(Arc::clone(&key));
+                                //info.assets.push(Arc::clone(&key));
+
+                                let res = get_destination(&pth, req.config, req.options);
+                                match res {
+                                    Ok(dest) => {
+                                        info.assets.entry(Arc::clone(&key)).or_insert(dest);
+                                    }
+                                    Err(e) => {
+                                        info.errors.push(e);
+                                        return WalkState::Continue;
+                                    }
+                                }
+
                             } else if key.starts_with(req.options.get_partials_path()) {
                                 info.partials.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_includes_path()) {
@@ -158,7 +192,16 @@ async fn find(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             } else if key.starts_with(req.options.get_short_codes_path()) {
                                 info.short_codes.push(Arc::clone(&key));
                             } else if !is_page {
-                                info.other.push(Arc::clone(&key));
+                                let res = get_destination(&pth, req.config, req.options);
+                                match res {
+                                    Ok(dest) => {
+                                        info.other.entry(Arc::clone(&key)).or_insert(dest);
+                                    }
+                                    Err(e) => {
+                                        info.errors.push(e);
+                                        return WalkState::Continue;
+                                    }
+                                }
                             }
                         }
 

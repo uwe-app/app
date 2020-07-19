@@ -118,6 +118,7 @@ async fn load(
     let mut collation: CollateInfo = res.try_into()?;
 
     if !collation.errors.is_empty() {
+        // TODO: print all errors?
         let e = collation.errors.swap_remove(0);
         return Err(Error::Collator(e));
     }

@@ -119,9 +119,7 @@ fn children<P: AsRef<Path>>(
                         ..Default::default()
                     };
 
-                    info.destination(&file_opts)?;
-
-                    let mut dest = info.output.unwrap();
+                    let mut dest = info.destination(&file_opts)?;
 
                     if let Ok(cleaned) = dest.strip_prefix(target) {
                         dest = cleaned.to_path_buf();
@@ -160,8 +158,7 @@ fn children<P: AsRef<Path>>(
                         ..Default::default()
                     };
 
-                    info.destination(&file_opts)?;
-                    let mut dest = info.output.unwrap();
+                    let mut dest = info.destination(&file_opts)?;
 
                     if let Ok(cleaned) = dest.strip_prefix(target) {
                         dest = cleaned.to_path_buf();
