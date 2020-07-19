@@ -147,10 +147,18 @@ impl Default for QueryList {
 }
 
 impl QueryList {
-    pub fn to_vec(self) -> Vec<IndexQuery> {
+    pub fn to_vec(&self) -> Vec<IndexQuery> {
         match self {
             QueryList::One(query) => vec![query.clone()],
             QueryList::Many(items) => items.to_vec(),
         } 
+    }
+
+    pub fn to_each_vec(&self) -> Vec<IndexQuery> {
+        self.to_vec()
+            .iter()
+            .filter(|q| q.each.is_some() && q.each.unwrap())
+            .map(IndexQuery::clone)
+            .collect::<Vec<_>>()
     }
 }

@@ -238,7 +238,19 @@ impl DataSourceMap {
     }
 
     pub fn expand(info: &mut CollateInfo, map: &BTreeMap<String, DataSource>) -> Result<()> {
-        println!("Expanding pages for collation in data source {:#?}", info.queries);
+        let mut each_queries: Vec<(PathBuf, Vec<IndexQuery>)> = Vec::new();
+        for (q, p) in info.queries.iter() {
+            let each = q.to_each_vec();
+            if !each.is_empty() {
+                println!("Found an each query {:?}", each);
+                each_queries.push((p.to_path_buf(), each));
+            }
+        }
+
+        for (p, queries) in each_queries {
+            println!("Process each query for file {:?}", p.display());
+        }
+
         Ok(())
     }
 
