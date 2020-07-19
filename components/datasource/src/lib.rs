@@ -314,9 +314,6 @@ impl DataSourceMap {
 
                             let dest = file_info.destination(&file_opts)?;
 
-                            //info!("{} -> {}", &id, dest.display());
-                            //info!("{} -> {}", mock.display(), &dest.display());
-
                             item_data.seal(
                                 &dest,
                                 config,
@@ -327,9 +324,6 @@ impl DataSourceMap {
                             // synthetic path used to generate a destination
                             let file_ctx = item_data.file.as_mut().unwrap();
                             file_ctx.source = p.to_path_buf();
-
-                            println!("Adding for mock path {:?}", mock.display());
-                            println!("Using template path {:?}", file_ctx.source.display());
 
                             info.pages.entry(Arc::new(mock)).or_insert(item_data);
                         }

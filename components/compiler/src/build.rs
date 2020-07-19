@@ -61,14 +61,14 @@ impl<'a> Compiler<'a> {
 
         if let Some(page) = self.get_page(file) {
             let mut data = page.clone();
+            let file_ctx = page.file.as_ref().unwrap();
 
             let render = data.render.is_some() && data.render.unwrap();
             if !render {
-                let file_ctx = data.file.unwrap();
                 return run::copy(file, &file_ctx.target).await
             }
 
-            run::parse(self.context, &self.parser, file, &mut data).await?;
+            run::parse(self.context, &self.parser, &file_ctx.source, &mut data).await?;
         } else {
             let target = self.context.collation.other.get(file).unwrap();
             run::copy(file, target).await?;

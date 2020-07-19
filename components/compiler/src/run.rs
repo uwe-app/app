@@ -2,11 +2,11 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
-use serde_json::{json, Value};
+use serde_json::{json};
 
-use config::{Config, Page, FileInfo, FileOptions, ProfileName, IndexQuery};
+use config::{Config, Page, ProfileName};
 
-use crate::{Error, Result, HTML};
+use crate::{Result, HTML};
 use crate::context::BuildContext;
 use crate::parser::Parser;
 use crate::draft;
@@ -30,125 +30,19 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
     release && html_extension
 }
 
-fn data_source_each(
-    ctx: &BuildContext,
-    parser: &Parser,
-    file: &PathBuf,
-    data: &Page,
-    _reference: IndexQuery,
-    values: Vec<Value>,
-) -> Result<()> {
-
-    let parent = file.parent().unwrap();
-
-    let mut rewrite_index = ctx.options.settings.should_rewrite_index();
-    // Override with rewrite-index page level setting
-    if let Some(val) = data.rewrite_index {
-        rewrite_index = val;
-    }
-
-    // Write out the document files
-    for doc in &values {
-        let mut item_data = data.clone();
-
-        if let Some(id) = doc.get("id") {
-
-            if let Some(id) = id.as_str() {
-                if doc.is_object() {
-                    let map = doc.as_object().unwrap();
-                    for (k, v) in map {
-                        item_data.extra.insert(k.clone(), json!(v));
-                    }
-                } else {
-                    return Err(Error::DataSourceDocumentNotAnObject);
-                }
-
-                // Mock a source file to build a destination
-                // respecting the clean URL setting
-                let mut mock = parent.to_path_buf();
-                mock.push(&id);
-                if let Some(ext) = file.extension() {
-                    mock.set_extension(ext);
-                }
-
-                let mut file_info = FileInfo::new(
-                    &ctx.config,
-                    &ctx.options,
-                    &mock,
-                    true,
-                );
-
-                let file_opts = FileOptions {
-                    rewrite_index,
-                    base_href: &ctx.options.settings.base_href,
-                    ..Default::default()
-                };
-
-                let dest = file_info.destination(&file_opts)?;
-                //let dest = file_info.output.clone().unwrap();
-
-                // Must inherit the real input template file
-                file_info.file = file;
-
-                info!("{} -> {}", &id, &dest.display());
-
-                let minify_html = should_minify_html(
-                    &dest,
-                    &ctx.options.settings.name,
-                    ctx.options.settings.is_release(),
-                    &ctx.config);
-
-                item_data.seal(
-                    &dest,
-                    &ctx.config,
-                    &ctx.options,
-                    &file_info)?;
-
-                let s = if minify_html {
-                    minify::html(parser.parse(&file, &mut item_data)?)
-                } else {
-                    parser.parse(&file, &mut item_data)?
-                };
-
-                utils::fs::write_string(&dest, &s)?;
-            }
-        } else {
-            return Err(Error::DataSourceDocumentNoId);
-        }
-    }
-
-    Ok(())
-}
-
 fn parse_query(ctx: &BuildContext, parser: &Parser, file: &PathBuf, data: &mut Page) -> Result<bool> {
     if let Some(ref q) = data.query {
         let queries = q.clone().to_vec();
         let datasource = &ctx.datasource;
-
         if !datasource.map.is_empty() {
-            let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
+            //let mut each_iters: Vec<(IndexQuery, Vec<Value>)> = Vec::new();
             for query in queries {
                 let each = query.each.is_some() && query.each.unwrap();
                 let idx = datasource.query_index(&query)?;
-
-                // Push on to the list of generators to iterate
-                // over so that we can support the same template
-                // for multiple generator indices although not sure
-                // how useful/desirable it is to declare multiple each iterators
-                // as identifiers may well collide.
-                if each {
-                    each_iters.push((query, idx));
-                } else {
+                if !each {
                     data.extra.insert(query.get_parameter(), json!(idx));
                 }
             }
-
-            //if !each_iters.is_empty() {
-                //for (gen, idx) in each_iters {
-                    //data_source_each(ctx, parser, file, &data, gen, idx)?;
-                //}
-                //return Ok(true);
-            //}
         }
     }
     Ok(false)
