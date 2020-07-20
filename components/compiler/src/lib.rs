@@ -7,12 +7,6 @@ pub enum Error {
     #[error("Path {0} is outside the site source")]
     OutsideSourceTree(PathBuf),
 
-    #[error("Data source document should be an object")]
-    DataSourceDocumentNotAnObject,
-
-    #[error("Data source document must have an id")]
-    DataSourceDocumentNoId,
-
     #[error("Parser got invalid file type")]
     ParserFileType,
 
