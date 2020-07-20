@@ -59,9 +59,6 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
-    Ignore(#[from] ignore::Error),
-
-    #[error(transparent)]
     TemplateFile(#[from] handlebars::TemplateFileError),
     #[error(transparent)]
     Template(#[from] handlebars::TemplateError),
@@ -86,8 +83,6 @@ type Result<T> = std::result::Result<T, Error>;
 
 static TEMPLATE_EXT: &str = ".hbs";
 static INDEX_HTML: &str = "index.html";
-static INDEX_STEM: &str = "index";
-static MD: &str = "md";
 static HTML: &str = "html";
 
 pub mod build;

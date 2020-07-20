@@ -21,7 +21,6 @@ log = "0.4.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_with = "1.4"
 serde_json = "1"
-ignore = "0.4"
 toml = "0.5"
 handlebars = {version = "3.0", default-features = true, features = [ "dir_source" ] }
 slug = "0.1.4"

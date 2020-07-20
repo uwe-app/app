@@ -30,22 +30,21 @@ impl HelperDef for Children<'_> {
 
         // See if we should render a specific directory
         // relative to the <input> source folder
-        let mut dir = "".to_string();
-        if let Some(d) = h.params().get(0) {
-            let v = d.value();
-            if let Some(val) = v.as_str() {
-                dir = val.to_owned();
-            }
-        }
+        //let mut dir = "".to_string();
+        //if let Some(d) = h.params().get(0) {
+            //let v = d.value();
+            //if let Some(val) = v.as_str() {
+                //dir = val.to_owned();
+            //}
+        //}
 
         let list_opts = ListOptions {
-            sort: true,
-            sort_key: "title".to_string(),
-            dir: dir.to_owned(),
+            sort: Some("title".to_string()),
+            dir: path.parent().unwrap().to_path_buf(),
             depth: 1,
         };
 
-        let list_result = tree::listing(&path, &list_opts, &self.context.config, &self.context.options);
+        let list_result = tree::listing(self.context, &list_opts);
         match list_result {
             Ok(entries) => {
                 let template = h.template();
@@ -53,7 +52,7 @@ impl HelperDef for Children<'_> {
                     Some(t) => {
                         for li in entries {
                             let mut local_rc = rc.clone();
-                            let local_ctx = Context::wraps(&li)?;
+                            let local_ctx = Context::wraps(li)?;
                             t.render(r, &local_ctx, &mut local_rc, out)?;
                         }
                         return Ok(());
