@@ -58,7 +58,7 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
             for s in allow {
                 let s = s.trim_start_matches("/");
                 let src = req.options.source.join(s);
-                let href = href(&src, req, false, None)?;
+                let href = href(&src, req.options, false, None)?;
                 link(&mut info, Arc::new(src), Arc::new(href));
             }
         }
@@ -82,19 +82,19 @@ fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) ->
     Ok(info.destination(&file_opts)?)
 }
 
-fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) {
+pub fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) {
     //println!("Link href {:?}", &href);
     info.links.reverse.entry(Arc::clone(&href)).or_insert(Arc::clone(&source));
     info.links.sources.entry(source).or_insert(href);
 }
 
-fn href(file: &PathBuf, req: &CollateRequest, rewrite: bool, strip: Option<PathBuf>) -> Result<String> {
+pub fn href(file: &PathBuf, options: &RuntimeOptions, rewrite: bool, strip: Option<PathBuf>) -> Result<String> {
     let mut href_opts: LinkOptions = Default::default();
     href_opts.strip = strip;
     href_opts.rewrite = rewrite;
     href_opts.trailing = false;
     href_opts.include_index = true;
-    link::absolute(file, req.options, href_opts).map_err(Error::from)
+    link::absolute(file, options, href_opts).map_err(Error::from)
 }
 
 async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
@@ -179,7 +179,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                             info.layouts.insert(Arc::clone(&key), layout.clone());
                                         }
 
-                                        let href_res = href(&pth, &req, rewrite_index, None);
+                                        let href_res = href(&pth, req.options, rewrite_index, None);
                                         match href_res {
                                             Ok(href) => {
                                                 link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
@@ -231,7 +231,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             } else if key.starts_with(req.options.get_includes_path()) {
                                 info.includes.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_resources_path()) {
-                                let href_res = href(&pth, &req, false, Some(req.options.get_resources_path()));
+                                let href_res = href(&pth, req.options, false, Some(req.options.get_resources_path()));
                                 match href_res {
                                     Ok(href) => {
                                         link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
@@ -250,7 +250,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             } else if key.starts_with(req.options.get_short_codes_path()) {
                                 info.short_codes.push(Arc::clone(&key));
                             } else if !is_page {
-                                let href_res = href(&pth, &req, false, None);
+                                let href_res = href(&pth, req.options, false, None);
                                 match href_res {
                                     Ok(href) => {
                                         link(&mut info, Arc::clone(&key), Arc::new(href.clone()));

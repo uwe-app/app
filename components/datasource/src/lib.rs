@@ -59,6 +59,8 @@ pub enum Error {
     #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
+    Collator(#[from] collator::Error),
+    #[error(transparent)]
     Provider(#[from] provider::DeserializeError),
     #[error(transparent)]
     Loader(#[from] loader::Error),
@@ -277,7 +279,11 @@ impl DataSourceMap {
         info: &mut CollateInfo,
         map: &DataSourceMap) -> Result<()> {
 
-        for (q, p) in info.queries.iter() {
+        //let mut links: HashMap<Arc<PathBuf>, Arc<String>> = HashMap::new();
+
+        let queries = info.queries.clone();
+
+        for (q, p) in queries.iter() {
 
             let each = q.to_each_vec();
             if each.is_empty() { continue; }
@@ -342,9 +348,19 @@ impl DataSourceMap {
                             // synthetic path used to generate a destination
                             let file_ctx = item_data.file.as_mut().unwrap();
                             file_ctx.template = p.to_path_buf();
-                            //file_ctx.source = p.to_path_buf();
 
-                            info.pages.entry(Arc::new(mock)).or_insert(item_data);
+                            let mut rewrite_index = options.settings.should_rewrite_index();
+                            // Override with rewrite-index page level setting
+                            if let Some(val) = item_data.rewrite_index {
+                                rewrite_index = val;
+                            }
+
+                            // Configure a link for the synthetic page
+                            let href = collator::href(&mock, options, rewrite_index, None)?;
+                            let key = Arc::new(mock);
+                            collator::link(info, Arc::clone(&key), Arc::new(href));
+
+                            info.pages.entry(key).or_insert(item_data);
                         }
                     } else {
                         return Err(Error::DataSourceDocumentNoId);

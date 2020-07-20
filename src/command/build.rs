@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::path::Path;
 
-use log::{info, debug};
+use log::{info, debug, error};
 
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
@@ -158,7 +158,9 @@ async fn livereload<P: AsRef<Path>>(
                             match result {
                                 Ok(invalidation) => {
                                     if let Err(e) = invalidator.invalidate(&source, &invalidation).await {
-                                        return error_cb(Error::from(e));
+                                        // TODO: allow setting to configure whether to quit here!
+                                        error!("{}", e);
+                                        //return error_cb(Error::from(e));
                                     }
 
                                     //self.builder.manifest.save()?;
