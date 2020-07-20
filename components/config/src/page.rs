@@ -120,6 +120,8 @@ pub struct Page {
     pub lang: Option<String>,
     #[serde(skip_deserializing)]
     pub file: Option<FileContext>,
+    #[serde(skip_deserializing)]
+    pub url: Option<String>,
 
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
@@ -156,6 +158,7 @@ impl Default for Page {
             href: None,
             lang: None,
             file: None,
+            url: None,
         }
     }
 }
@@ -194,6 +197,7 @@ impl Page {
         }
 
         self.file = Some(file_context);
+        self.url = Some(options.settings.get_host_url(config));
 
         // Some useful shortcuts
         if let Some(ref date) = config.date {

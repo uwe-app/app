@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use std::path::PathBuf;
 
+use log::warn;
+
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
@@ -26,13 +28,15 @@ impl<'a> Parser<'a> {
         let strict = settings.strict.is_some() && settings.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
-        // Register short codes directories
+        // Register short code directories
         if context.options.settings.should_use_short_codes() {
-            let short_codes = context.options.get_short_codes_path();
+            let short_codes = config::get_short_codes_location()?;
             if short_codes.exists() && short_codes.is_dir() {
                 handlebars.register_templates_directory(TEMPLATE_EXT, &short_codes)?;
             } else {
-                // TODO: warn on missing short codes directory
+                warn!("Short codes are enabled but the short code cache does not exist.");
+                warn!("Use the `fetch` command to download the short codes repository.");
+                return Err(Error::NoShortCodeCache(short_codes))
             }
         }
 

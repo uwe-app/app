@@ -140,6 +140,7 @@ pub struct ProfileSettings {
 
     pub host: Option<String>,
     pub port: Option<u16>,
+    pub scheme: Option<String>,
 }
 
 impl Default for ProfileSettings {
@@ -168,6 +169,7 @@ impl Default for ProfileSettings {
             profile: None,
             host: Some(config::HOST.to_string()),
             port: Some(config::PORT),
+            scheme: Some(config::SCHEME.to_string()),
             live: None,
             release: None,
             include_index: None,
@@ -186,6 +188,11 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
+
+    pub fn get_host_url(&self, conf: &config::Config) -> String {
+        let scheme = self.scheme.as_ref().unwrap();
+        format!("{}{}{}", scheme, config::SCHEME_DELIMITER, conf.host)
+    }
 
     pub fn set_defaults(&mut self) {
         if let None = self.strict { self.strict = Some(true); } 
@@ -290,10 +297,6 @@ impl RuntimeOptions {
 
     pub fn get_partials_path(&self) -> PathBuf {
         self.source.join(self.settings.partials.as_ref().unwrap())
-    }
-
-    pub fn get_short_codes_path(&self) -> PathBuf {
-        self.source.join(config::SHORT_CODES.to_string())
     }
 
     pub fn get_data_sources_path(&self) -> PathBuf {

@@ -38,7 +38,6 @@ pub struct CollateInfo {
     pub resources: Vec<Arc<PathBuf>>,
     pub locales: Vec<Arc<PathBuf>>,
     pub data_sources: Vec<Arc<PathBuf>>,
-    pub short_codes: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
 

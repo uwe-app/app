@@ -52,6 +52,11 @@ pub mod resolve;
 mod page;
 mod profile;
 
+pub fn get_short_codes_location() -> Result<PathBuf> {
+    //self.source.join(config::SHORT_CODES.to_string())
+    Ok(dirs::get_root_dir()?.join("shortcodes/site/partials"))
+}
+
 pub use crate::config::*;
 pub use page::Page;
 pub use file::{FileType, FileInfo, FileOptions};

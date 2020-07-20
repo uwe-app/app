@@ -247,8 +247,6 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 info.locales.push(Arc::clone(&key));
                             } else if key.starts_with(req.options.get_data_sources_path()) {
                                 info.data_sources.push(Arc::clone(&key));
-                            } else if key.starts_with(req.options.get_short_codes_path()) {
-                                info.short_codes.push(Arc::clone(&key));
                             } else if !is_page {
                                 let href_res = href(&pth, req.options, false, None);
                                 match href_res {

@@ -19,6 +19,9 @@ pub enum Error {
     #[error("Invalidation action not handled")]
     InvalidationActionNotHandled,
 
+    #[error("Short code cache is not a directory {0}")]
+    NoShortCodeCache(PathBuf),
+
     #[error("Failed to get canonical path for project root {0}")]
     CanonicalProjectRoot(PathBuf),
 
