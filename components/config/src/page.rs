@@ -121,7 +121,7 @@ pub struct Page {
     #[serde(skip_deserializing)]
     pub file: Option<FileContext>,
     #[serde(skip_deserializing)]
-    pub url: Option<String>,
+    pub canonical: Option<String>,
 
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
@@ -158,7 +158,7 @@ impl Default for Page {
             href: None,
             lang: None,
             file: None,
-            url: None,
+            canonical: None,
         }
     }
 }
@@ -197,7 +197,7 @@ impl Page {
         }
 
         self.file = Some(file_context);
-        self.url = Some(options.settings.get_host_url(config));
+        self.canonical = Some(options.settings.get_host_url(config));
 
         // Some useful shortcuts
         if let Some(ref date) = config.date {
