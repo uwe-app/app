@@ -26,16 +26,20 @@ impl<'a> Parser<'a> {
         let strict = settings.strict.is_some() && settings.strict.unwrap();
         handlebars.set_strict_mode(strict);
 
-        // Configure partial directories
-        let templates = context.options.get_partials_path();
-        if templates.exists() && templates.is_dir() {
-            handlebars.register_templates_directory(TEMPLATE_EXT, &templates)?;
-        }
+        // Register short codes directories
         if context.options.settings.should_use_short_codes() {
             let short_codes = context.options.get_short_codes_path();
             if short_codes.exists() && short_codes.is_dir() {
                 handlebars.register_templates_directory(TEMPLATE_EXT, &short_codes)?;
+            } else {
+                // TODO: warn on missing short codes directory
             }
+        }
+
+        // Configure partial directories
+        let templates = context.options.get_partials_path();
+        if templates.exists() && templates.is_dir() {
+            handlebars.register_templates_directory(TEMPLATE_EXT, &templates)?;
         }
 
         // Configure helpers
