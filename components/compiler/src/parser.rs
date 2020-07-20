@@ -58,13 +58,13 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("parent",
             Box::new(helpers::parent::Parent { context }));
         handlebars.register_helper("link",
-            Box::new(helpers::url::Link { context }));
+            Box::new(helpers::link::Link { context }));
         handlebars.register_helper("md",
             Box::new(helpers::markdown::Markdown { context }));
         handlebars.register_helper("components",
-            Box::new(helpers::url::Components { context }));
+            Box::new(helpers::components::Components { context }));
         handlebars.register_helper("match",
-            Box::new(helpers::url::Match { context }));
+            Box::new(helpers::matcher::Match { context }));
 
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("include", Box::new(helpers::include::Include));

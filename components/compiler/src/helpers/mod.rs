@@ -6,16 +6,18 @@ use serde_json::{Value, to_value};
 use config::Page;
 
 pub mod children;
+pub mod components;
 pub mod date;
 pub mod include;
 pub mod json;
+pub mod link;
 pub mod livereload;
 pub mod markdown;
+pub mod matcher;
 pub mod parent;
 pub mod partial;
 pub mod random;
 pub mod slug;
-pub mod url;
 
 pub fn map_render_error(e: loader::Error) -> RenderError {
     RenderError::new(e.to_string())

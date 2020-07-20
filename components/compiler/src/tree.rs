@@ -10,6 +10,10 @@ pub struct ListOptions<'a> {
     pub depth: usize,
 }
 
+pub fn ancestors<'a>(ctx: &'a BuildContext) -> Result<Vec<&'a Page>> {
+    Ok(vec![])
+}
+
 pub fn listing<'a>(ctx: &'a BuildContext, list: &'a ListOptions) -> Result<Vec<&'a Page>> {
 
     let depth = list.dir.components().count() + list.depth;
