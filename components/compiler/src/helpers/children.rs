@@ -27,20 +27,13 @@ impl HelperDef for Children<'_> {
             .replace("\"", "");
 
         let path = Path::new(&base_path).to_path_buf();
+        let dir = path.parent().unwrap().to_path_buf();
 
-        // See if we should render a specific directory
-        // relative to the <input> source folder
-        //let mut dir = "".to_string();
-        //if let Some(d) = h.params().get(0) {
-            //let v = d.value();
-            //if let Some(val) = v.as_str() {
-                //dir = val.to_owned();
-            //}
-        //}
+        // TODO: See if we should render a specific directory
 
         let list_opts = ListOptions {
             sort: Some("title".to_string()),
-            dir: path.parent().unwrap().to_path_buf(),
+            dir: &dir,
             depth: 1,
         };
 
@@ -52,7 +45,15 @@ impl HelperDef for Children<'_> {
                     Some(t) => {
                         for li in entries {
                             let mut local_rc = rc.clone();
-                            let local_ctx = Context::wraps(li)?;
+                            let mut local_ctx = Context::wraps(li)?;
+                            if let Some(ref file_ctx) = li.file {
+                                if file_ctx.source == path {
+                                    local_ctx.data_mut()
+                                        .as_object_mut()
+                                        .unwrap()
+                                        .insert("self".to_string(), serde_json::Value::Bool(true));
+                                }
+                            }
                             t.render(r, &local_ctx, &mut local_rc, out)?;
                         }
                         return Ok(());

@@ -6,7 +6,6 @@ use serde_json::json;
 
 use config::FileInfo;
 
-use crate::INDEX_HTML;
 use crate::lookup;
 use crate::BuildContext;
 
@@ -66,7 +65,7 @@ impl HelperDef for Link<'_> {
                 out.write(&input)?;
                 if include_index && (input == "." || input == "..") {
                     out.write("/")?;
-                    out.write(INDEX_HTML)?;
+                    out.write(config::INDEX_HTML)?;
                 }
                 return Ok(());
             }
@@ -112,7 +111,7 @@ impl HelperDef for Link<'_> {
 
                 value.push_str(&input);
                 if include_index && (value.ends_with("/") || value == "") {
-                    value.push_str(INDEX_HTML);
+                    value.push_str(config::INDEX_HTML);
                 }
 
                 debug!("Link {:?}", value);
@@ -164,7 +163,7 @@ impl HelperDef for Components<'_> {
                 if let Ok(rel) = path.strip_prefix(&opts.target) {
 
                     let mut buf = rel.to_path_buf();
-                    if buf.ends_with(INDEX_HTML) {
+                    if buf.ends_with(config::INDEX_HTML) {
                         buf.pop();
                     }
 
@@ -188,7 +187,7 @@ impl HelperDef for Components<'_> {
                         }
                         let mut url = up.repeat(amount);
                         if include_index {
-                            url.push_str(INDEX_HTML);
+                            url.push_str(config::INDEX_HTML);
                         }
 
                         if let Some(src) = lookup::lookup(self.context, &href) {
@@ -275,8 +274,8 @@ impl HelperDef for Match<'_> {
             let mut pth = "".to_string();
             pth.push('/');
             pth.push_str(&rel.to_string_lossy().into_owned());
-            if pth.ends_with(INDEX_HTML) {
-                pth = pth.trim_end_matches(INDEX_HTML).to_string();
+            if pth.ends_with(config::INDEX_HTML) {
+                pth = pth.trim_end_matches(config::INDEX_HTML).to_string();
             }
             if pth.ends_with("/") {
                 pth = pth.trim_end_matches("/").to_string();
