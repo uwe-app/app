@@ -341,7 +341,8 @@ impl DataSourceMap {
                             // Assign the template so it is preferred over the mock
                             // synthetic path used to generate a destination
                             let file_ctx = item_data.file.as_mut().unwrap();
-                            file_ctx.source = p.to_path_buf();
+                            file_ctx.template = p.to_path_buf();
+                            //file_ctx.source = p.to_path_buf();
 
                             info.pages.entry(Arc::new(mock)).or_insert(item_data);
                         }

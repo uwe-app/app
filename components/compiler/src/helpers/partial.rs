@@ -31,10 +31,10 @@ impl HelperDef for Partial<'_> {
     ) -> HelperResult {
 
         let source_path = rc
-            .evaluate(ctx, "@root/file.source")?
+            .evaluate(ctx, "@root/file.template")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+            .ok_or_else(|| RenderError::new("Type error for `file.template`, string expected"))?
             .replace("\"", "");
 
         let types = self.context.options.settings.types.as_ref().unwrap();
@@ -48,7 +48,8 @@ impl HelperDef for Partial<'_> {
 
         let (content, _has_fm, _fm) =
             frontmatter::load(&file, get_front_matter_config(&file))
-                .map_err(|e| RenderError::new(format!("Partial front matter error {} ({})", &source_path, e)))?;
+                .map_err(|e| RenderError::new(
+                    format!("Partial front matter error {} ({})", &source_path, e)))?;
 
         let result = r.render_template(&content, ctx.data())
             .map_err(|e| RenderError::new(

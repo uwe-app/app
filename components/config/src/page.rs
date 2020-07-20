@@ -41,12 +41,13 @@ pub fn from_toml_datetime<'de, D>(deserializer: D)
 pub struct FileContext {
     pub source: PathBuf,
     pub target: PathBuf,
+    pub template: PathBuf,
     pub name: Option<String>,
     pub modified: DateTime<Utc>,
 }
 
 impl FileContext {
-    pub fn new(source: PathBuf, target: PathBuf) -> Self {
+    pub fn new(source: PathBuf, target: PathBuf, template: PathBuf) -> Self {
         let mut name = None;
         if let Some(stem) = &source.file_stem() {
             name = Some(stem.to_string_lossy().into_owned());
@@ -55,6 +56,7 @@ impl FileContext {
         Self {
             source,
             target,
+            template,
             name,
             modified: Utc::now(),
         }
@@ -160,6 +162,11 @@ impl Default for Page {
 
 impl Page {
 
+    pub fn get_template(&self) -> &PathBuf {
+        let file_ctx = self.file.as_ref().unwrap();
+        &file_ctx.template
+    }
+
     pub fn set_language<S: AsRef<str>>(&mut self, lang: S) {
         self.lang = Some(lang.as_ref().to_string());
     }
@@ -178,7 +185,7 @@ impl Page {
         self.set_language(&options.lang);
         self.host = Some(config.host.clone());
 
-        let mut file_context = FileContext::new(info.file.clone(), output.clone());
+        let mut file_context = FileContext::new(info.file.clone(), output.clone(), info.file.clone());
         file_context.resolve_metadata()?;
 
         // TODO: allow setting to control this behavior
