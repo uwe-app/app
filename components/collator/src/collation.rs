@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use config::Page;
 use config::indexer::QueryList;
 
-use super::Error;
+use super::{Error, Result};
 
 #[derive(Debug, Default)]
 pub struct CollateData {
@@ -43,6 +43,29 @@ pub struct CollateInfo {
     // TODO: books too!
 
     pub links: LinkMap,
+}
+
+impl CollateInfo {
+
+    // Rewrite destination paths.
+    //
+    // Used for multi-lingual output to locale specific folders.
+    pub fn rewrite(&mut self, lang: &str, from: &PathBuf, to: &PathBuf) -> Result<()> {
+
+        for (_path, page) in self.pages.iter_mut() {
+            page.set_language(lang);
+            page.rewrite_target(&from, &to)?;
+        }
+    
+        let mut tmp: HashMap<Arc<PathBuf>, PathBuf> = HashMap::new();
+        for (k, target) in self.other.drain() {
+            let new_target = to.join(target.strip_prefix(&from)?);
+            tmp.entry(k).or_insert(new_target);
+        }
+
+        self.other = tmp;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Default)]

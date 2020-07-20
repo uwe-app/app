@@ -3,7 +3,6 @@ use once_cell::sync::OnceCell;
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
-use locale::Locales;
 use datasource::DataSourceMap;
 
 #[derive(Debug, Default)]
@@ -11,7 +10,7 @@ pub struct BuildContext {
     pub config: Config,
     pub options: RuntimeOptions,
     pub datasource: DataSourceMap,
-    pub locales: Locales,
+    //pub locales: Locales,
     pub collation: CollateInfo,
 }
 
@@ -20,18 +19,11 @@ impl BuildContext {
         config: Config,
         options: RuntimeOptions,
         datasource: DataSourceMap,
-        locales: Locales,
+        //locales: Locales,
         collation: CollateInfo) -> Self {
-        Self { config, options, datasource, locales, collation }
+        Self { config, options, datasource, collation }
     }
 }
-
-//pub fn runtime() -> &'static Arc<RwLock<BuildContext>> {
-    //static INSTANCE: OnceCell<Arc<RwLock<BuildContext>>> = OnceCell::new();
-    //INSTANCE.get_or_init(|| {
-        //Arc::new(RwLock::new(Default::default()))
-    //})
-//}
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {
     static INSTANCE: OnceCell<Arc<RwLock<Option<String>>>> = OnceCell::new();

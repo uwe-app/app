@@ -55,7 +55,7 @@ async fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> 
                     // Compile a pristine release
                     let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
-                    let ctx = workspace::compile(&config, &mut args, false).await?;
+                    let (ctx, _locales) = workspace::compile(&config, &mut args).await?;
 
                     publish_aws(ctx, request, env).await?
                 } else {

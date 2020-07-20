@@ -5,6 +5,7 @@ use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
 use config::{Page};
+use locale::Locales;
 
 use crate::{Error, Result, TEMPLATE_EXT};
 
@@ -18,7 +19,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(context: &'a BuildContext) -> Result<Self> {
+    pub fn new(context: &'a BuildContext, locales: &'a Locales) -> Result<Self> {
         let mut handlebars = Handlebars::new();
 
         let settings = &context.options.settings;
@@ -61,7 +62,7 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
         handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
 
-        if let Some(loader) = &context.locales.loader.arc {
+        if let Some(loader) = &locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }
 

@@ -17,27 +17,20 @@ use crate::resource;
 pub struct Compiler<'a> {
     pub context: &'a BuildContext,
     pub book: BookCompiler,
-    parser: Parser<'a>,
 }
 
 impl<'a> Compiler<'a> {
-    pub fn new(context: &'a BuildContext) -> Result<Self> {
-
+    pub fn new(context: &'a BuildContext) -> Self {
         let book = BookCompiler::new(
             context.options.source.clone(),
             context.options.target.clone(),
             context.options.settings.is_release(),
         );
 
-        // Parser must exist for the entire lifetime so that
-        // template partials can be found
-        let parser = Parser::new(&context)?;
-
-        Ok(Self {
+        Self {
             context,
             book,
-            parser,
-        })
+        }
     }
 
     // Verify the paths are within the site source
@@ -56,10 +49,10 @@ impl<'a> Compiler<'a> {
     }
 
     // Build a single file
-    pub async fn one(&self, file: &PathBuf) -> Result<()> {
+    pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<()> {
         if let Some(page) = self.get_page(file) {
-            let mut data = page.clone();
-            data.lang = Some(self.context.options.lang.clone());
+            //let mut data = page.clone();
+            //data.lang = Some(self.context.options.lang.clone());
 
             let file_ctx = page.file.as_ref().unwrap();
             let render = page.render.is_some() && page.render.unwrap();
@@ -67,7 +60,7 @@ impl<'a> Compiler<'a> {
                 return run::copy(file, &file_ctx.target).await
             }
 
-            run::parse(self.context, &self.parser, &file_ctx.source, &data).await?;
+            run::parse(self.context, parser, &file_ctx.source, &page).await?;
         } else {
             let target = self.context.collation.other.get(file).unwrap();
             run::copy(file, target).await?;
@@ -75,7 +68,7 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    pub async fn build(&self, target: &PathBuf) -> Result<()> {
+    pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<()> {
         let parallel = self.context.options.settings.is_parallel();
 
         // TODO: support allowing this in the settings
@@ -97,7 +90,7 @@ impl<'a> Compiler<'a> {
                         // NOTE: consistent futures based API
                         let mut rt = tokio::runtime::Runtime::new().unwrap();
                         rt.block_on(async move {
-                            let res = self.one(p).await;
+                            let res = self.one(parser, p).await;
                             if fail_fast && res.is_err() {
                                 error!("{}", res.err().unwrap());
                                 panic!("Build failed");
@@ -123,7 +116,7 @@ impl<'a> Compiler<'a> {
             }
         } else {
             for p in all {
-                self.one(p).await?;
+                self.one(parser, p).await?;
             }
 
             Ok(())
@@ -131,7 +124,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub async fn all(&self, targets: Vec<PathBuf>) -> Result<()> {
+    pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<()> {
         let livereload = crate::context::livereload().read().unwrap();
 
         resource::link(&self.context)?;
@@ -148,9 +141,9 @@ impl<'a> Compiler<'a> {
 
         for p in targets {
             if p.is_file() {
-                self.one(&p).await?;
+                self.one(parser, &p).await?;
             } else {
-                self.build(&p).await?;
+                self.build(parser, &p).await?;
             }
         }
 

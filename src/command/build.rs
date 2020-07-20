@@ -13,8 +13,9 @@ use notify::Watcher;
 use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
 
-use compiler::BuildContext;
+use compiler::Compiler;
 use compiler::invalidator::Invalidator;
+use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
 
@@ -32,14 +33,20 @@ pub async fn compile<P: AsRef<Path>>(
 ) -> Result<(), Error> {
 
     let live = args.live.is_some() && args.live.unwrap();
-    let ctx = workspace::compile_project(project, args, live).await?;
     if live {
-        livereload(ctx, error_cb).await?;
+        livereload(project, args, error_cb).await?;
+    } else {
+        workspace::compile_project(project, args).await?;
     }
     Ok(())
 }
 
-async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Error> {
+async fn livereload<P: AsRef<Path>>(
+    project: P,
+    args: &mut ProfileSettings,
+    error_cb: ErrorCallback) -> Result<(), Error> {
+
+    let (ctx, locales) = workspace::compile_project(project, args).await?;
 
     let host = ctx.options.settings.get_host();
     let port = ctx.options.settings.get_port();
@@ -93,10 +100,13 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
                 *livereload = Some(ws_url);
             }
 
-            let built = workspace::build(&ctx).await;
+            let parser = Parser::new(&ctx, &locales).unwrap();
+            let compiler = Compiler::new(&ctx);
 
-            match built {
-                Ok(compiler) => {
+            //let built = workspace::build(&ctx).await;
+
+            //match built {
+                //Ok(compiler) => {
                     // Prepare for incremental builds
                     //if let Err(_) = compiler.manifest.load() {}
 
@@ -106,7 +116,8 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
                     // Invalidator wraps the builder receiving filesystem change
                     // notifications and sending messages over the `tx` channel
                     // to connected websockets when necessary
-                    let mut invalidator = Invalidator::new(compiler);
+                    //
+                    let mut invalidator = Invalidator::new(compiler, parser);
 
                     // Create a channel to receive the events.
                     let (tx, rx) = std::sync::mpsc::channel();
@@ -161,9 +172,9 @@ async fn livereload(ctx: BuildContext, error_cb: ErrorCallback) -> Result<(), Er
 
                         }
                     }
-                },
-                Err(e) => return error_cb(Error::from(e))
-            }
+                //},
+                //Err(e) => return error_cb(Error::from(e))
+            //}
         });
     });
 

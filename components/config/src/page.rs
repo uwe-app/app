@@ -160,8 +160,22 @@ impl Default for Page {
 
 impl Page {
 
+    pub fn set_language<S: AsRef<str>>(&mut self, lang: S) {
+        self.lang = Some(lang.as_ref().to_string());
+    }
+
+    // Used when multiple languages active to rewrite the output
+    // path to a new base destination including the locale id.
+    //
+    // This should only be called after seal() so we have a file context.
+    pub fn rewrite_target(&mut self, from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
+        let file_ctx = self.file.as_mut().unwrap();
+        file_ctx.target = to.join(file_ctx.target.strip_prefix(from)?);
+        Ok(())
+    }
+
     pub fn seal(&mut self, output: &PathBuf, config: &Config, options: &RuntimeOptions, info: &FileInfo) -> Result<(), Error> {
-        self.lang = Some(options.lang.clone());
+        self.set_language(&options.lang);
         self.host = Some(config.host.clone());
 
         let mut file_context = FileContext::new(info.file.clone(), output.clone());

@@ -6,6 +6,7 @@ use config::{FileInfo, FileType};
 
 use super::Compiler;
 use super::hook;
+use super::parser::Parser;
 
 use crate::Error;
 
@@ -95,11 +96,12 @@ pub struct BookRule {
 
 pub struct Invalidator<'a> {
     builder: Compiler<'a>,
+    parser: Parser<'a>,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(builder: Compiler<'a>) -> Self {
-        Self { builder }
+    pub fn new(builder: Compiler<'a>, parser: Parser<'a>) -> Self {
+        Self { builder, parser }
     }
 
     fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
@@ -365,10 +367,10 @@ impl<'a> Invalidator<'a> {
 
         match rule.strategy {
             Strategy::Full => {
-                return self.builder.build(target).await;
+                return self.builder.build(&self.parser, target).await;
             }
             Strategy::Page => {
-                return self.builder.build(target).await;
+                return self.builder.build(&self.parser, target).await;
             }
             _ => {
                 for action in &rule.actions {
@@ -382,7 +384,7 @@ impl<'a> Invalidator<'a> {
                                 &ctx.options.source,
                             )?;
 
-                            self.builder.one(&file).await?;
+                            self.builder.one(&self.parser, &file).await?;
 
                             //if let Err(e) = self.builder.one(&file).await {
                                 //return Err(e);

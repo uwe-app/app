@@ -6,6 +6,7 @@ use std::convert::TryInto;
 use log::info;
 
 use compiler::{Compiler, BuildContext};
+use compiler::parser::Parser;
 use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
 use locale::Locales;
@@ -13,54 +14,55 @@ use locale::Locales;
 use collator::{CollateRequest, CollateResult, CollateInfo};
 
 use crate::{Error, Result};
+use crate::finder;
 
-pub async fn compile_project<P: AsRef<Path>>(
+pub async fn compile_project<'a, P: AsRef<Path>>(
     project: P,
-    args: &mut ProfileSettings,
-    skip_last: bool) -> Result<BuildContext> {
+    args:&mut ProfileSettings) -> Result<(BuildContext, Locales)> {
 
     let mut spaces: Vec<Config> = Vec::new();
-    super::finder::find(project, true, &mut spaces)?;
+    finder::find(project, true, &mut spaces)?;
 
-    let length = spaces.len();
-
-    let mut ctx: BuildContext = Default::default();
-    for (i, config) in spaces.into_iter().enumerate() {
-        let mut dry_run = false;
-
-        if skip_last && i == (length - 1) {
-            dry_run = true;
-        }
-
-        ctx = compile(&config, args, dry_run).await?;
-
-        let write_redirects = args.write_redirects.is_some() && args.write_redirects.unwrap();
-        if write_redirects {
-            compiler::redirect::write(&ctx)?;
-        }
+    let mut ctx = Default::default();
+    for config in spaces.into_iter() {
+        ctx = compile(&config, args).await?;
     }
 
     Ok(ctx)
 }
 
-pub async fn compile(config: &Config, args: &mut ProfileSettings, dry_run: bool) -> Result<BuildContext> {
+pub async fn compile(config: &Config, args: &mut ProfileSettings) -> Result<(BuildContext, Locales)> {
     let opts = super::project::prepare(config, args)?;
-    compile_one(config, opts, dry_run).await
+
+    let write_redirects = opts.settings.write_redirects.is_some()
+        && opts.settings.write_redirects.unwrap();
+
+    let res = compile_one(config, opts).await;
+
+    if let Ok((ref ctx, _)) = res {
+        if write_redirects {
+            compiler::redirect::write(ctx)?;
+        }
+    }
+    
+    res
 }
 
-async fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Result<BuildContext> {
-    let mut ctx: BuildContext = Default::default();
+async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
+
     let base_target = opts.target.clone();
+    //let mut options = opts.clone();
 
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
 
+    let mut ctx = load(config.clone(), opts, None).await?;
+
+    let mut previous_base = base_target.clone();
+
     if locales.is_multi() {
         for lang in locales.map.keys() {
-            let mut lang_opts = opts.clone();
-
-            let mut locale_target = base_target.clone();
-            locale_target.push(&lang);
+            let locale_target = base_target.join(&lang);
 
             info!("lang {} -> {}", &lang, locale_target.display());
 
@@ -68,36 +70,32 @@ async fn compile_one(config: &Config, opts: RuntimeOptions, dry_run: bool) -> Re
                 fs::create_dir_all(&locale_target)?;
             }
 
-            lang_opts.target = locale_target;
+            // Rewrite the output paths and page languages
+            ctx.collation.rewrite(&lang, &previous_base, &locale_target)?;
 
-            // FIXME: prevent loading all the locales again!?
-            let mut copy: Locales = Default::default();
-            copy.load(&config, &lang_opts)?;
+            previous_base = locale_target;
 
-            ctx = load(copy, config.clone(), lang_opts, Some(lang.clone())).await?;
-
-            // NOTE: this old conditional will break multi-lingual builds
-            // NOTE: when live reload is enabled. We need to find a better
-            // NOTE: way to handle workspace builds with live reload and multi-lingual sites
-
-            //if !dry_run {
-                build(&mut ctx).await?;
-            //}
+            build(&mut ctx, &locales).await?;
         }
     } else {
-        ctx = load(locales, config.clone(), opts, None).await?;
-        if !dry_run {
-            build(&mut ctx).await?;
-        }
-    }
-    Ok(ctx)
+        build(&mut ctx, &locales).await?;
+    };
+
+    Ok((ctx, locales))
 }
 
 async fn load(
-    locales: Locales,
+    //locales: Locales,
     config: Config,
     mut options: RuntimeOptions,
     lang: Option<String>) -> Result<BuildContext> {
+
+    // Finalize the language for this pass
+    options.lang = if let Some(lang) = lang {
+        lang
+    } else {
+        config.lang.clone()
+    };
 
     let should_collate = options.settings.should_collate();
 
@@ -126,20 +124,15 @@ async fn load(
     DataSourceMap::assign(&config, &options, &mut collation, &datasource)?;
     DataSourceMap::expand(&config, &options, &mut collation, &datasource)?;
 
-    // Finalize the language for this pass
-    options.lang = if let Some(lang) = lang {
-        lang
-    } else {
-        config.lang.clone()
-    };
-
     // Set up the real context
-    Ok(BuildContext::new(config, options, datasource, locales, collation))
+    Ok(BuildContext::new(config, options, datasource, collation))
 }
 
-pub async fn build(ctx: &BuildContext) -> std::result::Result<Compiler<'_>, compiler::Error> {
+pub async fn build<'a>(ctx: &'a BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
 
-    let builder = Compiler::new(ctx)?;
+    let parser = Parser::new(ctx, locales)?;
+    let builder = Compiler::new(ctx);
+
     //builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
@@ -153,9 +146,9 @@ pub async fn build(ctx: &BuildContext) -> std::result::Result<Compiler<'_>, comp
         targets.push(ctx.options.source.clone());
     }
 
-    builder.all(targets).await?;
+    builder.all(&parser, targets).await?;
 
     //builder.manifest.save()?;
 
-    Ok(builder)
+    Ok((builder, parser))
 }

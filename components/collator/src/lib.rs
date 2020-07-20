@@ -13,6 +13,9 @@ pub enum Error {
     NoLayout(PathBuf, PathBuf),
 
     #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
     Poison(#[from] std::sync::PoisonError<CollateInfo>),
 
     #[error(transparent)]
