@@ -81,10 +81,6 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-static TEMPLATE_EXT: &str = ".hbs";
-static INDEX_HTML: &str = "index.html";
-static HTML: &str = "html";
-
 pub mod build;
 pub mod context;
 pub mod draft;

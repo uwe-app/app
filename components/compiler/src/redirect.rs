@@ -5,7 +5,7 @@ use std::fs;
 
 use warp::http::Uri;
 
-use crate::{BuildContext, Error, Result, INDEX_HTML};
+use crate::{BuildContext, Error, Result};
 
 static MAX_REDIRECTS: usize = 4;
 
@@ -38,7 +38,7 @@ pub fn write(ctx: &BuildContext) -> Result<()> {
             let mut buf = ctx.options.base.clone();
             buf.push(utils::url::to_path_separator(key));
             if k.ends_with("/") {
-                buf.push(INDEX_HTML);
+                buf.push(config::INDEX_HTML);
             }
             if buf.exists() {
                 return Err(Error::RedirectFileExists(buf));

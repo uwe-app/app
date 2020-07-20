@@ -4,7 +4,7 @@ use log::info;
 
 use config::{Config, Page, ProfileName};
 
-use crate::{Result, HTML};
+use crate::Result;
 use crate::context::BuildContext;
 use crate::parser::Parser;
 use crate::draft;
@@ -12,7 +12,7 @@ use crate::draft;
 fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool, config: &Config) -> bool {
     let mut html_extension = false;
     if let Some(ext) = dest.as_ref().extension() {
-        html_extension = ext == HTML;
+        html_extension = ext == config::HTML;
     }
 
     if html_extension {

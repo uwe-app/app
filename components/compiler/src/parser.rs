@@ -9,10 +9,12 @@ use handlebars::Handlebars;
 use config::{Page};
 use locale::Locales;
 
-use crate::{Error, Result, TEMPLATE_EXT};
+use crate::{Error, Result};
 
 use super::context::BuildContext;
 use super::helpers;
+
+static TEMPLATE_EXT: &str = ".hbs";
 
 // Render templates using handlebars.
 pub struct Parser<'a> {
