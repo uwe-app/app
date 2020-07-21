@@ -13,26 +13,16 @@ impl HelperDef for Slug {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let type_err = Err(RenderError::new(
-            "Type error for `slug`, expected string parameter",
-        ));
 
-        let mut input: String = "".to_string();
-        if let Some(p) = h.params().get(0) {
-            if !p.is_value_missing() {
-                input = p.value().as_str().unwrap_or("").to_string();
-            }
+        let value = h.params().get(0)
+            .ok_or_else(|| RenderError::new("Type error in `slug`, expected parameter"))?
+            .value()
+            .as_str()
+            .ok_or_else(|| RenderError::new("Type error in `slug`, expected string parameter"))?;
 
-            if input.is_empty() {
-                return type_err;
-            }
+        debug!("slug {:?}", value);
+        out.write(&slug::slugify(&value))?;
 
-            debug!("slug {:?}", input);
-
-            out.write(&slug::slugify(&input))?;
-        } else {
-            return type_err;
-        }
         Ok(())
     }
 }
