@@ -48,7 +48,6 @@ pub mod indexer;
 mod file;
 pub mod filter;
 pub mod link;
-pub mod resolve;
 mod page;
 mod profile;
 
