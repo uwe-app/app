@@ -1042,6 +1042,7 @@ dependencies = [
  "report 0.1.0",
  "semver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
  "server 0.1.0",
  "site 0.1.0",
  "structopt 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1238,6 +1239,7 @@ name = "livereload"
 version = "0.1.0"
 dependencies = [
  "config 0.1.0",
+ "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "utils 0.1.0",
 ]
 

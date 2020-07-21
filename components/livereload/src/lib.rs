@@ -2,12 +2,15 @@ use std::path::PathBuf;
 
 use config::Config;
 
+pub mod messages;
+
 static SCRIPT: &str = "
 socket.onmessage = (event) => {
 	const el = document.querySelector('#livereload-notification');
-	if (event.data === 'start') {
+    const e = JSON.parse(event.data);
+	if (e.type === 'start') {
 		if(el) el.style.display = 'block';
-	}else if (event.data === 'reload') {
+	}else if (e.type === 'reload') {
 		socket.close();
 		location.reload();
 	}

@@ -144,7 +144,10 @@ async fn livereload<P: AsRef<Path>>(
                 if !paths.is_empty() {
                     info!("Changed({}) in {}", paths.len(), source.display());
 
-                    let _ = ws_tx.send(Message::text("start"));
+                    let msg = livereload::messages::start();
+                    let txt = serde_json::to_string(&msg).unwrap();
+
+                    let _ = ws_tx.send(Message::text(txt));
 
                     let result = invalidator.get_invalidation(paths);
                     match result {
@@ -157,7 +160,9 @@ async fn livereload<P: AsRef<Path>>(
 
                             //self.builder.manifest.save()?;
                             if invalidation.notify {
-                                let _ = ws_tx.send(Message::text("reload"));
+                                let msg = livereload::messages::reload();
+                                let txt = serde_json::to_string(&msg).unwrap();
+                                let _ = ws_tx.send(Message::text(txt));
                                 //println!("Got result {:?}", res);
                             }
                         },
