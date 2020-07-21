@@ -12,6 +12,9 @@ pub enum Error {
     #[error("No layout file found in source {0} with value {1}")]
     NoLayout(PathBuf, PathBuf),
 
+    #[error("Collision detected on {0} ({1} <-> {2})")]
+    LinkCollision(String, PathBuf, PathBuf),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 

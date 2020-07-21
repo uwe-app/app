@@ -83,6 +83,14 @@ fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) ->
 }
 
 pub fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) -> Result<()> {
+
+    if let Some(existing) = info.links.reverse.get(&href) {
+        return Err(Error::LinkCollision(
+            href.to_string(),
+            existing.to_path_buf(),
+            source.to_path_buf()))
+    }
+
     //println!("Link href {:?}", &href);
     info.links.reverse.entry(Arc::clone(&href)).or_insert(Arc::clone(&source));
     info.links.sources.entry(source).or_insert(href);
