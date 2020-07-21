@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::convert::TryInto;
 use std::sync::{Arc, Mutex};
 
@@ -59,7 +59,7 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
                 let s = s.trim_start_matches("/");
                 let src = req.options.source.join(s);
                 let href = href(&src, req.options, false, None)?;
-                link(&mut info, Arc::new(src), Arc::new(href));
+                link(&mut info, Arc::new(src), Arc::new(href))?;
             }
         }
     }
@@ -82,10 +82,11 @@ fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) ->
     Ok(info.destination(&file_opts)?)
 }
 
-pub fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) {
+pub fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) -> Result<()> {
     //println!("Link href {:?}", &href);
     info.links.reverse.entry(Arc::clone(&href)).or_insert(Arc::clone(&source));
     info.links.sources.entry(source).or_insert(href);
+    Ok(())
 }
 
 pub fn href(file: &PathBuf, options: &RuntimeOptions, rewrite: bool, strip: Option<PathBuf>) -> Result<String> {
@@ -95,6 +96,104 @@ pub fn href(file: &PathBuf, options: &RuntimeOptions, rewrite: bool, strip: Opti
     href_opts.trailing = false;
     href_opts.include_index = true;
     link::absolute(file, options, href_opts).map_err(Error::from)
+}
+
+fn add_page(
+    req: &CollateRequest<'_>,
+    mut info: &mut CollateInfo,
+    key: &Arc<PathBuf>,
+    path: &Path) -> Result<()> {
+
+    let pth = path.to_path_buf();
+
+    let mut page_info = loader::compute(&path, req.config, req.options, true)?;
+
+    if let Some(ref query) = page_info.query {
+        info.queries.push((query.clone(), Arc::clone(key)));
+    }
+
+    // Rewrite layouts relative to the source directory
+    if let Some(ref layout) = page_info.layout {
+        let layout_path = req.options.source.join(layout);
+        if !layout_path.exists() {
+            return Err(Error::NoLayout(layout_path, layout.clone()));
+        }
+
+        page_info.layout = Some(layout_path);
+    }
+
+    let mut file_info = FileInfo::new(
+        req.config,
+        req.options,
+        &pth,
+        false,
+    );
+
+    let mut rewrite_index = req.options.settings.should_rewrite_index();
+    // Override with rewrite-index page level setting
+    if let Some(val) = page_info.rewrite_index {
+        rewrite_index = val;
+    }
+
+    let file_opts = FileOptions {
+        rewrite_index,
+        base_href: &req.options.settings.base_href,
+        ..Default::default()
+    };
+
+    let dest = file_info.destination(&file_opts)?;
+    page_info.seal(&dest, req.config, req.options, &file_info)?;
+
+    if let Some(ref layout) = page_info.layout {
+        // Register the layout
+        info.layouts.insert(Arc::clone(key), layout.clone());
+    }
+
+    let href = href(&pth, req.options, rewrite_index, None)?;
+    link(&mut info, Arc::clone(key), Arc::new(href.clone()))?;
+
+    info.pages.entry(Arc::clone(key)).or_insert(page_info);
+
+    Ok(())
+}
+
+
+fn add_other(
+    req: &CollateRequest<'_>,
+    mut info: &mut CollateInfo,
+    key: &Arc<PathBuf>,
+    path: &Path,
+    is_page: bool) -> Result<()> {
+
+    let pth = path.to_path_buf();
+
+    // This falls through so it is captured as part
+    // of the other group too but we track these files
+    // for reporting purposes
+    if key.starts_with(req.options.get_assets_path()) {
+        info.assets.push(Arc::clone(key));
+    }
+
+    if key.starts_with(req.options.get_partials_path()) {
+        info.partials.push(Arc::clone(key));
+    } else if key.starts_with(req.options.get_includes_path()) {
+        info.includes.push(Arc::clone(key));
+    } else if key.starts_with(req.options.get_resources_path()) {
+        let href = href(&pth, req.options, false, Some(req.options.get_resources_path()))?;
+        link(&mut info, Arc::clone(key), Arc::new(href))?;
+        info.resources.push(Arc::clone(key));
+    } else if key.starts_with(req.options.get_locales()) {
+        info.locales.push(Arc::clone(key));
+    } else if key.starts_with(req.options.get_data_sources_path()) {
+        info.data_sources.push(Arc::clone(key));
+    } else if !is_page {
+        let href = href(&pth, req.options, false, None)?;
+        link(&mut info, Arc::clone(key), Arc::new(href))?;
+        let dest = get_destination(&pth, req.config, req.options)?;
+        info.other.entry(Arc::clone(key)).or_insert(dest);
+    }
+
+    Ok(())
 }
 
 async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
@@ -128,81 +227,9 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     let is_page = !is_data_source && pth.is_file() && FileInfo::is_page(&path, req.options);
 
                     if is_page {
-                        let result = loader::compute(&path, req.config, req.options, true);
-                        match result {
-                            Ok(mut page_info) => {
-
-                                if let Some(ref query) = page_info.query {
-                                    info.queries.push((query.clone(), Arc::clone(&key)));
-                                }
-
-                                // Rewrite layouts relative to the source directory
-                                if let Some(ref layout) = page_info.layout {
-                                    let layout_path = req.options.source.join(layout);
-                                    if !layout_path.exists() {
-                                        info.errors.push(Error::NoLayout(layout_path, layout.clone()));
-                                        return WalkState::Continue;
-                                    }
-
-                                    page_info.layout = Some(layout_path);
-                                }
-
-                                let mut file_info = FileInfo::new(
-                                    req.config,
-                                    req.options,
-                                    &pth,
-                                    false,
-                                );
-
-                                let mut rewrite_index = req.options.settings.should_rewrite_index();
-                                // Override with rewrite-index page level setting
-                                if let Some(val) = page_info.rewrite_index {
-                                    rewrite_index = val;
-                                }
-
-                                let file_opts = FileOptions {
-                                    rewrite_index,
-                                    base_href: &req.options.settings.base_href,
-                                    ..Default::default()
-                                };
-
-                                let res = file_info.destination(&file_opts);
-                                match res {
-                                    Ok(dest) => {
-                                        if let Err(e) = page_info.seal(&dest, req.config, req.options, &file_info) {
-                                            info.errors.push(Error::from(e));
-                                            return WalkState::Continue;
-                                        }
-
-                                        if let Some(ref layout) = page_info.layout {
-                                            // Register the layout
-                                            info.layouts.insert(Arc::clone(&key), layout.clone());
-                                        }
-
-                                        let href_res = href(&pth, req.options, rewrite_index, None);
-                                        match href_res {
-                                            Ok(href) => {
-                                                link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
-                                            }
-                                            Err(e) => {
-                                                info.errors.push(e);
-                                                return WalkState::Continue;
-                                            }
-                                        }
-
-                                        info.pages.entry(Arc::clone(&key)).or_insert(page_info);
-                                    }
-                                    Err(e) => {
-                                        info.errors.push(Error::from(e));
-                                        return WalkState::Continue;
-                                    }
-                                }
-
-                            }
-                            Err(e) => {
-                                info.errors.push(Error::from(e));
-                                return WalkState::Continue;
-                            }
+                        if let Err(e) = add_page(req, &mut *info, &key, &path) {
+                            info.errors.push(e);
+                            return WalkState::Continue;
                         }
                     }
 
@@ -211,7 +238,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     } else {
                         if !req.filter {
 
-                            // TODO: store the layout?
+                            // Store the primary layout
                             if let Some(ref layout) = req.options.settings.layout {
                                 if key.starts_with(layout) {
                                     info.layout = Some(Arc::clone(&key));
@@ -219,65 +246,17 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 }
                             }
 
-                            // This falls through so it is captured as part
-                            // of the other group too but we track these files
-                            // for reporting purposes
-                            if key.starts_with(req.options.get_assets_path()) {
-                                info.assets.push(Arc::clone(&key));
+                            if let Err(e) = add_other(req, &mut *info, &key, &path, is_page) {
+                                info.errors.push(Error::from(e));
+                                return WalkState::Continue;
                             }
 
-                            if key.starts_with(req.options.get_partials_path()) {
-                                info.partials.push(Arc::clone(&key));
-                            } else if key.starts_with(req.options.get_includes_path()) {
-                                info.includes.push(Arc::clone(&key));
-                            } else if key.starts_with(req.options.get_resources_path()) {
-                                let href_res = href(&pth, req.options, false, Some(req.options.get_resources_path()));
-                                match href_res {
-                                    Ok(href) => {
-                                        link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
-                                    }
-                                    Err(e) => {
-                                        info.errors.push(Error::from(e));
-                                        return WalkState::Continue;
-                                    }
-                                }
-
-                                info.resources.push(Arc::clone(&key));
-                            } else if key.starts_with(req.options.get_locales()) {
-                                info.locales.push(Arc::clone(&key));
-                            } else if key.starts_with(req.options.get_data_sources_path()) {
-                                info.data_sources.push(Arc::clone(&key));
-                            } else if !is_page {
-                                let href_res = href(&pth, req.options, false, None);
-                                match href_res {
-                                    Ok(href) => {
-                                        link(&mut info, Arc::clone(&key), Arc::new(href.clone()));
-                                    }
-                                    Err(e) => {
-                                        info.errors.push(Error::from(e));
-                                        return WalkState::Continue;
-                                    }
-                                }
-
-                                let res = get_destination(&pth, req.config, req.options);
-                                match res {
-                                    Ok(dest) => {
-                                        info.other.entry(Arc::clone(&key)).or_insert(dest);
-                                    }
-                                    Err(e) => {
-                                        info.errors.push(e);
-                                        return WalkState::Continue;
-                                    }
-                                }
-                            }
                         }
 
                         info.files.push(Arc::clone(&key));
                     }
 
                     info.all.push(key);
-
-                    //info.all.entry(key).or_insert(page);
                 }
                 WalkState::Continue
             }

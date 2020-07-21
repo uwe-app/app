@@ -358,7 +358,7 @@ impl DataSourceMap {
                             // Configure a link for the synthetic page
                             let href = collator::href(&mock, options, rewrite_index, None)?;
                             let key = Arc::new(mock);
-                            collator::link(info, Arc::clone(&key), Arc::new(href));
+                            collator::link(info, Arc::clone(&key), Arc::new(href))?;
 
                             info.pages.entry(key).or_insert(item_data);
                         }
