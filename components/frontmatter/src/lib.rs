@@ -43,6 +43,8 @@ impl Config {
     }
 }
 
+// Pads the content with lines so that template
+// error messages with line numbers are correct.
 pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> {
     let mut fm = String::new();
     let mut content = String::new();
@@ -58,6 +60,7 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
         match line {
             Ok(line) => {
                 if in_front_matter && line.trim() == conf.end {
+                    content.push_str(newline);
                     in_front_matter = false;
                     if conf.bail {
                         return Ok((content, has_front_matter, fm));
@@ -66,12 +69,14 @@ pub fn load<P: AsRef<Path>>(p: P, conf: Config) -> Result<ContentResult, Error> 
                 }
 
                 if in_front_matter {
+                    content.push_str(newline);
                     fm.push_str(&line);
                     fm.push_str(newline);
                     continue;
                 }
 
                 if !has_front_matter && line.trim() == conf.start && content.is_empty() {
+                    content.push_str(newline);
                     in_front_matter = true;
                     has_front_matter = true;
                     continue;
