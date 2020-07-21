@@ -18,40 +18,29 @@ impl HelperDef for Random {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let type_err = Err(RenderError::new(
-            "Type error for `random`, array parameter expected",
-        ));
 
-        let template_err = Err(RenderError::new(
-            "Type error for `random`, inner template expected",
-        ));
+        let list = h.params().get(0)
+            .ok_or_else(|| RenderError::new("Type error in `random`, expected parameter"))?
+            .value()
+            .as_array()
+            .ok_or_else(|| RenderError::new("Type error in `random`, expected array parameter"))?;
 
-        if let Some(p) = h.params().get(0) {
-            if !p.is_value_missing() {
-                let value = p.value();
-                if value.is_array() {
-                    let value = value.as_array().unwrap();
-                    if let Some(element) = value.choose(&mut rand::thread_rng()) {
-                        if let Some(t) = h.template() {
-                            let mut local_rc = rc.clone();
-                            let mut data: Page = Default::default();
-                            data.extra.insert("entry".to_string(), json!(element));
-                            let local_ctx = with_parent_context(ctx, &mut data)?;
-                            t.render(r, &local_ctx, &mut local_rc, out)?;
-                            return Ok(());
-                        } else {
-                            return template_err;
-                        }
-                    }
-                } else {
-                    return type_err;
-                }
-            } else {
-                return type_err;
-            }
-        } else {
-            return type_err;
+        let template = h.template()
+            .ok_or_else(|| RenderError::new("Type error in `random`, block template expected"))?;
+
+        //println!("Got list {:?}", list);
+
+        if let Some(element) = list.choose(&mut rand::thread_rng()) {
+            let mut local_rc = rc.clone();
+            let mut data: Page = Default::default();
+
+            data.extra.insert("entry".to_string(), json!(element));
+
+            let local_ctx = with_parent_context(ctx, &mut data)?;
+            template.render(r, &local_ctx, &mut local_rc, out)?;
+            return Ok(());
         }
+
         Ok(())
     }
 }
