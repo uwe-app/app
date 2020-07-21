@@ -72,6 +72,11 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
         handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
 
+        handlebars.register_helper("next",
+            Box::new(helpers::sibling::Sibling {name: String::from("next"), amount: 1}));
+        handlebars.register_helper("previous",
+            Box::new(helpers::sibling::Sibling {name: String::from("previous"), amount: -1}));
+
         if let Some(loader) = &locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
         }
