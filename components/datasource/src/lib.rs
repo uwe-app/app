@@ -18,6 +18,8 @@ use config::indexer::{IndexQuery, KeyType, SourceProvider, DataSource as DataSou
 pub mod identifier;
 pub mod provider;
 
+pub type QueryCache = HashMap<IndexQuery, Vec<Value>>;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Query should be array or object")]
@@ -248,12 +250,17 @@ impl DataSourceMap {
         }
     }
 
+    pub fn get_cache() -> QueryCache {
+        HashMap::new()
+    }
+
     // Assign query results to the page data
     pub fn assign(
         _config: &Config,
         _options: &RuntimeOptions,
         info: &mut CollateInfo,
-        map: &DataSourceMap) -> Result<()> {
+        map: &DataSourceMap,
+        cache: &mut QueryCache) -> Result<()> {
 
         for (q, p) in info.queries.iter() {
 
@@ -262,7 +269,7 @@ impl DataSourceMap {
 
             let page = info.pages.get_mut(p).unwrap();
             for query in queries.iter() {
-                let idx = map.query_index(query)?;
+                let idx = map.query_index(query, cache)?;
                 // TODO: error or warn on overwriting existing key
                 page.extra.insert(query.get_parameter(), json!(idx));
             }
@@ -277,7 +284,8 @@ impl DataSourceMap {
         config: &Config,
         options: &RuntimeOptions,
         info: &mut CollateInfo,
-        map: &DataSourceMap) -> Result<()> {
+        map: &DataSourceMap,
+        cache: &mut QueryCache) -> Result<()> {
 
         //let mut links: HashMap<Arc<PathBuf>, Arc<String>> = HashMap::new();
 
@@ -299,7 +307,7 @@ impl DataSourceMap {
             }
 
             for each_query in each.iter() {
-                let idx = map.query_index(each_query)?;
+                let idx = map.query_index(each_query, cache)?;
 
                 for doc in &idx {
                     let mut item_data = page.clone();
@@ -655,19 +663,41 @@ impl DataSourceMap {
         Ok(())
     }
 
-    pub fn query_index(&self, query: &IndexQuery) -> Result<Vec<Value>> {
+
+    fn get_result_set(
+        &self,
+        ds: &DataSource,
+        idx: &ValueIndex,
+        query: &IndexQuery,
+        cache: &mut QueryCache) -> Result<Vec<Value>> {
+
+        if let Some(ref cached) = cache.get(query) {
+            return Ok(cached.to_vec())
+        }
+
+        let res;
+
+        if query.keys.is_some() {
+            res = idx.to_keys(query.keys.as_ref().unwrap());
+        } else if query.values.is_some() && query.values.unwrap() {
+            res = idx.to_values();
+        } else {
+            res = idx.from_query(query, &ds.all);
+        }
+
+        cache.entry(query.clone()).or_insert(res.to_vec());
+
+        Ok(res)
+    }
+
+    pub fn query_index(&self, query: &IndexQuery, cache: &mut QueryCache) -> Result<Vec<Value>> {
         let name = &query.name;
         let idx_name = &query.index;
-        let values = query.values.is_some() && query.values.unwrap();
+        //let values = query.values.is_some() && query.values.unwrap();
 
         if let Some(generator) = self.map.get(name) {
             if let Some(idx) = generator.indices.get(idx_name) {
-                if query.keys.is_some() {
-                    return Ok(idx.to_keys(query.keys.as_ref().unwrap()));
-                } else if values {
-                    return Ok(idx.to_values());
-                }
-                return Ok(idx.from_query(query, &generator.all));
+                self.get_result_set(generator, idx, query, cache)
             } else {
                 return Err(Error::NoIndex(idx_name.to_string()));
             }

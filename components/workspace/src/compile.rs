@@ -121,8 +121,10 @@ async fn load(
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
 
-    DataSourceMap::assign(&config, &options, &mut collation, &datasource)?;
-    DataSourceMap::expand(&config, &options, &mut collation, &datasource)?;
+    let mut cache = DataSourceMap::get_cache();
+
+    DataSourceMap::assign(&config, &options, &mut collation, &datasource, &mut cache)?;
+    DataSourceMap::expand(&config, &options, &mut collation, &datasource, &mut cache)?;
 
     // Set up the real context
     Ok(BuildContext::new(config, options, datasource, collation))
