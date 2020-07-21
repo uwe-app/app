@@ -103,80 +103,69 @@ async fn livereload<P: AsRef<Path>>(
             let parser = Parser::new(&ctx, &locales).unwrap();
             let compiler = Compiler::new(&ctx);
 
-            //let built = workspace::build(&ctx).await;
+            // NOTE: only open the browser if initial build succeeds
+            open::that(&url).map(|_| ()).unwrap_or(());
 
-            //match built {
-                //Ok(compiler) => {
-                    // Prepare for incremental builds
-                    //if let Err(_) = compiler.manifest.load() {}
+            // Invalidator wraps the builder receiving filesystem change
+            // notifications and sending messages over the `tx` channel
+            // to connected websockets when necessary
+            //
+            let mut invalidator = Invalidator::new(compiler, parser);
 
-                    // NOTE: only open the browser if initial build succeeds
-                    open::that(&url).map(|_| ()).unwrap_or(());
+            // Create a channel to receive the events.
+            let (tx, rx) = std::sync::mpsc::channel();
+            let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
+                Ok(w) => w,
+                Err(e) => return error_cb(Error::from(e)),
+            };
 
-                    // Invalidator wraps the builder receiving filesystem change
-                    // notifications and sending messages over the `tx` channel
-                    // to connected websockets when necessary
-                    //
-                    let mut invalidator = Invalidator::new(compiler, parser);
+            // Add the source directory to the watcher
+            if let Err(e) = watcher.watch(&source, Recursive) {
+                return error_cb(Error::from(e));
+            };
 
-                    // Create a channel to receive the events.
-                    let (tx, rx) = std::sync::mpsc::channel();
-                    let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
-                        Ok(w) => w,
-                        Err(e) => return error_cb(Error::from(e)),
-                    };
+            info!("Watch {}", source.display());
 
-                    // Add the source directory to the watcher
-                    if let Err(e) = watcher.watch(&source, Recursive) {
-                        return error_cb(Error::from(e));
-                    };
+            loop {
+                let first_event = rx.recv().unwrap();
+                sleep(Duration::from_millis(50));
+                let other_events = rx.try_iter();
+                let all_events = std::iter::once(first_event).chain(other_events);
+                let paths = all_events
+                    .filter_map(|event| {
+                        debug!("Received filesystem event: {:?}", event);
+                        match event {
+                            Create(path) | Write(path) | Remove(path) | Rename(_, path) => Some(path),
+                            _ => None,
+                        }
+                    })
+                    .collect::<Vec<_>>();
 
-                    info!("Serve {}", &url);
-                    info!("Watch {}", source.display());
+                if !paths.is_empty() {
+                    info!("Changed({}) in {}", paths.len(), source.display());
 
-                    loop {
-                        let first_event = rx.recv().unwrap();
-                        sleep(Duration::from_millis(50));
-                        let other_events = rx.try_iter();
-                        let all_events = std::iter::once(first_event).chain(other_events);
-                        let paths = all_events
-                            .filter_map(|event| {
-                                debug!("Received filesystem event: {:?}", event);
-                                match event {
-                                    Create(path) | Write(path) | Remove(path) | Rename(_, path) => Some(path),
-                                    _ => None,
-                                }
-                            })
-                            .collect::<Vec<_>>();
+                    let _ = ws_tx.send(Message::text("start"));
 
-                        if !paths.is_empty() {
-                            info!("Changed({}) in {}", paths.len(), source.display());
-
-                            let _ = ws_tx.send(Message::text("start"));
-
-                            let result = invalidator.get_invalidation(paths);
-                            match result {
-                                Ok(invalidation) => {
-                                    if let Err(e) = invalidator.invalidate(&source, &invalidation).await {
-                                        // TODO: allow setting to configure whether to quit here!
-                                        error!("{}", e);
-                                        //return error_cb(Error::from(e));
-                                    }
-
-                                    //self.builder.manifest.save()?;
-                                    if invalidation.notify {
-                                        let _ = ws_tx.send(Message::text("reload"));
-                                        //println!("Got result {:?}", res);
-                                    }
-                                },
-                                Err(e) => return error_cb(Error::from(e))
+                    let result = invalidator.get_invalidation(paths);
+                    match result {
+                        Ok(invalidation) => {
+                            if let Err(e) = invalidator.invalidate(&source, &invalidation).await {
+                                // TODO: allow setting to configure whether to quit here!
+                                error!("{}", e);
+                                //return error_cb(Error::from(e));
                             }
 
-                        }
+                            //self.builder.manifest.save()?;
+                            if invalidation.notify {
+                                let _ = ws_tx.send(Message::text("reload"));
+                                //println!("Got result {:?}", res);
+                            }
+                        },
+                        Err(e) => return error_cb(Error::from(e))
                     }
-                //},
-                //Err(e) => return error_cb(Error::from(e))
-            //}
+
+                }
+            }
         });
     });
 
