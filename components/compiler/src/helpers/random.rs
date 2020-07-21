@@ -32,9 +32,13 @@ impl HelperDef for Random {
             let mut local_rc = rc.clone();
             let mut data: Page = Default::default();
 
-            data.extra.insert("entry".to_string(), json!(element));
+            let mut local_ctx = with_parent_context(ctx, &mut data)?;
 
-            let local_ctx = with_parent_context(ctx, &mut data)?;
+            local_ctx.data_mut()
+                .as_object_mut()
+                .unwrap()
+                .insert("entry".to_string(), json!(element));
+
             template.render(r, &local_ctx, &mut local_rc, out)?;
             return Ok(());
         }
