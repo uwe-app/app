@@ -25,6 +25,9 @@ pub struct CollateInfo {
     // Assets and other files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
+    // Quick lookup for directories to direct *page* descendants
+    pub children: HashMap<Arc<PathBuf>, Vec<Arc<PathBuf>>>,
+
     // Store queries for expansion later
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 

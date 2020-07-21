@@ -223,16 +223,14 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
             Box::new(|result| {
                 if let Ok(entry) = result {
                     let path = entry.path();
-                    let buf = path.to_path_buf();
 
                     let data = Arc::clone(&res.inner);
                     let mut info = data.lock().unwrap();
 
-                    let pth = buf.clone();
-                    let key = Arc::new(buf);
+                    let key = Arc::new(path.to_path_buf());
 
                     let is_data_source = key.starts_with(req.options.get_data_sources_path());
-                    let is_page = !is_data_source && pth.is_file() && FileInfo::is_page(&path, req.options);
+                    let is_page = !is_data_source && path.is_file() && FileInfo::is_page(&path, req.options);
 
                     if is_page {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {
@@ -272,4 +270,3 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
     });
     Ok(())
 }
-
