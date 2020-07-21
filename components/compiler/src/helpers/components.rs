@@ -26,7 +26,7 @@ impl HelperDef for Components<'_> {
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
-            .replace("\"", "");
+            .to_string();
 
         let template = h.template()
             .ok_or_else(|| RenderError::new("Type error in `components`, block template expected"))?;

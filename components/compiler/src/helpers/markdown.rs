@@ -23,12 +23,13 @@ impl HelperDef for Markdown<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let source_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error in `md` for `file.source`, string expected"))?
-            .replace("\"", "");
+            .to_string();
 
         let types = self.context.options.settings.types.as_ref().unwrap();
 

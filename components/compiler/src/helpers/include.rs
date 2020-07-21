@@ -21,8 +21,8 @@ impl HelperDef for Include {
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file`, string expected"))?
-            .replace("\"", "");
+            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+            .to_string();
 
         // TODO: support embedding only certain lines only
 

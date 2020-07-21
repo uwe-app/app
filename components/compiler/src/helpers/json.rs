@@ -13,6 +13,7 @@ impl HelperDef for Debug /*<'_>*/ {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let mut compact = false;
         let mut val = ctx.data();
 

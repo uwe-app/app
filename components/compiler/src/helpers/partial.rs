@@ -35,7 +35,7 @@ impl HelperDef for Partial<'_> {
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `file.template`, string expected"))?
-            .replace("\"", "");
+            .to_string();
 
         let types = self.context.options.settings.types.as_ref().unwrap();
         let mut parse_markdown = false;

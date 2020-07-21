@@ -23,7 +23,7 @@ impl HelperDef for Match<'_> {
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
-            .replace("\"", "");
+            .to_string();
 
         let opts = &self.context.options;
         let path = Path::new(&base_path).to_path_buf();

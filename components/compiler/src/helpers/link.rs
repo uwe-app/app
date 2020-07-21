@@ -23,12 +23,13 @@ impl HelperDef for Link<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
-            .replace("\"", "");
+            .to_string();
 
         let types = self.context.options.settings.types.as_ref().unwrap();
 
