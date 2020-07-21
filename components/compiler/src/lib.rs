@@ -65,8 +65,6 @@ pub enum Error {
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),
     #[error(transparent)]
-    Loader(#[from] loader::Error),
-    #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
     Collator(#[from] collator::Error),

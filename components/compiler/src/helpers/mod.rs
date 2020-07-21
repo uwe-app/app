@@ -19,10 +19,6 @@ pub mod partial;
 pub mod random;
 pub mod slug;
 
-pub fn map_render_error(e: loader::Error) -> RenderError {
-    RenderError::new(e.to_string())
-}
-
 pub struct BufferedOutput {
     buffer: String,
 }

@@ -9,6 +9,7 @@ use config::link::{self, LinkOptions};
 
 use super::{Error, Result, CollateInfo};
 use super::manifest::Manifest;
+use super::loader;
 
 pub struct CollateRequest<'a> {
     // When filter is active then only `all`, `pages`, `files` and `dirs`

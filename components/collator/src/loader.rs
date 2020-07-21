@@ -1,31 +1,11 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use log::warn;
 use inflector::Inflector;
-use thiserror::Error;
 
 use config::{Config, Page, RuntimeOptions, FileInfo, FileType};
 
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("File {0} for page data with key {1} does not exist")]
-    NoPageFile(PathBuf, String),
-
-    #[error("Front matter error in {0} ({1})")]
-    FrontMatterParse(PathBuf, toml::de::Error),
-
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-
-    #[error(transparent)]
-    TomlDeser(#[from] toml::de::Error),
-
-    #[error(transparent)]
-    FrontMatter(#[from] frontmatter::Error),
-
-    #[error(transparent)]
-    Config(#[from] config::Error),
-}
+use crate::{Error, Result};
 
 // Convert a file name to title case
 fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
@@ -46,7 +26,7 @@ fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
     None
 }
 
-pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, frontmatter: bool) -> Result<Page, Error> {
+pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, frontmatter: bool) -> Result<Page> {
 
     let file = f.as_ref();
 
@@ -98,7 +78,7 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, fro
     Ok(page)
 }
 
-fn parse_into<P: AsRef<Path>>(file: P, source: String, data: &mut Page) -> Result<(), Error> {
+fn parse_into<P: AsRef<Path>>(file: P, source: String, data: &mut Page) -> Result<()> {
     let mut page: Page = toml::from_str(&source)
         .map_err(|e| Error::FrontMatterParse(file.as_ref().to_path_buf(), e))?;
 
@@ -106,7 +86,7 @@ fn parse_into<P: AsRef<Path>>(file: P, source: String, data: &mut Page) -> Resul
     Ok(())
 }
 
-pub fn verify(config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
+pub fn verify(config: &Config, options: &RuntimeOptions) -> Result<()> {
     if let Some(ref pages) = config.pages {
         for (k, _) in pages {
             let pth = options.source.join(utils::url::to_path_separator(k));

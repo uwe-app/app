@@ -13,6 +13,7 @@ use locale::Locales;
 
 use collator::{CollateRequest, CollateResult, CollateInfo};
 use collator::manifest::Manifest;
+use collator::loader;
 
 use crate::{Error, Result};
 use crate::finder;

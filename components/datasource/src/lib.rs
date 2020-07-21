@@ -64,8 +64,6 @@ pub enum Error {
     Collator(#[from] collator::Error),
     #[error(transparent)]
     Provider(#[from] provider::DeserializeError),
-    #[error(transparent)]
-    Loader(#[from] loader::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

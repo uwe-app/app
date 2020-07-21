@@ -22,7 +22,6 @@ members = [
   "components/git",
   "components/installer",
   "components/livereload",
-  "components/loader",
   "components/locale",
   "components/minify",
   "components/preference",

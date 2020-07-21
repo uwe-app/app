@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 collator = {version = "0.1", path = "../collator" }
 config = {version = "0.1", path = "../config" }
-loader = {version = "0.1", path = "../loader" }
 utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"

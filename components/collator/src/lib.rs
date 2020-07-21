@@ -3,6 +3,7 @@ use thiserror::Error;
 
 pub mod collation;
 pub mod collator;
+pub mod loader;
 pub mod manifest;
 
 pub use collation::*;
@@ -15,6 +16,12 @@ pub enum Error {
 
     #[error("Collision detected on {0} ({1} <-> {2})")]
     LinkCollision(String, PathBuf, PathBuf),
+
+    #[error("File {0} for page data with key {1} does not exist")]
+    NoPageFile(PathBuf, String),
+
+    #[error("Front matter error in {0} ({1})")]
+    FrontMatterParse(PathBuf, toml::de::Error),
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
@@ -29,9 +36,13 @@ pub enum Error {
     Poison(#[from] std::sync::PoisonError<CollateInfo>),
 
     #[error(transparent)]
-    Config(#[from] config::Error),
+    TomlDeser(#[from] toml::de::Error),
+
     #[error(transparent)]
-    Loader(#[from] loader::Error),
+    FrontMatter(#[from] frontmatter::Error),
+
+    #[error(transparent)]
+    Config(#[from] config::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
