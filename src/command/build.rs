@@ -153,18 +153,24 @@ async fn livereload<P: AsRef<Path>>(
                     match result {
                         Ok(invalidation) => {
                             if let Err(e) = invalidator.invalidate(&source, &invalidation).await {
-                                // TODO: allow setting to configure whether to quit here!
-                                error!("{}", e);
-                                //return error_cb(Error::from(e));
-                            }
 
-                            //self.builder.manifest.save()?;
-                            if invalidation.notify {
-                                let msg = livereload::messages::reload();
+                                error!("{}", e);
+
+                                let msg = livereload::messages::notify(e.to_string(), true);
                                 let txt = serde_json::to_string(&msg).unwrap();
                                 let _ = ws_tx.send(Message::text(txt));
-                                //println!("Got result {:?}", res);
+
+                                //return error_cb(Error::from(e));
+                            } else {
+                                //self.builder.manifest.save()?;
+                                if invalidation.notify {
+                                    let msg = livereload::messages::reload();
+                                    let txt = serde_json::to_string(&msg).unwrap();
+                                    let _ = ws_tx.send(Message::text(txt));
+                                    //println!("Got result {:?}", res);
+                                }
                             }
+
                         },
                         Err(e) => return error_cb(Error::from(e))
                     }

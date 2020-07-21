@@ -6,21 +6,39 @@ pub mod messages;
 
 static SCRIPT: &str = "
 socket.onmessage = (event) => {
-	const el = document.querySelector('#livereload-notification');
+	const el = document.querySelector('.livereload-notification');
+    const msg = el.querySelector('span');
     const e = JSON.parse(event.data);
 	if (e.type === 'start') {
-		if(el) el.style.display = 'block';
+		el.style.display = 'block';
+        el.classList.remove('error');
+        msg.innerText = 'Building...';
 	}else if (e.type === 'reload') {
 		socket.close();
 		location.reload();
+	}else if (e.type === 'notify') {
+		el.style.display = 'block';
+        msg.innerText = e.message;
+        if (e.error) {
+            console.error(e.message);
+            el.classList.add('error');
+        }
 	}
 };
 window.onbeforeunload = () => socket.close();";
 
 static MARKUP: &str = "
-<div id='livereload-notification'
-style='
+<style>
+.livereload-notification {
+    max-width: 640px;
     background: #333;
+}
+.livereload-notification.error {
+    background: #933;
+}
+</style>
+<div class='livereload-notification'
+style='
     color: #cfcfcf;
     position: fixed;
     bottom: 0;
@@ -31,7 +49,7 @@ style='
     border-top-right-radius: 6px;
     display: none;
 '>
-<span>Building...</span>
+<span></span>
 </div>";
 
 fn get_script(url: &str) -> String {
