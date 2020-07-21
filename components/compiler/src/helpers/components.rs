@@ -28,37 +28,34 @@ impl HelperDef for Components<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .replace("\"", "");
 
+        let template = h.template()
+            .ok_or_else(|| RenderError::new("Type error in `components`, block template expected"))?;
+
         let source_path = PathBuf::from(&base_path);
         let components = tree::ancestors(self.context, &source_path);
         let amount = components.len() - 1;
 
-        let template = h.template();
-        match template {
-            Some(t) => {
-                for (i, page) in components.iter().rev().enumerate() {
-                    let first = i == 0;
-                    let last = i == amount;
-                    let href = std::iter::repeat("..")
-                        .take(amount - i)
-                        .collect::<Vec<_>>()
-                        .join("/");
+        for (i, page) in components.iter().rev().enumerate() {
+            let first = i == 0;
+            let last = i == amount;
+            let href = std::iter::repeat("..")
+                .take(amount - i)
+                .collect::<Vec<_>>()
+                .join("/");
 
-                    let mut local_rc = rc.clone();
-                    let mut local_ctx = Context::wraps(page)?;
-                    let ctx_data = local_ctx.data_mut()
-                        .as_object_mut()
-                        .unwrap();
+            let mut local_rc = rc.clone();
+            let mut local_ctx = Context::wraps(page)?;
+            let ctx_data = local_ctx.data_mut()
+                .as_object_mut()
+                .unwrap();
 
-                    ctx_data.insert("href".to_string(), Value::String(href));
-                    ctx_data.insert("first".to_string(), Value::Bool(first));
-                    ctx_data.insert("last".to_string(), Value::Bool(last));
+            ctx_data.insert("href".to_string(), Value::String(href));
+            ctx_data.insert("first".to_string(), Value::Bool(first));
+            ctx_data.insert("last".to_string(), Value::Bool(last));
 
-                    t.render(r, &local_ctx, &mut local_rc, out)?;
-                }
-            }
-            None => return Err(
-                RenderError::new("Template expected for components helper")),
+            template.render(r, &local_ctx, &mut local_rc, out)?;
         }
+
         Ok(())
     }
 }
