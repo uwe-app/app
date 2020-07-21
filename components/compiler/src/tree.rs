@@ -10,8 +10,34 @@ pub struct ListOptions<'a> {
     pub depth: usize,
 }
 
-pub fn ancestors<'a>(ctx: &'a BuildContext) -> Result<Vec<&'a Page>> {
-    Ok(vec![])
+pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
+    let mut pages: Vec<&'a Page> = Vec::new();
+    let types = ctx.options.settings.types.as_ref().unwrap();
+    let render_types = types.render();
+
+    let skip = if let Some(stem) = file.file_stem() {
+        if stem == config::INDEX_STEM { 1 } else { 0 }
+    } else { 0 };
+
+    for p in file.ancestors().skip(skip) {
+        if let Some(ref page) = ctx.collation.pages.get(&p.to_path_buf()) {
+            pages.push(page);
+            continue;
+        }
+
+        let mut parent = p.join(config::INDEX_STEM);
+        for ext in render_types.iter() {
+            parent.set_extension(ext);
+            if let Some(ref page) = ctx.collation.pages.get(&parent) {
+                pages.push(page);
+            }
+        }
+        if p == ctx.options.source {
+            break;
+        }
+    }
+
+    pages
 }
 
 pub fn listing<'a>(ctx: &'a BuildContext, list: &'a ListOptions) -> Result<Vec<&'a Page>> {

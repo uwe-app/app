@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use handlebars::*;
+use serde_json::Value;
 
 use crate::BuildContext;
 use crate::tree::{self, ListOptions};
@@ -51,7 +52,7 @@ impl HelperDef for Children<'_> {
                                     local_ctx.data_mut()
                                         .as_object_mut()
                                         .unwrap()
-                                        .insert("self".to_string(), serde_json::Value::Bool(true));
+                                        .insert("self".to_string(), Value::Bool(true));
                                 }
                             }
                             t.render(r, &local_ctx, &mut local_rc, out)?;
