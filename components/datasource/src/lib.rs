@@ -292,7 +292,6 @@ impl DataSourceMap {
         let queries = info.queries.clone();
 
         for (q, p) in queries.iter() {
-
             let each = q.to_each_vec();
             if each.is_empty() { continue; }
 
@@ -368,6 +367,7 @@ impl DataSourceMap {
                             let key = Arc::new(mock);
                             collator::link(info, Arc::clone(&key), Arc::new(href))?;
 
+                            info.targets.entry(Arc::clone(&key)).or_insert(dest);
                             info.pages.entry(key).or_insert(item_data);
                         }
                     } else {
@@ -591,6 +591,7 @@ impl DataSourceMap {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
+
                 let identity = def.identity.is_some() && def.identity.unwrap();
                 let key = def.key.as_ref().unwrap();
                 let group = def.group.is_some() && def.group.unwrap();
@@ -644,7 +645,6 @@ impl DataSourceMap {
                                 value: key_val.clone(),
                             };
 
-                            //println!("Creating index entry with key {:?}", s);
                             let items = values.documents
                                 .entry(index_key)
                                 .or_insert(Vec::new());

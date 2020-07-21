@@ -28,8 +28,6 @@ impl HelperDef for Random {
         let template = h.template()
             .ok_or_else(|| RenderError::new("Type error in `random`, block template expected"))?;
 
-        //println!("Got list {:?}", list);
-
         if let Some(element) = list.choose(&mut rand::thread_rng()) {
             let mut local_rc = rc.clone();
             let mut data: Page = Default::default();
