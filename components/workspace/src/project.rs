@@ -97,6 +97,11 @@ fn to_options(name: ProfileName, cfg: &Config, args: &mut ProfileSettings) -> Re
 
     if let Some(ref mut paths) = args.paths.as_mut() {
         let paths = prefix(&source, paths);
+        for p in paths.iter() {
+            if !p.exists() {
+                return Err(Error::NoFilter(p.to_path_buf()));
+            }
+        }
         debug!("Profile paths {:?}", &paths);
         args.paths = Some(paths);
     }
@@ -156,7 +161,12 @@ fn to_profile(args: &ProfileSettings) -> ProfileName {
 fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
     paths
         .iter()
-        .map(|p| source.join(p))
+        .map(|p| {
+            if !p.starts_with(source) {
+                return source.join(p)
+            }
+            p.to_path_buf()
+        })
         .collect::<Vec<_>>()
 }
 

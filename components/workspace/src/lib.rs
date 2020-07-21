@@ -7,6 +7,9 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
+    #[error("The path filter {0} does not exist")]
+    NoFilter(PathBuf),
+
     #[error("Build tag may not be an absolute path {0}")]
     ProfileNameAbsolute(String),
 
