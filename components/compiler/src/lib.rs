@@ -47,9 +47,6 @@ pub enum Error {
     InvalidUri(#[from] warp::http::uri::InvalidUri),
 
     #[error(transparent)]
-    Json(#[from] serde_json::error::Error),
-
-    #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
@@ -71,6 +68,8 @@ pub enum Error {
     Loader(#[from] loader::Error),
     #[error(transparent)]
     Config(#[from] config::Error),
+    #[error(transparent)]
+    Collator(#[from] collator::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -82,7 +81,6 @@ pub mod helpers;
 pub mod hook;
 pub mod invalidator;
 pub mod lookup;
-pub mod manifest;
 pub mod markdown;
 pub mod parser;
 pub mod redirect;

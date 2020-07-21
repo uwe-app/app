@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use config::Page;
 use config::indexer::QueryList;
 
+use super::manifest::Manifest;
+
 use super::{Error, Result};
 
 #[derive(Debug, Default)]
@@ -22,11 +24,16 @@ pub struct CollateInfo {
 
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
+
+    // FIXME: we should be able to dispense with `other`
+    // FIXME: now that we have the `targets` map
+    //
     // Assets and other files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
-    // Quick lookup for directories to direct *page* descendants
-    pub children: HashMap<Arc<PathBuf>, Vec<Arc<PathBuf>>>,
+    // Everything we need to build in pages and other
+    // with the target output files
+    pub targets: HashMap<Arc<PathBuf>, PathBuf>,
 
     // Store queries for expansion later
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
@@ -45,6 +52,9 @@ pub struct CollateInfo {
     // TODO: books too!
 
     pub links: LinkMap,
+
+    // Manifest for incremental builds
+    pub manifest: Option<Manifest>,
 }
 
 impl CollateInfo {

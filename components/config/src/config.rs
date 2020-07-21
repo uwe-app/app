@@ -37,6 +37,7 @@ pub static INDEX_HTML: &str = "index.html";
 pub static LAYOUT_HBS: &str = "layout.hbs";
 pub static MD: &str = "md";
 pub static TOML: &str = "toml";
+pub static JSON: &str = "json";
 pub static BOOK_TOML: &str = "book.toml";
 pub static ASSETS: &str = "assets";
 pub static PARTIALS: &str = "partials";

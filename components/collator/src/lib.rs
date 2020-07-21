@@ -3,6 +3,7 @@ use thiserror::Error;
 
 pub mod collation;
 pub mod collator;
+pub mod manifest;
 
 pub use collation::*;
 pub use collator::*;
@@ -17,6 +18,12 @@ pub enum Error {
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Json(#[from] serde_json::error::Error),
 
     #[error(transparent)]
     Poison(#[from] std::sync::PoisonError<CollateInfo>),

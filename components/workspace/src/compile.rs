@@ -12,6 +12,7 @@ use datasource::DataSourceMap;
 use locale::Locales;
 
 use collator::{CollateRequest, CollateResult, CollateInfo};
+use collator::manifest::Manifest;
 
 use crate::{Error, Result};
 use crate::finder;
@@ -37,12 +38,22 @@ pub async fn compile(config: &Config, args: &mut ProfileSettings) -> Result<(Bui
     let write_redirects = opts.settings.write_redirects.is_some()
         && opts.settings.write_redirects.unwrap();
 
-    let res = compile_one(config, opts).await;
+    let mut res = compile_one(config, opts).await;
 
-    if let Ok((ref ctx, _)) = res {
+    if let Ok((ref mut ctx, _)) = res {
         if write_redirects {
             compiler::redirect::write(ctx)?;
         }
+
+        // Write the manifest for incremental builds
+        if let Some(ref mut manifest) = ctx.collation.manifest {
+            let manifest_file = get_manifest_file(&ctx.options);
+            for (p, _) in ctx.collation.targets.iter() {
+                manifest.touch(&p.to_path_buf());
+            }
+            Manifest::save(&manifest_file, manifest)?;
+        }
+
     }
     
     res
@@ -69,6 +80,9 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             if !locale_target.exists() {
                 fs::create_dir_all(&locale_target)?;
             }
+
+            // Keep the options target in sync for manifests
+            ctx.options.target = locale_target.clone();
 
             // Rewrite the output paths and page languages
             ctx.collation.rewrite(&lang, &previous_base, &locale_target)?;
@@ -105,9 +119,22 @@ async fn load(
         loader::verify(&config, &options)?;
     }
 
+    // Set up the manifest for incremental builds
+    let manifest_file = get_manifest_file(&options);
+    let manifest: Option<Manifest> = if options.settings.is_incremental() {
+        Some(Manifest::load(&manifest_file)?)
+    } else {
+        None
+    };
+
     // Collate page data for later usage
-    let req = CollateRequest {filter: false, config: &config, options: &options};
-    let mut res = CollateResult::new();
+    let req = CollateRequest {
+        filter: false,
+        config: &config,
+        options: &options, 
+    };
+
+    let mut res = CollateResult::new(manifest);
     collator::walk(req, &mut res).await?;
 
     let mut collation: CollateInfo = res.try_into()?;
@@ -130,12 +157,16 @@ async fn load(
     Ok(BuildContext::new(config, options, datasource, collation))
 }
 
-pub async fn build<'a>(ctx: &'a BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
+fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
+    let mut manifest_file = options.base.clone();
+    manifest_file.set_extension(config::JSON);
+    manifest_file
+}
+
+pub async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
 
     let parser = Parser::new(ctx, locales)?;
     let builder = Compiler::new(ctx);
-
-    //builder.manifest.load()?;
 
     let mut targets: Vec<PathBuf> = Vec::new();
 
@@ -149,8 +180,6 @@ pub async fn build<'a>(ctx: &'a BuildContext, locales: &'a Locales) -> std::resu
     }
 
     builder.all(&parser, targets).await?;
-
-    //builder.manifest.save()?;
 
     Ok((builder, parser))
 }

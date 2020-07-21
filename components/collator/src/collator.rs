@@ -8,6 +8,7 @@ use config::{Config, RuntimeOptions, FileInfo, FileOptions};
 use config::link::{self, LinkOptions};
 
 use super::{Error, Result, CollateInfo};
+use super::manifest::Manifest;
 
 pub struct CollateRequest<'a> {
     // When filter is active then only `all`, `pages`, `files` and `dirs`
@@ -23,9 +24,9 @@ pub struct CollateResult {
 }
 
 impl CollateResult {
-    pub fn new() -> Self {
+    pub fn new(manifest: Option<Manifest>) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(CollateInfo { ..Default::default() } ))
+            inner: Arc::new(Mutex::new(CollateInfo { manifest, ..Default::default() } ))
         }    
     }
 }
@@ -161,6 +162,7 @@ fn add_page(
     link(&mut info, Arc::clone(key), Arc::new(href.clone()))?;
 
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
+    info.targets.entry(Arc::clone(key)).or_insert(dest);
 
     Ok(())
 }
@@ -195,10 +197,13 @@ fn add_other(
     } else if key.starts_with(req.options.get_data_sources_path()) {
         info.data_sources.push(Arc::clone(key));
     } else if !is_page {
+
         let href = href(&pth, req.options, false, None)?;
         link(&mut info, Arc::clone(key), Arc::new(href))?;
+
         let dest = get_destination(&pth, req.config, req.options)?;
-        info.other.entry(Arc::clone(key)).or_insert(dest);
+        info.other.entry(Arc::clone(key)).or_insert(dest.clone());
+        info.targets.entry(Arc::clone(key)).or_insert(dest);
     }
 
     Ok(())

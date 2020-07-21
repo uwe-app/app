@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::path::PathBuf;
 
 use crossbeam::channel;
-use log::error;
+use log::{debug, error};
 
 use book::compiler::BookCompiler;
 use config::Page;
@@ -50,6 +50,7 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<()> {
+
         if let Some(page) = self.get_page(file) {
 
             let render = page.render.is_some() && page.render.unwrap();
@@ -60,7 +61,7 @@ impl<'a> Compiler<'a> {
 
             run::parse(self.context, parser, page.get_template(), &page).await?;
         } else {
-            let target = self.context.collation.other.get(file).unwrap();
+            let target = self.context.collation.targets.get(file).unwrap();
             run::copy(file, target).await?;
         }
         Ok(())
@@ -72,9 +73,20 @@ impl<'a> Compiler<'a> {
         // TODO: support allowing this in the settings
         let fail_fast = true;
 
-        let all = self.context.collation.other.keys()
-            .chain(self.context.collation.pages.keys())
-            .filter(|p| p.starts_with(target));
+        let all = self.context.collation.targets
+            .iter()
+            .filter(|(p, _)| p.starts_with(target))
+            .filter(|(p, target)| {
+                if let Some(ref manifest) = self.context.collation.manifest {
+                    let file = p.to_path_buf();
+                    if manifest.exists(&file) && !manifest.is_dirty(&file, &target, false) {
+                        debug!("[NOOP] {}", file.display());
+                        return false
+                    }
+                }
+                true
+            })
+            .map(|(p, _)| p);
 
         if parallel {
             let (tx, rx) = channel::unbounded();
