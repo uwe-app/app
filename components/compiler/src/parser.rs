@@ -65,6 +65,8 @@ impl<'a> Parser<'a> {
             Box::new(helpers::components::Components { context }));
         handlebars.register_helper("match",
             Box::new(helpers::matcher::Match { context }));
+        handlebars.register_helper("series",
+            Box::new(helpers::series::Series{ context }));
 
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("include", Box::new(helpers::include::Include));

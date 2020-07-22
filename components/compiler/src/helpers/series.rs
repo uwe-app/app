@@ -1,17 +1,16 @@
 use std::path::PathBuf;
-
 use handlebars::*;
+
 use serde_json::Value;
 
 use crate::BuildContext;
-use crate::tree::{self, ListOptions};
 
 #[derive(Clone, Copy)]
-pub struct Children<'a> {
+pub struct Series<'a> {
     pub context: &'a BuildContext,
 }
 
-impl HelperDef for Children<'_> {
+impl HelperDef for Series<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -28,25 +27,20 @@ impl HelperDef for Children<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .to_string();
 
-        let template = h.template()
-            .ok_or_else(|| RenderError::new("Type error in `children`, block template expected"))?;
-
         let path = PathBuf::from(&base_path);
-        let dir = path.parent().unwrap().to_path_buf();
 
-        // TODO: See if we should render a specific directory
+        let name = h.params().get(0)
+            .ok_or_else(|| RenderError::new("Type error in `series`, expected parameter at index 0"))?
+            .value()
+            .as_str()
+            .ok_or_else(|| RenderError::new("Type error in `series`, expected string parameter"))?;
 
-        let list_opts = ListOptions {
-            sort: Some("title".to_string()),
-            dir: &dir,
-            depth: 1,
-        };
+        let template = h.template()
+            .ok_or_else(|| RenderError::new("Type error in `series`, block template expected"))?;
 
-        let list_result = tree::listing(self.context, &list_opts);
-        match list_result {
-            Ok(entries) => {
-
-                for li in entries {
+        if let Some(set) = self.context.collation.series.get(name) {
+            for p in set {
+                if let Some(li) = self.context.collation.pages.get(p) {
                     let mut local_rc = rc.clone();
                     let mut local_ctx = Context::wraps(li)?;
                     if let Some(ref file_ctx) = li.file {
@@ -59,11 +53,11 @@ impl HelperDef for Children<'_> {
                     }
                     template.render(r, &local_ctx, &mut local_rc, out)?;
                 }
-                return Ok(());
             }
-            // FIXME: find a better way to convert these errors
-            // SEE: https://stackoverflow.com/a/58337971/7625589
-            Err(e) => return Err(RenderError::new(e.to_string())),
+        } else {
+            return Err(RenderError::new(format!("Series `{}` does not exist", name)))
         }
+
+        Ok(())
     }
 }

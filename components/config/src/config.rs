@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use url::Url;
@@ -510,7 +510,7 @@ impl Default for LinkConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct SeriesConfig {
-    pub pages: HashSet<PathBuf>,
+    pub pages: Vec<PathBuf>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

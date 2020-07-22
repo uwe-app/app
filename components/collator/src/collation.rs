@@ -39,7 +39,7 @@ pub struct CollateInfo {
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 
     // List of series
-    pub series: HashMap<String, Arc<PathBuf>>,
+    pub series: HashMap<String, Vec<Arc<PathBuf>>>,
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,

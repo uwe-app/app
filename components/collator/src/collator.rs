@@ -50,9 +50,8 @@ pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()
 
 pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref series) = config.series {
-        println!("Got some series to parse {:?}", series);
-
         for (k, v) in series {
+            let mut refs: Vec<Arc<PathBuf>> = Vec::new();
             v.pages
                 .iter()
                 .map(|p| {
@@ -63,11 +62,17 @@ pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
                 })
                 .try_for_each(|p| {
                     if let Some(ref _page) = info.pages.get(&p) {
-                        info.series.entry(k.to_string()).or_insert(Arc::new(p));
+                        let item = Arc::new(p.clone());
+                        if refs.contains(&item) {
+                            return Err(Error::DuplicateSeriesPage(k.to_string(), p.to_path_buf()))
+                        }
+                        refs.push(item);
                         return Ok(());
                     }
                     Err(Error::NoSeriesPage(k.to_string(), p.to_path_buf()))
                 })?;
+
+            info.series.entry(k.to_string()).or_insert(refs);
         }
     }
     Ok(())

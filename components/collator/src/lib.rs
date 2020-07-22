@@ -26,6 +26,9 @@ pub enum Error {
     #[error("Series '{0}' references missing page {1}")]
     NoSeriesPage(String, PathBuf),
 
+    #[error("Series '{0}' has duplicate page {1}")]
+    DuplicateSeriesPage(String, PathBuf),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 

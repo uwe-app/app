@@ -17,6 +17,7 @@ pub mod matcher;
 pub mod parent;
 pub mod partial;
 pub mod random;
+pub mod series;
 pub mod sibling;
 pub mod slug;
 
