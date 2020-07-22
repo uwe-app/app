@@ -195,7 +195,7 @@ fn add_page(
     };
 
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, req.config, req.options, &file_info)?;
+    page_info.seal(&dest, req.config, req.options, &file_info, None)?;
 
     if let Some(ref layout) = page_info.layout {
         // Register the layout

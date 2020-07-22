@@ -75,10 +75,21 @@ impl FileContext {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PaginateInfo {
-    // Total number of items
+    // Total number of pages.
     pub total: usize,
-    // Total number of pages
-    pub pages: usize,
+    // Current page number.
+    pub current: usize,
+    // Total number of items in the collection.
+    pub length: usize,
+    // The index into the collection for the
+    // first item on this page.
+    pub first: usize,
+    // The index into the collection for the 
+    // last item on this page.
+    pub last: usize,
+    // The actual length of the items in this page, 
+    // normally the page size but may be less.
+    pub size: usize,
 }
 
 #[skip_serializing_none]
@@ -131,6 +142,8 @@ pub struct Page {
     pub file: Option<FileContext>,
     #[serde(skip_deserializing)]
     pub canonical: Option<String>,
+    #[serde(skip_deserializing)]
+    pub paginate: Option<PaginateInfo>,
 
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
@@ -168,6 +181,7 @@ impl Default for Page {
             lang: None,
             file: None,
             canonical: None,
+            paginate: None,
         }
     }
 }
@@ -193,12 +207,26 @@ impl Page {
         Ok(())
     }
 
-    pub fn seal(&mut self, output: &PathBuf, config: &Config, options: &RuntimeOptions, info: &FileInfo) -> Result<(), Error> {
+    pub fn seal(
+        &mut self,
+        output: &PathBuf,
+        config: &Config,
+        options: &RuntimeOptions,
+        info: &FileInfo,
+        template: Option<PathBuf>) -> Result<(), Error> {
+
         self.set_language(&options.lang);
         self.host = Some(config.host.clone());
 
-        let mut file_context = FileContext::new(info.file.clone(), output.clone(), info.file.clone());
+        let template = if let Some(template) = template {
+            template
+        } else {
+            info.file.clone()
+        };
+
+        let mut file_context = FileContext::new(info.file.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
+
 
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {

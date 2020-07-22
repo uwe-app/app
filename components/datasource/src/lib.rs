@@ -12,7 +12,7 @@ use serde_json::{json, to_value, Map, Value};
 use thiserror::Error;
 
 use collator::CollateInfo;
-use config::{Config, RuntimeOptions, FileInfo, FileOptions};
+use config::{Config, RuntimeOptions, FileInfo, FileOptions, PaginateInfo};
 use config::indexer::{IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
 
 pub mod identifier;
@@ -276,16 +276,144 @@ impl DataSourceMap {
         Ok(())
     }
 
-    // Expand out queries which generate multiple new pages, these can 
-    // be each iterators or pagination queries
-    pub fn expand(
+    // Expand out queries into page chunks.
+    pub fn pages(
         config: &Config,
         options: &RuntimeOptions,
         info: &mut CollateInfo,
         map: &DataSourceMap,
         cache: &mut QueryCache) -> Result<()> {
 
-        //let mut links: HashMap<Arc<PathBuf>, Arc<String>> = HashMap::new();
+        let queries = info.queries.clone();
+        for (q, p) in queries.iter() {
+            let pages_query = q.to_page_vec();
+            if pages_query.is_empty() { continue; }
+
+            println!("Got page queries {:?}", pages_query);
+
+            // Should have raw page data - note that we remove
+            // the page as it is being used as an iterator
+            let page = info.pages.remove(p).unwrap();
+
+            let mut rewrite_index = options.settings.should_rewrite_index();
+            // Override with rewrite-index page level setting
+            if let Some(val) = page.rewrite_index {
+                rewrite_index = val;
+            }
+
+            for page_query in pages_query.iter() {
+                let idx = map.query_index(page_query, cache)?;
+
+                let length = idx.len();
+                let page_req = page_query.page.as_ref().unwrap();
+
+                let mut total = idx.len() / page_req.size;
+                if idx.len() % page_req.size != 0 {
+                    total += 1;
+                }
+
+                for (current, items) in idx.chunks(page_req.size).enumerate() {
+                    //println!("Current {} of {}", current, total);
+
+                    let first = current * page_req.size;
+                    let last = if first + page_req.size >= length {
+                        length - 1
+                    } else {
+                        first + page_req.size - 1
+                    };
+
+                    let size = last - first + 1;
+
+                    let paginate = PaginateInfo {
+                        total,
+                        current,
+                        length,
+                        first,
+                        last,
+                        size,
+                    };
+
+                    let page_no = current + 1;
+                    let page_name = format!("{}", page_no);
+
+                    let mut item_data = page.clone();
+                    item_data.paginate = Some(paginate);
+                    item_data.extra.insert(page_query.get_parameter(), json!(items));
+
+                    let file_ctx = item_data.file.as_ref().unwrap();
+                    let file_source = file_ctx.source.clone();
+
+                    let parent = file_source.parent().unwrap().to_path_buf();
+                    let mut stem = if let Some(stem) = file_source.file_stem() {
+                        if stem == config::INDEX_STEM {
+                            PathBuf::from("")
+                        } else {
+                            PathBuf::from(stem)
+                        }
+                    } else {
+                        PathBuf::from("")
+                    };
+
+                    stem = if rewrite_index {
+                        stem.join(page_name)
+                    } else {
+                        stem.set_file_name(
+                            format!("{}{}", stem.to_string_lossy().into_owned(), page_name));
+                        stem
+                    };
+
+                    if let Some(ext) = file_source.extension() {
+                        stem.set_extension(ext);
+                    }
+
+                    let mock = parent.join(stem);
+
+                    let mut file_info = FileInfo::new(
+                        config,
+                        options,
+                        &mock,
+                        true,
+                    );
+
+                    let file_opts = FileOptions {
+                        rewrite_index,
+                        base_href: &options.settings.base_href,
+                        ..Default::default()
+                    };
+
+                    let dest = file_info.destination(&file_opts)?;
+
+                    item_data.seal(
+                        &dest,
+                        config,
+                        options,
+                        &file_info,
+                        Some(file_source))?;
+
+                    println!("Got paginate {:#?}", mock);
+
+                    // Configure a link for the synthetic page
+                    let href = collator::href(&mock, options, rewrite_index, None)?;
+                    let key = Arc::new(mock);
+                    collator::link(info, Arc::clone(&key), Arc::new(href))?;
+
+                    info.targets.entry(Arc::clone(&key)).or_insert(dest);
+                    info.pages.entry(key).or_insert(item_data);
+
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    // Expand out each queries to generate multiple new pages.
+    pub fn expand(
+        config: &Config,
+        options: &RuntimeOptions,
+        info: &mut CollateInfo,
+        map: &DataSourceMap,
+        cache: &mut QueryCache) -> Result<()> {
 
         let queries = info.queries.clone();
 
@@ -347,18 +475,8 @@ impl DataSourceMap {
                                 &dest,
                                 config,
                                 options,
-                                &file_info)?;
-
-                            // Assign the template so it is preferred over the mock
-                            // synthetic path used to generate a destination
-                            let file_ctx = item_data.file.as_mut().unwrap();
-                            file_ctx.template = p.to_path_buf();
-
-                            let mut rewrite_index = options.settings.should_rewrite_index();
-                            // Override with rewrite-index page level setting
-                            if let Some(val) = item_data.rewrite_index {
-                                rewrite_index = val;
-                            }
+                                &file_info,
+                                Some(p.to_path_buf()))?;
 
                             // Configure a link for the synthetic page
                             let href = collator::href(&mock, options, rewrite_index, None)?;

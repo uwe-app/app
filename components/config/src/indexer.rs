@@ -164,7 +164,7 @@ impl QueryList {
     pub fn to_assign_vec(&self) -> Vec<IndexQuery> {
         self.to_vec()
             .iter()
-            .filter(|q| q.each.is_none() || (q.each.is_some() && !q.each.unwrap()))
+            .filter(|q| (q.each.is_none() || (q.each.is_some() && !q.each.unwrap())) && q.page.is_none())
             .map(IndexQuery::clone)
             .collect::<Vec<_>>()
     }
@@ -173,6 +173,14 @@ impl QueryList {
         self.to_vec()
             .iter()
             .filter(|q| q.each.is_some() && q.each.unwrap())
+            .map(IndexQuery::clone)
+            .collect::<Vec<_>>()
+    }
+
+    pub fn to_page_vec(&self) -> Vec<IndexQuery> {
+        self.to_vec()
+            .iter()
+            .filter(|q| q.page.is_some())
             .map(IndexQuery::clone)
             .collect::<Vec<_>>()
     }

@@ -152,6 +152,7 @@ async fn load(
     let mut cache = DataSourceMap::get_cache();
 
     DataSourceMap::assign(&config, &options, &mut collation, &datasource, &mut cache)?;
+    DataSourceMap::pages(&config, &options, &mut collation, &datasource, &mut cache)?;
     DataSourceMap::expand(&config, &options, &mut collation, &datasource, &mut cache)?;
 
     // Collate the series data
