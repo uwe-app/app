@@ -72,6 +72,15 @@ impl FileContext {
     }
 }
 
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PaginateInfo {
+    // Total number of items
+    pub total: usize,
+    // Total number of pages
+    pub pages: usize,
+}
+
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default, rename_all = "kebab-case")]

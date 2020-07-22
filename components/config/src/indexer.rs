@@ -78,6 +78,11 @@ impl Default for KeyType {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+pub struct PageInfo {
+    pub size: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
@@ -90,6 +95,7 @@ pub struct IndexQuery {
     pub desc: Option<bool>,
     pub offset: Option<usize>,
     pub limit: Option<usize>,
+    pub page: Option<PageInfo>,
 }
 
 impl Default for IndexQuery {
@@ -106,6 +112,7 @@ impl Default for IndexQuery {
             desc: Some(false),
             offset: Some(0),
             limit: None,
+            page: None,
         }
     }
 }

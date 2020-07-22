@@ -6,6 +6,7 @@ use ignore::{WalkBuilder, WalkState};
 
 use config::{Config, RuntimeOptions, FileInfo, FileOptions};
 use config::link::{self, LinkOptions};
+use config::indexer::QueryList;
 
 use super::{Error, Result, CollateInfo};
 use super::manifest::Manifest;
@@ -138,6 +139,17 @@ pub fn href(file: &PathBuf, options: &RuntimeOptions, rewrite: bool, strip: Opti
     link::absolute(file, options, href_opts).map_err(Error::from)
 }
 
+fn verify_query(list: &QueryList) -> Result<()> {
+    let queries = list.to_vec();
+    for q in queries {
+        let each = q.each.is_some() && q.each.unwrap();
+        if q.page.is_some() && each {
+            return Err(Error::QueryConflict)
+        }
+    }
+    Ok(())
+}
+
 fn add_page(
     req: &CollateRequest<'_>,
     mut info: &mut CollateInfo,
@@ -149,6 +161,7 @@ fn add_page(
     let mut page_info = loader::compute(&path, req.config, req.options, true)?;
 
     if let Some(ref query) = page_info.query {
+        verify_query(query)?;
         info.queries.push((query.clone(), Arc::clone(key)));
     }
 
