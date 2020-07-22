@@ -9,6 +9,7 @@ use compiler::{Compiler, BuildContext};
 use compiler::parser::Parser;
 use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
+use datasource::synthetic;
 use locale::Locales;
 
 use collator::{CollateRequest, CollateResult, CollateInfo};
@@ -151,9 +152,9 @@ async fn load(
 
     let mut cache = DataSourceMap::get_cache();
 
-    DataSourceMap::assign(&config, &options, &mut collation, &datasource, &mut cache)?;
-    DataSourceMap::pages(&config, &options, &mut collation, &datasource, &mut cache)?;
-    DataSourceMap::expand(&config, &options, &mut collation, &datasource, &mut cache)?;
+    synthetic::pages(&config, &options, &mut collation, &datasource, &mut cache)?;
+    synthetic::each(&config, &options, &mut collation, &datasource, &mut cache)?;
+    synthetic::assign(&config, &options, &mut collation, &datasource, &mut cache)?;
 
     // Collate the series data
     collator::series(&config, &options, &mut collation)?;

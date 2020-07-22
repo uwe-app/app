@@ -62,6 +62,11 @@ pub struct CollateInfo {
 
 impl CollateInfo {
 
+    pub fn remove_page(&mut self, p: &PathBuf) -> Page {
+        self.targets.remove(p);
+        self.pages.remove(p).unwrap()
+    }
+
     // Rewrite destination paths.
     //
     // Used for multi-lingual output to locale specific folders.

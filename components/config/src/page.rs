@@ -72,7 +72,6 @@ impl FileContext {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PaginateInfo {
     // Total number of pages.
@@ -90,6 +89,8 @@ pub struct PaginateInfo {
     // The actual length of the items in this page, 
     // normally the page size but may be less.
     pub size: usize,
+    // The href values for each page
+    pub links: Vec<String>,
 }
 
 #[skip_serializing_none]
@@ -244,9 +245,13 @@ impl Page {
         Ok(())
     }
 
+    pub fn get_href<P: AsRef<Path>>(&mut self, p: P, opts: &RuntimeOptions) -> Result<String, Error> {
+        link::absolute(p.as_ref(), opts, Default::default())
+    }
+
     pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config, opts: &RuntimeOptions) -> Result<(), Error> {
 
-        self.href = Some(link::absolute(p.as_ref(), opts, Default::default())?);
+        self.href = Some(self.get_href(p, opts)?);
 
         debug!("Href: {:?}", self.href);
 
