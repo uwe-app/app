@@ -48,6 +48,31 @@ pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()
     Ok(())
 }
 
+pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
+    if let Some(ref series) = config.series {
+        println!("Got some series to parse {:?}", series);
+
+        for (k, v) in series {
+            v.pages
+                .iter()
+                .map(|p| {
+                    if !p.starts_with(&options.source) {
+                        return options.source.join(p)
+                    }
+                    p.to_path_buf()
+                })
+                .try_for_each(|p| {
+                    if let Some(ref _page) = info.pages.get(&p) {
+                        info.series.entry(k.to_string()).or_insert(Arc::new(p));
+                        return Ok(());
+                    }
+                    Err(Error::NoSeriesPage(k.to_string(), p.to_path_buf()))
+                })?;
+        }
+    }
+    Ok(())
+}
+
 fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
     let data = Arc::clone(&res.inner);
     let mut info = data.lock().unwrap();

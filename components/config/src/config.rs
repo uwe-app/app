@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-use std::convert::AsRef;
-use std::path::Path;
-use std::path::PathBuf;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 
 use url::Url;
 
@@ -124,6 +122,8 @@ pub struct Config {
     pub minify: Option<MinifyConfig>,
     pub livereload: Option<LiveReload>,
 
+    pub series: Option<HashMap<String, SeriesConfig>>,
+
     #[serde(skip)]
     pub file: Option<PathBuf>,
 
@@ -136,8 +136,6 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
-            file: None,
-            project: None,
             build: Some(Default::default()),
             workspace: None,
             fluent: None,
@@ -157,6 +155,10 @@ impl Default for Config {
             collate: None,
             minify: None,
             livereload: Some(Default::default()),
+            series: None,
+
+            file: None,
+            project: None,
         }
     }
 }
@@ -506,6 +508,10 @@ impl Default for LinkConfig {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct SeriesConfig {
+    pub pages: HashSet<PathBuf>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyConfig {

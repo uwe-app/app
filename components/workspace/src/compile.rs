@@ -154,6 +154,9 @@ async fn load(
     DataSourceMap::assign(&config, &options, &mut collation, &datasource, &mut cache)?;
     DataSourceMap::expand(&config, &options, &mut collation, &datasource, &mut cache)?;
 
+    // Collate the series data
+    collator::series(&config, &options, &mut collation)?;
+
     // Set up the real context
     Ok(BuildContext::new(config, options, datasource, collation))
 }
