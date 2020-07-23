@@ -73,6 +73,13 @@ impl FileContext {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PageLink {
+    pub index: usize,
+    pub name: String,
+    pub href: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PaginateInfo {
     // Total number of pages.
     pub total: usize,
@@ -89,8 +96,13 @@ pub struct PaginateInfo {
     // The actual length of the items in this page, 
     // normally the page size but may be less.
     pub size: usize,
-    // The href values for each page
-    pub links: Vec<String>,
+    // The href values for each page keyed by page number
+    // using a one-based index for the keys
+    pub links: Vec<PageLink>,
+
+    // The href values for next and previous
+    pub prev: Option<PageLink>,
+    pub next: Option<PageLink>,
 }
 
 #[skip_serializing_none]

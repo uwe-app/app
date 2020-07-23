@@ -57,7 +57,7 @@ pub fn get_short_codes_location() -> Result<PathBuf> {
 }
 
 pub use crate::config::*;
-pub use page::{Page, PaginateInfo};
+pub use page::{Page, PaginateInfo, PageLink};
 pub use file::{FileType, FileInfo, FileOptions};
 pub use profile::{ProfileName, ProfileSettings, RuntimeOptions, RenderTypes};
 pub use indexer::{IndexQuery, KeyType};

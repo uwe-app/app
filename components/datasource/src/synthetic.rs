@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use serde_json::json;
 
 use collator::CollateInfo;
-use config::{Config, RuntimeOptions, Page, FileInfo, FileOptions, PaginateInfo};
+use config::{Config, RuntimeOptions, Page, FileInfo, FileOptions, PaginateInfo, PageLink};
 
 use crate::{Error, Result, DataSourceMap, QueryCache};
 
@@ -142,7 +142,7 @@ pub fn pages(
                 };
 
                 stem = if rewrite_index {
-                    stem.join(page_name)
+                    stem.join(&page_name)
                 } else {
                     stem.set_file_name(
                         format!("{}{}", stem.to_string_lossy().into_owned(), page_name));
@@ -163,15 +163,34 @@ pub fn pages(
                     last,
                     size,
                     links: Vec::new(),
+                    prev: None,
+                    next: None,
                 };
 
-                links.push(item_data.get_href(&mock, options)?);
+                let link = PageLink {
+                    index: current,
+                    name: page_name,
+                    href: item_data.get_href(&mock, options)?,
+                };
 
-                chunks.push((mock, file_source, item_data, paginate, items));
+                links.push(link);
+
+                //links.insert(page_name, item_data.get_href(&mock, options)?);
+
+                chunks.push((current, mock, file_source, item_data, paginate, items));
             }
 
-            for (mock, file_source, mut item_data, mut paginate, items) in chunks {
+            for (current, mock, file_source, mut item_data, mut paginate, items) in chunks {
                 paginate.links = links.clone();
+
+                if current > 0 {
+                    paginate.prev = Some(paginate.links[current - 1].clone());
+                }
+
+                if current < (links.len() - 1) {
+                    paginate.next = Some(paginate.links[current + 1].clone());
+                }
+
                 item_data.paginate = Some(paginate);
                 item_data.extra.insert(page_query.get_parameter(), json!(items));
                 create_synthetic(
