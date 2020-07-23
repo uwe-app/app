@@ -97,11 +97,10 @@ pub struct PaginateInfo {
     // The actual length of the items in this page, 
     // normally the page size but may be less.
     pub size: usize,
-    // The href values for each page keyed by page number
-    // using a one-based index for the keys
+    // List of links for each page
     pub links: Vec<PageLink>,
 
-    // The href values for next and previous
+    // Links for next and previous pages when available
     pub prev: Option<PageLink>,
     pub next: Option<PageLink>,
 }
