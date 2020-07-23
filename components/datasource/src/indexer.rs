@@ -347,55 +347,6 @@ impl DataSourceMap {
         Ok(())
     }
 
-    fn find_field<S: AsRef<str>>(field: S, parent: &Value) -> Value {
-        match parent {
-            Value::Object(ref map) => {
-                if let Some(val) = map.get(field.as_ref()) {
-                    return val.clone();
-                }
-            },
-            Value::Array(ref list) => {
-                if let Ok(index) = field.as_ref().parse::<usize>() {
-                    if !list.is_empty() && index < list.len() {
-                        return list[index].clone();
-                    }
-                }
-            },
-            _ => {}
-        } 
-        Value::Null
-    }
-
-    fn find_value_for_key<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
-        #[allow(unused_assignments)]
-        let mut parent = Value::Null;
-
-        let parts = needle.as_ref()
-            .split(".")
-            .map(|p| p.to_string())
-            .enumerate()
-            .collect::<Vec<_>>();
-
-        match doc {
-            Value::Object(ref _map) => {
-                let mut current: &Value = doc;
-                for (i, part) in parts.iter() {
-                    if *i == parts.len() - 1 {
-                        return DataSourceMap::find_field(&part, current)
-                    } else {
-                        parent = DataSourceMap::find_field(&part, current);
-                        if let Value::Null = parent {
-                            break;
-                        }
-                        current = &parent;
-                    }
-                }
-            },
-            _ => {}
-        }
-        Value::Null
-    }
-
     fn get_sort_key_for_value<S: AsRef<str>>(id: S, key_val: &Value) -> String {
         match key_val {
             Value::String(ref s) => {
@@ -425,7 +376,7 @@ impl DataSourceMap {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
-                        DataSourceMap::find_value_for_key(key, document)
+                        config::path::find_path(key, document)
                     };
 
                     if let Value::Null = key_val {

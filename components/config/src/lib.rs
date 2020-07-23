@@ -49,6 +49,7 @@ mod file;
 pub mod filter;
 pub mod link;
 mod page;
+pub mod path;
 mod profile;
 
 pub fn get_short_codes_location() -> Result<PathBuf> {

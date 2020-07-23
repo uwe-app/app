@@ -99,7 +99,6 @@ pub struct PaginateInfo {
     pub size: usize,
     // List of links for each page
     pub links: Vec<PageLink>,
-
     // Links for next and previous pages when available
     pub prev: Option<PageLink>,
     pub next: Option<PageLink>,
