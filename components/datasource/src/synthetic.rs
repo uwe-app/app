@@ -105,6 +105,10 @@ pub fn pages(
             let length = idx.len();
             let page_req = page_query.page.as_ref().unwrap();
 
+            if page_req.size < 2 {
+                return Err(Error::PageSizeTooSmall(page_req.size));
+            }
+
             let mut total = idx.len() / page_req.size;
             if idx.len() % page_req.size != 0 {
                 total += 1;
@@ -165,23 +169,38 @@ pub fn pages(
                     links: Vec::new(),
                     prev: None,
                     next: None,
+                    //span: Some(get_page_span(current, total, 2)),
                 };
 
                 let link = PageLink {
                     index: current,
                     name: page_name,
                     href: item_data.get_href(&mock, options)?,
+                    preserve: false,
                 };
 
                 links.push(link);
 
-                //links.insert(page_name, item_data.get_href(&mock, options)?);
-
                 chunks.push((current, mock, file_source, item_data, paginate, items));
             }
 
+            let length = chunks.len();
+            let upto = 2;
+
             for (current, mock, file_source, mut item_data, mut paginate, items) in chunks {
-                paginate.links = links.clone();
+                let mut page_links = links.clone();
+
+                for (i, v) in page_links.iter_mut().enumerate() {
+                    let after = current + upto;
+                    let before: i32 = current as i32 - upto as i32;
+                    let before_limit = std::cmp::max(before, 0) as usize;
+                    let after_limit = std::cmp::min(after, length - 1);
+                    if (i < current && i >= before_limit) || (i > current && i <= after_limit) {
+                        v.preserve = true;
+                    }
+                }
+
+                paginate.links = page_links;
 
                 if current > 0 {
                     paginate.prev = Some(paginate.links[current - 1].clone());

@@ -77,6 +77,7 @@ pub struct PageLink {
     pub index: usize,
     pub name: String,
     pub href: String,
+    pub preserve: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

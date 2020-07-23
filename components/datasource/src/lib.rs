@@ -19,6 +19,9 @@ pub enum Error {
     #[error("Data source document must have an id")]
     DataSourceDocumentNoId,
 
+    #[error("Page size {0} is not large enough, must be greater than one")]
+    PageSizeTooSmall(usize),
+
     #[error("No data source with name {0}")]
     NoDataSource(String),
 
