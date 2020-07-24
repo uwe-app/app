@@ -86,6 +86,7 @@ pub struct PageInfo {
     pub size: usize,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct IndexQuery {
     pub name: String,
@@ -216,6 +217,19 @@ impl PartialEq for IndexKey {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum QueryValue {
+    One(Value),
+    Many(Vec<Value>),
+}
+
+impl Default for QueryValue {
+    fn default() -> Self {
+        QueryValue::Many(vec![])
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct QueryResult {
@@ -223,5 +237,5 @@ pub struct QueryResult {
     pub parameter: String,
     pub id: Option<String>,
     pub key: Option<IndexKey>,
-    pub documents: Option<Vec<Value>>,
+    pub value: Option<QueryValue>,
 }

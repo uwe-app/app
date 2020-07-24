@@ -76,6 +76,66 @@ pub fn assign(
     Ok(())
 }
 
+// Expand out each queries to generate a page for each item in the result set.
+pub fn each(
+    config: &Config,
+    options: &RuntimeOptions,
+    info: &mut CollateInfo,
+    map: &DataSourceMap,
+    cache: &mut QueryCache) -> Result<()> {
+
+    let queries = info.queries.clone();
+
+    for (q, p) in queries.iter() {
+        let each = q.to_each_vec();
+        if each.is_empty() { continue; }
+
+        // Should have raw page data - note that we remove
+        // the page as it is being used as an iterator
+        let page = info.remove_page(p);
+
+        let mut rewrite_index = options.settings.should_rewrite_index();
+        // Override with rewrite-index page level setting
+        if let Some(val) = page.rewrite_index {
+            rewrite_index = val;
+        }
+
+        for each_query in each.iter() {
+            let idx = map.query_index(each_query, cache)?;
+
+            for doc in &idx {
+                let mut item_data = page.clone();
+
+                if let Some(ref id) = doc.id {
+                    // Assign the document to the page data
+                    item_data.extra.insert(doc.parameter.clone(), json!(doc));
+
+                    // Mock a source file to build a destination
+                    // respecting the clean URL setting
+                    let mut mock = p.parent().unwrap().to_path_buf();
+                    mock.push(&id);
+                    if let Some(ext) = p.extension() {
+                        mock.set_extension(ext);
+                    }
+
+                    create_synthetic(
+                        config,
+                        options,
+                        info,
+                        mock,
+                        p.to_path_buf(),
+                        item_data,
+                        rewrite_index)?;
+                } else {
+                    return Err(Error::DataSourceDocumentNoId);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 // Expand out result sets into page chunks.
 pub fn pages(
     config: &Config,
@@ -228,75 +288,3 @@ pub fn pages(
     Ok(())
 }
 
-// Expand out each queries to generate a page for each item in the result set.
-pub fn each(
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-    map: &DataSourceMap,
-    cache: &mut QueryCache) -> Result<()> {
-
-    let queries = info.queries.clone();
-
-    for (q, p) in queries.iter() {
-        let each = q.to_each_vec();
-        if each.is_empty() { continue; }
-
-        // Should have raw page data - note that we remove
-        // the page as it is being used as an iterator
-        let page = info.remove_page(p);
-
-        let mut rewrite_index = options.settings.should_rewrite_index();
-        // Override with rewrite-index page level setting
-        if let Some(val) = page.rewrite_index {
-            rewrite_index = val;
-        }
-
-        for each_query in each.iter() {
-            let idx = map.query_index(each_query, cache)?;
-
-            for doc in &idx {
-                let mut item_data = page.clone();
-
-                if let Some(ref id) = doc.id {
-                    //if let Some(id) = id.as_str() {
-                        //if doc.is_object() {
-                            //let map = doc.as_object().unwrap();
-                            //for (k, v) in map {
-                                //item_data.extra.insert(k.clone(), json!(v));
-                            //}
-                        //} else {
-                            //return Err(Error::DataSourceDocumentNotAnObject);
-                        //}
-
-                        item_data.extra.insert(doc.parameter.clone(), json!(doc));
-
-
-                        // FIXME: assign the document to the page data!!!
-
-                        // Mock a source file to build a destination
-                        // respecting the clean URL setting
-                        let mut mock = p.parent().unwrap().to_path_buf();
-                        mock.push(&id);
-                        if let Some(ext) = p.extension() {
-                            mock.set_extension(ext);
-                        }
-
-                        create_synthetic(
-                            config,
-                            options,
-                            info,
-                            mock,
-                            p.to_path_buf(),
-                            item_data,
-                            rewrite_index)?;
-                    //}
-                } else {
-                    return Err(Error::DataSourceDocumentNoId);
-                }
-            }
-        }
-    }
-
-    Ok(())
-}

@@ -10,7 +10,14 @@ use serde_json::{json, to_value, Map, Value};
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
-use config::indexer::{IndexQuery, IndexKey, KeyType, SourceProvider, DataSource as DataSourceConfig, QueryResult};
+use config::indexer::{
+    IndexQuery,
+    IndexKey,
+    KeyType,
+    SourceProvider,
+    DataSource as DataSourceConfig,
+    QueryValue,
+    QueryResult};
 
 use crate::{Error, Result};
 use crate::identifier;
@@ -20,6 +27,11 @@ pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 
 static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
+
+static IDENTITY: &str = "id";
+static NAME: &str = "name";
+static PATH: &str = "path";
+static KEY: &str = "key";
 
 pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
@@ -74,6 +86,22 @@ impl ValueIndex {
     }
     */
 
+    fn get_identity(&self, slug: &str, id: &str, key: &IndexKey) -> Map<String, Value> {
+        let mut m = Map::new();
+        m.insert(PATH.to_string(), Value::String(slug.to_string()));
+        m.insert(NAME.to_string(), Value::String(id.to_string()));
+        m.insert(KEY.to_string(), to_value(key.clone()).unwrap());
+        m
+    }
+
+    fn with_identity(&self, doc: &mut Value, slug: &str, id: &str, key: &IndexKey) {
+        if doc.is_object() {
+            let obj = doc.as_object_mut().unwrap();
+            let ident = self.get_identity(slug, id, key);
+            obj.insert(IDENTITY.to_string(), Value::Object(ident));
+        }
+    }
+
     fn map_entry(
         &self,
         k: &IndexKey,
@@ -82,24 +110,39 @@ impl ValueIndex {
         docs: &BTreeMap<String, Value>,
         query: &IndexQuery) -> QueryResult {
 
-        let id = slug::slugify(&k.name);
+        let slug = slug::slugify(&k.name);
 
-        let documents = if include_docs {
-            let docs = v
-                .iter()
-                .filter(|s| docs.contains_key(&**s))
-                .map(|s| docs.get(s).unwrap().clone())
-                .collect::<Vec<_>>();
-            Some(docs)
+        let unique = query.unique.is_some() && query.unique.unwrap();
+
+        let value = if include_docs {
+            if unique && v.len() == 1 {
+                let id = &v[0];
+                let mut doc = docs.get(id).unwrap().clone();
+                self.with_identity(&mut doc, &slug, id, k);
+                Some(QueryValue::One(doc)) 
+            } else {
+                let docs = v
+                    .iter()
+                    .filter(|s| docs.contains_key(&**s))
+                    .map(|id| {
+                        let mut doc = docs.get(id).unwrap().clone();
+                        self.with_identity(&mut doc, &slug, id, k);
+                        doc
+                    })
+                    .collect::<Vec<_>>();
+
+                Some(QueryValue::Many(docs))
+            }
+
         } else {
             None 
         };
 
         let res = QueryResult {
             parameter: query.get_value_parameter(),
-            id: Some(id),
+            id: Some(slug),
             key: Some(k.clone()),
-            documents,
+            value,
         };
 
         res
