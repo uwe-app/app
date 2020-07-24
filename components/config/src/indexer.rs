@@ -1,6 +1,10 @@
+use std::cmp::Ordering;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+
+use serde_json::Value;
+use serde_with::skip_serializing_none;
 
 static ALL_INDEX: &str = "all";
 static DEFAULT_PARAMETER: &str = "documents";
@@ -186,4 +190,38 @@ impl QueryList {
             .map(IndexQuery::clone)
             .collect::<Vec<_>>()
     }
+}
+
+#[derive(Eq, Debug, Serialize, Deserialize, Clone, Default)]
+pub struct IndexKey {
+    pub name: String,
+    pub value: Value,
+}
+
+impl Ord for IndexKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name) 
+    }
+}
+
+impl PartialOrd for IndexKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for IndexKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name 
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct QueryResult {
+    #[serde(skip_serializing)]
+    pub parameter: String,
+    pub id: Option<String>,
+    pub key: Option<IndexKey>,
+    pub documents: Option<Vec<Value>>,
 }

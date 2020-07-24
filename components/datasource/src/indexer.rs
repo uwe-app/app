@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fs::ReadDir;
@@ -6,18 +5,18 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use log::{info, warn};
-use serde::{Serialize, Deserialize};
+//use serde::{Serialize, Deserialize};
 use serde_json::{json, to_value, Map, Value};
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
-use config::indexer::{IndexQuery, KeyType, SourceProvider, DataSource as DataSourceConfig};
+use config::indexer::{IndexQuery, IndexKey, KeyType, SourceProvider, DataSource as DataSourceConfig, QueryResult};
 
 use crate::{Error, Result};
 use crate::identifier;
 use crate::provider;
 
-pub type QueryCache = HashMap<IndexQuery, Vec<Value>>;
+pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 
 static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
@@ -36,36 +35,14 @@ pub struct DataSource {
     pub indices: BTreeMap<String, ValueIndex>,
 }
 
-#[derive(Eq, Debug, Serialize, Deserialize)]
-pub struct IndexKey {
-    pub name: String,
-    pub value: Value,
-}
-
-impl Ord for IndexKey {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.name.cmp(&other.name) 
-    }
-}
-
-impl PartialOrd for IndexKey {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for IndexKey {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name 
-    }
-}
-
 #[derive(Debug)]
 pub struct ValueIndex {
     pub documents: BTreeMap<IndexKey, Vec<String>>,
 }
 
 impl ValueIndex {
+
+    /*
     pub fn to_keys(&self, key_type: &KeyType) -> Vec<Value> {
         return self
             .documents
@@ -95,6 +72,7 @@ impl ValueIndex {
             })
             .collect::<Vec<_>>();
     }
+    */
 
     fn map_entry(
         &self,
@@ -102,47 +80,32 @@ impl ValueIndex {
         v: &Vec<String>,
         include_docs: bool,
         docs: &BTreeMap<String, Value>,
-        query: &IndexQuery) -> Value {
+        query: &IndexQuery) -> QueryResult {
 
         let id = slug::slugify(&k.name);
-        let mut m = Map::new();
 
-        m.insert("id".to_string(), json!(&id));
-        m.insert("key".to_string(), json!(&k));
+        let documents = if include_docs {
+            let docs = v
+                .iter()
+                .filter(|s| docs.contains_key(&**s))
+                .map(|s| docs.get(s).unwrap().clone())
+                .collect::<Vec<_>>();
+            Some(docs)
+        } else {
+            None 
+        };
 
-        if include_docs {
-            if query.is_unique() && v.len() == 1 {
-                let s = &v[0];
-                let mut d = Map::new();
-                d.insert("id".to_string(), json!(s));
-                if let Some(doc) = docs.get(s) {
-                    d.insert("document".to_string(), json!(doc));
-                } else {
-                    warn!("Query missing document for {}", s);
-                }
-                m.insert(query.get_value_parameter(), json!(&d));
-            } else {
-                
-                let docs = v
-                    .iter()
-                    .filter(|s| docs.contains_key(&**s))
-                    .map(|s| {
-                        let doc = docs.get(s).unwrap();
-                        let mut m = Map::new();
-                        m.insert("id".to_string(), json!(id));
-                        m.insert("document".to_string(), json!(doc));
-                        m
-                    })
-                    .collect::<Vec<_>>();
+        let res = QueryResult {
+            parameter: query.get_value_parameter(),
+            id: Some(id),
+            key: Some(k.clone()),
+            documents,
+        };
 
-                m.insert(query.get_value_parameter(), json!(&docs));
-            }
-        }
-
-        json!(&m)
+        res
     }
 
-    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<Value> {
+    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<QueryResult> {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
@@ -161,7 +124,7 @@ impl ValueIndex {
                 .skip(offset))
         };
 
-        let mut items: Vec<Value> = Vec::new();
+        let mut items: Vec<QueryResult> = Vec::new();
         for (i, (k, v)) in iter {
             if limit > 0 && i >= limit {
                 break; 
@@ -171,12 +134,13 @@ impl ValueIndex {
             items.push(val);
         }
 
-
+        /*
         if let Some(ref sort_key) = query.sort {
             // HACK: for sorting to work right now!
             let sort_key = format!("value.0.document.{}", sort_key);
             config::path::sort(&sort_key, &mut items);
         }
+        */
 
         items
     }
@@ -449,7 +413,7 @@ impl DataSourceMap {
         ds: &DataSource,
         idx: &ValueIndex,
         query: &IndexQuery,
-        cache: &mut QueryCache) -> Result<Vec<Value>> {
+        cache: &mut QueryCache) -> Result<Vec<QueryResult>> {
 
         if let Some(ref cached) = cache.get(query) {
             return Ok(cached.to_vec())
@@ -457,20 +421,20 @@ impl DataSourceMap {
 
         let res;
 
-        if query.keys.is_some() {
-            res = idx.to_keys(query.keys.as_ref().unwrap());
-        } else if query.values.is_some() && query.values.unwrap() {
-            res = idx.to_values();
-        } else {
+        //if query.keys.is_some() {
+            //res = idx.to_keys(query.keys.as_ref().unwrap());
+        //} else if query.values.is_some() && query.values.unwrap() {
+            //res = idx.to_values();
+        //} else {
             res = idx.from_query(query, &ds.all);
-        }
+        //}
 
-        cache.entry(query.clone()).or_insert(res.to_vec());
+        cache.entry(query.clone()).or_insert(res.clone());
 
         Ok(res)
     }
 
-    pub fn query_index(&self, query: &IndexQuery, cache: &mut QueryCache) -> Result<Vec<Value>> {
+    pub fn query_index(&self, query: &IndexQuery, cache: &mut QueryCache) -> Result<Vec<QueryResult>> {
         let name = &query.name;
         let idx_name = &query.index;
         //let values = query.values.is_some() && query.values.unwrap();

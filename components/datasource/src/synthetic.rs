@@ -258,16 +258,21 @@ pub fn each(
             for doc in &idx {
                 let mut item_data = page.clone();
 
-                if let Some(id) = doc.get("id") {
-                    if let Some(id) = id.as_str() {
-                        if doc.is_object() {
-                            let map = doc.as_object().unwrap();
-                            for (k, v) in map {
-                                item_data.extra.insert(k.clone(), json!(v));
-                            }
-                        } else {
-                            return Err(Error::DataSourceDocumentNotAnObject);
-                        }
+                if let Some(ref id) = doc.id {
+                    //if let Some(id) = id.as_str() {
+                        //if doc.is_object() {
+                            //let map = doc.as_object().unwrap();
+                            //for (k, v) in map {
+                                //item_data.extra.insert(k.clone(), json!(v));
+                            //}
+                        //} else {
+                            //return Err(Error::DataSourceDocumentNotAnObject);
+                        //}
+
+                        item_data.extra.insert(doc.parameter.clone(), json!(doc));
+
+
+                        // FIXME: assign the document to the page data!!!
 
                         // Mock a source file to build a destination
                         // respecting the clean URL setting
@@ -285,7 +290,7 @@ pub fn each(
                             p.to_path_buf(),
                             item_data,
                             rewrite_index)?;
-                    }
+                    //}
                 } else {
                     return Err(Error::DataSourceDocumentNoId);
                 }

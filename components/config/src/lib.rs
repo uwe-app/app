@@ -61,4 +61,4 @@ pub use crate::config::*;
 pub use page::{Page, PaginateInfo, PageLink};
 pub use file::{FileType, FileInfo, FileOptions};
 pub use profile::{ProfileName, ProfileSettings, RuntimeOptions, RenderTypes};
-pub use indexer::{IndexQuery, KeyType};
+pub use indexer::{IndexQuery, KeyType, QueryResult};
