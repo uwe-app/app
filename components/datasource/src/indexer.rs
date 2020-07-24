@@ -122,16 +122,15 @@ impl ValueIndex {
                 }
                 m.insert(query.get_value_parameter(), json!(&d));
             } else {
+                
                 let docs = v
                     .iter()
+                    .filter(|s| docs.contains_key(&**s))
                     .map(|s| {
+                        let doc = docs.get(s).unwrap();
                         let mut m = Map::new();
-                        if let Some(doc) = docs.get(s) {
-                            m.insert("id".to_string(), json!(s));
-                            m.insert("document".to_string(), json!(doc));
-                        } else {
-                            warn!("Query missing document for {}", s);
-                        }
+                        m.insert("id".to_string(), json!(id));
+                        m.insert("document".to_string(), json!(doc));
                         m
                     })
                     .collect::<Vec<_>>();
@@ -170,6 +169,13 @@ impl ValueIndex {
 
             let val = self.map_entry(k, v, include_docs, docs, query);
             items.push(val);
+        }
+
+
+        if let Some(ref sort_key) = query.sort {
+            // HACK: for sorting to work right now!
+            let sort_key = format!("value.0.document.{}", sort_key);
+            config::path::sort(&sort_key, &mut items);
         }
 
         items

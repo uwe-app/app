@@ -96,6 +96,7 @@ pub struct IndexQuery {
     pub offset: Option<usize>,
     pub limit: Option<usize>,
     pub page: Option<PageInfo>,
+    pub sort: Option<String>,
 }
 
 impl Default for IndexQuery {
@@ -113,6 +114,7 @@ impl Default for IndexQuery {
             offset: Some(0),
             limit: None,
             page: None,
+            sort: None,
         }
     }
 }
