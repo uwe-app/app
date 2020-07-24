@@ -108,7 +108,7 @@ pub fn each(
 
                 if let Some(ref id) = doc.id {
                     // Assign the document to the page data
-                    item_data.extra.insert(doc.parameter.clone(), json!(doc));
+                    item_data.extra.insert(each_query.get_parameter(), json!(doc));
 
                     // Mock a source file to build a destination
                     // respecting the clean URL setting

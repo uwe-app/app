@@ -6,9 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
 
-static ALL_INDEX: &str = "all";
-static DEFAULT_PARAMETER: &str = "documents";
-static DEFAULT_VALUE_PARAMETER: &str = "value";
+static DEFAULT_PARAMETER: &str = "result";
 
 // This is the configuration option for generating
 // an index, it is exposed here so that we can use
@@ -88,14 +86,15 @@ pub struct PageInfo {
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct IndexQuery {
     pub name: String,
     pub index: String,
     pub parameter: Option<String>,
     pub include_docs: Option<bool>,
     pub each: Option<bool>,
-    pub keys: Option<KeyType>,
-    pub values: Option<bool>,
+    pub keys: Option<bool>,
+    pub key_type: Option<KeyType>,
     pub unique: Option<bool>,
     pub desc: Option<bool>,
     pub offset: Option<usize>,
@@ -108,14 +107,14 @@ impl Default for IndexQuery {
     fn default() -> Self {
         Self {
             name: "".to_string(),
-            index: ALL_INDEX.to_string(),
+            index: "".to_string(),
             parameter: None,
-            include_docs: Some(false),
-            each: Some(false),
+            include_docs: None,
+            each: None,
             keys: None,
-            values: Some(false),
-            unique: Some(false),
-            desc: Some(false),
+            key_type: Some(Default::default()),
+            unique: None,
+            desc: None,
             offset: Some(0),
             limit: None,
             page: None,
@@ -134,16 +133,6 @@ impl IndexQuery {
             return param.clone();
         }
         return DEFAULT_PARAMETER.to_string();
-    }
-
-    pub fn get_value_parameter(&self) -> String {
-        let each = self.each.is_some() && self.each.unwrap();
-        if each {
-            if let Some(param) = &self.parameter {
-                return param.clone();
-            }
-        }
-        return DEFAULT_VALUE_PARAMETER.to_string();
     }
 }
 
@@ -230,12 +219,24 @@ impl Default for QueryValue {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum KeyResult {
+    Full(IndexKey),
+    Name(String),
+    Value(Value),
+}
+
+impl Default for KeyResult {
+    fn default() -> Self {
+        KeyResult::Name("".to_string())
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct QueryResult {
-    #[serde(skip_serializing)]
-    pub parameter: String,
     pub id: Option<String>,
-    pub key: Option<IndexKey>,
+    pub key: Option<KeyResult>,
     pub value: Option<QueryValue>,
 }

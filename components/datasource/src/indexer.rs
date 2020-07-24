@@ -4,9 +4,8 @@ use std::fs::ReadDir;
 use std::path::Path;
 use std::path::PathBuf;
 
-use log::{info, warn};
-//use serde::{Serialize, Deserialize};
-use serde_json::{json, to_value, Map, Value};
+use log::info;
+use serde_json::{Map, Value};
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
@@ -14,6 +13,7 @@ use config::indexer::{
     IndexQuery,
     IndexKey,
     KeyType,
+    KeyResult,
     SourceProvider,
     DataSource as DataSourceConfig,
     QueryValue,
@@ -54,47 +54,29 @@ pub struct ValueIndex {
 
 impl ValueIndex {
 
-    /*
-    pub fn to_keys(&self, key_type: &KeyType) -> Vec<Value> {
-        return self
-            .documents
-            .keys()
-            .map(|k| {
-                match key_type {
-                    KeyType::Full => {
-                        to_value(k).unwrap()
-                    },
-                    KeyType::Name => {
-                        to_value(&k.name).unwrap()
-                    },
-                    KeyType::Value => {
-                        to_value(&k.value).unwrap()
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
+    fn get_key_result(&self, key: &IndexKey, key_type: &KeyType) -> KeyResult {
+        match key_type {
+            KeyType::Full => {
+                KeyResult::Full(key.clone())
+            }
+            KeyType::Name => {
+                KeyResult::Name(key.name.clone())
+            }
+            KeyType::Value => {
+                KeyResult::Value(key.value.clone())
+            }
+        } 
     }
 
-    pub fn to_values(&self) -> Vec<Value> {
-        return self
-            .documents
-            .values()
-            .map(|v| {
-                return json!(&v);
-            })
-            .collect::<Vec<_>>();
-    }
-    */
-
-    fn get_identity(&self, slug: &str, id: &str, key: &IndexKey) -> Map<String, Value> {
+    fn get_identity(&self, slug: &str, id: &str, _key: &KeyResult) -> Map<String, Value> {
         let mut m = Map::new();
         m.insert(PATH.to_string(), Value::String(slug.to_string()));
         m.insert(NAME.to_string(), Value::String(id.to_string()));
-        m.insert(KEY.to_string(), to_value(key.clone()).unwrap());
+        //m.insert(KEY.to_string(), to_value(key.clone()).unwrap());
         m
     }
 
-    fn with_identity(&self, doc: &mut Value, slug: &str, id: &str, key: &IndexKey) {
+    fn with_identity(&self, doc: &mut Value, slug: &str, id: &str, key: &KeyResult) {
         if doc.is_object() {
             let obj = doc.as_object_mut().unwrap();
             let ident = self.get_identity(slug, id, key);
@@ -113,12 +95,19 @@ impl ValueIndex {
         let slug = slug::slugify(&k.name);
 
         let unique = query.unique.is_some() && query.unique.unwrap();
+        let keys = query.keys.is_some() && query.keys.unwrap();
+        let key_type = query.key_type.as_ref().unwrap();
+        let key = self.get_key_result(k, &key_type);
+
+        if keys {
+            return QueryResult { id: None, key: Some(key), value: None };
+        }
 
         let value = if include_docs {
             if unique && v.len() == 1 {
                 let id = &v[0];
                 let mut doc = docs.get(id).unwrap().clone();
-                self.with_identity(&mut doc, &slug, id, k);
+                self.with_identity(&mut doc, &slug, id, &key);
                 Some(QueryValue::One(doc)) 
             } else {
                 let docs = v
@@ -126,7 +115,7 @@ impl ValueIndex {
                     .filter(|s| docs.contains_key(&**s))
                     .map(|id| {
                         let mut doc = docs.get(id).unwrap().clone();
-                        self.with_identity(&mut doc, &slug, id, k);
+                        self.with_identity(&mut doc, &slug, id, &key);
                         doc
                     })
                     .collect::<Vec<_>>();
@@ -139,9 +128,8 @@ impl ValueIndex {
         };
 
         let res = QueryResult {
-            parameter: query.get_value_parameter(),
             id: Some(slug),
-            key: Some(k.clone()),
+            key: Some(key),
             value,
         };
 
@@ -462,16 +450,7 @@ impl DataSourceMap {
             return Ok(cached.to_vec())
         }
 
-        let res;
-
-        //if query.keys.is_some() {
-            //res = idx.to_keys(query.keys.as_ref().unwrap());
-        //} else if query.values.is_some() && query.values.unwrap() {
-            //res = idx.to_values();
-        //} else {
-            res = idx.from_query(query, &ds.all);
-        //}
-
+        let res = idx.from_query(query, &ds.all);
         cache.entry(query.clone()).or_insert(res.clone());
 
         Ok(res)
@@ -480,7 +459,6 @@ impl DataSourceMap {
     pub fn query_index(&self, query: &IndexQuery, cache: &mut QueryCache) -> Result<Vec<QueryResult>> {
         let name = &query.name;
         let idx_name = &query.index;
-        //let values = query.values.is_some() && query.values.unwrap();
 
         if let Some(generator) = self.map.get(name) {
             if let Some(idx) = generator.indices.get(idx_name) {
