@@ -108,12 +108,22 @@ impl Provider {
 
                 let result = serde_json::to_value(data);
                 match result {
-                    Ok(document) => {
+                    Ok(mut document) => {
                         let key = ComputeIdentifier::id(
                             &Strategy::Count, &path, &document, &count);
                         if docs.contains_key(&key) {
                             return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                         }
+
+                        /*
+                        if document.is_object() {
+                            document
+                                .as_object_mut()
+                                .unwrap()
+                                .insert("_id".to_string(), Value::String(key.clone()));
+                        }
+                        */
+
                         docs.insert(key, document);
                     },
                     Err(e) => {
@@ -138,11 +148,21 @@ impl Provider {
                     Ok(content) => {
                         let result = Provider::deserialize(&req.kind, &content);
                         match result {
-                            Ok(document) => {
+                            Ok(mut document) => {
                                 let key = ComputeIdentifier::id(&req.strategy, &path, &document, &count);
                                 if docs.contains_key(&key) {
                                     return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                                 }
+                                
+                                /*
+                                if document.is_object() {
+                                    document
+                                        .as_object_mut()
+                                        .unwrap()
+                                        .insert("_id".to_string(), Value::String(key.clone()));
+                                }
+                                */
+
                                 docs.insert(key, document);
                             },
                             Err(e) => {

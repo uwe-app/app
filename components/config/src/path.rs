@@ -52,7 +52,7 @@ pub fn find_field<S: AsRef<str>>(field: S, parent: &Value) -> Value {
 }
 
 // Sort a list of values by path lookup.
-pub fn sort<S: AsRef<str>>(needle: S, values: &mut Vec<Value>) {
+pub fn sort<S: AsRef<str>>(needle: S, values: &mut Vec<&Value>) {
     values.sort_by(|a, b| {
         let s1 = find_path(needle.as_ref(), a).to_string();
         let s2 = find_path(needle.as_ref(), b).to_string();

@@ -68,8 +68,14 @@ pub fn assign(
         let page = info.pages.get_mut(p).unwrap();
         for query in queries.iter() {
             let idx = map.query_index(query, cache)?;
+
+            let res = idx
+                .iter()
+                .map(|v| v.to_value(query).unwrap())
+                .collect::<Vec<_>>();
+
             // TODO: error or warn on overwriting existing key
-            page.extra.insert(query.get_parameter(), json!(idx));
+            page.extra.insert(query.get_parameter(), json!(res));
         }
     }
 
@@ -108,7 +114,9 @@ pub fn each(
 
                 if let Some(ref id) = doc.id {
                     // Assign the document to the page data
-                    item_data.extra.insert(each_query.get_parameter(), json!(doc));
+                    item_data.extra.insert(
+                        each_query.get_parameter(),
+                        doc.to_value(each_query)?);
 
                     // Mock a source file to build a destination
                     // respecting the clean URL setting

@@ -3,8 +3,10 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
-use serde_json::Value;
+use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
+
+use crate::Result;
 
 static DEFAULT_PARAMETER: &str = "result";
 
@@ -239,4 +241,30 @@ pub struct QueryResult {
     pub id: Option<String>,
     pub key: Option<KeyResult>,
     pub value: Option<QueryValue>,
+}
+
+impl QueryResult {
+    pub fn to_value(&self, query: &IndexQuery) -> Result<Value> {
+
+        // When only keys are requested transpose so we don't have
+        // the unnecessary `key` field name.
+        let keys = query.keys.is_some() && query.keys.unwrap();
+        if keys {
+            if let Some(ref key) = self.key {
+                match key {
+                    KeyResult::Name(ref name) => {
+                        return Ok(Value::String(name.clone()))
+                    }
+                    KeyResult::Value(val) => {
+                        return Ok(val.clone())
+                    }
+                    KeyResult::Full(ref key_val) => {
+                        return Ok(to_value(key_val.clone())?)
+                    }
+                }
+            }
+        }
+
+        Ok(to_value(self)?)
+    }
 }

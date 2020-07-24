@@ -31,7 +31,7 @@ static DOCUMENTS: &str = "documents";
 static IDENTITY: &str = "id";
 static NAME: &str = "name";
 static PATH: &str = "path";
-static KEY: &str = "key";
+//static KEY: &str = "key";
 
 pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
@@ -142,15 +142,42 @@ impl ValueIndex {
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
         let limit = if let Some(ref limit) = query.limit { limit.clone() } else { 0 };
 
+        //let mut sorted_docs = Vec::new();
+        let mut index_docs = self.documents.clone();
+
+        if let Some(ref sort_key) = query.sort {
+
+            /*
+            for (_k, v) in index_docs.iter_mut() {
+
+                let mut tmp = v
+                    .iter()
+                    .map(|id| docs.get(id).unwrap())
+                    .collect::<Vec<_>>();
+
+                //println!("Sort v {:?}", tmp);
+
+                config::path::sort(&sort_key, &mut tmp);
+
+                let ids = tmp
+                    .iter()
+                    .map(|v| v.as_object().unwrap().get("_id").unwrap().as_str().unwrap().to_string())
+                    .collect::<Vec<_>>();
+
+                *v = ids;
+            }
+            */
+        }
+
         let iter: Box<dyn Iterator<Item = (usize, (&IndexKey, &Vec<String>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set
-            Box::new(self.documents.iter()
+            Box::new(index_docs.iter()
                 .rev()
                 .enumerate()
                 .skip(offset))
         } else {
-            Box::new(self.documents.iter()
+            Box::new(index_docs.iter()
                 .enumerate()
                 .skip(offset))
         };

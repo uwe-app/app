@@ -32,6 +32,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
+    Json(#[from] serde_json::Error),
+
+    #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
