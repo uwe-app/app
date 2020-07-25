@@ -87,6 +87,13 @@ pub struct PageInfo {
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+pub struct GroupBy {
+    pub path: String,
+    pub expand: Option<bool>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct IndexQuery {
     pub name: String,
@@ -102,6 +109,7 @@ pub struct IndexQuery {
     pub limit: Option<usize>,
     pub page: Option<PageInfo>,
     pub sort: Option<String>,
+    pub group: Option<GroupBy>,
 }
 
 impl Default for IndexQuery {
@@ -120,6 +128,7 @@ impl Default for IndexQuery {
             limit: None,
             page: None,
             sort: None,
+            group: None,
         }
     }
 }
@@ -186,6 +195,7 @@ impl QueryList {
 #[derive(Eq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexKey {
     pub id: String,
+    pub name: String,
     pub sort: String,
     pub value: Value,
 }

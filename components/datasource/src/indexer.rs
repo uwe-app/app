@@ -25,6 +25,8 @@ use crate::identifier;
 use crate::provider;
 
 pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
+pub type IndexValue = (IndexKey, Arc<Value>);
+pub type Index = Vec<IndexValue>;
 
 static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
@@ -50,7 +52,7 @@ pub struct DataSource {
 
 #[derive(Debug)]
 pub struct ValueIndex {
-    pub documents: Vec<(IndexKey, Arc<Value>)>,
+    pub documents: Index,
 }
 
 impl ValueIndex {
@@ -78,10 +80,16 @@ impl ValueIndex {
     }
 
     fn with_identity(&self, doc: &mut Value, slug: &str, id: &str, key: &KeyResult) {
+        let ident = self.get_identity(slug, id, key);
         if doc.is_object() {
             let obj = doc.as_object_mut().unwrap();
-            let ident = self.get_identity(slug, id, key);
             obj.insert(IDENTITY.to_string(), Value::Object(ident));
+        } else if doc.is_array() {
+            let list = doc.as_array_mut().unwrap(); 
+            for doc in list.iter_mut() {
+                let obj = doc.as_object_mut().unwrap();
+                obj.insert(IDENTITY.to_string(), Value::Object(ident.clone()));
+            }
         }
     }
 
@@ -118,6 +126,51 @@ impl ValueIndex {
         res
     }
 
+    fn group_by(&self, input: &Index, query: &IndexQuery) -> Index {
+        let mut idx = Vec::new();
+
+        let group = query.group.as_ref().unwrap();
+        let expand = group.expand.is_some() && group.expand.unwrap();
+
+        let mut tmp: BTreeMap<String, (IndexKey, Value)> = BTreeMap::new();
+
+        for v in input {
+            let (key, arc) = v;
+
+            let doc = &*arc.clone();
+            let group_key = config::path::find_path(&group.path, doc); 
+
+            let candidates = if group_key.is_array() && expand {
+                group_key.as_array().unwrap().to_vec()
+            } else {
+                vec![group_key]
+            };
+
+            for val in candidates {
+                let val_key = if val.is_string() {
+                    val.as_str().unwrap().to_string()
+                } else {
+                    val.to_string()
+                };
+
+                let mut new_key = key.clone();
+                new_key.id = slug::slugify(&val_key);
+                new_key.name = val_key.clone();
+
+                tmp.entry(val_key.clone()).or_insert((new_key, Value::Array(vec![])));
+                let (_, items) = tmp.get_mut(&val_key).unwrap();
+                let list = items.as_array_mut().unwrap();
+                list.push(doc.clone());
+            }             
+        }
+
+        for (_, (key, value)) in tmp {
+            idx.push((key, Arc::new(value)));
+        }
+
+        idx
+    }
+
     pub fn from_query(&self, query: &IndexQuery) -> Vec<QueryResult> {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
@@ -125,6 +178,10 @@ impl ValueIndex {
         let limit = if let Some(ref limit) = query.limit { limit.clone() } else { 0 };
 
         let mut index_docs = self.documents.clone();
+
+        if query.group.is_some() {
+            index_docs = self.group_by(&index_docs, query);
+        }
 
         // Sorting needs to happen before enumeration so currently involves
         // a copy of the keys and injection of the `sort` field used to order
@@ -145,7 +202,6 @@ impl ValueIndex {
 
                 str_a.partial_cmp(&str_b).unwrap()
             });
-        } else {
         }
 
         let iter: Box<dyn Iterator<Item = (usize, &(IndexKey, Arc<Value>))>> = if desc {
@@ -387,6 +443,7 @@ impl DataSourceMap {
 
                     let default_key = IndexKey {
                         id: id.clone(),
+                        name: id.clone(),
                         sort: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
                     };
