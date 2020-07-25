@@ -414,6 +414,7 @@ impl DataSourceMap {
                     let default_key = IndexKey {
                         name: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
+                        sort: None,
                     };
 
                     if !group {
@@ -445,6 +446,7 @@ impl DataSourceMap {
                             let index_key = IndexKey {
                                 name: s.to_string(),
                                 value: key_val.clone(),
+                                sort: None,
                             };
 
                             let items = values.documents

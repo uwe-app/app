@@ -115,15 +115,6 @@ impl Provider {
                             return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                         }
 
-                        /*
-                        if document.is_object() {
-                            document
-                                .as_object_mut()
-                                .unwrap()
-                                .insert("_id".to_string(), Value::String(key.clone()));
-                        }
-                        */
-
                         docs.insert(key, document);
                     },
                     Err(e) => {
@@ -154,15 +145,6 @@ impl Provider {
                                     return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                                 }
                                 
-                                /*
-                                if document.is_object() {
-                                    document
-                                        .as_object_mut()
-                                        .unwrap()
-                                        .insert("_id".to_string(), Value::String(key.clone()));
-                                }
-                                */
-
                                 docs.insert(key, document);
                             },
                             Err(e) => {

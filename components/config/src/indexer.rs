@@ -188,10 +188,16 @@ impl QueryList {
 pub struct IndexKey {
     pub name: String,
     pub value: Value,
+    pub sort: Option<String>,
 }
 
 impl Ord for IndexKey {
     fn cmp(&self, other: &Self) -> Ordering {
+        if let Some(ref sort) = self.sort {
+            if let Some(ref other_sort) = other.sort {
+                return sort.cmp(other_sort) 
+            }
+        }
         self.name.cmp(&other.name) 
     }
 }
