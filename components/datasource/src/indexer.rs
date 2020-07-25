@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::iter::FromIterator;
+use std::sync::Arc;
 use std::fs::ReadDir;
 use std::path::Path;
 use std::path::PathBuf;
@@ -44,13 +44,13 @@ pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
 pub struct DataSource {
     pub source: PathBuf,
     pub config: DataSourceConfig,
-    pub all: BTreeMap<String, Value>,
+    pub all: BTreeMap<String, Arc<Value>>,
     pub indices: BTreeMap<String, ValueIndex>,
 }
 
 #[derive(Debug)]
 pub struct ValueIndex {
-    pub documents: BTreeMap<IndexKey, Vec<String>>,
+    pub documents: Vec<(IndexKey, String, Arc<Value>)>,
 }
 
 impl ValueIndex {
@@ -88,10 +88,12 @@ impl ValueIndex {
     fn map_entry(
         &self,
         k: &IndexKey,
-        v: &Vec<String>,
+        mut v: &mut Value,
+        id: &str,
+        docs: &BTreeMap<String, Arc<Value>>,
+        query: &IndexQuery,
         include_docs: bool,
-        docs: &BTreeMap<String, Value>,
-        query: &IndexQuery) -> QueryResult {
+        ) -> QueryResult {
 
         let slug = slug::slugify(&k.name);
 
@@ -105,24 +107,26 @@ impl ValueIndex {
         }
 
         let value = if include_docs {
-            if unique && v.len() == 1 {
-                let id = &v[0];
-                let mut doc = docs.get(id).unwrap().clone();
-                self.with_identity(&mut doc, &slug, id, &key);
-                Some(QueryValue::One(doc)) 
-            } else {
-                let docs = v
-                    .iter()
-                    .filter(|s| docs.contains_key(&**s))
-                    .map(|id| {
-                        let mut doc = docs.get(id).unwrap().clone();
-                        self.with_identity(&mut doc, &slug, id, &key);
-                        doc
-                    })
-                    .collect::<Vec<_>>();
+            //if unique && v.len() == 1
+            //{
+                //let mut doc = &v[0];
+                //let mut doc = docs.get(id).unwrap();
+                self.with_identity(&mut v, &slug, id, &key);
+                let doc = (&*v).clone();
+                Some(QueryValue::One(doc.clone())) 
+            //} else {
+                //let docs = v
+                    //.iter()
+                    //.filter(|s| docs.contains_key(&**s))
+                    //.map(|id| {
+                        //let mut doc = docs.get(id).unwrap();
+                        //self.with_identity(&mut doc, &slug, id, &key);
+                        //doc
+                    //})
+                    //.collect::<Vec<_>>();
 
-                Some(QueryValue::Many(docs))
-            }
+                //Some(QueryValue::Many(docs))
+            //}
 
         } else {
             None 
@@ -137,7 +141,7 @@ impl ValueIndex {
         res
     }
 
-    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Value>) -> Vec<QueryResult> {
+    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Arc<Value>>) -> Vec<QueryResult> {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
@@ -152,22 +156,35 @@ impl ValueIndex {
 
             println!("Sort start {}", index_docs.len());
 
+            index_docs.sort_by(|a, b| {
+                let (ak, aid, arc) = a;
+                let (bk, bid, brc) = b;
+
+                let doc_a = &*arc.clone();
+                let doc_b = &*brc.clone();
+                //let mut new_doc = doc.clone();
+
+                let sort_a = config::path::find_path(sort_key, doc_a); 
+                let sort_b = config::path::find_path(sort_key, doc_b); 
+
+                let str_a = sort_a.to_string();
+                let str_b = sort_b.to_string();
+
+                str_a.partial_cmp(&str_b).unwrap()
+            });
+
             //let list = Vec::from_iter(index_docs.iter())
-            let mut list = index_docs.iter()
-                .map(|(k, v)| {
-                    let docs = v
-                        .iter()
-                        .map(|s| docs.get(s).unwrap())
-                        .collect::<Vec<_>>();
-                    (k, docs) 
-                })
-                .collect::<Vec<_>>();
+            //let mut list = index_docs.iter()
+                //.map(|(k, v)| {
+                    //let docs = v
+                        //.iter()
+                        //.map(|s| docs.get(s).unwrap())
+                        //.collect::<Vec<_>>();
+                    //(k, docs) 
+                //})
+                //.collect::<Vec<_>>();
 
             /*
-            list.sort_by(|a, b| {
-                let (ak, av) = a; 
-                let (bk, bv) = b; 
-            });
             */
 
             //let mut tmp: BTreeMap<IndexKey, Vec<String>> = BTreeMap::new();
@@ -188,12 +205,12 @@ impl ValueIndex {
             //}
             //index_docs = tmp;
 
-            println!("Got list {:?}", list);
+            //println!("Got list {:?}", list);
 
             //println!("Sort end {}", index_docs.len());
         }
 
-        let iter: Box<dyn Iterator<Item = (usize, (&IndexKey, &Vec<String>))>> = if desc {
+        let iter: Box<dyn Iterator<Item = (usize, &(IndexKey, String, Arc<Value>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set
             Box::new(index_docs.iter()
@@ -207,12 +224,14 @@ impl ValueIndex {
         };
 
         let mut items: Vec<QueryResult> = Vec::new();
-        for (i, (k, v)) in iter {
+        for (i, (k, id, v)) in iter {
             if limit > 0 && i >= limit {
                 break; 
             }
 
-            let val = self.map_entry(k, v, include_docs, docs, query);
+            let doc = &*v.clone();
+            let mut new_doc = doc.clone();
+            let val = self.map_entry(k, &mut new_doc, id, docs, query, include_docs);
             items.push(val);
         }
 
@@ -241,7 +260,7 @@ impl DataSourceMap {
     }
 
     fn to_data_source(path: &PathBuf, config: DataSourceConfig) -> DataSource {
-        let all: BTreeMap<String, Value> = BTreeMap::new();
+        let all: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
         DataSource {
             source: path.to_path_buf(),
@@ -422,7 +441,7 @@ impl DataSourceMap {
                 let key = def.key.as_ref().unwrap();
                 let group = def.group.is_some() && def.group.unwrap();
 
-                let mut values = ValueIndex { documents: BTreeMap::new() };
+                let mut values = ValueIndex { documents: Vec::new() };
 
                 for (id, document) in &generator.all {
                     let key_val = if identity {
@@ -438,14 +457,12 @@ impl DataSourceMap {
                     let default_key = IndexKey {
                         name: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
-                        sort: None,
                     };
 
+                    //document.as_object_mut().unwrap().insert("id".to_string(), Value::String(id.clone()));
+
                     if !group {
-                        let items = values.documents
-                            .entry(default_key)
-                            .or_insert(Vec::new());
-                        items.push(id.to_string());
+                        values.documents.push((default_key, id.clone(), Arc::clone(document)));
 
                     } else {
                         let mut candidates: Vec<&str> = Vec::new();
@@ -470,14 +487,14 @@ impl DataSourceMap {
                             let index_key = IndexKey {
                                 name: s.to_string(),
                                 value: key_val.clone(),
-                                sort: None,
                             };
 
-                            let items = values.documents
-                                .entry(index_key)
-                                .or_insert(Vec::new());
+                            //let items = values.documents
+                                //.entry(index_key)
+                                //.or_insert(Vec::new());
 
-                            items.push(id.clone());
+                            //items.push(id.clone());
+                            //values.documents.push((index_key, vec![]));
                         }
                     }
                 }

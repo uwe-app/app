@@ -1,4 +1,5 @@
 use std::io;
+use std::sync::Arc;
 use std::path::PathBuf;
 use std::collections::BTreeMap;
 use std::pin::Pin;
@@ -83,7 +84,7 @@ impl Provider {
         }  
     }
 
-    pub async fn load(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
+    pub async fn load(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         match req.provider {
             SourceProvider::Documents => {
                 Provider::load_documents(req).await
@@ -94,8 +95,8 @@ impl Provider {
         }
     }
 
-    async fn load_pages(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
-        let mut docs: BTreeMap<String, Value> = BTreeMap::new();
+    async fn load_pages(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
+        let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
         stream::iter(req.collation.pages.keys())
@@ -115,7 +116,7 @@ impl Provider {
                             return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                         }
 
-                        docs.insert(key, document);
+                        docs.insert(key, Arc::new(document));
                     },
                     Err(e) => {
                         return future::err(Error::from(e))
@@ -127,8 +128,8 @@ impl Provider {
        Ok(docs)
     }
 
-    async fn load_documents(req: LoadRequest<'_>) -> Result<BTreeMap<String, Value>> {
-        let mut docs: BTreeMap<String, Value> = BTreeMap::new();
+    async fn load_documents(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
+        let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
         Provider::find_documents(&req)
@@ -145,7 +146,7 @@ impl Provider {
                                     return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
                                 }
                                 
-                                docs.insert(key, document);
+                                docs.insert(key, Arc::new(document));
                             },
                             Err(e) => {
                                 return future::err(Error::from(e))
