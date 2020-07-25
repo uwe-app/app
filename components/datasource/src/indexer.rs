@@ -90,14 +90,13 @@ impl ValueIndex {
         k: &IndexKey,
         mut v: &mut Value,
         id: &str,
-        docs: &BTreeMap<String, Arc<Value>>,
         query: &IndexQuery,
         include_docs: bool,
         ) -> QueryResult {
 
         let slug = slug::slugify(&k.name);
 
-        let unique = query.unique.is_some() && query.unique.unwrap();
+        //let unique = query.unique.is_some() && query.unique.unwrap();
         let keys = query.keys.is_some() && query.keys.unwrap();
         let key_type = query.key_type.as_ref().unwrap();
         let key = self.get_key_result(k, &key_type);
@@ -112,8 +111,7 @@ impl ValueIndex {
                 //let mut doc = &v[0];
                 //let mut doc = docs.get(id).unwrap();
                 self.with_identity(&mut v, &slug, id, &key);
-                let doc = (&*v).clone();
-                Some(QueryValue::One(doc.clone())) 
+                Some(QueryValue::One(v.clone())) 
             //} else {
                 //let docs = v
                     //.iter()
@@ -141,7 +139,7 @@ impl ValueIndex {
         res
     }
 
-    pub fn from_query(&self, query: &IndexQuery, docs: &BTreeMap<String, Arc<Value>>) -> Vec<QueryResult> {
+    pub fn from_query(&self, query: &IndexQuery) -> Vec<QueryResult> {
         let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
@@ -154,15 +152,14 @@ impl ValueIndex {
         // the index, obviously this can be done much better.
         if let Some(ref sort_key) = query.sort {
 
-            println!("Sort start {}", index_docs.len());
+            //println!("Sort start {}", index_docs.len());
 
             index_docs.sort_by(|a, b| {
-                let (ak, aid, arc) = a;
-                let (bk, bid, brc) = b;
+                let (_ak, _aid, arc) = a;
+                let (_bk, _bid, brc) = b;
 
                 let doc_a = &*arc.clone();
                 let doc_b = &*brc.clone();
-                //let mut new_doc = doc.clone();
 
                 let sort_a = config::path::find_path(sort_key, doc_a); 
                 let sort_b = config::path::find_path(sort_key, doc_b); 
@@ -172,42 +169,6 @@ impl ValueIndex {
 
                 str_a.partial_cmp(&str_b).unwrap()
             });
-
-            //let list = Vec::from_iter(index_docs.iter())
-            //let mut list = index_docs.iter()
-                //.map(|(k, v)| {
-                    //let docs = v
-                        //.iter()
-                        //.map(|s| docs.get(s).unwrap())
-                        //.collect::<Vec<_>>();
-                    //(k, docs) 
-                //})
-                //.collect::<Vec<_>>();
-
-            /*
-            */
-
-            //let mut tmp: BTreeMap<IndexKey, Vec<String>> = BTreeMap::new();
-            //for (k, v) in index_docs.iter() {
-                //let mut key = k.clone();
-
-                //// Use first doc as the value
-                //if !v.is_empty() {
-                    //let doc = docs.get(&v[0]);
-                    //if let Some(ref doc) = doc {
-                        //let sort_value = config::path::find_path(sort_key, doc); 
-                        //println!("Using sort_value {:?}", sort_value.to_string());
-                        //key.sort = Some(sort_value.to_string());
-                    //}
-                //}
-
-                //tmp.insert(key, v.to_vec());
-            //}
-            //index_docs = tmp;
-
-            //println!("Got list {:?}", list);
-
-            //println!("Sort end {}", index_docs.len());
         }
 
         let iter: Box<dyn Iterator<Item = (usize, &(IndexKey, String, Arc<Value>))>> = if desc {
@@ -231,17 +192,9 @@ impl ValueIndex {
 
             let doc = &*v.clone();
             let mut new_doc = doc.clone();
-            let val = self.map_entry(k, &mut new_doc, id, docs, query, include_docs);
+            let val = self.map_entry(k, &mut new_doc, id, query, include_docs);
             items.push(val);
         }
-
-        /*
-        if let Some(ref sort_key) = query.sort {
-            // HACK: for sorting to work right now!
-            let sort_key = format!("value.0.document.{}", sort_key);
-            config::path::sort(&sort_key, &mut items);
-        }
-        */
 
         items
     }
@@ -459,8 +412,6 @@ impl DataSourceMap {
                         value: key_val.clone(),
                     };
 
-                    //document.as_object_mut().unwrap().insert("id".to_string(), Value::String(id.clone()));
-
                     if !group {
                         values.documents.push((default_key, id.clone(), Arc::clone(document)));
 
@@ -483,11 +434,11 @@ impl DataSourceMap {
                             }
                         }
 
-                        for s in candidates {
-                            let index_key = IndexKey {
-                                name: s.to_string(),
-                                value: key_val.clone(),
-                            };
+                        //for s in candidates {
+                            //let index_key = IndexKey {
+                                //name: s.to_string(),
+                                //value: key_val.clone(),
+                            //};
 
                             //let items = values.documents
                                 //.entry(index_key)
@@ -495,7 +446,7 @@ impl DataSourceMap {
 
                             //items.push(id.clone());
                             //values.documents.push((index_key, vec![]));
-                        }
+                        //}
                     }
                 }
                 generator.indices.insert(name.clone(), values);
@@ -511,7 +462,7 @@ impl DataSourceMap {
 
     fn get_result_set(
         &self,
-        ds: &DataSource,
+        _ds: &DataSource,
         idx: &ValueIndex,
         query: &IndexQuery,
         cache: &mut QueryCache) -> Result<Vec<QueryResult>> {
@@ -520,7 +471,7 @@ impl DataSourceMap {
             return Ok(cached.to_vec())
         }
 
-        let res = idx.from_query(query, &ds.all);
+        let res = idx.from_query(query);
         cache.entry(query.clone()).or_insert(res.clone());
 
         Ok(res)
