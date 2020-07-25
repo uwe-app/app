@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::iter::FromIterator;
 use std::fs::ReadDir;
 use std::path::Path;
 use std::path::PathBuf;
@@ -142,31 +143,54 @@ impl ValueIndex {
         let offset = if let Some(ref offset) = query.offset { offset.clone() } else { 0 };
         let limit = if let Some(ref limit) = query.limit { limit.clone() } else { 0 };
 
-        //let mut sorted_docs = Vec::new();
         let mut index_docs = self.documents.clone();
 
+        // Sorting needs to happen before enumeration so currently involves
+        // a copy of the keys and injection of the `sort` field used to order
+        // the index, obviously this can be done much better.
         if let Some(ref sort_key) = query.sort {
 
+            println!("Sort start {}", index_docs.len());
+
+            //let list = Vec::from_iter(index_docs.iter())
+            let mut list = index_docs.iter()
+                .map(|(k, v)| {
+                    let docs = v
+                        .iter()
+                        .map(|s| docs.get(s).unwrap())
+                        .collect::<Vec<_>>();
+                    (k, docs) 
+                })
+                .collect::<Vec<_>>();
+
             /*
-            for (_k, v) in index_docs.iter_mut() {
-
-                let mut tmp = v
-                    .iter()
-                    .map(|id| docs.get(id).unwrap())
-                    .collect::<Vec<_>>();
-
-                //println!("Sort v {:?}", tmp);
-
-                config::path::sort(&sort_key, &mut tmp);
-
-                let ids = tmp
-                    .iter()
-                    .map(|v| v.as_object().unwrap().get("_id").unwrap().as_str().unwrap().to_string())
-                    .collect::<Vec<_>>();
-
-                *v = ids;
-            }
+            list.sort_by(|a, b| {
+                let (ak, av) = a; 
+                let (bk, bv) = b; 
+            });
             */
+
+            //let mut tmp: BTreeMap<IndexKey, Vec<String>> = BTreeMap::new();
+            //for (k, v) in index_docs.iter() {
+                //let mut key = k.clone();
+
+                //// Use first doc as the value
+                //if !v.is_empty() {
+                    //let doc = docs.get(&v[0]);
+                    //if let Some(ref doc) = doc {
+                        //let sort_value = config::path::find_path(sort_key, doc); 
+                        //println!("Using sort_value {:?}", sort_value.to_string());
+                        //key.sort = Some(sort_value.to_string());
+                    //}
+                //}
+
+                //tmp.insert(key, v.to_vec());
+            //}
+            //index_docs = tmp;
+
+            println!("Got list {:?}", list);
+
+            //println!("Sort end {}", index_docs.len());
         }
 
         let iter: Box<dyn Iterator<Item = (usize, (&IndexKey, &Vec<String>))>> = if desc {

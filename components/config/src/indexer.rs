@@ -193,17 +193,17 @@ pub struct IndexKey {
 
 impl Ord for IndexKey {
     fn cmp(&self, other: &Self) -> Ordering {
-        if let Some(ref sort) = self.sort {
-            if let Some(ref other_sort) = other.sort {
-                return sort.cmp(other_sort) 
-            }
-        }
         self.name.cmp(&other.name) 
     }
 }
 
 impl PartialOrd for IndexKey {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if let Some(ref sort) = self.sort {
+            if let Some(ref other_sort) = other.sort {
+                return sort.partial_cmp(other_sort) 
+            }
+        }
         Some(self.cmp(other))
     }
 }
