@@ -196,6 +196,7 @@ impl QueryList {
 pub struct IndexKey {
     pub id: String,
     pub name: String,
+    pub doc_id: String,
     pub sort: String,
     pub value: Value,
 }

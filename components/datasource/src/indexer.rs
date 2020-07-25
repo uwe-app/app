@@ -34,7 +34,7 @@ static DOCUMENTS: &str = "documents";
 static IDENTITY: &str = "id";
 static NAME: &str = "name";
 static PATH: &str = "path";
-//static KEY: &str = "key";
+static DOC: &str = "doc";
 
 pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
@@ -71,16 +71,17 @@ impl ValueIndex {
         } 
     }
 
-    fn get_identity(&self, slug: &str, id: &str, _key: &KeyResult) -> Map<String, Value> {
+    fn get_identity(&self, slug: &str, key: &IndexKey) -> Map<String, Value> {
         let mut m = Map::new();
+        m.insert(DOC.to_string(), Value::String(key.doc_id.to_string()));
+        m.insert(NAME.to_string(), Value::String(key.id.to_string()));
         m.insert(PATH.to_string(), Value::String(slug.to_string()));
-        m.insert(NAME.to_string(), Value::String(id.to_string()));
-        //m.insert(KEY.to_string(), to_value(key.clone()).unwrap());
         m
     }
 
-    fn with_identity(&self, doc: &mut Value, slug: &str, id: &str, key: &KeyResult) {
-        let ident = self.get_identity(slug, id, key);
+    fn with_identity(&self, doc: &mut Value, slug: &str, key: &IndexKey) {
+        let ident = self.get_identity(slug, key);
+
         if doc.is_object() {
             let obj = doc.as_object_mut().unwrap();
             obj.insert(IDENTITY.to_string(), Value::Object(ident));
@@ -101,7 +102,6 @@ impl ValueIndex {
         include_docs: bool) -> QueryResult {
 
         let slug = slug::slugify(&k.id);
-
         let keys = query.keys.is_some() && query.keys.unwrap();
         let key_type = query.key_type.as_ref().unwrap();
         let key = self.get_key_result(k, &key_type);
@@ -111,7 +111,7 @@ impl ValueIndex {
         }
 
         let value = if include_docs {
-            self.with_identity(&mut v, &slug, &k.id, &key);
+            self.with_identity(&mut v, &slug, k);
             Some(QueryValue::One(v.clone())) 
         } else {
             None 
@@ -444,24 +444,12 @@ impl DataSourceMap {
                     let default_key = IndexKey {
                         id: id.clone(),
                         name: id.clone(),
+                        doc_id: id.clone(),
                         sort: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
                     };
 
-                    //if !expand {
-                        values.documents.push((default_key, Arc::clone(document)));
-                    //} else {
-                        //if key_val.is_array() {
-                            //let key_list = key_val.as_array().unwrap();
-                            //for v in key_list {
-                                //let mut item_key = default_key.clone();
-                                //item_key.value = v.clone();
-                                //values.documents.push((item_key, Arc::clone(document)));
-                            //}
-                        //} else {
-                            //return type_err;
-                        //}
-                    //}
+                    values.documents.push((default_key, Arc::clone(document)));
                 }
 
                 // Sort using default key
