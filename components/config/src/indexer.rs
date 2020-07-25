@@ -186,6 +186,7 @@ impl QueryList {
 
 #[derive(Eq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexKey {
+    pub id: String,
     pub name: String,
     pub value: Value,
 }

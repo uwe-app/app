@@ -50,7 +50,7 @@ pub struct DataSource {
 
 #[derive(Debug)]
 pub struct ValueIndex {
-    pub documents: Vec<(IndexKey, String, Arc<Value>)>,
+    pub documents: Vec<(IndexKey, Arc<Value>)>,
 }
 
 impl ValueIndex {
@@ -89,7 +89,6 @@ impl ValueIndex {
         &self,
         k: &IndexKey,
         mut v: &mut Value,
-        id: &str,
         query: &IndexQuery,
         include_docs: bool,
         ) -> QueryResult {
@@ -110,7 +109,7 @@ impl ValueIndex {
             //{
                 //let mut doc = &v[0];
                 //let mut doc = docs.get(id).unwrap();
-                self.with_identity(&mut v, &slug, id, &key);
+                self.with_identity(&mut v, &slug, &k.id, &key);
                 Some(QueryValue::One(v.clone())) 
             //} else {
                 //let docs = v
@@ -151,12 +150,9 @@ impl ValueIndex {
         // a copy of the keys and injection of the `sort` field used to order
         // the index, obviously this can be done much better.
         if let Some(ref sort_key) = query.sort {
-
-            //println!("Sort start {}", index_docs.len());
-
             index_docs.sort_by(|a, b| {
-                let (_ak, _aid, arc) = a;
-                let (_bk, _bid, brc) = b;
+                let (_ak, arc) = a;
+                let (_bk, brc) = b;
 
                 let doc_a = &*arc.clone();
                 let doc_b = &*brc.clone();
@@ -169,9 +165,10 @@ impl ValueIndex {
 
                 str_a.partial_cmp(&str_b).unwrap()
             });
+        } else {
         }
 
-        let iter: Box<dyn Iterator<Item = (usize, &(IndexKey, String, Arc<Value>))>> = if desc {
+        let iter: Box<dyn Iterator<Item = (usize, &(IndexKey, Arc<Value>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set
             Box::new(index_docs.iter()
@@ -185,14 +182,14 @@ impl ValueIndex {
         };
 
         let mut items: Vec<QueryResult> = Vec::new();
-        for (i, (k, id, v)) in iter {
+        for (i, (k, v)) in iter {
             if limit > 0 && i >= limit {
                 break; 
             }
 
             let doc = &*v.clone();
             let mut new_doc = doc.clone();
-            let val = self.map_entry(k, &mut new_doc, id, query, include_docs);
+            let val = self.map_entry(k, &mut new_doc, query, include_docs);
             items.push(val);
         }
 
@@ -383,7 +380,7 @@ impl DataSourceMap {
     }
 
     fn load_index(map: &mut BTreeMap<String, DataSource>) -> Result<()> {
-        let type_err = Err(Error::IndexKeyType);
+        //let type_err = Err(Error::IndexKeyType);
 
         for (_, generator) in map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
@@ -392,7 +389,7 @@ impl DataSourceMap {
 
                 let identity = def.identity.is_some() && def.identity.unwrap();
                 let key = def.key.as_ref().unwrap();
-                let group = def.group.is_some() && def.group.unwrap();
+                //let group = def.group.is_some() && def.group.unwrap();
 
                 let mut values = ValueIndex { documents: Vec::new() };
 
@@ -408,31 +405,34 @@ impl DataSourceMap {
                     }
 
                     let default_key = IndexKey {
+                        id: id.clone(),
                         name: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
                     };
 
-                    if !group {
-                        values.documents.push((default_key, id.clone(), Arc::clone(document)));
+                    values.documents.push((default_key, Arc::clone(document)));
 
-                    } else {
-                        let mut candidates: Vec<&str> = Vec::new();
+                    //if !group {
+                        //values.documents.push((default_key, Arc::clone(document)));
 
-                        if !key_val.is_string() && !key_val.is_array() {
-                            return type_err;
-                        }
+                    //} else {
+                        //let mut candidates: Vec<&str> = Vec::new();
 
-                        if let Some(s) = key_val.as_str() {
-                            candidates.push(s);
-                        }else if let Some(arr) = key_val.as_array() {
-                            for val in arr {
-                                if let Some(s) = val.as_str() {
-                                    candidates.push(s);
-                                } else {
-                                    return type_err;
-                                }
-                            }
-                        }
+                        //if !key_val.is_string() && !key_val.is_array() {
+                            //return type_err;
+                        //}
+
+                        //if let Some(s) = key_val.as_str() {
+                            //candidates.push(s);
+                        //}else if let Some(arr) = key_val.as_array() {
+                            //for val in arr {
+                                //if let Some(s) = val.as_str() {
+                                    //candidates.push(s);
+                                //} else {
+                                    //return type_err;
+                                //}
+                            //}
+                        //}
 
                         //for s in candidates {
                             //let index_key = IndexKey {
@@ -447,8 +447,16 @@ impl DataSourceMap {
                             //items.push(id.clone());
                             //values.documents.push((index_key, vec![]));
                         //}
-                    }
+                    //}
                 }
+
+                // Sort using default key
+                values.documents.sort_by(|a, b| {
+                    let (ak, _arc) = a;
+                    let (bk, _brc) = b;
+                    ak.partial_cmp(&bk).unwrap()
+                });
+
                 generator.indices.insert(name.clone(), values);
             }
 
