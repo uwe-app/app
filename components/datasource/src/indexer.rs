@@ -60,8 +60,8 @@ impl ValueIndex {
             KeyType::Full => {
                 KeyResult::Full(key.clone())
             }
-            KeyType::Name => {
-                KeyResult::Name(key.name.clone())
+            KeyType::Id => {
+                KeyResult::Name(key.id.clone())
             }
             KeyType::Value => {
                 KeyResult::Value(key.value.clone())
@@ -90,12 +90,10 @@ impl ValueIndex {
         k: &IndexKey,
         mut v: &mut Value,
         query: &IndexQuery,
-        include_docs: bool,
-        ) -> QueryResult {
+        include_docs: bool) -> QueryResult {
 
-        let slug = slug::slugify(&k.name);
+        let slug = slug::slugify(&k.id);
 
-        //let unique = query.unique.is_some() && query.unique.unwrap();
         let keys = query.keys.is_some() && query.keys.unwrap();
         let key_type = query.key_type.as_ref().unwrap();
         let key = self.get_key_result(k, &key_type);
@@ -105,26 +103,8 @@ impl ValueIndex {
         }
 
         let value = if include_docs {
-            //if unique && v.len() == 1
-            //{
-                //let mut doc = &v[0];
-                //let mut doc = docs.get(id).unwrap();
-                self.with_identity(&mut v, &slug, &k.id, &key);
-                Some(QueryValue::One(v.clone())) 
-            //} else {
-                //let docs = v
-                    //.iter()
-                    //.filter(|s| docs.contains_key(&**s))
-                    //.map(|id| {
-                        //let mut doc = docs.get(id).unwrap();
-                        //self.with_identity(&mut doc, &slug, id, &key);
-                        //doc
-                    //})
-                    //.collect::<Vec<_>>();
-
-                //Some(QueryValue::Many(docs))
-            //}
-
+            self.with_identity(&mut v, &slug, &k.id, &key);
+            Some(QueryValue::One(v.clone())) 
         } else {
             None 
         };
@@ -387,13 +367,14 @@ impl DataSourceMap {
 
             for (name, def) in index {
 
-                let identity = def.identity.is_some() && def.identity.unwrap();
                 let key = def.key.as_ref().unwrap();
-                //let group = def.group.is_some() && def.group.unwrap();
+                //let expand = def.expand.is_some() && def.expand.unwrap();
+                let identity = key == IDENTITY;
 
                 let mut values = ValueIndex { documents: Vec::new() };
 
                 for (id, document) in &generator.all {
+
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
@@ -406,46 +387,22 @@ impl DataSourceMap {
 
                     let default_key = IndexKey {
                         id: id.clone(),
-                        name: DataSourceMap::get_sort_key_for_value(id, &key_val),
+                        sort: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
                     };
 
-                    values.documents.push((default_key, Arc::clone(document)));
-
-                    //if !group {
-                        //values.documents.push((default_key, Arc::clone(document)));
-
+                    //if !expand {
+                        values.documents.push((default_key, Arc::clone(document)));
                     //} else {
-                        //let mut candidates: Vec<&str> = Vec::new();
-
-                        //if !key_val.is_string() && !key_val.is_array() {
-                            //return type_err;
-                        //}
-
-                        //if let Some(s) = key_val.as_str() {
-                            //candidates.push(s);
-                        //}else if let Some(arr) = key_val.as_array() {
-                            //for val in arr {
-                                //if let Some(s) = val.as_str() {
-                                    //candidates.push(s);
-                                //} else {
-                                    //return type_err;
-                                //}
+                        //if key_val.is_array() {
+                            //let key_list = key_val.as_array().unwrap();
+                            //for v in key_list {
+                                //let mut item_key = default_key.clone();
+                                //item_key.value = v.clone();
+                                //values.documents.push((item_key, Arc::clone(document)));
                             //}
-                        //}
-
-                        //for s in candidates {
-                            //let index_key = IndexKey {
-                                //name: s.to_string(),
-                                //value: key_val.clone(),
-                            //};
-
-                            //let items = values.documents
-                                //.entry(index_key)
-                                //.or_insert(Vec::new());
-
-                            //items.push(id.clone());
-                            //values.documents.push((index_key, vec![]));
+                        //} else {
+                            //return type_err;
                         //}
                     //}
                 }
@@ -464,9 +421,9 @@ impl DataSourceMap {
                 //println!("Index {:#?} for {:?}", idx, k);
             //}
         }
+
         Ok(())
     }
-
 
     fn get_result_set(
         &self,

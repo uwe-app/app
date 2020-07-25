@@ -54,23 +54,22 @@ pub struct DataSource {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexRequest {
-    // Use the id as the value; primarily useful for the 
-    // default all index
-    pub identity: Option<bool>,
-    // Group on the key value, key must point to a string
-    // or array of strings
-    pub group: Option<bool>,
     // The document key to use for the index, may be dot-delimited
-    // to specify a path to the value
+    // to specify a path to the value. If the special `identity` value 
+    // is specified then the index is sorted by the generated document id.
     pub key: Option<String>,
+
+    // For a key that resolves to an array list create an entry in the 
+    // index for each item in the list.
+    pub expand: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum KeyType {
     #[serde(rename = "full")]
     Full,
-    #[serde(rename = "name")]
-    Name,
+    #[serde(rename = "id")]
+    Id,
     #[serde(rename = "value")]
     Value,
 }
@@ -187,13 +186,13 @@ impl QueryList {
 #[derive(Eq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexKey {
     pub id: String,
-    pub name: String,
+    pub sort: String,
     pub value: Value,
 }
 
 impl Ord for IndexKey {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.name.cmp(&other.name) 
+        self.sort.cmp(&other.sort) 
     }
 }
 
@@ -205,7 +204,7 @@ impl PartialOrd for IndexKey {
 
 impl PartialEq for IndexKey {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name 
+        self.sort == other.sort 
     }
 }
 
