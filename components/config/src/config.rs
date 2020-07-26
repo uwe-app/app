@@ -273,7 +273,7 @@ impl Config {
                 }
 
                 if let Some(db) = cfg.db.as_mut() {
-                    if let Some(collators) = db.collate.as_mut() {
+                    if let Some(collators) = db.load.as_mut() {
                         for(_, v) in collators {
                             if let Some(ref from) = v.from {
                                 if from.is_relative() {

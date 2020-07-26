@@ -86,8 +86,8 @@ impl Provider {
 
     pub async fn load(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         match req.provider {
-            SourceProvider::Documents => {
-                Provider::load_documents(req).await
+            SourceProvider::Files => {
+                Provider::load_files(req).await
             },
             SourceProvider::Pages => {
                 Provider::load_pages(req).await
@@ -133,7 +133,7 @@ impl Provider {
        Ok(docs)
     }
 
-    async fn load_documents(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
+    async fn load_files(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 

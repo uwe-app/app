@@ -30,8 +30,8 @@ impl Default for SourceType {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SourceProvider {
-    #[serde(rename = "documents")]
-    Documents,
+    #[serde(rename = "files")]
+    Files,
     #[serde(rename = "pages")]
     Pages,
 }
@@ -44,10 +44,11 @@ impl Default for SourceProvider {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DataBase {
-    pub collate: Option<HashMap<String, DataSource>>,
+    pub load: Option<HashMap<String, DataSource>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct DataSource {
     #[serde(rename = "type")]
     pub kind: Option<SourceType>,
@@ -55,6 +56,17 @@ pub struct DataSource {
     pub from: Option<PathBuf>,
     #[serde(alias = "on")]
     pub index: Option<HashMap<String, IndexRequest>>,
+}
+
+impl Default for DataSource {
+    fn default() -> Self {
+        Self {
+            kind: Some(Default::default()),
+            provider: Some(Default::default()),
+            from: None,
+            index: Some(HashMap::new()),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

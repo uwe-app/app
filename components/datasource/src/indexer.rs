@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::fs::ReadDir;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -15,7 +14,6 @@ use config::indexer::{
     IndexKey,
     KeyType,
     KeyResult,
-    SourceProvider,
     DataSource as DataSourceConfig,
     QueryValue,
     QueryResult};
@@ -258,9 +256,7 @@ impl DataSourceMap {
         }
     }
 
-    pub fn get_cache() -> QueryCache {
-        HashMap::new()
-    }
+    pub fn get_cache() -> QueryCache { HashMap::new() }
 
     pub async fn load(
         config: &Config,
@@ -269,13 +265,11 @@ impl DataSourceMap {
 
         let mut map: BTreeMap<String, DataSource> = BTreeMap::new();
 
-        // Load data source configurations
-        DataSourceMap::load_configurations(&mut map, options)?;
-
         // Map configurations for collations
         if options.settings.should_collate() {
             if let Some(ref db) = config.db {
-                if let Some(ref sources) = db.collate {
+
+                if let Some(ref sources) = db.load {
                     for (k, v) in sources {
                         let from = if v.from.is_some() {
                             v.from.as_ref().unwrap().clone()
@@ -295,6 +289,7 @@ impl DataSourceMap {
                         map.insert(k.to_string(), data_source);
                     }
                 }
+
             }
         }
 
@@ -305,53 +300,6 @@ impl DataSourceMap {
         DataSourceMap::load_index(&mut map)?;
 
         Ok(DataSourceMap { map })
-    }
-
-    fn load_configurations(map: &mut BTreeMap<String, DataSource>, options: &RuntimeOptions) -> Result<()> {
-        let src = options.get_data_sources_path();
-        if src.exists() && src.is_dir() {
-            let contents = src.read_dir()?;
-            DataSourceMap::load_config(map, contents)?;
-        }
-        Ok(())
-    }
-
-    fn load_config(map: &mut BTreeMap<String, DataSource>, dir: ReadDir) -> Result<()> {
-        for f in dir {
-            let mut path = f?.path();
-            if path.is_dir() {
-                if let Some(nm) = path.file_name() {
-                    let key = nm.to_string_lossy().into_owned();
-                    let conf = DataSourceMap::get_datasource_config_path(&path);
-                    if !conf.exists() || !conf.is_file() {
-                        return Err(Error::NoDataSourceConf {
-                            conf: DATASOURCE_TOML.to_string(),
-                            key
-                        });
-                    }
-
-                    let contents = utils::fs::read_string(conf)?;
-                    let config: DataSourceConfig = toml::from_str(&contents)?;
-
-                    // For document providers there must be a documents directory
-                    if let Some(SourceProvider::Documents) = config.provider {
-                        // Respect from when set
-                        if let Some(ref from) = config.from {
-                            path.push(from); 
-                        // Otherwise use the documents convention
-                        } else {
-                            let documents = get_datasource_documents_path(&path);
-                            path = documents;
-                        }
-                    }
-
-                    let data_source = DataSourceMap::to_data_source(&path.to_path_buf(), config);
-                    map.insert(key, data_source);
-                }
-            }
-        }
-
-        Ok(())
     }
 
     async fn load_documents(
