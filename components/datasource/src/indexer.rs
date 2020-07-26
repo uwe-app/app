@@ -245,14 +245,14 @@ impl DataSourceMap {
         pth
     }
 
-    fn to_data_source(path: &PathBuf, config: DataSourceConfig) -> DataSource {
+    fn to_data_source(path: &PathBuf, config: &DataSourceConfig) -> DataSource {
         let all: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
         DataSource {
             source: path.to_path_buf(),
             all,
             indices,
-            config,
+            config: config.clone(),
         }
     }
 
@@ -277,15 +277,7 @@ impl DataSourceMap {
                             options.source.clone() 
                         };
 
-                        let mut cfg = v.clone();
-                        if cfg.kind.is_none() {
-                            cfg.kind = Some(Default::default());
-                        }
-                        if cfg.provider.is_none() {
-                            cfg.provider = Some(Default::default());
-                        }
-
-                        let data_source = DataSourceMap::to_data_source(&from, cfg);
+                        let data_source = DataSourceMap::to_data_source(&from, v);
                         map.insert(k.to_string(), data_source);
                     }
                 }
