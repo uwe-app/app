@@ -1,0 +1,11 @@
+[package]
+name = "transform"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+config = {version = "0.1", path = "../config" }
+
+thiserror = "1"
+lol_html = "0.2"

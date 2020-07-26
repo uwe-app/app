@@ -54,6 +54,7 @@ pub mod link;
 mod page;
 pub mod path;
 mod profile;
+pub mod transform;
 
 pub fn get_short_codes_location() -> Result<PathBuf> {
     //self.source.join(config::SHORT_CODES.to_string())
