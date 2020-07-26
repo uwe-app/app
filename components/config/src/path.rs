@@ -31,6 +31,32 @@ pub fn find_path<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
     Value::Null
 }
 
+pub fn is_truthy(val: &Value) -> bool {
+    match val {
+        Value::Object(ref _map) => { return true }
+        Value::Array(ref _list) => { return true }
+        Value::String(ref s) => { return s.len() > 0 }
+        Value::Bool(ref b) => { return *b }
+        Value::Number(ref n) => {
+            if n.is_i64() {
+                return n.as_i64().unwrap() != 0;
+            } else if n.is_u64() {
+                return n.as_u64().unwrap() != 0;
+            } else if n.is_f64() {
+                return n.as_f64().unwrap() != 0.0;
+            }
+        }
+        _ => {}
+    }
+    false
+}
+
+// Lookup a value and determine whether it is truthy.
+pub fn truthy<S: AsRef<str>>(needle: S, doc: &Value) -> bool {
+    let val = find_path(needle, doc);
+    is_truthy(&val)
+}
+
 // Look up a field in an array or object.
 pub fn find_field<S: AsRef<str>>(field: S, parent: &Value) -> Value {
     match parent {

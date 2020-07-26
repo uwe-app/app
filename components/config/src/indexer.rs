@@ -75,6 +75,9 @@ pub struct IndexRequest {
     // to specify a path to the value. If the special `identity` value 
     // is specified then the index is sorted by the generated document id.
     pub key: String,
+
+    // List of filters to use when building the index.
+    pub filters: Option<HashMap<String, bool>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]

@@ -348,7 +348,19 @@ impl DataSourceMap {
 
                 let mut values = ValueIndex { documents: Vec::new() };
 
-                for (id, document) in &generator.all {
+                for (id, document) in generator.all
+                    .iter()
+                    .filter(|(_id, document)| {
+                        if let Some(ref filters) = def.filters {
+                            for (path, flag) in filters {
+                                let truthy = config::path::truthy(path, document);
+                                if (*flag && truthy) || (!*flag && !truthy) {
+                                    return false
+                                }
+                            }
+                        }
+                        true
+                    }) {
 
                     let key_val = if identity {
                         Value::String(id.to_string())
