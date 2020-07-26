@@ -62,11 +62,7 @@ pub struct IndexRequest {
     // The document key to use for the index, may be dot-delimited
     // to specify a path to the value. If the special `identity` value 
     // is specified then the index is sorted by the generated document id.
-    pub key: Option<String>,
-
-    // For a key that resolves to an array list create an entry in the 
-    // index for each item in the list.
-    pub expand: Option<bool>,
+    pub key: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]

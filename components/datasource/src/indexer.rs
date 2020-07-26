@@ -36,6 +36,8 @@ static NAME: &str = "name";
 static PATH: &str = "path";
 static DOC: &str = "doc";
 
+static IDENTITY_KEY: &str = "*";
+
 pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
     pth.push(DOCUMENTS);
@@ -299,9 +301,6 @@ impl DataSourceMap {
         // Load the documents for each configuration
         DataSourceMap::load_documents(&mut map, config, options, collation).await?;
 
-        // Configure defaults
-        DataSourceMap::configure_defaults(&mut map)?;
-
         // Create the indices
         DataSourceMap::load_index(&mut map)?;
 
@@ -387,25 +386,6 @@ impl DataSourceMap {
         Ok(())
     }
 
-    // Configure the default keys
-    fn configure_defaults(map: &mut BTreeMap<String, DataSource>) -> Result<()> {
-        for (_, generator) in map.iter_mut() {
-            if generator.config.index.is_none() {
-                generator.config.index = Some(HashMap::new());
-            }
-
-            if let Some(ref mut index) = generator.config.index.as_mut() {
-                // Inherit key from index name
-                for (k, v) in index.iter_mut() {
-                    if v.key.is_none() {
-                        v.key = Some(k.clone());
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
-
     fn get_sort_key_for_value<S: AsRef<str>>(id: S, key_val: &Value) -> String {
         match key_val {
             Value::String(ref s) => {
@@ -418,16 +398,13 @@ impl DataSourceMap {
     }
 
     fn load_index(map: &mut BTreeMap<String, DataSource>) -> Result<()> {
-        //let type_err = Err(Error::IndexKeyType);
-
         for (_, generator) in map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
 
-                let key = def.key.as_ref().unwrap();
-                //let expand = def.expand.is_some() && def.expand.unwrap();
-                let identity = key == IDENTITY;
+                let key = def.key.clone();
+                let identity = key == IDENTITY_KEY;
 
                 let mut values = ValueIndex { documents: Vec::new() };
 
@@ -436,7 +413,7 @@ impl DataSourceMap {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
-                        config::path::find_path(key, document)
+                        config::path::find_path(&key, document)
                     };
 
                     if let Value::Null = key_val {
