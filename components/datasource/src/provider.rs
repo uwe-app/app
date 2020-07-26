@@ -110,13 +110,18 @@ impl Provider {
                 let result = serde_json::to_value(data);
                 match result {
                     Ok(document) => {
-                        let key = ComputeIdentifier::id(
-                            &Strategy::Count, &path, &document, &count);
-                        if docs.contains_key(&key) {
-                            return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
+                        let listing = data.listing.is_some() && data.listing.unwrap();
+
+                        if listing {
+                            let key = ComputeIdentifier::id(
+                                &Strategy::Count, &path, &document, &count);
+                            if docs.contains_key(&key) {
+                                return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
+                            }
+
+                            docs.insert(key, Arc::new(document));
                         }
 
-                        docs.insert(key, Arc::new(document));
                     },
                     Err(e) => {
                         return future::err(Error::from(e))
