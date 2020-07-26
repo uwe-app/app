@@ -272,24 +272,26 @@ impl DataSourceMap {
 
         // Map configurations for collations
         if options.settings.should_collate() {
-            if let Some(ref sources) = config.collate {
-                for (k, v) in sources {
-                    let from = if v.from.is_some() {
-                        v.from.as_ref().unwrap().clone()
-                    } else {
-                        options.source.clone() 
-                    };
+            if let Some(ref db) = config.db {
+                if let Some(ref sources) = db.collate {
+                    for (k, v) in sources {
+                        let from = if v.from.is_some() {
+                            v.from.as_ref().unwrap().clone()
+                        } else {
+                            options.source.clone() 
+                        };
 
-                    let mut cfg = v.clone();
-                    if cfg.kind.is_none() {
-                        cfg.kind = Some(Default::default());
-                    }
-                    if cfg.provider.is_none() {
-                        cfg.provider = Some(Default::default());
-                    }
+                        let mut cfg = v.clone();
+                        if cfg.kind.is_none() {
+                            cfg.kind = Some(Default::default());
+                        }
+                        if cfg.provider.is_none() {
+                            cfg.provider = Some(Default::default());
+                        }
 
-                    let data_source = DataSourceMap::to_data_source(&from, cfg);
-                    map.insert(k.to_string(), data_source);
+                        let data_source = DataSourceMap::to_data_source(&from, cfg);
+                        map.insert(k.to_string(), data_source);
+                    }
                 }
             }
         }

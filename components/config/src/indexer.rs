@@ -43,6 +43,11 @@ impl Default for SourceProvider {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct DataBase {
+    pub collate: Option<HashMap<String, DataSource>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DataSource {
     #[serde(rename = "type")]
     pub kind: Option<SourceType>,

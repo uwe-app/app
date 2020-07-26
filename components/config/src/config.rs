@@ -15,7 +15,7 @@ use utils;
 use super::profile::{ProfileName, ProfileSettings};
 use super::page::{Author, Page};
 use super::Error;
-use super::indexer::{IndexRequest, DataSource};
+use super::indexer::{DataBase, IndexRequest};
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
@@ -118,7 +118,9 @@ pub struct Config {
     pub publish: Option<PublishConfig>,
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
-    pub collate: Option<HashMap<String, DataSource>>,
+
+    pub db: Option<DataBase>,
+
     pub minify: Option<MinifyConfig>,
     pub livereload: Option<LiveReload>,
 
@@ -152,7 +154,7 @@ impl Default for Config {
             publish: Some(Default::default()),
             index: None,
             authors: None,
-            collate: None,
+            db: None,
             minify: None,
             livereload: Some(Default::default()),
             series: None,
@@ -270,13 +272,15 @@ impl Config {
                     // FIXME: validate date time format specifiers
                 }
 
-                if let Some(collators) = cfg.collate.as_mut() {
-                    for(_, v) in collators {
-                        if let Some(ref from) = v.from {
-                            if from.is_relative() {
-                                let mut tmp = build.source.clone();
-                                tmp.push(from);
-                                v.from = Some(tmp);
+                if let Some(db) = cfg.db.as_mut() {
+                    if let Some(collators) = db.collate.as_mut() {
+                        for(_, v) in collators {
+                            if let Some(ref from) = v.from {
+                                if from.is_relative() {
+                                    let mut tmp = build.source.clone();
+                                    tmp.push(from);
+                                    v.from = Some(tmp);
+                                }
                             }
                         }
                     }
