@@ -29,6 +29,9 @@ fn write_options<P: AsRef<Path>>(
     host: Option<String>,
     locale_ids: Vec<String>) -> Result<(), Error> {
 
+    // This is used later to determine whether a redirect should be created
+    let has_custom_lang = lang.is_some() || !locale_ids.is_empty();
+
     // If we were passed a specific language use it
     let language = if lang.is_some() {
         lang
@@ -81,9 +84,11 @@ fn write_options<P: AsRef<Path>>(
     site_config.insert(config::FLUENT_KEY.to_string(), Value::Table(fluent));
 
     let mut redirect: Map<String, Value> = Map::new();
-    if let Some(ref lang) = language {
-        redirect.insert("/".to_string(), Value::String(format!("/{}/", lang)));
-        site_config.insert(config::REDIRECT_KEY.to_string(), Value::Table(redirect));
+    if has_custom_lang {
+        if let Some(ref lang) = language {
+            redirect.insert("/".to_string(), Value::String(format!("/{}/", lang)));
+            site_config.insert(config::REDIRECT_KEY.to_string(), Value::Table(redirect));
+        }
     }
 
     utils::fs::write_string(&config_file, toml::to_string(&site_config)?)?;
