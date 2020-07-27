@@ -89,10 +89,15 @@ fn scan(
     let code_block_buffer = text!(CODE, |t| {
         code_buf += t.as_str();
         if t.last_in_text_node() {
-            code_buf = code_buf.replace("&gt;", ">");
-            code_buf = code_buf.replace("&lt;", "<");
-            code_buf = code_buf.replace("&amp;", "&");
-            code_buf = code_buf.replace("&quot;", "\"");
+
+            // Must unescape text in code blocks otherwise 
+            // the syntax highlighting will re-encode them
+            code_buf = code_buf
+                .replace("&gt;", ">")
+                .replace("&lt;", "<")
+                .replace("&amp;", "&")
+                .replace("&quot;", "\"");
+
             code_blocks.push(code_buf.clone());
             code_buf.clear();
         }
