@@ -25,9 +25,6 @@ pub struct CollateInfo {
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
 
-    // FIXME: we should be able to dispense with `other`
-    // FIXME: now that we have the `targets` map
-    //
     // Assets and other files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
