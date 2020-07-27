@@ -307,6 +307,18 @@ impl Config {
 
     pub fn load<P: AsRef<Path>>(source: P, walk_ancestors: bool) -> Result<Self, Error> {
         let mut pth = source.as_ref().to_path_buf();
+
+        // Better error message when looking in the cwd
+        if pth == PathBuf::from("") {
+            if let Some(cwd) = resolve_cwd() {
+                pth = cwd;
+            }
+        }
+
+        let target_pth = pth.clone();
+
+        //println!("Path {}", pth.display());
+
         if pth.is_file() && pth.ends_with(SITE_TOML) {
             return Config::load_config(pth);
         } else if pth.is_file() {
@@ -316,6 +328,7 @@ impl Config {
                 } 
             }
         } else if pth.is_dir() {
+            println!("Loading from a dir");
             pth.push(SITE_TOML);
             if pth.is_file() && pth.exists() {
                 return Config::load_config(pth);
@@ -332,14 +345,7 @@ impl Config {
             }
         }
 
-        // Better error message when looking in the cwd
-        if pth == PathBuf::from("") {
-            if let Some(cwd) = resolve_cwd() {
-                pth = cwd;
-            }
-        }
-
-        Err(Error::NoSiteConfig(pth))
+        Err(Error::NoSiteConfig(target_pth))
     }
 
     pub fn get_project(&self) -> PathBuf {
