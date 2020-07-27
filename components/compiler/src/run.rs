@@ -49,11 +49,19 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
         ctx.options.settings.is_release(),
         &ctx.config);
 
-    let s = if minify_html {
+    let mut s = if minify_html {
         minify::html(parser.parse(file, &data)?)
     } else {
         parser.parse(file, &data)?
     };
+
+    let flags = transform::TransformFlags {
+        strip_comments: true,
+        auto_id: true,
+        syntax_highlight: true,
+    };
+
+    s = transform::apply(&s, &flags)?;
 
     utils::fs::write_string(&dest, &s)?;
 

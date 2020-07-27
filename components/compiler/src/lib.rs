@@ -68,6 +68,8 @@ pub enum Error {
     Config(#[from] config::Error),
     #[error(transparent)]
     Collator(#[from] collator::Error),
+    #[error(transparent)]
+    Transform(#[from] transform::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
