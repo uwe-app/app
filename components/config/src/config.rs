@@ -16,6 +16,7 @@ use super::profile::{ProfileName, ProfileSettings};
 use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{DataBase, IndexRequest};
+use super::syntax::SyntaxConfig;
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
@@ -119,6 +120,8 @@ pub struct Config {
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
 
+    pub syntax: Option<SyntaxConfig>,
+
     pub db: Option<DataBase>,
 
     pub minify: Option<MinifyConfig>,
@@ -154,6 +157,7 @@ impl Default for Config {
             publish: Some(Default::default()),
             index: None,
             authors: None,
+            syntax: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),
@@ -166,6 +170,14 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
+        if let Some(ref syntax) = self.syntax {
+            return syntax.is_enabled(name) 
+        }
+        false
+    }
+
     pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Self, Error> {
         let file = p.as_ref();
         debug!("load {:?}", p.as_ref().display());

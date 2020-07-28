@@ -8,7 +8,7 @@ use syntect::parsing::SyntaxReference;
 use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
 use syntect::html::ClassedHTMLGenerator;
-use syntect::html::highlighted_html_for_string;
+
 //use syntect::html::css_for_theme;
 
 use thiserror::Error;
@@ -21,10 +21,16 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod inline;
+
 pub fn conf(conf: Option<SyntaxConfig>) -> &'static SyntaxConfig {
     static INSTANCE: OnceCell<SyntaxConfig> = OnceCell::new();
     INSTANCE.get_or_init(|| {
-        conf.unwrap()
+        if let Some(conf) = conf {
+            conf    
+        } else {
+            Default::default()
+        }
     })
 }
 
@@ -59,8 +65,7 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
 
     if config.is_inline() {
         let ts = themes();
-
-        return highlighted_html_for_string(
+        return inline::highlighted_html_for_string(
             value,
             ps,
             syntax,
@@ -101,7 +106,6 @@ pub fn find<'a>(language: &str) -> Option<&'a SyntaxReference> {
 // This is expensive so should only be called when syntax 
 // highlighting is enabled for a profile.
 pub fn setup(config: &SyntaxConfig) -> Result<()> {
-
     // Store the configuration
     let conf = conf(Some(config.clone()));
 

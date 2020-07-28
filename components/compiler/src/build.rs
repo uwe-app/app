@@ -135,6 +135,7 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<()> {
+
         let livereload = crate::context::livereload().read().unwrap();
 
         resource::link(&self.context)?;

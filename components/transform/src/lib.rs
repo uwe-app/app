@@ -132,12 +132,17 @@ fn rewrite(
             let lang_id = captures.get(1).unwrap().as_str(); 
             if let Some(syntax) = syntax::find(lang_id) {
 
+                let conf = syntax::conf(None);
                 let highlighted = syntax::highlight(&value, syntax);
-
                 let new_class_name = format!("{} code", class_name);
                 el.set_attribute("class", &new_class_name)?;
 
-                el.set_inner_content(&highlighted, ContentType::Html);
+                if conf.is_inline() {
+                    el.replace(&highlighted, ContentType::Html);
+                } else {
+                    el.set_inner_content(&highlighted, ContentType::Html);
+                }
+
             }
         }
 

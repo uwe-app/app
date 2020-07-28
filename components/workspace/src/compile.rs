@@ -171,6 +171,13 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
 
 pub async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
 
+    if let Some(ref syntax_config) = ctx.config.syntax {
+        if ctx.config.is_syntax_enabled(&ctx.options.settings.name) {
+            info!("Syntax highlighting on");
+            syntax::setup(syntax_config)?;
+        }
+    }
+
     let parser = Parser::new(ctx, locales)?;
     let builder = Compiler::new(ctx);
 

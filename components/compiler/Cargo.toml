@@ -13,6 +13,7 @@ frontmatter = {version = "0.1", path = "../frontmatter" }
 livereload = {version = "0.1", path = "../livereload" }
 locale = {version = "0.1", path = "../locale" }
 minify = {version = "0.1", path = "../minify" }
+syntax = {version = "0.1", path = "../syntax" }
 transform = {version = "0.1", path = "../transform" }
 utils = {version = "0.1", path = "../utils" }
 

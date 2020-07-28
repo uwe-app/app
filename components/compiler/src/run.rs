@@ -58,8 +58,10 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
     let flags = transform::TransformFlags {
         strip_comments: true,
         auto_id: true,
-        syntax_highlight: true,
+        syntax_highlight: ctx.config.is_syntax_enabled(&ctx.options.settings.name),
     };
+
+    //println!("Flags {:?}", flags);
 
     s = transform::apply(&s, &flags)?;
 

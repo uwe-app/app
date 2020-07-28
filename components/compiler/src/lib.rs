@@ -70,6 +70,8 @@ pub enum Error {
     Collator(#[from] collator::Error),
     #[error(transparent)]
     Transform(#[from] transform::Error),
+    #[error(transparent)]
+    Syntax(#[from] syntax::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
