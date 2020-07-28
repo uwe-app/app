@@ -1,0 +1,10 @@
+[package]
+name = "syntax"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+
+syntect = "4.2"
+once_cell = "1.4"

@@ -29,6 +29,7 @@ members = [
   "components/report",
   "components/server",
   "components/site",
+  "components/syntax",
   "components/transform",
   "components/updater",
   "components/utils",

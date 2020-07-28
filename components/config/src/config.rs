@@ -328,7 +328,6 @@ impl Config {
                 } 
             }
         } else if pth.is_dir() {
-            println!("Loading from a dir");
             pth.push(SITE_TOML);
             if pth.is_file() && pth.exists() {
                 return Config::load_config(pth);

@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use once_cell::sync::OnceCell;
-
 use lol_html::{
     rewrite_str,
     RewriteStrSettings,
@@ -13,13 +11,6 @@ use lol_html::{
 };
 
 use regex::Regex;
-
-use syntect::parsing::SyntaxSet;
-use syntect::highlighting::ThemeSet;
-use syntect::html::ClassedHTMLGenerator;
-//use syntect::html::highlighted_html_for_string;
-//use syntect::html::css_for_theme;
-
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -42,22 +33,8 @@ pub struct TransformFlags {
 static HEADINGS: &str = "h1:not([id]), h2:not([id]), h3:not([id]), h4:not([id]), h5:not([id]), h6:not([id])";
 static CODE: &str = "pre > code[class]";
 
-pub fn syntax() -> &'static SyntaxSet {
-    static INSTANCE: OnceCell<SyntaxSet> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        SyntaxSet::load_defaults_newlines()
-    })
-}
-
-pub fn themes() -> &'static ThemeSet {
-    static INSTANCE: OnceCell<ThemeSet> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        ThemeSet::load_defaults()
-    })
-}
-
 fn scan(
-    val: &str,
+    doc: &str,
     flags: &TransformFlags,
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>) -> std::result::Result<String, RewritingError> {
@@ -109,7 +86,7 @@ fn scan(
     }
 
     rewrite_str(
-        val, 
+        doc,
         RewriteStrSettings {
             document_content_handlers, 
             element_content_handlers,
@@ -119,13 +96,10 @@ fn scan(
 }
 
 fn rewrite(
-    val: &str,
+    doc: &str,
     flags: &TransformFlags,
     headings: &mut Vec<String>,
-    code_blocks: &mut Vec<String>,
-    ps: &SyntaxSet,
-    _ts: &ThemeSet,
-    ll: &HashMap<&str, &str>) -> std::result::Result<String, RewritingError> {
+    code_blocks: &mut Vec<String>) -> std::result::Result<String, RewritingError> {
 
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
@@ -152,40 +126,18 @@ fn rewrite(
     });
 
     let code_block_rewrite = element!(CODE, |el| {
-        //println!("Code block trying to extract block {} {:?}", code_blocks.len(), el);
-
         let value = code_blocks.remove(0);
         let class_name = el.get_attribute("class").unwrap();
         if let Some(captures) = lang_re.captures(&class_name) {
             let lang_id = captures.get(1).unwrap().as_str(); 
-            if let Some(lang_ext) = ll.get(&lang_id) {
-                if let Some(syntax) = ps.find_syntax_by_extension(lang_ext) {
+            if let Some(syntax) = syntax::find(lang_id) {
 
-                    //let highlighted = highlighted_html_for_string(
-                        //&value,
-                        //ps,
-                        //syntax,
-                        //&ts.themes["base16-ocean.dark"]);
-                        //
-                        //
-                    //println!("{}", css_for_theme(&ts.themes["base16-ocean.dark"]));
+                let highlighted = syntax::highlight(&value, syntax);
 
-                    //println!("{}", &value);
+                let new_class_name = format!("{} code", class_name);
+                el.set_attribute("class", &new_class_name)?;
 
-                    let mut html_generator = ClassedHTMLGenerator::new(syntax, ps);
-                    for line in value.lines() {
-                        html_generator.parse_html_for_line(&line);
-                    }
-
-                    let highlighted = html_generator.finalize();
-
-                    //println!("{}", highlighted);
-
-                    let new_class_name = format!("{} code", class_name);
-                    el.set_attribute("class", &new_class_name)?;
-
-                    el.set_inner_content(&highlighted, ContentType::Html);
-                }
+                el.set_inner_content(&highlighted, ContentType::Html);
             }
         }
 
@@ -201,7 +153,7 @@ fn rewrite(
     }
 
     rewrite_str(
-        val, 
+        doc,
         RewriteStrSettings {
             element_content_handlers,
             ..Default::default()
@@ -217,39 +169,30 @@ fn unescape(txt: &str) -> String {
         .replace("&quot;", "\"")
 }
 
+// NOTE: This is necessary because currently the buffer text handlers
+// NOTE: will not fire is there is no text (:empty) but the element 
+// NOTE: handlers will fire which would cause an index out of bounds 
+// NOTE: panic attempting to access the buffered data. To prevent this 
+// NOTE: we strip the empty elements first.
+//
+// SEE: https://github.com/cloudflare/lol-html/issues/53
 fn strip_empty_tags(doc: &str) -> String {
     let strip_re = Regex::new(r"(<code[^>]*></code>|<h[1-6][^>]*></h[1-6]>)").unwrap();
     strip_re.replace_all(doc, "").to_string()
 }
 
 pub fn apply(doc: &str, flags: &TransformFlags) -> Result<String> {
-    let ps = syntax();
-    let ts = themes();
-
-    let mut lang_lookup: HashMap<&str, &str> = HashMap::new();
-    lang_lookup.insert("rust", "rs");
-
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
-
-    //println!("{:#?}", ps.syntaxes());
-    //
-    //for syn in ps.syntaxes() {
-        //println!("{} {:?}", syn.name, syn.file_extensions);
-    //}
 
     let clean = strip_empty_tags(doc);
 
     match scan(&clean, flags, &mut headings, &mut code_blocks) {
         Ok(value) => {
-            match rewrite(&value, flags, &mut headings, &mut code_blocks, &ps, &ts, &lang_lookup) {
-                Ok(result) => {
-                    //println!("Result {}", &result);
-                    Ok(result)
-                }
+            match rewrite(&value, flags, &mut headings, &mut code_blocks) {
+                Ok(result) => Ok(result),
                 Err(e) => Err(Error::Rewriting(e.to_string()))
             }
-
         }
         Err(e) => Err(Error::Rewriting(e.to_string()))
     }
