@@ -1107,7 +1107,7 @@ dependencies = [
 
 [[package]]
 name = "hypertext"
-version = "0.19.4"
+version = "0.19.5"
 dependencies = [
  "book 0.1.0",
  "cache 0.1.0",
