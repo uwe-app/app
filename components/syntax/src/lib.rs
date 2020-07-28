@@ -2,20 +2,31 @@ use std::collections::HashMap;
 
 use once_cell::sync::OnceCell;
 
+use config::syntax::SyntaxConfig;
+
 use syntect::parsing::SyntaxReference;
 use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
 use syntect::html::ClassedHTMLGenerator;
-//use syntect::html::highlighted_html_for_string;
+use syntect::html::highlighted_html_for_string;
 //use syntect::html::css_for_theme;
 
-//use thiserror::Error;
+use thiserror::Error;
 
-//#[derive(Error, Debug)]
-//pub enum Error {
-//}
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("Unknown theme '{0}', supported values are: {1}")]
+    UnknownTheme(String, String)
+}
 
-//type Result<T> = std::result::Result<T, Error>;
+type Result<T> = std::result::Result<T, Error>;
+
+pub fn conf(conf: Option<SyntaxConfig>) -> &'static SyntaxConfig {
+    static INSTANCE: OnceCell<SyntaxConfig> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        conf.unwrap()
+    })
+}
 
 pub fn syntaxes() -> &'static SyntaxSet {
     static INSTANCE: OnceCell<SyntaxSet> = OnceCell::new();
@@ -42,17 +53,25 @@ pub fn lookup() -> &'static HashMap<&'static str, &'static str> {
 }
 
 pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
-    //let highlighted = highlighted_html_for_string(
-        //&value,
-        //ps,
-        //syntax,
-        //&ts.themes["base16-ocean.dark"]);
+
+    let config = conf(None);
+    let ps = syntaxes();
+
+    if config.is_inline() {
+        let ts = themes();
+
+        return highlighted_html_for_string(
+            value,
+            ps,
+            syntax,
+            &ts.themes[config.theme()]);
+    }
+
         //
         //
     //println!("{}", css_for_theme(&ts.themes["base16-ocean.dark"]));
     //println!("{}", &value);
 
-    let ps = syntaxes();
     let mut html_generator = ClassedHTMLGenerator::new(syntax, ps);
     for line in value.lines() {
         html_generator.parse_html_for_line(&line);
@@ -75,4 +94,30 @@ pub fn find<'a>(language: &str) -> Option<&'a SyntaxReference> {
     }
 
     None
+}
+
+// Perform the initial setup for syntax highlighting.
+//
+// This is expensive so should only be called when syntax 
+// highlighting is enabled for a profile.
+pub fn setup(config: &SyntaxConfig) -> Result<()> {
+
+    // Store the configuration
+    let conf = conf(Some(config.clone()));
+
+    // Extract the bundled syntaxes and themes
+    let _ = syntaxes();
+    let ts = themes();
+
+    if !ts.themes.contains_key(conf.theme()) {
+        let supported = ts.themes
+            .keys()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        return Err(Error::UnknownTheme(conf.theme().to_string(), supported)) 
+    }
+
+    Ok(())
 }
