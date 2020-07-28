@@ -92,11 +92,7 @@ fn scan(
 
             // Must unescape text in code blocks otherwise 
             // the syntax highlighting will re-encode them
-            code_buf = code_buf
-                .replace("&gt;", ">")
-                .replace("&lt;", "<")
-                .replace("&amp;", "&")
-                .replace("&quot;", "\"");
+            code_buf = unescape(&code_buf);
 
             code_blocks.push(code_buf.clone());
             code_buf.clear();
@@ -158,13 +154,6 @@ fn rewrite(
     let code_block_rewrite = element!(CODE, |el| {
         //println!("Code block trying to extract block {} {:?}", code_blocks.len(), el);
 
-        // This is needed because empty code blocks with no text
-        // will not be detected during the call to scan() as there
-        // is not child text content.
-        if code_blocks.is_empty() {
-            return Ok(())
-        }
-
         let value = code_blocks.remove(0);
         let class_name = el.get_attribute("class").unwrap();
         if let Some(captures) = lang_re.captures(&class_name) {
@@ -220,6 +209,19 @@ fn rewrite(
     )
 }
 
+fn unescape(txt: &str) -> String {
+    txt
+        .replace("&gt;", ">")
+        .replace("&lt;", "<")
+        .replace("&amp;", "&")
+        .replace("&quot;", "\"")
+}
+
+fn strip_empty_tags(doc: &str) -> String {
+    let strip_re = Regex::new(r"(<code[^>]*></code>|<h[1-6][^>]*></h[1-6]>)").unwrap();
+    strip_re.replace_all(doc, "").to_string()
+}
+
 pub fn apply(doc: &str, flags: &TransformFlags) -> Result<String> {
     let ps = syntax();
     let ts = themes();
@@ -236,7 +238,9 @@ pub fn apply(doc: &str, flags: &TransformFlags) -> Result<String> {
         //println!("{} {:?}", syn.name, syn.file_extensions);
     //}
 
-    match scan(doc, flags, &mut headings, &mut code_blocks) {
+    let clean = strip_empty_tags(doc);
+
+    match scan(&clean, flags, &mut headings, &mut code_blocks) {
         Ok(value) => {
             match rewrite(&value, flags, &mut headings, &mut code_blocks, &ps, &ts, &lang_lookup) {
                 Ok(result) => {
