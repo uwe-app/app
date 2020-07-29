@@ -11,7 +11,7 @@ pub struct SyntaxConfig {
     pub enabled: bool,
     pub inline: Option<bool>,
     pub theme: Option<String>,
-    pub languages: Option<Vec<String>>,
+    //pub languages: Option<Vec<String>>,
     pub map: Option<HashMap<String, String>>,
     pub profiles: Option<Vec<ProfileName>>,
 }
@@ -21,7 +21,7 @@ impl Default for SyntaxConfig {
         Self {
             enabled: true,
             inline: Some(true),
-            languages: None,
+            //languages: None,
             theme: Some(DEFAULT_THEME.to_string()),
             map: Some(HashMap::new()),
             profiles: None,

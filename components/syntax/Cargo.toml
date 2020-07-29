@@ -8,5 +8,14 @@ edition = "2018"
 config = {version = "0.1", path = "../config" }
 
 thiserror = "1"
-syntect = "4.2"
 once_cell = "1.4"
+
+[dependencies.syntect]
+version = "4.2"
+default-features = false
+features = [
+  "parsing",
+  "regex-onig",
+  "dump-load",
+  "html",
+]
