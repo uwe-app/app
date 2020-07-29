@@ -20,7 +20,7 @@ impl Default for SyntaxConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            inline: Some(false),
+            inline: Some(true),
             languages: None,
             theme: Some(DEFAULT_THEME.to_string()),
             map: Some(HashMap::new()),
