@@ -195,7 +195,7 @@ struct FetchOpts {
     short_code: bool,
 
     /// Update the syntax highlighting cache
-    #[structopt(short, long)]
+    #[structopt(short = "y", long)]
     syntax: bool,
 
     /// Update the standalone cache

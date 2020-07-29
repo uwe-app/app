@@ -182,11 +182,8 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
                 cache::update(&prefs, vec![CacheComponent::Syntax])?;
             }
 
-            let syntax_bin = syntax_dir.join("binary/syntaxes.bin");
-            let themes_bin = syntax_dir.join("binary/themes.bin");
-
             info!("Syntax highlighting on");
-            syntax::setup(syntax_config)?;
+            syntax::setup(&syntax_dir, syntax_config)?;
         }
     }
 
