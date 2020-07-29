@@ -53,7 +53,14 @@ fn lookup() -> &'static HashMap<&'static str, &'static str> {
     INSTANCE.get_or_init(|| {
         let mut lang_lookup = HashMap::new();
         lang_lookup.insert("rust", "rs");
-        //lang_lookup.insert("toml", "ini");
+        lang_lookup.insert("handlebars", "hbs");
+
+        // Add custom mappings from the config
+        let map = conf(None).map.as_ref().unwrap();
+        for (k, v) in map.iter() {
+            lang_lookup.entry(k).or_insert(&v);
+        }
+
         lang_lookup
     })
 }

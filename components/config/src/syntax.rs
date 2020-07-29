@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::profile::ProfileName;
@@ -11,6 +12,7 @@ pub struct SyntaxConfig {
     pub inline: Option<bool>,
     pub theme: Option<String>,
     pub languages: Option<Vec<String>>,
+    pub map: Option<HashMap<String, String>>,
     pub profiles: Option<Vec<ProfileName>>,
 }
 
@@ -21,6 +23,7 @@ impl Default for SyntaxConfig {
             inline: Some(false),
             languages: None,
             theme: Some(DEFAULT_THEME.to_string()),
+            map: Some(HashMap::new()),
             profiles: None,
         }
     }
