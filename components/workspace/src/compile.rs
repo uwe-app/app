@@ -5,6 +5,7 @@ use std::convert::TryInto;
 
 use log::info;
 
+use cache::CacheComponent;
 use compiler::{Compiler, BuildContext};
 use compiler::parser::Parser;
 use config::{ProfileSettings, Config, RuntimeOptions};
@@ -174,6 +175,16 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
 fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     if let Some(ref syntax_config) = ctx.config.syntax {
         if ctx.config.is_syntax_enabled(&ctx.options.settings.name) {
+
+            let prefs = preference::load()?;
+            let syntax_dir = cache::get_syntax_dir()?;
+            if !syntax_dir.exists() {
+                cache::update(&prefs, vec![CacheComponent::Syntax])?;
+            }
+
+            let syntax_bin = syntax_dir.join("binary/syntaxes.bin");
+            let themes_bin = syntax_dir.join("binary/themes.bin");
+
             info!("Syntax highlighting on");
             syntax::setup(syntax_config)?;
         }

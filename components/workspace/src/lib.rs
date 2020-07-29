@@ -31,6 +31,10 @@ pub enum Error {
     #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
+    Cache(#[from] cache::Error),
+    #[error(transparent)]
+    Preference(#[from] preference::Error),
+    #[error(transparent)]
     Compiler(#[from] compiler::Error),
     #[error(transparent)]
     Locale(#[from] locale::Error),
