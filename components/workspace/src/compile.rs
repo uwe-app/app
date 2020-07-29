@@ -90,10 +90,12 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             ctx.collation.rewrite(&lang, &previous_base, &locale_target)?;
 
             previous_base = locale_target;
-
+            
+            prepare(&mut ctx)?;
             build(&mut ctx, &locales).await?;
         }
     } else {
+        prepare(&mut ctx)?;
         build(&mut ctx, &locales).await?;
     };
 
@@ -169,14 +171,18 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     manifest_file
 }
 
-pub async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
-
+fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     if let Some(ref syntax_config) = ctx.config.syntax {
         if ctx.config.is_syntax_enabled(&ctx.options.settings.name) {
             info!("Syntax highlighting on");
             syntax::setup(syntax_config)?;
         }
     }
+
+    Ok(())
+}
+
+async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
 
     let parser = Parser::new(ctx, locales)?;
     let builder = Compiler::new(ctx);

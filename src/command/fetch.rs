@@ -10,6 +10,7 @@ pub struct FetchOptions {
     pub documentation: bool,
     pub release: bool,
     pub short_code: bool,
+    pub syntax: bool,
 }
 
 pub fn update(options: FetchOptions) -> Result<()> {
@@ -21,25 +22,24 @@ pub fn update(options: FetchOptions) -> Result<()> {
         CacheComponent::Documentation,
         CacheComponent::Release,
         CacheComponent::ShortCode,
+        CacheComponent::Syntax,
     ];
 
-    if options.blueprint || options.standalone || options.documentation || options.release || options.short_code {
+    if options.blueprint
+        || options.standalone
+        || options.documentation
+        || options.release
+        || options.short_code
+        || options.syntax {
+
         components = Vec::new();
-        if options.blueprint {
-            components.push(CacheComponent::Blueprint);
-        }
-        if options.standalone {
-            components.push(CacheComponent::Standalone);
-        }
-        if options.documentation {
-            components.push(CacheComponent::Documentation);
-        }
-        if options.release {
-            components.push(CacheComponent::Release);
-        }
-        if options.short_code {
-            components.push(CacheComponent::ShortCode);
-        }
+
+        if options.blueprint { components.push(CacheComponent::Blueprint); }
+        if options.standalone { components.push(CacheComponent::Standalone); }
+        if options.documentation { components.push(CacheComponent::Documentation); }
+        if options.release { components.push(CacheComponent::Release); }
+        if options.short_code { components.push(CacheComponent::ShortCode); }
+        if options.syntax { components.push(CacheComponent::Syntax); }
     }
 
     cache::update(&prefs, components)?;

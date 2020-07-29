@@ -24,6 +24,9 @@ static DOCUMENTATION_NAME: &str = "documentation";
 static SHORT_CODES_REPO: &str = "https://github.com/hypertext-live/shortcodes";
 static SHORT_CODES_NAME: &str = "shortcodes";
 
+static SYNTAX_REPO: &str = "https://github.com/hypertext-live/syntax";
+static SYNTAX_NAME: &str = "syntax";
+
 static VERSION_BASE: &str = "https://raw.githubusercontent.com/hypertext-live/release-";
 static VERSION_FILE: &str = "/master/version.toml";
 
@@ -43,6 +46,7 @@ pub enum CacheComponent {
     Documentation,
     Release,
     ShortCode,
+    Syntax,
 }
 
 pub fn get_workspace_dir() -> io::Result<PathBuf> {
@@ -55,9 +59,7 @@ pub fn get_workspace_dir() -> io::Result<PathBuf> {
 }
 
 pub fn get_workspace_manifest() -> io::Result<PathBuf> {
-    let mut file = dirs::get_root_dir()?;
-    file.push(WORKSPACE_FILE);
-    Ok(file)
+    Ok(dirs::get_root_dir()?.join(WORKSPACE_FILE))
 }
 
 pub fn get_env_file() -> io::Result<PathBuf> {
@@ -85,9 +87,7 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
 }
 
 pub fn get_blueprint_dir() -> io::Result<PathBuf> {
-    let mut buf = dirs::get_root_dir()?;
-    buf.push(BLUEPRINT_NAME);
-    Ok(buf)
+    Ok(dirs::get_root_dir()?.join(BLUEPRINT_NAME))
 }
 
 pub fn get_standalone_url() -> String {
@@ -95,9 +95,7 @@ pub fn get_standalone_url() -> String {
 }
 
 pub fn get_standalone_dir() -> io::Result<PathBuf> {
-    let mut buf = dirs::get_root_dir()?;
-    buf.push(STANDALONE_NAME);
-    Ok(buf)
+    Ok(dirs::get_root_dir()?.join(STANDALONE_NAME))
 }
 
 pub fn get_docs_url() -> String {
@@ -105,9 +103,7 @@ pub fn get_docs_url() -> String {
 }
 
 pub fn get_docs_dir() -> io::Result<PathBuf> {
-    let mut buf = dirs::get_root_dir()?;
-    buf.push(DOCUMENTATION_NAME);
-    Ok(buf)
+    Ok(dirs::get_root_dir()?.join(DOCUMENTATION_NAME))
 }
 
 pub fn get_short_codes_url() -> String {
@@ -115,9 +111,15 @@ pub fn get_short_codes_url() -> String {
 }
 
 pub fn get_short_codes_dir() -> io::Result<PathBuf> {
-    let mut buf = dirs::get_root_dir()?;
-    buf.push(SHORT_CODES_NAME);
-    Ok(buf)
+    Ok(dirs::get_root_dir()?.join(SHORT_CODES_NAME))
+}
+
+pub fn get_syntax_url() -> String {
+    SYNTAX_REPO.to_string()
+}
+
+pub fn get_syntax_dir() -> io::Result<PathBuf> {
+    Ok(dirs::get_root_dir()?.join(SYNTAX_NAME))
 }
 
 #[cfg(target_os = "windows")]
@@ -188,6 +190,11 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
             CacheComponent::ShortCode => {
                 let url = get_short_codes_url();
                 let dir = get_short_codes_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            }
+            CacheComponent::Syntax => {
+                let url = get_syntax_url();
+                let dir = get_syntax_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
         }

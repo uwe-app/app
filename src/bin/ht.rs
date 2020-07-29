@@ -194,6 +194,10 @@ struct FetchOpts {
     #[structopt(short, long)]
     short_code: bool,
 
+    /// Update the syntax highlighting cache
+    #[structopt(short, long)]
+    syntax: bool,
+
     /// Update the standalone cache
     #[structopt(short = "a", long)]
     standalone: bool,
@@ -395,6 +399,7 @@ async fn process_command(cmd: &Command) {
                 documentation: args.documentation,
                 release: args.release,
                 short_code: args.short_code,
+                syntax: args.syntax,
             };
 
             if let Err(e) = command::fetch::update(opts) {

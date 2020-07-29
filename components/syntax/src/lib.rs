@@ -34,24 +34,24 @@ pub fn conf(conf: Option<SyntaxConfig>) -> &'static SyntaxConfig {
     })
 }
 
-pub fn syntaxes() -> &'static SyntaxSet {
+fn syntaxes() -> &'static SyntaxSet {
     static INSTANCE: OnceCell<SyntaxSet> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         SyntaxSet::load_defaults_newlines()
     })
 }
 
-pub fn themes() -> &'static ThemeSet {
+fn themes() -> &'static ThemeSet {
     static INSTANCE: OnceCell<ThemeSet> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         ThemeSet::load_defaults()
     })
 }
 
-pub fn lookup() -> &'static HashMap<&'static str, &'static str> {
+fn lookup() -> &'static HashMap<&'static str, &'static str> {
     static INSTANCE: OnceCell<HashMap<&'static str, &'static str>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
-        let mut lang_lookup: HashMap<&'static str, &'static str> = HashMap::new();
+        let mut lang_lookup = HashMap::new();
         lang_lookup.insert("rust", "rs");
         //lang_lookup.insert("toml", "ini");
         lang_lookup

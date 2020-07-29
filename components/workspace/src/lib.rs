@@ -38,6 +38,8 @@ pub enum Error {
     DataSource(#[from] datasource::Error),
     #[error(transparent)]
     Collator(#[from] collator::Error),
+    #[error(transparent)]
+    Syntax(#[from] syntax::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -49,5 +51,5 @@ pub mod project;
 
 pub use compile::compile_project;
 pub use compile::compile;
-pub use compile::build;
+//pub use compile::build;
 pub use finder::find;
