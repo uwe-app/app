@@ -30,6 +30,7 @@ members = [
   "components/server",
   "components/site",
   "components/syntax",
+  "components/toc",
   "components/transform",
   "components/updater",
   "components/utils",
