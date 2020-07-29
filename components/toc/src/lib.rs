@@ -51,5 +51,15 @@ impl TableOfContents {
         self.entries.push(heading);
         Ok(())
     }
+
+    pub fn to_html_string(&self, tag_name: &str, class_name: &str, from: &str, to: &str) -> Result<String> {
+        let from = Heading::parse(from, "", "")?;
+        let to = Heading::parse(to, "", "")?;
+
+        let mut markup = format!("<{} class=\"{}\">", tag_name, class_name);
+
+        markup.push_str(&format!("</{}>", tag_name));
+        Ok(markup)
+    }
 }
 

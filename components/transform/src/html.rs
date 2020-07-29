@@ -176,25 +176,39 @@ fn strip_empty_tags(doc: &str) -> String {
     strip_re.replace_all(doc, "").to_string()
 }
 
+fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
+    let toc_re = Regex::new("<toc data-from=\"(h[1-6])\" data-to=\"(h[1-6])\" />").unwrap();
+    if let Some(groups) = toc_re.captures(doc) {
+        let from = groups.get(1).unwrap().as_str(); 
+        let to = groups.get(2).unwrap().as_str(); 
+        let markup = toc.to_html_string("ol", "toc", from, to)?;
+
+        //println!("Markup {}", markup);
+        //println!("FOUND TOC MATCHES {} {}", from, to);
+        //std::process::exit(1);
+        
+    }
+    Ok(doc.to_string())
+}
+
 pub fn apply(doc: &str, flags: &HtmlTransformFlags) -> Result<String> {
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
 
     let clean = strip_empty_tags(doc);
 
-    match scan(&clean, flags, &mut headings, &mut code_blocks) {
-        Ok(value) => {
-            let mut toc = TableOfContents::new();
-            match rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc) {
-                Ok(result) => {
-                    if flags.use_toc() {
-                        // TODO: replace any placeholder <toc> element
-                    }
-                    Ok(result)
-                }
-                Err(e) => Err(Error::Rewriting(e.to_string()))
-            }
-        }
-        Err(e) => Err(Error::Rewriting(e.to_string()))
+    let value = scan(&clean, flags, &mut headings, &mut code_blocks)
+        .map_err(|e| Error::Rewriting(e.to_string()))?;
+
+    let mut toc = TableOfContents::new();
+
+    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc)
+        .map_err(|e| Error::Rewriting(e.to_string()))?;
+
+    if flags.use_toc() {
+        // TODO: replace any placeholder <toc> element
+        let res = toc_replace(&result, &toc)?;
+        return Ok(res)
     }
+    Ok(result)
 }
