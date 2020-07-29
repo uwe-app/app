@@ -19,6 +19,7 @@ impl Default for TransformConfig {
 pub struct HtmlTransformFlags {
     pub strip_comments: Option<bool>,
     pub auto_id: Option<bool>,
+    pub toc: Option<bool>,
     #[serde(skip_deserializing)]
     pub syntax_highlight: Option<bool>,
 }
@@ -28,6 +29,7 @@ impl Default for HtmlTransformFlags {
         Self {
             strip_comments: Some(false),
             auto_id: Some(false),
+            toc: Some(false),
             syntax_highlight: Some(false),
         }
     }
@@ -42,11 +44,15 @@ impl HtmlTransformFlags {
         self.auto_id.is_some() && self.auto_id.unwrap()
     }
 
+    pub fn use_toc(&self) -> bool {
+        self.toc.is_some() && self.toc.unwrap()
+    }
+
     pub fn use_syntax_highlight(&self) -> bool {
         self.syntax_highlight.is_some() && self.syntax_highlight.unwrap()
     }
 
     pub fn is_active(&self) -> bool {
-        self.use_strip_comments() || self.use_auto_id() || self.use_syntax_highlight()
+        self.use_strip_comments() || self.use_toc() || self.use_auto_id() || self.use_syntax_highlight()
     }
 }

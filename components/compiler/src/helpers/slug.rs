@@ -1,5 +1,4 @@
 use handlebars::*;
-use log::debug;
 
 #[derive(Clone, Copy)]
 pub struct Slug;
@@ -20,7 +19,6 @@ impl HelperDef for Slug {
             .as_str()
             .ok_or_else(|| RenderError::new("Type error in `slug`, expected string parameter"))?;
 
-        debug!("slug {:?}", value);
         out.write(&slug::slugify(&value))?;
 
         Ok(())

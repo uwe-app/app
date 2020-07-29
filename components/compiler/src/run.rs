@@ -65,16 +65,6 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
         }
     }
 
-    //let transformations = ctx.config.transform().as_ref().unwrap().
-
-    //let flags = transform::TransformFlags {
-        //strip_comments: true,
-        //auto_id: true,
-        //syntax_highlight: ctx.config.is_syntax_enabled(&ctx.options.settings.name),
-    //};
-
-    //println!("Flags {:?}", flags);
-
     utils::fs::write_string(&dest, &s)?;
 
     Ok(())

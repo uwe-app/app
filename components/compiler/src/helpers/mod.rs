@@ -20,6 +20,7 @@ pub mod random;
 pub mod series;
 pub mod sibling;
 pub mod slug;
+pub mod toc;
 
 pub struct BufferedOutput {
     buffer: String,

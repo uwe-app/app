@@ -13,6 +13,7 @@ use lol_html::{
 use regex::Regex;
 
 use config::transform::HtmlTransformFlags;
+use toc::TableOfContents;
 
 use super::{Error, Result};
 
@@ -85,7 +86,8 @@ fn rewrite(
     doc: &str,
     flags: &HtmlTransformFlags,
     headings: &mut Vec<String>,
-    code_blocks: &mut Vec<String>) -> std::result::Result<String, RewritingError> {
+    code_blocks: &mut Vec<String>,
+    toc: &mut TableOfContents) -> std::result::Result<String, RewritingError> {
 
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
@@ -103,6 +105,8 @@ fn rewrite(
             }
 
             el.set_attribute("id", &id)?;
+
+            toc.add(&el.tag_name(), &id, &value)?;
 
             seen_headings.entry(id)
                 .and_modify(|c| *c += 1)
@@ -135,7 +139,7 @@ fn rewrite(
         Ok(())
     });
 
-    if flags.use_auto_id() {
+    if flags.use_toc() || flags.use_auto_id() {
         element_content_handlers.push(auto_id_rewrite);
     }
 
@@ -180,8 +184,14 @@ pub fn apply(doc: &str, flags: &HtmlTransformFlags) -> Result<String> {
 
     match scan(&clean, flags, &mut headings, &mut code_blocks) {
         Ok(value) => {
-            match rewrite(&value, flags, &mut headings, &mut code_blocks) {
-                Ok(result) => Ok(result),
+            let mut toc = TableOfContents::new();
+            match rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc) {
+                Ok(result) => {
+                    if flags.use_toc() {
+                        // TODO: replace any placeholder <toc> element
+                    }
+                    Ok(result)
+                }
                 Err(e) => Err(Error::Rewriting(e.to_string()))
             }
         }

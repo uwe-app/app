@@ -73,6 +73,7 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
         handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
+        handlebars.register_helper("toc", Box::new(helpers::toc::TableOfContents));
 
         handlebars.register_helper("next",
             Box::new(helpers::sibling::Sibling {name: String::from("next"), amount: 1}));

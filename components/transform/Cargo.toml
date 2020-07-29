@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 config = {version = "0.1", path = "../config" }
 syntax = {version = "0.1", path = "../syntax" }
+toc = {version = "0.1", path = "../toc" }
 
 thiserror = "1"
 lol_html = "0.2"
