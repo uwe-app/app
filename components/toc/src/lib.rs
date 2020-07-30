@@ -99,7 +99,11 @@ impl TableOfContents {
             return Ok("".to_string())
         }
 
-        let mut markup = format!("<{} class=\"{}\">", tag_name, class_name);
+        let mut markup = if class_name.is_empty() {
+            format!("<{}>", tag_name)
+        } else {
+            format!("<{} class=\"{}\">", tag_name, class_name)
+        };
 
         let mut current: Option<&Heading> = None;
         let mut stack: Vec<&Heading> = Vec::new();

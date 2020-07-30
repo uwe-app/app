@@ -189,11 +189,17 @@ fn strip_empty_tags(doc: &str) -> String {
 }
 
 fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
-    let toc_re = Regex::new("<toc data-from=\"(h[1-6])\" data-to=\"(h[1-6])\" />").unwrap();
+    let toc_re = Regex::new(
+        "<toc data-tag=\"(ol|ul)\" data-class=\"([^\"]*)\" data-from=\"(h[1-6])\" data-to=\"(h[1-6])\" />"
+    ).unwrap();
+
     if let Some(groups) = toc_re.captures(doc) {
-        let from = groups.get(1).unwrap().as_str(); 
-        let to = groups.get(2).unwrap().as_str(); 
-        let markup = toc.to_html_string("ol", "toc", from, to)?;
+        let tag = groups.get(1).unwrap().as_str(); 
+        let class = groups.get(2).unwrap().as_str(); 
+        let from = groups.get(3).unwrap().as_str(); 
+        let to = groups.get(4).unwrap().as_str(); 
+
+        let markup = toc.to_html_string(tag, class, from, to)?;
         let res = toc_re.replace(doc, markup.as_str());
         return Ok(res.to_owned().to_string())
     }
