@@ -17,7 +17,7 @@ use toc::TableOfContents;
 
 use super::{Error, Result};
 
-static HEADINGS: &str = "h1:not([id]), h2:not([id]), h3:not([id]), h4:not([id]), h5:not([id]), h6:not([id])";
+static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
 static CODE: &str = "pre > code[class]";
 
 fn scan(
@@ -87,7 +87,7 @@ fn rewrite(
     flags: &HtmlTransformFlags,
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
-    toc: &mut TableOfContents) -> std::result::Result<String, RewritingError> {
+    toc: &mut Option<TableOfContents>) -> std::result::Result<String, RewritingError> {
 
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
@@ -97,16 +97,26 @@ fn rewrite(
     let auto_id_rewrite = element!(HEADINGS, |el| {
         if !headings.is_empty() {
             let value = headings.remove(0);
-            let mut id = slug::slugify(&value);
+            let id_attr = el.get_attribute("id");
+
+            let mut id = if let Some(ref val) = id_attr {
+                val.to_string() 
+            } else {
+                slug::slugify(&value)
+            };
 
             if seen_headings.contains_key(&id) {
                 let heading_count = seen_headings.get(&id).unwrap();
                 id = format!("{}-{}", &id, heading_count + 1);
             }
 
-            el.set_attribute("id", &id)?;
+            if let None = id_attr {
+                el.set_attribute("id", &id)?;
+            }
 
-            toc.add(&el.tag_name(), &id, &value)?;
+            if let Some(toc) = toc.as_mut() {
+                toc.add(&el.tag_name(), &id, &value)?;
+            }
 
             seen_headings.entry(id)
                 .and_modify(|c| *c += 1)
@@ -139,7 +149,7 @@ fn rewrite(
         Ok(())
     });
 
-    if flags.use_toc() || flags.use_auto_id() {
+    if flags.use_auto_id() {
         element_content_handlers.push(auto_id_rewrite);
     }
 
@@ -156,6 +166,8 @@ fn rewrite(
     )
 }
 
+// Content in code blocks has already been escaped
+// so we need to unescape it before highlighting.
 fn unescape(txt: &str) -> String {
     txt
         .replace("&gt;", ">")
@@ -193,19 +205,17 @@ pub fn apply(doc: &str, flags: &HtmlTransformFlags) -> Result<String> {
     let mut code_blocks: Vec<String> = Vec::new();
 
     let clean = strip_empty_tags(doc);
-
     let value = scan(&clean, flags, &mut headings, &mut code_blocks)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
-    let mut toc = TableOfContents::new();
-
+    let mut toc = if flags.use_toc() { Some(TableOfContents::new()) } else { None };
     let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     if flags.use_toc() {
-        // TODO: replace any placeholder <toc> element
-        let res = toc_replace(&result, &toc)?;
+        let res = toc_replace(&result, toc.as_ref().unwrap())?;
         return Ok(res)
     }
+
     Ok(result)
 }

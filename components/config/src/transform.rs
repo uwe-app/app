@@ -41,7 +41,7 @@ impl HtmlTransformFlags {
     }
 
     pub fn use_auto_id(&self) -> bool {
-        self.auto_id.is_some() && self.auto_id.unwrap()
+        self.use_toc() || self.auto_id.is_some() && self.auto_id.unwrap()
     }
 
     pub fn use_toc(&self) -> bool {
