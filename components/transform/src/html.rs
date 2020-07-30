@@ -15,22 +15,29 @@ use regex::Regex;
 use config::transform::HtmlTransformFlags;
 use toc::TableOfContents;
 
-use super::{Error, Result};
+use crate::{Error, Result};
+use crate::text::TextExtraction;
 
 static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
 static CODE: &str = "pre > code[class]";
+static TITLE: &str = "title";
+static TEXT: &str = "body *";
 
 fn scan(
     doc: &str,
     flags: &HtmlTransformFlags,
     headings: &mut Vec<String>,
-    code_blocks: &mut Vec<String>) -> std::result::Result<String, RewritingError> {
+    code_blocks: &mut Vec<String>,
+    text: &mut Option<TextExtraction>) -> std::result::Result<String, RewritingError> {
 
     let mut text_buf = String::new();
     let mut code_buf = String::new();
+    let mut title_buf = String::new();
 
     let mut document_content_handlers = vec![];
     let mut element_content_handlers = vec![];
+
+    let extract_text = text.is_some();
 
     let remove_all_comments = doc_comments!(|c| {
         c.remove();
@@ -64,12 +71,29 @@ fn scan(
         Ok(())
     });
 
+    let extract_text_title = text!(TITLE, |t| {
+        if let Some(txt) = text.as_mut() {
+            // If there are multiple title tags the last
+            // one will win
+            title_buf += t.as_str();
+            if t.last_in_text_node() {
+                txt.title = Some(title_buf.clone());
+                title_buf.clear();
+            }
+        }
+        Ok(())
+    });
+
     if flags.use_auto_id() {
         element_content_handlers.push(auto_id_buffer);
     }
 
     if flags.use_syntax_highlight() {
         element_content_handlers.push(code_block_buffer); 
+    }
+
+    if extract_text {
+        element_content_handlers.push(extract_text_title); 
     }
 
     rewrite_str(
@@ -87,11 +111,14 @@ fn rewrite(
     flags: &HtmlTransformFlags,
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
-    toc: &mut Option<TableOfContents>) -> std::result::Result<String, RewritingError> {
+    toc: &mut Option<TableOfContents>,
+    text: &mut Option<TextExtraction>) -> std::result::Result<String, RewritingError> {
 
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
 
+    let extract_text = text.is_some();
+    let mut text_buf = String::new();
     let mut element_content_handlers = vec![];
 
     let auto_id_rewrite = element!(HEADINGS, |el| {
@@ -131,7 +158,6 @@ fn rewrite(
         if let Some(captures) = lang_re.captures(&class_name) {
             let lang_id = captures.get(1).unwrap().as_str(); 
             if let Some(syntax) = syntax::find(lang_id) {
-
                 let conf = syntax::conf(None);
                 let highlighted = syntax::highlight(&value, syntax);
                 let new_class_name = format!("{} code", class_name);
@@ -142,10 +168,19 @@ fn rewrite(
                 } else {
                     el.set_inner_content(&highlighted, ContentType::Html);
                 }
-
             }
         }
+        Ok(())
+    });
 
+    let extract_text_content = text!(TEXT, |t| {
+        if let Some(txt) = text.as_mut() {
+            text_buf += t.as_str();
+            if t.last_in_text_node() {
+                txt.chunks.push(text_buf.clone());
+                text_buf.clear();
+            }
+        }
         Ok(())
     });
 
@@ -155,6 +190,10 @@ fn rewrite(
 
     if flags.use_syntax_highlight() {
         element_content_handlers.push(code_block_rewrite);
+    }
+
+    if extract_text {
+        element_content_handlers.push(extract_text_content);
     }
 
     rewrite_str(
@@ -206,16 +245,16 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
     Ok(doc.to_string())
 }
 
-pub fn apply(doc: &str, flags: &HtmlTransformFlags) -> Result<String> {
+pub fn apply(doc: &str, flags: &HtmlTransformFlags, text: &mut Option<TextExtraction>) -> Result<String> {
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
 
     let clean = strip_empty_tags(doc);
-    let value = scan(&clean, flags, &mut headings, &mut code_blocks)
+    let value = scan(&clean, flags, &mut headings, &mut code_blocks, text)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     let mut toc = if flags.use_toc() { Some(TableOfContents::new()) } else { None };
-    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc)
+    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, text)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     if flags.use_toc() {

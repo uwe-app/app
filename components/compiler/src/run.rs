@@ -60,7 +60,12 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
             let mut transformations = html.clone();
             transformations.syntax_highlight = Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
             if transformations.is_active() {
-                s = transform::html::apply(&s, &transformations)?;
+
+                let mut text = Some(transform::text::TextExtraction::new());
+
+                s = transform::html::apply(&s, &transformations, &mut text)?;
+
+                println!("{}", text.as_ref().unwrap().to_string());
             }
         }
     }
