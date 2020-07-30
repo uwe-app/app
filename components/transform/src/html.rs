@@ -177,7 +177,7 @@ fn unescape(txt: &str) -> String {
 }
 
 // NOTE: This is necessary because currently the buffer text handlers
-// NOTE: will not fire is there is no text (:empty) but the element 
+// NOTE: will not fire if there is no text (:empty) but the element 
 // NOTE: handlers will fire which would cause an index out of bounds 
 // NOTE: panic attempting to access the buffered data. To prevent this 
 // NOTE: we strip the empty elements first.

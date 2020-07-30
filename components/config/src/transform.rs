@@ -20,6 +20,9 @@ pub struct HtmlTransformFlags {
     pub strip_comments: Option<bool>,
     pub auto_id: Option<bool>,
     pub toc: Option<bool>,
+
+    // This flag is used internally to trigger syntax highlighting
+    // transformations when the syntax configuration is active
     #[serde(skip_deserializing)]
     pub syntax_highlight: Option<bool>,
 }
