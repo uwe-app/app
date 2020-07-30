@@ -182,11 +182,8 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
         let from = groups.get(1).unwrap().as_str(); 
         let to = groups.get(2).unwrap().as_str(); 
         let markup = toc.to_html_string("ol", "toc", from, to)?;
-
-        //println!("Markup {}", markup);
-        //println!("FOUND TOC MATCHES {} {}", from, to);
-        //std::process::exit(1);
-        
+        let res = toc_re.replace(doc, markup.as_str());
+        return Ok(res.to_owned().to_string())
     }
     Ok(doc.to_string())
 }
