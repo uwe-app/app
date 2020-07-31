@@ -73,7 +73,6 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("random", Box::new(helpers::random::Random));
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
         handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
-        handlebars.register_helper("toc", Box::new(helpers::toc::TableOfContents));
 
         handlebars.register_helper("next",
             Box::new(helpers::sibling::Sibling {name: String::from("next"), amount: 1}));
@@ -82,6 +81,15 @@ impl<'a> Parser<'a> {
 
         if let Some(loader) = &locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
+        }
+
+        // Conditional helpers
+        if let Some(ref transform) = context.config.transform {
+            if let Some(ref html) = transform.html {
+                if html.use_toc() {
+                    handlebars.register_helper("toc", Box::new(helpers::toc::TableOfContents));
+                }
+            }
         }
 
         // Register the global layout
