@@ -57,15 +57,23 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
 
     if let Some(ref transform) = ctx.config.transform {
         if let Some(ref html) = transform.html {
-            let mut transformations = html.clone();
-            transformations.syntax_highlight = Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
-            if transformations.is_active() {
+            let mut html = html.clone();
 
-                let mut text = Some(transform::text::TextExtraction::new());
+            html.syntax_highlight =
+                Some(
+                    ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
-                s = transform::html::apply(&s, &transformations, &mut text)?;
+            if html.is_active() {
 
-                println!("{}", text.as_ref().unwrap().to_string());
+                let mut text = if html.use_text_extraction() {
+                    Some(transform::text::TextExtraction::new())
+                } else {
+                    None  
+                };
+
+                s = transform::html::apply(&s, &html, &mut text)?;
+
+                //println!("{}", text.as_ref().unwrap().to_string());
             }
         }
     }
