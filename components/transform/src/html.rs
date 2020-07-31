@@ -10,12 +10,13 @@ use lol_html::{
     doc_comments,
 };
 
-use regex::Regex;
+use regex::{Captures, Regex};
 
 use config::transform::HtmlTransformFlags;
 use toc::TableOfContents;
 
 use crate::{Error, Result};
+use crate::text::TextExtraction;
 use crate::cache::TransformCache;
 
 static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
@@ -240,6 +241,9 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
         "<toc data-tag=\"(ol|ul)\" data-class=\"([^\"]*)\" data-from=\"(h[1-6])\" data-to=\"(h[1-6])\" />"
     ).unwrap();
 
+    // TODO: allow multiple replacements here, callers might want a toggle side menu
+    // TODO: and a static toc at the top of the page!
+
     if let Some(groups) = toc_re.captures(doc) {
         let tag = groups.get(1).unwrap().as_str(); 
         let class = groups.get(2).unwrap().as_str(); 
@@ -250,7 +254,35 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
         let res = toc_re.replace(doc, markup.as_str());
         return Ok(res.to_owned().to_string())
     }
+
     Ok(doc.to_string())
+}
+
+fn word_replace(doc: &str, text: &TextExtraction) -> Result<String> {
+    let word_re = Regex::new("<words( data-avg=\"([0-9]+)\")? />").unwrap();
+    let res = word_re.replace_all(doc, |caps: &Captures| {
+        let mut value: usize = text.words;
+        let avg_attr = caps.get(2);
+        if let Some(avg) = avg_attr {
+            let avg: usize = match avg.as_str().parse() {
+                Ok(res) => res,
+                Err(_) => 250,
+            };
+
+            // It doesn't make sense to show zero minutes for reading 
+            // time so we ensure it has a minimum value. Also, we set 
+            // it to two so that it is always a plural value as a workaround
+            // for the pluralization issue so callers can always safely use:
+            //
+            // {{words time=true}} minutes
+            //
+            value = std::cmp::max(value / avg, 2);
+        }
+
+        value.to_string()
+    }).to_string();
+
+    Ok(res.to_string())
 }
 
 pub fn apply(
@@ -267,12 +299,17 @@ pub fn apply(
 
     let mut toc = if flags.use_toc() { Some(TableOfContents::new()) } else { None };
 
-    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, cache)
+    let mut result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, cache)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     if flags.use_toc() {
-        let res = toc_replace(&result, toc.as_ref().unwrap())?;
-        return Ok(res)
+        result = toc_replace(&result, toc.as_ref().unwrap())?;
+    }
+
+    if flags.use_words() {
+        if let Some(ref text) = cache.text {
+            result = word_replace(&result, text)?;
+        }
     }
 
     Ok(result)

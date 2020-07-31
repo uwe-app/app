@@ -20,7 +20,7 @@ impl TransformCache {
 
     pub fn new() -> Result<Self> {
         Ok(Self {
-            words_re: Regex::new(r"\b\w\b")?,
+            words_re: Regex::new(r"\b?\w\b")?,
             text: None,
             syntax_highlight: None,
         })

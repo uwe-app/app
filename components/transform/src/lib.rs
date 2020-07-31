@@ -8,6 +8,9 @@ pub enum Error {
     Rewriting(String),
 
     #[error(transparent)]
+    ParserInt(#[from] std::num::ParseIntError),
+
+    #[error(transparent)]
     Regex(#[from] regex::Error),
 
     #[error(transparent)]

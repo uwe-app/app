@@ -19,7 +19,7 @@ impl HelperDef for Count {
         // from the `avg`
         let time = h.hash_get("time")
             .map(|v| v.value())
-            .or(Some(&json!(true)))
+            .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
             .ok_or(RenderError::new(
                 "Type error for `words` helper, hash parameter `time` must be a boolean"
