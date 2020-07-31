@@ -49,8 +49,8 @@ struct HighlightAssets {
 impl Default for HighlightAssets {
     fn default() -> Self {
         Self {
-            syntax_set: SyntaxSet::load_defaults_newlines(),
-            theme_set: ThemeSet::load_defaults(),
+            syntax_set: Default::default(),
+            theme_set: Default::default(),
         }
     }
 }
