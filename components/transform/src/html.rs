@@ -112,12 +112,15 @@ fn rewrite(
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
     toc: &mut Option<TableOfContents>,
-    text: &mut Option<TextExtraction>) -> std::result::Result<String, RewritingError> {
+    text: &mut Option<TextExtraction>,
+    words_re: &Regex) -> std::result::Result<String, RewritingError> {
 
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
 
     let extract_text = text.is_some();
+    let use_words = flags.use_words();
+
     let mut text_buf = String::new();
     let mut element_content_handlers = vec![];
 
@@ -177,6 +180,10 @@ fn rewrite(
         if let Some(txt) = text.as_mut() {
             text_buf += t.as_str();
             if t.last_in_text_node() {
+                if use_words {
+                    let count = words_re.find_iter(&text_buf).count();
+                    txt.words += count;
+                }
                 txt.chunks.push(text_buf.clone());
                 text_buf.clear();
             }
@@ -249,12 +256,14 @@ pub fn apply(doc: &str, flags: &HtmlTransformFlags, text: &mut Option<TextExtrac
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
 
+    let words_re = Regex::new(r"\b\w\b")?;
+
     let clean = strip_empty_tags(doc);
     let value = scan(&clean, flags, &mut headings, &mut code_blocks, text)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     let mut toc = if flags.use_toc() { Some(TableOfContents::new()) } else { None };
-    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, text)
+    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, text, &words_re)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     if flags.use_toc() {

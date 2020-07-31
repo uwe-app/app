@@ -4,6 +4,7 @@ use std::fmt;
 pub struct TextExtraction {
     pub title: Option<String>,
     pub chunks: Vec<String>,
+    pub words: usize,
 }
 
 impl TextExtraction {

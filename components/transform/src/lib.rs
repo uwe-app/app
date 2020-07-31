@@ -8,6 +8,9 @@ pub enum Error {
     Rewriting(String),
 
     #[error(transparent)]
+    Regex(#[from] regex::Error),
+
+    #[error(transparent)]
     Toc(#[from] toc::Error),
 }
 

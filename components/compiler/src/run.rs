@@ -64,7 +64,6 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
                     ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
             if html.is_active() {
-
                 let mut text = if html.use_text_extraction() {
                     Some(transform::text::TextExtraction::new())
                 } else {
