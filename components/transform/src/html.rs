@@ -16,7 +16,7 @@ use config::transform::HtmlTransformFlags;
 use toc::TableOfContents;
 
 use crate::{Error, Result};
-use crate::text::TextExtraction;
+use crate::cache::TransformCache;
 
 static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
 static CODE: &str = "pre > code[class]";
@@ -28,7 +28,7 @@ fn scan(
     flags: &HtmlTransformFlags,
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
-    text: &mut Option<TextExtraction>) -> std::result::Result<String, RewritingError> {
+    cache: &mut TransformCache) -> std::result::Result<String, RewritingError> {
 
     let mut text_buf = String::new();
     let mut code_buf = String::new();
@@ -37,7 +37,8 @@ fn scan(
     let mut document_content_handlers = vec![];
     let mut element_content_handlers = vec![];
 
-    let extract_text = text.is_some();
+    let extract_text = cache.text.is_some();
+    let highlight = cache.use_syntax_highlight();
 
     let remove_all_comments = doc_comments!(|c| {
         c.remove();
@@ -72,7 +73,7 @@ fn scan(
     });
 
     let extract_text_title = text!(TITLE, |t| {
-        if let Some(txt) = text.as_mut() {
+        if let Some(txt) = cache.text.as_mut() {
             // If there are multiple title tags the last
             // one will win
             title_buf += t.as_str();
@@ -88,7 +89,7 @@ fn scan(
         element_content_handlers.push(auto_id_buffer);
     }
 
-    if flags.use_syntax_highlight() {
+    if highlight {
         element_content_handlers.push(code_block_buffer); 
     }
 
@@ -112,14 +113,14 @@ fn rewrite(
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
     toc: &mut Option<TableOfContents>,
-    text: &mut Option<TextExtraction>,
-    words_re: &Regex) -> std::result::Result<String, RewritingError> {
+    cache: &mut TransformCache) -> std::result::Result<String, RewritingError> {
 
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
 
-    let extract_text = text.is_some();
+    let extract_text = cache.text.is_some();
     let use_words = flags.use_words();
+    let highlight = cache.use_syntax_highlight();
 
     let mut text_buf = String::new();
     let mut element_content_handlers = vec![];
@@ -177,11 +178,11 @@ fn rewrite(
     });
 
     let extract_text_content = text!(TEXT, |t| {
-        if let Some(txt) = text.as_mut() {
+        if let Some(txt) = cache.text.as_mut() {
             text_buf += t.as_str();
             if t.last_in_text_node() {
                 if use_words {
-                    let count = words_re.find_iter(&text_buf).count();
+                    let count = cache.words_re.find_iter(&text_buf).count();
                     txt.words += count;
                 }
                 txt.chunks.push(text_buf.clone());
@@ -195,7 +196,7 @@ fn rewrite(
         element_content_handlers.push(auto_id_rewrite);
     }
 
-    if flags.use_syntax_highlight() {
+    if highlight {
         element_content_handlers.push(code_block_rewrite);
     }
 
@@ -252,18 +253,21 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
     Ok(doc.to_string())
 }
 
-pub fn apply(doc: &str, flags: &HtmlTransformFlags, text: &mut Option<TextExtraction>) -> Result<String> {
+pub fn apply(
+    doc: &str,
+    flags: &HtmlTransformFlags,
+    cache: &mut TransformCache) -> Result<String> {
+
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
 
-    let words_re = Regex::new(r"\b\w\b")?;
-
     let clean = strip_empty_tags(doc);
-    let value = scan(&clean, flags, &mut headings, &mut code_blocks, text)
+    let value = scan(&clean, flags, &mut headings, &mut code_blocks, cache)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     let mut toc = if flags.use_toc() { Some(TableOfContents::new()) } else { None };
-    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, text, &words_re)
+
+    let result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, cache)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     if flags.use_toc() {

@@ -16,5 +16,6 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+pub mod cache;
 pub mod html;
 pub mod text;

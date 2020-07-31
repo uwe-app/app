@@ -57,20 +57,23 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
 
     if let Some(ref transform) = ctx.config.transform {
         if let Some(ref html) = transform.html {
-            let mut html = html.clone();
 
-            html.syntax_highlight =
+            let mut cache = transform::cache::TransformCache::new()?;
+            cache.syntax_highlight =
                 Some(
                     ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
-            if html.is_active() {
-                let mut text = if html.use_text_extraction() {
-                    Some(transform::text::TextExtraction::new())
-                } else {
-                    None  
-                };
+            // TODO: also enable this for search indexing
+            let use_text = html.use_words();
 
-                s = transform::html::apply(&s, &html, &mut text)?;
+            cache.text = if use_text {
+                Some(transform::text::TextExtraction::new())
+            } else {
+                None  
+            };
+
+            if html.is_active() || cache.is_active() {
+                s = transform::html::apply(&s, &html, &mut cache)?;
 
                 //println!("{}", text.as_ref().unwrap().to_string());
             }
