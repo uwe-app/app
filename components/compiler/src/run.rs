@@ -75,7 +75,7 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
             if html.is_active() || cache.is_active() {
                 s = transform::html::apply(&s, &html, &mut cache)?;
 
-                //println!("{}", text.as_ref().unwrap().to_string());
+                //println!("{}", cache.text.as_ref().unwrap().to_string());
             }
         }
     }

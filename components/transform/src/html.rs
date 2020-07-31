@@ -21,7 +21,7 @@ use crate::cache::TransformCache;
 static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
 static CODE: &str = "pre > code[class]";
 static TITLE: &str = "title";
-static TEXT: &str = "p, [index] *";
+static TEXT: &str = "p, [data-index] *";
 
 fn scan(
     doc: &str,
