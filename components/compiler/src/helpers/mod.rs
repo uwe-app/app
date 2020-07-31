@@ -21,6 +21,7 @@ pub mod series;
 pub mod sibling;
 pub mod slug;
 pub mod toc;
+pub mod word;
 
 pub struct BufferedOutput {
     buffer: String,

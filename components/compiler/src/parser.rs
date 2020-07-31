@@ -89,6 +89,10 @@ impl<'a> Parser<'a> {
                 if html.use_toc() {
                     handlebars.register_helper("toc", Box::new(helpers::toc::TableOfContents));
                 }
+
+                if html.use_words() {
+                    handlebars.register_helper("words", Box::new(helpers::word::Count));
+                }
             }
         }
 
