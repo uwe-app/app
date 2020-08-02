@@ -1,12 +1,12 @@
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
 use super::scores::*;
 use crate::common::{Fields, InternalWordAnnotation};
 use crate::config::TitleBoost;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-
-use crate::config::Config;
-use std::fs::File;
-use std::io::{BufWriter, Write};
 
 pub type EntryIndex = usize;
 pub type AliasTarget = String;
@@ -24,13 +24,13 @@ pub struct Index {
 }
 
 impl Index {
-    pub fn write(&self, config: &Config) -> usize {
-        let config = &config.output;
-        let file = File::create(&config.filename).unwrap();
+    //pub fn write(&self, config: &Config) -> usize {
+    pub fn write(&self, filename: &str, debug: bool) -> usize {
+        let file = File::create(filename).unwrap();
         let mut bufwriter = BufWriter::new(file);
         let write_version = super::VERSION_STRING.as_bytes();
 
-        if config.debug {
+        if debug {
             self.write_debug(&mut bufwriter, &write_version)
         } else {
             self.write_release(&mut bufwriter, &write_version)
