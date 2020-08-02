@@ -1,7 +1,7 @@
 pub mod index_analyzer;
 
 use crate::common::{Fields, IndexFromFile, InternalWordAnnotation};
-use crate::index_versions::v3;
+use crate::index::v3;
 use index_analyzer::{parse_index_version, IndexVersion, VersionParseError};
 use serde::{Deserialize, Serialize};
 use std::fmt;

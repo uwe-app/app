@@ -1,4 +1,4 @@
-use crate::index_versions::*;
+use crate::index::*;
 use crate::IndexFromFile;
 use std::convert::TryInto;
 use std::error::Error;
