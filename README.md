@@ -56,6 +56,19 @@ To build the installer and copy the files to the website:
 make installer
 ```
 
+## Search
+
+To build the search library you should first install [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) then you can build the wasm file and javascript bindings:
+
+```
+cd components/search
+make wasm-prod
+```
+
+To generate the test data files to `components/search/test/assets` run `make test-data`.
+
+Which generates some `*.st` files in `test/assets` and you should now have enough data to run the tests with `cargo test`.
+
 ## SSL
 
 For libgit2 support (`git2` crate) the SSL development package is required. For Ubunut/Mint I installed with `sudo apt-get install libssl-dev`.
