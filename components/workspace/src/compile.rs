@@ -207,7 +207,16 @@ async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
         targets.push(ctx.options.source.clone());
     }
 
-    builder.all(&parser, targets).await?;
+    let parse_list = builder.all(&parser, targets).await?;
+
+    for parse_data in parse_list {
+        //println!("Got parse data {:?}", parse_data);
+        let extraction = parse_data.extract.as_ref().unwrap();
+        let href = ctx.collation.links.sources.get(&parse_data.file);
+        println!("Title {:?}", extraction.title);
+        println!("Href {:?}", href);
+        // TODO: when not include_index strip the index.html from the href
+    }
 
     Ok((builder, parser))
 }

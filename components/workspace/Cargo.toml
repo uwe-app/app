@@ -12,6 +12,7 @@ config = {version = "0.1", path = "../config" }
 datasource = {version = "0.1", path = "../datasource" }
 locale = {version = "0.1", path = "../locale" }
 preference = {version = "0.1", path = "../preference" }
+search = {version = "0.1", path = "../search" }
 syntax = {version = "0.1", path = "../syntax" }
 utils = {version = "0.1", path = "../utils" }
 

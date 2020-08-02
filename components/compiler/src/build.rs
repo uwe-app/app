@@ -49,7 +49,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build a single file
-    pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData<'_>>> {
+    pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
 
         if let Some(page) = self.get_page(file) {
 
@@ -66,7 +66,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<Vec<ParseData<'_>>> {
+    pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<Vec<ParseData>> {
         let parallel = self.context.options.settings.is_parallel();
 
         // TODO: support allowing this in the settings
@@ -143,7 +143,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<Vec<ParseData<'_>>> {
+    pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<Vec<ParseData>> {
 
         resource::link(&self.context)?;
 

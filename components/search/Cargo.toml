@@ -1,6 +1,6 @@
 [package]
 name = "search"
-version = "0.8.0"
+version = "0.1.0"
 authors = ["James Little <littleguy23@gmail.com>", "Muji <muji@tmpfs.org>"]
 description = "Search index library"
 categories = ["wasm"]
