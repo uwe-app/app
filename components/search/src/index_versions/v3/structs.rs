@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
 
 use serde::{Deserialize, Serialize};
 
 use super::scores::*;
-use crate::common::{Fields, InternalWordAnnotation};
+use crate::common::{Fields, InternalWordAnnotation, IndexFromFile};
 use crate::config::TitleBoost;
 
 pub type EntryIndex = usize;
@@ -67,6 +68,21 @@ impl Index {
         // Return zero bytes written so that the frontend can alert the user
         // when they write an index in debug mode
         0
+    }
+}
+
+impl TryFrom<&IndexFromFile> for Index {
+    type Error = rmp_serde::decode::Error;
+    fn try_from(file: &IndexFromFile) -> Result<Self, Self::Error> {
+        let (version_size_bytes, rest) = file.split_at(std::mem::size_of::<u64>());
+        let version_size = u64::from_be_bytes(version_size_bytes.try_into().unwrap());
+        let (_version_bytes, rest) = rest.split_at(version_size as usize);
+
+        let (index_size_bytes, rest) = rest.split_at(std::mem::size_of::<u64>());
+        let index_size = u64::from_be_bytes(index_size_bytes.try_into().unwrap());
+        let (index_bytes, _rest) = rest.split_at(index_size as usize);
+
+        rmp_serde::from_read_ref(index_bytes)
     }
 }
 
