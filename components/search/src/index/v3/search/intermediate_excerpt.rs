@@ -3,14 +3,14 @@ use crate::common::{Fields, InternalWordAnnotation};
 use std::cmp::Ordering;
 
 #[derive(Clone, Debug)]
-pub(super) struct IntermediateExcerpt {
-    pub(super) query: String,
-    pub(super) entry_index: EntryIndex,
-    pub(super) score: Score,
-    pub(super) source: WordListSource,
-    pub(super) word_index: usize,
-    pub(super) internal_annotations: Vec<InternalWordAnnotation>,
-    pub(super) fields: Fields,
+pub struct IntermediateExcerpt {
+    pub query: String,
+    pub entry_index: EntryIndex,
+    pub score: Score,
+    pub source: WordListSource,
+    pub word_index: usize,
+    pub internal_annotations: Vec<InternalWordAnnotation>,
+    pub fields: Fields,
 }
 
 impl Ord for IntermediateExcerpt {

@@ -5,12 +5,12 @@ use crate::common::Fields;
 extern crate rust_stemmers;
 use rust_stemmers::Algorithm;
 
-pub(super) struct IntermediateEntry {
-    pub(super) contents: Contents,
-    pub(super) stem_algorithm: Option<Algorithm>,
-    pub(super) title: String,
-    pub(super) url: String,
-    pub(super) fields: Fields,
+pub struct IntermediateEntry {
+    pub contents: Contents,
+    pub stem_algorithm: Option<Algorithm>,
+    pub title: String,
+    pub url: String,
+    pub fields: Fields,
 }
 
 impl From<&IntermediateEntry> for Entry {

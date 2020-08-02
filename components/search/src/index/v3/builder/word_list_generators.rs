@@ -2,7 +2,7 @@ use super::super::structs::{AnnotatedWord, Contents};
 use crate::common::InternalWordAnnotation;
 use crate::config::{Filetype, InputConfig, SRTConfig, SRTTimestampFormat};
 
-pub(super) fn returns_word_list_generator(filetype: &Filetype) -> Box<dyn WordListGenerator> {
+pub fn returns_word_list_generator(filetype: &Filetype) -> Box<dyn WordListGenerator> {
     match filetype {
         Filetype::PlainText => Box::new(PlainTextWordListGenerator {}),
         Filetype::SRTSubtitle => Box::new(SRTWordListGenerator {}),
@@ -10,11 +10,11 @@ pub(super) fn returns_word_list_generator(filetype: &Filetype) -> Box<dyn WordLi
     }
 }
 
-pub(super) trait WordListGenerator {
+pub trait WordListGenerator {
     fn create_word_list(&self, config: &InputConfig, buffer: &str) -> Contents;
 }
 
-pub(super) struct PlainTextWordListGenerator {}
+pub struct PlainTextWordListGenerator {}
 
 impl WordListGenerator for PlainTextWordListGenerator {
     fn create_word_list(&self, _config: &InputConfig, buffer: &str) -> Contents {
@@ -30,7 +30,7 @@ impl WordListGenerator for PlainTextWordListGenerator {
     }
 }
 
-pub(super) struct SRTWordListGenerator {}
+pub struct SRTWordListGenerator {}
 
 impl WordListGenerator for SRTWordListGenerator {
     fn create_word_list(&self, config: &InputConfig, buffer: &str) -> Contents {
@@ -78,7 +78,7 @@ impl SRTWordListGenerator {
     }
 }
 
-pub(super) struct HTMLWordListGenerator {}
+pub struct HTMLWordListGenerator {}
 
 impl WordListGenerator for HTMLWordListGenerator {
     fn create_word_list(&self, _config: &InputConfig, _buffer: &str) -> Contents {

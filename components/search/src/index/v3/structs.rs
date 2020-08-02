@@ -19,9 +19,9 @@ pub type Score = u8;
  */
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Index {
-    pub(super) config: PassthroughConfig,
-    pub(super) entries: Vec<Entry>,
-    pub(super) containers: HashMap<String, Container>,
+    pub config: PassthroughConfig,
+    pub entries: Vec<Entry>,
+    pub containers: HashMap<String, Container>,
 }
 
 impl Index {
@@ -87,20 +87,20 @@ impl TryFrom<&IndexFromFile> for Index {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub(super) struct PassthroughConfig {
-    pub(super) url_prefix: String,
-    pub(super) title_boost: TitleBoost,
-    pub(super) excerpt_buffer: u8,
-    pub(super) excerpts_per_result: u8,
-    pub(super) displayed_results_count: u8,
+pub struct PassthroughConfig {
+    pub url_prefix: String,
+    pub title_boost: TitleBoost,
+    pub excerpt_buffer: u8,
+    pub excerpts_per_result: u8,
+    pub displayed_results_count: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(super) struct Entry {
-    pub(super) contents: String,
-    pub(super) title: String,
-    pub(super) url: String,
-    pub(super) fields: Fields,
+pub struct Entry {
+    pub contents: String,
+    pub title: String,
+    pub url: String,
+    pub fields: Fields,
 }
 
 /**
@@ -113,12 +113,12 @@ pub(super) struct Entry {
  * all search results for a given query from a single container.
  */
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub(super) struct Container {
+pub struct Container {
     // #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub(super) results: HashMap<EntryIndex, SearchResult>,
+    pub results: HashMap<EntryIndex, SearchResult>,
 
     // #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub(super) aliases: HashMap<AliasTarget, Score>,
+    pub aliases: HashMap<AliasTarget, Score>,
 }
 
 impl Container {
@@ -128,13 +128,13 @@ impl Container {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(super) struct SearchResult {
-    pub(super) excerpts: Vec<Excerpt>,
-    pub(super) score: Score,
+pub struct SearchResult {
+    pub excerpts: Vec<Excerpt>,
+    pub score: Score,
 }
 
 impl SearchResult {
-    pub(super) fn new() -> SearchResult {
+    pub fn new() -> SearchResult {
         SearchResult {
             excerpts: vec![],
             score: MATCHED_WORD_SCORE,
@@ -143,21 +143,21 @@ impl SearchResult {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub(super) struct Excerpt {
-    pub(super) word_index: usize,
+pub struct Excerpt {
+    pub word_index: usize,
 
     // #[serde(default, skip_serializing_if = "WordListSource::is_default")]
-    pub(super) source: WordListSource,
+    pub source: WordListSource,
 
     // #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(super) internal_annotations: Vec<InternalWordAnnotation>,
+    pub internal_annotations: Vec<InternalWordAnnotation>,
 
     // #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub(super) fields: Fields,
+    pub fields: Fields,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum WordListSource {
+pub enum WordListSource {
     Title,
     Contents,
 }
@@ -176,19 +176,19 @@ impl Default for WordListSource {
 // }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub(super) struct AnnotatedWord {
-    pub(super) word: String,
-    pub(super) internal_annotations: Vec<InternalWordAnnotation>,
-    pub(super) fields: Fields,
+pub struct AnnotatedWord {
+    pub word: String,
+    pub internal_annotations: Vec<InternalWordAnnotation>,
+    pub fields: Fields,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(super) struct Contents {
-    pub(super) word_list: Vec<AnnotatedWord>,
+pub struct Contents {
+    pub word_list: Vec<AnnotatedWord>,
 }
 
 impl Contents {
-    pub(super) fn get_full_text(&self) -> String {
+    pub fn get_full_text(&self) -> String {
         self.word_list
             .iter()
             .map(|aw| aw.word.clone())
