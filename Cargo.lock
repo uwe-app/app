@@ -1134,6 +1134,7 @@ dependencies = [
  "cache 0.1.0",
  "compiler 0.1.0",
  "config 0.1.0",
+ "datasource 0.1.0",
  "dirs 0.1.0",
  "git 0.1.0",
  "livereload 0.1.0",

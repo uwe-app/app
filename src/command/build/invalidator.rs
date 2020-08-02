@@ -4,11 +4,11 @@ use std::path::PathBuf;
 use datasource::{self, DataSourceMap};
 use config::{FileInfo, FileType};
 
-use super::Compiler;
-use super::hook;
-use super::parser::Parser;
-
-use crate::Error;
+use compiler::Compiler;
+use compiler::context;
+use compiler::hook;
+use compiler::parser::Parser;
+use compiler::Error;
 
 /*
  *  Invalidation rules.
@@ -300,7 +300,7 @@ impl<'a> Invalidator<'a> {
 
     pub async fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         let ctx = self.builder.context;
-        let livereload = crate::context::livereload().read().unwrap();
+        let livereload = context::livereload().read().unwrap();
 
         let config = &ctx.config;
         let options = &ctx.options;

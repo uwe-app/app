@@ -79,7 +79,6 @@ pub mod context;
 pub mod draft;
 pub mod helpers;
 pub mod hook;
-pub mod invalidator;
 pub mod lookup;
 pub mod markdown;
 pub mod parser;

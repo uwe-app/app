@@ -14,7 +14,7 @@ use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
 
 use compiler::Compiler;
-use compiler::invalidator::Invalidator;
+//use compiler::invalidator::Invalidator;
 use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
@@ -22,26 +22,13 @@ use config::ProfileSettings;
 use crate::command::run::{self, ServeOptions};
 use crate::{Error, ErrorCallback};
 
+use super::invalidator::Invalidator;
+
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
     format!("ws://{}:{}/{}", host, addr.port(), endpoint)
 }
 
-pub async fn compile<P: AsRef<Path>>(
-    project: P,
-    args: &mut ProfileSettings,
-    error_cb: ErrorCallback,
-) -> Result<(), Error> {
-
-    let live = args.live.is_some() && args.live.unwrap();
-    if live {
-        livereload(project, args, error_cb).await?;
-    } else {
-        workspace::compile_project(project, args).await?;
-    }
-    Ok(())
-}
-
-async fn livereload<P: AsRef<Path>>(
+pub async fn start<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
     error_cb: ErrorCallback) -> Result<(), Error> {
