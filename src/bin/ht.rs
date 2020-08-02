@@ -369,7 +369,7 @@ async fn process_command(cmd: &Command) {
         },
 
         Command::Init { ref args } => {
-            let opts = command::blueprint::InitOptions {
+            let opts = command::init::InitOptions {
                 source: args.source.clone(),
                 target: args.target.clone(),
                 private_key: args.private_key.clone(),
@@ -381,13 +381,13 @@ async fn process_command(cmd: &Command) {
             if let Some(ref action) = args.action {
                 match action {
                     InitCommands::List {} => {
-                        if let Err(e) = command::blueprint::list() {
+                        if let Err(e) = command::init::list() {
                             fatal(e);
                         }
                     }
                 }
             } else {
-                if let Err(e) = command::blueprint::init(opts) {
+                if let Err(e) = command::init::init(opts) {
                     fatal(e);
                 }
             }

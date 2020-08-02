@@ -1,4 +1,4 @@
-pub mod blueprint;
+pub mod init;
 pub mod book;
 pub mod build;
 pub mod docs;
