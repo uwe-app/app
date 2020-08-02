@@ -1,7 +1,7 @@
 pub mod index_analyzer;
 
 use crate::common::{Fields, IndexFromFile, InternalWordAnnotation};
-use crate::index::v3;
+use crate::index::v1;
 use index_analyzer::{parse_index_version, IndexVersion, VersionParseError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -52,7 +52,7 @@ pub enum SearchError {
     /// If version can't be parsed when reading the index
     VersionParseError(VersionParseError),
 
-    /// If the index deserialization returns an error (applicable to v3 only)
+    /// If the index deserialization returns an error (applicable to v1 only)
     IndexParseError,
 
     // If the JSON serialization engine crashes while turning the SearchOutput
@@ -80,7 +80,7 @@ pub fn search(index: &IndexFromFile, query: &str) -> Result<SearchOutput, Search
     match parse_index_version(index) {
         Ok(version) => {
             let search_function = match version {
-                IndexVersion::V3 => v3::search::search,
+                IndexVersion::V1 => v1::search::search,
             };
 
             search_function(index, query)

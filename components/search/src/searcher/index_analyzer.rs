@@ -31,7 +31,7 @@ pub fn parse_index_version(index: &IndexFromFile) -> Result<IndexVersion, Versio
     match version {
         Err(e) => Err(VersionParseError::VersionStringUtf8Error(e)),
         Ok(version) => match version.as_str() {
-            v3::VERSION_STRING => Ok(IndexVersion::V3),
+            v1::VERSION_STRING => Ok(IndexVersion::V1),
             _ => Err(VersionParseError::UnknownVersionString(version)),
         },
     }
@@ -39,14 +39,14 @@ pub fn parse_index_version(index: &IndexFromFile) -> Result<IndexVersion, Versio
 
 #[derive(Debug, PartialEq)]
 pub enum IndexVersion {
-    V3,
+    V1,
 }
 
 impl fmt::Display for IndexVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", {
             match self {
-                IndexVersion::V3 => v3::VERSION_STRING,
+                IndexVersion::V1 => v1::VERSION_STRING,
             }
         })
     }
@@ -137,6 +137,6 @@ mod tests {
 
     #[test]
     fn can_get_version_of_1_0_0_index() {
-        validate_version!("./test/assets/federalist-min.st", IndexVersion::V3);
+        validate_version!("./test/assets/federalist-min.st", IndexVersion::V1);
     }
 }

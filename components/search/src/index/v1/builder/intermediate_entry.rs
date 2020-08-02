@@ -27,7 +27,7 @@ impl From<&IntermediateEntry> for Entry {
 #[cfg(test)]
 mod tests {
     use super::IntermediateEntry;
-    use crate::index_versions::v3::structs::*;
+    use crate::index::v1::structs::*;
     use std::collections::HashMap;
 
     #[test]

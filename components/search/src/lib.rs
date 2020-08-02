@@ -1,15 +1,14 @@
 pub mod common;
 pub mod config;
+pub mod index;
 pub mod searcher;
-
-mod index;
 
 use common::IndexFromFile;
 use config::Config;
 use searcher::index_analyzer::parse_index_version;
 use searcher::SearchError;
 
-use index::v3 as LatestVersion;
+use index::v1 as LatestVersion;
 use LatestVersion::builder;
 use LatestVersion::structs::Index;
 
