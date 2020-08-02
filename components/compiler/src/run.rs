@@ -9,6 +9,23 @@ use crate::context::BuildContext;
 use crate::parser::Parser;
 use crate::draft;
 
+use transform::text::TextExtraction;
+
+#[derive(Debug)]
+pub struct ParseData<'a> {
+    pub file: &'a PathBuf,
+    pub extract: Option<TextExtraction>,
+}
+
+impl<'a> ParseData<'a> {
+    pub fn new(file: &'a PathBuf) -> Self {
+        Self {
+            file, 
+            extract: None,
+        } 
+    }
+}
+
 fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool, config: &Config) -> bool {
     let mut html_extension = false;
     if let Some(ext) = dest.as_ref().extension() {
@@ -28,15 +45,16 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
     release && html_extension
 }
 
-pub async fn copy(file: &PathBuf, dest: &PathBuf) -> Result<()> {
+pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData<'a>>> {
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, &dest)?;
-    Ok(())
+    Ok(None)
 }
 
-pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data: &Page) -> Result<()> {
+pub async fn parse<'a>(ctx: &BuildContext, parser: &Parser<'_>, file: &'a PathBuf, data: &Page) -> Result<Option<ParseData<'a>>> {
+
     if draft::is_draft(&data, &ctx.options) {
-        return Ok(());
+        return Ok(None);
     }
 
     let dest = data.file.as_ref().unwrap().target.clone();
@@ -54,6 +72,8 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
     } else {
         parser.parse(file, &data)?
     };
+
+    let mut res = ParseData::new(file);
 
     if let Some(ref transform) = ctx.config.transform {
         if let Some(ref html) = transform.html {
@@ -75,6 +95,8 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
             if html.is_active() || cache.is_active() {
                 s = transform::html::apply(&s, &html, &mut cache)?;
 
+                res.extract = cache.text.clone();
+
                 //println!("{}", cache.text.as_ref().unwrap().to_string());
             }
         }
@@ -82,5 +104,5 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
 
     utils::fs::write_string(&dest, &s)?;
 
-    Ok(())
+    Ok(Some(res))
 }

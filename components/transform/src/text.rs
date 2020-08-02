@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TextExtraction {
     pub title: Option<String>,
     pub chunks: Vec<String>,

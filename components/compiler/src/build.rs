@@ -10,7 +10,7 @@ use config::Page;
 use crate::{Error, Result};
 use crate::context::BuildContext;
 use crate::hook;
-use crate::run;
+use crate::run::{self, ParseData};
 use crate::parser::Parser;
 use crate::resource;
 
@@ -49,7 +49,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build a single file
-    pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<()> {
+    pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData<'_>>> {
 
         if let Some(page) = self.get_page(file) {
 
@@ -59,12 +59,11 @@ impl<'a> Compiler<'a> {
                 return run::copy(file, &file_ctx.target).await
             }
 
-            run::parse(self.context, parser, page.get_template(), &page).await?;
+            run::parse(self.context, parser, page.get_template(), &page).await
         } else {
             let target = self.context.collation.targets.get(file).unwrap();
-            run::copy(file, target).await?;
+            run::copy(file, target).await
         }
-        Ok(())
     }
 
     pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<()> {
@@ -114,19 +113,42 @@ impl<'a> Compiler<'a> {
             });
 
             drop(tx);
-            let errs: Vec<Error> = rx.iter()
-                .filter(|r| r.is_err())
-                .map(|r| r.err().unwrap())
-                .collect::<Vec<_>>();
+
+            let mut data: Vec<ParseData> = Vec::new();
+            let mut errs: Vec<Error> = Vec::new();
+            rx.iter().for_each(|r| {
+                if r.is_err() {
+                    errs.push(r.err().unwrap());
+                } else {
+                    let res = r.unwrap();
+                    if let Some(parse_data) = res {
+                        data.push(parse_data);
+                    }
+                }
+            });
 
             if errs.is_empty() {
+                for parse_data in data {
+                    println!("Index data for file {}", parse_data.file.display());
+                    if let Some(extraction) = parse_data.extract {
+                        // TODO: add to the search index
+                        println!("Got parse data extract: {}", extraction.to_string());
+                    }
+                }
                 Ok(())            
             } else {
                 Err(Error::Multi { errs })
             }
         } else {
             for p in all {
-                self.one(parser, p).await?;
+                if let Some(parse_data) = self.one(parser, p).await? {
+                    println!("Index data for file {}", parse_data.file.display());
+                    if let Some(extraction) = parse_data.extract {
+                        // TODO: add to the search index
+                        println!("Got parse data extract: {}", extraction.to_string());
+                    }
+                }
+
             }
 
             Ok(())
