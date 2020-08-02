@@ -66,7 +66,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<()> {
+    pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<Vec<ParseData<'_>>> {
         let parallel = self.context.options.settings.is_parallel();
 
         // TODO: support allowing this in the settings
@@ -86,6 +86,8 @@ impl<'a> Compiler<'a> {
                 true
             })
             .map(|(p, _)| p);
+
+        let mut data: Vec<ParseData> = Vec::new();
 
         if parallel {
             let (tx, rx) = channel::unbounded();
@@ -114,7 +116,6 @@ impl<'a> Compiler<'a> {
 
             drop(tx);
 
-            let mut data: Vec<ParseData> = Vec::new();
             let mut errs: Vec<Error> = Vec::new();
             rx.iter().for_each(|r| {
                 if r.is_err() {
@@ -127,38 +128,22 @@ impl<'a> Compiler<'a> {
                 }
             });
 
-            if errs.is_empty() {
-                for parse_data in data {
-                    println!("Index data for file {}", parse_data.file.display());
-                    if let Some(extraction) = parse_data.extract {
-                        // TODO: add to the search index
-                        println!("Got parse data extract: {}", extraction.to_string());
-                    }
-                }
-                Ok(())            
-            } else {
-                Err(Error::Multi { errs })
+            if !errs.is_empty() {
+                return Err(Error::Multi { errs })
             }
         } else {
             for p in all {
                 if let Some(parse_data) = self.one(parser, p).await? {
-                    println!("Index data for file {}", parse_data.file.display());
-                    if let Some(extraction) = parse_data.extract {
-                        // TODO: add to the search index
-                        println!("Got parse data extract: {}", extraction.to_string());
-                    }
+                    data.push(parse_data);
                 }
-
             }
-
-            Ok(())
         }
+
+        Ok(data)
     }
 
     // Build all target paths
-    pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<()> {
-
-        let livereload = crate::context::livereload().read().unwrap();
+    pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<Vec<ParseData<'_>>> {
 
         resource::link(&self.context)?;
 
@@ -172,16 +157,21 @@ impl<'a> Compiler<'a> {
             )?;
         }
 
+        let mut data: Vec<ParseData> = Vec::new();
+
         for p in targets {
             if p.is_file() {
-                self.one(parser, &p).await?;
+                if let Some(parse_data) = self.one(parser, &p).await? {
+                    data.push(parse_data);
+                }
             } else {
-                self.build(parser, &p).await?;
+                data.append(&mut self.build(parser, &p).await?);
             }
         }
 
         // Now compile the books
         if let Some(ref _book) = self.context.config.book {
+            let livereload = crate::context::livereload().read().unwrap();
             self.book
                 .all(&self.context.config, livereload.clone())?;
         }
@@ -196,7 +186,7 @@ impl<'a> Compiler<'a> {
             )?;
         }
 
-        Ok(())
+        Ok(data)
     }
 
 }

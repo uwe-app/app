@@ -190,7 +190,8 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
-async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales) -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
+async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
+    -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
 
     let parser = Parser::new(ctx, locales)?;
     let builder = Compiler::new(ctx);

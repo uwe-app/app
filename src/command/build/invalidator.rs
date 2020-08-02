@@ -366,11 +366,9 @@ impl<'a> Invalidator<'a> {
         }
 
         match rule.strategy {
-            Strategy::Full => {
-                return self.builder.build(&self.parser, target).await;
-            }
-            Strategy::Page => {
-                return self.builder.build(&self.parser, target).await;
+            Strategy::Full | Strategy::Page => {
+                // TODO: handle updating search index
+                let _parse_data = self.builder.build(&self.parser, target).await?;
             }
             _ => {
                 for action in &rule.actions {
