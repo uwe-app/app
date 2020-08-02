@@ -12,7 +12,7 @@ use syntect::dumps::from_reader;
 use syntect::parsing::SyntaxReference;
 use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
-use syntect::html::ClassedHTMLGenerator;
+use syntect::html::{ClassedHTMLGenerator, ClassStyle};
 
 //use syntect::html::css_for_theme;
 
@@ -136,7 +136,7 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
     //println!("{}", css_for_theme(&ts.themes["base16-ocean.dark"]));
     //println!("{}", &value);
 
-    let mut html_generator = ClassedHTMLGenerator::new(syntax, ps);
+    let mut html_generator = ClassedHTMLGenerator::new_with_class_style(syntax, ps, ClassStyle::Spaced);
     for line in value.lines() {
         html_generator.parse_html_for_line(&line);
     }
