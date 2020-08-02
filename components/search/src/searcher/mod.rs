@@ -58,9 +58,6 @@ pub enum SearchError {
     // If the JSON serialization engine crashes while turning the SearchOutput
     // into a string
     JSONSerializationError,
-
-    // If there's a panic while performing the search (applicable to v2 only)
-    InternalCrash,
 }
 
 impl fmt::Display for SearchError {
@@ -69,7 +66,6 @@ impl fmt::Display for SearchError {
             SearchError::VersionParseError(e) => format!("{}", e),
             SearchError::IndexParseError => "Could not parse index file.".to_string(),
             SearchError::JSONSerializationError => "Could not format search results.".to_string(),
-            SearchError::InternalCrash => "Unknown error.".to_string(),
         };
 
         write!(f, "{}", desc)
