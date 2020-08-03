@@ -94,19 +94,6 @@ mod tests {
     }
 
     #[test]
-    fn compute_from_implicit_filetype_html() {
-        assert_eq!(
-            File {
-                source: DataSource::FilePath("blah.html".to_string()),
-                ..Default::default()
-            }
-            .computed_filetype()
-            .unwrap(),
-            Filetype::HTML
-        )
-    }
-
-    #[test]
     fn compute_from_implicit_filetype_srt() {
         assert_eq!(
             File {
@@ -116,19 +103,6 @@ mod tests {
             .computed_filetype()
             .unwrap(),
             Filetype::SRTSubtitle
-        )
-    }
-
-    #[test]
-    fn compute_from_implicit_filetype_html_allcaps() {
-        assert_eq!(
-            File {
-                source: DataSource::FilePath("MYFILE.HTM".to_string()),
-                ..Default::default()
-            }
-            .computed_filetype()
-            .unwrap(),
-            Filetype::HTML
         )
     }
 
