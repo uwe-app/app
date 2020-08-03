@@ -9,9 +9,6 @@ use std::path::Path;
 
 use crate::common::Fields;
 
-pub mod word_list_generators;
-use word_list_generators::get_word_list_generator;
-
 extern crate rust_stemmers;
 use rust_stemmers::{Algorithm, Stemmer};
 
@@ -73,10 +70,6 @@ pub fn build(config: &Config) -> Index {
     // Step 1: Fill entries vector
     let base_directory = Path::new(&config.input.base_directory);
     for file in config.input.files.iter() {
-        let filetype = &file.computed_filetype().unwrap_or_else(
-            || panic!("Cannot determine a filetype for {}.
-Please include a filetype field in your config file 
-or use a known file extension.", &file.title));
 
         let buffer: String = match &file.source {
             DataSource::Contents(contents) => contents.to_string(),
@@ -100,9 +93,9 @@ or use a known file extension.", &file.title));
             StemmingConfig::None => None,
         };
 
-        let contents: Contents =
-            get_word_list_generator(filetype)
-                .create_word_list(&config.input, &buffer);
+        let contents: Contents = get_text_contents(&buffer);
+            //get_word_list_generator(filetype)
+                //.create_word_list(&config.input, &buffer);
 
         let entry = IntermediateEntry {
             contents,
