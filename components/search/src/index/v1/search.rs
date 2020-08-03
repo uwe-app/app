@@ -3,11 +3,42 @@ use super::structs::*;
 use crate::common::{IndexFromFile, STOPWORDS};
 use crate::config::TitleBoost;
 use crate::searcher::*;
+use crate::common::{Fields, InternalWordAnnotation};
+use std::cmp::Ordering;
+
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-pub mod intermediate_excerpt;
-use intermediate_excerpt::IntermediateExcerpt;
+#[derive(Clone, Debug)]
+pub struct IntermediateExcerpt {
+    pub query: String,
+    pub entry_index: EntryIndex,
+    pub score: Score,
+    pub source: WordListSource,
+    pub word_index: usize,
+    pub internal_annotations: Vec<InternalWordAnnotation>,
+    pub fields: Fields,
+}
+
+impl Ord for IntermediateExcerpt {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.score.cmp(&other.score)
+    }
+}
+
+impl PartialOrd for IntermediateExcerpt {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for IntermediateExcerpt {}
+
+impl PartialEq for IntermediateExcerpt {
+    fn eq(&self, other: &Self) -> bool {
+        self.entry_index == other.entry_index
+    }
+}
 
 pub fn search(index: &IndexFromFile, query: &str) -> Result<SearchOutput, SearchError> {
     match Index::try_from(index) {

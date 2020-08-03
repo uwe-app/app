@@ -51,7 +51,7 @@ pub fn intermediate(
     }
 }
 
-pub fn get_text_contents(buffer: &str) -> Contents {
+fn get_text_contents(buffer: &str) -> Contents {
     Contents {
         word_list: buffer
             .split_whitespace()
