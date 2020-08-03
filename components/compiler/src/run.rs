@@ -9,6 +9,7 @@ use crate::context::BuildContext;
 use crate::parser::Parser;
 use crate::draft;
 
+use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
 
 #[derive(Debug)]
@@ -75,29 +76,45 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
 
     let mut res = ParseData::new(data.file.as_ref().unwrap().source.clone());
 
-    if let Some(ref transform) = ctx.config.transform {
-        if let Some(ref html) = transform.html {
+    // Should we use text extraction?
+    let mut use_text = ctx.config.search.is_some();
 
-            let mut cache = transform::cache::TransformCache::new()?;
-            cache.syntax_highlight =
-                Some(
-                    ctx.config.is_syntax_enabled(&ctx.options.settings.name));
+    let mut html_flags: HtmlTransformFlags = Default::default();
 
-            // TODO: also enable this for search indexing
-            let use_text = html.use_words();
+    // Do we need to perform any transformations?
+    let requires_transform = if ctx.config.search.is_some() {
+        true 
+    } else {
+        if let Some(ref transform) = ctx.config.transform {
+            if let Some(ref html) = transform.html {
+                if !use_text {
+                    use_text = html.use_words();
+                }
+                html_flags = html.clone();
+                html.is_active()
+            } else { false }
+        } else {
+            false
+        }
+    };
 
-            cache.text = if use_text {
-                Some(transform::text::TextExtraction::new())
-            } else {
-                None  
-            };
+    if requires_transform {
+        let mut cache = transform::cache::TransformCache::new()?;
+        cache.syntax_highlight =
+            Some(
+                ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
-            if html.is_active() || cache.is_active() {
-                s = transform::html::apply(&s, &html, &mut cache)?;
-                // Assign the extracted text so we can use it later
-                // to build the search index
-                res.extract = cache.text.clone();
-            }
+        cache.text = if use_text {
+            Some(transform::text::TextExtraction::new())
+        } else {
+            None  
+        };
+
+        if html_flags.is_active() || cache.is_active() {
+            s = transform::html::apply(&s, &html_flags, &mut cache)?;
+            // Assign the extracted text so we can use it later
+            // to build the search index
+            res.extract = cache.text.clone();
         }
     }
 

@@ -44,6 +44,8 @@ pub enum Error {
     Collator(#[from] collator::Error),
     #[error(transparent)]
     Syntax(#[from] syntax::Error),
+    #[error(transparent)]
+    Search(#[from] search::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

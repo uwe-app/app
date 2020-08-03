@@ -3441,6 +3441,7 @@ dependencies = [
  "compiler 0.1.0",
  "config 0.1.0",
  "datasource 0.1.0",
+ "human_bytes 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "locale 0.1.0",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "preference 0.1.0",

@@ -4,9 +4,10 @@ use std::path::PathBuf;
 use std::convert::TryInto;
 
 use log::info;
+use human_bytes::human_bytes;
 
 use cache::CacheComponent;
-use compiler::{Compiler, BuildContext};
+use compiler::{Compiler, BuildContext, ParseData};
 use compiler::parser::Parser;
 use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
@@ -94,11 +95,15 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             previous_base = locale_target;
             
             prepare(&mut ctx)?;
-            build(&mut ctx, &locales).await?;
+            let (_, _, parse_list) = build(&mut ctx, &locales).await?;
+            finish(&mut ctx, parse_list)?;
         }
     } else {
         prepare(&mut ctx)?;
-        build(&mut ctx, &locales).await?;
+        let (_, _, parse_list) = build(&mut ctx, &locales).await?;
+        finish(&mut ctx, parse_list)?;
+        //build(&mut ctx, &locales).await?;
+        //finish(&mut ctx)?;
     };
 
     Ok((ctx, locales))
@@ -191,8 +196,41 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
+
+fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
+
+    if let Some(ref search) = ctx.config.search {
+        let output = search.output.as_ref().unwrap();
+
+        let mut intermediates: Vec<IntermediateEntry> = Vec::new();
+        info!("Prepare search index ({})", parse_list.len());
+        // TODO: configure the pass through config
+        for parse_data in parse_list {
+            let extraction = parse_data.extract.as_ref().unwrap();
+
+            // TODO: when not include_index strip the index.html from the href
+            let href = ctx.collation.links.sources.get(&parse_data.file);
+
+            let buffer = extraction.to_chunk_string();
+            let title = if let Some(ref title) = extraction.title { title } else { "" };
+            let url = if let Some(ref href) = href { href } else { "" };
+            intermediates.push(
+                intermediate(&buffer, title, url, Default::default()));
+        }
+
+        info!("Compile search index ({})", intermediates.len());
+        let idx: Index = compile_index(intermediates);
+        let index_file = ctx.options.target.join(output);
+        info!("Write search index to {}", index_file.display());
+        let bytes_written = idx.write(index_file, false)?;
+        info!("Search index {}", human_bytes(bytes_written as f64));
+    }
+
+    Ok(())
+}
+
 async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
-    -> std::result::Result<(Compiler<'a>, Parser<'a>), compiler::Error> {
+    -> std::result::Result<(Compiler<'a>, Parser<'a>, Vec<ParseData>), compiler::Error> {
 
     let parser = Parser::new(ctx, locales)?;
     let builder = Compiler::new(ctx);
@@ -209,29 +247,5 @@ async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
     }
 
     let parse_list = builder.all(&parser, targets).await?;
-
-    // FIXME: only do this when search is enabled!!!
-
-    let mut intermediates: Vec<IntermediateEntry> = Vec::new();
-    // TODO: configure the pass through config
-    for parse_data in parse_list {
-        let extraction = parse_data.extract.as_ref().unwrap();
-        // TODO: when not include_index strip the index.html from the href
-        let href = ctx.collation.links.sources.get(&parse_data.file);
-
-        let buffer = extraction.to_chunk_string();
-        let title = if let Some(ref title) = extraction.title { title } else { "" };
-        let url = if let Some(ref href) = href { href } else { "" };
-        intermediates.push(
-            intermediate(&buffer, title, url, Default::default()));
-
-        //println!("Title {:?}", extraction.title);
-        //println!("Href {:?}", href);
-    }
-
-    let idx: Index = compile_index(intermediates);
-
-    // TODO: write the index to disc
-
-    Ok((builder, parser))
+    Ok((builder, parser, parse_list))
 }

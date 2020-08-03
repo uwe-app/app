@@ -17,6 +17,7 @@ use super::page::{Author, Page};
 use super::Error;
 use super::indexer::{DataBase, IndexRequest};
 use super::syntax::SyntaxConfig;
+use super::search::SearchConfig;
 use super::transform::TransformConfig;
 
 pub static SITE: &str = "site";
@@ -123,6 +124,7 @@ pub struct Config {
 
     pub syntax: Option<SyntaxConfig>,
     pub transform: Option<TransformConfig>,
+    pub search: Option<SearchConfig>,
 
     pub db: Option<DataBase>,
 
@@ -161,6 +163,7 @@ impl Default for Config {
             authors: None,
             syntax: None,
             transform: Some(Default::default()),
+            search: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),

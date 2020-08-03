@@ -54,6 +54,7 @@ pub mod link;
 mod page;
 pub mod path;
 mod profile;
+pub mod search;
 pub mod syntax;
 pub mod transform;
 
