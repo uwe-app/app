@@ -56,8 +56,6 @@ impl Default for Config {
 #[serde(deny_unknown_fields, default)]
 #[allow(non_snake_case)]
 pub struct InputConfig {
-    #[serde(rename = "surrounding_word_count")]
-    pub UNUSED_surrounding_word_count: Option<u8>,
     pub base_directory: String,
     pub url_prefix: String,
     pub title_boost: TitleBoost,
@@ -118,19 +116,6 @@ files = [
 [output]
 filename = "test/federalist.st"
 debug = false
-    "#;
-        toml::from_str(contents).map(|_c: Config| ())
-    }
-
-    #[test]
-    fn surrounding_word_count_in_input() -> Result<(), Error> {
-        let contents = r#"
-[input]
-base_directory = "test/federalist"
-surrounding_word_count = 2
-files = []
-
-[output]
     "#;
         toml::from_str(contents).map(|_c: Config| ())
     }
