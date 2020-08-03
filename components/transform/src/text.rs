@@ -13,7 +13,7 @@ impl TextExtraction {
     }
 
     pub fn to_chunk_string(&self) -> String {
-        return self.chunks.join("");
+        return self.chunks.join(" ");
     }
 }
 
