@@ -11,8 +11,6 @@ use searcher::SearchError;
 use index::v1 as LatestVersion;
 pub use LatestVersion::*;
 
-use LatestVersion::Index;
-
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

@@ -11,6 +11,10 @@ impl TextExtraction {
     pub fn new() -> Self {
         Self {..Default::default()}
     }
+
+    pub fn to_chunk_string(&self) -> String {
+        return self.chunks.join("");
+    }
 }
 
 impl fmt::Display for TextExtraction {

@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::collections::HashMap;
@@ -26,7 +27,7 @@ pub struct Index {
 
 impl Index {
     //pub fn write(&self, config: &Config) -> usize {
-    pub fn write(&self, filename: &str, debug: bool) -> usize {
+    pub fn write<P: AsRef<Path>>(&self, filename: P, debug: bool) -> usize {
         let file = File::create(filename).unwrap();
         let mut bufwriter = BufWriter::new(file);
         let write_version = super::VERSION_STRING.as_bytes();

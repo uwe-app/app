@@ -12,7 +12,7 @@ use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
 use datasource::synthetic;
 use locale::Locales;
-use search::Index;
+use search::{Index, IntermediateEntry, intermediate, compile as compile_index};
 
 use collator::{CollateRequest, CollateResult, CollateInfo};
 use collator::manifest::Manifest;
@@ -210,18 +210,27 @@ async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
 
     let parse_list = builder.all(&parser, targets).await?;
 
-    let search_index: Index = Default::default();
+    let mut intermediates: Vec<IntermediateEntry> = Vec::new();
 
     // TODO: configure the pass through config
-
     for parse_data in parse_list {
-        //println!("Got parse data {:?}", parse_data);
         let extraction = parse_data.extract.as_ref().unwrap();
-        let href = ctx.collation.links.sources.get(&parse_data.file);
-        println!("Title {:?}", extraction.title);
-        println!("Href {:?}", href);
         // TODO: when not include_index strip the index.html from the href
+        let href = ctx.collation.links.sources.get(&parse_data.file);
+
+        let buffer = extraction.to_chunk_string();
+        let title = if let Some(ref title) = extraction.title { title } else { "" };
+        let url = if let Some(ref href) = href { href } else { "" };
+        intermediates.push(
+            intermediate(&buffer, title, url, Default::default()));
+
+        //println!("Title {:?}", extraction.title);
+        //println!("Href {:?}", href);
     }
+
+    let idx: Index = compile_index(intermediates);
+
+    // TODO: write the index to disc
 
     Ok((builder, parser))
 }
