@@ -210,8 +210,9 @@ async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
 
     let parse_list = builder.all(&parser, targets).await?;
 
-    let mut intermediates: Vec<IntermediateEntry> = Vec::new();
+    // FIXME: only do this when search is enabled!!!
 
+    let mut intermediates: Vec<IntermediateEntry> = Vec::new();
     // TODO: configure the pass through config
     for parse_data in parse_list {
         let extraction = parse_data.extract.as_ref().unwrap();

@@ -3,7 +3,9 @@ use std::env;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::time::Instant;
+
 use search::config::Config;
+use search::Result;
 
 use num_format::{Locale, ToFormattedString};
 
@@ -28,12 +30,12 @@ fn main() {
     std::process::exit(a.exec(env::args().collect()));
 }
 
-fn build_handler(args: &[String]) {
+fn build_handler(args: &[String]) -> Result<()> {
     let start_time = Instant::now();
     let config = Config::from_file(std::path::PathBuf::from(&args[2]));
     let index = search::build(&config);
     let build_time = Instant::now();
-    let bytes_written = index.write(&config.output.filename, config.output.debug);
+    let bytes_written = index.write(&config.output.filename, config.output.debug)?;
     let end_time = Instant::now();
     println!(
         "Index built, {} bytes written to {}. {}\n\t{:.3?}s to build index\n\t{:.3?}s to write file\n\t{:.3?}s total",
@@ -50,9 +52,11 @@ fn build_handler(args: &[String]) {
         end_time.duration_since(build_time).as_secs_f32(),
         end_time.duration_since(start_time).as_secs_f32()
     );
+
+    Ok(())
 }
 
-fn search_handler(args: &[String]) {
+fn search_handler(args: &[String]) -> Result<()> {
     let start_time = Instant::now();
     let file = File::open(&args[2]).unwrap_or_else(|err| {
         eprintln!("Could not read file {}: {}", &args[2], err);
@@ -82,6 +86,8 @@ fn search_handler(args: &[String]) {
         }
         Err(e) => eprintln!("Error performing search: {}", e),
     }
+
+    Ok(())
 }
 
 pub struct Argparse {
@@ -91,7 +97,7 @@ pub struct Argparse {
 
 struct Command {
     name: String,
-    action: fn(&[String]),
+    action: fn(&[String]) -> Result<()>,
     number_of_args: ValueOrRange,
 }
 
@@ -118,7 +124,7 @@ impl Argparse {
         }
     }
 
-    pub fn register(&mut self, cmd_name: &str, action: fn(&[String]), number_of_args: u8) {
+    pub fn register(&mut self, cmd_name: &str, action: fn(&[String]) -> Result<()>, number_of_args: u8) {
         self.commands.push(Command {
             name: cmd_name.to_string(),
             action,
@@ -127,7 +133,7 @@ impl Argparse {
     }
 
     #[allow(dead_code)]
-    pub fn register_range(&mut self, cmd_name: &str, action: fn(&[String]), args_range: (u8, u8)) {
+    pub fn register_range(&mut self, cmd_name: &str, action: fn(&[String]) -> Result<()>, args_range: (u8, u8)) {
         let min = std::cmp::min(args_range.0, args_range.1);
         let max = std::cmp::max(args_range.0, args_range.1);
         let number_of_args = if min == max {
@@ -173,7 +179,7 @@ impl Argparse {
                     );
                     return EXIT_FAILURE;
                 } else {
-                    (command.action)(&args);
+                    (command.action)(&args).expect("Command action failed");
                     return EXIT_SUCCESS;
                 }
             }

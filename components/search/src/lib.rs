@@ -3,6 +3,8 @@ pub mod config;
 pub mod index;
 pub mod searcher;
 
+use thiserror::Error;
+
 use common::IndexFromFile;
 use config::Config;
 use searcher::index_analyzer::parse_index_version;
@@ -10,6 +12,14 @@ use searcher::SearchError;
 
 use index::v1 as LatestVersion;
 pub use LatestVersion::*;
+
+#[derive(Error, Debug)]
+pub enum Error {
+
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
 
 use wasm_bindgen::prelude::*;
 
@@ -45,7 +55,7 @@ pub fn get_index_version(index: &IndexFromFile) -> String {
 pub fn search(
     index: &IndexFromFile,
     query: String,
-) -> Result<searcher::SearchOutput, searcher::SearchError> {
+) -> std::result::Result<searcher::SearchOutput, searcher::SearchError> {
     searcher::search(index, query.as_str())
 }
 

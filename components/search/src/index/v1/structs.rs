@@ -10,6 +10,8 @@ use super::scores::*;
 use crate::common::{Fields, InternalWordAnnotation, IndexFromFile};
 use crate::config::TitleBoost;
 
+use crate::Result;
+
 pub type EntryIndex = usize;
 pub type AliasTarget = String;
 pub type Score = u8;
@@ -27,7 +29,7 @@ pub struct Index {
 
 impl Index {
     //pub fn write(&self, config: &Config) -> usize {
-    pub fn write<P: AsRef<Path>>(&self, filename: P, debug: bool) -> usize {
+    pub fn write<P: AsRef<Path>>(&self, filename: P, debug: bool) -> Result<usize> {
         let file = File::create(filename).unwrap();
         let mut bufwriter = BufWriter::new(file);
         let write_version = super::VERSION_STRING.as_bytes();
@@ -39,7 +41,7 @@ impl Index {
         }
     }
 
-    fn write_release(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> usize {
+    fn write_release(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
         let mut bytes_written: usize = 0;
 
         let index_bytes = rmp_serde::to_vec(self).unwrap();
@@ -51,10 +53,10 @@ impl Index {
             bytes_written += bufwriter.write(vec).unwrap();
         }
 
-        bytes_written
+        Ok(bytes_written)
     }
 
-    fn write_debug(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> usize {
+    fn write_debug(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
         let index_serialized = serde_json::to_string_pretty(self).unwrap();
 
         let byte_vectors_to_write = [write_version, index_serialized.as_bytes()];
@@ -68,13 +70,13 @@ impl Index {
 
         // Return zero bytes written so that the frontend can alert the user
         // when they write an index in debug mode
-        0
+        Ok(0)
     }
 }
 
 impl TryFrom<&IndexFromFile> for Index {
     type Error = rmp_serde::decode::Error;
-    fn try_from(file: &IndexFromFile) -> Result<Self, Self::Error> {
+    fn try_from(file: &IndexFromFile) -> std::result::Result<Self, Self::Error> {
         let (version_size_bytes, rest) = file.split_at(std::mem::size_of::<u64>());
         let version_size = u64::from_be_bytes(version_size_bytes.try_into().unwrap());
         let (_version_bytes, rest) = rest.split_at(version_size as usize);
