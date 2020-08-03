@@ -4,7 +4,6 @@ use std::fs;
 mod file;
 pub use file::DataSource;
 pub use file::File;
-pub use file::Filetype;
 
 pub mod stemming_config;
 pub use stemming_config::StemmingConfig;

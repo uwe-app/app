@@ -1,7 +1,6 @@
 use super::StemmingConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::Path;
 
 type Fields = HashMap<String, String>;
 
@@ -16,31 +15,8 @@ pub struct File {
     #[serde(default)]
     pub stemming_override: Option<StemmingConfig>,
 
-    #[serde(default)]
-    pub filetype: Option<Filetype>,
-
     #[serde(flatten, default)]
     pub fields: Fields,
-}
-
-impl File {
-    pub fn computed_filetype(&self) -> Option<Filetype> {
-        if let Some(user_specified_filetype) = self.filetype.clone() {
-            return Some(user_specified_filetype);
-        }
-
-        if let DataSource::FilePath(path_string) = &self.source {
-            let path = Path::new(&path_string);
-            let ext_str = path.extension()?.to_str()?;
-            match String::from(ext_str).to_ascii_lowercase().as_ref() {
-                "srt" => Some(Filetype::SRTSubtitle),
-                "txt" => Some(Filetype::PlainText),
-                _ => None,
-            }
-        } else {
-            None
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -58,71 +34,3 @@ impl Default for DataSource {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum Filetype {
-    PlainText,
-    SRTSubtitle,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn compute_from_explicit_filetype() {
-        assert_eq!(
-            File {
-                filetype: Some(Filetype::PlainText),
-                ..Default::default()
-            }
-            .computed_filetype()
-            .unwrap(),
-            Filetype::PlainText
-        )
-    }
-
-    #[test]
-    fn compute_from_implicit_filetype_plaintext() {
-        assert_eq!(
-            File {
-                source: DataSource::FilePath("blah.txt".to_string()),
-                ..Default::default()
-            }
-            .computed_filetype()
-            .unwrap(),
-            Filetype::PlainText
-        )
-    }
-
-    #[test]
-    fn compute_from_implicit_filetype_srt() {
-        assert_eq!(
-            File {
-                source: DataSource::FilePath("blah.srt".to_string()),
-                ..Default::default()
-            }
-            .computed_filetype()
-            .unwrap(),
-            Filetype::SRTSubtitle
-        )
-    }
-
-    #[test]
-    fn compute_from_implicit_filetype_error() {
-        assert!(File {
-            source: DataSource::FilePath("myfile.derp".to_string()),
-            ..Default::default()
-        }
-        .computed_filetype()
-        .is_none())
-    }
-
-    #[test]
-    fn compute_from_no_filetype_error() {
-        assert!(File {
-            source: DataSource::Contents("A long time ago...".to_string()),
-            ..Default::default()
-        }
-        .computed_filetype()
-        .is_none())
-    }
-}
