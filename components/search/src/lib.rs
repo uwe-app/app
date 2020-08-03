@@ -9,8 +9,9 @@ use searcher::index_analyzer::parse_index_version;
 use searcher::SearchError;
 
 use index::v1 as LatestVersion;
-use LatestVersion::builder;
-pub use LatestVersion::structs::Index;
+pub use LatestVersion::*;
+
+use LatestVersion::Index;
 
 use wasm_bindgen::prelude::*;
 
