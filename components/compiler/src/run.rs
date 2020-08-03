@@ -78,25 +78,22 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
 
     // Should we use text extraction?
     let mut use_text = ctx.config.search.is_some();
-
+    // Set up the default transform flags
     let mut html_flags: HtmlTransformFlags = Default::default();
 
     // Do we need to perform any transformations?
-    let requires_transform = if ctx.config.search.is_some() {
-        true 
-    } else {
-        if let Some(ref transform) = ctx.config.transform {
-            if let Some(ref html) = transform.html {
-                if !use_text {
-                    use_text = html.use_words();
-                }
-                html_flags = html.clone();
-                html.is_active()
-            } else { false }
-        } else {
-            false
+    let mut requires_transform = ctx.config.search.is_some();
+
+    if let Some(ref transform) = ctx.config.transform {
+        if let Some(ref html) = transform.html {
+            // Must use the config flags
+            html_flags = html.clone();
+
+            // Enable transform actions when necessary
+            if !use_text { use_text = html.use_words(); }
+            if !requires_transform { requires_transform = html.is_active() }
         }
-    };
+    }
 
     if requires_transform {
         let mut cache = transform::cache::TransformCache::new()?;

@@ -199,6 +199,8 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
 
 fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
 
+    let include_index = ctx.options.settings.should_include_index();
+
     if let Some(ref search) = ctx.config.search {
         let output = search.output.as_ref().unwrap();
 
@@ -213,7 +215,14 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
 
             let buffer = extraction.to_chunk_string();
             let title = if let Some(ref title) = extraction.title { title } else { "" };
-            let url = if let Some(ref href) = href { href } else { "" };
+            let mut url = if let Some(ref href) = href { href } else { "" };
+            if !include_index && url.ends_with(config::INDEX_HTML) {
+                url = url.trim_end_matches(config::INDEX_HTML);
+            }
+
+            //println!("Title {}", title);
+            //println!("Buffer {}", &buffer);
+
             intermediates.push(
                 intermediate(&buffer, title, url, Default::default()));
         }
