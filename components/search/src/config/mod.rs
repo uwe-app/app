@@ -63,7 +63,6 @@ pub struct InputConfig {
     pub title_boost: TitleBoost,
     pub stemming: StemmingConfig,
     pub files: Vec<File>,
-    pub srt_config: SRTConfig,
 }
 
 /**
@@ -92,29 +91,6 @@ impl Default for OutputConfig {
             displayed_results_count: 10,
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct SRTConfig {
-    pub timestamp_linking: bool,
-    pub timestamp_template_string: String,
-    pub timestamp_format: SRTTimestampFormat,
-}
-
-impl Default for SRTConfig {
-    fn default() -> Self {
-        SRTConfig {
-            timestamp_linking: true,
-            timestamp_template_string: "&t={ts}".to_string(),
-            timestamp_format: SRTTimestampFormat::NumberOfSeconds,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "snake_case")]
-pub enum SRTTimestampFormat {
-    NumberOfSeconds,
 }
 
 #[cfg(test)]
