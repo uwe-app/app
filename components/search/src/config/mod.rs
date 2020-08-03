@@ -84,7 +84,7 @@ pub struct OutputConfig {
 impl Default for OutputConfig {
     fn default() -> Self {
         OutputConfig {
-            filename: "output.st".to_string(),
+            filename: "search.idx".to_string(),
             debug: false,
             excerpt_buffer: 8,
             excerpts_per_result: 5,
