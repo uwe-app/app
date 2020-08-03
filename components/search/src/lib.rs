@@ -15,11 +15,17 @@ pub use LatestVersion::*;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
 
+    #[error(transparent)]
+    Rmp(#[from] rmp_serde::encode::Error),
+
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
-
 
 use wasm_bindgen::prelude::*;
 

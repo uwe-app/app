@@ -28,12 +28,10 @@ pub struct Index {
 }
 
 impl Index {
-    //pub fn write(&self, config: &Config) -> usize {
     pub fn write<P: AsRef<Path>>(&self, filename: P, debug: bool) -> Result<usize> {
-        let file = File::create(filename).unwrap();
+        let file = File::create(filename)?;
         let mut bufwriter = BufWriter::new(file);
         let write_version = super::VERSION_STRING.as_bytes();
-
         if debug {
             self.write_debug(&mut bufwriter, &write_version)
         } else {
@@ -43,21 +41,17 @@ impl Index {
 
     fn write_release(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
         let mut bytes_written: usize = 0;
-
-        let index_bytes = rmp_serde::to_vec(self).unwrap();
-
+        let index_bytes = rmp_serde::to_vec(self)?;
         let byte_vectors_to_write = [write_version, index_bytes.as_slice()];
-
         for vec in byte_vectors_to_write.iter() {
-            bytes_written += bufwriter.write(&(vec.len() as u64).to_be_bytes()).unwrap();
-            bytes_written += bufwriter.write(vec).unwrap();
+            bytes_written += bufwriter.write(&(vec.len() as u64).to_be_bytes())?;
+            bytes_written += bufwriter.write(vec)?;
         }
-
         Ok(bytes_written)
     }
 
     fn write_debug(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
-        let index_serialized = serde_json::to_string_pretty(self).unwrap();
+        let index_serialized = serde_json::to_string_pretty(self)?;
 
         let byte_vectors_to_write = [write_version, index_serialized.as_bytes()];
 
