@@ -227,12 +227,15 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
                 intermediate(&buffer, title, url, Default::default()));
         }
 
+        //println!("{:#?}", &intermediates);
+
         info!("Compile search index ({})", intermediates.len());
         let idx: Index = compile_index(intermediates);
         let index_file = ctx.options.target.join(output);
         info!("Write search index to {}", index_file.display());
         let bytes_written = idx.write(index_file, false)?;
         info!("Search index {}", human_bytes(bytes_written as f64));
+
     }
 
     Ok(())

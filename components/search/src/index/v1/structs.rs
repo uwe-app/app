@@ -92,7 +92,6 @@ pub struct PassthroughConfig {
     pub displayed_results_count: u8,
 }
 
-
 impl Default for PassthroughConfig {
     fn default() -> Self {
         Self {

@@ -15,6 +15,7 @@ use word_list_generators::get_word_list_generator;
 extern crate rust_stemmers;
 use rust_stemmers::{Algorithm, Stemmer};
 
+#[derive(Debug)]
 pub struct IntermediateEntry {
     pub contents: Contents,
     pub stem_algorithm: Option<Algorithm>,
