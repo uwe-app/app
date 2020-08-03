@@ -88,7 +88,6 @@ or use a known file extension.", &file.title));
                 let _bytes_read = buf_reader.read_to_string(&mut buffer);
                 buffer
             }
-            DataSource::URL(_url) => panic!("URL not available yet"),
         };
 
         let current_stem_config = file

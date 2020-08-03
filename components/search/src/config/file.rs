@@ -48,9 +48,6 @@ pub enum DataSource {
     #[serde(rename = "contents")]
     Contents(String),
 
-    #[serde(rename = "src_url")]
-    URL(String),
-
     #[serde(rename = "path")]
     FilePath(String),
 }
