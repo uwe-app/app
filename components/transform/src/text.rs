@@ -13,7 +13,14 @@ impl TextExtraction {
     }
 
     pub fn to_chunk_string(&self) -> String {
-        return self.chunks.join(" ");
+        return self.chunks
+            .iter()
+            // HACK: !!!
+            // NOTE: this character causes a problem for search index
+            // NOTE: excerpt highlighting
+            .map(|c| c.replace("|", ""))
+            .collect::<Vec<_>>()
+            .join(" ");
     }
 }
 
