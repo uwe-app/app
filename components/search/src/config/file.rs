@@ -33,8 +33,6 @@ impl File {
             let path = Path::new(&path_string);
             let ext_str = path.extension()?.to_str()?;
             match String::from(ext_str).to_ascii_lowercase().as_ref() {
-                "html" => Some(Filetype::HTML),
-                "htm" => Some(Filetype::HTML),
                 "srt" => Some(Filetype::SRTSubtitle),
                 "txt" => Some(Filetype::PlainText),
                 _ => None,
@@ -67,7 +65,6 @@ impl Default for DataSource {
 pub enum Filetype {
     PlainText,
     SRTSubtitle,
-    HTML,
 }
 
 #[cfg(test)]

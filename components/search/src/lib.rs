@@ -10,7 +10,7 @@ use searcher::SearchError;
 
 use index::v1 as LatestVersion;
 use LatestVersion::builder;
-use LatestVersion::structs::Index;
+pub use LatestVersion::structs::Index;
 
 use wasm_bindgen::prelude::*;
 

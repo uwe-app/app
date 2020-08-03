@@ -7,25 +7,77 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::Path;
 
-pub mod word_list_generators;
-use word_list_generators::returns_word_list_generator;
+use crate::common::Fields;
 
-pub mod intermediate_entry;
-use intermediate_entry::IntermediateEntry;
+pub mod word_list_generators;
+use word_list_generators::get_word_list_generator;
 
 extern crate rust_stemmers;
 use rust_stemmers::{Algorithm, Stemmer};
 
+pub struct IntermediateEntry {
+    pub contents: Contents,
+    pub stem_algorithm: Option<Algorithm>,
+    pub title: String,
+    pub url: String,
+    pub fields: Fields,
+}
+
+impl From<&IntermediateEntry> for Entry {
+    fn from(ie: &IntermediateEntry) -> Self {
+        Entry {
+            contents: ie.contents.get_full_text(),
+            title: ie.title.clone(),
+            url: ie.url.clone(),
+            fields: ie.fields.clone(),
+        }
+    }
+}
+
+pub fn intermediate(
+    buffer: &str,
+    title: &str,
+    url: &str,
+    fields: Fields) -> IntermediateEntry {
+
+    // FIXME
+    let stem_algorithm = Some(Algorithm::English);
+
+    let contents = get_text_contents(buffer);
+    IntermediateEntry {
+        contents,
+        stem_algorithm,
+        title: title.to_string(),
+        url: url.to_string(),
+        fields: fields.clone(),
+    }
+}
+
+pub fn get_text_contents(buffer: &str) -> Contents {
+    Contents {
+        word_list: buffer
+            .split_whitespace()
+            .map(|word| AnnotatedWord {
+                word: word.to_string(),
+                ..Default::default()
+            })
+            .collect(),
+    }
+}
+
 pub fn build(config: &Config) -> Index {
     let mut intermediate_entries: Vec<IntermediateEntry> = Vec::new();
-    let mut containers: HashMap<String, Container> = HashMap::new();
+    //let mut containers: HashMap<String, Container> = HashMap::new();
 
     // Step 1: Fill entries vector
     let base_directory = Path::new(&config.input.base_directory);
-    for stork_file in config.input.files.iter() {
-        let filetype = &stork_file.computed_filetype().unwrap_or_else(|| panic!("Cannot determine a filetype for {}. Please include a filetype field in your config file or use a known file extension.", &stork_file.title));
+    for file in config.input.files.iter() {
+        let filetype = &file.computed_filetype().unwrap_or_else(
+            || panic!("Cannot determine a filetype for {}.
+Please include a filetype field in your config file 
+or use a known file extension.", &file.title));
 
-        let buffer: String = match &stork_file.source {
+        let buffer: String = match &file.source {
             DataSource::Contents(contents) => contents.to_string(),
             DataSource::FilePath(path_string) => {
                 let full_pathname = &base_directory.join(&path_string);
@@ -38,7 +90,7 @@ pub fn build(config: &Config) -> Index {
             DataSource::URL(_url) => panic!("URL not available yet"),
         };
 
-        let current_stem_config = stork_file
+        let current_stem_config = file
             .stemming_override
             .clone()
             .unwrap_or_else(|| config.input.stemming.clone());
@@ -49,22 +101,39 @@ pub fn build(config: &Config) -> Index {
         };
 
         let contents: Contents =
-            returns_word_list_generator(filetype).create_word_list(&config.input, &buffer);
+            get_word_list_generator(filetype)
+                .create_word_list(&config.input, &buffer);
 
         let entry = IntermediateEntry {
             contents,
             stem_algorithm,
-            title: stork_file.title.clone(),
-            url: stork_file.url.clone(),
-            fields: stork_file.fields.clone(),
+            title: file.title.clone(),
+            url: file.url.clone(),
+            fields: file.fields.clone(),
         };
 
         intermediate_entries.push(entry);
     }
 
+    compile(intermediate_entries)
+}
+
+pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
+
+    //let config = PassthroughConfig {
+        //url_prefix: config.input.url_prefix.clone(),
+        //title_boost: config.input.title_boost.clone(),
+        //excerpt_buffer: config.output.excerpt_buffer,
+        //excerpts_per_result: config.output.excerpts_per_result,
+        //displayed_results_count: config.output.displayed_results_count,
+    //};
+
+    let mut idx: Index = Default::default();
+
+    let mut containers: HashMap<String, Container> = HashMap::new();
     let mut stems: HashMap<String, Vec<String>> = HashMap::new();
 
-    for entry in &intermediate_entries {
+    for entry in &intermediates {
         let contents = &entry.contents;
 
         if let Some(stem_algorithm) = entry.stem_algorithm {
@@ -83,7 +152,7 @@ pub fn build(config: &Config) -> Index {
     }
 
     // Step 2: Fill containers map
-    for (entry_index, entry) in intermediate_entries.iter().enumerate() {
+    for (entry_index, entry) in intermediates.iter().enumerate() {
         let words_in_title: Vec<AnnotatedWord> = entry
             .title
             .split_whitespace()
@@ -164,21 +233,10 @@ pub fn build(config: &Config) -> Index {
         }
     }
 
-    let entries: Vec<Entry> = intermediate_entries.iter().map(Entry::from).collect();
-
-    let config = PassthroughConfig {
-        url_prefix: config.input.url_prefix.clone(),
-        title_boost: config.input.title_boost.clone(),
-        excerpt_buffer: config.output.excerpt_buffer,
-        excerpts_per_result: config.output.excerpts_per_result,
-        displayed_results_count: config.output.displayed_results_count,
-    };
-
-    Index {
-        entries,
-        containers,
-        config,
-    }
+    let entries: Vec<Entry> = intermediates.iter().map(Entry::from).collect();
+    idx.containers = containers;
+    idx.entries = entries;
+    idx
 }
 
 fn remove_surrounding_punctuation(input: &str) -> String {

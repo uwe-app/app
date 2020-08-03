@@ -2,11 +2,10 @@ use super::super::structs::{AnnotatedWord, Contents};
 use crate::common::InternalWordAnnotation;
 use crate::config::{Filetype, InputConfig, SRTConfig, SRTTimestampFormat};
 
-pub fn returns_word_list_generator(filetype: &Filetype) -> Box<dyn WordListGenerator> {
+pub fn get_word_list_generator(filetype: &Filetype) -> Box<dyn WordListGenerator> {
     match filetype {
         Filetype::PlainText => Box::new(PlainTextWordListGenerator {}),
         Filetype::SRTSubtitle => Box::new(SRTWordListGenerator {}),
-        Filetype::HTML => Box::new(HTMLWordListGenerator {}),
     }
 }
 
@@ -78,10 +77,3 @@ impl SRTWordListGenerator {
     }
 }
 
-pub struct HTMLWordListGenerator {}
-
-impl WordListGenerator for HTMLWordListGenerator {
-    fn create_word_list(&self, _config: &InputConfig, _buffer: &str) -> Contents {
-        Contents { word_list: vec![] }
-    }
-}

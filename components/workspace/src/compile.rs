@@ -12,6 +12,7 @@ use config::{ProfileSettings, Config, RuntimeOptions};
 use datasource::DataSourceMap;
 use datasource::synthetic;
 use locale::Locales;
+use search::Index;
 
 use collator::{CollateRequest, CollateResult, CollateInfo};
 use collator::manifest::Manifest;
@@ -208,6 +209,10 @@ async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
     }
 
     let parse_list = builder.all(&parser, targets).await?;
+
+    let search_index: Index = Default::default();
+
+    // TODO: configure the pass through config
 
     for parse_data in parse_list {
         //println!("Got parse data {:?}", parse_data);

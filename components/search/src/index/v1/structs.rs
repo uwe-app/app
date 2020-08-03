@@ -86,13 +86,26 @@ impl TryFrom<&IndexFromFile> for Index {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PassthroughConfig {
     pub url_prefix: String,
     pub title_boost: TitleBoost,
     pub excerpt_buffer: u8,
     pub excerpts_per_result: u8,
     pub displayed_results_count: u8,
+}
+
+
+impl Default for PassthroughConfig {
+    fn default() -> Self {
+        Self {
+            url_prefix: "".to_string(),
+            title_boost: Default::default(),
+            excerpt_buffer: 8,
+            excerpts_per_result: 5,
+            displayed_results_count: 10,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
