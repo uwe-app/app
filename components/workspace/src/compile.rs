@@ -60,7 +60,7 @@ pub async fn compile(config: &Config, args: &mut ProfileSettings) -> Result<(Bui
         }
 
     }
-    
+
     res
 }
 
@@ -93,7 +93,7 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             ctx.collation.rewrite(&lang, &previous_base, &locale_target)?;
 
             previous_base = locale_target;
-            
+
             prepare(&mut ctx)?;
             let (_, _, parse_list) = build(&mut ctx, &locales).await?;
             finish(&mut ctx, parse_list)?;
@@ -142,7 +142,7 @@ async fn load(
     let req = CollateRequest {
         filter: false,
         config: &config,
-        options: &options, 
+        options: &options,
     };
 
     let mut res = CollateResult::new(manifest);
@@ -181,15 +181,24 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
 fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     if let Some(ref syntax_config) = ctx.config.syntax {
         if ctx.config.is_syntax_enabled(&ctx.options.settings.name) {
-
             let prefs = preference::load()?;
             let syntax_dir = cache::get_syntax_dir()?;
             if !syntax_dir.exists() {
                 cache::update(&prefs, vec![CacheComponent::Syntax])?;
             }
-
             info!("Syntax highlighting on");
             syntax::setup(&syntax_dir, syntax_config)?;
+        }
+    }
+
+    if let Some(ref search) = ctx.config.search {
+        let fetch_search_runtime = search.copy_runtime.is_some() && search.copy_runtime.unwrap();
+        if fetch_search_runtime {
+            let prefs = preference::load()?;
+            let search_dir = cache::get_search_dir()?;
+            if !search_dir.exists() {
+                cache::update(&prefs, vec![CacheComponent::Search])?;
+            }
         }
     }
 

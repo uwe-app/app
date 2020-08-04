@@ -8,7 +8,7 @@ static JS:&str = "/search.js";
 static WASM:&str = "/search.wasm";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct SearchConfig {
     // The identifier used when registering the search widget
     pub id: Option<String>,
