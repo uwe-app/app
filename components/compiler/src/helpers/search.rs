@@ -53,11 +53,11 @@ impl HelperDef for Embed<'_> {
         let js = search_config.js.as_ref().unwrap().to_string();
 
         let output = search_config.output.as_ref().unwrap();
-
+        let index_url = format!("/{}", utils::url::to_href_separator(&output));
         let markup = if script {
             let inline = format!(
-            "search.register(\"{}\", \"/search.idx\",
-                {{showProgress: true, showScores: true, printIndexInfo: true}});", &id);
+            "search.register(\"{}\", \"{}\",
+                {{showProgress: true, showScores: true, printIndexInfo: true}});", &id, &index_url);
 
             format!("<script src=\"{}\"></script><script>{}</script>", js, inline)
 
