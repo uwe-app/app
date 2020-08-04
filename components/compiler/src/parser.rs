@@ -68,6 +68,11 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("series",
             Box::new(helpers::series::Series{ context }));
 
+        if context.config.search.is_some() {
+            handlebars.register_helper("search",
+                Box::new(helpers::search::Embed{ context }));
+        }
+
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
         handlebars.register_helper("include", Box::new(helpers::include::Include));
         handlebars.register_helper("random", Box::new(helpers::random::Random));
