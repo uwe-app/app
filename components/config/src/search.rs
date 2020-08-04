@@ -18,6 +18,9 @@ pub struct SearchConfig {
     pub js: Option<String>,
     // The URL relative to the site root for the wasm file
     pub wasm: Option<String>,
+    // Copy the `search.js` and `search.wasm` files to the URL paths
+    // referenced by `js` and `wasm`
+    pub copy_runtime: Option<bool>,
 }
 
 impl Default for SearchConfig {
@@ -27,6 +30,7 @@ impl Default for SearchConfig {
             output: Some(PathBuf::from(OUTPUT)),
             js: Some(JS.to_string()),
             wasm: Some(WASM.to_string()),
+            copy_runtime: Some(true),
         }
     }
 }
