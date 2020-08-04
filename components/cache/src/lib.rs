@@ -27,6 +27,9 @@ static SHORT_CODES_NAME: &str = "shortcodes";
 static SYNTAX_REPO: &str = "https://github.com/hypertext-live/syntax";
 static SYNTAX_NAME: &str = "syntax";
 
+static SEARCH_REPO: &str = "https://github.com/hypertext-live/search-runtime";
+static SEARCH_NAME: &str = "search-runtime";
+
 static VERSION_BASE: &str = "https://raw.githubusercontent.com/hypertext-live/release-";
 static VERSION_FILE: &str = "/master/version.toml";
 
@@ -47,6 +50,7 @@ pub enum CacheComponent {
     Release,
     ShortCode,
     Syntax,
+    Search,
 }
 
 pub fn get_workspace_dir() -> io::Result<PathBuf> {
@@ -122,6 +126,14 @@ pub fn get_syntax_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(SYNTAX_NAME))
 }
 
+pub fn get_search_url() -> String {
+    SEARCH_REPO.to_string()
+}
+
+pub fn get_search_dir() -> io::Result<PathBuf> {
+    Ok(dirs::get_root_dir()?.join(SEARCH_NAME))
+}
+
 #[cfg(target_os = "windows")]
 pub fn get_release_version() -> String {
     format!("{}{}{}", VERSION_BASE, "windows", VERSION_FILE)
@@ -195,6 +207,11 @@ pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<()
             CacheComponent::Syntax => {
                 let url = get_syntax_url();
                 let dir = get_syntax_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            }
+            CacheComponent::Search => {
+                let url = get_search_url();
+                let dir = get_search_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
         }

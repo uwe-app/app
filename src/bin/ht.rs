@@ -24,7 +24,7 @@ fn compiler_error(e: &compiler::Error) {
             error!("Compile error ({})", errs.len());
             for e in errs {
                 error!("{}", e);
-            } 
+            }
             std::process::exit(1);
         }
         _ => {}
@@ -40,7 +40,7 @@ fn fatal(e: hypertext::Error) {
         hypertext::Error::Workspace ( ref e ) => {
             match e {
                 workspace::Error::Compiler (ref e) => {
-                    return compiler_error(e); 
+                    return compiler_error(e);
                 }
                 _ => {}
             }
@@ -190,17 +190,21 @@ struct FetchOpts {
     #[structopt(short, long)]
     release: bool,
 
+    /// Update the standalone cache
+    #[structopt(short = "t", long)]
+    standalone: bool,
+
     /// Update the short codes cache
-    #[structopt(short, long)]
+    #[structopt(short = "h", long)]
     short_code: bool,
 
     /// Update the syntax highlighting cache
     #[structopt(short = "y", long)]
     syntax: bool,
 
-    /// Update the standalone cache
-    #[structopt(short = "a", long)]
-    standalone: bool,
+    /// Update the search runtime
+    #[structopt(short = "e", long)]
+    search: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -400,6 +404,7 @@ async fn process_command(cmd: &Command) {
                 release: args.release,
                 short_code: args.short_code,
                 syntax: args.syntax,
+                search: args.search,
             };
 
             if let Err(e) = command::fetch::update(opts) {

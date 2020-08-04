@@ -11,6 +11,7 @@ pub struct FetchOptions {
     pub release: bool,
     pub short_code: bool,
     pub syntax: bool,
+    pub search: bool,
 }
 
 pub fn update(options: FetchOptions) -> Result<()> {
@@ -23,6 +24,7 @@ pub fn update(options: FetchOptions) -> Result<()> {
         CacheComponent::Release,
         CacheComponent::ShortCode,
         CacheComponent::Syntax,
+        CacheComponent::Search,
     ];
 
     if options.blueprint
@@ -30,7 +32,8 @@ pub fn update(options: FetchOptions) -> Result<()> {
         || options.documentation
         || options.release
         || options.short_code
-        || options.syntax {
+        || options.syntax
+        || options.search {
 
         components = Vec::new();
 
@@ -40,6 +43,7 @@ pub fn update(options: FetchOptions) -> Result<()> {
         if options.release { components.push(CacheComponent::Release); }
         if options.short_code { components.push(CacheComponent::ShortCode); }
         if options.syntax { components.push(CacheComponent::Syntax); }
+        if options.search { components.push(CacheComponent::Search); }
     }
 
     cache::update(&prefs, components)?;
