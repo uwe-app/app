@@ -2,10 +2,13 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+pub static SEARCH_JS:&str = "search.js";
+pub static SEARCH_WASM:&str = "search.wasm";
+
 static ID:&str = "site-index";
 static OUTPUT:&str = "search.idx";
-static JS:&str = "/search.js";
-static WASM:&str = "/search.wasm";
+static JS:&str = "/assets/js/search.js";
+static WASM:&str = "/assets/wasm/search.wasm";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]

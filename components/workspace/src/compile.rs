@@ -161,6 +161,7 @@ async fn load(
 
     let mut cache = DataSourceMap::get_cache();
 
+    synthetic::search(&config, &options, &mut collation, &datasource, &mut cache)?;
     synthetic::pages(&config, &options, &mut collation, &datasource, &mut cache)?;
     synthetic::each(&config, &options, &mut collation, &datasource, &mut cache)?;
     synthetic::assign(&config, &options, &mut collation, &datasource, &mut cache)?;

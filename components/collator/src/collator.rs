@@ -29,7 +29,7 @@ impl CollateResult {
     pub fn new(manifest: Option<Manifest>) -> Self {
         Self {
             inner: Arc::new(Mutex::new(CollateInfo { manifest, ..Default::default() } ))
-        }    
+        }
     }
 }
 
@@ -83,8 +83,8 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
     let data = Arc::clone(&res.inner);
     let mut info = data.lock().unwrap();
 
-    // Compute explicitly allowed links, typically this would be used 
-    // for synthetic files outside the system such as those generated 
+    // Compute explicitly allowed links, typically this would be used
+    // for synthetic files outside the system such as those generated
     // by hooks.
     if let Some(ref links) = req.config.link {
          if let Some(ref allow) = links.allow {
@@ -99,7 +99,7 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
     Ok(())
 }
 
-fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) -> Result<PathBuf> {
+pub fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) -> Result<PathBuf> {
     let mut info = FileInfo::new(
         &config,
         &options,
@@ -211,6 +211,22 @@ fn add_page(
     Ok(())
 }
 
+pub fn add_file(
+    key: &Arc<PathBuf>,
+    dest: PathBuf,
+    mut info: &mut CollateInfo,
+    config: &Config,
+    options: &RuntimeOptions) -> Result<()> {
+
+    let pth = key.to_path_buf();
+    let href = href(&pth, options, false, None)?;
+    link(&mut info, Arc::clone(key), Arc::new(href))?;
+
+    info.other.entry(Arc::clone(key)).or_insert(dest.clone());
+    info.targets.entry(Arc::clone(key)).or_insert(dest);
+
+    Ok(())
+}
 
 fn add_other(
     req: &CollateRequest<'_>,
@@ -242,12 +258,18 @@ fn add_other(
         info.data_sources.push(Arc::clone(key));
     } else if !is_page {
 
+        let dest = get_destination(&pth, req.config, req.options)?;
+        add_file(key, dest, info, req.config, req.options)?;
+
+        /*
+
         let href = href(&pth, req.options, false, None)?;
         link(&mut info, Arc::clone(key), Arc::new(href))?;
 
         let dest = get_destination(&pth, req.config, req.options)?;
         info.other.entry(Arc::clone(key)).or_insert(dest.clone());
         info.targets.entry(Arc::clone(key)).or_insert(dest);
+        */
     }
 
     Ok(())

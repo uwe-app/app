@@ -51,13 +51,18 @@ impl HelperDef for Embed<'_> {
         let search_config = self.context.config.search.as_ref().unwrap();
         let id = search_config.id.as_ref().unwrap().to_string();
         let js = search_config.js.as_ref().unwrap().to_string();
+        let wasm = search_config.wasm.as_ref().unwrap().to_string();
 
         let output = search_config.output.as_ref().unwrap();
         let index_url = format!("/{}", utils::url::to_href_separator(&output));
         let markup = if script {
             let inline = format!(
-            "search.register(\"{}\", \"{}\",
-                {{showProgress: true, showScores: true, printIndexInfo: true}});", &id, &index_url);
+                "search.register(\"{}\", \"{}\",
+                    {{runtime: \"{}\", showProgress: true, showScores: true, printIndexInfo: true}});",
+                    &id,
+                    &index_url,
+                    &wasm
+            );
 
             format!("<script src=\"{}\"></script><script>{}</script>", js, inline)
 

@@ -5,6 +5,7 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
+cache = {version = "0.1", path = "../cache" }
 collator = {version = "0.1", path = "../collator" }
 config = {version = "0.1", path = "../config" }
 utils = {version = "0.1", path = "../utils" }

@@ -49,7 +49,59 @@ fn create_synthetic(
     info.targets.entry(Arc::clone(&key)).or_insert(dest);
     info.pages.entry(key).or_insert(data);
 
-    Ok(()) 
+    Ok(())
+}
+
+// Helper to create synthetic files.
+fn create_file(
+    config: &Config,
+    options: &RuntimeOptions,
+    info: &mut CollateInfo,
+    source: PathBuf,
+    target: PathBuf) -> Result<()> {
+
+    println!("Create synthetic file {}", source.display());
+    println!("Create synthetic file {}", target.display());
+
+    let key = Arc::new(source);
+
+    //let dest = collator::get_destination(&pth, config, options)?;
+    collator::add_file(&key, target, info, config, options)?;
+
+    Ok(())
+}
+
+// Copy search runtime files.
+pub fn search(
+    config: &Config,
+    options: &RuntimeOptions,
+    info: &mut CollateInfo,
+    map: &DataSourceMap,
+    cache: &mut QueryCache) -> Result<()> {
+
+    if let Some(ref search) = config.search {
+        let copy_runtime = search.copy_runtime.is_some() && search.copy_runtime.unwrap();
+        let search_dir = cache::get_search_dir()?;
+
+        let js_source = search_dir.join(config::SEARCH_JS);
+        let wasm_source = search_dir.join(config::SEARCH_WASM);
+
+        let js_value = search.js.as_ref().unwrap().to_string();
+        let wasm_value = search.wasm.as_ref().unwrap().to_string();
+        let js_path = utils::url::to_path_separator(js_value.trim_start_matches("/"));
+        let wasm_path = utils::url::to_path_separator(wasm_value.trim_start_matches("/"));
+
+        let js_target = options.target.join(js_path);
+        let wasm_target = options.target.join(wasm_path);
+
+        create_file(config, options, info, js_source, js_target)?;
+        create_file(config, options, info, wasm_source, wasm_target)?;
+
+        println!("COPY THE SEARCH RUNTIME FILES");
+        std::process::exit(1);
+    }
+
+    Ok(())
 }
 
 // Assign query results to the page data
@@ -292,7 +344,7 @@ pub fn pages(
             }
         }
     }
-    
+
     Ok(())
 }
 

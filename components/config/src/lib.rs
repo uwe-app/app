@@ -68,3 +68,4 @@ pub use page::{Page, PaginateInfo, PageLink};
 pub use file::{FileType, FileInfo, FileOptions};
 pub use profile::{ProfileName, ProfileSettings, RuntimeOptions, RenderTypes};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
+pub use search::{SEARCH_JS, SEARCH_WASM};
