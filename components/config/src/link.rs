@@ -31,7 +31,7 @@ impl Default for LinkOptions {
             rewrite: true,
             include_index: false,
             strip: None,
-        } 
+        }
     }
 }
 
@@ -47,17 +47,50 @@ fn is_home_index<P: AsRef<Path>>(p: P) -> bool {
     false
 }
 
-// Attempt to get an absolute path for a page 
-// relative to the source. The resulting href  
-// can be passed to the link helper to get a 
+fn to_href<R: AsRef<Path>>(rel: R, options: LinkOptions) -> Result<String> {
+    let rel = rel.as_ref();
+
+    let mut href = if options.leading { "/".to_string() } else { "".to_string() };
+    let value = if options.slashes {
+        utils::url::to_href_separator(&rel)
+    } else {
+        rel.to_string_lossy().into_owned()
+    };
+
+    href.push_str(&value);
+
+    if options.trailing && rel.extension().is_none() {
+        href.push('/');
+    }
+    Ok(href)
+}
+
+// Attempt to get an absolute URL path
+// for an asset relative to a source.
+/*
+pub fn asset<F: AsRef<Path>, S: AsRef<Path>>(file: F, source: S, options: LinkOptions) -> Result<String> {
+    let file = file.as_ref();
+    let source = source.as_ref();
+    if !file.starts_with(source) {
+        return Err(
+            Error::PageOutsideSource(
+                file.to_path_buf(), source.to_path_buf()));
+    }
+    to_href(file.strip_prefix(source)?, options)
+}
+*/
+
+// Attempt to get an absolute URL path for a page
+// relative to the source. The resulting href
+// can be passed to the link helper to get a
 // relative path.
 pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOptions) -> Result<String> {
     let src = if let Some(ref source) = options.strip {
-        source 
+        source
     } else {
         &opts.source
     };
-        
+
     let page = file.as_ref();
     if !page.starts_with(src) {
         return Err(
@@ -102,25 +135,7 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
         }
     }
 
-    let mut href = if options.leading {
-        "/".to_string()
-    } else {
-        "".to_string()
-    };
-
-    let value = if options.slashes {
-        utils::url::to_href_separator(&rel)
-    } else {
-        rel.to_string_lossy().into_owned()
-    };
-
-    href.push_str(&value);
-
-    if options.trailing && rel.extension().is_none() {
-        href.push('/');
-    }
-
-    Ok(href)
+    to_href(rel, options)
 }
 
 #[cfg(test)]

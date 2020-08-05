@@ -69,12 +69,23 @@ impl<'a> Compiler<'a> {
     pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<Vec<ParseData>> {
         let parallel = self.context.options.settings.is_parallel();
 
+        // Filtering using the starts_with() below allows command line paths
+        // to filter the files that get compiled. However if we apply this filtering
+        // logic when the target is the main input source directory we will also
+        // ignore synthetic asset files outside of the source directory such as
+        // those copied over for the search runtime. This is a workaround for now
+        // but really we should rewrite the path filtering logic.
+        let filter_active = *target != self.context.options.source;
+
         // TODO: support allowing this in the settings
         let fail_fast = true;
 
         let all = self.context.collation.targets
             .iter()
-            .filter(|(p, _)| p.starts_with(target))
+            .filter(|(p, _)| {
+                if !filter_active { return true }
+                p.starts_with(target)
+            })
             .filter(|(p, target)| {
                 if let Some(ref manifest) = self.context.collation.manifest {
                     let file = p.to_path_buf();
@@ -97,7 +108,7 @@ impl<'a> Compiler<'a> {
                     let tx = tx.clone();
                     s.spawn(move |_t| {
                         // NOTE: we pay a price for creating another runtime
-                        // NOTE: inside the rayon thread but it gives us a 
+                        // NOTE: inside the rayon thread but it gives us a
                         // NOTE: consistent futures based API
                         let mut rt = tokio::runtime::Runtime::new().unwrap();
                         rt.block_on(async move {

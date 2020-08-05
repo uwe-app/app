@@ -214,12 +214,12 @@ fn add_page(
 pub fn add_file(
     key: &Arc<PathBuf>,
     dest: PathBuf,
+    href: String,
     mut info: &mut CollateInfo,
-    config: &Config,
-    options: &RuntimeOptions) -> Result<()> {
+    _config: &Config,
+    _options: &RuntimeOptions) -> Result<()> {
 
-    let pth = key.to_path_buf();
-    let href = href(&pth, options, false, None)?;
+    //let pth = key.to_path_buf();
     link(&mut info, Arc::clone(key), Arc::new(href))?;
 
     info.other.entry(Arc::clone(key)).or_insert(dest.clone());
@@ -259,7 +259,8 @@ fn add_other(
     } else if !is_page {
 
         let dest = get_destination(&pth, req.config, req.options)?;
-        add_file(key, dest, info, req.config, req.options)?;
+        let href = href(&pth, req.options, false, None)?;
+        add_file(key, dest, href, info, req.config, req.options)?;
 
         /*
 

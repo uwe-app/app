@@ -5,6 +5,7 @@ use serde_json::json;
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions, Page, FileInfo, FileOptions, PaginateInfo, PageLink};
+//use config::link::{self, LinkOptions};
 
 use crate::{Error, Result, DataSourceMap, QueryCache};
 
@@ -57,16 +58,22 @@ fn create_file(
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
+    href: String,
+    _base: &PathBuf,
     source: PathBuf,
     target: PathBuf) -> Result<()> {
 
-    println!("Create synthetic file {}", source.display());
-    println!("Create synthetic file {}", target.display());
+    //println!("Create synthetic file {}", source.display());
+    //println!("Create synthetic file {}", target.display());
+
+    //let mut href_opts: LinkOptions = Default::default();
+    //let href = link::asset(&source, base, href_opts).map_err(Error::from)?;
+
+    //println!("Href {}", &href);
 
     let key = Arc::new(source);
 
-    //let dest = collator::get_destination(&pth, config, options)?;
-    collator::add_file(&key, target, info, config, options)?;
+    collator::add_file(&key, target, href, info, config, options)?;
 
     Ok(())
 }
@@ -75,30 +82,34 @@ fn create_file(
 pub fn search(
     config: &Config,
     options: &RuntimeOptions,
-    info: &mut CollateInfo,
-    map: &DataSourceMap,
-    cache: &mut QueryCache) -> Result<()> {
+    info: &mut CollateInfo) -> Result<()> {
 
     if let Some(ref search) = config.search {
         let copy_runtime = search.copy_runtime.is_some() && search.copy_runtime.unwrap();
-        let search_dir = cache::get_search_dir()?;
+        if copy_runtime {
+            let search_dir = cache::get_search_dir()?;
 
-        let js_source = search_dir.join(config::SEARCH_JS);
-        let wasm_source = search_dir.join(config::SEARCH_WASM);
+            let js_source = search_dir.join(config::SEARCH_JS);
+            let wasm_source = search_dir.join(config::SEARCH_WASM);
 
-        let js_value = search.js.as_ref().unwrap().to_string();
-        let wasm_value = search.wasm.as_ref().unwrap().to_string();
-        let js_path = utils::url::to_path_separator(js_value.trim_start_matches("/"));
-        let wasm_path = utils::url::to_path_separator(wasm_value.trim_start_matches("/"));
+            let js_value = search.js.as_ref().unwrap().to_string();
+            let wasm_value = search.wasm.as_ref().unwrap().to_string();
+            let js_path = utils::url::to_path_separator(js_value.trim_start_matches("/"));
+            let wasm_path = utils::url::to_path_separator(wasm_value.trim_start_matches("/"));
 
-        let js_target = options.target.join(js_path);
-        let wasm_target = options.target.join(wasm_path);
+            let js_target = options.target.join(js_path);
+            let wasm_target = options.target.join(wasm_path);
 
-        create_file(config, options, info, js_source, js_target)?;
-        create_file(config, options, info, wasm_source, wasm_target)?;
+            create_file(
+                config, options, info,
+                js_value, &search_dir, js_source, js_target)?;
+            create_file(
+                config, options, info,
+                wasm_value, &search_dir, wasm_source, wasm_target)?;
 
-        println!("COPY THE SEARCH RUNTIME FILES");
-        std::process::exit(1);
+            //println!("COPY THE SEARCH RUNTIME FILES");
+            //std::process::exit(1);
+        }
     }
 
     Ok(())
