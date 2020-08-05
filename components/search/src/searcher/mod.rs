@@ -1,6 +1,6 @@
 pub mod index_analyzer;
 
-use crate::common::{Fields, IndexFromFile, InternalWordAnnotation};
+use crate::common::{Fields, IndexFromFile};
 use crate::index::v1;
 use index_analyzer::{parse_index_version, IndexVersion, VersionParseError};
 use serde::{Deserialize, Serialize};
@@ -37,7 +37,6 @@ pub struct Excerpt {
     pub text: String,
     pub highlight_ranges: Vec<HighlightRange>,
     pub score: usize,
-    pub internal_annotations: Vec<InternalWordAnnotation>,
     pub fields: Fields,
 }
 

@@ -183,7 +183,6 @@ pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
                 entry_result.excerpts.push(Excerpt {
                     word_index,
                     source,
-                    internal_annotations: annotated_word.internal_annotations.clone(),
                     fields: annotated_word.fields.clone(),
                 });
 

@@ -7,7 +7,7 @@ use std::convert::{TryFrom, TryInto};
 use serde::{Deserialize, Serialize};
 
 use super::scores::*;
-use crate::common::{Fields, InternalWordAnnotation, IndexFromFile};
+use crate::common::{Fields, IndexFromFile};
 use crate::config::TitleBoost;
 
 use crate::Result;
@@ -158,9 +158,6 @@ pub struct Excerpt {
     // #[serde(default, skip_serializing_if = "WordListSource::is_default")]
     pub source: WordListSource,
 
-    // #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub internal_annotations: Vec<InternalWordAnnotation>,
-
     // #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub fields: Fields,
 }
@@ -187,7 +184,6 @@ impl Default for WordListSource {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AnnotatedWord {
     pub word: String,
-    pub internal_annotations: Vec<InternalWordAnnotation>,
     pub fields: Fields,
 }
 
@@ -236,9 +232,7 @@ mod tests {
                 },
                 AnnotatedWord {
                     word: "is-a".to_string(),
-                    internal_annotations: vec![InternalWordAnnotation::SRTUrlSuffix(
-                        "a".to_string(),
-                    )],
+                    internal_annotations: vec![],
                     fields: HashMap::default(),
                 },
                 AnnotatedWord {

@@ -3,7 +3,7 @@ use super::structs::*;
 use crate::common::{IndexFromFile, STOPWORDS};
 use crate::config::TitleBoost;
 use crate::searcher::*;
-use crate::common::{Fields, InternalWordAnnotation};
+use crate::common::{Fields};
 use std::cmp::Ordering;
 
 use std::collections::HashMap;
@@ -16,7 +16,6 @@ pub struct IntermediateExcerpt {
     pub score: Score,
     pub source: WordListSource,
     pub word_index: usize,
-    pub internal_annotations: Vec<InternalWordAnnotation>,
     pub fields: Fields,
 }
 
@@ -125,7 +124,6 @@ impl ContainerWithQuery {
                     score: result.score,
                     source: excerpt.source,
                     word_index: excerpt.word_index,
-                    internal_annotations: excerpt.internal_annotations,
                     fields: excerpt.fields,
                 })
             }
@@ -140,7 +138,6 @@ impl ContainerWithQuery {
                             query: alias_target.to_string(),
                             entry_index,
                             score: *alias_score,
-                            internal_annotations: excerpt.internal_annotations,
                             source: excerpt.source,
                             word_index: excerpt.word_index,
                             fields: excerpt.fields,
@@ -271,18 +268,18 @@ impl From<EntryAndIntermediateExcerpts> for OutputResult {
                     }
                 };
 
-                let internal_annotations = {
-                    if let Some(first) = ies.first() {
-                        first.internal_annotations.clone()
-                    } else {
-                        Vec::default()
-                    }
-                };
+                //let internal_annotations = {
+                    //if let Some(first) = ies.first() {
+                        //first.internal_annotations.clone()
+                    //} else {
+                        //Vec::default()
+                    //}
+                //};
 
                 crate::searcher::Excerpt {
                     text,
                     highlight_ranges,
-                    internal_annotations,
+                    //internal_annotations,
                     score,
                     fields,
                 }
