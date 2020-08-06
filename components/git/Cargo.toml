@@ -14,4 +14,4 @@ rpassword = "4.0"
 
 [dependencies.git2]
 version = "0.13"
-path = "/home/muji/git/2.external/git2-rs"
+features = ["vendored-openssl"]
