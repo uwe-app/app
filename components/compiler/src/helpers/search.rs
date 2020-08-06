@@ -53,14 +53,13 @@ impl HelperDef for Embed<'_> {
         let js = search_config.js.as_ref().unwrap().to_string();
         let wasm = search_config.wasm.as_ref().unwrap().to_string();
 
-        let output = search_config.output.as_ref().unwrap();
-        let index_url = format!("/{}", utils::url::to_href_separator(&output));
+        let index_url = search_config.target.as_ref().unwrap();
         let markup = if script {
             let inline = format!(
                 "search.register(\"{}\", \"{}\",
                     {{runtime: \"{}\", showProgress: true, showScores: true, printIndexInfo: true}});",
                     &id,
-                    &index_url,
+                    index_url,
                     &wasm
             );
 
@@ -78,7 +77,6 @@ impl HelperDef for Embed<'_> {
                 &id
             )
         };
-
         out.write(&markup)?;
         Ok(())
     }

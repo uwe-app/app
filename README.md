@@ -24,6 +24,13 @@ release
 └── windows
 ```
 
+## Cross-compiling
+
+I used these resources to build for OSX from Linux:
+
+* https://github.com/tpoechtrager/osxcross
+* https://www.reddit.com/r/rust/comments/6rxoty/tutorial_cross_compiling_from_linux_for_osx/
+
 ## Release
 
 To prepare a release for the current platform run the release task:
