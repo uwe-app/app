@@ -222,12 +222,14 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
         for parse_data in parse_list {
             let extraction = parse_data.extract.as_ref().unwrap();
 
-            // TODO: when not include_index strip the index.html from the href
             let href = ctx.collation.links.sources.get(&parse_data.file);
 
             let buffer = extraction.to_chunk_string();
             let title = if let Some(ref title) = extraction.title { title } else { "" };
             let mut url = if let Some(ref href) = href { href } else { "" };
+
+            if !search.filter(url) { continue; }
+
             if !include_index && url.ends_with(config::INDEX_HTML) {
                 url = url.trim_end_matches(config::INDEX_HTML);
             }

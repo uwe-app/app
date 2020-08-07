@@ -57,6 +57,16 @@ impl Default for SearchConfig {
 }
 
 impl SearchConfig {
+
+    pub fn filter(&self, href: &str) -> bool {
+        let idx = self.index.as_ref().unwrap();
+        if idx.filters.is_empty() { return true; }
+        for path in idx.filters.iter() {
+            if href.starts_with(path) { return true; }
+        }
+        false
+    }
+
     pub fn get_output_path(&self, base: &PathBuf) -> PathBuf {
         let val = self.target.as_ref().unwrap().trim_start_matches("/");
         return base.join(utils::url::to_path_separator(val));
@@ -66,5 +76,5 @@ impl SearchConfig {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct SearchIndexConfig {
-    pub filters: Vec<PathBuf>,
+    pub filters: Vec<String>,
 }
