@@ -232,7 +232,6 @@ mod tests {
                 },
                 AnnotatedWord {
                     word: "is-a".to_string(),
-                    internal_annotations: vec![],
                     fields: HashMap::default(),
                 },
                 AnnotatedWord {
