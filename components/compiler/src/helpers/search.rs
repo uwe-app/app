@@ -53,14 +53,31 @@ impl HelperDef for Embed<'_> {
         let js = search_config.js.as_ref().unwrap().to_string();
         let wasm = search_config.wasm.as_ref().unwrap().to_string();
 
+        let results = search_config.results.as_ref().unwrap();
+        let excerpt_buffer = search_config.excerpt_buffer.as_ref().unwrap();
+        let excerpts_per_result = search_config.excerpts_per_result.as_ref().unwrap();
+
         let index_url = search_config.target.as_ref().unwrap();
         let markup = if script {
             let inline = format!(
                 "search.register(\"{}\", \"{}\",
-                    {{runtime: \"{}\", showProgress: true, showScores: true, printIndexInfo: true}});",
+                    {{
+                        runtime: \"{}\",
+                        showProgress: true,
+                        showScores: true,
+                        printIndexInfo: true,
+                        options: {{
+                            results: {},
+                            excerpt_buffer: {},
+                            excerpts_per_result: {}
+                        }}
+                    }});",
                     &id,
                     index_url,
-                    &wasm
+                    &wasm,
+                    &results,
+                    &excerpt_buffer,
+                    &excerpts_per_result,
             );
 
             format!("<script src=\"{}\"></script><script>{}</script>", js, inline)

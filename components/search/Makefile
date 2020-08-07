@@ -1,4 +1,4 @@
-all: init
+all: wasm-prod
 
 wasm-dev:
 	@wasm-pack build --target web --out-name search --dev

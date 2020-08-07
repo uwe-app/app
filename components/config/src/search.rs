@@ -27,6 +27,17 @@ pub struct SearchConfig {
 
     // Configuration options for indexing behavior
     pub index: Option<SearchIndexConfig>,
+
+    // Maximum number of results displayed for a query
+    pub results: Option<u8>,
+
+    // Number of excerpts to buffer
+    #[serde(skip_deserializing)]
+    pub excerpt_buffer: Option<u8>,
+
+    // Maximum number of excerpts per result
+    #[serde(skip_deserializing)]
+    pub excerpts_per_result: Option<u8>,
 }
 
 impl Default for SearchConfig {
@@ -38,6 +49,9 @@ impl Default for SearchConfig {
             wasm: Some(WASM.to_string()),
             copy_runtime: Some(true),
             index: Some(Default::default()),
+            results: Some(10),
+            excerpt_buffer: Some(8),
+            excerpts_per_result: Some(5),
         }
     }
 }

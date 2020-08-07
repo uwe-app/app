@@ -36,9 +36,9 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn wasm_search(index: &IndexFromFile, query: String, options: &JsValue) -> String {
+pub fn wasm_search(index: &IndexFromFile, query: String, options: String) -> String {
     console_error_panic_hook::set_once();
-    let opts: QueryOptions = options.into_serde().unwrap();
+    let opts: QueryOptions = serde_json::from_str(&options).unwrap_or(Default::default());
     let search_result = search(index, query, &opts).and_then(|output| {
         serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
     });

@@ -40,7 +40,6 @@ impl Default for QueryOptions {
     }
 }
 
-
 /**
  * A serialized Index, for all intents and purposes, is the whole contents of
  * a Stork index file.
