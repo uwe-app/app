@@ -67,7 +67,7 @@ fn search_handler(args: &[String]) -> Result<()> {
     let mut index_bytes: Vec<u8> = Vec::new();
     let bytes_read = buf_reader.read_to_end(&mut index_bytes);
     let read_time = Instant::now();
-    let results = search::search(&index_bytes, args[3].clone());
+    let results = search::search(&index_bytes, args[3].clone(), &Default::default());
     let end_time = Instant::now();
 
     match results {

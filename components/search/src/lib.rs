@@ -36,9 +36,10 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn wasm_search(index: &IndexFromFile, query: String) -> String {
+pub fn wasm_search(index: &IndexFromFile, query: String, options: &JsValue) -> String {
     console_error_panic_hook::set_once();
-    let search_result = search(index, query).and_then(|output| {
+    let opts: QueryOptions = options.into_serde().unwrap();
+    let search_result = search(index, query, &opts).and_then(|output| {
         serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
     });
 
@@ -61,8 +62,9 @@ pub fn get_index_version(index: &IndexFromFile) -> String {
 pub fn search(
     index: &IndexFromFile,
     query: String,
+    options: &QueryOptions,
 ) -> std::result::Result<searcher::SearchOutput, searcher::SearchError> {
-    searcher::search(index, query.as_str())
+    searcher::search(index, query.as_str(), options)
 }
 
 pub fn build(config: &Config) -> Index {

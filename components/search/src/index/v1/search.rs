@@ -39,7 +39,7 @@ impl PartialEq for IntermediateExcerpt {
     }
 }
 
-pub fn search(index: &IndexFromFile, query: &str) -> Result<SearchOutput, SearchError> {
+pub fn search(index: &IndexFromFile, query: &str, options: &QueryOptions) -> Result<SearchOutput, SearchError> {
     match Index::try_from(index) {
         Err(_e) => Err(SearchError::IndexParseError),
         Ok(index) => {
@@ -79,20 +79,20 @@ pub fn search(index: &IndexFromFile, query: &str) -> Result<SearchOutput, Search
                 .map(|(entry_index, ies)| {
                     let data = EntryAndIntermediateExcerpts {
                         entry: index.entries[*entry_index].to_owned(),
-                        config: index.config.clone(),
                         intermediate_excerpts: ies.to_owned(),
                     };
-                    OutputResult::from(data)
+                    OutputResult::from_data(data, options)
                 })
                 .collect();
             output_results.sort_by_key(|or| or.entry.title.clone());
             output_results.sort_by_key(|or| -(or.score as i64));
-            output_results.truncate(index.config.displayed_results_count as usize);
+            output_results.truncate(options.results as usize);
 
             Ok(SearchOutput {
                 results: output_results,
                 total_hit_count: *total_len,
-                url_prefix: index.config.url_prefix,
+                url_prefix: "".to_string(),
+                //url_prefix: index.config.url_prefix,
             })
         }
     }
@@ -163,14 +163,13 @@ impl From<Entry> for OutputEntry {
 
 struct EntryAndIntermediateExcerpts {
     entry: Entry,
-    config: PassthroughConfig,
     intermediate_excerpts: Vec<IntermediateExcerpt>,
 }
 
-impl From<EntryAndIntermediateExcerpts> for OutputResult {
-    fn from(data: EntryAndIntermediateExcerpts) -> Self {
+impl OutputResult {
+    fn from_data(data: EntryAndIntermediateExcerpts, options: &QueryOptions) -> Self {
         let entry = data.entry;
-        let excerpt_buffer = data.config.excerpt_buffer as usize;
+        let excerpt_buffer = options.excerpt_buffer as usize;
         let split_contents: Vec<String> = entry
             .contents
             .split_whitespace()
@@ -287,7 +286,7 @@ impl From<EntryAndIntermediateExcerpts> for OutputResult {
             .collect();
 
         excerpts.sort_by_key(|e| -(e.score as i16));
-        excerpts.truncate(data.config.excerpts_per_result as usize);
+        excerpts.truncate(options.excerpts_per_result as usize);
 
         let split_title: Vec<&str> = entry.title.split_whitespace().collect();
         let title_highlight_ranges: Vec<HighlightRange> = data
@@ -305,7 +304,7 @@ impl From<EntryAndIntermediateExcerpts> for OutputResult {
             .collect();
 
         let title_boost_modifier = title_highlight_ranges.len()
-            * match data.config.title_boost {
+            * match options.title_boost {
                 TitleBoost::Minimal => 25,
                 TitleBoost::Moderate => 75,
                 TitleBoost::Large => 150,
@@ -339,7 +338,7 @@ mod tests {
         let mut index_bytes: Vec<u8> = Vec::new();
         let _bytes_read = buf_reader.read_to_end(&mut index_bytes);
 
-        let generated = search(index_bytes.as_slice(), "liber old world").unwrap();
+        let generated = search(index_bytes.as_slice(), "liber old world", &Default::default()).unwrap();
         let expected = serde_json::from_str("{\"results\":[{\"entry\":{\"url\":\"https://www.congress.gov/resources/display/content/The+Federalist+Papers#TheFederalistPapers-1\",\"title\":\"Introduction\",\"fields\":{}},\"excerpts\":[{\"text\":\"in many respects the most interesting in the world. It has been frequently remarked that it\",\"highlight_ranges\":[{\"beginning\":45,\"end\":50}],\"score\":128,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"despotic power and hostile to the principles of liberty. An over-scrupulous jealousy of danger to the\",\"highlight_ranges\":[{\"beginning\":48,\"end\":55}],\"score\":125,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"of love, and that the noble enthusiasm of liberty is apt to be infected with a\",\"highlight_ranges\":[{\"beginning\":42,\"end\":49}],\"score\":125,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"of government is essential to the security of liberty; that, in the contemplation of a sound\",\"highlight_ranges\":[{\"beginning\":46,\"end\":53}],\"score\":125,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"that this is the safest course for your liberty, your dignity, and your happiness. I affect\",\"highlight_ranges\":[{\"beginning\":40,\"end\":47}],\"score\":125,\"internal_annotations\":[],\"fields\":{}}],\"title_highlight_ranges\":[],\"score\":128}],\"total_hit_count\":1,\"url_prefix\":\"\"}").unwrap();
 
         assert_eq!(generated, expected, "{:?}", generated);

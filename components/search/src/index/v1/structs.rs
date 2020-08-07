@@ -16,13 +16,38 @@ pub type EntryIndex = usize;
 pub type AliasTarget = String;
 pub type Score = u8;
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
+pub struct QueryOptions {
+    // Total number of results to return
+    pub results: usize,
+    // Boost for title query matches
+    pub title_boost: TitleBoost,
+    // Number of excerpts to buffer
+    pub excerpt_buffer: u8,
+    // Maximum number of excerpts per result
+    pub excerpts_per_result: u8,
+}
+
+impl Default for QueryOptions {
+    fn default() -> Self {
+        Self {
+            excerpt_buffer: 8,
+            excerpts_per_result: 5,
+            results: 10,
+            title_boost: Default::default(),
+        }
+    }
+}
+
+
 /**
  * A serialized Index, for all intents and purposes, is the whole contents of
  * a Stork index file.
  */
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Index {
-    pub config: PassthroughConfig,
+    //pub config: PassthroughConfig,
     pub entries: Vec<Entry>,
     pub containers: HashMap<String, Container>,
 }
@@ -83,26 +108,26 @@ impl TryFrom<&IndexFromFile> for Index {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PassthroughConfig {
-    pub url_prefix: String,
-    pub title_boost: TitleBoost,
-    pub excerpt_buffer: u8,
-    pub excerpts_per_result: u8,
-    pub displayed_results_count: u8,
-}
+//#[derive(Serialize, Deserialize, Clone, Debug)]
+//pub struct PassthroughConfig {
+    //pub url_prefix: String,
+    //pub title_boost: TitleBoost,
+    //pub excerpt_buffer: u8,
+    //pub excerpts_per_result: u8,
+    //pub displayed_results_count: u8,
+//}
 
-impl Default for PassthroughConfig {
-    fn default() -> Self {
-        Self {
-            url_prefix: "".to_string(),
-            title_boost: Default::default(),
-            excerpt_buffer: 8,
-            excerpts_per_result: 5,
-            displayed_results_count: 10,
-        }
-    }
-}
+//impl Default for PassthroughConfig {
+    //fn default() -> Self {
+        //Self {
+            //url_prefix: "".to_string(),
+            //title_boost: Default::default(),
+            //excerpt_buffer: 8,
+            //excerpts_per_result: 5,
+            //displayed_results_count: 10,
+        //}
+    //}
+//}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Entry {
