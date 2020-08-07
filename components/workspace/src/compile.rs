@@ -228,11 +228,11 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
             let title = if let Some(ref title) = extraction.title { title } else { "" };
             let mut url = if let Some(ref href) = href { href } else { "" };
 
-            if !search.filter(url) { continue; }
-
             if !include_index && url.ends_with(config::INDEX_HTML) {
                 url = url.trim_end_matches(config::INDEX_HTML);
             }
+
+            if !search.filter(url) { continue; }
 
             //println!("Title {}", title);
             //println!("Buffer {}", &buffer);

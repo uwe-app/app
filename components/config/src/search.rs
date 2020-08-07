@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+use globset::Glob;
 
 pub static SEARCH_JS:&str = "search.js";
 pub static SEARCH_WASM:&str = "search.wasm";
@@ -60,9 +61,20 @@ impl SearchConfig {
 
     pub fn filter(&self, href: &str) -> bool {
         let idx = self.index.as_ref().unwrap();
-        if idx.filters.is_empty() { return true; }
-        for path in idx.filters.iter() {
-            if href.starts_with(path) { return true; }
+
+        for glob in idx.excludes.iter() {
+            // FIXME: compile these matchers AOT
+            let matcher = glob.compile_matcher();
+            if matcher.is_match(href) { return false; }
+        }
+
+        if idx.includes.is_empty() { return true; }
+        for glob in idx.includes.iter() {
+            // FIXME: compile these matchers AOT
+            let matcher = glob.compile_matcher();
+            if matcher.is_match(href) {
+                return true;
+            }
         }
         false
     }
@@ -76,5 +88,6 @@ impl SearchConfig {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct SearchIndexConfig {
-    pub filters: Vec<String>,
+    pub includes: Vec<Glob>,
+    pub excludes: Vec<Glob>,
 }
