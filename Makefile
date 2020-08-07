@@ -68,9 +68,4 @@ install: build-release
 	@mkdir -p $(HOME)/.hypertext/bin
 	@cp -f target/release/ht $(HOME)/.hypertext/bin
 
-build-osx:
-	export PATH=/usr/local/osx-ndk-x86/bin:$(PATH)
-	export PKG_CONFIG_ALLOW_CROSS=1
-	@cargo build --target=x86_64-apple-darwin --release
-
 .PHONY: all site-release install release
