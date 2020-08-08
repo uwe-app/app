@@ -3,6 +3,8 @@ pub mod config;
 pub mod index;
 pub mod searcher;
 
+use wasm_bindgen::prelude::*;
+
 use thiserror::Error;
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +17,6 @@ use std::convert::TryFrom;
 
 use index::v1 as LatestVersion;
 pub use LatestVersion::*;
-
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -30,8 +31,6 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
-
-use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -58,11 +57,11 @@ pub struct SearchIndex {
 #[wasm_bindgen]
 impl SearchIndex {
     #[wasm_bindgen(constructor)]
-    pub fn new(file: &IndexFromFile, opts: String) -> Self {
+    pub fn new(file: &IndexFromFile, options: &QueryOptions) -> Self {
         console_error_panic_hook::set_once();
 
-        let options: QueryOptions =
-            serde_json::from_str(&opts).unwrap_or(Default::default());
+        //let options: QueryOptions =
+            //serde_json::from_str(&opts).unwrap_or(Default::default());
 
         // FIXME: handle errors gracefully
         let version = parse_index_version(file).unwrap();
@@ -72,7 +71,7 @@ impl SearchIndex {
             file: file.to_vec(),
             version,
             index,
-            options,
+            options: options.clone(),
         }
     }
 

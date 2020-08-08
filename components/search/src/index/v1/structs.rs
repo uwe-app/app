@@ -4,6 +4,8 @@ use std::io::{BufWriter, Write};
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 
+use wasm_bindgen::prelude::*;
+
 use serde::{Deserialize, Serialize};
 
 use super::scores::*;
@@ -16,6 +18,7 @@ pub type EntryIndex = usize;
 pub type AliasTarget = String;
 pub type Score = u8;
 
+#[wasm_bindgen]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct QueryOptions {
@@ -37,6 +40,14 @@ impl Default for QueryOptions {
             results: 10,
             title_boost: Default::default(),
         }
+    }
+}
+
+#[wasm_bindgen]
+impl QueryOptions {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Default::default()
     }
 }
 

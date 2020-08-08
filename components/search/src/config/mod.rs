@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
+use wasm_bindgen::prelude::*;
+
 mod file;
 pub use file::DataSource;
 pub use file::File;
@@ -8,7 +10,8 @@ pub use file::File;
 pub mod stemming_config;
 pub use stemming_config::StemmingConfig;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[wasm_bindgen]
+#[derive(Serialize, Deserialize, Clone, Debug, Copy)]
 #[serde(deny_unknown_fields)]
 pub enum TitleBoost {
     Minimal,
