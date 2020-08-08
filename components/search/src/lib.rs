@@ -87,11 +87,11 @@ impl SearchIndex {
     }
 
     pub fn search(&self, query: String) -> String {
-        log(&format!("Index search is running with query {}", query));
-
-        let search_result = searcher::search(&self.index, &self.version, query.as_str(), &self.options).and_then(|output| {
-            serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
-        });
+        let search_result = searcher::search(
+            &self.index, &self.version, query.as_str(), &self.options)
+            .and_then(|output| {
+                serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
+            });
 
         match search_result {
             Ok(res) => res,
@@ -99,16 +99,6 @@ impl SearchIndex {
         }
     }
 }
-
-/*
-pub fn search(
-    index: &IndexFromFile,
-    query: String,
-    options: &QueryOptions,
-) -> std::result::Result<searcher::SearchOutput, searcher::SearchError> {
-    searcher::search(index, query.as_str(), options)
-}
-*/
 
 pub fn build(config: &Config) -> Index {
     builder::build(config)

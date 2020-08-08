@@ -81,5 +81,6 @@ pub fn search(
     let search_function = match version {
         IndexVersion::V1 => v1::search::search,
     };
+
     search_function(index, query, options)
 }
