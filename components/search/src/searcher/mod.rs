@@ -1,9 +1,9 @@
 pub mod index_analyzer;
 
-use crate::common::{Fields, IndexFromFile};
+use crate::common::{Fields};
 use crate::index::v1;
-use crate::index::v1::structs::QueryOptions;
-use index_analyzer::{parse_index_version, IndexVersion, VersionParseError};
+use crate::index::v1::structs::{Index, QueryOptions};
+use index_analyzer::{IndexVersion, VersionParseError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -72,15 +72,14 @@ impl fmt::Display for SearchError {
     }
 }
 
-pub fn search(index: &IndexFromFile, query: &str, options: &QueryOptions) -> Result<SearchOutput, SearchError> {
-    match parse_index_version(index) {
-        Ok(version) => {
-            let search_function = match version {
-                IndexVersion::V1 => v1::search::search,
-            };
+pub fn search(
+    index: &Index,
+    version: &IndexVersion,
+    query: &str,
+    options: &QueryOptions) -> Result<SearchOutput, SearchError> {
 
-            search_function(index, query, options)
-        }
-        Err(e) => Err(SearchError::VersionParseError(e)),
-    }
+    let search_function = match version {
+        IndexVersion::V1 => v1::search::search,
+    };
+    search_function(index, query, options)
 }

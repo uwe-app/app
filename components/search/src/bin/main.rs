@@ -1,7 +1,5 @@
 use std::fmt;
 use std::env;
-use std::fs::File;
-use std::io::{BufReader, Read};
 use std::time::Instant;
 
 use search::config::Config;
@@ -25,7 +23,6 @@ pub const EXIT_FAILURE: ExitCode = 1;
 fn main() {
     let mut a = Argparse::new();
     a.register("build", build_handler, 1);
-    a.register("search", search_handler, 2);
     a.register_help(HELP_TEXT);
     std::process::exit(a.exec(env::args().collect()));
 }
@@ -52,40 +49,6 @@ fn build_handler(args: &[String]) -> Result<()> {
         end_time.duration_since(build_time).as_secs_f32(),
         end_time.duration_since(start_time).as_secs_f32()
     );
-
-    Ok(())
-}
-
-fn search_handler(args: &[String]) -> Result<()> {
-    let start_time = Instant::now();
-    let file = File::open(&args[2]).unwrap_or_else(|err| {
-        eprintln!("Could not read file {}: {}", &args[2], err);
-        std::process::exit(EXIT_FAILURE);
-    });
-
-    let mut buf_reader = BufReader::new(file);
-    let mut index_bytes: Vec<u8> = Vec::new();
-    let bytes_read = buf_reader.read_to_end(&mut index_bytes);
-    let read_time = Instant::now();
-    let results = search::search(&index_bytes, args[3].clone(), &Default::default());
-    let end_time = Instant::now();
-
-    match results {
-        Ok(output) => {
-            println!("{}", serde_json::to_string_pretty(&output).unwrap());
-
-            eprintln!(
-                "{} search results.\nRead {} bytes from {}\n\t{:.3?}s to read index file\n\t{:.3?}s to get search results\n\t{:.3?}s total",
-                output.total_hit_count,
-                bytes_read.unwrap().to_formatted_string(&Locale::en),
-                &args[2],
-                read_time.duration_since(start_time).as_secs_f32(),
-                end_time.duration_since(read_time).as_secs_f32(),
-                end_time.duration_since(start_time).as_secs_f32()
-            );
-        }
-        Err(e) => eprintln!("Error performing search: {}", e),
-    }
 
     Ok(())
 }
