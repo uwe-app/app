@@ -57,7 +57,7 @@ impl HelperDef for Embed<'_> {
         let excerpt_buffer = search_config.excerpt_buffer.as_ref().unwrap();
         let excerpts_per_result = search_config.excerpts_per_result.as_ref().unwrap();
 
-        let index_url = search_config.target.as_ref().unwrap();
+        let index_url = search_config.index.as_ref().unwrap();
         let markup = if script {
             let inline = format!(
                 "search.register(\"{}\", \"{}\",

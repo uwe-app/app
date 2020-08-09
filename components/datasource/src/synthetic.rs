@@ -63,16 +63,7 @@ fn create_file(
     source: PathBuf,
     target: PathBuf) -> Result<()> {
 
-    //println!("Create synthetic file {}", source.display());
-    //println!("Create synthetic file {}", target.display());
-
-    //let mut href_opts: LinkOptions = Default::default();
-    //let href = link::asset(&source, base, href_opts).map_err(Error::from)?;
-
-    //println!("Href {}", &href);
-
     let key = Arc::new(source);
-
     collator::add_file(&key, target, href, info, config, options)?;
 
     Ok(())
@@ -85,8 +76,8 @@ pub fn search(
     info: &mut CollateInfo) -> Result<()> {
 
     if let Some(ref search) = config.search {
-        let copy_runtime = search.copy_runtime.is_some() && search.copy_runtime.unwrap();
-        if copy_runtime {
+        let bundle = search.bundle.is_some() && search.bundle.unwrap();
+        if bundle {
             let search_dir = cache::get_search_dir()?;
 
             let js_source = search_dir.join(config::SEARCH_JS);

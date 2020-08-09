@@ -195,7 +195,7 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     }
 
     if let Some(ref search) = ctx.config.search {
-        let fetch_search_runtime = search.copy_runtime.is_some() && search.copy_runtime.unwrap();
+        let fetch_search_runtime = search.bundle.is_some() && search.bundle.unwrap();
         if fetch_search_runtime {
             let prefs = preference::load()?;
             let search_dir = cache::get_search_dir()?;
