@@ -6,4 +6,3 @@ files = [
 
 [output]
 filename = "test/assets/federalist-min.st"
-debug = false

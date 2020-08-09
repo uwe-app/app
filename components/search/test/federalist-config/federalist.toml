@@ -25,4 +25,3 @@ files = [
 
 [output]
 filename = "test/assets/federalist.st"
-debug = false

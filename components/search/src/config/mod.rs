@@ -76,7 +76,6 @@ pub struct InputConfig {
 #[serde(deny_unknown_fields, default)]
 pub struct OutputConfig {
     pub filename: String,
-    pub debug: bool,
     pub excerpt_buffer: u8,
     pub excerpts_per_result: u8,
     pub displayed_results_count: u8,
@@ -86,7 +85,6 @@ impl Default for OutputConfig {
     fn default() -> Self {
         OutputConfig {
             filename: "search.idx".to_string(),
-            debug: false,
             excerpt_buffer: 8,
             excerpts_per_result: 5,
             displayed_results_count: 10,
@@ -118,7 +116,6 @@ files = [
 
 [output]
 filename = "test/federalist.st"
-debug = false
     "#;
         toml::from_str(contents).map(|_c: Config| ())
     }

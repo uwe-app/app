@@ -1,6 +1,3 @@
-use std::path::Path;
-use std::fs::File;
-use std::io::{BufWriter, Write};
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 
@@ -11,8 +8,6 @@ use serde::{Deserialize, Serialize};
 use super::scores::*;
 use crate::common::{Fields, IndexFromFile};
 use crate::config::TitleBoost;
-
-use crate::Result;
 
 pub type EntryIndex = usize;
 pub type AliasTarget = String;
@@ -57,50 +52,8 @@ impl QueryOptions {
  */
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Index {
-    //pub config: PassthroughConfig,
     pub entries: Vec<Entry>,
     pub containers: HashMap<String, Container>,
-}
-
-impl Index {
-    pub fn write<P: AsRef<Path>>(&self, filename: P, debug: bool) -> Result<usize> {
-        let file = File::create(filename)?;
-        let mut bufwriter = BufWriter::new(file);
-        let write_version = super::VERSION_STRING.as_bytes();
-        if debug {
-            self.write_debug(&mut bufwriter, &write_version)
-        } else {
-            self.write_release(&mut bufwriter, &write_version)
-        }
-    }
-
-    fn write_release(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
-        let mut bytes_written: usize = 0;
-        let index_bytes = rmp_serde::to_vec(self)?;
-        let byte_vectors_to_write = [write_version, index_bytes.as_slice()];
-        for vec in byte_vectors_to_write.iter() {
-            bytes_written += bufwriter.write(&(vec.len() as u64).to_be_bytes())?;
-            bytes_written += bufwriter.write(vec)?;
-        }
-        Ok(bytes_written)
-    }
-
-    fn write_debug(&self, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
-        let index_serialized = serde_json::to_string_pretty(self)?;
-
-        let byte_vectors_to_write = [write_version, index_serialized.as_bytes()];
-
-        for vec in byte_vectors_to_write.iter() {
-            let _ = bufwriter.write(vec.len().to_string().as_bytes());
-            let _ = bufwriter.write(b"\n");
-            let _ = bufwriter.write(vec);
-            let _ = bufwriter.write(b"\n\n");
-        }
-
-        // Return zero bytes written so that the frontend can alert the user
-        // when they write an index in debug mode
-        Ok(0)
-    }
 }
 
 impl TryFrom<&IndexFromFile> for Index {
@@ -117,27 +70,6 @@ impl TryFrom<&IndexFromFile> for Index {
         rmp_serde::from_read_ref(index_bytes)
     }
 }
-
-//#[derive(Serialize, Deserialize, Clone, Debug)]
-//pub struct PassthroughConfig {
-    //pub url_prefix: String,
-    //pub title_boost: TitleBoost,
-    //pub excerpt_buffer: u8,
-    //pub excerpts_per_result: u8,
-    //pub displayed_results_count: u8,
-//}
-
-//impl Default for PassthroughConfig {
-    //fn default() -> Self {
-        //Self {
-            //url_prefix: "".to_string(),
-            //title_boost: Default::default(),
-            //excerpt_buffer: 8,
-            //excerpts_per_result: 5,
-            //displayed_results_count: 10,
-        //}
-    //}
-//}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Entry {
@@ -208,13 +140,6 @@ impl Default for WordListSource {
         WordListSource::Contents
     }
 }
-
-// impl WordListSource {
-//     #[allow(clippy::trivially_copy_pass_by_ref)]
-//     fn is_default(&self) -> bool {
-//         self == &WordListSource::default()
-//     }
-// }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AnnotatedWord {

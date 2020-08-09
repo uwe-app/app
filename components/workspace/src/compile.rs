@@ -212,7 +212,6 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
 fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
 
     let include_index = ctx.options.settings.should_include_index();
-
     if let Some(ref search) = ctx.config.search {
         //let output = search.output.as_ref().unwrap();
 
@@ -248,9 +247,8 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
         //let index_file = ctx.options.target.join(output);
         let index_file = search.get_output_path(&ctx.options.target);
         info!("Write search index to {}", index_file.display());
-        let bytes_written = idx.write(index_file, false)?;
+        let bytes_written = search::writer::write(&idx, index_file)?;
         info!("Search index {}", human_bytes(bytes_written as f64));
-
     }
 
     Ok(())
