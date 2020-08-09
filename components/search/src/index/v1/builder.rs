@@ -113,14 +113,6 @@ pub fn build(config: &Config) -> Index {
 
 pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
 
-    //let config = PassthroughConfig {
-        //url_prefix: config.input.url_prefix.clone(),
-        //title_boost: config.input.title_boost.clone(),
-        //excerpt_buffer: config.output.excerpt_buffer,
-        //excerpts_per_result: config.output.excerpts_per_result,
-        //displayed_results_count: config.output.displayed_results_count,
-    //};
-
     let mut idx: Index = Default::default();
 
     let mut containers: HashMap<String, Container> = HashMap::new();
