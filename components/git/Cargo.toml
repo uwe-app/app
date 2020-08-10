@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 dirs = {version = "0.1", path = "../dirs" }
+utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 url = "2"

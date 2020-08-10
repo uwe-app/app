@@ -32,6 +32,8 @@ pub mod progress;
 pub mod pull;
 
 static ORIGIN: &str = "origin";
+static GIT_IGNORE: &str = ".gitignore";
+static NODE_MODULES: &str = "node_modules";
 
 pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
     let git_dir = repo.path();
@@ -39,6 +41,15 @@ pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error
     // Remove the git directory is the easiest
     // way to purge the history
     fs::remove_dir_all(git_dir)?;
+
+    let git_ignore = target.as_ref().join(GIT_IGNORE);
+    let node_modules = target.as_ref().join(NODE_MODULES);
+    if git_ignore.exists() && node_modules.exists() {
+        let mut ignore_file = utils::fs::read_string(&git_ignore)?;
+        ignore_file = ignore_file.trim_end_matches("\n").to_string();
+        ignore_file.push_str(&format!("\n/{}", NODE_MODULES));
+        utils::fs::write_string(git_ignore, ignore_file)?;
+    }
 
     // Create fresh repository
     let new_repo = Repository::init(target)?;
