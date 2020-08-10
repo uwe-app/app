@@ -8,6 +8,7 @@ edition = "2018"
 config = {version = "0.1", path = "../config" }
 syntax = {version = "0.1", path = "../syntax" }
 toc = {version = "0.1", path = "../toc" }
+utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 lol_html = "0.2"

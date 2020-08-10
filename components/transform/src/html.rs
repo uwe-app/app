@@ -59,7 +59,7 @@ fn scan(
         if t.last_in_text_node() {
             // Must unescape text in code blocks otherwise
             // the syntax highlighting will re-encode them
-            code_buf = unescape(&code_buf);
+            code_buf = utils::entity::unescape(&code_buf);
 
             code_blocks.push(code_buf.clone());
             code_buf.clear();
@@ -204,15 +204,6 @@ fn rewrite(
             ..Default::default()
         },
     )
-}
-
-// Content in code blocks has already been escaped
-// so we need to unescape it before highlighting.
-fn unescape(txt: &str) -> String {
-    txt.replace("&gt;", ">")
-        .replace("&lt;", "<")
-        .replace("&amp;", "&")
-        .replace("&quot;", "\"")
 }
 
 // NOTE: This is necessary because currently the buffer text handlers

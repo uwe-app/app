@@ -1,3 +1,4 @@
+pub mod entity;
 pub mod fs;
 pub mod symlink;
 pub mod url;
