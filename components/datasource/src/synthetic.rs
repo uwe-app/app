@@ -1,13 +1,13 @@
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use serde_json::json;
 
 use collator::CollateInfo;
-use config::{Config, RuntimeOptions, Page, FileInfo, FileOptions, PaginateInfo, PageLink};
+use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
 //use config::link::{self, LinkOptions};
 
-use crate::{Error, Result, DataSourceMap, QueryCache};
+use crate::{DataSourceMap, Error, QueryCache, Result};
 
 // Helper to inject synthetic pages.
 fn create_synthetic(
@@ -17,14 +17,9 @@ fn create_synthetic(
     source: PathBuf,
     template: PathBuf,
     mut data: Page,
-    rewrite_index: bool) -> Result<()> {
-
-    let mut file_info = FileInfo::new(
-        config,
-        options,
-        &source,
-        true,
-    );
+    rewrite_index: bool,
+) -> Result<()> {
+    let mut file_info = FileInfo::new(config, options, &source, true);
 
     let file_opts = FileOptions {
         rewrite_index,
@@ -34,12 +29,7 @@ fn create_synthetic(
 
     let dest = file_info.destination(&file_opts)?;
 
-    data.seal(
-        &dest,
-        config,
-        options,
-        &file_info,
-        Some(template))?;
+    data.seal(&dest, config, options, &file_info, Some(template))?;
 
     // Configure a link for the synthetic page
     let href = collator::href(&source, options, rewrite_index, None)?;
@@ -61,8 +51,8 @@ fn create_file(
     href: String,
     _base: &PathBuf,
     source: PathBuf,
-    target: PathBuf) -> Result<()> {
-
+    target: PathBuf,
+) -> Result<()> {
     let key = Arc::new(source);
     collator::add_file(&key, target, href, info, config, options)?;
 
@@ -70,11 +60,7 @@ fn create_file(
 }
 
 // Copy search runtime files.
-pub fn search(
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo) -> Result<()> {
-
+pub fn search(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref search) = config.search {
         let bundle = search.bundle.is_some() && search.bundle.unwrap();
         if bundle {
@@ -92,11 +78,23 @@ pub fn search(
             let wasm_target = options.target.join(wasm_path);
 
             create_file(
-                config, options, info,
-                js_value, &search_dir, js_source, js_target)?;
+                config,
+                options,
+                info,
+                js_value,
+                &search_dir,
+                js_source,
+                js_target,
+            )?;
             create_file(
-                config, options, info,
-                wasm_value, &search_dir, wasm_source, wasm_target)?;
+                config,
+                options,
+                info,
+                wasm_value,
+                &search_dir,
+                wasm_source,
+                wasm_target,
+            )?;
 
             //println!("COPY THE SEARCH RUNTIME FILES");
             //std::process::exit(1);
@@ -112,12 +110,13 @@ pub fn assign(
     _options: &RuntimeOptions,
     info: &mut CollateInfo,
     map: &DataSourceMap,
-    cache: &mut QueryCache) -> Result<()> {
-
+    cache: &mut QueryCache,
+) -> Result<()> {
     for (q, p) in info.queries.iter() {
-
         let queries = q.to_assign_vec();
-        if queries.is_empty() { continue; }
+        if queries.is_empty() {
+            continue;
+        }
 
         let page = info.pages.get_mut(p).unwrap();
         for query in queries.iter() {
@@ -142,13 +141,15 @@ pub fn each(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     map: &DataSourceMap,
-    cache: &mut QueryCache) -> Result<()> {
-
+    cache: &mut QueryCache,
+) -> Result<()> {
     let queries = info.queries.clone();
 
     for (q, p) in queries.iter() {
         let each = q.to_each_vec();
-        if each.is_empty() { continue; }
+        if each.is_empty() {
+            continue;
+        }
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
@@ -168,9 +169,9 @@ pub fn each(
 
                 if let Some(ref id) = doc.id {
                     // Assign the document to the page data
-                    item_data.extra.insert(
-                        each_query.get_parameter(),
-                        doc.to_value(each_query)?);
+                    item_data
+                        .extra
+                        .insert(each_query.get_parameter(), doc.to_value(each_query)?);
 
                     // Mock a source file to build a destination
                     // respecting the clean URL setting
@@ -187,7 +188,8 @@ pub fn each(
                         mock,
                         p.to_path_buf(),
                         item_data,
-                        rewrite_index)?;
+                        rewrite_index,
+                    )?;
                 } else {
                     return Err(Error::DataSourceDocumentNoId);
                 }
@@ -204,12 +206,14 @@ pub fn pages(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     map: &DataSourceMap,
-    cache: &mut QueryCache) -> Result<()> {
-
+    cache: &mut QueryCache,
+) -> Result<()> {
     let queries = info.queries.clone();
     for (q, p) in queries.iter() {
         let pages_query = q.to_page_vec();
-        if pages_query.is_empty() { continue; }
+        if pages_query.is_empty() {
+            continue;
+        }
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
@@ -270,8 +274,11 @@ pub fn pages(
                 stem = if rewrite_index {
                     stem.join(&page_name)
                 } else {
-                    stem.set_file_name(
-                        format!("{}{}", stem.to_string_lossy().into_owned(), page_name));
+                    stem.set_file_name(format!(
+                        "{}{}",
+                        stem.to_string_lossy().into_owned(),
+                        page_name
+                    ));
                     stem
                 };
 
@@ -333,7 +340,9 @@ pub fn pages(
                 }
 
                 item_data.paginate = Some(paginate);
-                item_data.extra.insert(page_query.get_parameter(), json!(items));
+                item_data
+                    .extra
+                    .insert(page_query.get_parameter(), json!(items));
                 create_synthetic(
                     config,
                     options,
@@ -341,12 +350,11 @@ pub fn pages(
                     mock,
                     file_source,
                     item_data,
-                    rewrite_index)?;
-
+                    rewrite_index,
+                )?;
             }
         }
     }
 
     Ok(())
 }
-

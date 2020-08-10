@@ -47,9 +47,9 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 mod config;
-pub mod indexer;
 mod file;
 pub mod filter;
+pub mod indexer;
 pub mod link;
 mod page;
 pub mod path;
@@ -64,8 +64,8 @@ pub fn get_short_codes_location() -> Result<PathBuf> {
 }
 
 pub use crate::config::*;
-pub use page::{Page, PaginateInfo, PageLink};
-pub use file::{FileType, FileInfo, FileOptions};
-pub use profile::{ProfileName, ProfileSettings, RuntimeOptions, RenderTypes};
+pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
+pub use page::{Page, PageLink, PaginateInfo};
+pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
 pub use search::{SEARCH_JS, SEARCH_WASM};

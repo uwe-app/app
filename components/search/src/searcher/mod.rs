@@ -1,6 +1,6 @@
 pub mod index_analyzer;
 
-use crate::common::{Fields};
+use crate::common::Fields;
 use crate::index::v1;
 use crate::index::v1::structs::{Index, QueryOptions};
 use index_analyzer::{IndexVersion, VersionParseError};
@@ -76,8 +76,8 @@ pub fn search(
     index: &Index,
     version: &IndexVersion,
     query: &str,
-    options: &QueryOptions) -> Result<SearchOutput, SearchError> {
-
+    options: &QueryOptions,
+) -> Result<SearchOutput, SearchError> {
     let search_function = match version {
         IndexVersion::V1 => v1::search::search,
     };

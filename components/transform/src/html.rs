@@ -1,13 +1,8 @@
 use std::collections::HashMap;
 
 use lol_html::{
-    rewrite_str,
+    doc_comments, element, errors::RewritingError, html_content::ContentType, rewrite_str, text,
     RewriteStrSettings,
-    errors::RewritingError,
-    html_content::ContentType,
-    text,
-    element,
-    doc_comments,
 };
 
 use regex::{Captures, Regex};
@@ -15,9 +10,9 @@ use regex::{Captures, Regex};
 use config::transform::HtmlTransformFlags;
 use toc::TableOfContents;
 
-use crate::{Error, Result};
-use crate::text::TextExtraction;
 use crate::cache::TransformCache;
+use crate::text::TextExtraction;
+use crate::{Error, Result};
 
 static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
 static CODE: &str = "pre > code[class]";
@@ -29,8 +24,8 @@ fn scan(
     flags: &HtmlTransformFlags,
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
-    cache: &mut TransformCache) -> std::result::Result<String, RewritingError> {
-
+    cache: &mut TransformCache,
+) -> std::result::Result<String, RewritingError> {
     let mut text_buf = String::new();
     let mut code_buf = String::new();
     let mut title_buf = String::new();
@@ -62,8 +57,7 @@ fn scan(
     let code_block_buffer = text!(CODE, |t| {
         code_buf += t.as_str();
         if t.last_in_text_node() {
-
-            // Must unescape text in code blocks otherwise 
+            // Must unescape text in code blocks otherwise
             // the syntax highlighting will re-encode them
             code_buf = unescape(&code_buf);
 
@@ -91,20 +85,20 @@ fn scan(
     }
 
     if highlight {
-        element_content_handlers.push(code_block_buffer); 
+        element_content_handlers.push(code_block_buffer);
     }
 
     if extract_text {
-        element_content_handlers.push(extract_text_title); 
+        element_content_handlers.push(extract_text_title);
     }
 
     rewrite_str(
         doc,
         RewriteStrSettings {
-            document_content_handlers, 
+            document_content_handlers,
             element_content_handlers,
             ..Default::default()
-        }
+        },
     )
 }
 
@@ -114,8 +108,8 @@ fn rewrite(
     headings: &mut Vec<String>,
     code_blocks: &mut Vec<String>,
     toc: &mut Option<TableOfContents>,
-    cache: &mut TransformCache) -> std::result::Result<String, RewritingError> {
-
+    cache: &mut TransformCache,
+) -> std::result::Result<String, RewritingError> {
     let mut seen_headings: HashMap<String, usize> = HashMap::new();
     let lang_re = Regex::new(r"language-([^\s]+)\s?").unwrap();
 
@@ -132,7 +126,7 @@ fn rewrite(
             let id_attr = el.get_attribute("id");
 
             let mut id = if let Some(ref val) = id_attr {
-                val.to_string() 
+                val.to_string()
             } else {
                 slug::slugify(&value)
             };
@@ -150,9 +144,7 @@ fn rewrite(
                 toc.add(&el.tag_name(), &id, &value)?;
             }
 
-            seen_headings.entry(id)
-                .and_modify(|c| *c += 1)
-                .or_insert(0);
+            seen_headings.entry(id).and_modify(|c| *c += 1).or_insert(0);
         }
         Ok(())
     });
@@ -161,7 +153,7 @@ fn rewrite(
         let value = code_blocks.remove(0);
         let class_name = el.get_attribute("class").unwrap();
         if let Some(captures) = lang_re.captures(&class_name) {
-            let lang_id = captures.get(1).unwrap().as_str(); 
+            let lang_id = captures.get(1).unwrap().as_str();
             if let Some(syntax) = syntax::find(lang_id) {
                 let conf = syntax::conf(None);
                 let highlighted = syntax::highlight(&value, syntax);
@@ -210,24 +202,23 @@ fn rewrite(
         RewriteStrSettings {
             element_content_handlers,
             ..Default::default()
-        }
+        },
     )
 }
 
 // Content in code blocks has already been escaped
 // so we need to unescape it before highlighting.
 fn unescape(txt: &str) -> String {
-    txt
-        .replace("&gt;", ">")
+    txt.replace("&gt;", ">")
         .replace("&lt;", "<")
         .replace("&amp;", "&")
         .replace("&quot;", "\"")
 }
 
 // NOTE: This is necessary because currently the buffer text handlers
-// NOTE: will not fire if there is no text (:empty) but the element 
-// NOTE: handlers will fire which would cause an index out of bounds 
-// NOTE: panic attempting to access the buffered data. To prevent this 
+// NOTE: will not fire if there is no text (:empty) but the element
+// NOTE: handlers will fire which would cause an index out of bounds
+// NOTE: panic attempting to access the buffered data. To prevent this
 // NOTE: we strip the empty elements first.
 //
 // SEE: https://github.com/cloudflare/lol-html/issues/53
@@ -245,14 +236,14 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
     // TODO: and a static toc at the top of the page!
 
     if let Some(groups) = toc_re.captures(doc) {
-        let tag = groups.get(1).unwrap().as_str(); 
-        let class = groups.get(2).unwrap().as_str(); 
-        let from = groups.get(3).unwrap().as_str(); 
-        let to = groups.get(4).unwrap().as_str(); 
+        let tag = groups.get(1).unwrap().as_str();
+        let class = groups.get(2).unwrap().as_str();
+        let from = groups.get(3).unwrap().as_str();
+        let to = groups.get(4).unwrap().as_str();
 
         let markup = toc.to_html_string(tag, class, from, to)?;
         let res = toc_re.replace(doc, markup.as_str());
-        return Ok(res.to_owned().to_string())
+        return Ok(res.to_owned().to_string());
     }
 
     Ok(doc.to_string())
@@ -260,36 +251,34 @@ fn toc_replace(doc: &str, toc: &TableOfContents) -> Result<String> {
 
 fn word_replace(doc: &str, text: &TextExtraction) -> Result<String> {
     let word_re = Regex::new("<words( data-avg=\"([0-9]+)\")? />").unwrap();
-    let res = word_re.replace_all(doc, |caps: &Captures| {
-        let mut value: usize = text.words;
-        let avg_attr = caps.get(2);
-        if let Some(avg) = avg_attr {
-            let avg: usize = match avg.as_str().parse() {
-                Ok(res) => res,
-                Err(_) => 250,
-            };
+    let res = word_re
+        .replace_all(doc, |caps: &Captures| {
+            let mut value: usize = text.words;
+            let avg_attr = caps.get(2);
+            if let Some(avg) = avg_attr {
+                let avg: usize = match avg.as_str().parse() {
+                    Ok(res) => res,
+                    Err(_) => 250,
+                };
 
-            // It doesn't make sense to show zero minutes for reading 
-            // time so we ensure it has a minimum value. Also, we set 
-            // it to two so that it is always a plural value as a workaround
-            // for the pluralization issue so callers can always safely use:
-            //
-            // {{words time=true}} minutes
-            //
-            value = std::cmp::max(value / avg, 2);
-        }
+                // It doesn't make sense to show zero minutes for reading
+                // time so we ensure it has a minimum value. Also, we set
+                // it to two so that it is always a plural value as a workaround
+                // for the pluralization issue so callers can always safely use:
+                //
+                // {{words time=true}} minutes
+                //
+                value = std::cmp::max(value / avg, 2);
+            }
 
-        value.to_string()
-    }).to_string();
+            value.to_string()
+        })
+        .to_string();
 
     Ok(res.to_string())
 }
 
-pub fn apply(
-    doc: &str,
-    flags: &HtmlTransformFlags,
-    cache: &mut TransformCache) -> Result<String> {
-
+pub fn apply(doc: &str, flags: &HtmlTransformFlags, cache: &mut TransformCache) -> Result<String> {
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
 
@@ -297,10 +286,21 @@ pub fn apply(
     let value = scan(&clean, flags, &mut headings, &mut code_blocks, cache)
         .map_err(|e| Error::Rewriting(e.to_string()))?;
 
-    let mut toc = if flags.use_toc() { Some(TableOfContents::new()) } else { None };
+    let mut toc = if flags.use_toc() {
+        Some(TableOfContents::new())
+    } else {
+        None
+    };
 
-    let mut result = rewrite(&value, flags, &mut headings, &mut code_blocks, &mut toc, cache)
-        .map_err(|e| Error::Rewriting(e.to_string()))?;
+    let mut result = rewrite(
+        &value,
+        flags,
+        &mut headings,
+        &mut code_blocks,
+        &mut toc,
+        cache,
+    )
+    .map_err(|e| Error::Rewriting(e.to_string()))?;
 
     if flags.use_toc() {
         result = toc_replace(&result, toc.as_ref().unwrap())?;

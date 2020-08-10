@@ -1,7 +1,7 @@
 use handlebars::*;
 use std::io;
 
-use serde_json::{Value, to_value};
+use serde_json::{to_value, Value};
 
 use config::Page;
 
@@ -72,10 +72,10 @@ pub fn with_parent_context<'rc>(
             match val {
                 Value::Object(ref mut val) => {
                     map.append(val);
-                },
+                }
                 _ => {}
             }
-        },
+        }
         _ => {}
     }
     Ok(local_ctx)

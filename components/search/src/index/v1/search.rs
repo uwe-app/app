@@ -1,9 +1,9 @@
 use super::scores::*;
 use super::structs::*;
+use crate::common::Fields;
 use crate::common::{IndexFromFile, STOPWORDS};
 use crate::config::TitleBoost;
 use crate::searcher::*;
-use crate::common::{Fields};
 use std::cmp::Ordering;
 
 use std::collections::HashMap;
@@ -39,71 +39,77 @@ impl PartialEq for IntermediateExcerpt {
     }
 }
 
-pub fn search_file(index: &IndexFromFile, query: &str, options: &QueryOptions) -> Result<SearchOutput, SearchError> {
+pub fn search_file(
+    index: &IndexFromFile,
+    query: &str,
+    options: &QueryOptions,
+) -> Result<SearchOutput, SearchError> {
     match Index::try_from(index) {
         Err(_e) => Err(SearchError::IndexParseError),
         Ok(index) => {
             search(&index, query, options)
             //let normalized_query = query.to_lowercase();
             //let words_in_query: Vec<String> =
-                //normalized_query.split(' ').map(|s| s.to_string()).collect();
+            //normalized_query.split(' ').map(|s| s.to_string()).collect();
 
             //// Get the containers for each word in the query, and separate them
             //// into intermediate excerpts
             //let mut intermediate_excerpts: Vec<IntermediateExcerpt> = words_in_query
-                //.iter()
-                //.flat_map(|word| index.containers.get_key_value(word))
-                //.map(|(word, ctr)| ContainerWithQuery::new(ctr.to_owned(), word))
-                //.map(|ctr_query| ctr_query.get_intermediate_excerpts(&index))
-                //.flatten()
-                //.collect();
+            //.iter()
+            //.flat_map(|word| index.containers.get_key_value(word))
+            //.map(|(word, ctr)| ContainerWithQuery::new(ctr.to_owned(), word))
+            //.map(|ctr_query| ctr_query.get_intermediate_excerpts(&index))
+            //.flatten()
+            //.collect();
 
             //for mut ie in &mut intermediate_excerpts {
-                //if STOPWORDS.contains(&ie.query.as_str()) {
-                    //ie.score = STOPWORD_SCORE;
-                //}
+            //if STOPWORDS.contains(&ie.query.as_str()) {
+            //ie.score = STOPWORD_SCORE;
+            //}
             //}
 
             //let mut excerpts_by_index: HashMap<EntryIndex, Vec<IntermediateExcerpt>> =
-                //HashMap::new();
+            //HashMap::new();
             //for ie in intermediate_excerpts {
-                //excerpts_by_index
-                    //.entry(ie.entry_index)
-                    //.or_insert_with(Vec::new)
-                    //.push(ie)
+            //excerpts_by_index
+            //.entry(ie.entry_index)
+            //.or_insert_with(Vec::new)
+            //.push(ie)
             //}
 
             //let total_len = &excerpts_by_index.len();
 
             //let mut output_results: Vec<OutputResult> = excerpts_by_index
-                //.iter()
-                //.map(|(entry_index, ies)| {
-                    //let data = EntryAndIntermediateExcerpts {
-                        //entry: index.entries[*entry_index].to_owned(),
-                        //intermediate_excerpts: ies.to_owned(),
-                    //};
-                    //OutputResult::from_data(data, options)
-                //})
-                //.collect();
+            //.iter()
+            //.map(|(entry_index, ies)| {
+            //let data = EntryAndIntermediateExcerpts {
+            //entry: index.entries[*entry_index].to_owned(),
+            //intermediate_excerpts: ies.to_owned(),
+            //};
+            //OutputResult::from_data(data, options)
+            //})
+            //.collect();
             //output_results.sort_by_key(|or| or.entry.title.clone());
             //output_results.sort_by_key(|or| -(or.score as i64));
             //output_results.truncate(options.results as usize);
 
             //Ok(SearchOutput {
-                //results: output_results,
-                //total_hit_count: *total_len,
-                //url_prefix: "".to_string(),
-                ////url_prefix: index.config.url_prefix,
+            //results: output_results,
+            //total_hit_count: *total_len,
+            //url_prefix: "".to_string(),
+            ////url_prefix: index.config.url_prefix,
             //})
         }
     }
 }
 
-pub fn search(index: &Index, query: &str, options: &QueryOptions) -> Result<SearchOutput, SearchError> {
-
+pub fn search(
+    index: &Index,
+    query: &str,
+    options: &QueryOptions,
+) -> Result<SearchOutput, SearchError> {
     let normalized_query = query.to_lowercase();
-    let words_in_query: Vec<String> =
-        normalized_query.split(' ').map(|s| s.to_string()).collect();
+    let words_in_query: Vec<String> = normalized_query.split(' ').map(|s| s.to_string()).collect();
 
     // Get the containers for each word in the query, and separate them
     // into intermediate excerpts
@@ -121,8 +127,7 @@ pub fn search(index: &Index, query: &str, options: &QueryOptions) -> Result<Sear
         }
     }
 
-    let mut excerpts_by_index: HashMap<EntryIndex, Vec<IntermediateExcerpt>> =
-        HashMap::new();
+    let mut excerpts_by_index: HashMap<EntryIndex, Vec<IntermediateExcerpt>> = HashMap::new();
     for ie in intermediate_excerpts {
         excerpts_by_index
             .entry(ie.entry_index)
@@ -324,11 +329,11 @@ impl OutputResult {
                 };
 
                 //let internal_annotations = {
-                    //if let Some(first) = ies.first() {
-                        //first.internal_annotations.clone()
-                    //} else {
-                        //Vec::default()
-                    //}
+                //if let Some(first) = ies.first() {
+                //first.internal_annotations.clone()
+                //} else {
+                //Vec::default()
+                //}
                 //};
 
                 crate::searcher::Excerpt {

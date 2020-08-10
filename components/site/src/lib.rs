@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use cache;
 use config::Config;
@@ -14,10 +14,10 @@ pub enum Error {
     EmptyName,
 
     #[error("Site {name} already exists")]
-    Exists {name: String},
+    Exists { name: String },
 
     #[error("Site {name} does not exist")]
-    NotExists {name: String},
+    NotExists { name: String },
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -91,7 +91,7 @@ pub fn add(project: PathBuf, site_name: Option<String>) -> Result<String> {
     }
 
     if manifest.sites.contains_key(&name) {
-        return Err(Error::Exists {name});
+        return Err(Error::Exists { name });
     }
 
     let mut link_target = cache::get_workspace_dir()?;
@@ -115,7 +115,9 @@ pub fn remove<S: AsRef<str>>(target: S) -> Result<()> {
     let mut manifest = load()?;
 
     if !manifest.sites.contains_key(name) {
-        return Err(Error::NotExists {name: name.to_string()});
+        return Err(Error::NotExists {
+            name: name.to_string(),
+        });
     }
 
     // Remove the symlink
@@ -135,7 +137,7 @@ pub fn list() -> Result<HashMap<String, SiteStatus>> {
     let manifest = load()?;
     for (name, entry) in manifest.sites {
         let ok = Config::load(&entry.project, false).is_ok();
-        let status = SiteStatus {ok, entry};
+        let status = SiteStatus { ok, entry };
         sites.insert(name.to_string(), status);
     }
     Ok(sites)

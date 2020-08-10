@@ -1,8 +1,8 @@
-use std::path::{Path, PathBuf};
 use super::Error;
+use std::path::{Path, PathBuf};
 
-use super::Config;
 use super::profile::{ProfileSettings, RenderTypes, RuntimeOptions};
+use super::Config;
 
 use crate::config::{HTML, INDEX_STEM};
 
@@ -56,7 +56,8 @@ impl<'a> FileInfo<'a> {
         config: &'a Config,
         options: &'a RuntimeOptions,
         file: &'a PathBuf,
-        synthetic: bool) -> Self {
+        synthetic: bool,
+    ) -> Self {
         let file_type = FileInfo::get_type(file, &options.settings);
         Self {
             config,
@@ -81,10 +82,11 @@ impl<'a> FileInfo<'a> {
         false
     }
 
-    fn rewrite_index_file<
-        P: AsRef<Path>,
-        Q: AsRef<Path>>(file: P, result: Q, types: &RenderTypes) -> Option<PathBuf> {
-
+    fn rewrite_index_file<P: AsRef<Path>, Q: AsRef<Path>>(
+        file: P,
+        result: Q,
+        types: &RenderTypes,
+    ) -> Option<PathBuf> {
         let clean_target = file.as_ref();
         if !FileInfo::is_index(&clean_target) {
             if let Some(parent) = clean_target.parent() {
@@ -119,10 +121,8 @@ impl<'a> FileInfo<'a> {
 
     pub fn is_page<P: AsRef<Path>>(p: P, options: &RuntimeOptions) -> bool {
         match FileInfo::get_type(p, &options.settings) {
-            FileType::Markdown | FileType::Template => {
-                true
-            },
-            _ => false
+            FileType::Markdown | FileType::Template => true,
+            _ => false,
         }
     }
 
@@ -161,7 +161,7 @@ impl<'a> FileInfo<'a> {
     }
 
     // Build the output file path.
-    // 
+    //
     // Does not modify the file extension, rewrite the index of change the slug,
     // this is used when we copy over files with a direct 1:1 correlation.
     //
@@ -225,4 +225,3 @@ impl<'a> FileInfo<'a> {
         return Ok(result);
     }
 }
-

@@ -1,6 +1,6 @@
-use std::path::Path;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use std::path::Path;
 
 use super::Index;
 use crate::Result;
@@ -12,7 +12,11 @@ pub fn write<P: AsRef<Path>>(index: &Index, filename: P) -> Result<usize> {
     write_release(index, &mut bufwriter, &write_version)
 }
 
-fn write_release(index: &Index, bufwriter: &mut BufWriter<File>, write_version: &[u8]) -> Result<usize> {
+fn write_release(
+    index: &Index,
+    bufwriter: &mut BufWriter<File>,
+    write_version: &[u8],
+) -> Result<usize> {
     let mut bytes_written: usize = 0;
     let index_bytes = rmp_serde::to_vec(index)?;
     let byte_vectors_to_write = [write_version, index_bytes.as_slice()];

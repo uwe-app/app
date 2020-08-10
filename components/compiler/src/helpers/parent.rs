@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use handlebars::*;
 
-use crate::BuildContext;
 use crate::tree;
+use crate::BuildContext;
 
 use super::with_parent_context;
 
@@ -21,7 +21,6 @@ impl HelperDef for Parent<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -29,7 +28,8 @@ impl HelperDef for Parent<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .to_string();
 
-        let template = h.template()
+        let template = h
+            .template()
             .ok_or_else(|| RenderError::new("Type error in `parent`, block template expected"))?;
 
         let path = PathBuf::from(&base_path);

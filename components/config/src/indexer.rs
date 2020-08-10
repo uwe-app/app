@@ -1,7 +1,7 @@
-use std::cmp::Ordering;
-use std::path::PathBuf;
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
@@ -72,7 +72,7 @@ impl Default for DataSource {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct IndexRequest {
     // The document key to use for the index, may be dot-delimited
-    // to specify a path to the value. If the special `identity` value 
+    // to specify a path to the value. If the special `identity` value
     // is specified then the index is sorted by the generated document id.
     pub key: String,
 
@@ -180,13 +180,15 @@ impl QueryList {
         match self {
             QueryList::One(query) => vec![query.clone()],
             QueryList::Many(items) => items.to_vec(),
-        } 
+        }
     }
 
     pub fn to_assign_vec(&self) -> Vec<IndexQuery> {
         self.to_vec()
             .iter()
-            .filter(|q| (q.each.is_none() || (q.each.is_some() && !q.each.unwrap())) && q.page.is_none())
+            .filter(|q| {
+                (q.each.is_none() || (q.each.is_some() && !q.each.unwrap())) && q.page.is_none()
+            })
             .map(IndexQuery::clone)
             .collect::<Vec<_>>()
     }
@@ -219,7 +221,7 @@ pub struct IndexKey {
 
 impl Ord for IndexKey {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.sort.cmp(&other.sort) 
+        self.sort.cmp(&other.sort)
     }
 }
 
@@ -231,7 +233,7 @@ impl PartialOrd for IndexKey {
 
 impl PartialEq for IndexKey {
     fn eq(&self, other: &Self) -> bool {
-        self.sort == other.sort 
+        self.sort == other.sort
     }
 }
 
@@ -272,22 +274,15 @@ pub struct QueryResult {
 
 impl QueryResult {
     pub fn to_value(&self, query: &IndexQuery) -> Result<Value> {
-
         // When only keys are requested transpose so we don't have
         // the unnecessary `key` field name.
         let keys = query.keys.is_some() && query.keys.unwrap();
         if keys {
             if let Some(ref key) = self.key {
                 match key {
-                    KeyResult::Name(ref name) => {
-                        return Ok(Value::String(name.clone()))
-                    }
-                    KeyResult::Value(val) => {
-                        return Ok(val.clone())
-                    }
-                    KeyResult::Full(ref key_val) => {
-                        return Ok(to_value(key_val.clone())?)
-                    }
+                    KeyResult::Name(ref name) => return Ok(Value::String(name.clone())),
+                    KeyResult::Value(val) => return Ok(val.clone()),
+                    KeyResult::Full(ref key_val) => return Ok(to_value(key_val.clone())?),
                 }
             }
         }

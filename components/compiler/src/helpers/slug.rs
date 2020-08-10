@@ -12,8 +12,9 @@ impl HelperDef for Slug {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
-        let value = h.params().get(0)
+        let value = h
+            .params()
+            .get(0)
             .ok_or_else(|| RenderError::new("Type error in `slug`, expected parameter"))?
             .value()
             .as_str()

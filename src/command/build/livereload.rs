@@ -1,17 +1,17 @@
 use std::net::SocketAddr;
 use std::path::Path;
 
-use log::{info, debug, error};
+use log::{debug, error, info};
 
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
 use warp::ws::Message;
 
-use std::thread::sleep;
-use std::time::Duration;
-use notify::Watcher;
 use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
+use notify::Watcher;
+use std::thread::sleep;
+use std::time::Duration;
 
 use compiler::Compiler;
 //use compiler::invalidator::Invalidator;
@@ -31,8 +31,8 @@ fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
 pub async fn start<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
-    error_cb: ErrorCallback) -> Result<(), Error> {
-
+    error_cb: ErrorCallback,
+) -> Result<(), Error> {
     let (ctx, locales) = workspace::compile_project(project, args).await?;
 
     let host = ctx.options.settings.get_host();
@@ -70,7 +70,6 @@ pub async fn start<P: AsRef<Path>>(
     std::thread::spawn(move || {
         let mut rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
-
             // Get the socket address and websocket transmission channel
             let (addr, url) = bind_rx.await.unwrap();
 
@@ -122,7 +121,9 @@ pub async fn start<P: AsRef<Path>>(
                     .filter_map(|event| {
                         debug!("Received filesystem event: {:?}", event);
                         match event {
-                            Create(path) | Write(path) | Remove(path) | Rename(_, path) => Some(path),
+                            Create(path) | Write(path) | Remove(path) | Rename(_, path) => {
+                                Some(path)
+                            }
                             _ => None,
                         }
                     })
@@ -140,14 +141,13 @@ pub async fn start<P: AsRef<Path>>(
                     match result {
                         Ok(invalidation) => {
                             if let Err(e) = invalidator.invalidate(&source, &invalidation).await {
-
                                 error!("{}", e);
 
                                 let msg = livereload::messages::notify(e.to_string(), true);
                                 let txt = serde_json::to_string(&msg).unwrap();
                                 let _ = ws_tx.send(Message::text(txt));
 
-                                //return error_cb(Error::from(e));
+                            //return error_cb(Error::from(e));
                             } else {
                                 //self.builder.manifest.save()?;
                                 if invalidation.notify {
@@ -157,11 +157,9 @@ pub async fn start<P: AsRef<Path>>(
                                     //println!("Got result {:?}", res);
                                 }
                             }
-
-                        },
-                        Err(e) => return error_cb(Error::from(e))
+                        }
+                        Err(e) => return error_cb(Error::from(e)),
                     }
-
                 }
             }
         });

@@ -18,14 +18,16 @@ impl HelperDef for Random {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
-        let list = h.params().get(0)
+        let list = h
+            .params()
+            .get(0)
             .ok_or_else(|| RenderError::new("Type error in `random`, expected parameter"))?
             .value()
             .as_array()
             .ok_or_else(|| RenderError::new("Type error in `random`, expected array parameter"))?;
 
-        let template = h.template()
+        let template = h
+            .template()
             .ok_or_else(|| RenderError::new("Type error in `random`, block template expected"))?;
 
         if let Some(element) = list.choose(&mut rand::thread_rng()) {
@@ -34,7 +36,8 @@ impl HelperDef for Random {
 
             let mut local_ctx = with_parent_context(ctx, &mut data)?;
 
-            local_ctx.data_mut()
+            local_ctx
+                .data_mut()
                 .as_object_mut()
                 .unwrap()
                 .insert("entry".to_string(), json!(element));

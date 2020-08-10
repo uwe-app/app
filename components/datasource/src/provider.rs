@@ -1,21 +1,21 @@
-use std::io;
-use std::sync::Arc;
-use std::path::PathBuf;
 use std::collections::BTreeMap;
+use std::io;
+use std::path::PathBuf;
 use std::pin::Pin;
-use std::result::{Result as StdResult};
+use std::result::Result as StdResult;
+use std::sync::Arc;
 
 use serde_json::Value;
 
-use tokio::fs::{self, DirEntry};
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
+use tokio::fs::{self, DirEntry};
 
 use collator::CollateInfo;
+use config::indexer::{SourceProvider, SourceType};
 use config::{Config, RuntimeOptions};
-use config::indexer::{SourceType, SourceProvider};
 
-use super::{Result, Error};
 use super::identifier::{ComputeIdentifier, Strategy};
+use super::{Error, Result};
 
 static JSON: &str = "json";
 
@@ -40,7 +40,9 @@ pub struct LoadRequest<'a> {
     pub provider: SourceProvider,
 }
 
-fn find_recursive(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
+fn find_recursive(
+    path: impl Into<PathBuf>,
+) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
     async fn one_level(path: PathBuf, to_visit: &mut Vec<PathBuf>) -> io::Result<Vec<DirEntry>> {
         let mut dir = fs::read_dir(path).await?;
         let mut files = Vec::new();
@@ -55,16 +57,14 @@ fn find_recursive(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<Dir
         Ok(files)
     }
 
-    stream::unfold(vec![path.into()], |mut to_visit| {
-        async {
-            let path = to_visit.pop()?;
-            let file_stream = match one_level(path, &mut to_visit).await {
-                Ok(files) => stream::iter(files).map(Ok).left_stream(),
-                Err(e) => stream::once(async { Err(e) }).right_stream(),
-            };
+    stream::unfold(vec![path.into()], |mut to_visit| async {
+        let path = to_visit.pop()?;
+        let file_stream = match one_level(path, &mut to_visit).await {
+            Ok(files) => stream::iter(files).map(Ok).left_stream(),
+            Err(e) => stream::once(async { Err(e) }).right_stream(),
+        };
 
-            Some((file_stream, to_visit))
-        }
+        Some((file_stream, to_visit))
     })
     .flatten()
 }
@@ -72,26 +72,17 @@ fn find_recursive(path: impl Into<PathBuf>) -> impl Stream<Item = io::Result<Dir
 pub struct Provider {}
 
 impl Provider {
-
     fn deserialize<S: AsRef<str>>(kind: &SourceType, content: S) -> ProviderResult {
         match kind {
-            SourceType::Json => {
-                Ok(serde_json::from_str(content.as_ref())?)
-            },
-            SourceType::Toml => {
-                Ok(toml::from_str(content.as_ref())?)
-            }
-        }  
+            SourceType::Json => Ok(serde_json::from_str(content.as_ref())?),
+            SourceType::Toml => Ok(toml::from_str(content.as_ref())?),
+        }
     }
 
     pub async fn load(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         match req.provider {
-            SourceProvider::Files => {
-                Provider::load_files(req).await
-            },
-            SourceProvider::Pages => {
-                Provider::load_pages(req).await
-            }
+            SourceProvider::Files => Provider::load_files(req).await,
+            SourceProvider::Pages => Provider::load_pages(req).await,
         }
     }
 
@@ -110,22 +101,23 @@ impl Provider {
                 let result = serde_json::to_value(data);
                 match result {
                     Ok(document) => {
-                        let key = ComputeIdentifier::id(
-                            &Strategy::Count, &path, &document, &count);
+                        let key = ComputeIdentifier::id(&Strategy::Count, &path, &document, &count);
                         if docs.contains_key(&key) {
-                            return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
+                            return future::err(Error::DuplicateId {
+                                key,
+                                path: path.to_path_buf(),
+                            });
                         }
 
                         docs.insert(key, Arc::new(document));
-                    },
-                    Err(e) => {
-                        return future::err(Error::from(e))
                     }
+                    Err(e) => return future::err(Error::from(e)),
                 }
                 future::ok(())
-            }).await?;
+            })
+            .await?;
 
-       Ok(docs)
+        Ok(docs)
     }
 
     async fn load_files(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
@@ -141,38 +133,39 @@ impl Provider {
                         let result = Provider::deserialize(&req.kind, &content);
                         match result {
                             Ok(document) => {
-                                let key = ComputeIdentifier::id(&req.strategy, &path, &document, &count);
+                                let key =
+                                    ComputeIdentifier::id(&req.strategy, &path, &document, &count);
                                 if docs.contains_key(&key) {
-                                    return future::err(Error::DuplicateId {key, path: path.to_path_buf()});
+                                    return future::err(Error::DuplicateId {
+                                        key,
+                                        path: path.to_path_buf(),
+                                    });
                                 }
-                                
+
                                 docs.insert(key, Arc::new(document));
-                            },
-                            Err(e) => {
-                                return future::err(Error::from(e))
                             }
+                            Err(e) => return future::err(Error::from(e)),
                         }
-                    },
-                    Err(e) => {
-                        return future::err(Error::from(e))
                     }
+                    Err(e) => return future::err(Error::from(e)),
                 }
 
                 future::ok(())
-            }).await?;
+            })
+            .await?;
         Ok(docs)
     }
 
-    fn find_documents<'a>(req: &'a LoadRequest<'a>)
-        -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>> {
-
+    fn find_documents<'a>(
+        req: &'a LoadRequest<'a>,
+    ) -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>> {
         find_recursive(&req.source)
             .map_err(Error::from)
             .filter(|result| {
                 if let Ok(entry) = result {
                     let path = entry.path();
                     if let Some(ext) = path.extension() {
-                        return future::ready(ext == JSON)
+                        return future::ready(ext == JSON);
                     }
                 }
                 future::ready(false)

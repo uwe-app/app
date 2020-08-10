@@ -33,17 +33,31 @@ pub fn update(options: FetchOptions) -> Result<()> {
         || options.release
         || options.short_code
         || options.syntax
-        || options.search {
-
+        || options.search
+    {
         components = Vec::new();
 
-        if options.blueprint { components.push(CacheComponent::Blueprint); }
-        if options.standalone { components.push(CacheComponent::Standalone); }
-        if options.documentation { components.push(CacheComponent::Documentation); }
-        if options.release { components.push(CacheComponent::Release); }
-        if options.short_code { components.push(CacheComponent::ShortCode); }
-        if options.syntax { components.push(CacheComponent::Syntax); }
-        if options.search { components.push(CacheComponent::Search); }
+        if options.blueprint {
+            components.push(CacheComponent::Blueprint);
+        }
+        if options.standalone {
+            components.push(CacheComponent::Standalone);
+        }
+        if options.documentation {
+            components.push(CacheComponent::Documentation);
+        }
+        if options.release {
+            components.push(CacheComponent::Release);
+        }
+        if options.short_code {
+            components.push(CacheComponent::ShortCode);
+        }
+        if options.syntax {
+            components.push(CacheComponent::Syntax);
+        }
+        if options.search {
+            components.push(CacheComponent::Search);
+        }
     }
 
     cache::update(&prefs, components)?;

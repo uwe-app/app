@@ -1,11 +1,11 @@
 use std::path::Path;
 
-use handlebars::*;
 use crate::BuildContext;
+use handlebars::*;
 
 #[derive(Clone, Copy)]
 pub struct Match<'a> {
-    pub context: &'a BuildContext
+    pub context: &'a BuildContext,
 }
 
 impl HelperDef for Match<'_> {
@@ -17,7 +17,6 @@ impl HelperDef for Match<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.target")?
             .as_json()

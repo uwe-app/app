@@ -1,35 +1,40 @@
+use std::collections::HashMap;
 use std::io;
 use std::mem;
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 
 use chrono::prelude::*;
 
 use log::debug;
 
-use serde::{Deserialize, Serialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
-use super::Error;
-use super::link;
-use super::{Config, FileInfo, RuntimeOptions};
 use super::indexer::QueryList;
+use super::link;
+use super::Error;
+use super::{Config, FileInfo, RuntimeOptions};
 
 /// Attribute to convert from TOML date time to chronos UTC variant
-pub fn from_toml_datetime<'de, D>(deserializer: D) 
-    -> Result<Option<DateTime<Utc>>, D::Error> where D: Deserializer<'de> {
-
+pub fn from_toml_datetime<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
     toml::value::Datetime::deserialize(deserializer).map(|s| {
         let d = s.to_string();
         let dt = if d.contains('T') {
-            DateTime::parse_from_rfc3339(&d).ok().map(|s| s.naive_local())
+            DateTime::parse_from_rfc3339(&d)
+                .ok()
+                .map(|s| s.naive_local())
         } else {
-            NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok().map(|s| s.and_hms(0, 0, 0))
+            NaiveDate::parse_from_str(&d, "%Y-%m-%d")
+                .ok()
+                .map(|s| s.and_hms(0, 0, 0))
         };
 
         if let Some(dt) = dt {
-            return Some(DateTime::<Utc>::from_utc(dt, Utc))
+            return Some(DateTime::<Utc>::from_utc(dt, Utc));
         }
 
         None
@@ -91,10 +96,10 @@ pub struct PaginateInfo {
     // The index into the collection for the
     // first item on this page.
     pub first: usize,
-    // The index into the collection for the 
+    // The index into the collection for the
     // last item on this page.
     pub last: usize,
-    // The actual length of the items in this page, 
+    // The actual length of the items in this page,
     // normally the page size but may be less.
     pub size: usize,
     // List of links for each page
@@ -108,10 +113,9 @@ pub struct PaginateInfo {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct Page {
-
     //
     // Configurable
-    // 
+    //
     pub title: Option<String>,
     pub description: Option<String>,
     pub keywords: Option<String>,
@@ -143,7 +147,7 @@ pub struct Page {
 
     //
     // Reserved
-    // 
+    //
     #[serde(skip_deserializing)]
     pub host: Option<String>,
     #[serde(skip_deserializing)]
@@ -199,7 +203,6 @@ impl Default for Page {
 }
 
 impl Page {
-
     pub fn get_template(&self) -> &PathBuf {
         let file_ctx = self.file.as_ref().unwrap();
         &file_ctx.template
@@ -225,8 +228,8 @@ impl Page {
         config: &Config,
         options: &RuntimeOptions,
         info: &FileInfo,
-        template: Option<PathBuf>) -> Result<(), Error> {
-
+        template: Option<PathBuf>,
+    ) -> Result<(), Error> {
         self.set_language(&options.lang);
         self.host = Some(config.host.clone());
 
@@ -239,7 +242,6 @@ impl Page {
         let mut file_context = FileContext::new(info.file.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
-
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {
             self.updated = Some(file_context.modified.clone());
@@ -250,18 +252,27 @@ impl Page {
 
         // Some useful shortcuts
         if let Some(ref date) = config.date {
-            self.extra.insert("date-formats".to_string(), json!(date.formats));
+            self.extra
+                .insert("date-formats".to_string(), json!(date.formats));
         }
 
         Ok(())
     }
 
-    pub fn get_href<P: AsRef<Path>>(&mut self, p: P, opts: &RuntimeOptions) -> Result<String, Error> {
+    pub fn get_href<P: AsRef<Path>>(
+        &mut self,
+        p: P,
+        opts: &RuntimeOptions,
+    ) -> Result<String, Error> {
         link::absolute(p.as_ref(), opts, Default::default())
     }
 
-    pub fn compute<P: AsRef<Path>>(&mut self, p: P, config: &Config, opts: &RuntimeOptions) -> Result<(), Error> {
-
+    pub fn compute<P: AsRef<Path>>(
+        &mut self,
+        p: P,
+        config: &Config,
+        opts: &RuntimeOptions,
+    ) -> Result<(), Error> {
         self.href = Some(self.get_href(p, opts)?);
 
         debug!("Href: {:?}", self.href);
@@ -272,7 +283,7 @@ impl Page {
             Vec::new()
         };
 
-        // TODO: finalize this page data after computation 
+        // TODO: finalize this page data after computation
         // TODO: build dynamic sort keys like date tuple (year, month, day) etc.
 
         if let Some(ref list) = self.byline {
@@ -281,10 +292,10 @@ impl Page {
                     if let Some(author) = authors.get(id) {
                         authors_list.push(author.clone());
                     } else {
-                        return Err(Error::NoAuthor(id.to_string()))
+                        return Err(Error::NoAuthor(id.to_string()));
                     }
                 } else {
-                    return Err(Error::NoAuthor(id.to_string()))
+                    return Err(Error::NoAuthor(id.to_string()));
                 }
             }
         }
@@ -371,4 +382,3 @@ pub struct Author {
     pub name: String,
     pub link: Option<String>,
 }
-

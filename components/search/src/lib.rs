@@ -5,8 +5,8 @@ pub mod searcher;
 
 use wasm_bindgen::prelude::*;
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use common::IndexFromFile;
 use config::Config;
@@ -61,7 +61,7 @@ impl SearchIndex {
         console_error_panic_hook::set_once();
 
         //let options: QueryOptions =
-            //serde_json::from_str(&opts).unwrap_or(Default::default());
+        //serde_json::from_str(&opts).unwrap_or(Default::default());
 
         // FIXME: handle errors gracefully
         let version = parse_index_version(file).unwrap();
@@ -86,11 +86,12 @@ impl SearchIndex {
     }
 
     pub fn search(&self, query: String) -> String {
-        let search_result = searcher::search(
-            &self.index, &self.version, query.as_str(), &self.options)
-            .and_then(|output| {
-                serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
-            });
+        let search_result =
+            searcher::search(&self.index, &self.version, query.as_str(), &self.options).and_then(
+                |output| {
+                    serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
+                },
+            );
 
         match search_result {
             Ok(res) => res,

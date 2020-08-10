@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use log::warn;
 use inflector::Inflector;
+use log::warn;
 
-use config::{Config, Page, RuntimeOptions, FileInfo, FileType};
+use config::{Config, FileInfo, FileType, Page, RuntimeOptions};
 
 use crate::{Error, Result};
 
@@ -26,8 +26,12 @@ fn file_auto_title<P: AsRef<Path>>(input: P) -> Option<String> {
     None
 }
 
-pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, frontmatter: bool) -> Result<Page> {
-
+pub fn compute<P: AsRef<Path>>(
+    f: P,
+    config: &Config,
+    opts: &RuntimeOptions,
+    frontmatter: bool,
+) -> Result<Page> {
     let file = f.as_ref();
 
     // Start with the global definition
@@ -44,7 +48,9 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, fro
             }
         } else {
             warn!(
-                "Failed to strip prefix for page path {}", f.as_ref().display());
+                "Failed to strip prefix for page path {}",
+                f.as_ref().display()
+            );
         }
     }
 
@@ -58,12 +64,8 @@ pub fn compute<P: AsRef<Path>>(f: P, config: &Config, opts: &RuntimeOptions, fro
         let file_type = FileInfo::get_type(f.as_ref(), &opts.settings);
         let mut conf: frontmatter::Config = Default::default();
         match file_type {
-            FileType::Markdown => {
-                conf = frontmatter::Config::new_markdown(true)
-            }
-            FileType::Template => {
-                conf = frontmatter::Config::new_html(true)
-            }
+            FileType::Markdown => conf = frontmatter::Config::new_markdown(true),
+            FileType::Template => conf = frontmatter::Config::new_html(true),
             _ => {}
         }
 
@@ -91,8 +93,14 @@ pub fn verify(config: &Config, options: &RuntimeOptions) -> Result<()> {
         for (k, _) in pages {
             let pth = options.source.join(utils::url::to_path_separator(k));
             if !pth.exists() || !pth.is_file() {
-                warn!("Check the [pages.\"{}\"] setting references a file", k.clone());
-                warn!("The file {} has probably been moved or renamed", pth.display());
+                warn!(
+                    "Check the [pages.\"{}\"] setting references a file",
+                    k.clone()
+                );
+                warn!(
+                    "The file {} has probably been moved or renamed",
+                    pth.display()
+                );
                 return Err(Error::NoPageFile(pth, k.clone()));
             }
         }

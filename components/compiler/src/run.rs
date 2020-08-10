@@ -4,10 +4,10 @@ use log::info;
 
 use config::{Config, Page, ProfileName};
 
-use crate::Result;
 use crate::context::BuildContext;
-use crate::parser::Parser;
 use crate::draft;
+use crate::parser::Parser;
+use crate::Result;
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
@@ -21,13 +21,18 @@ pub struct ParseData {
 impl ParseData {
     pub fn new(file: PathBuf) -> Self {
         Self {
-            file, 
+            file,
             extract: None,
-        } 
+        }
     }
 }
 
-fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool, config: &Config) -> bool {
+fn should_minify_html<P: AsRef<Path>>(
+    dest: P,
+    tag: &ProfileName,
+    release: bool,
+    config: &Config,
+) -> bool {
     let mut html_extension = false;
     if let Some(ext) = dest.as_ref().extension() {
         html_extension = ext == config::HTML;
@@ -39,7 +44,7 @@ fn should_minify_html<P: AsRef<Path>>(dest: P, tag: &ProfileName, release: bool,
                 if !html.profiles.is_empty() {
                     return html.profiles.contains(tag);
                 }
-            } 
+            }
         }
     }
 
@@ -52,8 +57,12 @@ pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData
     Ok(None)
 }
 
-pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data: &Page) -> Result<Option<ParseData>> {
-
+pub async fn parse(
+    ctx: &BuildContext,
+    parser: &Parser<'_>,
+    file: &PathBuf,
+    data: &Page,
+) -> Result<Option<ParseData>> {
     if draft::is_draft(&data, &ctx.options) {
         return Ok(None);
     }
@@ -66,7 +75,8 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
         &dest,
         &ctx.options.settings.name,
         ctx.options.settings.is_release(),
-        &ctx.config);
+        &ctx.config,
+    );
 
     let mut s = if minify_html {
         minify::html(parser.parse(file, &data)?)
@@ -90,21 +100,23 @@ pub async fn parse(ctx: &BuildContext, parser: &Parser<'_>, file: &PathBuf, data
             html_flags = html.clone();
 
             // Enable transform actions when necessary
-            if !use_text { use_text = html.use_words(); }
-            if !requires_transform { requires_transform = html.is_active() }
+            if !use_text {
+                use_text = html.use_words();
+            }
+            if !requires_transform {
+                requires_transform = html.is_active()
+            }
         }
     }
 
     if requires_transform {
         let mut cache = transform::cache::TransformCache::new()?;
-        cache.syntax_highlight =
-            Some(
-                ctx.config.is_syntax_enabled(&ctx.options.settings.name));
+        cache.syntax_highlight = Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
         cache.text = if use_text {
             Some(transform::text::TextExtraction::new())
         } else {
-            None  
+            None
         };
 
         if html_flags.is_active() || cache.is_active() {

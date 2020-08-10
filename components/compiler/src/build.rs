@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crossbeam::channel;
 use log::{debug, error};
@@ -7,12 +7,12 @@ use log::{debug, error};
 use book::compiler::BookCompiler;
 use config::Page;
 
-use crate::{Error, Result};
 use crate::context::BuildContext;
 use crate::hook;
-use crate::run::{self, ParseData};
 use crate::parser::Parser;
 use crate::resource;
+use crate::run::{self, ParseData};
+use crate::{Error, Result};
 
 pub struct Compiler<'a> {
     pub context: &'a BuildContext,
@@ -27,10 +27,7 @@ impl<'a> Compiler<'a> {
             context.options.settings.is_release(),
         );
 
-        Self {
-            context,
-            book,
-        }
+        Self { context, book }
     }
 
     // Verify the paths are within the site source
@@ -50,13 +47,11 @@ impl<'a> Compiler<'a> {
 
     // Build a single file
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
-
         if let Some(page) = self.get_page(file) {
-
             let render = page.render.is_some() && page.render.unwrap();
             if !render {
                 let file_ctx = page.file.as_ref().unwrap();
-                return run::copy(file, &file_ctx.target).await
+                return run::copy(file, &file_ctx.target).await;
             }
 
             run::parse(self.context, parser, page.get_template(), &page).await
@@ -80,10 +75,15 @@ impl<'a> Compiler<'a> {
         // TODO: support allowing this in the settings
         let fail_fast = true;
 
-        let all = self.context.collation.targets
+        let all = self
+            .context
+            .collation
+            .targets
             .iter()
             .filter(|(p, _)| {
-                if !filter_active { return true }
+                if !filter_active {
+                    return true;
+                }
                 p.starts_with(target)
             })
             .filter(|(p, target)| {
@@ -91,7 +91,7 @@ impl<'a> Compiler<'a> {
                     let file = p.to_path_buf();
                     if manifest.exists(&file) && !manifest.is_dirty(&file, &target, false) {
                         debug!("[NOOP] {}", file.display());
-                        return false
+                        return false;
                     }
                 }
                 true
@@ -120,7 +120,6 @@ impl<'a> Compiler<'a> {
                                 tx.send(res).unwrap();
                             }
                         });
-
                     })
                 }
             });
@@ -140,7 +139,7 @@ impl<'a> Compiler<'a> {
             });
 
             if !errs.is_empty() {
-                return Err(Error::Multi { errs })
+                return Err(Error::Multi { errs });
             }
         } else {
             for p in all {
@@ -155,7 +154,6 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<Vec<ParseData>> {
-
         resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
@@ -164,7 +162,8 @@ impl<'a> Compiler<'a> {
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::Before,
-                    &self.context.options.settings.name),
+                    &self.context.options.settings.name,
+                ),
             )?;
         }
 
@@ -183,8 +182,7 @@ impl<'a> Compiler<'a> {
         // Now compile the books
         if let Some(ref _book) = self.context.config.book {
             let livereload = crate::context::livereload().read().unwrap();
-            self.book
-                .all(&self.context.config, livereload.clone())?;
+            self.book.all(&self.context.config, livereload.clone())?;
         }
 
         if let Some(hooks) = &self.context.config.hook {
@@ -193,11 +191,11 @@ impl<'a> Compiler<'a> {
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::After,
-                    &self.context.options.settings.name),
+                    &self.context.options.settings.name,
+                ),
             )?;
         }
 
         Ok(data)
     }
-
 }

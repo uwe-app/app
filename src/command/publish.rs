@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::{ProfileSettings, Config};
-use config::AwsPublishEnvironment;
 use compiler::BuildContext;
+use config::AwsPublishEnvironment;
+use config::{Config, ProfileSettings};
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
@@ -73,13 +73,12 @@ async fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> 
 async fn publish_aws(
     ctx: BuildContext,
     request: PublishRequest,
-    env: &AwsPublishEnvironment) -> Result<()> {
-
+    env: &AwsPublishEnvironment,
+) -> Result<()> {
     info!("Building local file list");
 
     // Create the list of local build files
-    let mut file_builder =
-        FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
+    let mut file_builder = FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

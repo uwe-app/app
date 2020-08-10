@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use log::{info, error};
+use log::{error, info};
 
 use site;
 

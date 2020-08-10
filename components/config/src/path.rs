@@ -5,7 +5,8 @@ pub fn find_path<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
     #[allow(unused_assignments)]
     let mut parent = Value::Null;
 
-    let parts = needle.as_ref()
+    let parts = needle
+        .as_ref()
         .split(".")
         .map(|p| p.to_string())
         .enumerate()
@@ -16,7 +17,7 @@ pub fn find_path<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
             let mut current: &Value = doc;
             for (i, part) in parts.iter() {
                 if *i == parts.len() - 1 {
-                    return find_field(&part, current)
+                    return find_field(&part, current);
                 } else {
                     parent = find_field(&part, current);
                     if let Value::Null = parent {
@@ -25,7 +26,7 @@ pub fn find_path<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
                     current = &parent;
                 }
             }
-        },
+        }
         _ => {}
     }
     Value::Null
@@ -33,10 +34,10 @@ pub fn find_path<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
 
 pub fn is_truthy(val: &Value) -> bool {
     match val {
-        Value::Object(ref _map) => { return true }
-        Value::Array(ref _list) => { return true }
-        Value::String(ref s) => { return s.len() > 0 }
-        Value::Bool(ref b) => { return *b }
+        Value::Object(ref _map) => return true,
+        Value::Array(ref _list) => return true,
+        Value::String(ref s) => return s.len() > 0,
+        Value::Bool(ref b) => return *b,
         Value::Number(ref n) => {
             if n.is_i64() {
                 return n.as_i64().unwrap() != 0;
@@ -64,16 +65,16 @@ pub fn find_field<S: AsRef<str>>(field: S, parent: &Value) -> Value {
             if let Some(val) = map.get(field.as_ref()) {
                 return val.clone();
             }
-        },
+        }
         Value::Array(ref list) => {
             if let Ok(index) = field.as_ref().parse::<usize>() {
                 if !list.is_empty() && index < list.len() {
                     return list[index].clone();
                 }
             }
-        },
+        }
         _ => {}
-    } 
+    }
     Value::Null
 }
 

@@ -32,12 +32,7 @@ impl From<&IntermediateEntry> for Entry {
     }
 }
 
-pub fn intermediate(
-    buffer: &str,
-    title: &str,
-    url: &str,
-    fields: Fields) -> IntermediateEntry {
-
+pub fn intermediate(buffer: &str, title: &str, url: &str, fields: Fields) -> IntermediateEntry {
     // FIXME
     let stem_algorithm = Some(Algorithm::English);
 
@@ -70,7 +65,6 @@ pub fn build(config: &Config) -> Index {
     // Step 1: Fill entries vector
     let base_directory = Path::new(&config.input.base_directory);
     for file in config.input.files.iter() {
-
         let buffer: String = match &file.source {
             DataSource::Contents(contents) => contents.to_string(),
             DataSource::FilePath(path_string) => {
@@ -94,8 +88,8 @@ pub fn build(config: &Config) -> Index {
         };
 
         let contents: Contents = get_text_contents(&buffer);
-            //get_word_list_generator(filetype)
-                //.create_word_list(&config.input, &buffer);
+        //get_word_list_generator(filetype)
+        //.create_word_list(&config.input, &buffer);
 
         let entry = IntermediateEntry {
             contents,
@@ -112,7 +106,6 @@ pub fn build(config: &Config) -> Index {
 }
 
 pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
-
     let mut idx: Index = Default::default();
 
     let mut containers: HashMap<String, Container> = HashMap::new();

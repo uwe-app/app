@@ -1,16 +1,16 @@
-use std::path::{Path, PathBuf};
 use std::convert::TryInto;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use ignore::{WalkBuilder, WalkState};
 
-use config::{Config, RuntimeOptions, FileInfo, FileOptions};
-use config::link::{self, LinkOptions};
 use config::indexer::QueryList;
+use config::link::{self, LinkOptions};
+use config::{Config, FileInfo, FileOptions, RuntimeOptions};
 
-use super::{Error, Result, CollateInfo};
-use super::manifest::Manifest;
 use super::loader;
+use super::manifest::Manifest;
+use super::{CollateInfo, Error, Result};
 
 pub struct CollateRequest<'a> {
     // When filter is active then only `all`, `pages`, `files` and `dirs`
@@ -28,7 +28,10 @@ pub struct CollateResult {
 impl CollateResult {
     pub fn new(manifest: Option<Manifest>) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(CollateInfo { manifest, ..Default::default() } ))
+            inner: Arc::new(Mutex::new(CollateInfo {
+                manifest,
+                ..Default::default()
+            })),
         }
     }
 }
@@ -36,8 +39,7 @@ impl CollateResult {
 impl TryInto<CollateInfo> for CollateResult {
     type Error = Error;
     fn try_into(self) -> std::result::Result<CollateInfo, Self::Error> {
-        let lock = Arc::try_unwrap(self.inner)
-            .expect("Collate lock still has multiple owners");
+        let lock = Arc::try_unwrap(self.inner).expect("Collate lock still has multiple owners");
         let info = lock.into_inner()?;
         Ok(info)
     }
@@ -57,7 +59,7 @@ pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
                 .iter()
                 .map(|p| {
                     if !p.starts_with(&options.source) {
-                        return options.source.join(p)
+                        return options.source.join(p);
                     }
                     p.to_path_buf()
                 })
@@ -65,7 +67,7 @@ pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
                     if let Some(ref _page) = info.pages.get(&p) {
                         let item = Arc::new(p.clone());
                         if refs.contains(&item) {
-                            return Err(Error::DuplicateSeriesPage(k.to_string(), p.to_path_buf()))
+                            return Err(Error::DuplicateSeriesPage(k.to_string(), p.to_path_buf()));
                         }
                         refs.push(item);
                         return Ok(());
@@ -87,7 +89,7 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
     // for synthetic files outside the system such as those generated
     // by hooks.
     if let Some(ref links) = req.config.link {
-         if let Some(ref allow) = links.allow {
+        if let Some(ref allow) = links.allow {
             for s in allow {
                 let s = s.trim_start_matches("/");
                 let src = req.options.source.join(s);
@@ -99,13 +101,12 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
     Ok(())
 }
 
-pub fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions) -> Result<PathBuf> {
-    let mut info = FileInfo::new(
-        &config,
-        &options,
-        file,
-        false,
-    );
+pub fn get_destination(
+    file: &PathBuf,
+    config: &Config,
+    options: &RuntimeOptions,
+) -> Result<PathBuf> {
+    let mut info = FileInfo::new(&config, &options, file, false);
 
     let file_opts = FileOptions {
         exact: true,
@@ -116,21 +117,29 @@ pub fn get_destination(file: &PathBuf, config: &Config, options: &RuntimeOptions
 }
 
 pub fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) -> Result<()> {
-
     if let Some(existing) = info.links.reverse.get(&href) {
         return Err(Error::LinkCollision(
             href.to_string(),
             existing.to_path_buf(),
-            source.to_path_buf()))
+            source.to_path_buf(),
+        ));
     }
 
     //println!("Link href {:?}", &href);
-    info.links.reverse.entry(Arc::clone(&href)).or_insert(Arc::clone(&source));
+    info.links
+        .reverse
+        .entry(Arc::clone(&href))
+        .or_insert(Arc::clone(&source));
     info.links.sources.entry(source).or_insert(href);
     Ok(())
 }
 
-pub fn href(file: &PathBuf, options: &RuntimeOptions, rewrite: bool, strip: Option<PathBuf>) -> Result<String> {
+pub fn href(
+    file: &PathBuf,
+    options: &RuntimeOptions,
+    rewrite: bool,
+    strip: Option<PathBuf>,
+) -> Result<String> {
     let mut href_opts: LinkOptions = Default::default();
     href_opts.strip = strip;
     href_opts.rewrite = rewrite;
@@ -144,7 +153,7 @@ fn verify_query(list: &QueryList) -> Result<()> {
     for q in queries {
         let each = q.each.is_some() && q.each.unwrap();
         if q.page.is_some() && each {
-            return Err(Error::QueryConflict)
+            return Err(Error::QueryConflict);
         }
     }
     Ok(())
@@ -154,8 +163,8 @@ fn add_page(
     req: &CollateRequest<'_>,
     mut info: &mut CollateInfo,
     key: &Arc<PathBuf>,
-    path: &Path) -> Result<()> {
-
+    path: &Path,
+) -> Result<()> {
     let pth = path.to_path_buf();
 
     let mut page_info = loader::compute(&path, req.config, req.options, true)?;
@@ -175,12 +184,7 @@ fn add_page(
         page_info.layout = Some(layout_path);
     }
 
-    let mut file_info = FileInfo::new(
-        req.config,
-        req.options,
-        &pth,
-        false,
-    );
+    let mut file_info = FileInfo::new(req.config, req.options, &pth, false);
 
     let mut rewrite_index = req.options.settings.should_rewrite_index();
     // Override with rewrite-index page level setting
@@ -217,8 +221,8 @@ pub fn add_file(
     href: String,
     mut info: &mut CollateInfo,
     _config: &Config,
-    _options: &RuntimeOptions) -> Result<()> {
-
+    _options: &RuntimeOptions,
+) -> Result<()> {
     //let pth = key.to_path_buf();
     link(&mut info, Arc::clone(key), Arc::new(href))?;
 
@@ -233,8 +237,8 @@ fn add_other(
     mut info: &mut CollateInfo,
     key: &Arc<PathBuf>,
     path: &Path,
-    is_page: bool) -> Result<()> {
-
+    is_page: bool,
+) -> Result<()> {
     let pth = path.to_path_buf();
 
     // This falls through so it is captured as part
@@ -249,7 +253,12 @@ fn add_other(
     } else if key.starts_with(req.options.get_includes_path()) {
         info.includes.push(Arc::clone(key));
     } else if key.starts_with(req.options.get_resources_path()) {
-        let href = href(&pth, req.options, false, Some(req.options.get_resources_path()))?;
+        let href = href(
+            &pth,
+            req.options,
+            false,
+            Some(req.options.get_resources_path()),
+        )?;
         link(&mut info, Arc::clone(key), Arc::new(href))?;
         info.resources.push(Arc::clone(key));
     } else if key.starts_with(req.options.get_locales()) {
@@ -257,7 +266,6 @@ fn add_other(
     } else if key.starts_with(req.options.get_data_sources_path()) {
         info.data_sources.push(Arc::clone(key));
     } else if !is_page {
-
         let dest = get_destination(&pth, req.config, req.options)?;
         let href = href(&pth, req.options, false, None)?;
         add_file(key, dest, href, info, req.config, req.options)?;
@@ -279,7 +287,9 @@ fn add_other(
 async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
     let walk_filters = if req.filter {
         config::filter::get_filters(req.options, req.config)
-    } else { Vec::new() };
+    } else {
+        Vec::new()
+    };
 
     WalkBuilder::new(&req.options.source)
         .filter_entry(move |e| {
@@ -302,7 +312,8 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     let key = Arc::new(path.to_path_buf());
 
                     let is_data_source = key.starts_with(req.options.get_data_sources_path());
-                    let is_page = !is_data_source && path.is_file() && FileInfo::is_page(&path, req.options);
+                    let is_page =
+                        !is_data_source && path.is_file() && FileInfo::is_page(&path, req.options);
 
                     if is_page {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {
@@ -315,7 +326,6 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         info.dirs.push(Arc::clone(&key));
                     } else {
                         if !req.filter {
-
                             // Store the primary layout
                             if let Some(ref layout) = req.options.settings.layout {
                                 if key.starts_with(layout) {
@@ -328,7 +338,6 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                                 info.errors.push(Error::from(e));
                                 return WalkState::Continue;
                             }
-
                         }
 
                         info.files.push(Arc::clone(&key));
@@ -337,8 +346,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     info.all.push(key);
                 }
                 WalkState::Continue
-            }
-        )
-    });
+            })
+        });
     Ok(())
 }

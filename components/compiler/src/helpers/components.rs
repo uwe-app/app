@@ -8,7 +8,7 @@ use crate::BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct Components<'a> {
-    pub context: &'a BuildContext
+    pub context: &'a BuildContext,
 }
 
 impl HelperDef for Components<'_> {
@@ -20,7 +20,6 @@ impl HelperDef for Components<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -28,8 +27,9 @@ impl HelperDef for Components<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .to_string();
 
-        let template = h.template()
-            .ok_or_else(|| RenderError::new("Type error in `components`, block template expected"))?;
+        let template = h.template().ok_or_else(|| {
+            RenderError::new("Type error in `components`, block template expected")
+        })?;
 
         let source_path = PathBuf::from(&base_path);
         let components = tree::ancestors(self.context, &source_path);
@@ -45,9 +45,7 @@ impl HelperDef for Components<'_> {
 
             let mut local_rc = rc.clone();
             let mut local_ctx = Context::wraps(page)?;
-            let ctx_data = local_ctx.data_mut()
-                .as_object_mut()
-                .unwrap();
+            let ctx_data = local_ctx.data_mut().as_object_mut().unwrap();
 
             ctx_data.insert("href".to_string(), Value::String(href));
             ctx_data.insert("first".to_string(), Value::Bool(first));

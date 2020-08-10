@@ -3,8 +3,8 @@ use std::process::{Command, Stdio};
 
 use log::{debug, info};
 
-use config::{HookConfig, ProfileName};
 use crate::{BuildContext, Error};
+use config::{HookConfig, ProfileName};
 
 pub enum Phase {
     Before,
@@ -12,7 +12,6 @@ pub enum Phase {
 }
 
 pub fn exec(ctx: &BuildContext, hook: &HookConfig) -> Result<(), Error> {
-
     let project_root = ctx.config.get_project();
     debug!("hook root {}", project_root.display());
     if let Ok(root) = project_root.canonicalize() {
@@ -33,7 +32,10 @@ pub fn exec(ctx: &BuildContext, hook: &HookConfig) -> Result<(), Error> {
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
         let node = ctx.config.node.as_ref().unwrap();
-        let node_env = ctx.options.settings.name
+        let node_env = ctx
+            .options
+            .settings
+            .name
             .get_node_env(node.debug.clone(), node.release.clone());
 
         info!("{} {}", cmd, args.join(" "));
@@ -66,7 +68,11 @@ pub fn exec(ctx: &BuildContext, hook: &HookConfig) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase, name: &ProfileName) -> Vec<(String, HookConfig)> {
+pub fn collect(
+    hooks: HashMap<String, HookConfig>,
+    phase: Phase,
+    name: &ProfileName,
+) -> Vec<(String, HookConfig)> {
     hooks
         .into_iter()
         .filter(|(_, v)| {
@@ -78,7 +84,7 @@ pub fn collect(hooks: HashMap<String, HookConfig>, phase: Phase, name: &ProfileN
         })
         .filter(|(_, v)| {
             if let Some(ref profiles) = v.profiles {
-                profiles.contains(name) 
+                profiles.contains(name)
             } else {
                 true
             }

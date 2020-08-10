@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{ProfileName, RuntimeOptions};
 use compiler::redirect;
-use config::{ProfileSettings, Config};
+use config::{Config, ProfileSettings};
+use config::{ProfileName, RuntimeOptions};
 
 use crate::{Error, Result};
 
@@ -20,7 +20,11 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn to_options(name: ProfileName, cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
+fn to_options(
+    name: ProfileName,
+    cfg: &Config,
+    args: &mut ProfileSettings,
+) -> Result<RuntimeOptions> {
     args.name = name.clone();
     args.set_defaults();
 
@@ -74,7 +78,7 @@ fn to_options(name: ProfileName, cfg: &Config, args: &mut ProfileSettings) -> Re
 
     let serve = cfg.serve.as_ref().unwrap();
     if args.host.is_none() {
-        args.host = Some(serve.host.clone()); 
+        args.host = Some(serve.host.clone());
     }
 
     if args.port.is_none() {
@@ -163,7 +167,7 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
         .iter()
         .map(|p| {
             if !p.starts_with(source) {
-                return source.join(p)
+                return source.join(p);
             }
             p.to_path_buf()
         })
@@ -172,12 +176,20 @@ fn prefix(source: &PathBuf, paths: &Vec<PathBuf>) -> Vec<PathBuf> {
 
 fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     // WARN: We cannot merge from args here otherwise we clobber
-    // WARN: other settings from the arg defaults so we 
+    // WARN: other settings from the arg defaults so we
     // WARN: manually override from command line arguments.
-    if args.live.is_some() { settings.live = args.live; }
-    if args.release.is_some() { settings.release = args.release; }
-    if args.host.is_some() { settings.host = args.host.clone(); }
-    if args.port.is_some() { settings.port = args.port; }
+    if args.live.is_some() {
+        settings.live = args.live;
+    }
+    if args.release.is_some() {
+        settings.release = args.release;
+    }
+    if args.host.is_some() {
+        settings.host = args.host.clone();
+    }
+    if args.port.is_some() {
+        settings.port = args.port;
+    }
 }
 
 pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {

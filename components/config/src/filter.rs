@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
-use super::{RuntimeOptions, Config};
+use super::{Config, RuntimeOptions};
 
 pub fn get_filters(options: &RuntimeOptions, config: &Config) -> Vec<PathBuf> {
-
     let source = &options.source;
 
     let mut filters: Vec<PathBuf> = Vec::new();

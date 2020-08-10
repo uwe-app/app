@@ -1,5 +1,5 @@
-use std::fmt;
 use std::env;
+use std::fmt;
 use std::time::Instant;
 
 use search::config::Config;
@@ -87,7 +87,12 @@ impl Argparse {
         }
     }
 
-    pub fn register(&mut self, cmd_name: &str, action: fn(&[String]) -> Result<()>, number_of_args: u8) {
+    pub fn register(
+        &mut self,
+        cmd_name: &str,
+        action: fn(&[String]) -> Result<()>,
+        number_of_args: u8,
+    ) {
         self.commands.push(Command {
             name: cmd_name.to_string(),
             action,
@@ -96,7 +101,12 @@ impl Argparse {
     }
 
     #[allow(dead_code)]
-    pub fn register_range(&mut self, cmd_name: &str, action: fn(&[String]) -> Result<()>, args_range: (u8, u8)) {
+    pub fn register_range(
+        &mut self,
+        cmd_name: &str,
+        action: fn(&[String]) -> Result<()>,
+        args_range: (u8, u8),
+    ) {
         let min = std::cmp::min(args_range.0, args_range.1);
         let max = std::cmp::max(args_range.0, args_range.1);
         let number_of_args = if min == max {

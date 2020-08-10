@@ -11,11 +11,10 @@ use crate::BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct Link<'a> {
-    pub context: &'a BuildContext
+    pub context: &'a BuildContext,
 }
 
 impl HelperDef for Link<'_> {
-
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -24,13 +23,13 @@ impl HelperDef for Link<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
-        let abs = h.hash_get("abs")
+        let abs = h
+            .hash_get("abs")
             .map(|v| v.value())
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
             .ok_or(RenderError::new(
-                "Type error for `link` helper, hash parameter `abs` must be a boolean"
+                "Type error for `link` helper, hash parameter `abs` must be a boolean",
             ))?;
 
         let base_path = rc
@@ -45,7 +44,9 @@ impl HelperDef for Link<'_> {
         let opts = &self.context.options;
         let path = Path::new(&base_path);
 
-        let mut input = h.params().get(0)
+        let mut input = h
+            .params()
+            .get(0)
             .ok_or_else(|| RenderError::new("Type error in `link`, expected parameter"))?
             .value()
             .as_str()
@@ -56,9 +57,7 @@ impl HelperDef for Link<'_> {
         let make_relative = !abs && link_config.relative.is_some() && link_config.relative.unwrap();
 
         let passthrough =
-            !input.starts_with("/")
-            || input.starts_with("http:")
-            || input.starts_with("https:");
+            !input.starts_with("/") || input.starts_with("http:") || input.starts_with("https:");
 
         if passthrough {
             out.write(&input)?;
@@ -98,7 +97,6 @@ impl HelperDef for Link<'_> {
         }
 
         if let Ok(rel) = path.strip_prefix(base) {
-
             let value = if make_relative {
                 let up = "../";
                 let mut value: String = "".to_string();

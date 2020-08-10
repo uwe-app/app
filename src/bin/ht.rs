@@ -12,15 +12,15 @@ use structopt::StructOpt;
 
 use std::panic;
 
-use hypertext::{ProfileSettings, Config, Error};
 use hypertext::command;
+use hypertext::{Config, Error, ProfileSettings};
 use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
 
 fn compiler_error(e: &compiler::Error) {
     match e {
-        compiler::Error::Multi {ref errs} => {
+        compiler::Error::Multi { ref errs } => {
             error!("Compile error ({})", errs.len());
             for e in errs {
                 error!("{}", e);
@@ -36,15 +36,15 @@ fn compiler_error(e: &compiler::Error) {
 
 fn fatal(e: hypertext::Error) {
     match e {
-        hypertext::Error::Compiler ( ref e ) => { return compiler_error(e); }
-        hypertext::Error::Workspace ( ref e ) => {
-            match e {
-                workspace::Error::Compiler (ref e) => {
-                    return compiler_error(e);
-                }
-                _ => {}
-            }
+        hypertext::Error::Compiler(ref e) => {
+            return compiler_error(e);
         }
+        hypertext::Error::Workspace(ref e) => match e {
+            workspace::Error::Compiler(ref e) => {
+                return compiler_error(e);
+            }
+            _ => {}
+        },
         _ => {}
     }
     error!("{}", e);
@@ -153,7 +153,7 @@ struct InitOpts {
     host: Option<String>,
 
     /// Set multiple languages (comma delimited)
-    #[structopt(short="L", long)]
+    #[structopt(short = "L", long)]
     locales: Option<String>,
 
     /// Private key to use for SSH connections

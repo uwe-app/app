@@ -27,8 +27,8 @@ fn write_options<P: AsRef<Path>>(
     prefs: &Preferences,
     lang: Option<String>,
     host: Option<String>,
-    locale_ids: Vec<String>) -> Result<(), Error> {
-
+    locale_ids: Vec<String>,
+) -> Result<(), Error> {
     // This is used later to determine whether a redirect should be created
     let has_custom_lang = lang.is_some() || !locale_ids.is_empty();
 
@@ -47,9 +47,13 @@ fn write_options<P: AsRef<Path>>(
     let target = output.as_ref().to_path_buf();
     let mut config_file = target.clone();
     config_file.push(config::SITE_TOML);
-    let mut site_config: toml::value::Table = toml::from_str(&utils::fs::read_string(&config_file)?)?;
+    let mut site_config: toml::value::Table =
+        toml::from_str(&utils::fs::read_string(&config_file)?)?;
     if let Some(ref lang) = language {
-        site_config.insert(config::LANG_KEY.to_string(), Value::String(lang.to_string()));
+        site_config.insert(
+            config::LANG_KEY.to_string(),
+            Value::String(lang.to_string()),
+        );
     }
     if let Some(host) = host {
         site_config.insert(config::HOST_KEY.to_string(), Value::String(host));
@@ -78,9 +82,15 @@ fn write_options<P: AsRef<Path>>(
 
     let mut fluent: Map<String, Value> = Map::new();
     if let Some(ref lang) = language {
-        fluent.insert(config::FALLBACK_KEY.to_string(), Value::String(lang.to_string()));
+        fluent.insert(
+            config::FALLBACK_KEY.to_string(),
+            Value::String(lang.to_string()),
+        );
     }
-    fluent.insert(config::SHARED_KEY.to_string(), Value::String(config::CORE_FTL.to_string()));
+    fluent.insert(
+        config::SHARED_KEY.to_string(),
+        Value::String(config::CORE_FTL.to_string()),
+    );
     site_config.insert(config::FLUENT_KEY.to_string(), Value::Table(fluent));
 
     let mut redirect: Map<String, Value> = Map::new();
@@ -144,8 +154,10 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
     if !locale_ids.is_empty() {
         if let Some(ref lang) = language {
             if !locale_ids.contains(lang) {
-                return Err(
-                    Error::LanguageMissingFromLocales(lang.clone(), locale_ids.join(",")));
+                return Err(Error::LanguageMissingFromLocales(
+                    lang.clone(),
+                    locale_ids.join(","),
+                ));
             }
         }
     }

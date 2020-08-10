@@ -3,7 +3,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-
     #[error("{0}")]
     Panic(String),
 
@@ -85,4 +84,4 @@ pub type ErrorCallback = fn(Error);
 
 pub mod command;
 
-pub use config::{ProfileSettings, Config};
+pub use config::{Config, ProfileSettings};

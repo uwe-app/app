@@ -15,7 +15,6 @@ impl HelperDef for DateFormat {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // Use local=true to convert to local timezone
         //
         // "%a %b %e %Y"
@@ -23,11 +22,15 @@ impl HelperDef for DateFormat {
         // TODO: support format shortcuts for common formats
         // TODO: support locale aware date/time formats
 
-        let dt = h.params().get(0)
+        let dt = h
+            .params()
+            .get(0)
             .ok_or_else(|| RenderError::new("Type error in `date`, expected date parameter"))?
             .value();
 
-        let fmt = h.params().get(1)
+        let fmt = h
+            .params()
+            .get(1)
             .ok_or_else(|| RenderError::new("Type error in `date`, expected format parameter"))?
             .value()
             .as_str()

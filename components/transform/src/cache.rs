@@ -1,7 +1,7 @@
 use regex::Regex;
 
-use crate::Result;
 use crate::text::TextExtraction;
+use crate::Result;
 
 #[derive(Debug)]
 pub struct TransformCache {
@@ -17,7 +17,6 @@ pub struct TransformCache {
 }
 
 impl TransformCache {
-
     pub fn new() -> Result<Self> {
         Ok(Self {
             words_re: Regex::new(r"\b?\w\b")?,
@@ -35,7 +34,6 @@ impl TransformCache {
     }
 
     pub fn is_active(&self) -> bool {
-        self.use_text_extraction()
-            || self.use_syntax_highlight()
+        self.use_text_extraction() || self.use_syntax_highlight()
     }
 }

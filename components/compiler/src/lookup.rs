@@ -1,14 +1,14 @@
-use std::path::PathBuf;
 use crate::BuildContext;
+use std::path::PathBuf;
 
 fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
     let mut s = s.as_ref().to_string();
     if !s.starts_with("/") {
-        s = format!("/{}", s); 
+        s = format!("/{}", s);
     }
     // We got a hint with the trailing slash that we should look for an index page
     if s != "/" && s.ends_with("/") {
-        s.push_str(config::INDEX_HTML); 
+        s.push_str(config::INDEX_HTML);
     }
     s
 }
@@ -34,4 +34,3 @@ pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
 pub fn exists(ctx: &BuildContext, href: &str) -> bool {
     lookup(ctx, href).is_some()
 }
-

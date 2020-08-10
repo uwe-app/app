@@ -1,7 +1,7 @@
-use std::path::Path;
 use log::info;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 
 use warp::http::Uri;
 
@@ -88,7 +88,10 @@ fn validate_redirect<S: AsRef<str>>(
     key = key.trim_end_matches("/").to_string();
 
     if stack.contains(&key) {
-        return Err(Error::CyclicRedirect {stack: stack.join(" <-> "), key: key.clone()});
+        return Err(Error::CyclicRedirect {
+            stack: stack.join(" <-> "),
+            key: key.clone(),
+        });
     }
 
     stack.push(key);

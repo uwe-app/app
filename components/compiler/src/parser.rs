@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use log::warn;
 
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
-use config::{Page};
+use config::Page;
 use locale::Locales;
 
 use crate::{Error, Result};
@@ -38,7 +38,7 @@ impl<'a> Parser<'a> {
             } else {
                 warn!("Short codes are enabled but the short code cache does not exist.");
                 warn!("Use the `fetch` command to download the short codes repository.");
-                return Err(Error::NoShortCodeCache(short_codes))
+                return Err(Error::NoShortCodeCache(short_codes));
             }
         }
 
@@ -49,28 +49,27 @@ impl<'a> Parser<'a> {
         }
 
         // Configure helpers
-        handlebars.register_helper("partial",
-            Box::new(helpers::partial::Partial { context }));
-        handlebars.register_helper("children",
-            Box::new(helpers::children::Children { context }));
-        handlebars.register_helper("livereload",
-            Box::new(helpers::livereload::LiveReload { context }));
-        handlebars.register_helper("parent",
-            Box::new(helpers::parent::Parent { context }));
-        handlebars.register_helper("link",
-            Box::new(helpers::link::Link { context }));
-        handlebars.register_helper("md",
-            Box::new(helpers::markdown::Markdown { context }));
-        handlebars.register_helper("components",
-            Box::new(helpers::components::Components { context }));
-        handlebars.register_helper("match",
-            Box::new(helpers::matcher::Match { context }));
-        handlebars.register_helper("series",
-            Box::new(helpers::series::Series{ context }));
+        handlebars.register_helper("partial", Box::new(helpers::partial::Partial { context }));
+        handlebars.register_helper(
+            "children",
+            Box::new(helpers::children::Children { context }),
+        );
+        handlebars.register_helper(
+            "livereload",
+            Box::new(helpers::livereload::LiveReload { context }),
+        );
+        handlebars.register_helper("parent", Box::new(helpers::parent::Parent { context }));
+        handlebars.register_helper("link", Box::new(helpers::link::Link { context }));
+        handlebars.register_helper("md", Box::new(helpers::markdown::Markdown { context }));
+        handlebars.register_helper(
+            "components",
+            Box::new(helpers::components::Components { context }),
+        );
+        handlebars.register_helper("match", Box::new(helpers::matcher::Match { context }));
+        handlebars.register_helper("series", Box::new(helpers::series::Series { context }));
 
         if context.config.search.is_some() {
-            handlebars.register_helper("search",
-                Box::new(helpers::search::Embed{ context }));
+            handlebars.register_helper("search", Box::new(helpers::search::Embed { context }));
         }
 
         handlebars.register_helper("json", Box::new(helpers::json::Debug));
@@ -79,10 +78,20 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
         handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
 
-        handlebars.register_helper("next",
-            Box::new(helpers::sibling::Sibling {name: String::from("next"), amount: 1}));
-        handlebars.register_helper("previous",
-            Box::new(helpers::sibling::Sibling {name: String::from("previous"), amount: -1}));
+        handlebars.register_helper(
+            "next",
+            Box::new(helpers::sibling::Sibling {
+                name: String::from("next"),
+                amount: 1,
+            }),
+        );
+        handlebars.register_helper(
+            "previous",
+            Box::new(helpers::sibling::Sibling {
+                name: String::from("previous"),
+                amount: -1,
+            }),
+        );
 
         if let Some(loader) = &locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
@@ -115,15 +124,23 @@ impl<'a> Parser<'a> {
             handlebars.register_template_file(&layout_name, &layout)?;
         }
 
-        Ok(Parser { context, handlebars })
+        Ok(Parser {
+            context,
+            handlebars,
+        })
     }
 
     fn resolve(&self, file: &PathBuf) -> Option<&PathBuf> {
-        if let Some(ref layout) = self.context.collation.layouts.get(&Arc::new(file.to_path_buf())) {
-            return Some(layout)
+        if let Some(ref layout) = self
+            .context
+            .collation
+            .layouts
+            .get(&Arc::new(file.to_path_buf()))
+        {
+            return Some(layout);
         }
         if let Some(ref layout) = self.context.collation.layout {
-            return Some(layout)
+            return Some(layout);
         }
         None
     }
@@ -131,28 +148,32 @@ impl<'a> Parser<'a> {
     fn get_front_matter_config(&self, file: &PathBuf) -> frontmatter::Config {
         if let Some(ext) = file.extension() {
             if ext == config::HTML {
-                return frontmatter::Config::new_html(false)
-            } 
+                return frontmatter::Config::new_html(false);
+            }
         }
         frontmatter::Config::new_markdown(false)
     }
 
     fn layout(&self, data: &Page, layout: &PathBuf) -> Result<String> {
         let layout_name = layout.to_string_lossy().into_owned();
-        return self.handlebars.render(&layout_name, data).map_err(Error::from)
+        return self
+            .handlebars
+            .render(&layout_name, data)
+            .map_err(Error::from);
     }
 
     fn standalone(&self, file: &PathBuf, data: &Page) -> Result<String> {
-        let (content, _has_fm, _fm) =
-            frontmatter::load(file, self.get_front_matter_config(file))?;
-        self.handlebars.render_template(&content, data).map_err(Error::from)
+        let (content, _has_fm, _fm) = frontmatter::load(file, self.get_front_matter_config(file))?;
+        self.handlebars
+            .render_template(&content, data)
+            .map_err(Error::from)
     }
 
     pub fn parse(&self, file: &PathBuf, data: &Page) -> Result<String> {
         // Explicitly marked as standalone
         if let Some(standalone) = data.standalone {
             if standalone {
-                return self.standalone(file, data)
+                return self.standalone(file, data);
             }
         }
 

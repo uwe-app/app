@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use handlebars::*;
 use serde_json::Value;
 
-use crate::BuildContext;
 use crate::tree::{self, ListOptions};
+use crate::BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct Children<'a> {
@@ -20,7 +20,6 @@ impl HelperDef for Children<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -28,7 +27,8 @@ impl HelperDef for Children<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .to_string();
 
-        let template = h.template()
+        let template = h
+            .template()
             .ok_or_else(|| RenderError::new("Type error in `children`, block template expected"))?;
 
         let path = PathBuf::from(&base_path);
@@ -45,13 +45,13 @@ impl HelperDef for Children<'_> {
         let list_result = tree::listing(self.context, &list_opts);
         match list_result {
             Ok(entries) => {
-
                 for li in entries {
                     let mut local_rc = rc.clone();
                     let mut local_ctx = Context::wraps(li)?;
                     if let Some(ref file_ctx) = li.file {
                         if file_ctx.source == path {
-                            local_ctx.data_mut()
+                            local_ctx
+                                .data_mut()
                                 .as_object_mut()
                                 .unwrap()
                                 .insert("self".to_string(), Value::Bool(true));

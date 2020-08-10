@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use super::{RuntimeOptions, Error, Result};
+use super::{Error, Result, RuntimeOptions};
 
 use super::config::INDEX_STEM;
 
@@ -50,7 +50,11 @@ fn is_home_index<P: AsRef<Path>>(p: P) -> bool {
 fn to_href<R: AsRef<Path>>(rel: R, options: LinkOptions) -> Result<String> {
     let rel = rel.as_ref();
 
-    let mut href = if options.leading { "/".to_string() } else { "".to_string() };
+    let mut href = if options.leading {
+        "/".to_string()
+    } else {
+        "".to_string()
+    };
     let value = if options.slashes {
         utils::url::to_href_separator(&rel)
     } else {
@@ -84,7 +88,11 @@ pub fn asset<F: AsRef<Path>, S: AsRef<Path>>(file: F, source: S, options: LinkOp
 // relative to the source. The resulting href
 // can be passed to the link helper to get a
 // relative path.
-pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOptions) -> Result<String> {
+pub fn absolute<F: AsRef<Path>>(
+    file: F,
+    opts: &RuntimeOptions,
+    options: LinkOptions,
+) -> Result<String> {
     let src = if let Some(ref source) = options.strip {
         source
     } else {
@@ -93,14 +101,16 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
 
     let page = file.as_ref();
     if !page.starts_with(src) {
-        return Err(
-            Error::PageOutsideSource(page.to_path_buf(), src.to_path_buf()));
+        return Err(Error::PageOutsideSource(
+            page.to_path_buf(),
+            src.to_path_buf(),
+        ));
     }
 
     let mut rel = page.strip_prefix(src)?.to_path_buf();
 
     if is_home_index(&rel) {
-        return Ok("/".to_string())
+        return Ok("/".to_string());
     }
 
     let rewrite_index = opts.settings.should_rewrite_index();
@@ -121,7 +131,6 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
                 }
             }
         }
-
     }
 
     if options.transpose {
@@ -140,9 +149,9 @@ pub fn absolute<F: AsRef<Path>>(file: F, opts: &RuntimeOptions, options: LinkOpt
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-    use crate::{Config, RuntimeOptions};
     use crate::link::*;
+    use crate::{Config, RuntimeOptions};
+    use std::path::PathBuf;
 
     #[test]
     fn outside_source() -> Result<()> {

@@ -24,19 +24,41 @@ impl HelperDef for Sibling {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
-        let list = h.params().get(0)
-            .ok_or_else(|| RenderError::new(format!("Type error in `{}`, expected parameter at index 0", self.name)))?
+        let list = h
+            .params()
+            .get(0)
+            .ok_or_else(|| {
+                RenderError::new(format!(
+                    "Type error in `{}`, expected parameter at index 0",
+                    self.name
+                ))
+            })?
             .value()
             .as_array()
-            .ok_or_else(|| RenderError::new(format!("Type error in `{}`, expected array parameter", self.name)))?;
+            .ok_or_else(|| {
+                RenderError::new(format!(
+                    "Type error in `{}`, expected array parameter",
+                    self.name
+                ))
+            })?;
 
-        let current = h.params().get(1)
-            .ok_or_else(|| RenderError::new(format!("Type error in `{}`, expected parameter at index 1", self.name)))?
+        let current = h
+            .params()
+            .get(1)
+            .ok_or_else(|| {
+                RenderError::new(format!(
+                    "Type error in `{}`, expected parameter at index 1",
+                    self.name
+                ))
+            })?
             .value();
 
-        let template = h.template()
-            .ok_or_else(|| RenderError::new(format!("Type error in `{}`, block template expected", self.name)))?;
+        let template = h.template().ok_or_else(|| {
+            RenderError::new(format!(
+                "Type error in `{}`, block template expected",
+                self.name
+            ))
+        })?;
 
         if list.len() > 1 {
             let pos = list.iter().position(|i| i == current);
@@ -47,7 +69,8 @@ impl HelperDef for Sibling {
                     let mut local_rc = rc.clone();
                     let mut local_ctx = Context::wraps(ctx.data())?;
 
-                    local_ctx.data_mut()
+                    local_ctx
+                        .data_mut()
                         .as_object_mut()
                         .unwrap()
                         .insert("entry".to_string(), json!(sibling));
@@ -56,8 +79,10 @@ impl HelperDef for Sibling {
                     return Ok(());
                 }
             } else {
-                return Err(
-                    RenderError::new(format!("Type error in `{}`, element is not in the array", self.name))) 
+                return Err(RenderError::new(format!(
+                    "Type error in `{}`, element is not in the array",
+                    self.name
+                )));
             }
         }
 

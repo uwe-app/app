@@ -1,7 +1,7 @@
+use std::collections::HashMap;
+use std::convert::From;
 use std::fmt;
 use std::path::PathBuf;
-use std::convert::From;
-use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
@@ -24,17 +24,13 @@ pub enum ProfileName {
 
 impl Serialize for ProfileName {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer {
+    where
+        S: Serializer,
+    {
         match *self {
-            ProfileName::Debug => {
-                serializer.serialize_str(DEBUG)
-            },
-            ProfileName::Release => {
-                serializer.serialize_str(RELEASE)
-            },
-            ProfileName::Custom(ref val) => {
-                serializer.serialize_str(val)
-            },
+            ProfileName::Debug => serializer.serialize_str(DEBUG),
+            ProfileName::Release => serializer.serialize_str(RELEASE),
+            ProfileName::Custom(ref val) => serializer.serialize_str(val),
         }
     }
 }
@@ -52,7 +48,7 @@ impl From<String> for ProfileName {
         } else if s == RELEASE {
             ProfileName::Release
         } else {
-            ProfileName::Custom(s) 
+            ProfileName::Custom(s)
         }
     }
 }
@@ -188,23 +184,32 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
-
     pub fn get_host_url(&self, conf: &config::Config) -> String {
         let scheme = self.scheme.as_ref().unwrap();
         format!("{}{}{}", scheme, config::SCHEME_DELIMITER, conf.host)
     }
 
     pub fn set_defaults(&mut self) {
-        if let None = self.strict { self.strict = Some(true); } 
-        if let None = self.parallel { self.parallel = Some(true); } 
-        if let None = self.pristine { self.pristine = Some(true); } 
-        if let None = self.incremental { self.incremental = Some(false); } 
-        if let None = self.collate { self.collate = Some(true); } 
+        if let None = self.strict {
+            self.strict = Some(true);
+        }
+        if let None = self.parallel {
+            self.parallel = Some(true);
+        }
+        if let None = self.pristine {
+            self.pristine = Some(true);
+        }
+        if let None = self.incremental {
+            self.incremental = Some(false);
+        }
+        if let None = self.collate {
+            self.collate = Some(true);
+        }
     }
 
     pub fn get_host(&self) -> String {
         if let Some(ref host) = self.host {
-            host.clone() 
+            host.clone()
         } else {
             config::HOST.to_string()
         }
@@ -300,7 +305,8 @@ impl RuntimeOptions {
     }
 
     pub fn get_data_sources_path(&self) -> PathBuf {
-        self.source.join(self.settings.data_sources.as_ref().unwrap())
+        self.source
+            .join(self.settings.data_sources.as_ref().unwrap())
     }
 
     pub fn get_resources_path(&self) -> PathBuf {
@@ -310,7 +316,6 @@ impl RuntimeOptions {
     pub fn get_locales(&self) -> PathBuf {
         self.source.join(self.settings.locales.as_ref().unwrap())
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -323,11 +328,12 @@ impl Default for RenderTypes {
     fn default() -> Self {
         let mut types: HashMap<String, PageType> = HashMap::new();
         types.insert(
-            config::MD.to_string(), 
+            config::MD.to_string(),
             PageType {
                 markdown: Some(true),
                 map: Some(config::HTML.to_string()),
-            });
+            },
+        );
         Self { types }
     }
 }
@@ -335,10 +341,7 @@ impl Default for RenderTypes {
 impl RenderTypes {
     // Get list of file extensions to render
     pub fn render(&self) -> Vec<String> {
-        self.types
-            .keys()
-            .map(|v| v.to_string())
-            .collect::<Vec<_>>()
+        self.types.keys().map(|v| v.to_string()).collect::<Vec<_>>()
     }
 
     // Get the extension mapping

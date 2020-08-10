@@ -18,7 +18,9 @@ pub struct Manifest {
 
 impl Manifest {
     pub fn new() -> Self {
-        Manifest {map: HashMap::new()}
+        Manifest {
+            map: HashMap::new(),
+        }
     }
 
     fn get_entry<P: AsRef<Path>>(&self, file: P) -> Option<ManifestEntry> {
@@ -31,7 +33,9 @@ impl Manifest {
     }
 
     pub fn is_dirty<P: AsRef<Path>, D: AsRef<Path>>(&self, file: P, dest: D, force: bool) -> bool {
-        if force || !dest.as_ref().exists() { return true; }
+        if force || !dest.as_ref().exists() {
+            return true;
+        }
         if let Some(entry) = self.map.get(&file.as_ref().to_path_buf()) {
             if let Some(current) = self.get_entry(file) {
                 if current.modified > entry.modified {

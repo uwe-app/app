@@ -6,10 +6,10 @@ enum State {
 
 // Minify an HTML string.
 //
-// Designed so it doesn't break your markup (not overly agressive) 
+// Designed so it doesn't break your markup (not overly agressive)
 // and so it does not require parsing a DOM tree (fast).
 //
-// Finds consecutive sections of whitespace between nodes and ignores 
+// Finds consecutive sections of whitespace between nodes and ignores
 // them.
 pub fn html<S: AsRef<str>>(content: S) -> String {
     let s = content.as_ref();
@@ -25,18 +25,18 @@ pub fn html<S: AsRef<str>>(content: S) -> String {
             }
 
             tmp = "".to_string();
-            state = State::Inside; 
+            state = State::Inside;
         } else if c == '>' {
             state = State::Between;
             empty = true;
-            buf.push(c); 
+            buf.push(c);
             continue;
         }
 
         match state {
             State::None | State::Inside => {
-                buf.push(c); 
-            },
+                buf.push(c);
+            }
             _ => {
                 empty = empty && c.is_whitespace();
                 tmp.push(c);

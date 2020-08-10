@@ -29,7 +29,7 @@ pub enum Error {
     TooManyRedirects(usize),
 
     #[error("Cyclic redirect: {stack} <-> {key}")]
-    CyclicRedirect{ stack: String, key: String },
+    CyclicRedirect { stack: String, key: String },
 
     #[error("Resources not a directory {0}")]
     ResourceNotDirectory(PathBuf),

@@ -12,13 +12,13 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
-use super::profile::{ProfileName, ProfileSettings};
-use super::page::{Author, Page};
-use super::Error;
 use super::indexer::{DataBase, IndexRequest};
-use super::syntax::SyntaxConfig;
+use super::page::{Author, Page};
+use super::profile::{ProfileName, ProfileSettings};
 use super::search::SearchConfig;
+use super::syntax::SyntaxConfig;
 use super::transform::TransformConfig;
+use super::Error;
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
@@ -176,10 +176,9 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
         if let Some(ref syntax) = self.syntax {
-            return syntax.is_enabled(name)
+            return syntax.is_enabled(name);
         }
         false
     }
@@ -292,7 +291,7 @@ impl Config {
 
                 if let Some(db) = cfg.db.as_mut() {
                     if let Some(collators) = db.load.as_mut() {
-                        for(_, v) in collators {
+                        for (_, v) in collators {
                             if let Some(ref from) = v.from {
                                 if from.is_relative() {
                                     let mut tmp = build.source.clone();
@@ -551,7 +550,7 @@ pub struct MinifyConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyFormat {
-    pub profiles: Vec<ProfileName>
+    pub profiles: Vec<ProfileName>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

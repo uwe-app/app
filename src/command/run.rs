@@ -1,17 +1,17 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::net::{SocketAddr, ToSocketAddrs};
+use std::path::PathBuf;
 
+use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
-use tokio::sync::broadcast;
 use warp::http::Uri;
 use warp::ws::Message;
 
 use log::{error, info};
 
-use server::{serve_static, WebServerOptions};
 use crate::Error;
+use server::{serve_static, WebServerOptions};
 
 #[derive(Debug)]
 pub struct ServeOptions {
@@ -35,7 +35,6 @@ pub async fn serve(
     ws_notify: broadcast::Sender<Message>,
     bind: oneshot::Sender<(SocketAddr, String)>,
 ) -> Result<(), Error> {
-
     let address = format!("{}:{}", options.host, options.port);
     let sockaddr: SocketAddr = address
         .to_socket_addrs()?

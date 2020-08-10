@@ -8,7 +8,7 @@ pub enum Error {
     QueryType,
 
     #[error("Duplicate document id {key} ({path})")]
-    DuplicateId {key: String, path: PathBuf},
+    DuplicateId { key: String, path: PathBuf },
 
     #[error("Type error building index, keys must be string values")]
     IndexKeyType,
@@ -29,10 +29,10 @@ pub enum Error {
     NoIndex(String),
 
     #[error("No configuration {conf} for data source {key}")]
-    NoDataSourceConf {conf: String, key: String},
+    NoDataSourceConf { conf: String, key: String },
 
     #[error("No {docs} directory for data source {key}")]
-    NoDataSourceDocuments {docs: PathBuf, key: String},
+    NoDataSourceDocuments { docs: PathBuf, key: String },
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

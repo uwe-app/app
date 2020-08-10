@@ -18,41 +18,47 @@ impl HelperDef for Embed<'_> {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // The identifier for which search index to use
-        let id = h.hash_get("id")
+        let id = h
+            .hash_get("id")
             .map(|v| v.value())
             .and_then(|v| v.as_str())
             .ok_or(RenderError::new(
-                "Type error for `search` helper, hash parameter `id` must be a string"
-            ))?.to_string();
+                "Type error for `search` helper, hash parameter `id` must be a string",
+            ))?
+            .to_string();
 
         // Are we writing the script? Otherwise we print the embed markup.
-        let script = h.hash_get("script")
+        let script = h
+            .hash_get("script")
             .map(|v| v.value())
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
             .ok_or(RenderError::new(
-                "Type error for `search` helper, hash parameter `script` must be a boolean"
+                "Type error for `search` helper, hash parameter `script` must be a boolean",
             ))?;
 
         // Customize the class for the embed wrapper element (embed)
-        let class = h.hash_get("class")
+        let class = h
+            .hash_get("class")
             .map(|v| v.value())
             .or(Some(&json!("search-wrapper")))
             .and_then(|v| v.as_str())
             .ok_or(RenderError::new(
-                "Type error for `search` helper, hash parameter `class` must be a string"
-            ))?.to_string();
+                "Type error for `search` helper, hash parameter `class` must be a string",
+            ))?
+            .to_string();
 
         // Set the search input placeholder (embed)
-        let placeholder = h.hash_get("placeholder")
+        let placeholder = h
+            .hash_get("placeholder")
             .map(|v| v.value())
             .or(Some(&json!("Keywords")))
             .and_then(|v| v.as_str())
             .ok_or(RenderError::new(
-                "Type error for `search` helper, hash parameter `placeholder` must be a string"
-            ))?.to_string();
+                "Type error for `search` helper, hash parameter `placeholder` must be a string",
+            ))?
+            .to_string();
 
         // This helper is conditional on the search config so it
         // is safe to unwrap
@@ -60,8 +66,10 @@ impl HelperDef for Embed<'_> {
 
         let search_item = search.items.get(&id);
         if search_item.is_none() {
-            return Err(RenderError::new(
-                format!("Type error for `search` helper, settings for `{}` search index not found", &id)))
+            return Err(RenderError::new(format!(
+                "Type error for `search` helper, settings for `{}` search index not found",
+                &id
+            )));
         }
 
         let search_config = search_item.unwrap();
@@ -89,26 +97,20 @@ impl HelperDef for Embed<'_> {
                             excerpts_per_result: {}
                         }}
                     }});",
-                    &id,
-                    index_url,
-                    &wasm,
-                    &results,
-                    &excerpt_buffer,
-                    &excerpts_per_result,
+                &id, index_url, &wasm, &results, &excerpt_buffer, &excerpts_per_result,
             );
 
-            format!("<script src=\"{}\"></script><script>{}</script>", js, inline)
-
+            format!(
+                "<script src=\"{}\"></script><script>{}</script>",
+                js, inline
+            )
         } else {
             format!(
                 "<div class=\"{}\">
                   <input data-search=\"{}\" placeholder=\"{}\" class=\"search-input\"></input>
                   <div data-search=\"{}-output\" class=\"search-output\"></div>
                 </div>",
-                &class,
-                &id,
-                &placeholder,
-                &id
+                &class, &id, &placeholder, &id
             )
         };
         out.write(&markup)?;

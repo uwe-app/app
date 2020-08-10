@@ -36,16 +36,21 @@ impl PartialEq for Heading {
 
 impl Heading {
     pub fn parse(tag_name: &str, id: &str, text: &str) -> Result<Self> {
-
-        let depth = if tag_name == "h1" { 0 }
-            else if tag_name == "h2" { 1 } 
-            else if tag_name == "h3" { 2 }
-            else if tag_name == "h4" { 3 }
-            else if tag_name == "h5" { 4 }
-            else if tag_name == "h6" { 5 } 
-            else {
-                return Err(Error::InvalidTagName(tag_name.to_string()));
-            };
+        let depth = if tag_name == "h1" {
+            0
+        } else if tag_name == "h2" {
+            1
+        } else if tag_name == "h3" {
+            2
+        } else if tag_name == "h4" {
+            3
+        } else if tag_name == "h5" {
+            4
+        } else if tag_name == "h6" {
+            5
+        } else {
+            return Err(Error::InvalidTagName(tag_name.to_string()));
+        };
 
         Ok(Self {
             depth,
@@ -61,7 +66,7 @@ impl Heading {
     }
 
     pub fn close(&self) -> &str {
-        "</li>" 
+        "</li>"
     }
 }
 
@@ -72,7 +77,9 @@ pub struct TableOfContents {
 
 impl TableOfContents {
     pub fn new() -> Self {
-        Self { entries: Vec::new() }
+        Self {
+            entries: Vec::new(),
+        }
     }
 
     pub fn add(&mut self, tag_name: &str, id: &str, text: &str) -> Result<()> {
@@ -89,14 +96,22 @@ impl TableOfContents {
         }
     }
 
-    pub fn to_html_string(&self, tag_name: &str, class_name: &str, from: &str, to: &str) -> Result<String> {
+    pub fn to_html_string(
+        &self,
+        tag_name: &str,
+        class_name: &str,
+        from: &str,
+        to: &str,
+    ) -> Result<String> {
         let from = Heading::parse(from, "", "")?;
         let mut to = Heading::parse(to, "", "")?;
 
-        if to < from { to = from.clone(); }
+        if to < from {
+            to = from.clone();
+        }
 
         if self.entries.is_empty() {
-            return Ok("".to_string())
+            return Ok("".to_string());
         }
 
         let mut markup = if class_name.is_empty() {
@@ -118,14 +133,14 @@ impl TableOfContents {
                     stack.push(h);
                     markup.push_str(&self.list(tag_name, true));
                 } else if h < prev && !stack.is_empty() {
-                    let _ = stack.pop(); 
+                    let _ = stack.pop();
                     markup.push_str(h.close());
                     markup.push_str(&self.list(tag_name, false));
                     markup.push_str(h.close());
                 } else {
                     markup.push_str(h.close());
                 }
-            } 
+            }
 
             markup.push_str(&h.open());
             current = Some(h);
@@ -151,7 +166,7 @@ impl TableOfContents {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Heading, TableOfContents, Error, Result};
+    use crate::{Error, Heading, Result, TableOfContents};
 
     #[test]
     fn empty_list() -> Result<()> {

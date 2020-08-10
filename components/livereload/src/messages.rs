@@ -26,13 +26,21 @@ struct MessageEvent {
 }
 
 pub fn start() -> impl Serialize + std::fmt::Debug {
-    SimpleEvent {event_type: EventType::Start}
+    SimpleEvent {
+        event_type: EventType::Start,
+    }
 }
 
 pub fn reload() -> impl Serialize + std::fmt::Debug {
-    SimpleEvent {event_type: EventType::Reload}
+    SimpleEvent {
+        event_type: EventType::Reload,
+    }
 }
 
 pub fn notify(message: String, error: bool) -> impl Serialize + std::fmt::Debug {
-    MessageEvent {event_type: EventType::Notify, message, error}
+    MessageEvent {
+        event_type: EventType::Notify,
+        message,
+        error,
+    }
 }

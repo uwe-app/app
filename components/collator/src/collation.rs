@@ -1,9 +1,9 @@
-use std::sync::Arc;
-use std::path::PathBuf;
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
 
-use config::Page;
 use config::indexer::QueryList;
+use config::Page;
 
 use super::manifest::Manifest;
 
@@ -50,7 +50,6 @@ pub struct CollateInfo {
     pub data_sources: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
-
     pub links: LinkMap,
 
     // Manifest for incremental builds
@@ -58,7 +57,6 @@ pub struct CollateInfo {
 }
 
 impl CollateInfo {
-
     pub fn remove_page(&mut self, p: &PathBuf) -> Page {
         self.targets.remove(p);
         self.pages.remove(p).unwrap()
@@ -68,12 +66,11 @@ impl CollateInfo {
     //
     // Used for multi-lingual output to locale specific folders.
     pub fn rewrite(&mut self, lang: &str, from: &PathBuf, to: &PathBuf) -> Result<()> {
-
         for (_path, page) in self.pages.iter_mut() {
             page.set_language(lang);
             page.rewrite_target(&from, &to)?;
         }
-    
+
         let mut tmp: HashMap<Arc<PathBuf>, PathBuf> = HashMap::new();
         for (k, target) in self.other.drain() {
             let new_target = to.join(target.strip_prefix(&from)?);
@@ -88,5 +85,5 @@ impl CollateInfo {
 #[derive(Debug, Default)]
 pub struct LinkMap {
     pub sources: HashMap<Arc<PathBuf>, Arc<String>>,
-    pub reverse: HashMap<Arc<String>, Arc<PathBuf>>
+    pub reverse: HashMap<Arc<String>, Arc<PathBuf>>,
 }

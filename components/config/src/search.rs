@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
 use globset::{Glob, GlobMatcher};
+use serde::{Deserialize, Serialize};
 
-pub static SEARCH_JS:&str = "search.js";
-pub static SEARCH_WASM:&str = "search.wasm";
+pub static SEARCH_JS: &str = "search.js";
+pub static SEARCH_WASM: &str = "search.wasm";
 
-static ID:&str = "site-index";
-static INDEX:&str = "/search.idx";
-static JS:&str = "/search.js";
-static WASM:&str = "/search.wasm";
+static ID: &str = "site-index";
+static INDEX: &str = "/search.idx";
+static JS: &str = "/search.js";
+static WASM: &str = "/search.wasm";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
@@ -45,10 +45,8 @@ impl SearchConfig {
     pub fn prepare(&mut self) {
         for (k, v) in self.items.iter_mut() {
             v.id = Some(k.to_string());
-            v.include_match = v.includes.iter()
-                .map(|g| g.compile_matcher()).collect();
-            v.exclude_match = v.excludes.iter()
-                .map(|g| g.compile_matcher()).collect();
+            v.include_match = v.includes.iter().map(|g| g.compile_matcher()).collect();
+            v.exclude_match = v.excludes.iter().map(|g| g.compile_matcher()).collect();
         }
     }
 }
@@ -101,16 +99,21 @@ impl Default for SearchItemConfig {
 }
 
 impl SearchItemConfig {
-
     pub fn filter(&self, href: &str) -> bool {
         for glob in self.exclude_match.iter() {
-            if glob.is_match(href) { return false; }
+            if glob.is_match(href) {
+                return false;
+            }
         }
 
-        if self.include_match.is_empty() { return true; }
+        if self.include_match.is_empty() {
+            return true;
+        }
 
         for glob in self.include_match.iter() {
-            if glob.is_match(href) { return true; }
+            if glob.is_match(href) {
+                return true;
+            }
         }
         false
     }

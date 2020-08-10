@@ -1,31 +1,31 @@
+use std::convert::TryInto;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
-use std::convert::TryInto;
 
-use log::info;
 use human_bytes::human_bytes;
+use log::info;
 
 use cache::CacheComponent;
-use compiler::{Compiler, BuildContext, ParseData};
 use compiler::parser::Parser;
-use config::{ProfileSettings, Config, RuntimeOptions};
-use datasource::DataSourceMap;
+use compiler::{BuildContext, Compiler, ParseData};
+use config::{Config, ProfileSettings, RuntimeOptions};
 use datasource::synthetic;
+use datasource::DataSourceMap;
 use locale::Locales;
-use search::{Index, IntermediateEntry, intermediate, compile as compile_index};
+use search::{compile as compile_index, intermediate, Index, IntermediateEntry};
 
-use collator::{CollateRequest, CollateResult, CollateInfo};
-use collator::manifest::Manifest;
 use collator::loader;
+use collator::manifest::Manifest;
+use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use crate::{Error, Result};
 use crate::finder;
+use crate::{Error, Result};
 
 pub async fn compile_project<'a, P: AsRef<Path>>(
     project: P,
-    args:&mut ProfileSettings) -> Result<(BuildContext, Locales)> {
-
+    args: &mut ProfileSettings,
+) -> Result<(BuildContext, Locales)> {
     let mut spaces: Vec<Config> = Vec::new();
     finder::find(project, true, &mut spaces)?;
 
@@ -37,11 +37,14 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     Ok(ctx)
 }
 
-pub async fn compile(config: &Config, args: &mut ProfileSettings) -> Result<(BuildContext, Locales)> {
+pub async fn compile(
+    config: &Config,
+    args: &mut ProfileSettings,
+) -> Result<(BuildContext, Locales)> {
     let opts = super::project::prepare(config, args)?;
 
-    let write_redirects = opts.settings.write_redirects.is_some()
-        && opts.settings.write_redirects.unwrap();
+    let write_redirects =
+        opts.settings.write_redirects.is_some() && opts.settings.write_redirects.unwrap();
 
     let mut res = compile_one(config, opts).await;
 
@@ -58,14 +61,12 @@ pub async fn compile(config: &Config, args: &mut ProfileSettings) -> Result<(Bui
             }
             Manifest::save(&manifest_file, manifest)?;
         }
-
     }
 
     res
 }
 
 async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
-
     let base_target = opts.target.clone();
     //let mut options = opts.clone();
 
@@ -90,7 +91,8 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             ctx.options.target = locale_target.clone();
 
             // Rewrite the output paths and page languages
-            ctx.collation.rewrite(&lang, &previous_base, &locale_target)?;
+            ctx.collation
+                .rewrite(&lang, &previous_base, &locale_target)?;
 
             previous_base = locale_target;
 
@@ -113,8 +115,8 @@ async fn load(
     //locales: Locales,
     config: Config,
     mut options: RuntimeOptions,
-    lang: Option<String>) -> Result<BuildContext> {
-
+    lang: Option<String>,
+) -> Result<BuildContext> {
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {
         lang
@@ -208,7 +210,6 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
-
 fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
     let include_index = ctx.options.settings.should_include_index();
     if let Some(ref search) = ctx.config.search {
@@ -222,20 +223,25 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
                 let href = ctx.collation.links.sources.get(&parse_data.file);
 
                 let buffer = extraction.to_chunk_string();
-                let title = if let Some(ref title) = extraction.title { title } else { "" };
+                let title = if let Some(ref title) = extraction.title {
+                    title
+                } else {
+                    ""
+                };
                 let mut url = if let Some(ref href) = href { href } else { "" };
 
                 if !include_index && url.ends_with(config::INDEX_HTML) {
                     url = url.trim_end_matches(config::INDEX_HTML);
                 }
 
-                if !search.filter(url) { continue; }
+                if !search.filter(url) {
+                    continue;
+                }
 
                 //println!("Title {}", title);
                 //println!("Buffer {}", &buffer);
 
-                intermediates.push(
-                    intermediate(&buffer, title, url, Default::default()));
+                intermediates.push(intermediate(&buffer, title, url, Default::default()));
             }
 
             info!("Compile search index ({})", intermediates.len());
@@ -249,9 +255,10 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
     Ok(())
 }
 
-async fn build<'a>(ctx: &'a mut BuildContext, locales: &'a Locales)
-    -> std::result::Result<(Compiler<'a>, Parser<'a>, Vec<ParseData>), compiler::Error> {
-
+async fn build<'a>(
+    ctx: &'a mut BuildContext,
+    locales: &'a Locales,
+) -> std::result::Result<(Compiler<'a>, Parser<'a>, Vec<ParseData>), compiler::Error> {
     let parser = Parser::new(ctx, locales)?;
     let builder = Compiler::new(ctx);
 

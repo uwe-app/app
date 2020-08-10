@@ -9,11 +9,14 @@ pub struct TextExtraction {
 
 impl TextExtraction {
     pub fn new() -> Self {
-        Self {..Default::default()}
+        Self {
+            ..Default::default()
+        }
     }
 
     pub fn to_chunk_string(&self) -> String {
-        return self.chunks
+        return self
+            .chunks
             .iter()
             // HACK: !!!
             // NOTE: this character causes a problem for search index

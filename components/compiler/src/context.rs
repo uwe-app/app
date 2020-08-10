@@ -1,5 +1,5 @@
-use std::sync::{Arc, RwLock};
 use once_cell::sync::OnceCell;
+use std::sync::{Arc, RwLock};
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
@@ -20,14 +20,18 @@ impl BuildContext {
         options: RuntimeOptions,
         datasource: DataSourceMap,
         //locales: Locales,
-        collation: CollateInfo) -> Self {
-        Self { config, options, datasource, collation }
+        collation: CollateInfo,
+    ) -> Self {
+        Self {
+            config,
+            options,
+            datasource,
+            collation,
+        }
     }
 }
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {
     static INSTANCE: OnceCell<Arc<RwLock<Option<String>>>> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        Arc::new(RwLock::new(None))
-    })
+    INSTANCE.get_or_init(|| Arc::new(RwLock::new(None)))
 }

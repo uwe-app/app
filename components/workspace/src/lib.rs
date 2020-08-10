@@ -55,7 +55,7 @@ mod finder;
 mod merge;
 pub mod project;
 
-pub use compile::compile_project;
 pub use compile::compile;
+pub use compile::compile_project;
 //pub use compile::build;
 pub use finder::find;

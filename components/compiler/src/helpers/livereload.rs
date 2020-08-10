@@ -4,7 +4,7 @@ use crate::BuildContext;
 
 #[derive(Clone, Copy)]
 pub struct LiveReload<'a> {
-    pub context: &'a BuildContext
+    pub context: &'a BuildContext,
 }
 
 impl HelperDef for LiveReload<'_> {
@@ -16,7 +16,6 @@ impl HelperDef for LiveReload<'_> {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         if self.context.options.settings.is_live() {
             let content = livereload::embed(&self.context.config);
             out.write(&content)?;

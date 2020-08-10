@@ -79,4 +79,3 @@ pub fn write(config: &Config, target: &PathBuf, url: &str) -> std::io::Result<()
     let script = get_script(url);
     utils::fs::write_string(dest, script)
 }
-

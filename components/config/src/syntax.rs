@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use super::profile::ProfileName;
 
@@ -30,18 +30,17 @@ impl Default for SyntaxConfig {
 }
 
 impl SyntaxConfig {
-
     pub fn is_enabled(&self, name: &ProfileName) -> bool {
         if self.enabled {
             if let Some(ref profiles) = self.profiles {
-                return profiles.contains(name) 
+                return profiles.contains(name);
             }
         }
-        self.enabled 
+        self.enabled
     }
 
     pub fn is_inline(&self) -> bool {
-        self.inline.is_some() && self.inline.unwrap() 
+        self.inline.is_some() && self.inline.unwrap()
     }
 
     pub fn theme(&self) -> &str {

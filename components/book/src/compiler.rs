@@ -42,10 +42,7 @@ impl BookCompiler {
         let mut base = self.target.clone();
         base.push(relative);
 
-        for result in WalkBuilder::new(&build_dir)
-            .follow_links(true)
-            .build()
-        {
+        for result in WalkBuilder::new(&build_dir).follow_links(true).build() {
             match result {
                 Ok(entry) => {
                     if entry.path().is_file() {

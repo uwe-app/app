@@ -1,13 +1,13 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use datasource::{self, DataSourceMap};
 use config::{FileInfo, FileType};
+use datasource::{self, DataSourceMap};
 
-use compiler::Compiler;
 use compiler::context;
 use compiler::hook;
 use compiler::parser::Parser;
+use compiler::Compiler;
 use compiler::Error;
 
 /*
@@ -147,25 +147,26 @@ impl<'a> Invalidator<'a> {
         let partials = self.canonical(ctx.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators = self.canonical(
-            ctx.options.get_data_sources_path()
-        );
+        let generators = self.canonical(ctx.options.get_data_sources_path());
 
         let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = ctx.config
+        let book_theme = ctx
+            .config
             .get_book_theme_path(&ctx.options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
         if let Some(ref book) = ctx.config.book {
-            books = book.get_paths(&ctx.options.source)
+            books = book
+                .get_paths(&ctx.options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
         }
 
-        let generator_paths: Vec<PathBuf> = datasource.map
+        let generator_paths: Vec<PathBuf> = datasource
+            .map
             .values()
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();
@@ -180,9 +181,8 @@ impl<'a> Invalidator<'a> {
                     // NOTE: and should take precedence
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
-                            let hook_base = self.canonical(
-                                hook.get_source_path(&ctx.options.source).unwrap(),
-                            );
+                            let hook_base =
+                                self.canonical(hook.get_source_path(&ctx.options.source).unwrap());
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
                                 continue 'paths;
@@ -202,8 +202,7 @@ impl<'a> Invalidator<'a> {
                         }
 
                         if path.starts_with(book_path) {
-                            if let Some(md) = self.builder.book.locate(&ctx.config, &book)
-                            {
+                            if let Some(md) = self.builder.book.locate(&ctx.config, &book) {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
 
@@ -309,7 +308,7 @@ impl<'a> Invalidator<'a> {
         if rule.reload {
             // FIXME: to restore this we need to reload and parse the configuration!
             //if let Err(e) = loader::reload(config, options) {
-                //error!("{}", e);
+            //error!("{}", e);
             //}
         }
 
@@ -327,11 +326,7 @@ impl<'a> Invalidator<'a> {
             for action in &book.reload {
                 match action {
                     Action::BookConfig(base, _) => {
-                        self.builder.book.load(
-                            config,
-                            base,
-                            livereload.clone(),
-                        )?;
+                        self.builder.book.load(config, base, livereload.clone())?;
                     }
                     _ => {}
                 }
@@ -339,26 +334,16 @@ impl<'a> Invalidator<'a> {
         }
 
         if book.all {
-            self.builder
-                .book
-                .all(config, livereload.clone())?;
+            self.builder.book.all(config, livereload.clone())?;
         } else {
             for action in &book.source {
                 match action {
                     Action::BookSource(base, _) => {
                         // Make the path relative to the project source
                         // as the notify crate gives us an absolute path
-                        let file = FileInfo::relative_to(
-                            base,
-                            &options.source,
-                            &options.source,
-                        )?;
+                        let file = FileInfo::relative_to(base, &options.source, &options.source)?;
 
-                        self.builder.book.build(
-                            config,
-                            &file,
-                            livereload.clone(),
-                        )?;
+                        self.builder.book.build(config, &file, livereload.clone())?;
                     }
                     _ => {}
                 }
@@ -385,7 +370,7 @@ impl<'a> Invalidator<'a> {
                             self.builder.one(&self.parser, &file).await?;
 
                             //if let Err(e) = self.builder.one(&file).await {
-                                //return Err(e);
+                            //return Err(e);
                             //}
                         }
                         _ => {
