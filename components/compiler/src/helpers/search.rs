@@ -19,7 +19,7 @@ impl HelperDef for Embed<'_> {
         out: &mut dyn Output,
     ) -> HelperResult {
 
-        // Customize the class for the embed wrapper element (embed)
+        // The identifier for which search index to use
         let id = h.hash_get("id")
             .map(|v| v.value())
             .and_then(|v| v.as_str())
@@ -60,16 +60,16 @@ impl HelperDef for Embed<'_> {
 
         let search_item = search.items.get(&id);
         if search_item.is_none() {
-            return Err(RenderError::new(format!("Type error for `search` helper, no search setting for `{}`", &id)))
+            return Err(RenderError::new(
+                format!("Type error for `search` helper, settings for `{}` search index not found", &id)))
         }
 
         let search_config = search_item.unwrap();
 
-        let id = search_config.id.as_ref().unwrap().to_string();
-
         let js = search.js.as_ref().unwrap().to_string();
         let wasm = search.wasm.as_ref().unwrap().to_string();
 
+        let id = search_config.id.as_ref().unwrap().to_string();
         let results = search_config.results.as_ref().unwrap();
         let excerpt_buffer = search_config.excerpt_buffer.as_ref().unwrap();
         let excerpts_per_result = search_config.excerpts_per_result.as_ref().unwrap();
