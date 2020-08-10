@@ -10,6 +10,7 @@ use cache::CacheComponent;
 use compiler::parser::Parser;
 use compiler::{BuildContext, Compiler, ParseData};
 use config::{Config, ProfileSettings, RuntimeOptions};
+use config::sitemap::{SiteMapIndex, SiteMapEntry};
 use datasource::synthetic;
 use datasource::DataSourceMap;
 use locale::Locales;
@@ -100,13 +101,15 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             let (_, _, parse_list) = build(&mut ctx, &locales).await?;
             finish(&mut ctx, parse_list)?;
         }
+
+
     } else {
         prepare(&mut ctx)?;
         let (_, _, parse_list) = build(&mut ctx, &locales).await?;
         finish(&mut ctx, parse_list)?;
-        //build(&mut ctx, &locales).await?;
-        //finish(&mut ctx)?;
     };
+
+    write_robots_file(&mut ctx)?;
 
     Ok((ctx, locales))
 }
@@ -210,13 +213,13 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
-fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
+fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -> Result<()> {
     let include_index = ctx.options.settings.should_include_index();
     if let Some(ref search) = ctx.config.search {
         for (_id, search) in search.items.iter() {
             let mut intermediates: Vec<IntermediateEntry> = Vec::new();
             info!("Prepare search index ({})", parse_list.len());
-            for parse_data in &parse_list {
+            for parse_data in parse_list {
                 let extraction = parse_data.extract.as_ref().unwrap();
                 let href = ctx.collation.links.sources.get(&parse_data.file);
 
@@ -246,20 +249,64 @@ fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseDat
     Ok(())
 }
 
+fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -> Result<()> {
+
+    if let Some(ref sitemap) = ctx.options.settings.sitemap {
+        let entries = sitemap.entries.as_ref().unwrap();
+        let base = ctx.options.settings.get_canonical_url(&ctx.config)?;
+        let mut idx = SiteMapIndex::new(base.clone());
+        println!("GOT A SITEMAP TO WRITE {:?}", idx);
+        //println!("GOT A SITEMAP TO WRITE {}", ctx.config.);
+        for (count, window) in parse_list.chunks(*entries).enumerate() {
+            let mut sitemap = idx.create(count);
+            println!("Created file {}", &sitemap.name);
+
+            sitemap.entries = window
+                .iter()
+                .map(|d| {
+                    //let file = &d.file;
+                    let href = ctx.collation.links.sources.get(&d.file).unwrap();
+                    let location = base.join(href).unwrap();
+                    println!("Collecing site map entries {}", location.to_string());
+                    let lastmod = "".to_string();
+                    SiteMapEntry {location, lastmod}
+                }).collect();
+
+            idx.maps.push(sitemap);
+
+
+
+            // TODO: write each sitemap to disc
+
+            //println!("Window count {}", count);
+            //println!("Window size {}", window.len());
+            //println!("Window size {:?}", window);
+        }
+
+        //idx.to_writer(std::io::stdout())?;
+
+        // TODO: write sitemap index to disc
+        // TODO: update or create robots config to include the sitemap 
+        //let sitemap_url = idx.to_url();
+    }
+
+    Ok(())
+}
+
 fn write_robots_file<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     if let Some(ref robots) = ctx.options.settings.robots {
         // NOTE: robots must always be at the root regardless
         // NOTE: of multi-lingual support so we use `base` rather
         // NOTE: than the `target`
-        let robots_file = ctx.options.base.join("robots.txt");
+        let robots_file = ctx.options.base.join(config::robots::FILE);
         utils::fs::write_string(robots_file, robots.to_string())?;
     }
     Ok(())
 }
 
 fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
-    create_search_indices(ctx, parse_list)?;
-    write_robots_file(ctx)?;
+    create_search_indices(ctx, &parse_list)?;
+    create_site_map(ctx, &parse_list)?;
     Ok(())
 }
 

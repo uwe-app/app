@@ -6,8 +6,11 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
+use url::Url;
+
 use super::config;
 use super::robots::RobotsConfig;
+use super::sitemap::SiteMapConfig;
 
 static DEBUG: &str = "debug";
 static RELEASE: &str = "release";
@@ -140,6 +143,7 @@ pub struct ProfileSettings {
     pub scheme: Option<String>,
 
     pub robots: Option<RobotsConfig>,
+    pub sitemap: Option<SiteMapConfig>,
 }
 
 impl Default for ProfileSettings {
@@ -184,14 +188,21 @@ impl Default for ProfileSettings {
             use_layout: Some(true),
 
             robots: None,
+            sitemap: None,
         }
     }
 }
 
 impl ProfileSettings {
-    pub fn get_host_url(&self, conf: &config::Config) -> String {
+
+    pub fn get_canonical_url(&self, conf: &config::Config) -> crate::Result<Url> {
         let scheme = self.scheme.as_ref().unwrap();
-        format!("{}{}{}", scheme, config::SCHEME_DELIMITER, conf.host)
+        Ok(Url::parse(&format!("{}{}{}", scheme, config::SCHEME_DELIMITER, conf.host))?)
+    }
+
+    pub fn get_host_url(&self, conf: &config::Config) -> String {
+        // FIXME: do not unwrap here, return the Result?
+        self.get_canonical_url(conf).unwrap().to_string()
     }
 
     pub fn set_defaults(&mut self) {
@@ -212,6 +223,9 @@ impl ProfileSettings {
         }
         if let None = self.robots {
             self.robots = Some(Default::default());
+        }
+        if let None = self.sitemap {
+            self.sitemap = Some(Default::default());
         }
     }
 
