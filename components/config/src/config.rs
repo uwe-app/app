@@ -304,6 +304,10 @@ impl Config {
                     }
                 }
 
+                if let Some(search) = cfg.search.as_mut() {
+                    search.prepare();
+                }
+
                 let mut livereload = cfg.livereload.as_mut().unwrap();
                 if livereload.file.is_none() {
                     livereload.file = Some(PathBuf::from(LIVERELOAD_FILE));

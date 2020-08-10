@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
-use globset::Glob;
+use globset::{Glob, GlobMatcher};
 
 pub static SEARCH_JS:&str = "search.js";
 pub static SEARCH_WASM:&str = "search.wasm";
@@ -23,7 +23,7 @@ pub struct SearchConfig {
     // The URL relative to the site root for the wasm file
     pub wasm: Option<String>,
 
-    // Number of excerpts to buffer
+    // Search index configurations
     #[serde(flatten)]
     pub items: HashMap<String, SearchItemConfig>,
 }
@@ -39,55 +39,49 @@ impl Default for SearchConfig {
     }
 }
 
-//impl SearchConfig {
-
-    //pub fn filter(&self, href: &str) -> bool {
-        //for glob in self.excludes.iter() {
-            //// FIXME: compile these matchers AOT
-            //let matcher = glob.compile_matcher();
-            //if matcher.is_match(href) { return false; }
-        //}
-
-        //if self.includes.is_empty() { return true; }
-
-        //for glob in self.includes.iter() {
-            //// FIXME: compile these matchers AOT
-            //let matcher = glob.compile_matcher();
-            //if matcher.is_match(href) {
-                //return true;
-            //}
-        //}
-        //false
-    //}
-
-    //pub fn get_output_path(&self, base: &PathBuf) -> PathBuf {
-        //let val = self.index.as_ref().unwrap().trim_start_matches("/");
-        //return base.join(utils::url::to_path_separator(val));
-    //}
-//}
+impl SearchConfig {
+    // Prepare the configuration by assigning id fields
+    // and compiling the glob matchers
+    pub fn prepare(&mut self) {
+        for (k, v) in self.items.iter_mut() {
+            v.id = Some(k.to_string());
+            v.include_match = v.includes.iter()
+                .map(|g| g.compile_matcher()).collect();
+            v.exclude_match = v.excludes.iter()
+                .map(|g| g.compile_matcher()).collect();
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct SearchItemConfig {
-    // The identifier used when registering the search widget
-    pub id: Option<String>,
     // The URL path for the search index file relative to the site root
     pub index: Option<String>,
 
     // Maximum number of results displayed for a query
     pub results: Option<u8>,
 
-    // Number of excerpts to buffer
-    #[serde(skip_deserializing)]
-    pub excerpt_buffer: Option<u8>,
-
-    // Maximum number of excerpts per result
-    #[serde(skip_deserializing)]
-    pub excerpts_per_result: Option<u8>,
-
     // Configuration options for indexing behavior
     pub includes: Vec<Glob>,
     pub excludes: Vec<Glob>,
+
+    // The identifier used when registering the search widget
+    #[serde(skip)]
+    pub id: Option<String>,
+
+    // Number of excerpts to buffer
+    #[serde(skip)]
+    pub excerpt_buffer: Option<u8>,
+
+    // Maximum number of excerpts per result
+    #[serde(skip)]
+    pub excerpts_per_result: Option<u8>,
+
+    #[serde(skip)]
+    pub include_match: Vec<GlobMatcher>,
+    #[serde(skip)]
+    pub exclude_match: Vec<GlobMatcher>,
 }
 
 impl Default for SearchItemConfig {
@@ -100,6 +94,8 @@ impl Default for SearchItemConfig {
             excerpts_per_result: Some(5),
             includes: Vec::new(),
             excludes: Vec::new(),
+            include_match: Vec::new(),
+            exclude_match: Vec::new(),
         }
     }
 }
@@ -107,20 +103,14 @@ impl Default for SearchItemConfig {
 impl SearchItemConfig {
 
     pub fn filter(&self, href: &str) -> bool {
-        for glob in self.excludes.iter() {
-            // FIXME: compile these matchers AOT
-            let matcher = glob.compile_matcher();
-            if matcher.is_match(href) { return false; }
+        for glob in self.exclude_match.iter() {
+            if glob.is_match(href) { return false; }
         }
 
-        if self.includes.is_empty() { return true; }
+        if self.include_match.is_empty() { return true; }
 
-        for glob in self.includes.iter() {
-            // FIXME: compile these matchers AOT
-            let matcher = glob.compile_matcher();
-            if matcher.is_match(href) {
-                return true;
-            }
+        for glob in self.include_match.iter() {
+            if glob.is_match(href) { return true; }
         }
         false
     }
