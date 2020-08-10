@@ -26,9 +26,6 @@ pub struct SearchConfig {
     // referenced by `js` and `wasm`
     pub bundle: Option<bool>,
 
-    // Configuration options for indexing behavior
-    pub source: Option<SearchSourceConfig>,
-
     // Maximum number of results displayed for a query
     pub results: Option<u8>,
 
@@ -39,6 +36,10 @@ pub struct SearchConfig {
     // Maximum number of excerpts per result
     #[serde(skip_deserializing)]
     pub excerpts_per_result: Option<u8>,
+
+    // Configuration options for indexing behavior
+    pub includes: Vec<Glob>,
+    pub excludes: Vec<Glob>,
 }
 
 impl Default for SearchConfig {
@@ -49,10 +50,11 @@ impl Default for SearchConfig {
             js: Some(JS.to_string()),
             wasm: Some(WASM.to_string()),
             bundle: Some(true),
-            source: Some(Default::default()),
             results: Some(10),
             excerpt_buffer: Some(8),
             excerpts_per_result: Some(5),
+            includes: Vec::new(),
+            excludes: Vec::new(),
         }
     }
 }
@@ -60,17 +62,15 @@ impl Default for SearchConfig {
 impl SearchConfig {
 
     pub fn filter(&self, href: &str) -> bool {
-        let sources = self.source.as_ref().unwrap();
-
-        for glob in sources.excludes.iter() {
+        for glob in self.excludes.iter() {
             // FIXME: compile these matchers AOT
             let matcher = glob.compile_matcher();
             if matcher.is_match(href) { return false; }
         }
 
-        if sources.includes.is_empty() { return true; }
+        if self.includes.is_empty() { return true; }
 
-        for glob in sources.includes.iter() {
+        for glob in self.includes.iter() {
             // FIXME: compile these matchers AOT
             let matcher = glob.compile_matcher();
             if matcher.is_match(href) {
@@ -84,11 +84,4 @@ impl SearchConfig {
         let val = self.index.as_ref().unwrap().trim_start_matches("/");
         return base.join(utils::url::to_path_separator(val));
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-#[serde(default, rename_all = "kebab-case")]
-pub struct SearchSourceConfig {
-    pub includes: Vec<Glob>,
-    pub excludes: Vec<Glob>,
 }
