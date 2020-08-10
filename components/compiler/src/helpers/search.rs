@@ -19,6 +19,14 @@ impl HelperDef for Embed<'_> {
         out: &mut dyn Output,
     ) -> HelperResult {
 
+        // Customize the class for the embed wrapper element (embed)
+        let id = h.hash_get("id")
+            .map(|v| v.value())
+            .and_then(|v| v.as_str())
+            .ok_or(RenderError::new(
+                "Type error for `search` helper, hash parameter `id` must be a string"
+            ))?.to_string();
+
         // Are we writing the script? Otherwise we print the embed markup.
         let script = h.hash_get("script")
             .map(|v| v.value())
@@ -48,10 +56,19 @@ impl HelperDef for Embed<'_> {
 
         // This helper is conditional on the search config so it
         // is safe to unwrap
-        let search_config = self.context.config.search.as_ref().unwrap();
+        let search = self.context.config.search.as_ref().unwrap();
+
+        let search_item = search.items.get(&id);
+        if search_item.is_none() {
+            return Err(RenderError::new(format!("Type error for `search` helper, no search setting for `{}`", &id)))
+        }
+
+        let search_config = search_item.unwrap();
+
         let id = search_config.id.as_ref().unwrap().to_string();
-        let js = search_config.js.as_ref().unwrap().to_string();
-        let wasm = search_config.wasm.as_ref().unwrap().to_string();
+
+        let js = search.js.as_ref().unwrap().to_string();
+        let wasm = search.wasm.as_ref().unwrap().to_string();
 
         let results = search_config.results.as_ref().unwrap();
         let excerpt_buffer = search_config.excerpt_buffer.as_ref().unwrap();

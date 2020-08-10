@@ -179,7 +179,7 @@ impl Config {
 
     pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
         if let Some(ref syntax) = self.syntax {
-            return syntax.is_enabled(name) 
+            return syntax.is_enabled(name)
         }
         false
     }
@@ -343,7 +343,7 @@ impl Config {
             if let Some(ext) = pth.extension() {
                 if ext == TOML {
                     return Config::load_config(pth);
-                } 
+                }
             }
         } else if pth.is_dir() {
             pth.push(SITE_TOML);

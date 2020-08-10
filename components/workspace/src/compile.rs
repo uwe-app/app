@@ -210,47 +210,42 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
 
 
 fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
-
     let include_index = ctx.options.settings.should_include_index();
     if let Some(ref search) = ctx.config.search {
-        //let output = search.output.as_ref().unwrap();
+        for (_id, search) in search.items.iter() {
+            let mut intermediates: Vec<IntermediateEntry> = Vec::new();
+            info!("Prepare search index ({})", parse_list.len());
+            // TODO: configure the pass through config
+            for parse_data in &parse_list {
+                let extraction = parse_data.extract.as_ref().unwrap();
 
-        let mut intermediates: Vec<IntermediateEntry> = Vec::new();
-        info!("Prepare search index ({})", parse_list.len());
-        // TODO: configure the pass through config
-        for parse_data in parse_list {
-            let extraction = parse_data.extract.as_ref().unwrap();
+                let href = ctx.collation.links.sources.get(&parse_data.file);
 
-            let href = ctx.collation.links.sources.get(&parse_data.file);
+                let buffer = extraction.to_chunk_string();
+                let title = if let Some(ref title) = extraction.title { title } else { "" };
+                let mut url = if let Some(ref href) = href { href } else { "" };
 
-            let buffer = extraction.to_chunk_string();
-            let title = if let Some(ref title) = extraction.title { title } else { "" };
-            let mut url = if let Some(ref href) = href { href } else { "" };
+                if !include_index && url.ends_with(config::INDEX_HTML) {
+                    url = url.trim_end_matches(config::INDEX_HTML);
+                }
 
-            if !include_index && url.ends_with(config::INDEX_HTML) {
-                url = url.trim_end_matches(config::INDEX_HTML);
+                if !search.filter(url) { continue; }
+
+                //println!("Title {}", title);
+                //println!("Buffer {}", &buffer);
+
+                intermediates.push(
+                    intermediate(&buffer, title, url, Default::default()));
             }
 
-            if !search.filter(url) { continue; }
-
-            //println!("Title {}", title);
-            //println!("Buffer {}", &buffer);
-
-            intermediates.push(
-                intermediate(&buffer, title, url, Default::default()));
+            info!("Compile search index ({})", intermediates.len());
+            let idx: Index = compile_index(intermediates);
+            let index_file = search.get_output_path(&ctx.options.target);
+            info!("Write search index to {}", index_file.display());
+            let bytes_written = search::writer::write(&idx, index_file)?;
+            info!("Search index {}", human_bytes(bytes_written as f64));
         }
-
-        //println!("{:#?}", &intermediates);
-
-        info!("Compile search index ({})", intermediates.len());
-        let idx: Index = compile_index(intermediates);
-        //let index_file = ctx.options.target.join(output);
-        let index_file = search.get_output_path(&ctx.options.target);
-        info!("Write search index to {}", index_file.display());
-        let bytes_written = search::writer::write(&idx, index_file)?;
-        info!("Search index {}", human_bytes(bytes_written as f64));
     }
-
     Ok(())
 }
 
