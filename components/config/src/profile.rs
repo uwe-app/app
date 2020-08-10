@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
 use super::config;
+use super::robots::RobotsConfig;
 
 static DEBUG: &str = "debug";
 static RELEASE: &str = "release";
@@ -137,6 +138,8 @@ pub struct ProfileSettings {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub scheme: Option<String>,
+
+    pub robots: Option<RobotsConfig>,
 }
 
 impl Default for ProfileSettings {
@@ -179,6 +182,8 @@ impl Default for ProfileSettings {
             base_href: None,
 
             use_layout: Some(true),
+
+            robots: None,
         }
     }
 }
@@ -204,6 +209,10 @@ impl ProfileSettings {
         }
         if let None = self.collate {
             self.collate = Some(true);
+        }
+
+        if let None = self.robots {
+            self.robots = Some(Default::default());
         }
     }
 

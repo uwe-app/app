@@ -210,24 +210,18 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
-fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
+fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
     let include_index = ctx.options.settings.should_include_index();
     if let Some(ref search) = ctx.config.search {
         for (_id, search) in search.items.iter() {
             let mut intermediates: Vec<IntermediateEntry> = Vec::new();
             info!("Prepare search index ({})", parse_list.len());
-            // TODO: configure the pass through config
             for parse_data in &parse_list {
                 let extraction = parse_data.extract.as_ref().unwrap();
-
                 let href = ctx.collation.links.sources.get(&parse_data.file);
 
                 let buffer = extraction.to_chunk_string();
-                let title = if let Some(ref title) = extraction.title {
-                    title
-                } else {
-                    ""
-                };
+                let title = if let Some(ref title) = extraction.title { title } else { "" };
                 let mut url = if let Some(ref href) = href { href } else { "" };
 
                 if !include_index && url.ends_with(config::INDEX_HTML) {
@@ -237,9 +231,6 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
                 if !search.filter(url) {
                     continue;
                 }
-
-                //println!("Title {}", title);
-                //println!("Buffer {}", &buffer);
 
                 intermediates.push(intermediate(&buffer, title, url, Default::default()));
             }
@@ -252,6 +243,23 @@ fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<(
             info!("Search index {}", human_bytes(bytes_written as f64));
         }
     }
+    Ok(())
+}
+
+fn write_robots_file<'a>(ctx: &'a mut BuildContext) -> Result<()> {
+    if let Some(ref robots) = ctx.options.settings.robots {
+        // NOTE: robots must always be at the root regardless
+        // NOTE: of multi-lingual support so we use `base` rather
+        // NOTE: than the `target`
+        let robots_file = ctx.options.base.join("robots.txt");
+        utils::fs::write_string(robots_file, robots.to_string())?;
+    }
+    Ok(())
+}
+
+fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
+    create_search_indices(ctx, parse_list)?;
+    write_robots_file(ctx)?;
     Ok(())
 }
 
