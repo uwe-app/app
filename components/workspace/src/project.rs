@@ -127,6 +127,7 @@ fn to_options(
         base: target.clone(),
         settings: args.clone(),
         target,
+        multi_lingual: cfg.fluent.is_some(),
     };
 
     //println!("Got settings {:#?}", args);

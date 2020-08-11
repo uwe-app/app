@@ -8,7 +8,7 @@ use serde_with::skip_serializing_none;
 
 use url::Url;
 
-use super::config;
+use super::config::{self, Config};
 use super::robots::RobotsConfig;
 use super::sitemap::SiteMapConfig;
 
@@ -224,9 +224,6 @@ impl ProfileSettings {
         if let None = self.robots {
             self.robots = Some(Default::default());
         }
-        if let None = self.sitemap {
-            self.sitemap = Some(Default::default());
-        }
     }
 
     pub fn get_host(&self) -> String {
@@ -307,9 +304,20 @@ pub struct RuntimeOptions {
     pub target: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
+    // Determine id this build is configured for multi-lingual support
+    pub multi_lingual: bool,
 }
 
 impl RuntimeOptions {
+
+    pub fn get_canonical_url(&self, config: &Config, include_lang: bool) -> crate::Result<Url> {
+        let mut base = self.settings.get_canonical_url(config)?;
+        if include_lang && self.multi_lingual {
+            base = base.join(&self.lang)?;
+        }
+        Ok(base)
+    }
+
     pub fn get_layout_path(&self) -> PathBuf {
         self.source.join(self.settings.layout.as_ref().unwrap())
     }

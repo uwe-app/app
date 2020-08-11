@@ -203,6 +203,14 @@ impl Default for Page {
 }
 
 impl Page {
+
+    // This should be a W3C Datetime string suitable for a 
+    // sitemap lastmod field.
+    pub fn lastmod(&self) -> String {
+        let file_ctx = self.file.as_ref().unwrap();
+        file_ctx.modified.to_rfc3339()
+    }
+
     pub fn get_template(&self) -> &PathBuf {
         let file_ctx = self.file.as_ref().unwrap();
         &file_ctx.template

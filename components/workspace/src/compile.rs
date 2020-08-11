@@ -1,16 +1,16 @@
 use std::convert::TryInto;
-use std::fs;
+use std::fs::{self, File};
 use std::path::Path;
 use std::path::PathBuf;
 
 use human_bytes::human_bytes;
-use log::info;
+use log::{info, warn};
 
 use cache::CacheComponent;
 use compiler::parser::Parser;
 use compiler::{BuildContext, Compiler, ParseData};
 use config::{Config, ProfileSettings, RuntimeOptions};
-use config::sitemap::{SiteMapIndex, SiteMapEntry};
+use config::sitemap::{SiteMapIndex, SiteMapFile, SiteMapEntry};
 use datasource::synthetic;
 use datasource::DataSourceMap;
 use locale::Locales;
@@ -68,8 +68,8 @@ pub async fn compile(
 }
 
 async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
+    let multi_lingual = opts.multi_lingual;
     let base_target = opts.target.clone();
-    //let mut options = opts.clone();
 
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
@@ -78,7 +78,7 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
 
     let mut previous_base = base_target.clone();
 
-    if locales.is_multi() {
+    if multi_lingual {
         for lang in locales.map.keys() {
             let locale_target = base_target.join(&lang);
 
@@ -87,6 +87,9 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
             if !locale_target.exists() {
                 fs::create_dir_all(&locale_target)?;
             }
+
+            // Keep the target language in sync
+            ctx.options.lang = lang.clone();
 
             // Keep the options target in sync for manifests
             ctx.options.target = locale_target.clone();
@@ -252,42 +255,63 @@ fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseDa
 fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -> Result<()> {
 
     if let Some(ref sitemap) = ctx.options.settings.sitemap {
+        // How many entries per chunk window?
         let entries = sitemap.entries.as_ref().unwrap();
-        let base = ctx.options.settings.get_canonical_url(&ctx.config)?;
-        let mut idx = SiteMapIndex::new(base.clone());
-        println!("GOT A SITEMAP TO WRITE {:?}", idx);
-        //println!("GOT A SITEMAP TO WRITE {}", ctx.config.);
-        for (count, window) in parse_list.chunks(*entries).enumerate() {
-            let mut sitemap = idx.create(count);
-            println!("Created file {}", &sitemap.name);
 
+        // Base canonical URL
+        let base = ctx.options.get_canonical_url(&ctx.config, true)?;
+
+        // Create the top-level index of all sitemaps
+        let folder = sitemap.name.as_ref().unwrap().to_string();
+        let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
+
+        let base_folder = ctx.options.target.join(&folder);
+
+        if !base_folder.exists() {
+            fs::create_dir_all(&base_folder)?;
+        }
+
+        for (count, window) in parse_list.chunks(*entries).enumerate() {
+            let href = format!("{}.xml", count + 1); 
+            let mut sitemap = SiteMapFile {href, entries: vec![]};
+            let sitemap_path = base_folder.join(&sitemap.href);
             sitemap.entries = window
                 .iter()
+                // NOTE: quick hack to ignore error file, needs stronger logic
+                .filter(|d| !d.file.ends_with("404.html"))
                 .map(|d| {
-                    //let file = &d.file;
+                    // Get the href to use to build the location
                     let href = ctx.collation.links.sources.get(&d.file).unwrap();
+                    // Get the last modification data from the page
+                    let page = ctx.collation.pages.get(&d.file).unwrap();
+                    // Generate the absolute location
                     let location = base.join(href).unwrap();
-                    println!("Collecing site map entries {}", location.to_string());
-                    let lastmod = "".to_string();
+                    let lastmod = page.lastmod();
                     SiteMapEntry {location, lastmod}
                 }).collect();
 
+            let map_file = File::create(&sitemap_path)?;
+            sitemap.to_writer(map_file)?;
+
+            // Add the file to the index
             idx.maps.push(sitemap);
-
-
-
-            // TODO: write each sitemap to disc
-
-            //println!("Window count {}", count);
-            //println!("Window size {}", window.len());
-            //println!("Window size {:?}", window);
         }
+        
+        // Write out the master index file
+        let idx_path = base_folder.join(config::sitemap::FILE);
+        let idx_file = File::create(&idx_path)?;
+        idx.to_writer(idx_file)?;
 
-        //idx.to_writer(std::io::stdout())?;
+        let sitemap_url = idx.to_location();
+        info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
+        //info!("Sitemap {}", idx_path.display());
 
-        // TODO: write sitemap index to disc
-        // TODO: update or create robots config to include the sitemap 
-        //let sitemap_url = idx.to_url();
+        // Update robots config to include the sitemap 
+        if let Some(ref mut robots) = ctx.options.settings.robots.as_mut() {
+            robots.sitemaps.push(sitemap_url);
+        } else {
+            warn!("Unable to add sitemap {} to robots.txt configuration", sitemap_url.to_string());
+        }
     }
 
     Ok(())

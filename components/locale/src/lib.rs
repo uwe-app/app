@@ -37,10 +37,6 @@ impl Default for Locales {
 }
 
 impl Locales {
-    pub fn is_multi(&mut self) -> bool {
-        self.map.len() > 1
-    }
-
     pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
         self.loader.load(config, options)?;
         if let Some(arc) = &self.loader.arc {
