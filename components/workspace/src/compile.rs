@@ -4,7 +4,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use human_bytes::human_bytes;
-use log::{info, warn};
+use log::info;
 
 use cache::CacheComponent;
 use compiler::parser::Parser;
@@ -255,6 +255,10 @@ fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseDa
 fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -> Result<()> {
 
     if let Some(ref sitemap) = ctx.options.settings.sitemap {
+        if ctx.options.settings.robots.is_none() {
+            ctx.options.settings.robots = Some(Default::default()); 
+        }
+
         // How many entries per chunk window?
         let entries = sitemap.entries.as_ref().unwrap();
 
@@ -309,8 +313,6 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
         // Update robots config to include the sitemap 
         if let Some(ref mut robots) = ctx.options.settings.robots.as_mut() {
             robots.sitemaps.push(sitemap_url);
-        } else {
-            warn!("Unable to add sitemap {} to robots.txt configuration", sitemap_url.to_string());
         }
     }
 
@@ -323,7 +325,8 @@ fn write_robots_file<'a>(ctx: &'a mut BuildContext) -> Result<()> {
         // NOTE: of multi-lingual support so we use `base` rather
         // NOTE: than the `target`
         let robots_file = ctx.options.base.join(config::robots::FILE);
-        utils::fs::write_string(robots_file, robots.to_string())?;
+        utils::fs::write_string(&robots_file, robots.to_string())?;
+        info!("Robots {}", robots_file.display());
     }
     Ok(())
 }

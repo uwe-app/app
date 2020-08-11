@@ -221,9 +221,6 @@ impl ProfileSettings {
         if let None = self.collate {
             self.collate = Some(true);
         }
-        if let None = self.robots {
-            self.robots = Some(Default::default());
-        }
     }
 
     pub fn get_host(&self) -> String {
