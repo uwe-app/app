@@ -108,7 +108,7 @@ pub fn relative<P: AsRef<Path>, B: AsRef<Path>>(
         }
     }
 
-    value.push_str(&href);
+    value.push_str(&href.trim_start_matches("/"));
 
     if include_index && (value.ends_with("/") || value == "") {
         value.push_str(super::INDEX_HTML);
