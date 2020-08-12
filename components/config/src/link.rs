@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use super::{Error, Result, RuntimeOptions};
+use super::file::FileInfo;
 
 use super::config::INDEX_STEM;
 
@@ -83,6 +84,41 @@ pub fn asset<F: AsRef<Path>, S: AsRef<Path>>(file: F, source: S, options: LinkOp
     to_href(file.strip_prefix(source)?, options)
 }
 */
+
+pub fn relative<P: AsRef<Path>, B: AsRef<Path>>(
+    href: &str,
+    path: P,
+    base: B,
+    opts: &RuntimeOptions) -> Result<String> {
+
+    let rel = path.as_ref().strip_prefix(base.as_ref())?;
+
+    let types = opts.settings.types.as_ref().unwrap();
+    let include_index = opts.settings.should_include_index();
+    let rewrite_index = opts.settings.should_rewrite_index();
+
+    let up = "../";
+    let mut value: String = "".to_string();
+    if let Some(p) = rel.parent() {
+        if rewrite_index && FileInfo::is_clean(path.as_ref(), types) {
+            value.push_str(up);
+        }
+        for _ in p.components() {
+            value.push_str(up);
+        }
+    }
+
+    value.push_str(&href);
+
+    if include_index && (value.ends_with("/") || value == "") {
+        value.push_str(super::INDEX_HTML);
+    }
+
+    if !rewrite_index && value == "" {
+        value = up.to_string();
+    }
+    Ok(value)
+}
 
 // Attempt to get an absolute URL path for a page
 // relative to the source. The resulting href

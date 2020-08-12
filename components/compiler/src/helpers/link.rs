@@ -4,7 +4,7 @@ use handlebars::*;
 use log::debug;
 use serde_json::json;
 
-use config::FileInfo;
+//use config::FileInfo;
 
 use crate::lookup;
 use crate::BuildContext;
@@ -39,7 +39,7 @@ impl HelperDef for Link<'_> {
             .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .to_string();
 
-        let types = self.context.options.settings.types.as_ref().unwrap();
+        //let types = self.context.options.settings.types.as_ref().unwrap();
 
         let opts = &self.context.options;
         let path = Path::new(&base_path);
@@ -89,13 +89,29 @@ impl HelperDef for Link<'_> {
 
         if let Some(ref href_path) = opts.settings.base_href {
             base.push(href_path);
-
             if input.starts_with(href_path) {
                 input = input.trim_start_matches(href_path);
                 input = input.trim_start_matches("/");
             }
         }
 
+        let value = if make_relative {
+            if let Ok(val) = config::link::relative(&input, path, base, opts) {
+                val
+            } else {
+                return Err(RenderError::new(
+                    "Type error for `link`, file is outside source!",
+                ));
+            }
+        } else {
+            format!("/{}", input)
+        };
+
+        debug!("Link {:?}", value);
+
+        out.write(&value)?;
+
+        /*
         if let Ok(rel) = path.strip_prefix(base) {
             let value = if make_relative {
                 let up = "../";
@@ -131,6 +147,7 @@ impl HelperDef for Link<'_> {
                 "Type error for `link`, file is outside source!",
             ));
         }
+        */
 
         Ok(())
     }
