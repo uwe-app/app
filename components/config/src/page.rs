@@ -137,6 +137,8 @@ pub struct Page {
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
 
+    pub permalink: Option<String>,
+
     //#[serde(deserialize_with = "from_toml_datetime", serialize_with = "to_toml_datetime")]
     #[serde(deserialize_with = "from_toml_datetime")]
     pub created: Option<DateTime<Utc>>,
@@ -186,6 +188,7 @@ impl Default for Page {
             meta: None,
             scripts: None,
             styles: None,
+            permalink: None,
 
             created: None,
             updated: None,
