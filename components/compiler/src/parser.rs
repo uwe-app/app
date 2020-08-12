@@ -67,6 +67,7 @@ impl<'a> Parser<'a> {
         );
         handlebars.register_helper("match", Box::new(helpers::matcher::Match { context }));
         handlebars.register_helper("series", Box::new(helpers::series::Series { context }));
+        handlebars.register_helper("favicon", Box::new(helpers::favicon::Icon{ context }));
 
         if context.config.search.is_some() {
             handlebars.register_helper("search", Box::new(helpers::search::Embed { context }));
