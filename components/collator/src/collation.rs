@@ -25,6 +25,11 @@ pub struct CollateInfo {
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
 
+    // Pages that have permalinks map the 
+    // permalink to the computed href so that
+    // we can configure redirects for permalinks.
+    pub permalinks: HashMap<String, String>,
+
     // Assets and other files that should be copied
     pub other: HashMap<Arc<PathBuf>, PathBuf>,
 

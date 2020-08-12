@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use compiler::redirect;
 use config::{Config, ProfileSettings};
 use config::{ProfileName, RuntimeOptions};
 
@@ -54,10 +53,6 @@ fn to_options(
 
     if live && release {
         return Err(Error::LiveReloadRelease);
-    }
-
-    if let Some(ref redirects) = cfg.redirect {
-        redirect::validate(redirects)?;
     }
 
     let incremental = args.is_incremental();

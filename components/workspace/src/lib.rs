@@ -13,6 +13,9 @@ pub enum Error {
     #[error("Build tag may not be an absolute path {0}")]
     ProfileNameAbsolute(String),
 
+    #[error("Permalink {0} collides with an existing redirect")]
+    RedirectPermalinkCollision(String),
+
     #[error("Live reload is not available for release builds")]
     LiveReloadRelease,
 

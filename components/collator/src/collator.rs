@@ -209,6 +209,19 @@ fn add_page(
     let href = href(&pth, req.options, rewrite_index, None)?;
     link(&mut info, Arc::clone(key), Arc::new(href.clone()))?;
 
+    // Map permalinks to be converted to redirects later
+    if let Some(ref permalink) = page_info.permalink {
+        let key = permalink.trim_end_matches("/").to_string();
+
+        if info.permalinks.contains_key(&key) {
+            return Err(Error::DuplicatePermalink(key)) 
+        }
+
+        info.permalinks.insert(
+            key,
+            page_info.href.as_ref().unwrap().to_string());
+    }
+
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
     info.targets.entry(Arc::clone(key)).or_insert(dest);
 

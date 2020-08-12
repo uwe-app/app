@@ -7,6 +7,7 @@ use human_bytes::human_bytes;
 use log::info;
 
 use cache::CacheComponent;
+use compiler::redirect;
 use compiler::parser::Parser;
 use compiler::{BuildContext, Compiler, ParseData};
 use config::{Config, ProfileSettings, RuntimeOptions};
@@ -119,7 +120,7 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
 
 async fn load(
     //locales: Locales,
-    config: Config,
+    mut config: Config,
     mut options: RuntimeOptions,
     lang: Option<String>,
 ) -> Result<BuildContext> {
@@ -167,7 +168,31 @@ async fn load(
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
 
+    // Set up the cache for data source queries
     let mut cache = DataSourceMap::get_cache();
+
+    // Map permalink redirects
+    if !collation.permalinks.is_empty() {
+        // Must have some redirects
+        if let None = config.redirect {
+            config.redirect = Some(Default::default()); 
+        }
+
+        if let Some(redirects) = config.redirect.as_mut() {
+            for (permalink, href) in collation.permalinks.iter() {
+                let key = permalink.to_string() ;
+                if redirects.contains_key(&key) {
+                    return Err(Error::RedirectPermalinkCollision(key));
+                }
+                redirects.insert(key, href.to_string());
+            }
+        }
+    }
+
+    // Validate the redirects
+    if let Some(ref redirects) = config.redirect {
+        redirect::validate(redirects)?;
+    }
 
     // Copy the search runtime files if we need them
     synthetic::search(&config, &options, &mut collation)?;

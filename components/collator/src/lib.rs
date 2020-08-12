@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Front matter error in {0} ({1})")]
     FrontMatterParse(PathBuf, toml::de::Error),
 
+    #[error("Duplicate permalink for path '{0}', ensure permalinks are unique")]
+    DuplicatePermalink(String),
+
     #[error("Series '{0}' references missing page {1}")]
     NoSeriesPage(String, PathBuf),
 

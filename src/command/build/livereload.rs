@@ -33,6 +33,8 @@ pub async fn start<P: AsRef<Path>>(
     args: &mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
+
+    // Compile the project
     let (ctx, locales) = workspace::compile_project(project, args).await?;
 
     let host = ctx.options.settings.get_host();
@@ -41,8 +43,8 @@ pub async fn start<P: AsRef<Path>>(
     let source = ctx.options.source.clone();
     let endpoint = utils::generate_id(16);
 
+    // Gather redirects
     let mut redirect_uris = None;
-
     if let Some(ref redirects) = ctx.config.redirect {
         redirect_uris = Some(redirect::collect(redirects)?);
     }
