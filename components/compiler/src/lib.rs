@@ -50,6 +50,9 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
+    Url(#[from] url::ParseError),
+
+    #[error(transparent)]
     TemplateFile(#[from] handlebars::TemplateFileError),
     #[error(transparent)]
     Template(#[from] handlebars::TemplateError),

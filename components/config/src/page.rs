@@ -377,6 +377,10 @@ impl Page {
             self.styles = Some(mem::take(styles));
         }
 
+        if let Some(permalink) = other.permalink.as_mut() {
+            self.permalink = Some(mem::take(permalink));
+        }
+
         self.created = other.created.clone();
         self.updated = other.updated.clone();
 
