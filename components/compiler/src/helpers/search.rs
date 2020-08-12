@@ -107,7 +107,7 @@ impl HelperDef for Embed<'_> {
         } else {
             format!(
                 "<div class=\"{}\">
-                  <input data-search=\"{}\" placeholder=\"{}\" class=\"search-input\"></input>
+                  <input data-search=\"{}\" placeholder=\"{}\" class=\"search-input\">
                   <div data-search=\"{}-output\" class=\"search-output\"></div>
                 </div>",
                 &class, &id, &placeholder, &id
