@@ -12,6 +12,7 @@ use unic_langid::LanguageIdentifier;
 
 use utils;
 
+use super::feed::FeedConfig;
 use super::indexer::{DataBase, IndexRequest};
 use super::page::{Author, Page};
 use super::profile::{ProfileName, ProfileSettings};
@@ -126,6 +127,7 @@ pub struct Config {
     pub syntax: Option<SyntaxConfig>,
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
+    pub feed: Option<FeedConfig>,
 
     pub db: Option<DataBase>,
 
@@ -165,6 +167,7 @@ impl Default for Config {
             syntax: None,
             transform: Some(Default::default()),
             search: None,
+            feed: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),
