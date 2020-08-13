@@ -174,7 +174,7 @@ impl Default for ProfileSettings {
             host: Some(config::HOST.to_string()),
             port: Some(config::PORT),
             scheme: Some(config::SCHEME_HTTPS.to_string()),
-            tls: Some(true),
+            tls: None,
 
             live: None,
             release: None,
@@ -231,6 +231,9 @@ impl ProfileSettings {
         if let None = self.collate {
             self.collate = Some(true);
         }
+        if let None = self.tls {
+            self.tls = Some(true);
+        }
     }
 
     pub fn get_host(&self) -> String {
@@ -253,7 +256,7 @@ impl ProfileSettings {
         if let Some(ref tls) = self.tls {
             tls.clone()
         } else {
-            true
+            false
         }
     }
 
