@@ -27,14 +27,14 @@ pub struct ServeOptions {
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-    let (tx, _rx) = oneshot::channel::<(SocketAddr, String)>();
+    let (tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
     serve(options, ws_tx, tx).await
 }
 
 pub async fn serve(
     options: ServeOptions,
     ws_notify: broadcast::Sender<Message>,
-    bind: oneshot::Sender<(SocketAddr, String)>,
+    bind: oneshot::Sender<(SocketAddr, String, bool)>,
 ) -> Result<(), Error> {
     let address = format!("{}:{}", options.host, options.port);
     let sockaddr: SocketAddr = address
@@ -61,7 +61,7 @@ pub async fn serve(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(_) = bind.send((addr, url)) {
+        if let Err(_) = bind.send((addr, url, tls)) {
             error!("Failed to notify of server bind event");
             std::process::exit(1);
         }

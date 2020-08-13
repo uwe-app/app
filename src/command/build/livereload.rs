@@ -24,8 +24,9 @@ use crate::{Error, ErrorCallback};
 
 use super::invalidator::Invalidator;
 
-fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str) -> String {
-    format!("ws://{}:{}/{}", host, addr.port(), endpoint)
+fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str, secure: bool) -> String {
+    let scheme = if secure {"wss:"} else {"ws:"};
+    format!("{}//{}:{}/{}", scheme, host, addr.port(), endpoint)
 }
 
 pub async fn start<P: AsRef<Path>>(
@@ -64,7 +65,7 @@ pub async fn start<P: AsRef<Path>>(
     };
 
     // Create a channel to receive the bind address.
-    let (bind_tx, bind_rx) = oneshot::channel::<(SocketAddr, String)>();
+    let (bind_tx, bind_rx) = oneshot::channel::<(SocketAddr, String, bool)>();
 
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
     let reload_tx = ws_tx.clone();
@@ -75,9 +76,9 @@ pub async fn start<P: AsRef<Path>>(
         let mut rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
             // Get the socket address and websocket transmission channel
-            let (addr, url) = bind_rx.await.unwrap();
+            let (addr, url, tls) = bind_rx.await.unwrap();
 
-            let ws_url = get_websocket_url(host, addr, &endpoint);
+            let ws_url = get_websocket_url(host, addr, &endpoint, tls);
 
             if let Err(e) = livereload::write(&ctx.config, &ctx.options.target, &ws_url) {
                 return error_cb(Error::from(e));

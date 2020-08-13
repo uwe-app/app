@@ -82,6 +82,15 @@ pub async fn serve(
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: broadcast::Sender<Message>,
 ) {
+
+    let address = opts.address.clone();
+    let root = opts.serve_dir.clone();
+    let state = opts.serve_dir.clone();
+    let serve_tls_cert = std::env::var("LOCALHOST_CERT").ok();
+    let serve_tls_key = std::env::var("LOCALHOST_KEY").ok();
+    let use_tls = opts.tls && serve_tls_cert.is_some() && serve_tls_key.is_some();
+
+
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
     // receive reload messages.
     let sender = warp::any().map(move || reload_tx.subscribe());
@@ -89,7 +98,8 @@ pub async fn serve(
     let port = opts.address.clone().port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
-        let origin = format!("http://{}:{}", opts.host, port);
+        let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
+        let origin = format!("{}//{}:{}", scheme, opts.host, port);
         cors = warp::cors()
             .allow_origin(origin.as_str())
             .allow_methods(vec!["GET"]);
@@ -114,13 +124,6 @@ pub async fn serve(
             },
         )
         .with(&cors);
-
-    let address = opts.address.clone();
-    let root = opts.serve_dir.clone();
-    let state = opts.serve_dir.clone();
-    let serve_tls_cert = std::env::var("LOCALHOST_CERT").ok();
-    let serve_tls_key = std::env::var("LOCALHOST_KEY").ok();
-    let use_tls = opts.tls && serve_tls_cert.is_some() && serve_tls_key.is_some();
 
     //let redirects = opts.redirects.clone();
 
