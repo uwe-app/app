@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use warp::http::Uri;
+use http::Uri;
 
 use crate::{BuildContext, Error, Result};
 

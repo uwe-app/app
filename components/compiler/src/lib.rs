@@ -44,7 +44,7 @@ pub enum Error {
     StripPrefix(#[from] std::path::StripPrefixError),
 
     #[error(transparent)]
-    InvalidUri(#[from] warp::http::uri::InvalidUri),
+    InvalidUri(#[from] http::uri::InvalidUri),
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),

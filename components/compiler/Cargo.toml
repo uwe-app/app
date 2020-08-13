@@ -32,12 +32,13 @@ fluent-templates = {version = "0.5.9", default-features = true, features = ["han
 
 rayon = "1.3"
 crossbeam = "0.7"
+http = "0.2"
 
 futures = "0.3"
 futures-util = { version = "0.3.4" }
 tokio = { version = "0.2.18", features = ["macros"] }
 
-# TODO: we only need Url!
-warp = { version = "0.2.2", default-features = false, features = ["websocket"] }
+
+#warp = { version = "0.2.2", default-features = false, features = ["websocket"] }
 
 once_cell = "1.4"
