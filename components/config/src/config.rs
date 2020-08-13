@@ -86,18 +86,18 @@ pub fn parse_language<S: AsRef<str>>(lang: S) -> Result<LanguageIdentifier, Erro
 }
 
 pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
-    let mut src = host.as_ref().clone().to_string();
+    let mut host = host.as_ref().clone().to_string();
     // It's ok if people want to declare a scheme but we don't
     // want one for the host
-    src = src
-        .trim_start_matches("http://")
-        .trim_start_matches("https://")
+    host = host
+        .trim_start_matches(SCHEME_HTTP)
+        .trim_start_matches(SCHEME_HTTPS)
+        .trim_start_matches(SCHEME_DELIMITER)
         .to_string();
 
     // Check host can be parsed as a valid URL
     // and return the parsed URL
-    let url_host = format!("https://{}", src);
-    Ok(Url::parse(&url_host)?)
+    Ok(Url::parse(&crate::to_url_string(SCHEME_HTTPS, &host, None))?)
 }
 
 #[skip_serializing_none]
