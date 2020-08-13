@@ -19,6 +19,7 @@ pub struct ServeOptions {
     pub host: String,
     pub port: u16,
     pub open_browser: bool,
+    pub tls: bool,
     pub watch: Option<PathBuf>,
     pub endpoint: String,
     pub redirects: Option<HashMap<String, Uri>>,
@@ -47,11 +48,12 @@ pub async fn serve(
     let open_browser = options.open_browser;
 
     // Create a channel to receive the bind address.
-    let (ctx, mut crx) = mpsc::channel::<SocketAddr>(100);
+    let (ctx, mut crx) = mpsc::channel::<(bool, SocketAddr)>(100);
 
     let _ = tokio::task::spawn(async move {
-        let addr = crx.recv().await.unwrap();
-        let url = config::to_url_string(config::SCHEME_HTTP, &host, addr.port());
+        let (tls, addr) = crx.recv().await.unwrap();
+        let scheme = if tls { config::SCHEME_HTTPS } else { config::SCHEME_HTTP };
+        let url = config::to_url_string(scheme, &host, addr.port());
         info!("Serve {}", url);
 
         if open_browser {
@@ -72,6 +74,7 @@ pub async fn serve(
         address: sockaddr,
         redirects: options.redirects,
         log: true,
+        tls: options.tls,
         temporary_redirect: true,
     };
 

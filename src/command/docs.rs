@@ -25,6 +25,7 @@ pub async fn open() -> Result<(), Error> {
         target,
         host: docs_prefs.host.clone(),
         port: docs_prefs.port.clone(),
+        tls: docs_prefs.tls,
         open_browser: true,
         watch: None,
         endpoint: utils::generate_id(16),

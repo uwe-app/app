@@ -32,6 +32,8 @@ pub struct WebServerOptions {
     // TODO: support conditional logging
     pub log: bool,
 
+    pub tls: bool,
+
     pub temporary_redirect: bool,
     pub redirects: Option<HashMap<String, Uri>>,
 }
@@ -77,7 +79,7 @@ async fn redirect_trailing_slash(
 
 pub async fn serve(
     opts: WebServerOptions,
-    mut bind_tx: mpsc::Sender<SocketAddr>,
+    mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: broadcast::Sender<Message>,
 ) {
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
@@ -116,6 +118,9 @@ pub async fn serve(
     let address = opts.address.clone();
     let root = opts.serve_dir.clone();
     let state = opts.serve_dir.clone();
+    let serve_tls_cert = std::env::var("LOCALHOST_CERT").ok();
+    let serve_tls_key = std::env::var("LOCALHOST_KEY").ok();
+    let use_tls = opts.tls && serve_tls_cert.is_some() && serve_tls_key.is_some();
 
     //let redirects = opts.redirects.clone();
 
@@ -138,24 +143,32 @@ pub async fn serve(
 
     let routes = livereload.or(redirect_handler.or(slash_redirect));
 
-    //if opts.log {
-    //routes = routes.with(warp::log("static"));
-    //}
+    if use_tls {
+        let (addr, future) = warp::serve(routes)
+            .tls()
+            .cert_path(serve_tls_cert.as_ref().unwrap())
+            .key_path(serve_tls_key.as_ref().unwrap())
+            .bind_ephemeral(address);
 
-    let bind_result = warp::serve(routes).try_bind_ephemeral(address);
-    match bind_result {
-        Ok((addr, future)) => {
-            if let Err(e) = bind_tx.try_send(addr) {
+        bind_tx.try_send((true, addr)).expect("Failed to send web server socket address");
+        future.await;
+    } else {
+        let bind_result = warp::serve(routes).try_bind_ephemeral(address);
+        match bind_result {
+            Ok((addr, future)) => {
+                if let Err(e) = bind_tx.try_send((false, addr)) {
+                    error!("{}", e);
+                    std::process::exit(1);
+                }
+                future.await;
+            }
+            Err(e) => {
                 error!("{}", e);
                 std::process::exit(1);
             }
-            future.await;
-        }
-        Err(e) => {
-            error!("{}", e);
-            std::process::exit(1);
         }
     }
+
 }
 
 // An API error serializable to JSON.

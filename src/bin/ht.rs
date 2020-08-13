@@ -442,6 +442,7 @@ async fn process_command(cmd: &Command) {
                 host: host.to_owned(),
                 port: port.to_owned(),
                 open_browser: true,
+                tls: true,
                 watch: None,
                 endpoint: utils::generate_id(16),
                 redirects: None,

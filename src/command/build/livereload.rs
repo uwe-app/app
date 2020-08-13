@@ -39,6 +39,7 @@ pub async fn start<P: AsRef<Path>>(
 
     let host = ctx.options.settings.get_host();
     let port = ctx.options.settings.get_port();
+    let tls = ctx.options.settings.get_tls();
 
     let source = ctx.options.source.clone();
     let endpoint = utils::generate_id(16);
@@ -56,6 +57,7 @@ pub async fn start<P: AsRef<Path>>(
         watch: Some(source.clone()),
         host: host.to_owned(),
         port: port.to_owned(),
+        tls,
         endpoint: endpoint.clone(),
         open_browser: false,
         redirects: redirect_uris,

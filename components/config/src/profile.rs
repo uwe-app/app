@@ -141,6 +141,7 @@ pub struct ProfileSettings {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub scheme: Option<String>,
+    pub tls: Option<bool>,
 
     pub robots: Option<RobotsConfig>,
     pub sitemap: Option<SiteMapConfig>,
@@ -173,6 +174,8 @@ impl Default for ProfileSettings {
             host: Some(config::HOST.to_string()),
             port: Some(config::PORT),
             scheme: Some(config::SCHEME_HTTPS.to_string()),
+            tls: Some(true),
+
             live: None,
             release: None,
             include_index: None,
@@ -243,6 +246,14 @@ impl ProfileSettings {
             port.clone()
         } else {
             config::PORT
+        }
+    }
+
+    pub fn get_tls(&self) -> bool {
+        if let Some(ref tls) = self.tls {
+            tls.clone()
+        } else {
+            true
         }
     }
 
