@@ -1,5 +1,4 @@
 use handlebars::*;
-use log::warn;
 
 use config::{Config, RuntimeOptions};
 use crate::{Result, BuildContext};
@@ -21,6 +20,57 @@ pub fn get_permalink<'a>(
     Ok(base.join(path)?.to_string())
 }
 
+
+fn get_permalink_href<'rc, 'a>(
+    ctx: &'rc Context,
+    context: &'a BuildContext,
+) -> Result<String> {
+
+    let href = ctx
+        .data()
+        .as_object()
+        .ok_or_else(
+            || RenderError::new("Type error for `bookmark`, invalid page data"))
+        .unwrap()
+        .get("href")
+        .ok_or_else(
+            || RenderError::new("Type error for `bookmark`, no href set"))
+        .unwrap()
+        .as_str();
+
+    let permalink = ctx
+        .data()
+        .as_object()
+        .ok_or_else(
+            || RenderError::new("Type error for `bookmark`, invalid page data"))
+        .unwrap()
+        .get("permalink")
+        .and_then(|v| v.as_str());
+
+    get_permalink(href, permalink, &context.config, &context.options)
+}
+
+#[derive(Clone, Copy)]
+pub struct PermaLink<'a> {
+    pub context: &'a BuildContext,
+}
+
+impl HelperDef for PermaLink<'_> {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        _h: &Helper<'reg, 'rc>,
+        _r: &'reg Handlebars<'_>,
+        ctx: &'rc Context,
+        _rc: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        if let Ok(href) = get_permalink_href(ctx, self.context) {
+            out.write(&href)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Link<'a> {
     pub context: &'a BuildContext,
@@ -36,32 +86,30 @@ impl HelperDef for Link<'_> {
         out: &mut dyn Output,
     ) -> HelperResult {
 
-        let href = ctx
-            .data()
-            .as_object()
-            .ok_or_else(
-                || RenderError::new("Type error for `bookmark`, invalid page data"))
-            .unwrap()
-            .get("href")
-            .ok_or_else(
-                || RenderError::new("Type error for `bookmark`, no href set"))
-            .unwrap()
-            .as_str();
+        //let href = ctx
+            //.data()
+            //.as_object()
+            //.ok_or_else(
+                //|| RenderError::new("Type error for `bookmark`, invalid page data"))
+            //.unwrap()
+            //.get("href")
+            //.ok_or_else(
+                //|| RenderError::new("Type error for `bookmark`, no href set"))
+            //.unwrap()
+            //.as_str();
 
-        let permalink = ctx
-            .data()
-            .as_object()
-            .ok_or_else(
-                || RenderError::new("Type error for `bookmark`, invalid page data"))
-            .unwrap()
-            .get("permalink")
-            .and_then(|v| v.as_str());
+        //let permalink = ctx
+            //.data()
+            //.as_object()
+            //.ok_or_else(
+                //|| RenderError::new("Type error for `bookmark`, invalid page data"))
+            //.unwrap()
+            //.get("permalink")
+            //.and_then(|v| v.as_str());
 
-        if let Ok(href) = get_permalink(href, permalink, &self.context.config, &self.context.options) {
+        if let Ok(href) = get_permalink_href(ctx, self.context) {
             let markup = format!("<link rel=\"bookmark\" href=\"{}\">", &href);
             out.write(&markup)?;
-        } else {
-            warn!("Failed to create bookmark for {}", href.unwrap());
         }
         Ok(())
     }
