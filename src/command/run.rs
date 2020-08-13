@@ -51,8 +51,7 @@ pub async fn serve(
 
     let _ = tokio::task::spawn(async move {
         let addr = crx.recv().await.unwrap();
-        let url = format!("http://{}:{}", &host, addr.port());
-
+        let url = config::to_url_string(config::SCHEME_HTTP, &host, addr.port());
         info!("Serve {}", url);
 
         if open_browser {

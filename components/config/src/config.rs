@@ -51,7 +51,8 @@ pub static LIVERELOAD_FILE: &str = "__livereload.js";
 pub static HOST: &str = "localhost";
 pub static PORT: u16 = 8888;
 
-pub static SCHEME: &str = "https:";
+pub static SCHEME_HTTPS: &str = "https:";
+pub static SCHEME_HTTP: &str = "http:";
 pub static SCHEME_DELIMITER: &str = "//";
 
 type RedirectConfig = HashMap<String, String>;

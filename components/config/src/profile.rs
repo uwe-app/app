@@ -172,7 +172,7 @@ impl Default for ProfileSettings {
             profile: None,
             host: Some(config::HOST.to_string()),
             port: Some(config::PORT),
-            scheme: Some(config::SCHEME.to_string()),
+            scheme: Some(config::SCHEME_HTTPS.to_string()),
             live: None,
             release: None,
             include_index: None,
@@ -197,7 +197,7 @@ impl ProfileSettings {
 
     pub fn get_canonical_url(&self, conf: &config::Config) -> crate::Result<Url> {
         let scheme = self.scheme.as_ref().unwrap();
-        Ok(Url::parse(&format!("{}{}{}", scheme, config::SCHEME_DELIMITER, conf.host))?)
+        Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
     }
 
     pub fn get_host_url(&self, conf: &config::Config) -> String {

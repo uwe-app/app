@@ -65,6 +65,15 @@ pub fn get_short_codes_location() -> Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join("shortcodes/site/partials"))
 }
 
+pub fn to_url_string(scheme: &str, host: &str, port: impl Into<Option<u16>>) -> String {
+    let url = if let Some(port) = port.into() {
+        format!("{}{}{}:{}", scheme, crate::config::SCHEME_DELIMITER, host, port)
+    } else {
+        format!("{}{}{}", scheme, crate::config::SCHEME_DELIMITER, host)
+    };
+    url
+}
+
 pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
