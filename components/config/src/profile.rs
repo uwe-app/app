@@ -196,8 +196,15 @@ impl Default for ProfileSettings {
 impl ProfileSettings {
 
     pub fn get_canonical_url(&self, conf: &config::Config) -> crate::Result<Url> {
-        let scheme = self.scheme.as_ref().unwrap();
-        Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
+        if self.is_release() {
+            let scheme = self.scheme.as_ref().unwrap();
+            Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
+        } else {
+            Ok(Url::parse(&crate::to_url_string(
+                config::SCHEME_HTTP,
+                self.host.as_ref().unwrap(),
+                self.port.clone()))?)
+        }
     }
 
     pub fn get_host_url(&self, conf: &config::Config) -> String {
