@@ -205,6 +205,10 @@ struct FetchOpts {
     /// Update the search runtime
     #[structopt(short = "e", long)]
     search: bool,
+
+    /// Update the feed templates
+    #[structopt(short = "f", long)]
+    feed: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -405,6 +409,7 @@ async fn process_command(cmd: &Command) {
                 short_code: args.short_code,
                 syntax: args.syntax,
                 search: args.search,
+                feed: args.feed,
             };
 
             if let Err(e) = command::fetch::update(opts) {

@@ -12,6 +12,7 @@ pub struct FetchOptions {
     pub short_code: bool,
     pub syntax: bool,
     pub search: bool,
+    pub feed: bool,
 }
 
 pub fn update(options: FetchOptions) -> Result<()> {
@@ -25,6 +26,7 @@ pub fn update(options: FetchOptions) -> Result<()> {
         CacheComponent::ShortCode,
         CacheComponent::Syntax,
         CacheComponent::Search,
+        CacheComponent::Feed,
     ];
 
     if options.blueprint
@@ -34,6 +36,7 @@ pub fn update(options: FetchOptions) -> Result<()> {
         || options.short_code
         || options.syntax
         || options.search
+        || options.feed
     {
         components = Vec::new();
 
@@ -57,6 +60,9 @@ pub fn update(options: FetchOptions) -> Result<()> {
         }
         if options.search {
             components.push(CacheComponent::Search);
+        }
+        if options.feed {
+            components.push(CacheComponent::Feed);
         }
     }
 
