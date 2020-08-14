@@ -80,18 +80,21 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                 let template = if let Some(tpl) = feed.templates.get(feed_type) {
                     tpl.to_path_buf()
                 } else {
-                    // TODO: use system template
-                    PathBuf::from("")
+                    cache::get_feed_dir()?.join(&file_name)
                 };
 
+                if !template.exists() {
+                    return Err(Error::NoFeedTemplate(template));
+                }
+
                 //let target = target_dir.join(&file_name);
-                println!("Got feed type to process {:?} {}", feed_type, source.display());
+                println!("Got feed type to process {:?} {} {}", feed_type, source.display(), template.display());
                 //create_synthetic(
                     //config,
                     //options,
                     //info,
                     //source,
-                    //target,
+                    //template,
                     //item_data.clone(),
                     //rewrite_index,
                 //)?;

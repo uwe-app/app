@@ -75,6 +75,7 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
 
+    fetch_cache_lazy(config, &opts)?;
     let mut ctx = load(config.clone(), opts, None).await?;
 
     let mut previous_base = base_target.clone();
@@ -124,6 +125,7 @@ async fn load(
     mut options: RuntimeOptions,
     lang: Option<String>,
 ) -> Result<BuildContext> {
+
     // Finalize the language for this pass
     options.lang = if let Some(lang) = lang {
         lang
@@ -219,27 +221,51 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     manifest_file
 }
 
-fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
-    if let Some(ref syntax_config) = ctx.config.syntax {
-        if ctx.config.is_syntax_enabled(&ctx.options.settings.name) {
-            let prefs = preference::load()?;
+
+fn fetch_cache_lazy(config: &Config, opts: &RuntimeOptions) -> Result<()> {
+    let mut components: Vec<CacheComponent> = Vec::new();
+
+    if let Some(ref syntax_config) = config.syntax {
+        if config.is_syntax_enabled(&opts.settings.name) {
             let syntax_dir = cache::get_syntax_dir()?;
             if !syntax_dir.exists() {
-                cache::update(&prefs, vec![CacheComponent::Syntax])?;
+                components.push(CacheComponent::Syntax);
             }
-            info!("Syntax highlighting on");
-            syntax::setup(&syntax_dir, syntax_config)?;
         }
     }
 
-    if let Some(ref search) = ctx.config.search {
+    if let Some(ref search) = config.search {
         let fetch_search_runtime = search.bundle.is_some() && search.bundle.unwrap();
         if fetch_search_runtime {
-            let prefs = preference::load()?;
             let search_dir = cache::get_search_dir()?;
             if !search_dir.exists() {
-                cache::update(&prefs, vec![CacheComponent::Search])?;
+                components.push(CacheComponent::Search);
             }
+        }
+    }
+
+    if let Some(ref feed) = config.feed {
+        let feed_dir = cache::get_feed_dir()?;
+        if !feed_dir.exists() {
+            components.push(CacheComponent::Feed);
+        }
+    }
+
+    if !components.is_empty() {
+        let prefs = preference::load()?;
+        cache::update(&prefs, components)?;
+    }
+
+    Ok(())
+}
+
+fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
+
+    if let Some(ref syntax_config) = ctx.config.syntax {
+        if ctx.config.is_syntax_enabled(&ctx.options.settings.name) {
+            let syntax_dir = cache::get_syntax_dir()?;
+            info!("Syntax highlighting on");
+            syntax::setup(&syntax_dir, syntax_config)?;
         }
     }
 

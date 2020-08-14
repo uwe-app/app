@@ -21,7 +21,6 @@ pub enum FeedType {
 }
 
 impl FeedType {
-
     pub fn get_name(&self) -> String {
         format!("{}.{}", self.get_file_name(), self.get_extension())
     }
@@ -42,13 +41,30 @@ impl FeedType {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct FeedTemplates {
+    pub json: Option<PathBuf>,
+    pub rss: Option<PathBuf>,
+    pub atom: Option<PathBuf>,
+}
+
+impl FeedTemplates {
+    pub fn get(&self, feed_type: &FeedType) -> &Option<PathBuf> {
+        match *feed_type {
+            FeedType::Json => &self.json,
+            FeedType::Rss => &self.rss,
+            FeedType::Atom => &self.atom,
+        } 
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct FeedConfig {
     // List of custom templates to use for each feed.
     //
     // When specified they override the default templates 
     // for each feed type.
-    pub templates: HashMap<FeedType, PathBuf>,
+    pub templates: FeedTemplates,
 
     #[serde(flatten)]
     pub channels: HashMap<String, ChannelConfig>,
