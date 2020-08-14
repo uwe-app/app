@@ -21,7 +21,12 @@ pub enum FeedType {
 }
 
 impl FeedType {
-    pub fn get_name(&self) -> &str {
+
+    pub fn get_name(&self) -> String {
+        format!("{}.{}", self.get_file_name(), self.get_extension())
+    }
+
+    pub fn get_file_name(&self) -> &str {
         match *self {
             Self::Rss | Self::Json => FEED_NAME,
             Self::Atom => ATOM_NAME,
@@ -52,7 +57,8 @@ pub struct FeedConfig {
 impl FeedConfig {
     // Prepare the configuration by compiling the glob matchers.
     pub fn prepare(&mut self) {
-        for (_k, v) in self.channels.iter_mut() {
+        for (k, v) in self.channels.iter_mut() {
+            v.target = Some(k.to_string());
             v.include_match = v.includes.iter().map(|g| g.compile_matcher()).collect();
             v.exclude_match = v.excludes.iter().map(|g| g.compile_matcher()).collect();
         }
@@ -64,7 +70,7 @@ impl FeedConfig {
 pub struct ChannelConfig {
     // The path to write feed pages to relative to the target
     // build directory, eg: `posts`.
-    pub target: Option<PathBuf>,
+    pub target: Option<String>,
 
     // List of file types to generate for this feed
     pub types: Vec<FeedType>,
@@ -83,7 +89,7 @@ impl Default for ChannelConfig {
     fn default() -> Self {
         Self {
             target: None,
-            types: vec![FeedType::Json, FeedType::Rss],
+            types: vec![FeedType::Json, FeedType::Rss, FeedType::Atom],
             includes: Vec::new(),
             excludes: Vec::new(),
             include_match: Vec::new(),

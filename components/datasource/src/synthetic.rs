@@ -61,11 +61,45 @@ fn create_file(
 // Create feed pages.
 pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref feed) = config.feed {
-        println!("Creating feed pages");
+        let rewrite_index = options.settings.should_rewrite_index();
         for (name, channel) in feed.channels.iter() {
+            let channel_target = utils::url::to_path_separator(
+                channel.target.as_ref().unwrap().trim_start_matches("/"));
+            let source_dir = options.source.join(&channel_target);
             let page_paths = info.feeds.get(name).unwrap();
+
             println!("Got channel to process: {}", name);
+
+            // Data is the same for each feed
+            let item_data: Page = Default::default();
+
+            for feed_type in channel.types.iter() {
+                let file_name = feed_type.get_name();
+                let source = source_dir.join(&file_name);
+
+                let template = if let Some(tpl) = feed.templates.get(feed_type) {
+                    tpl.to_path_buf()
+                } else {
+                    // TODO: use system template
+                    PathBuf::from("")
+                };
+
+                //let target = target_dir.join(&file_name);
+                println!("Got feed type to process {:?} {}", feed_type, source.display());
+                //create_synthetic(
+                    //config,
+                    //options,
+                    //info,
+                    //source,
+                    //target,
+                    //item_data.clone(),
+                    //rewrite_index,
+                //)?;
+            }
         }
+
+        println!("GENERATE FEED SYNTHETIC PAGES");
+        std::process::exit(1);
     }
     Ok(())
 }
@@ -106,9 +140,6 @@ pub fn search(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
                 wasm_source,
                 wasm_target,
             )?;
-
-            //println!("COPY THE SEARCH RUNTIME FILES");
-            //std::process::exit(1);
         }
     }
 
