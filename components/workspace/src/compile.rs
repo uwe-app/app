@@ -196,9 +196,14 @@ async fn load(
 
     // Copy the search runtime files if we need them
     synthetic::search(&config, &options, &mut collation)?;
+    // Create feed pages
+    synthetic::feed(&config, &options, &mut collation)?;
 
+    // Perform pagination
     synthetic::pages(&config, &options, &mut collation, &datasource, &mut cache)?;
+    // Create pages for iterators
     synthetic::each(&config, &options, &mut collation, &datasource, &mut cache)?;
+    // Assign data from queries
     synthetic::assign(&config, &options, &mut collation, &datasource, &mut cache)?;
 
     // Collate the series data

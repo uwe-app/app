@@ -55,7 +55,18 @@ fn create_file(
 ) -> Result<()> {
     let key = Arc::new(source);
     collator::add_file(&key, target, href, info, config, options)?;
+    Ok(())
+}
 
+// Create feed pages.
+pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
+    if let Some(ref feed) = config.feed {
+        println!("Creating feed pages");
+        for (name, channel) in feed.channels.iter() {
+            let page_paths = info.feeds.get(name).unwrap();
+            println!("Got channel to process: {}", name);
+        }
+    }
     Ok(())
 }
 

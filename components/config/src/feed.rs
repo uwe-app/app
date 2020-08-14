@@ -64,8 +64,6 @@ impl FeedConfig {
 pub struct ChannelConfig {
     // The path to write feed pages to relative to the target
     // build directory, eg: `posts`.
-    //
-    // Feed files will be placed in this directory.
     pub target: Option<PathBuf>,
 
     // List of file types to generate for this feed

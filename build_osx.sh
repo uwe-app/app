@@ -6,4 +6,5 @@ export CC=o64-clang
 export CXX=o64-clang++
 export LIBZ_SYS_STATIC=1
 #export ONIG_STATIC=1
+#export RUSTONIG_STATIC_LIBONIG=1
 cargo build --target=x86_64-apple-darwin --release
