@@ -307,9 +307,8 @@ impl Config {
                     }
                 }
 
-                if let Some(search) = cfg.search.as_mut() {
-                    search.prepare();
-                }
+                if let Some(search) = cfg.search.as_mut() { search.prepare(); }
+                if let Some(feed) = cfg.feed.as_mut() { feed.prepare(); }
 
                 let mut livereload = cfg.livereload.as_mut().unwrap();
                 if livereload.file.is_none() {

@@ -222,6 +222,19 @@ fn add_page(
             page_info.href.as_ref().unwrap().to_string());
     }
 
+    // Collate feed pages
+    if let Some(ref feed) = req.config.feed {
+        for (name, cfg) in feed.channels.iter() {
+            let href = page_info.href.as_ref().unwrap();
+            if cfg.filter(href) {
+                let items = info.feeds
+                    .entry(name.to_string())
+                    .or_insert(vec![]); 
+                items.push(Arc::clone(key));
+            }
+        }
+    }
+
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
     info.targets.entry(Arc::clone(key)).or_insert(dest);
 

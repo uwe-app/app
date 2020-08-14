@@ -37,6 +37,13 @@ pub struct CollateInfo {
     // with the target output files
     pub targets: HashMap<Arc<PathBuf>, PathBuf>,
 
+    // Pages located for feed configurations.
+    //
+    // The hash map key is the key for the feed congiguration 
+    // and each entry is a page path that can be used to 
+    // locate the page data in `pages`.
+    pub feeds: HashMap<String, Vec<Arc<PathBuf>>>,
+
     // Store queries for expansion later
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 

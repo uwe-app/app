@@ -101,19 +101,11 @@ impl Default for SearchItemConfig {
 impl SearchItemConfig {
     pub fn filter(&self, href: &str) -> bool {
         for glob in self.exclude_match.iter() {
-            if glob.is_match(href) {
-                return false;
-            }
+            if glob.is_match(href) { return false; }
         }
-
-        if self.include_match.is_empty() {
-            return true;
-        }
-
+        if self.include_match.is_empty() { return true; }
         for glob in self.include_match.iter() {
-            if glob.is_match(href) {
-                return true;
-            }
+            if glob.is_match(href) { return true; }
         }
         false
     }
