@@ -225,7 +225,7 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
 fn fetch_cache_lazy(config: &Config, opts: &RuntimeOptions) -> Result<()> {
     let mut components: Vec<CacheComponent> = Vec::new();
 
-    if let Some(ref syntax_config) = config.syntax {
+    if config.syntax.is_some() {
         if config.is_syntax_enabled(&opts.settings.name) {
             let syntax_dir = cache::get_syntax_dir()?;
             if !syntax_dir.exists() {
@@ -244,7 +244,7 @@ fn fetch_cache_lazy(config: &Config, opts: &RuntimeOptions) -> Result<()> {
         }
     }
 
-    if let Some(ref feed) = config.feed {
+    if config.feed.is_some() {
         let feed_dir = cache::get_feed_dir()?;
         if !feed_dir.exists() {
             components.push(CacheComponent::Feed);

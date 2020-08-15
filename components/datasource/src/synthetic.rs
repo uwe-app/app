@@ -38,6 +38,7 @@ fn create_synthetic(
     // Configure a link for the synthetic page
     let href = collator::href(&source, options, rewrite_index, None)?;
     let key = Arc::new(source);
+
     collator::link(info, Arc::clone(&key), Arc::new(href))?;
 
     // Inject the synthetic page
@@ -147,7 +148,7 @@ fn build_feed(
         })
         .collect();
 
-    println!("Feed is {:#?}", feed);
+    //println!("Feed is {:#?}", feed);
 
     Ok(feed)
 }
@@ -155,22 +156,21 @@ fn build_feed(
 // Create feed pages.
 pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref feed) = config.feed {
-        let rewrite_index = options.settings.should_rewrite_index();
+        //let rewrite_index = options.settings.should_rewrite_index();
         let lang = &options.lang;
         for (name, channel) in feed.channels.iter() {
             let channel_href = channel.target.as_ref().unwrap().trim_start_matches("/");
             let channel_target = utils::url::to_path_separator(channel_href);
             let source_dir = options.source.join(&channel_target);
 
-            println!("Got channel to process: {}", name);
+            //println!("Got channel to process: {}", name);
 
             // Data is the same for each feed
             let mut data_source: Page = Default::default();
+            data_source.standalone = Some(true);
             data_source.lang = Some(lang.to_string());
             data_source.feed = Some(
                 build_feed(lang, name, config, options, info, feed, channel)?);
-
-            // TODO: generate feed data source
 
             for feed_type in channel.types.iter() {
 
@@ -188,8 +188,8 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                 }
 
                 //let target = target_dir.join(&file_name);
-                println!("Got feed type to process {:?} {} {}",
-                    feed_type, source.display(), template.display());
+                //println!("Got feed type to process {:?} {} {}",
+                    //feed_type, source.display(), template.display());
 
                 let mut item_data = data_source.clone();
 
@@ -201,20 +201,22 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                     //println!("Feed is {:#?}", feed);
                 }
 
-                //create_synthetic(
-                    //config,
-                    //options,
-                    //info,
-                    //source,
-                    //template,
-                    //item_data,
-                    //rewrite_index,
-                //)?;
+                create_synthetic(
+                    config,
+                    options,
+                    info,
+                    source,
+                    template,
+                    item_data,
+                    // NOTE: must be false otherwise we get a collision
+                    // NOTE: on feed.xml and feed.json
+                    false,
+                )?;
             }
         }
 
-        println!("GENERATE FEED SYNTHETIC PAGES");
-        std::process::exit(1);
+        //println!("GENERATE FEED SYNTHETIC PAGES");
+        //std::process::exit(1);
     }
     Ok(())
 }
