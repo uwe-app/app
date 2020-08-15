@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 static JSON: &str = "json";
 static XML: &str = "xml";
 
-static FEED_NAME: &str = "feed";
+static JSON_NAME: &str = "feed";
+static RSS_NAME: &str = "rss";
 static ATOM_NAME: &str = "atom";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
@@ -27,7 +28,8 @@ impl FeedType {
 
     pub fn get_file_name(&self) -> &str {
         match *self {
-            Self::Rss | Self::Json => FEED_NAME,
+            Self::Json => JSON_NAME,
+            Self::Rss => RSS_NAME,
             Self::Atom => ATOM_NAME,
         } 
     }

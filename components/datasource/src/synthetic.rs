@@ -63,7 +63,6 @@ fn create_file(
 }
 
 fn build_feed(
-    lang: &str,
     name: &str,
     config: &Config,
     options: &RuntimeOptions,
@@ -156,8 +155,6 @@ fn build_feed(
 // Create feed pages.
 pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref feed) = config.feed {
-        //let rewrite_index = options.settings.should_rewrite_index();
-        let lang = &options.lang;
         for (name, channel) in feed.channels.iter() {
             let channel_href = channel.target.as_ref().unwrap().trim_start_matches("/");
             let channel_target = utils::url::to_path_separator(channel_href);
@@ -169,15 +166,15 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
             data_source.feed = Some(
-                build_feed(lang, name, config, options, info, feed, channel)?);
+                build_feed(name, config, options, info, feed, channel)?);
 
             for feed_type in channel.types.iter() {
 
                 let file_name = feed_type.get_name();
                 let source = source_dir.join(&file_name);
 
-                let template = if let Some(tpl) = feed.templates.get(feed_type) {
-                    tpl.to_path_buf()
+                let template = if let Some(ref tpl) = feed.templates.get(feed_type) {
+                    options.source.join(tpl)
                 } else {
                     cache::get_feed_dir()?.join(&file_name)
                 };
