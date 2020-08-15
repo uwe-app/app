@@ -2,9 +2,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde_json::json;
+use jsonfeed::Feed;
 
 use collator::CollateInfo;
 use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
+use config::feed::{FeedConfig, ChannelConfig};
+
 //use config::link::{self, LinkOptions};
 
 use crate::{DataSourceMap, Error, QueryCache, Result};
@@ -58,22 +61,63 @@ fn create_file(
     Ok(())
 }
 
+fn build_feed(
+    lang: &str,
+    name: &str,
+    config: &Config,
+    options: &RuntimeOptions,
+    info: &mut CollateInfo,
+    feed_cfg: &FeedConfig,
+    channel_cfg: &ChannelConfig) -> Result<Feed> {
+
+    let base_url = options.get_canonical_url(config, true)?;
+
+    let mut feed: Feed = Default::default();
+    feed.version = "https://jsonfeed.org/version/1".to_string();
+    feed.home_page_url = Some(base_url.to_string());
+
+    if let Some(ref title) = channel_cfg.title {
+        feed.title = title.to_string();
+    }
+    if let Some(ref description) = channel_cfg.description {
+        feed.description = Some(description.to_string());
+    }
+    if let Some(ref favicon) = channel_cfg.favicon {
+        feed.favicon = Some(base_url.join(favicon)?.to_string());
+    }
+    if let Some(ref icon) = channel_cfg.icon {
+        feed.icon = Some(base_url.join(icon)?.to_string());
+    }
+
+    let page_paths = info.feeds.get(name).unwrap();
+
+    println!("Feed is {:#?}", feed);
+
+    Ok(feed)
+}
+
 // Create feed pages.
 pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref feed) = config.feed {
         let rewrite_index = options.settings.should_rewrite_index();
+        let lang = &options.lang;
         for (name, channel) in feed.channels.iter() {
-            let channel_target = utils::url::to_path_separator(
-                channel.target.as_ref().unwrap().trim_start_matches("/"));
+            let channel_href = channel.target.as_ref().unwrap().trim_start_matches("/");
+            let channel_target = utils::url::to_path_separator(channel_href);
             let source_dir = options.source.join(&channel_target);
-            let page_paths = info.feeds.get(name).unwrap();
 
             println!("Got channel to process: {}", name);
 
             // Data is the same for each feed
-            let item_data: Page = Default::default();
+            let mut data_source: Page = Default::default();
+            data_source.lang = Some(lang.to_string());
+            data_source.feed = Some(
+                build_feed(lang, name, config, options, info, feed, channel)?);
+
+            // TODO: generate feed data source
 
             for feed_type in channel.types.iter() {
+
                 let file_name = feed_type.get_name();
                 let source = source_dir.join(&file_name);
 
@@ -88,14 +132,26 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                 }
 
                 //let target = target_dir.join(&file_name);
-                println!("Got feed type to process {:?} {} {}", feed_type, source.display(), template.display());
+                println!("Got feed type to process {:?} {} {}",
+                    feed_type, source.display(), template.display());
+
+                let mut item_data = data_source.clone();
+
+                // Update the feed url for this file
+                let base_url = options.get_canonical_url(config, true)?;
+                if let Some(ref mut feed) = item_data.feed.as_mut() {
+                    let path = format!("{}/{}", channel_href, file_name);
+                    feed.feed_url = Some(base_url.join(&path)?.to_string()); 
+                    //println!("Feed is {:#?}", feed);
+                }
+
                 //create_synthetic(
                     //config,
                     //options,
                     //info,
                     //source,
                     //template,
-                    //item_data.clone(),
+                    //item_data,
                     //rewrite_index,
                 //)?;
             }

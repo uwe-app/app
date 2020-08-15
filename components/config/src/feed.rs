@@ -57,9 +57,14 @@ impl FeedTemplates {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct FeedConfig {
+    // The limit for the number of items in each feed.
+    //
+    // The resulting list will be truncated to this value.
+    pub limit: Option<usize>,
+
     // List of custom templates to use for each feed.
     //
     // When specified they override the default templates 
@@ -68,6 +73,16 @@ pub struct FeedConfig {
 
     #[serde(flatten)]
     pub channels: HashMap<String, ChannelConfig>,
+}
+
+impl Default for FeedConfig {
+    fn default() -> Self {
+        Self {
+            limit: Some(100),
+            templates: Default::default(),
+            channels: HashMap::new(),
+        }
+    }
 }
 
 impl FeedConfig {
@@ -88,6 +103,18 @@ pub struct ChannelConfig {
     // build directory, eg: `posts`.
     pub target: Option<String>,
 
+    // A title for the feed channel.
+    pub title: Option<String>,
+
+    // A description for the feed channel.
+    pub description: Option<String>,
+
+    // Path for a favicon, it will be made absolute.
+    pub favicon: Option<String>,
+
+    // Path for an icon, it will be made absolute.
+    pub icon: Option<String>,
+
     // List of file types to generate for this feed
     pub types: Vec<FeedType>,
 
@@ -105,6 +132,10 @@ impl Default for ChannelConfig {
     fn default() -> Self {
         Self {
             target: None,
+            title: None,
+            description: None,
+            favicon: None,
+            icon: None,
             types: vec![FeedType::Json, FeedType::Rss, FeedType::Atom],
             includes: Vec::new(),
             excludes: Vec::new(),

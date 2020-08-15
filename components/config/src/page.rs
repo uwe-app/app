@@ -4,6 +4,7 @@ use std::mem;
 use std::path::{Path, PathBuf};
 
 use chrono::prelude::*;
+use jsonfeed::Feed;
 
 use log::debug;
 
@@ -136,8 +137,9 @@ pub struct Page {
 
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
-
     pub permalink: Option<String>,
+
+    // Automatically assigned
 
     //#[serde(deserialize_with = "from_toml_datetime", serialize_with = "to_toml_datetime")]
     #[serde(deserialize_with = "from_toml_datetime")]
@@ -162,6 +164,8 @@ pub struct Page {
     pub canonical: Option<String>,
     #[serde(skip_deserializing)]
     pub paginate: Option<PaginateInfo>,
+    #[serde(skip_deserializing)]
+    pub feed: Option<Feed>,
 
     // NOTE: that we do not define `context` as it would
     // NOTE: create a recursive data type; the template
@@ -201,6 +205,7 @@ impl Default for Page {
             file: None,
             canonical: None,
             paginate: None,
+            feed: None,
         }
     }
 }

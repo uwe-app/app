@@ -47,6 +47,9 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
+    Url(#[from] url::ParseError),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
     Collator(#[from] collator::Error),
