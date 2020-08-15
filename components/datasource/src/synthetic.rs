@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use chrono::prelude::*;
 use serde_json::json;
-use jsonfeed::Feed;
+use jsonfeed::{Feed, Item};
 
 use collator::CollateInfo;
 use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
@@ -90,6 +91,61 @@ fn build_feed(
     }
 
     let page_paths = info.feeds.get(name).unwrap();
+    let mut pages: Vec<&Page> = page_paths
+        .iter()
+        .map(|pth| info.pages.get(pth).unwrap())
+        .collect();
+
+    pages.sort_by(|a, b| {
+        let a_val: &DateTime<Utc>;
+        let b_val: &DateTime<Utc>;
+        if a.created.is_some() && b.created.is_some() {
+            a_val = a.created.as_ref().unwrap();
+            b_val = b.created.as_ref().unwrap();
+        }else if a.updated.is_some() && b.updated.is_some() {
+            a_val = a.updated.as_ref().unwrap();
+            b_val = b.updated.as_ref().unwrap();
+        } else {
+            a_val = &a.file.as_ref().unwrap().modified;
+            b_val = &b.file.as_ref().unwrap().modified;
+        }
+        // NOTE: Compare this way around for descending order
+        // NOTE: if we compared `a` to `b` instead it would be
+        // NOTE: ascending. This saves us from reversing the list.
+        b_val.partial_cmp(a_val).unwrap()
+    });
+
+    // Limit the number of items in the feed
+    pages.truncate(*feed_cfg.limit.as_ref().unwrap());
+
+    feed.items = pages
+        .iter()
+        .map(|p| {
+            let mut item: Item = Default::default();
+            item.id = base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
+            item.url = if let Some(ref permalink) = p.permalink {
+                Some(base_url.join(permalink).unwrap().to_string()) 
+            } else {
+                Some(item.id.to_string())
+            };
+
+            item.title = p.title.clone();
+            item.summary = p.description.clone();
+            if let Some(ref created) = p.created {
+                item.date_published = Some(created.to_rfc3339());
+            }
+            item.date_modified = if let Some(ref updated) = p.updated {
+                Some(updated.to_rfc3339())
+            } else {
+                Some(p.file.as_ref().unwrap().modified.to_rfc3339())
+            };
+
+            // TODO: external_url, content, image, banner_image, authors
+            // TODO: tags, language, attachments
+
+            item
+        })
+        .collect();
 
     println!("Feed is {:#?}", feed);
 

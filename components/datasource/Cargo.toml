@@ -10,6 +10,7 @@ collator = {version = "0.1", path = "../collator" }
 config = {version = "0.1", path = "../config" }
 utils = {version = "0.1", path = "../utils" }
 
+chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1"
 futures = "0.3"
 tokio = { version = "0.2", features = ["full"] }
