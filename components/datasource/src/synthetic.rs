@@ -32,7 +32,6 @@ fn create_synthetic(
     };
 
     let dest = file_info.destination(&file_opts)?;
-
     data.seal(&dest, config, options, &file_info, Some(template))?;
 
     // Configure a link for the synthetic page
@@ -121,6 +120,7 @@ fn build_feed(
 
     feed.items = pages
         .iter()
+        .filter(|p| !p.is_draft())
         .map(|p| {
             let mut item: Item = Default::default();
             item.id = base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
@@ -168,7 +168,6 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
             // Data is the same for each feed
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
-            data_source.lang = Some(lang.to_string());
             data_source.feed = Some(
                 build_feed(lang, name, config, options, info, feed, channel)?);
 
@@ -192,6 +191,7 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                     //feed_type, source.display(), template.display());
 
                 let mut item_data = data_source.clone();
+                //item_data.set_language(lang);
 
                 // Update the feed url for this file
                 let base_url = options.get_canonical_url(config, true)?;
@@ -200,6 +200,8 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                     feed.feed_url = Some(base_url.join(&path)?.to_string()); 
                     //println!("Feed is {:#?}", feed);
                 }
+
+                //println!("Feed data {:#?}", item_data);
 
                 create_synthetic(
                     config,

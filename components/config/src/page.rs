@@ -228,6 +228,10 @@ impl Page {
         self.lang = Some(lang.as_ref().to_string());
     }
 
+    pub fn is_draft(&self) -> bool {
+        self.draft.is_some() && self.draft.unwrap()
+    }
+
     // Used when multiple languages active to rewrite the output
     // path to a new base destination including the locale id.
     //
