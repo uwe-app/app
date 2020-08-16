@@ -5,6 +5,7 @@ use serde_json::{to_value, Value};
 
 use config::Page;
 
+pub mod author;
 pub mod bookmark;
 pub mod children;
 pub mod components;
