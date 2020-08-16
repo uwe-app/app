@@ -159,14 +159,19 @@ fn build_feed(
                 }
             }
 
-            // TODO: external_url, content, image, banner_image
-            // TODO: language, attachments
+            if let Some(ref entry) = p.entry {
+                item.language = entry.language.clone();
+                item.external_url = entry.external_url.clone();
+                item.image = entry.image.clone();
+                item.banner_image = entry.banner_image.clone();
+                item.attachments = entry.attachments.clone();
+            }
+
+            // TODO: content
 
             item
         })
         .collect();
-
-    //println!("Feed is {:#?}", feed);
 
     Ok(feed)
 }

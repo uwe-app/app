@@ -4,7 +4,7 @@ use std::mem;
 use std::path::{Path, PathBuf};
 
 use chrono::prelude::*;
-pub use jsonfeed::{Feed, Author};
+pub use jsonfeed::{Feed, Author, Attachment};
 
 use log::debug;
 
@@ -111,6 +111,16 @@ pub struct PaginateInfo {
 }
 
 #[skip_serializing_none]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct FeedEntry {
+    pub language: Option<String>,
+    pub external_url: Option<String>,
+    pub image: Option<String>,
+    pub banner_image: Option<String>,
+    pub attachments: Option<Vec<Attachment>>,
+}
+
+#[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct Page {
@@ -138,6 +148,9 @@ pub struct Page {
     pub scripts: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
     pub permalink: Option<String>,
+
+    // Custom values for feed entry
+    pub entry: Option<FeedEntry>,
 
     // Automatically assigned
 
@@ -193,6 +206,7 @@ impl Default for Page {
             scripts: None,
             styles: None,
             permalink: None,
+            entry: None,
 
             created: None,
             updated: None,
@@ -388,6 +402,10 @@ impl Page {
 
         if let Some(permalink) = other.permalink.as_mut() {
             self.permalink = Some(mem::take(permalink));
+        }
+
+        if let Some(entry) = other.entry.as_mut() {
+            self.entry = Some(mem::take(entry));
         }
 
         self.created = other.created.clone();
