@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use chrono::prelude::*;
 use serde_json::json;
-use jsonfeed::{Feed, Item};
+use jsonfeed::{Feed, Item, VERSION};
 
 use collator::CollateInfo;
 use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
@@ -73,7 +73,8 @@ fn build_feed(
     let base_url = options.get_canonical_url(config, true)?;
 
     let mut feed: Feed = Default::default();
-    feed.version = "https://jsonfeed.org/version/1".to_string();
+    feed.version = VERSION.to_string();
+    feed.language = Some(options.lang.clone());
     feed.home_page_url = Some(base_url.to_string());
 
     if let Some(ref title) = channel_cfg.title {
