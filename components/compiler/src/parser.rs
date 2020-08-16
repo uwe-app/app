@@ -59,6 +59,7 @@ impl<'a> Parser<'a> {
             "livereload",
             Box::new(helpers::livereload::LiveReload { context }),
         );
+        handlebars.register_helper("feed", Box::new(helpers::feed::Feed { context }));
         handlebars.register_helper("parent", Box::new(helpers::parent::Parent { context }));
         handlebars.register_helper("link", Box::new(helpers::link::Link { context }));
         handlebars.register_helper("md", Box::new(helpers::markdown::Markdown { context }));

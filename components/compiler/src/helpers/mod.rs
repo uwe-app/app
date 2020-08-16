@@ -11,6 +11,7 @@ pub mod children;
 pub mod components;
 pub mod date;
 pub mod favicon;
+pub mod feed;
 pub mod include;
 pub mod json;
 pub mod link;

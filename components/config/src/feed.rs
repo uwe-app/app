@@ -7,6 +7,10 @@ use serde::{Deserialize, Serialize};
 static JSON: &str = "json";
 static XML: &str = "xml";
 
+static JSON_MIME: &str = "application/feed+json";
+static ATOM_MIME: &str = "application/atom+xml";
+static RSS_MIME: &str = "application/rss+xml";
+
 static JSON_NAME: &str = "feed";
 static RSS_NAME: &str = "rss";
 static ATOM_NAME: &str = "atom";
@@ -24,6 +28,14 @@ pub enum FeedType {
 impl FeedType {
     pub fn get_name(&self) -> String {
         format!("{}.{}", self.get_file_name(), self.get_extension())
+    }
+
+    pub fn get_mime(&self) -> &str {
+        match *self {
+            Self::Json => JSON_MIME,
+            Self::Rss => RSS_MIME,
+            Self::Atom => ATOM_MIME,
+        } 
     }
 
     pub fn get_file_name(&self) -> &str {
@@ -133,7 +145,7 @@ pub struct ChannelConfig {
 impl Default for ChannelConfig {
     fn default() -> Self {
         Self {
-            target: None,
+            target: Some("".to_string()),
             title: None,
             description: None,
             favicon: None,
