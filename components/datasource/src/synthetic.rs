@@ -77,6 +77,14 @@ fn build_feed(
     feed.language = Some(options.lang.clone());
     feed.home_page_url = Some(base_url.to_string());
 
+    if let Some(ref authors) = config.authors {
+        let authors = authors
+            .values()
+            .map(|v| v.clone())
+            .collect::<Vec<_>>();
+        feed.authors = Some(authors);
+    }
+
     if let Some(ref title) = channel_cfg.title {
         feed.title = title.to_string();
     }
@@ -141,7 +149,10 @@ fn build_feed(
                 Some(p.file.as_ref().unwrap().modified.to_rfc3339())
             };
 
-            // TODO: external_url, content, image, banner_image, authors
+            // Page-level authors
+            item.authors = p.authors.clone();
+
+            // TODO: external_url, content, image, banner_image
             // TODO: tags, language, attachments
 
             item
