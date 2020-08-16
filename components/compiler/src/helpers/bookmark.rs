@@ -86,27 +86,6 @@ impl HelperDef for Link<'_> {
         out: &mut dyn Output,
     ) -> HelperResult {
 
-        //let href = ctx
-            //.data()
-            //.as_object()
-            //.ok_or_else(
-                //|| RenderError::new("Type error for `bookmark`, invalid page data"))
-            //.unwrap()
-            //.get("href")
-            //.ok_or_else(
-                //|| RenderError::new("Type error for `bookmark`, no href set"))
-            //.unwrap()
-            //.as_str();
-
-        //let permalink = ctx
-            //.data()
-            //.as_object()
-            //.ok_or_else(
-                //|| RenderError::new("Type error for `bookmark`, invalid page data"))
-            //.unwrap()
-            //.get("permalink")
-            //.and_then(|v| v.as_str());
-
         if let Ok(href) = get_permalink_href(ctx, self.context) {
             let markup = format!("<link rel=\"bookmark\" href=\"{}\">", &href);
             out.write(&markup)?;

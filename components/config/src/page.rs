@@ -4,7 +4,7 @@ use std::mem;
 use std::path::{Path, PathBuf};
 
 use chrono::prelude::*;
-use jsonfeed::Feed;
+pub use jsonfeed::{Feed, Author};
 
 use log::debug;
 
@@ -401,8 +401,8 @@ impl Page {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub struct Author {
-    pub name: String,
-    pub link: Option<String>,
-}
+//#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+//pub struct Author {
+    //pub name: String,
+    //pub link: Option<String>,
+//}

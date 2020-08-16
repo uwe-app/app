@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
         }
 
         // Configure helpers
-        handlebars.register_helper("author", Box::new(helpers::author::Author { context }));
+        handlebars.register_helper("author", Box::new(helpers::author::AuthorMeta { context }));
         handlebars.register_helper("partial", Box::new(helpers::partial::Partial { context }));
         handlebars.register_helper(
             "children",

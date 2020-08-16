@@ -78,6 +78,6 @@ pub fn to_url_string(scheme: &str, host: &str, port: impl Into<Option<u16>>) -> 
 pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
-pub use page::{Page, PageLink, PaginateInfo};
+pub use page::{Page, PageLink, PaginateInfo, Author};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
 pub use search::{SEARCH_JS, SEARCH_WASM};
