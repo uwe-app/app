@@ -152,8 +152,15 @@ fn build_feed(
             // Page-level authors
             item.authors = p.authors.clone();
 
+            // Pass through tags from the `meta` taxonomies
+            if let Some(ref meta) = p.meta {
+                if let Some(ref tags) = meta.get(config::TAGS) {
+                    item.tags = Some(tags.to_vec());
+                }
+            }
+
             // TODO: external_url, content, image, banner_image
-            // TODO: tags, language, attachments
+            // TODO: language, attachments
 
             item
         })

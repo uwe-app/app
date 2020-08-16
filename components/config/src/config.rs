@@ -48,6 +48,7 @@ pub static DATASOURCES: &str = "data-sources";
 pub static RESOURCES: &str = "resources";
 pub static LANG: &str = "en";
 pub static LIVERELOAD_FILE: &str = "__livereload.js";
+pub static TAGS: &str = "tags";
 
 pub static HOST: &str = "localhost";
 pub static PORT: u16 = 8888;
