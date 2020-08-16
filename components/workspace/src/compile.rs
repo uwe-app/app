@@ -279,22 +279,23 @@ fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseDa
             let mut intermediates: Vec<IntermediateEntry> = Vec::new();
             info!("Prepare search index ({})", parse_list.len());
             for parse_data in parse_list {
-                let extraction = parse_data.extract.as_ref().unwrap();
-                let href = ctx.collation.links.sources.get(&parse_data.file);
+                if let Some(ref extraction) = parse_data.extract {
+                    let href = ctx.collation.links.sources.get(&parse_data.file);
 
-                let buffer = extraction.to_chunk_string();
-                let title = if let Some(ref title) = extraction.title { title } else { "" };
-                let mut url = if let Some(ref href) = href { href } else { "" };
+                    let buffer = extraction.to_chunk_string();
+                    let title = if let Some(ref title) = extraction.title { title } else { "" };
+                    let mut url = if let Some(ref href) = href { href } else { "" };
 
-                if !include_index && url.ends_with(config::INDEX_HTML) {
-                    url = url.trim_end_matches(config::INDEX_HTML);
+                    if !include_index && url.ends_with(config::INDEX_HTML) {
+                        url = url.trim_end_matches(config::INDEX_HTML);
+                    }
+
+                    if !search.filter(url) {
+                        continue;
+                    }
+
+                    intermediates.push(intermediate(&buffer, title, url, Default::default()));
                 }
-
-                if !search.filter(url) {
-                    continue;
-                }
-
-                intermediates.push(intermediate(&buffer, title, url, Default::default()));
             }
 
             info!("Compile search index ({})", intermediates.len());

@@ -27,17 +27,20 @@ impl ParseData {
     }
 }
 
+fn is_html_extension<P: AsRef<Path>>(dest: P) -> bool {
+    if let Some(ext) = dest.as_ref().extension() {
+        return ext == config::HTML
+    }
+    false
+}
+
 fn should_minify_html<P: AsRef<Path>>(
     dest: P,
     tag: &ProfileName,
     release: bool,
     config: &Config,
 ) -> bool {
-    let mut html_extension = false;
-    if let Some(ext) = dest.as_ref().extension() {
-        html_extension = ext == config::HTML;
-    }
-
+    let html_extension = is_html_extension(dest.as_ref());
     if html_extension {
         if let Some(ref minify) = config.minify {
             if let Some(ref html) = minify.html {
@@ -47,7 +50,6 @@ fn should_minify_html<P: AsRef<Path>>(
             }
         }
     }
-
     release && html_extension
 }
 
@@ -86,45 +88,48 @@ pub async fn parse(
 
     let mut res = ParseData::new(data.file.as_ref().unwrap().source.clone());
 
-    // Should we use text extraction?
-    let mut use_text = ctx.config.search.is_some();
-    // Set up the default transform flags
-    let mut html_flags: HtmlTransformFlags = Default::default();
+    if is_html_extension(&dest) {
+        // Should we use text extraction?
+        let mut use_text = ctx.config.search.is_some();
+        // Set up the default transform flags
+        let mut html_flags: HtmlTransformFlags = Default::default();
 
-    // Do we need to perform any transformations?
-    let mut requires_transform = ctx.config.search.is_some();
+        // Do we need to perform any transformations?
+        let mut requires_transform = ctx.config.search.is_some();
 
-    if let Some(ref transform) = ctx.config.transform {
-        if let Some(ref html) = transform.html {
-            // Must use the config flags
-            html_flags = html.clone();
+        if let Some(ref transform) = ctx.config.transform {
+            if let Some(ref html) = transform.html {
+                // Must use the config flags
+                html_flags = html.clone();
 
-            // Enable transform actions when necessary
-            if !use_text {
-                use_text = html.use_words();
-            }
-            if !requires_transform {
-                requires_transform = html.is_active()
+                // Enable transform actions when necessary
+                if !use_text {
+                    use_text = html.use_words();
+                }
+                if !requires_transform {
+                    requires_transform = html.is_active()
+                }
             }
         }
-    }
 
-    if requires_transform {
-        let mut cache = transform::cache::TransformCache::new()?;
-        cache.syntax_highlight = Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
+        if requires_transform {
+            let mut cache = transform::cache::TransformCache::new()?;
+            cache.syntax_highlight = Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
-        cache.text = if use_text {
-            Some(transform::text::TextExtraction::new())
-        } else {
-            None
-        };
+            cache.text = if use_text {
+                Some(transform::text::TextExtraction::new())
+            } else {
+                None
+            };
 
-        if html_flags.is_active() || cache.is_active() {
-            s = transform::html::apply(&s, &html_flags, &mut cache)?;
-            // Assign the extracted text so we can use it later
-            // to build the search index
-            res.extract = cache.text.clone();
+            if html_flags.is_active() || cache.is_active() {
+                s = transform::html::apply(&s, &html_flags, &mut cache)?;
+                // Assign the extracted text so we can use it later
+                // to build the search index
+                res.extract = cache.text.clone();
+            }
         }
+
     }
 
     utils::fs::write_string(&dest, &s)?;
