@@ -10,6 +10,7 @@ use url::Url;
 
 use super::config::{self, Config};
 use super::robots::RobotsConfig;
+use super::server::TlsConfig;
 use super::sitemap::SiteMapConfig;
 
 static DEBUG: &str = "debug";
@@ -141,7 +142,7 @@ pub struct ProfileSettings {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub scheme: Option<String>,
-    pub tls: Option<bool>,
+    pub tls: Option<TlsConfig>,
 
     pub robots: Option<RobotsConfig>,
     pub sitemap: Option<SiteMapConfig>,
@@ -231,9 +232,6 @@ impl ProfileSettings {
         if let None = self.collate {
             self.collate = Some(true);
         }
-        if let None = self.tls {
-            self.tls = Some(true);
-        }
     }
 
     pub fn get_host(&self) -> String {
@@ -249,14 +247,6 @@ impl ProfileSettings {
             port.clone()
         } else {
             config::PORT
-        }
-    }
-
-    pub fn get_tls(&self) -> bool {
-        if let Some(ref tls) = self.tls {
-            tls.clone()
-        } else {
-            false
         }
     }
 

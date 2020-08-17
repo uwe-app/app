@@ -40,7 +40,7 @@ pub async fn start<P: AsRef<Path>>(
 
     let host = ctx.options.settings.get_host();
     let port = ctx.options.settings.get_port();
-    let tls = ctx.options.settings.get_tls();
+    let tls = ctx.options.settings.tls.clone();
 
     let source = ctx.options.source.clone();
     let endpoint = utils::generate_id(16);

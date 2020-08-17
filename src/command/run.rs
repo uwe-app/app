@@ -11,6 +11,7 @@ use warp::ws::Message;
 use log::{error, info};
 
 use crate::Error;
+use config::server::TlsConfig;
 use server::{serve_static, WebServerOptions};
 
 #[derive(Debug)]
@@ -19,7 +20,7 @@ pub struct ServeOptions {
     pub host: String,
     pub port: u16,
     pub open_browser: bool,
-    pub tls: bool,
+    pub tls: Option<TlsConfig>,
     pub watch: Option<PathBuf>,
     pub endpoint: String,
     pub redirects: Option<HashMap<String, Uri>>,

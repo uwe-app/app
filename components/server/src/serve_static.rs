@@ -21,6 +21,8 @@ use std::path::PathBuf;
 
 use log::{error, trace};
 
+use config::server::TlsConfig;
+
 use utils;
 
 #[derive(Debug, Clone)]
@@ -32,7 +34,7 @@ pub struct WebServerOptions {
     // TODO: support conditional logging
     pub log: bool,
 
-    pub tls: bool,
+    pub tls: Option<TlsConfig>,
 
     pub temporary_redirect: bool,
     pub redirects: Option<HashMap<String, Uri>>,
@@ -80,16 +82,15 @@ async fn redirect_trailing_slash(
 pub async fn serve(
     opts: WebServerOptions,
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
-    reload_tx: broadcast::Sender<Message>,
-) {
+    reload_tx: broadcast::Sender<Message>) {
 
     let address = opts.address.clone();
     let root = opts.serve_dir.clone();
     let state = opts.serve_dir.clone();
-    let serve_tls_cert = std::env::var("LOCALHOST_CERT").ok();
-    let serve_tls_key = std::env::var("LOCALHOST_KEY").ok();
-    let use_tls = opts.tls && serve_tls_cert.is_some() && serve_tls_key.is_some();
-
+    let use_tls = opts.tls.is_some();
+    let tls = opts.tls.clone();
+    //let serve_tls_cert = if let Some();
+    //let serve_tls_key = std::env::var("SSL_KEY").ok();
 
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
     // receive reload messages.
@@ -149,8 +150,8 @@ pub async fn serve(
     if use_tls {
         let (addr, future) = warp::serve(routes)
             .tls()
-            .cert_path(serve_tls_cert.as_ref().unwrap())
-            .key_path(serve_tls_key.as_ref().unwrap())
+            .cert_path(&tls.as_ref().unwrap().cert)
+            .key_path(&tls.as_ref().unwrap().key)
             .bind_ephemeral(address);
 
         bind_tx.try_send((true, addr)).expect("Failed to send web server socket address");

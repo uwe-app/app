@@ -14,6 +14,7 @@ use std::panic;
 
 use hypertext::command;
 use hypertext::{Config, Error, ProfileSettings};
+use config::server::TlsConfig;
 use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
@@ -244,6 +245,14 @@ struct WebServerOpts {
     /// The port number
     #[structopt(short, long)]
     port: Option<u16>,
+
+    /// Path to an SSL certificate file
+    #[structopt(long, env, hide_env_values = true)]
+    ssl_cert: Option<PathBuf>,
+
+    /// Path to an SSL key file
+    #[structopt(long, env, hide_env_values = true)]
+    ssl_key: Option<PathBuf>,
 }
 
 #[derive(StructOpt, Debug)]
@@ -433,13 +442,16 @@ async fn process_command(cmd: &Command) {
             let serve = cfg.serve.as_ref().unwrap();
             let mut host = &serve.host;
             let mut port = &serve.port;
+            let mut tls = serve.tls.clone();
 
-            if let Some(h) = &args.server.host {
-                host = h;
-            }
+            if let Some(h) = &args.server.host { host = h; }
+            if let Some(p) = &args.server.port { port = p; }
 
-            if let Some(p) = &args.server.port {
-                port = p;
+            if args.server.ssl_cert.is_some() && args.server.ssl_key.is_some() {
+                tls = Some(TlsConfig {
+                    cert: args.server.ssl_cert.as_ref().unwrap().to_path_buf(),
+                    key: args.server.ssl_key.as_ref().unwrap().to_path_buf(),
+                });
             }
 
             let opts = command::run::ServeOptions {
@@ -447,7 +459,7 @@ async fn process_command(cmd: &Command) {
                 host: host.to_owned(),
                 port: port.to_owned(),
                 open_browser: true,
-                tls: true,
+                tls,
                 watch: None,
                 endpoint: utils::generate_id(16),
                 redirects: None,
@@ -514,6 +526,15 @@ async fn process_command(cmd: &Command) {
                 None
             };
 
+            let mut tls: Option<TlsConfig> = None;
+
+            if args.server.ssl_cert.is_some() && args.server.ssl_key.is_some() {
+                tls = Some(TlsConfig {
+                    cert: args.server.ssl_cert.as_ref().unwrap().to_path_buf(),
+                    key: args.server.ssl_key.as_ref().unwrap().to_path_buf(),
+                });
+            }
+
             let mut build_args = ProfileSettings {
                 paths,
                 profile: args.profile.clone(),
@@ -521,6 +542,7 @@ async fn process_command(cmd: &Command) {
                 release: Some(args.release),
                 host: args.server.host.clone(),
                 port: args.server.port.clone(),
+                tls,
                 ..Default::default()
             };
 

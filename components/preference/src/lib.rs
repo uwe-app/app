@@ -81,7 +81,6 @@ impl Default for SshPreferences {
 pub struct DocsPreferences {
     pub host: String,
     pub port: u16,
-    pub tls: bool,
 }
 
 impl Default for DocsPreferences {
@@ -89,7 +88,6 @@ impl Default for DocsPreferences {
         Self {
             host: String::from("localhost"),
             port: 0,
-            tls: true,
         }
     }
 }

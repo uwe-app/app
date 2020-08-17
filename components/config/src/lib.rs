@@ -57,6 +57,7 @@ pub mod path;
 mod profile;
 pub mod robots;
 pub mod search;
+pub mod server;
 pub mod sitemap;
 pub mod syntax;
 pub mod transform;

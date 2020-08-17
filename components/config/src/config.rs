@@ -16,6 +16,7 @@ use super::feed::FeedConfig;
 use super::indexer::{DataBase, IndexRequest};
 use super::page::{Author, Page};
 use super::profile::{ProfileName, ProfileSettings};
+use super::server::ServeConfig;
 use super::search::SearchConfig;
 use super::syntax::SyntaxConfig;
 use super::transform::TransformConfig;
@@ -447,21 +448,6 @@ impl Default for FluentConfig {
             fallback: Some(String::from(LANG)),
             shared: Some(String::from(CORE_FTL)),
             fallback_id: String::from(LANG).parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ServeConfig {
-    pub host: String,
-    pub port: u16,
-}
-
-impl Default for ServeConfig {
-    fn default() -> Self {
-        Self {
-            host: String::from(HOST),
-            port: PORT,
         }
     }
 }
