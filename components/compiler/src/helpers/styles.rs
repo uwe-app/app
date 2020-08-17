@@ -14,7 +14,7 @@ impl HelperDef for Styles<'_> {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
+        r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
@@ -79,6 +79,13 @@ impl HelperDef for Styles<'_> {
 
             let markup = format!("<link rel=\"stylesheet\" href=\"{}\">", href);
             out.write(&markup)?;
+        }
+
+        // Render block inline styles
+        if let Some(tpl) = h.template() {
+            out.write("<style>")?;
+            tpl.render(r, ctx, rc, out)?; 
+            out.write("</style>")?;
         }
 
         Ok(())
