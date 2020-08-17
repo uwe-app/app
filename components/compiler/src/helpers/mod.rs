@@ -25,6 +25,7 @@ pub mod search;
 pub mod series;
 pub mod sibling;
 pub mod slug;
+pub mod styles;
 pub mod toc;
 pub mod word;
 
