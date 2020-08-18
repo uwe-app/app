@@ -62,6 +62,7 @@ impl ValueIndex {
 
     fn get_identity(&self, slug: &str, key: &IndexKey) -> Map<String, Value> {
         let mut m = Map::new();
+        //m.insert(DOC.to_string(), Value::String(key.doc_id.to_string()));
         m.insert(DOC.to_string(), Value::String(key.doc_id.to_string()));
         m.insert(NAME.to_string(), Value::String(key.id.to_string()));
         m.insert(PATH.to_string(), Value::String(slug.to_string()));
@@ -104,7 +105,9 @@ impl ValueIndex {
         }
 
         let value = if include_docs {
-            self.with_identity(&mut v, &slug, k);
+            if query.group.is_none() {
+                self.with_identity(&mut v, &slug, k);
+            }
             Some(QueryValue::One(v.clone()))
         } else {
             None
@@ -150,11 +153,14 @@ impl ValueIndex {
                 new_key.id = slug::slugify(&val_key);
                 new_key.name = val_key.clone();
 
+                let mut group_doc = doc.clone();
+                self.with_identity(&mut group_doc, &new_key.id, &new_key);
+
                 tmp.entry(val_key.clone())
                     .or_insert((new_key, Value::Array(vec![])));
                 let (_, items) = tmp.get_mut(&val_key).unwrap();
                 let list = items.as_array_mut().unwrap();
-                list.push(doc.clone());
+                list.push(group_doc);
             }
         }
 
@@ -206,12 +212,12 @@ impl ValueIndex {
             });
         }
 
-        let iter: Box<dyn Iterator<Item = (usize, &(IndexKey, Arc<Value>))>> = if desc {
+        let iter: Box<dyn Iterator<Item = (usize, &mut (IndexKey, Arc<Value>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set
-            Box::new(index_docs.iter().rev().enumerate().skip(offset))
+            Box::new(index_docs.iter_mut().rev().enumerate().skip(offset))
         } else {
-            Box::new(index_docs.iter().enumerate().skip(offset))
+            Box::new(index_docs.iter_mut().enumerate().skip(offset))
         };
 
         let mut items: Vec<QueryResult> = Vec::new();

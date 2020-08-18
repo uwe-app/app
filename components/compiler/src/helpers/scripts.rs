@@ -100,8 +100,6 @@ impl HelperDef for Scripts<'_> {
             out.write("</noscript>")?;
         }
 
-        // TODO: noscript on inverse()
-
         Ok(())
     }
 }
