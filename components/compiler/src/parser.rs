@@ -58,6 +58,8 @@ impl<'a> Parser<'a> {
         handlebars.register_template_string(
             "canonical", include_str!("builtins/canonical.hbs"))?;
         handlebars.register_template_string(
+            "noindex", include_str!("builtins/noindex.hbs"))?;
+        handlebars.register_template_string(
             "head", include_str!("builtins/head.hbs"))?;
 
         // Configure partial directories

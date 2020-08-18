@@ -137,6 +137,7 @@ pub struct Page {
     pub draft: Option<bool>,
     pub standalone: Option<bool>,
     pub listing: Option<bool>,
+    pub noindex: Option<bool>,
 
     pub authors: Option<Vec<Author>>,
     pub byline: Option<Vec<String>>,
@@ -201,6 +202,7 @@ impl Default for Page {
             draft: Some(false),
             standalone: Some(false),
             listing: Some(true),
+            noindex: None,
             query: None,
             layout: None,
             meta: None,
@@ -227,7 +229,7 @@ impl Default for Page {
 
 impl Page {
 
-    // This should be a W3C Datetime string suitable for a 
+    // This should be a W3C Datetime string suitable for a
     // sitemap lastmod field.
     pub fn lastmod(&self) -> String {
         let file_ctx = self.file.as_ref().unwrap();
@@ -371,6 +373,10 @@ impl Page {
 
         if let Some(listing) = other.listing.as_mut() {
             self.listing = Some(mem::take(listing));
+        }
+
+        if let Some(noindex) = other.noindex.as_mut() {
+            self.noindex = Some(mem::take(noindex));
         }
 
         if let Some(authors) = other.authors.as_mut() {
