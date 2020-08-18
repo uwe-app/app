@@ -16,6 +16,7 @@ use super::feed::FeedConfig;
 use super::indexer::{DataBase, IndexRequest};
 use super::page::{Author, Page};
 use super::profile::{ProfileName, ProfileSettings};
+use super::script::JavaScriptConfig;
 use super::server::ServeConfig;
 use super::search::SearchConfig;
 use super::syntax::SyntaxConfig;
@@ -130,6 +131,7 @@ pub struct Config {
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
     pub feed: Option<FeedConfig>,
+    pub js: Option<JavaScriptConfig>,
 
     pub db: Option<DataBase>,
 
@@ -170,6 +172,7 @@ impl Default for Config {
             transform: Some(Default::default()),
             search: None,
             feed: None,
+            js: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),
