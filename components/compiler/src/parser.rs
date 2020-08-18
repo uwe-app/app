@@ -92,6 +92,7 @@ impl<'a> Parser<'a> {
         handlebars.register_helper("permalink", Box::new(helpers::bookmark::PermaLink{ context }));
 
         handlebars.register_helper("styles", Box::new(helpers::styles::Styles { context }));
+        handlebars.register_helper("scripts", Box::new(helpers::scripts::Scripts { context }));
 
         if context.config.search.is_some() {
             handlebars.register_helper("search", Box::new(helpers::search::Embed { context }));

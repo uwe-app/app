@@ -14,7 +14,24 @@ pub struct JavaScriptConfig {
 #[serde(untagged)]
 pub enum ScriptFile {
     Source(String),
-    File(ScriptTag),
+    Tag(ScriptTag),
+}
+
+impl ScriptFile {
+
+    pub fn to_tag(&self) -> ScriptTag {
+        match *self {
+            Self::Source(ref s) => ScriptTag::new(s),
+            Self::Tag(ref f) => f.clone(),
+        } 
+    }
+
+    pub fn get_source(&self) -> &str {
+        match *self {
+            Self::Source(ref s) => s,
+            Self::Tag(ref f) => &f.src,
+        } 
+    }
 }
 
 impl fmt::Display for ScriptFile {
@@ -23,7 +40,7 @@ impl fmt::Display for ScriptFile {
             Self::Source(ref s) => {
                 write!(f, "<script src=\"{}\">", entity::escape(s))?;
             }
-            Self::File(ref script) => {
+            Self::Tag(ref script) => {
                 write!(f, "<script src=\"{}\"", entity::escape(&script.src))?;
                 if let Some(ref script_type) = script.script_type {
                     write!(f, " type=\"{}\"", entity::escape(script_type))?;
@@ -74,6 +91,21 @@ pub struct ScriptTag {
     pub script_type: Option<String>,
     #[serde(rename = "async")]
     pub script_async: Option<bool>,
+}
+
+impl ScriptTag {
+    pub fn new(s: &str) -> Self {
+        Self {
+            src: s.to_string(),
+            nomodule: None,
+            nonce: None,
+            integrity: None,
+            crossorigin: None,
+            referrerpolicy: None,
+            script_type: None,
+            script_async: None,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

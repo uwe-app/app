@@ -13,6 +13,7 @@ use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
 use super::indexer::QueryList;
+use super::script::ScriptFile;
 use super::link;
 use super::Error;
 use super::{Config, FileInfo, RuntimeOptions};
@@ -145,7 +146,7 @@ pub struct Page {
     pub layout: Option<PathBuf>,
     pub meta: Option<HashMap<String, Vec<String>>>,
 
-    pub scripts: Option<Vec<String>>,
+    pub scripts: Option<Vec<ScriptFile>>,
     pub styles: Option<Vec<String>>,
     pub permalink: Option<String>,
 
