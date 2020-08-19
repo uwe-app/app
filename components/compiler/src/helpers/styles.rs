@@ -42,8 +42,8 @@ impl HelperDef for Styles<'_> {
             .and_then(|v| v.as_array());
 
         // Use global styles from the settings
-        let mut sheets: Vec<StyleFile> = if let Some(ref css) = self.context.config.css {
-           css.main.clone()
+        let mut sheets: Vec<StyleFile> = if let Some(ref styles) = self.context.config.styles {
+           styles.main.clone()
         } else {
             vec![]
         };

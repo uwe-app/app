@@ -52,7 +52,7 @@ impl HelperDef for Scripts<'_> {
         };
 
         // Append global scripts from the settings
-        if let Some(ref js) = self.context.config.js {
+        if let Some(ref js) = self.context.config.scripts {
             let mut main = js.main.clone();
             scripts.append(&mut main);
         }

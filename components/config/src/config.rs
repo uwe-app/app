@@ -132,8 +132,8 @@ pub struct Config {
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
     pub feed: Option<FeedConfig>,
-    pub js: Option<JavaScriptConfig>,
-    pub css: Option<StyleSheetConfig>,
+    pub scripts: Option<JavaScriptConfig>,
+    pub styles: Option<StyleSheetConfig>,
 
     pub db: Option<DataBase>,
 
@@ -174,8 +174,8 @@ impl Default for Config {
             transform: Some(Default::default()),
             search: None,
             feed: None,
-            js: None,
-            css: None,
+            scripts: None,
+            styles: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),
