@@ -24,17 +24,19 @@ pub struct PublishOptions {
 pub async fn publish(options: PublishOptions) -> Result<()> {
     let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
-    for space in spaces {
-        build_publish(&options, &space).await?;
+    for mut space in spaces.iter_mut() {
+        build_publish(&options, &mut space).await?;
     }
     Ok(())
 }
 
-async fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> {
+async fn build_publish(options: &PublishOptions, config: &mut Config) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
             if let Some(ref publish_config) = config.publish.as_ref().unwrap().aws {
                 if let Some(env) = publish_config.environments.get(&options.env) {
+                    let publish_env = env.clone();
+
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
@@ -55,9 +57,9 @@ async fn build_publish(options: &PublishOptions, config: &Config) -> Result<()> 
                     // Compile a pristine release
                     let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
-                    let (ctx, _locales) = workspace::compile(&config, &mut args).await?;
+                    let (ctx, _locales) = workspace::compile(config, &mut args).await?;
 
-                    publish_aws(ctx, request, env).await?
+                    publish_aws(ctx, request, &publish_env).await?
                 } else {
                     return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
                 }

@@ -32,17 +32,19 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     finder::find(project, true, &mut spaces)?;
 
     let mut ctx = Default::default();
-    for config in spaces.into_iter() {
-        ctx = compile(&config, args).await?;
+    for mut config in spaces.iter_mut() {
+        ctx = compile(&mut config, args).await?;
     }
 
     Ok(ctx)
 }
 
 pub async fn compile(
-    config: &Config,
+    config: &mut Config,
     args: &mut ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
+
+    // Finalize the runtime options
     let opts = super::project::prepare(config, args)?;
 
     let write_redirects =
@@ -68,7 +70,7 @@ pub async fn compile(
     res
 }
 
-async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
+async fn compile_one(config: &mut Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
     let multi_lingual = opts.multi_lingual;
     let base_target = opts.target.clone();
 
@@ -76,7 +78,10 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
     locales.load(&config, &opts)?;
 
     fetch_cache_lazy(config, &opts)?;
-    let mut ctx = load(config.clone(), opts, None).await?;
+
+    let (collation, datasource) = collate(config, &opts).await?;
+
+    let mut ctx = load(config, opts, collation, datasource, None).await?;
 
     let mut previous_base = base_target.clone();
 
@@ -119,22 +124,16 @@ async fn compile_one(config: &Config, opts: RuntimeOptions) -> Result<(BuildCont
     Ok((ctx, locales))
 }
 
-async fn load(
+async fn collate(
     //locales: Locales,
-    mut config: Config,
-    mut options: RuntimeOptions,
-    lang: Option<String>,
-) -> Result<BuildContext> {
+    config: &mut Config,
+    options: &RuntimeOptions,
+) -> Result<(CollateInfo, DataSourceMap)> {
 
-    // Finalize the language for this pass
-    options.lang = if let Some(lang) = lang {
-        lang
-    } else {
-        config.lang.clone()
-    };
-
+    // FIXME: remove this test and flag, to do with mixing
+    // FIXME: functionality and sources in build profiles
+    // FIXME: which should not be allowed, see the blog/readme profile.
     let should_collate = options.settings.should_collate();
-
     if should_collate {
         // Verify that files referenced by key in the pages
         // map exist on disc
@@ -177,7 +176,7 @@ async fn load(
     if !collation.permalinks.is_empty() {
         // Must have some redirects
         if let None = config.redirect {
-            config.redirect = Some(Default::default()); 
+            config.redirect = Some(Default::default());
         }
 
         if let Some(redirects) = config.redirect.as_mut() {
@@ -211,8 +210,27 @@ async fn load(
     // Collate the series data
     collator::series(&config, &options, &mut collation)?;
 
+    Ok((collation, datasource))
+}
+
+async fn load(
+    //locales: Locales,
+    config: &mut Config,
+    mut options: RuntimeOptions,
+    collation: CollateInfo,
+    datasource: DataSourceMap,
+    lang: Option<String>,
+) -> Result<BuildContext> {
+
+    // Finalize the language for this pass
+    options.lang = if let Some(lang) = lang {
+        lang
+    } else {
+        config.lang.clone()
+    };
+
     // Set up the real context
-    Ok(BuildContext::new(config, options, datasource, collation))
+    Ok(BuildContext::new(config.clone(), options, datasource, collation))
 }
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
@@ -313,7 +331,7 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
 
     if let Some(ref sitemap) = ctx.options.settings.sitemap {
         if ctx.options.settings.robots.is_none() {
-            ctx.options.settings.robots = Some(Default::default()); 
+            ctx.options.settings.robots = Some(Default::default());
         }
 
         // How many entries per chunk window?
@@ -333,7 +351,7 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
         }
 
         for (count, window) in parse_list.chunks(*entries).enumerate() {
-            let href = format!("{}.xml", count + 1); 
+            let href = format!("{}.xml", count + 1);
             let mut sitemap = SiteMapFile {href, entries: vec![]};
             let sitemap_path = base_folder.join(&sitemap.href);
             sitemap.entries = window
@@ -357,7 +375,7 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
             // Add the file to the index
             idx.maps.push(sitemap);
         }
-        
+
         // Write out the master index file
         let idx_path = base_folder.join(config::sitemap::FILE);
         let idx_file = File::create(&idx_path)?;
@@ -367,7 +385,7 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
         info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
         //info!("Sitemap {}", idx_path.display());
 
-        // Update robots config to include the sitemap 
+        // Update robots config to include the sitemap
         if let Some(ref mut robots) = ctx.options.settings.robots.as_mut() {
             robots.sitemaps.push(sitemap_url);
         }
