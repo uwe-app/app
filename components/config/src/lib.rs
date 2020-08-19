@@ -60,6 +60,7 @@ pub mod script;
 pub mod search;
 pub mod server;
 pub mod sitemap;
+pub mod style;
 pub mod syntax;
 pub mod transform;
 

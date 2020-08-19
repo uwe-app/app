@@ -4,6 +4,7 @@ use handlebars::*;
 use serde_json::json;
 
 use crate::BuildContext;
+use config::style::StyleFile;
 
 #[derive(Clone, Copy)]
 pub struct Styles<'a> {
@@ -30,12 +31,6 @@ impl HelperDef for Styles<'_> {
                 "Type error for `styles` helper, hash parameter `abs` must be a boolean",
             ))?;
 
-        // The main stylesheet (optional)
-        let main = h
-            .hash_get("main")
-            .map(|v| v.value())
-            .and_then(|v| v.as_str());
-
         // List of page specific styles
         let styles = ctx
             .data()
@@ -46,45 +41,54 @@ impl HelperDef for Styles<'_> {
             .get("styles")
             .and_then(|v| v.as_array());
 
-        let mut sheets: Vec<&str> = if let Some(main_style) = main {
-            vec![main_style] 
+        // Use global styles from the settings
+        let mut sheets: Vec<StyleFile> = if let Some(ref css) = self.context.config.css {
+           css.main.clone()
         } else {
             vec![]
         };
 
-        if let Some(stylesheets) = styles {
-            let mut page_sheets: Vec<&str> = stylesheets
-                .iter()
-                .map(|v| v.as_str().unwrap())
+        // NOTE: Unlike scripts which come beforehand page-level
+        // NOTE: styles come afterwards following the principle of specificity
+        if let Some(styles) = styles {
+            let mut page_styles = styles.iter()
+                .map(|v| serde_json::from_value::<StyleFile>(v.clone()).unwrap())
                 .collect();
-            sheets.append(&mut page_sheets);
+            sheets.append(&mut page_styles);
         }
 
-        let opts = &self.context.options;
-        let base_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
-            .to_string();
-        let path = Path::new(&base_path);
+        // Convert to relative paths if necessary
+        let sheets = if abs {
+            sheets
+        } else {
+            let opts = &self.context.options;
+            let base_path = rc
+                .evaluate(ctx, "@root/file.source")?
+                .as_json()
+                .as_str()
+                .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+                .to_string();
+            let path = Path::new(&base_path);
 
-        for href in sheets {
-            let href = if abs {
-                href.to_string()
-            } else {
-                config::link::relative(href, path, &opts.source, opts)
-                    .map_err(|_e| RenderError::new("Type error for `styles`, file is outside source!"))?
-            };
+            sheets
+                .iter()
+                .map(|style| {
+                    let rel = config::link::relative(style.get_source(), path, &opts.source, opts)
+                        .map_err(|_e| RenderError::new("Type error for `styles`, file is outside source!"))
+                        .unwrap();
+                    StyleFile::Source(rel)
+                })
+                .collect()
+        };
 
-            let markup = format!("<link rel=\"stylesheet\" href=\"{}\">", href);
-            out.write(&markup)?;
+        for style in sheets {
+            out.write(&style.to_string())?;
         }
 
         // Render block inline styles
         if let Some(tpl) = h.template() {
             out.write("<style>")?;
-            tpl.render(r, ctx, rc, out)?; 
+            tpl.render(r, ctx, rc, out)?;
             out.write("</style>")?;
         }
 
