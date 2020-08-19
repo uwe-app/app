@@ -1,6 +1,6 @@
 [package]
 name = "hypertext"
-version = "0.20.4"
+version = "0.20.5"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Fast and lean static site generator"
 repository = "https://github.com/hypertext-live/hypertext"
@@ -74,4 +74,4 @@ notify = { version = "4.0.0" }
 [profile.release]
 lto = true
 codegen-units = 1
-#opt-level = "z"
+opt-level = "z"
