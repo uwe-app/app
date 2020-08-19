@@ -7,7 +7,7 @@ use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
 use config::Page;
-use locale::Locales;
+use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
@@ -123,6 +123,8 @@ impl<'a> Parser<'a> {
 
         if let Some(loader) = &locales.loader.arc {
             handlebars.register_helper("fluent", Box::new(FluentLoader::new(loader.as_ref())));
+        } else {
+            handlebars.register_helper("fluent", Box::new(FluentLoader::new(&*LOCALES)));
         }
 
         // Conditional helpers

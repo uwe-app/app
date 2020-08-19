@@ -4,7 +4,7 @@ use std::path::Path;
 
 use thiserror::Error;
 
-use fluent_templates::ArcLoader;
+use fluent_templates::{ArcLoader, Loader, static_loader};
 use unic_langid::LanguageIdentifier;
 
 use config::{Config, FluentConfig, RuntimeOptions};
@@ -20,6 +20,10 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+static_loader! {
+    pub static LOCALES = {locales: "./locales", fallback_language: "en"};
+}
+
 #[derive(Debug)]
 pub struct LocaleResult {
     pub multi: bool,
@@ -34,7 +38,6 @@ pub struct Locales {
 impl Default for Locales {
     fn default() -> Self {
         Self {
-            //map: BTreeMap::new(),
             loader: Default::default(),
         }
     }
@@ -51,7 +54,7 @@ impl Locales {
         if let Some(ref arc) = self.loader.arc {
             let langs = arc.locales();
             for lang_id in langs {
-                res.map.insert(lang_id.to_string(), lang_id);
+                res.map.insert(lang_id.to_string(), lang_id.clone());
             }
         } else {
             let id: LanguageIdentifier = fallback.parse()?;
@@ -61,8 +64,7 @@ impl Locales {
     }
 
     pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
-        self.loader.load(config, options)?;
-        Ok(())
+        self.loader.load(config, options)
     }
 }
 
