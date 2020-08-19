@@ -71,7 +71,8 @@ pub async fn compile(
 }
 
 async fn compile_one(config: &mut Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
-    let multi_lingual = opts.multi_lingual;
+    //let multi_lingual = opts.multi_lingual;
+
     let base_target = opts.target.clone();
 
     let mut locales: Locales = Default::default();
@@ -85,39 +86,45 @@ async fn compile_one(config: &mut Config, opts: RuntimeOptions) -> Result<(Build
 
     let mut previous_base = base_target.clone();
 
-    if multi_lingual {
-        for lang in locales.map.keys() {
-            let locale_target = base_target.join(&lang);
+    let lang_res = locales.get_locale_map(&config.lang)?;
 
-            info!("lang {} -> {}", &lang, locale_target.display());
+    //if multi_lingual {
+        for lang in lang_res.map.keys() {
 
-            if !locale_target.exists() {
-                fs::create_dir_all(&locale_target)?;
+            if lang_res.multi {
+
+                let locale_target = base_target.join(&lang);
+
+                info!("lang {} -> {}", &lang, locale_target.display());
+
+                if !locale_target.exists() {
+                    fs::create_dir_all(&locale_target)?;
+                }
+
+                // Keep the target language in sync
+                ctx.options.lang = lang.clone();
+
+                // Keep the options target in sync for manifests
+                ctx.options.target = locale_target.clone();
+
+                // Rewrite the output paths and page languages
+                ctx.collation
+                    .rewrite(&lang, &previous_base, &locale_target)?;
+
+                previous_base = locale_target;
+
             }
-
-            // Keep the target language in sync
-            ctx.options.lang = lang.clone();
-
-            // Keep the options target in sync for manifests
-            ctx.options.target = locale_target.clone();
-
-            // Rewrite the output paths and page languages
-            ctx.collation
-                .rewrite(&lang, &previous_base, &locale_target)?;
-
-            previous_base = locale_target;
 
             prepare(&mut ctx)?;
             let (_, _, parse_list) = build(&mut ctx, &locales).await?;
             finish(&mut ctx, parse_list)?;
         }
 
-
-    } else {
-        prepare(&mut ctx)?;
-        let (_, _, parse_list) = build(&mut ctx, &locales).await?;
-        finish(&mut ctx, parse_list)?;
-    };
+    //} else {
+        //prepare(&mut ctx)?;
+        //let (_, _, parse_list) = build(&mut ctx, &locales).await?;
+        //finish(&mut ctx, parse_list)?;
+    //};
 
     write_robots_file(&mut ctx)?;
 

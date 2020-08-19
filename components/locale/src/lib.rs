@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use fluent_templates::ArcLoader;
@@ -19,32 +18,50 @@ pub enum Error {
     Boxed(#[from] Box<dyn std::error::Error>),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Locales {
-    #[serde(skip)]
+type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug)]
+pub struct LocaleResult {
+    pub multi: bool,
     pub map: BTreeMap<String, LanguageIdentifier>,
-    #[serde(skip)]
+}
+
+#[derive(Debug)]
+pub struct Locales {
     pub loader: LocalesLoader,
 }
 
 impl Default for Locales {
     fn default() -> Self {
         Self {
-            map: BTreeMap::new(),
+            //map: BTreeMap::new(),
             loader: Default::default(),
         }
     }
 }
 
 impl Locales {
-    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
-        self.loader.load(config, options)?;
-        if let Some(arc) = &self.loader.arc {
+
+    pub fn get_locale_map(&self, fallback: &str) -> Result<LocaleResult> {
+        let mut res = LocaleResult {
+            map : BTreeMap::new(),
+            multi: self.loader.arc.is_some()
+        };
+
+        if let Some(ref arc) = self.loader.arc {
             let langs = arc.locales();
             for lang_id in langs {
-                self.map.insert(lang_id.to_string(), lang_id);
+                res.map.insert(lang_id.to_string(), lang_id);
             }
+        } else {
+            let id: LanguageIdentifier = fallback.parse()?;
+            res.map.insert(fallback.to_string(), id);
         }
+        Ok(res)
+    }
+
+    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
+        self.loader.load(config, options)?;
         Ok(())
     }
 }
@@ -66,11 +83,10 @@ impl fmt::Debug for LocalesLoader {
 }
 
 impl LocalesLoader {
-    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<(), Error> {
+    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
         let locales_dir = options.get_locales();
         if locales_dir.exists() && locales_dir.is_dir() {
             let fluent = config.fluent.as_ref().unwrap();
-            // FIXME: catch and return this error
             let result = self.arc(locales_dir, fluent)?;
             self.arc = Some(Box::new(result));
         }
@@ -81,7 +97,7 @@ impl LocalesLoader {
         &mut self,
         dir: P,
         fluent: &FluentConfig,
-    ) -> Result<ArcLoader, Box<dyn std::error::Error>> {
+    ) -> std::result::Result<ArcLoader, Box<dyn std::error::Error>> {
         let file = dir.as_ref();
         if let Some(core_file) = &fluent.shared {
             let mut core = file.to_path_buf();
