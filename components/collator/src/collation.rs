@@ -84,12 +84,12 @@ impl CollateInfo {
         }
 
         let mut tmp: HashMap<Arc<PathBuf>, PathBuf> = HashMap::new();
-        for (k, target) in self.other.drain() {
+        for (k, target) in self.targets.drain() {
             let new_target = to.join(target.strip_prefix(&from)?);
             tmp.entry(k).or_insert(new_target);
         }
 
-        self.other = tmp;
+        self.targets = tmp;
         Ok(())
     }
 }
