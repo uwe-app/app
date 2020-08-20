@@ -82,5 +82,5 @@ pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use page::{Page, PageLink, PaginateInfo, Author};
-pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
+pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions, LocaleMap};
 pub use search::{SEARCH_JS, SEARCH_WASM};

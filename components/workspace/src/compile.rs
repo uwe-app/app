@@ -45,12 +45,12 @@ pub async fn compile(
 ) -> Result<(BuildContext, Locales)> {
 
     // Finalize the runtime options
-    let opts = super::project::prepare(config, args)?;
+    let mut opts = super::project::prepare(config, args)?;
 
     let write_redirects =
         opts.settings.write_redirects.is_some() && opts.settings.write_redirects.unwrap();
 
-    let mut res = compile_one(config, opts).await;
+    let mut res = render(config, &mut opts).await;
 
     if let Ok((ref mut ctx, _)) = res {
         if write_redirects {
@@ -70,61 +70,51 @@ pub async fn compile(
     res
 }
 
-async fn compile_one(config: &mut Config, opts: RuntimeOptions) -> Result<(BuildContext, Locales)> {
-    //let multi_lingual = opts.multi_lingual;
-
+async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(BuildContext, Locales)> {
     let base_target = opts.target.clone();
 
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
+    let locale_map = locales.get_locale_map(&config.lang)?;
+
+    opts.locales = locale_map.clone();
 
     fetch_cache_lazy(config, &opts)?;
 
-    let (collation, datasource) = collate(config, &opts).await?;
-
-    let mut ctx = load(config, opts, collation, datasource, None).await?;
+    let (collation, datasource) = collate(config, opts).await?;
+    let mut ctx = BuildContext::new(
+        config.clone(), opts.clone(), datasource, collation);
 
     let mut previous_base = base_target.clone();
 
-    let lang_res = locales.get_locale_map(&config.lang)?;
+    for lang in locale_map.map.keys() {
+        // When we have multiple languages we need to rewrite paths
+        // on each iteration for each specific language
+        if lang_res.multi {
+            let locale_target = base_target.join(&lang);
+            info!("lang {} -> {}", &lang, locale_target.display());
 
-    //if multi_lingual {
-        for lang in lang_res.map.keys() {
-
-            if lang_res.multi {
-
-                let locale_target = base_target.join(&lang);
-
-                info!("lang {} -> {}", &lang, locale_target.display());
-
-                if !locale_target.exists() {
-                    fs::create_dir_all(&locale_target)?;
-                }
-
-                // Keep the target language in sync
-                ctx.options.lang = lang.clone();
-
-                // Keep the options target in sync for manifests
-                ctx.options.target = locale_target.clone();
-
-                // Rewrite the output paths and page languages
-                ctx.collation
-                    .rewrite(&lang, &previous_base, &locale_target)?;
-
-                previous_base = locale_target;
-
+            if !locale_target.exists() {
+                fs::create_dir_all(&locale_target)?;
             }
 
-            prepare(&mut ctx)?;
-            let (_, _, parse_list) = build(&mut ctx, &locales).await?;
-            finish(&mut ctx, parse_list)?;
+            // Keep the target language in sync
+            ctx.options.lang = lang.clone();
+
+            // Keep the options target in sync for manifests
+            ctx.options.target = locale_target.clone();
+
+            // Rewrite the output paths and page languages
+            ctx.collation
+                .rewrite(&lang, &previous_base, &locale_target)?;
+
+            previous_base = locale_target;
         }
 
-    //} else {
-        //prepare(&mut ctx)?;
-        //let (_, _, parse_list) = build(&mut ctx, &locales).await?;
-        //finish(&mut ctx, parse_list)?;
-    //};
+        prepare(&mut ctx)?;
+        let (_, _, parse_list) = build(&mut ctx, &locales).await?;
+        finish(&mut ctx, parse_list)?;
+    }
 
     write_robots_file(&mut ctx)?;
 
@@ -218,26 +208,6 @@ async fn collate(
     collator::series(&config, &options, &mut collation)?;
 
     Ok((collation, datasource))
-}
-
-async fn load(
-    //locales: Locales,
-    config: &mut Config,
-    mut options: RuntimeOptions,
-    collation: CollateInfo,
-    datasource: DataSourceMap,
-    lang: Option<String>,
-) -> Result<BuildContext> {
-
-    // Finalize the language for this pass
-    options.lang = if let Some(lang) = lang {
-        lang
-    } else {
-        config.lang.clone()
-    };
-
-    // Set up the real context
-    Ok(BuildContext::new(config.clone(), options, datasource, collation))
 }
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {

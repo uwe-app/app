@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
+use unic_langid::LanguageIdentifier;
 
 use url::Url;
 
@@ -18,6 +19,13 @@ static RELEASE: &str = "release";
 
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
+
+#[derive(Debug, Clone, Default)]
+pub struct LocaleMap {
+    pub enabled: bool,
+    pub multi: bool,
+    pub map: HashMap<String, LanguageIdentifier>,
+}
 
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(from = "String", untagged)]
@@ -313,14 +321,14 @@ pub struct RuntimeOptions {
     // The computed profile to use
     pub settings: ProfileSettings,
     // Determine id this build is configured for multi-lingual support
-    pub multi_lingual: bool,
+    pub locales: LocaleMap,
 }
 
 impl RuntimeOptions {
 
     pub fn get_canonical_url(&self, config: &Config, include_lang: bool) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
-        if include_lang && self.multi_lingual {
+        if include_lang && self.locales.multi {
             base = base.join(&self.lang)?;
         }
         Ok(base)

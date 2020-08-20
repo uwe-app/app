@@ -115,14 +115,14 @@ fn to_options(
     }
 
     let opts = RuntimeOptions {
-        lang: config::LANG.to_string(),
+        lang: cfg.lang.clone(),
         project,
         source,
         output: args.target.clone(),
         base: target.clone(),
         settings: args.clone(),
         target,
-        multi_lingual: cfg.fluent.is_some(),
+        locales: Default::default(),
     };
 
     //println!("Got settings {:#?}", args);

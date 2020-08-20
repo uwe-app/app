@@ -156,7 +156,7 @@ impl Default for Config {
             host: String::from(HOST),
             build: Some(Default::default()),
             workspace: None,
-            fluent: None,
+            fluent: Some(Default::default()),
             book: None,
             serve: Some(Default::default()),
             hook: None,
@@ -218,11 +218,13 @@ impl Config {
                 // Ensure the host is a valid Url
                 parse_host(&cfg.host)?;
 
-                if cfg.fluent.is_some() {
-                    let mut fluent = cfg.fluent.as_mut().unwrap();
-                    if fluent.fallback.is_some() {
-                        fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
+                if let Some(fluent) = cfg.fluent.as_mut() {
+
+                    if fluent.fallback.is_none() {
+                        fluent.fallback = Some(cfg.lang.to_string());
                     }
+
+                    fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
                 }
 
                 // Assume default build settings for the site

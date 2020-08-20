@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::fmt;
 use std::path::Path;
 
@@ -7,7 +7,7 @@ use thiserror::Error;
 use fluent_templates::{ArcLoader, Loader, static_loader};
 use unic_langid::LanguageIdentifier;
 
-use config::{Config, FluentConfig, RuntimeOptions};
+use config::{Config, FluentConfig, RuntimeOptions, LocaleMap};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -25,12 +25,6 @@ static_loader! {
 }
 
 #[derive(Debug)]
-pub struct LocaleResult {
-    pub multi: bool,
-    pub map: BTreeMap<String, LanguageIdentifier>,
-}
-
-#[derive(Debug)]
 pub struct Locales {
     pub loader: LocalesLoader,
 }
@@ -45,10 +39,11 @@ impl Default for Locales {
 
 impl Locales {
 
-    pub fn get_locale_map(&self, fallback: &str) -> Result<LocaleResult> {
-        let mut res = LocaleResult {
-            map : BTreeMap::new(),
-            multi: self.loader.arc.is_some()
+    pub fn get_locale_map(&self, fallback: &str) -> Result<LocaleMap> {
+        let mut res = LocaleMap {
+            map : HashMap::new(),
+            enabled: self.loader.arc.is_some(),
+            multi: false,
         };
 
         if let Some(ref arc) = self.loader.arc {
@@ -60,6 +55,8 @@ impl Locales {
             let id: LanguageIdentifier = fallback.parse()?;
             res.map.insert(fallback.to_string(), id);
         }
+
+        res.multi = res.map.len() > 1;
         Ok(res)
     }
 
@@ -88,9 +85,10 @@ impl LocalesLoader {
     pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
         let locales_dir = options.get_locales();
         if locales_dir.exists() && locales_dir.is_dir() {
-            let fluent = config.fluent.as_ref().unwrap();
-            let result = self.arc(locales_dir, fluent)?;
-            self.arc = Some(Box::new(result));
+            if let Some(ref fluent) = config.fluent {
+                let result = self.arc(locales_dir, fluent)?;
+                self.arc = Some(Box::new(result));
+            }
         }
         Ok(())
     }
