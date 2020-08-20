@@ -131,6 +131,7 @@ pub struct Page {
     //
     pub title: Option<String>,
     pub description: Option<String>,
+    pub summary: Option<String>,
     pub keywords: Option<String>,
 
     pub render: Option<bool>,
@@ -195,6 +196,7 @@ impl Default for Page {
         Self {
             title: None,
             description: None,
+            summary: None,
             keywords: None,
             authors: None,
             byline: None,
@@ -350,6 +352,10 @@ impl Page {
 
         if let Some(description) = other.description.as_mut() {
             self.description = Some(mem::take(description));
+        }
+
+        if let Some(summary) = other.summary.as_mut() {
+            self.summary = Some(mem::take(summary));
         }
 
         if let Some(keywords) = other.keywords.as_mut() {

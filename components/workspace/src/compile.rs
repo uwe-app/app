@@ -90,7 +90,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
     for lang in locale_map.map.keys() {
         // When we have multiple languages we need to rewrite paths
         // on each iteration for each specific language
-        if lang_res.multi {
+        if locale_map.multi {
             let locale_target = base_target.join(&lang);
             info!("lang {} -> {}", &lang, locale_target.display());
 
