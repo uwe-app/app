@@ -10,7 +10,7 @@ use cache::CacheComponent;
 use compiler::redirect;
 use compiler::parser::Parser;
 use compiler::{BuildContext, Compiler, ParseData};
-use config::{Config, ProfileSettings, RuntimeOptions};
+use config::{Config, ProfileSettings, RuntimeOptions, LocaleMap};
 use config::sitemap::{SiteMapIndex, SiteMapFile, SiteMapEntry};
 use datasource::synthetic;
 use datasource::DataSourceMap;
@@ -81,7 +81,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
 
     fetch_cache_lazy(config, &opts)?;
 
-    let (collation, datasource) = collate(config, opts).await?;
+    let (collation, datasource) = collate(config, opts, &locale_map).await?;
     let mut ctx = BuildContext::new(
         config.clone(), opts.clone(), datasource, collation);
 
@@ -122,9 +122,9 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
 }
 
 async fn collate(
-    //locales: Locales,
     config: &mut Config,
     options: &RuntimeOptions,
+    locales: &LocaleMap,
 ) -> Result<(CollateInfo, DataSourceMap)> {
 
     // FIXME: remove this test and flag, to do with mixing
@@ -162,6 +162,9 @@ async fn collate(
         let e = collation.errors.swap_remove(0);
         return Err(Error::Collator(e));
     }
+
+    // Find and transform localized pages
+    collator::localize(config, options, locales, &mut collation).await?;
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;

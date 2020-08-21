@@ -1,11 +1,9 @@
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use crossbeam::channel;
 use log::{debug, error};
 
 use book::compiler::BookCompiler;
-use config::Page;
 
 use crate::context::BuildContext;
 use crate::hook;
@@ -40,21 +38,26 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    // Try to find page data for a file from the collation
-    fn get_page(&self, file: &PathBuf) -> Option<&Page> {
-        self.context.collation.pages.get(&Arc::new(file.clone()))
-    }
-
     // Build a single file
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
-        if let Some(page) = self.get_page(file) {
+        if let Some(default_page) = self.context.collation.pages.get(file) {
+
+            let mut page = default_page;
+            if let Some(locale_pages) = self.context.collation.locale_pages.get(
+                &self.context.options.lang) {
+
+                if let Some(locale_page) = locale_pages.get(file) {
+                    page = locale_page;
+                }
+            }
+
             let render = page.render.is_some() && page.render.unwrap();
             if !render {
                 let file_ctx = page.file.as_ref().unwrap();
                 return run::copy(file, &file_ctx.target).await;
             }
 
-            run::parse(self.context, parser, page.get_template(), &page).await
+            run::parse(self.context, parser, page.get_template(), page).await
         } else {
             let target = self.context.collation.targets.get(file).unwrap();
             run::copy(file, target).await

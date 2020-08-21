@@ -25,6 +25,9 @@ pub struct CollateInfo {
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
 
+    // Locale specific pages
+    pub locale_pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
+
     // Pages that have permalinks map the 
     // permalink to the computed href so that
     // we can configure redirects for permalinks.
@@ -39,7 +42,7 @@ pub struct CollateInfo {
 
     // Pages located for feed configurations.
     //
-    // The hash map key is the key for the feed congiguration 
+    // The hash map key is the key for the feed congfiguration 
     // and each entry is a page path that can be used to 
     // locate the page data in `pages`.
     pub feeds: HashMap<String, Vec<Arc<PathBuf>>>,
