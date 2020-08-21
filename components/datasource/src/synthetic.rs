@@ -184,8 +184,6 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
             let channel_target = utils::url::to_path_separator(channel_href);
             let source_dir = options.source.join(&channel_target);
 
-            //println!("Got channel to process: {}", name);
-
             // Data is the same for each feed
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
@@ -207,22 +205,14 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                     return Err(Error::NoFeedTemplate(template));
                 }
 
-                //let target = target_dir.join(&file_name);
-                //println!("Got feed type to process {:?} {} {}",
-                    //feed_type, source.display(), template.display());
-
                 let mut item_data = data_source.clone();
-                //item_data.set_language(lang);
 
                 // Update the feed url for this file
                 let base_url = options.get_canonical_url(config, true)?;
                 if let Some(ref mut feed) = item_data.feed.as_mut() {
                     let path = format!("{}/{}", channel_href, file_name);
                     feed.feed_url = Some(base_url.join(&path)?.to_string()); 
-                    //println!("Feed is {:#?}", feed);
                 }
-
-                //println!("Feed data {:#?}", item_data);
 
                 create_synthetic(
                     config,
@@ -237,9 +227,6 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                 )?;
             }
         }
-
-        //println!("GENERATE FEED SYNTHETIC PAGES");
-        //std::process::exit(1);
     }
     Ok(())
 }
@@ -525,6 +512,7 @@ pub fn pages(
                 item_data
                     .extra
                     .insert(page_query.get_parameter(), json!(items));
+
                 create_synthetic(
                     config,
                     options,

@@ -75,7 +75,7 @@ pub fn compute<P: AsRef<Path>>(
         }
     }
 
-    page.compute(file, config, opts)?;
+    page.compute(config, opts)?;
 
     Ok(page)
 }

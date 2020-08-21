@@ -6,8 +6,6 @@ use std::path::{Path, PathBuf};
 use chrono::prelude::*;
 pub use jsonfeed::{Feed, Author, Attachment};
 
-use log::debug;
-
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
@@ -282,6 +280,8 @@ impl Page {
         let mut file_context = FileContext::new(info.file.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
+        self.href = Some(self.get_href(&file_context.source, options)?);
+
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {
             self.updated = Some(file_context.modified.clone());
@@ -307,16 +307,11 @@ impl Page {
         link::absolute(p.as_ref(), opts, Default::default())
     }
 
-    pub fn compute<P: AsRef<Path>>(
+    pub fn compute(
         &mut self,
-        p: P,
         config: &Config,
-        opts: &RuntimeOptions,
+        _opts: &RuntimeOptions,
     ) -> Result<(), Error> {
-        self.href = Some(self.get_href(p, opts)?);
-
-        debug!("Href: {:?}", self.href);
-
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
         } else {
@@ -432,9 +427,3 @@ impl Page {
         self.extra.append(&mut other.extra);
     }
 }
-
-//#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-//pub struct Author {
-    //pub name: String,
-    //pub link: Option<String>,
-//}
