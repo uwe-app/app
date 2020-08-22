@@ -12,6 +12,8 @@ use crate::resource;
 use crate::run::{self, ParseData};
 use crate::{Error, Result};
 
+use config::Page;
+
 pub struct Compiler<'a> {
     pub context: &'a BuildContext,
     pub book: BookCompiler,
@@ -38,19 +40,35 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
+    pub fn resolve(&self, file: &PathBuf) -> Option<&Page> {
+        let mut page: Option<&Page> = None;
+
+        // Check for a standard page
+        if let Some(default_page) = self.context.collation.pages.get(file) {
+            page = Some(default_page);
+        }
+
+        // Check for a locale specific override
+        if let Some(locale_pages) = self.context.collation.locale_pages.get(
+            &self.context.options.lang) {
+            if let Some(locale_page) = locale_pages.get(file) {
+                page = Some(locale_page);
+            }
+        }
+
+        page
+    }
+
     // Build a single file
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
-        if let Some(default_page) = self.context.collation.pages.get(file) {
 
-            let mut page = default_page;
-            if let Some(locale_pages) = self.context.collation.locale_pages.get(
-                &self.context.options.lang) {
+        // FIXME: support locale overrides such as `about.id.md`
+        // SEE: #160
 
-                if let Some(locale_page) = locale_pages.get(file) {
-                    page = locale_page;
-                }
-            }
-
+        //println!("Got file {:?}", file);
+        //println!("Got file {:?}", self.resolve(file));
+        
+        if let Some(page) = self.resolve(file) {
             let render = page.render.is_some() && page.render.unwrap();
             if !render {
                 let file_ctx = page.file.as_ref().unwrap();

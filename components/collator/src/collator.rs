@@ -82,49 +82,49 @@ pub async fn localize(
     // into the locale_pages map
     let mut cache: Vec<LocalePage> = Vec::new();
 
-    info.pages.retain(
-        |path, page| {
-            if let Some(ext) = path.extension() {
-                let ext = ext.to_str().unwrap();
-                if let Some(stem) = path.file_stem() {
-                    let stem = stem.to_str().unwrap();
-                    if is_locale_stem(&locale_names, stem) {
-                        let stem_path = Path::new(stem);
-                        let locale_id = stem_path.extension().unwrap().to_str().unwrap();
-                        let parent_stem = stem_path.file_stem().unwrap().to_str().unwrap();
-                        let fallback_name = format!("{}.{}", parent_stem, ext);
-                        let fallback = path.parent().unwrap().join(fallback_name);
-                        let tmp = LocalePage {
-                            locale_id: locale_id.to_string(),
-                            page: page.clone(),
-                            fallback,
-                            path: path.to_path_buf(),
-                        };
-                        cache.push(tmp);
-
-                        // Remove from the primary pages list so it is not rendered directly
-                        // as it needs to be resolved on a locale-specific basis during render
-                        //return false
-                    }
-                } 
+    for (path, page) in info.pages.iter() {
+        if let Some(ext) = path.extension() {
+            let ext = ext.to_str().unwrap();
+            if let Some(stem) = path.file_stem() {
+                let stem = stem.to_str().unwrap();
+                if is_locale_stem(&locale_names, stem) {
+                    let stem_path = Path::new(stem);
+                    let locale_id = stem_path.extension().unwrap().to_str().unwrap();
+                    let parent_stem = stem_path.file_stem().unwrap().to_str().unwrap();
+                    let fallback_name = format!("{}.{}", parent_stem, ext);
+                    let fallback = path.parent().unwrap().join(fallback_name);
+                    let tmp = LocalePage {
+                        locale_id: locale_id.to_string(),
+                        page: page.clone(),
+                        fallback,
+                        path: path.to_path_buf(),
+                    };
+                    cache.push(tmp);
+                }
             } 
-            true
-        }
-    );
+        } 
+    }
 
     for entry in cache {
         let lang = entry.locale_id.clone();
         let map = info.locale_pages.entry(entry.locale_id).or_insert(HashMap::new());
         let mut page_info = entry.page;
+        let use_fallback = page_info.fallback.is_some() && page_info.fallback.unwrap();
+
         // Inherit from the fallback page when it exists
         if let Some(fallback_page) = info.pages.get(&entry.fallback) {
             let file_context = fallback_page.file.as_ref().unwrap();
             let source = file_context.source.clone();
-            let template = page_info.file.as_ref().unwrap().source.clone();
-            let mut tmp: Page = Default::default();
-
             // NOTE: Must clone the fallback page
             let mut fallback_page = fallback_page.clone();
+
+            let template = if use_fallback {
+                fallback_page.file.as_ref().unwrap().template.clone()
+            }else {
+                page_info.file.as_ref().unwrap().template.clone()
+            };
+
+            let mut tmp: Page = Default::default();
 
             tmp.append(&mut fallback_page);
             tmp.append(&mut page_info);
