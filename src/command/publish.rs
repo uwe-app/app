@@ -10,6 +10,8 @@ use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
 use workspace;
+use workspace::lock;
+use scopeguard::defer;
 
 use crate::Error;
 use crate::Result;
@@ -22,6 +24,11 @@ pub struct PublishOptions {
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
+
+    let lock_path = options.project.join("site.lock");
+    let lock_file = lock::acquire(&lock_path)?;
+    defer! { let _ = lock::release(lock_file); }
+
     let mut spaces: Vec<Config> = Vec::new();
     workspace::find(&options.project, true, &mut spaces)?;
     for mut space in spaces.iter_mut() {

@@ -1,7 +1,6 @@
 use std::convert::TryInto;
 use std::fs::{self, File};
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use human_bytes::human_bytes;
 use log::info;

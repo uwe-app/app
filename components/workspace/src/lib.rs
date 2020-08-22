@@ -55,6 +55,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 mod compile;
 mod finder;
+pub mod lock;
 mod merge;
 pub mod project;
 
