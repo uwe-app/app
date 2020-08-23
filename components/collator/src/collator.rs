@@ -211,8 +211,7 @@ fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()
     if let Some(ref links) = req.config.link {
         if let Some(ref allow) = links.allow {
             for s in allow {
-                let s = s.trim_start_matches("/");
-                let src = req.options.source.join(s);
+                let src = req.options.source.join(s.trim_start_matches("/"));
                 let href = href(&src, req.options, false, None)?;
                 link(&mut info, Arc::new(src), Arc::new(href))?;
             }
@@ -374,34 +373,21 @@ pub fn add_file(
     Ok(())
 }
 
-fn add_other(
-    req: &CollateRequest<'_>,
-    mut info: &mut CollateInfo,
-    key: &Arc<PathBuf>,
-    path: &Path,
-    is_page: bool,
-) -> Result<()> {
-    let pth = path.to_path_buf();
+fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf>) -> Result<()> {
+    let pth = key.to_path_buf();
 
     let mut kind = ResourceKind::File;
 
-    // This falls through so it is captured as part
-    // of the other group too but we track these files
-    // for reporting purposes
     if key.starts_with(req.options.get_assets_path()) {
-        //info.assets.push(Arc::clone(key));
         kind = ResourceKind::Asset;
     }
-
+    
     if key.starts_with(req.options.get_partials_path()) {
-        //info.partials.push(Arc::clone(key));
-
         kind = ResourceKind::Partial;
     } else if key.starts_with(req.options.get_includes_path()) {
-        //info.includes.push(Arc::clone(key));
-
         kind = ResourceKind::Include;
     } else if key.starts_with(req.options.get_resources_path()) {
+
         let href = href(
             &pth,
             req.options,
@@ -409,26 +395,25 @@ fn add_other(
             Some(req.options.get_resources_path()),
         )?;
 
-        link(&mut info, Arc::clone(key), Arc::new(href))?;
+        link(info, Arc::clone(key), Arc::new(href))?;
+
         info.resources.push(Arc::clone(key));
 
-    } else if key.starts_with(req.options.get_locales()) {
-        info.locales.push(Arc::clone(key));
-    } else if key.starts_with(req.options.get_data_sources_path()) {
-        //info.data_sources.push(Arc::clone(key));
+        kind = ResourceKind::Content;
 
+    } else if key.starts_with(req.options.get_locales()) {
+        kind = ResourceKind::Locale;
+    } else if key.starts_with(req.options.get_data_sources_path()) {
         kind = ResourceKind::DataSource;
-    } else if !is_page {
+    } else {
         let dest = get_destination(&pth, req.config, req.options)?;
         let href = href(&pth, req.options, false, None)?;
         add_file(key, dest, href, info, req.config, req.options)?;
     }
 
-    if !is_page {
-        let dest = get_destination(&pth, req.config, req.options)?;
-        let resource = Resource::new(dest, kind, ResourceOperation::Copy);
-        info.all.insert(Arc::clone(key), resource);
-    }
+    let dest = get_destination(&pth, req.config, req.options)?;
+    let resource = Resource::new(dest, kind, ResourceOperation::Copy);
+    info.all.insert(Arc::clone(key), resource);
 
     Ok(())
 }
@@ -440,12 +425,17 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
         .run(|| {
             Box::new(|result| {
                 if let Ok(entry) = result {
-                    let path = entry.path();
-
                     let data = Arc::clone(&res.inner);
                     let mut info = data.lock().unwrap();
-
+                    let path = entry.path();
                     let key = Arc::new(path.to_path_buf());
+
+                    if path.is_dir() {
+                        let res = Resource::new(
+                            path.to_path_buf(), ResourceKind::Dir, ResourceOperation::Noop);
+                        info.all.insert(Arc::clone(&key), res);
+                        return WalkState::Continue;
+                    }
 
                     let is_data_source = key.starts_with(req.options.get_data_sources_path());
                     let is_page =
@@ -455,13 +445,6 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {
                             info.errors.push(e);
                         }
-                        return WalkState::Continue;
-                    }
-
-                    if key.is_dir() {
-                        let res = Resource::new(
-                            path.to_path_buf(), ResourceKind::Dir, ResourceOperation::Noop);
-                        info.all.insert(Arc::clone(&key), res);
                     } else {
                         // Store the primary layout
                         if let Some(ref layout) = req.options.settings.layout {
@@ -471,12 +454,9 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             }
                         }
 
-                        if let Err(e) = add_other(req, &mut *info, &key, &path, is_page) {
+                        if let Err(e) = add_other(req, &mut *info, &key) {
                             info.errors.push(Error::from(e));
-                            return WalkState::Continue;
                         }
-
-                        //info.files.push(Arc::clone(&key));
                     }
                 }
                 WalkState::Continue

@@ -20,6 +20,8 @@ pub enum ResourceKind {
     /// An asset file is typically located in the `assets` folder and
     /// is primarily used for the site layout: images, fonts, styles etc.
     Asset,
+    /// A locale resource, typically .ftl files in the `locales` folder.
+    Locale,
     /// A partial file provides part of a template render; normally 
     /// located in the `partials` directory but can also come from 
     /// other locations.
@@ -30,6 +32,9 @@ pub enum ResourceKind {
     Include,
     /// This file is part of a data source directory.
     DataSource,
+    /// Type for unknown content files such as images, videos and other 
+    /// binary or text files.
+    Content,
 }
 
 impl Default for ResourceKind {
@@ -80,14 +85,16 @@ impl Resource {
 
 #[derive(Debug, Default)]
 pub struct CollateInfo {
+    /// List of errors encountered during collation.
     pub errors: Vec<Error>,
 
+    /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
 
-    // Pages to compile
+    /// Lookup table for page data.
     pub pages: HashMap<Arc<PathBuf>, Page>,
 
-    // Locale specific pages
+    /// Locale specific pages are keyed first by locale.
     pub locale_pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
 
     // Pages that have permalinks map the 
@@ -102,7 +109,7 @@ pub struct CollateInfo {
     // Pages located for feed configurations.
     //
     // The hash map key is the key for the feed congfiguration 
-    // and each entry is a page path that can be used to 
+    // and each entry is a path that can be used to 
     // locate the page data in `pages`.
     pub feeds: HashMap<String, Vec<Arc<PathBuf>>>,
 
@@ -119,7 +126,6 @@ pub struct CollateInfo {
     pub layout: Option<Arc<PathBuf>>,
 
     pub resources: Vec<Arc<PathBuf>>,
-    pub locales: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
     pub links: LinkMap,
