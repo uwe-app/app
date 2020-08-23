@@ -369,12 +369,8 @@ pub fn add_file(
     _config: &Config,
     _options: &RuntimeOptions,
 ) -> Result<()> {
-    //let pth = key.to_path_buf();
     link(&mut info, Arc::clone(key), Arc::new(href))?;
-
-    info.other.entry(Arc::clone(key)).or_insert(dest.clone());
     info.targets.entry(Arc::clone(key)).or_insert(dest);
-
     Ok(())
 }
 

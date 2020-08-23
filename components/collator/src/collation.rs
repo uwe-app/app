@@ -84,9 +84,6 @@ pub struct CollateInfo {
 
     pub all: HashMap<Arc<PathBuf>, Resource>,
 
-    //pub files: Vec<Arc<PathBuf>>,
-    //pub assets: Vec<Arc<PathBuf>>,
-
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
 
@@ -97,9 +94,6 @@ pub struct CollateInfo {
     // permalink to the computed href so that
     // we can configure redirects for permalinks.
     pub permalinks: HashMap<String, String>,
-
-    // Assets and other files that should be copied
-    pub other: HashMap<Arc<PathBuf>, PathBuf>,
 
     // Everything we need to build in pages and other
     // with the target output files
@@ -120,14 +114,12 @@ pub struct CollateInfo {
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,
+
     // The default layout
     pub layout: Option<Arc<PathBuf>>,
 
-    //pub partials: Vec<Arc<PathBuf>>,
-    //pub includes: Vec<Arc<PathBuf>>,
     pub resources: Vec<Arc<PathBuf>>,
     pub locales: Vec<Arc<PathBuf>>,
-    //pub data_sources: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
     pub links: LinkMap,

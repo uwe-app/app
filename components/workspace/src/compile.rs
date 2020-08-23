@@ -145,10 +145,7 @@ async fn collate(
     };
 
     // Collate page data for later usage
-    let req = CollateRequest {
-        config: &config,
-        options: &options,
-    };
+    let req = CollateRequest { config: &config, options: &options };
 
     let mut res = CollateResult::new(manifest);
     collator::walk(req, &mut res).await?;
