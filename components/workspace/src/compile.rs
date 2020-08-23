@@ -59,7 +59,7 @@ pub async fn compile(
         // Write the manifest for incremental builds
         if let Some(ref mut manifest) = ctx.collation.manifest {
             let manifest_file = get_manifest_file(&ctx.options);
-            for (p, _) in ctx.collation.targets.iter() {
+            for p in ctx.collation.resources.iter() {
                 manifest.touch(&p.to_path_buf());
             }
             Manifest::save(&manifest_file, manifest)?;

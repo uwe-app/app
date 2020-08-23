@@ -354,19 +354,18 @@ fn add_page(
         }
     }
 
-    //let mut resource = Resource::new_page(dest);
-    //if let Some(ref render) = page_info.render {
-        //if !render {
-            //resource.set_operation(ResourceOperation::Copy);
-        //}
-    //}
-    //info.all.insert(Arc::clone(key), resource);
-    //info.resources.push(Arc::clone(key));
+    let mut resource = Resource::new_page(dest);
+    if let Some(ref render) = page_info.render {
+        if !render {
+            resource.set_operation(ResourceOperation::Copy);
+        }
+    }
+    info.all.insert(Arc::clone(key), resource);
+    info.resources.push(Arc::clone(key));
+
+    //info.targets.entry(Arc::clone(key)).or_insert(dest);
 
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
-
-    // FIXME: do not use targets anymore
-    info.targets.entry(Arc::clone(key)).or_insert(dest);
 
     Ok(())
 }
@@ -393,10 +392,10 @@ pub fn add_file(
         _ => {}
     }
 
-    //let resource = Resource::new(dest, kind, ResourceOperation::Copy);
-    //info.all.insert(Arc::clone(key), resource);
+    let resource = Resource::new(dest, kind, ResourceOperation::Copy);
+    info.all.insert(Arc::clone(key), resource);
 
-    info.targets.entry(Arc::clone(key)).or_insert(dest);
+    //info.targets.entry(Arc::clone(key)).or_insert(dest);
 
     Ok(())
 }

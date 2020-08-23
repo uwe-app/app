@@ -7,6 +7,9 @@ pub enum Error {
     #[error("Path {0} is outside the site source")]
     OutsideSourceTree(PathBuf),
 
+    #[error("Could not resolve page data for file {0}")]
+    PageResolve(PathBuf),
+
     #[error("Parser got invalid file type")]
     ParserFileType,
 
