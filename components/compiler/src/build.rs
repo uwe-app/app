@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crossbeam::channel;
-use log::error;
+use log::{debug, error};
 
 use book::compiler::BookCompiler;
 
@@ -149,33 +149,6 @@ impl<'a> Compiler<'a> {
         // TODO: support allowing this in the settings
         let fail_fast = true;
 
-
-        /*
-        let all = self
-            .context
-            .collation
-            .targets
-            .iter()
-            .filter(|(p, _)| {
-                if !filter_active {
-                    return true;
-                }
-                p.starts_with(target)
-            })
-            .filter(|(p, target)| {
-                if let Some(ref manifest) = self.context.collation.manifest {
-                    let file = p.to_path_buf();
-                    if manifest.exists(&file) && !manifest.is_dirty(&file, &target, false) {
-                        debug!("[NOOP] {}", file.display());
-                        return false;
-                    }
-                }
-                true
-            })
-          .map(|(p, _)| p);
-        */
-
-
         let all = self
             .context
             .collation
@@ -186,6 +159,23 @@ impl<'a> Compiler<'a> {
                     return true;
                 }
                 p.starts_with(target)
+            })
+            .filter(|p| {
+                if let Some(ref manifest) = self.context.collation.manifest {
+                    if let Some(ref resource) = self.context.collation.all.get(*p) {
+                        match resource {
+                            Resource::Page {ref target} | Resource::File {ref target} => {
+                                let file = p.to_path_buf();
+                                if manifest.exists(&file)
+                                    && !manifest.is_dirty(&file, &target.destination, false) {
+                                    debug!("[NOOP] {}", file.display());
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                true
             });
 
         let mut data: Vec<ParseData> = Vec::new();
