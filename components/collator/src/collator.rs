@@ -354,7 +354,15 @@ fn add_page(
         }
     }
 
+    // FIXME: remove the to_path_buf() once the collation
+    // FIXME: refactor is complete
+    let resource = Resource::new_page(dest.to_path_buf());
+    info.all.insert(Arc::clone(key), resource);
+    info.resources.push(Arc::clone(key));
+
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
+
+    // FIXME: do not use targets anymore
     info.targets.entry(Arc::clone(key)).or_insert(dest);
 
     Ok(())
@@ -364,28 +372,63 @@ pub fn add_file(
     key: &Arc<PathBuf>,
     dest: PathBuf,
     href: String,
-    mut info: &mut CollateInfo,
+    info: &mut CollateInfo,
     _config: &Config,
-    _options: &RuntimeOptions,
+    options: &RuntimeOptions,
 ) -> Result<()> {
-    link(&mut info, Arc::clone(key), Arc::new(href))?;
+
+    let kind = get_file_kind(key, options);
+    match kind {
+        ResourceKind::File
+            | ResourceKind::Asset
+            | ResourceKind::Content => {
+
+            info.resources.push(Arc::clone(&key));
+            link(info, Arc::clone(key), Arc::new(href))?;
+
+        }
+        _ => {}
+    }
+
+    //let resource = Resource::new(dest, kind, ResourceOperation::Copy);
+    //info.all.insert(Arc::clone(key), resource);
+
     info.targets.entry(Arc::clone(key)).or_insert(dest);
+
     Ok(())
+}
+
+fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
+    let mut kind = ResourceKind::File;
+    if key.starts_with(options.get_assets_path()) {
+        kind = ResourceKind::Asset;
+    } else if key.starts_with(options.get_partials_path()) {
+        kind = ResourceKind::Partial;
+    } else if key.starts_with(options.get_includes_path()) {
+        kind = ResourceKind::Include;
+    } else if key.starts_with(options.get_resources_path()) {
+        kind = ResourceKind::Content;
+    } else if key.starts_with(options.get_locales()) {
+        kind = ResourceKind::Locale;
+    } else if key.starts_with(options.get_data_sources_path()) {
+        kind = ResourceKind::DataSource;
+    }
+    kind
 }
 
 fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf>) -> Result<()> {
     let pth = key.to_path_buf();
 
-    let mut kind = ResourceKind::File;
+    let kind = get_file_kind(key, req.options);
 
-    if key.starts_with(req.options.get_assets_path()) {
-        kind = ResourceKind::Asset;
-    }
+    //if key.starts_with(req.options.get_assets_path()) {
+        //kind = ResourceKind::Asset;
+    //}
     
     if key.starts_with(req.options.get_partials_path()) {
-        kind = ResourceKind::Partial;
+        //kind = ResourceKind::Partial;
     } else if key.starts_with(req.options.get_includes_path()) {
-        kind = ResourceKind::Include;
+        //kind = ResourceKind::Include;
     } else if key.starts_with(req.options.get_resources_path()) {
 
         let href = href(
@@ -397,23 +440,28 @@ fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf
 
         link(info, Arc::clone(key), Arc::new(href))?;
 
-        //info.resources.push(Arc::clone(key));
-
-        kind = ResourceKind::Content;
+        //kind = ResourceKind::Content;
 
     } else if key.starts_with(req.options.get_locales()) {
-        kind = ResourceKind::Locale;
+        //kind = ResourceKind::Locale;
     } else if key.starts_with(req.options.get_data_sources_path()) {
-        kind = ResourceKind::DataSource;
+        //kind = ResourceKind::DataSource;
     } else {
         let dest = get_destination(&pth, req.config, req.options)?;
         let href = href(&pth, req.options, false, None)?;
         add_file(key, dest, href, info, req.config, req.options)?;
     }
 
-    let dest = get_destination(&pth, req.config, req.options)?;
-    let resource = Resource::new(dest, kind, ResourceOperation::Copy);
-    info.all.insert(Arc::clone(key), resource);
+    //match kind {
+        //ResourceKind::File
+            //| ResourceKind::Asset
+            //| ResourceKind::Content => info.resources.push(Arc::clone(&key)),
+        //_ => {}
+    //}
+
+    //let dest = get_destination(&pth, req.config, req.options)?;
+    //let resource = Resource::new(dest, kind, ResourceOperation::Copy);
+    //info.all.insert(Arc::clone(key), resource);
 
     Ok(())
 }

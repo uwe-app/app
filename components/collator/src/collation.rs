@@ -91,11 +91,13 @@ pub struct CollateInfo {
     /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
 
-    // FIXME: pages should always be keyed by locale
+    /// Lookup table for all the resources that should
+    /// be processed by the compiler.
+    pub resources: Vec<Arc<PathBuf>>,
 
+    // FIXME: pages should always be keyed by locale
     /// Lookup table for page data.
     pub pages: HashMap<Arc<PathBuf>, Page>,
-
     /// Locale specific pages are keyed first by locale.
     pub locale_pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
 
@@ -126,8 +128,6 @@ pub struct CollateInfo {
     // The default layout
     pub layout: Option<Arc<PathBuf>>,
 
-    //pub resources: Vec<Arc<PathBuf>>,
-
     // TODO: books too!
     pub links: LinkMap,
 
@@ -138,6 +138,10 @@ pub struct CollateInfo {
 impl CollateInfo {
     pub fn remove_page(&mut self, p: &PathBuf) -> Page {
         self.targets.remove(p);
+
+        if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
+            self.resources.remove(pos);
+        }
         self.pages.remove(p).unwrap()
     }
 
