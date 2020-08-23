@@ -354,6 +354,19 @@ fn add_page(
         }
     }
 
+    add_page_reference(info, key, dest, page_info);
+
+    Ok(())
+}
+
+// Note that this is also used when creating synthetic pages from 
+// data sources, pagination etc.
+pub fn add_page_reference(
+    info: &mut CollateInfo,
+    key: &Arc<PathBuf>,
+    dest: PathBuf,
+    page_info: Page) {
+
     let mut resource = Resource::new_page(dest);
     if let Some(ref render) = page_info.render {
         if !render {
@@ -362,12 +375,7 @@ fn add_page(
     }
     info.all.insert(Arc::clone(key), resource);
     info.resources.push(Arc::clone(key));
-
-    //info.targets.entry(Arc::clone(key)).or_insert(dest);
-
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
-
-    Ok(())
 }
 
 pub fn add_file(
@@ -380,11 +388,11 @@ pub fn add_file(
 ) -> Result<()> {
 
     let kind = get_file_kind(key, options);
+
     match kind {
         ResourceKind::File
             | ResourceKind::Asset
             | ResourceKind::Content => {
-
             info.resources.push(Arc::clone(&key));
             link(info, Arc::clone(key), Arc::new(href))?;
 
@@ -394,8 +402,6 @@ pub fn add_file(
 
     let resource = Resource::new(dest, kind, ResourceOperation::Copy);
     info.all.insert(Arc::clone(key), resource);
-
-    //info.targets.entry(Arc::clone(key)).or_insert(dest);
 
     Ok(())
 }
@@ -421,52 +427,8 @@ fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
 fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf>) -> Result<()> {
     let pth = key.to_path_buf();
 
-    //let kind = get_file_kind(key, req.options);
-
-    //if key.starts_with(req.options.get_assets_path()) {
-        //kind = ResourceKind::Asset;
-    //}
-    
-    //if key.starts_with(req.options.get_partials_path()) {
-        //kind = ResourceKind::Partial;
-    //} else if key.starts_with(req.options.get_includes_path()) {
-        //kind = ResourceKind::Include;
-    //} else if key.starts_with(req.options.get_resources_path()) {
-
-        //let href = href(
-            //&pth,
-            //req.options,
-            //false,
-            //Some(req.options.get_resources_path()),
-        //)?;
-
-        //link(info, Arc::clone(key), Arc::new(href))?;
-
-        //kind = ResourceKind::Content;
-
-    //} else if key.starts_with(req.options.get_locales()) {
-        //kind = ResourceKind::Locale;
-    //} else if key.starts_with(req.options.get_data_sources_path()) {
-        //kind = ResourceKind::DataSource;
-    //} else {
-        //let dest = get_destination(&pth, req.config, req.options)?;
-        //let href = href(&pth, req.options, false, None)?;
-        //add_file(key, dest, href, info, req.config, req.options)?;
-    //}
-
-    //match kind {
-        //ResourceKind::File
-            //| ResourceKind::Asset
-            //| ResourceKind::Content => info.resources.push(Arc::clone(&key)),
-        //_ => {}
-    //}
-
-    //let dest = get_destination(&pth, req.config, req.options)?;
-    //let resource = Resource::new(dest, kind, ResourceOperation::Copy);
-    //info.all.insert(Arc::clone(key), resource);
-
-    //Ok(())
-
+    // FIXME: remove this special handling once the resource 
+    // FIXME: symbolic linking logic has been improved
     if key.starts_with(req.options.get_resources_path()) {
         let href = href(
             &pth,

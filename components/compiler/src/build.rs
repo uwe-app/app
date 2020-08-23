@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crossbeam::channel;
-use log::{debug, error};
+use log::error;
 
 use book::compiler::BookCompiler;
 
@@ -108,6 +108,9 @@ impl<'a> Compiler<'a> {
     // Build a single file
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
 
+        // FIXME: support locale overrides such as `about.id.md`
+        // SEE: #160
+
         let resource = self.context.collation.all.get(file).unwrap();
         match resource {
             Resource::Page {ref target} => {
@@ -130,25 +133,6 @@ impl<'a> Compiler<'a> {
                 run::copy(file, &target.destination).await
             }
         }
-
-        // FIXME: support locale overrides such as `about.id.md`
-        // SEE: #160
-
-        //println!("Got file {:?}", file);
-        //println!("Got file {:?}", self.resolve(file));
-        
-        //if let Some(page) = self.resolve(file) {
-            //let render = page.render.is_some() && page.render.unwrap();
-            //if !render {
-                //let file_ctx = page.file.as_ref().unwrap();
-                //return run::copy(file, &file_ctx.target).await;
-            //}
-
-            //run::parse(self.context, parser, page.get_template(), page).await
-        //} else {
-            //let target = self.context.collation.targets.get(file).unwrap();
-            //run::copy(file, target).await
-        //}
     }
 
     pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<Vec<ParseData>> {

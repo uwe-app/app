@@ -164,6 +164,17 @@ impl CollateInfo {
             page.rewrite_target(&from, &to)?;
         }
 
+        for pth in self.resources.iter_mut() {
+            let res = self.all.get_mut(pth).unwrap();
+            match res {
+                Resource::File {ref mut target} => {
+                    let new_path = to.join(target.destination.strip_prefix(&from)?);
+                    target.destination = new_path;
+                }
+                _ => {}
+            } 
+        }
+
         // FIXME: restore this logic!!!
 
         /*

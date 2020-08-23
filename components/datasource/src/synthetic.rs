@@ -5,7 +5,7 @@ use chrono::prelude::*;
 use serde_json::json;
 use jsonfeed::{Feed, Item, VERSION};
 
-use collator::{CollateInfo, Resource, ResourceOperation};
+use collator::CollateInfo;
 use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
 use config::feed::{FeedConfig, ChannelConfig};
 
@@ -39,20 +39,7 @@ fn create_synthetic(
     let key = Arc::new(source);
 
     collator::link(info, Arc::clone(&key), Arc::new(href))?;
-
-    // Inject the synthetic page
-    let mut resource = Resource::new_page(dest);
-    if let Some(ref render) = page_info.render {
-        if !render {
-            resource.set_operation(ResourceOperation::Copy);
-        }
-    }
-    info.all.insert(Arc::clone(&key), resource);
-    info.resources.push(Arc::clone(&key));
-    
-    //info.targets.entry(Arc::clone(&key)).or_insert(dest);
-
-    info.pages.entry(key).or_insert(page_info);
+    collator::add_page_reference(info, &key, dest, page_info);
 
     Ok(())
 }
