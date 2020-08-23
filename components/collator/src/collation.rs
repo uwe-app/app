@@ -111,10 +111,6 @@ pub struct CollateInfo {
     /// Locale specific pages are keyed first by locale.
     pub locale_pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
 
-    // Everything we need to build in pages and other
-    // with the target output files
-    //pub targets: HashMap<Arc<PathBuf>, PathBuf>,
-
     // Pages that have permalinks map the 
     // permalink to the computed href so that
     // we can configure redirects for permalinks.
@@ -147,8 +143,6 @@ pub struct CollateInfo {
 
 impl CollateInfo {
     pub fn remove_page(&mut self, p: &PathBuf) -> Page {
-        //self.targets.remove(p);
-
         if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
             self.resources.remove(pos);
         }
@@ -174,18 +168,6 @@ impl CollateInfo {
                 _ => {}
             } 
         }
-
-        // FIXME: restore this logic!!!
-
-        /*
-        let mut tmp: HashMap<Arc<PathBuf>, PathBuf> = HashMap::new();
-        for (k, target) in self.targets.drain() {
-            let new_target = to.join(target.strip_prefix(&from)?);
-            tmp.entry(k).or_insert(new_target);
-        }
-
-        self.targets = tmp;
-        */
 
         Ok(())
     }

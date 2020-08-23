@@ -180,7 +180,13 @@ impl<'a> Compiler<'a> {
             .context
             .collation
             .resources
-            .iter();
+            .iter()
+            .filter(|p| {
+                if !filter_active {
+                    return true;
+                }
+                p.starts_with(target)
+            });
 
         let mut data: Vec<ParseData> = Vec::new();
 
