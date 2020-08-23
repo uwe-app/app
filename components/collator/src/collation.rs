@@ -9,18 +9,83 @@ use super::manifest::Manifest;
 
 use super::{Error, Result};
 
+#[derive(Debug)]
+pub enum ResourceKind {
+    /// A directory encountered whilst walking the tree.
+    Dir,
+    /// The default type indicates we don't know much about this resource.
+    File,
+    /// The type of file that renders to an output page.
+    Page,
+    /// An asset file is typically located in the `assets` folder and
+    /// is primarily used for the site layout: images, fonts, styles etc.
+    Asset,
+    /// A partial file provides part of a template render; normally 
+    /// located in the `partials` directory but can also come from 
+    /// other locations.
+    Partial,
+    /// Include files are documents included by pages; they normally 
+    /// reside in the `includes` directory and are typically used for 
+    /// code samples etc.
+    Include,
+    /// This file is part of a data source directory.
+    DataSource,
+}
+
+impl Default for ResourceKind {
+    fn default() -> Self { ResourceKind::File }
+}
+
+/// The compiler uses this as the action to perform 
+/// with the input source file.
+#[derive(Debug)]
+pub enum ResourceOperation {
+    // Do nothing, used for the Dir kind primarily.
+    Noop,
+    // Render a file as a page template
+    Render,
+    // Copy a file to the build target
+    Copy,
+    // Create a symbolic link to the source file
+    Link,
+}
+
+impl Default for ResourceOperation {
+    fn default() -> Self { ResourceOperation::Copy }
+}
+
 #[derive(Debug, Default)]
-pub struct CollateData {
-    pub page: Option<Page>,
+pub struct ResourceTarget {
+    pub destination: PathBuf,
+    pub operation: ResourceOperation,
+    pub kind: ResourceKind,
+}
+
+#[derive(Debug)]
+pub enum Resource {
+    Page(ResourceTarget),
+    File(ResourceTarget),
+}
+
+impl Resource {
+    pub fn new(destination: PathBuf, kind: ResourceKind, op: ResourceOperation) -> Self {
+        Resource::File(ResourceTarget {kind, destination, operation: op}) 
+    }
+
+    pub fn new_page(destination: PathBuf) -> Self {
+        let kind = ResourceKind::Page;
+        Resource::Page(ResourceTarget {kind, destination, operation: ResourceOperation::Render}) 
+    }
 }
 
 #[derive(Debug, Default)]
 pub struct CollateInfo {
     pub errors: Vec<Error>,
-    pub all: Vec<Arc<PathBuf>>,
-    pub dirs: Vec<Arc<PathBuf>>,
-    pub files: Vec<Arc<PathBuf>>,
-    pub assets: Vec<Arc<PathBuf>>,
+
+    pub all: HashMap<Arc<PathBuf>, Resource>,
+
+    //pub files: Vec<Arc<PathBuf>>,
+    //pub assets: Vec<Arc<PathBuf>>,
 
     // Pages to compile
     pub pages: HashMap<Arc<PathBuf>, Page>,
@@ -58,11 +123,11 @@ pub struct CollateInfo {
     // The default layout
     pub layout: Option<Arc<PathBuf>>,
 
-    pub partials: Vec<Arc<PathBuf>>,
-    pub includes: Vec<Arc<PathBuf>>,
+    //pub partials: Vec<Arc<PathBuf>>,
+    //pub includes: Vec<Arc<PathBuf>>,
     pub resources: Vec<Arc<PathBuf>>,
     pub locales: Vec<Arc<PathBuf>>,
-    pub data_sources: Vec<Arc<PathBuf>>,
+    //pub data_sources: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
     pub links: LinkMap,

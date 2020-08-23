@@ -11,7 +11,7 @@ use config::{Config, FileInfo, FileOptions, RuntimeOptions, LocaleMap, Page};
 
 use super::loader;
 use super::manifest::Manifest;
-use super::{CollateInfo, Error, Result};
+use super::{CollateInfo, Resource, ResourceOperation, ResourceKind, Error, Result};
 
 pub struct CollateRequest<'a> {
     // When filter is active then only `all`, `pages`, `files` and `dirs`
@@ -390,17 +390,24 @@ fn add_other(
 ) -> Result<()> {
     let pth = path.to_path_buf();
 
+    let mut kind = ResourceKind::File;
+
     // This falls through so it is captured as part
     // of the other group too but we track these files
     // for reporting purposes
     if key.starts_with(req.options.get_assets_path()) {
-        info.assets.push(Arc::clone(key));
+        //info.assets.push(Arc::clone(key));
+        kind = ResourceKind::Asset;
     }
 
     if key.starts_with(req.options.get_partials_path()) {
-        info.partials.push(Arc::clone(key));
+        //info.partials.push(Arc::clone(key));
+
+        kind = ResourceKind::Partial;
     } else if key.starts_with(req.options.get_includes_path()) {
-        info.includes.push(Arc::clone(key));
+        //info.includes.push(Arc::clone(key));
+
+        kind = ResourceKind::Include;
     } else if key.starts_with(req.options.get_resources_path()) {
         let href = href(
             &pth,
@@ -408,26 +415,26 @@ fn add_other(
             false,
             Some(req.options.get_resources_path()),
         )?;
+
         link(&mut info, Arc::clone(key), Arc::new(href))?;
         info.resources.push(Arc::clone(key));
+
     } else if key.starts_with(req.options.get_locales()) {
         info.locales.push(Arc::clone(key));
     } else if key.starts_with(req.options.get_data_sources_path()) {
-        info.data_sources.push(Arc::clone(key));
+        //info.data_sources.push(Arc::clone(key));
+
+        kind = ResourceKind::DataSource;
     } else if !is_page {
         let dest = get_destination(&pth, req.config, req.options)?;
         let href = href(&pth, req.options, false, None)?;
         add_file(key, dest, href, info, req.config, req.options)?;
+    }
 
-        /*
-
-        let href = href(&pth, req.options, false, None)?;
-        link(&mut info, Arc::clone(key), Arc::new(href))?;
-
+    if !is_page {
         let dest = get_destination(&pth, req.config, req.options)?;
-        info.other.entry(Arc::clone(key)).or_insert(dest.clone());
-        info.targets.entry(Arc::clone(key)).or_insert(dest);
-        */
+        let resource = Resource::new(dest, kind, ResourceOperation::Copy);
+        info.all.insert(Arc::clone(key), resource);
     }
 
     Ok(())
@@ -467,12 +474,14 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                     if is_page {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {
                             info.errors.push(e);
-                            return WalkState::Continue;
                         }
+                        return WalkState::Continue;
                     }
 
                     if key.is_dir() {
-                        info.dirs.push(Arc::clone(&key));
+                        let res = Resource::new(
+                            path.to_path_buf(), ResourceKind::Dir, ResourceOperation::Noop);
+                        info.all.insert(Arc::clone(&key), res);
                     } else {
                         if !req.filter {
                             // Store the primary layout
@@ -489,10 +498,8 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             }
                         }
 
-                        info.files.push(Arc::clone(&key));
+                        //info.files.push(Arc::clone(&key));
                     }
-
-                    info.all.push(key);
                 }
                 WalkState::Continue
             })
