@@ -146,7 +146,6 @@ async fn collate(
 
     // Collate page data for later usage
     let req = CollateRequest {
-        filter: false,
         config: &config,
         options: &options,
     };

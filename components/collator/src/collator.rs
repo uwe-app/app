@@ -14,9 +14,6 @@ use super::manifest::Manifest;
 use super::{CollateInfo, Resource, ResourceOperation, ResourceKind, Error, Result};
 
 pub struct CollateRequest<'a> {
-    // When filter is active then only `all`, `pages`, `files` and `dirs`
-    // will be filled otherwise we organize by all the recognized types.
-    pub filter: bool,
     pub config: &'a Config,
     pub options: &'a RuntimeOptions,
 }
@@ -441,20 +438,7 @@ fn add_other(
 }
 
 async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
-    let walk_filters = if req.filter {
-        config::filter::get_filters(req.options, req.config)
-    } else {
-        Vec::new()
-    };
-
     WalkBuilder::new(&req.options.source)
-        .filter_entry(move |e| {
-            let path = e.path();
-            if walk_filters.contains(&path.to_path_buf()) {
-                return false;
-            }
-            true
-        })
         .follow_links(true)
         .build_parallel()
         .run(|| {
@@ -483,19 +467,17 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             path.to_path_buf(), ResourceKind::Dir, ResourceOperation::Noop);
                         info.all.insert(Arc::clone(&key), res);
                     } else {
-                        if !req.filter {
-                            // Store the primary layout
-                            if let Some(ref layout) = req.options.settings.layout {
-                                if key.starts_with(layout) {
-                                    info.layout = Some(Arc::clone(&key));
-                                    return WalkState::Continue;
-                                }
-                            }
-
-                            if let Err(e) = add_other(req, &mut *info, &key, &path, is_page) {
-                                info.errors.push(Error::from(e));
+                        // Store the primary layout
+                        if let Some(ref layout) = req.options.settings.layout {
+                            if key.starts_with(layout) {
+                                info.layout = Some(Arc::clone(&key));
                                 return WalkState::Continue;
                             }
+                        }
+
+                        if let Err(e) = add_other(req, &mut *info, &key, &path, is_page) {
+                            info.errors.push(Error::from(e));
+                            return WalkState::Continue;
                         }
 
                         //info.files.push(Arc::clone(&key));
