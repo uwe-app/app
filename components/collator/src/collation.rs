@@ -68,18 +68,28 @@ pub struct ResourceTarget {
 
 #[derive(Debug)]
 pub enum Resource {
-    Page(ResourceTarget),
-    File(ResourceTarget),
+    Page { target: ResourceTarget },
+    File { target: ResourceTarget },
 }
 
 impl Resource {
     pub fn new(destination: PathBuf, kind: ResourceKind, op: ResourceOperation) -> Self {
-        Resource::File(ResourceTarget {kind, destination, operation: op}) 
+        let target = ResourceTarget {kind, destination, operation: op};
+        Resource::File { target }
     }
 
     pub fn new_page(destination: PathBuf) -> Self {
         let kind = ResourceKind::Page;
-        Resource::Page(ResourceTarget {kind, destination, operation: ResourceOperation::Render}) 
+        let target = ResourceTarget {kind, destination, operation: ResourceOperation::Render};
+        Resource::Page { target }
+    }
+
+    pub fn set_operation(&mut self, operation: ResourceOperation) {
+        match self {
+            Self::Page {ref mut target} | Self::File {ref mut target} => {
+                target.operation = operation; 
+            }
+        }
     }
 }
 

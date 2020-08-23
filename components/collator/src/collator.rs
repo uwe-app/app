@@ -354,7 +354,12 @@ fn add_page(
         }
     }
 
-    //let resource = Resource::new_page(dest);
+    //let mut resource = Resource::new_page(dest);
+    //if let Some(ref render) = page_info.render {
+        //if !render {
+            //resource.set_operation(ResourceOperation::Copy);
+        //}
+    //}
     //info.all.insert(Arc::clone(key), resource);
     //info.resources.push(Arc::clone(key));
 
