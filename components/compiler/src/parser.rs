@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use log::warn;
 
@@ -147,7 +146,7 @@ impl<'a> Parser<'a> {
             handlebars.register_template_file(&layout_name, &layout)?;
         }
 
-        // Register page-specific layouts
+        // Register layouts
         for (_, l) in context.collation.layouts.iter() {
             let layout = l.to_path_buf();
             let layout_name = layout.to_string_lossy().into_owned();
@@ -161,12 +160,7 @@ impl<'a> Parser<'a> {
     }
 
     fn resolve(&self, file: &PathBuf) -> Option<&PathBuf> {
-        if let Some(ref layout) = self
-            .context
-            .collation
-            .layouts
-            .get(&Arc::new(file.to_path_buf()))
-        {
+        if let Some(ref layout) = self.context.collation.layouts.get(file) {
             return Some(layout);
         }
         if let Some(ref layout) = self.context.collation.layout {

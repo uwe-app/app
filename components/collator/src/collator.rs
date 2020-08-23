@@ -397,7 +397,7 @@ fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf
 
         link(info, Arc::clone(key), Arc::new(href))?;
 
-        info.resources.push(Arc::clone(key));
+        //info.resources.push(Arc::clone(key));
 
         kind = ResourceKind::Content;
 
@@ -451,6 +451,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                             if key.starts_with(layout) {
                                 info.layout = Some(Arc::clone(&key));
                                 return WalkState::Continue;
+                                //info.layouts.insert(Arc::clone(&key), key.to_path_buf());
                             }
                         }
 

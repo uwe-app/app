@@ -91,20 +91,22 @@ pub struct CollateInfo {
     /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
 
+    // FIXME: pages should always be keyed by locale
+
     /// Lookup table for page data.
     pub pages: HashMap<Arc<PathBuf>, Page>,
 
     /// Locale specific pages are keyed first by locale.
     pub locale_pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
 
+    // Everything we need to build in pages and other
+    // with the target output files
+    pub targets: HashMap<Arc<PathBuf>, PathBuf>,
+
     // Pages that have permalinks map the 
     // permalink to the computed href so that
     // we can configure redirects for permalinks.
     pub permalinks: HashMap<String, String>,
-
-    // Everything we need to build in pages and other
-    // with the target output files
-    pub targets: HashMap<Arc<PathBuf>, PathBuf>,
 
     // Pages located for feed configurations.
     //
@@ -121,11 +123,10 @@ pub struct CollateInfo {
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,
-
     // The default layout
     pub layout: Option<Arc<PathBuf>>,
 
-    pub resources: Vec<Arc<PathBuf>>,
+    //pub resources: Vec<Arc<PathBuf>>,
 
     // TODO: books too!
     pub links: LinkMap,
