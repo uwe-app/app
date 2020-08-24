@@ -105,11 +105,8 @@ pub struct CollateInfo {
     /// be processed by the compiler.
     pub resources: Vec<Arc<PathBuf>>,
 
-    // FIXME: pages should always be keyed by locale
-    /// Lookup table for page data.
-    pub pages: HashMap<Arc<PathBuf>, Page>,
-    /// Locale specific pages are keyed first by locale.
-    pub locale_pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
+    /// Lookup table for page data resolved by locale identifier and source path.
+    pub pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
 
     // Pages that have permalinks map the 
     // permalink to the computed href so that
@@ -143,15 +140,23 @@ pub struct CollateInfo {
 
 impl CollateInfo {
 
+    pub fn get_pages(&self, lang: &str) -> Option<&HashMap<Arc<PathBuf>, Page>> {
+        self.pages.get(lang)
+    }
+
+    pub fn resolve(&self, file: &PathBuf, options: &RuntimeOptions) -> Option<&Page> {
+        self.get_page(file, options)
+    }
+
     pub fn get_page(&self, key: &PathBuf, options: &RuntimeOptions) -> Option<&Page> {
         let mut result: Option<&Page> = None;
 
-        if let Some(ref map) = self.locale_pages.get(&options.lang) {
+        if let Some(ref map) = self.pages.get(&options.lang) {
             result = map.get(key);
         } 
 
         if result.is_none() && options.lang != options.locales.fallback {
-            if let Some(ref map) = self.locale_pages.get(&options.locales.fallback) {
+            if let Some(ref map) = self.pages.get(&options.locales.fallback) {
                 result = map.get(key);
             } 
         }
@@ -159,23 +164,49 @@ impl CollateInfo {
         result
     }
 
-    pub fn remove_page(&mut self, p: &PathBuf, options: &RuntimeOptions) -> Page {
+    // FIXME: should we resolve locale overrides here too? See synthetic.rs in datasource.
+    pub fn get_page_mut(&mut self, key: &PathBuf, options: &RuntimeOptions) -> Option<&mut Page> {
+        //let mut result: Option<&mut Page> = None;
+
+        if let Some(map) = self.pages.get_mut(&options.lang) {
+            return map.get_mut(key)
+        } else {
+            //if options.lang != options.locales.fallback {
+                //if let Some(map) = self.pages.get_mut(&options.locales.fallback) {
+                    //return map.get_mut(key)
+                //} 
+            //}
+        }
+
+        None
+    }
+
+    pub fn remove_page(&mut self, p: &PathBuf, options: &RuntimeOptions) -> Option<Page> {
         if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
             self.resources.remove(pos);
         }
 
-        // FIXME: remove using lang!
-        self.pages.remove(p).unwrap()
+        if let Some(ref mut map) = self.pages.get_mut(&options.lang) {
+            return map.remove(p)
+        } 
+
+        None
     }
 
     // Rewrite destination paths.
     //
     // Used for multi-lingual output to locale specific folders.
-    pub fn rewrite(&mut self, lang: &str, from: &PathBuf, to: &PathBuf) -> Result<()> {
-        for (_path, page) in self.pages.iter_mut() {
-            page.set_language(lang);
-            page.rewrite_target(&from, &to)?;
+    pub fn rewrite(&mut self,
+        options: &RuntimeOptions, lang: &str, from: &PathBuf, to: &PathBuf) -> Result<()> {
+
+        if let Some(pages) = self.pages.get_mut(&options.locales.fallback) {
+            for (_path, page) in pages.iter_mut() {
+                page.set_language(lang);
+                page.rewrite_target(&from, &to)?;
+            }
         }
+
+        // FIXME: restore the page locale rewrite logic!
 
         for pth in self.resources.iter_mut() {
             let res = self.all.get_mut(pth).unwrap();

@@ -60,6 +60,43 @@ struct LocalePage {
     path: PathBuf,
 }
 
+fn get_locale_page_cache(
+    options: &RuntimeOptions,
+    locales: &LocaleMap,
+    info: &mut CollateInfo) -> Vec<LocalePage> {
+
+    let locale_names = locales.map.keys()
+        .map(|k| k.as_str())
+        .collect::<Vec<_>>();
+
+    let mut cache: Vec<LocalePage> = Vec::new();
+    if let Some(ref pages) = info.pages.get(&options.lang) {
+        for (path, page) in pages.iter() {
+            if let Some(ext) = path.extension() {
+                let ext = ext.to_str().unwrap();
+                if let Some(stem) = path.file_stem() {
+                    let stem = stem.to_str().unwrap();
+                    if is_locale_stem(&locale_names, stem) {
+                        let stem_path = Path::new(stem);
+                        let locale_id = stem_path.extension().unwrap().to_str().unwrap();
+                        let parent_stem = stem_path.file_stem().unwrap().to_str().unwrap();
+                        let fallback_name = format!("{}.{}", parent_stem, ext);
+                        let fallback = path.parent().unwrap().join(fallback_name);
+                        let tmp = LocalePage {
+                            locale_id: locale_id.to_string(),
+                            page: page.clone(),
+                            fallback,
+                            path: path.to_path_buf(),
+                        };
+                        cache.push(tmp);
+                    }
+                } 
+            } 
+        }
+    }
+    cache
+}
+
 // Localize logic involves another pass as we can't guarantee the order
 // that pages are discovered so this allows us to ensure we have page 
 // data for the default fallback locale before we assign page data for 
@@ -71,45 +108,18 @@ pub async fn localize(
     locales: &LocaleMap,
     info: &mut CollateInfo) -> Result<()> {
 
-    let locale_names = locales.map.keys()
-        .map(|k| k.as_str())
-        .collect::<Vec<_>>();
+    let cache: Vec<LocalePage> = get_locale_page_cache(options, locales, info);
 
-    // As we remove locale-specific pages we cache them to be injected
-    // into the locale_pages map
-    let mut cache: Vec<LocalePage> = Vec::new();
-
-    for (path, page) in info.pages.iter() {
-        if let Some(ext) = path.extension() {
-            let ext = ext.to_str().unwrap();
-            if let Some(stem) = path.file_stem() {
-                let stem = stem.to_str().unwrap();
-                if is_locale_stem(&locale_names, stem) {
-                    let stem_path = Path::new(stem);
-                    let locale_id = stem_path.extension().unwrap().to_str().unwrap();
-                    let parent_stem = stem_path.file_stem().unwrap().to_str().unwrap();
-                    let fallback_name = format!("{}.{}", parent_stem, ext);
-                    let fallback = path.parent().unwrap().join(fallback_name);
-                    let tmp = LocalePage {
-                        locale_id: locale_id.to_string(),
-                        page: page.clone(),
-                        fallback,
-                        path: path.to_path_buf(),
-                    };
-                    cache.push(tmp);
-                }
-            } 
-        } 
-    }
+    let pages = info.pages.get_mut(&options.locales.fallback).unwrap().clone();
 
     for entry in cache {
         let lang = entry.locale_id.clone();
-        let map = info.locale_pages.entry(entry.locale_id).or_insert(HashMap::new());
+        let map = info.pages.entry(entry.locale_id).or_insert(HashMap::new());
         let mut page_info = entry.page;
         let use_fallback = page_info.fallback.is_some() && page_info.fallback.unwrap();
 
         // Inherit from the fallback page when it exists
-        if let Some(fallback_page) = info.pages.get(&entry.fallback) {
+        if let Some(fallback_page) = pages.get(&entry.fallback) {
             let file_context = fallback_page.file.as_ref().unwrap();
             let source = file_context.source.clone();
             // NOTE: Must clone the fallback page
@@ -152,7 +162,7 @@ pub async fn localize(
         }
         map.insert(Arc::new(entry.fallback), page_info);
 
-        info.remove_page(&entry.path, options);
+        //info.remove_page(&entry.path, options);
     }
 
     //for (k, _v) in info.pages.iter() {
@@ -184,7 +194,7 @@ pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
                     p.to_path_buf()
                 })
                 .try_for_each(|p| {
-                    if let Some(ref _page) = info.pages.get(&p) {
+                    if let Some(ref _page) = info.resolve(&p, options) {
                         let item = Arc::new(p.clone());
                         if refs.contains(&item) {
                             return Err(Error::DuplicateSeriesPage(k.to_string(), p.to_path_buf()));
@@ -354,7 +364,7 @@ fn add_page(
         }
     }
 
-    add_page_reference(info, key, dest, page_info);
+    add_page_reference(info, req.options, key, dest, page_info);
 
     Ok(())
 }
@@ -363,6 +373,7 @@ fn add_page(
 // data sources, pagination etc.
 pub fn add_page_reference(
     info: &mut CollateInfo,
+    options: &RuntimeOptions,
     key: &Arc<PathBuf>,
     dest: PathBuf,
     page_info: Page) {
@@ -376,7 +387,9 @@ pub fn add_page_reference(
     info.all.insert(Arc::clone(key), resource);
     info.resources.push(Arc::clone(key));
 
-    info.pages.entry(Arc::clone(key)).or_insert(page_info);
+    let lang = options.lang.clone();
+    let map = info.pages.entry(lang).or_insert(HashMap::new());
+    map.entry(Arc::clone(key)).or_insert(page_info);
 }
 
 pub fn add_file(
@@ -446,6 +459,7 @@ fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf
 }
 
 async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
+
     WalkBuilder::new(&req.options.source)
         .follow_links(true)
         .build_parallel()
@@ -454,6 +468,10 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                 if let Ok(entry) = result {
                     let data = Arc::clone(&res.inner);
                     let mut info = data.lock().unwrap();
+
+                    // Must always have a pages map for the default locale
+                    info.pages.entry(req.config.lang.to_string()).or_insert(HashMap::new());
+
                     let path = entry.path();
                     let key = Arc::new(path.to_path_buf());
 

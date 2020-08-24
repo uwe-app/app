@@ -90,13 +90,16 @@ impl Provider {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
-        stream::iter(req.collation.pages.keys())
+        // FIXME: do not call unwrap() here, test for locale pages
+        let map = req.collation.get_pages(&req.options.lang).unwrap();
+
+        stream::iter(map.keys())
             .filter(|p| future::ready(p.starts_with(req.source)))
             .enumerate()
             .map(Ok)
             .try_for_each_concurrent(limit, |(count, path)| {
                 // Convert the page data to a Value for indexing
-                let data = req.collation.pages.get(path).unwrap();
+                let data = req.collation.resolve(path, req.options).unwrap();
 
                 let result = serde_json::to_value(data);
                 match result {

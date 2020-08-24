@@ -28,7 +28,7 @@ pub fn parent<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Option<&'a Page> {
         let mut parent = p.join(config::INDEX_STEM);
         for ext in render_types.iter() {
             parent.set_extension(ext);
-            if let Some(ref page) = ctx.collation.pages.get(&parent) {
+            if let Some(ref page) = ctx.collation.resolve(&parent, &ctx.options) {
                 return Some(page);
             }
         }
@@ -53,7 +53,7 @@ pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
     };
 
     for p in file.ancestors().skip(skip) {
-        if let Some(ref page) = ctx.collation.pages.get(&p.to_path_buf()) {
+        if let Some(ref page) = ctx.collation.resolve(&p.to_path_buf(), &ctx.options) {
             pages.push(page);
             continue;
         }
@@ -61,7 +61,7 @@ pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
         let mut parent = p.join(config::INDEX_STEM);
         for ext in render_types.iter() {
             parent.set_extension(ext);
-            if let Some(ref page) = ctx.collation.pages.get(&parent) {
+            if let Some(ref page) = ctx.collation.resolve(&parent, &ctx.options) {
                 pages.push(page);
             }
         }
@@ -76,9 +76,10 @@ pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
 pub fn listing<'a>(ctx: &'a BuildContext, list: &'a ListOptions) -> Result<Vec<&'a Page>> {
     let depth = list.dir.components().count() + list.depth;
 
-    let keys = ctx
-        .collation
-        .pages
+    let pages = ctx.collation.pages.get(&ctx.options.locales.fallback).unwrap();
+
+    let keys = 
+        pages
         .iter()
         .filter(|(k, _)| {
             let key_count = k.components().count();
@@ -97,7 +98,7 @@ pub fn listing<'a>(ctx: &'a BuildContext, list: &'a ListOptions) -> Result<Vec<&
 
     let mut values = keys
         .iter()
-        .map(|k| ctx.collation.pages.get(*k).unwrap())
+        .map(|k| ctx.collation.resolve(*k, &ctx.options).unwrap())
         .collect::<Vec<_>>();
 
     if let Some(ref sort_key) = list.sort {

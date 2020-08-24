@@ -39,7 +39,7 @@ fn create_synthetic(
     let key = Arc::new(source);
 
     collator::link(info, Arc::clone(&key), Arc::new(href))?;
-    collator::add_page_reference(info, &key, dest, page_info);
+    collator::add_page_reference(info, options, &key, dest, page_info);
 
     Ok(())
 }
@@ -98,7 +98,7 @@ fn build_feed(
     let page_paths = info.feeds.get(name).unwrap();
     let mut pages: Vec<&Page> = page_paths
         .iter()
-        .map(|pth| info.pages.get(pth).unwrap())
+        .map(|pth| info.resolve(pth, options).unwrap())
         .collect();
 
     pages.sort_by(|a, b| {
@@ -273,18 +273,18 @@ pub fn search(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
 // Assign query results to the page data
 pub fn assign(
     _config: &Config,
-    _options: &RuntimeOptions,
+    options: &RuntimeOptions,
     info: &mut CollateInfo,
     map: &DataSourceMap,
     cache: &mut QueryCache,
 ) -> Result<()> {
-    for (q, p) in info.queries.iter() {
+    for (q, p) in info.queries.clone().iter() {
         let queries = q.to_assign_vec();
         if queries.is_empty() {
             continue;
         }
 
-        let page = info.pages.get_mut(p).unwrap();
+        let page = info.get_page_mut(p, options).unwrap();
         for query in queries.iter() {
             let idx = map.query_index(query, cache)?;
 
@@ -319,7 +319,7 @@ pub fn each(
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
-        let page = info.remove_page(p, options);
+        let page = info.remove_page(p, options).unwrap();
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -383,7 +383,7 @@ pub fn pages(
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
-        let page = info.remove_page(p, options);
+        let page = info.remove_page(p, options).unwrap();
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting

@@ -105,7 +105,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
 
             // Rewrite the output paths and page languages
             ctx.collation
-                .rewrite(&lang, &previous_base, &locale_target)?;
+                .rewrite(opts, &lang, &previous_base, &locale_target)?;
 
             previous_base = locale_target;
         }
@@ -337,7 +337,7 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
                     // Get the href to use to build the location
                     let href = ctx.collation.links.sources.get(&d.file).unwrap();
                     // Get the last modification data from the page
-                    let page = ctx.collation.pages.get(&d.file).unwrap();
+                    let page = ctx.collation.resolve(&d.file, &ctx.options).unwrap();
                     // Generate the absolute location
                     let location = base.join(href).unwrap();
                     let lastmod = page.lastmod();
