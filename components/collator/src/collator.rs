@@ -57,6 +57,7 @@ struct LocalePage {
     locale_id: String,
     page: Page,
     fallback: PathBuf,
+    path: PathBuf,
 }
 
 fn get_locale_page_cache(
@@ -85,6 +86,7 @@ fn get_locale_page_cache(
                             locale_id: locale_id.to_string(),
                             page: page.clone(),
                             fallback,
+                            path: path.to_path_buf(),
                         };
                         cache.push(tmp);
                     }
@@ -160,7 +162,7 @@ pub async fn localize(
         }
         map.insert(Arc::new(entry.fallback), page_info);
 
-        //info.remove_page(&entry.path, options);
+        info.remove_page(&entry.path, options);
     }
 
     //for (k, _v) in info.pages.iter() {

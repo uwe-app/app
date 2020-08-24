@@ -32,10 +32,9 @@ fn compiler_error(e: &compiler::Error) {
     }
 
     error!("{}", e);
-    std::process::exit(1);
 }
 
-fn fatal(e: hypertext::Error) {
+fn print_error(e: hypertext::Error) {
     match e {
         hypertext::Error::Compiler(ref e) => {
             return compiler_error(e);
@@ -49,6 +48,10 @@ fn fatal(e: hypertext::Error) {
         _ => {}
     }
     error!("{}", e);
+}
+
+fn fatal(e: hypertext::Error) {
+    print_error(e);
     std::process::exit(1);
 }
 
@@ -567,7 +570,10 @@ async fn main() {
     // so we catch it here and push it out via the log
     panic::set_hook(Box::new(|info| {
         let message = format!("{}", info);
-        fatal(Error::Panic(message));
+        // NOTE: We must NOT call `fatal` here which explictly exits the program; 
+        // NOTE: if we did our defer! {} hooks would not get called which means 
+        // NOTE: lock files would not be removed from disc correctly.
+        print_error(Error::Panic(message));
     }));
 
     match &*root_args.log_level {
