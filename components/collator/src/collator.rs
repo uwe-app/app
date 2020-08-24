@@ -57,7 +57,6 @@ struct LocalePage {
     locale_id: String,
     page: Page,
     fallback: PathBuf,
-    path: PathBuf,
 }
 
 fn get_locale_page_cache(
@@ -86,7 +85,6 @@ fn get_locale_page_cache(
                             locale_id: locale_id.to_string(),
                             page: page.clone(),
                             fallback,
-                            path: path.to_path_buf(),
                         };
                         cache.push(tmp);
                     }
