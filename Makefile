@@ -24,6 +24,9 @@ SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
 all: init site-release
 
+docs:
+	@cargo doc --open --no-deps --lib --workspace
+
 init-newcss:
 	@rm -rf ./build/init-newcss
 	@cargo run -- init ./build/init-newcss style/newcss
