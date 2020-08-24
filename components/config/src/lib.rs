@@ -49,7 +49,6 @@ type Result<T> = std::result::Result<T, Error>;
 mod config;
 pub mod feed;
 mod file;
-pub mod filter;
 pub mod indexer;
 pub mod link;
 mod page;
