@@ -353,7 +353,7 @@ fn add_page(
     if let Some(ref feed) = req.config.feed {
         for (name, cfg) in feed.channels.iter() {
             let href = page_info.href.as_ref().unwrap();
-            if cfg.filter(href) {
+            if cfg.matcher.filter(href) {
                 let items = info.feeds
                     .entry(name.to_string())
                     .or_insert(vec![]); 

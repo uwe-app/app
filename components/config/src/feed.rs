@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 use std::collections::HashMap;
 
-use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
+
+use super::matcher::GlobPatternMatcher;
 
 static JSON: &str = "json";
 static XML: &str = "xml";
@@ -104,8 +105,7 @@ impl FeedConfig {
     pub fn prepare(&mut self) {
         for (k, v) in self.channels.iter_mut() {
             v.target = Some(k.to_string());
-            v.include_match = v.includes.iter().map(|g| g.compile_matcher()).collect();
-            v.exclude_match = v.excludes.iter().map(|g| g.compile_matcher()).collect();
+            v.matcher.compile();
         }
     }
 }
@@ -132,14 +132,8 @@ pub struct ChannelConfig {
     // List of file types to generate for this feed
     pub types: Vec<FeedType>,
 
-    // Configuration options for indexing behavior
-    pub includes: Vec<Glob>,
-    pub excludes: Vec<Glob>,
-
-    #[serde(skip)]
-    pub include_match: Vec<GlobMatcher>,
-    #[serde(skip)]
-    pub exclude_match: Vec<GlobMatcher>,
+    #[serde(flatten)]
+    pub matcher: GlobPatternMatcher,
 }
 
 impl Default for ChannelConfig {
@@ -151,23 +145,7 @@ impl Default for ChannelConfig {
             favicon: None,
             icon: None,
             types: vec![FeedType::Json, FeedType::Rss, FeedType::Atom],
-            includes: Vec::new(),
-            excludes: Vec::new(),
-            include_match: Vec::new(),
-            exclude_match: Vec::new(),
+            matcher: Default::default(),
         }
-    }
-}
-
-impl ChannelConfig {
-    pub fn filter(&self, href: &str) -> bool {
-        for glob in self.exclude_match.iter() {
-            if glob.is_match(href) { return false; }
-        }
-        if self.include_match.is_empty() { return true; }
-        for glob in self.include_match.iter() {
-            if glob.is_match(href) { return true; }
-        }
-        false
     }
 }

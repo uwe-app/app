@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
+
+use super::matcher::GlobPatternMatcher;
 
 pub static SEARCH_JS: &str = "search.js";
 pub static SEARCH_WASM: &str = "search.wasm";
@@ -45,8 +46,7 @@ impl SearchConfig {
     pub fn prepare(&mut self) {
         for (k, v) in self.items.iter_mut() {
             v.id = Some(k.to_string());
-            v.include_match = v.includes.iter().map(|g| g.compile_matcher()).collect();
-            v.exclude_match = v.excludes.iter().map(|g| g.compile_matcher()).collect();
+            v.matcher.compile();
         }
     }
 }
@@ -60,9 +60,8 @@ pub struct SearchItemConfig {
     // Maximum number of results displayed for a query
     pub results: Option<u8>,
 
-    // Configuration options for indexing behavior
-    pub includes: Vec<Glob>,
-    pub excludes: Vec<Glob>,
+    #[serde(flatten)]
+    pub matcher: GlobPatternMatcher,
 
     // The identifier used when registering the search widget
     #[serde(skip)]
@@ -75,11 +74,6 @@ pub struct SearchItemConfig {
     // Maximum number of excerpts per result
     #[serde(skip)]
     pub excerpts_per_result: Option<u8>,
-
-    #[serde(skip)]
-    pub include_match: Vec<GlobMatcher>,
-    #[serde(skip)]
-    pub exclude_match: Vec<GlobMatcher>,
 }
 
 impl Default for SearchItemConfig {
@@ -90,26 +84,12 @@ impl Default for SearchItemConfig {
             results: Some(10),
             excerpt_buffer: Some(8),
             excerpts_per_result: Some(5),
-            includes: Vec::new(),
-            excludes: Vec::new(),
-            include_match: Vec::new(),
-            exclude_match: Vec::new(),
+            matcher: Default::default(),
         }
     }
 }
 
 impl SearchItemConfig {
-    pub fn filter(&self, href: &str) -> bool {
-        for glob in self.exclude_match.iter() {
-            if glob.is_match(href) { return false; }
-        }
-        if self.include_match.is_empty() { return true; }
-        for glob in self.include_match.iter() {
-            if glob.is_match(href) { return true; }
-        }
-        false
-    }
-
     pub fn get_output_path(&self, base: &PathBuf) -> PathBuf {
         let val = self.index.as_ref().unwrap().trim_start_matches("/");
         return base.join(utils::url::to_path_separator(val));

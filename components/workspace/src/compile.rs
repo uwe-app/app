@@ -283,7 +283,7 @@ fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseDa
                         url = url.trim_end_matches(config::INDEX_HTML);
                     }
 
-                    if !search.filter(url) {
+                    if !search.matcher.filter(url) {
                         continue;
                     }
 

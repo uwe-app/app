@@ -51,6 +51,7 @@ pub mod feed;
 mod file;
 pub mod indexer;
 pub mod link;
+mod matcher;
 mod page;
 pub mod path;
 mod profile;
