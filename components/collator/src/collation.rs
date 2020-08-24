@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use config::indexer::QueryList;
-use config::Page;
+use config::{Page, RuntimeOptions};
 
 use super::manifest::Manifest;
 
@@ -143,9 +143,20 @@ pub struct CollateInfo {
 
 impl CollateInfo {
 
-    pub fn get_page(&self, key: &PathBuf) -> Option<&Page> {
+    pub fn get_page(&self, key: &PathBuf, options: &RuntimeOptions) -> Option<&Page> {
+        let mut result: Option<&Page> = None;
 
-        self.pages.get(key)
+        if let Some(ref map) = self.locale_pages.get(&options.lang) {
+            result = map.get(key);
+        } 
+
+        if result.is_none() && options.lang != options.locales.fallback {
+            if let Some(ref map) = self.locale_pages.get(&options.locales.fallback) {
+                result = map.get(key);
+            } 
+        }
+
+        result
     }
 
     pub fn remove_page(&mut self, p: &PathBuf) -> Page {
