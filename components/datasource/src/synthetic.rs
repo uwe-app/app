@@ -319,7 +319,7 @@ pub fn each(
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
-        let page = info.remove_page(p);
+        let page = info.remove_page(p, options);
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -383,7 +383,7 @@ pub fn pages(
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
-        let page = info.remove_page(p);
+        let page = info.remove_page(p, options);
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting

@@ -159,10 +159,12 @@ impl CollateInfo {
         result
     }
 
-    pub fn remove_page(&mut self, p: &PathBuf) -> Page {
+    pub fn remove_page(&mut self, p: &PathBuf, options: &RuntimeOptions) -> Page {
         if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
             self.resources.remove(pos);
         }
+
+        // FIXME: remove using lang!
         self.pages.remove(p).unwrap()
     }
 

@@ -152,7 +152,7 @@ pub async fn localize(
         }
         map.insert(Arc::new(entry.fallback), page_info);
 
-        info.remove_page(&entry.path);
+        info.remove_page(&entry.path, options);
     }
 
     //for (k, _v) in info.pages.iter() {
@@ -375,6 +375,7 @@ pub fn add_page_reference(
     }
     info.all.insert(Arc::clone(key), resource);
     info.resources.push(Arc::clone(key));
+
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
 }
 
