@@ -142,6 +142,12 @@ pub struct CollateInfo {
 }
 
 impl CollateInfo {
+
+    pub fn get_page(&self, key: &PathBuf) -> Option<&Page> {
+
+        self.pages.get(key)
+    }
+
     pub fn remove_page(&mut self, p: &PathBuf) -> Page {
         if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
             self.resources.remove(pos);

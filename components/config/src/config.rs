@@ -219,11 +219,7 @@ impl Config {
                 parse_host(&cfg.host)?;
 
                 if let Some(fluent) = cfg.fluent.as_mut() {
-
-                    if fluent.fallback.is_none() {
-                        fluent.fallback = Some(cfg.lang.to_string());
-                    }
-
+                    fluent.fallback = Some(cfg.lang.to_string());
                     fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
                 }
 
@@ -444,8 +440,9 @@ pub struct BookItem {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FluentConfig {
-    pub fallback: Option<String>,
     pub shared: Option<String>,
+    #[serde(skip)]
+    pub fallback: Option<String>,
     #[serde(skip)]
     pub fallback_id: LanguageIdentifier,
 }
@@ -453,7 +450,7 @@ pub struct FluentConfig {
 impl Default for FluentConfig {
     fn default() -> Self {
         Self {
-            fallback: Some(String::from(LANG)),
+            fallback: None,
             shared: Some(String::from(CORE_FTL)),
             fallback_id: String::from(LANG).parse().unwrap(),
         }

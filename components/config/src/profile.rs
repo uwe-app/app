@@ -22,6 +22,9 @@ static PRODUCTION: &str = "production";
 
 #[derive(Debug, Clone, Default)]
 pub struct LocaleMap {
+    // The fallback language is inherited
+    // from the top-level config `lang`
+    pub fallback: String,
     pub enabled: bool,
     pub multi: bool,
     pub map: HashMap<String, LanguageIdentifier>,

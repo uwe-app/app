@@ -41,6 +41,7 @@ impl Locales {
 
     pub fn get_locale_map(&self, fallback: &str) -> Result<LocaleMap> {
         let mut res = LocaleMap {
+            fallback: fallback.to_string(),
             map : HashMap::new(),
             enabled: self.loader.arc.is_some(),
             multi: false,
