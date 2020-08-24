@@ -404,9 +404,7 @@ pub fn add_file(
     let kind = get_file_kind(key, options);
 
     match kind {
-        ResourceKind::File
-            | ResourceKind::Asset
-            | ResourceKind::Content => {
+        ResourceKind::File | ResourceKind::Asset => {
             info.resources.push(Arc::clone(&key));
             link(info, Arc::clone(key), Arc::new(href))?;
 
@@ -428,8 +426,6 @@ fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
         kind = ResourceKind::Partial;
     } else if key.starts_with(options.get_includes_path()) {
         kind = ResourceKind::Include;
-    } else if key.starts_with(options.get_resources_path()) {
-        kind = ResourceKind::Content;
     } else if key.starts_with(options.get_locales()) {
         kind = ResourceKind::Locale;
     } else if key.starts_with(options.get_data_sources_path()) {
@@ -440,18 +436,6 @@ fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
 
 fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf>) -> Result<()> {
     let pth = key.to_path_buf();
-
-    // FIXME: remove this special handling once the resource 
-    // FIXME: symbolic linking logic has been improved
-    if key.starts_with(req.options.get_resources_path()) {
-        let href = href(
-            &pth,
-            req.options,
-            false,
-            Some(req.options.get_resources_path()),
-        )?;
-        link(info, Arc::clone(key), Arc::new(href))?;
-    }
 
     let dest = get_destination(&pth, req.config, req.options)?;
     let href = href(&pth, req.options, false, None)?;

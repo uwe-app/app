@@ -89,7 +89,6 @@ pub mod lookup;
 pub mod markdown;
 pub mod parser;
 pub mod redirect;
-pub mod resource;
 pub mod run;
 pub mod tree;
 

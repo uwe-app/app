@@ -10,7 +10,7 @@ use collator::{Resource, ResourceOperation};
 use crate::context::BuildContext;
 use crate::hook;
 use crate::parser::Parser;
-use crate::resource;
+//use crate::resource;
 use crate::run::{self, ParseData};
 use crate::{Error, Result};
 
@@ -169,7 +169,7 @@ impl<'a> Compiler<'a> {
 
     // Build all target paths
     pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<Vec<ParseData>> {
-        resource::link(&self.context)?;
+        //resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
             hook::run(

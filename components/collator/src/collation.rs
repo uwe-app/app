@@ -32,9 +32,6 @@ pub enum ResourceKind {
     Include,
     /// This file is part of a data source directory.
     DataSource,
-    /// Type for unknown content files such as images, videos and other 
-    /// binary or text files.
-    Content,
 }
 
 impl Default for ResourceKind {

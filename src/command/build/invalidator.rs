@@ -44,7 +44,6 @@ pub enum Action {
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
-    Resource(PathBuf),
     Hook(String, PathBuf),
     DataSourceConfig(PathBuf),
     DataSourceDocument(PathBuf),
@@ -149,7 +148,7 @@ impl<'a> Invalidator<'a> {
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators = self.canonical(ctx.options.get_data_sources_path());
 
-        let resources = self.canonical(ctx.options.get_resources_path());
+        //let resources = self.canonical(ctx.options.get_resources_path());
 
         let book_theme = ctx
             .config
@@ -258,8 +257,6 @@ impl<'a> Invalidator<'a> {
                                 break;
                             }
                         }
-                    } else if path.starts_with(&resources) {
-                        rule.ignores.push(Action::Resource(path));
                     } else {
                         let file_type = FileInfo::get_type(&path, &ctx.options.settings);
                         match file_type {

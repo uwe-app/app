@@ -10,6 +10,7 @@ use unic_langid::LanguageIdentifier;
 use url::Url;
 
 use super::config::{self, Config};
+use super::matcher::GlobPatternMatcher;
 use super::robots::RobotsConfig;
 use super::server::TlsConfig;
 use super::sitemap::SiteMapConfig;
@@ -122,7 +123,7 @@ pub struct ProfileSettings {
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
-    pub resources: Option<PathBuf>,
+    //pub resources: Option<PathBuf>,
     pub layout: Option<PathBuf>,
 
     pub extend: Option<Vec<String>>,
@@ -161,6 +162,7 @@ pub struct ProfileSettings {
 
     pub robots: Option<RobotsConfig>,
     pub sitemap: Option<SiteMapConfig>,
+    pub resources: Option<Resources>,
 }
 
 impl Default for ProfileSettings {
@@ -179,7 +181,6 @@ impl Default for ProfileSettings {
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
-            resources: Some(PathBuf::from(config::RESOURCES)),
             layout: Some(PathBuf::from(config::LAYOUT_HBS)),
 
             rewrite_index: None,
@@ -208,6 +209,7 @@ impl Default for ProfileSettings {
 
             robots: None,
             sitemap: None,
+            resources: None,
         }
     }
 }
@@ -362,10 +364,6 @@ impl RuntimeOptions {
             .join(self.settings.data_sources.as_ref().unwrap())
     }
 
-    pub fn get_resources_path(&self) -> PathBuf {
-        self.source.join(self.settings.resources.as_ref().unwrap())
-    }
-
     pub fn get_locales(&self) -> PathBuf {
         self.source.join(self.settings.locales.as_ref().unwrap())
     }
@@ -435,4 +433,23 @@ impl Default for PageType {
             markdown: None,
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(default)]
+pub struct Resources {
+    /// Dynamic resources are files created outside the program 
+    /// that should just be mapped as links.
+    pub dynamic: ResourceGroup,
+    /// Resources that should by symlinks.
+    pub symlink: ResourceGroup,
+    /// Resources that should by copied.
+    pub copy: ResourceGroup,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(default)]
+pub struct ResourceGroup {
+    #[serde(flatten)]
+    pub matcher: GlobPatternMatcher,
 }
