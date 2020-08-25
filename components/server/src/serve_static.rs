@@ -155,6 +155,11 @@ pub async fn serve(
             .bind_ephemeral(address);
 
         bind_tx.try_send((true, addr)).expect("Failed to send web server socket address");
+
+        super::redirect_server::spawn();
+
+        //println!("Start the HTTP server to redirect...");
+
         future.await;
     } else {
         let bind_result = warp::serve(routes).try_bind_ephemeral(address);
