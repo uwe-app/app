@@ -1,28 +1,25 @@
+use std::path::PathBuf;
+use std::net::SocketAddr;
+use std::convert::Infallible;
+
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
-use std::net::SocketAddr;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
-
-use std::convert::Infallible;
-
-use serde::Serialize;
-
 use warp::http::Uri;
 use warp::path::FullPath;
 use warp::ws::Message;
 
-use std::path::PathBuf;
+use serde::Serialize;
 
-use log::{error, trace};
+use log::trace;
 
 use config::server::ServeOptions;
-
-use utils;
+use crate::Error;
 
 async fn redirect_map(
     path: FullPath,
@@ -64,12 +61,11 @@ async fn redirect_trailing_slash(
 }
 
 pub async fn serve(
-    address: SocketAddr,
     opts: ServeOptions,
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
-    reload_tx: broadcast::Sender<Message>) {
+    reload_tx: broadcast::Sender<Message>) -> crate::Result<()> {
 
-    let address = address.clone();
+    let address = opts.get_sock_addr()?;
     let root = opts.target.clone();
     let state = opts.target.clone();
     let use_tls = opts.tls.is_some();
@@ -119,6 +115,11 @@ pub async fn serve(
     let with_state = warp::any().map(move || state.clone());
     let with_options = warp::any().map(move || opts.clone());
 
+    // TODO: only bypass caching when not a release build
+    let with_cache_control = warp::reply::with::header("cache-control", "no-cache, no-store, must-revalidate");
+    let with_pragma = warp::reply::with::header("pragma", "no-cache");
+    let with_expires = warp::reply::with::header("expires", "0");
+
     let redirect_handler = warp::get()
         .and(warp::path::full())
         .and(with_options)
@@ -130,7 +131,10 @@ pub async fn serve(
         .and_then(redirect_trailing_slash)
         .or(file_server);
 
-    let routes = livereload.or(redirect_handler.or(slash_redirect));
+    let routes = livereload.or(redirect_handler.or(slash_redirect))
+        .with(with_cache_control)
+        .with(with_pragma)
+        .with(with_expires);
 
     if use_tls {
         let (addr, future) = warp::serve(routes)
@@ -141,7 +145,7 @@ pub async fn serve(
 
         bind_tx.try_send((true, addr)).expect("Failed to send web server socket address");
 
-        super::redirect_server::spawn();
+        //super::redirect_server::spawn();
 
         //println!("Start the HTTP server to redirect...");
 
@@ -151,18 +155,15 @@ pub async fn serve(
         match bind_result {
             Ok((addr, future)) => {
                 if let Err(e) = bind_tx.try_send((false, addr)) {
-                    error!("{}", e);
-                    std::process::exit(1);
+                    return Err(Error::from(e));
                 }
                 future.await;
             }
-            Err(e) => {
-                error!("{}", e);
-                std::process::exit(1);
-            }
+            Err(e) => return Err(Error::from(e))
         }
     }
 
+    Ok(())
 }
 
 // An API error serializable to JSON.

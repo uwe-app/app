@@ -77,6 +77,8 @@ pub enum Error {
     Publish(#[from] publisher::Error),
     #[error(transparent)]
     Site(#[from] site::Error),
+    #[error(transparent)]
+    Server(#[from] server::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

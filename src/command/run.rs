@@ -23,8 +23,6 @@ pub async fn serve(
     bind: oneshot::Sender<(SocketAddr, String, bool)>,
 ) -> Result<(), Error> {
 
-    let sockaddr: SocketAddr = options.get_sock_addr()?;
-
     let host = options.host.clone();
     let open_browser = options.open_browser;
 
@@ -48,7 +46,7 @@ pub async fn serve(
         }
     });
 
-    serve_static::serve(sockaddr, options, ctx, ws_notify).await;
+    serve_static::serve(options, ctx, ws_notify).await?;
 
     Ok(())
 }
