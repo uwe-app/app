@@ -192,24 +192,24 @@ pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOption
     let name = to_profile(args);
 
     // Inherit the profile settings from the root
-    let root = cfg.build.as_ref().unwrap().clone();
+    let mut root = cfg.build.as_ref().unwrap().clone();
 
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
     let profiles = cfg.profile.as_ref().unwrap();
-    if let Some(ref profile) = profiles.get(&name.to_string()) {
+    if let Some(profile) = profiles.get(&name.to_string()) {
         let mut copy = profile.clone();
-        let mut merged = super::merge::map::<ProfileSettings>(&root, &mut copy)?;
+        root.append(&mut copy);
 
         if profile.profile.is_some() {
             return Err(Error::NoProfileInProfile);
         }
 
-        from_cli(&mut merged, args);
-        to_options(name, cfg, &mut merged)
+        from_cli(&mut root, args);
+        to_options(name, cfg, &mut root)
     } else {
-        let mut merged = super::merge::map::<ProfileSettings>(&root, args)?;
-        from_cli(&mut merged, args);
-        to_options(name, cfg, &mut merged)
+        root.append(args);
+        from_cli(&mut root, args);
+        to_options(name, cfg, &mut root)
     }
 }

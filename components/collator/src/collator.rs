@@ -401,8 +401,25 @@ pub fn add_file(
     options: &RuntimeOptions,
 ) -> Result<()> {
 
-    let kind = get_file_kind(key, options);
+    // Set up the default resource operation
+    let mut op = if options.settings.is_release() {
+        ResourceOperation::Copy
+    } else {
+        ResourceOperation::Link
+    };
 
+    // Allow the profile settings to control the resource operation
+    if let Some(ref resources) = options.settings.resources {
+        if resources.ignore.matcher.matches(&href) {
+            op = ResourceOperation::Noop; 
+        } else if resources.symlink.matcher.matches(&href) {
+            op = ResourceOperation::Link;
+        } else if resources.copy.matcher.matches(&href) {
+            op = ResourceOperation::Copy;
+        }
+    }
+
+    let kind = get_file_kind(key, options);
     match kind {
         ResourceKind::File | ResourceKind::Asset => {
             info.resources.push(Arc::clone(&key));
@@ -411,13 +428,6 @@ pub fn add_file(
         }
         _ => {}
     }
-
-    let op = if options.settings.is_release() {
-        ResourceOperation::Copy
-    } else {
-        ResourceOperation::Link
-        //ResourceOperation::Copy
-    };
 
     info.all.insert(Arc::clone(key), Resource::new(dest, kind, op));
 
