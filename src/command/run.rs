@@ -1,4 +1,4 @@
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
@@ -9,7 +9,7 @@ use log::{error, info};
 
 use crate::Error;
 use config::server::ServeOptions;
-use server::{serve_static, WebServerOptions};
+use server::serve_static;
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
@@ -23,21 +23,9 @@ pub async fn serve(
     bind: oneshot::Sender<(SocketAddr, String, bool)>,
 ) -> Result<(), Error> {
 
-    let port = if let Some(ref tls) = options.tls {
-        tls.port
-    } else {
-        options.port
-    };
+    let sockaddr: SocketAddr = options.get_sock_addr()?;
 
-    let address = format!("{}:{}", options.host, port);
-    let sockaddr: SocketAddr = address
-        .to_socket_addrs()?
-        .next()
-        .ok_or_else(|| Error::NoSocketAddress(address))?;
-
-    let serve_dir = options.target.clone();
     let host = options.host.clone();
-    let serve_host = host.clone();
     let open_browser = options.open_browser;
 
     // Create a channel to receive the bind address.
@@ -60,18 +48,7 @@ pub async fn serve(
         }
     });
 
-    let web_server_opts = WebServerOptions {
-        serve_dir,
-        endpoint: options.endpoint.clone(),
-        host: serve_host,
-        address: sockaddr,
-        redirects: options.redirects,
-        log: true,
-        tls: options.tls,
-        temporary_redirect: true,
-    };
-
-    serve_static::serve(web_server_opts, ctx, ws_notify).await;
+    serve_static::serve(sockaddr, options, ctx, ws_notify).await;
 
     Ok(())
 }

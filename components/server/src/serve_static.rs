@@ -8,7 +8,6 @@ use tokio::sync::mpsc;
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
-use std::collections::HashMap;
 use std::convert::Infallible;
 
 use serde::Serialize;
@@ -21,28 +20,13 @@ use std::path::PathBuf;
 
 use log::{error, trace};
 
-use config::server::TlsConfig;
+use config::server::ServeOptions;
 
 use utils;
 
-#[derive(Debug, Clone)]
-pub struct WebServerOptions {
-    pub serve_dir: PathBuf,
-    pub host: String,
-    pub endpoint: String,
-    pub address: SocketAddr,
-    // TODO: support conditional logging
-    pub log: bool,
-
-    pub tls: Option<TlsConfig>,
-
-    pub temporary_redirect: bool,
-    pub redirects: Option<HashMap<String, Uri>>,
-}
-
 async fn redirect_map(
     path: FullPath,
-    opts: WebServerOptions,
+    opts: ServeOptions,
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if let Some(ref redirects) = opts.redirects {
         if let Some(uri) = redirects.get(path.as_str()) {
@@ -80,13 +64,14 @@ async fn redirect_trailing_slash(
 }
 
 pub async fn serve(
-    opts: WebServerOptions,
+    address: SocketAddr,
+    opts: ServeOptions,
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: broadcast::Sender<Message>) {
 
-    let address = opts.address.clone();
-    let root = opts.serve_dir.clone();
-    let state = opts.serve_dir.clone();
+    let address = address.clone();
+    let root = opts.target.clone();
+    let state = opts.target.clone();
     let use_tls = opts.tls.is_some();
     let tls = opts.tls.clone();
     //let serve_tls_cert = if let Some();
@@ -96,7 +81,7 @@ pub async fn serve(
     // receive reload messages.
     let sender = warp::any().map(move || reload_tx.subscribe());
 
-    let port = opts.address.clone().port();
+    let port = address.clone().port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
         let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
@@ -129,7 +114,7 @@ pub async fn serve(
     //let redirects = opts.redirects.clone();
 
     let file_server =
-        warp::fs::dir(opts.serve_dir.clone()).recover(move |e| handle_rejection(e, root.clone()));
+        warp::fs::dir(opts.target.clone()).recover(move |e| handle_rejection(e, root.clone()));
 
     let with_state = warp::any().map(move || state.clone());
     let with_options = warp::any().map(move || opts.clone());

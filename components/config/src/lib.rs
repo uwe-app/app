@@ -10,6 +10,9 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
+    #[error("No socket address for {0}")]
+    NoSocketAddress(String),
+
     #[error("Missing book configuration {0}")]
     NoBookConfig(PathBuf),
 
@@ -24,6 +27,7 @@ pub enum Error {
 
     #[error("Failed to read link catalog {0}")]
     LinkCatalog(PathBuf),
+
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),

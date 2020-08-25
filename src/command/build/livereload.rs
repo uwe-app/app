@@ -63,6 +63,8 @@ pub async fn start<P: AsRef<Path>>(
         endpoint: endpoint.clone(),
         open_browser: false,
         redirects: redirect_uris,
+        log: true,
+        temporary_redirect: true,
     };
 
     // Create a channel to receive the bind address.

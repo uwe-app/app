@@ -36,8 +36,8 @@ pub enum Error {
     #[error("Unknown publish environment {0}")]
     UnknownPublishEnvironment(String),
 
-    #[error("No socket address for {0}")]
-    NoSocketAddress(String),
+    //#[error("No socket address for {0}")]
+    //NoSocketAddress(String),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

@@ -31,6 +31,8 @@ pub async fn open() -> Result<(), Error> {
         watch: None,
         endpoint: utils::generate_id(16),
         redirects: None,
+        log: true,
+        temporary_redirect: true,
     };
 
     run::serve_only(opts).await

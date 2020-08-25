@@ -477,6 +477,8 @@ async fn process_command(cmd: &Command) {
                 watch: None,
                 endpoint: utils::generate_id(16),
                 redirects: None,
+                log: true,
+                temporary_redirect: true,
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {
