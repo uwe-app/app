@@ -114,13 +114,16 @@ fn to_options(
         }
     }
 
+    let mut settings = args.clone();
+    if let Some(resources) = settings.resources.as_mut() { resources.prepare(); }
+
     let opts = RuntimeOptions {
         lang: cfg.lang.clone(),
         project,
         source,
-        output: args.target.clone(),
+        output: settings.target.clone(),
         base: target.clone(),
-        settings: args.clone(),
+        settings,
         target,
         locales: Default::default(),
     };

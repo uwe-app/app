@@ -491,6 +491,14 @@ pub struct Resources {
     pub copy: ResourceGroup,
 }
 
+impl Resources {
+    pub fn prepare(&mut self) {
+        self.ignore.matcher.compile();
+        self.symlink.matcher.compile();
+        self.copy.matcher.compile();
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct ResourceGroup {
