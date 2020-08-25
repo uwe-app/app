@@ -10,6 +10,9 @@ pub enum Error {
     #[error("Could not resolve page data for file {0}")]
     PageResolve(PathBuf),
 
+    #[error("Invalid resource operation attempted on {0}")]
+    InvalidResourceOperation(PathBuf),
+
     #[error("Parser got invalid file type")]
     ParserFileType,
 

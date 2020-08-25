@@ -26,7 +26,7 @@ pub struct LocaleMap {
     /// The fallback language is inherited
     /// from the top-level config `lang`
     pub fallback: String,
-    /// Enabled is active when we are able to load 
+    /// Enabled is active when we are able to load
     /// locale files at runtime.
     pub enabled: bool,
     /// Determine if multiple locales are active.
@@ -215,7 +215,6 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
-
     pub fn get_canonical_url(&self, conf: &config::Config) -> crate::Result<Url> {
         if self.is_release() {
             let scheme = self.scheme.as_ref().unwrap();
@@ -224,7 +223,8 @@ impl ProfileSettings {
             Ok(Url::parse(&crate::to_url_string(
                 config::SCHEME_HTTP,
                 self.host.as_ref().unwrap(),
-                self.port.clone()))?)
+                self.port.clone(),
+            ))?)
         }
     }
 
@@ -334,7 +334,6 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
-
     pub fn get_canonical_url(&self, config: &Config, include_lang: bool) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
         if include_lang && self.locales.multi {
@@ -438,9 +437,11 @@ impl Default for PageType {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct Resources {
-    /// Dynamic resources are files created outside the program 
+    /// Ignore these resources.
+    ///
+    /// Typially used for files created outside the program
     /// that should just be mapped as links.
-    pub dynamic: ResourceGroup,
+    pub ignore: ResourceGroup,
     /// Resources that should by symlinks.
     pub symlink: ResourceGroup,
     /// Resources that should by copied.

@@ -412,8 +412,14 @@ pub fn add_file(
         _ => {}
     }
 
-    let resource = Resource::new(dest, kind, ResourceOperation::Copy);
-    info.all.insert(Arc::clone(key), resource);
+    let op = if options.settings.is_release() {
+        ResourceOperation::Copy
+    } else {
+        ResourceOperation::Link
+        //ResourceOperation::Copy
+    };
+
+    info.all.insert(Arc::clone(key), Resource::new(dest, kind, op));
 
     Ok(())
 }
@@ -436,7 +442,6 @@ fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
 
 fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf>) -> Result<()> {
     let pth = key.to_path_buf();
-
     let dest = get_destination(&pth, req.config, req.options)?;
     let href = href(&pth, req.options, false, None)?;
     Ok(add_file(key, dest, href, info, req.config, req.options)?)

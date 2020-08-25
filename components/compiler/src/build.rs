@@ -5,7 +5,7 @@ use log::{debug, error};
 
 use book::compiler::BookCompiler;
 
-use collator::{Resource, ResourceOperation};
+use collator::{Resource, ResourceOperation, ResourceTarget};
 
 use crate::context::BuildContext;
 use crate::hook;
@@ -30,7 +30,7 @@ impl<'a> Compiler<'a> {
         Self { context, book }
     }
 
-    // Verify the paths are within the site source
+    /// Verify the paths are within the site source.
     pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
             if !p.starts_with(&self.context.options.source) {
@@ -40,33 +40,37 @@ impl<'a> Compiler<'a> {
         Ok(())
     }
 
-    // Build a single file
+    /// Handle a resource file depending upon the resource operation.
+    pub async fn resource(
+        &self,
+        file: &PathBuf,
+        target: &ResourceTarget,
+    ) -> Result<Option<ParseData>> {
+        match target.operation {
+            ResourceOperation::Noop => Ok(None),
+            ResourceOperation::Copy => run::copy(file, &target.destination).await,
+            ResourceOperation::Link => run::link(file, &target.destination).await,
+            _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
+        }
+    }
+
+    /// Build a single file, negotiates pages and resource files.
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
-
-        // FIXME: support locale overrides such as `about.id.md`
-        // SEE: #160
-
         let resource = self.context.collation.all.get(file).unwrap();
         match resource {
-            Resource::Page {ref target} => {
+            Resource::Page { ref target } => {
                 if let Some(page) = self.context.collation.resolve(file, &self.context.options) {
                     match target.operation {
                         ResourceOperation::Render => {
                             run::parse(self.context, parser, page.get_template(), page).await
-                        },
-                        _ => {
-                            run::copy(file, &target.destination).await
                         }
+                        _ => self.resource(file, target).await,
                     }
-
                 } else {
                     Err(Error::PageResolve(file.to_path_buf()))
                 }
             }
-            Resource::File {ref target} => {
-                //let target = self.context.collation.targets.get(file).unwrap();
-                run::copy(file, &target.destination).await
-            }
+            Resource::File { ref target } => self.resource(file, target).await,
         }
     }
 
@@ -99,10 +103,11 @@ impl<'a> Compiler<'a> {
                 if let Some(ref manifest) = self.context.collation.manifest {
                     if let Some(ref resource) = self.context.collation.all.get(*p) {
                         match resource {
-                            Resource::Page {ref target} | Resource::File {ref target} => {
+                            Resource::Page { ref target } | Resource::File { ref target } => {
                                 let file = p.to_path_buf();
                                 if manifest.exists(&file)
-                                    && !manifest.is_dirty(&file, &target.destination, false) {
+                                    && !manifest.is_dirty(&file, &target.destination, false)
+                                {
                                     debug!("[NOOP] {}", file.display());
                                     return false;
                                 }

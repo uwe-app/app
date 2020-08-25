@@ -29,7 +29,7 @@ impl ParseData {
 
 fn is_html_extension<P: AsRef<Path>>(dest: P) -> bool {
     if let Some(ext) = dest.as_ref().extension() {
-        return ext == config::HTML
+        return ext == config::HTML;
     }
     false
 }
@@ -55,7 +55,27 @@ fn should_minify_html<P: AsRef<Path>>(
 
 pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData>> {
     info!("{} -> {}", file.display(), dest.display());
-    utils::fs::copy(file, &dest)?;
+    utils::fs::copy(file, dest)?;
+    Ok(None)
+}
+
+pub async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData>> {
+    info!("{} -> {}", file.display(), dest.display());
+
+    // NOTE: prevent errors trying to symlink when the target 
+    // NOTE: already exists, otherwise when live reload is enabled
+    // NOTE: the compiler errors will cause the websocket build 
+    // NOTE: complete message to never fire and the browser client
+    // NOTE: will hang whilst building :(
+    if dest.exists() {
+        return Ok(None) 
+    }
+
+    if let Some(parent) = dest.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let abs = file.canonicalize()?;
+    utils::symlink::soft(&abs, dest)?;
     Ok(None)
 }
 
@@ -129,7 +149,6 @@ pub async fn parse(
                 res.extract = cache.text.clone();
             }
         }
-
     }
 
     utils::fs::write_string(&dest, &s)?;
