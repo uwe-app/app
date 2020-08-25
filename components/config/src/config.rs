@@ -55,6 +55,7 @@ pub static TAGS: &str = "tags";
 
 pub static HOST: &str = "localhost";
 pub static PORT: u16 = 8888;
+pub static PORT_SSL: u16 = 8843;
 
 pub static SCHEME_HTTPS: &str = "https:";
 pub static SCHEME_HTTP: &str = "http:";

@@ -424,7 +424,6 @@ pub fn add_file(
         ResourceKind::File | ResourceKind::Asset => {
             info.resources.push(Arc::clone(&key));
             link(info, Arc::clone(key), Arc::new(href))?;
-
         }
         _ => {}
     }

@@ -249,6 +249,10 @@ struct WebServerOpts {
     #[structopt(short, long)]
     port: Option<u16>,
 
+    /// The port number for SSL
+    #[structopt(long)]
+    ssl_port: Option<u16>,
+
     /// Path to an SSL certificate file
     #[structopt(long, env, hide_env_values = true)]
     ssl_cert: Option<PathBuf>,
@@ -447,6 +451,12 @@ async fn process_command(cmd: &Command) {
             let mut port = &serve.port;
             let mut tls = serve.tls.clone();
 
+            let ssl_port = if let Some(ssl_port) = args.server.ssl_port {
+                ssl_port
+            } else {
+                config::PORT_SSL
+            };
+
             if let Some(h) = &args.server.host { host = h; }
             if let Some(p) = &args.server.port { port = p; }
 
@@ -454,6 +464,7 @@ async fn process_command(cmd: &Command) {
                 tls = Some(TlsConfig {
                     cert: args.server.ssl_cert.as_ref().unwrap().to_path_buf(),
                     key: args.server.ssl_key.as_ref().unwrap().to_path_buf(),
+                    port: ssl_port,
                 });
             }
 
@@ -531,10 +542,17 @@ async fn process_command(cmd: &Command) {
 
             let mut tls: Option<TlsConfig> = None;
 
+            let ssl_port = if let Some(ssl_port) = args.server.ssl_port {
+                ssl_port
+            } else {
+                config::PORT_SSL
+            };
+
             if args.server.ssl_cert.is_some() && args.server.ssl_key.is_some() {
                 tls = Some(TlsConfig {
                     cert: args.server.ssl_cert.as_ref().unwrap().to_path_buf(),
                     key: args.server.ssl_key.as_ref().unwrap().to_path_buf(),
+                    port: ssl_port,
                 });
             }
 
@@ -550,12 +568,9 @@ async fn process_command(cmd: &Command) {
             };
 
             let now = SystemTime::now();
-            //if let Err(e) = hypertext::build(cfg, opts, fatal) {
-            if let Err(e) = command::build::compile(&project, &mut build_args, fatal).await {
-                fatal(e);
-            }
-            if let Ok(t) = now.elapsed() {
-                info!("{:?}", t);
+            match command::build::compile(&project, &mut build_args, fatal).await {
+                Ok(_) => if let Ok(t) = now.elapsed() { info!("{:?}", t); }
+                Err(e) => print_error(e)
             }
         }
     }

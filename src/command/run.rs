@@ -37,7 +37,14 @@ pub async fn serve(
     ws_notify: broadcast::Sender<Message>,
     bind: oneshot::Sender<(SocketAddr, String, bool)>,
 ) -> Result<(), Error> {
-    let address = format!("{}:{}", options.host, options.port);
+
+    let port = if let Some(ref tls) = options.tls {
+        tls.port
+    } else {
+        options.port
+    };
+
+    let address = format!("{}:{}", options.host, port);
     let sockaddr: SocketAddr = address
         .to_socket_addrs()?
         .next()

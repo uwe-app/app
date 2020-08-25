@@ -23,5 +23,5 @@ impl Default for ServeConfig {
 pub struct TlsConfig {
     pub cert: PathBuf,
     pub key: PathBuf,
+    pub port: u16,
 }
-
