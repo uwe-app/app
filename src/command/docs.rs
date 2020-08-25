@@ -2,9 +2,10 @@ use cache::{self, CacheComponent};
 use preference;
 use utils;
 
-use crate::Error;
+use config::server::ServeOptions;
 
-use super::run::{self, ServeOptions};
+use crate::Error;
+use super::run;
 
 static DOCS_DIR: &str = "docs";
 

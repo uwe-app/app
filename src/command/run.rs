@@ -1,30 +1,15 @@
-use std::collections::HashMap;
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::path::PathBuf;
 
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
-use warp::http::Uri;
 use warp::ws::Message;
 
 use log::{error, info};
 
 use crate::Error;
-use config::server::TlsConfig;
+use config::server::ServeOptions;
 use server::{serve_static, WebServerOptions};
-
-#[derive(Debug)]
-pub struct ServeOptions {
-    pub target: PathBuf,
-    pub host: String,
-    pub port: u16,
-    pub open_browser: bool,
-    pub tls: Option<TlsConfig>,
-    pub watch: Option<PathBuf>,
-    pub endpoint: String,
-    pub redirects: Option<HashMap<String, Uri>>,
-}
 
 pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);

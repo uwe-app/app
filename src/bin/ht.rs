@@ -468,7 +468,7 @@ async fn process_command(cmd: &Command) {
                 });
             }
 
-            let opts = command::run::ServeOptions {
+            let opts = config::server::ServeOptions {
                 target: args.target.clone(),
                 host: host.to_owned(),
                 port: port.to_owned(),

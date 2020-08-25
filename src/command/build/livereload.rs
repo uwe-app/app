@@ -18,8 +18,9 @@ use compiler::Compiler;
 use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
+use config::server::ServeOptions;
 
-use crate::command::run::{self, ServeOptions};
+use crate::command::run;
 use crate::{Error, ErrorCallback};
 
 use super::invalidator::Invalidator;
