@@ -5,12 +5,12 @@ use warp::http::Uri;
 
 use log::info;
 
-use config::server::{ServeOptions, PortType};
+use config::server::{ServerConfig, PortType};
 
 use crate::Result;
 
 /// An HTTP server that redirects all requests to HTTPS.
-pub fn spawn(options: ServeOptions) -> Result<()> {
+pub fn spawn(options: ServerConfig) -> Result<()> {
     let addr = options.get_sock_addr(PortType::Insecure)?;
     let host_url = options.get_url(config::SCHEME_HTTPS, PortType::Secure);
     std::thread::spawn(move || {

@@ -18,7 +18,7 @@ use super::page::{Author, Page};
 use super::profile::{ProfileName, ProfileSettings};
 use super::script::JavaScriptConfig;
 use super::style::StyleSheetConfig;
-use super::server::ServeConfig;
+use super::server::ServerConfig;
 use super::search::SearchConfig;
 use super::syntax::SyntaxConfig;
 use super::transform::TransformConfig;
@@ -114,7 +114,7 @@ pub struct Config {
     pub host: String,
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
-    pub serve: Option<ServeConfig>,
+    pub serve: Option<ServerConfig>,
     pub book: Option<BookConfig>,
     pub fluent: Option<FluentConfig>,
     pub hook: Option<HashMap<String, HookConfig>>,

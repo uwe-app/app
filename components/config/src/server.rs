@@ -7,54 +7,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ServeConfig {
-    pub host: String,
-    pub port: u16,
-    pub tls: Option<TlsConfig>,
-}
-
-impl Default for ServeConfig {
-    fn default() -> Self {
-        Self {
-            host: String::from(crate::config::HOST),
-            port: crate::config::PORT,
-            tls: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TlsConfig {
-    pub cert: PathBuf,
-    pub key: PathBuf,
-    pub port: u16,
-}
-
-#[derive(Debug, Clone)]
-pub struct ServeOptions {
-    pub target: PathBuf,
-
-    // FIXME: use ServeConfig here
-    pub host: String,
-    pub port: u16,
-    pub tls: Option<TlsConfig>,
-
-    pub open_browser: bool,
-    pub watch: Option<PathBuf>,
-    pub endpoint: String,
-    pub redirects: Option<HashMap<String, Uri>>,
-
-    /// Send headers that instruct browsers to disable caching.
-    pub disable_cache: bool,
-    /// When running a server over SSL redirect HTTP to HTTPS.
-    pub redirect_insecure: bool,
-
-    // TODO: support conditional logging
-    pub log: bool,
-    pub temporary_redirect: bool,
-}
-
 /// Determines the type of port to use.
 pub enum PortType {
     Infer,
@@ -62,7 +14,61 @@ pub enum PortType {
     Secure,
 }
 
-impl ServeOptions {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ServerConfig {
+    pub host: String,
+    pub port: u16,
+    pub tls: Option<TlsConfig>,
+
+    #[serde(skip)]
+    pub target: PathBuf,
+
+    #[serde(skip)]
+    pub open_browser: bool,
+    #[serde(skip)]
+    pub watch: Option<PathBuf>,
+    #[serde(skip)]
+    pub endpoint: String,
+    #[serde(skip)]
+    pub redirects: Option<HashMap<String, Uri>>,
+
+    /// Send headers that instruct browsers to disable caching.
+    #[serde(skip)]
+    pub disable_cache: bool,
+    /// When running a server over SSL redirect HTTP to HTTPS.
+    #[serde(skip)]
+    pub redirect_insecure: bool,
+
+    #[serde(skip)]
+    pub temporary_redirect: bool,
+
+    // TODO: support conditional logging
+    #[serde(skip)]
+    pub log: bool,
+}
+
+impl Default for ServerConfig {
+    fn default() -> Self {
+        Self {
+            target: PathBuf::from(""),
+
+            host: String::from(crate::config::HOST),
+            port: crate::config::PORT,
+            tls: None,
+
+            open_browser: false,
+            watch: None,
+            endpoint: "".to_string(),
+            redirects: None,
+            disable_cache: false,
+            redirect_insecure: false,
+            temporary_redirect: false,
+            log: false,
+        }
+    }
+}
+
+impl ServerConfig {
     pub fn get_port(&self, port_type: PortType) -> u16 {
         match port_type {
             PortType::Infer => {
@@ -92,3 +98,11 @@ impl ServeOptions {
             .ok_or_else(|| Error::NoSocketAddress(address))?)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TlsConfig {
+    pub cert: PathBuf,
+    pub key: PathBuf,
+    pub port: u16,
+}
+

@@ -8,17 +8,17 @@ use warp::ws::Message;
 use log::{error, info};
 
 use crate::Error;
-use config::server::ServeOptions;
+use config::server::ServerConfig;
 use server::serve_static;
 
-pub async fn serve_only(options: ServeOptions) -> Result<(), Error> {
+pub async fn serve_only(options: ServerConfig) -> Result<(), Error> {
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
     let (tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
     serve(options, ws_tx, tx).await
 }
 
 pub async fn serve(
-    options: ServeOptions,
+    options: ServerConfig,
     ws_notify: broadcast::Sender<Message>,
     bind: oneshot::Sender<(SocketAddr, String, bool)>,
 ) -> Result<(), Error> {

@@ -18,12 +18,12 @@ use serde::Serialize;
 
 use log::{error, trace};
 
-use config::server::{ServeOptions, PortType};
+use config::server::{ServerConfig, PortType};
 use crate::Error;
 
 async fn redirect_map(
     path: FullPath,
-    opts: ServeOptions,
+    opts: ServerConfig,
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if let Some(ref redirects) = opts.redirects {
         if let Some(uri) = redirects.get(path.as_str()) {
@@ -61,7 +61,7 @@ async fn redirect_trailing_slash(
 }
 
 pub async fn serve(
-    opts: ServeOptions,
+    opts: ServerConfig,
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: broadcast::Sender<Message>) -> crate::Result<()> {
 

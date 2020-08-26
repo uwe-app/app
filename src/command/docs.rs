@@ -2,7 +2,7 @@ use cache::{self, CacheComponent};
 use preference;
 use utils;
 
-use config::server::ServeOptions;
+use config::server::ServerConfig;
 
 use crate::Error;
 use super::run;
@@ -22,7 +22,7 @@ pub async fn open() -> Result<(), Error> {
 
     target.push(DOCS_DIR);
 
-    let opts = ServeOptions {
+    let opts = ServerConfig {
         target,
         host: docs_prefs.host.clone(),
         port: docs_prefs.port.clone(),

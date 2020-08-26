@@ -18,7 +18,7 @@ use compiler::Compiler;
 use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
-use config::server::ServeOptions;
+use config::server::ServerConfig;
 
 use crate::command::run;
 use crate::{Error, ErrorCallback};
@@ -54,7 +54,7 @@ pub async fn start<P: AsRef<Path>>(
 
     let target = ctx.options.base.clone().to_path_buf();
 
-    let opts = ServeOptions {
+    let opts = ServerConfig {
         target,
         watch: Some(source.clone()),
         host: host.to_owned(),
