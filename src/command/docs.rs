@@ -33,6 +33,7 @@ pub async fn open() -> Result<(), Error> {
         redirects: None,
         log: true,
         temporary_redirect: true,
+        disable_cache: true,
     };
 
     run::serve_only(opts).await

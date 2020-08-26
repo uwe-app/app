@@ -42,6 +42,8 @@ pub struct ServeOptions {
     pub endpoint: String,
     pub redirects: Option<HashMap<String, Uri>>,
 
+    pub disable_cache: bool,
+
     // TODO: support conditional logging
     pub log: bool,
     pub temporary_redirect: bool,

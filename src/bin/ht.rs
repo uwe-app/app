@@ -479,6 +479,7 @@ async fn process_command(cmd: &Command) {
                 redirects: None,
                 log: true,
                 temporary_redirect: true,
+                disable_cache: true,
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {

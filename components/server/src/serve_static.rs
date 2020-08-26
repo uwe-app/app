@@ -65,13 +65,22 @@ pub async fn serve(
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: broadcast::Sender<Message>) -> crate::Result<()> {
 
+    // TODO: Include the version number from the root crate
+    // TODO: sadly, option_env!("CARGO_PKG_VERSION) references 
+    // TODO: this crate :(
+    let server_id = format!("hypertext");
+
     let address = opts.get_sock_addr()?;
+
+    let target = opts.target.clone();
     let root = opts.target.clone();
     let state = opts.target.clone();
+
     let use_tls = opts.tls.is_some();
     let tls = opts.tls.clone();
-    //let serve_tls_cert = if let Some();
-    //let serve_tls_key = std::env::var("SSL_KEY").ok();
+    let disable_cache = opts.disable_cache;
+
+    let with_server = warp::reply::with::header("server", &server_id);
 
     // A warp Filter which captures `reload_tx` and provides an `rx` copy to
     // receive reload messages.
@@ -105,20 +114,33 @@ pub async fn serve(
                 })
             },
         )
+        .with(with_server.clone())
         .with(&cors);
-
-    //let redirects = opts.redirects.clone();
-
-    let file_server =
-        warp::fs::dir(opts.target.clone()).recover(move |e| handle_rejection(e, root.clone()));
 
     let with_state = warp::any().map(move || state.clone());
     let with_options = warp::any().map(move || opts.clone());
 
-    // TODO: only bypass caching when not a release build
-    let with_cache_control = warp::reply::with::header("cache-control", "no-cache, no-store, must-revalidate");
+    let with_cache_control = warp::reply::with::header(
+        "cache-control", "no-cache, no-store, must-revalidate");
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
+
+    let dir_server = warp::fs::dir(target.clone()).recover(
+        move |e| handle_rejection(e, root.clone())
+    );
+
+    let file_server = if disable_cache {
+        dir_server
+            .with(with_cache_control)
+            .with(with_pragma)
+            .with(with_expires)
+            .with(with_server)
+            .boxed()
+    } else {
+        dir_server
+            .with(with_server)
+            .boxed()
+    };
 
     let redirect_handler = warp::get()
         .and(warp::path::full())
@@ -128,13 +150,10 @@ pub async fn serve(
     let slash_redirect = warp::get()
         .and(warp::path::full())
         .and(with_state)
-        .and_then(redirect_trailing_slash)
-        .or(file_server);
+        .and_then(redirect_trailing_slash);
 
-    let routes = livereload.or(redirect_handler.or(slash_redirect))
-        .with(with_cache_control)
-        .with(with_pragma)
-        .with(with_expires);
+    let static_server = redirect_handler.or(slash_redirect).or(file_server);
+    let routes = livereload.or(static_server);
 
     if use_tls {
         let (addr, future) = warp::serve(routes)
@@ -146,7 +165,6 @@ pub async fn serve(
         bind_tx.try_send((true, addr)).expect("Failed to send web server socket address");
 
         //super::redirect_server::spawn();
-
         //println!("Start the HTTP server to redirect...");
 
         future.await;
