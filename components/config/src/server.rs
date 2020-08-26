@@ -14,6 +14,13 @@ pub enum PortType {
     Secure,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TlsConfig {
+    pub cert: PathBuf,
+    pub key: PathBuf,
+    pub port: u16,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
     pub host: String,
@@ -42,7 +49,6 @@ pub struct ServerConfig {
     #[serde(skip)]
     pub temporary_redirect: bool,
 
-    // TODO: support conditional logging
     #[serde(skip)]
     pub log: bool,
 }
@@ -97,12 +103,5 @@ impl ServerConfig {
             .next()
             .ok_or_else(|| Error::NoSocketAddress(address))?)
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TlsConfig {
-    pub cert: PathBuf,
-    pub key: PathBuf,
-    pub port: u16,
 }
 

@@ -36,7 +36,7 @@ http = "0.2"
 
 futures = "0.3"
 futures-util = { version = "0.3.4" }
-tokio = { version = "0.2.18", features = ["macros"] }
+tokio = { version = "0.2.22", features = ["full"] }
 
 #warp = { version = "0.2.2", default-features = false, features = ["websocket"] }
 

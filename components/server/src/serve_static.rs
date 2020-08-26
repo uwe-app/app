@@ -75,13 +75,13 @@ pub async fn serve(
     let address = opts.get_sock_addr(PortType::Infer)?;
 
     let target = opts.target.clone();
-    let root = opts.target.clone();
     let state = opts.target.clone();
 
     let use_tls = opts.tls.is_some();
     let tls = opts.tls.clone();
     let disable_cache = opts.disable_cache;
     let redirect_insecure = opts.redirect_insecure;
+    let use_log = opts.log;
 
     let with_server = warp::reply::with::header("server", &server_id);
 
@@ -128,9 +128,10 @@ pub async fn serve(
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
 
-    let dir_server = warp::fs::dir(target.clone()).recover(
-        move |e| handle_rejection(e, root.clone())
-    );
+    let dir_server = warp::fs::dir(target.clone())
+        .recover(
+            move |e| handle_rejection(e, target.clone())
+        );
 
     let file_server = if disable_cache {
         dir_server
@@ -157,6 +158,12 @@ pub async fn serve(
 
     let static_server = redirect_handler.or(slash_redirect).or(file_server);
     let routes = livereload.or(static_server);
+
+    //let routes = if use_log {
+        //routes.with(warp::log("static")).boxed()
+    //} else {
+        //routes.boxed()
+    //};
 
     if use_tls {
         let (addr, future) = warp::serve(routes)

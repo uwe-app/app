@@ -7,6 +7,7 @@ repository = "https://github.com/hypertext-live/hypertext"
 edition = "2018"
 default-run = "ht"
 
+
 [workspace]
 members = [
   "components/book",
@@ -68,7 +69,7 @@ toml = { version = "0.5", features = ["preserve_order"] }
 semver = "0.10"
 scopeguard = "1.1.0"
 
-tokio = { version = "0.2.18", features = ["macros"] }
+tokio = { version = "0.2.22", features = ["full"] }
 warp = { version = "0.2.4", default-features = false, features = ["websocket"] }
 notify = { version = "4.0.0" }
 
