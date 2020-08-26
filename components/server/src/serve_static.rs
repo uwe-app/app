@@ -159,12 +159,6 @@ pub async fn serve(
     let static_server = redirect_handler.or(slash_redirect).or(file_server);
     let routes = livereload.or(static_server);
 
-    //let routes = if use_log {
-        //routes.with(warp::log("static")).boxed()
-    //} else {
-        //routes.boxed()
-    //};
-
     if use_tls {
         let (addr, future) = warp::serve(routes)
             .tls()
