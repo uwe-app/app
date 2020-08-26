@@ -14,5 +14,5 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub mod redirect_server;
+pub mod redirect;
 pub mod serve_static;

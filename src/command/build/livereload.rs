@@ -66,6 +66,7 @@ pub async fn start<P: AsRef<Path>>(
         log: true,
         temporary_redirect: true,
         disable_cache: true,
+        redirect_insecure: true,
     };
 
     // Create a channel to receive the bind address.

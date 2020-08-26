@@ -34,33 +34,58 @@ pub struct TlsConfig {
 #[derive(Debug, Clone)]
 pub struct ServeOptions {
     pub target: PathBuf,
+
+    // FIXME: use ServeConfig here
     pub host: String,
     pub port: u16,
-    pub open_browser: bool,
     pub tls: Option<TlsConfig>,
+
+    pub open_browser: bool,
     pub watch: Option<PathBuf>,
     pub endpoint: String,
     pub redirects: Option<HashMap<String, Uri>>,
 
+    /// Send headers that instruct browsers to disable caching.
     pub disable_cache: bool,
+    /// When running a server over SSL redirect HTTP to HTTPS.
+    pub redirect_insecure: bool,
 
     // TODO: support conditional logging
     pub log: bool,
     pub temporary_redirect: bool,
 }
 
+/// Determines the type of port to use.
+pub enum PortType {
+    Infer,
+    Insecure,
+    Secure,
+}
+
 impl ServeOptions {
-    pub fn get_port(&self) -> u16 {
-        if let Some(ref tls) = self.tls { tls.port } else { self.port }
+    pub fn get_port(&self, port_type: PortType) -> u16 {
+        match port_type {
+            PortType::Infer => {
+                if let Some(ref tls) = self.tls { tls.port } else { self.port }
+            }
+            PortType::Insecure => self.port,
+            PortType::Secure => {
+                if let Some(ref tls) = self.tls { tls.port } else { crate::PORT_SSL }
+            }
+        }
     }
 
-    pub fn get_address(&self) -> String {
-        let port = self.get_port();
+    pub fn get_address(&self, port_type: PortType) -> String {
+        let port = self.get_port(port_type);
         format!("{}:{}", self.host, port)
     }
 
-    pub fn get_sock_addr(&self) -> Result<SocketAddr> {
-        let address = self.get_address();
+    pub fn get_url(&self, scheme: &str, port_type: PortType) -> String {
+        format!("{}//{}", scheme, self.get_address(port_type)) 
+    }
+
+    pub fn get_sock_addr(&self, port_type: PortType) -> Result<SocketAddr> {
+        let address = self.get_address(port_type);
         Ok(address
             .to_socket_addrs()?
             .next()

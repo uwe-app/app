@@ -480,6 +480,7 @@ async fn process_command(cmd: &Command) {
                 log: true,
                 temporary_redirect: true,
                 disable_cache: true,
+                redirect_insecure: true,
             };
 
             if !opts.target.exists() || !opts.target.is_dir() {

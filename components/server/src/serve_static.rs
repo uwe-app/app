@@ -16,9 +16,9 @@ use warp::ws::Message;
 
 use serde::Serialize;
 
-use log::trace;
+use log::{error, trace};
 
-use config::server::ServeOptions;
+use config::server::{ServeOptions, PortType};
 use crate::Error;
 
 async fn redirect_map(
@@ -70,7 +70,9 @@ pub async fn serve(
     // TODO: this crate :(
     let server_id = format!("hypertext");
 
-    let address = opts.get_sock_addr()?;
+    let state_opts = opts.clone();
+
+    let address = opts.get_sock_addr(PortType::Infer)?;
 
     let target = opts.target.clone();
     let root = opts.target.clone();
@@ -79,6 +81,7 @@ pub async fn serve(
     let use_tls = opts.tls.is_some();
     let tls = opts.tls.clone();
     let disable_cache = opts.disable_cache;
+    let redirect_insecure = opts.redirect_insecure;
 
     let with_server = warp::reply::with::header("server", &server_id);
 
@@ -118,7 +121,7 @@ pub async fn serve(
         .with(&cors);
 
     let with_state = warp::any().map(move || state.clone());
-    let with_options = warp::any().map(move || opts.clone());
+    let with_options = warp::any().map(move || state_opts.clone());
 
     let with_cache_control = warp::reply::with::header(
         "cache-control", "no-cache, no-store, must-revalidate");
@@ -162,10 +165,14 @@ pub async fn serve(
             .key_path(&tls.as_ref().unwrap().key)
             .bind_ephemeral(address);
 
-        bind_tx.try_send((true, addr)).expect("Failed to send web server socket address");
+        bind_tx.try_send((true, addr))
+            .expect("Failed to send web server socket address");
 
-        //super::redirect_server::spawn();
-        //println!("Start the HTTP server to redirect...");
+        if redirect_insecure {
+            super::redirect::spawn(opts.clone()).unwrap_or_else(|_| {
+                error!("Failed to start HTTP redirect server");
+            });
+        }
 
         future.await;
     } else {

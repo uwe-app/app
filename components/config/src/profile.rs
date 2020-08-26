@@ -188,6 +188,8 @@ impl Default for ProfileSettings {
             short_codes: None,
 
             profile: None,
+
+            // FIXME: use ServeConfig
             host: Some(config::HOST.to_string()),
             port: Some(config::PORT),
             scheme: Some(config::SCHEME_HTTPS.to_string()),

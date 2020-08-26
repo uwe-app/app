@@ -34,6 +34,7 @@ pub async fn open() -> Result<(), Error> {
         log: true,
         temporary_redirect: true,
         disable_cache: true,
+        redirect_insecure: true,
     };
 
     run::serve_only(opts).await
