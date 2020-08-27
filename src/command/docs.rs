@@ -32,5 +32,5 @@ pub async fn open() -> Result<(), Error> {
     };
 
     let launch = LaunchConfig { open: true };
-    Ok(server::bind(opts, launch, None).await?)
+    Ok(server::bind(opts, launch, None, None).await?)
 }

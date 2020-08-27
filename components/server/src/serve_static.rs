@@ -10,6 +10,7 @@ use tokio::sync::mpsc;
 
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
+use warp::filters::BoxedFilter;
 use warp::http::Uri;
 use warp::path::FullPath;
 use warp::ws::Message;
@@ -20,6 +21,49 @@ use log::{error, trace};
 
 use config::server::{ServerConfig, PortType};
 use crate::Error;
+
+#[macro_export]
+macro_rules! bind {
+    (
+        $routes:expr,
+        $opts:expr,
+        $bind_tx:expr
+    ) => {
+        let address = $opts.get_sock_addr(PortType::Infer)?;
+        let use_tls = $opts.tls.is_some();
+        let redirect_insecure = $opts.redirect_insecure;
+
+        if use_tls {
+            let (addr, future) = warp::serve($routes)
+                .tls()
+                .cert_path(&$opts.tls.as_ref().unwrap().cert)
+                .key_path(&$opts.tls.as_ref().unwrap().key)
+                .bind_ephemeral(address);
+
+            $bind_tx.try_send((true, addr))
+                .expect("Failed to send web server socket address");
+
+            if redirect_insecure {
+                super::redirect::spawn($opts.clone()).unwrap_or_else(|_| {
+                    error!("Failed to start HTTP redirect server");
+                });
+            }
+
+            future.await;
+        } else {
+            let bind_result = warp::serve($routes).try_bind_ephemeral(address);
+            match bind_result {
+                Ok((addr, future)) => {
+                    if let Err(e) = $bind_tx.try_send((false, addr)) {
+                        return Err(Error::from(e));
+                    }
+                    future.await;
+                }
+                Err(e) => return Err(Error::from(e))
+            }
+        }
+    };
+}
 
 async fn redirect_map(
     path: FullPath,
@@ -60,65 +104,16 @@ async fn redirect_trailing_slash(
     Err(warp::reject())
 }
 
-pub async fn serve(
-    opts: ServerConfig,
-    mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
-    reload_tx: broadcast::Sender<Message>) -> crate::Result<()> {
+fn get_static_server(opts: &ServerConfig) -> BoxedFilter<(impl Reply,)> {
 
-    // TODO: Include the version number from the root crate
-    // TODO: sadly, option_env!("CARGO_PKG_VERSION) references 
-    // TODO: this crate :(
     let server_id = format!("hypertext");
-
-    let state_opts = opts.clone();
-
-    let address = opts.get_sock_addr(PortType::Infer)?;
+    let with_server = warp::reply::with::header("server", &server_id);
 
     let target = opts.target.clone();
     let state = opts.target.clone();
 
-    let use_tls = opts.tls.is_some();
-    let tls = opts.tls.clone();
     let disable_cache = opts.disable_cache;
-    let redirect_insecure = opts.redirect_insecure;
-    let use_log = opts.log;
-
-    let with_server = warp::reply::with::header("server", &server_id);
-
-    // A warp Filter which captures `reload_tx` and provides an `rx` copy to
-    // receive reload messages.
-    let sender = warp::any().map(move || reload_tx.subscribe());
-
-    let port = address.clone().port();
-    let mut cors = warp::cors().allow_any_origin();
-    if port > 0 {
-        let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
-        let origin = format!("{}//{}:{}", scheme, opts.host, port);
-        cors = warp::cors()
-            .allow_origin(origin.as_str())
-            .allow_methods(vec!["GET"]);
-    }
-
-    // A warp Filter to handle the livereload endpoint. This upgrades to a
-    // websocket, and then waits for any filesystem change notifications, and
-    // relays them over the websocket.
-    let livereload = warp::path(opts.endpoint.clone())
-        .and(warp::ws())
-        .and(sender)
-        .map(
-            move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
-                ws.on_upgrade(move |ws| async move {
-                    let (mut user_ws_tx, _user_ws_rx) = ws.split();
-                    trace!("Websocket got connection");
-                    while let Ok(m) = rx.recv().await {
-                        let _res = user_ws_tx.send(m).await;
-                        //println!("Websocket res {:?}", res);
-                    }
-                })
-            },
-        )
-        .with(with_server.clone())
-        .with(&cors);
+    let state_opts = opts.clone();
 
     let with_state = warp::any().map(move || state.clone());
     let with_options = warp::any().map(move || state_opts.clone());
@@ -138,11 +133,11 @@ pub async fn serve(
             .with(with_cache_control)
             .with(with_pragma)
             .with(with_expires)
-            .with(with_server)
+            .with(with_server.clone())
             .boxed()
     } else {
         dir_server
-            .with(with_server)
+            .with(with_server.clone())
             .boxed()
     };
 
@@ -157,36 +152,74 @@ pub async fn serve(
         .and_then(redirect_trailing_slash);
 
     let static_server = redirect_handler.or(slash_redirect).or(file_server);
-    let routes = livereload.or(static_server);
 
-    if use_tls {
-        let (addr, future) = warp::serve(routes)
-            .tls()
-            .cert_path(&tls.as_ref().unwrap().cert)
-            .key_path(&tls.as_ref().unwrap().key)
-            .bind_ephemeral(address);
+    static_server.boxed()
+}
 
-        bind_tx.try_send((true, addr))
-            .expect("Failed to send web server socket address");
 
-        if redirect_insecure {
-            super::redirect::spawn(opts.clone()).unwrap_or_else(|_| {
-                error!("Failed to start HTTP redirect server");
-            });
-        }
+fn get_live_reload(
+    opts: &ServerConfig,
+    reload_tx: broadcast::Sender<Message>) -> crate::Result<BoxedFilter<(impl Reply,)>> {
 
-        future.await;
+    let use_tls = opts.tls.is_some();
+
+    let address = opts.get_sock_addr(PortType::Infer)?;
+    let port = address.clone().port();
+    let mut cors = warp::cors().allow_any_origin();
+    if port > 0 {
+        let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
+        let origin = format!("{}//{}:{}", scheme, opts.host, port);
+        cors = warp::cors()
+            .allow_origin(origin.as_str())
+            .allow_methods(vec!["GET"]);
+    }
+
+    // A warp Filter which captures `reload_tx` and provides an `rx` copy to
+    // receive reload messages.
+    let sender = warp::any().map(move || reload_tx.subscribe());
+
+    // A warp Filter to handle the livereload endpoint. This upgrades to a
+    // websocket, and then waits for any filesystem change notifications, and
+    // relays them over the websocket.
+    let livereload = warp::path(opts.endpoint.clone())
+        .and(warp::ws())
+        .and(sender)
+        .map(
+            move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
+                ws.on_upgrade(move |ws| async move {
+                    let (mut user_ws_tx, _user_ws_rx) = ws.split();
+                    trace!("Websocket got connection");
+                    while let Ok(m) = rx.recv().await {
+                        let _res = user_ws_tx.send(m).await;
+                        //println!("Websocket res {:?}", res);
+                    }
+                })
+            },
+        )
+        //.with(with_server.clone())
+        .with(&cors);
+
+    Ok(livereload.boxed())
+}
+
+pub async fn serve(
+    opts: ServerConfig,
+    mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
+    reload_tx: Option<broadcast::Sender<Message>>) -> crate::Result<()> {
+
+    // TODO: Include the version number from the root crate
+    // TODO: sadly, option_env!("CARGO_PKG_VERSION) references 
+    // TODO: this crate :(
+    let server_id = format!("hypertext");
+    let with_server = warp::reply::with::header("server", &server_id);
+    let use_log = opts.log;
+
+    let static_server = get_static_server(&opts);
+    if let Some(reload_tx) = reload_tx {
+        let livereload = get_live_reload(&opts, reload_tx)?;
+        bind!(livereload.or(static_server), opts, bind_tx);
     } else {
-        let bind_result = warp::serve(routes).try_bind_ephemeral(address);
-        match bind_result {
-            Ok((addr, future)) => {
-                if let Err(e) = bind_tx.try_send((false, addr)) {
-                    return Err(Error::from(e));
-                }
-                future.await;
-            }
-            Err(e) => return Err(Error::from(e))
-        }
+        bind!(static_server, opts, bind_tx);
     }
 
     Ok(())

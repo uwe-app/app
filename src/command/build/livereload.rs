@@ -21,8 +21,6 @@ use config::server::{ServerConfig, LaunchConfig};
 
 use crate::{Error, ErrorCallback};
 
-use server::ServerChannel;
-
 use super::invalidator::Invalidator;
 
 fn get_websocket_url(host: String, addr: SocketAddr, endpoint: &str, secure: bool) -> String {
@@ -75,7 +73,6 @@ pub async fn start<P: AsRef<Path>>(
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
 
     let reload_tx = ws_tx.clone();
-    let channel = ServerChannel {bind: bind_tx, websocket: reload_tx};
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
@@ -178,7 +175,7 @@ pub async fn start<P: AsRef<Path>>(
     });
 
     // Start the webserver
-    server::bind(opts, launch, Some(channel)).await?;
+    server::bind(opts, launch, Some(bind_tx), Some(reload_tx)).await?;
 
     Ok(())
 }

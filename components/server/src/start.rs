@@ -11,43 +11,25 @@ use crate::Error;
 use config::server::{ServerConfig, LaunchConfig};
 use super::serve_static;
 
-pub struct ServerChannel {
-    /// Notification channel for websocket messages.
-    pub websocket: broadcast::Sender<Message>,
-    /// Notification sent when a server binds successfully.
-    pub bind: oneshot::Sender<(SocketAddr, String, bool)>,
-}
+type BindInfo = (SocketAddr, String, bool);
 
-impl Default for ServerChannel {
-    fn default() -> Self {
-        let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-        let (bind_tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
-        Self {
-            websocket: ws_tx,
-            bind: bind_tx,
-        }
-    }
-}
+type WebsocketSender = broadcast::Sender<Message>;
+type BindSender = oneshot::Sender<BindInfo>;
 
 pub async fn bind(
     options: ServerConfig,
     launch: LaunchConfig,
-    channel: Option<ServerChannel>) -> Result<(), Error> {
-
-    let channel = if let Some(channel) = channel {
-        channel
-    } else { Default::default() };
-
-    bind_open(options, launch, channel).await
+    bind: Option<BindSender>,
+    channel: Option<WebsocketSender>) -> Result<(), Error> {
+    bind_open(options, launch, bind, channel).await
 }
 
 async fn bind_open(
     options: ServerConfig,
     launch: LaunchConfig,
-    channel: ServerChannel,
+    bind: Option<BindSender>,
+    channel: Option<WebsocketSender>,
 ) -> Result<(), Error> {
-
-    let ws = channel.websocket.clone();
 
     // The options are passed down to the web server so 
     // we need to clone this for use on the closure.
@@ -74,13 +56,16 @@ async fn bind_open(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(_) = channel.bind.send((addr, url, tls)) {
-            error!("Failed to notify of server bind event");
-            std::process::exit(1);
+        if let Some(bind) = bind {
+            if let Err(_) = bind.send((addr, url, tls)) {
+                error!("Failed to notify of server bind event");
+                std::process::exit(1);
+            }
         }
+
     });
 
-    serve_static::serve(options, ctx, ws).await?;
+    serve_static::serve(options, ctx, channel).await?;
 
     Ok(())
 }
