@@ -2,7 +2,7 @@ use cache::{self, CacheComponent};
 use preference;
 use utils;
 
-use config::server::ServerConfig;
+use config::server::{ServerConfig, LaunchConfig};
 
 use crate::Error;
 use super::run;
@@ -27,7 +27,6 @@ pub async fn open() -> Result<(), Error> {
         host: docs_prefs.host.clone(),
         port: docs_prefs.port.clone(),
         tls: None,
-        open_browser: true,
         watch: None,
         endpoint: utils::generate_id(16),
         redirects: None,
@@ -37,5 +36,7 @@ pub async fn open() -> Result<(), Error> {
         redirect_insecure: true,
     };
 
-    run::serve_only(opts).await
+    let launch = LaunchConfig { open: true };
+
+    run::serve_only(opts, launch).await
 }

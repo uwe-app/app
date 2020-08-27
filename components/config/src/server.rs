@@ -21,6 +21,11 @@ pub struct TlsConfig {
     pub port: u16,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LaunchConfig {
+    pub open: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
     pub host: String,
@@ -30,8 +35,8 @@ pub struct ServerConfig {
     #[serde(skip)]
     pub target: PathBuf,
 
-    #[serde(skip)]
-    pub open_browser: bool,
+    //#[serde(skip)]
+    //pub open_browser: bool,
     #[serde(skip)]
     pub watch: Option<PathBuf>,
     #[serde(skip)]
@@ -62,7 +67,6 @@ impl Default for ServerConfig {
             port: crate::config::PORT,
             tls: None,
 
-            open_browser: false,
             watch: None,
             endpoint: "".to_string(),
             redirects: None,

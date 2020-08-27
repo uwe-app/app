@@ -18,7 +18,7 @@ use compiler::Compiler;
 use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
-use config::server::ServerConfig;
+use config::server::{ServerConfig, LaunchConfig};
 
 use crate::command::run;
 use crate::{Error, ErrorCallback};
@@ -61,13 +61,14 @@ pub async fn start<P: AsRef<Path>>(
         port: port.to_owned(),
         tls,
         endpoint: endpoint.clone(),
-        open_browser: false,
         redirects: redirect_uris,
         log: true,
         temporary_redirect: true,
         disable_cache: true,
         redirect_insecure: true,
     };
+
+    let launch = LaunchConfig { open: false };
 
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<(SocketAddr, String, bool)>();
@@ -176,7 +177,7 @@ pub async fn start<P: AsRef<Path>>(
     });
 
     // Start the webserver
-    run::serve(opts, reload_tx, bind_tx).await?;
+    run::serve(opts, launch, reload_tx, bind_tx).await?;
 
     Ok(())
 }

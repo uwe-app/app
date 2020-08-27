@@ -14,7 +14,7 @@ use std::panic;
 
 use hypertext::command;
 use hypertext::{Config, Error, ProfileSettings};
-use config::server::TlsConfig;
+use config::server::{LaunchConfig, ServerConfig, TlsConfig};
 use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
@@ -445,6 +445,12 @@ async fn process_command(cmd: &Command) {
         }
 
         Command::Run { ref args } => {
+
+            if !args.target.exists() || !args.target.is_dir() {
+                fatal(Error::NotDirectory(args.target.to_path_buf()));
+                return;
+            }
+
             let cfg: Config = Default::default();
             let serve = cfg.serve.as_ref().unwrap();
             let mut host = &serve.host;
@@ -468,11 +474,10 @@ async fn process_command(cmd: &Command) {
                 });
             }
 
-            let opts = config::server::ServerConfig {
+            let opts = ServerConfig {
                 target: args.target.clone(),
                 host: host.to_owned(),
                 port: port.to_owned(),
-                open_browser: true,
                 tls,
                 watch: None,
                 endpoint: utils::generate_id(16),
@@ -483,12 +488,9 @@ async fn process_command(cmd: &Command) {
                 redirect_insecure: true,
             };
 
-            if !opts.target.exists() || !opts.target.is_dir() {
-                fatal(Error::NotDirectory(opts.target));
-                return;
-            }
+            let launch = LaunchConfig { open: true };
 
-            if let Err(e) = command::run::serve_only(opts).await {
+            if let Err(e) = command::run::serve_only(opts, launch).await {
                 fatal(e);
             }
         }

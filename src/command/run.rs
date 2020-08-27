@@ -8,23 +8,24 @@ use warp::ws::Message;
 use log::{error, info};
 
 use crate::Error;
-use config::server::ServerConfig;
+use config::server::{ServerConfig, LaunchConfig};
 use server::serve_static;
 
-pub async fn serve_only(options: ServerConfig) -> Result<(), Error> {
+pub async fn serve_only(options: ServerConfig, launch: LaunchConfig) -> Result<(), Error> {
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
     let (tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
-    serve(options, ws_tx, tx).await
+    serve(options, launch, ws_tx, tx).await
 }
 
 pub async fn serve(
     options: ServerConfig,
+    launch: LaunchConfig,
     ws_notify: broadcast::Sender<Message>,
     bind: oneshot::Sender<(SocketAddr, String, bool)>,
 ) -> Result<(), Error> {
 
     let host = options.host.clone();
-    let open_browser = options.open_browser;
+    let open_browser = launch.open;
 
     // Create a channel to receive the bind address.
     let (ctx, mut crx) = mpsc::channel::<(bool, SocketAddr)>(100);
