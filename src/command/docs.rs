@@ -1,11 +1,6 @@
 use cache::{self, CacheComponent};
-use preference;
-use utils;
-
 use config::server::{ServerConfig, LaunchConfig};
-
 use crate::Error;
-use super::run;
 
 static DOCS_DIR: &str = "docs";
 
@@ -37,6 +32,5 @@ pub async fn open() -> Result<(), Error> {
     };
 
     let launch = LaunchConfig { open: true };
-
-    run::serve_only(opts, launch).await
+    Ok(server::bind(opts, launch).await?)
 }

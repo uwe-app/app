@@ -9,9 +9,15 @@ use log::{error, info};
 
 use crate::Error;
 use config::server::{ServerConfig, LaunchConfig};
-use server::serve_static;
+use super::serve_static;
 
-pub async fn serve(
+pub async fn bind(options: ServerConfig, launch: LaunchConfig) -> Result<(), Error> {
+    let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+    let (tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
+    bind_open(options, launch, ws_tx, tx).await
+}
+
+pub async fn bind_open(
     options: ServerConfig,
     launch: LaunchConfig,
     ws_notify: broadcast::Sender<Message>,
