@@ -75,7 +75,6 @@ pub async fn start<P: AsRef<Path>>(
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
 
     let reload_tx = ws_tx.clone();
-
     let channel = ServerChannel {bind: bind_tx, websocket: reload_tx};
 
     // Spawn a thread to receive a notification on the `rx` channel

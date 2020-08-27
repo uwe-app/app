@@ -49,8 +49,9 @@ async fn bind_open(
 
     let ws = channel.websocket.clone();
 
+    // The options are passed down to the web server so 
+    // we need to clone this for use on the closure.
     let host = options.host.clone();
-    let open_browser = launch.open;
 
     // Create a channel to receive the bind address.
     let (ctx, mut crx) = mpsc::channel::<(bool, SocketAddr)>(100);
@@ -61,7 +62,14 @@ async fn bind_open(
         let url = config::to_url_string(scheme, &host, addr.port());
         info!("Serve {}", url);
 
-        if open_browser {
+        // Most of the time we want to open a browser unless explictly
+        // disabled however in the case of the live reload logic it 
+        // takes control of opening the browser so that:
+        //
+        // 1) Don't start to compile until we have bound to a port.
+        // 2) Don't open a browser window unless the build succeeds.
+        // 
+        if launch.open {
             // It is ok if this errors we just don't open a browser window
             open::that(&url).map(|_| ()).unwrap_or(());
         }
