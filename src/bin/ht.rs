@@ -490,7 +490,7 @@ async fn process_command(cmd: &Command) {
 
             let launch = LaunchConfig { open: true };
 
-            match server::bind(opts, launch).await {
+            match server::bind(opts, launch, None).await {
                 Err(e) => fatal(Error::from(e)),
                 _ => {}
             }

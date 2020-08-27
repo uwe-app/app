@@ -11,18 +11,43 @@ use crate::Error;
 use config::server::{ServerConfig, LaunchConfig};
 use super::serve_static;
 
-pub async fn bind(options: ServerConfig, launch: LaunchConfig) -> Result<(), Error> {
-    let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-    let (tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
-    bind_open(options, launch, ws_tx, tx).await
+pub struct ServerChannel {
+    /// Notification channel for websocket messages.
+    pub websocket: broadcast::Sender<Message>,
+    /// Notification sent when a server binds successfully.
+    pub bind: oneshot::Sender<(SocketAddr, String, bool)>,
 }
 
-pub async fn bind_open(
+impl Default for ServerChannel {
+    fn default() -> Self {
+        let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+        let (bind_tx, _rx) = oneshot::channel::<(SocketAddr, String, bool)>();
+        Self {
+            websocket: ws_tx,
+            bind: bind_tx,
+        }
+    }
+}
+
+pub async fn bind(
     options: ServerConfig,
     launch: LaunchConfig,
-    ws_notify: broadcast::Sender<Message>,
-    bind: oneshot::Sender<(SocketAddr, String, bool)>,
+    channel: Option<ServerChannel>) -> Result<(), Error> {
+
+    let channel = if let Some(channel) = channel {
+        channel
+    } else { Default::default() };
+
+    bind_open(options, launch, channel).await
+}
+
+async fn bind_open(
+    options: ServerConfig,
+    launch: LaunchConfig,
+    channel: ServerChannel,
 ) -> Result<(), Error> {
+
+    let ws = channel.websocket.clone();
 
     let host = options.host.clone();
     let open_browser = launch.open;
@@ -41,13 +66,13 @@ pub async fn bind_open(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
 
-        if let Err(_) = bind.send((addr, url, tls)) {
+        if let Err(_) = channel.bind.send((addr, url, tls)) {
             error!("Failed to notify of server bind event");
             std::process::exit(1);
         }
     });
 
-    serve_static::serve(options, ctx, ws_notify).await?;
+    serve_static::serve(options, ctx, ws).await?;
 
     Ok(())
 }
