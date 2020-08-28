@@ -98,6 +98,23 @@ impl Default for ServerConfig {
 }
 
 impl ServerConfig {
+
+    pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
+        Self {
+            target: host.directory,
+            host: host.name,
+            port: port,
+            tls,
+            watch: None,
+            endpoint: utils::generate_id(16),
+            redirects: None,
+            log: true,
+            temporary_redirect: true,
+            disable_cache: true,
+            redirect_insecure: true,
+        }
+    }
+
     pub fn get_port(&self, port_type: PortType) -> u16 {
         match port_type {
             PortType::Infer => {
@@ -125,6 +142,18 @@ impl ServerConfig {
             .to_socket_addrs()?
             .next()
             .ok_or_else(|| Error::NoSocketAddress(address))?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct HostConfig {
+    pub directory: PathBuf,
+    pub name: String,
+}
+
+impl HostConfig {
+    pub fn new(directory: PathBuf, name: String) -> Self {
+        Self {directory, name} 
     }
 }
 

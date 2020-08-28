@@ -14,7 +14,7 @@ use std::panic;
 
 use hypertext::command;
 use hypertext::{Config, Error, ProfileSettings};
-use config::server::{LaunchConfig, ServerConfig, TlsConfig};
+use config::server::{LaunchConfig, ServerConfig, HostConfig, TlsConfig};
 use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
@@ -474,19 +474,22 @@ async fn process_command(cmd: &Command) {
                 });
             }
 
-            let opts = ServerConfig {
-                target: args.target.clone(),
-                host: host.to_owned(),
-                port: port.to_owned(),
-                tls,
-                watch: None,
-                endpoint: utils::generate_id(16),
-                redirects: None,
-                log: true,
-                temporary_redirect: true,
-                disable_cache: true,
-                redirect_insecure: true,
-            };
+            let host = HostConfig::new(args.target.clone(), host.to_owned());
+            let opts = ServerConfig::new_host(host, port.to_owned(), tls);
+
+            //let opts = ServerConfig {
+                //target: args.target.clone(),
+                //host: host.to_owned(),
+                //port: port.to_owned(),
+                //tls,
+                //watch: None,
+                //endpoint: utils::generate_id(16),
+                //redirects: None,
+                //log: true,
+                //temporary_redirect: true,
+                //disable_cache: true,
+                //redirect_insecure: true,
+            //};
 
             let launch = LaunchConfig { open: true };
 
