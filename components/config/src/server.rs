@@ -7,6 +7,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
 
+#[derive(Debug)]
+pub struct ConnectionInfo {
+    pub addr: SocketAddr,
+    pub host: String,
+    pub tls: bool,
+}
+
+impl ConnectionInfo {
+    pub fn to_url(&self) -> String {
+        let scheme = if self.tls { crate::SCHEME_HTTPS } else { crate::SCHEME_HTTP };
+        crate::to_url_string(scheme, &self.host, self.addr.port())
+    }
+}
+
 /// Determines the type of port to use.
 pub enum PortType {
     Infer,

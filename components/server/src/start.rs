@@ -8,13 +8,11 @@ use warp::ws::Message;
 use log::{error, info};
 
 use crate::Error;
-use config::server::{ServerConfig, LaunchConfig};
+use config::server::{ServerConfig, LaunchConfig, ConnectionInfo};
 use super::serve_static;
 
-type BindInfo = (SocketAddr, String, bool);
-
 type WebsocketSender = broadcast::Sender<Message>;
-type BindSender = oneshot::Sender<BindInfo>;
+type BindSender = oneshot::Sender<ConnectionInfo>;
 
 pub async fn bind(
     options: ServerConfig,
@@ -40,9 +38,12 @@ async fn bind_open(
 
     let _ = tokio::task::spawn(async move {
         let (tls, addr) = crx.recv().await.unwrap();
-        let scheme = if tls { config::SCHEME_HTTPS } else { config::SCHEME_HTTP };
-        let url = config::to_url_string(scheme, &host, addr.port());
-        info!("Serve {}", url);
+        //let scheme = if tls { config::SCHEME_HTTPS } else { config::SCHEME_HTTP };
+        //let url = config::to_url_string(scheme, &host, addr.port());
+
+        let info = ConnectionInfo { addr, host, tls };
+        let url = info.to_url();
+        info!("Serve {}", &url);
 
         // Most of the time we want to open a browser unless explictly
         // disabled however in the case of the live reload logic it 
@@ -57,7 +58,7 @@ async fn bind_open(
         }
 
         if let Some(bind) = bind {
-            if let Err(_) = bind.send((addr, url, tls)) {
+            if let Err(_) = bind.send(info) {
                 error!("Failed to notify of server bind event");
                 std::process::exit(1);
             }
