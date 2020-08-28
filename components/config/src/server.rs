@@ -19,6 +19,11 @@ impl ConnectionInfo {
         let scheme = if self.tls { crate::SCHEME_HTTPS } else { crate::SCHEME_HTTP };
         crate::to_url_string(scheme, &self.host, self.addr.port())
     }
+
+    pub fn to_websocket_url(&self, endpoint: &str) -> String {
+        let scheme = if self.tls { crate::SCHEME_WSS } else { crate::SCHEME_WS };
+        format!("{}//{}:{}/{}", scheme, &self.host, self.addr.port(), endpoint)
+    }
 }
 
 /// Determines the type of port to use.

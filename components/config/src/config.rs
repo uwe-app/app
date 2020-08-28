@@ -60,6 +60,8 @@ pub static PORT_SSL: u16 = 8843;
 pub static SCHEME_HTTPS: &str = "https:";
 pub static SCHEME_HTTP: &str = "http:";
 pub static SCHEME_DELIMITER: &str = "//";
+pub static SCHEME_WSS: &str = "wss:";
+pub static SCHEME_WS: &str = "ws:";
 
 type RedirectConfig = HashMap<String, String>;
 

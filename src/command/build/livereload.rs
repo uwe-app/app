@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use std::path::Path;
 
 use log::{debug, error, info};
@@ -22,11 +21,6 @@ use config::server::{ServerConfig, LaunchConfig, ConnectionInfo};
 use crate::{Error, ErrorCallback};
 
 use super::invalidator::Invalidator;
-
-fn get_websocket_url(host: &str, addr: &SocketAddr, endpoint: &str, secure: bool) -> String {
-    let scheme = if secure {"wss:"} else {"ws:"};
-    format!("{}//{}:{}/{}", scheme, host, addr.port(), endpoint)
-}
 
 pub async fn start<P: AsRef<Path>>(
     project: P,
@@ -83,7 +77,7 @@ pub async fn start<P: AsRef<Path>>(
             let info = bind_rx.await.unwrap();
             let url = info.to_url();
 
-            let ws_url = get_websocket_url(&info.host, &info.addr, &endpoint, info.tls);
+            let ws_url = info.to_websocket_url(&endpoint);
 
             if let Err(e) = livereload::write(&ctx.config, &ctx.options.target, &ws_url) {
                 return error_cb(Error::from(e));
