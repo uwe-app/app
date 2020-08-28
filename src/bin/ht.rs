@@ -474,23 +474,8 @@ async fn process_command(cmd: &Command) {
                 });
             }
 
-            let host = HostConfig::new(args.target.clone(), host.to_owned());
+            let host = HostConfig::new(args.target.clone(), host.to_owned(), None);
             let opts = ServerConfig::new_host(host, port.to_owned(), tls);
-
-            //let opts = ServerConfig {
-                //target: args.target.clone(),
-                //host: host.to_owned(),
-                //port: port.to_owned(),
-                //tls,
-                //watch: None,
-                //endpoint: utils::generate_id(16),
-                //redirects: None,
-                //log: true,
-                //temporary_redirect: true,
-                //disable_cache: true,
-                //redirect_insecure: true,
-            //};
-
             let launch = LaunchConfig { open: true };
 
             match server::bind(opts, launch, None, None).await {

@@ -22,19 +22,6 @@ use log::{error, trace};
 use config::server::{ServerConfig, PortType};
 use crate::Error;
 
-//macro_rules! with_log {
-    //(
-        //$opts:expr,
-        //$routes:expr
-    //) => {
-        //if $opts.log {
-            //$routes.with(warp::log("static")) 
-        //} else {
-            //$routes 
-        //}
-    //}
-//}
-
 macro_rules! bind {
     (
         $opts:expr,
@@ -44,25 +31,8 @@ macro_rules! bind {
         let address = $opts.get_sock_addr(PortType::Infer)?;
         let use_tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
-
-        let with_server = get_with_server($opts);
-
-        // NOTE: for multi-host support we need a new version of warp :(
-        // NOTE: so that we can get the `host` filter.
-        //
-        // SEE: https://github.com/seanmonstar/warp/blob/master/src/filters/host.rs
-        // SEE: https://github.com/seanmonstar/warp/pull/676
-
-        //let hostname = $opts.get_host_port(address, PortType::Infer);
-        //let for_host = warp::host::exact("host", "localhost:8843");
-        //let serve_routes = for_host
-            //.and($routes)
-            //.with(with_server);
-            
-        let serve_routes = $routes.with(with_server);
-
         if use_tls {
-            let (addr, future) = warp::serve(serve_routes)
+            let (addr, future) = warp::serve($routes)
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
@@ -79,7 +49,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve(serve_routes).try_bind_ephemeral(address);
+            let bind_result = warp::serve($routes).try_bind_ephemeral(address);
             match bind_result {
                 Ok((addr, future)) => {
                     if let Err(e) = $bind_tx.try_send((false, addr)) {
@@ -89,6 +59,35 @@ macro_rules! bind {
                 }
                 Err(e) => return Err(Error::from(e))
             }
+        }
+    };
+}
+
+macro_rules! server {
+    (
+        $opts:expr,
+        $routes:expr,
+        $bind_tx:expr
+    ) => {
+        let with_server = get_with_server($opts);
+
+        // NOTE: for multi-host support we need a new version of warp :(
+        // NOTE: so that we can get the `host` filter.
+        //
+        // SEE: https://github.com/seanmonstar/warp/blob/master/src/filters/host.rs
+        // SEE: https://github.com/seanmonstar/warp/pull/676
+
+        //let hostname = $opts.get_host_port(address, PortType::Infer);
+        //let for_host = warp::host::exact("host", "localhost:8843");
+        //let serve_routes = for_host
+            //.and($routes)
+            //.with(with_server);
+            
+        let serve_routes = $routes.with(with_server);
+        if let Some(ref log) = $opts.log {
+            bind!($opts, serve_routes.with(warp::log(&log.prefix)), $bind_tx);
+        } else {
+            bind!($opts, serve_routes, $bind_tx);
         }
     };
 }
@@ -225,7 +224,6 @@ fn get_live_reload(
                 })
             },
         )
-        //.with(with_server.clone())
         .with(&cors);
 
     Ok(livereload.boxed())
@@ -247,9 +245,9 @@ pub async fn serve(
     let static_server = get_static_server(new_opts);
     if let Some(reload_tx) = reload_tx {
         let livereload = get_live_reload(new_opts, reload_tx)?;
-        bind!(new_opts, livereload.or(static_server), bind_tx);
+        server!(new_opts, livereload.or(static_server), bind_tx);
     } else {
-        bind!(new_opts, static_server, bind_tx);
+        server!(new_opts, static_server, bind_tx);
     }
 
     Ok(())

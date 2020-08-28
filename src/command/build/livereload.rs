@@ -48,13 +48,13 @@ pub async fn start<P: AsRef<Path>>(
 
     let opts = ServerConfig {
         target,
-        watch: Some(source.clone()),
+        //watch: Some(source.clone()),
         host: host.to_owned(),
         port: port.to_owned(),
         tls,
         endpoint: endpoint.clone(),
         redirects: redirect_uris,
-        log: true,
+        log: None,
         temporary_redirect: true,
         disable_cache: true,
         redirect_insecure: true,

@@ -1,5 +1,5 @@
 use cache::{self, CacheComponent};
-use config::server::{ServerConfig, LaunchConfig};
+use config::server::{ServerConfig, LaunchConfig, HostConfig};
 use crate::Error;
 
 static DOCS_DIR: &str = "docs";
@@ -17,20 +17,9 @@ pub async fn open() -> Result<(), Error> {
 
     target.push(DOCS_DIR);
 
-    let opts = ServerConfig {
-        target,
-        host: docs_prefs.host.clone(),
-        port: docs_prefs.port.clone(),
-        tls: None,
-        watch: None,
-        endpoint: utils::generate_id(16),
-        redirects: None,
-        log: true,
-        temporary_redirect: true,
-        disable_cache: true,
-        redirect_insecure: true,
-    };
-
+    let tls = None;
+    let host = HostConfig::new(target, docs_prefs.host.to_owned(), None);
+    let opts = ServerConfig::new_host(host, docs_prefs.port.to_owned(), tls);
     let launch = LaunchConfig { open: true };
     Ok(server::bind(opts, launch, None, None).await?)
 }
