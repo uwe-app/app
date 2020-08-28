@@ -22,19 +22,47 @@ use log::{error, trace};
 use config::server::{ServerConfig, PortType};
 use crate::Error;
 
-#[macro_export]
+//macro_rules! with_log {
+    //(
+        //$opts:expr,
+        //$routes:expr
+    //) => {
+        //if $opts.log {
+            //$routes.with(warp::log("static")) 
+        //} else {
+            //$routes 
+        //}
+    //}
+//}
+
 macro_rules! bind {
     (
-        $routes:expr,
         $opts:expr,
+        $routes:expr,
         $bind_tx:expr
     ) => {
         let address = $opts.get_sock_addr(PortType::Infer)?;
         let use_tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
 
+        let with_server = get_with_server($opts);
+
+        // NOTE: for multi-host support we need a new version of warp :(
+        // NOTE: so that we can get the `host` filter.
+        //
+        // SEE: https://github.com/seanmonstar/warp/blob/master/src/filters/host.rs
+        // SEE: https://github.com/seanmonstar/warp/pull/676
+
+        //let hostname = $opts.get_host_port(address, PortType::Infer);
+        //let for_host = warp::host::exact("host", "localhost:8843");
+        //let serve_routes = for_host
+            //.and($routes)
+            //.with(with_server);
+            
+        let serve_routes = $routes.with(with_server);
+
         if use_tls {
-            let (addr, future) = warp::serve($routes)
+            let (addr, future) = warp::serve(serve_routes)
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
@@ -51,7 +79,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve($routes).try_bind_ephemeral(address);
+            let bind_result = warp::serve(serve_routes).try_bind_ephemeral(address);
             match bind_result {
                 Ok((addr, future)) => {
                     if let Err(e) = $bind_tx.try_send((false, addr)) {
@@ -104,18 +132,23 @@ async fn redirect_trailing_slash(
     Err(warp::reject())
 }
 
-fn get_static_server(opts: &ServerConfig) -> BoxedFilter<(impl Reply,)> {
-
+fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
+    // TODO: use version in server header
     let server_id = format!("hypertext");
-    let with_server = warp::reply::with::header("server", &server_id);
+    warp::reply::with::header("server", &server_id)
+}
+
+fn get_static_server(opts: &'static ServerConfig) -> BoxedFilter<(impl Reply,)> {
+
+    let with_server = get_with_server(opts);
 
     let target = opts.target.clone();
-    let state = opts.target.clone();
+    //let state = opts.target.clone();
 
     let disable_cache = opts.disable_cache;
     let state_opts = opts.clone();
 
-    let with_state = warp::any().map(move || state.clone());
+    let with_target = warp::any().map(move || target.clone());
     let with_options = warp::any().map(move || state_opts.clone());
 
     let with_cache_control = warp::reply::with::header(
@@ -123,10 +156,8 @@ fn get_static_server(opts: &ServerConfig) -> BoxedFilter<(impl Reply,)> {
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
 
-    let dir_server = warp::fs::dir(target.clone())
-        .recover(
-            move |e| handle_rejection(e, target.clone())
-        );
+    let dir_server = warp::fs::dir(opts.target.clone())
+        .recover(move |e| handle_rejection(e, opts.target.clone()));
 
     let file_server = if disable_cache {
         dir_server
@@ -148,14 +179,12 @@ fn get_static_server(opts: &ServerConfig) -> BoxedFilter<(impl Reply,)> {
 
     let slash_redirect = warp::get()
         .and(warp::path::full())
-        .and(with_state)
+        .and(with_target)
         .and_then(redirect_trailing_slash);
 
     let static_server = redirect_handler.or(slash_redirect).or(file_server);
-
     static_server.boxed()
 }
-
 
 fn get_live_reload(
     opts: &ServerConfig,
@@ -207,19 +236,20 @@ pub async fn serve(
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: Option<broadcast::Sender<Message>>) -> crate::Result<()> {
 
-    // TODO: Include the version number from the root crate
-    // TODO: sadly, option_env!("CARGO_PKG_VERSION) references 
-    // TODO: this crate :(
-    let server_id = format!("hypertext");
-    let with_server = warp::reply::with::header("server", &server_id);
-    let use_log = opts.log;
+    // WARN: This leaks the stack `opts` onto the heap so 
+    // WARN: that we can get &'static references to the underlying
+    // WARN: data which is needed for host name matching.
+    //
+    // TODO: Make the underlying ServerConfig a static and pass a reference
+    // TODO: to the static ServerConfig.
+    let new_opts: &'static ServerConfig = Box::leak(Box::new(opts.clone()));
 
-    let static_server = get_static_server(&opts);
+    let static_server = get_static_server(new_opts);
     if let Some(reload_tx) = reload_tx {
-        let livereload = get_live_reload(&opts, reload_tx)?;
-        bind!(livereload.or(static_server), opts, bind_tx);
+        let livereload = get_live_reload(new_opts, reload_tx)?;
+        bind!(new_opts, livereload.or(static_server), bind_tx);
     } else {
-        bind!(static_server, opts, bind_tx);
+        bind!(new_opts, static_server, bind_tx);
     }
 
     Ok(())

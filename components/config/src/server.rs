@@ -143,6 +143,11 @@ impl ServerConfig {
             .next()
             .ok_or_else(|| Error::NoSocketAddress(address))?)
     }
+
+    //pub fn get_host_port(&self, address: SocketAddr, port_type: PortType) -> String {
+        //let port = self.get_port(port_type);
+        //format!("{}:{}", self.host, port)
+    //}
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
