@@ -209,7 +209,7 @@ fn get_live_reload(
     // A warp Filter to handle the livereload endpoint. This upgrades to a
     // websocket, and then waits for any filesystem change notifications, and
     // relays them over the websocket.
-    let livereload = warp::path(opts.endpoint.clone())
+    let livereload = warp::path(opts.endpoint.as_ref().unwrap().clone())
         .and(warp::ws())
         .and(sender)
         .map(

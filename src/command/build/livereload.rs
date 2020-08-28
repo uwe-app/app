@@ -16,7 +16,7 @@ use compiler::Compiler;
 use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
-use config::server::{ServerConfig, LaunchConfig, ConnectionInfo};
+use config::server::{ServerConfig, HostConfig, LaunchConfig, ConnectionInfo};
 
 use crate::{Error, ErrorCallback};
 
@@ -36,7 +36,7 @@ pub async fn start<P: AsRef<Path>>(
     let tls = ctx.options.settings.tls.clone();
 
     let source = ctx.options.source.clone();
-    let endpoint = utils::generate_id(16);
+    //let endpoint = utils::generate_id(16);
 
     // Gather redirects
     let mut redirect_uris = None;
@@ -46,20 +46,16 @@ pub async fn start<P: AsRef<Path>>(
 
     let target = ctx.options.base.clone().to_path_buf();
 
-    let opts = ServerConfig {
-        target,
-        //watch: Some(source.clone()),
-        host: host.to_owned(),
-        port: port.to_owned(),
-        tls,
-        endpoint: endpoint.clone(),
-        redirects: redirect_uris,
-        log: None,
-        temporary_redirect: true,
-        disable_cache: true,
-        redirect_insecure: true,
-    };
+    //println!("Redirects {:#?}", redirect_uris);
 
+    let host = HostConfig::new(
+        target,
+        host.to_owned(),
+        redirect_uris,
+        Some(utils::generate_id(16)));
+
+    let endpoint = host.endpoint.as_ref().unwrap().clone();
+    let opts = ServerConfig::new_host(host, port.to_owned(), tls);
     let launch = LaunchConfig { open: false };
 
     // Create a channel to receive the bind address.

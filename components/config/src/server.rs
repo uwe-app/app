@@ -72,7 +72,7 @@ pub struct ServerConfig {
     //#[serde(skip)]
     //pub watch: Option<PathBuf>,
     #[serde(skip)]
-    pub endpoint: String,
+    pub endpoint: Option<String>,
     #[serde(skip)]
     pub redirects: Option<Redirects>,
 
@@ -98,9 +98,7 @@ impl Default for ServerConfig {
             host: String::from(crate::config::HOST),
             port: crate::config::PORT,
             tls: None,
-
-            //watch: None,
-            endpoint: "".to_string(),
+            endpoint: None,
             redirects: None,
             disable_cache: false,
             redirect_insecure: false,
@@ -119,48 +117,14 @@ impl ServerConfig {
             host: host.name,
             port: port,
             tls,
-            redirects: None,
-            log: None,
-            temporary_redirect: true,
-            disable_cache: true,
-            redirect_insecure: true,
-            endpoint: utils::generate_id(16),
-        }
-    }
-
-    /// New configuration using a single host suitable for live reload.
-    pub fn new_host_live(host: HostConfig, port: u16, tls: Option<TlsConfig>, endpoint: String) -> Self {
-
-        Self {
-            target: host.directory,
-            host: host.name,
-            port: port,
-            tls,
             redirects: host.redirects,
             log: None,
             temporary_redirect: true,
             disable_cache: true,
             redirect_insecure: true,
-
-            //watch: Some(source.clone()),
-            endpoint: endpoint.clone(),
+            endpoint: host.endpoint,
         }
-
-        //Self {
-            //target: host.directory,
-            //host: host.name,
-            //port: port,
-            //tls,
-            //watch: None,
-            //endpoint: utils::generate_id(16),
-            //redirects: None,
-            //log: Some(Default::default()),
-            //temporary_redirect: true,
-            //disable_cache: true,
-            //redirect_insecure: true,
-        //}
     }
-
 
     pub fn get_port(&self, port_type: PortType) -> u16 {
         match port_type {
@@ -203,10 +167,12 @@ pub struct HostConfig {
     pub name: String,
     #[serde(skip)]
     pub redirects: Option<Redirects>,
+    #[serde(skip)]
+    pub endpoint: Option<String>,
 }
 
 impl HostConfig {
-    pub fn new(directory: PathBuf, name: String, redirects: Option<Redirects>) -> Self {
-        Self {directory, name, redirects} 
+    pub fn new(directory: PathBuf, name: String, redirects: Option<Redirects>, endpoint: Option<String>) -> Self {
+        Self {directory, name, redirects, endpoint} 
     }
 }

@@ -18,7 +18,7 @@ pub async fn open() -> Result<(), Error> {
     target.push(DOCS_DIR);
 
     let tls = None;
-    let host = HostConfig::new(target, docs_prefs.host.to_owned(), None);
+    let host = HostConfig::new(target, docs_prefs.host.to_owned(), None, None);
     let opts = ServerConfig::new_host(host, docs_prefs.port.to_owned(), tls);
     let launch = LaunchConfig { open: true };
     Ok(server::bind(opts, launch, None, None).await?)
