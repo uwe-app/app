@@ -19,7 +19,7 @@ use serde::Serialize;
 
 use log::{error, trace};
 
-use config::server::{ServerConfig, PortType};
+use config::server::{ServerConfig, HostConfig, PortType};
 use crate::Error;
 
 macro_rules! bind {
@@ -84,7 +84,7 @@ macro_rules! server {
             //.with(with_server);
             
         let serve_routes = $routes.with(with_server);
-        if let Some(ref log) = $opts.log {
+        if let Some(ref log) = $opts.default_host.log {
             bind!($opts, serve_routes.with(warp::log(&log.prefix)), $bind_tx);
         } else {
             bind!($opts, serve_routes, $bind_tx);
@@ -96,7 +96,7 @@ async fn redirect_map(
     path: FullPath,
     opts: ServerConfig,
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-    if let Some(ref redirects) = opts.redirects {
+    if let Some(ref redirects) = opts.default_host.redirects {
         if let Some(uri) = redirects.get(path.as_str()) {
             let location = uri.to_string().parse::<Uri>().unwrap();
             return if opts.temporary_redirect {
@@ -137,14 +137,14 @@ fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
     warp::reply::with::header("server", &server_id)
 }
 
-fn get_static_server(opts: &'static ServerConfig) -> BoxedFilter<(impl Reply,)> {
+fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> BoxedFilter<(impl Reply,)> {
 
     let with_server = get_with_server(opts);
 
-    let target = opts.target.clone();
+    let target = host.directory.clone();
     //let state = opts.target.clone();
 
-    let disable_cache = opts.disable_cache;
+    let disable_cache = host.disable_cache;
     let state_opts = opts.clone();
 
     let with_target = warp::any().map(move || target.clone());
@@ -155,8 +155,8 @@ fn get_static_server(opts: &'static ServerConfig) -> BoxedFilter<(impl Reply,)> 
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
 
-    let dir_server = warp::fs::dir(opts.target.clone())
-        .recover(move |e| handle_rejection(e, opts.target.clone()));
+    let dir_server = warp::fs::dir(host.directory.clone())
+        .recover(move |e| handle_rejection(e, host.directory.clone()));
 
     let file_server = if disable_cache {
         dir_server
@@ -209,7 +209,7 @@ fn get_live_reload(
     // A warp Filter to handle the livereload endpoint. This upgrades to a
     // websocket, and then waits for any filesystem change notifications, and
     // relays them over the websocket.
-    let livereload = warp::path(opts.endpoint.as_ref().unwrap().clone())
+    let livereload = warp::path(opts.default_host.endpoint.as_ref().unwrap().clone())
         .and(warp::ws())
         .and(sender)
         .map(
@@ -242,7 +242,7 @@ pub async fn serve(
     // TODO: to the static ServerConfig.
     let new_opts: &'static ServerConfig = Box::leak(Box::new(opts.clone()));
 
-    let static_server = get_static_server(new_opts);
+    let static_server = get_static_server(new_opts, &new_opts.default_host);
     if let Some(reload_tx) = reload_tx {
         let livereload = get_live_reload(new_opts, reload_tx)?;
         server!(new_opts, livereload.or(static_server), bind_tx);

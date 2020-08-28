@@ -63,47 +63,24 @@ pub struct ServerConfig {
     pub host: String,
     pub port: u16,
     pub tls: Option<TlsConfig>,
-
-    #[serde(skip)]
-    pub target: PathBuf,
-
-    //#[serde(skip)]
-    //pub open_browser: bool,
-    //#[serde(skip)]
-    //pub watch: Option<PathBuf>,
-    #[serde(skip)]
-    pub endpoint: Option<String>,
-    #[serde(skip)]
-    pub redirects: Option<Redirects>,
-
-    /// Send headers that instruct browsers to disable caching.
-    #[serde(skip)]
-    pub disable_cache: bool,
+    pub default_host: HostConfig,
     /// When running a server over SSL redirect HTTP to HTTPS.
     #[serde(skip)]
     pub redirect_insecure: bool,
-
+    /// Whether redirects should use a temporary status code.
     #[serde(skip)]
     pub temporary_redirect: bool,
-
-    #[serde(skip)]
-    pub log: Option<LogConfig>,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            target: PathBuf::from(""),
-
             host: String::from(crate::config::HOST),
             port: crate::config::PORT,
             tls: None,
-            endpoint: None,
-            redirects: None,
-            disable_cache: false,
-            redirect_insecure: false,
+            redirect_insecure: true,
             temporary_redirect: false,
-            log: None,
+            default_host: Default::default(),
         }
     }
 }
@@ -113,16 +90,12 @@ impl ServerConfig {
     /// New configuration using a single host.
     pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
         Self {
-            target: host.directory,
-            host: host.name,
+            host: String::from(crate::config::HOST),
             port: port,
             tls,
-            redirects: host.redirects,
-            log: None,
-            temporary_redirect: true,
-            disable_cache: true,
             redirect_insecure: true,
-            endpoint: host.endpoint,
+            temporary_redirect: true,
+            default_host: host,
         }
     }
 
@@ -169,10 +142,40 @@ pub struct HostConfig {
     pub redirects: Option<Redirects>,
     #[serde(skip)]
     pub endpoint: Option<String>,
+    /// Send headers that instruct browsers to disable caching.
+    #[serde(skip)]
+    pub disable_cache: bool,
+    #[serde(skip)]
+    pub log: Option<LogConfig>,
+}
+
+impl Default for HostConfig {
+    fn default() -> Self {
+        Self {
+            name: crate::config::HOST.to_string(),
+            directory: PathBuf::from(""),
+            redirects: None,
+            endpoint: None,
+            disable_cache: false,
+            log: None,
+        }
+    }
 }
 
 impl HostConfig {
-    pub fn new(directory: PathBuf, name: String, redirects: Option<Redirects>, endpoint: Option<String>) -> Self {
-        Self {directory, name, redirects, endpoint} 
+    pub fn new(
+        directory: PathBuf,
+        name: String,
+        redirects: Option<Redirects>,
+        endpoint: Option<String>) -> Self {
+
+        Self {
+            directory,
+            name,
+            redirects,
+            endpoint,
+            disable_cache: true,
+            log: None,
+        } 
     }
 }
