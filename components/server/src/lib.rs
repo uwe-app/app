@@ -1,6 +1,6 @@
 use once_cell::sync::OnceCell;
 use thiserror::Error;
-use config::server::ServerConfig;
+use config::server::{ServerConfig, ConnectionInfo};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -11,7 +11,7 @@ pub enum Error {
     Warp(#[from] warp::Error),
 
     #[error(transparent)]
-    TrySend(#[from] tokio::sync::mpsc::error::TrySendError<(bool, std::net::SocketAddr)>),
+    TrySend(#[from] tokio::sync::mpsc::error::TrySendError<ConnectionInfo>),
 }
 
 type Result<T> = std::result::Result<T, Error>;

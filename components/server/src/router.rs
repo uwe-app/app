@@ -1,12 +1,11 @@
 use std::path::PathBuf;
-use std::net::SocketAddr;
 use std::convert::Infallible;
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
 use tokio::sync::broadcast;
-use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
@@ -19,7 +18,7 @@ use serde::Serialize;
 
 use log::{error, trace};
 
-use config::server::{ServerConfig, HostConfig, PortType};
+use config::server::{ServerConfig, HostConfig, PortType, ConnectionInfo};
 use crate::Error;
 
 macro_rules! bind {
@@ -28,6 +27,7 @@ macro_rules! bind {
         $routes:expr,
         $bind_tx:expr
     ) => {
+        let host = $opts.default_host.name.clone();
         let address = $opts.get_sock_addr(PortType::Infer)?;
         let use_tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
@@ -38,7 +38,8 @@ macro_rules! bind {
                 .key_path(&$opts.tls.as_ref().unwrap().key)
                 .bind_ephemeral(address);
 
-            $bind_tx.try_send((true, addr))
+            let info = ConnectionInfo {addr, host, tls: true};
+            $bind_tx.send(info)
                 .expect("Failed to send web server socket address");
 
             if redirect_insecure {
@@ -52,9 +53,9 @@ macro_rules! bind {
             let bind_result = warp::serve($routes).try_bind_ephemeral(address);
             match bind_result {
                 Ok((addr, future)) => {
-                    if let Err(e) = $bind_tx.try_send((false, addr)) {
-                        return Err(Error::from(e));
-                    }
+                    let info = ConnectionInfo {addr, host, tls: true};
+                    $bind_tx.send(info)
+                        .expect("Failed to send web server socket address");
                     future.await;
                 }
                 Err(e) => return Err(Error::from(e))
@@ -231,7 +232,7 @@ fn get_live_reload(
 
 pub async fn serve(
     opts: &'static ServerConfig,
-    mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
+    bind_tx: oneshot::Sender<ConnectionInfo>,
     reload_tx: Option<broadcast::Sender<Message>>) -> crate::Result<()> {
 
     let static_server = get_static_server(opts, &opts.default_host);

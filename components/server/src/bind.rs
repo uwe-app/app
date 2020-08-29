@@ -1,7 +1,4 @@
-use std::net::SocketAddr;
-
 use tokio::sync::broadcast;
-use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use warp::ws::Message;
 
@@ -21,17 +18,12 @@ pub async fn bind(
     channel: Option<WebsocketSender>,
 ) -> Result<(), Error> {
 
-    // The options are passed down to the web server so 
-    // we need to clone this for use on the closure.
-    let host = options.host.clone();
-
     // Create a channel to receive the bind address.
-    let (ctx, mut crx) = mpsc::channel::<(bool, SocketAddr)>(100);
+    let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 
     let _ = tokio::task::spawn(async move {
-        let (tls, addr) = crx.recv().await.unwrap();
+        let info = crx.await.unwrap();
 
-        let info = ConnectionInfo { addr, host, tls };
         let url = info.to_url();
         info!("Serve {}", &url);
 
