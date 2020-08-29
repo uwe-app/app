@@ -17,10 +17,10 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 pub mod redirect;
-pub mod serve_static;
-mod start;
+mod router;
+mod bind;
 
-pub use start::*;
+pub use bind::*;
 
 pub fn configure(config: ServerConfig) -> &'static ServerConfig {
     static INSTANCE: OnceCell<ServerConfig> = OnceCell::new();

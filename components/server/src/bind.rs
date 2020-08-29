@@ -9,7 +9,7 @@ use log::{error, info};
 
 use crate::Error;
 use config::server::{ServerConfig, LaunchConfig, ConnectionInfo};
-use super::serve_static;
+use super::router;
 
 type WebsocketSender = broadcast::Sender<Message>;
 type BindSender = oneshot::Sender<ConnectionInfo>;
@@ -66,7 +66,7 @@ async fn bind_open(
 
     });
 
-    serve_static::serve(options, ctx, channel).await?;
+    router::serve(options, ctx, channel).await?;
 
     Ok(())
 }
