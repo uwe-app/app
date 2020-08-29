@@ -18,14 +18,6 @@ pub async fn bind(
     options: &'static ServerConfig,
     launch: LaunchConfig,
     bind: Option<BindSender>,
-    channel: Option<WebsocketSender>) -> Result<(), Error> {
-    bind_open(options, launch, bind, channel).await
-}
-
-async fn bind_open(
-    options: &'static ServerConfig,
-    launch: LaunchConfig,
-    bind: Option<BindSender>,
     channel: Option<WebsocketSender>,
 ) -> Result<(), Error> {
 
@@ -38,8 +30,6 @@ async fn bind_open(
 
     let _ = tokio::task::spawn(async move {
         let (tls, addr) = crx.recv().await.unwrap();
-        //let scheme = if tls { config::SCHEME_HTTPS } else { config::SCHEME_HTTP };
-        //let url = config::to_url_string(scheme, &host, addr.port());
 
         let info = ConnectionInfo { addr, host, tls };
         let url = info.to_url();
