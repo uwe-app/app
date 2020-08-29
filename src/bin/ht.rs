@@ -607,6 +607,12 @@ async fn main() {
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
 
+    // Must configure the version here otherwise option_env!() will 
+    // use the version from the workspace package which we don't really
+    // care about, the top-level version is the one that interests us.
+    let semver = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
+    config::app::version(Some(semver));
+
     match &root_args.cmd {
         Some(cmd) => {
             process_command(cmd).await;

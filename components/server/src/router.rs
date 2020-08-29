@@ -95,7 +95,7 @@ macro_rules! server {
 
 async fn redirect_map(
     path: FullPath,
-    opts: ServerConfig,
+    opts: &'static ServerConfig,
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if let Some(ref redirects) = opts.default_host.redirects {
         if let Some(uri) = redirects.get(path.as_str()) {
@@ -133,23 +133,20 @@ async fn redirect_trailing_slash(
 }
 
 fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
-    // TODO: use version in server header
-    let server_id = format!("hypertext");
+    let server_id = format!("hypertext/{}", config::app::version(None));
     warp::reply::with::header("server", &server_id)
 }
 
 fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> BoxedFilter<(impl Reply,)> {
 
+    // NOTE: Later we add this to all requests in the macro 
+    // NOTE: but we also need to add it here so the `else` branch
+    // NOTE: below for `disable_cache` has a type that matches the 
+    // NOTE: `if` branch. A `noop` filter would be really useful 
+    // NOTE: here but warp does not expose the functionality to create one.
     let with_server = get_with_server(opts);
 
-    let target = host.directory.clone();
-    //let state = opts.target.clone();
-
     let disable_cache = host.disable_cache;
-    let state_opts = opts.clone();
-
-    let with_target = warp::any().map(move || target.clone());
-    let with_options = warp::any().map(move || state_opts.clone());
 
     let with_cache_control = warp::reply::with::header(
         "cache-control", "no-cache, no-store, must-revalidate");
@@ -172,11 +169,13 @@ fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> 
             .boxed()
     };
 
+    let with_options = warp::any().map(move || opts);
     let redirect_handler = warp::get()
         .and(warp::path::full())
         .and(with_options)
         .and_then(redirect_map);
 
+    let with_target = warp::any().map(move || host.directory.clone());
     let slash_redirect = warp::get()
         .and(warp::path::full())
         .and(with_target)
@@ -269,7 +268,7 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
         message = "METHOD_NOT_ALLOWED";
     } else {
         // We should have expected this... Just log and say its a 500
-        eprintln!("unhandled rejection: {:?}", err);
+        //eprintln!("unhandled rejection: {:?}", err);
         code = StatusCode::INTERNAL_SERVER_ERROR;
         message = "UNHANDLED_REJECTION";
     }
