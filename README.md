@@ -24,6 +24,40 @@ release
 └── windows
 ```
 
+## Linux
+
+Ensure you have a recent version of `llvm`, I cloned the repo and built from source to get:
+
+```
+clang version 12.0.0 (https://github.com/llvm/llvm-project b904324788a8446791dbfbfd9c716644dbac283e)
+Target: x86_64-unknown-linux-gnu
+```
+
+Which gets us the faster `lld` linker by using these build commands:
+
+```
+git clone https://github.com/llvm/llvm-project llvm-project
+cd llvm-project
+mkdir build
+cd build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;lld" -DCMAKE_INSTALL_PREFIX=/usr/local ../llvm
+cmake --build .
+```
+
+Then I put the `build/bin` directory in `PATH` so that upgrading llvm is a pull and re-compile.
+
+In order to resolve the linker correctly we also need a modern version of GCC, most distros come with really old versions so it is a good idea to build [from source](https://gcc.gnu.org/install/configure.html):
+
+```
+git clone git://gcc.gnu.org/git/gcc.git
+mkdir gcc-build
+../gcc/configure --disable-multilib
+make 
+sudo make install
+```
+
+Be sure to symlink `cc` to `gcc` wherever the new installation is and prefer it in `PATH` and everything should compile ok.
+
 ## Cross-compiling
 
 I used these resources to build for OSX from Linux:

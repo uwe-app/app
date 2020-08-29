@@ -7,7 +7,6 @@ repository = "https://github.com/hypertext-live/hypertext"
 edition = "2018"
 default-run = "ht"
 
-
 [workspace]
 members = [
   "components/book",
@@ -75,6 +74,7 @@ warp = { version = "0.2.4", features = ["tls", "websocket"] }
 notify = { version = "4.0.0" }
 
 [profile.release]
+incremental = false
 lto = true
 codegen-units = 1
 opt-level = "z"
