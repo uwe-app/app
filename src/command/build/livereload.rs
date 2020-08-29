@@ -165,6 +165,9 @@ pub async fn start<P: AsRef<Path>>(
         });
     });
 
+    // Convert to &'static reference
+    let opts = server::configure(opts);
+
     // Start the webserver
     server::bind(opts, launch, Some(bind_tx), Some(reload_tx)).await?;
 

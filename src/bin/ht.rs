@@ -478,6 +478,9 @@ async fn process_command(cmd: &Command) {
             let opts = ServerConfig::new_host(host, port.to_owned(), tls);
             let launch = LaunchConfig { open: true };
 
+            // Convert to &'static reference
+            let opts = server::configure(opts);
+
             match server::bind(opts, launch, None, None).await {
                 Err(e) => fatal(Error::from(e)),
                 _ => {}

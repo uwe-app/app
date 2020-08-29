@@ -15,7 +15,7 @@ type WebsocketSender = broadcast::Sender<Message>;
 type BindSender = oneshot::Sender<ConnectionInfo>;
 
 pub async fn bind(
-    options: ServerConfig,
+    options: &'static ServerConfig,
     launch: LaunchConfig,
     bind: Option<BindSender>,
     channel: Option<WebsocketSender>) -> Result<(), Error> {
@@ -23,7 +23,7 @@ pub async fn bind(
 }
 
 async fn bind_open(
-    options: ServerConfig,
+    options: &'static ServerConfig,
     launch: LaunchConfig,
     bind: Option<BindSender>,
     channel: Option<WebsocketSender>,

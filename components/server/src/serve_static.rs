@@ -230,24 +230,16 @@ fn get_live_reload(
 }
 
 pub async fn serve(
-    opts: ServerConfig,
+    opts: &'static ServerConfig,
     mut bind_tx: mpsc::Sender<(bool, SocketAddr)>,
     reload_tx: Option<broadcast::Sender<Message>>) -> crate::Result<()> {
 
-    // WARN: This leaks the stack `opts` onto the heap so 
-    // WARN: that we can get &'static references to the underlying
-    // WARN: data which is needed for host name matching.
-    //
-    // TODO: Make the underlying ServerConfig a static and pass a reference
-    // TODO: to the static ServerConfig.
-    let new_opts: &'static ServerConfig = Box::leak(Box::new(opts.clone()));
-
-    let static_server = get_static_server(new_opts, &new_opts.default_host);
+    let static_server = get_static_server(opts, &opts.default_host);
     if let Some(reload_tx) = reload_tx {
-        let livereload = get_live_reload(new_opts, reload_tx)?;
-        server!(new_opts, livereload.or(static_server), bind_tx);
+        let livereload = get_live_reload(opts, reload_tx)?;
+        server!(opts, livereload.or(static_server), bind_tx);
     } else {
-        server!(new_opts, static_server, bind_tx);
+        server!(opts, static_server, bind_tx);
     }
 
     Ok(())

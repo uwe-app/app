@@ -21,5 +21,9 @@ pub async fn open() -> Result<(), Error> {
     let host = HostConfig::new(target, docs_prefs.host.to_owned(), None, None);
     let opts = ServerConfig::new_host(host, docs_prefs.port.to_owned(), tls);
     let launch = LaunchConfig { open: true };
+
+    // Convert to &'static reference
+    let opts = server::configure(opts);
+
     Ok(server::bind(opts, launch, None, None).await?)
 }

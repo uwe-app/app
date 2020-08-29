@@ -1,4 +1,6 @@
+use once_cell::sync::OnceCell;
 use thiserror::Error;
+use config::server::ServerConfig;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -19,3 +21,8 @@ pub mod serve_static;
 mod start;
 
 pub use start::*;
+
+pub fn configure(config: ServerConfig) -> &'static ServerConfig {
+    static INSTANCE: OnceCell<ServerConfig> = OnceCell::new();
+    INSTANCE.get_or_init(|| config)
+}
