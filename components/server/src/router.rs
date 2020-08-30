@@ -67,17 +67,17 @@ macro_rules! bind {
 
 macro_rules! server {
     (
+        $address:expr,
         $opts:expr,
         $routes:expr,
         $bind_tx:expr
     ) => {
 
-        let host: &'static HostConfig = &$opts.default_host;
-
-        let address = $opts.get_sock_addr(PortType::Infer)?;
-        let hostname = &format!("localhost:{}", address.port());
         let with_server = get_with_server($opts);
 
+        let host: &'static HostConfig = &$opts.default_host;
+
+        let hostname = &format!("localhost:{}", $address.port());
         let for_host = warp::host::exact(hostname);
         let serve_routes = for_host
             .and($routes)
@@ -85,13 +85,14 @@ macro_rules! server {
             // TODO: use a different rejection handler that returns
             // TODO: internal system error pages
             .recover(move |e| handle_rejection(e, host.directory.clone()));
-            
-        //let serve_routes = $routes.with(with_server);
 
-        if let Some(ref log) = $opts.default_host.log {
-            bind!($opts, serve_routes.with(warp::log(&log.prefix)), address, $bind_tx);
+        //let serve_routes = $routes.with(with_server);
+        //let serve_routes = with_log!(host, $routes);
+
+        if let Some(ref log) = host.log {
+            bind!($opts, serve_routes.with(warp::log(&log.prefix)), $address, $bind_tx);
         } else {
-            bind!($opts, serve_routes, address, $bind_tx);
+            bind!($opts, serve_routes, $address, $bind_tx);
         }
     };
 }
@@ -237,12 +238,14 @@ pub async fn serve(
     bind_tx: oneshot::Sender<ConnectionInfo>,
     reload_tx: Option<broadcast::Sender<Message>>) -> crate::Result<()> {
 
+    let addr = opts.get_sock_addr(PortType::Infer)?;
+
     let static_server = get_static_server(opts, &opts.default_host);
     if let Some(reload_tx) = reload_tx {
         let livereload = get_live_reload(opts, reload_tx)?;
-        server!(opts, livereload.or(static_server), bind_tx);
+        server!(addr, opts, livereload.or(static_server), bind_tx);
     } else {
-        server!(opts, static_server, bind_tx);
+        server!(addr, opts, static_server, bind_tx);
     }
 
     Ok(())
