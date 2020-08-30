@@ -144,13 +144,18 @@ macro_rules! server2 {
         let default_host: &'static HostConfig = &$opts.default_host;
         let default_host_route = fallback.or(for_host!($opts, $address, default_host, $reload_tx));
 
+        //default_host_route.foo();
+
         if !$opts.hosts.is_empty() {
             let routes = $opts.hosts.iter()
                 .map(|h| for_host!($opts, $address, h, $reload_tx))
                 .collect::<Vec<_>>();
 
+            let hosts_routes = warp::fold(routes);
+            router!($address, $opts, hosts_routes, $bind_tx);
+
             //let all_host_routes = routes.iter()
-                //.fold(default_host_route, |acc, r| acc.or(r));
+                //.fold(default_host_route, |acc, r| acc.or(*r).boxed());
             //routes.foo();
         } else {
             router!($address, $opts, default_host_route, $bind_tx);
@@ -341,15 +346,15 @@ pub async fn serve(
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
 
-    //server2!(&addr, opts, bind_tx, reload_tx);
+    server2!(&addr, opts, bind_tx, reload_tx);
 
-    let static_server = get_static_server(opts, &opts.default_host);
-    if let Some(reload_tx) = reload_tx {
-        let livereload = get_live_reload(opts, reload_tx)?;
-        server!(&addr, opts, livereload.clone().or(static_server.clone()), bind_tx);
-    } else {
-        server!(&addr, opts, static_server.clone(), bind_tx);
-    }
+    //let static_server = get_static_server(opts, &opts.default_host);
+    //if let Some(reload_tx) = reload_tx {
+        //let livereload = get_live_reload(opts, reload_tx)?;
+        //server!(&addr, opts, livereload.clone().or(static_server.clone()), bind_tx);
+    //} else {
+        //server!(&addr, opts, static_server.clone(), bind_tx);
+    //}
 
     Ok(())
 }
