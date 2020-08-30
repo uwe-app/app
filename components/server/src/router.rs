@@ -140,23 +140,18 @@ macro_rules! server2 {
         $bind_tx:expr,
         $reload_tx:expr
     ) => {
-        let fallback = get_fallback(&$address);
+        //let fallback = get_fallback(&$address);
         let default_host: &'static HostConfig = &$opts.default_host;
-        let default_host_route = fallback.or(for_host!($opts, $address, default_host, $reload_tx));
-
-        //default_host_route.foo();
+        let default_host_route = for_host!($opts, $address, default_host, $reload_tx);
 
         if !$opts.hosts.is_empty() {
-            let routes = $opts.hosts.iter()
+            let mut routes = vec![default_host_route];
+            let mut host_routes = $opts.hosts.iter()
                 .map(|h| for_host!($opts, $address, h, $reload_tx))
                 .collect::<Vec<_>>();
-
-            let hosts_routes = warp::fold(routes);
+            routes.append(&mut host_routes);
+            let hosts_routes = warp::fold(routes).unwrap();
             router!($address, $opts, hosts_routes, $bind_tx);
-
-            //let all_host_routes = routes.iter()
-                //.fold(default_host_route, |acc, r| acc.or(*r).boxed());
-            //routes.foo();
         } else {
             router!($address, $opts, default_host_route, $bind_tx);
         }

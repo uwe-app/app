@@ -55,8 +55,16 @@ pub async fn start<P: AsRef<Path>>(
         Some(utils::generate_id(16)));
 
     let endpoint = host.endpoint.as_ref().unwrap().clone();
-    let opts = ServerConfig::new_host(host, port.to_owned(), tls);
+    let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
     let launch = LaunchConfig { open: false };
+
+    //use std::path::PathBuf;
+    //let mock = HostConfig::new(
+        //PathBuf::from("/home/muji/git/hypertext/blog/build/debug"),
+        //"testhost1".to_string(),
+        //None,
+        //Some(utils::generate_id(16)));
+    //opts.hosts.push(mock);
 
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
