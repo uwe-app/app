@@ -25,10 +25,11 @@ macro_rules! bind {
     (
         $opts:expr,
         $routes:expr,
+        $addr:expr,
         $bind_tx:expr
     ) => {
+
         let host = $opts.default_host.name.clone();
-        let address = $opts.get_sock_addr(PortType::Infer)?;
         let use_tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
         if use_tls {
@@ -36,7 +37,7 @@ macro_rules! bind {
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
-                .bind_ephemeral(address);
+                .bind_ephemeral($addr);
 
             let info = ConnectionInfo {addr, host, tls: true};
             $bind_tx.send(info)
@@ -50,7 +51,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve($routes).try_bind_ephemeral(address);
+            let bind_result = warp::serve($routes).try_bind_ephemeral($addr);
             match bind_result {
                 Ok((addr, future)) => {
                     let info = ConnectionInfo {addr, host, tls: true};
@@ -70,25 +71,27 @@ macro_rules! server {
         $routes:expr,
         $bind_tx:expr
     ) => {
+
+        let host: &'static HostConfig = &$opts.default_host;
+
+        let address = $opts.get_sock_addr(PortType::Infer)?;
+        let hostname = &format!("localhost:{}", address.port());
         let with_server = get_with_server($opts);
 
-        // NOTE: for multi-host support we need a new version of warp :(
-        // NOTE: so that we can get the `host` filter.
-        //
-        // SEE: https://github.com/seanmonstar/warp/blob/master/src/filters/host.rs
-        // SEE: https://github.com/seanmonstar/warp/pull/676
-
-        //let hostname = $opts.get_host_port(address, PortType::Infer);
-        //let for_host = warp::host::exact("host", "localhost:8843");
-        //let serve_routes = for_host
-            //.and($routes)
-            //.with(with_server);
+        let for_host = warp::host::exact(hostname);
+        let serve_routes = for_host
+            .and($routes)
+            .with(with_server)
+            // TODO: use a different rejection handler that returns
+            // TODO: internal system error pages
+            .recover(move |e| handle_rejection(e, host.directory.clone()));
             
-        let serve_routes = $routes.with(with_server);
+        //let serve_routes = $routes.with(with_server);
+
         if let Some(ref log) = $opts.default_host.log {
-            bind!($opts, serve_routes.with(warp::log(&log.prefix)), $bind_tx);
+            bind!($opts, serve_routes.with(warp::log(&log.prefix)), address, $bind_tx);
         } else {
-            bind!($opts, serve_routes, $bind_tx);
+            bind!($opts, serve_routes, address, $bind_tx);
         }
     };
 }
