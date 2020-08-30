@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::convert::Infallible;
 
@@ -37,7 +38,7 @@ macro_rules! bind {
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
-                .bind_ephemeral($addr);
+                .bind_ephemeral(*$addr);
 
             let info = ConnectionInfo {addr, host, tls: true};
             $bind_tx.send(info)
@@ -51,7 +52,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve($routes).try_bind_ephemeral($addr);
+            let bind_result = warp::serve($routes).try_bind_ephemeral(*$addr);
             match bind_result {
                 Ok((addr, future)) => {
                     let info = ConnectionInfo {addr, host, tls: true};
@@ -65,6 +66,98 @@ macro_rules! bind {
     };
 }
 
+fn for_host(
+    address: &SocketAddr,
+    host: &'static HostConfig) -> impl Filter<Extract = (), Error = Rejection> + Clone {
+    let hostname = &format!("{}:{}", host.name, address.port());
+    warp::host::exact(hostname)
+}
+
+
+fn get_fallback(
+    address: &SocketAddr) -> BoxedFilter<(impl Reply,)> {
+    let hostname = &format!("{}", address.to_string());
+    warp::host::exact(hostname)
+        .map(|| "Fallback")
+        .boxed()
+}
+
+macro_rules! router {
+    (
+        $address:expr,
+        $opts:expr,
+        $routes:expr,
+        $bind_tx:expr
+    ) => {
+        let default_host: &'static HostConfig = &$opts.default_host;
+        let with_server = get_with_server($opts);
+        let all = $routes.with(with_server)
+            // TODO: use a different rejection handler that returns
+            // TODO: internal system error pages
+            .recover(move |e| handle_rejection(e, default_host.directory.clone()));
+
+        if let Some(ref log) = default_host.log {
+            bind!($opts, all.with(warp::log(&log.prefix)), $address, $bind_tx);
+        } else {
+            bind!($opts, all, $address, $bind_tx);
+        }
+    };
+}
+
+macro_rules! for_host {
+    (
+        $opts:expr,
+        $address:expr,
+        $host:expr,
+        $reload_tx:expr
+    ) => {
+        {
+            let static_server = get_static_server($opts, $host);
+            let hostname = &format!("{}:{}", $host.name, $address.port());
+            let reload_tx = if let Some(reload_tx) = $reload_tx.clone() {
+                reload_tx 
+            } else {
+                let (ws_tx, _) = broadcast::channel::<Message>(0);
+                ws_tx
+            };
+            let livereload = get_live_reload($opts, reload_tx).unwrap();
+
+            // NOTE: We would like to conditionally add the livereload route
+            // NOTE: but spent so much time trying to fight the warp type 
+            // NOTE: system to achieve it and failing it is much easier 
+            // NOTE: to just make it a noop. :(
+            warp::host::exact(hostname)
+                .and(livereload.or(static_server))
+                .boxed()
+        }
+    }
+}
+
+macro_rules! server2 {
+    (
+        $address:expr,
+        $opts:expr,
+        $bind_tx:expr,
+        $reload_tx:expr
+    ) => {
+        let fallback = get_fallback(&$address);
+        let default_host: &'static HostConfig = &$opts.default_host;
+        let default_host_route = fallback.or(for_host!($opts, $address, default_host, $reload_tx));
+
+        if !$opts.hosts.is_empty() {
+            let routes = $opts.hosts.iter()
+                .map(|h| for_host!($opts, $address, h, $reload_tx))
+                .collect::<Vec<_>>();
+
+            //let all_host_routes = routes.iter()
+                //.fold(default_host_route, |acc, r| acc.or(r));
+            //routes.foo();
+        } else {
+            router!($address, $opts, default_host_route, $bind_tx);
+        }
+    }
+}
+
 macro_rules! server {
     (
         $address:expr,
@@ -73,27 +166,34 @@ macro_rules! server {
         $bind_tx:expr
     ) => {
 
-        let with_server = get_with_server($opts);
+        //let never = warp::path("never-match-this-thin").map(|| "Ooops").and($routes);
 
-        let host: &'static HostConfig = &$opts.default_host;
+        let fallback = get_fallback(&$address);
+        let default_host: &'static HostConfig = &$opts.default_host;
+        let default_host_route = fallback.or(
+            for_host(&$address, default_host).and($routes));
 
-        let hostname = &format!("localhost:{}", $address.port());
-        let for_host = warp::host::exact(hostname);
-        let serve_routes = for_host
-            .and($routes)
-            .with(with_server)
-            // TODO: use a different rejection handler that returns
-            // TODO: internal system error pages
-            .recover(move |e| handle_rejection(e, host.directory.clone()));
-
-        //let serve_routes = $routes.with(with_server);
-        //let serve_routes = with_log!(host, $routes);
-
-        if let Some(ref log) = host.log {
-            bind!($opts, serve_routes.with(warp::log(&log.prefix)), $address, $bind_tx);
+        if !$opts.hosts.is_empty() {
+            let routes = $opts.hosts.iter()
+                .map(|h| for_host(&$address, default_host).and($routes))
+                .collect::<Vec<_>>();
+            //let all_host_routes = routes.iter()
+                //.fold(default_host_route, |acc, r| acc.or(*r));
+            //routes.foo();
         } else {
-            bind!($opts, serve_routes, $address, $bind_tx);
+            router!($address, $opts, default_host_route, $bind_tx);
         }
+
+        //let all = hosts_routes.with(with_server)
+            //// TODO: use a different rejection handler that returns
+            //// TODO: internal system error pages
+            //.recover(move |e| handle_rejection(e, default_host.directory.clone()));
+
+        //if let Some(ref log) = default_host.log {
+            //bind!($opts, all.with(warp::log(&log.prefix)), $address, $bind_tx);
+        //} else {
+            //bind!($opts, all, $address, $bind_tx);
+        //}
     };
 }
 
@@ -196,7 +296,7 @@ fn get_live_reload(
     let use_tls = opts.tls.is_some();
 
     let address = opts.get_sock_addr(PortType::Infer)?;
-    let port = address.clone().port();
+    let port = address.port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
         let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
@@ -236,16 +336,19 @@ fn get_live_reload(
 pub async fn serve(
     opts: &'static ServerConfig,
     bind_tx: oneshot::Sender<ConnectionInfo>,
-    reload_tx: Option<broadcast::Sender<Message>>) -> crate::Result<()> {
+    reload_tx: Option<broadcast::Sender<Message>>
+) -> crate::Result<()> {
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
+
+    //server2!(&addr, opts, bind_tx, reload_tx);
 
     let static_server = get_static_server(opts, &opts.default_host);
     if let Some(reload_tx) = reload_tx {
         let livereload = get_live_reload(opts, reload_tx)?;
-        server!(addr, opts, livereload.or(static_server), bind_tx);
+        server!(&addr, opts, livereload.clone().or(static_server.clone()), bind_tx);
     } else {
-        server!(addr, opts, static_server, bind_tx);
+        server!(&addr, opts, static_server.clone(), bind_tx);
     }
 
     Ok(())

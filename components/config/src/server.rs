@@ -64,6 +64,8 @@ pub struct ServerConfig {
     pub port: u16,
     pub tls: Option<TlsConfig>,
     pub default_host: HostConfig,
+    pub hosts: Vec<HostConfig>,
+
     /// When running a server over SSL redirect HTTP to HTTPS.
     #[serde(skip)]
     pub redirect_insecure: bool,
@@ -81,6 +83,7 @@ impl Default for ServerConfig {
             redirect_insecure: true,
             temporary_redirect: false,
             default_host: Default::default(),
+            hosts: vec![],
         }
     }
 }
@@ -96,6 +99,7 @@ impl ServerConfig {
             redirect_insecure: true,
             temporary_redirect: true,
             default_host: host,
+            hosts: vec![],
         }
     }
 
