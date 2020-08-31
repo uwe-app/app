@@ -29,10 +29,9 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 
-    let mut spaces: Vec<Config> = Vec::new();
-    workspace::find(&options.project, true, &mut spaces)?;
-    for mut space in spaces.iter_mut() {
-        build_publish(&options, &mut space).await?;
+    let mut spaces = workspace::find(&options.project, true)?.flatten();
+    for space in spaces.iter_mut() {
+        build_publish(&options, space).await?;
     }
     Ok(())
 }

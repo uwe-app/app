@@ -27,12 +27,12 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
-    let mut spaces: Vec<Config> = Vec::new();
-    finder::find(project, true, &mut spaces)?;
+    let mut spaces = finder::find(project, true)?.flatten();
 
     let mut ctx = Default::default();
-    for mut config in spaces.iter_mut() {
-        ctx = compile(&mut config, args).await?;
+    for config in spaces.iter_mut() {
+        let mut copy = args.clone();
+        ctx = compile(config, &mut copy).await?;
     }
 
     Ok(ctx)

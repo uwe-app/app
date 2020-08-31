@@ -36,6 +36,7 @@ fn to_options(
     let project = cfg.get_project();
 
     let source = get_profile_source(cfg, args);
+
     let release = args.is_release();
 
     let mut target = args.target.clone();
@@ -84,6 +85,7 @@ fn to_options(
         return Err(Error::NotDirectory(source.clone()));
     }
 
+    // TODO: always use a layout?
     if args.should_use_layout() {
         if let Some(ref layout) = args.layout {
             let location = source.clone().join(layout);
@@ -128,7 +130,6 @@ fn to_options(
         locales: Default::default(),
     };
 
-    //println!("Got settings {:#?}", args);
     debug!("{:?}", &cfg);
 
     Ok(opts)
@@ -136,7 +137,7 @@ fn to_options(
 
 fn get_profile_source(cfg: &Config, args: &ProfileSettings) -> PathBuf {
     let base_dir = cfg.get_project();
-    base_dir.join(&args.source)
+    base_dir.join(&args.source.clone())
 }
 
 fn to_profile(args: &ProfileSettings) -> ProfileName {

@@ -1,28 +1,57 @@
 use std::path::Path;
 
 use config::Config;
-
 use crate::{Error, Result};
 
-pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool, spaces: &mut Vec<Config>) -> Result<()> {
-    let project = dir.as_ref();
-    let cfg = Config::load(&project, walk_ancestors)?;
+#[derive(Debug)]
+pub enum ProjectEntry {
+    One(Config),
+    Many(Vec<Config>),
+}
 
-    if let Some(ref workspaces) = &cfg.workspace {
-        for space in &workspaces.members {
+#[derive(Debug, Default)]
+pub struct Workspace {
+    pub projects: Vec<ProjectEntry>,
+}
+
+impl Workspace {
+    pub fn flatten(self) -> Vec<Config> {
+        let configs: Vec<Config> = Vec::new();
+        self.projects.into_iter().fold(configs, |mut acc, p| {
+            match p {
+                ProjectEntry::One(c) => acc.push(c),
+                ProjectEntry::Many(mut list) => acc.append(&mut list),
+            }
+            acc
+        })
+    }
+}
+
+pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
+    let mut workspace: Workspace = Default::default();
+    let cfg = Config::load(dir.as_ref(), walk_ancestors)?;
+
+    if let Some(ref projects) = &cfg.workspace {
+        let mut members: Vec<Config> = Vec::new();
+        for space in &projects.members {
             let mut root = cfg.get_project();
             root.push(space);
             if !root.exists() || !root.is_dir() {
                 return Err(Error::NotDirectory(root));
             }
 
-            // Recursive so that workspaces can reference
-            // other workspaces if they need to
-            find(root, false, spaces)?;
+            let cfg = Config::load(&root, false)?;
+            if cfg.workspace.is_some() {
+                return Err(Error::NoNestedWorkspace(root))
+            }
+
+            members.push(cfg);
         }
+
+        workspace.projects.push(ProjectEntry::Many(members));
     } else {
-        spaces.push(cfg);
+        workspace.projects.push(ProjectEntry::One(cfg));
     }
 
-    Ok(())
+    Ok(workspace)
 }

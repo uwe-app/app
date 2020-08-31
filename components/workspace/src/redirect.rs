@@ -1,7 +1,5 @@
 use std::path::Path;
 
-use utils;
-
 pub fn write<P: AsRef<Path>>(location: &str, target: P) -> std::io::Result<()> {
     let mut content = String::from("<!doctype html>");
     let body = format!(

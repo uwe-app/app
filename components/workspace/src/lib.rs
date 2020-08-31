@@ -10,6 +10,9 @@ pub enum Error {
     #[error("The path filter {0} does not exist")]
     NoFilter(PathBuf),
 
+    #[error("Project workspaces may not be nested")]
+    NoNestedWorkspace(PathBuf),
+
     #[error("Build tag may not be an absolute path {0}")]
     ProfileNameAbsolute(String),
 

@@ -17,7 +17,7 @@ pub async fn open() -> Result<(), Error> {
 
     let target = target.join(DOCS_DIR);
 
-    println!("Docs target is {:#?}", target);
+    //println!("Docs target is {:#?}", target);
 
     let tls = None;
     let host = HostConfig::new(target, docs_prefs.host.to_owned(), None, None);
