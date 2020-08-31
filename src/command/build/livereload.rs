@@ -20,6 +20,8 @@ use config::server::{ServerConfig, HostConfig, LaunchConfig, ConnectionInfo};
 
 use crate::{Error, ErrorCallback};
 
+use server::{Channels, HostChannel};
+
 use super::invalidator::Invalidator;
 
 pub async fn start<P: AsRef<Path>>(
@@ -47,6 +49,7 @@ pub async fn start<P: AsRef<Path>>(
     let target = ctx.options.base.clone().to_path_buf();
 
     //println!("Redirects {:#?}", redirect_uris);
+    //
 
     let host = HostConfig::new(
         target,
@@ -54,23 +57,25 @@ pub async fn start<P: AsRef<Path>>(
         redirect_uris,
         Some(utils::generate_id(16)));
 
+    // Create a channel to receive the bind address.
+    let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
+    let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+    let reload_tx = ws_tx.clone();
+    let mut channels: Channels = Default::default();
+    let host_channel = HostChannel {reload: Some(reload_tx)};
+    channels.hosts.entry(host.name.to_string()).or_insert(host_channel);
+
     let endpoint = host.endpoint.as_ref().unwrap().clone();
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
     let launch = LaunchConfig { open: false };
 
-    //use std::path::PathBuf;
-    //let mock = HostConfig::new(
-        //PathBuf::from("/home/muji/git/hypertext/blog/build/debug"),
-        //"testhost1".to_string(),
-        //None,
-        //Some(utils::generate_id(16)));
-    //opts.hosts.push(mock);
-
-    // Create a channel to receive the bind address.
-    let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
-    let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-
-    let reload_tx = ws_tx.clone();
+    use std::path::PathBuf;
+    let mock = HostConfig::new(
+        PathBuf::from("/home/muji/git/hypertext/blog/build/debug"),
+        "testhost1".to_string(),
+        None,
+        Some(utils::generate_id(16)));
+    opts.hosts.push(mock);
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
@@ -177,7 +182,7 @@ pub async fn start<P: AsRef<Path>>(
     let opts = server::configure(opts);
 
     // Start the webserver
-    server::bind(opts, launch, Some(bind_tx), Some(reload_tx)).await?;
+    server::bind(opts, launch, Some(bind_tx), &channels).await?;
 
     Ok(())
 }

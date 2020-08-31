@@ -25,5 +25,6 @@ pub async fn open() -> Result<(), Error> {
     // Convert to &'static reference
     let opts = server::configure(opts);
 
-    Ok(server::bind(opts, launch, None, None).await?)
+    let channels = Default::default();
+    Ok(server::bind(opts, launch, None, &channels).await?)
 }

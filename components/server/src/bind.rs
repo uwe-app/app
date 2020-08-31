@@ -1,21 +1,16 @@
-use tokio::sync::broadcast;
 use tokio::sync::oneshot;
-use warp::ws::Message;
 
 use log::{error, info};
 
 use crate::Error;
 use config::server::{ServerConfig, LaunchConfig, ConnectionInfo};
-use super::router;
-
-type WebsocketSender = broadcast::Sender<Message>;
-type BindSender = oneshot::Sender<ConnectionInfo>;
+use super::{router, BindSender, Channels};
 
 pub async fn bind(
     options: &'static ServerConfig,
     launch: LaunchConfig,
     bind: Option<BindSender>,
-    channel: Option<WebsocketSender>,
+    channels: &Channels,
 ) -> Result<(), Error> {
 
     // Create a channel to receive the bind address.
@@ -48,7 +43,7 @@ pub async fn bind(
 
     });
 
-    router::serve(options, ctx, channel).await?;
+    router::serve(options, ctx, channels).await?;
 
     Ok(())
 }

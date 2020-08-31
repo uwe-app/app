@@ -480,8 +480,8 @@ async fn process_command(cmd: &Command) {
 
             // Convert to &'static reference
             let opts = server::configure(opts);
-
-            match server::bind(opts, launch, None, None).await {
+            let channels = Default::default();
+            match server::bind(opts, launch, None, &channels).await {
                 Err(e) => fatal(Error::from(e)),
                 _ => {}
             }

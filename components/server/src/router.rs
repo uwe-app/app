@@ -20,7 +20,56 @@ use serde::Serialize;
 use log::{error, trace};
 
 use config::server::{ServerConfig, HostConfig, PortType, ConnectionInfo};
-use crate::Error;
+use crate::{Error, Channels};
+
+macro_rules! server {
+    (
+        $address:expr,
+        $opts:expr,
+        $bind_tx:expr,
+        $channels:expr
+    ) => {
+        //let fallback = get_fallback(&$address);
+        let default_host: &'static HostConfig = &$opts.default_host;
+        let default_host_route = get_host_filter(
+            $address, $opts, default_host, $channels);
+
+        if !$opts.hosts.is_empty() {
+            let mut routes = vec![default_host_route];
+            let mut host_routes = $opts.hosts.iter()
+                .map(|h| get_host_filter($address, $opts, h, $channels))
+                .collect::<Vec<_>>();
+            routes.append(&mut host_routes);
+            let hosts_routes = warp::fold(routes).unwrap();
+            router!($address, $opts, hosts_routes, $bind_tx);
+        } else {
+            router!($address, $opts, default_host_route, $bind_tx);
+        }
+    }
+}
+
+macro_rules! router {
+    (
+        $address:expr,
+        $opts:expr,
+        $routes:expr,
+        $bind_tx:expr
+    ) => {
+        let default_host: &'static HostConfig = &$opts.default_host;
+        let with_server = get_with_server($opts);
+        let all = $routes.with(with_server)
+            // TODO: use a different rejection handler that returns
+            // TODO: internal system error pages
+            .recover(move |e| handle_rejection(e, default_host.directory.clone()));
+
+        // TODO: get log enabled from server config
+        if let Some(ref log) = default_host.log {
+            bind!($opts, all.with(warp::log(&log.prefix)), $address, $bind_tx);
+        } else {
+            bind!($opts, all, $address, $bind_tx);
+        }
+    };
+}
 
 macro_rules! bind {
     (
@@ -66,136 +115,37 @@ macro_rules! bind {
     };
 }
 
-fn for_host(
+// TODO: fallback derived from IP address
+//fn get_fallback(
+    //address: &SocketAddr) -> BoxedFilter<(impl Reply,)> {
+    //let hostname = &format!("{}", address.to_string());
+    //warp::host::exact(hostname)
+        //.map(|| "Fallback")
+        //.boxed()
+//}
+
+fn get_host_filter(
     address: &SocketAddr,
-    host: &'static HostConfig) -> impl Filter<Extract = (), Error = Rejection> + Clone {
+    opts: &'static ServerConfig,
+    host: &'static HostConfig,
+    channels: &Channels,
+    ) -> BoxedFilter<(impl Reply,)> {
+
+    let static_server = get_static_server(opts, host);
     let hostname = &format!("{}:{}", host.name, address.port());
-    warp::host::exact(hostname)
-}
 
+    let reload_tx = channels.get_host_reload(&host.name);
+    let livereload = get_live_reload(opts, reload_tx).unwrap();
 
-fn get_fallback(
-    address: &SocketAddr) -> BoxedFilter<(impl Reply,)> {
-    let hostname = &format!("{}", address.to_string());
+    // NOTE: We would like to conditionally add the livereload route
+    // NOTE: but spent so much time trying to fight the warp type 
+    // NOTE: system to achieve it and failing it is much easier 
+    // NOTE: to just make it a noop. :(
     warp::host::exact(hostname)
-        .map(|| "Fallback")
+        .and(livereload.or(static_server))
         .boxed()
 }
 
-macro_rules! router {
-    (
-        $address:expr,
-        $opts:expr,
-        $routes:expr,
-        $bind_tx:expr
-    ) => {
-        let default_host: &'static HostConfig = &$opts.default_host;
-        let with_server = get_with_server($opts);
-        let all = $routes.with(with_server)
-            // TODO: use a different rejection handler that returns
-            // TODO: internal system error pages
-            .recover(move |e| handle_rejection(e, default_host.directory.clone()));
-
-        if let Some(ref log) = default_host.log {
-            bind!($opts, all.with(warp::log(&log.prefix)), $address, $bind_tx);
-        } else {
-            bind!($opts, all, $address, $bind_tx);
-        }
-    };
-}
-
-macro_rules! for_host {
-    (
-        $opts:expr,
-        $address:expr,
-        $host:expr,
-        $reload_tx:expr
-    ) => {
-        {
-            let static_server = get_static_server($opts, $host);
-            let hostname = &format!("{}:{}", $host.name, $address.port());
-            let reload_tx = if let Some(reload_tx) = $reload_tx.clone() {
-                reload_tx 
-            } else {
-                let (ws_tx, _) = broadcast::channel::<Message>(0);
-                ws_tx
-            };
-            let livereload = get_live_reload($opts, reload_tx).unwrap();
-
-            // NOTE: We would like to conditionally add the livereload route
-            // NOTE: but spent so much time trying to fight the warp type 
-            // NOTE: system to achieve it and failing it is much easier 
-            // NOTE: to just make it a noop. :(
-            warp::host::exact(hostname)
-                .and(livereload.or(static_server))
-                .boxed()
-        }
-    }
-}
-
-macro_rules! server2 {
-    (
-        $address:expr,
-        $opts:expr,
-        $bind_tx:expr,
-        $reload_tx:expr
-    ) => {
-        //let fallback = get_fallback(&$address);
-        let default_host: &'static HostConfig = &$opts.default_host;
-        let default_host_route = for_host!($opts, $address, default_host, $reload_tx);
-
-        if !$opts.hosts.is_empty() {
-            let mut routes = vec![default_host_route];
-            let mut host_routes = $opts.hosts.iter()
-                .map(|h| for_host!($opts, $address, h, $reload_tx))
-                .collect::<Vec<_>>();
-            routes.append(&mut host_routes);
-            let hosts_routes = warp::fold(routes).unwrap();
-            router!($address, $opts, hosts_routes, $bind_tx);
-        } else {
-            router!($address, $opts, default_host_route, $bind_tx);
-        }
-    }
-}
-
-macro_rules! server {
-    (
-        $address:expr,
-        $opts:expr,
-        $routes:expr,
-        $bind_tx:expr
-    ) => {
-
-        //let never = warp::path("never-match-this-thin").map(|| "Ooops").and($routes);
-
-        let fallback = get_fallback(&$address);
-        let default_host: &'static HostConfig = &$opts.default_host;
-        let default_host_route = fallback.or(
-            for_host(&$address, default_host).and($routes));
-
-        if !$opts.hosts.is_empty() {
-            let routes = $opts.hosts.iter()
-                .map(|h| for_host(&$address, default_host).and($routes))
-                .collect::<Vec<_>>();
-            //let all_host_routes = routes.iter()
-                //.fold(default_host_route, |acc, r| acc.or(*r));
-            //routes.foo();
-        } else {
-            router!($address, $opts, default_host_route, $bind_tx);
-        }
-
-        //let all = hosts_routes.with(with_server)
-            //// TODO: use a different rejection handler that returns
-            //// TODO: internal system error pages
-            //.recover(move |e| handle_rejection(e, default_host.directory.clone()));
-
-        //if let Some(ref log) = default_host.log {
-            //bind!($opts, all.with(warp::log(&log.prefix)), $address, $bind_tx);
-        //} else {
-            //bind!($opts, all, $address, $bind_tx);
-        //}
-    };
-}
 
 async fn redirect_map(
     path: FullPath,
@@ -336,20 +286,11 @@ fn get_live_reload(
 pub async fn serve(
     opts: &'static ServerConfig,
     bind_tx: oneshot::Sender<ConnectionInfo>,
-    reload_tx: Option<broadcast::Sender<Message>>
+    channels: &Channels
 ) -> crate::Result<()> {
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
-
-    server2!(&addr, opts, bind_tx, reload_tx);
-
-    //let static_server = get_static_server(opts, &opts.default_host);
-    //if let Some(reload_tx) = reload_tx {
-        //let livereload = get_live_reload(opts, reload_tx)?;
-        //server!(&addr, opts, livereload.clone().or(static_server.clone()), bind_tx);
-    //} else {
-        //server!(&addr, opts, static_server.clone(), bind_tx);
-    //}
+    server!(&addr, opts, bind_tx, channels);
 
     Ok(())
 }
@@ -397,3 +338,4 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
     response = warp::reply::html(message.to_string());
     Ok(warp::reply::with_status(response, code))
 }
+
