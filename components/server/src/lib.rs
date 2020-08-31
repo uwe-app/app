@@ -24,11 +24,11 @@ type WebsocketSender = broadcast::Sender<Message>;
 type BindSender = oneshot::Sender<ConnectionInfo>;
 type Result<T> = std::result::Result<T, Error>;
 
+mod launch;
 pub mod redirect;
 mod router;
-mod bind;
 
-pub use bind::*;
+pub use launch::*;
 
 /// Encapsulates the communication channels for a virtual host.
 #[derive(Debug)]
@@ -40,10 +40,15 @@ pub struct HostChannel {
 /// Maps the virtual host communication channels by host name.
 #[derive(Debug, Default)]
 pub struct Channels {
+    pub bind: Option<BindSender>,
     pub hosts: HashMap<String, HostChannel>,
 }
 
 impl Channels {
+    pub fn new(bind: BindSender) -> Self {
+        Self {bind: Some(bind), hosts: HashMap::new()}
+    }
+
     pub fn get_host_reload(&self, name: &str) -> WebsocketSender {
         if let Some(channel) = self.hosts.get(name) {
             if let Some(ref reload) = channel.reload {

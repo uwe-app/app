@@ -16,7 +16,7 @@ use compiler::Compiler;
 use compiler::parser::Parser;
 use compiler::redirect;
 use config::ProfileSettings;
-use config::server::{ServerConfig, HostConfig, LaunchConfig, ConnectionInfo};
+use config::server::{ServerConfig, HostConfig, ConnectionInfo};
 
 use crate::{Error, ErrorCallback};
 
@@ -61,13 +61,12 @@ pub async fn start<P: AsRef<Path>>(
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
     let (ws_tx, _rx) = broadcast::channel::<Message>(100);
     let reload_tx = ws_tx.clone();
-    let mut channels: Channels = Default::default();
+    let mut channels = Channels::new(bind_tx);
     let host_channel = HostChannel {reload: Some(reload_tx)};
     channels.hosts.entry(host.name.to_string()).or_insert(host_channel);
 
     let endpoint = host.endpoint.as_ref().unwrap().clone();
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
-    let launch = LaunchConfig { open: false };
 
     use std::path::PathBuf;
     let mock = HostConfig::new(
@@ -85,6 +84,7 @@ pub async fn start<P: AsRef<Path>>(
             // Get the socket address and websocket transmission channel
             let info = bind_rx.await.unwrap();
             let url = info.to_url();
+            info!("Serve {}", &url);
 
             let ws_url = info.to_websocket_url(&endpoint);
 
@@ -182,7 +182,7 @@ pub async fn start<P: AsRef<Path>>(
     let opts = server::configure(opts);
 
     // Start the webserver
-    server::bind(opts, launch, Some(bind_tx), &channels).await?;
+    server::start(opts, &mut channels).await?;
 
     Ok(())
 }

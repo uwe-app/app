@@ -17,6 +17,8 @@ pub async fn open() -> Result<(), Error> {
 
     let target = target.join(DOCS_DIR);
 
+    println!("Docs target is {:#?}", target);
+
     let tls = None;
     let host = HostConfig::new(target, docs_prefs.host.to_owned(), None, None);
     let opts = ServerConfig::new_host(host, docs_prefs.port.to_owned(), tls);
@@ -24,7 +26,6 @@ pub async fn open() -> Result<(), Error> {
 
     // Convert to &'static reference
     let opts = server::configure(opts);
-
-    let channels = Default::default();
-    Ok(server::bind(opts, launch, None, &channels).await?)
+    let mut channels = Default::default();
+    Ok(server::launch(opts, launch, &mut channels).await?)
 }

@@ -6,7 +6,6 @@ use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
 use tokio::sync::broadcast;
-use tokio::sync::oneshot;
 
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
@@ -26,7 +25,6 @@ macro_rules! server {
     (
         $address:expr,
         $opts:expr,
-        $bind_tx:expr,
         $channels:expr
     ) => {
         //let fallback = get_fallback(&$address);
@@ -41,9 +39,9 @@ macro_rules! server {
                 .collect::<Vec<_>>();
             routes.append(&mut host_routes);
             let hosts_routes = warp::fold(routes).unwrap();
-            router!($address, $opts, hosts_routes, $bind_tx);
+            router!($address, $opts, hosts_routes, $channels);
         } else {
-            router!($address, $opts, default_host_route, $bind_tx);
+            router!($address, $opts, default_host_route, $channels);
         }
     }
 }
@@ -53,7 +51,7 @@ macro_rules! router {
         $address:expr,
         $opts:expr,
         $routes:expr,
-        $bind_tx:expr
+        $channels:expr
     ) => {
         let default_host: &'static HostConfig = &$opts.default_host;
         let with_server = get_with_server($opts);
@@ -64,9 +62,9 @@ macro_rules! router {
 
         // TODO: get log enabled from server config
         if let Some(ref log) = default_host.log {
-            bind!($opts, all.with(warp::log(&log.prefix)), $address, $bind_tx);
+            bind!($opts, all.with(warp::log(&log.prefix)), $address, $channels);
         } else {
-            bind!($opts, all, $address, $bind_tx);
+            bind!($opts, all, $address, $channels);
         }
     };
 }
@@ -76,7 +74,7 @@ macro_rules! bind {
         $opts:expr,
         $routes:expr,
         $addr:expr,
-        $bind_tx:expr
+        $channels:expr
     ) => {
 
         let host = $opts.default_host.name.clone();
@@ -89,9 +87,11 @@ macro_rules! bind {
                 .key_path(&$opts.tls.as_ref().unwrap().key)
                 .bind_ephemeral(*$addr);
 
-            let info = ConnectionInfo {addr, host, tls: true};
-            $bind_tx.send(info)
-                .expect("Failed to send web server socket address");
+            if let Some(bind) = $channels.bind.take() {
+                let info = ConnectionInfo {addr, host, tls: true};
+                bind.send(info)
+                    .expect("Failed to send web server socket address");
+            }
 
             if redirect_insecure {
                 super::redirect::spawn($opts.clone()).unwrap_or_else(|_| {
@@ -104,9 +104,15 @@ macro_rules! bind {
             let bind_result = warp::serve($routes).try_bind_ephemeral(*$addr);
             match bind_result {
                 Ok((addr, future)) => {
-                    let info = ConnectionInfo {addr, host, tls: true};
-                    $bind_tx.send(info)
-                        .expect("Failed to send web server socket address");
+                    if let Some(bind) = $channels.bind.take() {
+                        let info = ConnectionInfo {addr, host, tls: true};
+                        bind.send(info)
+                            .expect("Failed to send web server socket address");
+                    }
+
+                    //let info = ConnectionInfo {addr, host, tls: true};
+                    //$bind_tx.send(info)
+                        //.expect("Failed to send web server socket address");
                     future.await;
                 }
                 Err(e) => return Err(Error::from(e))
@@ -128,14 +134,12 @@ fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
-    channels: &Channels,
+    channels: &mut Channels,
     ) -> BoxedFilter<(impl Reply,)> {
 
     let static_server = get_static_server(opts, host);
     let hostname = &format!("{}:{}", host.name, address.port());
-
-    let reload_tx = channels.get_host_reload(&host.name);
-    let livereload = get_live_reload(opts, reload_tx).unwrap();
+    let livereload = get_live_reload(opts, host, channels).unwrap();
 
     // NOTE: We would like to conditionally add the livereload route
     // NOTE: but spent so much time trying to fight the warp type 
@@ -144,6 +148,59 @@ fn get_host_filter(
     warp::host::exact(hostname)
         .and(livereload.or(static_server))
         .boxed()
+}
+
+fn get_live_reload(
+    opts: &ServerConfig,
+    host: &'static HostConfig,
+    channels: &mut Channels) -> crate::Result<BoxedFilter<(impl Reply,)>> {
+
+    let reload_tx = channels.get_host_reload(&host.name);
+
+    let use_tls = opts.tls.is_some();
+
+    let address = opts.get_sock_addr(PortType::Infer)?;
+    let port = address.port();
+    let mut cors = warp::cors().allow_any_origin();
+    if port > 0 {
+        let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
+        let origin = format!("{}//{}:{}", scheme, opts.host, port);
+        cors = warp::cors()
+            .allow_origin(origin.as_str())
+            .allow_methods(vec!["GET"]);
+    }
+
+    // A warp Filter which captures `reload_tx` and provides an `rx` copy to
+    // receive reload messages.
+    let sender = warp::any().map(move || reload_tx.subscribe());
+
+    let endpoint = if let Some(ref endpoint) = host.endpoint {
+        endpoint.clone() 
+    } else {
+        utils::generate_id(16)
+    };
+
+    // A warp Filter to handle the livereload endpoint. This upgrades to a
+    // websocket, and then waits for any filesystem change notifications, and
+    // relays them over the websocket.
+    let livereload = warp::path(endpoint)
+        .and(warp::ws())
+        .and(sender)
+        .map(
+            move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
+                ws.on_upgrade(move |ws| async move {
+                    let (mut user_ws_tx, _user_ws_rx) = ws.split();
+                    trace!("Websocket got connection");
+                    while let Ok(m) = rx.recv().await {
+                        let _res = user_ws_tx.send(m).await;
+                        //println!("Websocket res {:?}", res);
+                    }
+                })
+            },
+        )
+        .with(&cors);
+
+    Ok(livereload.boxed())
 }
 
 
@@ -239,58 +296,13 @@ fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> 
     static_server.boxed()
 }
 
-fn get_live_reload(
-    opts: &ServerConfig,
-    reload_tx: broadcast::Sender<Message>) -> crate::Result<BoxedFilter<(impl Reply,)>> {
-
-    let use_tls = opts.tls.is_some();
-
-    let address = opts.get_sock_addr(PortType::Infer)?;
-    let port = address.port();
-    let mut cors = warp::cors().allow_any_origin();
-    if port > 0 {
-        let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
-        let origin = format!("{}//{}:{}", scheme, opts.host, port);
-        cors = warp::cors()
-            .allow_origin(origin.as_str())
-            .allow_methods(vec!["GET"]);
-    }
-
-    // A warp Filter which captures `reload_tx` and provides an `rx` copy to
-    // receive reload messages.
-    let sender = warp::any().map(move || reload_tx.subscribe());
-
-    // A warp Filter to handle the livereload endpoint. This upgrades to a
-    // websocket, and then waits for any filesystem change notifications, and
-    // relays them over the websocket.
-    let livereload = warp::path(opts.default_host.endpoint.as_ref().unwrap().clone())
-        .and(warp::ws())
-        .and(sender)
-        .map(
-            move |ws: warp::ws::Ws, mut rx: broadcast::Receiver<Message>| {
-                ws.on_upgrade(move |ws| async move {
-                    let (mut user_ws_tx, _user_ws_rx) = ws.split();
-                    trace!("Websocket got connection");
-                    while let Ok(m) = rx.recv().await {
-                        let _res = user_ws_tx.send(m).await;
-                        //println!("Websocket res {:?}", res);
-                    }
-                })
-            },
-        )
-        .with(&cors);
-
-    Ok(livereload.boxed())
-}
-
 pub async fn serve(
     opts: &'static ServerConfig,
-    bind_tx: oneshot::Sender<ConnectionInfo>,
-    channels: &Channels
+    channels: &mut Channels
 ) -> crate::Result<()> {
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
-    server!(&addr, opts, bind_tx, channels);
+    server!(&addr, opts, channels);
 
     Ok(())
 }

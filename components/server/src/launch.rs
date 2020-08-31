@@ -1,20 +1,21 @@
 use tokio::sync::oneshot;
 
-use log::{error, info};
+use log::info;
 
 use crate::Error;
 use config::server::{ServerConfig, LaunchConfig, ConnectionInfo};
-use super::{router, BindSender, Channels};
+use super::{router, Channels};
 
-pub async fn bind(
+/// Start a server and launch a browser window.
+pub async fn launch(
     options: &'static ServerConfig,
     launch: LaunchConfig,
-    bind: Option<BindSender>,
-    channels: &Channels,
+    channels: &mut Channels,
 ) -> Result<(), Error> {
 
     // Create a channel to receive the bind address.
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
+    channels.bind = Some(ctx);
 
     let _ = tokio::task::spawn(async move {
         let info = crx.await.unwrap();
@@ -33,17 +34,15 @@ pub async fn bind(
             // It is ok if this errors we just don't open a browser window
             open::that(&url).map(|_| ()).unwrap_or(());
         }
-
-        if let Some(bind) = bind {
-            if let Err(_) = bind.send(info) {
-                error!("Failed to notify of server bind event");
-                std::process::exit(1);
-            }
-        }
-
     });
 
-    router::serve(options, ctx, channels).await?;
+    Ok(start(options, channels).await?)
+}
 
-    Ok(())
+/// Start a server.
+pub async fn start(
+    options: &'static ServerConfig,
+    channels: &mut Channels,
+) -> Result<(), Error> {
+    Ok(router::serve(options, channels).await?)
 }
