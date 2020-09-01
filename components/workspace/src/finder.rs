@@ -9,12 +9,26 @@ pub enum ProjectEntry {
     Many(Vec<Config>),
 }
 
+#[derive(Debug)]
+pub struct Entry {
+    pub config: Config,
+}
+
 #[derive(Debug, Default)]
 pub struct Workspace {
     pub projects: Vec<ProjectEntry>,
+
+    // Iterator entry index
+    entry_index: usize,
+    many_index: Option<usize>,
 }
 
 impl Workspace {
+
+    pub fn is_empty(&self) -> bool {
+        self.projects.is_empty() 
+    }
+
     pub fn has_multiple_projects(&self) -> bool {
         if self.projects.len() > 1 { return true };
         if self.projects.len() == 1 {
@@ -25,24 +39,49 @@ impl Workspace {
         };
         false
     }
-}
 
-impl IntoIterator for Workspace {
-    type Item = Config;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
+    pub fn flatten(&mut self) -> impl IntoIterator<Item = &Config> {
         self.projects
-            .into_iter()
+            .iter()
             .map(|e| {
                 match e {
                     ProjectEntry::One(c) => vec![c],
-                    ProjectEntry::Many(c) => c,
+                    ProjectEntry::Many(c) => c.iter().collect(),
                 } 
             })
             .flatten()
-            .collect::<Vec<Config>>()
+            .collect::<Vec<&Config>>()
             .into_iter()
+    }
+}
+
+impl Iterator for Workspace {
+    type Item = Entry;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(entry) = self.projects.get(self.entry_index) {
+            match entry {
+                ProjectEntry::One(config) => {
+                    self.entry_index += 1;
+                    return Some(Entry{config: config.clone()})
+                }
+                ProjectEntry::Many(config_list) => {
+                    let many_index = self.many_index.unwrap_or(0);
+                    if many_index >= config_list.len() {
+                        self.entry_index += 1;
+                        self.many_index = None
+                    } else {
+                        self.many_index = Some(many_index);
+                        *self.many_index.as_mut().unwrap() += 1;
+                    }
+                    if let Some(config) = config_list.get(many_index) {
+                        return Some(Entry{config: config.clone()})
+                    }
+                },
+            }
+        }
+        self.entry_index = 0;
+        self.many_index = None;
+        None
     }
 }
 

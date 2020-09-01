@@ -29,8 +29,8 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     defer! { let _ = lock::release(lock_file); }
 
     let spaces = workspace::find(&options.project, true)?;
-    for mut space in spaces.into_iter() {
-        build_publish(&options, &mut space).await?;
+    for mut entry in spaces.into_iter() {
+        build_publish(&options, &mut entry.config).await?;
     }
     Ok(())
 }

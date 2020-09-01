@@ -30,9 +30,9 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
 
     let spaces = finder::find(project, true)?;
     let mut ctx = Default::default();
-    for mut config in spaces.into_iter() {
+    for mut entry in spaces {
         let mut copy = args.clone();
-        ctx = compile(&mut config, &mut copy).await?;
+        ctx = compile(&mut entry.config, &mut copy).await?;
     }
 
     Ok(ctx)
