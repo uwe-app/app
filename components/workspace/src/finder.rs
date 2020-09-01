@@ -53,9 +53,13 @@ impl Workspace {
             .collect::<Vec<&Config>>()
             .into_iter()
     }
+
+    pub fn iter(&mut self) -> impl Iterator<Item = Entry> + '_ {
+        self 
+    }
 }
 
-impl Iterator for Workspace {
+impl<'a> Iterator for &'a mut Workspace {
     type Item = Entry;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(entry) = self.projects.get(self.entry_index) {
@@ -71,7 +75,8 @@ impl Iterator for Workspace {
                         self.many_index = None
                     } else {
                         self.many_index = Some(many_index);
-                        *self.many_index.as_mut().unwrap() += 1;
+                        let mi = self.many_index.as_mut().unwrap();
+                        *mi += 1;
                     }
                     if let Some(config) = config_list.get(many_index) {
                         return Some(Entry{config: config.clone()})
@@ -84,6 +89,36 @@ impl Iterator for Workspace {
         None
     }
 }
+
+//impl Iterator for Workspace {
+    //type Item = Entry;
+    //fn next(&mut self) -> Option<Self::Item> {
+        //if let Some(entry) = self.projects.get(self.entry_index) {
+            //match entry {
+                //ProjectEntry::One(config) => {
+                    //self.entry_index += 1;
+                    //return Some(Entry{config: config.clone()})
+                //}
+                //ProjectEntry::Many(config_list) => {
+                    //let many_index = self.many_index.unwrap_or(0);
+                    //if many_index >= config_list.len() {
+                        //self.entry_index += 1;
+                        //self.many_index = None
+                    //} else {
+                        //self.many_index = Some(many_index);
+                        //*self.many_index.as_mut().unwrap() += 1;
+                    //}
+                    //if let Some(config) = config_list.get(many_index) {
+                        //return Some(Entry{config: config.clone()})
+                    //}
+                //},
+            //}
+        //}
+        //self.entry_index = 0;
+        //self.many_index = None;
+        //None
+    //}
+//}
 
 pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();

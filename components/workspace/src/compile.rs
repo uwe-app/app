@@ -28,9 +28,9 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     args: &mut ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
 
-    let spaces = finder::find(project, true)?;
+    let mut spaces = finder::find(project, true)?;
     let mut ctx = Default::default();
-    for mut entry in spaces {
+    for mut entry in spaces.iter() {
         let mut copy = args.clone();
         ctx = compile(&mut entry.config, &mut copy).await?;
     }
