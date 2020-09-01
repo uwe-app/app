@@ -1,6 +1,8 @@
 use std::path::Path;
 
 use config::{Config, ProfileSettings, RuntimeOptions};
+use locale::Locales;
+
 use crate::{Error, Result};
 
 #[derive(Debug)]
@@ -14,19 +16,30 @@ pub struct Entry {
     pub config: Config,
 }
 
-#[derive(Debug)]
-pub struct RenderEntry<'a> {
-    pub config: &'a Config,
-    pub options: RuntimeOptions,
-}
-
 impl Entry {
-    pub fn map(&self, args: &ProfileSettings) -> Result<RenderEntry> {
-        let options = super::project::prepare(&self.config, args)?;
-        Ok(RenderEntry {
+    pub fn map_options(&self, args: &ProfileSettings) -> Result<EntryOptions> {
+        let options = crate::options::prepare(&self.config, args)?;
+        Ok(EntryOptions {
             config: &self.config,
+            locales: Default::default(),
             options,
         })
+    }
+}
+
+#[derive(Debug)]
+pub struct EntryOptions<'a> {
+    pub config: &'a Config,
+    pub options: RuntimeOptions,
+    pub locales: Locales,
+}
+
+impl<'a> EntryOptions<'a> {
+    pub fn load_locales(&mut self) -> Result<()> {
+        self.locales.load(self.config, &self.options)?;
+        let locale_map = self.locales.get_locale_map(&self.config.lang)?;
+        self.options.locales = locale_map;
+        Ok(())
     }
 }
 
@@ -79,9 +92,10 @@ impl Workspace {
             .collect::<Vec<&mut Entry>>()
             .into_iter()
     }
+
 }
 
-pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
+pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();
     let config = Config::load(dir.as_ref(), walk_ancestors)?;
 

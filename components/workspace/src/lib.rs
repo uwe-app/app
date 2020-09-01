@@ -59,8 +59,8 @@ type Result<T> = std::result::Result<T, Error>;
 mod compile;
 mod finder;
 pub mod lock;
-pub mod project;
+mod options;
 
 pub use compile::compile;
 pub use compile::compile_project;
-pub use finder::find;
+pub use finder::load;

@@ -20,7 +20,6 @@ use collator::loader;
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use crate::finder;
 use crate::{Error, Result};
 
 pub async fn compile_project<'a, P: AsRef<Path>>(
@@ -28,10 +27,17 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     args: &ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
 
-    let mut spaces = finder::find(project, true)?;
+    let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
+    //for entry in spaces.iter_mut() {
+        //ctx = compile(&mut entry.config, args).await?;
+    //}
+
     for entry in spaces.iter_mut() {
-        ctx = compile(&mut entry.config, args).await?;
+        let state = entry
+            .map_options(args)?
+            .load_locales()?;
+        //ctx = compile(&mut entry.config, args).await?;
     }
 
     Ok(ctx)
@@ -43,7 +49,7 @@ pub async fn compile(
 ) -> Result<(BuildContext, Locales)> {
 
     // Finalize the runtime options
-    let mut opts = super::project::prepare(config, args)?;
+    let mut opts = crate::options::prepare(config, args)?;
 
     let write_redirects =
         opts.settings.write_redirects.is_some() && opts.settings.write_redirects.unwrap();

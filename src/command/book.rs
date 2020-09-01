@@ -18,7 +18,7 @@ pub fn add(options: BookOptions) -> Result<()> {
         return Err(Error::BookCreatePath);
     }
 
-    let mut spaces = workspace::find(&options.project, true)?;
+    let mut spaces = workspace::load(&options.project, true)?;
     if spaces.has_multiple_projects() {
         return Err(Error::BookCreateWorkspace);
     }
@@ -36,7 +36,7 @@ pub fn add(options: BookOptions) -> Result<()> {
 }
 
 pub fn list(options: BookOptions) -> Result<()> {
-    let mut spaces = workspace::find(&options.project, true)?;
+    let mut spaces = workspace::load(&options.project, true)?;
     for entry in spaces.iter() {
         book::list(&entry.config)?;
     }
@@ -44,7 +44,7 @@ pub fn list(options: BookOptions) -> Result<()> {
 }
 
 pub fn build(options: BookOptions) -> Result<()> {
-    let mut spaces = workspace::find(&options.project, true)?;
+    let mut spaces = workspace::load(&options.project, true)?;
     for entry in spaces.iter() {
         // TODO: support release flag!
         book::build(&entry.config, options.target.clone(), false)?;
