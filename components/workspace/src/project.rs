@@ -192,11 +192,13 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     }
 }
 
-pub(crate) fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
+pub(crate) fn prepare(cfg: &Config, args: &ProfileSettings) -> Result<RuntimeOptions> {
     let name = to_profile(args);
 
     // Inherit the profile settings from the root
     let mut root = cfg.build.as_ref().unwrap().clone();
+
+    let mut input = args.clone();
 
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
@@ -209,11 +211,11 @@ pub(crate) fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<Runtim
             return Err(Error::NoProfileInProfile);
         }
 
-        from_cli(&mut root, args);
+        from_cli(&mut root, &mut input);
         to_options(name, cfg, &mut root)
     } else {
-        root.append(args);
-        from_cli(&mut root, args);
+        root.append(&mut input);
+        from_cli(&mut root, &mut input);
         to_options(name, cfg, &mut root)
     }
 }

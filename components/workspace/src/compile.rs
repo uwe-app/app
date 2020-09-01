@@ -25,15 +25,13 @@ use crate::{Error, Result};
 
 pub async fn compile_project<'a, P: AsRef<Path>>(
     project: P,
-    args: &mut ProfileSettings,
+    args: &ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
 
     let mut spaces = finder::find(project, true)?;
     let mut ctx = Default::default();
     for entry in spaces.iter_mut() {
-        //entry.foo();
-        let mut copy = args.clone();
-        ctx = compile(&mut entry.config, &mut copy).await?;
+        ctx = compile(&mut entry.config, args).await?;
     }
 
     Ok(ctx)
@@ -41,7 +39,7 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
 
 pub async fn compile(
     config: &mut Config,
-    args: &mut ProfileSettings,
+    args: &ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
 
     // Finalize the runtime options

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use config::Config;
+use config::{Config, ProfileSettings, RuntimeOptions};
 use crate::{Error, Result};
 
 #[derive(Debug)]
@@ -12,6 +12,22 @@ pub enum ProjectEntry {
 #[derive(Debug)]
 pub struct Entry {
     pub config: Config,
+}
+
+#[derive(Debug)]
+pub struct RenderEntry<'a> {
+    pub config: &'a Config,
+    pub options: RuntimeOptions,
+}
+
+impl Entry {
+    pub fn map(&self, args: &ProfileSettings) -> Result<RenderEntry> {
+        let options = super::project::prepare(&self.config, args)?;
+        Ok(RenderEntry {
+            config: &self.config,
+            options,
+        })
+    }
 }
 
 #[derive(Debug, Default)]
