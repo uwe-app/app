@@ -5,8 +5,8 @@ use crate::{Error, Result};
 
 #[derive(Debug)]
 pub enum ProjectEntry {
-    One(Config),
-    Many(Vec<Config>),
+    One(Entry),
+    Many(Vec<Entry>),
 }
 
 #[derive(Debug)]
@@ -17,10 +17,6 @@ pub struct Entry {
 #[derive(Debug, Default)]
 pub struct Workspace {
     pub projects: Vec<ProjectEntry>,
-
-    // Iterator entry index
-    entry_index: usize,
-    many_index: Option<usize>,
 }
 
 impl Workspace {
@@ -40,7 +36,7 @@ impl Workspace {
         false
     }
 
-    pub fn flatten(&mut self) -> impl IntoIterator<Item = &Config> {
+    pub fn iter(&mut self) -> impl Iterator<Item = &Entry> {
         self.projects
             .iter()
             .map(|e| {
@@ -50,100 +46,49 @@ impl Workspace {
                 } 
             })
             .flatten()
-            .collect::<Vec<&Config>>()
+            .collect::<Vec<&Entry>>()
             .into_iter()
     }
 
-    pub fn iter(&mut self) -> impl Iterator<Item = Entry> + '_ {
-        self 
+    pub fn iter_mut(&mut self) -> impl IntoIterator<Item = &mut Entry> {
+        self.projects
+            .iter_mut()
+            .map(|e| {
+                match e {
+                    ProjectEntry::One(c) => vec![c],
+                    ProjectEntry::Many(c) => c.iter_mut().collect(),
+                } 
+            })
+            .flatten()
+            .collect::<Vec<&mut Entry>>()
+            .into_iter()
     }
 }
-
-impl<'a> Iterator for &'a mut Workspace {
-    type Item = Entry;
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(entry) = self.projects.get(self.entry_index) {
-            match entry {
-                ProjectEntry::One(config) => {
-                    self.entry_index += 1;
-                    return Some(Entry{config: config.clone()})
-                }
-                ProjectEntry::Many(config_list) => {
-                    let many_index = self.many_index.unwrap_or(0);
-                    if many_index >= config_list.len() {
-                        self.entry_index += 1;
-                        self.many_index = None
-                    } else {
-                        self.many_index = Some(many_index);
-                        let mi = self.many_index.as_mut().unwrap();
-                        *mi += 1;
-                    }
-                    if let Some(config) = config_list.get(many_index) {
-                        return Some(Entry{config: config.clone()})
-                    }
-                },
-            }
-        }
-        self.entry_index = 0;
-        self.many_index = None;
-        None
-    }
-}
-
-//impl Iterator for Workspace {
-    //type Item = Entry;
-    //fn next(&mut self) -> Option<Self::Item> {
-        //if let Some(entry) = self.projects.get(self.entry_index) {
-            //match entry {
-                //ProjectEntry::One(config) => {
-                    //self.entry_index += 1;
-                    //return Some(Entry{config: config.clone()})
-                //}
-                //ProjectEntry::Many(config_list) => {
-                    //let many_index = self.many_index.unwrap_or(0);
-                    //if many_index >= config_list.len() {
-                        //self.entry_index += 1;
-                        //self.many_index = None
-                    //} else {
-                        //self.many_index = Some(many_index);
-                        //*self.many_index.as_mut().unwrap() += 1;
-                    //}
-                    //if let Some(config) = config_list.get(many_index) {
-                        //return Some(Entry{config: config.clone()})
-                    //}
-                //},
-            //}
-        //}
-        //self.entry_index = 0;
-        //self.many_index = None;
-        //None
-    //}
-//}
 
 pub fn find<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();
-    let cfg = Config::load(dir.as_ref(), walk_ancestors)?;
+    let config = Config::load(dir.as_ref(), walk_ancestors)?;
 
-    if let Some(ref projects) = &cfg.workspace {
-        let mut members: Vec<Config> = Vec::new();
+    if let Some(ref projects) = &config.workspace {
+        let mut members: Vec<Entry> = Vec::new();
         for space in &projects.members {
-            let mut root = cfg.get_project();
+            let mut root = config.get_project();
             root.push(space);
             if !root.exists() || !root.is_dir() {
                 return Err(Error::NotDirectory(root));
             }
 
-            let cfg = Config::load(&root, false)?;
-            if cfg.workspace.is_some() {
+            let config = Config::load(&root, false)?;
+            if config.workspace.is_some() {
                 return Err(Error::NoNestedWorkspace(root))
             }
 
-            members.push(cfg);
+            members.push(Entry { config });
         }
 
         workspace.projects.push(ProjectEntry::Many(members));
     } else {
-        workspace.projects.push(ProjectEntry::One(cfg));
+        workspace.projects.push(ProjectEntry::One(Entry{ config }));
     }
 
     Ok(workspace)

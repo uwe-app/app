@@ -23,7 +23,7 @@ pub fn add(options: BookOptions) -> Result<()> {
         return Err(Error::BookCreateWorkspace);
     }
 
-    let entry = spaces.into_iter().take(1).next();
+    let entry = spaces.iter().take(1).next();
 
     book::add(
         &entry.as_ref().unwrap().config,
@@ -37,7 +37,7 @@ pub fn add(options: BookOptions) -> Result<()> {
 
 pub fn list(options: BookOptions) -> Result<()> {
     let mut spaces = workspace::find(&options.project, true)?;
-    for entry in spaces.into_iter() {
+    for entry in spaces.iter() {
         book::list(&entry.config)?;
     }
     Ok(())
@@ -45,7 +45,7 @@ pub fn list(options: BookOptions) -> Result<()> {
 
 pub fn build(options: BookOptions) -> Result<()> {
     let mut spaces = workspace::find(&options.project, true)?;
-    for entry in spaces.into_iter() {
+    for entry in spaces.iter() {
         // TODO: support release flag!
         book::build(&entry.config, options.target.clone(), false)?;
     }
