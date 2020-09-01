@@ -15,15 +15,34 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn flatten(self) -> Vec<Config> {
-        let configs: Vec<Config> = Vec::new();
-        self.projects.into_iter().fold(configs, |mut acc, p| {
-            match p {
-                ProjectEntry::One(c) => acc.push(c),
-                ProjectEntry::Many(mut list) => acc.append(&mut list),
+    pub fn has_multiple_projects(&self) -> bool {
+        if self.projects.len() > 1 { return true };
+        if self.projects.len() == 1 {
+            return match self.projects.first().unwrap() {
+                ProjectEntry::Many(_) => true, 
+                ProjectEntry::One(_) => false, 
             }
-            acc
-        })
+        };
+        false
+    }
+}
+
+impl IntoIterator for Workspace {
+    type Item = Config;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.projects
+            .into_iter()
+            .map(|e| {
+                match e {
+                    ProjectEntry::One(c) => vec![c],
+                    ProjectEntry::Many(c) => c,
+                } 
+            })
+            .flatten()
+            .collect::<Vec<Config>>()
+            .into_iter()
     }
 }
 

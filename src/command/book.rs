@@ -18,13 +18,13 @@ pub fn add(options: BookOptions) -> Result<()> {
         return Err(Error::BookCreatePath);
     }
 
-    let spaces = workspace::find(&options.project, true)?.flatten();
-    if spaces.len() != 1 {
+    let spaces = workspace::find(&options.project, true)?;
+    if spaces.has_multiple_projects() {
         return Err(Error::BookCreateWorkspace);
     }
 
     book::add(
-        &spaces[0],
+        spaces.into_iter().take(1).next().as_ref().unwrap(),
         options.path.unwrap(),
         options.title,
         options.authors,
@@ -34,16 +34,16 @@ pub fn add(options: BookOptions) -> Result<()> {
 }
 
 pub fn list(options: BookOptions) -> Result<()> {
-    let spaces = workspace::find(&options.project, true)?.flatten();
-    for config in spaces {
+    let spaces = workspace::find(&options.project, true)?;
+    for config in spaces.into_iter() {
         book::list(&config)?;
     }
     Ok(())
 }
 
 pub fn build(options: BookOptions) -> Result<()> {
-    let spaces = workspace::find(&options.project, true)?.flatten();
-    for config in spaces {
+    let spaces = workspace::find(&options.project, true)?;
+    for config in spaces.into_iter() {
         // TODO: support release flag!
         book::build(&config, options.target.clone(), false)?;
     }

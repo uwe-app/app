@@ -192,7 +192,7 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     }
 }
 
-pub fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
+pub(crate) fn prepare(cfg: &Config, args: &mut ProfileSettings) -> Result<RuntimeOptions> {
     let name = to_profile(args);
 
     // Inherit the profile settings from the root

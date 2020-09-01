@@ -27,12 +27,12 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
-    let mut spaces = finder::find(project, true)?.flatten();
 
+    let spaces = finder::find(project, true)?;
     let mut ctx = Default::default();
-    for config in spaces.iter_mut() {
+    for mut config in spaces.into_iter() {
         let mut copy = args.clone();
-        ctx = compile(config, &mut copy).await?;
+        ctx = compile(&mut config, &mut copy).await?;
     }
 
     Ok(ctx)

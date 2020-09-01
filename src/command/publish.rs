@@ -9,7 +9,6 @@ use config::{Config, ProfileSettings};
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
-use workspace;
 use workspace::lock;
 use scopeguard::defer;
 
@@ -29,9 +28,9 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 
-    let mut spaces = workspace::find(&options.project, true)?.flatten();
-    for space in spaces.iter_mut() {
-        build_publish(&options, space).await?;
+    let spaces = workspace::find(&options.project, true)?;
+    for mut space in spaces.into_iter() {
+        build_publish(&options, &mut space).await?;
     }
     Ok(())
 }
