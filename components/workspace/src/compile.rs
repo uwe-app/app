@@ -9,7 +9,7 @@ use cache::CacheComponent;
 use compiler::redirect;
 use compiler::parser::Parser;
 use compiler::{BuildContext, Compiler, ParseData};
-use config::{Config, ProfileSettings, RuntimeOptions, LocaleMap};
+use config::{Config, ProfileSettings, RuntimeOptions};
 use config::sitemap::{SiteMapIndex, SiteMapFile, SiteMapEntry};
 use datasource::synthetic;
 use datasource::DataSourceMap;
@@ -29,16 +29,15 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
 
     let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
-    //for entry in spaces.iter_mut() {
-        //ctx = compile(&mut entry.config, args).await?;
-    //}
-
     for entry in spaces.iter_mut() {
-        let state = entry
-            .map_options(args)?
-            .load_locales()?;
-        //ctx = compile(&mut entry.config, args).await?;
+        ctx = compile(&mut entry.config, args).await?;
     }
+
+    //for entry in spaces.iter_mut() {
+        //let state = entry
+            //.map_options(args)?
+            //.load_locales()?;
+    //}
 
     Ok(ctx)
 }
@@ -80,12 +79,11 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
     let locale_map = locales.get_locale_map(&config.lang)?;
-
     opts.locales = locale_map.clone();
 
     fetch_cache_lazy(config, &opts)?;
 
-    let (collation, datasource) = collate(config, opts, &locale_map).await?;
+    let (collation, datasource) = collate(config, opts).await?;
     let mut ctx = BuildContext::new(
         config.clone(), opts.clone(), datasource, collation);
 
@@ -128,7 +126,6 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
 async fn collate(
     config: &mut Config,
     options: &RuntimeOptions,
-    locales: &LocaleMap,
 ) -> Result<(CollateInfo, DataSourceMap)> {
 
     // FIXME: remove this test and flag, to do with mixing
@@ -164,7 +161,7 @@ async fn collate(
     }
 
     // Find and transform localized pages
-    collator::localize(config, options, locales, &mut collation).await?;
+    collator::localize(config, options, &options.locales, &mut collation).await?;
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
