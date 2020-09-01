@@ -17,10 +17,10 @@ pub struct Entry {
 }
 
 impl Entry {
-    pub fn map_options(&self, args: &ProfileSettings) -> Result<EntryOptions> {
+    pub fn map_options(self, args: &ProfileSettings) -> Result<EntryOptions> {
         let options = crate::options::prepare(&self.config, args)?;
         Ok(EntryOptions {
-            config: &self.config,
+            config: self.config,
             locales: Default::default(),
             options,
         })
@@ -28,15 +28,15 @@ impl Entry {
 }
 
 #[derive(Debug)]
-pub struct EntryOptions<'a> {
-    pub config: &'a Config,
+pub struct EntryOptions {
+    pub config: Config,
     pub options: RuntimeOptions,
     pub locales: Locales,
 }
 
-impl<'a> EntryOptions<'a> {
+impl EntryOptions {
     pub fn load_locales(&mut self) -> Result<()> {
-        self.locales.load(self.config, &self.options)?;
+        self.locales.load(&self.config, &self.options)?;
         let locale_map = self.locales.get_locale_map(&self.config.lang)?;
         self.options.locales = locale_map;
         Ok(())
