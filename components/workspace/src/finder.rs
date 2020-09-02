@@ -6,7 +6,6 @@ use log::info;
 use url::Url;
 
 use cache::CacheComponent;
-use compiler::redirect;
 use compiler::{BuildContext};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
@@ -17,8 +16,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{Error, Result};
-use crate::render::Render;
+use crate::{Error, Result, redirect, render::Render};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();

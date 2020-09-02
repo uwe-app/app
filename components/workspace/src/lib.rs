@@ -31,8 +31,23 @@ pub enum Error {
     #[error("Profiles may not define a build profile, please remove it")]
     NoProfileInProfile,
 
+    #[error("Redirect file {0} already exists")]
+    RedirectFileExists(PathBuf),
+
+    #[error("Too many redirects, limit is {0}")]
+    TooManyRedirects(usize),
+
+    #[error("Cyclic redirect: {stack} <-> {key}")]
+    CyclicRedirect { stack: String, key: String },
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
+    InvalidUri(#[from] http::uri::InvalidUri),
 
     #[error(transparent)]
     Json(#[from] serde_json::error::Error),
@@ -64,6 +79,7 @@ mod finder;
 pub mod lock;
 mod options;
 mod render;
+pub mod redirect;
 
 pub use compile::compile;
 pub use compile::compile_project;

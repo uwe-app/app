@@ -7,7 +7,6 @@ use log::info;
 use url::Url;
 
 use cache::CacheComponent;
-use compiler::redirect;
 use compiler::parser::Parser;
 use compiler::{BuildContext, Compiler, ParseData};
 use config::{Config, ProfileSettings, RuntimeOptions};
@@ -21,7 +20,7 @@ use collator::loader;
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use crate::{Error, Result};
+use crate::{Error, Result, redirect};
 
 pub async fn compile_project<'a, P: AsRef<Path>>(
     project: P,
@@ -42,6 +41,7 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
         state.fetch_lazy().await?;
 
         state.collate().await?;
+
         state.map_redirects().await?;
         state.map_search().await?;
         state.map_feed().await?;
@@ -83,7 +83,7 @@ pub async fn compile(
 
     if let Ok((ref mut ctx, _)) = res {
         if write_redirects {
-            compiler::redirect::write(ctx)?;
+            crate::redirect::write(ctx)?;
         }
 
         // Write the manifest for incremental builds

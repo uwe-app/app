@@ -14,14 +14,13 @@ use std::time::Duration;
 
 use compiler::Compiler;
 use compiler::parser::Parser;
-use compiler::redirect;
 use config::ProfileSettings;
 use config::server::{ServerConfig, HostConfig, ConnectionInfo};
 
-use crate::{Error, ErrorCallback};
-
 use server::{Channels, HostChannel};
+use workspace::redirect;
 
+use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
 
 pub async fn start<P: AsRef<Path>>(

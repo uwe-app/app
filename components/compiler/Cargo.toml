@@ -32,7 +32,7 @@ fluent-templates = {version = "0.5.9", default-features = true, features = ["han
 
 rayon = "1.3"
 crossbeam = "0.7"
-http = "0.2"
+#http = "0.2"
 
 futures = "0.3"
 futures-util = { version = "0.3.4" }

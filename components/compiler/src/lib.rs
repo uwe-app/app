@@ -30,14 +30,14 @@ pub enum Error {
     #[error("Path parameter for listing is not a directory {0}")]
     ListingNotDirectory(PathBuf),
 
-    #[error("Redirect file {0} already exists")]
-    RedirectFileExists(PathBuf),
+    //#[error("Redirect file {0} already exists")]
+    //RedirectFileExists(PathBuf),
 
-    #[error("Too many redirects, limit is {0}")]
-    TooManyRedirects(usize),
+    //#[error("Too many redirects, limit is {0}")]
+    //TooManyRedirects(usize),
 
-    #[error("Cyclic redirect: {stack} <-> {key}")]
-    CyclicRedirect { stack: String, key: String },
+    //#[error("Cyclic redirect: {stack} <-> {key}")]
+    //CyclicRedirect { stack: String, key: String },
 
     #[error("Resources not a directory {0}")]
     ResourceNotDirectory(PathBuf),
@@ -51,8 +51,8 @@ pub enum Error {
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
-    #[error(transparent)]
-    InvalidUri(#[from] http::uri::InvalidUri),
+    //#[error(transparent)]
+    //InvalidUri(#[from] http::uri::InvalidUri),
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
@@ -93,7 +93,7 @@ pub mod hook;
 pub mod lookup;
 pub mod markdown;
 pub mod parser;
-pub mod redirect;
+//pub mod redirect;
 pub mod run;
 pub mod tree;
 
