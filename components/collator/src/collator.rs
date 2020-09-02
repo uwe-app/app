@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
+use crossbeam::channel;
+
 use ignore::{WalkBuilder, WalkState};
 
 use config::indexer::QueryList;
@@ -21,6 +23,7 @@ pub struct CollateRequest<'a> {
 #[derive(Debug)]
 pub struct CollateResult {
     pub inner: Arc<Mutex<CollateInfo>>,
+    pub errors: Vec<Error>,
 }
 
 impl CollateResult {
@@ -30,6 +33,7 @@ impl CollateResult {
                 manifest,
                 ..Default::default()
             })),
+            errors: Vec::new(),
         }
     }
 }
@@ -175,10 +179,10 @@ pub async fn localize(
 }
 
 
-pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
-    find(&req, res).await?;
+pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<Error>> {
+    let errors = find(&req, res).await?;
     compute_links(&req, res)?;
-    Ok(())
+    Ok(errors)
 }
 
 pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
@@ -456,7 +460,11 @@ fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf
     Ok(add_file(key, dest, href, info, req.config, req.options)?)
 }
 
-async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
+async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<Error>> {
+
+    //let mut errors: Vec<Error> = Vec::new();
+
+    let (tx, rx) = channel::unbounded();
 
     WalkBuilder::new(&req.options.source)
         .follow_links(true)
@@ -486,7 +494,8 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
 
                     if is_page {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {
-                            info.errors.push(e);
+                            tx.send(e);
+                            //errors.push(e);
                         }
                     } else {
                         // Store the primary layout
@@ -499,12 +508,17 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
                         }
 
                         if let Err(e) = add_other(req, &mut *info, &key) {
-                            info.errors.push(Error::from(e));
+                            tx.send(Error::from(e));
+                            //errors.push(Error::from(e));
                         }
                     }
                 }
                 WalkState::Continue
             })
         });
-    Ok(())
+
+    drop(tx);
+
+    let errors: Vec<Error> = rx.iter().collect();
+    Ok(errors)
 }

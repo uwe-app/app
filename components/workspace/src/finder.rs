@@ -136,15 +136,15 @@ impl EntryOptions<'_> {
         let req = CollateRequest { config: self.config, options: &self.options };
 
         let mut res = CollateResult::new(manifest);
-        collator::walk(req, &mut res).await?;
-
-        let mut collation: CollateInfo = res.try_into()?;
-
-        if !collation.errors.is_empty() {
+        let mut errors = collator::walk(req, &mut res).await?;
+        if !errors.is_empty() {
             // TODO: print all errors?
-            let e = collation.errors.swap_remove(0);
+            let e = errors.swap_remove(0);
             return Err(Error::Collator(e));
         }
+
+
+        let mut collation: CollateInfo = res.try_into()?;
 
         // Find and transform localized pages
         collator::localize(self.config, &self.options, &self.options.locales, &mut collation).await?;
@@ -230,7 +230,6 @@ impl EntryOptions<'_> {
         let mut context = BuildContext::new(
             self.config.clone(),
             self.options.clone(),
-            self.datasource,
             self.collation
         );
 
@@ -251,7 +250,6 @@ impl EntryOptions<'_> {
             })
             .into_iter()
     }
-
     */
 }
 

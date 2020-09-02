@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::Result;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ManifestEntry {
     modified: SystemTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Manifest {
     pub map: HashMap<PathBuf, ManifestEntry>,
 }

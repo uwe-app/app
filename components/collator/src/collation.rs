@@ -9,7 +9,7 @@ use super::manifest::Manifest;
 
 use super::{Error, Result};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ResourceKind {
     /// A directory encountered whilst walking the tree.
     Dir,
@@ -40,7 +40,7 @@ impl Default for ResourceKind {
 
 /// The compiler uses this as the action to perform 
 /// with the input source file.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ResourceOperation {
     // Do nothing, used for the Dir kind primarily.
     Noop,
@@ -56,14 +56,14 @@ impl Default for ResourceOperation {
     fn default() -> Self { ResourceOperation::Copy }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ResourceTarget {
     pub destination: PathBuf,
     pub operation: ResourceOperation,
     pub kind: ResourceKind,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Resource {
     Page { target: ResourceTarget },
     File { target: ResourceTarget },
@@ -90,10 +90,10 @@ impl Resource {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct CollateInfo {
     /// List of errors encountered during collation.
-    pub errors: Vec<Error>,
+    //pub errors: Vec<Error>,
 
     /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
@@ -220,7 +220,7 @@ impl CollateInfo {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct LinkMap {
     pub sources: HashMap<Arc<PathBuf>, Arc<String>>,
     pub reverse: HashMap<Arc<String>, Arc<PathBuf>>,

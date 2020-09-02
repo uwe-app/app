@@ -30,10 +30,11 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
 
-    //for entry in spaces.iter_mut() {
-        //ctx = compile(&mut entry.config, args).await?;
-    //}
+    for entry in spaces.iter_mut() {
+        ctx = compile(&mut entry.config, args).await?;
+    }
 
+    /*
     for entry in spaces.iter_mut() {
         let mut state = entry.map_options(args)?;
 
@@ -60,6 +61,7 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
         //let renderer = state.to_render();
         //renderer.render().await?;
     }
+    */
 
     Ok(ctx)
 }
@@ -171,15 +173,14 @@ async fn collate(
     let req = CollateRequest { config: &config, options: &options };
 
     let mut res = CollateResult::new(manifest);
-    collator::walk(req, &mut res).await?;
-
-    let mut collation: CollateInfo = res.try_into()?;
-
-    if !collation.errors.is_empty() {
+    let mut errors = collator::walk(req, &mut res).await?;
+    if !errors.is_empty() {
         // TODO: print all errors?
-        let e = collation.errors.swap_remove(0);
+        let e = errors.swap_remove(0);
         return Err(Error::Collator(e));
     }
+
+    let mut collation: CollateInfo = res.try_into()?;
 
     // Find and transform localized pages
     collator::localize(config, options, &options.locales, &mut collation).await?;
