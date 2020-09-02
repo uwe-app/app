@@ -222,13 +222,37 @@ impl EntryOptions<'_> {
         Ok(synthetic::assign(
             self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
     }
+   
+    /*
+    pub fn into_iter(&mut self) -> impl IntoIterator<Item = Render> {
+        let locales = self.options.locales.clone();
+        let mut options = self.options.clone();
+        let mut context = BuildContext::new(
+            self.config.clone(),
+            self.options.clone(),
+            self.datasource,
+            self.collation
+        );
 
-    pub fn to_render(self) -> Render {
-        Render {
-            context: BuildContext::new(self.config.clone(), self.options, self.datasource, self.collation),
-            locales: self.locales,
-        }
+        let base_target = options.target.clone();
+        let mut previous_base = base_target.clone();
+
+        locales.map.keys()
+            .map(move |lang| {
+                //if locales.multi {
+                    //let locale_target = base_target.join(lang);
+                    //options.lang = lang.clone();
+                    //options.target = locale_target.clone();
+                    //context.collation.rewrite(&options, lang, &previous_base, &locale_target);
+                    //previous_base = locale_target;
+                //}
+
+                Render {context, locales: &self.locales}
+            })
+            .into_iter()
     }
+
+    */
 }
 
 #[derive(Debug, Default)]

@@ -53,10 +53,12 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
         // TODO: do this after fetch_lazy() ?
         state.map_syntax().await?;
 
-        let renderer = state.to_render();
+        //for render in state.into_iter() {
+            //println!("Got render block");
+        //}
 
-
-        renderer.render().await?;
+        //let renderer = state.to_render();
+        //renderer.render().await?;
     }
 
     Ok(ctx)

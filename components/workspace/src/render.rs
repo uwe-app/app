@@ -9,15 +9,15 @@ use locale::Locales;
 use crate::Result;
 
 #[derive(Debug)]
-pub struct Render {
+pub struct Render<'a> {
     pub context: BuildContext,
-    pub locales: Locales,
+    pub locales: &'a Locales,
 }
 
-impl Render {
+impl Render<'_> {
 
-    pub async fn render(&self) -> Result<&Self> {
-        Ok(self)
+    pub async fn render(&self) -> Result<()> {
+        Ok(())
     }
 
     /*
