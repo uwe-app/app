@@ -9,7 +9,7 @@ use datasource::DataSourceMap;
 pub struct BuildContext {
     pub config: Config,
     pub options: RuntimeOptions,
-    pub datasource: DataSourceMap,
+    //pub datasource: DataSourceMap,
     //pub locales: Locales,
     pub collation: CollateInfo,
 }
@@ -18,14 +18,11 @@ impl BuildContext {
     pub fn new(
         config: Config,
         options: RuntimeOptions,
-        datasource: DataSourceMap,
-        //locales: Locales,
         collation: CollateInfo,
     ) -> Self {
         Self {
             config,
             options,
-            datasource,
             collation,
         }
     }

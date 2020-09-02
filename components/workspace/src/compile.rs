@@ -105,7 +105,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
 
     let (collation, datasource) = collate(config, opts).await?;
     let mut ctx = BuildContext::new(
-        config.clone(), opts.clone(), datasource, collation);
+        config.clone(), opts.clone(), collation);
 
     let base_target = opts.target.clone();
     let mut previous_base = base_target.clone();
