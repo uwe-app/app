@@ -74,13 +74,15 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-mod compile;
-mod finder;
+mod compile1;
 pub mod lock;
 mod options;
-mod render;
+mod project;
 pub mod redirect;
+mod render;
 
-pub use compile::compile;
-pub use compile::compile_project;
-pub use finder::load;
+pub use compile1::compile;
+pub use compile1::compile_project;
+
+pub use project::load;
+pub use project::compile as compile2;

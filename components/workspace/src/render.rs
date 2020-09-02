@@ -26,6 +26,7 @@ pub struct Render {
 
 impl Render {
 
+    /// Render a locale for a project.
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
         let (_, _, parse_list) = self.build(locales).await?;
         Ok(RenderResult { sitemap: self.finish(parse_list)? })
@@ -80,10 +81,6 @@ impl Render {
         let mut res: Option<Url> = None;
         if let Some(ref sitemap) = ctx.options.settings.sitemap {
 
-            //if ctx.options.settings.robots.is_none() {
-                //ctx.options.settings.robots = Some(Default::default());
-            //}
-
             // How many entries per chunk window?
             let entries = sitemap.entries.as_ref().unwrap();
 
@@ -133,13 +130,6 @@ impl Render {
 
             let sitemap_url = idx.to_location();
             info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
-            //info!("Sitemap {}", idx_path.display());
-
-            // Update robots config to include the sitemap
-
-            //if let Some(ref mut robots) = ctx.options.settings.robots.as_mut() {
-                //robots.sitemaps.push(sitemap_url);
-            //}
 
             res = Some(sitemap_url);
         }

@@ -22,7 +22,8 @@ use collator::{CollateInfo, CollateRequest, CollateResult};
 
 use crate::{Error, Result, redirect};
 
-pub async fn compile_project<'a, P: AsRef<Path>>(
+#[deprecated(since="0.20.8", note="Use Workspace")]
+pub async fn compile_project<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
@@ -34,45 +35,10 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
         ctx = compile(&mut entry.config, args).await?;
     }
 
-    //for entry in spaces.iter_mut() {
-        //let mut state = entry.from_profile(args)?;
-
-        //state.load_locales().await?;
-        //state.fetch_lazy().await?;
-
-        //state.collate().await?;
-
-        //state.map_redirects().await?;
-        //state.map_data().await?;
-
-        //state.map_search().await?;
-        //state.map_feed().await?;
-
-        //state.map_pages().await?;
-        //state.map_each().await?;
-        //state.map_assign().await?;
-
-        //// TODO: do this after fetch_lazy() ?
-        //state.map_syntax().await?;
-
-        //let mut sitemaps: Vec<Url> = Vec::new();
-        //for renderer in state.renderer()?.into_iter() {
-            //let mut result = renderer.render(&state.locales).await?;
-            //if let Some(url) = result.sitemap.take() {
-                //sitemaps.push(url); 
-            //}
-
-            //// TODO: ensure redirects work in multi-lingual config
-            //state.write_redirects(&renderer.context.options)?;
-            //state.write_manifest()?;
-        //}
-
-        //state.write_robots(sitemaps)?;
-    //}
-
     Ok(ctx)
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 pub async fn compile(
     config: &mut Config,
     args: &ProfileSettings,
@@ -104,6 +70,7 @@ pub async fn compile(
     res
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(BuildContext, Locales)> {
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
@@ -153,6 +120,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
     Ok((ctx, locales))
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 async fn collate(
     config: &mut Config,
     options: &RuntimeOptions,
@@ -238,13 +206,14 @@ async fn collate(
     Ok((collation, datasource))
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
     manifest_file.set_extension(config::JSON);
     manifest_file
 }
 
-
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn fetch_cache_lazy(config: &Config, opts: &RuntimeOptions) -> Result<()> {
     let mut components: Vec<CacheComponent> = Vec::new();
 
@@ -282,6 +251,7 @@ fn fetch_cache_lazy(config: &Config, opts: &RuntimeOptions) -> Result<()> {
     Ok(())
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
 
     if let Some(ref syntax_config) = ctx.config.syntax {
@@ -295,6 +265,7 @@ fn prepare<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -> Result<()> {
     let include_index = ctx.options.settings.should_include_index();
     if let Some(ref search) = ctx.config.search {
@@ -332,6 +303,7 @@ fn create_search_indices<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseDa
     Ok(())
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -> Result<()> {
 
     if let Some(ref sitemap) = ctx.options.settings.sitemap {
@@ -399,6 +371,7 @@ fn create_site_map<'a>(ctx: &'a mut BuildContext, parse_list: &Vec<ParseData>) -
     Ok(())
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn write_robots_file<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     if let Some(ref robots) = ctx.options.settings.robots {
         // NOTE: robots must always be at the root regardless
@@ -411,12 +384,14 @@ fn write_robots_file<'a>(ctx: &'a mut BuildContext) -> Result<()> {
     Ok(())
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 fn finish<'a>(ctx: &'a mut BuildContext, parse_list: Vec<ParseData>) -> Result<()> {
     create_search_indices(ctx, &parse_list)?;
     create_site_map(ctx, &parse_list)?;
     Ok(())
 }
 
+#[deprecated(since="0.20.8", note="Use Workspace")]
 async fn build<'a>(
     ctx: &'a mut BuildContext,
     locales: &'a Locales,

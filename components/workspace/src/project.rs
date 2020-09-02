@@ -37,9 +37,9 @@ pub struct Entry {
 
 impl Entry {
     /// Get the runtime options from a build profile.
-    pub fn from_profile(&mut self, args: &ProfileSettings) -> Result<EntryOptions> {
+    pub fn from_profile(&mut self, args: &ProfileSettings) -> Result<RenderState> {
         let options = crate::options::prepare(&self.config, args)?;
-        Ok(EntryOptions {
+        Ok(RenderState {
             config: &mut self.config,
             options,
             locales: Default::default(),
@@ -51,7 +51,7 @@ impl Entry {
 }
 
 #[derive(Debug)]
-pub struct EntryOptions<'a> {
+pub struct RenderState<'a> {
     pub config: &'a mut Config,
     pub options: RuntimeOptions,
     pub locales: Locales,
@@ -60,7 +60,7 @@ pub struct EntryOptions<'a> {
     pub cache: QueryCache,
 }
 
-impl EntryOptions<'_> {
+impl RenderState<'_> {
 
     /// Load locale message files (.ftl).
     pub async fn load_locales(&mut self) -> Result<()> {
@@ -403,4 +403,76 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     }
 
     Ok(workspace)
+}
+
+#[derive(Debug, Default)]
+pub struct ProjectResult {
+    pub renderers: Vec<Render>,
+    pub locales: Locales,
+}
+
+#[derive(Debug, Default)]
+pub struct CompileResult {
+    pub projects: Vec<ProjectResult>,
+}
+
+/// Compile a project.
+///
+/// The project may contain workspace members in which case all 
+/// member projects will be compiled.
+pub async fn compile<P: AsRef<Path>>(
+    project: P,
+    args: &ProfileSettings,
+) -> Result<CompileResult> {
+
+    let mut project = crate::load(project, true)?;
+    let mut compiled: CompileResult = Default::default();
+
+    for entry in project.iter_mut() {
+        let mut result: ProjectResult = Default::default();
+
+        let mut state = entry.from_profile(args)?;
+
+        state.load_locales().await?;
+        state.fetch_lazy().await?;
+
+        state.collate().await?;
+
+        state.map_redirects().await?;
+        state.map_data().await?;
+
+        state.map_search().await?;
+        state.map_feed().await?;
+
+        state.map_pages().await?;
+        state.map_each().await?;
+        state.map_assign().await?;
+
+        // TODO: do this after fetch_lazy() ?
+        state.map_syntax().await?;
+
+        let mut sitemaps: Vec<Url> = Vec::new();
+
+        // Renderer is generated for each locale to compile
+        for renderer in state.renderer()?.into_iter() {
+            let mut res = renderer.render(&state.locales).await?;
+            if let Some(url) = res.sitemap.take() {
+                sitemaps.push(url); 
+            }
+            // TODO: ensure redirects work in multi-lingual config
+            state.write_redirects(&renderer.context.options)?;
+            state.write_manifest()?;
+
+            result.renderers.push(renderer);
+        }
+
+        state.write_robots(sitemaps)?;
+
+        // Move the locales out of each state into the result
+        // to ensure they still contain the loaded messages
+        result.locales = state.locales;
+        compiled.projects.push(result);
+    }
+
+    Ok(compiled)
 }

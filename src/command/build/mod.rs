@@ -23,7 +23,7 @@ pub async fn compile<P: AsRef<Path>>(
     if live {
         livereload::start(project, args, error_cb).await?;
     } else {
-        workspace::compile_project(project, args).await?;
+        workspace::compile2(project, args).await?;
     }
 
     Ok(())
