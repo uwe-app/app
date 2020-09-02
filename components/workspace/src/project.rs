@@ -37,10 +37,10 @@ pub struct Entry {
 
 impl Entry {
     /// Get the runtime options from a build profile.
-    pub fn from_profile(&mut self, args: &ProfileSettings) -> Result<RenderState> {
+    pub fn from_profile(self, args: &ProfileSettings) -> Result<RenderState> {
         let options = crate::options::prepare(&self.config, args)?;
         Ok(RenderState {
-            config: &mut self.config,
+            config: self.config,
             options,
             locales: Default::default(),
             collation: Default::default(),
@@ -51,8 +51,8 @@ impl Entry {
 }
 
 #[derive(Debug)]
-pub struct RenderState<'a> {
-    pub config: &'a mut Config,
+pub struct RenderState {
+    pub config: Config,
     pub options: RuntimeOptions,
     pub locales: Locales,
     pub collation: CollateInfo,
@@ -60,11 +60,11 @@ pub struct RenderState<'a> {
     pub cache: QueryCache,
 }
 
-impl RenderState<'_> {
+impl RenderState {
 
     /// Load locale message files (.ftl).
     pub async fn load_locales(&mut self) -> Result<()> {
-        self.locales.load(self.config, &self.options)?;
+        self.locales.load(&self.config, &self.options)?;
         let locale_map = self.locales.get_locale_map(&self.config.lang)?;
         self.options.locales = locale_map;
         Ok(())
@@ -134,7 +134,7 @@ impl RenderState<'_> {
         };
 
         // Collate page data for later usage
-        let req = CollateRequest { config: self.config, options: &self.options };
+        let req = CollateRequest { config: &self.config, options: &self.options };
 
         // FIXME: decouple the manifest from the collation
 
@@ -150,10 +150,10 @@ impl RenderState<'_> {
         let mut collation: CollateInfo = res.try_into()?;
 
         // Find and transform localized pages
-        collator::localize(self.config, &self.options, &self.options.locales, &mut collation).await?;
+        collator::localize(&self.config, &self.options, &self.options.locales, &mut collation).await?;
 
         // Collate the series data
-        collator::series(self.config, &self.options, &mut collation)?;
+        collator::series(&self.config, &self.options, &mut collation)?;
 
         self.collation = collation;
 
@@ -193,7 +193,7 @@ impl RenderState<'_> {
     pub async fn map_data(&mut self) -> Result<()> {
         // Load data sources and create indices
         self.datasource = DataSourceMap::load(
-            self.config, &self.options, &mut self.collation).await?;
+            &self.config, &self.options, &mut self.collation).await?;
 
         // Set up the cache for data source queries
         self.cache = DataSourceMap::get_cache();
@@ -203,30 +203,30 @@ impl RenderState<'_> {
 
     /// Copy the search runtime files if we need them.
     pub async fn map_search(&mut self) -> Result<()> {
-        Ok(synthetic::search(self.config, &self.options, &mut self.collation)?)
+        Ok(synthetic::search(&self.config, &self.options, &mut self.collation)?)
     }
 
     /// Create feed pages.
     pub async fn map_feed(&mut self) -> Result<()> {
-        Ok(synthetic::feed(self.config, &self.options, &mut self.collation)?)
+        Ok(synthetic::feed(&self.config, &self.options, &mut self.collation)?)
     }
 
     /// Perform pagination.
     pub async fn map_pages(&mut self) -> Result<()> {
         Ok(synthetic::pages(
-            self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+            &self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
     }
 
     /// Create collation entries for data source iterators.
     pub async fn map_each(&mut self) -> Result<()> {
         Ok(synthetic::each(
-            self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+            &self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
     }
 
     /// Create collation entries for data source assignments.
     pub async fn map_assign(&mut self) -> Result<()> {
         Ok(synthetic::assign(
-            self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+            &self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
     }
    
     /// Verify the paths are within the site source.
@@ -282,7 +282,7 @@ impl RenderState<'_> {
             options.settings.write_redirects.is_some()
             && options.settings.write_redirects.unwrap();
         if write_redirects {
-            crate::redirect::write(self.config, options)?;
+            crate::redirect::write(&self.config, options)?;
         }
         Ok(())
     }
@@ -360,6 +360,7 @@ impl Workspace {
             .into_iter()
     }
 
+    #[deprecated(since="0.20.8", note="Use into_iter()")]
     pub fn iter_mut(&mut self) -> impl IntoIterator<Item = &mut Entry> {
         self.projects
             .iter_mut()
@@ -371,6 +372,20 @@ impl Workspace {
             })
             .flatten()
             .collect::<Vec<&mut Entry>>()
+            .into_iter()
+    }
+
+    pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
+        self.projects
+            .into_iter()
+            .map(|e| {
+                match e {
+                    ProjectEntry::One(c) => vec![c],
+                    ProjectEntry::Many(c) => c.into_iter().collect(),
+                } 
+            })
+            .flatten()
+            .collect::<Vec<Entry>>()
             .into_iter()
     }
 
@@ -428,7 +443,7 @@ pub async fn compile<P: AsRef<Path>>(
     let mut project = crate::load(project, true)?;
     let mut compiled: CompileResult = Default::default();
 
-    for entry in project.iter_mut() {
+    for mut entry in project.into_iter() {
         let mut result: ProjectResult = Default::default();
 
         let mut state = entry.from_profile(args)?;
