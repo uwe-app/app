@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
+use url::Url;
+
 use cache::CacheComponent;
 use compiler::redirect;
 use compiler::{BuildContext};
@@ -149,6 +151,9 @@ impl EntryOptions<'_> {
         // Find and transform localized pages
         collator::localize(self.config, &self.options, &self.options.locales, &mut collation).await?;
 
+        // Collate the series data
+        collator::series(self.config, &self.options, &mut collation)?;
+
         self.collation = collation;
 
         Ok(())
@@ -223,34 +228,77 @@ impl EntryOptions<'_> {
             self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
     }
    
-    /*
-    pub fn into_iter(&mut self) -> impl IntoIterator<Item = Render> {
+    /// Verify the paths are within the site source.
+    fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
+        for p in paths {
+            if !p.starts_with(&self.options.source) {
+                return Err(Error::OutsideSourceTree(p.clone()));
+            }
+        }
+        Ok(())
+    }
+
+    /// Get a list of renderers for each locale. 
+    pub fn renderer(&mut self) -> Result<Vec<Render>> {
         let locales = self.options.locales.clone();
         let mut options = self.options.clone();
-        let mut context = BuildContext::new(
-            self.config.clone(),
-            self.options.clone(),
-            self.collation
-        );
-
         let base_target = options.target.clone();
-        let mut previous_base = base_target.clone();
+
+        let mut targets: Vec<Render> = Vec::new();
 
         locales.map.keys()
-            .map(move |lang| {
-                //if locales.multi {
-                    //let locale_target = base_target.join(lang);
-                    //options.lang = lang.clone();
-                    //options.target = locale_target.clone();
-                    //context.collation.rewrite(&options, lang, &previous_base, &locale_target);
-                    //previous_base = locale_target;
-                //}
+            .try_for_each(|lang| {
+                let mut context = BuildContext::new(
+                    self.config.clone(),
+                    self.options.clone(),
+                    self.collation.clone(),
+                );
 
-                Render {context, locales: &self.locales}
-            })
-            .into_iter()
+                if locales.multi {
+                    let locale_target = base_target.join(lang);
+                    options.lang = lang.clone();
+                    options.target = locale_target.clone();
+                    context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
+                }
+
+                let paths: Vec<PathBuf> = if let Some(ref paths) = context.options.settings.paths {
+                    self.verify(paths)?;
+                    paths.clone()
+                } else {
+                    vec![options.source.clone()]
+                };
+
+                targets.push(Render {context, paths});
+                Ok::<(), Error>(())
+            })?;
+
+        Ok(targets)
     }
-    */
+
+
+    pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
+        let output_robots = self.options.settings.robots.is_some()
+            || !sitemaps.is_empty();
+
+        if output_robots {
+            let mut robots = if let Some(ref robots) = self.options.settings.robots {
+                robots.clone() 
+            } else {
+                Default::default()
+            };
+
+            robots.sitemaps = sitemaps;
+
+            //// NOTE: robots must always be at the root regardless
+            //// NOTE: of multi-lingual support so we use `base` rather
+            //// NOTE: than the `target`
+            let robots_file = self.options.base.join(config::robots::FILE);
+            utils::fs::write_string(&robots_file, robots.to_string())?;
+            info!("Robots {}", robots_file.display());
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Default)]

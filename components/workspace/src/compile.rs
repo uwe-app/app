@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use human_bytes::human_bytes;
 use log::info;
+use url::Url;
 
 use cache::CacheComponent;
 use compiler::redirect;
@@ -30,11 +31,10 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
 
-    for entry in spaces.iter_mut() {
-        ctx = compile(&mut entry.config, args).await?;
-    }
+    //for entry in spaces.iter_mut() {
+        //ctx = compile(&mut entry.config, args).await?;
+    //}
 
-    /*
     for entry in spaces.iter_mut() {
         let mut state = entry.map_options(args)?;
 
@@ -54,14 +54,16 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
         // TODO: do this after fetch_lazy() ?
         state.map_syntax().await?;
 
-        //for render in state.into_iter() {
-            //println!("Got render block");
-        //}
+        let mut sitemaps: Vec<Url> = Vec::new();
+        for renderer in state.renderer()?.into_iter() {
+            let mut result = renderer.render(&state.locales).await?;
+            if let Some(url) = result.sitemap.take() {
+                sitemaps.push(url); 
+            }
+        }
 
-        //let renderer = state.to_render();
-        //renderer.render().await?;
+        state.write_robots(sitemaps)?;
     }
-    */
 
     Ok(ctx)
 }
@@ -428,6 +430,6 @@ async fn build<'a>(
         targets.push(ctx.options.source.clone());
     }
 
-    let parse_list = builder.all(&parser, targets).await?;
+    let parse_list = builder.all(&parser, &targets).await?;
     Ok((builder, parser, parse_list))
 }

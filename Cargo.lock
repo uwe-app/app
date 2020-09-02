@@ -3916,6 +3916,7 @@ dependencies = [
  "serde_json",
  "syntax",
  "thiserror",
+ "url",
  "utils",
 ]
 

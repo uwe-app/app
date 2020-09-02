@@ -31,6 +31,7 @@ impl<'a> Compiler<'a> {
     }
 
     /// Verify the paths are within the site source.
+    #[deprecated(since="0.20.8", note="Use workspace verify instead")]
     pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
             if !p.starts_with(&self.context.options.source) {
@@ -173,7 +174,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub async fn all(&self, parser: &Parser<'_>, targets: Vec<PathBuf>) -> Result<Vec<ParseData>> {
+    pub async fn all(&self, parser: &Parser<'_>, targets: &Vec<PathBuf>) -> Result<Vec<ParseData>> {
         //resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {

@@ -4,6 +4,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+
+    #[deprecated(since="0.20.8", note="Use workspace verify instead")]
     #[error("Path {0} is outside the site source")]
     OutsideSourceTree(PathBuf),
 
