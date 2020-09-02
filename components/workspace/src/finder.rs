@@ -5,6 +5,7 @@ use log::info;
 
 use cache::CacheComponent;
 use compiler::redirect;
+use compiler::{BuildContext};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
@@ -15,6 +16,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{Error, Result};
+use crate::render::Render;
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -219,6 +221,13 @@ impl EntryOptions<'_> {
     pub async fn map_assign(&mut self) -> Result<()> {
         Ok(synthetic::assign(
             self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+    }
+
+    pub fn to_render(self) -> Render {
+        Render {
+            context: BuildContext::new(self.config.clone(), self.options, self.datasource, self.collation),
+            locales: self.locales,
+        }
     }
 }
 

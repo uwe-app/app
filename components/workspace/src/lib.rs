@@ -60,6 +60,7 @@ mod compile;
 mod finder;
 pub mod lock;
 mod options;
+mod render;
 
 pub use compile::compile;
 pub use compile::compile_project;

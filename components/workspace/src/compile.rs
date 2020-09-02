@@ -30,11 +30,10 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
 
-    for entry in spaces.iter_mut() {
-        ctx = compile(&mut entry.config, args).await?;
-    }
+    //for entry in spaces.iter_mut() {
+        //ctx = compile(&mut entry.config, args).await?;
+    //}
 
-    /*
     for entry in spaces.iter_mut() {
         let mut state = entry.map_options(args)?;
 
@@ -53,8 +52,12 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
 
         // TODO: do this after fetch_lazy() ?
         state.map_syntax().await?;
+
+        let renderer = state.to_render();
+
+
+        renderer.render().await?;
     }
-    */
 
     Ok(ctx)
 }
