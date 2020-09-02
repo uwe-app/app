@@ -3,14 +3,11 @@ use std::sync::{Arc, RwLock};
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
-use datasource::DataSourceMap;
 
 #[derive(Debug, Default)]
 pub struct BuildContext {
     pub config: Config,
     pub options: RuntimeOptions,
-    //pub datasource: DataSourceMap,
-    //pub locales: Locales,
     pub collation: CollateInfo,
 }
 

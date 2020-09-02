@@ -7,7 +7,7 @@ use config::{Page, RuntimeOptions};
 
 use super::manifest::Manifest;
 
-use super::{Error, Result};
+use super::Result;
 
 #[derive(Debug, Clone)]
 pub enum ResourceKind {

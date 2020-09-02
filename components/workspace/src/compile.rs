@@ -30,44 +30,45 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
     let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
 
-    //for entry in spaces.iter_mut() {
-        //ctx = compile(&mut entry.config, args).await?;
-    //}
-
     for entry in spaces.iter_mut() {
-        let mut state = entry.map_options(args)?;
-
-        state.load_locales().await?;
-        state.fetch_lazy().await?;
-
-        state.collate().await?;
-
-        state.map_redirects().await?;
-        state.map_search().await?;
-        state.map_feed().await?;
-        state.map_data().await?;
-
-        state.map_pages().await?;
-        state.map_each().await?;
-        state.map_assign().await?;
-
-        // TODO: do this after fetch_lazy() ?
-        state.map_syntax().await?;
-
-        let mut sitemaps: Vec<Url> = Vec::new();
-        for renderer in state.renderer()?.into_iter() {
-            let mut result = renderer.render(&state.locales).await?;
-            if let Some(url) = result.sitemap.take() {
-                sitemaps.push(url); 
-            }
-
-            // TODO: ensure redirects work in multi-lingual config
-            state.write_redirects(&renderer.context.options)?;
-            state.write_manifest()?;
-        }
-
-        state.write_robots(sitemaps)?;
+        ctx = compile(&mut entry.config, args).await?;
     }
+
+    //for entry in spaces.iter_mut() {
+        //let mut state = entry.from_profile(args)?;
+
+        //state.load_locales().await?;
+        //state.fetch_lazy().await?;
+
+        //state.collate().await?;
+
+        //state.map_redirects().await?;
+        //state.map_data().await?;
+
+        //state.map_search().await?;
+        //state.map_feed().await?;
+
+        //state.map_pages().await?;
+        //state.map_each().await?;
+        //state.map_assign().await?;
+
+        //// TODO: do this after fetch_lazy() ?
+        //state.map_syntax().await?;
+
+        //let mut sitemaps: Vec<Url> = Vec::new();
+        //for renderer in state.renderer()?.into_iter() {
+            //let mut result = renderer.render(&state.locales).await?;
+            //if let Some(url) = result.sitemap.take() {
+                //sitemaps.push(url); 
+            //}
+
+            //// TODO: ensure redirects work in multi-lingual config
+            //state.write_redirects(&renderer.context.options)?;
+            //state.write_manifest()?;
+        //}
+
+        //state.write_robots(sitemaps)?;
+    //}
 
     Ok(ctx)
 }
@@ -111,7 +112,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
 
     fetch_cache_lazy(config, &opts)?;
 
-    let (collation, datasource) = collate(config, opts).await?;
+    let (collation, _datasource) = collate(config, opts).await?;
     let mut ctx = BuildContext::new(
         config.clone(), opts.clone(), collation);
 

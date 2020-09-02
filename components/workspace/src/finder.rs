@@ -36,7 +36,8 @@ pub struct Entry {
 }
 
 impl Entry {
-    pub fn map_options(&mut self, args: &ProfileSettings) -> Result<EntryOptions> {
+    /// Get the runtime options from a build profile.
+    pub fn from_profile(&mut self, args: &ProfileSettings) -> Result<EntryOptions> {
         let options = crate::options::prepare(&self.config, args)?;
         Ok(EntryOptions {
             config: &mut self.config,
@@ -134,6 +135,8 @@ impl EntryOptions<'_> {
 
         // Collate page data for later usage
         let req = CollateRequest { config: self.config, options: &self.options };
+
+        // FIXME: decouple the manifest from the collation
 
         let mut res = CollateResult::new(manifest);
         let mut errors = collator::walk(req, &mut res).await?;

@@ -494,7 +494,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<E
 
                     if is_page {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {
-                            tx.send(e);
+                            let _ = tx.send(e);
                             //errors.push(e);
                         }
                     } else {
@@ -508,7 +508,7 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<E
                         }
 
                         if let Err(e) = add_other(req, &mut *info, &key) {
-                            tx.send(Error::from(e));
+                            let _ = tx.send(Error::from(e));
                             //errors.push(Error::from(e));
                         }
                     }
