@@ -29,15 +29,32 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
 
     let mut spaces = crate::load(project, true)?;
     let mut ctx = Default::default();
+
     for entry in spaces.iter_mut() {
         ctx = compile(&mut entry.config, args).await?;
     }
 
-    //for entry in spaces.iter_mut() {
-        //let state = entry
-            //.map_options(args)?
-            //.load_locales()?;
-    //}
+    /*
+    for entry in spaces.iter_mut() {
+        let mut state = entry.map_options(args)?;
+
+        state.load_locales().await?;
+        state.fetch_lazy().await?;
+
+        state.collate().await?;
+        state.map_redirects().await?;
+        state.map_search().await?;
+        state.map_feed().await?;
+        state.map_data().await?;
+
+        state.map_pages().await?;
+        state.map_each().await?;
+        state.map_assign().await?;
+
+        // TODO: do this after fetch_lazy() ?
+        state.map_syntax().await?;
+    }
+    */
 
     Ok(ctx)
 }
@@ -74,8 +91,6 @@ pub async fn compile(
 }
 
 async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(BuildContext, Locales)> {
-    let base_target = opts.target.clone();
-
     let mut locales: Locales = Default::default();
     locales.load(&config, &opts)?;
     let locale_map = locales.get_locale_map(&config.lang)?;
@@ -87,6 +102,7 @@ async fn render(config: &mut Config, opts: &mut RuntimeOptions) -> Result<(Build
     let mut ctx = BuildContext::new(
         config.clone(), opts.clone(), datasource, collation);
 
+    let base_target = opts.target.clone();
     let mut previous_base = base_target.clone();
 
     for lang in locale_map.map.keys() {
@@ -165,7 +181,6 @@ async fn collate(
 
     // Load data sources and create indices
     let datasource = DataSourceMap::load(&config, &options, &mut collation).await?;
-
     // Set up the cache for data source queries
     let mut cache = DataSourceMap::get_cache();
 
