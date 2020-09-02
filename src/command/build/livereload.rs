@@ -67,13 +67,13 @@ pub async fn start<P: AsRef<Path>>(
     let endpoint = host.endpoint.as_ref().unwrap().clone();
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
 
-    use std::path::PathBuf;
-    let mock = HostConfig::new(
-        PathBuf::from("/home/muji/git/hypertext/blog/build/debug"),
-        "testhost1".to_string(),
-        None,
-        Some(utils::generate_id(16)));
-    opts.hosts.push(mock);
+    //use std::path::PathBuf;
+    //let mock = HostConfig::new(
+        //PathBuf::from("/home/muji/git/hypertext/blog/build/debug"),
+        //"testhost1".to_string(),
+        //None,
+        //Some(utils::generate_id(16)));
+    //opts.hosts.push(mock);
 
     // Spawn a thread to receive a notification on the `rx` channel
     // once the server has bound to a port
