@@ -60,6 +60,10 @@ pub async fn compile_project<'a, P: AsRef<Path>>(
             if let Some(url) = result.sitemap.take() {
                 sitemaps.push(url); 
             }
+
+            // TODO: ensure redirects work in multi-lingual config
+            state.write_redirects(&renderer.context.options)?;
+            state.write_manifest()?;
         }
 
         state.write_robots(sitemaps)?;
@@ -83,7 +87,7 @@ pub async fn compile(
 
     if let Ok((ref mut ctx, _)) = res {
         if write_redirects {
-            crate::redirect::write(ctx)?;
+            crate::redirect::write(&ctx.config, &ctx.options)?;
         }
 
         // Write the manifest for incremental builds

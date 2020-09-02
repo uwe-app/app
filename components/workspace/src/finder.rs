@@ -274,6 +274,28 @@ impl EntryOptions<'_> {
     }
 
 
+    pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
+        let write_redirects =
+            options.settings.write_redirects.is_some()
+            && options.settings.write_redirects.unwrap();
+        if write_redirects {
+            crate::redirect::write(self.config, options)?;
+        }
+        Ok(())
+    }
+
+    pub fn write_manifest(&mut self) -> Result<()> {
+        // Write the manifest for incremental builds
+        if let Some(ref mut manifest) = self.collation.manifest {
+            let manifest_file = get_manifest_file(&self.options);
+            for p in self.collation.resources.iter() {
+                manifest.touch(&p.to_path_buf());
+            }
+            Manifest::save(&manifest_file, manifest)?;
+        }
+        Ok(())
+    }
+
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
         let output_robots = self.options.settings.robots.is_some()
             || !sitemaps.is_empty();

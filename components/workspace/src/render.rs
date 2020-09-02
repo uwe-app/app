@@ -28,12 +28,7 @@ impl Render {
 
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
         let (_, _, parse_list) = self.build(locales).await?;
-
-        let mut result = RenderResult {
-            sitemap: self.finish(parse_list)?
-        };
-
-        Ok(result)
+        Ok(RenderResult { sitemap: self.finish(parse_list)? })
     }
 
     fn finish<'a>(&self, parse_list: Vec<ParseData>) -> Result<Option<Url>> {
@@ -151,53 +146,6 @@ impl Render {
 
         Ok(res)
     }
-
-    /*
-    async fn compile(&self) -> Result<()> {
-        let mut opts = self.context.options.clone();
-        let mut ctx = self.context;
-
-        let locale_map = opts.locales;
-
-        let base_target = opts.target.clone();
-        let mut previous_base = base_target.clone();
-
-        for lang in locale_map.map.keys() {
-            // When we have multiple languages we need to rewrite paths
-            // on each iteration for each specific language
-            if locale_map.multi {
-                let locale_target = base_target.join(&lang);
-                info!("lang {} -> {}", &lang, locale_target.display());
-
-                if !locale_target.exists() {
-                    fs::create_dir_all(&locale_target)?;
-                }
-
-                // Keep the target language in sync
-                ctx.options.lang = lang.clone();
-
-                // Keep the options target in sync for manifests
-                ctx.options.target = locale_target.clone();
-
-                // Rewrite the output paths and page languages
-                ctx.collation
-                    .rewrite(&opts, &lang, &previous_base, &locale_target)?;
-
-                previous_base = locale_target;
-            }
-
-            //prepare(&mut ctx)?;
-            //let (_, _, parse_list) = build(&mut ctx, &locales).await?;
-            //finish(&mut ctx, parse_list)?;
-        }
-
-        //write_robots_file(&mut ctx)?;
-
-        //Ok((ctx, locales))
-
-        Ok(())
-    }
-    */
 
     async fn build<'a>(
         &'a self,

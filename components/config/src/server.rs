@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
 
-type Redirects = HashMap<String, Uri>;
+pub type Redirects = HashMap<String, Uri>;
 
 #[derive(Debug)]
 pub struct ConnectionInfo {

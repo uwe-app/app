@@ -1,24 +1,3 @@
-//use std::path::Path;
-
-//pub fn write<P: AsRef<Path>>(location: &str, target: P) -> std::io::Result<()> {
-    //let mut content = String::from("<!doctype html>");
-    //let body = format!(
-        //"<body onload=\"document.location.replace('{}');\"></body>",
-        //location
-    //);
-    //let meta = format!(
-        //"<noscript><meta http-equiv=\"refresh\" content=\"0; {}\"></noscript>",
-        //location
-    //);
-    //content.push_str("<html>");
-    //content.push_str("<head>");
-    //content.push_str(&meta);
-    //content.push_str("</head>");
-    //content.push_str(&body);
-    //content.push_str("</html>");
-    //utils::fs::write_string(target, content)
-//}
-
 use log::info;
 use std::collections::HashMap;
 use std::fs;
@@ -26,7 +5,7 @@ use std::path::Path;
 
 use http::Uri;
 
-use compiler::{BuildContext};
+use config::{Config, RuntimeOptions, server::Redirects};
 
 use crate::{Error, Result};
 
@@ -51,14 +30,13 @@ fn write_file<P: AsRef<Path>>(location: &str, target: P) -> std::io::Result<()> 
     utils::fs::write_string(target, content)
 }
 
-pub fn write(ctx: &BuildContext) -> Result<()> {
-    if let Some(ref redirect) = ctx.config.redirect {
+pub fn write(config: &Config, options: &RuntimeOptions) -> Result<()> {
+    if let Some(ref redirect) = config.redirect {
         for (k, v) in redirect {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX
             let key = k.trim_start_matches("/");
-
-            let mut buf = ctx.options.base.clone();
+            let mut buf = options.target.clone();
             buf.push(utils::url::to_path_separator(key));
             if k.ends_with("/") {
                 buf.push(config::INDEX_HTML);
@@ -67,7 +45,7 @@ pub fn write(ctx: &BuildContext) -> Result<()> {
                 return Err(Error::RedirectFileExists(buf));
             }
 
-            let short = buf.strip_prefix(&ctx.options.base)?;
+            let short = buf.strip_prefix(&options.target)?;
             info!("{} -> {} as {}", &k, &v, short.display());
             if let Some(ref parent) = buf.parent() {
                 fs::create_dir_all(parent)?;
@@ -78,7 +56,7 @@ pub fn write(ctx: &BuildContext) -> Result<()> {
     Ok(())
 }
 
-pub fn collect(items: &HashMap<String, String>) -> Result<HashMap<String, Uri>> {
+pub fn collect(items: &HashMap<String, String>) -> Result<Redirects> {
     let mut map: HashMap<String, Uri> = HashMap::new();
     for (k, v) in items {
         map.insert(k.clone(), v.as_str().parse::<Uri>()?);
