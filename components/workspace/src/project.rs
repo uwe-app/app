@@ -36,7 +36,14 @@ pub struct Entry {
 }
 
 impl Entry {
-    /// Get the runtime options from a build profile.
+
+    /// Get a render state for this configuration.
+    ///
+    /// Creates the initial runtime options from a build profile which typically 
+    /// would come from command line arguments.
+    ///
+    /// This should only be called when you intend to render a project 
+    /// as it consumes the configuration entry.
     pub fn from_profile(self, args: &ProfileSettings) -> Result<RenderState> {
         let options = crate::options::prepare(&self.config, args)?;
         Ok(RenderState {
@@ -50,7 +57,7 @@ impl Entry {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RenderState {
     pub config: Config,
     pub options: RuntimeOptions,
@@ -276,7 +283,6 @@ impl RenderState {
         Ok(targets)
     }
 
-
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects =
             options.settings.write_redirects.is_some()
@@ -422,8 +428,8 @@ pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
 #[derive(Debug, Default)]
 pub struct ProjectResult {
+    pub state: RenderState,
     pub renderers: Vec<Render>,
-    pub locales: Locales,
 }
 
 #[derive(Debug, Default)]
@@ -483,9 +489,7 @@ pub async fn compile<P: AsRef<Path>>(
 
         state.write_robots(sitemaps)?;
 
-        // Move the locales out of each state into the result
-        // to ensure they still contain the loaded messages
-        result.locales = state.locales;
+        result.state = state;
         compiled.projects.push(result);
     }
 
