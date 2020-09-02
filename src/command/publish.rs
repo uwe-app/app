@@ -28,7 +28,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 
-    let mut spaces = workspace::load(&options.project, true)?;
+    let mut spaces = workspace::open(&options.project, true)?;
     for entry in spaces.iter_mut() {
         build_publish(&options, &mut entry.config).await?;
     }
@@ -62,7 +62,7 @@ async fn build_publish(options: &PublishOptions, config: &mut Config) -> Result<
                     // Compile a pristine release
                     let mut args: ProfileSettings = Default::default();
                     args.release = Some(true);
-                    let (ctx, _locales) = workspace::compile(config, &mut args).await?;
+                    let (ctx, _locales) = workspace::compile1(config, &mut args).await?;
 
                     publish_aws(ctx, request, &publish_env).await?
                 } else {

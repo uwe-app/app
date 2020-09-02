@@ -30,7 +30,7 @@ pub async fn start<P: AsRef<Path>>(
 ) -> Result<(), Error> {
 
     // Compile the project
-    let (ctx, locales) = workspace::compile_project(project, args).await?;
+    let (ctx, locales) = workspace::compile_project1(project, args).await?;
 
     let host = ctx.options.settings.get_host();
     let port = ctx.options.settings.get_port();

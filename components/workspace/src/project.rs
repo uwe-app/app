@@ -397,7 +397,7 @@ impl Workspace {
 
 }
 
-pub fn load<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
+pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();
     let config = Config::load(dir.as_ref(), walk_ancestors)?;
 
@@ -446,7 +446,7 @@ pub async fn compile<P: AsRef<Path>>(
     args: &ProfileSettings,
 ) -> Result<CompileResult> {
 
-    let mut project = crate::load(project, true)?;
+    let mut project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 
     for mut entry in project.into_iter() {

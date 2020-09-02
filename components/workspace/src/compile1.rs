@@ -28,7 +28,7 @@ pub async fn compile_project<P: AsRef<Path>>(
     args: &ProfileSettings,
 ) -> Result<(BuildContext, Locales)> {
 
-    let mut spaces = crate::load(project, true)?;
+    let mut spaces = crate::open(project, true)?;
     let mut ctx = Default::default();
 
     for entry in spaces.iter_mut() {

@@ -81,8 +81,8 @@ mod project;
 pub mod redirect;
 mod render;
 
-pub use compile1::compile;
-pub use compile1::compile_project;
+pub use compile1::compile as compile1;
+pub use compile1::compile_project as compile_project1;
 
-pub use project::load;
-pub use project::compile as compile2;
+pub use project::open;
+pub use project::compile;
