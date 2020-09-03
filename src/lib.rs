@@ -33,6 +33,9 @@ pub enum Error {
     #[error("No virtual hosts for live reload")]
     NoLiveHosts,
 
+    #[error("Live reload does not support the ephemeral port")]
+    NoLiveEphemeralPort,
+
     #[error("No publish configuration")]
     NoPublishConfiguration,
 

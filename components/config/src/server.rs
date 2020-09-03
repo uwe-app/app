@@ -88,6 +88,15 @@ impl Default for ServerConfig {
 
 impl ServerConfig {
 
+    /// New configuration for a host and port.
+    pub fn new(host: String, port: u16, tls: Option<TlsConfig>) -> Self {
+        let mut tmp: Self = Default::default();
+        tmp.host = host;
+        tmp.port = port;
+        tmp.tls = tls;
+        tmp
+    }
+
     /// New configuration using a single host.
     pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
         Self {
