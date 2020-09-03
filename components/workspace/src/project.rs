@@ -6,7 +6,7 @@ use log::info;
 use url::Url;
 
 use cache::CacheComponent;
-use compiler::{BuildContext};
+use compiler::BuildContext;
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
@@ -256,6 +256,17 @@ impl RenderState {
         Ok(())
     }
 
+    /// Get the build context for a compiler pass.
+    pub fn to_context(&self) -> BuildContext {
+        // FIXME: must remove the clones here and 
+        // FIXME: pass an Arc to the compiler
+        BuildContext::new(
+            self.config.clone(),
+            self.options.clone(),
+            self.collation.clone(),
+        )
+    }
+
     /// Get a list of renderers for each locale. 
     pub fn renderer(&mut self) -> Result<Vec<Render>> {
         let locales = self.options.locales.clone();
@@ -267,13 +278,7 @@ impl RenderState {
         locales.map.keys()
             .try_for_each(|lang| {
 
-                // FIXME: must remove the clones here and 
-                // FIXME: pass an Arc to the compiler
-                let mut context = BuildContext::new(
-                    self.config.clone(),
-                    self.options.clone(),
-                    self.collation.clone(),
-                );
+                let mut context = self.to_context();
 
                 if locales.multi {
                     let locale_target = base_target.join(lang);

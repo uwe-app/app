@@ -98,11 +98,11 @@ pub async fn start<P: AsRef<Path>>(
                 *livereload = Some(ws_url);
             }
 
-            let parser = Parser::new(&ctx, &locales).unwrap();
-            let compiler = Compiler::new(&ctx);
-
             // NOTE: only open the browser if initial build succeeds
             open::that(&url).map(|_| ()).unwrap_or(());
+
+            let parser = Parser::new(&ctx, &locales).unwrap();
+            let compiler = Compiler::new(&ctx);
 
             // Invalidator wraps the builder receiving filesystem change
             // notifications and sending messages over the `tx` channel
