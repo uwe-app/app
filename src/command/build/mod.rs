@@ -8,7 +8,6 @@ use scopeguard::defer;
 
 mod invalidator;
 mod livereload;
-mod livereload2;
 
 pub async fn compile<P: AsRef<Path>>(
     project: P,
@@ -22,7 +21,7 @@ pub async fn compile<P: AsRef<Path>>(
 
     let live = args.live.is_some() && args.live.unwrap();
     if live {
-        livereload2::start(project, args, error_cb).await?;
+        livereload::start(project, args, error_cb).await?;
     } else {
         workspace::compile(project, args).await?;
     }

@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc;
 
 use log::{debug, error, info};
 
@@ -6,176 +7,217 @@ use tokio::sync::broadcast;
 use tokio::sync::oneshot;
 use warp::ws::Message;
 
-use notify::DebouncedEvent::{Create, Remove, Rename, Write};
+use notify::DebouncedEvent::{self, Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
-use notify::Watcher;
+use notify::{Watcher, INotifyWatcher};
 use std::thread::sleep;
 use std::time::Duration;
 
-use compiler::Compiler;
+use compiler::{Compiler, BuildContext};
 use compiler::parser::Parser;
 use config::ProfileSettings;
-use config::server::{ServerConfig, HostConfig, ConnectionInfo};
+use config::server::{ServerConfig, HostConfig, ConnectionInfo, PortType};
 
 use server::{Channels, HostChannel};
+
+use workspace::ProjectResult;
 
 use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
 
-#[deprecated(since="0.20.9", note="Use livereload2 module")]
+struct LiveHost {
+    source: PathBuf,
+    receiver: mpsc::Receiver<DebouncedEvent>,
+    watcher: INotifyWatcher,
+    result: ProjectResult,
+    websocket: broadcast::Sender<Message>,
+}
+
 pub async fn start<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
 
-    // Compile the project
-    let (ctx, locales) = workspace::compile_project1(project, args).await?;
-
-    let host = ctx.options.settings.get_host();
-    let port = ctx.options.settings.get_port();
-    let tls = ctx.options.settings.tls.clone();
-
-    let source = ctx.options.source.clone();
-    //let endpoint = utils::generate_id(16);
-
-    // Gather redirects
-    let mut redirect_uris = None;
-    if let Some(ref redirects) = ctx.config.redirect {
-        redirect_uris = Some(redirects.collect()?);
+    // Prepare the server settings
+    let port = args.get_port();
+    if port == 0 {
+        return Err(Error::NoLiveEphemeralPort)
     }
+    let tls = args.tls.clone();
 
-    let target = ctx.options.base.clone().to_path_buf();
-
-    //println!("Redirects {:#?}", redirect_uris);
-    //
-
-    let host = HostConfig::new(
-        target,
-        host.to_owned(),
-        redirect_uris,
-        Some(utils::generate_id(16)));
+    // Compile the project
+    let result = workspace::compile(project, args).await?;
 
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
-    let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-    let reload_tx = ws_tx.clone();
+
+    // Create the collection of channels
     let mut channels = Channels::new(bind_tx);
-    let host_channel = HostChannel {reload: Some(reload_tx)};
-    channels.hosts.entry(host.name.to_string()).or_insert(host_channel);
 
-    let endpoint = host.endpoint.as_ref().unwrap().clone();
+    // Multiple projects will use *.localhost names
+    // otherwise we can just run using the standard `localhost`.
+    let multiple = result.projects.len() > 1;
+
+    let mut watchers: Vec<LiveHost> = Vec::new();
+
+    // Collect virual host configurations
+    let mut hosts: Vec<HostConfig> = Vec::new();
+    result.projects
+        .into_iter()
+        .try_for_each(|result| {
+            let target = result.state.options.base.clone();
+            let redirect_uris = result.state.redirects.collect()?;
+            let hostname = result.state.config.get_local_host_name(multiple); 
+            let host = HostConfig::new(
+                target,
+                hostname,
+                Some(redirect_uris),
+                Some(utils::generate_id(16)));
+
+            // NOTE: These host names may not resolve so cannot attempt
+            // NOTE: to lookup a socket address here.
+            let ws_url = config::server::to_websocket_url(
+                tls.is_some(),
+                &host.name,
+                host.endpoint.as_ref().unwrap(),
+                config::server::get_port(port.to_owned(), &tls, PortType::Infer));
+
+            // Write out the livereload javascript using the correct 
+            // websocket endpoint which the server will create later
+            livereload::write(&result.state.config, &host.directory, &ws_url)?;
+
+            // Configure the live reload relay channels
+            let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+            let reload_tx = ws_tx.clone();
+
+            let host_channel = HostChannel {reload: Some(reload_tx)};
+            channels.hosts.entry(host.name.clone()).or_insert(host_channel);
+
+            info!("Virtual host: {}", &host.name);
+
+            hosts.push(host);
+
+            // Get the source directory to configure the watcher
+            let source = result.state.options.source.clone();
+            // Create a channel to receive the events.
+            let (tx, rx) = mpsc::channel();
+            // Configure the watcher
+            let mut watcher = notify::watcher(tx, Duration::from_secs(1))?;
+
+            let live_host = LiveHost {
+                source,
+                watcher,
+                result,
+                websocket: ws_tx,
+                receiver: rx,
+            };
+            watchers.push(live_host);
+
+            Ok::<(), Error>(())
+        })?;
+
+    if hosts.is_empty() {
+        return Err(Error::NoLiveHosts)
+    }
+
+    // Server must have at least a single virtual host
+    let host = hosts.swap_remove(0);
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
+    opts.hosts = hosts;
 
-    //use std::path::PathBuf;
-    //let mock = HostConfig::new(
-        //PathBuf::from("/home/muji/git/hypertext/blog/build/debug"),
-        //"testhost1".to_string(),
-        //None,
-        //Some(utils::generate_id(16)));
-    //opts.hosts.push(mock);
-
-    // Spawn a thread to receive a notification on the `rx` channel
-    // once the server has bound to a port
+    // Listen for the bind message and open the browser
     std::thread::spawn(move || {
         let mut rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
-            // Get the socket address and websocket transmission channel
+            // Get the server connection info
             let info = bind_rx.await.unwrap();
             let url = info.to_url();
             info!("Serve {}", &url);
-
-            let ws_url = info.to_websocket_url(&endpoint);
-
-            if let Err(e) = livereload::write(&ctx.config, &ctx.options.target, &ws_url) {
-                return error_cb(Error::from(e));
-            }
-
-            // Must be in a new scope so the write lock is dropped
-            // before compilation and invalidation
-            {
-                let mut livereload = compiler::context::livereload().write().unwrap();
-                *livereload = Some(ws_url);
-            }
-
             // NOTE: only open the browser if initial build succeeds
             open::that(&url).map(|_| ()).unwrap_or(());
-
-            let parser = Parser::new(&ctx, &locales).unwrap();
-            let compiler = Compiler::new(&ctx);
-
-            // Invalidator wraps the builder receiving filesystem change
-            // notifications and sending messages over the `tx` channel
-            // to connected websockets when necessary
-            //
-            let mut invalidator = Invalidator::new(compiler, parser);
-
-            // Create a channel to receive the events.
-            let (tx, rx) = std::sync::mpsc::channel();
-            let mut watcher = match notify::watcher(tx, Duration::from_secs(1)) {
-                Ok(w) => w,
-                Err(e) => return error_cb(Error::from(e)),
-            };
-
-            // Add the source directory to the watcher
-            if let Err(e) = watcher.watch(&source, Recursive) {
-                return error_cb(Error::from(e));
-            };
-
-            info!("Watch {}", source.display());
-
-            loop {
-                let first_event = rx.recv().unwrap();
-                sleep(Duration::from_millis(50));
-                let other_events = rx.try_iter();
-                let all_events = std::iter::once(first_event).chain(other_events);
-                let paths = all_events
-                    .filter_map(|event| {
-                        debug!("Received filesystem event: {:?}", event);
-                        match event {
-                            Create(path) | Write(path) | Remove(path) | Rename(_, path) => {
-                                Some(path)
-                            }
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>();
-
-                if !paths.is_empty() {
-                    info!("Changed({}) in {}", paths.len(), source.display());
-
-                    let msg = livereload::messages::start();
-                    let txt = serde_json::to_string(&msg).unwrap();
-
-                    let _ = ws_tx.send(Message::text(txt));
-
-                    let result = invalidator.get_invalidation(paths);
-                    match result {
-                        Ok(invalidation) => {
-                            if let Err(e) = invalidator.invalidate(&source, &invalidation).await {
-                                error!("{}", e);
-
-                                let msg = livereload::messages::notify(e.to_string(), true);
-                                let txt = serde_json::to_string(&msg).unwrap();
-                                let _ = ws_tx.send(Message::text(txt));
-
-                            //return error_cb(Error::from(e));
-                            } else {
-                                //self.builder.manifest.save()?;
-                                if invalidation.notify {
-                                    let msg = livereload::messages::reload();
-                                    let txt = serde_json::to_string(&msg).unwrap();
-                                    let _ = ws_tx.send(Message::text(txt));
-                                    //println!("Got result {:?}", res);
-                                }
-                            }
-                        }
-                        Err(e) => return error_cb(Error::from(e)),
-                    }
-                }
-            }
         });
     });
+
+    for mut w in watchers {
+        std::thread::spawn(move || {
+
+            let mut rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async move {
+
+                let rx = w.receiver;
+
+                // NOTE: must start watching in this thread otherwise
+                // NOTE: the `rx` channel will be closed prematurely
+                w.watcher.watch(&w.source, Recursive).expect("Failed to start watcher");
+                info!("Watch {}", w.source.display());
+
+
+                let context = w.result.state.to_context();
+
+                // Invalidator wraps the builder receiving filesystem change
+                // notifications and sending messages over the `tx` channel
+                // to connected websockets when necessary
+                //
+                let parser = Parser::new(&context, &w.result.state.locales).unwrap();
+                let compiler = Compiler::new(&context);
+                let mut invalidator = Invalidator::new(compiler, parser);
+                let ws_tx = &w.websocket;
+
+                loop {
+                    let first_event = rx.recv().unwrap();
+                    sleep(Duration::from_millis(50));
+                    let other_events = rx.try_iter();
+                    let all_events = std::iter::once(first_event).chain(other_events);
+                    let paths = all_events
+                        .filter_map(|event| {
+                            debug!("Received filesystem event: {:?}", event);
+                            match event {
+                                Create(path) | Write(path) | Remove(path) | Rename(_, path) => {
+                                    Some(path)
+                                }
+                                _ => None,
+                            }
+                        })
+                        .collect::<Vec<_>>();
+
+                    if !paths.is_empty() {
+                        info!("Changed({}) in {}", paths.len(), w.source.display());
+
+                        let msg = livereload::messages::start();
+                        let txt = serde_json::to_string(&msg).unwrap();
+
+                        let _ = ws_tx.send(Message::text(txt));
+
+                        let result = invalidator.get_invalidation(paths);
+                        match result {
+                            Ok(invalidation) => {
+                                if let Err(e) = invalidator.invalidate(&w.source, &invalidation).await {
+                                    error!("{}", e);
+
+                                    let msg = livereload::messages::notify(e.to_string(), true);
+                                    let txt = serde_json::to_string(&msg).unwrap();
+                                    let _ = ws_tx.send(Message::text(txt));
+
+                                //return error_cb(Error::from(e));
+                                } else {
+                                    //self.builder.manifest.save()?;
+                                    if invalidation.notify {
+                                        let msg = livereload::messages::reload();
+                                        let txt = serde_json::to_string(&msg).unwrap();
+                                        let _ = ws_tx.send(Message::text(txt));
+                                        //println!("Got result {:?}", res);
+                                    }
+                                }
+                            }
+                            Err(e) => return error_cb(Error::from(e)),
+                        }
+
+                    }
+                }
+            });
+        });
+    }
 
     // Convert to &'static reference
     let opts = server::configure(opts);
