@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 
@@ -16,7 +17,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{Error, Result, render::Render};
+use crate::{Error, Result, render::Renderer};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -60,6 +61,7 @@ impl Entry {
             locales: Default::default(),
             datasource: Default::default(),
             cache: Default::default(),
+            renderers: Default::default(),
         })
     }
 }
@@ -73,6 +75,7 @@ pub struct RenderState {
     pub locales: Locales,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
+    pub renderers: HashMap<String, Renderer>,
 }
 
 impl RenderState {
@@ -268,12 +271,10 @@ impl RenderState {
     }
 
     /// Get a list of renderers for each locale. 
-    pub fn renderer(&mut self) -> Result<Vec<Render>> {
+    pub fn renderer(&mut self) -> Result<()> {
         let locales = self.options.locales.clone();
         let mut options = self.options.clone();
         let base_target = options.target.clone();
-
-        let mut targets: Vec<Render> = Vec::new();
 
         locales.map.keys()
             .try_for_each(|lang| {
@@ -294,20 +295,21 @@ impl RenderState {
                     vec![options.source.clone()]
                 };
 
-                targets.push(Render {context, paths});
+                self.renderers.insert(lang.clone(), Renderer {context, paths});
+
                 Ok::<(), Error>(())
             })?;
 
-        Ok(targets)
+        Ok(())
     }
 
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects =
             options.settings.write_redirects.is_some()
             && options.settings.write_redirects.unwrap();
+
         if write_redirects {
             self.redirects.write(&options.target)?;
-            //crate::redirect::write(&self.config, options)?;
         }
         Ok(())
     }
@@ -446,14 +448,8 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 }
 
 #[derive(Debug, Default)]
-pub struct ProjectResult {
-    pub state: RenderState,
-    pub renderers: Vec<Render>,
-}
-
-#[derive(Debug, Default)]
 pub struct CompileResult {
-    pub projects: Vec<ProjectResult>,
+    pub projects: Vec<RenderState>,
 }
 
 /// Compile a project.
@@ -469,8 +465,6 @@ pub async fn compile<P: AsRef<Path>>(
     let mut compiled: CompileResult = Default::default();
 
     for entry in project.into_iter() {
-        let mut result: ProjectResult = Default::default();
-
         let mut state = entry.from_profile(args)?;
 
         state.load_locales().await?;
@@ -493,23 +487,24 @@ pub async fn compile<P: AsRef<Path>>(
 
         let mut sitemaps: Vec<Url> = Vec::new();
 
+        state.renderer()?;
+
         // Renderer is generated for each locale to compile
-        for renderer in state.renderer()?.into_iter() {
+        for (_lang, renderer) in state.renderers.iter() {
             let mut res = renderer.render(&state.locales).await?;
             if let Some(url) = res.sitemap.take() {
                 sitemaps.push(url); 
             }
+
             // TODO: ensure redirects work in multi-lingual config
             state.write_redirects(&renderer.context.options)?;
-            state.write_manifest()?;
 
-            result.renderers.push(renderer);
         }
 
-        state.write_robots(sitemaps)?;
+        state.write_manifest()?;
 
-        result.state = state;
-        compiled.projects.push(result);
+        state.write_robots(sitemaps)?;
+        compiled.projects.push(state);
     }
 
     Ok(compiled)

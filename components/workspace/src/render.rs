@@ -19,12 +19,12 @@ pub struct RenderResult {
 }
 
 #[derive(Debug)]
-pub struct Render {
+pub struct Renderer {
     pub context: BuildContext,
     pub paths: Vec<PathBuf>,
 }
 
-impl Render {
+impl Renderer {
 
     /// Render a locale for a project.
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {

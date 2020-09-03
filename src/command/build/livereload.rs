@@ -20,7 +20,7 @@ use config::server::{ServerConfig, HostConfig, ConnectionInfo, PortType};
 
 use server::{Channels, HostChannel};
 
-use workspace::ProjectResult;
+use workspace::RenderState;
 
 use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
@@ -29,7 +29,7 @@ struct LiveHost {
     source: PathBuf,
     receiver: mpsc::Receiver<DebouncedEvent>,
     watcher: INotifyWatcher,
-    result: ProjectResult,
+    state: RenderState,
     websocket: broadcast::Sender<Message>,
 }
 
@@ -65,10 +65,10 @@ pub async fn start<P: AsRef<Path>>(
     let mut hosts: Vec<HostConfig> = Vec::new();
     result.projects
         .into_iter()
-        .try_for_each(|result| {
-            let target = result.state.options.base.clone();
-            let redirect_uris = result.state.redirects.collect()?;
-            let hostname = result.state.config.get_local_host_name(multiple); 
+        .try_for_each(|state| {
+            let target = state.options.base.clone();
+            let redirect_uris = state.redirects.collect()?;
+            let hostname = state.config.get_local_host_name(multiple); 
             let host = HostConfig::new(
                 target,
                 hostname,
@@ -85,7 +85,7 @@ pub async fn start<P: AsRef<Path>>(
 
             // Write out the livereload javascript using the correct 
             // websocket endpoint which the server will create later
-            livereload::write(&result.state.config, &host.directory, &ws_url)?;
+            livereload::write(&state.config, &host.directory, &ws_url)?;
 
             // Configure the live reload relay channels
             let (ws_tx, _rx) = broadcast::channel::<Message>(100);
@@ -99,7 +99,7 @@ pub async fn start<P: AsRef<Path>>(
             hosts.push(host);
 
             // Get the source directory to configure the watcher
-            let source = result.state.options.source.clone();
+            let source = state.options.source.clone();
             // Create a channel to receive the events.
             let (tx, rx) = mpsc::channel();
             // Configure the watcher
@@ -108,7 +108,7 @@ pub async fn start<P: AsRef<Path>>(
             let live_host = LiveHost {
                 source,
                 watcher,
-                result,
+                state,
                 websocket: ws_tx,
                 receiver: rx,
             };
@@ -153,13 +153,13 @@ pub async fn start<P: AsRef<Path>>(
                 info!("Watch {}", w.source.display());
 
 
-                let context = w.result.state.to_context();
+                let context = w.state.to_context();
 
                 // Invalidator wraps the builder receiving filesystem change
                 // notifications and sending messages over the `tx` channel
                 // to connected websockets when necessary
                 //
-                let parser = Parser::new(&context, &w.result.state.locales).unwrap();
+                let parser = Parser::new(&context, &w.state.locales).unwrap();
                 let compiler = Compiler::new(&context);
                 let mut invalidator = Invalidator::new(compiler, parser);
                 let ws_tx = &w.websocket;
