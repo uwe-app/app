@@ -159,12 +159,12 @@ fn get_live_reload(
 
     let use_tls = opts.tls.is_some();
 
-    let address = opts.get_sock_addr(PortType::Infer)?;
+    let address = opts.get_sock_addr(PortType::Infer, None)?;
     let port = address.port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
         let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
-        let origin = format!("{}//{}:{}", scheme, opts.host, port);
+        let origin = format!("{}//{}:{}", scheme, &host.name, port);
         cors = warp::cors()
             .allow_origin(origin.as_str())
             .allow_methods(vec!["GET"]);
@@ -301,7 +301,7 @@ pub async fn serve(
     channels: &mut Channels
 ) -> crate::Result<()> {
 
-    let addr = opts.get_sock_addr(PortType::Infer)?;
+    let addr = opts.get_sock_addr(PortType::Infer, None)?;
     server!(&addr, opts, channels);
 
     Ok(())

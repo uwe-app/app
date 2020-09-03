@@ -75,17 +75,13 @@ pub async fn start<P: AsRef<Path>>(
                 Some(redirect_uris),
                 Some(utils::generate_id(16)));
 
-
-            // We need to fake the connection info so that we can 
-            // write out the livereload script before the server has bound to a port
-            let tmp = ServerConfig::new(
-                host.name.clone(), port.to_owned(), tls.clone());
-            // Must match how the server will get an address
-            let addr = tmp.get_sock_addr(PortType::Infer)?;
-
-            let info = ConnectionInfo {
-                addr, host: host.name.clone(), tls: tls.is_some()};
-            let ws_url = info.to_websocket_url(host.endpoint.as_ref().unwrap());
+            // NOTE: These host names may not resolve so cannot attempt
+            // NOTE: to lookup a socket address here.
+            let ws_url = config::server::to_websocket_url(
+                tls.is_some(),
+                &host.name,
+                host.endpoint.as_ref().unwrap(),
+                config::server::get_port(port.to_owned(), &tls, PortType::Infer));
 
             // Write out the livereload javascript using the correct 
             // websocket endpoint which the server will create later
@@ -128,6 +124,7 @@ pub async fn start<P: AsRef<Path>>(
     // Server must have at least a single virtual host
     let host = hosts.swap_remove(0);
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
+    opts.hosts = hosts;
 
     // Listen for the bind message and open the browser
     std::thread::spawn(move || {

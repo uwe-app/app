@@ -51,6 +51,10 @@ pub static LANG: &str = "en";
 pub static LIVERELOAD_FILE: &str = "__livereload.js";
 pub static TAGS: &str = "tags";
 
+/// Used when multiple virtual hosts and inferring 
+/// a sub-domain from the primary host name.
+pub static HOST_DEV: &str = "localhost.dev";
+
 pub static HOST: &str = "localhost";
 pub static PORT: u16 = 8888;
 pub static PORT_SSL: u16 = 8843;
@@ -198,7 +202,7 @@ impl Config {
         } else {
             if infer_from_host {
                 let subdomain = slug::slugify(&self.host);
-                format!("{}.{}", subdomain, HOST)
+                format!("{}.{}", subdomain, HOST_DEV)
             } else {
                 HOST.to_string()
             }

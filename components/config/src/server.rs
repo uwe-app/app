@@ -7,6 +7,23 @@ use crate::redirect::Redirects;
 
 use crate::{Error, Result};
 
+pub fn to_websocket_url(tls: bool, host: &str, endpoint: &str, port: u16) -> String {
+    let scheme = if tls { crate::SCHEME_WSS } else { crate::SCHEME_WS };
+    format!("{}//{}:{}/{}", scheme, host, port, endpoint)
+}
+
+pub fn get_port(port: u16, tls: &Option<TlsConfig>, port_type: PortType) -> u16 {
+    match port_type {
+        PortType::Infer => {
+            if let Some(ref tls) = tls { tls.port } else { port }
+        }
+        PortType::Insecure => port,
+        PortType::Secure => {
+            if let Some(ref tls) = tls { tls.port } else { crate::PORT_SSL }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct ConnectionInfo {
     pub addr: SocketAddr,
@@ -21,8 +38,9 @@ impl ConnectionInfo {
     }
 
     pub fn to_websocket_url(&self, endpoint: &str) -> String {
-        let scheme = if self.tls { crate::SCHEME_WSS } else { crate::SCHEME_WS };
-        format!("{}//{}:{}/{}", scheme, &self.host, self.addr.port(), endpoint)
+        to_websocket_url(self.tls, &self.host, endpoint, self.addr.port())
+        //let scheme = if self.tls { crate::SCHEME_WSS } else { crate::SCHEME_WS };
+        //format!("{}//{}:{}/{}", scheme, &self.host, self.addr.port(), endpoint)
     }
 }
 
@@ -58,7 +76,11 @@ impl Default for LogConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
+    pub listen: String,
+
+    #[deprecated(since = "0.20.9", note = "Use listen to bind, get host name from virtual host")]
     pub host: String,
+
     pub port: u16,
     pub tls: Option<TlsConfig>,
     pub default_host: HostConfig,
@@ -75,6 +97,7 @@ pub struct ServerConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
+            listen: String::from(crate::config::HOST),
             host: String::from(crate::config::HOST),
             port: crate::config::PORT,
             tls: None,
@@ -100,6 +123,7 @@ impl ServerConfig {
     /// New configuration using a single host.
     pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
         Self {
+            listen: String::from(crate::config::HOST),
             host: String::from(crate::config::HOST),
             port: port,
             tls,
@@ -111,28 +135,25 @@ impl ServerConfig {
     }
 
     pub fn get_port(&self, port_type: PortType) -> u16 {
-        match port_type {
-            PortType::Infer => {
-                if let Some(ref tls) = self.tls { tls.port } else { self.port }
-            }
-            PortType::Insecure => self.port,
-            PortType::Secure => {
-                if let Some(ref tls) = self.tls { tls.port } else { crate::PORT_SSL }
-            }
-        }
+        get_port(self.port, &self.tls, port_type)
     }
 
-    pub fn get_address(&self, port_type: PortType) -> String {
+    pub fn get_address(&self, port_type: PortType, host: Option<String>) -> String {
         let port = self.get_port(port_type);
-        format!("{}:{}", self.host, port)
+        let host = if let Some(host) = host {
+            host.clone()
+        } else {
+            self.listen.clone()
+        };
+        format!("{}:{}", host, port)
     }
 
-    pub fn get_url(&self, scheme: &str, port_type: PortType) -> String {
-        format!("{}//{}", scheme, self.get_address(port_type)) 
+    pub fn get_url(&self, scheme: &str, port_type: PortType, host: Option<String>) -> String {
+        format!("{}//{}", scheme, self.get_address(port_type, host)) 
     }
 
-    pub fn get_sock_addr(&self, port_type: PortType) -> Result<SocketAddr> {
-        let address = self.get_address(port_type);
+    pub fn get_sock_addr(&self, port_type: PortType, host: Option<String>) -> Result<SocketAddr> {
+        let address = self.get_address(port_type, host);
         Ok(address
             .to_socket_addrs()?
             .next()
