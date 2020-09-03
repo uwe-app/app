@@ -22,6 +22,7 @@ use server::{Channels, HostChannel};
 use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
 
+#[deprecated(since="0.20.9", note="Use livereload2 module")]
 pub async fn start<P: AsRef<Path>>(
     project: P,
     args: &mut ProfileSettings,

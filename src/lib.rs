@@ -30,6 +30,9 @@ pub enum Error {
     #[error("Could not determine default source path")]
     SourceEmpty,
 
+    #[error("No virtual hosts for live reload")]
+    NoLiveHosts,
+
     #[error("No publish configuration")]
     NoPublishConfiguration,
 

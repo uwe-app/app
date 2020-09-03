@@ -110,6 +110,11 @@ pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
 pub struct Config {
     pub lang: String,
     pub host: String,
+
+    // Host name when running locally which overrides the inferred
+    // localhost subdomain
+    pub localhost: Option<String>,
+
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
     pub book: Option<BookConfig>,
@@ -152,6 +157,7 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
+            localhost: None,
             build: Some(Default::default()),
             workspace: None,
             fluent: Some(Default::default()),
@@ -185,6 +191,20 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn get_local_host_name(&self, infer_from_host: bool) -> String {
+        if let Some(ref hostname) = self.localhost {
+            hostname.clone() 
+        } else {
+            if infer_from_host {
+                let subdomain = slug::slugify(&self.host);
+                format!("{}.{}", subdomain, HOST)
+            } else {
+                HOST.to_string()
+            }
+        }
+    }
+
     pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
         if let Some(ref syntax) = self.syntax {
             return syntax.is_enabled(name);
