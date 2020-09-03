@@ -15,7 +15,7 @@ use config::{Config, ProfileSettings, RuntimeOptions, RedirectConfig};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
-use locale::Locales;
+use locale::{Locales, LocaleName};
 
 use crate::{Error, Result, render::Renderer};
 
@@ -75,7 +75,7 @@ pub struct RenderState {
     pub locales: Locales,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub renderers: HashMap<String, Renderer>,
+    pub renderers: HashMap<LocaleName, Renderer>,
 }
 
 impl RenderState {
@@ -278,7 +278,6 @@ impl RenderState {
 
         locales.map.keys()
             .try_for_each(|lang| {
-
                 let mut context = self.to_context();
 
                 if locales.multi {

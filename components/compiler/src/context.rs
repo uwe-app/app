@@ -1,8 +1,10 @@
+use std::path::PathBuf;
 use once_cell::sync::OnceCell;
 use std::sync::{Arc, RwLock};
 
 use collator::CollateInfo;
 use config::{Config, RuntimeOptions};
+use locale::LocaleName;
 
 #[derive(Debug, Default)]
 pub struct BuildContext {
@@ -23,6 +25,12 @@ impl BuildContext {
             collation,
         }
     }
+}
+
+#[derive(Debug)]
+pub struct CompileTarget {
+    pub lang: LocaleName,
+    pub target: PathBuf,
 }
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {

@@ -201,6 +201,7 @@ impl<'a> Compiler<'a> {
         }
 
         // Now compile the books
+        // FIXME: refactor books
         if let Some(ref _book) = self.context.config.book {
             let livereload = crate::context::livereload().read().unwrap();
             self.book.all(&self.context.config, livereload.clone())?;
