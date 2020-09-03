@@ -34,6 +34,9 @@ pub enum Error {
     #[error("Cyclic redirect: {stack} <-> {key}")]
     CyclicRedirect { stack: String, key: String },
 
+    #[error("Redirect file {0} already exists")]
+    RedirectFileExists(PathBuf),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 

@@ -1,5 +1,9 @@
+use std::fs;
+use std::path::Path;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+
+use log::info;
 
 use http::Uri;
 
@@ -35,10 +39,10 @@ impl RedirectConfig {
 
     // FIXME: improve this redirect validation logic to handle
     // FIXME: trailing slashes on sources and targets better
-    fn validate_redirect<S: AsRef<str>>(
+    fn validate_redirect<S: AsRef<str>, T: AsRef<str>>(
         &self,
         k: S,
-        v: S,
+        v: T,
         stack: &mut Vec<String>,
     ) -> Result<()> {
         if stack.len() >= MAX_REDIRECTS {
@@ -71,5 +75,49 @@ impl RedirectConfig {
 
         Ok(())
     }
+
+    pub fn write<P: AsRef<Path>>(&self, target: P) -> Result<()> {
+        for (k, v) in self.map.iter() {
+            // Strip the trailing slash so it is not treated
+            // as an absolute path on UNIX
+            let key = k.trim_start_matches("/");
+            let mut buf = target.as_ref().to_path_buf();
+            buf.push(utils::url::to_path_separator(key));
+            if k.ends_with("/") {
+                buf.push(crate::INDEX_HTML);
+            }
+            if buf.exists() {
+                return Err(Error::RedirectFileExists(buf));
+            }
+
+            let short = buf.strip_prefix(target.as_ref())?;
+            info!("{} -> {} as {}", &k, &v, short.display());
+            if let Some(ref parent) = buf.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            self.write_file(&v, &buf)?;
+        }
+        Ok(())
+    }
+
+    fn write_file<P: AsRef<Path>>(&self, location: &str, target: P) -> std::io::Result<()> {
+        let mut content = String::from("<!doctype html>");
+        let body = format!(
+            "<body onload=\"document.location.replace('{}');\"></body>",
+            location
+        );
+        let meta = format!(
+            "<noscript><meta http-equiv=\"refresh\" content=\"0; {}\"></noscript>",
+            location
+        );
+        content.push_str("<html>");
+        content.push_str("<head>");
+        content.push_str(&meta);
+        content.push_str("</head>");
+        content.push_str(&body);
+        content.push_str("</html>");
+        utils::fs::write_string(target, content)
+    }
+
 }
 

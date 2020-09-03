@@ -31,8 +31,8 @@ pub enum Error {
     #[error("Profiles may not define a build profile, please remove it")]
     NoProfileInProfile,
 
-    #[error("Redirect file {0} already exists")]
-    RedirectFileExists(PathBuf),
+    //#[error("Redirect file {0} already exists")]
+    //RedirectFileExists(PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -72,7 +72,6 @@ mod compile1;
 pub mod lock;
 mod options;
 mod project;
-pub mod redirect;
 mod render;
 
 pub use compile1::compile as compile1;

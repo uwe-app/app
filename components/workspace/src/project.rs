@@ -1,6 +1,5 @@
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use log::info;
 
@@ -11,13 +10,13 @@ use compiler::{BuildContext};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use config::{Config, ProfileSettings, RuntimeOptions, Redirects, RedirectConfig};
+use config::{Config, ProfileSettings, RuntimeOptions, RedirectConfig};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{Error, Result, redirect, render::Render};
+use crate::{Error, Result, render::Render};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -302,7 +301,8 @@ impl RenderState {
             options.settings.write_redirects.is_some()
             && options.settings.write_redirects.unwrap();
         if write_redirects {
-            crate::redirect::write(&self.config, options)?;
+            self.redirects.write(&options.target)?;
+            //crate::redirect::write(&self.config, options)?;
         }
         Ok(())
     }
@@ -460,10 +460,10 @@ pub async fn compile<P: AsRef<Path>>(
     args: &ProfileSettings,
 ) -> Result<CompileResult> {
 
-    let mut project = open(project, true)?;
+    let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 
-    for mut entry in project.into_iter() {
+    for entry in project.into_iter() {
         let mut result: ProjectResult = Default::default();
 
         let mut state = entry.from_profile(args)?;

@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 
 use human_bytes::human_bytes;
 use log::info;
-use url::Url;
 
 use cache::CacheComponent;
 use compiler::parser::Parser;
@@ -20,7 +19,7 @@ use collator::loader;
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use crate::{Error, Result, redirect};
+use crate::{Error, Result};
 
 #[deprecated(since="0.20.8", note="Use Workspace")]
 pub async fn compile_project<P: AsRef<Path>>(
@@ -54,7 +53,10 @@ pub async fn compile(
 
     if let Ok((ref mut ctx, _)) = res {
         if write_redirects {
-            crate::redirect::write(&ctx.config, &ctx.options)?;
+            //crate::redirect::write(&ctx.config, &ctx.options)?;
+            if let Some(ref redirects) = ctx.config.redirect {
+                redirects.write(&ctx.options.target)?;
+            }
         }
 
         // Write the manifest for incremental builds

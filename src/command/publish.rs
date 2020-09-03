@@ -3,9 +3,8 @@ use std::path::PathBuf;
 
 use log::info;
 
-use compiler::BuildContext;
 use config::AwsPublishEnvironment;
-use config::{Config, ProfileSettings};
+use config::ProfileSettings;
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 

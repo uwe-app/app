@@ -18,7 +18,6 @@ use config::ProfileSettings;
 use config::server::{ServerConfig, HostConfig, ConnectionInfo};
 
 use server::{Channels, HostChannel};
-use workspace::redirect;
 
 use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
