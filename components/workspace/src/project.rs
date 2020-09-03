@@ -7,7 +7,7 @@ use log::info;
 use url::Url;
 
 use cache::CacheComponent;
-use compiler::BuildContext;
+use compiler::{BuildContext, CompileTarget};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
@@ -17,7 +17,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::{Locales, LocaleName};
 
-use crate::{Error, Result, render::Renderer};
+use crate::{Error, Result, renderer::Renderer};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -272,29 +272,35 @@ impl RenderState {
 
     /// Get a list of renderers for each locale. 
     pub fn renderer(&mut self) -> Result<()> {
-        let locales = self.options.locales.clone();
-        let mut options = self.options.clone();
-        let base_target = options.target.clone();
+        let base_target = self.options.base.clone();
 
+        let locales = self.options.locales.clone();
         locales.map.keys()
             .try_for_each(|lang| {
                 let mut context = self.to_context();
 
-                if locales.multi {
-                    let locale_target = base_target.join(lang);
-                    options.lang = lang.clone();
-                    options.target = locale_target.clone();
-                    context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
-                }
+                let target = if locales.multi {
+                    CompileTarget { lang: lang.clone(), target: base_target.join(lang) }
+                } else {
+                    CompileTarget { lang: lang.clone(), target: base_target.clone() }
+                };
 
-                let paths: Vec<PathBuf> = if let Some(ref paths) = context.options.settings.paths {
+                //if locales.multi {
+                    //let locale_target = base_target.join(lang);
+                    //options.lang = lang.clone();
+                    //options.target = locale_target.clone();
+                    //context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
+                //}
+
+                // Get source paths from the profile settings
+                let paths: Vec<PathBuf> = if let Some(ref paths) = self.options.settings.paths {
                     self.verify(paths)?;
                     paths.clone()
                 } else {
-                    vec![options.source.clone()]
+                    vec![self.options.source.clone()]
                 };
 
-                self.renderers.insert(lang.clone(), Renderer {context, paths});
+                self.renderers.insert(lang.clone(), Renderer {target, context, paths});
 
                 Ok::<(), Error>(())
             })?;

@@ -103,7 +103,7 @@ pub async fn start<P: AsRef<Path>>(
             // Create a channel to receive the events.
             let (tx, rx) = mpsc::channel();
             // Configure the watcher
-            let mut watcher = notify::watcher(tx, Duration::from_secs(1))?;
+            let watcher = notify::watcher(tx, Duration::from_secs(1))?;
 
             let live_host = LiveHost {
                 source,

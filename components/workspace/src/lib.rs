@@ -71,6 +71,6 @@ type Result<T> = std::result::Result<T, Error>;
 pub mod lock;
 mod options;
 mod project;
-mod render;
+mod renderer;
 
 pub use project::*;

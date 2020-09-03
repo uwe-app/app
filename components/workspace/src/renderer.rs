@@ -6,7 +6,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use compiler::{BuildContext, Compiler, ParseData, parser::Parser};
+use compiler::{BuildContext, CompileTarget, Compiler, ParseData, parser::Parser};
 use config::sitemap::{SiteMapIndex, SiteMapFile, SiteMapEntry};
 use locale::Locales;
 use search::{compile as compile_index, intermediate, Index, IntermediateEntry};
@@ -20,6 +20,7 @@ pub struct RenderResult {
 
 #[derive(Debug)]
 pub struct Renderer {
+    pub target: CompileTarget,
     pub context: BuildContext,
     pub paths: Vec<PathBuf>,
 }

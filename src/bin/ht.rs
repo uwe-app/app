@@ -452,7 +452,7 @@ async fn process_command(cmd: &Command) {
             }
 
             let serve: ServerConfig = Default::default();
-            let mut host = &serve.host;
+            let mut host = &serve.listen;
             let mut port = &serve.port;
             let mut tls = serve.tls.clone();
 
