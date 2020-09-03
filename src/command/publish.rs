@@ -9,7 +9,7 @@ use config::{Config, ProfileSettings};
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
-use workspace::lock;
+use workspace::{lock, compile, RenderState};
 use scopeguard::defer;
 
 use crate::Error;
@@ -28,24 +28,27 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 
-    let mut spaces = workspace::open(&options.project, true)?;
-    for entry in spaces.iter_mut() {
-        build_publish(&options, &mut entry.config).await?;
+    let args = ProfileSettings::new_release();
+    let result = compile(&options.project, &args).await?;
+
+    for project in result.projects.into_iter() {
+        do_publish(&options, &project.state).await?; 
     }
+
     Ok(())
 }
 
-async fn build_publish(options: &PublishOptions, config: &mut Config) -> Result<()> {
+async fn do_publish(options: &PublishOptions, state: &RenderState) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
-            if let Some(ref publish_config) = config.publish.as_ref().unwrap().aws {
+            if let Some(ref publish_config) = state.config.publish.as_ref().unwrap().aws {
                 if let Some(env) = publish_config.environments.get(&options.env) {
                     let publish_env = env.clone();
 
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
-                        config.host.clone()
+                        state.config.host.clone()
                     };
 
                     info!("Bucket {}", &bucket);
@@ -59,12 +62,7 @@ async fn build_publish(options: &PublishOptions, config: &mut Config) -> Result<
                         prefix: env.prefix.clone(),
                     };
 
-                    // Compile a pristine release
-                    let mut args: ProfileSettings = Default::default();
-                    args.release = Some(true);
-                    let (ctx, _locales) = workspace::compile1(config, &mut args).await?;
-
-                    publish_aws(ctx, request, &publish_env).await?
+                    publish_aws(state, request, &publish_env).await?
                 } else {
                     return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
                 }
@@ -78,14 +76,14 @@ async fn build_publish(options: &PublishOptions, config: &mut Config) -> Result<
 }
 
 async fn publish_aws(
-    ctx: BuildContext,
+    state: &RenderState,
     request: PublishRequest,
     env: &AwsPublishEnvironment,
 ) -> Result<()> {
     info!("Building local file list");
 
     // Create the list of local build files
-    let mut file_builder = FileBuilder::new(ctx.options.base.clone(), env.prefix.clone());
+    let mut file_builder = FileBuilder::new(state.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

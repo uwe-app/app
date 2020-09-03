@@ -218,6 +218,12 @@ impl Default for ProfileSettings {
 
 impl ProfileSettings {
 
+    pub fn new_release() -> Self {
+        let mut settings: ProfileSettings = Default::default();
+        settings.release = Some(true);
+        settings
+    }
+
     pub fn append(&mut self, other: &mut Self) {
         self.source = mem::take(&mut other.source);
         self.target = mem::take(&mut other.target);
