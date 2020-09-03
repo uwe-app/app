@@ -72,15 +72,6 @@ fn to_options(
 
     require_output_dir(&target)?;
 
-    let serve = cfg.serve.as_ref().unwrap();
-    if args.host.is_none() {
-        args.host = Some(serve.host.clone());
-    }
-
-    if args.port.is_none() {
-        args.port = Some(serve.port.clone());
-    }
-
     if !source.exists() || !source.is_dir() {
         return Err(Error::NotDirectory(source.clone()));
     }

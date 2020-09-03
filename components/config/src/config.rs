@@ -17,7 +17,6 @@ use super::profile::{ProfileName, ProfileSettings};
 use super::redirect::RedirectConfig;
 use super::script::JavaScriptConfig;
 use super::style::StyleSheetConfig;
-use super::server::ServerConfig;
 use super::search::SearchConfig;
 use super::syntax::SyntaxConfig;
 use super::transform::TransformConfig;
@@ -113,7 +112,6 @@ pub struct Config {
     pub host: String,
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
-    pub serve: Option<ServerConfig>,
     pub book: Option<BookConfig>,
     pub fluent: Option<FluentConfig>,
     pub hook: Option<HashMap<String, HookConfig>>,
@@ -158,7 +156,6 @@ impl Default for Config {
             workspace: None,
             fluent: Some(Default::default()),
             book: None,
-            serve: Some(Default::default()),
             hook: None,
             node: Some(Default::default()),
             page: Some(Default::default()),

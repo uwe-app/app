@@ -13,7 +13,7 @@ use structopt::StructOpt;
 use std::panic;
 
 use hypertext::command;
-use hypertext::{Config, Error, ProfileSettings};
+use hypertext::{Error, ProfileSettings};
 use config::server::{LaunchConfig, ServerConfig, HostConfig, TlsConfig};
 use publisher::PublishProvider;
 
@@ -451,8 +451,7 @@ async fn process_command(cmd: &Command) {
                 return;
             }
 
-            let cfg: Config = Default::default();
-            let serve = cfg.serve.as_ref().unwrap();
+            let serve: ServerConfig = Default::default();
             let mut host = &serve.host;
             let mut port = &serve.port;
             let mut tls = serve.tls.clone();
