@@ -68,13 +68,9 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-mod compile1;
 pub mod lock;
 mod options;
 mod project;
 mod render;
-
-pub use compile1::compile as compile1;
-pub use compile1::compile_project as compile_project1;
 
 pub use project::*;
