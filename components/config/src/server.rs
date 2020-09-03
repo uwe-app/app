@@ -2,12 +2,11 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use http::Uri;
 use serde::{Deserialize, Serialize};
 
-use crate::{Error, Result};
+use crate::redirect::Redirects;
 
-pub type Redirects = HashMap<String, Uri>;
+use crate::{Error, Result};
 
 #[derive(Debug)]
 pub struct ConnectionInfo {

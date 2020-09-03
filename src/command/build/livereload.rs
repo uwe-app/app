@@ -42,7 +42,7 @@ pub async fn start<P: AsRef<Path>>(
     // Gather redirects
     let mut redirect_uris = None;
     if let Some(ref redirects) = ctx.config.redirect {
-        redirect_uris = Some(redirect::collect(redirects)?);
+        redirect_uris = Some(redirects.collect()?);
     }
 
     let target = ctx.options.base.clone().to_path_buf();

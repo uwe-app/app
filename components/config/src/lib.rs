@@ -28,12 +28,20 @@ pub enum Error {
     #[error("Failed to read link catalog {0}")]
     LinkCatalog(PathBuf),
 
+    #[error("Too many redirects, limit is {0}")]
+    TooManyRedirects(usize),
+
+    #[error("Cyclic redirect: {stack} <-> {key}")]
+    CyclicRedirect { stack: String, key: String },
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    InvalidUri(#[from] http::uri::InvalidUri),
 
     #[error(transparent)]
     Json(#[from] serde_json::Error),
@@ -60,6 +68,7 @@ mod matcher;
 mod page;
 pub mod path;
 mod profile;
+pub mod redirect;
 pub mod robots;
 pub mod script;
 pub mod search;
@@ -89,3 +98,4 @@ pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use page::{Page, PageLink, PaginateInfo, Author};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions, LocaleMap};
 pub use search::{SEARCH_JS, SEARCH_WASM};
+pub use redirect::*;

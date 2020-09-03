@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use log::info;
 
@@ -10,7 +11,7 @@ use compiler::{BuildContext};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use config::{Config, ProfileSettings, RuntimeOptions};
+use config::{Config, ProfileSettings, RuntimeOptions, Redirects, RedirectConfig};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
@@ -46,11 +47,18 @@ impl Entry {
     /// as it consumes the configuration entry.
     pub fn from_profile(self, args: &ProfileSettings) -> Result<RenderState> {
         let options = crate::options::prepare(&self.config, args)?;
+        let redirects = if let Some(ref redirects) = self.config.redirect {
+            redirects.clone()    
+        } else {
+            Default::default()
+        };
+
         Ok(RenderState {
             config: self.config,
             options,
-            locales: Default::default(),
             collation: Default::default(),
+            redirects,
+            locales: Default::default(),
             datasource: Default::default(),
             cache: Default::default(),
         })
@@ -61,8 +69,9 @@ impl Entry {
 pub struct RenderState {
     pub config: Config,
     pub options: RuntimeOptions,
-    pub locales: Locales,
     pub collation: CollateInfo,
+    pub redirects: RedirectConfig,
+    pub locales: Locales,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
 }
@@ -173,25 +182,27 @@ impl RenderState {
         // Map permalink redirects
         if !self.collation.permalinks.is_empty() {
             // Must have some redirects
-            if let None = self.config.redirect {
-                self.config.redirect = Some(Default::default());
-            }
+            //if let None = self.config.redirect {
+                //self.config.redirect = Some(Default::default());
+            //}
 
-            if let Some(redirects) = self.config.redirect.as_mut() {
+            //if let Some(redirects) = self.config.redirect.as_mut() {
                 for (permalink, href) in self.collation.permalinks.iter() {
                     let key = permalink.to_string() ;
-                    if redirects.contains_key(&key) {
+                    if self.redirects.map.contains_key(&key) {
                         return Err(Error::RedirectPermalinkCollision(key));
                     }
-                    redirects.insert(key, href.to_string());
+                    self.redirects.map.insert(key, href.to_string());
                 }
-            }
+            //}
         }
 
         // Validate the redirects
-        if let Some(ref redirects) = self.config.redirect {
-            redirect::validate(redirects)?;
-        }
+        //if let Some(ref redirects) = self.config.redirect {
+        //redirect::validate(&self.redirects.map)?;
+        //}
+
+        self.redirects.validate()?;
 
         Ok(())
     }
@@ -256,6 +267,9 @@ impl RenderState {
 
         locales.map.keys()
             .try_for_each(|lang| {
+
+                // FIXME: must remove the clones here and 
+                // FIXME: pass an Arc to the compiler
                 let mut context = BuildContext::new(
                     self.config.clone(),
                     self.options.clone(),

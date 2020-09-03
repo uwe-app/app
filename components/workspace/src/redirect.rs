@@ -3,9 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use http::Uri;
-
-use config::{Config, RuntimeOptions, server::Redirects};
+use config::{Config, RuntimeOptions, Redirects};
 
 use crate::{Error, Result};
 
@@ -32,7 +30,7 @@ fn write_file<P: AsRef<Path>>(location: &str, target: P) -> std::io::Result<()> 
 
 pub fn write(config: &Config, options: &RuntimeOptions) -> Result<()> {
     if let Some(ref redirect) = config.redirect {
-        for (k, v) in redirect {
+        for (k, v) in redirect.map.iter() {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX
             let key = k.trim_start_matches("/");
@@ -56,14 +54,7 @@ pub fn write(config: &Config, options: &RuntimeOptions) -> Result<()> {
     Ok(())
 }
 
-pub fn collect(items: &HashMap<String, String>) -> Result<Redirects> {
-    let mut map: HashMap<String, Uri> = HashMap::new();
-    for (k, v) in items {
-        map.insert(k.clone(), v.as_str().parse::<Uri>()?);
-    }
-    Ok(map)
-}
-
+/*
 pub fn validate(map: &HashMap<String, String>) -> Result<()> {
     for (k, v) in map {
         let mut stack: Vec<String> = Vec::new();
@@ -111,3 +102,4 @@ fn validate_redirect<S: AsRef<str>>(
 
     Ok(())
 }
+*/

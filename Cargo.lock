@@ -3906,7 +3906,6 @@ dependencies = [
  "config",
  "datasource",
  "fs2",
- "http",
  "human_bytes",
  "locale",
  "log",

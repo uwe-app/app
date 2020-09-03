@@ -34,20 +34,14 @@ pub enum Error {
     #[error("Redirect file {0} already exists")]
     RedirectFileExists(PathBuf),
 
-    #[error("Too many redirects, limit is {0}")]
-    TooManyRedirects(usize),
-
-    #[error("Cyclic redirect: {stack} <-> {key}")]
-    CyclicRedirect { stack: String, key: String },
-
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
-    #[error(transparent)]
-    InvalidUri(#[from] http::uri::InvalidUri),
+    //#[error(transparent)]
+    //InvalidUri(#[from] http::uri::InvalidUri),
 
     #[error(transparent)]
     Json(#[from] serde_json::error::Error),

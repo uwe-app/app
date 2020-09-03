@@ -175,17 +175,18 @@ async fn collate(
         if let Some(redirects) = config.redirect.as_mut() {
             for (permalink, href) in collation.permalinks.iter() {
                 let key = permalink.to_string() ;
-                if redirects.contains_key(&key) {
+                if redirects.map.contains_key(&key) {
                     return Err(Error::RedirectPermalinkCollision(key));
                 }
-                redirects.insert(key, href.to_string());
+                redirects.map.insert(key, href.to_string());
             }
         }
     }
 
     // Validate the redirects
     if let Some(ref redirects) = config.redirect {
-        redirect::validate(redirects)?;
+        redirects.validate()?;
+        //redirect::validate(&redirects.map)?;
     }
 
     // Copy the search runtime files if we need them

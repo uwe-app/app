@@ -10,12 +10,11 @@ use toml;
 use log::debug;
 use unic_langid::LanguageIdentifier;
 
-use utils;
-
 use super::feed::FeedConfig;
 use super::indexer::{DataBase, IndexRequest};
 use super::page::{Author, Page};
 use super::profile::{ProfileName, ProfileSettings};
+use super::redirect::RedirectConfig;
 use super::script::JavaScriptConfig;
 use super::style::StyleSheetConfig;
 use super::server::ServerConfig;
@@ -62,8 +61,6 @@ pub static SCHEME_HTTP: &str = "http:";
 pub static SCHEME_DELIMITER: &str = "//";
 pub static SCHEME_WSS: &str = "wss:";
 pub static SCHEME_WS: &str = "ws:";
-
-type RedirectConfig = HashMap<String, String>;
 
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {
