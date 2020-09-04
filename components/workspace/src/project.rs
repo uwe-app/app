@@ -99,6 +99,74 @@ impl Entry {
 
         Ok(builder)
     }
+
+}
+
+#[derive(Debug, Default)]
+pub struct CollationBuilder {
+    pub fallback: CollateInfo,
+    pub locales: Vec<CollateInfo>,
+}
+
+//pub struct CollationBuilderIterator<'a> {
+    //builder: &'a mut CollationBuilder,
+    //index: usize,
+    //fallback: bool,
+//}
+
+//impl<'a> Iterator for CollationBuilderIterator<'a> {
+    //type Item = &'a mut CollateInfo;
+
+    //fn next(&mut self) -> Option<&'a mut CollateInfo> {
+        //if !self.fallback {
+            //self.fallback = true;
+            //return Some(&mut self.builder.fallback)
+            ////return self.builder.get_fallback_mut();
+        //} else if self.index < self.builder.locales.len() {
+            //let val = self.builder.locales.get_mut(self.index);
+            //self.index += 1;
+            //return val
+        //}
+        //None
+    //}
+//}
+
+impl CollationBuilder {
+
+    //pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut CollateInfo> {
+        //CollationBuilderIterator { builder: self, index: 0, fallback: false }
+    //}
+
+    /// Get a hash map of Arc collations keyed by locale.
+    pub fn build(self) -> Result<HashMap<LocaleName, Collation>> {
+        let mut map: HashMap<LocaleName, Collation> = HashMap::new();
+        let fallback = Arc::new(self.fallback);
+
+        let mut collations: Vec<Collation> = self.locales
+            .into_iter()
+            .map(|info| {
+                Collation {
+                    fallback: Arc::clone(&fallback),
+                    locale: Arc::new(info),
+                } 
+            })
+            .collect();
+
+        let default = Collation {
+            // The primary collation just has a pointer to the fallback
+            locale: Arc::clone(&fallback),
+            fallback: fallback,
+        };
+
+        map.insert(default.locale.lang.clone(), default);
+
+        collations.into_iter()
+            .for_each(|info| {
+                map.insert(info.locale.lang.clone(), info); 
+            });
+
+        Ok(map)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -110,7 +178,7 @@ pub struct RenderBuilder {
     pub redirects: RedirectConfig,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub collations: Vec<CollateInfo>,
+    pub collations: CollationBuilder,
 }
 
 impl RenderBuilder {
@@ -203,7 +271,6 @@ impl RenderBuilder {
     /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
-
         // FIXME: restore manifest handling?
         // Set up the manifest for incremental builds
         /*
@@ -220,7 +287,8 @@ impl RenderBuilder {
         let config = &self.context.config;
         let options = &self.context.options;
 
-        let fallback_collation = collation(&locales.fallback, config, options).await?;
+        let fallback = collation(&locales.fallback, config, options).await?;
+
         let languages = locales.map
             .keys()
             .filter(|lang| lang != &&locales.fallback )
@@ -236,78 +304,8 @@ impl RenderBuilder {
             .try_collect()
             .await;
 
-        let mut other = values?;
-        let mut collations = vec![fallback_collation];
-        collations.append(&mut other);
-
-        self.collations = collations;
-
-        //let mut other_collations: Vec<Collation> = values?
-            //.into_iter()
-            //.map(|(lang, info)| {
-                //Collation {
-                    //lang,
-                    //fallback: Arc::clone(&fallback_collation),
-                    //locale: Arc::new(info),
-                //} 
-            //})
-            //.collect();
-
-        //let mut collations = vec![Collation {
-            //lang: locales.fallback.clone(),
-            //// The primary collation just has a pointer to the fallback
-            //locale: Arc::clone(&fallback_collation),
-            //fallback: fallback_collation,
-        //}];
-        //collations.append(&mut other_collations);
-
-        //println!("Collation {:#?}", collations.len());
-
-        //others.foo();
-
-        //println!("Got other locales {:#?}", other_locales);
-        //std::process::exit(1);
-
-        //let collations = other_locales
-            //.iter()
-            //.map(|lang| {
-            
-            //})
-            //.collect();
-
-        /*
-        // Collate page data for later usage
-        let req = CollateRequest {
-            config: &self.context.config,
-            options: &self.context.options,
-        };
-
-        // FIXME: decouple the manifest from the collation
-
-        let mut res = CollateResult::new();
-        let mut errors = collator::walk(req, &mut res).await?;
-        if !errors.is_empty() {
-            // TODO: print all errors?
-            let e = errors.swap_remove(0);
-            return Err(Error::Collator(e));
-        }
-
-        let mut collation: CollateInfo = res.try_into()?;
-
-        // Find and transform localized pages
-        collator::localize(
-            &self.context.config,
-            &self.context.options,
-            &self.context.options.locales,
-            &mut collation,
-        )
-        .await?;
-
-        // Collate the series data
-        collator::series(&self.context.config, &self.context.options, &mut collation)?;
-
-        self.context.collation = collation;
-        */
+        let locales = values?;
+        self.collations = CollationBuilder { fallback, locales };
 
         Ok(self)
     }
@@ -423,6 +421,9 @@ impl RenderBuilder {
     pub fn build(self) -> Result<Render> {
         let context = Arc::new(self.context);
         let sources = Arc::new(self.sources);
+
+        // Get a map of collations keyed by locale wrapper
+        let collations = self.collations.build()?;
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
         self.targets.iter().try_for_each(|(lang, target)| {
