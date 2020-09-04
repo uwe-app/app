@@ -2,12 +2,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use chrono::prelude::*;
-use serde_json::json;
 use jsonfeed::{Feed, Item, VERSION};
+use serde_json::json;
 
 use collator::CollateInfo;
+use config::feed::{ChannelConfig, FeedConfig};
 use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
-use config::feed::{FeedConfig, ChannelConfig};
 
 //use config::link::{self, LinkOptions};
 
@@ -65,8 +65,8 @@ fn build_feed(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     feed_cfg: &FeedConfig,
-    channel_cfg: &ChannelConfig) -> Result<Feed> {
-
+    channel_cfg: &ChannelConfig,
+) -> Result<Feed> {
     let base_url = options.get_canonical_url(config, true)?;
 
     let mut feed: Feed = Default::default();
@@ -75,10 +75,7 @@ fn build_feed(
     feed.home_page_url = Some(base_url.to_string());
 
     if let Some(ref authors) = config.authors {
-        let authors = authors
-            .values()
-            .map(|v| v.clone())
-            .collect::<Vec<_>>();
+        let authors = authors.values().map(|v| v.clone()).collect::<Vec<_>>();
         feed.authors = Some(authors);
     }
 
@@ -107,7 +104,7 @@ fn build_feed(
         if a.created.is_some() && b.created.is_some() {
             a_val = a.created.as_ref().unwrap();
             b_val = b.created.as_ref().unwrap();
-        }else if a.updated.is_some() && b.updated.is_some() {
+        } else if a.updated.is_some() && b.updated.is_some() {
             a_val = a.updated.as_ref().unwrap();
             b_val = b.updated.as_ref().unwrap();
         } else {
@@ -130,7 +127,7 @@ fn build_feed(
             let mut item: Item = Default::default();
             item.id = base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
             item.url = if let Some(ref permalink) = p.permalink {
-                Some(base_url.join(permalink).unwrap().to_string()) 
+                Some(base_url.join(permalink).unwrap().to_string())
             } else {
                 Some(item.id.to_string())
             };
@@ -184,11 +181,9 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
             // Data is the same for each feed
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
-            data_source.feed = Some(
-                build_feed(name, config, options, info, feed, channel)?);
+            data_source.feed = Some(build_feed(name, config, options, info, feed, channel)?);
 
             for feed_type in channel.types.iter() {
-
                 let file_name = feed_type.get_name();
                 let source = source_dir.join(&file_name);
 
@@ -208,16 +203,11 @@ pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -
                 let base_url = options.get_canonical_url(config, true)?;
                 if let Some(ref mut feed) = item_data.feed.as_mut() {
                     let path = format!("{}/{}", channel_href, file_name);
-                    feed.feed_url = Some(base_url.join(&path)?.to_string()); 
+                    feed.feed_url = Some(base_url.join(&path)?.to_string());
                 }
 
                 create_synthetic(
-                    config,
-                    options,
-                    info,
-                    source,
-                    template,
-                    item_data,
+                    config, options, info, source, template, item_data,
                     // NOTE: must be false otherwise we get a collision
                     // NOTE: on feed.xml and feed.json
                     false,

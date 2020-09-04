@@ -4,10 +4,10 @@ use std::path::Path;
 
 use thiserror::Error;
 
-use fluent_templates::{ArcLoader, Loader, static_loader};
+use fluent_templates::{static_loader, ArcLoader, Loader};
 use unic_langid::LanguageIdentifier;
 
-use config::{Config, FluentConfig, RuntimeOptions, LocaleMap};
+use config::{Config, FluentConfig, LocaleMap, RuntimeOptions};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -38,11 +38,10 @@ impl Default for Locales {
 }
 
 impl Locales {
-
     pub fn get_locale_map(&self, fallback: &str) -> Result<LocaleMap> {
         let mut res = LocaleMap {
             fallback: fallback.to_string(),
-            map : HashMap::new(),
+            map: HashMap::new(),
             enabled: self.loader.arc.is_some(),
             multi: false,
         };

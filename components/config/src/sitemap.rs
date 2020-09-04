@@ -1,5 +1,5 @@
-use std::io;
 use serde::{Deserialize, Serialize};
+use std::io;
 
 use url::Url;
 
@@ -32,9 +32,12 @@ pub struct SiteMapIndex {
 }
 
 impl SiteMapIndex {
-
     pub fn new(base: Url, folder: String) -> Self {
-        Self {base, folder, maps: vec![]}
+        Self {
+            base,
+            folder,
+            maps: vec![],
+        }
     }
 
     pub fn to_location(&self) -> Url {
@@ -48,9 +51,15 @@ impl SiteMapIndex {
         self.base.join(&dest).unwrap()
     }
 
-    pub fn to_writer<W>(&self, mut w: W) -> io::Result<()> where W: io::Write {
+    pub fn to_writer<W>(&self, mut w: W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
         write!(w, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")?;
-        write!(w, "<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")?;
+        write!(
+            w,
+            "<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
+        )?;
         for map in self.maps.iter() {
             write!(w, "\t<sitemap>\n")?;
             let loc = utils::entity::escape(&map.to_location(&self.to_location()).to_string());
@@ -69,9 +78,15 @@ pub struct SiteMapFile {
 }
 
 impl SiteMapFile {
-    pub fn to_writer<W>(&self, mut w: W) -> io::Result<()> where W: io::Write {
+    pub fn to_writer<W>(&self, mut w: W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
         write!(w, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")?;
-        write!(w, "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")?;
+        write!(
+            w,
+            "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
+        )?;
         for entry in self.entries.iter() {
             write!(w, "\t<url>\n")?;
             let loc = utils::entity::escape(&entry.location.to_string());

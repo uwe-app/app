@@ -108,7 +108,9 @@ fn to_options(
     }
 
     let mut settings = args.clone();
-    if let Some(resources) = settings.resources.as_mut() { resources.prepare(); }
+    if let Some(resources) = settings.resources.as_mut() {
+        resources.prepare();
+    }
 
     let opts = RuntimeOptions {
         lang: cfg.lang.clone(),

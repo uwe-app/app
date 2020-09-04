@@ -62,13 +62,13 @@ pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData
 pub async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData>> {
     info!("{} -> {}", file.display(), dest.display());
 
-    // NOTE: prevent errors trying to symlink when the target 
+    // NOTE: prevent errors trying to symlink when the target
     // NOTE: already exists, otherwise when live reload is enabled
-    // NOTE: the compiler errors will cause the websocket build 
+    // NOTE: the compiler errors will cause the websocket build
     // NOTE: complete message to never fire and the browser client
     // NOTE: will hang whilst building :(
     if dest.exists() {
-        return Ok(None) 
+        return Ok(None);
     }
 
     if let Some(parent) = dest.parent() {

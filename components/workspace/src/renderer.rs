@@ -5,8 +5,8 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use compiler::{CompileInfo, Compiler, ParseData, parser::Parser};
-use config::sitemap::{SiteMapIndex, SiteMapFile, SiteMapEntry};
+use compiler::{parser::Parser, CompileInfo, Compiler, ParseData};
+use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
 use search::{compile as compile_index, intermediate, Index, IntermediateEntry};
 
@@ -23,11 +23,12 @@ pub struct Renderer {
 }
 
 impl Renderer {
-
     /// Render a locale for a project.
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
         let (_, _, parse_list) = self.build(locales).await?;
-        Ok(RenderResult { sitemap: self.finish(parse_list)? })
+        Ok(RenderResult {
+            sitemap: self.finish(parse_list)?,
+        })
     }
 
     fn finish<'a>(&self, parse_list: Vec<ParseData>) -> Result<Option<Url>> {
@@ -47,7 +48,11 @@ impl Renderer {
                         let href = ctx.collation.links.sources.get(&parse_data.file);
 
                         let buffer = extraction.to_chunk_string();
-                        let title = if let Some(ref title) = extraction.title { title } else { "" };
+                        let title = if let Some(ref title) = extraction.title {
+                            title
+                        } else {
+                            ""
+                        };
                         let mut url = if let Some(ref href) = href { href } else { "" };
 
                         if !include_index && url.ends_with(config::INDEX_HTML) {
@@ -78,7 +83,6 @@ impl Renderer {
 
         let mut res: Option<Url> = None;
         if let Some(ref sitemap) = ctx.options.settings.sitemap {
-
             // How many entries per chunk window?
             let entries = sitemap.entries.as_ref().unwrap();
 
@@ -97,7 +101,10 @@ impl Renderer {
 
             for (count, window) in parse_list.chunks(*entries).enumerate() {
                 let href = format!("{}.xml", count + 1);
-                let mut sitemap = SiteMapFile {href, entries: vec![]};
+                let mut sitemap = SiteMapFile {
+                    href,
+                    entries: vec![],
+                };
                 let sitemap_path = base_folder.join(&sitemap.href);
                 sitemap.entries = window
                     .iter()
@@ -111,8 +118,9 @@ impl Renderer {
                         // Generate the absolute location
                         let location = base.join(href).unwrap();
                         let lastmod = page.lastmod();
-                        SiteMapEntry {location, lastmod}
-                    }).collect();
+                        SiteMapEntry { location, lastmod }
+                    })
+                    .collect();
 
                 let map_file = File::create(&sitemap_path)?;
                 sitemap.to_writer(map_file)?;
@@ -135,9 +143,10 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn build<'a>(&'a self, locales: &'a Locales)
-        -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
-
+    async fn build<'a>(
+        &'a self,
+        locales: &'a Locales,
+    ) -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
         // When working with multi-lingual sites the target may not exist yet
         if !self.info.target.path.exists() {
             fs::create_dir_all(&self.info.target.path)?;

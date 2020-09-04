@@ -44,7 +44,6 @@ pub enum Error {
 
     //#[error("No socket address for {0}")]
     //NoSocketAddress(String),
-
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

@@ -20,7 +20,6 @@ impl HelperDef for Scripts<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // Make links absolute (passthrough)
         let abs = h
             .hash_get("abs")
@@ -35,8 +34,7 @@ impl HelperDef for Scripts<'_> {
         let scripts = ctx
             .data()
             .as_object()
-            .ok_or_else(
-                || RenderError::new("Type error for `scripts` helper, invalid page data"))
+            .ok_or_else(|| RenderError::new("Type error for `scripts` helper, invalid page data"))
             .unwrap()
             .get("scripts")
             .and_then(|v| v.as_array());
@@ -75,7 +73,9 @@ impl HelperDef for Scripts<'_> {
                 .map(|script| {
                     let mut tag = script.to_tag();
                     tag.src = config::link::relative(script.get_source(), path, &opts.source, opts)
-                        .map_err(|_e| RenderError::new("Type error for `scripts`, file is outside source!"))
+                        .map_err(|_e| {
+                            RenderError::new("Type error for `scripts`, file is outside source!")
+                        })
                         .unwrap();
                     ScriptFile::Tag(tag)
                 })

@@ -1,25 +1,25 @@
+use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::convert::Infallible;
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
 use tokio::sync::broadcast;
 
-use warp::http::StatusCode;
-use warp::{Filter, Rejection, Reply};
 use warp::filters::BoxedFilter;
+use warp::http::StatusCode;
 use warp::http::Uri;
 use warp::path::FullPath;
 use warp::ws::Message;
+use warp::{Filter, Rejection, Reply};
 
 use serde::Serialize;
 
 use log::{error, trace};
 
-use config::server::{ServerConfig, HostConfig, PortType, ConnectionInfo};
-use crate::{Error, Channels};
+use crate::{Channels, Error};
+use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
 macro_rules! server {
     (
@@ -29,12 +29,13 @@ macro_rules! server {
     ) => {
         //let fallback = get_fallback(&$address);
         let default_host: &'static HostConfig = &$opts.default_host;
-        let default_host_route = get_host_filter(
-            $address, $opts, default_host, $channels);
+        let default_host_route = get_host_filter($address, $opts, default_host, $channels);
 
         if !$opts.hosts.is_empty() {
             let mut routes = vec![default_host_route];
-            let mut host_routes = $opts.hosts.iter()
+            let mut host_routes = $opts
+                .hosts
+                .iter()
                 .map(|h| get_host_filter($address, $opts, h, $channels))
                 .collect::<Vec<_>>();
             routes.append(&mut host_routes);
@@ -43,7 +44,7 @@ macro_rules! server {
         } else {
             router!($address, $opts, default_host_route, $channels);
         }
-    }
+    };
 }
 
 macro_rules! router {
@@ -55,7 +56,8 @@ macro_rules! router {
     ) => {
         let default_host: &'static HostConfig = &$opts.default_host;
         let with_server = get_with_server($opts);
-        let all = $routes.with(with_server)
+        let all = $routes
+            .with(with_server)
             // TODO: use a different rejection handler that returns
             // TODO: internal system error pages
             .recover(move |e| handle_rejection(e, default_host.directory.clone()));
@@ -76,7 +78,6 @@ macro_rules! bind {
         $addr:expr,
         $channels:expr
     ) => {
-
         let host = $opts.default_host.name.clone();
         let use_tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
@@ -88,7 +89,11 @@ macro_rules! bind {
                 .bind_ephemeral(*$addr);
 
             if let Some(bind) = $channels.bind.take() {
-                let info = ConnectionInfo {addr, host, tls: true};
+                let info = ConnectionInfo {
+                    addr,
+                    host,
+                    tls: true,
+                };
                 bind.send(info)
                     .expect("Failed to send web server socket address");
             }
@@ -105,17 +110,21 @@ macro_rules! bind {
             match bind_result {
                 Ok((addr, future)) => {
                     if let Some(bind) = $channels.bind.take() {
-                        let info = ConnectionInfo {addr, host, tls: true};
+                        let info = ConnectionInfo {
+                            addr,
+                            host,
+                            tls: true,
+                        };
                         bind.send(info)
                             .expect("Failed to send web server socket address");
                     }
 
                     //let info = ConnectionInfo {addr, host, tls: true};
                     //$bind_tx.send(info)
-                        //.expect("Failed to send web server socket address");
+                    //.expect("Failed to send web server socket address");
                     future.await;
                 }
-                Err(e) => return Err(Error::from(e))
+                Err(e) => return Err(Error::from(e)),
             }
         }
     };
@@ -123,11 +132,11 @@ macro_rules! bind {
 
 // TODO: fallback derived from IP address
 //fn get_fallback(
-    //address: &SocketAddr) -> BoxedFilter<(impl Reply,)> {
-    //let hostname = &format!("{}", address.to_string());
-    //warp::host::exact(hostname)
-        //.map(|| "Fallback")
-        //.boxed()
+//address: &SocketAddr) -> BoxedFilter<(impl Reply,)> {
+//let hostname = &format!("{}", address.to_string());
+//warp::host::exact(hostname)
+//.map(|| "Fallback")
+//.boxed()
 //}
 
 fn get_host_filter(
@@ -135,15 +144,14 @@ fn get_host_filter(
     opts: &'static ServerConfig,
     host: &'static HostConfig,
     channels: &mut Channels,
-    ) -> BoxedFilter<(impl Reply,)> {
-
+) -> BoxedFilter<(impl Reply,)> {
     let static_server = get_static_server(opts, host);
     let hostname = &format!("{}:{}", host.name, address.port());
     let livereload = get_live_reload(opts, host, channels).unwrap();
 
     // NOTE: We would like to conditionally add the livereload route
-    // NOTE: but spent so much time trying to fight the warp type 
-    // NOTE: system to achieve it and failing it is much easier 
+    // NOTE: but spent so much time trying to fight the warp type
+    // NOTE: system to achieve it and failing it is much easier
     // NOTE: to just make it a noop. :(
     warp::host::exact(hostname)
         .and(livereload.or(static_server))
@@ -153,8 +161,8 @@ fn get_host_filter(
 fn get_live_reload(
     opts: &ServerConfig,
     host: &'static HostConfig,
-    channels: &mut Channels) -> crate::Result<BoxedFilter<(impl Reply,)>> {
-
+    channels: &mut Channels,
+) -> crate::Result<BoxedFilter<(impl Reply,)>> {
     let reload_tx = channels.get_host_reload(&host.name);
 
     let use_tls = opts.tls.is_some();
@@ -163,7 +171,11 @@ fn get_live_reload(
     let port = address.port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
-        let scheme = if use_tls {config::SCHEME_HTTPS} else {config::SCHEME_HTTP};
+        let scheme = if use_tls {
+            config::SCHEME_HTTPS
+        } else {
+            config::SCHEME_HTTP
+        };
         let origin = format!("{}//{}:{}", scheme, &host.name, port);
         cors = warp::cors()
             .allow_origin(origin.as_str())
@@ -175,7 +187,7 @@ fn get_live_reload(
     let sender = warp::any().map(move || reload_tx.subscribe());
 
     let endpoint = if let Some(ref endpoint) = host.endpoint {
-        endpoint.clone() 
+        endpoint.clone()
     } else {
         utils::generate_id(16)
     };
@@ -202,7 +214,6 @@ fn get_live_reload(
 
     Ok(livereload.boxed())
 }
-
 
 async fn redirect_map(
     path: FullPath,
@@ -248,19 +259,21 @@ fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
     warp::reply::with::header("server", &server_id)
 }
 
-fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> BoxedFilter<(impl Reply,)> {
-
-    // NOTE: Later we add this to all requests in the macro 
+fn get_static_server(
+    opts: &'static ServerConfig,
+    host: &'static HostConfig,
+) -> BoxedFilter<(impl Reply,)> {
+    // NOTE: Later we add this to all requests in the macro
     // NOTE: but we also need to add it here so the `else` branch
-    // NOTE: below for `disable_cache` has a type that matches the 
-    // NOTE: `if` branch. A `noop` filter would be really useful 
+    // NOTE: below for `disable_cache` has a type that matches the
+    // NOTE: `if` branch. A `noop` filter would be really useful
     // NOTE: here but warp does not expose the functionality to create one.
     let with_server = get_with_server(opts);
 
     let disable_cache = host.disable_cache;
 
-    let with_cache_control = warp::reply::with::header(
-        "cache-control", "no-cache, no-store, must-revalidate");
+    let with_cache_control =
+        warp::reply::with::header("cache-control", "no-cache, no-store, must-revalidate");
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
 
@@ -275,9 +288,7 @@ fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> 
             .with(with_server.clone())
             .boxed()
     } else {
-        dir_server
-            .with(with_server.clone())
-            .boxed()
+        dir_server.with(with_server.clone()).boxed()
     };
 
     let with_options = warp::any().map(move || opts);
@@ -296,11 +307,7 @@ fn get_static_server(opts: &'static ServerConfig, host: &'static HostConfig) -> 
     static_server.boxed()
 }
 
-pub async fn serve(
-    opts: &'static ServerConfig,
-    channels: &mut Channels
-) -> crate::Result<()> {
-
+pub async fn serve(opts: &'static ServerConfig, channels: &mut Channels) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     server!(&addr, opts, channels);
 
@@ -350,4 +357,3 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
     response = warp::reply::html(message.to_string());
     Ok(warp::reply::with_status(response, code))
 }
-

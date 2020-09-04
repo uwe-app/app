@@ -1,8 +1,8 @@
 use std::path::Path;
 
+use crate::BuildContext;
 use handlebars::*;
 use serde_json::json;
-use crate::BuildContext;
 
 static DEFAULT_ICON: &str = "/assets/favicon.png";
 // A transparent gif for the icon
@@ -22,7 +22,6 @@ impl HelperDef for Icon<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let abs = h
             .hash_get("abs")
             .map(|v| v.value())
@@ -42,15 +41,17 @@ impl HelperDef for Icon<'_> {
             ))?
             .to_string();
 
-        let path = self.context.options.source.join(
-            utils::url::to_path_separator(&href.trim_start_matches("/")));
+        let path = self
+            .context
+            .options
+            .source
+            .join(utils::url::to_path_separator(&href.trim_start_matches("/")));
 
         let release = self.context.options.settings.is_release();
 
         if !path.exists() {
-            href = INLINE_ICON.to_string(); 
+            href = INLINE_ICON.to_string();
         } else {
-
             // Generate relative path by default
             if !abs {
                 let opts = &self.context.options;
@@ -58,7 +59,9 @@ impl HelperDef for Icon<'_> {
                     .evaluate(ctx, "@root/file.source")?
                     .as_json()
                     .as_str()
-                    .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+                    .ok_or_else(|| {
+                        RenderError::new("Type error for `file.source`, string expected")
+                    })?
                     .to_string();
                 let path = Path::new(&base_path);
                 href = if let Ok(val) = config::link::relative(&href, path, &opts.source, opts) {
@@ -71,8 +74,8 @@ impl HelperDef for Icon<'_> {
             }
 
             if !release {
-                // Browsers will aggressively cache icons for the same host and 
-                // when developing locally sometimes the browser will show the 
+                // Browsers will aggressively cache icons for the same host and
+                // when developing locally sometimes the browser will show the
                 // wrong favicon when switching projects, this should prevent that
                 // by adding a random query string parameter
                 href.push_str(&format!("?v={}", utils::generate_id(8)));

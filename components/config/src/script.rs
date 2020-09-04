@@ -1,5 +1,5 @@
-use std::fmt;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 use utils::entity;
 
@@ -18,19 +18,18 @@ pub enum ScriptFile {
 }
 
 impl ScriptFile {
-
     pub fn to_tag(&self) -> ScriptTag {
         match *self {
             Self::Source(ref s) => ScriptTag::new(s),
             Self::Tag(ref f) => f.clone(),
-        } 
+        }
     }
 
     pub fn get_source(&self) -> &str {
         match *self {
             Self::Source(ref s) => s,
             Self::Tag(ref f) => &f.src,
-        } 
+        }
     }
 }
 

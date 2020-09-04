@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -36,7 +36,7 @@ impl FeedType {
             Self::Json => JSON_MIME,
             Self::Rss => RSS_MIME,
             Self::Atom => ATOM_MIME,
-        } 
+        }
     }
 
     pub fn get_file_name(&self) -> &str {
@@ -44,14 +44,14 @@ impl FeedType {
             Self::Json => JSON_NAME,
             Self::Rss => RSS_NAME,
             Self::Atom => ATOM_NAME,
-        } 
+        }
     }
 
     pub fn get_extension(&self) -> &str {
         match *self {
             Self::Json => JSON,
-            _ => XML
-        } 
+            _ => XML,
+        }
     }
 }
 
@@ -68,7 +68,7 @@ impl FeedTemplates {
             FeedType::Json => &self.json,
             FeedType::Rss => &self.rss,
             FeedType::Atom => &self.atom,
-        } 
+        }
     }
 }
 
@@ -82,7 +82,7 @@ pub struct FeedConfig {
 
     // List of custom templates to use for each feed.
     //
-    // When specified they override the default templates 
+    // When specified they override the default templates
     // for each feed type.
     pub templates: FeedTemplates,
 

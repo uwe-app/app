@@ -1,11 +1,11 @@
 use std::net::SocketAddr;
-use warp::Filter;
 use warp::filters::path::FullPath;
 use warp::http::Uri;
+use warp::Filter;
 
 use log::info;
 
-use config::server::{ServerConfig, PortType};
+use config::server::{PortType, ServerConfig};
 
 use crate::Result;
 
@@ -22,7 +22,11 @@ pub fn spawn(options: ServerConfig) -> Result<()> {
 }
 
 async fn run(addr: SocketAddr, base: String) {
-    info!("Redirect {} -> {}", config::SCHEME_HTTP, config::SCHEME_HTTPS);
+    info!(
+        "Redirect {} -> {}",
+        config::SCHEME_HTTP,
+        config::SCHEME_HTTPS
+    );
     let redirect = warp::any()
         .and(warp::path::full())
         .map(move |path: FullPath| {

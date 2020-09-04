@@ -1,7 +1,7 @@
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 
 use crossbeam::channel;
 
@@ -9,11 +9,11 @@ use ignore::{WalkBuilder, WalkState};
 
 use config::indexer::QueryList;
 use config::link::{self, LinkOptions};
-use config::{Config, FileInfo, FileOptions, RuntimeOptions, LocaleMap, Page};
+use config::{Config, FileInfo, FileOptions, LocaleMap, Page, RuntimeOptions};
 
 use super::loader;
 use super::manifest::Manifest;
-use super::{CollateInfo, Resource, ResourceOperation, ResourceKind, Error, Result};
+use super::{CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result};
 
 pub struct CollateRequest<'a> {
     pub config: &'a Config,
@@ -51,7 +51,7 @@ fn is_locale_stem(names: &Vec<&str>, stem: &str) -> bool {
     for name in names {
         let ext = format!(".{}", name);
         if stem.ends_with(&ext) {
-            return true 
+            return true;
         }
     }
     false
@@ -67,11 +67,9 @@ struct LocalePage {
 fn get_locale_page_cache(
     options: &RuntimeOptions,
     locales: &LocaleMap,
-    info: &mut CollateInfo) -> Vec<LocalePage> {
-
-    let locale_names = locales.map.keys()
-        .map(|k| k.as_str())
-        .collect::<Vec<_>>();
+    info: &mut CollateInfo,
+) -> Vec<LocalePage> {
+    let locale_names = locales.map.keys().map(|k| k.as_str()).collect::<Vec<_>>();
 
     let mut cache: Vec<LocalePage> = Vec::new();
     if let Some(ref pages) = info.pages.get(&options.lang) {
@@ -94,27 +92,31 @@ fn get_locale_page_cache(
                         };
                         cache.push(tmp);
                     }
-                } 
-            } 
+                }
+            }
         }
     }
     cache
 }
 
 // Localize logic involves another pass as we can't guarantee the order
-// that pages are discovered so this allows us to ensure we have page 
-// data for the default fallback locale before we assign page data for 
-// locales specific pages. Which allows us to inherit page data from the 
+// that pages are discovered so this allows us to ensure we have page
+// data for the default fallback locale before we assign page data for
+// locales specific pages. Which allows us to inherit page data from the
 // fallback page.
 pub async fn localize(
     config: &Config,
     options: &RuntimeOptions,
     locales: &LocaleMap,
-    info: &mut CollateInfo) -> Result<()> {
-
+    info: &mut CollateInfo,
+) -> Result<()> {
     let cache: Vec<LocalePage> = get_locale_page_cache(options, locales, info);
 
-    let pages = info.pages.get_mut(&options.locales.fallback).unwrap().clone();
+    let pages = info
+        .pages
+        .get_mut(&options.locales.fallback)
+        .unwrap()
+        .clone();
 
     for entry in cache {
         let lang = entry.locale_id.clone();
@@ -131,7 +133,7 @@ pub async fn localize(
 
             let template = if use_fallback {
                 fallback_page.file.as_ref().unwrap().template.clone()
-            }else {
+            } else {
                 page_info.file.as_ref().unwrap().template.clone()
             };
 
@@ -162,7 +164,6 @@ pub async fn localize(
             tmp.rewrite_target(&options.target, &locale_target)?;
 
             page_info = tmp;
-
         }
         map.insert(Arc::new(entry.fallback), page_info);
 
@@ -170,14 +171,13 @@ pub async fn localize(
     }
 
     //for (k, _v) in info.pages.iter() {
-        //println!("Got page key {:?}", k);
+    //println!("Got page key {:?}", k);
     //}
 
     //println!("Locale pages {:#?}", info.locale_pages);
 
     Ok(())
 }
-
 
 pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<Error>> {
     let errors = find(&req, res).await?;
@@ -347,12 +347,11 @@ fn add_page(
         let key = permalink.trim_end_matches("/").to_string();
 
         if info.permalinks.contains_key(&key) {
-            return Err(Error::DuplicatePermalink(key)) 
+            return Err(Error::DuplicatePermalink(key));
         }
 
-        info.permalinks.insert(
-            key,
-            page_info.href.as_ref().unwrap().to_string());
+        info.permalinks
+            .insert(key, page_info.href.as_ref().unwrap().to_string());
     }
 
     // Collate feed pages
@@ -360,9 +359,7 @@ fn add_page(
         for (name, cfg) in feed.channels.iter() {
             let href = page_info.href.as_ref().unwrap();
             if cfg.matcher.filter(href) {
-                let items = info.feeds
-                    .entry(name.to_string())
-                    .or_insert(vec![]); 
+                let items = info.feeds.entry(name.to_string()).or_insert(vec![]);
                 items.push(Arc::clone(key));
             }
         }
@@ -373,15 +370,15 @@ fn add_page(
     Ok(())
 }
 
-// Note that this is also used when creating synthetic pages from 
+// Note that this is also used when creating synthetic pages from
 // data sources, pagination etc.
 pub fn add_page_reference(
     info: &mut CollateInfo,
     options: &RuntimeOptions,
     key: &Arc<PathBuf>,
     dest: PathBuf,
-    page_info: Page) {
-
+    page_info: Page,
+) {
     let mut resource = Resource::new_page(dest);
     if let Some(ref render) = page_info.render {
         if !render {
@@ -404,7 +401,6 @@ pub fn add_file(
     _config: &Config,
     options: &RuntimeOptions,
 ) -> Result<()> {
-
     // Set up the default resource operation
     let mut op = if options.settings.is_release() {
         ResourceOperation::Copy
@@ -415,7 +411,7 @@ pub fn add_file(
     // Allow the profile settings to control the resource operation
     if let Some(ref resources) = options.settings.resources {
         if resources.ignore.matcher.matches(&href) {
-            op = ResourceOperation::Noop; 
+            op = ResourceOperation::Noop;
         } else if resources.symlink.matcher.matches(&href) {
             op = ResourceOperation::Link;
         } else if resources.copy.matcher.matches(&href) {
@@ -432,7 +428,8 @@ pub fn add_file(
         _ => {}
     }
 
-    info.all.insert(Arc::clone(key), Resource::new(dest, kind, op));
+    info.all
+        .insert(Arc::clone(key), Resource::new(dest, kind, op));
 
     Ok(())
 }
@@ -461,7 +458,6 @@ fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf
 }
 
 async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<Error>> {
-
     //let mut errors: Vec<Error> = Vec::new();
 
     let (tx, rx) = channel::unbounded();
@@ -476,14 +472,19 @@ async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<E
                     let mut info = data.lock().unwrap();
 
                     // Must always have a pages map for the default locale
-                    info.pages.entry(req.config.lang.to_string()).or_insert(HashMap::new());
+                    info.pages
+                        .entry(req.config.lang.to_string())
+                        .or_insert(HashMap::new());
 
                     let path = entry.path();
                     let key = Arc::new(path.to_path_buf());
 
                     if path.is_dir() {
                         let res = Resource::new(
-                            path.to_path_buf(), ResourceKind::Dir, ResourceOperation::Noop);
+                            path.to_path_buf(),
+                            ResourceKind::Dir,
+                            ResourceOperation::Noop,
+                        );
                         info.all.insert(Arc::clone(&key), res);
                         return WalkState::Continue;
                     }

@@ -22,12 +22,12 @@ pub enum ResourceKind {
     Asset,
     /// A locale resource, typically .ftl files in the `locales` folder.
     Locale,
-    /// A partial file provides part of a template render; normally 
-    /// located in the `partials` directory but can also come from 
+    /// A partial file provides part of a template render; normally
+    /// located in the `partials` directory but can also come from
     /// other locations.
     Partial,
-    /// Include files are documents included by pages; they normally 
-    /// reside in the `includes` directory and are typically used for 
+    /// Include files are documents included by pages; they normally
+    /// reside in the `includes` directory and are typically used for
     /// code samples etc.
     Include,
     /// This file is part of a data source directory.
@@ -35,10 +35,12 @@ pub enum ResourceKind {
 }
 
 impl Default for ResourceKind {
-    fn default() -> Self { ResourceKind::File }
+    fn default() -> Self {
+        ResourceKind::File
+    }
 }
 
-/// The compiler uses this as the action to perform 
+/// The compiler uses this as the action to perform
 /// with the input source file.
 #[derive(Debug, Clone)]
 pub enum ResourceOperation {
@@ -53,7 +55,9 @@ pub enum ResourceOperation {
 }
 
 impl Default for ResourceOperation {
-    fn default() -> Self { ResourceOperation::Copy }
+    fn default() -> Self {
+        ResourceOperation::Copy
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -71,20 +75,28 @@ pub enum Resource {
 
 impl Resource {
     pub fn new(destination: PathBuf, kind: ResourceKind, op: ResourceOperation) -> Self {
-        let target = ResourceTarget {kind, destination, operation: op};
+        let target = ResourceTarget {
+            kind,
+            destination,
+            operation: op,
+        };
         Resource::File { target }
     }
 
     pub fn new_page(destination: PathBuf) -> Self {
         let kind = ResourceKind::Page;
-        let target = ResourceTarget {kind, destination, operation: ResourceOperation::Render};
+        let target = ResourceTarget {
+            kind,
+            destination,
+            operation: ResourceOperation::Render,
+        };
         Resource::Page { target }
     }
 
     pub fn set_operation(&mut self, operation: ResourceOperation) {
         match self {
-            Self::Page {ref mut target} | Self::File {ref mut target} => {
-                target.operation = operation; 
+            Self::Page { ref mut target } | Self::File { ref mut target } => {
+                target.operation = operation;
             }
         }
     }
@@ -102,15 +114,15 @@ pub struct CollateInfo {
     /// Lookup table for page data resolved by locale identifier and source path.
     pub pages: HashMap<String, HashMap<Arc<PathBuf>, Page>>,
 
-    // Pages that have permalinks map the 
+    // Pages that have permalinks map the
     // permalink to the computed href so that
     // we can configure redirects for permalinks.
     pub permalinks: HashMap<String, String>,
 
     // Pages located for feed configurations.
     //
-    // The hash map key is the key for the feed congfiguration 
-    // and each entry is a path that can be used to 
+    // The hash map key is the key for the feed congfiguration
+    // and each entry is a path that can be used to
     // locate the page data in `pages`.
     pub feeds: HashMap<String, Vec<Arc<PathBuf>>>,
 
@@ -133,7 +145,6 @@ pub struct CollateInfo {
 }
 
 impl CollateInfo {
-
     pub fn get_pages(&self, lang: &str) -> Option<&HashMap<Arc<PathBuf>, Page>> {
         self.pages.get(lang)
     }
@@ -147,12 +158,12 @@ impl CollateInfo {
 
         if let Some(ref map) = self.pages.get(&options.lang) {
             result = map.get(key);
-        } 
+        }
 
         if result.is_none() && options.lang != options.locales.fallback {
             if let Some(ref map) = self.pages.get(&options.locales.fallback) {
                 result = map.get(key);
-            } 
+            }
         }
 
         result
@@ -163,12 +174,12 @@ impl CollateInfo {
         //let mut result: Option<&mut Page> = None;
 
         if let Some(map) = self.pages.get_mut(&options.lang) {
-            return map.get_mut(key)
+            return map.get_mut(key);
         } else {
             //if options.lang != options.locales.fallback {
-                //if let Some(map) = self.pages.get_mut(&options.locales.fallback) {
-                    //return map.get_mut(key)
-                //} 
+            //if let Some(map) = self.pages.get_mut(&options.locales.fallback) {
+            //return map.get_mut(key)
+            //}
             //}
         }
 
@@ -181,8 +192,8 @@ impl CollateInfo {
         }
 
         if let Some(ref mut map) = self.pages.get_mut(&options.lang) {
-            return map.remove(p)
-        } 
+            return map.remove(p);
+        }
 
         None
     }
@@ -191,9 +202,13 @@ impl CollateInfo {
     //
     // Used for multi-lingual output to locale specific folders.
     #[deprecated(since = "0.20.10", note = "Use refactored collation per locale")]
-    pub fn rewrite(&mut self,
-        options: &RuntimeOptions, lang: &str, from: &PathBuf, to: &PathBuf) -> Result<()> {
-
+    pub fn rewrite(
+        &mut self,
+        options: &RuntimeOptions,
+        lang: &str,
+        from: &PathBuf,
+        to: &PathBuf,
+    ) -> Result<()> {
         if let Some(pages) = self.pages.get_mut(&options.locales.fallback) {
             for (_path, page) in pages.iter_mut() {
                 page.set_language(lang);
@@ -206,12 +221,12 @@ impl CollateInfo {
         for pth in self.resources.iter_mut() {
             let res = self.all.get_mut(pth).unwrap();
             match res {
-                Resource::File {ref mut target} => {
+                Resource::File { ref mut target } => {
                     let new_path = to.join(target.destination.strip_prefix(&from)?);
                     target.destination = new_path;
                 }
                 _ => {}
-            } 
+            }
         }
 
         Ok(())

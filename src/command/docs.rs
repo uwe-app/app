@@ -1,6 +1,6 @@
-use cache::{self, CacheComponent};
-use config::server::{ServerConfig, LaunchConfig, HostConfig};
 use crate::Error;
+use cache::{self, CacheComponent};
+use config::server::{HostConfig, LaunchConfig, ServerConfig};
 
 static DOCS_DIR: &str = "docs";
 

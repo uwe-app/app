@@ -16,8 +16,8 @@ use super::page::{Author, Page};
 use super::profile::{ProfileName, ProfileSettings};
 use super::redirect::RedirectConfig;
 use super::script::JavaScriptConfig;
-use super::style::StyleSheetConfig;
 use super::search::SearchConfig;
+use super::style::StyleSheetConfig;
 use super::syntax::SyntaxConfig;
 use super::transform::TransformConfig;
 use super::Error;
@@ -51,7 +51,7 @@ pub static LANG: &str = "en";
 pub static LIVERELOAD_FILE: &str = "__livereload.js";
 pub static TAGS: &str = "tags";
 
-/// Used when multiple virtual hosts and inferring 
+/// Used when multiple virtual hosts and inferring
 /// a sub-domain from the primary host name.
 pub static HOST_DEV: &str = "loopback.space";
 
@@ -106,7 +106,11 @@ pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
 
     // Check host can be parsed as a valid URL
     // and return the parsed URL
-    Ok(Url::parse(&crate::to_url_string(SCHEME_HTTPS, &host, None))?)
+    Ok(Url::parse(&crate::to_url_string(
+        SCHEME_HTTPS,
+        &host,
+        None,
+    ))?)
 }
 
 #[skip_serializing_none]
@@ -196,10 +200,9 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn get_local_host_name(&self, infer_from_host: bool) -> String {
         if let Some(ref hostname) = self.localhost {
-            hostname.clone() 
+            hostname.clone()
         } else {
             if infer_from_host {
                 let subdomain = slug::slugify(&self.host);
@@ -335,8 +338,12 @@ impl Config {
                     }
                 }
 
-                if let Some(search) = cfg.search.as_mut() { search.prepare(); }
-                if let Some(feed) = cfg.feed.as_mut() { feed.prepare(); }
+                if let Some(search) = cfg.search.as_mut() {
+                    search.prepare();
+                }
+                if let Some(feed) = cfg.feed.as_mut() {
+                    feed.prepare();
+                }
 
                 let mut livereload = cfg.livereload.as_mut().unwrap();
                 if livereload.file.is_none() {

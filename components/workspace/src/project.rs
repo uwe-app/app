@@ -8,17 +8,17 @@ use log::info;
 use url::Url;
 
 use cache::CacheComponent;
-use compiler::{BuildContext, CompileTarget, CompileInfo};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
+use compiler::{BuildContext, CompileInfo, CompileTarget};
 
-use config::{Config, ProfileSettings, RuntimeOptions, RedirectConfig, LocaleName};
+use config::{Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{Error, Result, renderer::Renderer};
+use crate::{renderer::Renderer, Error, Result};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -40,20 +40,20 @@ pub struct Entry {
 impl Entry {
     /// Get a render builder for this configuration.
     ///
-    /// Creates the initial runtime options from a build profile which typically 
+    /// Creates the initial runtime options from a build profile which typically
     /// would come from command line arguments.
     ///
-    /// This should only be called when you intend to render a project 
+    /// This should only be called when you intend to render a project
     /// as it consumes the configuration entry.
     pub fn builder(self, args: &ProfileSettings) -> Result<RenderBuilder> {
         let options = crate::options::prepare(&self.config, args)?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
-            redirects.clone()    
+            redirects.clone()
         } else {
             Default::default()
         };
 
-        let builder = RenderBuilder{
+        let builder = RenderBuilder {
             context: BuildContext {
                 options,
                 config: self.config,
@@ -79,7 +79,6 @@ pub struct RenderBuilder {
 }
 
 impl RenderBuilder {
-
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
@@ -98,19 +97,26 @@ impl RenderBuilder {
 
     /// Load locale message files (.ftl).
     pub async fn locales(mut self) -> Result<Self> {
-        self.locales.load(&self.context.config, &self.context.options)?;
+        self.locales
+            .load(&self.context.config, &self.context.options)?;
         let locales = self.locales.get_locale_map(&self.context.config.lang)?;
 
         // Set up a compile target for each locale
         let base_target = &self.context.options.base;
         for (lang, _) in locales.map.iter() {
             let target = if locales.multi {
-                CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
+                CompileTarget {
+                    lang: lang.clone(),
+                    path: base_target.join(lang),
+                }
             } else {
-                CompileTarget { lang: lang.clone(), path: base_target.clone() }
+                CompileTarget {
+                    lang: lang.clone(),
+                    path: base_target.clone(),
+                }
             };
             self.targets.insert(lang.clone(), Arc::new(target));
-        } 
+        }
 
         self.context.options.locales = locales;
 
@@ -122,7 +128,11 @@ impl RenderBuilder {
         let mut components: Vec<CacheComponent> = Vec::new();
 
         if self.context.config.syntax.is_some() {
-            if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
+            if self
+                .context
+                .config
+                .is_syntax_enabled(&self.context.options.settings.name)
+            {
                 let syntax_dir = cache::get_syntax_dir()?;
                 if !syntax_dir.exists() {
                     components.push(CacheComponent::Syntax);
@@ -155,11 +165,9 @@ impl RenderBuilder {
         Ok(self)
     }
 
-
-    /// Load page front matter with inheritance, collate all files for compilation 
+    /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
-
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.context.options);
         let manifest: Option<Manifest> = if self.context.options.settings.is_incremental() {
@@ -169,7 +177,10 @@ impl RenderBuilder {
         };
 
         // Collate page data for later usage
-        let req = CollateRequest { config: &self.context.config, options: &self.context.options };
+        let req = CollateRequest {
+            config: &self.context.config,
+            options: &self.context.options,
+        };
 
         // FIXME: decouple the manifest from the collation
 
@@ -181,14 +192,16 @@ impl RenderBuilder {
             return Err(Error::Collator(e));
         }
 
-
         let mut collation: CollateInfo = res.try_into()?;
 
         // Find and transform localized pages
         collator::localize(
             &self.context.config,
             &self.context.options,
-            &self.context.options.locales, &mut collation).await?;
+            &self.context.options.locales,
+            &mut collation,
+        )
+        .await?;
 
         // Collate the series data
         collator::series(&self.context.config, &self.context.options, &mut collation)?;
@@ -198,13 +211,13 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    /// Map redirects from strings to Uris suitable for use 
+    /// Map redirects from strings to Uris suitable for use
     /// on a local web server.
     pub async fn redirects(mut self) -> Result<Self> {
         // Map permalink redirects
         if !self.context.collation.permalinks.is_empty() {
             for (permalink, href) in self.context.collation.permalinks.iter() {
-                let key = permalink.to_string() ;
+                let key = permalink.to_string();
                 if self.redirects.map.contains_key(&key) {
                     return Err(Error::RedirectPermalinkCollision(key));
                 }
@@ -222,7 +235,11 @@ impl RenderBuilder {
     pub async fn load_data(mut self) -> Result<Self> {
         // Load data sources and create indices
         self.datasource = DataSourceMap::load(
-            &self.context.config, &self.context.options, &mut self.context.collation).await?;
+            &self.context.config,
+            &self.context.options,
+            &mut self.context.collation,
+        )
+        .await?;
 
         // Set up the cache for data source queries
         self.cache = DataSourceMap::get_cache();
@@ -232,13 +249,21 @@ impl RenderBuilder {
 
     /// Copy the search runtime files if we need them.
     pub async fn search(mut self) -> Result<Self> {
-        synthetic::search(&self.context.config, &self.context.options, &mut self.context.collation)?;
+        synthetic::search(
+            &self.context.config,
+            &self.context.options,
+            &mut self.context.collation,
+        )?;
         Ok(self)
     }
 
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
-        synthetic::feed(&self.context.config, &self.context.options, &mut self.context.collation)?;
+        synthetic::feed(
+            &self.context.config,
+            &self.context.options,
+            &mut self.context.collation,
+        )?;
         Ok(self)
     }
 
@@ -247,7 +272,10 @@ impl RenderBuilder {
         synthetic::pages(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation, &self.datasource, &mut self.cache)?;
+            &mut self.context.collation,
+            &self.datasource,
+            &mut self.cache,
+        )?;
         Ok(self)
     }
 
@@ -256,7 +284,10 @@ impl RenderBuilder {
         synthetic::each(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation, &self.datasource, &mut self.cache)?;
+            &mut self.context.collation,
+            &self.datasource,
+            &mut self.cache,
+        )?;
         Ok(self)
     }
 
@@ -265,14 +296,21 @@ impl RenderBuilder {
         synthetic::assign(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation, &self.datasource, &mut self.cache)?;
+            &mut self.context.collation,
+            &self.datasource,
+            &mut self.cache,
+        )?;
         Ok(self)
     }
-   
+
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
         if let Some(ref syntax_config) = self.context.config.syntax {
-            if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
+            if self
+                .context
+                .config
+                .is_syntax_enabled(&self.context.options.settings.name)
+            {
                 let syntax_dir = cache::get_syntax_dir()?;
                 info!("Syntax highlighting on");
                 syntax::setup(&syntax_dir, syntax_config)?;
@@ -286,16 +324,15 @@ impl RenderBuilder {
         let sources = Arc::new(self.sources);
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
-        self.targets.iter()
-            .try_for_each(|(lang, target)| {
-                let info = CompileInfo {
-                    target: Arc::clone(target),
-                    sources: Arc::clone(&sources),
-                    context: Arc::clone(&context)
-                };
-                renderers.insert(lang.clone(), Renderer{info});
-                Ok::<(), Error>(())
-            })?;
+        self.targets.iter().try_for_each(|(lang, target)| {
+            let info = CompileInfo {
+                target: Arc::clone(target),
+                sources: Arc::clone(&sources),
+                context: Arc::clone(&context),
+            };
+            renderers.insert(lang.clone(), Renderer { info });
+            Ok::<(), Error>(())
+        })?;
 
         Ok(Render {
             locales: self.locales,
@@ -305,7 +342,6 @@ impl RenderBuilder {
             context,
             renderers,
         })
-
     }
 
     /// Verify the paths are within the site source.
@@ -317,7 +353,6 @@ impl RenderBuilder {
         }
         Ok(())
     }
-
 }
 
 #[derive(Debug, Default)]
@@ -331,11 +366,9 @@ pub struct Render {
 }
 
 impl Render {
-
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects =
-            options.settings.write_redirects.is_some()
-            && options.settings.write_redirects.unwrap();
+            options.settings.write_redirects.is_some() && options.settings.write_redirects.unwrap();
 
         if write_redirects {
             self.redirects.write(&options.target)?;
@@ -358,12 +391,11 @@ impl Render {
     */
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
-        let output_robots = self.context.options.settings.robots.is_some()
-            || !sitemaps.is_empty();
+        let output_robots = self.context.options.settings.robots.is_some() || !sitemaps.is_empty();
 
         if output_robots {
             let mut robots = if let Some(ref robots) = self.context.options.settings.robots {
-                robots.clone() 
+                robots.clone()
             } else {
                 Default::default()
             };
@@ -388,18 +420,19 @@ pub struct Workspace {
 }
 
 impl Workspace {
-
     pub fn is_empty(&self) -> bool {
-        self.projects.is_empty() 
+        self.projects.is_empty()
     }
 
     pub fn has_multiple_projects(&self) -> bool {
-        if self.projects.len() > 1 { return true };
+        if self.projects.len() > 1 {
+            return true;
+        };
         if self.projects.len() == 1 {
             return match self.projects.first().unwrap() {
-                ProjectEntry::Many(_) => true, 
-                ProjectEntry::One(_) => false, 
-            }
+                ProjectEntry::Many(_) => true,
+                ProjectEntry::One(_) => false,
+            };
         };
         false
     }
@@ -407,26 +440,22 @@ impl Workspace {
     pub fn iter(&mut self) -> impl Iterator<Item = &Entry> {
         self.projects
             .iter()
-            .map(|e| {
-                match e {
-                    ProjectEntry::One(c) => vec![c],
-                    ProjectEntry::Many(c) => c.iter().collect(),
-                } 
+            .map(|e| match e {
+                ProjectEntry::One(c) => vec![c],
+                ProjectEntry::Many(c) => c.iter().collect(),
             })
             .flatten()
             .collect::<Vec<&Entry>>()
             .into_iter()
     }
 
-    #[deprecated(since="0.20.8", note="Use into_iter()")]
+    #[deprecated(since = "0.20.8", note = "Use into_iter()")]
     pub fn iter_mut(&mut self) -> impl IntoIterator<Item = &mut Entry> {
         self.projects
             .iter_mut()
-            .map(|e| {
-                match e {
-                    ProjectEntry::One(c) => vec![c],
-                    ProjectEntry::Many(c) => c.iter_mut().collect(),
-                } 
+            .map(|e| match e {
+                ProjectEntry::One(c) => vec![c],
+                ProjectEntry::Many(c) => c.iter_mut().collect(),
             })
             .flatten()
             .collect::<Vec<&mut Entry>>()
@@ -436,17 +465,14 @@ impl Workspace {
     pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
         self.projects
             .into_iter()
-            .map(|e| {
-                match e {
-                    ProjectEntry::One(c) => vec![c],
-                    ProjectEntry::Many(c) => c.into_iter().collect(),
-                } 
+            .map(|e| match e {
+                ProjectEntry::One(c) => vec![c],
+                ProjectEntry::Many(c) => c.into_iter().collect(),
             })
             .flatten()
             .collect::<Vec<Entry>>()
             .into_iter()
     }
-
 }
 
 /// Open a project.
@@ -467,7 +493,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
             let config = Config::load(&root, false)?;
             if config.workspace.is_some() {
-                return Err(Error::NoNestedWorkspace(root))
+                return Err(Error::NoNestedWorkspace(root));
             }
 
             members.push(Entry { config });
@@ -475,7 +501,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
         workspace.projects.push(ProjectEntry::Many(members));
     } else {
-        workspace.projects.push(ProjectEntry::One(Entry{ config }));
+        workspace.projects.push(ProjectEntry::One(Entry { config }));
     }
 
     Ok(workspace)
@@ -488,7 +514,7 @@ pub struct CompileResult {
 
 /// Compile a project.
 ///
-/// The project may contain workspace members in which case all 
+/// The project may contain workspace members in which case all
 /// member projects will be compiled.
 pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Result<CompileResult> {
     let project = open(project, true)?;
@@ -497,26 +523,39 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
     for entry in project.into_iter() {
         let mut sitemaps: Vec<Url> = Vec::new();
 
-        let state = entry.builder(args)?
-            .sources().await?
-            .locales().await?
-            .fetch().await?
-            .collate().await?
-            .redirects().await?
-            .load_data().await?
-            .search().await?
-            .feed().await?
-            .pages().await?
-            .each().await?
-            .assign().await?
-            .syntax().await?
+        let state = entry
+            .builder(args)?
+            .sources()
+            .await?
+            .locales()
+            .await?
+            .fetch()
+            .await?
+            .collate()
+            .await?
+            .redirects()
+            .await?
+            .load_data()
+            .await?
+            .search()
+            .await?
+            .feed()
+            .await?
+            .pages()
+            .await?
+            .each()
+            .await?
+            .assign()
+            .await?
+            .syntax()
+            .await?
             .build()?;
 
         // Renderer is generated for each locale to compile
         for (_lang, renderer) in state.renderers.iter() {
             let mut res = renderer.render(&state.locales).await?;
             if let Some(url) = res.sitemap.take() {
-                sitemaps.push(url); 
+                sitemaps.push(url);
             }
             // TODO: ensure redirects work in multi-lingual config
             state.write_redirects(&renderer.info.context.options)?;

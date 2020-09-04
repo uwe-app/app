@@ -76,10 +76,13 @@ pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
 pub fn listing<'a>(ctx: &'a BuildContext, list: &'a ListOptions) -> Result<Vec<&'a Page>> {
     let depth = list.dir.components().count() + list.depth;
 
-    let pages = ctx.collation.pages.get(&ctx.options.locales.fallback).unwrap();
+    let pages = ctx
+        .collation
+        .pages
+        .get(&ctx.options.locales.fallback)
+        .unwrap();
 
-    let keys = 
-        pages
+    let keys = pages
         .iter()
         .filter(|(k, _)| {
             let key_count = k.components().count();

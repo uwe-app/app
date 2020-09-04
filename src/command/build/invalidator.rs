@@ -101,7 +101,11 @@ pub struct Invalidator<'a> {
 
 impl<'a> Invalidator<'a> {
     pub fn new(builder: Compiler<'a>, parser: Parser<'a>, datasource: &'a DataSourceMap) -> Self {
-        Self { builder, parser, datasource }
+        Self {
+            builder,
+            parser,
+            datasource,
+        }
     }
 
     fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
@@ -163,7 +167,8 @@ impl<'a> Invalidator<'a> {
                 .collect::<Vec<_>>();
         }
 
-        let generator_paths: Vec<PathBuf> = self.datasource
+        let generator_paths: Vec<PathBuf> = self
+            .datasource
             .map
             .values()
             .map(|g| self.canonical(g.source.clone()))

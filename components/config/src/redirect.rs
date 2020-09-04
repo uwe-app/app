@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 
 use log::info;
 
@@ -27,7 +27,6 @@ impl RedirectConfig {
         }
         Ok(map)
     }
-
 
     pub fn validate(&self) -> Result<()> {
         for (k, v) in self.map.iter() {
@@ -118,6 +117,4 @@ impl RedirectConfig {
         content.push_str("</html>");
         utils::fs::write_string(target, content)
     }
-
 }
-

@@ -20,7 +20,6 @@ impl HelperDef for Styles<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // Make links absolute (passthrough)
         let abs = h
             .hash_get("abs")
@@ -35,15 +34,14 @@ impl HelperDef for Styles<'_> {
         let styles = ctx
             .data()
             .as_object()
-            .ok_or_else(
-                || RenderError::new("Type error for `styles` helper, invalid page data"))
+            .ok_or_else(|| RenderError::new("Type error for `styles` helper, invalid page data"))
             .unwrap()
             .get("styles")
             .and_then(|v| v.as_array());
 
         // Use global styles from the settings
         let mut sheets: Vec<StyleFile> = if let Some(ref styles) = self.context.config.styles {
-           styles.main.clone()
+            styles.main.clone()
         } else {
             vec![]
         };
@@ -51,7 +49,8 @@ impl HelperDef for Styles<'_> {
         // NOTE: Unlike scripts which come beforehand page-level
         // NOTE: styles come afterwards following the principle of specificity
         if let Some(styles) = styles {
-            let mut page_styles = styles.iter()
+            let mut page_styles = styles
+                .iter()
                 .map(|v| serde_json::from_value::<StyleFile>(v.clone()).unwrap())
                 .collect();
             sheets.append(&mut page_styles);
@@ -74,7 +73,9 @@ impl HelperDef for Styles<'_> {
                 .iter()
                 .map(|style| {
                     let rel = config::link::relative(style.get_source(), path, &opts.source, opts)
-                        .map_err(|_e| RenderError::new("Type error for `styles`, file is outside source!"))
+                        .map_err(|_e| {
+                            RenderError::new("Type error for `styles`, file is outside source!")
+                        })
                         .unwrap();
                     StyleFile::Source(rel)
                 })

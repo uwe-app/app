@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use super::{Error, Result, RuntimeOptions};
 use super::file::FileInfo;
+use super::{Error, Result, RuntimeOptions};
 
 use super::config::INDEX_STEM;
 
@@ -89,8 +89,8 @@ pub fn relative<P: AsRef<Path>, B: AsRef<Path>>(
     href: &str,
     path: P,
     base: B,
-    opts: &RuntimeOptions) -> Result<String> {
-
+    opts: &RuntimeOptions,
+) -> Result<String> {
     let rel = path.as_ref().strip_prefix(base.as_ref())?;
 
     let types = opts.settings.types.as_ref().unwrap();

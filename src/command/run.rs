@@ -1,5 +1,5 @@
 use crate::Result;
-use config::server::{ServerConfig, LaunchConfig};
+use config::server::{LaunchConfig, ServerConfig};
 
 pub async fn serve(opts: ServerConfig, launch: LaunchConfig) -> Result<()> {
     // Convert to &'static reference

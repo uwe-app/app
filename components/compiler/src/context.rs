@@ -1,9 +1,9 @@
-use std::path::PathBuf;
 use once_cell::sync::OnceCell;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use collator::CollateInfo;
-use config::{Config, RuntimeOptions, LocaleName};
+use config::{Config, LocaleName, RuntimeOptions};
 
 #[derive(Debug, Default)]
 pub struct CompileTarget {

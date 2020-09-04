@@ -203,7 +203,6 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
-
     pub fn new_release() -> Self {
         let mut settings: ProfileSettings = Default::default();
         settings.release = Some(true);
@@ -214,44 +213,105 @@ impl ProfileSettings {
         self.source = mem::take(&mut other.source);
         self.target = mem::take(&mut other.target);
 
-        if other.types.is_some() { self.types = mem::take(&mut other.types) }
-        if other.strict.is_some() { self.strict = mem::take(&mut other.strict) }
-        if other.parallel.is_some() { self.parallel = mem::take(&mut other.parallel) }
+        if other.types.is_some() {
+            self.types = mem::take(&mut other.types)
+        }
+        if other.strict.is_some() {
+            self.strict = mem::take(&mut other.strict)
+        }
+        if other.parallel.is_some() {
+            self.parallel = mem::take(&mut other.parallel)
+        }
 
-        if other.assets.is_some() { self.assets = mem::take(&mut other.assets) }
-        if other.locales.is_some() { self.locales = mem::take(&mut other.locales) }
-        if other.includes.is_some() { self.includes = mem::take(&mut other.includes) }
-        if other.partials.is_some() { self.partials = mem::take(&mut other.partials) }
-        if other.data_sources.is_some() { self.data_sources = mem::take(&mut other.data_sources) }
-        if other.layout.is_some() { self.layout = mem::take(&mut other.layout) }
+        if other.assets.is_some() {
+            self.assets = mem::take(&mut other.assets)
+        }
+        if other.locales.is_some() {
+            self.locales = mem::take(&mut other.locales)
+        }
+        if other.includes.is_some() {
+            self.includes = mem::take(&mut other.includes)
+        }
+        if other.partials.is_some() {
+            self.partials = mem::take(&mut other.partials)
+        }
+        if other.data_sources.is_some() {
+            self.data_sources = mem::take(&mut other.data_sources)
+        }
+        if other.layout.is_some() {
+            self.layout = mem::take(&mut other.layout)
+        }
 
-        if other.rewrite_index.is_some() { self.rewrite_index = mem::take(&mut other.rewrite_index) }
-        if other.extend.is_some() { self.extend = mem::take(&mut other.extend) }
-        if other.short_codes.is_some() { self.short_codes = mem::take(&mut other.short_codes) }
+        if other.rewrite_index.is_some() {
+            self.rewrite_index = mem::take(&mut other.rewrite_index)
+        }
+        if other.extend.is_some() {
+            self.extend = mem::take(&mut other.extend)
+        }
+        if other.short_codes.is_some() {
+            self.short_codes = mem::take(&mut other.short_codes)
+        }
 
-        if other.host.is_some() { self.host = mem::take(&mut other.host) }
-        if other.port.is_some() { self.port = mem::take(&mut other.port) }
-        if other.scheme.is_some() { self.scheme = mem::take(&mut other.scheme) }
-        if other.tls.is_some() { self.tls = mem::take(&mut other.tls) }
+        if other.host.is_some() {
+            self.host = mem::take(&mut other.host)
+        }
+        if other.port.is_some() {
+            self.port = mem::take(&mut other.port)
+        }
+        if other.scheme.is_some() {
+            self.scheme = mem::take(&mut other.scheme)
+        }
+        if other.tls.is_some() {
+            self.tls = mem::take(&mut other.tls)
+        }
 
-        if other.live.is_some() { self.live = mem::take(&mut other.live) }
-        if other.release.is_some() { self.release = mem::take(&mut other.release) }
-        if other.include_index.is_some() { self.include_index = mem::take(&mut other.include_index) }
-        if other.incremental.is_some() { self.incremental = mem::take(&mut other.incremental) }
-        if other.pristine.is_some() { self.pristine = mem::take(&mut other.pristine) }
-        if other.force.is_some() { self.force = mem::take(&mut other.force) }
-        if other.collate.is_some() { self.collate = mem::take(&mut other.collate) }
-        if other.write_redirects.is_some() { self.write_redirects = mem::take(&mut other.write_redirects) }
-        if other.base.is_some() { self.base = mem::take(&mut other.base) }
-        if other.paths.is_some() { self.paths = mem::take(&mut other.paths) }
-        if other.base_href.is_some() { self.base_href = mem::take(&mut other.base_href) }
+        if other.live.is_some() {
+            self.live = mem::take(&mut other.live)
+        }
+        if other.release.is_some() {
+            self.release = mem::take(&mut other.release)
+        }
+        if other.include_index.is_some() {
+            self.include_index = mem::take(&mut other.include_index)
+        }
+        if other.incremental.is_some() {
+            self.incremental = mem::take(&mut other.incremental)
+        }
+        if other.pristine.is_some() {
+            self.pristine = mem::take(&mut other.pristine)
+        }
+        if other.force.is_some() {
+            self.force = mem::take(&mut other.force)
+        }
+        if other.collate.is_some() {
+            self.collate = mem::take(&mut other.collate)
+        }
+        if other.write_redirects.is_some() {
+            self.write_redirects = mem::take(&mut other.write_redirects)
+        }
+        if other.base.is_some() {
+            self.base = mem::take(&mut other.base)
+        }
+        if other.paths.is_some() {
+            self.paths = mem::take(&mut other.paths)
+        }
+        if other.base_href.is_some() {
+            self.base_href = mem::take(&mut other.base_href)
+        }
 
-        if other.use_layout.is_some() { self.use_layout = mem::take(&mut other.use_layout) }
+        if other.use_layout.is_some() {
+            self.use_layout = mem::take(&mut other.use_layout)
+        }
 
-        if other.robots.is_some() { self.robots = mem::take(&mut other.robots) }
-        if other.sitemap.is_some() { self.sitemap = mem::take(&mut other.sitemap) }
-        if other.resources.is_some() { self.resources = mem::take(&mut other.resources) }
-
+        if other.robots.is_some() {
+            self.robots = mem::take(&mut other.robots)
+        }
+        if other.sitemap.is_some() {
+            self.sitemap = mem::take(&mut other.sitemap)
+        }
+        if other.resources.is_some() {
+            self.resources = mem::take(&mut other.resources)
+        }
     }
 
     pub fn get_canonical_url(&self, conf: &config::Config) -> crate::Result<Url> {

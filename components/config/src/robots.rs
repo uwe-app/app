@@ -1,5 +1,5 @@
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -21,7 +21,10 @@ impl Default for RobotsConfig {
         let mut rules = HashMap::new();
         let rule = RobotsRule::all();
         rules.insert(WILDCARD.to_string(), rule);
-        Self { rules, sitemaps: vec![] }
+        Self {
+            rules,
+            sitemaps: vec![],
+        }
     }
 }
 
@@ -57,10 +60,14 @@ impl RobotsRule {
 impl fmt::Display for RobotsRule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref allow) = self.allow {
-            for path in allow.iter() { write!(f, "allow: {}\n", path)?; }
+            for path in allow.iter() {
+                write!(f, "allow: {}\n", path)?;
+            }
         }
         if let Some(ref disallow) = self.disallow {
-            for path in disallow.iter() { write!(f, "disallow: {}\n", path)?; }
+            for path in disallow.iter() {
+                write!(f, "disallow: {}\n", path)?;
+            }
         }
         Ok(())
     }

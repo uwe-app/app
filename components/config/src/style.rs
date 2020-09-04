@@ -1,5 +1,5 @@
-use std::fmt;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 use utils::entity;
 
@@ -29,7 +29,11 @@ impl fmt::Display for StyleFile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Source(ref s) => {
-                write!(f, "<link rel=\"stylesheet\" href=\"{}\">", entity::escape(s))?;
+                write!(
+                    f,
+                    "<link rel=\"stylesheet\" href=\"{}\">",
+                    entity::escape(s)
+                )?;
             }
         }
         Ok(())

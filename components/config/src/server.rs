@@ -8,18 +8,30 @@ use crate::redirect::Redirects;
 use crate::{Error, Result};
 
 pub fn to_websocket_url(tls: bool, host: &str, endpoint: &str, port: u16) -> String {
-    let scheme = if tls { crate::SCHEME_WSS } else { crate::SCHEME_WS };
+    let scheme = if tls {
+        crate::SCHEME_WSS
+    } else {
+        crate::SCHEME_WS
+    };
     format!("{}//{}:{}/{}", scheme, host, port, endpoint)
 }
 
 pub fn get_port(port: u16, tls: &Option<TlsConfig>, port_type: PortType) -> u16 {
     match port_type {
         PortType::Infer => {
-            if let Some(ref tls) = tls { tls.port } else { port }
+            if let Some(ref tls) = tls {
+                tls.port
+            } else {
+                port
+            }
         }
         PortType::Insecure => port,
         PortType::Secure => {
-            if let Some(ref tls) = tls { tls.port } else { crate::PORT_SSL }
+            if let Some(ref tls) = tls {
+                tls.port
+            } else {
+                crate::PORT_SSL
+            }
         }
     }
 }
@@ -33,7 +45,11 @@ pub struct ConnectionInfo {
 
 impl ConnectionInfo {
     pub fn to_url(&self) -> String {
-        let scheme = if self.tls { crate::SCHEME_HTTPS } else { crate::SCHEME_HTTP };
+        let scheme = if self.tls {
+            crate::SCHEME_HTTPS
+        } else {
+            crate::SCHEME_HTTP
+        };
         crate::to_url_string(scheme, &self.host, self.addr.port())
     }
 
@@ -68,7 +84,9 @@ pub struct LogConfig {
 
 impl Default for LogConfig {
     fn default() -> Self {
-        Self {prefix: "web:log".to_string()}
+        Self {
+            prefix: "web:log".to_string(),
+        }
     }
 }
 
@@ -103,7 +121,6 @@ impl Default for ServerConfig {
 }
 
 impl ServerConfig {
-
     /// New configuration for a host and port.
     pub fn new(listen: String, port: u16, tls: Option<TlsConfig>) -> Self {
         let mut tmp: Self = Default::default();
@@ -141,7 +158,7 @@ impl ServerConfig {
     }
 
     pub fn get_url(&self, scheme: &str, port_type: PortType, host: Option<String>) -> String {
-        format!("{}//{}", scheme, self.get_address(port_type, host)) 
+        format!("{}//{}", scheme, self.get_address(port_type, host))
     }
 
     pub fn get_sock_addr(&self, port_type: PortType, host: Option<String>) -> Result<SocketAddr> {
@@ -186,8 +203,8 @@ impl HostConfig {
         directory: PathBuf,
         name: String,
         redirects: Option<Redirects>,
-        endpoint: Option<String>) -> Self {
-
+        endpoint: Option<String>,
+    ) -> Self {
         Self {
             directory,
             name,
@@ -195,6 +212,6 @@ impl HostConfig {
             endpoint,
             disable_cache: true,
             log: None,
-        } 
+        }
     }
 }

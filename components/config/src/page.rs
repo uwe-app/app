@@ -4,16 +4,16 @@ use std::mem;
 use std::path::{Path, PathBuf};
 
 use chrono::prelude::*;
-pub use jsonfeed::{Feed, Author, Attachment};
+pub use jsonfeed::{Attachment, Author, Feed};
 
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
 use super::indexer::QueryList;
+use super::link;
 use super::script::ScriptFile;
 use super::style::StyleFile;
-use super::link;
 use super::Error;
 use super::{Config, FileInfo, RuntimeOptions};
 
@@ -231,7 +231,6 @@ impl Default for Page {
 }
 
 impl Page {
-
     // This should be a W3C Datetime string suitable for a
     // sitemap lastmod field.
     pub fn lastmod(&self) -> String {
@@ -309,11 +308,7 @@ impl Page {
         link::absolute(p.as_ref(), opts, Default::default())
     }
 
-    pub fn compute(
-        &mut self,
-        config: &Config,
-        _opts: &RuntimeOptions,
-    ) -> Result<(), Error> {
+    pub fn compute(&mut self, config: &Config, _opts: &RuntimeOptions) -> Result<(), Error> {
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
         } else {

@@ -89,7 +89,13 @@ pub fn get_short_codes_location() -> Result<PathBuf> {
 
 pub fn to_url_string(scheme: &str, host: &str, port: impl Into<Option<u16>>) -> String {
     let url = if let Some(port) = port.into() {
-        format!("{}{}{}:{}", scheme, crate::config::SCHEME_DELIMITER, host, port)
+        format!(
+            "{}{}{}:{}",
+            scheme,
+            crate::config::SCHEME_DELIMITER,
+            host,
+            port
+        )
     } else {
         format!("{}{}{}", scheme, crate::config::SCHEME_DELIMITER, host)
     };
@@ -100,7 +106,7 @@ pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use locale::*;
-pub use page::{Page, PageLink, PaginateInfo, Author};
+pub use page::{Author, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
-pub use search::{SEARCH_JS, SEARCH_WASM};
 pub use redirect::*;
+pub use search::{SEARCH_JS, SEARCH_WASM};

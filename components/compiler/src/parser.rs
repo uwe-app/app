@@ -42,24 +42,16 @@ impl<'a> Parser<'a> {
         }
 
         // Built-in partials
-        handlebars.register_template_string(
-            "charset", include_str!("builtins/charset.hbs"))?;
-        handlebars.register_template_string(
-            "title", include_str!("builtins/title.hbs"))?;
-        handlebars.register_template_string(
-            "viewport", include_str!("builtins/viewport.hbs"))?;
-        handlebars.register_template_string(
-            "edge", include_str!("builtins/edge.hbs"))?;
-        handlebars.register_template_string(
-            "description", include_str!("builtins/description.hbs"))?;
-        handlebars.register_template_string(
-            "keywords", include_str!("builtins/keywords.hbs"))?;
-        handlebars.register_template_string(
-            "canonical", include_str!("builtins/canonical.hbs"))?;
-        handlebars.register_template_string(
-            "noindex", include_str!("builtins/noindex.hbs"))?;
-        handlebars.register_template_string(
-            "head", include_str!("builtins/head.hbs"))?;
+        handlebars.register_template_string("charset", include_str!("builtins/charset.hbs"))?;
+        handlebars.register_template_string("title", include_str!("builtins/title.hbs"))?;
+        handlebars.register_template_string("viewport", include_str!("builtins/viewport.hbs"))?;
+        handlebars.register_template_string("edge", include_str!("builtins/edge.hbs"))?;
+        handlebars
+            .register_template_string("description", include_str!("builtins/description.hbs"))?;
+        handlebars.register_template_string("keywords", include_str!("builtins/keywords.hbs"))?;
+        handlebars.register_template_string("canonical", include_str!("builtins/canonical.hbs"))?;
+        handlebars.register_template_string("noindex", include_str!("builtins/noindex.hbs"))?;
+        handlebars.register_template_string("head", include_str!("builtins/head.hbs"))?;
 
         // Configure partial directories
         let templates = context.options.get_partials_path();
@@ -88,9 +80,12 @@ impl<'a> Parser<'a> {
         );
         handlebars.register_helper("match", Box::new(helpers::matcher::Match { context }));
         handlebars.register_helper("series", Box::new(helpers::series::Series { context }));
-        handlebars.register_helper("favicon", Box::new(helpers::favicon::Icon{ context }));
-        handlebars.register_helper("bookmark", Box::new(helpers::bookmark::Link{ context }));
-        handlebars.register_helper("permalink", Box::new(helpers::bookmark::PermaLink{ context }));
+        handlebars.register_helper("favicon", Box::new(helpers::favicon::Icon { context }));
+        handlebars.register_helper("bookmark", Box::new(helpers::bookmark::Link { context }));
+        handlebars.register_helper(
+            "permalink",
+            Box::new(helpers::bookmark::PermaLink { context }),
+        );
 
         handlebars.register_helper("styles", Box::new(helpers::styles::Styles { context }));
         handlebars.register_helper("scripts", Box::new(helpers::scripts::Scripts { context }));

@@ -33,7 +33,6 @@ pub enum Error {
 
     //#[error("Redirect file {0} already exists")]
     //RedirectFileExists(PathBuf),
-
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -42,7 +41,6 @@ pub enum Error {
 
     //#[error(transparent)]
     //InvalidUri(#[from] http::uri::InvalidUri),
-
     #[error(transparent)]
     Json(#[from] serde_json::error::Error),
 

@@ -8,8 +8,8 @@ use config::ProfileSettings;
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
-use workspace::{lock, compile, Render};
 use scopeguard::defer;
+use workspace::{compile, lock, Render};
 
 use crate::Error;
 use crate::Result;
@@ -22,7 +22,6 @@ pub struct PublishOptions {
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
-
     let lock_path = options.project.join("site.lock");
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
@@ -31,7 +30,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let result = compile(&options.project, &args).await?;
 
     for state in result.projects.into_iter() {
-        do_publish(&options, &state).await?; 
+        do_publish(&options, &state).await?;
     }
 
     Ok(())

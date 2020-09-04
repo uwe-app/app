@@ -12,9 +12,9 @@ use structopt::StructOpt;
 
 use std::panic;
 
+use config::server::{HostConfig, LaunchConfig, ServerConfig, TlsConfig};
 use hypertext::command;
 use hypertext::{Error, ProfileSettings};
-use config::server::{LaunchConfig, ServerConfig, HostConfig, TlsConfig};
 use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
@@ -445,7 +445,6 @@ async fn process_command(cmd: &Command) {
         }
 
         Command::Run { ref args } => {
-
             if !args.target.exists() || !args.target.is_dir() {
                 fatal(Error::NotDirectory(args.target.to_path_buf()));
                 return;
@@ -462,8 +461,12 @@ async fn process_command(cmd: &Command) {
                 config::PORT_SSL
             };
 
-            if let Some(h) = &args.server.host { host = h; }
-            if let Some(p) = &args.server.port { port = p; }
+            if let Some(h) = &args.server.host {
+                host = h;
+            }
+            if let Some(p) = &args.server.port {
+                port = p;
+            }
 
             if args.server.ssl_cert.is_some() && args.server.ssl_key.is_some() {
                 tls = Some(TlsConfig {
@@ -566,8 +569,12 @@ async fn process_command(cmd: &Command) {
 
             let now = SystemTime::now();
             match command::build::compile(&project, &mut build_args, fatal).await {
-                Ok(_) => if let Ok(t) = now.elapsed() { info!("{:?}", t); }
-                Err(e) => print_error(e)
+                Ok(_) => {
+                    if let Ok(t) = now.elapsed() {
+                        info!("{:?}", t);
+                    }
+                }
+                Err(e) => print_error(e),
             }
         }
     }
@@ -582,8 +589,8 @@ async fn main() {
     // so we catch it here and push it out via the log
     panic::set_hook(Box::new(|info| {
         let message = format!("{}", info);
-        // NOTE: We must NOT call `fatal` here which explictly exits the program; 
-        // NOTE: if we did our defer! {} hooks would not get called which means 
+        // NOTE: We must NOT call `fatal` here which explictly exits the program;
+        // NOTE: if we did our defer! {} hooks would not get called which means
         // NOTE: lock files would not be removed from disc correctly.
         print_error(Error::Panic(message));
     }));
@@ -606,7 +613,7 @@ async fn main() {
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
 
-    // Must configure the version here otherwise option_env!() will 
+    // Must configure the version here otherwise option_env!() will
     // use the version from the workspace package which we don't really
     // care about, the top-level version is the one that interests us.
     let semver = option_env!("CARGO_PKG_VERSION").unwrap().to_string();

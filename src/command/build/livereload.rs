@@ -9,21 +9,21 @@ use warp::ws::Message;
 
 use notify::DebouncedEvent::{self, Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
-use notify::{Watcher, INotifyWatcher};
+use notify::{INotifyWatcher, Watcher};
 use std::thread::sleep;
 use std::time::Duration;
 
-use compiler::Compiler;
 use compiler::parser::Parser;
+use compiler::Compiler;
+use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 use config::ProfileSettings;
-use config::server::{ServerConfig, HostConfig, ConnectionInfo, PortType};
 
 use server::{Channels, HostChannel};
 
 use workspace::Render;
 
-use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
+use crate::{Error, ErrorCallback};
 
 struct LiveHost {
     source: PathBuf,
@@ -38,11 +38,10 @@ pub async fn start<P: AsRef<Path>>(
     args: &mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-
     // Prepare the server settings
     let port = args.get_port();
     if port == 0 {
-        return Err(Error::NoLiveEphemeralPort)
+        return Err(Error::NoLiveEphemeralPort);
     }
     let tls = args.tls.clone();
 
@@ -63,62 +62,67 @@ pub async fn start<P: AsRef<Path>>(
 
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
-    result.projects
-        .into_iter()
-        .try_for_each(|state| {
-            let target = state.context.options.base.clone();
-            let redirect_uris = state.redirects.collect()?;
-            let hostname = state.context.config.get_local_host_name(multiple); 
-            let host = HostConfig::new(
-                target,
-                hostname,
-                Some(redirect_uris),
-                Some(utils::generate_id(16)));
+    result.projects.into_iter().try_for_each(|state| {
+        let target = state.context.options.base.clone();
+        let redirect_uris = state.redirects.collect()?;
+        let hostname = state.context.config.get_local_host_name(multiple);
+        let host = HostConfig::new(
+            target,
+            hostname,
+            Some(redirect_uris),
+            Some(utils::generate_id(16)),
+        );
 
-            // NOTE: These host names may not resolve so cannot attempt
-            // NOTE: to lookup a socket address here.
-            let ws_url = config::server::to_websocket_url(
-                tls.is_some(),
-                &host.name,
-                host.endpoint.as_ref().unwrap(),
-                config::server::get_port(port.to_owned(), &tls, PortType::Infer));
+        // NOTE: These host names may not resolve so cannot attempt
+        // NOTE: to lookup a socket address here.
+        let ws_url = config::server::to_websocket_url(
+            tls.is_some(),
+            &host.name,
+            host.endpoint.as_ref().unwrap(),
+            config::server::get_port(port.to_owned(), &tls, PortType::Infer),
+        );
 
-            // Write out the livereload javascript using the correct 
-            // websocket endpoint which the server will create later
-            livereload::write(&state.context.config, &host.directory, &ws_url)?;
+        // Write out the livereload javascript using the correct
+        // websocket endpoint which the server will create later
+        livereload::write(&state.context.config, &host.directory, &ws_url)?;
 
-            // Configure the live reload relay channels
-            let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-            let reload_tx = ws_tx.clone();
+        // Configure the live reload relay channels
+        let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+        let reload_tx = ws_tx.clone();
 
-            let host_channel = HostChannel {reload: Some(reload_tx)};
-            channels.hosts.entry(host.name.clone()).or_insert(host_channel);
+        let host_channel = HostChannel {
+            reload: Some(reload_tx),
+        };
+        channels
+            .hosts
+            .entry(host.name.clone())
+            .or_insert(host_channel);
 
-            info!("Virtual host: {}", &host.name);
+        info!("Virtual host: {}", &host.name);
 
-            hosts.push(host);
+        hosts.push(host);
 
-            // Get the source directory to configure the watcher
-            let source = state.context.options.source.clone();
-            // Create a channel to receive the events.
-            let (tx, rx) = mpsc::channel();
-            // Configure the watcher
-            let watcher = notify::watcher(tx, Duration::from_secs(1))?;
+        // Get the source directory to configure the watcher
+        let source = state.context.options.source.clone();
+        // Create a channel to receive the events.
+        let (tx, rx) = mpsc::channel();
+        // Configure the watcher
+        let watcher = notify::watcher(tx, Duration::from_secs(1))?;
 
-            let live_host = LiveHost {
-                source,
-                watcher,
-                state,
-                websocket: ws_tx,
-                receiver: rx,
-            };
-            watchers.push(live_host);
+        let live_host = LiveHost {
+            source,
+            watcher,
+            state,
+            websocket: ws_tx,
+            receiver: rx,
+        };
+        watchers.push(live_host);
 
-            Ok::<(), Error>(())
-        })?;
+        Ok::<(), Error>(())
+    })?;
 
     if hosts.is_empty() {
-        return Err(Error::NoLiveHosts)
+        return Err(Error::NoLiveHosts);
     }
 
     // Server must have at least a single virtual host
@@ -141,17 +145,16 @@ pub async fn start<P: AsRef<Path>>(
 
     for mut w in watchers {
         std::thread::spawn(move || {
-
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-
                 let rx = w.receiver;
 
                 // NOTE: must start watching in this thread otherwise
                 // NOTE: the `rx` channel will be closed prematurely
-                w.watcher.watch(&w.source, Recursive).expect("Failed to start watcher");
+                w.watcher
+                    .watch(&w.source, Recursive)
+                    .expect("Failed to start watcher");
                 info!("Watch {}", w.source.display());
-
 
                 let context = w.state.context;
 
@@ -192,7 +195,9 @@ pub async fn start<P: AsRef<Path>>(
                         let result = invalidator.get_invalidation(paths);
                         match result {
                             Ok(invalidation) => {
-                                if let Err(e) = invalidator.invalidate(&w.source, &invalidation).await {
+                                if let Err(e) =
+                                    invalidator.invalidate(&w.source, &invalidation).await
+                                {
                                     error!("{}", e);
 
                                     let msg = livereload::messages::notify(e.to_string(), true);
@@ -212,7 +217,6 @@ pub async fn start<P: AsRef<Path>>(
                             }
                             Err(e) => return error_cb(Error::from(e)),
                         }
-
                     }
                 }
             });

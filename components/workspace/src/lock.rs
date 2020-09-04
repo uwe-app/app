@@ -1,4 +1,4 @@
-use std::fs::{File, remove_file};
+use std::fs::{remove_file, File};
 use std::path::PathBuf;
 
 use fs2::FileExt;
@@ -13,7 +13,6 @@ pub struct LockFile<'a> {
 }
 
 pub fn acquire(path: &PathBuf) -> Result<LockFile> {
-
     let file = if path.exists() {
         File::open(path)?
     } else {
@@ -27,7 +26,7 @@ pub fn acquire(path: &PathBuf) -> Result<LockFile> {
         while let Err(_) = file.try_lock_exclusive() {}
     }
     debug!("Lock obtained {}", path.display());
-    Ok(LockFile {path, file})
+    Ok(LockFile { path, file })
 }
 
 pub fn release(lock_file: LockFile) -> Result<()> {
