@@ -138,16 +138,12 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn build<'a>(
-        &'a self,
-        //ctx: &'a mut BuildContext,
-        locales: &'a Locales,
-    ) -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
+    async fn build<'a>(&'a self, locales: &'a Locales)
+        -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
 
         // When working with multi-lingual sites the target may not exist yet
-        let target = &self.context.options.target;
-        if !target.exists() {
-            fs::create_dir_all(target)?;
+        if !self.target.path.exists() {
+            fs::create_dir_all(&self.target.path)?;
         }
 
         let parser = Parser::new(&self.context, &locales)?;

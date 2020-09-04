@@ -30,7 +30,7 @@ impl BuildContext {
 #[derive(Debug)]
 pub struct CompileTarget {
     pub lang: LocaleName,
-    pub target: PathBuf,
+    pub path: PathBuf,
 }
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {

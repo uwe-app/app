@@ -54,9 +54,11 @@ impl Entry {
         };
 
         Ok(RenderState {
-            config: self.config,
-            options,
-            collation: Default::default(),
+            context: BuildContext {
+                config: self.config,
+                options,
+                collation: Default::default(),
+            },
             redirects,
             locales: Default::default(),
             datasource: Default::default(),
@@ -68,9 +70,7 @@ impl Entry {
 
 #[derive(Debug, Default)]
 pub struct RenderState {
-    pub config: Config,
-    pub options: RuntimeOptions,
-    pub collation: CollateInfo,
+    pub context: BuildContext,
     pub redirects: RedirectConfig,
     pub locales: Locales,
     pub datasource: DataSourceMap,
@@ -82,9 +82,9 @@ impl RenderState {
 
     /// Load locale message files (.ftl).
     pub async fn load_locales(&mut self) -> Result<()> {
-        self.locales.load(&self.config, &self.options)?;
-        let locale_map = self.locales.get_locale_map(&self.config.lang)?;
-        self.options.locales = locale_map;
+        self.locales.load(&self.context.config, &self.context.options)?;
+        let locale_map = self.locales.get_locale_map(&self.context.config.lang)?;
+        self.context.options.locales = locale_map;
         Ok(())
     }
 
@@ -93,8 +93,8 @@ impl RenderState {
 
         let mut components: Vec<CacheComponent> = Vec::new();
 
-        if self.config.syntax.is_some() {
-            if self.config.is_syntax_enabled(&self.options.settings.name) {
+        if self.context.config.syntax.is_some() {
+            if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
                 if !syntax_dir.exists() {
                     components.push(CacheComponent::Syntax);
@@ -102,7 +102,7 @@ impl RenderState {
             }
         }
 
-        if let Some(ref search) = self.config.search {
+        if let Some(ref search) = self.context.config.search {
             let fetch_search_runtime = search.bundle.is_some() && search.bundle.unwrap();
             if fetch_search_runtime {
                 let search_dir = cache::get_search_dir()?;
@@ -112,7 +112,7 @@ impl RenderState {
             }
         }
 
-        if self.config.feed.is_some() {
+        if self.context.config.feed.is_some() {
             let feed_dir = cache::get_feed_dir()?;
             if !feed_dir.exists() {
                 components.push(CacheComponent::Feed);
@@ -129,8 +129,8 @@ impl RenderState {
 
     /// Setup syntax highlighting when enabled.
     pub async fn map_syntax(&mut self) -> Result<()> {
-        if let Some(ref syntax_config) = self.config.syntax {
-            if self.config.is_syntax_enabled(&self.options.settings.name) {
+        if let Some(ref syntax_config) = self.context.config.syntax {
+            if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
                 info!("Syntax highlighting on");
                 syntax::setup(&syntax_dir, syntax_config)?;
@@ -144,15 +144,15 @@ impl RenderState {
     pub async fn collate(&mut self) -> Result<()> {
 
         // Set up the manifest for incremental builds
-        let manifest_file = get_manifest_file(&self.options);
-        let manifest: Option<Manifest> = if self.options.settings.is_incremental() {
+        let manifest_file = get_manifest_file(&self.context.options);
+        let manifest: Option<Manifest> = if self.context.options.settings.is_incremental() {
             Some(Manifest::load(&manifest_file)?)
         } else {
             None
         };
 
         // Collate page data for later usage
-        let req = CollateRequest { config: &self.config, options: &self.options };
+        let req = CollateRequest { config: &self.context.config, options: &self.context.options };
 
         // FIXME: decouple the manifest from the collation
 
@@ -168,12 +168,15 @@ impl RenderState {
         let mut collation: CollateInfo = res.try_into()?;
 
         // Find and transform localized pages
-        collator::localize(&self.config, &self.options, &self.options.locales, &mut collation).await?;
+        collator::localize(
+            &self.context.config,
+            &self.context.options,
+            &self.context.options.locales, &mut collation).await?;
 
         // Collate the series data
-        collator::series(&self.config, &self.options, &mut collation)?;
+        collator::series(&self.context.config, &self.context.options, &mut collation)?;
 
-        self.collation = collation;
+        self.context.collation = collation;
 
         Ok(())
     }
@@ -182,28 +185,17 @@ impl RenderState {
     /// on a local web server.
     pub async fn map_redirects(&mut self) -> Result<()> {
         // Map permalink redirects
-        if !self.collation.permalinks.is_empty() {
-            // Must have some redirects
-            //if let None = self.config.redirect {
-                //self.config.redirect = Some(Default::default());
-            //}
-
-            //if let Some(redirects) = self.config.redirect.as_mut() {
-                for (permalink, href) in self.collation.permalinks.iter() {
-                    let key = permalink.to_string() ;
-                    if self.redirects.map.contains_key(&key) {
-                        return Err(Error::RedirectPermalinkCollision(key));
-                    }
-                    self.redirects.map.insert(key, href.to_string());
+        if !self.context.collation.permalinks.is_empty() {
+            for (permalink, href) in self.context.collation.permalinks.iter() {
+                let key = permalink.to_string() ;
+                if self.redirects.map.contains_key(&key) {
+                    return Err(Error::RedirectPermalinkCollision(key));
                 }
-            //}
+                self.redirects.map.insert(key, href.to_string());
+            }
         }
 
         // Validate the redirects
-        //if let Some(ref redirects) = self.config.redirect {
-        //redirect::validate(&self.redirects.map)?;
-        //}
-
         self.redirects.validate()?;
 
         Ok(())
@@ -213,7 +205,7 @@ impl RenderState {
     pub async fn map_data(&mut self) -> Result<()> {
         // Load data sources and create indices
         self.datasource = DataSourceMap::load(
-            &self.config, &self.options, &mut self.collation).await?;
+            &self.context.config, &self.context.options, &mut self.context.collation).await?;
 
         // Set up the cache for data source queries
         self.cache = DataSourceMap::get_cache();
@@ -223,36 +215,42 @@ impl RenderState {
 
     /// Copy the search runtime files if we need them.
     pub async fn map_search(&mut self) -> Result<()> {
-        Ok(synthetic::search(&self.config, &self.options, &mut self.collation)?)
+        Ok(synthetic::search(&self.context.config, &self.context.options, &mut self.context.collation)?)
     }
 
     /// Create feed pages.
     pub async fn map_feed(&mut self) -> Result<()> {
-        Ok(synthetic::feed(&self.config, &self.options, &mut self.collation)?)
+        Ok(synthetic::feed(&self.context.config, &self.context.options, &mut self.context.collation)?)
     }
 
     /// Perform pagination.
     pub async fn map_pages(&mut self) -> Result<()> {
         Ok(synthetic::pages(
-            &self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+            &self.context.config,
+            &self.context.options,
+            &mut self.context.collation, &self.datasource, &mut self.cache)?)
     }
 
     /// Create collation entries for data source iterators.
     pub async fn map_each(&mut self) -> Result<()> {
         Ok(synthetic::each(
-            &self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+            &self.context.config,
+            &self.context.options,
+            &mut self.context.collation, &self.datasource, &mut self.cache)?)
     }
 
     /// Create collation entries for data source assignments.
     pub async fn map_assign(&mut self) -> Result<()> {
         Ok(synthetic::assign(
-            &self.config, &self.options, &mut self.collation, &self.datasource, &mut self.cache)?)
+            &self.context.config,
+            &self.context.options,
+            &mut self.context.collation, &self.datasource, &mut self.cache)?)
     }
    
     /// Verify the paths are within the site source.
     fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
-            if !p.starts_with(&self.options.source) {
+            if !p.starts_with(&self.context.options.source) {
                 return Err(Error::OutsideSourceTree(p.clone()));
             }
         }
@@ -264,25 +262,25 @@ impl RenderState {
         // FIXME: must remove the clones here and 
         // FIXME: pass an Arc to the compiler
         BuildContext::new(
-            self.config.clone(),
-            self.options.clone(),
-            self.collation.clone(),
+            self.context.config.clone(),
+            self.context.options.clone(),
+            self.context.collation.clone(),
         )
     }
 
     /// Get a list of renderers for each locale. 
     pub fn renderer(&mut self) -> Result<()> {
-        let base_target = self.options.base.clone();
+        let base_target = self.context.options.base.clone();
+        let locales = self.context.options.locales.clone();
 
-        let locales = self.options.locales.clone();
         locales.map.keys()
             .try_for_each(|lang| {
                 let mut context = self.to_context();
 
                 let target = if locales.multi {
-                    CompileTarget { lang: lang.clone(), target: base_target.join(lang) }
+                    CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
                 } else {
-                    CompileTarget { lang: lang.clone(), target: base_target.clone() }
+                    CompileTarget { lang: lang.clone(), path: base_target.clone() }
                 };
 
                 //if locales.multi {
@@ -293,11 +291,11 @@ impl RenderState {
                 //}
 
                 // Get source paths from the profile settings
-                let paths: Vec<PathBuf> = if let Some(ref paths) = self.options.settings.paths {
+                let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
                     self.verify(paths)?;
                     paths.clone()
                 } else {
-                    vec![self.options.source.clone()]
+                    vec![self.context.options.source.clone()]
                 };
 
                 self.renderers.insert(lang.clone(), Renderer {target, context, paths});
@@ -321,9 +319,9 @@ impl RenderState {
 
     pub fn write_manifest(&mut self) -> Result<()> {
         // Write the manifest for incremental builds
-        if let Some(ref mut manifest) = self.collation.manifest {
-            let manifest_file = get_manifest_file(&self.options);
-            for p in self.collation.resources.iter() {
+        if let Some(ref mut manifest) = self.context.collation.manifest {
+            let manifest_file = get_manifest_file(&self.context.options);
+            for p in self.context.collation.resources.iter() {
                 manifest.touch(&p.to_path_buf());
             }
             Manifest::save(&manifest_file, manifest)?;
@@ -332,11 +330,11 @@ impl RenderState {
     }
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
-        let output_robots = self.options.settings.robots.is_some()
+        let output_robots = self.context.options.settings.robots.is_some()
             || !sitemaps.is_empty();
 
         if output_robots {
-            let mut robots = if let Some(ref robots) = self.options.settings.robots {
+            let mut robots = if let Some(ref robots) = self.context.options.settings.robots {
                 robots.clone() 
             } else {
                 Default::default()
@@ -347,7 +345,7 @@ impl RenderState {
             //// NOTE: robots must always be at the root regardless
             //// NOTE: of multi-lingual support so we use `base` rather
             //// NOTE: than the `target`
-            let robots_file = self.options.base.join(config::robots::FILE);
+            let robots_file = self.context.options.base.join(config::robots::FILE);
             utils::fs::write_string(&robots_file, robots.to_string())?;
             info!("Robots {}", robots_file.display());
         }

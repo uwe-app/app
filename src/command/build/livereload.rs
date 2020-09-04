@@ -66,9 +66,9 @@ pub async fn start<P: AsRef<Path>>(
     result.projects
         .into_iter()
         .try_for_each(|state| {
-            let target = state.options.base.clone();
+            let target = state.context.options.base.clone();
             let redirect_uris = state.redirects.collect()?;
-            let hostname = state.config.get_local_host_name(multiple); 
+            let hostname = state.context.config.get_local_host_name(multiple); 
             let host = HostConfig::new(
                 target,
                 hostname,
@@ -85,7 +85,7 @@ pub async fn start<P: AsRef<Path>>(
 
             // Write out the livereload javascript using the correct 
             // websocket endpoint which the server will create later
-            livereload::write(&state.config, &host.directory, &ws_url)?;
+            livereload::write(&state.context.config, &host.directory, &ws_url)?;
 
             // Configure the live reload relay channels
             let (ws_tx, _rx) = broadcast::channel::<Message>(100);
@@ -99,7 +99,7 @@ pub async fn start<P: AsRef<Path>>(
             hosts.push(host);
 
             // Get the source directory to configure the watcher
-            let source = state.options.source.clone();
+            let source = state.context.options.source.clone();
             // Create a channel to receive the events.
             let (tx, rx) = mpsc::channel();
             // Configure the watcher

@@ -40,14 +40,14 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
 async fn do_publish(options: &PublishOptions, state: &RenderState) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
-            if let Some(ref publish_config) = state.config.publish.as_ref().unwrap().aws {
+            if let Some(ref publish_config) = state.context.config.publish.as_ref().unwrap().aws {
                 if let Some(env) = publish_config.environments.get(&options.env) {
                     let publish_env = env.clone();
 
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
-                        state.config.host.clone()
+                        state.context.config.host.clone()
                     };
 
                     info!("Bucket {}", &bucket);
@@ -82,7 +82,7 @@ async fn publish_aws(
     info!("Building local file list");
 
     // Create the list of local build files
-    let mut file_builder = FileBuilder::new(state.options.base.clone(), env.prefix.clone());
+    let mut file_builder = FileBuilder::new(state.context.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());
