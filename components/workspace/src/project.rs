@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use log::info;
 
@@ -251,15 +252,23 @@ impl RenderBuilder {
 
     pub fn build(mut self) -> Result<RenderState> {
 
+        let source = self.context.options.source.clone();
         let base_target = self.context.options.base.clone();
         let locales = self.context.options.locales.clone();
 
-        let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
+        // Get source paths from the profile settings
+        let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
+            self.verify(paths)?;
+            paths.clone()
+        } else {
+            vec![source]
+        };
 
+        let context = Arc::new(self.context);
+
+        let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
         locales.map.keys()
             .try_for_each(|lang| {
-                let mut context = self.to_context();
-
                 let target = if locales.multi {
                     CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
                 } else {
@@ -273,25 +282,17 @@ impl RenderBuilder {
                     //context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
                 //}
 
-                // Get source paths from the profile settings
-                let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
-                    //self.verify(paths)?;
-                    paths.clone()
-                } else {
-                    vec![self.context.options.source.clone()]
-                };
-
-                renderers.insert(lang.clone(), Renderer {target, context, paths});
+                renderers.insert(lang.clone(), Renderer {target, paths: paths.clone(), context: Arc::clone(&context)});
 
                 Ok::<(), Error>(())
             })?;
 
         Ok(RenderState {
             locales: self.locales,
-            context: self.context,
             redirects: self.redirects,
             datasource: self.datasource,
             cache: self.cache,
+            context,
             renderers,
         })
 
@@ -307,22 +308,11 @@ impl RenderBuilder {
         Ok(())
     }
 
-    /// Get the build context for a compiler pass.
-    pub fn to_context(&self) -> BuildContext {
-        // FIXME: must remove the clones here and 
-        // FIXME: pass an Arc to the compiler
-        BuildContext::new(
-            self.context.config.clone(),
-            self.context.options.clone(),
-            self.context.collation.clone(),
-        )
-    }
-
 }
 
 #[derive(Debug, Default)]
 pub struct RenderState {
-    pub context: BuildContext,
+    pub context: Arc<BuildContext>,
     pub redirects: RedirectConfig,
     pub locales: Locales,
     pub datasource: DataSourceMap,
@@ -343,6 +333,7 @@ impl RenderState {
         Ok(())
     }
 
+    /*
     pub fn write_manifest(&mut self) -> Result<()> {
         // Write the manifest for incremental builds
         if let Some(ref mut manifest) = self.context.collation.manifest {
@@ -354,6 +345,7 @@ impl RenderState {
         }
         Ok(())
     }
+    */
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
         let output_robots = self.context.options.settings.robots.is_some()
@@ -512,12 +504,13 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
             if let Some(url) = res.sitemap.take() {
                 sitemaps.push(url); 
             }
-
             // TODO: ensure redirects work in multi-lingual config
             state.write_redirects(&renderer.context.options)?;
         }
 
-        state.write_manifest()?;
+        // FIXME: restore manifest logic - requires decoupling from the collation
+        //state.write_manifest()?;
+
         state.write_robots(sitemaps)?;
         compiled.projects.push(state);
     }

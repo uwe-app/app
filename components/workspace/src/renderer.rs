@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::fs::{self, File};
+use std::sync::Arc;
 
 use log::info;
 use url::Url;
@@ -21,7 +22,7 @@ pub struct RenderResult {
 #[derive(Debug)]
 pub struct Renderer {
     pub target: CompileTarget,
-    pub context: BuildContext,
+    pub context: Arc<BuildContext>,
     pub paths: Vec<PathBuf>,
 }
 
