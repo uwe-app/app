@@ -39,8 +39,6 @@ impl ConnectionInfo {
 
     pub fn to_websocket_url(&self, endpoint: &str) -> String {
         to_websocket_url(self.tls, &self.host, endpoint, self.addr.port())
-        //let scheme = if self.tls { crate::SCHEME_WSS } else { crate::SCHEME_WS };
-        //format!("{}//{}:{}/{}", scheme, &self.host, self.addr.port(), endpoint)
     }
 }
 
@@ -77,10 +75,6 @@ impl Default for LogConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
     pub listen: String,
-
-    #[deprecated(since = "0.20.9", note = "Use listen to bind, get host name from virtual host")]
-    pub host: String,
-
     pub port: u16,
     pub tls: Option<TlsConfig>,
     pub default_host: HostConfig,
@@ -98,7 +92,6 @@ impl Default for ServerConfig {
     fn default() -> Self {
         Self {
             listen: String::from(crate::config::HOST),
-            host: String::from(crate::config::HOST),
             port: crate::config::PORT,
             tls: None,
             redirect_insecure: true,
@@ -112,19 +105,18 @@ impl Default for ServerConfig {
 impl ServerConfig {
 
     /// New configuration for a host and port.
-    pub fn new(host: String, port: u16, tls: Option<TlsConfig>) -> Self {
+    pub fn new(listen: String, port: u16, tls: Option<TlsConfig>) -> Self {
         let mut tmp: Self = Default::default();
-        tmp.host = host;
+        tmp.listen = listen;
         tmp.port = port;
         tmp.tls = tls;
         tmp
     }
 
-    /// New configuration using a single host.
+    /// New configuration using a default host.
     pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
         Self {
             listen: String::from(crate::config::HOST),
-            host: String::from(crate::config::HOST),
             port: port,
             tls,
             redirect_insecure: true,
