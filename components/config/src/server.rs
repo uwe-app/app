@@ -116,7 +116,7 @@ impl ServerConfig {
     /// New configuration using a default host.
     pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
         Self {
-            listen: String::from(crate::config::HOST),
+            listen: String::from(crate::config::ADDR),
             port: port,
             tls,
             redirect_insecure: true,
