@@ -9,7 +9,7 @@ use ignore::{WalkBuilder, WalkState};
 
 use config::indexer::QueryList;
 use config::link::{self, LinkOptions};
-use config::{Config, FileInfo, FileOptions, LocaleMap, Page, RuntimeOptions};
+use config::{Config, FileInfo, FileOptions, LocaleName, LocaleMap, Page, RuntimeOptions};
 
 use super::loader;
 use super::{CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result};
@@ -26,9 +26,10 @@ pub struct CollateResult {
 }
 
 impl CollateResult {
-    pub fn new() -> Self {
+    pub fn new(lang: LocaleName) -> Self {
         Self {
             inner: Arc::new(Mutex::new(CollateInfo {
+                lang,
                 ..Default::default()
             })),
             errors: Vec::new(),

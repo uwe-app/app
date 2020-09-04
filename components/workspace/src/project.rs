@@ -31,14 +31,9 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
 /// Get a collation for a single locale.
 async fn collation(locale: &LocaleName, config: &Config, options: &RuntimeOptions) -> Result<CollateInfo> {
     // Collate page data for later usage
-    let req = CollateRequest {
-        config,
-        options,
-    };
+    let req = CollateRequest { config, options };
 
-    // FIXME: decouple the manifest from the collation
-
-    let mut res = CollateResult::new();
+    let mut res = CollateResult::new(locale.clone());
     let mut errors = collator::walk(req, &mut res).await?;
     if !errors.is_empty() {
         // TODO: print all errors?
@@ -115,6 +110,7 @@ pub struct RenderBuilder {
     pub redirects: RedirectConfig,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
+    pub collations: Vec<CollateInfo>,
 }
 
 impl RenderBuilder {
@@ -231,15 +227,20 @@ impl RenderBuilder {
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
 
-        let values: Result<Vec<(String, CollateInfo)>> = stream::iter(languages)
+        let values: Result<Vec<CollateInfo>> = stream::iter(languages)
             .filter(|lang| future::ready(lang != &&*locales.fallback))
             .then(|lang| async move {
                 let locale = lang.clone().to_string();
-                let info = collation(&locale, config, options).await?;
-                Ok((locale, info))
+                Ok(collation(&locale, config, options).await?)
             })
             .try_collect()
             .await;
+
+        let mut other = values?;
+        let mut collations = vec![fallback_collation];
+        collations.append(&mut other);
+
+        self.collations = collations;
 
         //let mut other_collations: Vec<Collation> = values?
             //.into_iter()

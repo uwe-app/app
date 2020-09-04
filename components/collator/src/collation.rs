@@ -11,7 +11,6 @@ use super::Result;
 
 #[derive(Debug)]
 pub struct Collation {
-    pub lang: LocaleName,
     pub fallback: Arc<CollateInfo>,
     pub locale: Arc<CollateInfo>,
 }
@@ -111,6 +110,10 @@ impl Resource {
 
 #[derive(Debug, Default, Clone)]
 pub struct CollateInfo {
+
+    /// The language for this collation.
+    pub lang: LocaleName,
+
     /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
 
