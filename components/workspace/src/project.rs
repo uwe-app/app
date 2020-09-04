@@ -168,6 +168,7 @@ impl RenderBuilder {
     /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
+
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.context.options);
         let manifest: Option<Manifest> = if self.context.options.settings.is_incremental() {
@@ -176,6 +177,10 @@ impl RenderBuilder {
             None
         };
 
+        // Get a reference to the locale map
+        let locales = &self.context.options.locales;
+
+        /*
         // Collate page data for later usage
         let req = CollateRequest {
             config: &self.context.config,
@@ -207,6 +212,7 @@ impl RenderBuilder {
         collator::series(&self.context.config, &self.context.options, &mut collation)?;
 
         self.context.collation = collation;
+        */
 
         Ok(self)
     }

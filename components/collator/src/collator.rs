@@ -12,7 +12,6 @@ use config::link::{self, LinkOptions};
 use config::{Config, FileInfo, FileOptions, LocaleMap, Page, RuntimeOptions};
 
 use super::loader;
-use super::manifest::Manifest;
 use super::{CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result};
 
 pub struct CollateRequest<'a> {
@@ -27,10 +26,9 @@ pub struct CollateResult {
 }
 
 impl CollateResult {
-    pub fn new(manifest: Option<Manifest>) -> Self {
+    pub fn new() -> Self {
         Self {
             inner: Arc::new(Mutex::new(CollateInfo {
-                manifest,
                 ..Default::default()
             })),
             errors: Vec::new(),
