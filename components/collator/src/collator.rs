@@ -103,6 +103,7 @@ fn get_locale_page_cache(
 // data for the default fallback locale before we assign page data for
 // locales specific pages. Which allows us to inherit page data from the
 // fallback page.
+#[deprecated(since = "0.20.10", note = "Use workspace locale collation")]
 pub async fn localize(
     config: &Config,
     options: &RuntimeOptions,

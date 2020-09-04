@@ -66,6 +66,7 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod collation;
 pub mod lock;
 mod options;
 mod project;

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -7,11 +6,9 @@ use log::info;
 
 use url::Url;
 
-use futures::{future, stream, StreamExt, TryStreamExt};
-
 use cache::CacheComponent;
-use collator::manifest::Manifest;
-use collator::{Collation, CollateInfo, CollateRequest, CollateResult};
+//use collator::manifest::Manifest;
+use collator::{Collation, CollateInfo};
 use compiler::{BuildContext, CompileInfo, CompileTarget};
 
 use config::{Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions};
@@ -26,38 +23,6 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
     manifest_file.set_extension(config::JSON);
     manifest_file
-}
-
-/// Get a collation for a single locale.
-async fn collation(locale: &LocaleName, config: &Config, options: &RuntimeOptions) -> Result<CollateInfo> {
-    // Collate page data for later usage
-    let req = CollateRequest { config, options };
-
-    let mut res = CollateResult::new(locale.clone());
-    let mut errors = collator::walk(req, &mut res).await?;
-    if !errors.is_empty() {
-        // TODO: print all errors?
-        let e = errors.swap_remove(0);
-        return Err(Error::Collator(e));
-    }
-
-    let mut collation: CollateInfo = res.try_into()?;
-
-    /*
-    // Find and transform localized pages
-    collator::localize(
-        &self.context.config,
-        &self.context.options,
-        &self.context.options.locales,
-        &mut collation,
-    )
-    .await?;
-
-    // Collate the series data
-    collator::series(&self.context.config, &self.context.options, &mut collation)?;
-    */
-
-    Ok(collation)
 }
 
 #[derive(Debug)]
@@ -125,7 +90,7 @@ impl CollationBuilder {
         let fallback = self.locales.swap_remove(0);
         let fallback = Arc::new(fallback);
 
-        let mut collations: Vec<Collation> = self.locales
+        let collations: Vec<Collation> = self.locales
             .into_iter()
             .map(|info| {
                 Collation {
@@ -270,7 +235,7 @@ impl RenderBuilder {
         let config = &self.context.config;
         let options = &self.context.options;
 
-        let fallback = collation(&locales.fallback, config, options).await?;
+        let mut fallback = super::collation::collate(&locales.fallback, config, options).await?;
 
         let languages = locales.map
             .keys()
@@ -278,17 +243,9 @@ impl RenderBuilder {
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
 
-        let values: Result<Vec<CollateInfo>> = stream::iter(languages)
-            .filter(|lang| future::ready(lang != &&*locales.fallback))
-            .then(|lang| async move {
-                let locale = lang.clone().to_string();
-                Ok(collation(&locale, config, options).await?)
-            })
-            .try_collect()
-            .await;
+        let mut values = super::collation::extract(&mut fallback, languages, config, options).await?;
 
         let mut locales = vec![fallback];
-        let mut values = values?;
         locales.append(&mut values);
         self.collations = CollationBuilder { locales };
 
@@ -403,7 +360,12 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(self) -> Result<Render> {
+    pub fn build(mut self) -> Result<Render> {
+
+        // Temp
+        //let collation = self.collations.locales.into_iter().take(1).next().unwrap();
+        //self.context.collation = collation;
+
         let context = Arc::new(self.context);
         let sources = Arc::new(self.sources);
 
