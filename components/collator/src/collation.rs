@@ -92,9 +92,6 @@ impl Resource {
 
 #[derive(Debug, Default, Clone)]
 pub struct CollateInfo {
-    /// List of errors encountered during collation.
-    //pub errors: Vec<Error>,
-
     /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
 
@@ -193,6 +190,7 @@ impl CollateInfo {
     // Rewrite destination paths.
     //
     // Used for multi-lingual output to locale specific folders.
+    #[deprecated(since = "0.20.10", note = "Use refactored collation per locale")]
     pub fn rewrite(&mut self,
         options: &RuntimeOptions, lang: &str, from: &PathBuf, to: &PathBuf) -> Result<()> {
 

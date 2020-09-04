@@ -30,17 +30,6 @@ impl<'a> Compiler<'a> {
         Self { context, book }
     }
 
-    /// Verify the paths are within the site source.
-    #[deprecated(since="0.20.8", note="Use workspace verify instead")]
-    pub fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
-        for p in paths {
-            if !p.starts_with(&self.context.options.source) {
-                return Err(Error::OutsideSourceTree(p.clone()));
-            }
-        }
-        Ok(())
-    }
-
     /// Handle a resource file depending upon the resource operation.
     pub async fn resource(
         &self,
