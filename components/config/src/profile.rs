@@ -6,11 +6,11 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
-use unic_langid::LanguageIdentifier;
 
 use url::Url;
 
 use super::config::{self, Config};
+use super::locale::LocaleMap;
 use super::matcher::GlobPatternMatcher;
 use super::robots::RobotsConfig;
 use super::server::TlsConfig;
@@ -21,20 +21,6 @@ static RELEASE: &str = "release";
 
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
-
-#[derive(Debug, Clone, Default)]
-pub struct LocaleMap {
-    /// The fallback language is inherited
-    /// from the top-level config `lang`
-    pub fallback: String,
-    /// Enabled is active when we are able to load
-    /// locale files at runtime.
-    pub enabled: bool,
-    /// Determine if multiple locales are active.
-    pub multi: bool,
-    /// Map of all locales to the parsed language identifiers.
-    pub map: HashMap<String, LanguageIdentifier>,
-}
 
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(from = "String", untagged)]

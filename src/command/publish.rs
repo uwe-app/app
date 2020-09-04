@@ -8,7 +8,7 @@ use config::ProfileSettings;
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
-use workspace::{lock, compile, RenderState};
+use workspace::{lock, compile, Render};
 use scopeguard::defer;
 
 use crate::Error;
@@ -37,7 +37,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     Ok(())
 }
 
-async fn do_publish(options: &PublishOptions, state: &RenderState) -> Result<()> {
+async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
             if let Some(ref publish_config) = state.context.config.publish.as_ref().unwrap().aws {
@@ -75,7 +75,7 @@ async fn do_publish(options: &PublishOptions, state: &RenderState) -> Result<()>
 }
 
 async fn publish_aws(
-    state: &RenderState,
+    state: &Render,
     request: PublishRequest,
     env: &AwsPublishEnvironment,
 ) -> Result<()> {

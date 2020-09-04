@@ -67,6 +67,7 @@ pub mod feed;
 mod file;
 pub mod indexer;
 pub mod link;
+pub mod locale;
 mod matcher;
 mod page;
 pub mod path;
@@ -98,7 +99,8 @@ pub fn to_url_string(scheme: &str, host: &str, port: impl Into<Option<u16>>) -> 
 pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
+pub use locale::*;
 pub use page::{Page, PageLink, PaginateInfo, Author};
-pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions, LocaleMap};
+pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
 pub use search::{SEARCH_JS, SEARCH_WASM};
 pub use redirect::*;

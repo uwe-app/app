@@ -9,8 +9,6 @@ use unic_langid::LanguageIdentifier;
 
 use config::{Config, FluentConfig, RuntimeOptions, LocaleMap};
 
-pub type LocaleName = String;
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]

@@ -12,11 +12,11 @@ use compiler::{BuildContext, CompileTarget};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
-use config::{Config, ProfileSettings, RuntimeOptions, RedirectConfig};
+use config::{Config, ProfileSettings, RuntimeOptions, RedirectConfig, LocaleName};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
-use locale::{Locales, LocaleName};
+use locale::Locales;
 
 use crate::{Error, Result, renderer::Renderer};
 
@@ -70,6 +70,8 @@ impl Entry {
 #[derive(Debug, Default)]
 pub struct RenderBuilder {
     pub locales: Locales,
+    pub sources: Vec<PathBuf>,
+    pub targets: HashMap<LocaleName, Arc<CompileTarget>>,
     pub context: BuildContext,
     pub redirects: RedirectConfig,
     pub datasource: DataSourceMap,
@@ -78,11 +80,40 @@ pub struct RenderBuilder {
 
 impl RenderBuilder {
 
+    /// Determine and verify input source files to compile.
+    pub async fn sources(mut self) -> Result<Self> {
+        // Get source paths from the profile settings
+        let source = self.context.options.source.clone();
+        let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
+            self.verify(paths)?;
+            paths.clone()
+        } else {
+            vec![source]
+        };
+
+        self.sources = paths;
+
+        Ok(self)
+    }
+
     /// Load locale message files (.ftl).
     pub async fn locales(mut self) -> Result<Self> {
         self.locales.load(&self.context.config, &self.context.options)?;
-        let locale_map = self.locales.get_locale_map(&self.context.config.lang)?;
-        self.context.options.locales = locale_map;
+        let locales = self.locales.get_locale_map(&self.context.config.lang)?;
+
+        // Set up a compile target for each locale
+        let base_target = &self.context.options.base;
+        for (lang, _) in locales.map.iter() {
+            let target = if locales.multi {
+                CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
+            } else {
+                CompileTarget { lang: lang.clone(), path: base_target.clone() }
+            };
+            self.targets.insert(lang.clone(), Arc::new(target));
+        } 
+
+        self.context.options.locales = locales;
+
         Ok(self)
     }
 
@@ -250,44 +281,27 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(mut self) -> Result<RenderState> {
-
-        let source = self.context.options.source.clone();
-        let base_target = self.context.options.base.clone();
-        let locales = self.context.options.locales.clone();
-
-        // Get source paths from the profile settings
-        let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
-            self.verify(paths)?;
-            paths.clone()
-        } else {
-            vec![source]
-        };
-
+    pub fn build(mut self) -> Result<Render> {
         let context = Arc::new(self.context);
+        let sources = Arc::new(self.sources);
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
-        locales.map.keys()
-            .try_for_each(|lang| {
-                let target = if locales.multi {
-                    CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
-                } else {
-                    CompileTarget { lang: lang.clone(), path: base_target.clone() }
-                };
-
-                //if locales.multi {
-                    //let locale_target = base_target.join(lang);
-                    //options.lang = lang.clone();
-                    //options.target = locale_target.clone();
-                    //context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
-                //}
-
-                renderers.insert(lang.clone(), Renderer {target, paths: paths.clone(), context: Arc::clone(&context)});
+        self.targets.iter()
+            .try_for_each(|(lang, target)| {
+                renderers.insert(
+                    lang.clone(),
+                    Renderer {
+                        target: Arc::clone(target),
+                        sources: Arc::clone(&sources),
+                        context: Arc::clone(&context)
+                    }
+                );
 
                 Ok::<(), Error>(())
+
             })?;
 
-        Ok(RenderState {
+        Ok(Render {
             locales: self.locales,
             redirects: self.redirects,
             datasource: self.datasource,
@@ -311,7 +325,7 @@ impl RenderBuilder {
 }
 
 #[derive(Debug, Default)]
-pub struct RenderState {
+pub struct Render {
     pub context: Arc<BuildContext>,
     pub redirects: RedirectConfig,
     pub locales: Locales,
@@ -320,7 +334,7 @@ pub struct RenderState {
     pub renderers: HashMap<LocaleName, Renderer>,
 }
 
-impl RenderState {
+impl Render {
 
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects =
@@ -470,7 +484,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
 #[derive(Debug, Default)]
 pub struct CompileResult {
-    pub projects: Vec<RenderState>,
+    pub projects: Vec<Render>,
 }
 
 /// Compile a project.
@@ -485,6 +499,7 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
         let mut sitemaps: Vec<Url> = Vec::new();
 
         let mut state = entry.builder(args)?
+            .sources().await?
             .locales().await?
             .fetch().await?
             .collate().await?

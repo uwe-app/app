@@ -3,8 +3,7 @@ use once_cell::sync::OnceCell;
 use std::sync::{Arc, RwLock};
 
 use collator::CollateInfo;
-use config::{Config, RuntimeOptions};
-use locale::LocaleName;
+use config::{Config, RuntimeOptions, LocaleName};
 
 #[derive(Debug, Default)]
 pub struct BuildContext {

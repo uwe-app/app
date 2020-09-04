@@ -21,9 +21,9 @@ pub struct RenderResult {
 
 #[derive(Debug)]
 pub struct Renderer {
-    pub target: CompileTarget,
+    pub target: Arc<CompileTarget>,
     pub context: Arc<BuildContext>,
-    pub paths: Vec<PathBuf>,
+    pub sources: Arc<Vec<PathBuf>>,
 }
 
 impl Renderer {
@@ -149,7 +149,7 @@ impl Renderer {
 
         let parser = Parser::new(&self.context, &locales)?;
         let builder = Compiler::new(&self.context);
-        let parse_list = builder.all(&parser, &self.paths).await?;
+        let parse_list = builder.all(&parser, &self.sources).await?;
         Ok((builder, parser, parse_list))
     }
 }

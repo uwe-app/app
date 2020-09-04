@@ -20,7 +20,7 @@ use config::server::{ServerConfig, HostConfig, ConnectionInfo, PortType};
 
 use server::{Channels, HostChannel};
 
-use workspace::RenderState;
+use workspace::Render;
 
 use crate::{Error, ErrorCallback};
 use super::invalidator::Invalidator;
@@ -29,7 +29,7 @@ struct LiveHost {
     source: PathBuf,
     receiver: mpsc::Receiver<DebouncedEvent>,
     watcher: INotifyWatcher,
-    state: RenderState,
+    state: Render,
     websocket: broadcast::Sender<Message>,
 }
 
