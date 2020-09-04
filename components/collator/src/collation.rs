@@ -3,11 +3,18 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use config::indexer::QueryList;
-use config::{Page, RuntimeOptions};
+use config::{Page, RuntimeOptions, LocaleName};
 
 use super::manifest::Manifest;
 
 use super::Result;
+
+#[derive(Debug)]
+pub struct Collation {
+    pub lang: LocaleName,
+    pub fallback: Arc<CollateInfo>,
+    pub locale: Arc<CollateInfo>,
+}
 
 #[derive(Debug, Clone)]
 pub enum ResourceKind {
@@ -145,6 +152,7 @@ pub struct CollateInfo {
 }
 
 impl CollateInfo {
+
     pub fn get_pages(&self, lang: &str) -> Option<&HashMap<Arc<PathBuf>, Page>> {
         self.pages.get(lang)
     }

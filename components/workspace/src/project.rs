@@ -11,7 +11,7 @@ use futures::{future, stream, StreamExt, TryStreamExt};
 
 use cache::CacheComponent;
 use collator::manifest::Manifest;
-use collator::{CollateInfo, CollateRequest, CollateResult};
+use collator::{Collation, CollateInfo, CollateRequest, CollateResult};
 use compiler::{BuildContext, CompileInfo, CompileTarget};
 
 use config::{Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions};
@@ -221,29 +221,46 @@ impl RenderBuilder {
 
         // Get a reference to the locale map
         let locales = &self.context.options.locales;
-
         let config = &self.context.config;
         let options = &self.context.options;
 
-        let fallback_collation = Arc::new(
-            collation(&locales.fallback, config, options).await?);
-
-        let collations = locales.map
+        let fallback_collation = collation(&locales.fallback, config, options).await?;
+        let languages = locales.map
             .keys()
             .filter(|lang| lang != &&locales.fallback )
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
 
-        let values: Result<Vec<CollateInfo>> = stream::iter(collations)
+        let values: Result<Vec<(String, CollateInfo)>> = stream::iter(languages)
             .filter(|lang| future::ready(lang != &&*locales.fallback))
             .then(|lang| async move {
                 let locale = lang.clone().to_string();
-                Ok(collation(&locale, config, options).await?) 
+                let info = collation(&locale, config, options).await?;
+                Ok((locale, info))
             })
             .try_collect()
             .await;
 
-        let others = values?;
+        //let mut other_collations: Vec<Collation> = values?
+            //.into_iter()
+            //.map(|(lang, info)| {
+                //Collation {
+                    //lang,
+                    //fallback: Arc::clone(&fallback_collation),
+                    //locale: Arc::new(info),
+                //} 
+            //})
+            //.collect();
+
+        //let mut collations = vec![Collation {
+            //lang: locales.fallback.clone(),
+            //// The primary collation just has a pointer to the fallback
+            //locale: Arc::clone(&fallback_collation),
+            //fallback: fallback_collation,
+        //}];
+        //collations.append(&mut other_collations);
+
+        //println!("Collation {:#?}", collations.len());
 
         //others.foo();
 
