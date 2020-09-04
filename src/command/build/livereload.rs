@@ -13,7 +13,7 @@ use notify::{Watcher, INotifyWatcher};
 use std::thread::sleep;
 use std::time::Duration;
 
-use compiler::{Compiler, BuildContext};
+use compiler::Compiler;
 use compiler::parser::Parser;
 use config::ProfileSettings;
 use config::server::{ServerConfig, HostConfig, ConnectionInfo, PortType};
@@ -161,7 +161,7 @@ pub async fn start<P: AsRef<Path>>(
                 //
                 let parser = Parser::new(&context, &w.state.locales).unwrap();
                 let compiler = Compiler::new(&context);
-                let mut invalidator = Invalidator::new(compiler, parser);
+                let mut invalidator = Invalidator::new(compiler, parser, &w.state.datasource);
                 let ws_tx = &w.websocket;
 
                 loop {

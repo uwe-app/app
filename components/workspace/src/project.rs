@@ -118,7 +118,7 @@ impl RenderBuilder {
     }
 
     /// Fetch runtime dependencies on demand.
-    pub async fn fetch(mut self) -> Result<Self> {
+    pub async fn fetch(self) -> Result<Self> {
         let mut components: Vec<CacheComponent> = Vec::new();
 
         if self.context.config.syntax.is_some() {
@@ -270,7 +270,7 @@ impl RenderBuilder {
     }
    
     /// Setup syntax highlighting when enabled.
-    pub async fn setup_syntax(mut self) -> Result<Self> {
+    pub async fn syntax(self) -> Result<Self> {
         if let Some(ref syntax_config) = self.context.config.syntax {
             if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
@@ -281,7 +281,7 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(mut self) -> Result<Render> {
+    pub fn build(self) -> Result<Render> {
         let context = Arc::new(self.context);
         let sources = Arc::new(self.sources);
 
@@ -453,6 +453,9 @@ impl Workspace {
 
 }
 
+/// Open a project.
+///
+/// Load the configuration for a project and resolve workspace members when necessary.
 pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();
     let config = Config::load(dir.as_ref(), walk_ancestors)?;
@@ -498,7 +501,7 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
     for entry in project.into_iter() {
         let mut sitemaps: Vec<Url> = Vec::new();
 
-        let mut state = entry.builder(args)?
+        let state = entry.builder(args)?
             .sources().await?
             .locales().await?
             .fetch().await?
@@ -510,7 +513,7 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
             .pages().await?
             .each().await?
             .assign().await?
-            .setup_syntax().await?
+            .syntax().await?
             .build()?;
 
         // Renderer is generated for each locale to compile

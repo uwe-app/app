@@ -96,11 +96,12 @@ pub struct BookRule {
 pub struct Invalidator<'a> {
     builder: Compiler<'a>,
     parser: Parser<'a>,
+    datasource: &'a DataSourceMap,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(builder: Compiler<'a>, parser: Parser<'a>) -> Self {
-        Self { builder, parser }
+    pub fn new(builder: Compiler<'a>, parser: Parser<'a>, datasource: &'a DataSourceMap) -> Self {
+        Self { builder, parser, datasource }
     }
 
     fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
@@ -115,8 +116,6 @@ impl<'a> Invalidator<'a> {
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
         let ctx = self.builder.context;
-
-        //let datasource = &self.builder.context.datasource;
 
         let mut rule = Rule {
             notify: true,
@@ -164,11 +163,11 @@ impl<'a> Invalidator<'a> {
                 .collect::<Vec<_>>();
         }
 
-        //let generator_paths: Vec<PathBuf> = datasource
-            //.map
-            //.values()
-            //.map(|g| self.canonical(g.source.clone()))
-            //.collect::<Vec<_>>();
+        let generator_paths: Vec<PathBuf> = self.datasource
+            .map
+            .values()
+            .map(|g| self.canonical(g.source.clone()))
+            .collect::<Vec<_>>();
 
         // TODO: recognise custom layouts (layout = )
 
@@ -246,17 +245,17 @@ impl<'a> Invalidator<'a> {
                         rule.strategy = Strategy::Page;
                         rule.ignores.push(Action::Partial(path));
                     } else if path.starts_with(&generators) {
-                        //for p in &generator_paths {
-                            //let cfg = DataSourceMap::get_datasource_config_path(p);
-                            //let documents = datasource::get_datasource_documents_path(p);
-                            //if path == cfg {
-                                //rule.actions.push(Action::DataSourceConfig(path));
-                                //break;
-                            //} else if path.starts_with(documents) {
-                                //rule.actions.push(Action::DataSourceDocument(path));
-                                //break;
-                            //}
-                        //}
+                        for p in &generator_paths {
+                            let cfg = DataSourceMap::get_datasource_config_path(p);
+                            let documents = datasource::get_datasource_documents_path(p);
+                            if path == cfg {
+                                rule.actions.push(Action::DataSourceConfig(path));
+                                break;
+                            } else if path.starts_with(documents) {
+                                rule.actions.push(Action::DataSourceDocument(path));
+                                break;
+                            }
+                        }
                     } else {
                         let file_type = FileInfo::get_type(&path, &ctx.options.settings);
                         match file_type {
