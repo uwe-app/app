@@ -6,30 +6,23 @@ use collator::CollateInfo;
 use config::{Config, RuntimeOptions, LocaleName};
 
 #[derive(Debug, Default)]
+pub struct CompileTarget {
+    pub lang: LocaleName,
+    pub path: PathBuf,
+}
+
+#[derive(Debug, Default)]
 pub struct BuildContext {
     pub config: Config,
     pub options: RuntimeOptions,
     pub collation: CollateInfo,
 }
 
-impl BuildContext {
-    pub fn new(
-        config: Config,
-        options: RuntimeOptions,
-        collation: CollateInfo,
-    ) -> Self {
-        Self {
-            config,
-            options,
-            collation,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct CompileTarget {
-    pub lang: LocaleName,
-    pub path: PathBuf,
+#[derive(Debug, Default)]
+pub struct CompileInfo {
+    pub target: Arc<CompileTarget>,
+    pub context: Arc<BuildContext>,
+    pub sources: Arc<Vec<PathBuf>>,
 }
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {

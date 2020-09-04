@@ -8,7 +8,7 @@ use log::info;
 use url::Url;
 
 use cache::CacheComponent;
-use compiler::{BuildContext, CompileTarget};
+use compiler::{BuildContext, CompileTarget, CompileInfo};
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
 
@@ -288,17 +288,13 @@ impl RenderBuilder {
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
         self.targets.iter()
             .try_for_each(|(lang, target)| {
-                renderers.insert(
-                    lang.clone(),
-                    Renderer {
-                        target: Arc::clone(target),
-                        sources: Arc::clone(&sources),
-                        context: Arc::clone(&context)
-                    }
-                );
-
+                let info = CompileInfo {
+                    target: Arc::clone(target),
+                    sources: Arc::clone(&sources),
+                    context: Arc::clone(&context)
+                };
+                renderers.insert(lang.clone(), Renderer{info});
                 Ok::<(), Error>(())
-
             })?;
 
         Ok(Render {
@@ -523,7 +519,7 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
                 sitemaps.push(url); 
             }
             // TODO: ensure redirects work in multi-lingual config
-            state.write_redirects(&renderer.context.options)?;
+            state.write_redirects(&renderer.info.context.options)?;
         }
 
         // FIXME: restore manifest logic - requires decoupling from the collation

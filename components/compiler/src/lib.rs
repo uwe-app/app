@@ -85,5 +85,5 @@ pub mod run;
 pub mod tree;
 
 pub use build::Compiler;
-pub use context::{BuildContext, CompileTarget};
+pub use context::*;
 pub use run::ParseData;

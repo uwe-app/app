@@ -1,13 +1,11 @@
-use std::path::PathBuf;
 use std::fs::{self, File};
-use std::sync::Arc;
 
 use log::info;
 use url::Url;
 
 use human_bytes::human_bytes;
 
-use compiler::{BuildContext, CompileTarget, Compiler, ParseData, parser::Parser};
+use compiler::{CompileInfo, Compiler, ParseData, parser::Parser};
 use config::sitemap::{SiteMapIndex, SiteMapFile, SiteMapEntry};
 use locale::Locales;
 use search::{compile as compile_index, intermediate, Index, IntermediateEntry};
@@ -21,9 +19,7 @@ pub struct RenderResult {
 
 #[derive(Debug)]
 pub struct Renderer {
-    pub target: Arc<CompileTarget>,
-    pub context: Arc<BuildContext>,
-    pub sources: Arc<Vec<PathBuf>>,
+    pub info: CompileInfo,
 }
 
 impl Renderer {
@@ -40,7 +36,7 @@ impl Renderer {
     }
 
     fn create_search_indices(&self, parse_list: &Vec<ParseData>) -> Result<()> {
-        let ctx = &self.context;
+        let ctx = &self.info.context;
         let include_index = ctx.options.settings.should_include_index();
         if let Some(ref search) = ctx.config.search {
             for (_id, search) in search.items.iter() {
@@ -78,7 +74,7 @@ impl Renderer {
     }
 
     fn create_site_map(&self, parse_list: &Vec<ParseData>) -> Result<Option<Url>> {
-        let ctx = &self.context;
+        let ctx = &self.info.context;
 
         let mut res: Option<Url> = None;
         if let Some(ref sitemap) = ctx.options.settings.sitemap {
@@ -143,13 +139,13 @@ impl Renderer {
         -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
 
         // When working with multi-lingual sites the target may not exist yet
-        if !self.target.path.exists() {
-            fs::create_dir_all(&self.target.path)?;
+        if !self.info.target.path.exists() {
+            fs::create_dir_all(&self.info.target.path)?;
         }
 
-        let parser = Parser::new(&self.context, &locales)?;
-        let builder = Compiler::new(&self.context);
-        let parse_list = builder.all(&parser, &self.sources).await?;
+        let parser = Parser::new(&self.info.context, &locales)?;
+        let builder = Compiler::new(&self.info.context);
+        let parse_list = builder.all(&parser, &self.info.sources).await?;
         Ok((builder, parser, parse_list))
     }
 }
