@@ -153,7 +153,7 @@ pub async fn start<P: AsRef<Path>>(
                 info!("Watch {}", w.source.display());
 
 
-                let context = w.state.to_context();
+                let context = w.state.context;
 
                 // Invalidator wraps the builder receiving filesystem change
                 // notifications and sending messages over the `tx` channel

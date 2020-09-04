@@ -37,15 +37,14 @@ pub struct Entry {
 }
 
 impl Entry {
-
-    /// Get a render state for this configuration.
+    /// Get a render builder for this configuration.
     ///
     /// Creates the initial runtime options from a build profile which typically 
     /// would come from command line arguments.
     ///
     /// This should only be called when you intend to render a project 
     /// as it consumes the configuration entry.
-    pub fn from_profile(self, args: &ProfileSettings) -> Result<RenderState> {
+    pub fn builder(self, args: &ProfileSettings) -> Result<RenderBuilder> {
         let options = crate::options::prepare(&self.config, args)?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
             redirects.clone()    
@@ -53,44 +52,41 @@ impl Entry {
             Default::default()
         };
 
-        Ok(RenderState {
+        let builder = RenderBuilder{
             context: BuildContext {
-                config: self.config,
                 options,
-                collation: Default::default(),
+                config: self.config,
+                ..Default::default()
             },
             redirects,
-            locales: Default::default(),
-            datasource: Default::default(),
-            cache: Default::default(),
-            renderers: Default::default(),
-        })
+            ..Default::default()
+        };
+
+        Ok(builder)
     }
 }
 
 #[derive(Debug, Default)]
-pub struct RenderState {
+pub struct RenderBuilder {
+    pub locales: Locales,
     pub context: BuildContext,
     pub redirects: RedirectConfig,
-    pub locales: Locales,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub renderers: HashMap<LocaleName, Renderer>,
 }
 
-impl RenderState {
+impl RenderBuilder {
 
     /// Load locale message files (.ftl).
-    pub async fn load_locales(&mut self) -> Result<()> {
+    pub async fn locales(mut self) -> Result<Self> {
         self.locales.load(&self.context.config, &self.context.options)?;
         let locale_map = self.locales.get_locale_map(&self.context.config.lang)?;
         self.context.options.locales = locale_map;
-        Ok(())
+        Ok(self)
     }
 
     /// Fetch runtime dependencies on demand.
-    pub async fn fetch_lazy(&mut self) -> Result<()> {
-
+    pub async fn fetch(mut self) -> Result<Self> {
         let mut components: Vec<CacheComponent> = Vec::new();
 
         if self.context.config.syntax.is_some() {
@@ -124,24 +120,13 @@ impl RenderState {
             cache::update(&prefs, components)?;
         }
 
-        Ok(())
+        Ok(self)
     }
 
-    /// Setup syntax highlighting when enabled.
-    pub async fn map_syntax(&mut self) -> Result<()> {
-        if let Some(ref syntax_config) = self.context.config.syntax {
-            if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
-                let syntax_dir = cache::get_syntax_dir()?;
-                info!("Syntax highlighting on");
-                syntax::setup(&syntax_dir, syntax_config)?;
-            }
-        }
-        Ok(())
-    }
 
     /// Load page front matter with inheritance, collate all files for compilation 
     /// and map available links.
-    pub async fn collate(&mut self) -> Result<()> {
+    pub async fn collate(mut self) -> Result<Self> {
 
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.context.options);
@@ -178,12 +163,12 @@ impl RenderState {
 
         self.context.collation = collation;
 
-        Ok(())
+        Ok(self)
     }
 
     /// Map redirects from strings to Uris suitable for use 
     /// on a local web server.
-    pub async fn map_redirects(&mut self) -> Result<()> {
+    pub async fn redirects(mut self) -> Result<Self> {
         // Map permalink redirects
         if !self.context.collation.permalinks.is_empty() {
             for (permalink, href) in self.context.collation.permalinks.iter() {
@@ -198,11 +183,11 @@ impl RenderState {
         // Validate the redirects
         self.redirects.validate()?;
 
-        Ok(())
+        Ok(self)
     }
 
     /// Load data sources.
-    pub async fn map_data(&mut self) -> Result<()> {
+    pub async fn load_data(mut self) -> Result<Self> {
         // Load data sources and create indices
         self.datasource = DataSourceMap::load(
             &self.context.config, &self.context.options, &mut self.context.collation).await?;
@@ -210,43 +195,108 @@ impl RenderState {
         // Set up the cache for data source queries
         self.cache = DataSourceMap::get_cache();
 
-        Ok(())
+        Ok(self)
     }
 
     /// Copy the search runtime files if we need them.
-    pub async fn map_search(&mut self) -> Result<()> {
-        Ok(synthetic::search(&self.context.config, &self.context.options, &mut self.context.collation)?)
+    pub async fn search(mut self) -> Result<Self> {
+        synthetic::search(&self.context.config, &self.context.options, &mut self.context.collation)?;
+        Ok(self)
     }
 
     /// Create feed pages.
-    pub async fn map_feed(&mut self) -> Result<()> {
-        Ok(synthetic::feed(&self.context.config, &self.context.options, &mut self.context.collation)?)
+    pub async fn feed(mut self) -> Result<Self> {
+        synthetic::feed(&self.context.config, &self.context.options, &mut self.context.collation)?;
+        Ok(self)
     }
 
     /// Perform pagination.
-    pub async fn map_pages(&mut self) -> Result<()> {
-        Ok(synthetic::pages(
+    pub async fn pages(mut self) -> Result<Self> {
+        synthetic::pages(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation, &self.datasource, &mut self.cache)?)
+            &mut self.context.collation, &self.datasource, &mut self.cache)?;
+        Ok(self)
     }
 
     /// Create collation entries for data source iterators.
-    pub async fn map_each(&mut self) -> Result<()> {
-        Ok(synthetic::each(
+    pub async fn each(mut self) -> Result<Self> {
+        synthetic::each(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation, &self.datasource, &mut self.cache)?)
+            &mut self.context.collation, &self.datasource, &mut self.cache)?;
+        Ok(self)
     }
 
     /// Create collation entries for data source assignments.
-    pub async fn map_assign(&mut self) -> Result<()> {
-        Ok(synthetic::assign(
+    pub async fn assign(mut self) -> Result<Self> {
+        synthetic::assign(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation, &self.datasource, &mut self.cache)?)
+            &mut self.context.collation, &self.datasource, &mut self.cache)?;
+        Ok(self)
     }
    
+    /// Setup syntax highlighting when enabled.
+    pub async fn setup_syntax(mut self) -> Result<Self> {
+        if let Some(ref syntax_config) = self.context.config.syntax {
+            if self.context.config.is_syntax_enabled(&self.context.options.settings.name) {
+                let syntax_dir = cache::get_syntax_dir()?;
+                info!("Syntax highlighting on");
+                syntax::setup(&syntax_dir, syntax_config)?;
+            }
+        }
+        Ok(self)
+    }
+
+    pub fn build(mut self) -> Result<RenderState> {
+
+        let base_target = self.context.options.base.clone();
+        let locales = self.context.options.locales.clone();
+
+        let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
+
+        locales.map.keys()
+            .try_for_each(|lang| {
+                let mut context = self.to_context();
+
+                let target = if locales.multi {
+                    CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
+                } else {
+                    CompileTarget { lang: lang.clone(), path: base_target.clone() }
+                };
+
+                //if locales.multi {
+                    //let locale_target = base_target.join(lang);
+                    //options.lang = lang.clone();
+                    //options.target = locale_target.clone();
+                    //context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
+                //}
+
+                // Get source paths from the profile settings
+                let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
+                    //self.verify(paths)?;
+                    paths.clone()
+                } else {
+                    vec![self.context.options.source.clone()]
+                };
+
+                renderers.insert(lang.clone(), Renderer {target, context, paths});
+
+                Ok::<(), Error>(())
+            })?;
+
+        Ok(RenderState {
+            locales: self.locales,
+            context: self.context,
+            redirects: self.redirects,
+            datasource: self.datasource,
+            cache: self.cache,
+            renderers,
+        })
+
+    }
+
     /// Verify the paths are within the site source.
     fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
@@ -268,43 +318,19 @@ impl RenderState {
         )
     }
 
-    /// Get a list of renderers for each locale. 
-    pub fn renderer(&mut self) -> Result<()> {
-        let base_target = self.context.options.base.clone();
-        let locales = self.context.options.locales.clone();
+}
 
-        locales.map.keys()
-            .try_for_each(|lang| {
-                let mut context = self.to_context();
+#[derive(Debug, Default)]
+pub struct RenderState {
+    pub context: BuildContext,
+    pub redirects: RedirectConfig,
+    pub locales: Locales,
+    pub datasource: DataSourceMap,
+    pub cache: QueryCache,
+    pub renderers: HashMap<LocaleName, Renderer>,
+}
 
-                let target = if locales.multi {
-                    CompileTarget { lang: lang.clone(), path: base_target.join(lang) }
-                } else {
-                    CompileTarget { lang: lang.clone(), path: base_target.clone() }
-                };
-
-                //if locales.multi {
-                    //let locale_target = base_target.join(lang);
-                    //options.lang = lang.clone();
-                    //options.target = locale_target.clone();
-                    //context.collation.rewrite(&options, lang, &base_target, &locale_target)?;
-                //}
-
-                // Get source paths from the profile settings
-                let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
-                    self.verify(paths)?;
-                    paths.clone()
-                } else {
-                    vec![self.context.options.source.clone()]
-                };
-
-                self.renderers.insert(lang.clone(), Renderer {target, context, paths});
-
-                Ok::<(), Error>(())
-            })?;
-
-        Ok(())
-    }
+impl RenderState {
 
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects =
@@ -459,38 +485,26 @@ pub struct CompileResult {
 ///
 /// The project may contain workspace members in which case all 
 /// member projects will be compiled.
-pub async fn compile<P: AsRef<Path>>(
-    project: P,
-    args: &ProfileSettings,
-) -> Result<CompileResult> {
-
+pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Result<CompileResult> {
     let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 
     for entry in project.into_iter() {
-        let mut state = entry.from_profile(args)?;
-
-        state.load_locales().await?;
-        state.fetch_lazy().await?;
-
-        state.collate().await?;
-
-        state.map_redirects().await?;
-        state.map_data().await?;
-
-        state.map_search().await?;
-        state.map_feed().await?;
-
-        state.map_pages().await?;
-        state.map_each().await?;
-        state.map_assign().await?;
-
-        // TODO: do this after fetch_lazy() ?
-        state.map_syntax().await?;
-
         let mut sitemaps: Vec<Url> = Vec::new();
 
-        state.renderer()?;
+        let mut state = entry.builder(args)?
+            .locales().await?
+            .fetch().await?
+            .collate().await?
+            .redirects().await?
+            .load_data().await?
+            .search().await?
+            .feed().await?
+            .pages().await?
+            .each().await?
+            .assign().await?
+            .setup_syntax().await?
+            .build()?;
 
         // Renderer is generated for each locale to compile
         for (_lang, renderer) in state.renderers.iter() {
@@ -501,11 +515,9 @@ pub async fn compile<P: AsRef<Path>>(
 
             // TODO: ensure redirects work in multi-lingual config
             state.write_redirects(&renderer.context.options)?;
-
         }
 
         state.write_manifest()?;
-
         state.write_robots(sitemaps)?;
         compiled.projects.push(state);
     }
