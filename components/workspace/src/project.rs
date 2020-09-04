@@ -525,30 +525,18 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
 
         let state = entry
             .builder(args)?
-            .sources()
-            .await?
-            .locales()
-            .await?
-            .fetch()
-            .await?
-            .collate()
-            .await?
-            .redirects()
-            .await?
-            .load_data()
-            .await?
-            .search()
-            .await?
-            .feed()
-            .await?
-            .pages()
-            .await?
-            .each()
-            .await?
-            .assign()
-            .await?
-            .syntax()
-            .await?
+            .sources().await?
+            .locales().await?
+            .fetch().await?
+            .collate().await?
+            .redirects().await?
+            .load_data().await?
+            .search().await?
+            .feed().await?
+            .pages().await?
+            .each().await?
+            .assign().await?
+            .syntax().await?
             .build()?;
 
         // Renderer is generated for each locale to compile
