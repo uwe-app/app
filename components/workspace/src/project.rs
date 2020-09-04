@@ -102,45 +102,28 @@ impl Entry {
 
 }
 
+/// Wrap all the collations in a vector with the guarantee that 
+/// it will never be empty and that the first item is the default 
+/// fallback locale.
 #[derive(Debug, Default)]
-pub struct CollationBuilder {
-    pub fallback: CollateInfo,
-    pub locales: Vec<CollateInfo>,
+struct CollationBuilder {
+    locales: Vec<CollateInfo>,
 }
-
-//pub struct CollationBuilderIterator<'a> {
-    //builder: &'a mut CollationBuilder,
-    //index: usize,
-    //fallback: bool,
-//}
-
-//impl<'a> Iterator for CollationBuilderIterator<'a> {
-    //type Item = &'a mut CollateInfo;
-
-    //fn next(&mut self) -> Option<&'a mut CollateInfo> {
-        //if !self.fallback {
-            //self.fallback = true;
-            //return Some(&mut self.builder.fallback)
-            ////return self.builder.get_fallback_mut();
-        //} else if self.index < self.builder.locales.len() {
-            //let val = self.builder.locales.get_mut(self.index);
-            //self.index += 1;
-            //return val
-        //}
-        //None
-    //}
-//}
 
 impl CollationBuilder {
 
-    //pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut CollateInfo> {
-        //CollationBuilderIterator { builder: self, index: 0, fallback: false }
-    //}
+    /// Get mutable iterator over all the locales.
+    ///
+    /// The default fallback locale is guaranteed to be the first.
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut CollateInfo> {
+        self.locales.iter_mut()
+    }
 
     /// Get a hash map of Arc collations keyed by locale.
-    pub fn build(self) -> Result<HashMap<LocaleName, Collation>> {
+    fn build(mut self) -> Result<HashMap<LocaleName, Collation>> {
         let mut map: HashMap<LocaleName, Collation> = HashMap::new();
-        let fallback = Arc::new(self.fallback);
+        let fallback = self.locales.swap_remove(0);
+        let fallback = Arc::new(fallback);
 
         let mut collations: Vec<Collation> = self.locales
             .into_iter()
@@ -178,7 +161,7 @@ pub struct RenderBuilder {
     pub redirects: RedirectConfig,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub collations: CollationBuilder,
+    collations: CollationBuilder,
 }
 
 impl RenderBuilder {
@@ -304,8 +287,10 @@ impl RenderBuilder {
             .try_collect()
             .await;
 
-        let locales = values?;
-        self.collations = CollationBuilder { fallback, locales };
+        let mut locales = vec![fallback];
+        let mut values = values?;
+        locales.append(&mut values);
+        self.collations = CollationBuilder { locales };
 
         Ok(self)
     }
