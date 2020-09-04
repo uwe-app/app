@@ -53,10 +53,10 @@ pub static TAGS: &str = "tags";
 
 /// Used when multiple virtual hosts and inferring 
 /// a sub-domain from the primary host name.
-pub static HOST_DEV: &str = "localhost.dev";
+pub static HOST_DEV: &str = "loopback.space";
 
 pub static ADDR: &str = "127.0.0.1";
-pub static HOST: &str = "localhost";
+pub static HOST: &str = "loopback.space";
 pub static PORT: u16 = 8888;
 pub static PORT_SSL: u16 = 8843;
 
