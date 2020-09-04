@@ -7,6 +7,8 @@ use log::info;
 
 use url::Url;
 
+use futures::{future, stream, StreamExt, TryStreamExt};
+
 use cache::CacheComponent;
 use collator::manifest::Manifest;
 use collator::{CollateInfo, CollateRequest, CollateResult};
@@ -24,6 +26,43 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
     manifest_file.set_extension(config::JSON);
     manifest_file
+}
+
+/// Get a collation for a single locale.
+async fn collation(locale: &LocaleName, config: &Config, options: &RuntimeOptions) -> Result<CollateInfo> {
+    // Collate page data for later usage
+    let req = CollateRequest {
+        config,
+        options,
+    };
+
+    // FIXME: decouple the manifest from the collation
+
+    let mut res = CollateResult::new();
+    let mut errors = collator::walk(req, &mut res).await?;
+    if !errors.is_empty() {
+        // TODO: print all errors?
+        let e = errors.swap_remove(0);
+        return Err(Error::Collator(e));
+    }
+
+    let mut collation: CollateInfo = res.try_into()?;
+
+    /*
+    // Find and transform localized pages
+    collator::localize(
+        &self.context.config,
+        &self.context.options,
+        &self.context.options.locales,
+        &mut collation,
+    )
+    .await?;
+
+    // Collate the series data
+    collator::series(&self.context.config, &self.context.options, &mut collation)?;
+    */
+
+    Ok(collation)
 }
 
 #[derive(Debug)]
@@ -169,16 +208,54 @@ impl RenderBuilder {
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
 
+        // FIXME: restore manifest handling?
         // Set up the manifest for incremental builds
+        /*
         let manifest_file = get_manifest_file(&self.context.options);
         let manifest: Option<Manifest> = if self.context.options.settings.is_incremental() {
             Some(Manifest::load(&manifest_file)?)
         } else {
             None
         };
+        */
 
         // Get a reference to the locale map
         let locales = &self.context.options.locales;
+
+        let config = &self.context.config;
+        let options = &self.context.options;
+
+        let fallback_collation = Arc::new(
+            collation(&locales.fallback, config, options).await?);
+
+        let collations = locales.map
+            .keys()
+            .filter(|lang| lang != &&locales.fallback )
+            .map(|s| s.as_str())
+            .collect::<Vec<_>>();
+
+        let values: Result<Vec<CollateInfo>> = stream::iter(collations)
+            .filter(|lang| future::ready(lang != &&*locales.fallback))
+            .then(|lang| async move {
+                let locale = lang.clone().to_string();
+                Ok(collation(&locale, config, options).await?) 
+            })
+            .try_collect()
+            .await;
+
+        let others = values?;
+
+        //others.foo();
+
+        //println!("Got other locales {:#?}", other_locales);
+        //std::process::exit(1);
+
+        //let collations = other_locales
+            //.iter()
+            //.map(|lang| {
+            
+            //})
+            //.collect();
 
         /*
         // Collate page data for later usage
@@ -189,7 +266,7 @@ impl RenderBuilder {
 
         // FIXME: decouple the manifest from the collation
 
-        let mut res = CollateResult::new(manifest);
+        let mut res = CollateResult::new();
         let mut errors = collator::walk(req, &mut res).await?;
         if !errors.is_empty() {
             // TODO: print all errors?

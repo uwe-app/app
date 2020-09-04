@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use unic_langid::LanguageIdentifier;
 
 pub type LocaleName = String;
+pub type LocaleIdentifier = HashMap<LocaleName, LanguageIdentifier>;
 
 #[derive(Debug, Clone, Default)]
 pub struct LocaleMap {
@@ -14,5 +15,5 @@ pub struct LocaleMap {
     /// Determine if multiple locales are active.
     pub multi: bool,
     /// Map of all locales to the parsed language identifiers.
-    pub map: HashMap<LocaleName, LanguageIdentifier>,
+    pub map: LocaleIdentifier,
 }
