@@ -100,11 +100,7 @@ pub struct Invalidator<'a> {
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(
-        builder: Compiler<'a>,
-        parser: Parser<'a>,
-        datasource: &'a DataSourceMap,
-    ) -> Self {
+    pub fn new(builder: Compiler<'a>, parser: Parser<'a>, datasource: &'a DataSourceMap) -> Self {
         Self {
             builder,
             parser,
@@ -122,10 +118,7 @@ impl<'a> Invalidator<'a> {
         file
     }
 
-    pub fn get_invalidation(
-        &mut self,
-        paths: Vec<PathBuf>,
-    ) -> Result<Rule, Error> {
+    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule, Error> {
         let ctx = self.builder.context;
 
         let mut rule = Rule {
@@ -191,10 +184,8 @@ impl<'a> Invalidator<'a> {
                     // NOTE: and should take precedence
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
-                            let hook_base = self.canonical(
-                                hook.get_source_path(&ctx.options.source)
-                                    .unwrap(),
-                            );
+                            let hook_base =
+                                self.canonical(hook.get_source_path(&ctx.options.source).unwrap());
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
                                 continue 'paths;
@@ -214,9 +205,7 @@ impl<'a> Invalidator<'a> {
                         }
 
                         if path.starts_with(book_path) {
-                            if let Some(md) =
-                                self.builder.book.locate(&ctx.config, &book)
-                            {
+                            if let Some(md) = self.builder.book.locate(&ctx.config, &book) {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
 
@@ -227,16 +216,12 @@ impl<'a> Invalidator<'a> {
                                 build.push(build_dir);
 
                                 if path.starts_with(build) {
-                                    rule.ignores.push(Action::BookBuild(
-                                        book.clone(),
-                                        path,
-                                    ));
+                                    rule.ignores.push(Action::BookBuild(book.clone(), path));
                                     continue 'paths;
                                 } else if path.starts_with(src) {
-                                    rule.book.source.push(Action::BookSource(
-                                        book.clone(),
-                                        path,
-                                    ));
+                                    rule.book
+                                        .source
+                                        .push(Action::BookSource(book.clone(), path));
                                     continue 'paths;
                                 }
                             }
@@ -246,8 +231,7 @@ impl<'a> Invalidator<'a> {
                     if let Some(theme) = &book_theme {
                         if path.starts_with(theme) {
                             rule.book.all = true;
-                            rule.ignores
-                                .push(Action::BookTheme(theme.clone(), path));
+                            rule.ignores.push(Action::BookTheme(theme.clone(), path));
                             continue 'paths;
                         }
                     }
@@ -267,23 +251,18 @@ impl<'a> Invalidator<'a> {
                         rule.ignores.push(Action::Partial(path));
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
-                            let cfg =
-                                DataSourceMap::get_datasource_config_path(p);
-                            let documents =
-                                datasource::get_datasource_documents_path(p);
+                            let cfg = DataSourceMap::get_datasource_config_path(p);
+                            let documents = datasource::get_datasource_documents_path(p);
                             if path == cfg {
-                                rule.actions
-                                    .push(Action::DataSourceConfig(path));
+                                rule.actions.push(Action::DataSourceConfig(path));
                                 break;
                             } else if path.starts_with(documents) {
-                                rule.actions
-                                    .push(Action::DataSourceDocument(path));
+                                rule.actions.push(Action::DataSourceDocument(path));
                                 break;
                             }
                         }
                     } else {
-                        let file_type =
-                            FileInfo::get_type(&path, &ctx.options.settings);
+                        let file_type = FileInfo::get_type(&path, &ctx.options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -305,9 +284,8 @@ impl<'a> Invalidator<'a> {
         //
         // Once the logic for selecting watch directories is implemented
         // this can probably be removed.
-        let is_empty = rule.actions.is_empty()
-            && rule.hooks.is_empty()
-            && rule.book.source.is_empty();
+        let is_empty =
+            rule.actions.is_empty() && rule.hooks.is_empty() && rule.book.source.is_empty();
         match rule.strategy {
             Strategy::Mixed => {
                 if is_empty {
@@ -320,11 +298,7 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    pub async fn invalidate(
-        &mut self,
-        target: &PathBuf,
-        rule: &Rule,
-    ) -> Result<(), Error> {
+    pub async fn invalidate(&mut self, target: &PathBuf, rule: &Rule) -> Result<(), Error> {
         let ctx = self.builder.context;
         let livereload = context::livereload().read().unwrap();
 
@@ -341,8 +315,7 @@ impl<'a> Invalidator<'a> {
 
         for hook in &rule.hooks {
             if let Action::Hook(id, _path) = hook {
-                if let Some(hook_config) = config.hook.as_ref().unwrap().get(id)
-                {
+                if let Some(hook_config) = config.hook.as_ref().unwrap().get(id) {
                     hook::exec(self.builder.context, hook_config)?;
                 }
             }
@@ -354,11 +327,7 @@ impl<'a> Invalidator<'a> {
             for action in &book.reload {
                 match action {
                     Action::BookConfig(base, _) => {
-                        self.builder.book.load(
-                            config,
-                            base,
-                            livereload.clone(),
-                        )?;
+                        self.builder.book.load(config, base, livereload.clone())?;
                     }
                     _ => {}
                 }
@@ -373,17 +342,9 @@ impl<'a> Invalidator<'a> {
                     Action::BookSource(base, _) => {
                         // Make the path relative to the project source
                         // as the notify crate gives us an absolute path
-                        let file = FileInfo::relative_to(
-                            base,
-                            &options.source,
-                            &options.source,
-                        )?;
+                        let file = FileInfo::relative_to(base, &options.source, &options.source)?;
 
-                        self.builder.book.build(
-                            config,
-                            &file,
-                            livereload.clone(),
-                        )?;
+                        self.builder.book.build(config, &file, livereload.clone())?;
                     }
                     _ => {}
                 }
@@ -393,8 +354,7 @@ impl<'a> Invalidator<'a> {
         match rule.strategy {
             Strategy::Full | Strategy::Page => {
                 // TODO: handle updating search index
-                let _parse_data =
-                    self.builder.build(&self.parser, target).await?;
+                let _parse_data = self.builder.build(&self.parser, target).await?;
             }
             _ => {
                 for action in &rule.actions {

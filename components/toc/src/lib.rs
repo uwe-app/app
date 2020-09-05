@@ -182,8 +182,7 @@ mod tests {
         let mut toc = TableOfContents::new();
         toc.add("h1", "foo", "Foo");
         let markup = toc.to_html_string("ol", "toc", "h1", "h1")?;
-        let expected =
-            "<ol class=\"toc\"><li><a href=\"#foo\">Foo</a></li></ol>";
+        let expected = "<ol class=\"toc\"><li><a href=\"#foo\">Foo</a></li></ol>";
         assert_eq!(expected, markup);
         Ok(())
     }

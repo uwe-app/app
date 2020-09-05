@@ -15,16 +15,10 @@ impl HelperDef for Slug {
         let value = h
             .params()
             .get(0)
-            .ok_or_else(|| {
-                RenderError::new("Type error in `slug`, expected parameter")
-            })?
+            .ok_or_else(|| RenderError::new("Type error in `slug`, expected parameter"))?
             .value()
             .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `slug`, expected string parameter",
-                )
-            })?;
+            .ok_or_else(|| RenderError::new("Type error in `slug`, expected string parameter"))?;
 
         out.write(&slug::slugify(&value))?;
 

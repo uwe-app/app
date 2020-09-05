@@ -67,11 +67,7 @@ impl BookCompiler {
         Ok(())
     }
 
-    pub fn locate<P: AsRef<Path>>(
-        &self,
-        config: &Config,
-        p: P,
-    ) -> Option<MDBook> {
+    pub fn locate<P: AsRef<Path>>(&self, config: &Config, p: P) -> Option<MDBook> {
         let pth = p.as_ref().to_path_buf();
         if let Ok(md) = self.load(config, &pth, None) {
             return Some(md);
@@ -97,10 +93,7 @@ impl BookCompiler {
                             md.config.set(BOOK_THEME_KEY, s)?;
                         }
                     } else {
-                        warn!(
-                            "Missing book theme directory '{}'",
-                            theme_dir.display()
-                        );
+                        warn!("Missing book theme directory '{}'", theme_dir.display());
                     }
                 }
 
@@ -115,13 +108,7 @@ impl BookCompiler {
         }
     }
 
-    fn compile<P: AsRef<Path>>(
-        &self,
-        config: &Config,
-        md: MDBook,
-        rel: P,
-        p: P,
-    ) -> Result<()> {
+    fn compile<P: AsRef<Path>>(&self, config: &Config, md: MDBook, rel: P, p: P) -> Result<()> {
         let dir = p.as_ref();
         if let Some(ref book) = config.book {
             if let Some(cfg) = book.find(rel.as_ref()) {
@@ -161,11 +148,7 @@ impl BookCompiler {
         self.compile(config, book, rel, &pth)
     }
 
-    pub fn all(
-        &self,
-        config: &Config,
-        livereload: Option<String>,
-    ) -> Result<()> {
+    pub fn all(&self, config: &Config, livereload: Option<String>) -> Result<()> {
         if let Some(ref book) = config.book {
             let paths = book.get_paths(&self.source);
             for p in paths {

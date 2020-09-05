@@ -53,8 +53,7 @@ style='
 </div>";
 
 fn get_script(url: &str) -> String {
-    let mut script =
-        String::from(format!("var socket = new WebSocket('{}')\n", url));
+    let mut script = String::from(format!("var socket = new WebSocket('{}')\n", url));
     script.push_str(SCRIPT);
     script
 }
@@ -73,11 +72,7 @@ pub fn embed(config: &Config) -> String {
     content
 }
 
-pub fn write(
-    config: &Config,
-    target: &PathBuf,
-    url: &str,
-) -> std::io::Result<()> {
+pub fn write(config: &Config, target: &PathBuf, url: &str) -> std::io::Result<()> {
     let cfg = config.livereload.as_ref().unwrap();
     let mut dest = target.clone();
     dest.push(cfg.file.as_ref().unwrap());

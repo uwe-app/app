@@ -28,9 +28,7 @@ impl HelperDef for Markdown<'_> {
             .as_json()
             .as_str()
             .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `md` for `file.source`, string expected",
-                )
+                RenderError::new("Type error in `md` for `file.source`, string expected")
             })?
             .to_string();
 
@@ -100,10 +98,7 @@ impl HelperDef for Markdown<'_> {
         }
 
         if evaluate {
-            let parsed = render_markdown_string(
-                &mut Cow::from(buf.buffer),
-                &self.context.config,
-            );
+            let parsed = render_markdown_string(&mut Cow::from(buf.buffer), &self.context.config);
             out.write(&parsed)?;
         } else {
             out.write(&buf.buffer)?;

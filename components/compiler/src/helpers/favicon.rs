@@ -6,8 +6,7 @@ use serde_json::json;
 
 static DEFAULT_ICON: &str = "/assets/favicon.png";
 // A transparent gif for the icon
-static INLINE_ICON: &str =
-    "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
+static INLINE_ICON: &str = "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
 
 #[derive(Clone, Copy)]
 pub struct Icon<'a> {
@@ -61,15 +60,11 @@ impl HelperDef for Icon<'_> {
                     .as_json()
                     .as_str()
                     .ok_or_else(|| {
-                        RenderError::new(
-                            "Type error for `file.source`, string expected",
-                        )
+                        RenderError::new("Type error for `file.source`, string expected")
                     })?
                     .to_string();
                 let path = Path::new(&base_path);
-                href = if let Ok(val) =
-                    config::link::relative(&href, path, &opts.source, opts)
-                {
+                href = if let Ok(val) = config::link::relative(&href, path, &opts.source, opts) {
                     val
                 } else {
                     return Err(RenderError::new(

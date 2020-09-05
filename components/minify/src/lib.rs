@@ -85,8 +85,7 @@ mod tests {
 
     #[test]
     fn strip_inline_text() {
-        let val =
-            "<p>   <b>bold</b> with some inline text <i>italic</i>   \n</p>";
+        let val = "<p>   <b>bold</b> with some inline text <i>italic</i>   \n</p>";
         let expect = "<p><b>bold</b> with some inline text <i>italic</i></p>";
         let res = html(val);
         assert_eq!(res, expect.to_string());

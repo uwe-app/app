@@ -21,11 +21,7 @@ impl HelperDef for Match<'_> {
             .evaluate(ctx, "@root/file.target")?
             .as_json()
             .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.target`, string expected",
-                )
-            })?
+            .ok_or_else(|| RenderError::new("Type error for `file.target`, string expected"))?
             .to_string();
 
         let opts = &self.context.options;

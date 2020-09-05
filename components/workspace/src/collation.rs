@@ -6,11 +6,7 @@ use config::{Config, LocaleMap, RuntimeOptions};
 
 use crate::{Error, Result};
 
-fn get_locale_target(
-    lang: &str,
-    locales: &LocaleMap,
-    base: &PathBuf,
-) -> PathBuf {
+fn get_locale_target(lang: &str, locales: &LocaleMap, base: &PathBuf) -> PathBuf {
     if locales.multi {
         base.join(lang)
     } else {

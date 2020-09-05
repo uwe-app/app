@@ -89,9 +89,7 @@ fn resolve_project<P: AsRef<Path>>(f: P) -> Option<PathBuf> {
     resolve_cwd()
 }
 
-pub fn parse_language<S: AsRef<str>>(
-    lang: S,
-) -> Result<LanguageIdentifier, Error> {
+pub fn parse_language<S: AsRef<str>>(lang: S) -> Result<LanguageIdentifier, Error> {
     let id: LanguageIdentifier = lang.as_ref().parse()?;
     Ok(id)
 }
@@ -247,8 +245,7 @@ impl Config {
 
                 if let Some(fluent) = cfg.fluent.as_mut() {
                     fluent.fallback = Some(cfg.lang.to_string());
-                    fluent.fallback_id =
-                        fluent.fallback.as_ref().unwrap().parse()?;
+                    fluent.fallback_id = fluent.fallback.as_ref().unwrap().parse()?;
                 }
 
                 // Assume default build settings for the site
@@ -304,36 +301,19 @@ impl Config {
 
                 if let Some(date) = cfg.date.as_mut() {
                     let mut datetime_formats = HashMap::new();
-                    datetime_formats
-                        .insert("date-short".to_string(), "%F".to_string());
-                    datetime_formats.insert(
-                        "date-medium".to_string(),
-                        "%a %b %e %Y".to_string(),
-                    );
-                    datetime_formats.insert(
-                        "date-long".to_string(),
-                        "%A %B %e %Y".to_string(),
-                    );
+                    datetime_formats.insert("date-short".to_string(), "%F".to_string());
+                    datetime_formats.insert("date-medium".to_string(), "%a %b %e %Y".to_string());
+                    datetime_formats.insert("date-long".to_string(), "%A %B %e %Y".to_string());
 
-                    datetime_formats
-                        .insert("time-short".to_string(), "%R".to_string());
-                    datetime_formats
-                        .insert("time-medium".to_string(), "%X".to_string());
-                    datetime_formats
-                        .insert("time-long".to_string(), "%r".to_string());
+                    datetime_formats.insert("time-short".to_string(), "%R".to_string());
+                    datetime_formats.insert("time-medium".to_string(), "%X".to_string());
+                    datetime_formats.insert("time-long".to_string(), "%r".to_string());
 
-                    datetime_formats.insert(
-                        "datetime-short".to_string(),
-                        "%F %R".to_string(),
-                    );
-                    datetime_formats.insert(
-                        "datetime-medium".to_string(),
-                        "%a %b %e %Y %X".to_string(),
-                    );
-                    datetime_formats.insert(
-                        "datetime-long".to_string(),
-                        "%A %B %e %Y %r".to_string(),
-                    );
+                    datetime_formats.insert("datetime-short".to_string(), "%F %R".to_string());
+                    datetime_formats
+                        .insert("datetime-medium".to_string(), "%a %b %e %Y %X".to_string());
+                    datetime_formats
+                        .insert("datetime-long".to_string(), "%A %B %e %Y %r".to_string());
 
                     for (k, v) in datetime_formats {
                         if !date.formats.contains_key(&k) {
@@ -384,10 +364,7 @@ impl Config {
         return Ok(Default::default());
     }
 
-    pub fn load<P: AsRef<Path>>(
-        source: P,
-        walk_ancestors: bool,
-    ) -> Result<Self, Error> {
+    pub fn load<P: AsRef<Path>>(source: P, walk_ancestors: bool) -> Result<Self, Error> {
         let mut pth = source.as_ref().to_path_buf();
 
         // Better error message when looking in the cwd
@@ -433,10 +410,7 @@ impl Config {
         self.project.as_ref().unwrap().clone()
     }
 
-    pub fn get_book_theme_path<P: AsRef<Path>>(
-        &self,
-        source: P,
-    ) -> Option<PathBuf> {
+    pub fn get_book_theme_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
         if let Some(book) = &self.book {
             let mut pth = source.as_ref().to_path_buf();
             pth.push(book.theme.clone());
@@ -527,10 +501,7 @@ pub struct HookConfig {
 }
 
 impl HookConfig {
-    pub fn get_source_path<P: AsRef<Path>>(
-        &self,
-        source: P,
-    ) -> Option<PathBuf> {
+    pub fn get_source_path<P: AsRef<Path>>(&self, source: P) -> Option<PathBuf> {
         if let Some(src) = self.source.as_ref() {
             let mut pth = source.as_ref().to_path_buf();
             pth.push(src);

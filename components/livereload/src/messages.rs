@@ -37,10 +37,7 @@ pub fn reload() -> impl Serialize + std::fmt::Debug {
     }
 }
 
-pub fn notify(
-    message: String,
-    error: bool,
-) -> impl Serialize + std::fmt::Debug {
+pub fn notify(message: String, error: bool) -> impl Serialize + std::fmt::Debug {
     MessageEvent {
         event_type: EventType::Notify,
         message,

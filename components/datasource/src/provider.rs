@@ -43,10 +43,7 @@ pub struct LoadRequest<'a> {
 fn find_recursive(
     path: impl Into<PathBuf>,
 ) -> impl Stream<Item = io::Result<DirEntry>> + Send + 'static {
-    async fn one_level(
-        path: PathBuf,
-        to_visit: &mut Vec<PathBuf>,
-    ) -> io::Result<Vec<DirEntry>> {
+    async fn one_level(path: PathBuf, to_visit: &mut Vec<PathBuf>) -> io::Result<Vec<DirEntry>> {
         let mut dir = fs::read_dir(path).await?;
         let mut files = Vec::new();
         while let Some(child) = dir.next_entry().await? {
@@ -75,28 +72,21 @@ fn find_recursive(
 pub struct Provider {}
 
 impl Provider {
-    fn deserialize<S: AsRef<str>>(
-        kind: &SourceType,
-        content: S,
-    ) -> ProviderResult {
+    fn deserialize<S: AsRef<str>>(kind: &SourceType, content: S) -> ProviderResult {
         match kind {
             SourceType::Json => Ok(serde_json::from_str(content.as_ref())?),
             SourceType::Toml => Ok(toml::from_str(content.as_ref())?),
         }
     }
 
-    pub async fn load(
-        req: LoadRequest<'_>,
-    ) -> Result<BTreeMap<String, Arc<Value>>> {
+    pub async fn load(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         match req.provider {
             SourceProvider::Files => Provider::load_files(req).await,
             SourceProvider::Pages => Provider::load_pages(req).await,
         }
     }
 
-    async fn load_pages(
-        req: LoadRequest<'_>,
-    ) -> Result<BTreeMap<String, Arc<Value>>> {
+    async fn load_pages(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
@@ -113,12 +103,7 @@ impl Provider {
                 let result = serde_json::to_value(data);
                 match result {
                     Ok(document) => {
-                        let key = ComputeIdentifier::id(
-                            &Strategy::Count,
-                            &path,
-                            &document,
-                            &count,
-                        );
+                        let key = ComputeIdentifier::id(&Strategy::Count, &path, &document, &count);
                         if docs.contains_key(&key) {
                             return future::err(Error::DuplicateId {
                                 key,
@@ -137,9 +122,7 @@ impl Provider {
         Ok(docs)
     }
 
-    async fn load_files(
-        req: LoadRequest<'_>,
-    ) -> Result<BTreeMap<String, Arc<Value>>> {
+    async fn load_files(req: LoadRequest<'_>) -> Result<BTreeMap<String, Arc<Value>>> {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
@@ -152,12 +135,8 @@ impl Provider {
                         let result = Provider::deserialize(&req.kind, &content);
                         match result {
                             Ok(document) => {
-                                let key = ComputeIdentifier::id(
-                                    &req.strategy,
-                                    &path,
-                                    &document,
-                                    &count,
-                                );
+                                let key =
+                                    ComputeIdentifier::id(&req.strategy, &path, &document, &count);
                                 if docs.contains_key(&key) {
                                     return future::err(Error::DuplicateId {
                                         key,
@@ -181,8 +160,7 @@ impl Provider {
 
     fn find_documents<'a>(
         req: &'a LoadRequest<'a>,
-    ) -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>> {
         find_recursive(&req.source)
             .map_err(Error::from)
             .filter(|result| {

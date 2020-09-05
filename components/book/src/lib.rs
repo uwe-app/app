@@ -81,11 +81,7 @@ pub fn add<P: AsRef<Path>>(
 
 // Build a book, if path is none then build all books
 // defined in the config.
-pub fn build<P: AsRef<Path>>(
-    config: &Config,
-    path: Vec<P>,
-    release: bool,
-) -> Result<()> {
+pub fn build<P: AsRef<Path>>(config: &Config, path: Vec<P>, release: bool) -> Result<()> {
     let build_config = config.build.as_ref().unwrap();
     let compiler = compiler::BookCompiler::new(
         build_config.source.clone(),

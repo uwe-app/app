@@ -52,11 +52,7 @@ impl fmt::Display for ScriptFile {
                 }
                 if let Some(ref referrer_policy) = script.referrerpolicy {
                     // NOTE: we know that we don't need to escape this attribute value
-                    write!(
-                        f,
-                        " referrerpolicy=\"{}\"",
-                        referrer_policy.to_string()
-                    )?;
+                    write!(f, " referrerpolicy=\"{}\"", referrer_policy.to_string())?;
                 }
                 if let Some(ref _script_async) = script.script_async {
                     write!(f, " async")?;
@@ -142,18 +138,12 @@ impl fmt::Display for ReferrerPolicy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::NoReferrer => write!(f, "no-referrer"),
-            Self::NoReferrerWhenDowngrade => {
-                write!(f, "no-referrer-when-downgrade")
-            }
+            Self::NoReferrerWhenDowngrade => write!(f, "no-referrer-when-downgrade"),
             Self::Origin => write!(f, "origin"),
-            Self::OriginWhenCrossOrigin => {
-                write!(f, "origin-when-cross-origin")
-            }
+            Self::OriginWhenCrossOrigin => write!(f, "origin-when-cross-origin"),
             Self::SameOrigin => write!(f, "same-origin"),
             Self::StrictOrigin => write!(f, "strict-origin"),
-            Self::StrictOriginWhenCrossOrigin => {
-                write!(f, "strict-origin-when-cross-origin")
-            }
+            Self::StrictOriginWhenCrossOrigin => write!(f, "strict-origin-when-cross-origin"),
         }
     }
 }

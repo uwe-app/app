@@ -64,12 +64,8 @@ impl fmt::Display for SearchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let desc: String = match self {
             SearchError::VersionParseError(e) => format!("{}", e),
-            SearchError::IndexParseError => {
-                "Could not parse index file.".to_string()
-            }
-            SearchError::JSONSerializationError => {
-                "Could not format search results.".to_string()
-            }
+            SearchError::IndexParseError => "Could not parse index file.".to_string(),
+            SearchError::JSONSerializationError => "Could not format search results.".to_string(),
         };
 
         write!(f, "{}", desc)

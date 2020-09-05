@@ -37,13 +37,9 @@ pub enum Error {
     #[error(transparent)]
     PutObject(#[from] rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
     #[error(transparent)]
-    DeleteObject(
-        #[from] rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>,
-    ),
+    DeleteObject(#[from] rusoto_core::RusotoError<rusoto_s3::DeleteObjectError>),
     #[error(transparent)]
-    ListObjects(
-        #[from] rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>,
-    ),
+    ListObjects(#[from] rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -105,8 +101,7 @@ fn get_client(request: &PublishRequest) -> Result<S3Client> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(&request.profile_name);
     let dispatcher = HttpClient::new()?;
-    let client =
-        S3Client::new_with(dispatcher, provider, request.region.clone());
+    let client = S3Client::new_with(dispatcher, provider, request.region.clone());
     Ok(client)
 }
 
@@ -177,8 +172,7 @@ async fn fetch_bucket_remote(
 ) -> Result<()> {
     let mut continuation_token = None;
     loop {
-        let result =
-            list_bucket_remote(client, request, continuation_token).await?;
+        let result = list_bucket_remote(client, request, continuation_token).await?;
         if let Some(contents) = result.contents {
             debug!("List bucket contents length {}", contents.len());
             for obj in contents {
@@ -193,8 +187,7 @@ async fn fetch_bucket_remote(
                 }
             }
         }
-        let is_truncated =
-            result.is_truncated.is_some() && result.is_truncated.unwrap();
+        let is_truncated = result.is_truncated.is_some() && result.is_truncated.unwrap();
         if !is_truncated {
             break;
         } else {
@@ -227,8 +220,8 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(
     let size = file.metadata()?.len();
 
     let tokio_file = tokio::fs::File::from_std(file);
-    let stream = codec::FramedRead::new(tokio_file, codec::BytesCodec::new())
-        .map_ok(|r| r.freeze());
+    let stream =
+        codec::FramedRead::new(tokio_file, codec::BytesCodec::new()).map_ok(|r| r.freeze());
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);
@@ -254,10 +247,7 @@ pub async fn publish(
     builder: FileBuilder,
     diff: DiffReport,
 ) -> Result<()> {
-    if diff.upload.is_empty()
-        && diff.changed.is_empty()
-        && diff.deleted.is_empty()
-    {
+    if diff.upload.is_empty() && diff.changed.is_empty() && diff.deleted.is_empty() {
         info!("Site is up to date!");
         return Ok(());
     }

@@ -87,11 +87,7 @@ pub fn get_short_codes_location() -> Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join("shortcodes/site/partials"))
 }
 
-pub fn to_url_string(
-    scheme: &str,
-    host: &str,
-    port: impl Into<Option<u16>>,
-) -> String {
+pub fn to_url_string(scheme: &str, host: &str, port: impl Into<Option<u16>>) -> String {
     let url = if let Some(port) = port.into() {
         format!(
             "{}{}{}:{}",

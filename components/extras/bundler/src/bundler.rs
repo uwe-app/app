@@ -65,9 +65,7 @@ pub struct Target {
 impl Target {
     pub fn get_binary_name(&self, name: &str) -> String {
         match self.platform {
-            Platform::Linux(ref s) | Platform::Darwin(ref s) => {
-                return format!("{}-{}", name, s)
-            }
+            Platform::Linux(ref s) | Platform::Darwin(ref s) => return format!("{}-{}", name, s),
             Platform::Windows(ref s) => return format!("{}-{}.exe", name, s),
         }
     }
@@ -107,13 +105,7 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
         "time.Now()"
     }
 
-    fn get_dir_entry(
-        &self,
-        name: String,
-        key: &str,
-        _path: &Path,
-        meta: Metadata,
-    ) -> String {
+    fn get_dir_entry(&self, name: String, key: &str, _path: &Path, meta: Metadata) -> String {
         let mod_time = self.get_mod_time(&meta);
         format!(
             "\"{}\": &DirInfo{{name:\"{}\", modTime: {}}},\n",
@@ -166,11 +158,7 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
         "}\n"
     }
 
-    fn get_key(
-        &self,
-        source: &PathBuf,
-        path: &Path,
-    ) -> Result<(PathBuf, String), Error> {
+    fn get_key(&self, source: &PathBuf, path: &Path) -> Result<(PathBuf, String), Error> {
         let rel = path.strip_prefix(source)?;
         let mut key = "/".to_string();
         key.push_str(&rel.clone().to_string_lossy().into_owned());
@@ -212,15 +200,9 @@ var fs = &EmbeddedFileSystem{assets: AssetMap {\n"
 
                             if path.is_dir() {
                                 dirs.push(path.to_path_buf());
-                                s.push_str(
-                                    &self.get_dir_entry(nm, &key, &path, meta),
-                                );
+                                s.push_str(&self.get_dir_entry(nm, &key, &path, meta));
                             } else if path.is_file() {
-                                s.push_str(
-                                    &self.get_file_entry(
-                                        nm, &key, &path, meta,
-                                    )?,
-                                );
+                                s.push_str(&self.get_file_entry(nm, &key, &path, meta)?);
                             } else {
                                 return Err(Error::UnknownPathType);
                             }

@@ -62,9 +62,7 @@ impl SiteMapIndex {
         )?;
         for map in self.maps.iter() {
             write!(w, "\t<sitemap>\n")?;
-            let loc = utils::entity::escape(
-                &map.to_location(&self.to_location()).to_string(),
-            );
+            let loc = utils::entity::escape(&map.to_location(&self.to_location()).to_string());
             write!(w, "\t\t<loc>{}</loc>\n", loc)?;
             write!(w, "\t</sitemap>\n")?;
         }

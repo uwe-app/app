@@ -7,12 +7,7 @@ use crate::redirect::Redirects;
 
 use crate::{Error, Result};
 
-pub fn to_websocket_url(
-    tls: bool,
-    host: &str,
-    endpoint: &str,
-    port: u16,
-) -> String {
+pub fn to_websocket_url(tls: bool, host: &str, endpoint: &str, port: u16) -> String {
     let scheme = if tls {
         crate::SCHEME_WSS
     } else {
@@ -21,11 +16,7 @@ pub fn to_websocket_url(
     format!("{}//{}:{}/{}", scheme, host, port, endpoint)
 }
 
-pub fn get_port(
-    port: u16,
-    tls: &Option<TlsConfig>,
-    port_type: PortType,
-) -> u16 {
+pub fn get_port(port: u16, tls: &Option<TlsConfig>, port_type: PortType) -> u16 {
     match port_type {
         PortType::Infer => {
             if let Some(ref tls) = tls {
@@ -140,11 +131,7 @@ impl ServerConfig {
     }
 
     /// New configuration using a default host.
-    pub fn new_host(
-        host: HostConfig,
-        port: u16,
-        tls: Option<TlsConfig>,
-    ) -> Self {
+    pub fn new_host(host: HostConfig, port: u16, tls: Option<TlsConfig>) -> Self {
         Self {
             listen: String::from(crate::config::ADDR),
             port: port,
@@ -160,11 +147,7 @@ impl ServerConfig {
         get_port(self.port, &self.tls, port_type)
     }
 
-    pub fn get_address(
-        &self,
-        port_type: PortType,
-        host: Option<String>,
-    ) -> String {
+    pub fn get_address(&self, port_type: PortType, host: Option<String>) -> String {
         let port = self.get_port(port_type);
         let host = if let Some(host) = host {
             host.clone()
@@ -174,20 +157,11 @@ impl ServerConfig {
         format!("{}:{}", host, port)
     }
 
-    pub fn get_url(
-        &self,
-        scheme: &str,
-        port_type: PortType,
-        host: Option<String>,
-    ) -> String {
+    pub fn get_url(&self, scheme: &str, port_type: PortType, host: Option<String>) -> String {
         format!("{}//{}", scheme, self.get_address(port_type, host))
     }
 
-    pub fn get_sock_addr(
-        &self,
-        port_type: PortType,
-        host: Option<String>,
-    ) -> Result<SocketAddr> {
+    pub fn get_sock_addr(&self, port_type: PortType, host: Option<String>) -> Result<SocketAddr> {
         let address = self.get_address(port_type, host);
         Ok(address
             .to_socket_addrs()?

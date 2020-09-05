@@ -72,11 +72,7 @@ impl fmt::Display for ProfileName {
 }
 
 impl ProfileName {
-    pub fn get_node_env(
-        &self,
-        debug: Option<String>,
-        release: Option<String>,
-    ) -> String {
+    pub fn get_node_env(&self, debug: Option<String>, release: Option<String>) -> String {
         match self {
             ProfileName::Debug => {
                 if let Some(env) = debug {
@@ -318,10 +314,7 @@ impl ProfileSettings {
         }
     }
 
-    pub fn get_canonical_url(
-        &self,
-        conf: &config::Config,
-    ) -> crate::Result<Url> {
+    pub fn get_canonical_url(&self, conf: &config::Config) -> crate::Result<Url> {
         if self.is_release() {
             let scheme = self.scheme.as_ref().unwrap();
             Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
@@ -440,11 +433,7 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
-    pub fn get_canonical_url(
-        &self,
-        config: &Config,
-        include_lang: bool,
-    ) -> crate::Result<Url> {
+    pub fn get_canonical_url(&self, config: &Config, include_lang: bool) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
         if include_lang && self.locales.multi {
             base = base.join(&self.lang)?;

@@ -166,35 +166,28 @@ pub async fn start<P: AsRef<Path>>(
                 //
                 let parser = Parser::new(context, locales).unwrap();
                 let compiler = Compiler::new(context);
-                let mut invalidator =
-                    Invalidator::new(compiler, parser, datasource);
+                let mut invalidator = Invalidator::new(compiler, parser, datasource);
                 let ws_tx = &w.websocket;
 
                 loop {
                     let first_event = rx.recv().unwrap();
                     sleep(Duration::from_millis(50));
                     let other_events = rx.try_iter();
-                    let all_events =
-                        std::iter::once(first_event).chain(other_events);
+                    let all_events = std::iter::once(first_event).chain(other_events);
                     let paths = all_events
                         .filter_map(|event| {
                             debug!("Received filesystem event: {:?}", event);
                             match event {
-                                Create(path)
-                                | Write(path)
-                                | Remove(path)
-                                | Rename(_, path) => Some(path),
+                                Create(path) | Write(path) | Remove(path) | Rename(_, path) => {
+                                    Some(path)
+                                }
                                 _ => None,
                             }
                         })
                         .collect::<Vec<_>>();
 
                     if !paths.is_empty() {
-                        info!(
-                            "Changed({}) in {}",
-                            paths.len(),
-                            w.source.display()
-                        );
+                        info!("Changed({}) in {}", paths.len(), w.source.display());
 
                         let msg = livereload::messages::start();
                         let txt = serde_json::to_string(&msg).unwrap();
@@ -204,28 +197,21 @@ pub async fn start<P: AsRef<Path>>(
                         let result = invalidator.get_invalidation(paths);
                         match result {
                             Ok(invalidation) => {
-                                if let Err(e) = invalidator
-                                    .invalidate(&w.source, &invalidation)
-                                    .await
+                                if let Err(e) =
+                                    invalidator.invalidate(&w.source, &invalidation).await
                                 {
                                     error!("{}", e);
 
-                                    let msg = livereload::messages::notify(
-                                        e.to_string(),
-                                        true,
-                                    );
-                                    let txt =
-                                        serde_json::to_string(&msg).unwrap();
+                                    let msg = livereload::messages::notify(e.to_string(), true);
+                                    let txt = serde_json::to_string(&msg).unwrap();
                                     let _ = ws_tx.send(Message::text(txt));
 
                                 //return error_cb(Error::from(e));
                                 } else {
                                     //self.builder.manifest.save()?;
                                     if invalidation.notify {
-                                        let msg =
-                                            livereload::messages::reload();
-                                        let txt = serde_json::to_string(&msg)
-                                            .unwrap();
+                                        let msg = livereload::messages::reload();
+                                        let txt = serde_json::to_string(&msg).unwrap();
                                         let _ = ws_tx.send(Message::text(txt));
                                         //println!("Got result {:?}", res);
                                     }

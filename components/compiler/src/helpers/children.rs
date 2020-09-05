@@ -24,18 +24,12 @@ impl HelperDef for Children<'_> {
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.source`, string expected",
-                )
-            })?
+            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
             .to_string();
 
-        let template = h.template().ok_or_else(|| {
-            RenderError::new(
-                "Type error in `children`, block template expected",
-            )
-        })?;
+        let template = h
+            .template()
+            .ok_or_else(|| RenderError::new("Type error in `children`, block template expected"))?;
 
         let path = PathBuf::from(&base_path);
         let dir = path.parent().unwrap().to_path_buf();

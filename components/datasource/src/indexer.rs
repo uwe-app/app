@@ -9,8 +9,8 @@ use serde_json::{Map, Value};
 
 use collator::CollateInfo;
 use config::indexer::{
-    DataSource as DataSourceConfig, IndexKey, IndexQuery, KeyResult, KeyType,
-    QueryResult, QueryValue,
+    DataSource as DataSourceConfig, IndexKey, IndexQuery, KeyResult, KeyType, QueryResult,
+    QueryValue,
 };
 use config::{Config, RuntimeOptions};
 
@@ -172,8 +172,7 @@ impl ValueIndex {
     }
 
     pub fn from_query(&self, query: &IndexQuery) -> Vec<QueryResult> {
-        let include_docs =
-            query.include_docs.is_some() && query.include_docs.unwrap();
+        let include_docs = query.include_docs.is_some() && query.include_docs.unwrap();
         let desc = query.desc.is_some() && query.desc.unwrap();
         let offset = if let Some(ref offset) = query.offset {
             offset.clone()
@@ -213,9 +212,7 @@ impl ValueIndex {
             });
         }
 
-        let iter: Box<
-            dyn Iterator<Item = (usize, &mut (IndexKey, Arc<Value>))>,
-        > = if desc {
+        let iter: Box<dyn Iterator<Item = (usize, &mut (IndexKey, Arc<Value>))>> = if desc {
             // Note the enumerate() must be after rev() for the limit logic
             // to work as expected when DESC is set
             Box::new(index_docs.iter_mut().rev().enumerate().skip(offset))
@@ -284,8 +281,7 @@ impl DataSourceMap {
                             options.source.clone()
                         };
 
-                        let data_source =
-                            DataSourceMap::to_data_source(&from, v);
+                        let data_source = DataSourceMap::to_data_source(&from, v);
                         map.insert(k.to_string(), data_source);
                     }
                 }
@@ -293,8 +289,7 @@ impl DataSourceMap {
         }
 
         // Load the documents for each configuration
-        DataSourceMap::load_documents(&mut map, config, options, collation)
-            .await?;
+        DataSourceMap::load_documents(&mut map, config, options, collation).await?;
 
         // Create the indices
         DataSourceMap::load_index(&mut map)?;
@@ -353,20 +348,17 @@ impl DataSourceMap {
                     documents: Vec::new(),
                 };
 
-                for (id, document) in
-                    generator.all.iter().filter(|(_id, document)| {
-                        if let Some(ref filters) = def.filters {
-                            for (path, flag) in filters {
-                                let truthy =
-                                    config::path::truthy(path, document);
-                                if (*flag && truthy) || (!*flag && !truthy) {
-                                    return false;
-                                }
+                for (id, document) in generator.all.iter().filter(|(_id, document)| {
+                    if let Some(ref filters) = def.filters {
+                        for (path, flag) in filters {
+                            let truthy = config::path::truthy(path, document);
+                            if (*flag && truthy) || (!*flag && !truthy) {
+                                return false;
                             }
                         }
-                        true
-                    })
-                {
+                    }
+                    true
+                }) {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
@@ -381,9 +373,7 @@ impl DataSourceMap {
                         id: id.clone(),
                         name: id.clone(),
                         doc_id: id.clone(),
-                        sort: DataSourceMap::get_sort_key_for_value(
-                            id, &key_val,
-                        ),
+                        sort: DataSourceMap::get_sort_key_for_value(id, &key_val),
                         value: key_val.clone(),
                     };
 

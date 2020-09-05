@@ -42,9 +42,7 @@ impl<'de> serde::Deserialize<'de> for StemmingConfig {
     {
         use serde::de::Error;
 
-        if let Ok(Value::String(string)) =
-            Deserialize::deserialize(deserializer)
-        {
+        if let Ok(Value::String(string)) = Deserialize::deserialize(deserializer) {
             StemmingConfig::try_from(&string).map_err(|_e| {
                 serde::de::Error::custom(format!("Unexpected value `{}`, expected `none` or a language supported by https://snowballstem.org/, e.g. `Dutch`", string.clone()))
             })

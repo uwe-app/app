@@ -109,8 +109,7 @@ pub fn search(
     options: &QueryOptions,
 ) -> Result<SearchOutput, SearchError> {
     let normalized_query = query.to_lowercase();
-    let words_in_query: Vec<String> =
-        normalized_query.split(' ').map(|s| s.to_string()).collect();
+    let words_in_query: Vec<String> = normalized_query.split(' ').map(|s| s.to_string()).collect();
 
     // Get the containers for each word in the query, and separate them
     // into intermediate excerpts
@@ -128,8 +127,7 @@ pub fn search(
         }
     }
 
-    let mut excerpts_by_index: HashMap<EntryIndex, Vec<IntermediateExcerpt>> =
-        HashMap::new();
+    let mut excerpts_by_index: HashMap<EntryIndex, Vec<IntermediateExcerpt>> = HashMap::new();
     for ie in intermediate_excerpts {
         excerpts_by_index
             .entry(ie.entry_index)
@@ -176,10 +174,7 @@ impl ContainerWithQuery {
         }
     }
 
-    fn get_intermediate_excerpts(
-        &self,
-        index: &Index,
-    ) -> Vec<IntermediateExcerpt> {
+    fn get_intermediate_excerpts(&self, index: &Index) -> Vec<IntermediateExcerpt> {
         let mut output = vec![];
         // Put container's results in output
         for (entry_index, result) in self.results.iter() {
@@ -198,8 +193,7 @@ impl ContainerWithQuery {
         // Put alias containers' results in output
         for (alias_target, alias_score) in self.aliases.iter() {
             if let Some(target_container) = index.containers.get(alias_target) {
-                for (entry_index, result) in target_container.results.to_owned()
-                {
+                for (entry_index, result) in target_container.results.to_owned() {
                     for excerpt in result.excerpts.to_owned() {
                         output.push(IntermediateExcerpt {
                             query: alias_target.to_string(),
@@ -234,10 +228,7 @@ struct EntryAndIntermediateExcerpts {
 }
 
 impl OutputResult {
-    fn from_data(
-        data: EntryAndIntermediateExcerpts,
-        options: &QueryOptions,
-    ) -> Self {
+    fn from_data(data: EntryAndIntermediateExcerpts, options: &QueryOptions) -> Self {
         let entry = data.entry;
         let excerpt_buffer = options.excerpt_buffer as usize;
         let split_contents: Vec<String> = entry
@@ -257,14 +248,12 @@ impl OutputResult {
         ies.sort_by_cached_key(|ie| ie.word_index);
         ies.dedup_by_key(|ie| ie.word_index);
 
-        let mut ies_grouped_by_word_index: Vec<Vec<&IntermediateExcerpt>> =
-            vec![];
+        let mut ies_grouped_by_word_index: Vec<Vec<&IntermediateExcerpt>> = vec![];
 
         for ie in &ies {
             if let Some(most_recent) = ies_grouped_by_word_index.last_mut() {
                 if let Some(trailing_ie) = most_recent.first() {
-                    if (ie.word_index as isize)
-                        - (trailing_ie.word_index as isize)
+                    if (ie.word_index as isize) - (trailing_ie.word_index as isize)
                         < (excerpt_buffer as isize)
                     {
                         most_recent.push(ie);
@@ -276,92 +265,86 @@ impl OutputResult {
             ies_grouped_by_word_index.push(vec![ie])
         }
 
-        let mut excerpts: Vec<crate::searcher::Excerpt> =
-            ies_grouped_by_word_index
-                .iter()
-                .map(|ies| {
-                    let minimum_word_index = ies
-                        .first()
+        let mut excerpts: Vec<crate::searcher::Excerpt> = ies_grouped_by_word_index
+            .iter()
+            .map(|ies| {
+                let minimum_word_index = ies
+                    .first()
+                    .unwrap()
+                    .word_index
+                    .saturating_sub(excerpt_buffer);
+
+                let maximum_word_index = std::cmp::min(
+                    ies.last()
                         .unwrap()
                         .word_index
-                        .saturating_sub(excerpt_buffer);
+                        .saturating_add(excerpt_buffer),
+                    split_contents.len(),
+                );
 
-                    let maximum_word_index = std::cmp::min(
-                        ies.last()
-                            .unwrap()
-                            .word_index
-                            .saturating_add(excerpt_buffer),
-                        split_contents.len(),
-                    );
+                let text = split_contents[minimum_word_index..maximum_word_index].join(" ");
 
-                    let text = split_contents
-                        [minimum_word_index..maximum_word_index]
-                        .join(" ");
-
-                    let mut highlight_ranges: Vec<HighlightRange> = ies
-                        .iter()
-                        .map(|ie| {
-                            let beginning = split_contents
-                                [minimum_word_index..ie.word_index]
-                                .join(" ")
-                                .len()
-                                + 1;
-                            HighlightRange {
-                                beginning,
-                                end: beginning + ie.query.len(),
-                            }
-                        })
-                        .collect();
-                    // Maybe unneccesary?
-                    highlight_ranges.sort_by_key(|hr| hr.beginning);
-
-                    let highlighted_character_range =
-                        highlight_ranges.last().unwrap().end
-                            - highlight_ranges.first().unwrap().beginning;
-
-                    let highlighted_characters_count: usize = highlight_ranges
-                        .iter()
-                        .map(|hr| hr.end - hr.beginning)
-                        .sum();
-
-                    let score_modifier = highlighted_character_range
-                        - highlighted_characters_count;
-
-                    let score = ies
-                        .iter()
-                        .map(|ie| (ie.score as usize))
-                        .sum::<usize>()
-                        .saturating_sub(score_modifier);
-
-                    // Since we're mapping from multiple IntermediateExcerpts to one
-                    // Excerpt, we have to either combine or filter data. For
-                    // `fields` and `internal_annotations`, I'm taking the data from
-                    // the first intermediate excerpt in the vector.
-                    let fields = {
-                        if let Some(first) = ies.first() {
-                            first.fields.clone()
-                        } else {
-                            HashMap::new()
+                let mut highlight_ranges: Vec<HighlightRange> = ies
+                    .iter()
+                    .map(|ie| {
+                        let beginning = split_contents[minimum_word_index..ie.word_index]
+                            .join(" ")
+                            .len()
+                            + 1;
+                        HighlightRange {
+                            beginning,
+                            end: beginning + ie.query.len(),
                         }
-                    };
+                    })
+                    .collect();
+                // Maybe unneccesary?
+                highlight_ranges.sort_by_key(|hr| hr.beginning);
 
-                    //let internal_annotations = {
-                    //if let Some(first) = ies.first() {
-                    //first.internal_annotations.clone()
-                    //} else {
-                    //Vec::default()
-                    //}
-                    //};
+                let highlighted_character_range = highlight_ranges.last().unwrap().end
+                    - highlight_ranges.first().unwrap().beginning;
 
-                    crate::searcher::Excerpt {
-                        text,
-                        highlight_ranges,
-                        //internal_annotations,
-                        score,
-                        fields,
+                let highlighted_characters_count: usize = highlight_ranges
+                    .iter()
+                    .map(|hr| hr.end - hr.beginning)
+                    .sum();
+
+                let score_modifier = highlighted_character_range - highlighted_characters_count;
+
+                let score = ies
+                    .iter()
+                    .map(|ie| (ie.score as usize))
+                    .sum::<usize>()
+                    .saturating_sub(score_modifier);
+
+                // Since we're mapping from multiple IntermediateExcerpts to one
+                // Excerpt, we have to either combine or filter data. For
+                // `fields` and `internal_annotations`, I'm taking the data from
+                // the first intermediate excerpt in the vector.
+                let fields = {
+                    if let Some(first) = ies.first() {
+                        first.fields.clone()
+                    } else {
+                        HashMap::new()
                     }
-                })
-                .collect();
+                };
+
+                //let internal_annotations = {
+                //if let Some(first) = ies.first() {
+                //first.internal_annotations.clone()
+                //} else {
+                //Vec::default()
+                //}
+                //};
+
+                crate::searcher::Excerpt {
+                    text,
+                    highlight_ranges,
+                    //internal_annotations,
+                    score,
+                    fields,
+                }
+            })
+            .collect();
 
         excerpts.sort_by_key(|e| -(e.score as i16));
         excerpts.truncate(options.excerpts_per_result as usize);
@@ -373,8 +356,7 @@ impl OutputResult {
             .filter(|&ie| ie.source == WordListSource::Title)
             .map(|ie| {
                 let space_offset = if ie.word_index == 0 { 0 } else { 1 };
-                let beginning = split_title[0..ie.word_index].join(" ").len()
-                    + space_offset;
+                let beginning = split_title[0..ie.word_index].join(" ").len() + space_offset;
                 HighlightRange {
                     beginning,
                     end: beginning + ie.query.len(),
@@ -419,8 +401,7 @@ mod tests {
 
         let index = Index::try_from(index_bytes.as_slice()).unwrap();
 
-        let generated =
-            search(&index, "liber old world", &Default::default()).unwrap();
+        let generated = search(&index, "liber old world", &Default::default()).unwrap();
         let expected = serde_json::from_str("{\"results\":[{\"entry\":{\"url\":\"https://www.congress.gov/resources/display/content/The+Federalist+Papers#TheFederalistPapers-1\",\"title\":\"Introduction\",\"fields\":{}},\"excerpts\":[{\"text\":\"in many respects the most interesting in the world. It has been frequently remarked that it\",\"highlight_ranges\":[{\"beginning\":45,\"end\":50}],\"score\":128,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"despotic power and hostile to the principles of liberty. An over-scrupulous jealousy of danger to the\",\"highlight_ranges\":[{\"beginning\":48,\"end\":55}],\"score\":125,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"of love, and that the noble enthusiasm of liberty is apt to be infected with a\",\"highlight_ranges\":[{\"beginning\":42,\"end\":49}],\"score\":125,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"of government is essential to the security of liberty; that, in the contemplation of a sound\",\"highlight_ranges\":[{\"beginning\":46,\"end\":53}],\"score\":125,\"internal_annotations\":[],\"fields\":{}},{\"text\":\"that this is the safest course for your liberty, your dignity, and your happiness. I affect\",\"highlight_ranges\":[{\"beginning\":40,\"end\":47}],\"score\":125,\"internal_annotations\":[],\"fields\":{}}],\"title_highlight_ranges\":[],\"score\":128}],\"total_hit_count\":1,\"url_prefix\":\"\"}").unwrap();
 
         assert_eq!(generated, expected, "{:?}", generated);

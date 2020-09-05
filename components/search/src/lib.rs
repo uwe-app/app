@@ -86,16 +86,12 @@ impl SearchIndex {
     }
 
     pub fn search(&self, query: String) -> String {
-        let search_result = searcher::search(
-            &self.index,
-            &self.version,
-            query.as_str(),
-            &self.options,
-        )
-        .and_then(|output| {
-            serde_json::to_string(&output)
-                .map_err(|_e| SearchError::JSONSerializationError)
-        });
+        let search_result =
+            searcher::search(&self.index, &self.version, query.as_str(), &self.options).and_then(
+                |output| {
+                    serde_json::to_string(&output).map_err(|_e| SearchError::JSONSerializationError)
+                },
+            );
 
         match search_result {
             Ok(res) => res,

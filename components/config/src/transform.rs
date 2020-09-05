@@ -52,9 +52,6 @@ impl HtmlTransformFlags {
     }
 
     pub fn is_active(&self) -> bool {
-        self.use_strip_comments()
-            || self.use_auto_id()
-            || self.use_toc()
-            || self.use_words()
+        self.use_strip_comments() || self.use_auto_id() || self.use_toc() || self.use_words()
     }
 }

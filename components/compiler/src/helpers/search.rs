@@ -80,8 +80,7 @@ impl HelperDef for Embed<'_> {
         let id = search_config.id.as_ref().unwrap().to_string();
         let results = search_config.results.as_ref().unwrap();
         let excerpt_buffer = search_config.excerpt_buffer.as_ref().unwrap();
-        let excerpts_per_result =
-            search_config.excerpts_per_result.as_ref().unwrap();
+        let excerpts_per_result = search_config.excerpts_per_result.as_ref().unwrap();
 
         let index_url = search_config.index.as_ref().unwrap();
         let markup = if script {
@@ -98,12 +97,7 @@ impl HelperDef for Embed<'_> {
                             excerpts_per_result: {}
                         }}
                     }});",
-                &id,
-                index_url,
-                &wasm,
-                &results,
-                &excerpt_buffer,
-                &excerpts_per_result,
+                &id, index_url, &wasm, &results, &excerpt_buffer, &excerpts_per_result,
             );
 
             format!(

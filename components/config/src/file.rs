@@ -70,10 +70,7 @@ impl<'a> FileInfo<'a> {
         }
     }
 
-    fn has_parse_file_match<P: AsRef<Path>>(
-        file: P,
-        types: &RenderTypes,
-    ) -> bool {
+    fn has_parse_file_match<P: AsRef<Path>>(file: P, types: &RenderTypes) -> bool {
         let path = file.as_ref();
         let mut copy = path.to_path_buf();
         for ext in types.render() {
@@ -129,11 +126,7 @@ impl<'a> FileInfo<'a> {
         }
     }
 
-    pub fn relative_to<P: AsRef<Path>>(
-        file: P,
-        base: P,
-        target: P,
-    ) -> Result<PathBuf, Error> {
+    pub fn relative_to<P: AsRef<Path>>(file: P, base: P, target: P) -> Result<PathBuf, Error> {
         let f = file.as_ref().canonicalize()?;
         let b = base.as_ref().canonicalize()?;
         let mut t = target.as_ref().to_path_buf();
@@ -142,10 +135,7 @@ impl<'a> FileInfo<'a> {
         Ok(t)
     }
 
-    pub fn get_type<P: AsRef<Path>>(
-        p: P,
-        settings: &ProfileSettings,
-    ) -> FileType {
+    pub fn get_type<P: AsRef<Path>>(p: P, settings: &ProfileSettings) -> FileType {
         let types = &settings.types.as_ref().unwrap();
         let file = p.as_ref();
         if let Some(ext) = file.extension() {
@@ -203,10 +193,7 @@ impl<'a> FileInfo<'a> {
     }
 
     // Build the destination file path and update the file extension.
-    pub fn destination(
-        &mut self,
-        options: &FileOptions,
-    ) -> Result<PathBuf, Error> {
+    pub fn destination(&mut self, options: &FileOptions) -> Result<PathBuf, Error> {
         let pth = self.file.clone();
         let mut result = self.output(options)?;
         if !options.exact {
@@ -226,9 +213,7 @@ impl<'a> FileInfo<'a> {
                     }
 
                     if options.rewrite_index {
-                        if let Some(res) =
-                            FileInfo::rewrite_index_file(pth, &result, types)
-                        {
+                        if let Some(res) = FileInfo::rewrite_index_file(pth, &result, types) {
                             result = res;
                         }
                     }

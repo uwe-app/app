@@ -7,9 +7,7 @@ use serde_json::json;
 
 use collator::{Collate, CollateInfo};
 use config::feed::{ChannelConfig, FeedConfig};
-use config::{
-    Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions,
-};
+use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
 
 //use config::link::{self, LinkOptions};
 
@@ -127,8 +125,7 @@ fn build_feed(
         .filter(|p| !p.is_draft())
         .map(|p| {
             let mut item: Item = Default::default();
-            item.id =
-                base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
+            item.id = base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
             item.url = if let Some(ref permalink) = p.permalink {
                 Some(base_url.join(permalink).unwrap().to_string())
             } else {
@@ -174,34 +171,27 @@ fn build_feed(
 }
 
 // Create feed pages.
-pub fn feed(
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-) -> Result<()> {
+pub fn feed(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref feed) = config.feed {
         for (name, channel) in feed.channels.iter() {
-            let channel_href =
-                channel.target.as_ref().unwrap().trim_start_matches("/");
+            let channel_href = channel.target.as_ref().unwrap().trim_start_matches("/");
             let channel_target = utils::url::to_path_separator(channel_href);
             let source_dir = options.source.join(&channel_target);
 
             // Data is the same for each feed
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
-            data_source.feed =
-                Some(build_feed(name, config, options, info, feed, channel)?);
+            data_source.feed = Some(build_feed(name, config, options, info, feed, channel)?);
 
             for feed_type in channel.types.iter() {
                 let file_name = feed_type.get_name();
                 let source = source_dir.join(&file_name);
 
-                let template =
-                    if let Some(ref tpl) = feed.templates.get(feed_type) {
-                        options.source.join(tpl)
-                    } else {
-                        cache::get_feed_dir()?.join(&file_name)
-                    };
+                let template = if let Some(ref tpl) = feed.templates.get(feed_type) {
+                    options.source.join(tpl)
+                } else {
+                    cache::get_feed_dir()?.join(&file_name)
+                };
 
                 if !template.exists() {
                     return Err(Error::NoFeedTemplate(template));
@@ -229,11 +219,7 @@ pub fn feed(
 }
 
 // Copy search runtime files.
-pub fn search(
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-) -> Result<()> {
+pub fn search(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref search) = config.search {
         let bundle = search.bundle.is_some() && search.bundle.unwrap();
         if bundle {
@@ -244,11 +230,8 @@ pub fn search(
 
             let js_value = search.js.as_ref().unwrap().to_string();
             let wasm_value = search.wasm.as_ref().unwrap().to_string();
-            let js_path =
-                utils::url::to_path_separator(js_value.trim_start_matches("/"));
-            let wasm_path = utils::url::to_path_separator(
-                wasm_value.trim_start_matches("/"),
-            );
+            let js_path = utils::url::to_path_separator(js_value.trim_start_matches("/"));
+            let wasm_path = utils::url::to_path_separator(wasm_value.trim_start_matches("/"));
 
             let js_target = options.target.join(js_path);
             let wasm_target = options.target.join(wasm_path);
@@ -342,10 +325,9 @@ pub fn each(
 
                 if let Some(ref id) = doc.id {
                     // Assign the document to the page data
-                    item_data.extra.insert(
-                        each_query.get_parameter(),
-                        doc.to_value(each_query)?,
-                    );
+                    item_data
+                        .extra
+                        .insert(each_query.get_parameter(), doc.to_value(each_query)?);
 
                     // Mock a source file to build a destination
                     // respecting the clean URL setting
@@ -484,28 +466,13 @@ pub fn pages(
 
                 links.push(link);
 
-                chunks.push((
-                    current,
-                    mock,
-                    file_source,
-                    item_data,
-                    paginate,
-                    items,
-                ));
+                chunks.push((current, mock, file_source, item_data, paginate, items));
             }
 
             let length = chunks.len();
             let upto = 2;
 
-            for (
-                current,
-                mock,
-                file_source,
-                mut item_data,
-                mut paginate,
-                items,
-            ) in chunks
-            {
+            for (current, mock, file_source, mut item_data, mut paginate, items) in chunks {
                 let mut page_links = links.clone();
 
                 for (i, v) in page_links.iter_mut().enumerate() {
@@ -513,9 +480,7 @@ pub fn pages(
                     let before: i32 = current as i32 - upto as i32;
                     let before_limit = std::cmp::max(before, 0) as usize;
                     let after_limit = std::cmp::min(after, length - 1);
-                    if (i < current && i >= before_limit)
-                        || (i > current && i <= after_limit)
-                    {
+                    if (i < current && i >= before_limit) || (i > current && i <= after_limit) {
                         v.preserve = true;
                     }
                 }

@@ -6,12 +6,9 @@ use std::fmt;
 
 //use crate::log;
 
-pub fn parse_index_version(
-    index: &IndexFromFile,
-) -> Result<IndexVersion, VersionParseError> {
+pub fn parse_index_version(index: &IndexFromFile) -> Result<IndexVersion, VersionParseError> {
     let (version_size_bytes, rest) = index.split_at(std::mem::size_of::<u64>());
-    let version_size =
-        u64::from_be_bytes(version_size_bytes.try_into().unwrap_or_default());
+    let version_size = u64::from_be_bytes(version_size_bytes.try_into().unwrap_or_default());
     if version_size > 32 {
         return Err(VersionParseError::BadVersionSize(
             version_size,
@@ -71,8 +68,7 @@ pub enum VersionParseError {
 
 impl Error for VersionParseError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        if let VersionParseError::VersionStringUtf8Error(from_utf8_error) = self
-        {
+        if let VersionParseError::VersionStringUtf8Error(from_utf8_error) = self {
             Some(from_utf8_error)
         } else {
             None
@@ -84,8 +80,7 @@ impl fmt::Display for VersionParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let desc: String = match self {
             VersionParseError::FileTooShort => {
-                "Index file too short; could not find a version string."
-                    .to_string()
+                "Index file too short; could not find a version string.".to_string()
             }
 
             VersionParseError::BadVersionSize(size, problem) => format!(
@@ -134,10 +129,7 @@ mod tests {
         let badstring = "bad index".as_bytes();
         let err = parse_index_version(badstring).unwrap_err();
         assert!(
-            err == VersionParseError::BadVersionSize(
-                7089057378828444773,
-                VersionSizeProblem::Long
-            ),
+            err == VersionParseError::BadVersionSize(7089057378828444773, VersionSizeProblem::Long),
             "Bad error type, found {:?}",
             err
         );

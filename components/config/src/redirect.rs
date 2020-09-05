@@ -99,11 +99,7 @@ impl RedirectConfig {
         Ok(())
     }
 
-    fn write_file<P: AsRef<Path>>(
-        &self,
-        location: &str,
-        target: P,
-    ) -> std::io::Result<()> {
+    fn write_file<P: AsRef<Path>>(&self, location: &str, target: P) -> std::io::Result<()> {
         let mut content = String::from("<!doctype html>");
         let body = format!(
             "<body onload=\"document.location.replace('{}');\"></body>",

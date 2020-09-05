@@ -38,11 +38,7 @@ pub fn list() -> Result<()> {
             if status.ok {
                 info!("{} -> {}", name, status.entry.project.display());
             } else {
-                error!(
-                    "{} -> {} [invalid]",
-                    name,
-                    status.entry.project.display()
-                );
+                error!("{} -> {} [invalid]", name, status.entry.project.display());
             }
         }
     }

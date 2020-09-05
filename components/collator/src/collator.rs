@@ -8,15 +8,10 @@ use ignore::{WalkBuilder, WalkState};
 
 use config::indexer::QueryList;
 use config::link::{self, LinkOptions};
-use config::{
-    Config, FileInfo, FileOptions, LocaleMap, LocaleName, Page, RuntimeOptions,
-};
+use config::{Config, FileInfo, FileOptions, LocaleMap, LocaleName, Page, RuntimeOptions};
 
 use super::loader;
-use super::{
-    Collate, CollateInfo, Error, Resource, ResourceKind, ResourceOperation,
-    Result,
-};
+use super::{Collate, CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result};
 
 pub struct CollateRequest<'a> {
     pub config: &'a Config,
@@ -45,8 +40,7 @@ impl CollateResult {
 impl TryInto<CollateInfo> for CollateResult {
     type Error = Error;
     fn try_into(self) -> std::result::Result<CollateInfo, Self::Error> {
-        let lock = Arc::try_unwrap(self.inner)
-            .expect("Collate lock still has multiple owners");
+        let lock = Arc::try_unwrap(self.inner).expect("Collate lock still has multiple owners");
         let info = lock.into_inner()?;
         Ok(info)
     }
@@ -74,8 +68,7 @@ fn get_locale_page_cache(
     locales: &LocaleMap,
     info: &mut CollateInfo,
 ) -> Vec<LocalePage> {
-    let locale_names =
-        locales.map.keys().map(|k| k.as_str()).collect::<Vec<_>>();
+    let locale_names = locales.map.keys().map(|k| k.as_str()).collect::<Vec<_>>();
 
     let mut cache: Vec<LocalePage> = Vec::new();
     //if let Some(ref pages) = info.pages.get(&options.lang) {
@@ -86,10 +79,8 @@ fn get_locale_page_cache(
                 let stem = stem.to_str().unwrap();
                 if is_locale_stem(&locale_names, stem) {
                     let stem_path = Path::new(stem);
-                    let locale_id =
-                        stem_path.extension().unwrap().to_str().unwrap();
-                    let parent_stem =
-                        stem_path.file_stem().unwrap().to_str().unwrap();
+                    let locale_id = stem_path.extension().unwrap().to_str().unwrap();
+                    let parent_stem = stem_path.file_stem().unwrap().to_str().unwrap();
                     let fallback_name = format!("{}.{}", parent_stem, ext);
                     let fallback = path.parent().unwrap().join(fallback_name);
                     let tmp = LocalePage {
@@ -191,20 +182,13 @@ pub async fn localize(
 }
 */
 
-pub async fn walk(
-    req: CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<Vec<Error>> {
+pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<Error>> {
     let errors = find(&req, res).await?;
     compute_links(&req, res)?;
     Ok(errors)
 }
 
-pub fn series(
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-) -> Result<()> {
+pub fn series(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo) -> Result<()> {
     if let Some(ref series) = config.series {
         for (k, v) in series {
             let mut refs: Vec<Arc<PathBuf>> = Vec::new();
@@ -220,10 +204,7 @@ pub fn series(
                     if let Some(ref _page) = info.resolve(&p) {
                         let item = Arc::new(p.clone());
                         if refs.contains(&item) {
-                            return Err(Error::DuplicateSeriesPage(
-                                k.to_string(),
-                                p.to_path_buf(),
-                            ));
+                            return Err(Error::DuplicateSeriesPage(k.to_string(), p.to_path_buf()));
                         }
                         refs.push(item);
                         return Ok(());
@@ -237,10 +218,7 @@ pub fn series(
     Ok(())
 }
 
-fn compute_links(
-    req: &CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<()> {
+fn compute_links(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<()> {
     let data = Arc::clone(&res.inner);
     let mut info = data.lock().unwrap();
 
@@ -274,11 +252,7 @@ pub fn get_destination(
     Ok(info.destination(&file_opts)?)
 }
 
-pub fn link(
-    info: &mut CollateInfo,
-    source: Arc<PathBuf>,
-    href: Arc<String>,
-) -> Result<()> {
+pub fn link(info: &mut CollateInfo, source: Arc<PathBuf>, href: Arc<String>) -> Result<()> {
     if let Some(existing) = info.links.reverse.get(&href) {
         return Err(Error::LinkCollision(
             href.to_string(),
@@ -388,8 +362,7 @@ fn add_page(
         for (name, cfg) in feed.channels.iter() {
             let href = page_info.href.as_ref().unwrap();
             if cfg.matcher.filter(href) {
-                let items =
-                    info.feeds.entry(name.to_string()).or_insert(vec![]);
+                let items = info.feeds.entry(name.to_string()).or_insert(vec![]);
                 items.push(Arc::clone(key));
             }
         }
@@ -480,21 +453,14 @@ fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
     kind
 }
 
-fn add_other(
-    req: &CollateRequest<'_>,
-    info: &mut CollateInfo,
-    key: &Arc<PathBuf>,
-) -> Result<()> {
+fn add_other(req: &CollateRequest<'_>, info: &mut CollateInfo, key: &Arc<PathBuf>) -> Result<()> {
     let pth = key.to_path_buf();
     let dest = get_destination(&pth, req.config, req.options)?;
     let href = href(&pth, req.options, false, None)?;
     Ok(add_file(key, dest, href, info, req.config, req.options)?)
 }
 
-async fn find(
-    req: &CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<Vec<Error>> {
+async fn find(req: &CollateRequest<'_>, res: &mut CollateResult) -> Result<Vec<Error>> {
     //let mut errors: Vec<Error> = Vec::new();
 
     let (tx, rx) = channel::unbounded();
@@ -526,11 +492,9 @@ async fn find(
                         return WalkState::Continue;
                     }
 
-                    let is_data_source =
-                        key.starts_with(req.options.get_data_sources_path());
-                    let is_page = !is_data_source
-                        && path.is_file()
-                        && FileInfo::is_page(&path, req.options);
+                    let is_data_source = key.starts_with(req.options.get_data_sources_path());
+                    let is_page =
+                        !is_data_source && path.is_file() && FileInfo::is_page(&path, req.options);
 
                     if is_page {
                         if let Err(e) = add_page(req, &mut *info, &key, &path) {

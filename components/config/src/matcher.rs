@@ -31,10 +31,8 @@ impl GlobPatternMatcher {
     /// Callers should ensure this is done early, eg, when
     /// the configuration data has been loaded.
     pub fn compile(&mut self) {
-        self.include_match =
-            self.includes.iter().map(|g| g.compile_matcher()).collect();
-        self.exclude_match =
-            self.excludes.iter().map(|g| g.compile_matcher()).collect();
+        self.include_match = self.includes.iter().map(|g| g.compile_matcher()).collect();
+        self.exclude_match = self.excludes.iter().map(|g| g.compile_matcher()).collect();
     }
 
     /// Determine if a pattern matches.

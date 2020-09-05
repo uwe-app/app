@@ -60,11 +60,7 @@ impl Locales {
         Ok(res)
     }
 
-    pub fn load(
-        &mut self,
-        config: &Config,
-        options: &RuntimeOptions,
-    ) -> Result<()> {
+    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
         self.loader.load(config, options)
     }
 }
@@ -86,11 +82,7 @@ impl fmt::Debug for LocalesLoader {
 }
 
 impl LocalesLoader {
-    pub fn load(
-        &mut self,
-        config: &Config,
-        options: &RuntimeOptions,
-    ) -> Result<()> {
+    pub fn load(&mut self, config: &Config, options: &RuntimeOptions) -> Result<()> {
         let locales_dir = options.get_locales();
         if locales_dir.exists() && locales_dir.is_dir() {
             if let Some(ref fluent) = config.fluent {
@@ -110,12 +102,9 @@ impl LocalesLoader {
         if let Some(core_file) = &fluent.shared {
             let mut core = file.to_path_buf();
             core.push(core_file);
-            return ArcLoader::builder(
-                dir.as_ref(),
-                fluent.fallback_id.clone(),
-            )
-            .shared_resources(Some(&[core]))
-            .build();
+            return ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone())
+                .shared_resources(Some(&[core]))
+                .build();
         }
 
         ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone()).build()

@@ -32,12 +32,7 @@ impl From<&IntermediateEntry> for Entry {
     }
 }
 
-pub fn intermediate(
-    buffer: &str,
-    title: &str,
-    url: &str,
-    fields: Fields,
-) -> IntermediateEntry {
+pub fn intermediate(buffer: &str, title: &str, url: &str, fields: Fields) -> IntermediateEntry {
     // FIXME
     let stem_algorithm = Some(Algorithm::English);
 
@@ -121,14 +116,12 @@ pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
 
         if let Some(stem_algorithm) = entry.stem_algorithm {
             for annotated_word in contents.word_list.iter() {
-                let normalized_word = remove_surrounding_punctuation(
-                    &annotated_word.word.to_lowercase(),
-                );
+                let normalized_word =
+                    remove_surrounding_punctuation(&annotated_word.word.to_lowercase());
                 let stem = Stemmer::create(stem_algorithm)
                     .stem(&normalized_word)
                     .to_string();
-                let stem_vector =
-                    stems.entry(stem).or_insert_with(Vec::default);
+                let stem_vector = stems.entry(stem).or_insert_with(Vec::default);
                 if !stem_vector.contains(&normalized_word) {
                     stem_vector.push(normalized_word);
                 }
@@ -147,8 +140,7 @@ pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
             })
             .collect();
 
-        let words_in_contents: Vec<AnnotatedWord> =
-            entry.contents.word_list.to_owned();
+        let words_in_contents: Vec<AnnotatedWord> = entry.contents.word_list.to_owned();
 
         let word_lists = vec![
             (WordListSource::Title, words_in_title),
@@ -157,9 +149,8 @@ pub fn compile(intermediates: Vec<IntermediateEntry>) -> Index {
 
         for (source, word_list) in word_lists {
             for (word_index, annotated_word) in word_list.iter().enumerate() {
-                let normalized_word = remove_surrounding_punctuation(
-                    &annotated_word.word.to_lowercase(),
-                );
+                let normalized_word =
+                    remove_surrounding_punctuation(&annotated_word.word.to_lowercase());
                 if normalized_word.is_empty() {
                     break;
                 }

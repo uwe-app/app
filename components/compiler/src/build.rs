@@ -37,22 +37,14 @@ impl<'a> Compiler<'a> {
     ) -> Result<Option<ParseData>> {
         match target.operation {
             ResourceOperation::Noop => Ok(None),
-            ResourceOperation::Copy => {
-                run::copy(file, &target.destination).await
-            }
-            ResourceOperation::Link => {
-                run::link(file, &target.destination).await
-            }
+            ResourceOperation::Copy => run::copy(file, &target.destination).await,
+            ResourceOperation::Link => run::link(file, &target.destination).await,
             _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
         }
     }
 
     /// Build a single file, negotiates pages and resource files.
-    pub async fn one(
-        &self,
-        parser: &Parser<'_>,
-        file: &PathBuf,
-    ) -> Result<Option<ParseData>> {
+    pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
         let resource = self.context.collation.get_resource(file).unwrap();
 
         match resource {
@@ -60,13 +52,7 @@ impl<'a> Compiler<'a> {
                 if let Some(page) = self.context.collation.resolve(file) {
                     match target.operation {
                         ResourceOperation::Render => {
-                            run::parse(
-                                self.context,
-                                parser,
-                                page.get_template(),
-                                page,
-                            )
-                            .await
+                            run::parse(self.context, parser, page.get_template(), page).await
                         }
                         _ => self.resource(file, target).await,
                     }
@@ -78,11 +64,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub async fn build(
-        &self,
-        parser: &Parser<'_>,
-        target: &PathBuf,
-    ) -> Result<Vec<ParseData>> {
+    pub async fn build(&self, parser: &Parser<'_>, target: &PathBuf) -> Result<Vec<ParseData>> {
         let parallel = self.context.options.settings.is_parallel();
 
         // Filtering using the starts_with() below allows command line paths
@@ -180,11 +162,7 @@ impl<'a> Compiler<'a> {
     }
 
     // Build all target paths
-    pub async fn all(
-        &self,
-        parser: &Parser<'_>,
-        targets: &Vec<PathBuf>,
-    ) -> Result<Vec<ParseData>> {
+    pub async fn all(&self, parser: &Parser<'_>, targets: &Vec<PathBuf>) -> Result<Vec<ParseData>> {
         //resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
