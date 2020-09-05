@@ -10,6 +10,7 @@ use super::manifest::Manifest;
 pub trait Collate {
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
     fn resolve(&self, key: &PathBuf) -> Option<&Page>;
+    fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
 }
 
 #[derive(Debug)]
@@ -19,13 +20,16 @@ pub struct Collation {
 }
 
 impl Collate for Collation {
-
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
         self.locale.get_resource(key).or(self.fallback.get_resource(key))
     }
 
     fn resolve(&self, key: &PathBuf) -> Option<&Page> {
         self.locale.resolve(key).or(self.fallback.resolve(key))
+    }
+
+    fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
+        Box::new(self.fallback.resources().chain(self.locale.resources()))
     }
 }
 
@@ -179,6 +183,10 @@ impl Collate for CollateInfo {
 
     fn resolve(&self, key: &PathBuf) -> Option<&Page> {
         self.pages.get(key)
+    }
+
+    fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
+        Box::new(self.resources.iter())
     }
 }
 

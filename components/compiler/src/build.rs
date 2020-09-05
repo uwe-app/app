@@ -81,8 +81,7 @@ impl<'a> Compiler<'a> {
         let all = self
             .context
             .collation
-            .resources
-            .iter()
+            .resources()
             .filter(|p| {
                 if !filter_active {
                     return true;
