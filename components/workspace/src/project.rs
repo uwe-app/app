@@ -17,7 +17,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{renderer::Renderer, Error, Result};
+use crate::{collation, renderer::Renderer, Error, Result};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -76,6 +76,10 @@ struct CollationBuilder {
 }
 
 impl CollationBuilder {
+
+    fn get_fallback(&mut self) -> &mut CollateInfo {
+        self.locales.iter_mut().take(1).next().unwrap()
+    }
 
     /// Get mutable iterator over all the locales.
     ///
@@ -219,6 +223,7 @@ impl RenderBuilder {
     /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
+
         // FIXME: restore manifest handling?
         // Set up the manifest for incremental builds
         /*
@@ -235,7 +240,8 @@ impl RenderBuilder {
         let config = &self.context.config;
         let options = &self.context.options;
 
-        let mut fallback = super::collation::collate(&locales.fallback, config, options).await?;
+        let mut fallback = collation::collate(
+            &locales.fallback, config, options).await?;
 
         let languages = locales.map
             .keys()
@@ -243,7 +249,8 @@ impl RenderBuilder {
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
 
-        let mut values = super::collation::extract(&mut fallback, languages, config, options).await?;
+        let mut values = collation::extract(
+            &mut fallback, languages, config, options).await?;
 
         let mut locales = vec![fallback];
         locales.append(&mut values);
@@ -274,73 +281,100 @@ impl RenderBuilder {
 
     /// Load data sources.
     pub async fn load_data(mut self) -> Result<Self> {
+
+        // TODO: how to iterate and store data sources?
+        let collation = self.collations.get_fallback();
+
+        // Set up the cache for data source queries
+        self.cache = DataSourceMap::get_cache();
+
         // Load data sources and create indices
         self.datasource = DataSourceMap::load(
             &self.context.config,
             &self.context.options,
-            &mut self.context.collation,
+            collation,
         )
         .await?;
-
-        // Set up the cache for data source queries
-        self.cache = DataSourceMap::get_cache();
 
         Ok(self)
     }
 
     /// Copy the search runtime files if we need them.
     pub async fn search(mut self) -> Result<Self> {
-        synthetic::search(
-            &self.context.config,
-            &self.context.options,
-            &mut self.context.collation,
-        )?;
+        for collation in self.collations.iter_mut() {
+            synthetic::search(
+                &self.context.config,
+                &self.context.options,
+                collation
+            )?;
+        }
+
         Ok(self)
     }
 
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
-        synthetic::feed(
-            &self.context.config,
-            &self.context.options,
-            &mut self.context.collation,
-        )?;
+        for collation in self.collations.iter_mut() {
+            synthetic::feed(
+                &self.context.config,
+                &self.context.options,
+                collation
+            )?;
+        }
         Ok(self)
     }
 
+    /// Collate series data.
+    pub async fn series(mut self) -> Result<Self> {
+        for collation in self.collations.iter_mut() {
+            collator::series(
+                &self.context.config,
+                &self.context.options,
+                collation)?;
+        }
+        Ok(self)
+    }
+
+
     /// Perform pagination.
     pub async fn pages(mut self) -> Result<Self> {
-        synthetic::pages(
-            &self.context.config,
-            &self.context.options,
-            &mut self.context.collation,
-            &self.datasource,
-            &mut self.cache,
-        )?;
+        for collation in self.collations.iter_mut() {
+            synthetic::pages(
+                &self.context.config,
+                &self.context.options,
+                collation,
+                &self.datasource,
+                &mut self.cache,
+            )?;
+        }
         Ok(self)
     }
 
     /// Create collation entries for data source iterators.
     pub async fn each(mut self) -> Result<Self> {
-        synthetic::each(
-            &self.context.config,
-            &self.context.options,
-            &mut self.context.collation,
-            &self.datasource,
-            &mut self.cache,
-        )?;
+        for collation in self.collations.iter_mut() {
+            synthetic::each(
+                &self.context.config,
+                &self.context.options,
+                collation,
+                &self.datasource,
+                &mut self.cache,
+            )?;
+        }
         Ok(self)
     }
 
     /// Create collation entries for data source assignments.
     pub async fn assign(mut self) -> Result<Self> {
-        synthetic::assign(
-            &self.context.config,
-            &self.context.options,
-            &mut self.context.collation,
-            &self.datasource,
-            &mut self.cache,
-        )?;
+        for collation in self.collations.iter_mut() {
+            synthetic::assign(
+                &self.context.config,
+                &self.context.options,
+                collation,
+                &self.datasource,
+                &mut self.cache,
+            )?;
+        }
         Ok(self)
     }
 
@@ -363,14 +397,13 @@ impl RenderBuilder {
     pub fn build(mut self) -> Result<Render> {
 
         // Temp
-        //let collation = self.collations.locales.into_iter().take(1).next().unwrap();
-        //self.context.collation = collation;
+        self.context.collation = self.collations.get_fallback().clone();
 
         let context = Arc::new(self.context);
         let sources = Arc::new(self.sources);
 
         // Get a map of collations keyed by locale wrapper
-        let collations = self.collations.build()?;
+        //let collations = self.collations.build()?;
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
         self.targets.iter().try_for_each(|(lang, target)| {
@@ -582,6 +615,7 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
             .load_data().await?
             .search().await?
             .feed().await?
+            .series().await?
             .pages().await?
             .each().await?
             .assign().await?

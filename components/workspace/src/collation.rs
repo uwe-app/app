@@ -30,8 +30,6 @@ pub(crate) async fn collate(locale: &LocaleName, config: &Config, options: &Runt
     )
     .await?;
 
-    // Collate the series data
-    collator::series(&self.context.config, &self.context.options, &mut collation)?;
     */
 
     Ok(collation)
