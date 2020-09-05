@@ -34,7 +34,11 @@ impl HelperDef for Scripts<'_> {
         let scripts = ctx
             .data()
             .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `scripts` helper, invalid page data"))
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `scripts` helper, invalid page data",
+                )
+            })
             .unwrap()
             .get("scripts")
             .and_then(|v| v.as_array());
@@ -43,7 +47,9 @@ impl HelperDef for Scripts<'_> {
         let mut scripts = if let Some(scripts) = scripts {
             scripts
                 .iter()
-                .map(|v| serde_json::from_value::<ScriptFile>(v.clone()).unwrap())
+                .map(|v| {
+                    serde_json::from_value::<ScriptFile>(v.clone()).unwrap()
+                })
                 .collect()
         } else {
             vec![]
@@ -64,7 +70,11 @@ impl HelperDef for Scripts<'_> {
                 .evaluate(ctx, "@root/file.source")?
                 .as_json()
                 .as_str()
-                .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error for `file.source`, string expected",
+                    )
+                })?
                 .to_string();
             let path = Path::new(&base_path);
 
@@ -72,11 +82,18 @@ impl HelperDef for Scripts<'_> {
                 .iter()
                 .map(|script| {
                     let mut tag = script.to_tag();
-                    tag.src = config::link::relative(script.get_source(), path, &opts.source, opts)
-                        .map_err(|_e| {
-                            RenderError::new("Type error for `scripts`, file is outside source!")
-                        })
-                        .unwrap();
+                    tag.src = config::link::relative(
+                        script.get_source(),
+                        path,
+                        &opts.source,
+                        opts,
+                    )
+                    .map_err(|_e| {
+                        RenderError::new(
+                            "Type error for `scripts`, file is outside source!",
+                        )
+                    })
+                    .unwrap();
                     ScriptFile::Tag(tag)
                 })
                 .collect()

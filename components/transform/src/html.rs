@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use lol_html::{
-    doc_comments, element, errors::RewritingError, html_content::ContentType, rewrite_str, text,
-    RewriteStrSettings,
+    doc_comments, element, errors::RewritingError, html_content::ContentType,
+    rewrite_str, text, RewriteStrSettings,
 };
 
 use regex::{Captures, Regex};
@@ -214,7 +214,8 @@ fn rewrite(
 //
 // SEE: https://github.com/cloudflare/lol-html/issues/53
 fn strip_empty_tags(doc: &str) -> String {
-    let strip_re = Regex::new(r"(<code[^>]*></code>|<h[1-6][^>]*></h[1-6]>)").unwrap();
+    let strip_re =
+        Regex::new(r"(<code[^>]*></code>|<h[1-6][^>]*></h[1-6]>)").unwrap();
     strip_re.replace_all(doc, "").to_string()
 }
 
@@ -269,7 +270,11 @@ fn word_replace(doc: &str, text: &TextExtraction) -> Result<String> {
     Ok(res.to_string())
 }
 
-pub fn apply(doc: &str, flags: &HtmlTransformFlags, cache: &mut TransformCache) -> Result<String> {
+pub fn apply(
+    doc: &str,
+    flags: &HtmlTransformFlags,
+    cache: &mut TransformCache,
+) -> Result<String> {
     let mut headings: Vec<String> = Vec::new();
     let mut code_blocks: Vec<String> = Vec::new();
 

@@ -1,18 +1,29 @@
-use std::path::PathBuf;
 use std::convert::TryInto;
+use std::path::PathBuf;
 
 use collator::{CollateInfo, CollateRequest, CollateResult};
 use config::{Config, LocaleMap, RuntimeOptions};
 
 use crate::{Error, Result};
 
-fn get_locale_target(lang: &str, locales: &LocaleMap, base: &PathBuf) -> PathBuf {
-    if locales.multi { base.join(lang) } else { base.clone() }
+fn get_locale_target(
+    lang: &str,
+    locales: &LocaleMap,
+    base: &PathBuf,
+) -> PathBuf {
+    if locales.multi {
+        base.join(lang)
+    } else {
+        base.clone()
+    }
 }
 
 /// Get the default fallback collation.
-pub(crate) async fn collate(locales: &LocaleMap, config: &Config, options: &RuntimeOptions) -> Result<CollateInfo> {
-
+pub(crate) async fn collate(
+    locales: &LocaleMap,
+    config: &Config,
+    options: &RuntimeOptions,
+) -> Result<CollateInfo> {
     let lang = &locales.fallback;
     let path = get_locale_target(lang, locales, &options.base);
 
@@ -50,9 +61,10 @@ pub(crate) async fn extract(
     fallback: &mut CollateInfo,
     languages: Vec<&str>,
     config: &Config,
-    options: &RuntimeOptions) -> Result<Vec<CollateInfo>> {
-
-    let values: Vec<CollateInfo> = languages.iter()
+    options: &RuntimeOptions,
+) -> Result<Vec<CollateInfo>> {
+    let values: Vec<CollateInfo> = languages
+        .iter()
         .map(|lang| {
             let path = get_locale_target(lang, locales, &options.base);
             //println!("Collate for alternative language {:?}", lang);

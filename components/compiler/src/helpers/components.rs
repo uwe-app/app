@@ -24,11 +24,17 @@ impl HelperDef for Components<'_> {
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `file.source`, string expected",
+                )
+            })?
             .to_string();
 
         let template = h.template().ok_or_else(|| {
-            RenderError::new("Type error in `components`, block template expected")
+            RenderError::new(
+                "Type error in `components`, block template expected",
+            )
         })?;
 
         let source_path = PathBuf::from(&base_path);

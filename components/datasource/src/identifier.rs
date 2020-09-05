@@ -11,7 +11,12 @@ pub enum Strategy {
 pub struct ComputeIdentifier {}
 
 impl ComputeIdentifier {
-    pub fn id(strategy: &Strategy, path: &Path, _document: &Value, count: &usize) -> String {
+    pub fn id(
+        strategy: &Strategy,
+        path: &Path,
+        _document: &Value,
+        count: &usize,
+    ) -> String {
         match strategy {
             Strategy::FileName => {
                 if let Some(stem) = path.file_stem() {

@@ -36,7 +36,11 @@ impl HelperDef for Link<'_> {
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `file.source`, string expected",
+                )
+            })?
             .to_string();
 
         //let types = self.context.options.settings.types.as_ref().unwrap();
@@ -47,17 +51,26 @@ impl HelperDef for Link<'_> {
         let mut input = h
             .params()
             .get(0)
-            .ok_or_else(|| RenderError::new("Type error in `link`, expected parameter"))?
+            .ok_or_else(|| {
+                RenderError::new("Type error in `link`, expected parameter")
+            })?
             .value()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error in `link`, expected string parameter"))?;
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `link`, expected string parameter",
+                )
+            })?;
 
         let link_config = self.context.config.link.as_ref().unwrap();
         let include_index = opts.settings.should_include_index();
-        let make_relative = !abs && link_config.relative.is_some() && link_config.relative.unwrap();
+        let make_relative = !abs
+            && link_config.relative.is_some()
+            && link_config.relative.unwrap();
 
-        let passthrough =
-            !input.starts_with("/") || input.starts_with("http:") || input.starts_with("https:");
+        let passthrough = !input.starts_with("/")
+            || input.starts_with("http:")
+            || input.starts_with("https:");
 
         if passthrough {
             out.write(&input)?;

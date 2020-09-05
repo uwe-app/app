@@ -32,7 +32,12 @@ impl Manifest {
         None
     }
 
-    pub fn is_dirty<P: AsRef<Path>, D: AsRef<Path>>(&self, file: P, dest: D, force: bool) -> bool {
+    pub fn is_dirty<P: AsRef<Path>, D: AsRef<Path>>(
+        &self,
+        file: P,
+        dest: D,
+        force: bool,
+    ) -> bool {
         if force || !dest.as_ref().exists() {
             return true;
         }

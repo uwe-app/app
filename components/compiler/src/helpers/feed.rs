@@ -29,7 +29,11 @@ impl HelperDef for Feed<'_> {
             .context
             .options
             .get_canonical_url(&self.context.config, true)
-            .map_err(|_e| RenderError::new("Error in `feed` helper, failed to parse base URL"))?;
+            .map_err(|_e| {
+                RenderError::new(
+                    "Error in `feed` helper, failed to parse base URL",
+                )
+            })?;
 
         let missing_feed = RenderError::new(&format!(
             "Type error for `feed`, missing named feed {}",
@@ -38,7 +42,8 @@ impl HelperDef for Feed<'_> {
 
         if let Some(ref feed) = self.context.config.feed {
             if let Some(ref channel) = feed.channels.get(&name) {
-                let channel_href = channel.target.as_ref().unwrap().trim_start_matches("/");
+                let channel_href =
+                    channel.target.as_ref().unwrap().trim_start_matches("/");
 
                 for feed_type in channel.types.iter() {
                     let file_name = feed_type.get_name();
@@ -47,7 +52,9 @@ impl HelperDef for Feed<'_> {
                     let url = base_url
                         .join(&path)
                         .map_err(|_e| {
-                            RenderError::new("Error in `feed` helper, failed to join URL")
+                            RenderError::new(
+                                "Error in `feed` helper, failed to join URL",
+                            )
                         })?
                         .to_string();
 

@@ -19,7 +19,9 @@ pub enum BundleError {
     #[error("Bundle {0} already exists, use --force to overwrite")]
     BundleExists(PathBuf),
 
-    #[error("Could not execute 'go version', install from https://golang.org/dl/")]
+    #[error(
+        "Could not execute 'go version', install from https://golang.org/dl/"
+    )]
     NoToolChain,
 
     #[error(transparent)]

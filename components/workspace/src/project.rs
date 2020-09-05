@@ -8,10 +8,12 @@ use url::Url;
 
 use cache::CacheComponent;
 //use collator::manifest::Manifest;
-use collator::{Collation, CollateInfo};
+use collator::{CollateInfo, Collation};
 use compiler::{BuildContext, CompileInfo};
 
-use config::{Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions};
+use config::{
+    Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions,
+};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
@@ -61,11 +63,10 @@ impl Entry {
 
         Ok(builder)
     }
-
 }
 
-/// Wrap all the collations in a vector with the guarantee that 
-/// it will never be empty and that the first item is the default 
+/// Wrap all the collations in a vector with the guarantee that
+/// it will never be empty and that the first item is the default
 /// fallback locale.
 #[derive(Debug, Default)]
 struct CollationBuilder {
@@ -73,7 +74,6 @@ struct CollationBuilder {
 }
 
 impl CollationBuilder {
-
     fn get_fallback(&mut self) -> &mut CollateInfo {
         self.locales.iter_mut().take(1).next().unwrap()
     }
@@ -91,15 +91,14 @@ impl CollationBuilder {
         let fallback = self.locales.swap_remove(0);
         let fallback = Arc::new(fallback);
 
-        // Create wrappers for the other locales including 
+        // Create wrappers for the other locales including
         // a pointer to the fallback collation
-        let mut collations: Vec<Collation> = self.locales
+        let mut collations: Vec<Collation> = self
+            .locales
             .into_iter()
-            .map(|info| {
-                Collation {
-                    fallback: Arc::clone(&fallback),
-                    locale: Arc::new(info),
-                } 
+            .map(|info| Collation {
+                fallback: Arc::clone(&fallback),
+                locale: Arc::new(info),
             })
             .collect();
 
@@ -115,9 +114,9 @@ impl CollationBuilder {
 
         //map.insert(default.locale.lang.clone(), default);
         //collations.into_iter()
-            //.for_each(|info| {
-                //map.insert(info.locale.lang.clone(), info); 
-            //});
+        //.for_each(|info| {
+        //map.insert(info.locale.lang.clone(), info);
+        //});
 
         Ok(all)
     }
@@ -140,12 +139,13 @@ impl RenderBuilder {
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
         let source = self.options.source.clone();
-        let paths: Vec<PathBuf> = if let Some(ref paths) = self.options.settings.paths {
-            self.verify(paths)?;
-            paths.clone()
-        } else {
-            vec![source]
-        };
+        let paths: Vec<PathBuf> =
+            if let Some(ref paths) = self.options.settings.paths {
+                self.verify(paths)?;
+                paths.clone()
+            } else {
+                vec![source]
+            };
 
         self.sources = paths;
 
@@ -154,8 +154,7 @@ impl RenderBuilder {
 
     /// Load locale message files (.ftl).
     pub async fn locales(mut self) -> Result<Self> {
-        self.locales
-            .load(&self.config, &self.options)?;
+        self.locales.load(&self.config, &self.options)?;
         let locales = self.locales.get_locale_map(&self.config.lang)?;
         self.options.locales = locales;
         Ok(self)
@@ -166,10 +165,7 @@ impl RenderBuilder {
         let mut components: Vec<CacheComponent> = Vec::new();
 
         if self.config.syntax.is_some() {
-            if self
-                .config
-                .is_syntax_enabled(&self.options.settings.name)
-            {
+            if self.config.is_syntax_enabled(&self.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
                 if !syntax_dir.exists() {
                     components.push(CacheComponent::Syntax);
@@ -178,7 +174,8 @@ impl RenderBuilder {
         }
 
         if let Some(ref search) = self.config.search {
-            let fetch_search_runtime = search.bundle.is_some() && search.bundle.unwrap();
+            let fetch_search_runtime =
+                search.bundle.is_some() && search.bundle.unwrap();
             if fetch_search_runtime {
                 let search_dir = cache::get_search_dir()?;
                 if !search_dir.exists() {
@@ -205,7 +202,6 @@ impl RenderBuilder {
     /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
-
         // FIXME: restore manifest handling?
         // Set up the manifest for incremental builds
         /*
@@ -222,12 +218,12 @@ impl RenderBuilder {
         let config = &self.config;
         let options = &self.options;
 
-        let mut fallback = collation::collate(
-            locales, config, options).await?;
+        let mut fallback = collation::collate(locales, config, options).await?;
 
-        let languages = locales.map
+        let languages = locales
+            .map
             .keys()
-            .filter(|lang| lang != &&locales.fallback )
+            .filter(|lang| lang != &&locales.fallback)
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
 
@@ -236,7 +232,9 @@ impl RenderBuilder {
             &mut fallback,
             languages,
             config,
-            options).await?;
+            options,
+        )
+        .await?;
 
         let mut locales = vec![fallback];
         locales.append(&mut values);
@@ -248,7 +246,6 @@ impl RenderBuilder {
     /// Map redirects from strings to Uris suitable for use
     /// on a local web server.
     pub async fn redirects(mut self) -> Result<Self> {
-
         // Map permalink redirects
         for collation in self.collations.iter_mut() {
             if !collation.permalinks.is_empty() {
@@ -270,7 +267,6 @@ impl RenderBuilder {
 
     /// Load data sources.
     pub async fn load_data(mut self) -> Result<Self> {
-
         // TODO: how to iterate and store data sources?
         let collation = self.collations.get_fallback();
 
@@ -278,12 +274,8 @@ impl RenderBuilder {
         self.cache = DataSourceMap::get_cache();
 
         // Load data sources and create indices
-        self.datasource = DataSourceMap::load(
-            &self.config,
-            &self.options,
-            collation,
-        )
-        .await?;
+        self.datasource =
+            DataSourceMap::load(&self.config, &self.options, collation).await?;
 
         Ok(self)
     }
@@ -291,11 +283,7 @@ impl RenderBuilder {
     /// Copy the search runtime files if we need them.
     pub async fn search(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
-            synthetic::search(
-                &self.config,
-                &self.options,
-                collation
-            )?;
+            synthetic::search(&self.config, &self.options, collation)?;
         }
 
         Ok(self)
@@ -304,11 +292,7 @@ impl RenderBuilder {
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
-            synthetic::feed(
-                &self.config,
-                &self.options,
-                collation
-            )?;
+            synthetic::feed(&self.config, &self.options, collation)?;
         }
         Ok(self)
     }
@@ -316,14 +300,10 @@ impl RenderBuilder {
     /// Collate series data.
     pub async fn series(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
-            collator::series(
-                &self.config,
-                &self.options,
-                collation)?;
+            collator::series(&self.config, &self.options, collation)?;
         }
         Ok(self)
     }
-
 
     /// Perform pagination.
     pub async fn pages(mut self) -> Result<Self> {
@@ -370,10 +350,7 @@ impl RenderBuilder {
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
         if let Some(ref syntax_config) = self.config.syntax {
-            if self
-                .config
-                .is_syntax_enabled(&self.options.settings.name)
-            {
+            if self.config.is_syntax_enabled(&self.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
                 info!("Syntax highlighting on");
                 syntax::setup(&syntax_dir, syntax_config)?;
@@ -383,7 +360,6 @@ impl RenderBuilder {
     }
 
     pub fn build(self) -> Result<Render> {
-
         let sources = Arc::new(self.sources);
         let config = Arc::new(self.config);
         let options = Arc::new(self.options);
@@ -400,7 +376,10 @@ impl RenderBuilder {
                 collation: Arc::new(collation),
             };
 
-            let info = CompileInfo { sources: Arc::clone(&sources), context };
+            let info = CompileInfo {
+                sources: Arc::clone(&sources),
+                context,
+            };
             renderers.insert(lang, Renderer { info });
             Ok::<(), Error>(())
         })?;
@@ -439,9 +418,8 @@ pub struct Render {
 }
 
 impl Render {
-
     pub fn get_fallback_context(&self) -> &BuildContext {
-        &self.get_fallback_renderer().info.context 
+        &self.get_fallback_renderer().info.context
     }
 
     pub fn get_fallback_renderer(&self) -> &Renderer {
@@ -449,8 +427,8 @@ impl Render {
     }
 
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
-        let write_redirects =
-            options.settings.write_redirects.is_some() && options.settings.write_redirects.unwrap();
+        let write_redirects = options.settings.write_redirects.is_some()
+            && options.settings.write_redirects.unwrap();
 
         if write_redirects {
             self.redirects.write(&options.target)?;
@@ -473,14 +451,16 @@ impl Render {
     */
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
-        let output_robots = self.options.settings.robots.is_some() || !sitemaps.is_empty();
+        let output_robots =
+            self.options.settings.robots.is_some() || !sitemaps.is_empty();
 
         if output_robots {
-            let mut robots = if let Some(ref robots) = self.options.settings.robots {
-                robots.clone()
-            } else {
-                Default::default()
-            };
+            let mut robots =
+                if let Some(ref robots) = self.options.settings.robots {
+                    robots.clone()
+                } else {
+                    Default::default()
+                };
 
             robots.sitemaps = sitemaps;
 
@@ -598,7 +578,10 @@ pub struct CompileResult {
 ///
 /// The project may contain workspace members in which case all
 /// member projects will be compiled.
-pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Result<CompileResult> {
+pub async fn compile<P: AsRef<Path>>(
+    project: P,
+    args: &ProfileSettings,
+) -> Result<CompileResult> {
     let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 

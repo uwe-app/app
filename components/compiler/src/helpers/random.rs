@@ -21,14 +21,20 @@ impl HelperDef for Random {
         let list = h
             .params()
             .get(0)
-            .ok_or_else(|| RenderError::new("Type error in `random`, expected parameter"))?
+            .ok_or_else(|| {
+                RenderError::new("Type error in `random`, expected parameter")
+            })?
             .value()
             .as_array()
-            .ok_or_else(|| RenderError::new("Type error in `random`, expected array parameter"))?;
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `random`, expected array parameter",
+                )
+            })?;
 
-        let template = h
-            .template()
-            .ok_or_else(|| RenderError::new("Type error in `random`, block template expected"))?;
+        let template = h.template().ok_or_else(|| {
+            RenderError::new("Type error in `random`, block template expected")
+        })?;
 
         if let Some(element) = list.choose(&mut rand::thread_rng()) {
             let mut local_rc = rc.clone();

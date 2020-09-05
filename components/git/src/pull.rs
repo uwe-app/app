@@ -82,7 +82,8 @@ fn normal_merge(
     let ancestor = repo
         .find_commit(repo.merge_base(local.id(), remote.id())?)?
         .tree()?;
-    let mut idx = repo.merge_trees(&ancestor, &local_tree, &remote_tree, None)?;
+    let mut idx =
+        repo.merge_trees(&ancestor, &local_tree, &remote_tree, None)?;
 
     if idx.has_conflicts() {
         info!("Merge conficts detected...");
@@ -134,7 +135,11 @@ fn do_merge<'a>(
                     &refname,
                     fetch_commit.id(),
                     true,
-                    &format!("Setting {} to {}", remote_branch, fetch_commit.id()),
+                    &format!(
+                        "Setting {} to {}",
+                        remote_branch,
+                        fetch_commit.id()
+                    ),
                 )?;
                 repo.set_head(&refname)?;
                 repo.checkout_head(Some(
@@ -172,6 +177,7 @@ pub fn pull<P: AsRef<Path>>(
 
     let repo = Repository::open(path)?;
     let mut remote = repo.find_remote(remote_name)?;
-    let fetch_commit = do_fetch(&repo, &[remote_branch], &mut remote, &remote_name)?;
+    let fetch_commit =
+        do_fetch(&repo, &[remote_branch], &mut remote, &remote_name)?;
     do_merge(&repo, &remote_branch, fetch_commit)
 }

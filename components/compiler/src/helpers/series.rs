@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 
-use collator::{Collate, SeriesCollate};
 use crate::BuildContext;
+use collator::{Collate, SeriesCollate};
 
 #[derive(Clone, Copy)]
 pub struct Series<'a> {
@@ -24,7 +24,11 @@ impl HelperDef for Series<'_> {
             .evaluate(ctx, "@root/file.source")?
             .as_json()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `file.source`, string expected",
+                )
+            })?
             .to_string();
 
         let path = PathBuf::from(&base_path);
@@ -33,15 +37,21 @@ impl HelperDef for Series<'_> {
             .params()
             .get(0)
             .ok_or_else(|| {
-                RenderError::new("Type error in `series`, expected parameter at index 0")
+                RenderError::new(
+                    "Type error in `series`, expected parameter at index 0",
+                )
             })?
             .value()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error in `series`, expected string parameter"))?;
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `series`, expected string parameter",
+                )
+            })?;
 
-        let template = h
-            .template()
-            .ok_or_else(|| RenderError::new("Type error in `series`, block template expected"))?;
+        let template = h.template().ok_or_else(|| {
+            RenderError::new("Type error in `series`, block template expected")
+        })?;
 
         if let Some(set) = self.context.collation.get_series(name) {
             for p in set {

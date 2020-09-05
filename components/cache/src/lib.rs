@@ -18,7 +18,8 @@ static WORKSPACE_FILE: &str = "workspace.toml";
 static STANDALONE_REPO: &str = "https://github.com/hypertext-live/standalone";
 static STANDALONE_NAME: &str = "standalone";
 
-static DOCUMENTATION_REPO: &str = "https://github.com/hypertext-live/documentation";
+static DOCUMENTATION_REPO: &str =
+    "https://github.com/hypertext-live/documentation";
 static DOCUMENTATION_NAME: &str = "documentation";
 
 static SHORT_CODES_REPO: &str = "https://github.com/hypertext-live/shortcodes";
@@ -33,7 +34,8 @@ static SEARCH_NAME: &str = "search-runtime";
 static FEED_REPO: &str = "https://github.com/hypertext-live/feed";
 static FEED_NAME: &str = "feed";
 
-static VERSION_BASE: &str = "https://raw.githubusercontent.com/hypertext-live/release-";
+static VERSION_BASE: &str =
+    "https://raw.githubusercontent.com/hypertext-live/release-";
 static VERSION_FILE: &str = "/master/version.toml";
 
 static RELEASE_NAME: &str = "release";
@@ -188,7 +190,10 @@ pub fn get_release_bin_dir() -> io::Result<PathBuf> {
     Ok(buf)
 }
 
-pub fn update(prefs: &Preferences, components: Vec<CacheComponent>) -> Result<(), Error> {
+pub fn update(
+    prefs: &Preferences,
+    components: Vec<CacheComponent>,
+) -> Result<(), Error> {
     for c in components {
         match c {
             CacheComponent::Blueprint => {

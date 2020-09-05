@@ -39,6 +39,9 @@ pub async fn launch(
 }
 
 /// Start a server.
-pub async fn start(options: &'static ServerConfig, channels: &mut Channels) -> Result<(), Error> {
+pub async fn start(
+    options: &'static ServerConfig,
+    channels: &mut Channels,
+) -> Result<(), Error> {
     Ok(router::serve(options, channels).await?)
 }

@@ -9,7 +9,9 @@ use collator::{Collate, LinkCollate};
 use compiler::{parser::Parser, CompileInfo, Compiler, ParseData};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
-use search::{compile as compile_index, intermediate, Index, IntermediateEntry};
+use search::{
+    compile as compile_index, intermediate, Index, IntermediateEntry,
+};
 
 use crate::Result;
 
@@ -46,7 +48,8 @@ impl Renderer {
                 info!("Prepare search index ({})", parse_list.len());
                 for parse_data in parse_list {
                     if let Some(ref extraction) = parse_data.extract {
-                        let href = ctx.collation.get_link_source(&parse_data.file);
+                        let href =
+                            ctx.collation.get_link_source(&parse_data.file);
 
                         let buffer = extraction.to_chunk_string();
                         let title = if let Some(ref title) = extraction.title {
@@ -54,7 +57,8 @@ impl Renderer {
                         } else {
                             ""
                         };
-                        let mut url = if let Some(ref href) = href { href } else { "" };
+                        let mut url =
+                            if let Some(ref href) = href { href } else { "" };
 
                         if !include_index && url.ends_with(config::INDEX_HTML) {
                             url = url.trim_end_matches(config::INDEX_HTML);
@@ -64,7 +68,12 @@ impl Renderer {
                             continue;
                         }
 
-                        intermediates.push(intermediate(&buffer, title, url, Default::default()));
+                        intermediates.push(intermediate(
+                            &buffer,
+                            title,
+                            url,
+                            Default::default(),
+                        ));
                     }
                 }
 
@@ -79,7 +88,10 @@ impl Renderer {
         Ok(())
     }
 
-    fn create_site_map(&self, parse_list: &Vec<ParseData>) -> Result<Option<Url>> {
+    fn create_site_map(
+        &self,
+        parse_list: &Vec<ParseData>,
+    ) -> Result<Option<Url>> {
         let ctx = &self.info.context;
 
         let mut res: Option<Url> = None;
@@ -113,7 +125,8 @@ impl Renderer {
                     .filter(|d| !d.file.ends_with("404.html"))
                     .map(|d| {
                         // Get the href to use to build the location
-                        let href = ctx.collation.get_link_source(&d.file).unwrap();
+                        let href =
+                            ctx.collation.get_link_source(&d.file).unwrap();
                         // Get the last modification data from the page
                         let page = ctx.collation.resolve(&d.file).unwrap();
                         // Generate the absolute location
@@ -147,8 +160,10 @@ impl Renderer {
     async fn build<'a>(
         &'a self,
         locales: &'a Locales,
-    ) -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
-
+    ) -> std::result::Result<
+        (Compiler<'_>, Parser<'_>, Vec<ParseData>),
+        compiler::Error,
+    > {
         // When working with multi-lingual sites the target may not exist yet
         let path = self.info.context.collation.get_path();
         if !path.exists() {

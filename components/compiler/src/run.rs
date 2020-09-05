@@ -53,13 +53,19 @@ fn should_minify_html<P: AsRef<Path>>(
     release && html_extension
 }
 
-pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData>> {
+pub async fn copy<'a>(
+    file: &PathBuf,
+    dest: &PathBuf,
+) -> Result<Option<ParseData>> {
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, dest)?;
     Ok(None)
 }
 
-pub async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<Option<ParseData>> {
+pub async fn link<'a>(
+    file: &PathBuf,
+    dest: &PathBuf,
+) -> Result<Option<ParseData>> {
     info!("{} -> {}", file.display(), dest.display());
 
     // NOTE: prevent errors trying to symlink when the target
@@ -134,7 +140,8 @@ pub async fn parse(
 
         if requires_transform {
             let mut cache = transform::cache::TransformCache::new()?;
-            cache.syntax_highlight = Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
+            cache.syntax_highlight =
+                Some(ctx.config.is_syntax_enabled(&ctx.options.settings.name));
 
             cache.text = if use_text {
                 Some(transform::text::TextExtraction::new())

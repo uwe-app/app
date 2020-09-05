@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use collator::LinkCollate;
 use crate::BuildContext;
+use collator::LinkCollate;
 
 fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
     let mut s = s.as_ref().to_string();

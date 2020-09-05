@@ -56,15 +56,19 @@ impl Default for HighlightAssets {
 }
 
 impl HighlightAssets {
-    pub fn from_cache(syntax_bin: &PathBuf, themes_bin: &PathBuf) -> Result<Self> {
-        let syntax_set_file =
-            File::open(syntax_bin).map_err(|_e| Error::SyntaxSetLoad(syntax_bin.clone()))?;
+    pub fn from_cache(
+        syntax_bin: &PathBuf,
+        themes_bin: &PathBuf,
+    ) -> Result<Self> {
+        let syntax_set_file = File::open(syntax_bin)
+            .map_err(|_e| Error::SyntaxSetLoad(syntax_bin.clone()))?;
         let syntax_set: SyntaxSet =
-            from_reader(BufReader::new(syntax_set_file)).map_err(|_e| Error::SyntaxSetParse)?;
-        let theme_set_file =
-            File::open(themes_bin).map_err(|_e| Error::ThemeSetLoad(themes_bin.clone()))?;
-        let theme_set: ThemeSet =
-            from_reader(BufReader::new(theme_set_file)).map_err(|_e| Error::ThemeSetParse)?;
+            from_reader(BufReader::new(syntax_set_file))
+                .map_err(|_e| Error::SyntaxSetParse)?;
+        let theme_set_file = File::open(themes_bin)
+            .map_err(|_e| Error::ThemeSetLoad(themes_bin.clone()))?;
+        let theme_set: ThemeSet = from_reader(BufReader::new(theme_set_file))
+            .map_err(|_e| Error::ThemeSetParse)?;
         Ok(Self {
             syntax_set,
             theme_set,
@@ -100,7 +104,8 @@ fn assets(assets: Option<HighlightAssets>) -> &'static HighlightAssets {
 }
 
 fn lookup() -> &'static HashMap<&'static str, &'static str> {
-    static INSTANCE: OnceCell<HashMap<&'static str, &'static str>> = OnceCell::new();
+    static INSTANCE: OnceCell<HashMap<&'static str, &'static str>> =
+        OnceCell::new();
     INSTANCE.get_or_init(|| {
         let mut lang_lookup = HashMap::new();
         lang_lookup.insert("rust", "rs");
@@ -124,7 +129,12 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
     if config.is_inline() {
         let ts = &assets.theme_set;
 
-        return inline::highlighted_html_for_string(value, ps, syntax, &ts.themes[config.theme()]);
+        return inline::highlighted_html_for_string(
+            value,
+            ps,
+            syntax,
+            &ts.themes[config.theme()],
+        );
     }
 
     //
@@ -132,8 +142,11 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
     //println!("{}", css_for_theme(&ts.themes["base16-ocean.dark"]));
     //println!("{}", &value);
 
-    let mut html_generator =
-        ClassedHTMLGenerator::new_with_class_style(syntax, ps, ClassStyle::Spaced);
+    let mut html_generator = ClassedHTMLGenerator::new_with_class_style(
+        syntax,
+        ps,
+        ClassStyle::Spaced,
+    );
     for line in value.lines() {
         html_generator.parse_html_for_line(&line);
     }

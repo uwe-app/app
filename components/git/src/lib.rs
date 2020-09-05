@@ -6,7 +6,8 @@ use url::Url;
 
 use git2::build::RepoBuilder;
 use git2::{
-    Commit, Cred, ErrorClass, ErrorCode, FetchOptions, IndexAddOption, RemoteCallbacks, Repository,
+    Commit, Cred, ErrorClass, ErrorCode, FetchOptions, IndexAddOption,
+    RemoteCallbacks, Repository,
 };
 
 use log::info;
@@ -35,7 +36,10 @@ static ORIGIN: &str = "origin";
 static GIT_IGNORE: &str = ".gitignore";
 static NODE_MODULES: &str = "node_modules";
 
-pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error> {
+pub fn detached<P: AsRef<Path>>(
+    target: P,
+    repo: Repository,
+) -> Result<(), Error> {
     let git_dir = repo.path();
 
     // Remove the git directory is the easiest
@@ -74,7 +78,8 @@ pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<(), Error
     let tree = new_repo.find_tree(oid)?;
     let parents: &[&Commit] = &[];
 
-    let _commit_id = new_repo.commit(Some("HEAD"), &sig, &sig, message, &tree, parents)?;
+    let _commit_id =
+        new_repo.commit(Some("HEAD"), &sig, &sig, message, &tree, parents)?;
 
     Ok(())
 }
@@ -111,7 +116,8 @@ pub fn clone_ssh<P: AsRef<Path>>(
         if let ErrorClass::Ssh = e.class() {
             // Sadly cannot find a better way to detect this particular error
             if e.message().contains("Wrong passphrase") {
-                let pass = rpassword::read_password_from_tty(Some("Passphrase: "))?;
+                let pass =
+                    rpassword::read_password_from_tty(Some("Passphrase: "))?;
                 return clone_ssh(src, target, key_file.clone(), Some(pass));
             }
         }
@@ -120,7 +126,10 @@ pub fn clone_ssh<P: AsRef<Path>>(
     result.map_err(Error::from)
 }
 
-pub fn clone_standard<P: AsRef<Path>>(src: &str, target: P) -> Result<Repository, Error> {
+pub fn clone_standard<P: AsRef<Path>>(
+    src: &str,
+    target: P,
+) -> Result<Repository, Error> {
     let mut callbacks = RemoteCallbacks::new();
     progress::add_progress_callbacks(&mut callbacks);
 
@@ -133,7 +142,10 @@ pub fn clone_standard<P: AsRef<Path>>(src: &str, target: P) -> Result<Repository
     builder.clone(src, target.as_ref()).map_err(Error::from)
 }
 
-fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
+fn fetch_submodules<P: AsRef<Path>>(
+    repo: &Repository,
+    base: P,
+) -> Result<(), Error> {
     let modules = repo.submodules()?;
     for mut sub in modules {
         sub.sync()?;
@@ -201,7 +213,10 @@ pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
 //Ok(repo)
 //}
 
-pub fn clone_recurse<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, Error> {
+pub fn clone_recurse<P: AsRef<Path>>(
+    from: &str,
+    dir: P,
+) -> Result<Repository, Error> {
     let repo = match Repository::clone_recurse(from, dir) {
         Ok(repo) => repo,
         Err(e) => return Err(Error::from(e)),
@@ -227,7 +242,11 @@ pub fn open_or_clone<P: AsRef<Path>>(
     }
 }
 
-pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P, submodules: bool) -> Result<(), Error> {
+pub fn clone_or_fetch<P: AsRef<Path>>(
+    from: &str,
+    to: P,
+    submodules: bool,
+) -> Result<(), Error> {
     if !to.as_ref().exists() {
         print_clone(from, to.as_ref().clone());
     }
@@ -285,7 +304,8 @@ pub fn create<P: AsRef<Path>>(
 
                     print_clone(&src, target.as_ref().clone());
 
-                    return clone_ssh(src, target, key_file, None).map_err(Error::from);
+                    return clone_ssh(src, target, key_file, None)
+                        .map_err(Error::from);
                 } else {
                     return Err(Error::PrivateKeyRequired);
                 }

@@ -187,7 +187,8 @@ impl QueryList {
         self.to_vec()
             .iter()
             .filter(|q| {
-                (q.each.is_none() || (q.each.is_some() && !q.each.unwrap())) && q.page.is_none()
+                (q.each.is_none() || (q.each.is_some() && !q.each.unwrap()))
+                    && q.page.is_none()
             })
             .map(IndexQuery::clone)
             .collect::<Vec<_>>()
@@ -280,9 +281,13 @@ impl QueryResult {
         if keys {
             if let Some(ref key) = self.key {
                 match key {
-                    KeyResult::Name(ref name) => return Ok(Value::String(name.clone())),
+                    KeyResult::Name(ref name) => {
+                        return Ok(Value::String(name.clone()))
+                    }
                     KeyResult::Value(val) => return Ok(val.clone()),
-                    KeyResult::Full(ref key_val) => return Ok(to_value(key_val.clone())?),
+                    KeyResult::Full(ref key_val) => {
+                        return Ok(to_value(key_val.clone())?)
+                    }
                 }
             }
         }

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use config::indexer::QueryList;
-use config::{Page, RuntimeOptions, LocaleName};
+use config::{LocaleName, Page, RuntimeOptions};
 
 use super::manifest::Manifest;
 
@@ -21,7 +21,6 @@ pub struct Collation {
 
 #[derive(Debug, Default, Clone)]
 pub struct CollateInfo {
-
     /// The language for this collation.
     pub lang: LocaleName,
 
@@ -80,7 +79,9 @@ pub trait Collate {
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
     fn resolve(&self, key: &PathBuf) -> Option<&Page>;
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
-    fn pages(&self) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_>;
+    fn pages(
+        &self,
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_>;
 }
 
 /// Access to the collated series.
@@ -93,7 +94,7 @@ pub trait LayoutCollate {
     /// Get the primary layout.
     fn get_layout(&self) -> Option<Arc<PathBuf>>;
 
-    /// Get all layouts keyed by layout name suitable 
+    /// Get all layouts keyed by layout name suitable
     /// for configuring as templates.
     fn layouts(&self) -> HashMap<String, PathBuf>;
 
@@ -117,13 +118,14 @@ impl LinkCollate for LinkMap {
 }
 
 impl Collate for Collation {
-
     fn get_path(&self) -> &PathBuf {
         self.locale.get_path()
     }
 
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
-        self.locale.get_resource(key).or(self.fallback.get_resource(key))
+        self.locale
+            .get_resource(key)
+            .or(self.fallback.get_resource(key))
     }
 
     fn resolve(&self, key: &PathBuf) -> Option<&Page> {
@@ -133,16 +135,23 @@ impl Collate for Collation {
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
         // The fallback entry will have the same language so no need to iterate both!
         if self.fallback.lang == self.locale.lang {
-            return self.fallback.resources()
+            return self.fallback.resources();
         }
 
-        Box::new(self.fallback.resources.iter().chain(self.locale.resources.iter()))
+        Box::new(
+            self.fallback
+                .resources
+                .iter()
+                .chain(self.locale.resources.iter()),
+        )
     }
 
-    fn pages(&self) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
+    fn pages(
+        &self,
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
         // The fallback entry will have the same language so no need to iterate both!
         if self.fallback.lang == self.locale.lang {
-            return self.fallback.pages()
+            return self.fallback.pages();
         }
 
         Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
@@ -151,7 +160,9 @@ impl Collate for Collation {
 
 impl SeriesCollate for Collation {
     fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
-        self.locale.get_series(key).or(self.fallback.get_series(key))
+        self.locale
+            .get_series(key)
+            .or(self.fallback.get_series(key))
     }
 }
 
@@ -177,7 +188,9 @@ impl LinkCollate for Collation {
     }
 
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
-        self.locale.get_link_source(key).or(self.fallback.get_link_source(key))
+        self.locale
+            .get_link_source(key)
+            .or(self.fallback.get_link_source(key))
     }
 }
 
@@ -246,7 +259,11 @@ pub enum Resource {
 }
 
 impl Resource {
-    pub fn new(destination: PathBuf, kind: ResourceKind, op: ResourceOperation) -> Self {
+    pub fn new(
+        destination: PathBuf,
+        kind: ResourceKind,
+        op: ResourceOperation,
+    ) -> Self {
         let target = ResourceTarget {
             kind,
             destination,
@@ -275,7 +292,6 @@ impl Resource {
 }
 
 impl Collate for CollateInfo {
-
     fn get_path(&self) -> &PathBuf {
         &self.path
     }
@@ -292,7 +308,9 @@ impl Collate for CollateInfo {
         Box::new(self.resources.iter())
     }
 
-    fn pages(&self) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
+    fn pages(
+        &self,
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
         Box::new(self.pages.iter())
     }
 }
@@ -346,7 +364,11 @@ impl LinkCollate for CollateInfo {
 
 impl CollateInfo {
     pub fn new(lang: String, path: PathBuf) -> Self {
-        Self {lang, path, ..Default::default()} 
+        Self {
+            lang,
+            path,
+            ..Default::default()
+        }
     }
 
     pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Page> {
@@ -357,11 +379,14 @@ impl CollateInfo {
         self.pages.get_mut(key)
     }
 
-    pub fn remove_page(&mut self, p: &PathBuf, options: &RuntimeOptions) -> Option<Page> {
+    pub fn remove_page(
+        &mut self,
+        p: &PathBuf,
+        options: &RuntimeOptions,
+    ) -> Option<Page> {
         if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
             self.resources.remove(pos);
         }
         self.pages.remove(p)
     }
 }
-

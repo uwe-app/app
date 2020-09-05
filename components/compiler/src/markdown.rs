@@ -4,7 +4,10 @@ use config::Config;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
-pub fn render_markdown_string(content: &mut Cow<str>, config: &Config) -> String {
+pub fn render_markdown_string(
+    content: &mut Cow<str>,
+    config: &Config,
+) -> String {
     if let Some(ref links) = config.link {
         if let Some(ref catalog_content) = links.catalog_content {
             content.to_mut().push('\n');

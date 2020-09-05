@@ -34,24 +34,31 @@ impl HelperDef for Styles<'_> {
         let styles = ctx
             .data()
             .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `styles` helper, invalid page data"))
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `styles` helper, invalid page data",
+                )
+            })
             .unwrap()
             .get("styles")
             .and_then(|v| v.as_array());
 
         // Use global styles from the settings
-        let mut sheets: Vec<StyleFile> = if let Some(ref styles) = self.context.config.styles {
-            styles.main.clone()
-        } else {
-            vec![]
-        };
+        let mut sheets: Vec<StyleFile> =
+            if let Some(ref styles) = self.context.config.styles {
+                styles.main.clone()
+            } else {
+                vec![]
+            };
 
         // NOTE: Unlike scripts which come beforehand page-level
         // NOTE: styles come afterwards following the principle of specificity
         if let Some(styles) = styles {
             let mut page_styles = styles
                 .iter()
-                .map(|v| serde_json::from_value::<StyleFile>(v.clone()).unwrap())
+                .map(|v| {
+                    serde_json::from_value::<StyleFile>(v.clone()).unwrap()
+                })
                 .collect();
             sheets.append(&mut page_styles);
         }
@@ -65,18 +72,29 @@ impl HelperDef for Styles<'_> {
                 .evaluate(ctx, "@root/file.source")?
                 .as_json()
                 .as_str()
-                .ok_or_else(|| RenderError::new("Type error for `file.source`, string expected"))?
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error for `file.source`, string expected",
+                    )
+                })?
                 .to_string();
             let path = Path::new(&base_path);
 
             sheets
                 .iter()
                 .map(|style| {
-                    let rel = config::link::relative(style.get_source(), path, &opts.source, opts)
-                        .map_err(|_e| {
-                            RenderError::new("Type error for `styles`, file is outside source!")
-                        })
-                        .unwrap();
+                    let rel = config::link::relative(
+                        style.get_source(),
+                        path,
+                        &opts.source,
+                        opts,
+                    )
+                    .map_err(|_e| {
+                        RenderError::new(
+                            "Type error for `styles`, file is outside source!",
+                        )
+                    })
+                    .unwrap();
                     StyleFile::Source(rel)
                 })
                 .collect()
