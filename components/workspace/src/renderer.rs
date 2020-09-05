@@ -5,6 +5,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
+use collator::Collate;
 use compiler::{parser::Parser, CompileInfo, Compiler, ParseData};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;

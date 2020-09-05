@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 
+use collator::Collate;
 use crate::BuildContext;
 
 #[derive(Clone, Copy)]

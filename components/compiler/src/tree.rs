@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{BuildContext, Result};
+use collator::Collate;
 use config::Page;
 
 #[derive(Debug)]

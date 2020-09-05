@@ -11,7 +11,7 @@ use config::link::{self, LinkOptions};
 use config::{Config, FileInfo, FileOptions, LocaleName, LocaleMap, Page, RuntimeOptions};
 
 use super::loader;
-use super::{CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result};
+use super::{Collate, CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result};
 
 pub struct CollateRequest<'a> {
     pub config: &'a Config,

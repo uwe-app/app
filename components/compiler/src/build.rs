@@ -5,12 +5,11 @@ use log::{debug, error};
 
 use book::compiler::BookCompiler;
 
-use collator::{Resource, ResourceOperation, ResourceTarget};
+use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
 
 use crate::context::BuildContext;
 use crate::hook;
 use crate::parser::Parser;
-//use crate::resource;
 use crate::run::{self, ParseData};
 use crate::{Error, Result};
 
@@ -46,7 +45,8 @@ impl<'a> Compiler<'a> {
 
     /// Build a single file, negotiates pages and resource files.
     pub async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<Option<ParseData>> {
-        let resource = self.context.collation.all.get(file).unwrap();
+        let resource = self.context.collation.get_resource(file).unwrap();
+
         match resource {
             Resource::Page { ref target } => {
                 if let Some(page) = self.context.collation.resolve(file) {
@@ -90,21 +90,21 @@ impl<'a> Compiler<'a> {
                 p.starts_with(target)
             })
             .filter(|p| {
-                if let Some(ref manifest) = self.context.collation.manifest {
-                    if let Some(ref resource) = self.context.collation.all.get(*p) {
-                        match resource {
-                            Resource::Page { ref target } | Resource::File { ref target } => {
-                                let file = p.to_path_buf();
-                                if manifest.exists(&file)
-                                    && !manifest.is_dirty(&file, &target.destination, false)
-                                {
-                                    debug!("[NOOP] {}", file.display());
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
+                //if let Some(ref manifest) = self.context.collation.manifest {
+                    //if let Some(ref resource) = self.context.collation.all.get(*p) {
+                        //match resource {
+                            //Resource::Page { ref target } | Resource::File { ref target } => {
+                                //let file = p.to_path_buf();
+                                //if manifest.exists(&file)
+                                    //&& !manifest.is_dirty(&file, &target.destination, false)
+                                //{
+                                    //debug!("[NOOP] {}", file.display());
+                                    //return false;
+                                //}
+                            //}
+                        //}
+                    //}
+                //}
                 true
             });
 

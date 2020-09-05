@@ -5,7 +5,7 @@ use chrono::prelude::*;
 use jsonfeed::{Feed, Item, VERSION};
 use serde_json::json;
 
-use collator::CollateInfo;
+use collator::{Collate, CollateInfo};
 use config::feed::{ChannelConfig, FeedConfig};
 use config::{Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions};
 
@@ -263,7 +263,7 @@ pub fn search(config: &Config, options: &RuntimeOptions, info: &mut CollateInfo)
 // Assign query results to the page data
 pub fn assign(
     _config: &Config,
-    options: &RuntimeOptions,
+    _options: &RuntimeOptions,
     info: &mut CollateInfo,
     map: &DataSourceMap,
     cache: &mut QueryCache,
@@ -274,7 +274,7 @@ pub fn assign(
             continue;
         }
 
-        let page = info.get_page_mut(p, options).unwrap();
+        let page = info.pages.get_mut(p).unwrap();
         for query in queries.iter() {
             let idx = map.query_index(query, cache)?;
 

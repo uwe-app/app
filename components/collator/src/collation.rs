@@ -7,10 +7,26 @@ use config::{Page, RuntimeOptions, LocaleName};
 
 use super::manifest::Manifest;
 
+pub trait Collate {
+    fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
+    fn resolve(&self, key: &PathBuf) -> Option<&Page>;
+}
+
 #[derive(Debug)]
 pub struct Collation {
     pub fallback: Arc<CollateInfo>,
     pub locale: Arc<CollateInfo>,
+}
+
+impl Collate for Collation {
+
+    fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
+        self.locale.get_resource(key).or(self.fallback.get_resource(key))
+    }
+
+    fn resolve(&self, key: &PathBuf) -> Option<&Page> {
+        self.locale.resolve(key).or(self.fallback.resolve(key))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -155,22 +171,21 @@ pub struct CollateInfo {
     pub manifest: Option<Manifest>,
 }
 
+
+impl Collate for CollateInfo {
+    fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
+        self.all.get(key)
+    }
+
+    fn resolve(&self, key: &PathBuf) -> Option<&Page> {
+        self.pages.get(key)
+    }
+}
+
 impl CollateInfo {
 
     pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Page> {
         &self.pages
-    }
-
-    pub fn resolve(&self, file: &PathBuf) -> Option<&Page> {
-        self.get_page(file)
-    }
-
-    pub fn get_page(&self, key: &PathBuf) -> Option<&Page> {
-        self.pages.get(key)
-    }
-
-    pub fn get_page_mut(&mut self, key: &PathBuf, options: &RuntimeOptions) -> Option<&mut Page> {
-        self.pages.get_mut(key)
     }
 
     pub fn remove_page(&mut self, p: &PathBuf, options: &RuntimeOptions) -> Option<Page> {
