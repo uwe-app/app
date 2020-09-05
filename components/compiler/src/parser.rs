@@ -5,6 +5,7 @@ use log::warn;
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
+use collator::LayoutCollate;
 use config::Page;
 use locale::{Locales, LOCALES};
 
@@ -134,34 +135,15 @@ impl<'a> Parser<'a> {
             }
         }
 
-        // Register the global layout
-        if let Some(ref l) = context.collation.layout {
-            let layout = l.to_path_buf();
-            let layout_name = layout.to_string_lossy().into_owned();
-            handlebars.register_template_file(&layout_name, &layout)?;
-        }
-
-        // Register layouts
-        for (_, l) in context.collation.layouts.iter() {
-            let layout = l.to_path_buf();
-            let layout_name = layout.to_string_lossy().into_owned();
-            handlebars.register_template_file(&layout_name, &layout)?;
+        let layouts = context.collation.layouts();
+        for (name, path) in layouts.iter() {
+            handlebars.register_template_file(name, path)?;
         }
 
         Ok(Parser {
             context,
             handlebars,
         })
-    }
-
-    fn resolve(&self, file: &PathBuf) -> Option<&PathBuf> {
-        if let Some(ref layout) = self.context.collation.layouts.get(file) {
-            return Some(layout);
-        }
-        if let Some(ref layout) = self.context.collation.layout {
-            return Some(layout);
-        }
-        None
     }
 
     fn get_front_matter_config(&self, file: &PathBuf) -> frontmatter::Config {
@@ -196,7 +178,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        let layout = self.resolve(file);
+        let layout = self.context.collation.find_layout(file);
         if let Some(ref layout_path) = layout {
             self.layout(data, layout_path)
         } else {

@@ -7,6 +7,12 @@ use config::{Page, RuntimeOptions, LocaleName};
 
 use super::manifest::Manifest;
 
+fn get_layout(l: &PathBuf) -> (String, PathBuf) {
+    let layout = l.to_path_buf();
+    let name = layout.to_string_lossy().into_owned();
+    (name, layout)
+}
+
 pub trait Collate {
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
     fn resolve(&self, key: &PathBuf) -> Option<&Page>;
@@ -15,6 +21,19 @@ pub trait Collate {
 
 pub trait SeriesCollate {
     fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>>;
+}
+
+pub trait LayoutCollate {
+
+    /// Get the primary layout.
+    fn get_layout(&self) -> Option<Arc<PathBuf>>;
+
+    /// Get all layouts keyed by layout name suitable 
+    /// for configuring as templates.
+    fn layouts(&self) -> HashMap<String, PathBuf>;
+
+    /// Attempt to find a layout for a file path.
+    fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf>;
 }
 
 #[derive(Debug)]
@@ -46,6 +65,22 @@ impl Collate for Collation {
 impl SeriesCollate for Collation {
     fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
         self.locale.get_series(key).or(self.fallback.get_series(key))
+    }
+}
+
+impl LayoutCollate for Collation {
+    fn get_layout(&self) -> Option<Arc<PathBuf>> {
+        self.locale.get_layout().or(self.fallback.get_layout())
+    }
+
+    fn layouts(&self) -> HashMap<String, PathBuf> {
+        // TODO: prefer locale layouts?
+        self.fallback.layouts()
+    }
+
+    fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
+        // TODO: prefer locale layouts?
+        self.fallback.find_layout(key)
     }
 }
 
@@ -180,9 +215,9 @@ pub struct CollateInfo {
     pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
 
     // Custom page specific layouts
-    pub layouts: HashMap<Arc<PathBuf>, PathBuf>,
+    pub(crate) layouts: HashMap<Arc<PathBuf>, PathBuf>,
     // The default layout
-    pub layout: Option<Arc<PathBuf>>,
+    pub(crate) layout: Option<Arc<PathBuf>>,
 
     // TODO: books too!
     pub links: LinkMap,
@@ -209,6 +244,37 @@ impl Collate for CollateInfo {
 impl SeriesCollate for CollateInfo {
     fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
         self.series.get(key)
+    }
+}
+
+impl LayoutCollate for CollateInfo {
+    fn get_layout(&self) -> Option<Arc<PathBuf>> {
+        self.layout.clone()
+    }
+
+    fn layouts(&self) -> HashMap<String, PathBuf> {
+        let mut map = HashMap::new();
+        if let Some(ref layout) = self.get_layout() {
+            let (name, path) = get_layout(&layout.to_path_buf());
+            map.insert(name, path);
+        }
+
+        for (_, layout) in self.layouts.iter() {
+            let (name, path) = get_layout(layout);
+            map.insert(name, path);
+        }
+
+        map
+    }
+
+    fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
+        if let Some(ref layout) = self.layouts.get(key) {
+            return Some(layout);
+        }
+        if let Some(ref layout) = self.layout {
+            return Some(layout);
+        }
+        None
     }
 }
 
