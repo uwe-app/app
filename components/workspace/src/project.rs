@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use log::info;
 
+use futures::TryFutureExt;
 use url::Url;
 
 use cache::CacheComponent;
@@ -347,6 +348,11 @@ impl RenderBuilder {
         Ok(self)
     }
 
+    pub fn has_syntax(&self) -> bool {
+        self.config.syntax.is_some()
+            && self.config.is_syntax_enabled(&self.options.settings.name)
+    }
+
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
         if let Some(ref syntax_config) = self.config.syntax {
@@ -588,22 +594,33 @@ pub async fn compile<P: AsRef<Path>>(
     for entry in project.into_iter() {
         let mut sitemaps: Vec<Url> = Vec::new();
 
-        let state = entry
-            .builder(args)?
-            .sources().await?
-            .locales().await?
-            .fetch().await?
-            .collate().await?
-            .redirects().await?
-            .load_data().await?
-            .search().await?
-            .feed().await?
-            .series().await?
-            .pages().await?
-            .each().await?
-            .assign().await?
-            .syntax().await?
-            .build()?;
+        let builder = entry.builder(args)?;
+        let builder = builder
+            .sources()
+            .and_then(|s| s.locales())
+            .and_then(|s| s.fetch())
+            .and_then(|s| s.collate())
+            .and_then(|s| s.redirects())
+            .and_then(|s| s.load_data())
+            .and_then(|s| s.search())
+            .and_then(|s| s.feed())
+            .and_then(|s| s.series())
+            .and_then(|s| s.pages())
+            .and_then(|s| s.each())
+            .and_then(|s| s.assign())
+            .await?;
+
+        // WARN: If we add the future from syntax() to the chain
+        // WARN: above then the compiler overflows resolving trait
+        // WARN: bounds. The workaround is to await (above) and
+        // WARN: then await again here.
+        let builder = if builder.has_syntax() {
+            builder.syntax().await?
+        } else {
+            builder
+        };
+
+        let state = builder.build()?;
 
         // Renderer is generated for each locale to compile
         for (_lang, renderer) in state.renderers.iter() {
