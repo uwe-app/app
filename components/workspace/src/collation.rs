@@ -1,16 +1,25 @@
+use std::path::PathBuf;
 use std::convert::TryInto;
 
 use collator::{CollateInfo, CollateRequest, CollateResult};
-use config::{Config, LocaleName, RuntimeOptions};
+use config::{Config, LocaleMap, LocaleName, RuntimeOptions};
 
 use crate::{Error, Result};
 
+fn get_locale_target(lang: &str, locales: &LocaleMap, base: &PathBuf) -> PathBuf {
+    if locales.multi { base.join(lang) } else { base.clone() }
+}
+
 /// Get the default fallback collation.
-pub(crate) async fn collate(locale: &LocaleName, config: &Config, options: &RuntimeOptions) -> Result<CollateInfo> {
+pub(crate) async fn collate(locales: &LocaleMap, config: &Config, options: &RuntimeOptions) -> Result<CollateInfo> {
+
+    let lang = &locales.fallback;
+    let path = get_locale_target(lang, locales, &options.base);
+
     // Collate page data for later usage
     let req = CollateRequest { config, options };
 
-    let mut res = CollateResult::new(locale.clone());
+    let mut res = CollateResult::new(lang.to_string(), path);
     let mut errors = collator::walk(req, &mut res).await?;
     if !errors.is_empty() {
         // TODO: print all errors?
@@ -37,6 +46,7 @@ pub(crate) async fn collate(locale: &LocaleName, config: &Config, options: &Runt
 
 /// Take the fallback locale and extract pages for each of the alternative languages.
 pub(crate) async fn extract(
+    locales: &LocaleMap,
     fallback: &mut CollateInfo,
     languages: Vec<&str>,
     config: &Config,
@@ -44,9 +54,10 @@ pub(crate) async fn extract(
 
     let values: Vec<CollateInfo> = languages.iter()
         .map(|lang| {
+            let path = get_locale_target(lang, locales, &options.base);
             //println!("Collate for alternative language {:?}", lang);
             //println!("Using fallback {:?}", &fallback.lang);
-            CollateInfo { lang: lang.to_string(), ..Default::default() }
+            CollateInfo { path, lang: lang.to_string(), ..Default::default() }
         })
         .collect();
 

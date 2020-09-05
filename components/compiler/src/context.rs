@@ -6,12 +6,6 @@ use collator::CollateInfo;
 use config::{Config, LocaleName, RuntimeOptions};
 
 #[derive(Debug, Default)]
-pub struct CompileTarget {
-    pub lang: LocaleName,
-    pub path: PathBuf,
-}
-
-#[derive(Debug, Default)]
 pub struct BuildContext {
     pub config: Config,
     pub options: RuntimeOptions,
@@ -20,7 +14,6 @@ pub struct BuildContext {
 
 #[derive(Debug, Default)]
 pub struct CompileInfo {
-    pub target: Arc<CompileTarget>,
     pub context: Arc<BuildContext>,
     pub sources: Arc<Vec<PathBuf>>,
 }

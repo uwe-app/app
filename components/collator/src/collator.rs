@@ -26,10 +26,11 @@ pub struct CollateResult {
 }
 
 impl CollateResult {
-    pub fn new(lang: LocaleName) -> Self {
+    pub fn new(lang: LocaleName, path: PathBuf) -> Self {
         Self {
             inner: Arc::new(Mutex::new(CollateInfo {
                 lang,
+                path,
                 ..Default::default()
             })),
             errors: Vec::new(),

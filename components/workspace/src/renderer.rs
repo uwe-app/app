@@ -148,8 +148,8 @@ impl Renderer {
         locales: &'a Locales,
     ) -> std::result::Result<(Compiler<'_>, Parser<'_>, Vec<ParseData>), compiler::Error> {
         // When working with multi-lingual sites the target may not exist yet
-        if !self.info.target.path.exists() {
-            fs::create_dir_all(&self.info.target.path)?;
+        if !self.info.context.collation.path.exists() {
+            fs::create_dir_all(&self.info.context.collation.path)?;
         }
 
         let parser = Parser::new(&self.info.context, &locales)?;

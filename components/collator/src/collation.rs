@@ -114,6 +114,9 @@ pub struct CollateInfo {
     /// The language for this collation.
     pub lang: LocaleName,
 
+    /// The target output directory for this collation.
+    pub path: PathBuf,
+
     /// All the resources resulting from a collation.
     pub all: HashMap<Arc<PathBuf>, Resource>,
 

@@ -9,7 +9,7 @@ use url::Url;
 use cache::CacheComponent;
 //use collator::manifest::Manifest;
 use collator::{Collation, CollateInfo};
-use compiler::{BuildContext, CompileInfo, CompileTarget};
+use compiler::{BuildContext, CompileInfo};
 
 use config::{Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions};
 
@@ -125,7 +125,7 @@ impl CollationBuilder {
 pub struct RenderBuilder {
     pub locales: Locales,
     pub sources: Vec<PathBuf>,
-    pub targets: HashMap<LocaleName, Arc<CompileTarget>>,
+    //pub targets: HashMap<LocaleName, Arc<CompileTarget>>,
     pub context: BuildContext,
     pub redirects: RedirectConfig,
     pub datasource: DataSourceMap,
@@ -157,21 +157,21 @@ impl RenderBuilder {
         let locales = self.locales.get_locale_map(&self.context.config.lang)?;
 
         // Set up a compile target for each locale
-        let base_target = &self.context.options.base;
-        for (lang, _) in locales.map.iter() {
-            let target = if locales.multi {
-                CompileTarget {
-                    lang: lang.clone(),
-                    path: base_target.join(lang),
-                }
-            } else {
-                CompileTarget {
-                    lang: lang.clone(),
-                    path: base_target.clone(),
-                }
-            };
-            self.targets.insert(lang.clone(), Arc::new(target));
-        }
+        //let base_target = &self.context.options.base;
+        //for (lang, _) in locales.map.iter() {
+            //let target = if locales.multi {
+                //CompileTarget {
+                    //lang: lang.clone(),
+                    //path: base_target.join(lang),
+                //}
+            //} else {
+                //CompileTarget {
+                    //lang: lang.clone(),
+                    //path: base_target.clone(),
+                //}
+            //};
+            //self.targets.insert(lang.clone(), Arc::new(target));
+        //}
 
         self.context.options.locales = locales;
 
@@ -241,7 +241,7 @@ impl RenderBuilder {
         let options = &self.context.options;
 
         let mut fallback = collation::collate(
-            &locales.fallback, config, options).await?;
+            locales, config, options).await?;
 
         let languages = locales.map
             .keys()
@@ -250,7 +250,11 @@ impl RenderBuilder {
             .collect::<Vec<_>>();
 
         let mut values = collation::extract(
-            &mut fallback, languages, config, options).await?;
+            locales,
+            &mut fallback,
+            languages,
+            config,
+            options).await?;
 
         let mut locales = vec![fallback];
         locales.append(&mut values);
@@ -397,7 +401,7 @@ impl RenderBuilder {
     pub fn build(mut self) -> Result<Render> {
 
         // Temp
-        self.context.collation = self.collations.get_fallback().clone();
+        let collations = vec![self.collations.get_fallback().clone()];
 
         let context = Arc::new(self.context);
         let sources = Arc::new(self.sources);
@@ -406,13 +410,12 @@ impl RenderBuilder {
         //let collations = self.collations.build()?;
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
-        self.targets.iter().try_for_each(|(lang, target)| {
+        collations.iter().try_for_each(|collation| {
             let info = CompileInfo {
-                target: Arc::clone(target),
                 sources: Arc::clone(&sources),
                 context: Arc::clone(&context),
             };
-            renderers.insert(lang.clone(), Renderer { info });
+            renderers.insert(collation.lang.clone(), Renderer { info });
             Ok::<(), Error>(())
         })?;
 
