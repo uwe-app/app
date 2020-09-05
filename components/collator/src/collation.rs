@@ -13,6 +13,10 @@ pub trait Collate {
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
 }
 
+pub trait SeriesCollate {
+    fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>>;
+}
+
 #[derive(Debug)]
 pub struct Collation {
     pub fallback: Arc<CollateInfo>,
@@ -36,6 +40,12 @@ impl Collate for Collation {
         }
 
         Box::new(self.fallback.resources.iter().chain(self.locale.resources.iter()))
+    }
+}
+
+impl SeriesCollate for Collation {
+    fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
+        self.locale.get_series(key).or(self.fallback.get_series(key))
     }
 }
 
@@ -196,7 +206,14 @@ impl Collate for CollateInfo {
     }
 }
 
+impl SeriesCollate for CollateInfo {
+    fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
+        self.series.get(key)
+    }
+}
+
 impl CollateInfo {
+
 
     pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Page> {
         &self.pages

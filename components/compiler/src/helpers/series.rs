@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 
-use collator::Collate;
+use collator::{Collate, SeriesCollate};
 use crate::BuildContext;
 
 #[derive(Clone, Copy)]
@@ -43,7 +43,7 @@ impl HelperDef for Series<'_> {
             .template()
             .ok_or_else(|| RenderError::new("Type error in `series`, block template expected"))?;
 
-        if let Some(set) = self.context.collation.series.get(name) {
+        if let Some(set) = self.context.collation.get_series(name) {
             for p in set {
                 if let Some(li) = self.context.collation.resolve(p) {
                     let mut local_rc = rc.clone();
