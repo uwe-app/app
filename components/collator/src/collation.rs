@@ -13,18 +13,81 @@ fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     (name, layout)
 }
 
+#[derive(Debug)]
+pub struct Collation {
+    pub fallback: Arc<CollateInfo>,
+    pub locale: Arc<CollateInfo>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct CollateInfo {
+
+    /// The language for this collation.
+    pub lang: LocaleName,
+
+    /// The target output directory for this collation.
+    pub path: PathBuf,
+
+    /// All the resources resulting from a collation.
+    pub(crate) all: HashMap<Arc<PathBuf>, Resource>,
+
+    /// Lookup table for all the resources that should
+    /// be processed by the compiler.
+    pub(crate) resources: Vec<Arc<PathBuf>>,
+
+    /// Lookup table for page data resolved by locale identifier and source path.
+    pub pages: HashMap<Arc<PathBuf>, Page>,
+
+    // Pages that have permalinks map the
+    // permalink to the computed href so that
+    // we can configure redirects for permalinks.
+    pub permalinks: HashMap<String, String>,
+
+    // Pages located for feed configurations.
+    //
+    // The hash map key is the key for the feed congfiguration
+    // and each entry is a path that can be used to
+    // locate the page data in `pages`.
+    pub feeds: HashMap<String, Vec<Arc<PathBuf>>>,
+
+    // Store queries for expansion later
+    pub queries: Vec<(QueryList, Arc<PathBuf>)>,
+
+    // List of series
+    pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
+
+    // Custom page specific layouts
+    pub(crate) layouts: HashMap<Arc<PathBuf>, PathBuf>,
+    // The default layout
+    pub(crate) layout: Option<Arc<PathBuf>>,
+
+    // TODO: books too!
+    pub(crate) links: LinkMap,
+
+    // Manifest for incremental builds
+    pub manifest: Option<Manifest>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct LinkMap {
+    pub(crate) sources: HashMap<Arc<PathBuf>, Arc<String>>,
+    pub(crate) reverse: HashMap<Arc<String>, Arc<PathBuf>>,
+}
+
+/// General access to collated data.
 pub trait Collate {
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
     fn resolve(&self, key: &PathBuf) -> Option<&Page>;
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
 }
 
+/// Access to the collated series.
 pub trait SeriesCollate {
     fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>>;
 }
 
+/// Access to the layouts.
 pub trait LayoutCollate {
-
     /// Get the primary layout.
     fn get_layout(&self) -> Option<Arc<PathBuf>>;
 
@@ -36,10 +99,19 @@ pub trait LayoutCollate {
     fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf>;
 }
 
-#[derive(Debug)]
-pub struct Collation {
-    pub fallback: Arc<CollateInfo>,
-    pub locale: Arc<CollateInfo>,
+pub trait LinkCollate {
+    fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>>;
+    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>>;
+}
+
+impl LinkCollate for LinkMap {
+    fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+        self.reverse.get(key)
+    }
+
+    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.sources.get(key)
+    }
 }
 
 impl Collate for Collation {
@@ -81,6 +153,16 @@ impl LayoutCollate for Collation {
     fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
         // TODO: prefer locale layouts?
         self.fallback.find_layout(key)
+    }
+}
+
+impl LinkCollate for Collation {
+    fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+        self.locale.get_link(key).or(self.fallback.get_link(key))
+    }
+
+    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.locale.get_link_source(key).or(self.fallback.get_link_source(key))
     }
 }
 
@@ -177,56 +259,6 @@ impl Resource {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct CollateInfo {
-
-    /// The language for this collation.
-    pub lang: LocaleName,
-
-    /// The target output directory for this collation.
-    pub path: PathBuf,
-
-    /// All the resources resulting from a collation.
-    pub(crate) all: HashMap<Arc<PathBuf>, Resource>,
-
-    /// Lookup table for all the resources that should
-    /// be processed by the compiler.
-    pub(crate) resources: Vec<Arc<PathBuf>>,
-
-    /// Lookup table for page data resolved by locale identifier and source path.
-    pub pages: HashMap<Arc<PathBuf>, Page>,
-
-    // Pages that have permalinks map the
-    // permalink to the computed href so that
-    // we can configure redirects for permalinks.
-    pub permalinks: HashMap<String, String>,
-
-    // Pages located for feed configurations.
-    //
-    // The hash map key is the key for the feed congfiguration
-    // and each entry is a path that can be used to
-    // locate the page data in `pages`.
-    pub feeds: HashMap<String, Vec<Arc<PathBuf>>>,
-
-    // Store queries for expansion later
-    pub queries: Vec<(QueryList, Arc<PathBuf>)>,
-
-    // List of series
-    pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
-
-    // Custom page specific layouts
-    pub(crate) layouts: HashMap<Arc<PathBuf>, PathBuf>,
-    // The default layout
-    pub(crate) layout: Option<Arc<PathBuf>>,
-
-    // TODO: books too!
-    pub links: LinkMap,
-
-    // Manifest for incremental builds
-    pub manifest: Option<Manifest>,
-}
-
-
 impl Collate for CollateInfo {
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
         self.all.get(key)
@@ -278,8 +310,17 @@ impl LayoutCollate for CollateInfo {
     }
 }
 
-impl CollateInfo {
+impl LinkCollate for CollateInfo {
+    fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+        self.links.get_link(key)
+    }
 
+    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.links.get_link_source(key)
+    }
+}
+
+impl CollateInfo {
     pub fn new(lang: String, path: PathBuf) -> Self {
         Self {lang, path, ..Default::default()} 
     }
@@ -296,8 +337,3 @@ impl CollateInfo {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct LinkMap {
-    pub sources: HashMap<Arc<PathBuf>, Arc<String>>,
-    pub reverse: HashMap<Arc<String>, Arc<PathBuf>>,
-}

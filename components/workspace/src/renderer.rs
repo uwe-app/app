@@ -5,7 +5,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::Collate;
+use collator::{Collate, LinkCollate};
 use compiler::{parser::Parser, CompileInfo, Compiler, ParseData};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
@@ -46,7 +46,7 @@ impl Renderer {
                 info!("Prepare search index ({})", parse_list.len());
                 for parse_data in parse_list {
                     if let Some(ref extraction) = parse_data.extract {
-                        let href = ctx.collation.links.sources.get(&parse_data.file);
+                        let href = ctx.collation.get_link_source(&parse_data.file);
 
                         let buffer = extraction.to_chunk_string();
                         let title = if let Some(ref title) = extraction.title {
@@ -113,7 +113,7 @@ impl Renderer {
                     .filter(|d| !d.file.ends_with("404.html"))
                     .map(|d| {
                         // Get the href to use to build the location
-                        let href = ctx.collation.links.sources.get(&d.file).unwrap();
+                        let href = ctx.collation.get_link_source(&d.file).unwrap();
                         // Get the last modification data from the page
                         let page = ctx.collation.resolve(&d.file).unwrap();
                         // Generate the absolute location

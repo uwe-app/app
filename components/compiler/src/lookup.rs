@@ -1,5 +1,7 @@
-use crate::BuildContext;
 use std::path::PathBuf;
+
+use collator::LinkCollate;
+use crate::BuildContext;
 
 fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
     let mut s = s.as_ref().to_string();
@@ -16,18 +18,17 @@ fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
 // Try to find a source file for the given URL
 pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
     let mut key = normalize(ctx, href);
-    if let Some(path) = ctx.collation.links.reverse.get(&key) {
+    if let Some(path) = ctx.collation.get_link(&key) {
         return Some(path.to_path_buf());
     } else {
         // Sometimes we have directory references without a trailing slash
         // so try again with an index page
         key.push('/');
         key.push_str(config::INDEX_HTML);
-        if let Some(path) = ctx.collation.links.reverse.get(&key) {
+        if let Some(path) = ctx.collation.get_link(&key) {
             return Some(path.to_path_buf());
         }
     }
-
     None
 }
 
