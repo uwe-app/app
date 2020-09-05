@@ -57,7 +57,7 @@ pub(crate) async fn extract(
             let path = get_locale_target(lang, locales, &options.base);
             //println!("Collate for alternative language {:?}", lang);
             //println!("Using fallback {:?}", &fallback.lang);
-            CollateInfo { path, lang: lang.to_string(), ..Default::default() }
+            CollateInfo::new(lang.to_string(), path)
         })
         .collect();
 

@@ -152,11 +152,11 @@ pub struct CollateInfo {
     pub path: PathBuf,
 
     /// All the resources resulting from a collation.
-    pub all: HashMap<Arc<PathBuf>, Resource>,
+    pub(crate) all: HashMap<Arc<PathBuf>, Resource>,
 
     /// Lookup table for all the resources that should
     /// be processed by the compiler.
-    pub resources: Vec<Arc<PathBuf>>,
+    pub(crate) resources: Vec<Arc<PathBuf>>,
 
     /// Lookup table for page data resolved by locale identifier and source path.
     pub pages: HashMap<Arc<PathBuf>, Page>,
@@ -177,7 +177,7 @@ pub struct CollateInfo {
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 
     // List of series
-    pub series: HashMap<String, Vec<Arc<PathBuf>>>,
+    pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
 
     // Custom page specific layouts
     pub layouts: HashMap<Arc<PathBuf>, PathBuf>,
@@ -214,6 +214,9 @@ impl SeriesCollate for CollateInfo {
 
 impl CollateInfo {
 
+    pub fn new(lang: String, path: PathBuf) -> Self {
+        Self {lang, path, ..Default::default()} 
+    }
 
     pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Page> {
         &self.pages
