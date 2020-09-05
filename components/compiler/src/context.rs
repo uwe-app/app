@@ -3,18 +3,18 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use collator::CollateInfo;
-use config::{Config, LocaleName, RuntimeOptions};
+use config::{Config, RuntimeOptions};
 
 #[derive(Debug, Default)]
 pub struct BuildContext {
-    pub config: Config,
-    pub options: RuntimeOptions,
-    pub collation: CollateInfo,
+    pub config: Arc<Config>,
+    pub options: Arc<RuntimeOptions>,
+    pub collation: Arc<CollateInfo>,
 }
 
 #[derive(Debug, Default)]
 pub struct CompileInfo {
-    pub context: Arc<BuildContext>,
+    pub context: BuildContext,
     pub sources: Arc<Vec<PathBuf>>,
 }
 

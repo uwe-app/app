@@ -53,11 +53,8 @@ impl Entry {
         };
 
         let builder = RenderBuilder {
-            context: BuildContext {
-                options,
-                config: self.config,
-                ..Default::default()
-            },
+            config: self.config,
+            options,
             redirects,
             ..Default::default()
         };
@@ -89,12 +86,14 @@ impl CollationBuilder {
     }
 
     /// Get a hash map of Arc collations keyed by locale.
-    fn build(mut self) -> Result<HashMap<LocaleName, Collation>> {
-        let mut map: HashMap<LocaleName, Collation> = HashMap::new();
+    fn build(mut self) -> Result<Vec<Collation>> {
+        // Extract the primary fallback collation
         let fallback = self.locales.swap_remove(0);
         let fallback = Arc::new(fallback);
 
-        let collations: Vec<Collation> = self.locales
+        // Create wrappers for the other locales including 
+        // a pointer to the fallback collation
+        let mut collations: Vec<Collation> = self.locales
             .into_iter()
             .map(|info| {
                 Collation {
@@ -104,20 +103,23 @@ impl CollationBuilder {
             })
             .collect();
 
+        // Set up the default collation
         let default = Collation {
             // The primary collation just has a pointer to the fallback
             locale: Arc::clone(&fallback),
             fallback: fallback,
         };
 
-        map.insert(default.locale.lang.clone(), default);
+        let mut all = vec![default];
+        all.append(&mut collations);
 
-        collations.into_iter()
-            .for_each(|info| {
-                map.insert(info.locale.lang.clone(), info); 
-            });
+        //map.insert(default.locale.lang.clone(), default);
+        //collations.into_iter()
+            //.for_each(|info| {
+                //map.insert(info.locale.lang.clone(), info); 
+            //});
 
-        Ok(map)
+        Ok(all)
     }
 }
 
@@ -125,8 +127,8 @@ impl CollationBuilder {
 pub struct RenderBuilder {
     pub locales: Locales,
     pub sources: Vec<PathBuf>,
-    //pub targets: HashMap<LocaleName, Arc<CompileTarget>>,
-    pub context: BuildContext,
+    pub config: Config,
+    pub options: RuntimeOptions,
     pub redirects: RedirectConfig,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
@@ -137,8 +139,8 @@ impl RenderBuilder {
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
-        let source = self.context.options.source.clone();
-        let paths: Vec<PathBuf> = if let Some(ref paths) = self.context.options.settings.paths {
+        let source = self.options.source.clone();
+        let paths: Vec<PathBuf> = if let Some(ref paths) = self.options.settings.paths {
             self.verify(paths)?;
             paths.clone()
         } else {
@@ -153,28 +155,9 @@ impl RenderBuilder {
     /// Load locale message files (.ftl).
     pub async fn locales(mut self) -> Result<Self> {
         self.locales
-            .load(&self.context.config, &self.context.options)?;
-        let locales = self.locales.get_locale_map(&self.context.config.lang)?;
-
-        // Set up a compile target for each locale
-        //let base_target = &self.context.options.base;
-        //for (lang, _) in locales.map.iter() {
-            //let target = if locales.multi {
-                //CompileTarget {
-                    //lang: lang.clone(),
-                    //path: base_target.join(lang),
-                //}
-            //} else {
-                //CompileTarget {
-                    //lang: lang.clone(),
-                    //path: base_target.clone(),
-                //}
-            //};
-            //self.targets.insert(lang.clone(), Arc::new(target));
-        //}
-
-        self.context.options.locales = locales;
-
+            .load(&self.config, &self.options)?;
+        let locales = self.locales.get_locale_map(&self.config.lang)?;
+        self.options.locales = locales;
         Ok(self)
     }
 
@@ -182,11 +165,10 @@ impl RenderBuilder {
     pub async fn fetch(self) -> Result<Self> {
         let mut components: Vec<CacheComponent> = Vec::new();
 
-        if self.context.config.syntax.is_some() {
+        if self.config.syntax.is_some() {
             if self
-                .context
                 .config
-                .is_syntax_enabled(&self.context.options.settings.name)
+                .is_syntax_enabled(&self.options.settings.name)
             {
                 let syntax_dir = cache::get_syntax_dir()?;
                 if !syntax_dir.exists() {
@@ -195,7 +177,7 @@ impl RenderBuilder {
             }
         }
 
-        if let Some(ref search) = self.context.config.search {
+        if let Some(ref search) = self.config.search {
             let fetch_search_runtime = search.bundle.is_some() && search.bundle.unwrap();
             if fetch_search_runtime {
                 let search_dir = cache::get_search_dir()?;
@@ -205,7 +187,7 @@ impl RenderBuilder {
             }
         }
 
-        if self.context.config.feed.is_some() {
+        if self.config.feed.is_some() {
             let feed_dir = cache::get_feed_dir()?;
             if !feed_dir.exists() {
                 components.push(CacheComponent::Feed);
@@ -227,8 +209,8 @@ impl RenderBuilder {
         // FIXME: restore manifest handling?
         // Set up the manifest for incremental builds
         /*
-        let manifest_file = get_manifest_file(&self.context.options);
-        let manifest: Option<Manifest> = if self.context.options.settings.is_incremental() {
+        let manifest_file = get_manifest_file(&self.options);
+        let manifest: Option<Manifest> = if self.options.settings.is_incremental() {
             Some(Manifest::load(&manifest_file)?)
         } else {
             None
@@ -236,9 +218,9 @@ impl RenderBuilder {
         */
 
         // Get a reference to the locale map
-        let locales = &self.context.options.locales;
-        let config = &self.context.config;
-        let options = &self.context.options;
+        let locales = &self.options.locales;
+        let config = &self.config;
+        let options = &self.options;
 
         let mut fallback = collation::collate(
             locales, config, options).await?;
@@ -266,14 +248,17 @@ impl RenderBuilder {
     /// Map redirects from strings to Uris suitable for use
     /// on a local web server.
     pub async fn redirects(mut self) -> Result<Self> {
+
         // Map permalink redirects
-        if !self.context.collation.permalinks.is_empty() {
-            for (permalink, href) in self.context.collation.permalinks.iter() {
-                let key = permalink.to_string();
-                if self.redirects.map.contains_key(&key) {
-                    return Err(Error::RedirectPermalinkCollision(key));
+        for collation in self.collations.iter_mut() {
+            if !collation.permalinks.is_empty() {
+                for (permalink, href) in collation.permalinks.iter() {
+                    let key = permalink.to_string();
+                    if self.redirects.map.contains_key(&key) {
+                        return Err(Error::RedirectPermalinkCollision(key));
+                    }
+                    self.redirects.map.insert(key, href.to_string());
                 }
-                self.redirects.map.insert(key, href.to_string());
             }
         }
 
@@ -294,8 +279,8 @@ impl RenderBuilder {
 
         // Load data sources and create indices
         self.datasource = DataSourceMap::load(
-            &self.context.config,
-            &self.context.options,
+            &self.config,
+            &self.options,
             collation,
         )
         .await?;
@@ -307,8 +292,8 @@ impl RenderBuilder {
     pub async fn search(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
             synthetic::search(
-                &self.context.config,
-                &self.context.options,
+                &self.config,
+                &self.options,
                 collation
             )?;
         }
@@ -320,8 +305,8 @@ impl RenderBuilder {
     pub async fn feed(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
             synthetic::feed(
-                &self.context.config,
-                &self.context.options,
+                &self.config,
+                &self.options,
                 collation
             )?;
         }
@@ -332,8 +317,8 @@ impl RenderBuilder {
     pub async fn series(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
             collator::series(
-                &self.context.config,
-                &self.context.options,
+                &self.config,
+                &self.options,
                 collation)?;
         }
         Ok(self)
@@ -344,8 +329,8 @@ impl RenderBuilder {
     pub async fn pages(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
             synthetic::pages(
-                &self.context.config,
-                &self.context.options,
+                &self.config,
+                &self.options,
                 collation,
                 &self.datasource,
                 &mut self.cache,
@@ -358,8 +343,8 @@ impl RenderBuilder {
     pub async fn each(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
             synthetic::each(
-                &self.context.config,
-                &self.context.options,
+                &self.config,
+                &self.options,
                 collation,
                 &self.datasource,
                 &mut self.cache,
@@ -372,8 +357,8 @@ impl RenderBuilder {
     pub async fn assign(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
             synthetic::assign(
-                &self.context.config,
-                &self.context.options,
+                &self.config,
+                &self.options,
                 collation,
                 &self.datasource,
                 &mut self.cache,
@@ -384,11 +369,10 @@ impl RenderBuilder {
 
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
-        if let Some(ref syntax_config) = self.context.config.syntax {
+        if let Some(ref syntax_config) = self.config.syntax {
             if self
-                .context
                 .config
-                .is_syntax_enabled(&self.context.options.settings.name)
+                .is_syntax_enabled(&self.options.settings.name)
             {
                 let syntax_dir = cache::get_syntax_dir()?;
                 info!("Syntax highlighting on");
@@ -400,39 +384,48 @@ impl RenderBuilder {
 
     pub fn build(mut self) -> Result<Render> {
 
-        // Temp
-        let collations = vec![self.collations.get_fallback().clone()];
-
-        let context = Arc::new(self.context);
         let sources = Arc::new(self.sources);
 
+        let config = Arc::new(self.config);
+        let options = Arc::new(self.options);
+
         // Get a map of collations keyed by locale wrapper
-        //let collations = self.collations.build()?;
+        let collations = self.collations.build()?;
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
-        collations.iter().try_for_each(|collation| {
-            let info = CompileInfo {
-                sources: Arc::clone(&sources),
-                context: Arc::clone(&context),
+        collations.into_iter().try_for_each(|collation| {
+
+            // FIXME TEMP: extract the inner locale
+            let collation = collation.locale;
+
+            let lang = collation.lang.clone();
+
+            let context = BuildContext {
+                config: Arc::clone(&config),
+                options: Arc::clone(&options),
+                collation
             };
-            renderers.insert(collation.lang.clone(), Renderer { info });
+
+            let info = CompileInfo { sources: Arc::clone(&sources), context };
+            renderers.insert(lang, Renderer { info });
             Ok::<(), Error>(())
         })?;
 
         Ok(Render {
+            config,
+            options,
+            renderers,
             locales: self.locales,
             redirects: self.redirects,
             datasource: self.datasource,
             cache: self.cache,
-            context,
-            renderers,
         })
     }
 
     /// Verify the paths are within the site source.
     fn verify(&self, paths: &Vec<PathBuf>) -> Result<()> {
         for p in paths {
-            if !p.starts_with(&self.context.options.source) {
+            if !p.starts_with(&self.options.source) {
                 return Err(Error::OutsideSourceTree(p.clone()));
             }
         }
@@ -442,7 +435,8 @@ impl RenderBuilder {
 
 #[derive(Debug, Default)]
 pub struct Render {
-    pub context: Arc<BuildContext>,
+    pub config: Arc<Config>,
+    pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Locales,
     pub datasource: DataSourceMap,
@@ -451,6 +445,15 @@ pub struct Render {
 }
 
 impl Render {
+
+    pub fn get_fallback_context(&self) -> &BuildContext {
+        &self.get_fallback_renderer().info.context 
+    }
+
+    pub fn get_fallback_renderer(&self) -> &Renderer {
+        self.renderers.get(&self.config.lang).unwrap()
+    }
+
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects =
             options.settings.write_redirects.is_some() && options.settings.write_redirects.unwrap();
@@ -464,9 +467,9 @@ impl Render {
     /*
     pub fn write_manifest(&mut self) -> Result<()> {
         // Write the manifest for incremental builds
-        if let Some(ref mut manifest) = self.context.collation.manifest {
-            let manifest_file = get_manifest_file(&self.context.options);
-            for p in self.context.collation.resources.iter() {
+        if let Some(ref mut manifest) = self.collation.manifest {
+            let manifest_file = get_manifest_file(&self.options);
+            for p in self.collation.resources.iter() {
                 manifest.touch(&p.to_path_buf());
             }
             Manifest::save(&manifest_file, manifest)?;
@@ -476,10 +479,10 @@ impl Render {
     */
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
-        let output_robots = self.context.options.settings.robots.is_some() || !sitemaps.is_empty();
+        let output_robots = self.options.settings.robots.is_some() || !sitemaps.is_empty();
 
         if output_robots {
-            let mut robots = if let Some(ref robots) = self.context.options.settings.robots {
+            let mut robots = if let Some(ref robots) = self.options.settings.robots {
                 robots.clone()
             } else {
                 Default::default()
@@ -490,7 +493,7 @@ impl Render {
             //// NOTE: robots must always be at the root regardless
             //// NOTE: of multi-lingual support so we use `base` rather
             //// NOTE: than the `target`
-            let robots_file = self.context.options.base.join(config::robots::FILE);
+            let robots_file = self.options.base.join(config::robots::FILE);
             utils::fs::write_string(&robots_file, robots.to_string())?;
             info!("Robots {}", robots_file.display());
         }

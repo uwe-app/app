@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::convert::TryInto;
 
 use collator::{CollateInfo, CollateRequest, CollateResult};
-use config::{Config, LocaleMap, LocaleName, RuntimeOptions};
+use config::{Config, LocaleMap, RuntimeOptions};
 
 use crate::{Error, Result};
 

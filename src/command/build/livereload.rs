@@ -63,9 +63,9 @@ pub async fn start<P: AsRef<Path>>(
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
     result.projects.into_iter().try_for_each(|state| {
-        let target = state.context.options.base.clone();
+        let target = state.options.base.clone();
         let redirect_uris = state.redirects.collect()?;
-        let hostname = state.context.config.get_local_host_name(multiple);
+        let hostname = state.config.get_local_host_name(multiple);
         let host = HostConfig::new(
             target,
             hostname,
@@ -84,7 +84,7 @@ pub async fn start<P: AsRef<Path>>(
 
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
-        livereload::write(&state.context.config, &host.directory, &ws_url)?;
+        livereload::write(&state.config, &host.directory, &ws_url)?;
 
         // Configure the live reload relay channels
         let (ws_tx, _rx) = broadcast::channel::<Message>(100);
@@ -103,7 +103,7 @@ pub async fn start<P: AsRef<Path>>(
         hosts.push(host);
 
         // Get the source directory to configure the watcher
-        let source = state.context.options.source.clone();
+        let source = state.options.source.clone();
         // Create a channel to receive the events.
         let (tx, rx) = mpsc::channel();
         // Configure the watcher
@@ -156,15 +156,17 @@ pub async fn start<P: AsRef<Path>>(
                     .expect("Failed to start watcher");
                 info!("Watch {}", w.source.display());
 
-                let context = w.state.context;
+                let context = w.state.get_fallback_context();
+                let locales = &w.state.locales;
+                let datasource = &w.state.datasource;
 
                 // Invalidator wraps the builder receiving filesystem change
                 // notifications and sending messages over the `tx` channel
                 // to connected websockets when necessary
                 //
-                let parser = Parser::new(&context, &w.state.locales).unwrap();
-                let compiler = Compiler::new(&context);
-                let mut invalidator = Invalidator::new(compiler, parser, &w.state.datasource);
+                let parser = Parser::new(context, locales).unwrap();
+                let compiler = Compiler::new(context);
+                let mut invalidator = Invalidator::new(compiler, parser, datasource);
                 let ws_tx = &w.websocket;
 
                 loop {
