@@ -100,7 +100,8 @@ impl Renderer {
             let entries = sitemap.entries.as_ref().unwrap();
 
             // Base canonical URL
-            let base = ctx.options.get_canonical_url(&ctx.config, true)?;
+            let base = ctx.options.get_canonical_url(
+                &ctx.config, Some(self.info.context.collation.get_lang()))?;
 
             // Create the top-level index of all sitemaps
             let folder = sitemap.name.as_ref().unwrap().to_string();

@@ -78,7 +78,6 @@ fn get_locale_page_cache(
         locales.map.keys().map(|k| k.as_str()).collect::<Vec<_>>();
 
     let mut cache: Vec<LocalePage> = Vec::new();
-    //if let Some(ref pages) = info.pages.get(&options.lang) {
     for (path, page) in info.pages.iter() {
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap();
@@ -103,7 +102,6 @@ fn get_locale_page_cache(
             }
         }
     }
-    //}
     cache
 }
 
@@ -417,8 +415,6 @@ pub fn add_page_reference(
     info.all.insert(Arc::clone(key), resource);
     info.resources.push(Arc::clone(key));
 
-    //let lang = options.lang.clone();
-    //let map = info.pages.entry(lang).or_insert(HashMap::new());
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
 }
 

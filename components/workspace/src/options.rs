@@ -113,7 +113,6 @@ fn to_options(
     }
 
     let opts = RuntimeOptions {
-        lang: cfg.lang.clone(),
         project,
         source,
         output: settings.target.clone(),

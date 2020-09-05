@@ -67,11 +67,11 @@ fn build_feed(
     feed_cfg: &FeedConfig,
     channel_cfg: &ChannelConfig,
 ) -> Result<Feed> {
-    let base_url = options.get_canonical_url(config, true)?;
+    let base_url = options.get_canonical_url(config, Some(info.get_lang()))?;
 
     let mut feed: Feed = Default::default();
     feed.version = VERSION.to_string();
-    feed.language = Some(options.lang.clone());
+    feed.language = Some(info.lang.clone());
     feed.home_page_url = Some(base_url.to_string());
 
     if let Some(ref authors) = config.authors {
@@ -208,7 +208,7 @@ pub fn feed(
                 let mut item_data = data_source.clone();
 
                 // Update the feed url for this file
-                let base_url = options.get_canonical_url(config, true)?;
+                let base_url = options.get_canonical_url(config, Some(info.get_lang()))?;
                 if let Some(ref mut feed) = item_data.feed.as_mut() {
                     let path = format!("{}/{}", channel_href, file_name);
                     feed.feed_url = Some(base_url.join(&path)?.to_string());

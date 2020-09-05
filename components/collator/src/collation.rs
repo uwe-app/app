@@ -75,6 +75,7 @@ pub struct LinkMap {
 
 /// General access to collated data.
 pub trait Collate {
+    fn get_lang(&self) -> &str;
     fn get_path(&self) -> &PathBuf;
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
     fn resolve(&self, key: &PathBuf) -> Option<&Page>;
@@ -118,6 +119,10 @@ impl LinkCollate for LinkMap {
 }
 
 impl Collate for Collation {
+    fn get_lang(&self) -> &str {
+        self.locale.get_lang()
+    }
+
     fn get_path(&self) -> &PathBuf {
         self.locale.get_path()
     }
@@ -292,6 +297,10 @@ impl Resource {
 }
 
 impl Collate for CollateInfo {
+    fn get_lang(&self) -> &str {
+        &self.lang
+    }
+
     fn get_path(&self) -> &PathBuf {
         &self.path
     }

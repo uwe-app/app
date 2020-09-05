@@ -420,8 +420,6 @@ impl ProfileSettings {
 
 #[derive(Debug, Clone, Default)]
 pub struct RuntimeOptions {
-    // The current language
-    pub lang: String,
     // Project root
     pub project: PathBuf,
     // Root for the input source files
@@ -443,11 +441,13 @@ impl RuntimeOptions {
     pub fn get_canonical_url(
         &self,
         config: &Config,
-        include_lang: bool,
+        include_lang: Option<&str>,
     ) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
-        if include_lang && self.locales.multi {
-            base = base.join(&self.lang)?;
+        if self.locales.multi {
+            if let Some(lang) = include_lang {
+                base = base.join(lang)?;
+            } 
         }
         Ok(base)
     }

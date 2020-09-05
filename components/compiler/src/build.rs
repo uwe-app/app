@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crossbeam::channel;
-use log::{debug, error};
+use log::error;
 
 use book::compiler::BookCompiler;
 
