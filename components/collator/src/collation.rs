@@ -29,7 +29,13 @@ impl Collate for Collation {
     }
 
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        Box::new(self.fallback.resources().chain(self.locale.resources()))
+        // The fallback entry will have the same language so no need
+        // to iterate both!
+        if self.fallback.lang == self.locale.lang {
+            return Box::new(self.fallback.resources.iter())
+        }
+
+        Box::new(self.fallback.resources.iter().chain(self.locale.resources.iter()))
     }
 }
 
