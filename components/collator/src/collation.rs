@@ -13,7 +13,7 @@ fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     (name, layout)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Collation {
     pub fallback: Arc<CollateInfo>,
     pub locale: Arc<CollateInfo>,
@@ -36,7 +36,7 @@ pub struct CollateInfo {
     pub(crate) resources: Vec<Arc<PathBuf>>,
 
     /// Lookup table for page data resolved by locale identifier and source path.
-    pub pages: HashMap<Arc<PathBuf>, Page>,
+    pub(crate) pages: HashMap<Arc<PathBuf>, Page>,
 
     // Pages that have permalinks map the
     // permalink to the computed href so that
@@ -76,9 +76,11 @@ pub struct LinkMap {
 
 /// General access to collated data.
 pub trait Collate {
+    fn get_path(&self) -> &PathBuf;
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
     fn resolve(&self, key: &PathBuf) -> Option<&Page>;
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
+    fn pages(&self) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_>;
 }
 
 /// Access to the collated series.
@@ -115,6 +117,11 @@ impl LinkCollate for LinkMap {
 }
 
 impl Collate for Collation {
+
+    fn get_path(&self) -> &PathBuf {
+        self.locale.get_path()
+    }
+
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
         self.locale.get_resource(key).or(self.fallback.get_resource(key))
     }
@@ -124,13 +131,21 @@ impl Collate for Collation {
     }
 
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        // The fallback entry will have the same language so no need
-        // to iterate both!
+        // The fallback entry will have the same language so no need to iterate both!
         if self.fallback.lang == self.locale.lang {
-            return Box::new(self.fallback.resources.iter())
+            return self.fallback.resources()
         }
 
         Box::new(self.fallback.resources.iter().chain(self.locale.resources.iter()))
+    }
+
+    fn pages(&self) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
+        // The fallback entry will have the same language so no need to iterate both!
+        if self.fallback.lang == self.locale.lang {
+            return self.fallback.pages()
+        }
+
+        Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
     }
 }
 
@@ -260,6 +275,11 @@ impl Resource {
 }
 
 impl Collate for CollateInfo {
+
+    fn get_path(&self) -> &PathBuf {
+        &self.path
+    }
+
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
         self.all.get(key)
     }
@@ -270,6 +290,10 @@ impl Collate for CollateInfo {
 
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
         Box::new(self.resources.iter())
+    }
+
+    fn pages(&self) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
+        Box::new(self.pages.iter())
     }
 }
 
@@ -327,6 +351,10 @@ impl CollateInfo {
 
     pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Page> {
         &self.pages
+    }
+
+    pub fn get_page_mut(&mut self, key: &PathBuf) -> Option<&mut Page> {
+        self.pages.get_mut(key)
     }
 
     pub fn remove_page(&mut self, p: &PathBuf, options: &RuntimeOptions) -> Option<Page> {

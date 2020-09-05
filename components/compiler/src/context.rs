@@ -2,14 +2,14 @@ use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use collator::CollateInfo;
+use collator::Collation;
 use config::{Config, RuntimeOptions};
 
 #[derive(Debug, Default)]
 pub struct BuildContext {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
-    pub collation: Arc<CollateInfo>,
+    pub collation: Arc<Collation>,
 }
 
 #[derive(Debug, Default)]

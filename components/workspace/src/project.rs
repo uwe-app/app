@@ -394,13 +394,10 @@ impl RenderBuilder {
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
         collations.into_iter().try_for_each(|collation| {
             let lang = collation.locale.lang.clone();
-
-            let collation = collation.locale;
-
             let context = BuildContext {
                 config: Arc::clone(&config),
                 options: Arc::clone(&options),
-                collation
+                collation: Arc::new(collation),
             };
 
             let info = CompileInfo { sources: Arc::clone(&sources), context };

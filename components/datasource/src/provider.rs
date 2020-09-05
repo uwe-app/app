@@ -90,13 +90,13 @@ impl Provider {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
-        let map = &req.collation.pages;
+        //let map = &req.collation.pages;
 
-        stream::iter(map.keys())
-            .filter(|p| future::ready(p.starts_with(req.source)))
+        stream::iter(req.collation.pages())
+            .filter(|(p, _)| future::ready(p.starts_with(req.source)))
             .enumerate()
             .map(Ok)
-            .try_for_each_concurrent(limit, |(count, path)| {
+            .try_for_each_concurrent(limit, |(count, (path, _))| {
                 // Convert the page data to a Value for indexing
                 let data = req.collation.resolve(path).unwrap();
 

@@ -274,7 +274,7 @@ pub fn assign(
             continue;
         }
 
-        let page = info.pages.get_mut(p).unwrap();
+        let page = info.get_page_mut(p).unwrap();
         for query in queries.iter() {
             let idx = map.query_index(query, cache)?;
 

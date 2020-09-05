@@ -83,8 +83,7 @@ pub fn listing<'a>(ctx: &'a BuildContext, list: &'a ListOptions) -> Result<Vec<&
         ////.get(&ctx.options.locales.fallback)
         //.unwrap();
 
-    let keys = ctx.collation.pages
-        .iter()
+    let keys = ctx.collation.pages()
         .filter(|(k, _)| {
             let key_count = k.components().count();
             if key_count == depth + 1 {
