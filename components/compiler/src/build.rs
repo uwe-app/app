@@ -49,7 +49,7 @@ impl<'a> Compiler<'a> {
         let resource = self.context.collation.all.get(file).unwrap();
         match resource {
             Resource::Page { ref target } => {
-                if let Some(page) = self.context.collation.resolve(file, &self.context.options) {
+                if let Some(page) = self.context.collation.resolve(file) {
                     match target.operation {
                         ResourceOperation::Render => {
                             run::parse(self.context, parser, page.get_template(), page).await

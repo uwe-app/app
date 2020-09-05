@@ -382,10 +382,9 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(mut self) -> Result<Render> {
+    pub fn build(self) -> Result<Render> {
 
         let sources = Arc::new(self.sources);
-
         let config = Arc::new(self.config);
         let options = Arc::new(self.options);
 
@@ -394,11 +393,9 @@ impl RenderBuilder {
 
         let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
         collations.into_iter().try_for_each(|collation| {
+            let lang = collation.locale.lang.clone();
 
-            // FIXME TEMP: extract the inner locale
             let collation = collation.locale;
-
-            let lang = collation.lang.clone();
 
             let context = BuildContext {
                 config: Arc::clone(&config),

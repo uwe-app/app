@@ -44,7 +44,7 @@ impl HelperDef for Series<'_> {
 
         if let Some(set) = self.context.collation.series.get(name) {
             for p in set {
-                if let Some(li) = self.context.collation.resolve(p, &self.context.options) {
+                if let Some(li) = self.context.collation.resolve(p) {
                     let mut local_rc = rc.clone();
                     let mut local_ctx = Context::wraps(li)?;
                     if let Some(ref file_ctx) = li.file {

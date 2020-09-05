@@ -95,7 +95,7 @@ fn build_feed(
     let page_paths = info.feeds.get(name).unwrap();
     let mut pages: Vec<&Page> = page_paths
         .iter()
-        .map(|pth| info.resolve(pth, options).unwrap())
+        .map(|pth| info.resolve(pth).unwrap())
         .collect();
 
     pages.sort_by(|a, b| {

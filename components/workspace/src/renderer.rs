@@ -114,7 +114,7 @@ impl Renderer {
                         // Get the href to use to build the location
                         let href = ctx.collation.links.sources.get(&d.file).unwrap();
                         // Get the last modification data from the page
-                        let page = ctx.collation.resolve(&d.file, &ctx.options).unwrap();
+                        let page = ctx.collation.resolve(&d.file).unwrap();
                         // Generate the absolute location
                         let location = base.join(href).unwrap();
                         let lastmod = page.lastmod();
