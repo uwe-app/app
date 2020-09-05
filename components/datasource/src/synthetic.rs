@@ -11,8 +11,6 @@ use config::{
     Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions,
 };
 
-//use config::link::{self, LinkOptions};
-
 use crate::{DataSourceMap, Error, QueryCache, Result};
 
 // Helper to inject synthetic pages.
@@ -34,7 +32,7 @@ fn create_synthetic(
     };
 
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, config, options, &file_info, Some(template))?;
+    page_info.seal(&dest, config, options, &file_info, Some(template), &info.lang)?;
 
     // Configure a link for the synthetic page
     let href = collator::href(&source, options, rewrite_index, None)?;

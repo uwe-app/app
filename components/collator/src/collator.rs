@@ -166,8 +166,7 @@ pub async fn localize(
                 ..Default::default()
             };
             let dest = file_info.destination(&file_opts)?;
-            tmp.seal(&dest, config, options, &file_info, Some(template))?;
-            tmp.set_language(&lang);
+            tmp.seal(&dest, config, options, &file_info, Some(template)), &lang?;
 
             // Ensure we are putting the file in the correct locale specific location
             let locale_target = options.target.join(&lang);
@@ -361,7 +360,7 @@ fn add_page(
     };
 
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, req.config, req.options, &file_info, None)?;
+    page_info.seal(&dest, req.config, req.options, &file_info, None, &info.lang)?;
 
     if let Some(ref layout) = page_info.layout {
         // Register the layout
@@ -418,7 +417,7 @@ pub fn add_page_reference(
     info.all.insert(Arc::clone(key), resource);
     info.resources.push(Arc::clone(key));
 
-    let lang = options.lang.clone();
+    //let lang = options.lang.clone();
     //let map = info.pages.entry(lang).or_insert(HashMap::new());
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
 }
@@ -507,11 +506,6 @@ async fn find(
                 if let Ok(entry) = result {
                     let data = Arc::clone(&res.inner);
                     let mut info = data.lock().unwrap();
-
-                    // Must always have a pages map for the default locale
-                    //info.pages
-                    //.entry(req.config.lang.to_string())
-                    //.or_insert(HashMap::new());
 
                     let path = entry.path();
                     let key = Arc::new(path.to_path_buf());

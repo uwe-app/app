@@ -134,8 +134,7 @@ pub async fn localize(
                 ..Default::default()
             };
             let dest = file_info.destination(&file_opts)?;
-            tmp.seal(&dest, config, options, &file_info, Some(template))?;
-            tmp.set_language(&lang);
+            tmp.seal(&dest, config, options, &file_info, Some(template), &lang)?;
 
             // Ensure we are putting the file in the correct locale specific location
             let locale_target = options.target.join(&lang);

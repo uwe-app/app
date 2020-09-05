@@ -274,8 +274,9 @@ impl Page {
         options: &RuntimeOptions,
         info: &FileInfo,
         template: Option<PathBuf>,
+        lang: &str,
     ) -> Result<(), Error> {
-        self.set_language(&options.lang);
+        self.set_language(lang);
         self.host = Some(config.host.clone());
 
         let template = if let Some(template) = template {
