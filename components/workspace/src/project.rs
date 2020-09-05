@@ -13,7 +13,7 @@ use collator::{CollateInfo, Collation};
 use compiler::{BuildContext, CompileInfo};
 
 use config::{
-    Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions,
+    Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions, syntax::SyntaxConfig
 };
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
@@ -348,19 +348,20 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    pub fn has_syntax(&self) -> bool {
-        self.config.syntax.is_some()
-            && self.config.is_syntax_enabled(&self.options.settings.name)
+    /// Determine if syntax highlighting is enabled.
+    pub fn get_syntax(&self) -> &Option<SyntaxConfig> {
+        if self.config.is_syntax_enabled(&self.options.settings.name) {
+            return &self.config.syntax 
+        }
+        &None
     }
 
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
-        if let Some(ref syntax_config) = self.config.syntax {
-            if self.config.is_syntax_enabled(&self.options.settings.name) {
-                let syntax_dir = cache::get_syntax_dir()?;
-                info!("Syntax highlighting on");
-                syntax::setup(&syntax_dir, syntax_config)?;
-            }
+        if let Some(ref syntax_config) = self.get_syntax() {
+            let syntax_dir = cache::get_syntax_dir()?;
+            info!("Syntax highlighting on");
+            syntax::setup(&syntax_dir, syntax_config)?;
         }
         Ok(self)
     }
@@ -614,7 +615,7 @@ pub async fn compile<P: AsRef<Path>>(
         // WARN: above then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to await (above) and
         // WARN: then await again here.
-        let builder = if builder.has_syntax() {
+        let builder = if builder.get_syntax().is_some() {
             builder.syntax().await?
         } else {
             builder
