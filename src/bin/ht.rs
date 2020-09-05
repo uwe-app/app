@@ -161,7 +161,12 @@ struct InitOpts {
     locales: Option<String>,
 
     /// Private key to use for SSH connections
-    #[structopt(short, long, env = "HT_SSH_PRIVATE_KEY", hide_env_values = true)]
+    #[structopt(
+        short,
+        long,
+        env = "HT_SSH_PRIVATE_KEY",
+        hide_env_values = true
+    )]
     private_key: Option<PathBuf>,
 
     /// Output directory for the project
@@ -476,7 +481,12 @@ async fn process_command(cmd: &Command) {
                 });
             }
 
-            let host = HostConfig::new(args.target.clone(), host.to_owned(), None, None);
+            let host = HostConfig::new(
+                args.target.clone(),
+                host.to_owned(),
+                None,
+                None,
+            );
             let opts = ServerConfig::new_host(host, port.to_owned(), tls);
             let launch = LaunchConfig { open: true };
 
@@ -568,7 +578,9 @@ async fn process_command(cmd: &Command) {
             };
 
             let now = SystemTime::now();
-            match command::build::compile(&project, &mut build_args, fatal).await {
+            match command::build::compile(&project, &mut build_args, fatal)
+                .await
+            {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);

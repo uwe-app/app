@@ -41,7 +41,9 @@ pub fn compute<P: AsRef<Path>>(
     if let Some(ref pages) = config.pages {
         let raw = f.as_ref().to_path_buf();
         if let Ok(rel) = raw.strip_prefix(&opts.source) {
-            let file_key = utils::url::to_href_separator(rel.to_string_lossy().into_owned());
+            let file_key = utils::url::to_href_separator(
+                rel.to_string_lossy().into_owned(),
+            );
             if let Some(file_object) = pages.get(&file_key) {
                 let mut copy = file_object.clone();
                 page.append(&mut copy);
@@ -64,7 +66,9 @@ pub fn compute<P: AsRef<Path>>(
         let file_type = FileInfo::get_type(f.as_ref(), &opts.settings);
         let mut conf: frontmatter::Config = Default::default();
         match file_type {
-            FileType::Markdown => conf = frontmatter::Config::new_markdown(true),
+            FileType::Markdown => {
+                conf = frontmatter::Config::new_markdown(true)
+            }
             FileType::Template => conf = frontmatter::Config::new_html(true),
             _ => {}
         }
@@ -80,7 +84,11 @@ pub fn compute<P: AsRef<Path>>(
     Ok(page)
 }
 
-fn parse_into<P: AsRef<Path>>(file: P, source: String, data: &mut Page) -> Result<()> {
+fn parse_into<P: AsRef<Path>>(
+    file: P,
+    source: String,
+    data: &mut Page,
+) -> Result<()> {
     let mut page: Page = toml::from_str(&source)
         .map_err(|e| Error::FrontMatterParse(file.as_ref().to_path_buf(), e))?;
 

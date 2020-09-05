@@ -18,7 +18,9 @@ use super::Error;
 use super::{Config, FileInfo, RuntimeOptions};
 
 /// Attribute to convert from TOML date time to chronos UTC variant
-pub fn from_toml_datetime<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
+pub fn from_toml_datetime<'de, D>(
+    deserializer: D,
+) -> Result<Option<DateTime<Utc>>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -255,7 +257,11 @@ impl Page {
     // path to a new base destination including the locale id.
     //
     // This should only be called after seal() so we have a file context.
-    pub fn rewrite_target(&mut self, from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
+    pub fn rewrite_target(
+        &mut self,
+        from: &PathBuf,
+        to: &PathBuf,
+    ) -> Result<(), Error> {
         let file_ctx = self.file.as_mut().unwrap();
         file_ctx.target = to.join(file_ctx.target.strip_prefix(from)?);
         Ok(())
@@ -278,7 +284,8 @@ impl Page {
             info.file.clone()
         };
 
-        let mut file_context = FileContext::new(info.file.clone(), output.clone(), template);
+        let mut file_context =
+            FileContext::new(info.file.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
         self.href = Some(self.get_href(&file_context.source, options)?);
@@ -308,7 +315,11 @@ impl Page {
         link::absolute(p.as_ref(), opts, Default::default())
     }
 
-    pub fn compute(&mut self, config: &Config, _opts: &RuntimeOptions) -> Result<(), Error> {
+    pub fn compute(
+        &mut self,
+        config: &Config,
+        _opts: &RuntimeOptions,
+    ) -> Result<(), Error> {
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
         } else {

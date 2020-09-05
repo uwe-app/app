@@ -42,7 +42,8 @@ impl Config {
             )
         });
 
-        toml::from_str(&contents).expect("Config file does not contain proper TOML syntax.")
+        toml::from_str(&contents)
+            .expect("Config file does not contain proper TOML syntax.")
     }
 }
 
@@ -128,7 +129,9 @@ filename = "test/federalist.st"
         let result: Result<Config, Error> = toml::from_str(contents);
 
         match result {
-            Result::Ok(_r) => panic!("Config creation didn't fail with an unknown key"),
+            Result::Ok(_r) => {
+                panic!("Config creation didn't fail with an unknown key")
+            }
             Result::Err(_e) => (),
         }
     }
@@ -142,7 +145,9 @@ files = [{}]
         let result: Result<Config, Error> = toml::from_str(contents);
 
         match result {
-            Result::Ok(_r) => panic!("Config creation didn't fail with an empty file object"),
+            Result::Ok(_r) => {
+                panic!("Config creation didn't fail with an empty file object")
+            }
             Result::Err(_e) => (),
         }
     }

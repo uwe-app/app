@@ -29,7 +29,8 @@ macro_rules! server {
     ) => {
         //let fallback = get_fallback(&$address);
         let default_host: &'static HostConfig = &$opts.default_host;
-        let default_host_route = get_host_filter($address, $opts, default_host, $channels);
+        let default_host_route =
+            get_host_filter($address, $opts, default_host, $channels);
 
         if !$opts.hosts.is_empty() {
             let mut routes = vec![default_host_route];
@@ -60,7 +61,9 @@ macro_rules! router {
             .with(with_server)
             // TODO: use a different rejection handler that returns
             // TODO: internal system error pages
-            .recover(move |e| handle_rejection(e, default_host.directory.clone()));
+            .recover(move |e| {
+                handle_rejection(e, default_host.directory.clone())
+            });
 
         // TODO: get log enabled from server config
         if let Some(ref log) = default_host.log {
@@ -247,7 +250,8 @@ async fn redirect_trailing_slash(
         let mut buf = root.clone();
         buf.push(file_path);
         if buf.is_dir() {
-            let location = format!("{}/", path.as_str()).parse::<Uri>().unwrap();
+            let location =
+                format!("{}/", path.as_str()).parse::<Uri>().unwrap();
             return Ok(Box::new(warp::redirect(location)));
         }
     }
@@ -272,8 +276,10 @@ fn get_static_server(
 
     let disable_cache = host.disable_cache;
 
-    let with_cache_control =
-        warp::reply::with::header("cache-control", "no-cache, no-store, must-revalidate");
+    let with_cache_control = warp::reply::with::header(
+        "cache-control",
+        "no-cache, no-store, must-revalidate",
+    );
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
 
@@ -307,7 +313,10 @@ fn get_static_server(
     static_server.boxed()
 }
 
-pub async fn serve(opts: &'static ServerConfig, channels: &mut Channels) -> crate::Result<()> {
+pub async fn serve(
+    opts: &'static ServerConfig,
+    channels: &mut Channels,
+) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     server!(&addr, opts, channels);
 
@@ -323,7 +332,10 @@ struct ErrorMessage {
 
 // This function receives a `Rejection` and tries to return a custom
 // value, otherwise simply passes the rejection along.
-async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, Infallible> {
+async fn handle_rejection(
+    err: Rejection,
+    root: PathBuf,
+) -> Result<impl Reply, Infallible> {
     let mut code;
     let mut message;
 
@@ -347,7 +359,10 @@ async fn handle_rejection(err: Rejection, root: PathBuf) -> Result<impl Reply, I
     let response;
     if error_file.exists() {
         if let Ok(content) = utils::fs::read_string(&error_file) {
-            return Ok(warp::reply::with_status(warp::reply::html(content), code));
+            return Ok(warp::reply::with_status(
+                warp::reply::html(content),
+                code,
+            ));
         } else {
             code = StatusCode::INTERNAL_SERVER_ERROR;
             message = "ERROR_FILE_READ";

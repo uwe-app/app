@@ -96,8 +96,12 @@ fn write_options<P: AsRef<Path>>(
     let mut redirect: Map<String, Value> = Map::new();
     if has_custom_lang {
         if let Some(ref lang) = language {
-            redirect.insert("/".to_string(), Value::String(format!("/{}/", lang)));
-            site_config.insert(config::REDIRECT_KEY.to_string(), Value::Table(redirect));
+            redirect
+                .insert("/".to_string(), Value::String(format!("/{}/", lang)));
+            site_config.insert(
+                config::REDIRECT_KEY.to_string(),
+                Value::Table(redirect),
+            );
         }
     }
 
@@ -174,7 +178,9 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         let source = if let Some(ref source) = options.source {
             source.clone()
         } else {
-            if let Some(ref source) = prefs.blueprint.as_ref().unwrap().default_path {
+            if let Some(ref source) =
+                prefs.blueprint.as_ref().unwrap().default_path
+            {
                 source.clone()
             } else {
                 "".to_string()

@@ -92,7 +92,10 @@ pub fn collect(
         .collect::<Vec<_>>()
 }
 
-pub fn run(ctx: &BuildContext, hooks: Vec<(String, HookConfig)>) -> Result<(), Error> {
+pub fn run(
+    ctx: &BuildContext,
+    hooks: Vec<(String, HookConfig)>,
+) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
         exec(ctx, &hook)?;

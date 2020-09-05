@@ -3,7 +3,9 @@ use syntect::highlighting::{Color, Theme};
 use syntect::parsing::SyntaxReference;
 use syntect::parsing::SyntaxSet;
 
-use syntect::html::{append_highlighted_html_for_styled_line, IncludeBackground};
+use syntect::html::{
+    append_highlighted_html_for_styled_line, IncludeBackground,
+};
 use syntect::util::LinesWithEndings;
 
 //

@@ -39,8 +39,11 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
 async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
-            if let Some(ref publish_config) = state.config.publish.as_ref().unwrap().aws {
-                if let Some(env) = publish_config.environments.get(&options.env) {
+            if let Some(ref publish_config) =
+                state.config.publish.as_ref().unwrap().aws
+            {
+                if let Some(env) = publish_config.environments.get(&options.env)
+                {
                     let publish_env = env.clone();
 
                     let bucket = if let Some(ref bucket) = env.bucket {
@@ -51,7 +54,8 @@ async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
 
                     info!("Bucket {}", &bucket);
 
-                    let region = publisher::parse_region(&publish_config.region)?;
+                    let region =
+                        publisher::parse_region(&publish_config.region)?;
 
                     let request = PublishRequest {
                         region,
@@ -62,7 +66,9 @@ async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
 
                     publish_aws(state, request, &publish_env).await?
                 } else {
-                    return Err(Error::UnknownPublishEnvironment(options.env.to_string()));
+                    return Err(Error::UnknownPublishEnvironment(
+                        options.env.to_string(),
+                    ));
                 }
             } else {
                 return Err(Error::NoPublishConfiguration);
@@ -81,7 +87,8 @@ async fn publish_aws(
     info!("Building local file list");
 
     // Create the list of local build files
-    let mut file_builder = FileBuilder::new(state.options.base.clone(), env.prefix.clone());
+    let mut file_builder =
+        FileBuilder::new(state.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

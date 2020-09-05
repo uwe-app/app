@@ -25,16 +25,28 @@ impl HelperDef for DateFormat {
         let dt = h
             .params()
             .get(0)
-            .ok_or_else(|| RenderError::new("Type error in `date`, expected date parameter"))?
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `date`, expected date parameter",
+                )
+            })?
             .value();
 
         let fmt = h
             .params()
             .get(1)
-            .ok_or_else(|| RenderError::new("Type error in `date`, expected format parameter"))?
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `date`, expected format parameter",
+                )
+            })?
             .value()
             .as_str()
-            .ok_or_else(|| RenderError::new("Type error in `date`, format must be a string"))?;
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `date`, format must be a string",
+                )
+            })?;
 
         let local = h.hash_get("local").map(|v| v.value());
         let date: DateTime<Utc> = from_value(dt.clone())?;

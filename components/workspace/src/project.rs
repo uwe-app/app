@@ -12,7 +12,9 @@ use cache::CacheComponent;
 use collator::{CollateInfo, Collation};
 use compiler::{BuildContext, CompileInfo};
 
-use config::{Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions};
+use config::{
+    Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions,
+};
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
 
@@ -138,12 +140,13 @@ impl RenderBuilder {
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
         let source = self.options.source.clone();
-        let paths: Vec<PathBuf> = if let Some(ref paths) = self.options.settings.paths {
-            self.verify(paths)?;
-            paths.clone()
-        } else {
-            vec![source]
-        };
+        let paths: Vec<PathBuf> =
+            if let Some(ref paths) = self.options.settings.paths {
+                self.verify(paths)?;
+                paths.clone()
+            } else {
+                vec![source]
+            };
 
         self.sources = paths;
 
@@ -172,7 +175,8 @@ impl RenderBuilder {
         }
 
         if let Some(ref search) = self.config.search {
-            let fetch_search_runtime = search.bundle.is_some() && search.bundle.unwrap();
+            let fetch_search_runtime =
+                search.bundle.is_some() && search.bundle.unwrap();
             if fetch_search_runtime {
                 let search_dir = cache::get_search_dir()?;
                 if !search_dir.exists() {
@@ -224,8 +228,14 @@ impl RenderBuilder {
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
 
-        let mut values =
-            collation::extract(locales, &mut fallback, languages, config, options).await?;
+        let mut values = collation::extract(
+            locales,
+            &mut fallback,
+            languages,
+            config,
+            options,
+        )
+        .await?;
 
         let mut locales = vec![fallback];
         locales.append(&mut values);
@@ -265,7 +275,8 @@ impl RenderBuilder {
         self.cache = DataSourceMap::get_cache();
 
         // Load data sources and create indices
-        self.datasource = DataSourceMap::load(&self.config, &self.options, collation).await?;
+        self.datasource =
+            DataSourceMap::load(&self.config, &self.options, collation).await?;
 
         Ok(self)
     }
@@ -338,7 +349,8 @@ impl RenderBuilder {
     }
 
     pub fn has_syntax(&self) -> bool {
-        self.config.syntax.is_some() && self.config.is_syntax_enabled(&self.options.settings.name)
+        self.config.syntax.is_some()
+            && self.config.is_syntax_enabled(&self.options.settings.name)
     }
 
     /// Setup syntax highlighting when enabled.
@@ -421,8 +433,8 @@ impl Render {
     }
 
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
-        let write_redirects =
-            options.settings.write_redirects.is_some() && options.settings.write_redirects.unwrap();
+        let write_redirects = options.settings.write_redirects.is_some()
+            && options.settings.write_redirects.unwrap();
 
         if write_redirects {
             self.redirects.write(&options.target)?;
@@ -445,14 +457,16 @@ impl Render {
     */
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
-        let output_robots = self.options.settings.robots.is_some() || !sitemaps.is_empty();
+        let output_robots =
+            self.options.settings.robots.is_some() || !sitemaps.is_empty();
 
         if output_robots {
-            let mut robots = if let Some(ref robots) = self.options.settings.robots {
-                robots.clone()
-            } else {
-                Default::default()
-            };
+            let mut robots =
+                if let Some(ref robots) = self.options.settings.robots {
+                    robots.clone()
+                } else {
+                    Default::default()
+                };
 
             robots.sitemaps = sitemaps;
 
@@ -570,7 +584,10 @@ pub struct CompileResult {
 ///
 /// The project may contain workspace members in which case all
 /// member projects will be compiled.
-pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Result<CompileResult> {
+pub async fn compile<P: AsRef<Path>>(
+    project: P,
+    args: &ProfileSettings,
+) -> Result<CompileResult> {
     let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 

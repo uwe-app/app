@@ -150,7 +150,8 @@ pub fn install() -> Result<()> {
             preference::init_if_none()?;
 
             // Try to configure the shell paths
-            let (shell_ok, shell_write, shell_name, shell_file) = source_env(&bin_dir)?;
+            let (shell_ok, shell_write, shell_name, shell_file) =
+                source_env(&bin_dir)?;
             if shell_ok {
                 if shell_write {
                     info!("");

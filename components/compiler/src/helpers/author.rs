@@ -22,7 +22,9 @@ impl HelperDef for AuthorMeta<'_> {
         let authors = ctx
             .data()
             .as_object()
-            .ok_or_else(|| RenderError::new("Type error for `author`, invalid page data"))
+            .ok_or_else(|| {
+                RenderError::new("Type error for `author`, invalid page data")
+            })
             .unwrap()
             .get("authors");
 
