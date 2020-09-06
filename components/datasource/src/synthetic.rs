@@ -248,8 +248,8 @@ pub fn search(
                 wasm_value.trim_start_matches("/"),
             );
 
-            let js_target = options.target.join(js_path);
-            let wasm_target = options.target.join(wasm_path);
+            let js_target = PathBuf::from(js_path);
+            let wasm_target = PathBuf::from(wasm_path);
 
             create_file(
                 config,

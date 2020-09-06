@@ -438,8 +438,9 @@ impl Render {
             && options.settings.write_redirects.unwrap();
 
         if write_redirects {
-            self.redirects.write(&options.target)?;
+            self.redirects.write(&options.base)?;
         }
+
         Ok(())
     }
 

@@ -38,10 +38,10 @@ impl<'a> Compiler<'a> {
         match target.operation {
             ResourceOperation::Noop => Ok(None),
             ResourceOperation::Copy => {
-                run::copy(file, &target.destination).await
+                run::copy(file, &target.get_output(self.context.collation.get_path())).await
             }
             ResourceOperation::Link => {
-                run::link(file, &target.destination).await
+                run::link(file, &target.get_output(self.context.collation.get_path())).await
             }
             _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
         }
@@ -60,11 +60,14 @@ impl<'a> Compiler<'a> {
                 if let Some(page) = self.context.collation.resolve(file) {
                     match target.operation {
                         ResourceOperation::Render => {
+                            let rel = page.file.as_ref().unwrap().target.clone();
+                            let dest = self.context.collation.get_path().join(&rel);
                             run::parse(
                                 self.context,
                                 parser,
                                 page.get_template(),
                                 page,
+                                &dest,
                             )
                             .await
                         }

@@ -90,12 +90,11 @@ pub async fn parse(
     parser: &Parser<'_>,
     file: &PathBuf,
     data: &Page,
+    dest: &PathBuf,
 ) -> Result<Option<ParseData>> {
     if draft::is_draft(&data, &ctx.options) {
         return Ok(None);
     }
-
-    let dest = data.file.as_ref().unwrap().target.clone();
 
     info!("{} -> {}", file.display(), dest.display());
 

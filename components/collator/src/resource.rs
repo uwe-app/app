@@ -58,6 +58,12 @@ pub struct ResourceTarget {
     pub kind: ResourceKind,
 }
 
+impl ResourceTarget {
+    pub fn get_output(&self, base: &PathBuf) -> PathBuf {
+        base.join(&self.destination) 
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Resource {
     Page { target: ResourceTarget },
