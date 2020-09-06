@@ -21,9 +21,9 @@ use super::{
 pub struct CollateRequest<'a> {
     pub config: &'a Config,
     pub options: &'a RuntimeOptions,
+    pub locales: &'a LocaleMap,
 }
 
-#[derive(Debug)]
 pub struct CollateResult {
     pub inner: Arc<Mutex<CollateInfo>>,
     pub errors: Vec<Error>,
@@ -50,6 +50,100 @@ impl TryInto<CollateInfo> for CollateResult {
         let info = lock.into_inner()?;
         Ok(info)
     }
+}
+
+pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult)
+    -> Result<Vec<Error>> {
+    let errors = find(&req, res).await?;
+    compute_links(&req, res)?;
+    Ok(errors)
+}
+
+async fn find(
+    req: &CollateRequest<'_>,
+    res: &mut CollateResult,
+) -> Result<Vec<Error>> {
+
+    // Channel for collecting errors
+    let (tx, rx) = channel::unbounded();
+
+    WalkBuilder::new(&req.options.source)
+        .follow_links(true)
+        .build_parallel()
+        .run(|| {
+            Box::new(|result| {
+                if let Ok(entry) = result {
+                    let data = Arc::clone(&res.inner);
+                    let mut info = data.lock().unwrap();
+
+                    let path = entry.path();
+                    let key = Arc::new(path.to_path_buf());
+
+                    if path.is_dir() {
+                        let res = Resource::new(
+                            path.to_path_buf(),
+                            ResourceKind::Dir,
+                            ResourceOperation::Noop,
+                        );
+                        info.all.insert(Arc::clone(&key), res);
+                        return WalkState::Continue;
+                    }
+
+                    let is_data_source =
+                        key.starts_with(req.options.get_data_sources_path());
+
+                    let is_page = !is_data_source
+                        && path.is_file()
+                        && FileInfo::is_page(&path, req.options);
+
+                    if is_page {
+                        if let Err(e) = add_page(req, &mut *info, &key, &path) {
+                            let _ = tx.send(e);
+                        }
+                    } else {
+                        // Store the primary layout
+                        if let Some(ref layout) = req.options.settings.layout {
+                            if key.starts_with(layout) {
+                                info.layout = Some(Arc::clone(&key));
+                                return WalkState::Continue;
+                            }
+                        }
+
+                        if let Err(e) = add_other(req, &mut *info, &key) {
+                            let _ = tx.send(Error::from(e));
+                        }
+                    }
+                }
+                WalkState::Continue
+            })
+        });
+
+    drop(tx);
+
+    std::process::exit(1);
+
+    Ok(rx.iter().collect())
+}
+
+fn compute_links(
+    req: &CollateRequest<'_>,
+    res: &mut CollateResult,
+) -> Result<()> {
+    let mut info = res.inner.lock().unwrap();
+
+    // Compute explicitly allowed links, typically this would be used
+    // for synthetic files outside the system such as those generated
+    // by hooks.
+    if let Some(ref links) = req.config.link {
+        if let Some(ref allow) = links.allow {
+            for s in allow {
+                let src = req.options.source.join(s.trim_start_matches("/"));
+                let href = href(&src, req.options, false, None)?;
+                link(&mut info, Arc::new(src), Arc::new(href))?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn is_locale_stem(names: &Vec<&str>, stem: &str) -> bool {
@@ -188,15 +282,6 @@ pub async fn localize(
 }
 */
 
-pub async fn walk(
-    req: CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<Vec<Error>> {
-    let errors = find(&req, res).await?;
-    compute_links(&req, res)?;
-    Ok(errors)
-}
-
 pub fn series(
     config: &Config,
     options: &RuntimeOptions,
@@ -229,28 +314,6 @@ pub fn series(
                 })?;
 
             info.series.entry(k.to_string()).or_insert(refs);
-        }
-    }
-    Ok(())
-}
-
-fn compute_links(
-    req: &CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<()> {
-    let data = Arc::clone(&res.inner);
-    let mut info = data.lock().unwrap();
-
-    // Compute explicitly allowed links, typically this would be used
-    // for synthetic files outside the system such as those generated
-    // by hooks.
-    if let Some(ref links) = req.config.link {
-        if let Some(ref allow) = links.allow {
-            for s in allow {
-                let src = req.options.source.join(s.trim_start_matches("/"));
-                let href = href(&src, req.options, false, None)?;
-                link(&mut info, Arc::new(src), Arc::new(href))?;
-            }
         }
     }
     Ok(())
@@ -486,69 +549,3 @@ fn add_other(
     Ok(add_file(key, dest, href, info, req.config, req.options)?)
 }
 
-async fn find(
-    req: &CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<Vec<Error>> {
-    //let mut errors: Vec<Error> = Vec::new();
-
-    let (tx, rx) = channel::unbounded();
-
-    WalkBuilder::new(&req.options.source)
-        .follow_links(true)
-        .build_parallel()
-        .run(|| {
-            Box::new(|result| {
-                if let Ok(entry) = result {
-                    let data = Arc::clone(&res.inner);
-                    let mut info = data.lock().unwrap();
-
-                    let path = entry.path();
-                    let key = Arc::new(path.to_path_buf());
-
-                    if path.is_dir() {
-                        let res = Resource::new(
-                            path.to_path_buf(),
-                            ResourceKind::Dir,
-                            ResourceOperation::Noop,
-                        );
-                        info.all.insert(Arc::clone(&key), res);
-                        return WalkState::Continue;
-                    }
-
-                    let is_data_source =
-                        key.starts_with(req.options.get_data_sources_path());
-                    let is_page = !is_data_source
-                        && path.is_file()
-                        && FileInfo::is_page(&path, req.options);
-
-                    if is_page {
-                        if let Err(e) = add_page(req, &mut *info, &key, &path) {
-                            let _ = tx.send(e);
-                            //errors.push(e);
-                        }
-                    } else {
-                        // Store the primary layout
-                        if let Some(ref layout) = req.options.settings.layout {
-                            if key.starts_with(layout) {
-                                info.layout = Some(Arc::clone(&key));
-                                return WalkState::Continue;
-                                //info.layouts.insert(Arc::clone(&key), key.to_path_buf());
-                            }
-                        }
-
-                        if let Err(e) = add_other(req, &mut *info, &key) {
-                            let _ = tx.send(Error::from(e));
-                            //errors.push(Error::from(e));
-                        }
-                    }
-                }
-                WalkState::Continue
-            })
-        });
-
-    drop(tx);
-
-    let errors: Vec<Error> = rx.iter().collect();
-    Ok(errors)
-}

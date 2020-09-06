@@ -28,7 +28,7 @@ pub(crate) async fn collate(
     let path = get_locale_target(lang, locales, &options.base);
 
     // Collate page data for later usage
-    let req = CollateRequest { config, options };
+    let req = CollateRequest { locales, config, options };
 
     let mut res = CollateResult::new(lang.to_string(), path);
     let mut errors = collator::walk(req, &mut res).await?;
