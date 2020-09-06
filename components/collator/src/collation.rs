@@ -354,9 +354,13 @@ impl LayoutCollate for CollateInfo {
     }
 
     fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
-        self.layouts.get(key).or(
-            { if let Some(ref layout) = self.layout { Some(layout); } None }
-        )
+        if let Some(ref layout) = self.layouts.get(key) {
+            return Some(layout);
+        }
+        if let Some(ref layout) = self.layout {
+            return Some(layout);
+        }
+        None
     }
 }
 

@@ -416,8 +416,9 @@ pub fn get_destination(
     file: &PathBuf,
     config: &Config,
     options: &RuntimeOptions,
+    info: &mut CollateInfo,
 ) -> Result<PathBuf> {
-    let mut info = FileInfo::new(&config, &options, file, false);
+    let mut info = FileInfo::new(info.get_path(), &config, &options, file, false);
 
     let file_opts = FileOptions {
         exact: true,
@@ -499,7 +500,11 @@ fn add_page(
         page_info.layout = Some(layout_path);
     }
 
-    let mut file_info = FileInfo::new(req.config, req.options, &pth, false);
+    let mut file_info = FileInfo::new(
+        info.get_path(), 
+        req.config,
+        req.options,
+        &pth, false);
 
     let mut rewrite_index = req.options.settings.should_rewrite_index();
     // Override with rewrite-index page level setting
@@ -637,7 +642,7 @@ fn add_other(
     key: &Arc<PathBuf>,
 ) -> Result<()> {
     let pth = key.to_path_buf();
-    let dest = get_destination(&pth, req.config, req.options)?;
+    let dest = get_destination(&pth, req.config, req.options, info)?;
     let href = href(&pth, req.options, false, None)?;
     Ok(add_file(key, dest, href, info, req.config, req.options)?)
 }

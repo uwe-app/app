@@ -625,7 +625,9 @@ pub async fn compile<P: AsRef<Path>>(
 
         // Renderer is generated for each locale to compile
         for renderer in state.renderers.iter() {
-            info!("Render {}", renderer.info.context.collation.get_lang());
+            info!("Render {} -> {}",
+                renderer.info.context.collation.get_lang(),
+                renderer.info.context.collation.get_path().display());
 
             let mut res = renderer.render(&state.locales).await?;
             if let Some(url) = res.sitemap.take() {

@@ -35,14 +35,14 @@ impl Default for FileOptions<'_> {
 
 #[derive(Debug, Clone)]
 pub struct FileInfo<'a> {
+    // The root of the build target
+    pub target: &'a PathBuf,
     // The configuration
     pub config: &'a Config,
     // The runtime options
     pub options: &'a RuntimeOptions,
     // The root of the source files
     pub source: &'a PathBuf,
-    // The root of the build target
-    pub target: &'a PathBuf,
     // A source file path
     pub file: &'a PathBuf,
     // The file type
@@ -53,6 +53,7 @@ pub struct FileInfo<'a> {
 
 impl<'a> FileInfo<'a> {
     pub fn new(
+        target: &'a PathBuf,
         config: &'a Config,
         options: &'a RuntimeOptions,
         file: &'a PathBuf,
@@ -60,10 +61,10 @@ impl<'a> FileInfo<'a> {
     ) -> Self {
         let file_type = FileInfo::get_type(file, &options.settings);
         Self {
+            target,
             config,
             options,
             source: &options.source,
-            target: &options.target,
             file,
             file_type,
             synthetic,
