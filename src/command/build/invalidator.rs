@@ -409,7 +409,7 @@ impl<'a> Invalidator<'a> {
                             )?;
 
                             // Raw source files might be localized variants
-                            // we need to strip the locale identifier from the 
+                            // we need to strip the locale identifier from the
                             // file path before compiling
                             let file = ctx.strip_locale(&file);
 

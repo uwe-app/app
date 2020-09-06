@@ -21,10 +21,12 @@ pub struct CompileInfo {
 impl BuildContext {
     pub fn strip_locale(&self, file: &PathBuf) -> PathBuf {
         let languages = self.options.locales.get_translations();
-        if let Some((_lang, path)) = collator::get_locale_file_info(&file.as_path(), &languages) {
-            return path
+        if let Some((_lang, path)) =
+            collator::get_locale_file_info(&file.as_path(), &languages)
+        {
+            return path;
         }
-        file.to_path_buf() 
+        file.to_path_buf()
     }
 }
 

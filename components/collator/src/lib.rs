@@ -5,11 +5,13 @@ use thiserror::Error;
 pub mod collation;
 pub mod collator;
 pub mod loader;
+pub mod locale;
 pub mod manifest;
 pub mod resource;
 
 pub use collation::*;
 pub use collator::*;
+pub use locale::*;
 pub use resource::*;
 
 use config::LocaleName;
