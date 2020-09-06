@@ -1,7 +1,7 @@
 use handlebars::*;
 
-use collator::Collate;
 use crate::{BuildContext, Result};
+use collator::Collate;
 
 pub fn get_permalink<'a>(
     href: Option<&'a str>,
@@ -9,7 +9,9 @@ pub fn get_permalink<'a>(
     context: &'a BuildContext,
 ) -> Result<String> {
     let base = context.options.get_canonical_url(
-        &context.config, Some(context.collation.get_lang()))?;
+        &context.config,
+        Some(context.collation.get_lang()),
+    )?;
 
     let path = if let Some(ref href) = permalink {
         href

@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use collator::{Collate, CollateInfo, CollateRequest, CollateResult};
+use collator::{CollateInfo, CollateRequest, CollateResult};
 use config::{Config, LocaleMap, RuntimeOptions};
 
 use crate::{Error, Result};
@@ -13,7 +13,11 @@ pub(crate) async fn collate(
 ) -> Result<Vec<CollateInfo>> {
     let lang = &locales.fallback;
     // Collate page data for later usage
-    let req = CollateRequest { locales, config, options };
+    let req = CollateRequest {
+        locales,
+        config,
+        options,
+    };
 
     let mut res = CollateResult::new(lang, &options.base, locales);
     let mut errors = collator::walk(req, &mut res).await?;
@@ -23,7 +27,7 @@ pub(crate) async fn collate(
         return Err(Error::Collator(e));
     }
 
-    let mut collations: Vec<CollateInfo> = res.try_into()?;
+    let collations: Vec<CollateInfo> = res.try_into()?;
     Ok(collations)
 }
 
@@ -95,7 +99,7 @@ pub async fn localize(
         }
         map.insert(Arc::new(entry.fallback), page_info);
 
-        info.remove_page(&entry.path, options);
+        info.remove_page(&entry.path);
     }
 
     //for (k, _v) in info.pages.iter() {

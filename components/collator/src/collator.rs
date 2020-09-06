@@ -21,7 +21,11 @@ use super::{
     Result,
 };
 
-fn get_locale_target(lang: &str, base: &PathBuf, locales: &LocaleMap) -> PathBuf {
+fn get_locale_target(
+    lang: &str,
+    base: &PathBuf,
+    locales: &LocaleMap,
+) -> PathBuf {
     if locales.multi {
         base.join(lang)
     } else {
@@ -53,7 +57,7 @@ impl CollateResult {
                 path,
                 ..Default::default()
             };
-            map.insert(lang.to_string(), info); 
+            map.insert(lang.to_string(), info);
         }
 
         // Path for the fallback language
@@ -74,7 +78,6 @@ impl CollateResult {
 impl TryInto<Vec<CollateInfo>> for CollateResult {
     type Error = Error;
     fn try_into(self) -> std::result::Result<Vec<CollateInfo>, Self::Error> {
-
         // Extract the primary fallback collation.
         let lock = Arc::try_unwrap(self.inner)
             .expect("Collate lock still has multiple owners");
@@ -94,8 +97,10 @@ impl TryInto<Vec<CollateInfo>> for CollateResult {
     }
 }
 
-pub async fn walk(req: CollateRequest<'_>, res: &mut CollateResult)
-    -> Result<Vec<Error>> {
+pub async fn walk(
+    req: CollateRequest<'_>,
+    res: &mut CollateResult,
+) -> Result<Vec<Error>> {
     let errors = find(&req, res).await?;
     compute_links(&req, res)?;
     Ok(errors)
@@ -105,7 +110,6 @@ async fn find(
     req: &CollateRequest<'_>,
     res: &mut CollateResult,
 ) -> Result<Vec<Error>> {
-
     let languages = req.locales.get_translations();
 
     //let translations = req.locales.get_translations();
@@ -128,8 +132,8 @@ async fn find(
                     let path = entry.path();
                     let mut buf = path.to_path_buf();
 
-                    // Check if this is a locale specific file by testing 
-                    // an extensions prefix,eg: `.fr.md` indicates this is 
+                    // Check if this is a locale specific file by testing
+                    // an extensions prefix,eg: `.fr.md` indicates this is
                     // a French language file.
                     if let Some(ext) = path.extension() {
                         let ext = ext.to_str().unwrap();
@@ -139,15 +143,20 @@ async fn find(
                             if is_locale_stem(&languages, stem) {
                                 // Rewrite the file path without the locale id
                                 let stem_path = Path::new(stem);
-                                let locale_id =
-                                    stem_path.extension()
-                                    .unwrap().to_str().unwrap();
-                                let parent_stem =
-                                    stem_path.file_stem()
-                                    .unwrap().to_str().unwrap();
-                                let fallback_name = format!("{}.{}", parent_stem, ext);
-                                let fallback = path.parent().unwrap()
-                                    .join(&fallback_name);
+                                let locale_id = stem_path
+                                    .extension()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap();
+                                let parent_stem = stem_path
+                                    .file_stem()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap();
+                                let fallback_name =
+                                    format!("{}.{}", parent_stem, ext);
+                                let fallback =
+                                    path.parent().unwrap().join(&fallback_name);
 
                                 // Update the path for the new file
                                 buf = fallback;
@@ -281,7 +290,6 @@ pub fn get_destination(
     file: &PathBuf,
     config: &Config,
     options: &RuntimeOptions,
-    info: &mut CollateInfo,
 ) -> Result<PathBuf> {
     let mut info = FileInfo::new(&config, &options, file, false);
 
@@ -365,10 +373,7 @@ fn add_page(
         page_info.layout = Some(layout_path);
     }
 
-    let mut file_info = FileInfo::new(
-        req.config,
-        req.options,
-        &pth, false);
+    let mut file_info = FileInfo::new(req.config, req.options, &pth, false);
 
     let mut rewrite_index = req.options.settings.should_rewrite_index();
     // Override with rewrite-index page level setting
@@ -383,7 +388,14 @@ fn add_page(
     };
 
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, req.config, req.options, &file_info, None, &info.lang)?;
+    page_info.seal(
+        &dest,
+        req.config,
+        req.options,
+        &file_info,
+        None,
+        &info.lang,
+    )?;
 
     if let Some(ref layout) = page_info.layout {
         // Register the layout
@@ -426,8 +438,8 @@ fn add_page(
 // data sources, pagination etc.
 pub fn add_page_reference(
     info: &mut CollateInfo,
-    config: &Config,
-    options: &RuntimeOptions,
+    _config: &Config,
+    _options: &RuntimeOptions,
     key: &Arc<PathBuf>,
     dest: PathBuf,
     page_info: Page,
@@ -452,7 +464,6 @@ pub fn add_file(
     _config: &Config,
     options: &RuntimeOptions,
 ) -> Result<()> {
-
     // Set up the default resource operation
     let mut op = if options.settings.is_release() {
         ResourceOperation::Copy
@@ -508,8 +519,7 @@ fn add_other(
     key: &Arc<PathBuf>,
 ) -> Result<()> {
     let pth = key.to_path_buf();
-    let dest = get_destination(&pth, req.config, req.options, info)?;
+    let dest = get_destination(&pth, req.config, req.options)?;
     let href = href(&pth, req.options, false, None)?;
     Ok(add_file(key, dest, href, info, req.config, req.options)?)
 }
-

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -13,7 +12,8 @@ use collator::{Collate, CollateInfo, Collation};
 use compiler::{BuildContext, CompileInfo};
 
 use config::{
-    Config, LocaleName, ProfileSettings, RedirectConfig, RuntimeOptions, syntax::SyntaxConfig
+    syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
+    RuntimeOptions,
 };
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
@@ -222,18 +222,18 @@ impl RenderBuilder {
         let locales = collation::collate(locales, config, options).await?;
 
         //let languages = locales
-            //.map
-            //.keys()
-            //.filter(|lang| lang != &&locales.fallback)
-            //.map(|s| s.as_str())
-            //.collect::<Vec<_>>();
+        //.map
+        //.keys()
+        //.filter(|lang| lang != &&locales.fallback)
+        //.map(|s| s.as_str())
+        //.collect::<Vec<_>>();
 
         //let mut values = collation::extract(
-            //locales,
-            //&mut fallback,
-            //languages,
-            //config,
-            //options,
+        //locales,
+        //&mut fallback,
+        //languages,
+        //config,
+        //options,
         //)
         //.await?;
 
@@ -351,7 +351,7 @@ impl RenderBuilder {
     /// Determine if syntax highlighting is enabled.
     pub fn get_syntax(&self) -> &Option<SyntaxConfig> {
         if self.config.is_syntax_enabled(&self.options.settings.name) {
-            return &self.config.syntax 
+            return &self.config.syntax;
         }
         &None
     }
@@ -376,7 +376,6 @@ impl RenderBuilder {
 
         let mut renderers: Vec<Renderer> = Vec::new();
         collations.into_iter().try_for_each(|collation| {
-            let lang = collation.locale.lang.clone();
             let context = BuildContext {
                 config: Arc::clone(&config),
                 options: Arc::clone(&options),
@@ -626,9 +625,11 @@ pub async fn compile<P: AsRef<Path>>(
 
         // Renderer is generated for each locale to compile
         for renderer in state.renderers.iter() {
-            info!("Render {} -> {}",
+            info!(
+                "Render {} -> {}",
                 renderer.info.context.collation.get_lang(),
-                renderer.info.context.collation.get_path().display());
+                renderer.info.context.collation.get_path().display()
+            );
 
             let mut res = renderer.render(&state.locales).await?;
             if let Some(url) = res.sitemap.take() {

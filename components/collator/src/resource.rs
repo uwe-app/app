@@ -60,7 +60,7 @@ pub struct ResourceTarget {
 
 impl ResourceTarget {
     pub fn get_output(&self, base: &PathBuf) -> PathBuf {
-        base.join(&self.destination) 
+        base.join(&self.destination)
     }
 }
 

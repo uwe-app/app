@@ -4,8 +4,8 @@ use std::process::{Command, Stdio};
 use log::{debug, info};
 
 use crate::{BuildContext, Error};
-use config::{HookConfig, ProfileName};
 use collator::Collate;
+use config::{HookConfig, ProfileName};
 
 pub enum Phase {
     Before,

@@ -55,7 +55,9 @@ pub enum Error {
     Poison(#[from] std::sync::PoisonError<CollateInfo>),
 
     #[error(transparent)]
-    PoisonTranslations(#[from] std::sync::PoisonError<HashMap<LocaleName, CollateInfo>>),
+    PoisonTranslations(
+        #[from] std::sync::PoisonError<HashMap<LocaleName, CollateInfo>>,
+    ),
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),

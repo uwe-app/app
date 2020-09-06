@@ -17,7 +17,6 @@ impl HelperDef for Match<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // TODO: use pre-computed href field!!!
 
         let base_path = rc
@@ -31,7 +30,6 @@ impl HelperDef for Match<'_> {
             })?
             .to_string();
 
-        let opts = &self.context.options;
         let path = Path::new(&base_path).to_path_buf();
 
         if h.params().len() != 2 && h.params().len() != 3 {
@@ -66,26 +64,24 @@ impl HelperDef for Match<'_> {
             }
         }
 
-        //if let Ok(rel) = path.strip_prefix(&opts.target) {
-            let mut pth = "".to_string();
-            pth.push('/');
-            pth.push_str(&path.to_string_lossy().into_owned());
-            if pth.ends_with(config::INDEX_HTML) {
-                pth = pth.trim_end_matches(config::INDEX_HTML).to_string();
-            }
-            if pth.ends_with("/") {
-                pth = pth.trim_end_matches("/").to_string();
-            }
+        let mut pth = "".to_string();
+        pth.push('/');
+        pth.push_str(&path.to_string_lossy().into_owned());
+        if pth.ends_with(config::INDEX_HTML) {
+            pth = pth.trim_end_matches(config::INDEX_HTML).to_string();
+        }
+        if pth.ends_with("/") {
+            pth = pth.trim_end_matches("/").to_string();
+        }
 
-            let matches = (exact && pth == target)
-                || (!exact && target != "" && pth.starts_with(&target))
-                || (!exact && target == "" && pth == "");
+        let matches = (exact && pth == target)
+            || (!exact && target != "" && pth.starts_with(&target))
+            || (!exact && target == "" && pth == "");
 
-            if matches {
-                out.write(&output)?;
-            }
-        //}
-        
+        if matches {
+            out.write(&output)?;
+        }
+
         Ok(())
     }
 }

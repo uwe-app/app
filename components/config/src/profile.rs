@@ -447,7 +447,7 @@ impl RuntimeOptions {
         if self.locales.multi {
             if let Some(lang) = include_lang {
                 base = base.join(lang)?;
-            } 
+            }
         }
         Ok(base)
     }

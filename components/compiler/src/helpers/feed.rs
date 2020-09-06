@@ -1,7 +1,7 @@
 use handlebars::*;
 
-use collator::Collate;
 use crate::BuildContext;
+use collator::Collate;
 
 #[derive(Clone, Copy)]
 pub struct Feed<'a> {
@@ -29,7 +29,10 @@ impl HelperDef for Feed<'_> {
         let base_url = self
             .context
             .options
-            .get_canonical_url(&self.context.config, Some(self.context.collation.get_lang()))
+            .get_canonical_url(
+                &self.context.config,
+                Some(self.context.collation.get_lang()),
+            )
             .map_err(|_e| {
                 RenderError::new(
                     "Error in `feed` helper, failed to parse base URL",

@@ -79,7 +79,8 @@ impl Renderer {
 
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
-                let index_file = search.get_output_path(ctx.collation.get_path());
+                let index_file =
+                    search.get_output_path(ctx.collation.get_path());
                 info!("Write search index to {}", index_file.display());
                 let bytes_written = search::writer::write(&idx, index_file)?;
                 info!("Search index {}", human_bytes(bytes_written as f64));
@@ -101,7 +102,9 @@ impl Renderer {
 
             // Base canonical URL
             let base = ctx.options.get_canonical_url(
-                &ctx.config, Some(self.info.context.collation.get_lang()))?;
+                &ctx.config,
+                Some(self.info.context.collation.get_lang()),
+            )?;
 
             // Create the top-level index of all sitemaps
             let folder = sitemap.name.as_ref().unwrap().to_string();

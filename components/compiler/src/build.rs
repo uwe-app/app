@@ -38,10 +38,18 @@ impl<'a> Compiler<'a> {
         match target.operation {
             ResourceOperation::Noop => Ok(None),
             ResourceOperation::Copy => {
-                run::copy(file, &target.get_output(self.context.collation.get_path())).await
+                run::copy(
+                    file,
+                    &target.get_output(self.context.collation.get_path()),
+                )
+                .await
             }
             ResourceOperation::Link => {
-                run::link(file, &target.get_output(self.context.collation.get_path())).await
+                run::link(
+                    file,
+                    &target.get_output(self.context.collation.get_path()),
+                )
+                .await
             }
             _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
         }
@@ -60,8 +68,10 @@ impl<'a> Compiler<'a> {
                 if let Some(page) = self.context.collation.resolve(file) {
                     match target.operation {
                         ResourceOperation::Render => {
-                            let rel = page.file.as_ref().unwrap().target.clone();
-                            let dest = self.context.collation.get_path().join(&rel);
+                            let rel =
+                                page.file.as_ref().unwrap().target.clone();
+                            let dest =
+                                self.context.collation.get_path().join(&rel);
                             run::parse(
                                 self.context,
                                 parser,
@@ -109,22 +119,31 @@ impl<'a> Compiler<'a> {
                 }
                 p.starts_with(target)
             })
-            .filter(|p| {
-                //if let Some(ref manifest) = self.context.collation.manifest {
-                //if let Some(ref resource) = self.context.collation.all.get(*p) {
-                //match resource {
-                //Resource::Page { ref target } | Resource::File { ref target } => {
-                //let file = p.to_path_buf();
-                //if manifest.exists(&file)
-                //&& !manifest.is_dirty(&file, &target.destination, false)
-                //{
-                //debug!("[NOOP] {}", file.display());
-                //return false;
-                //}
-                //}
-                //}
-                //}
-                //}
+            .filter(|_p| {
+                /*
+                if let Some(ref manifest) = self.context.collation.manifest {
+                    if let Some(ref resource) =
+                        self.context.collation.all.get(*p)
+                    {
+                        match resource {
+                            Resource::Page { ref target }
+                            | Resource::File { ref target } => {
+                                let file = p.to_path_buf();
+                                if manifest.exists(&file)
+                                    && !manifest.is_dirty(
+                                        &file,
+                                        &target.destination,
+                                        false,
+                                    )
+                                {
+                                    debug!("[NOOP] {}", file.display());
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                */
                 true
             });
 

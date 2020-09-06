@@ -21,14 +21,15 @@ pub struct LocaleMap {
 impl LocaleMap {
     /// Get all locale identifiers.
     pub fn get_locales(&self) -> Vec<&str> {
-        self.map.keys().map(|s| s.as_str()).collect() 
+        self.map.keys().map(|s| s.as_str()).collect()
     }
 
     /// Get all locale identifiers excluding the fallback.
     pub fn get_translations(&self) -> Vec<&str> {
-        self.map.keys()
+        self.map
+            .keys()
             .filter(|s| s != &&self.fallback)
             .map(|s| s.as_str())
-            .collect() 
+            .collect()
     }
 }

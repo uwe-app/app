@@ -32,7 +32,14 @@ fn create_synthetic(
     };
 
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, config, options, &file_info, Some(template), &info.lang)?;
+    page_info.seal(
+        &dest,
+        config,
+        options,
+        &file_info,
+        Some(template),
+        &info.lang,
+    )?;
 
     // Configure a link for the synthetic page
     let href = collator::href(&source, options, rewrite_index, None)?;
@@ -208,7 +215,8 @@ pub fn feed(
                 let mut item_data = data_source.clone();
 
                 // Update the feed url for this file
-                let base_url = options.get_canonical_url(config, Some(info.get_lang()))?;
+                let base_url =
+                    options.get_canonical_url(config, Some(info.get_lang()))?;
                 if let Some(ref mut feed) = item_data.feed.as_mut() {
                     let path = format!("{}/{}", channel_href, file_name);
                     feed.feed_url = Some(base_url.join(&path)?.to_string());
@@ -324,7 +332,7 @@ pub fn each(
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
-        let page = info.remove_page(p, options).unwrap();
+        let page = info.remove_page(p).unwrap();
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -389,7 +397,7 @@ pub fn pages(
 
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
-        let page = info.remove_page(p, options).unwrap();
+        let page = info.remove_page(p).unwrap();
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting

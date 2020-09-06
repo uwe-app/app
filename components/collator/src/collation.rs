@@ -4,10 +4,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use config::indexer::QueryList;
-use config::{LocaleName, Page, RuntimeOptions};
+use config::{LocaleName, Page};
 
-use crate::resource::*;
 use crate::manifest::Manifest;
+use crate::resource::*;
 
 fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     let layout = l.to_path_buf();
@@ -107,7 +107,7 @@ pub trait LayoutCollate {
     /// for configuring as templates.
     fn layouts(&self) -> HashMap<String, PathBuf>;
 
-    /// Attempt to find a layout for a file path searching 
+    /// Attempt to find a layout for a file path searching
     /// custom layouts and falling back to the default layout
     /// if no custom layout was found for the key.
     fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf>;
@@ -175,7 +175,6 @@ impl SeriesCollate for Collation {
 }
 
 impl LayoutCollate for Collation {
-
     fn get_layout(&self) -> Option<Arc<PathBuf>> {
         self.locale.get_layout().or(self.fallback.get_layout())
     }
@@ -295,14 +294,7 @@ impl CollateInfo {
         self.pages.get_mut(key)
     }
 
-    pub fn remove_page(
-        &mut self,
-        p: &PathBuf,
-        options: &RuntimeOptions,
-    ) -> Option<Page> {
-        //if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
-            //self.resources.remove(pos);
-        //}
+    pub fn remove_page(&mut self, p: &PathBuf) -> Option<Page> {
         self.resources.remove(p);
         self.pages.remove(p)
     }
