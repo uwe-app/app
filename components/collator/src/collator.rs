@@ -149,11 +149,6 @@ async fn find(
                                 let fallback = path.parent().unwrap()
                                     .join(&fallback_name);
 
-                                //println!("Got file stem {:?}", stem);
-                                //println!("Got locale id {:?}", locale_id);
-                                //println!("Got fallback file name {:?}", fallback_name);
-                                //println!("Got fallback path {:?}", fallback);
-
                                 // Update the path for the new file
                                 buf = fallback;
 
@@ -211,8 +206,6 @@ async fn find(
 
     drop(tx);
 
-    //std::process::exit(1);
-
     Ok(rx.iter().collect())
 }
 
@@ -246,134 +239,6 @@ fn is_locale_stem(names: &Vec<&str>, stem: &str) -> bool {
     }
     false
 }
-
-/*
-struct LocalePage {
-    locale_id: String,
-    page: Page,
-    fallback: PathBuf,
-    path: PathBuf,
-}
-
-fn get_locale_page_cache(
-    options: &RuntimeOptions,
-    locales: &LocaleMap,
-    info: &mut CollateInfo,
-) -> Vec<LocalePage> {
-    let locale_names =
-        locales.map.keys().map(|k| k.as_str()).collect::<Vec<_>>();
-
-    let mut cache: Vec<LocalePage> = Vec::new();
-    for (path, page) in info.pages.iter() {
-        if let Some(ext) = path.extension() {
-            let ext = ext.to_str().unwrap();
-            if let Some(stem) = path.file_stem() {
-                let stem = stem.to_str().unwrap();
-                if is_locale_stem(&locale_names, stem) {
-                    let stem_path = Path::new(stem);
-                    let locale_id =
-                        stem_path.extension().unwrap().to_str().unwrap();
-                    let parent_stem =
-                        stem_path.file_stem().unwrap().to_str().unwrap();
-                    let fallback_name = format!("{}.{}", parent_stem, ext);
-                    let fallback = path.parent().unwrap().join(fallback_name);
-                    let tmp = LocalePage {
-                        locale_id: locale_id.to_string(),
-                        page: page.clone(),
-                        fallback,
-                        path: path.to_path_buf(),
-                    };
-                    cache.push(tmp);
-                }
-            }
-        }
-    }
-    cache
-}
-*/
-
-// Localize logic involves another pass as we can't guarantee the order
-// that pages are discovered so this allows us to ensure we have page
-// data for the default fallback locale before we assign page data for
-// locales specific pages. Which allows us to inherit page data from the
-// fallback page.
-/*
-#[deprecated(since = "0.20.10", note = "Use workspace locale collation")]
-pub async fn localize(
-    config: &Config,
-    options: &RuntimeOptions,
-    locales: &LocaleMap,
-    info: &mut CollateInfo,
-) -> Result<()> {
-    let cache: Vec<LocalePage> = get_locale_page_cache(options, locales, info);
-
-    let pages = info
-        .pages
-        .get_mut(&options.locales.fallback)
-        .unwrap()
-        .clone();
-
-    for entry in cache {
-        let lang = entry.locale_id.clone();
-        //let map = info.pages.entry(entry.locale_id).or_insert(HashMap::new());
-        let mut page_info = entry.page;
-        let use_fallback = page_info.fallback.is_some() && page_info.fallback.unwrap();
-
-        // Inherit from the fallback page when it exists
-        if let Some(fallback_page) = pages.get(&entry.fallback) {
-            let file_context = fallback_page.file.as_ref().unwrap();
-            let source = file_context.source.clone();
-            // NOTE: Must clone the fallback page
-            let mut fallback_page = fallback_page.clone();
-
-            let template = if use_fallback {
-                fallback_page.file.as_ref().unwrap().template.clone()
-            } else {
-                page_info.file.as_ref().unwrap().template.clone()
-            };
-
-            let mut tmp: Page = Default::default();
-
-            tmp.append(&mut fallback_page);
-            tmp.append(&mut page_info);
-
-            let mut rewrite_index = options.settings.should_rewrite_index();
-            // Override with rewrite-index page level setting
-            if let Some(val) = tmp.rewrite_index {
-                rewrite_index = val;
-            }
-
-            // Must seal() again so the file paths are correct
-            let mut file_info = FileInfo::new(config, options, &source, false);
-            let file_opts = FileOptions {
-                rewrite_index,
-                base_href: &options.settings.base_href,
-                ..Default::default()
-            };
-            let dest = file_info.destination(&file_opts)?;
-            tmp.seal(&dest, config, options, &file_info, Some(template)), &lang?;
-
-            // Ensure we are putting the file in the correct locale specific location
-            let locale_target = options.base.join(&lang);
-            tmp.rewrite_target(&options.base, &locale_target)?;
-
-            page_info = tmp;
-        }
-
-        info.pages.insert(Arc::new(entry.fallback), page_info);
-
-        info.remove_page(&entry.path, options);
-    }
-
-    //for (k, _v) in info.pages.iter() {
-    //println!("Got page key {:?}", k);
-    //}
-
-    //println!("Locale pages {:#?}", info.locale_pages);
-
-    Ok(())
-}
-*/
 
 pub fn series(
     config: &Config,
