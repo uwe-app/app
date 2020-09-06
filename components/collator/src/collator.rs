@@ -1,6 +1,9 @@
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+
+use log::debug;
 
 use crossbeam::channel;
 
@@ -18,6 +21,14 @@ use super::{
     Result,
 };
 
+fn get_locale_target(lang: &str, base: &PathBuf, locales: &LocaleMap) -> PathBuf {
+    if locales.multi {
+        base.join(lang)
+    } else {
+        base.clone()
+    }
+}
+
 pub struct CollateRequest<'a> {
     pub config: &'a Config,
     pub options: &'a RuntimeOptions,
@@ -26,29 +37,60 @@ pub struct CollateRequest<'a> {
 
 pub struct CollateResult {
     pub inner: Arc<Mutex<CollateInfo>>,
+    pub translations: Arc<Mutex<HashMap<LocaleName, CollateInfo>>>,
     pub errors: Vec<Error>,
 }
 
 impl CollateResult {
-    pub fn new(lang: LocaleName, path: PathBuf) -> Self {
+    pub fn new(lang: &str, base: &PathBuf, locales: &LocaleMap) -> Self {
+        let translations = locales.get_translations();
+
+        let mut map: HashMap<LocaleName, CollateInfo> = HashMap::new();
+        for lang in translations.iter() {
+            let path = get_locale_target(lang, base, locales);
+            let info = CollateInfo {
+                lang: lang.to_string(),
+                path,
+                ..Default::default()
+            };
+            map.insert(lang.to_string(), info); 
+        }
+
+        // Path for the fallback language
+        let path = get_locale_target(lang, base, locales);
+
         Self {
             inner: Arc::new(Mutex::new(CollateInfo {
-                lang,
+                lang: lang.to_string(),
                 path,
                 ..Default::default()
             })),
+            translations: Arc::new(Mutex::new(map)),
             errors: Vec::new(),
         }
     }
 }
 
-impl TryInto<CollateInfo> for CollateResult {
+impl TryInto<Vec<CollateInfo>> for CollateResult {
     type Error = Error;
-    fn try_into(self) -> std::result::Result<CollateInfo, Self::Error> {
+    fn try_into(self) -> std::result::Result<Vec<CollateInfo>, Self::Error> {
+
+        // Extract the primary fallback collation.
         let lock = Arc::try_unwrap(self.inner)
             .expect("Collate lock still has multiple owners");
         let info = lock.into_inner()?;
-        Ok(info)
+
+        let mut locales = vec![info];
+
+        // Extract the translation collations.
+        let lock = Arc::try_unwrap(self.translations)
+            .expect("Collate translations lock still has multiple owners");
+        let translations = lock.into_inner()?;
+        for (_, v) in translations.into_iter() {
+            locales.push(v);
+        }
+
+        Ok(locales)
     }
 }
 
@@ -64,6 +106,11 @@ async fn find(
     res: &mut CollateResult,
 ) -> Result<Vec<Error>> {
 
+    let languages = req.locales.get_translations();
+
+    //let translations = req.locales.get_translations();
+    //println!("Find is running with translations {:?}", translations);
+
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();
 
@@ -74,10 +121,54 @@ async fn find(
             Box::new(|result| {
                 if let Ok(entry) = result {
                     let data = Arc::clone(&res.inner);
-                    let mut info = data.lock().unwrap();
+                    let translate_data = Arc::clone(&res.translations);
+                    let mut info = &mut *data.lock().unwrap();
+                    let mut translations = translate_data.lock().unwrap();
 
                     let path = entry.path();
-                    let key = Arc::new(path.to_path_buf());
+                    let mut buf = path.to_path_buf();
+
+                    // Check if this is a locale specific file by testing 
+                    // an extensions prefix,eg: `.fr.md` indicates this is 
+                    // a French language file.
+                    if let Some(ext) = path.extension() {
+                        let ext = ext.to_str().unwrap();
+                        if let Some(stem) = path.file_stem() {
+                            let stem = stem.to_str().unwrap();
+                            // Verify the stem locale id is recognized
+                            if is_locale_stem(&languages, stem) {
+                                // Rewrite the file path without the locale id
+                                let stem_path = Path::new(stem);
+                                let locale_id =
+                                    stem_path.extension()
+                                    .unwrap().to_str().unwrap();
+                                let parent_stem =
+                                    stem_path.file_stem()
+                                    .unwrap().to_str().unwrap();
+                                let fallback_name = format!("{}.{}", parent_stem, ext);
+                                let fallback = path.parent().unwrap()
+                                    .join(&fallback_name);
+
+                                //println!("Got file stem {:?}", stem);
+                                //println!("Got locale id {:?}", locale_id);
+                                //println!("Got fallback file name {:?}", fallback_name);
+                                //println!("Got fallback path {:?}", fallback);
+
+                                // Update the path for the new file
+                                buf = fallback;
+
+                                // Switch the collation to put the file into
+                                info = translations.get_mut(locale_id).unwrap();
+                            }
+                        }
+                    }
+
+                    debug!("Collate {} for {}", buf.display(), &info.lang);
+
+                    // Must override path in case the localization logic kicked in
+                    let path = buf.to_path_buf();
+
+                    let key = Arc::new(buf);
 
                     if path.is_dir() {
                         let res = Resource::new(
@@ -97,7 +188,7 @@ async fn find(
                         && FileInfo::is_page(&path, req.options);
 
                     if is_page {
-                        if let Err(e) = add_page(req, &mut *info, &key, &path) {
+                        if let Err(e) = add_page(req, info, &key, &path) {
                             let _ = tx.send(e);
                         }
                     } else {
@@ -109,7 +200,7 @@ async fn find(
                             }
                         }
 
-                        if let Err(e) = add_other(req, &mut *info, &key) {
+                        if let Err(e) = add_other(req, info, &key) {
                             let _ = tx.send(Error::from(e));
                         }
                     }
@@ -120,7 +211,7 @@ async fn find(
 
     drop(tx);
 
-    std::process::exit(1);
+    //std::process::exit(1);
 
     Ok(rx.iter().collect())
 }
@@ -156,6 +247,7 @@ fn is_locale_stem(names: &Vec<&str>, stem: &str) -> bool {
     false
 }
 
+/*
 struct LocalePage {
     locale_id: String,
     page: Page,
@@ -198,6 +290,7 @@ fn get_locale_page_cache(
     }
     cache
 }
+*/
 
 // Localize logic involves another pass as we can't guarantee the order
 // that pages are discovered so this allows us to ensure we have page

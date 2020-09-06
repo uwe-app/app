@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -8,6 +9,8 @@ pub mod manifest;
 
 pub use collation::*;
 pub use collator::*;
+
+use config::LocaleName;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -48,6 +51,9 @@ pub enum Error {
 
     #[error(transparent)]
     Poison(#[from] std::sync::PoisonError<CollateInfo>),
+
+    #[error(transparent)]
+    PoisonTranslations(#[from] std::sync::PoisonError<HashMap<LocaleName, CollateInfo>>),
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),

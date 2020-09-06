@@ -138,28 +138,17 @@ impl Collate for Collation {
     }
 
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        // The fallback entry will have the same language so no need to iterate both!
-        if self.fallback.lang == self.locale.lang {
-            return self.fallback.resources();
-        }
-
-        Box::new(
-            self.fallback
-                .resources
-                .iter()
-                .chain(self.locale.resources.iter()),
-        )
+        // NOTE: we should only iterate a single collation here
+        // NOTE: otherwise we can get duplicates processed
+        self.fallback.resources()
     }
 
     fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
-        // The fallback entry will have the same language so no need to iterate both!
-        if self.fallback.lang == self.locale.lang {
-            return self.fallback.pages();
-        }
-
-        Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
+        // NOTE: we should only iterate a single collation here
+        // NOTE: otherwise we can get duplicates processed
+        self.fallback.pages()
     }
 }
 

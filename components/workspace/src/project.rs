@@ -219,26 +219,26 @@ impl RenderBuilder {
         let config = &self.config;
         let options = &self.options;
 
-        let mut fallback = collation::collate(locales, config, options).await?;
+        let locales = collation::collate(locales, config, options).await?;
 
-        let languages = locales
-            .map
-            .keys()
-            .filter(|lang| lang != &&locales.fallback)
-            .map(|s| s.as_str())
-            .collect::<Vec<_>>();
+        //let languages = locales
+            //.map
+            //.keys()
+            //.filter(|lang| lang != &&locales.fallback)
+            //.map(|s| s.as_str())
+            //.collect::<Vec<_>>();
 
-        let mut values = collation::extract(
-            locales,
-            &mut fallback,
-            languages,
-            config,
-            options,
-        )
-        .await?;
+        //let mut values = collation::extract(
+            //locales,
+            //&mut fallback,
+            //languages,
+            //config,
+            //options,
+        //)
+        //.await?;
 
-        let mut locales = vec![fallback];
-        locales.append(&mut values);
+        //let mut locales = vec![fallback];
+        //locales.append(&mut values);
         self.collations = CollationBuilder { locales };
 
         Ok(self)
@@ -624,7 +624,9 @@ pub async fn compile<P: AsRef<Path>>(
         let state = builder.build()?;
 
         // Renderer is generated for each locale to compile
-        for (_lang, renderer) in state.renderers.iter() {
+        for (lang, renderer) in state.renderers.iter() {
+            info!("Render {}", lang);
+
             let mut res = renderer.render(&state.locales).await?;
             if let Some(url) = res.sitemap.take() {
                 sitemaps.push(url);

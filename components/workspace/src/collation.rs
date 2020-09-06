@@ -1,36 +1,21 @@
 use std::convert::TryInto;
-use std::path::PathBuf;
 
 use collator::{CollateInfo, CollateRequest, CollateResult};
 use config::{Config, LocaleMap, RuntimeOptions};
 
 use crate::{Error, Result};
 
-fn get_locale_target(
-    lang: &str,
-    locales: &LocaleMap,
-    base: &PathBuf,
-) -> PathBuf {
-    if locales.multi {
-        base.join(lang)
-    } else {
-        base.clone()
-    }
-}
-
-/// Get the default fallback collation.
+/// Get the collations.
 pub(crate) async fn collate(
     locales: &LocaleMap,
     config: &Config,
     options: &RuntimeOptions,
-) -> Result<CollateInfo> {
+) -> Result<Vec<CollateInfo>> {
     let lang = &locales.fallback;
-    let path = get_locale_target(lang, locales, &options.base);
-
     // Collate page data for later usage
     let req = CollateRequest { locales, config, options };
 
-    let mut res = CollateResult::new(lang.to_string(), path);
+    let mut res = CollateResult::new(lang, &options.base, locales);
     let mut errors = collator::walk(req, &mut res).await?;
     if !errors.is_empty() {
         // TODO: print all errors?
@@ -38,42 +23,8 @@ pub(crate) async fn collate(
         return Err(Error::Collator(e));
     }
 
-    let collation: CollateInfo = res.try_into()?;
-
-    /*
-    // Find and transform localized pages
-    collator::localize(
-        &self.context.config,
-        &self.context.options,
-        &self.context.options.locales,
-        &mut collation,
-    )
-    .await?;
-
-    */
-
-    Ok(collation)
-}
-
-/// Take the fallback locale and extract pages for each of the alternative languages.
-pub(crate) async fn extract(
-    locales: &LocaleMap,
-    fallback: &mut CollateInfo,
-    languages: Vec<&str>,
-    config: &Config,
-    options: &RuntimeOptions,
-) -> Result<Vec<CollateInfo>> {
-    let values: Vec<CollateInfo> = languages
-        .iter()
-        .map(|lang| {
-            let path = get_locale_target(lang, locales, &options.base);
-            //println!("Collate for alternative language {:?}", lang);
-            //println!("Using fallback {:?}", &fallback.lang);
-            CollateInfo::new(lang.to_string(), path)
-        })
-        .collect();
-
-    Ok(values)
+    let collations: Vec<CollateInfo> = res.try_into()?;
+    Ok(collations)
 }
 
 // Localize logic involves another pass as we can't guarantee the order
