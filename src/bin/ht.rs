@@ -23,8 +23,8 @@ fn get_server_config(
     target: &PathBuf,
     opts: &WebServerOpts,
     default_port: u16,
-    default_port_ssl: u16) -> ServerConfig {
-
+    default_port_ssl: u16,
+) -> ServerConfig {
     let serve: ServerConfig = Default::default();
     let mut host = &serve.listen;
     let mut port = &default_port;
@@ -51,12 +51,7 @@ fn get_server_config(
         });
     }
 
-    let host = HostConfig::new(
-        target.clone(),
-        host.to_owned(),
-        None,
-        None,
-    );
+    let host = HostConfig::new(target.clone(), host.to_owned(), None, None);
 
     ServerConfig::new_host(host, port.to_owned(), tls)
 }
@@ -414,18 +409,14 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                     path: Some(path.clone()),
                     ..Default::default()
                 };
-                if let Err(e) = command::book::add(opts) {
-                    fatal(e);
-                }
+                command::book::add(opts)?;
             }
             Book::List { ref project } => {
                 let opts = command::book::BookOptions {
                     project: project.clone(),
                     ..Default::default()
                 };
-                if let Err(e) = command::book::list(opts) {
-                    fatal(e);
-                }
+                command::book::list(opts)?;
             }
             Book::Build {
                 ref project,
@@ -436,9 +427,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                     target: target.clone(),
                     ..Default::default()
                 };
-                if let Err(e) = command::book::build(opts) {
-                    fatal(e);
-                }
+                command::book::build(opts)?;
             }
         },
 
@@ -455,15 +444,11 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             if let Some(ref action) = args.action {
                 match action {
                     InitCommands::List {} => {
-                        if let Err(e) = command::init::list() {
-                            fatal(e);
-                        }
+                        command::init::list()?;
                     }
                 }
             } else {
-                if let Err(e) = command::init::init(opts) {
-                    fatal(e);
-                }
+                command::init::init(opts)?;
             }
         }
         Command::Fetch { ref args } => {
@@ -478,14 +463,10 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 feed: args.feed,
             };
 
-            if let Err(e) = command::fetch::update(opts) {
-                fatal(e);
-            }
+            command::fetch::update(opts)?;
         }
         Command::Upgrade { .. } => {
-            if let Err(e) = command::upgrade::try_upgrade() {
-                fatal(e);
-            }
+            command::upgrade::try_upgrade()?;
         }
 
         Command::Docs { ref args } => {
@@ -494,11 +475,10 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 &target,
                 &args.server,
                 config::PORT_DOCS,
-                config::PORT_DOCS_SSL);
+                config::PORT_DOCS_SSL,
+            );
 
-            if let Err(e) = command::docs::open(opts).await {
-                fatal(e);
-            }
+            command::docs::open(opts).await?;
         }
 
         Command::Run { ref args } => {
@@ -511,7 +491,8 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 &args.target,
                 &args.server,
                 config::PORT,
-                config::PORT_SSL);
+                config::PORT_SSL,
+            );
 
             let launch = LaunchConfig { open: true };
 
@@ -519,10 +500,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             let opts = server::configure(opts);
             let mut channels = Default::default();
 
-            match server::launch(opts, launch, &mut channels).await {
-                Err(e) => fatal(Error::from(e)),
-                _ => {}
-            }
+            server::launch(opts, launch, &mut channels).await?;
         }
 
         Command::Publish { ref args } => {
@@ -534,9 +512,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 project,
             };
 
-            if let Err(e) = command::publish::publish(opts).await {
-                fatal(e);
-            }
+            command::publish::publish(opts).await?;
         }
 
         Command::Site { ref action } => match action {
@@ -548,22 +524,16 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                     project: project.clone(),
                     name: name.clone(),
                 };
-                if let Err(e) = command::site::add(opts) {
-                    fatal(e);
-                }
+                command::site::add(opts)?;
             }
             Site::Remove { ref name } => {
                 let opts = command::site::RemoveOptions {
                     name: name.to_string(),
                 };
-                if let Err(e) = command::site::remove(opts) {
-                    fatal(e);
-                }
+                command::site::remove(opts)?;
             }
             Site::List { .. } => {
-                if let Err(e) = command::site::list() {
-                    fatal(e);
-                }
+                command::site::list()?;
             }
         },
 
@@ -666,7 +636,8 @@ async fn main() -> Result<(), Error> {
             }
         }
         None => {
-            if let Err(e) = process_command(&Command::default(root_args)).await {
+            if let Err(e) = process_command(&Command::default(root_args)).await
+            {
                 fatal(e);
             }
         }
