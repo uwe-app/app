@@ -106,7 +106,9 @@ pub trait LayoutCollate {
     /// for configuring as templates.
     fn layouts(&self) -> HashMap<String, PathBuf>;
 
-    /// Attempt to find a layout for a file path.
+    /// Attempt to find a layout for a file path searching 
+    /// custom layouts and falling back to the default layout
+    /// if no custom layout was found for the key.
     fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf>;
 }
 
@@ -145,7 +147,6 @@ impl Collate for Collation {
     }
 
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        // The fallback entry will have the same language so no need to iterate both!
         if self.is_fallback() {
             return self.fallback.resources();
         }
@@ -156,7 +157,6 @@ impl Collate for Collation {
     fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
-        // The fallback entry will have the same language so no need to iterate both!
         if self.is_fallback() {
             return self.fallback.pages();
         }
@@ -174,6 +174,7 @@ impl SeriesCollate for Collation {
 }
 
 impl LayoutCollate for Collation {
+
     fn get_layout(&self) -> Option<Arc<PathBuf>> {
         self.locale.get_layout().or(self.fallback.get_layout())
     }
@@ -353,13 +354,9 @@ impl LayoutCollate for CollateInfo {
     }
 
     fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
-        if let Some(ref layout) = self.layouts.get(key) {
-            return Some(layout);
-        }
-        if let Some(ref layout) = self.layout {
-            return Some(layout);
-        }
-        None
+        self.layouts.get(key).or(
+            { if let Some(ref layout) = self.layout { Some(layout); } None }
+        )
     }
 }
 
