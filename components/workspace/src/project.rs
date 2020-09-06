@@ -9,7 +9,7 @@ use url::Url;
 
 use cache::CacheComponent;
 //use collator::manifest::Manifest;
-use collator::{CollateInfo, Collation};
+use collator::{Collate, CollateInfo, Collation};
 use compiler::{BuildContext, CompileInfo};
 
 use config::{
@@ -374,7 +374,7 @@ impl RenderBuilder {
         // Get a map of collations keyed by locale wrapper
         let collations = self.collations.build()?;
 
-        let mut renderers: HashMap<LocaleName, Renderer> = HashMap::new();
+        let mut renderers: Vec<Renderer> = Vec::new();
         collations.into_iter().try_for_each(|collation| {
             let lang = collation.locale.lang.clone();
             let context = BuildContext {
@@ -387,7 +387,7 @@ impl RenderBuilder {
                 sources: Arc::clone(&sources),
                 context,
             };
-            renderers.insert(lang, Renderer { info });
+            renderers.push(Renderer { info });
             Ok::<(), Error>(())
         })?;
 
@@ -421,7 +421,7 @@ pub struct Render {
     pub locales: Locales,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub renderers: HashMap<LocaleName, Renderer>,
+    pub renderers: Vec<Renderer>,
 }
 
 impl Render {
@@ -430,7 +430,7 @@ impl Render {
     }
 
     pub fn get_fallback_renderer(&self) -> &Renderer {
-        self.renderers.get(&self.config.lang).unwrap()
+        self.renderers.get(0).unwrap()
     }
 
     pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
@@ -624,8 +624,8 @@ pub async fn compile<P: AsRef<Path>>(
         let state = builder.build()?;
 
         // Renderer is generated for each locale to compile
-        for (lang, renderer) in state.renderers.iter() {
-            info!("Render {}", lang);
+        for renderer in state.renderers.iter() {
+            info!("Render {}", renderer.info.context.collation.get_lang());
 
             let mut res = renderer.render(&state.locales).await?;
             if let Some(url) = res.sitemap.take() {
