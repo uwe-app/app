@@ -408,11 +408,12 @@ impl<'a> Invalidator<'a> {
                                 &ctx.options.source,
                             )?;
 
-                            self.builder.one(&self.parser, &file).await?;
+                            // Raw source files might be localized variants
+                            // we need to strip the locale identifier from the 
+                            // file path before compiling
+                            let file = ctx.strip_locale(&file);
 
-                            //if let Err(e) = self.builder.one(&file).await {
-                            //return Err(e);
-                            //}
+                            self.builder.one(&self.parser, &file).await?;
                         }
                         _ => {
                             return Err(Error::InvalidationActionNotHandled);

@@ -2,7 +2,7 @@ use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use collator::Collation;
+use collator::{self, Collation};
 use config::{Config, RuntimeOptions};
 
 #[derive(Debug, Default)]
@@ -16,6 +16,16 @@ pub struct BuildContext {
 pub struct CompileInfo {
     pub context: BuildContext,
     pub sources: Arc<Vec<PathBuf>>,
+}
+
+impl BuildContext {
+    pub fn strip_locale(&self, file: &PathBuf) -> PathBuf {
+        let languages = self.options.locales.get_translations();
+        if let Some((_lang, path)) = collator::get_locale_file_info(&file.as_path(), &languages) {
+            return path
+        }
+        file.to_path_buf() 
+    }
 }
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {

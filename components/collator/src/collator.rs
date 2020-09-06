@@ -132,37 +132,44 @@ async fn find(
                     // Check if this is a locale specific file by testing
                     // an extensions prefix,eg: `.fr.md` indicates this is
                     // a French language file.
-                    if let Some(ext) = path.extension() {
-                        let ext = ext.to_str().unwrap();
-                        if let Some(stem) = path.file_stem() {
-                            let stem = stem.to_str().unwrap();
-                            // Verify the stem locale id is recognized
-                            if is_locale_stem(&languages, stem) {
-                                // Rewrite the file path without the locale id
-                                let stem_path = Path::new(stem);
-                                let locale_id = stem_path
-                                    .extension()
-                                    .unwrap()
-                                    .to_str()
-                                    .unwrap();
-                                let parent_stem = stem_path
-                                    .file_stem()
-                                    .unwrap()
-                                    .to_str()
-                                    .unwrap();
-                                let fallback_name =
-                                    format!("{}.{}", parent_stem, ext);
-                                let fallback =
-                                    path.parent().unwrap().join(&fallback_name);
-
-                                // Update the path for the new file
-                                buf = fallback;
-
-                                // Switch the collation to put the file into
-                                info = translations.get_mut(locale_id).unwrap();
-                            }
-                        }
+                    if let Some((lang, fallback)) = get_locale_file_info(&path, &languages) {
+                        // Update the path for the new file
+                        buf = fallback;
+                        // Switch the collation to put the file into
+                        info = translations.get_mut(&lang).unwrap();
                     }
+
+                    //if let Some(ext) = path.extension() {
+                        //let ext = ext.to_str().unwrap();
+                        //if let Some(stem) = path.file_stem() {
+                            //let stem = stem.to_str().unwrap();
+                            //// Verify the stem locale id is recognized
+                            //if is_locale_stem(&languages, stem) {
+                                //// Rewrite the file path without the locale id
+                                //let stem_path = Path::new(stem);
+                                //let locale_id = stem_path
+                                    //.extension()
+                                    //.unwrap()
+                                    //.to_str()
+                                    //.unwrap();
+                                //let parent_stem = stem_path
+                                    //.file_stem()
+                                    //.unwrap()
+                                    //.to_str()
+                                    //.unwrap();
+                                //let fallback_name =
+                                    //format!("{}.{}", parent_stem, ext);
+                                //let fallback =
+                                    //path.parent().unwrap().join(&fallback_name);
+
+                                //// Update the path for the new file
+                                //buf = fallback;
+
+                                //// Switch the collation to put the file into
+                                //info = translations.get_mut(locale_id).unwrap();
+                            //}
+                        //}
+                    //}
 
                     debug!("Collate {} for {}", buf.display(), &info.lang);
 
@@ -241,6 +248,40 @@ fn is_locale_stem(names: &Vec<&str>, stem: &str) -> bool {
         }
     }
     false
+}
+
+/// Extract a locale identifier from a file path and return 
+/// a new normalized path without the locale identifier.
+pub fn get_locale_file_info(path: &Path, languages: &Vec<&str>) -> Option<(LocaleName, PathBuf)> {
+    if let Some(ext) = path.extension() {
+        let ext = ext.to_str().unwrap();
+        if let Some(stem) = path.file_stem() {
+            let stem = stem.to_str().unwrap();
+            // Verify the stem locale id is recognized
+            if is_locale_stem(languages, stem) {
+                // Rewrite the file path without the locale id
+                let stem_path = Path::new(stem);
+                let locale_id = stem_path
+                    .extension()
+                    .unwrap()
+                    .to_str()
+                    .unwrap();
+                let parent_stem = stem_path
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap();
+                let fallback_name =
+                    format!("{}.{}", parent_stem, ext);
+                let fallback =
+                    path.parent().unwrap().join(&fallback_name);
+
+                return Some((locale_id.to_string(), fallback))
+            }
+        }
+    }
+
+    None
 }
 
 pub fn series(
