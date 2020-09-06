@@ -418,7 +418,7 @@ pub fn get_destination(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
 ) -> Result<PathBuf> {
-    let mut info = FileInfo::new(info.get_path(), &config, &options, file, false);
+    let mut info = FileInfo::new(&config, &options, file, false);
 
     let file_opts = FileOptions {
         exact: true,
@@ -501,7 +501,6 @@ fn add_page(
     }
 
     let mut file_info = FileInfo::new(
-        info.get_path(), 
         req.config,
         req.options,
         &pth, false);

@@ -35,8 +35,6 @@ impl Default for FileOptions<'_> {
 
 #[derive(Debug, Clone)]
 pub struct FileInfo<'a> {
-    // The root of the build target
-    pub target: &'a PathBuf,
     // The configuration
     pub config: &'a Config,
     // The runtime options
@@ -53,7 +51,6 @@ pub struct FileInfo<'a> {
 
 impl<'a> FileInfo<'a> {
     pub fn new(
-        target: &'a PathBuf,
         config: &'a Config,
         options: &'a RuntimeOptions,
         file: &'a PathBuf,
@@ -61,7 +58,6 @@ impl<'a> FileInfo<'a> {
     ) -> Self {
         let file_type = FileInfo::get_type(file, &options.settings);
         Self {
-            target,
             config,
             options,
             source: &options.source,
@@ -199,8 +195,8 @@ impl<'a> FileInfo<'a> {
             }
         }
 
-        let result = self.target.clone().join(relative);
-        return Ok(result);
+        //let result = self.target.clone().join(relative);
+        return Ok(relative.to_path_buf());
     }
 
     // Build the destination file path and update the file extension.
