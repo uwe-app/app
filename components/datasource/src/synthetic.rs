@@ -39,7 +39,7 @@ fn create_synthetic(
     let key = Arc::new(source);
 
     collator::link(info, Arc::clone(&key), Arc::new(href))?;
-    collator::add_page_reference(info, options, &key, dest, page_info);
+    collator::add_page_reference(info, config, options, &key, dest, page_info);
 
     Ok(())
 }

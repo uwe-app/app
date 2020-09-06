@@ -553,7 +553,7 @@ fn add_page(
         }
     }
 
-    add_page_reference(info, req.options, key, dest, page_info);
+    add_page_reference(info, req.config, req.options, key, dest, page_info);
 
     Ok(())
 }
@@ -562,11 +562,14 @@ fn add_page(
 // data sources, pagination etc.
 pub fn add_page_reference(
     info: &mut CollateInfo,
+    config: &Config,
     options: &RuntimeOptions,
     key: &Arc<PathBuf>,
     dest: PathBuf,
     page_info: Page,
 ) {
+    println!("Adding page resource with destination {}", dest.display());
+
     let mut resource = Resource::new_page(dest);
     if let Some(ref render) = page_info.render {
         if !render {
@@ -613,6 +616,8 @@ pub fn add_file(
         }
         _ => {}
     }
+
+    println!("Adding resource with destination {}", dest.display());
 
     info.all
         .insert(Arc::clone(key), Resource::new(dest, kind, op));
