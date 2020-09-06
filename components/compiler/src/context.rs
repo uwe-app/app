@@ -2,7 +2,7 @@ use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use collator::{self, Collation};
+use collator::{self, Collate, Collation};
 use config::{Config, RuntimeOptions};
 
 #[derive(Debug, Default)]
@@ -24,6 +24,11 @@ impl BuildContext {
         if let Some((_lang, path)) =
             collator::get_locale_file_info(&file.as_path(), &languages)
         {
+            println!("GOT LOCALE SPECIFIC FILE");
+            let page = self.collation.resolve(&path);
+
+            println!("Page {:#?}", page);
+
             return path;
         }
         file.to_path_buf()

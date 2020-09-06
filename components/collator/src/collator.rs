@@ -123,7 +123,7 @@ async fn find(
                     // an extensions prefix,eg: `.fr.md` indicates this is
                     // a French language file.
                     if let Some((lang, fallback)) =
-                        get_locale_file_info(&path, &languages)
+                        get_locale_file_info(&path, languages)
                     {
                         // Update the path for the new file
                         buf = fallback;

@@ -16,6 +16,8 @@ pub struct LocaleMap {
     pub multi: bool,
     /// Map of all locales to the parsed language identifiers.
     pub map: LocaleIdentifier,
+    /// List of languages other than the primary fallback language.
+    pub translations: Vec<String>,
 }
 
 impl LocaleMap {
@@ -25,11 +27,7 @@ impl LocaleMap {
     }
 
     /// Get all locale identifiers excluding the fallback.
-    pub fn get_translations(&self) -> Vec<&str> {
-        self.map
-            .keys()
-            .filter(|s| s != &&self.fallback)
-            .map(|s| s.as_str())
-            .collect()
+    pub fn get_translations(&self) -> &Vec<String> {
+        &self.translations
     }
 }

@@ -6,7 +6,7 @@ use config::{LocaleMap, LocaleName};
 /// a new normalized path without the locale identifier.
 pub fn get_locale_file_info(
     path: &Path,
-    languages: &Vec<&str>,
+    languages: &Vec<String>,
 ) -> Option<(LocaleName, PathBuf)> {
     if let Some(ext) = path.extension() {
         let ext = ext.to_str().unwrap();
@@ -45,7 +45,7 @@ pub(crate) fn get_locale_target(
     }
 }
 
-fn is_locale_stem(names: &Vec<&str>, stem: &str) -> bool {
+fn is_locale_stem(names: &Vec<String>, stem: &str) -> bool {
     for name in names {
         let ext = format!(".{}", name);
         if stem.ends_with(&ext) {

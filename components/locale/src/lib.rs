@@ -44,6 +44,7 @@ impl Locales {
             map: HashMap::new(),
             enabled: self.loader.arc.is_some(),
             multi: false,
+            translations: vec![],
         };
 
         if let Some(ref arc) = self.loader.arc {
@@ -57,6 +58,15 @@ impl Locales {
         }
 
         res.multi = res.map.len() > 1;
+
+        let translations: Vec<String> = res
+            .map
+            .keys()
+            .filter(|s| s.as_str() != fallback)
+            .map(|s| s.to_owned())
+            .collect();
+        res.translations = translations;
+
         Ok(res)
     }
 

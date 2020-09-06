@@ -156,6 +156,7 @@ pub async fn start<P: AsRef<Path>>(
                     .expect("Failed to start watcher");
                 info!("Watch {}", w.source.display());
 
+                // FIXME: this logic needs to handle multiple locales!!
                 let context = w.state.get_fallback_context();
                 let locales = &w.state.locales;
                 let datasource = &w.state.datasource;
