@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -32,7 +33,7 @@ pub struct CollateInfo {
 
     /// Lookup table for all the resources that should
     /// be processed by the compiler.
-    pub(crate) resources: Vec<Arc<PathBuf>>,
+    pub(crate) resources: HashSet<Arc<PathBuf>>,
 
     /// Lookup table for page data resolved by locale identifier and source path.
     pub(crate) pages: HashMap<Arc<PathBuf>, Page>,
@@ -382,9 +383,10 @@ impl CollateInfo {
         p: &PathBuf,
         options: &RuntimeOptions,
     ) -> Option<Page> {
-        if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
-            self.resources.remove(pos);
-        }
+        //if let Some(pos) = self.resources.iter().position(|x| &**x == p) {
+            //self.resources.remove(pos);
+        //}
+        self.resources.remove(p);
         self.pages.remove(p)
     }
 }

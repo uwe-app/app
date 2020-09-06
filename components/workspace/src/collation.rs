@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use collator::{CollateInfo, CollateRequest, CollateResult};
+use collator::{Collate, CollateInfo, CollateRequest, CollateResult};
 use config::{Config, LocaleMap, RuntimeOptions};
 
 use crate::{Error, Result};
@@ -23,7 +23,7 @@ pub(crate) async fn collate(
         return Err(Error::Collator(e));
     }
 
-    let collations: Vec<CollateInfo> = res.try_into()?;
+    let mut collations: Vec<CollateInfo> = res.try_into()?;
     Ok(collations)
 }
 

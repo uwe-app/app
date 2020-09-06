@@ -569,7 +569,7 @@ pub fn add_page_reference(
         }
     }
     info.all.insert(Arc::clone(key), resource);
-    info.resources.push(Arc::clone(key));
+    info.resources.insert(Arc::clone(key));
 
     info.pages.entry(Arc::clone(key)).or_insert(page_info);
 }
@@ -603,7 +603,7 @@ pub fn add_file(
     let kind = get_file_kind(key, options);
     match kind {
         ResourceKind::File | ResourceKind::Asset => {
-            info.resources.push(Arc::clone(&key));
+            info.resources.insert(Arc::clone(&key));
             link(info, Arc::clone(key), Arc::new(href))?;
         }
         _ => {}
