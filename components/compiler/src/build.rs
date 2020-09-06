@@ -22,7 +22,7 @@ impl<'a> Compiler<'a> {
     pub fn new(context: &'a BuildContext) -> Self {
         let book = BookCompiler::new(
             context.options.source.clone(),
-            context.options.target.clone(),
+            context.options.base.clone(),
             context.options.settings.is_release(),
         );
 

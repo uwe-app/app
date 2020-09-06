@@ -17,6 +17,9 @@ impl HelperDef for Match<'_> {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
+        // TODO: use pre-computed href field!!!
+
         let base_path = rc
             .evaluate(ctx, "@root/file.target")?
             .as_json()
@@ -63,10 +66,10 @@ impl HelperDef for Match<'_> {
             }
         }
 
-        if let Ok(rel) = path.strip_prefix(&opts.target) {
+        //if let Ok(rel) = path.strip_prefix(&opts.target) {
             let mut pth = "".to_string();
             pth.push('/');
-            pth.push_str(&rel.to_string_lossy().into_owned());
+            pth.push_str(&path.to_string_lossy().into_owned());
             if pth.ends_with(config::INDEX_HTML) {
                 pth = pth.trim_end_matches(config::INDEX_HTML).to_string();
             }
@@ -81,7 +84,8 @@ impl HelperDef for Match<'_> {
             if matches {
                 out.write(&output)?;
             }
-        }
+        //}
+        
         Ok(())
     }
 }

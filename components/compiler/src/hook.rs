@@ -5,6 +5,7 @@ use log::{debug, info};
 
 use crate::{BuildContext, Error};
 use config::{HookConfig, ProfileName};
+use collator::Collate;
 
 pub enum Phase {
     Before,
@@ -28,7 +29,7 @@ pub fn exec(ctx: &BuildContext, hook: &HookConfig) -> Result<(), Error> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
-        let mut build_target = ctx.options.target.clone().canonicalize()?;
+        let mut build_target = ctx.collation.get_path().canonicalize()?;
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
         let node = ctx.config.node.as_ref().unwrap();

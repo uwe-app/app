@@ -79,7 +79,7 @@ impl Renderer {
 
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
-                let index_file = search.get_output_path(&ctx.options.target);
+                let index_file = search.get_output_path(ctx.collation.get_path());
                 info!("Write search index to {}", index_file.display());
                 let bytes_written = search::writer::write(&idx, index_file)?;
                 info!("Search index {}", human_bytes(bytes_written as f64));
@@ -107,7 +107,7 @@ impl Renderer {
             let folder = sitemap.name.as_ref().unwrap().to_string();
             let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
 
-            let base_folder = ctx.options.target.join(&folder);
+            let base_folder = ctx.collation.get_path().join(&folder);
 
             if !base_folder.exists() {
                 fs::create_dir_all(&base_folder)?;

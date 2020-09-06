@@ -39,15 +39,15 @@ fn to_options(
 
     let release = args.is_release();
 
-    let mut target = args.target.clone();
+    let mut base = args.target.clone();
     let target_dir = args.name.to_string();
     if !target_dir.is_empty() {
         let target_dir_buf = PathBuf::from(&target_dir);
         if target_dir_buf.is_absolute() {
             return Err(Error::ProfileNameAbsolute(target_dir));
         }
-        target.push(target_dir);
-        target = project.join(target);
+        base.push(target_dir);
+        base = project.join(base);
     }
 
     let live = args.is_live();
@@ -59,9 +59,9 @@ fn to_options(
     let incremental = args.is_incremental();
     let pristine = args.is_pristine();
 
-    if (pristine || args.is_force()) && target.exists() {
-        info!("clean {}", target.display());
-        fs::remove_dir_all(&target)?;
+    if (pristine || args.is_force()) && base.exists() {
+        info!("clean {}", base.display());
+        fs::remove_dir_all(&base)?;
     }
 
     // Force is implied when live and incremental, the live
@@ -70,7 +70,7 @@ fn to_options(
         args.force = Some(true);
     }
 
-    require_output_dir(&target)?;
+    require_output_dir(&base)?;
 
     if !source.exists() || !source.is_dir() {
         return Err(Error::NotDirectory(source.clone()));
@@ -116,9 +116,8 @@ fn to_options(
         project,
         source,
         output: settings.target.clone(),
-        base: target.clone(),
+        base,
         settings,
-        target,
         locales: Default::default(),
     };
 

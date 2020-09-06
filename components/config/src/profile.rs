@@ -430,7 +430,7 @@ pub struct RuntimeOptions {
     pub base: PathBuf,
     // Target output directory including a build tag and
     // a locale identifier when multilingual
-    pub target: PathBuf,
+    //pub target: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
     // Determine id this build is configured for multi-lingual support

@@ -354,8 +354,8 @@ pub async fn localize(
             tmp.seal(&dest, config, options, &file_info, Some(template)), &lang?;
 
             // Ensure we are putting the file in the correct locale specific location
-            let locale_target = options.target.join(&lang);
-            tmp.rewrite_target(&options.target, &locale_target)?;
+            let locale_target = options.base.join(&lang);
+            tmp.rewrite_target(&options.base, &locale_target)?;
 
             page_info = tmp;
         }
@@ -567,8 +567,6 @@ pub fn add_page_reference(
     dest: PathBuf,
     page_info: Page,
 ) {
-    println!("Adding page resource with destination {}", dest.display());
-
     let mut resource = Resource::new_page(dest);
     if let Some(ref render) = page_info.render {
         if !render {
@@ -589,6 +587,7 @@ pub fn add_file(
     _config: &Config,
     options: &RuntimeOptions,
 ) -> Result<()> {
+
     // Set up the default resource operation
     let mut op = if options.settings.is_release() {
         ResourceOperation::Copy
@@ -615,8 +614,6 @@ pub fn add_file(
         }
         _ => {}
     }
-
-    println!("Adding resource with destination {}", dest.display());
 
     info.all
         .insert(Arc::clone(key), Resource::new(dest, kind, op));

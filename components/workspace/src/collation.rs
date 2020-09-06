@@ -88,8 +88,8 @@ pub async fn localize(
             tmp.seal(&dest, config, options, &file_info, Some(template), &lang)?;
 
             // Ensure we are putting the file in the correct locale specific location
-            let locale_target = options.target.join(&lang);
-            tmp.rewrite_target(&options.target, &locale_target)?;
+            let locale_target = options.base.join(&lang);
+            tmp.rewrite_target(&options.base, &locale_target)?;
 
             page_info = tmp;
         }
