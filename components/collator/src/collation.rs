@@ -4,10 +4,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use config::indexer::QueryList;
-use config::{LocaleName, Page};
+use config::{Config, FileInfo, FileOptions, LocaleName, Page, RuntimeOptions};
 
 use crate::manifest::Manifest;
 use crate::resource::*;
+use crate::Result;
 
 fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     let layout = l.to_path_buf();
@@ -297,5 +298,66 @@ impl CollateInfo {
     pub fn remove_page(&mut self, p: &PathBuf) -> Option<Page> {
         self.resources.remove(p);
         self.pages.remove(p)
+    }
+
+    /// Inherit page data from a fallback locale.
+    pub fn inherit(
+        &mut self,
+        config: &Config,
+        options: &RuntimeOptions,
+        fallback: &mut CollateInfo,
+    ) -> Result<()> {
+        let lang = &self.lang;
+
+        let mut updated: HashMap<Arc<PathBuf>, Page> = HashMap::new();
+        for (path, page) in self.pages.iter_mut() {
+            let use_fallback =
+                page.fallback.is_some() && page.fallback.unwrap();
+            let mut fallback_page = fallback.pages.get_mut(path);
+            if let Some(ref mut fallback_page) = fallback_page {
+                let file_context = fallback_page.file.as_ref().unwrap();
+                let source = file_context.source.clone();
+
+                let mut sub_page = fallback_page.clone();
+
+                let template = if use_fallback {
+                    sub_page.file.as_ref().unwrap().template.clone()
+                } else {
+                    page.file.as_ref().unwrap().template.clone()
+                };
+
+                sub_page.append(page);
+
+                let mut rewrite_index = options.settings.should_rewrite_index();
+                // Override with rewrite-index page level setting
+                if let Some(val) = sub_page.rewrite_index {
+                    rewrite_index = val;
+                }
+
+                // Must seal() again so the file paths are correct
+                let mut file_info =
+                    FileInfo::new(config, options, &source, false);
+                let file_opts = FileOptions {
+                    rewrite_index,
+                    base_href: &options.settings.base_href,
+                    ..Default::default()
+                };
+                let dest = file_info.destination(&file_opts)?;
+                sub_page.seal(
+                    &dest,
+                    config,
+                    options,
+                    &file_info,
+                    Some(template),
+                    lang,
+                )?;
+
+                updated.insert(path.to_owned(), sub_page);
+            } else {
+                updated.insert(path.to_owned(), page.to_owned());
+            }
+        }
+        self.pages = updated;
+        Ok(())
     }
 }

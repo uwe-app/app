@@ -253,20 +253,6 @@ impl Page {
         self.draft.is_some() && self.draft.unwrap()
     }
 
-    // Used when multiple languages active to rewrite the output
-    // path to a new base destination including the locale id.
-    //
-    // This should only be called after seal() so we have a file context.
-    pub fn rewrite_target(
-        &mut self,
-        from: &PathBuf,
-        to: &PathBuf,
-    ) -> Result<(), Error> {
-        let file_ctx = self.file.as_mut().unwrap();
-        file_ctx.target = to.join(file_ctx.target.strip_prefix(from)?);
-        Ok(())
-    }
-
     pub fn seal(
         &mut self,
         output: &PathBuf,

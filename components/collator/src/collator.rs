@@ -112,9 +112,6 @@ async fn find(
 ) -> Result<Vec<Error>> {
     let languages = req.locales.get_translations();
 
-    //let translations = req.locales.get_translations();
-    //println!("Find is running with translations {:?}", translations);
-
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();
 
@@ -168,9 +165,6 @@ async fn find(
                     }
 
                     debug!("Collate {} for {}", buf.display(), &info.lang);
-
-                    // Must override path in case the localization logic kicked in
-                    let path = buf.to_path_buf();
 
                     let key = Arc::new(buf);
 
@@ -356,7 +350,7 @@ fn add_page(
 ) -> Result<()> {
     let pth = path.to_path_buf();
 
-    let mut page_info = loader::compute(&path, req.config, req.options, true)?;
+    let mut page_info = loader::compute(path, req.config, req.options, true)?;
 
     if let Some(ref query) = page_info.query {
         verify_query(query)?;

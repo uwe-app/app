@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -8,7 +9,9 @@ use url::Url;
 
 use cache::CacheComponent;
 //use collator::manifest::Manifest;
-use collator::{Collate, CollateInfo, Collation};
+use collator::{
+    Collate, CollateInfo, CollateRequest, CollateResult, Collation,
+};
 use compiler::{BuildContext, CompileInfo};
 
 use config::{
@@ -20,7 +23,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{collation, renderer::Renderer, Error, Result};
+use crate::{renderer::Renderer, Error, Result};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -214,33 +217,27 @@ impl RenderBuilder {
         };
         */
 
-        // Get a reference to the locale map
-        let locales = &self.options.locales;
-        let config = &self.config;
-        let options = &self.options;
+        let req = CollateRequest {
+            locales: &self.options.locales,
+            config: &self.config,
+            options: &self.options,
+        };
 
-        let locales = collation::collate(locales, config, options).await?;
+        let mut res = CollateResult::new(
+            &self.options.locales.fallback,
+            &self.options.base,
+            &self.options.locales,
+        );
 
-        //let languages = locales
-        //.map
-        //.keys()
-        //.filter(|lang| lang != &&locales.fallback)
-        //.map(|s| s.as_str())
-        //.collect::<Vec<_>>();
+        let mut errors = collator::walk(req, &mut res).await?;
+        if !errors.is_empty() {
+            // TODO: print all errors?
+            let e = errors.swap_remove(0);
+            return Err(Error::Collator(e));
+        }
 
-        //let mut values = collation::extract(
-        //locales,
-        //&mut fallback,
-        //languages,
-        //config,
-        //options,
-        //)
-        //.await?;
-
-        //let mut locales = vec![fallback];
-        //locales.append(&mut values);
+        let locales: Vec<CollateInfo> = res.try_into()?;
         self.collations = CollationBuilder { locales };
-
         Ok(self)
     }
 
@@ -344,6 +341,16 @@ impl RenderBuilder {
                 &self.datasource,
                 &mut self.cache,
             )?;
+        }
+        Ok(self)
+    }
+
+    /// Localized pages inherit data from the fallback.
+    pub async fn inherit(mut self) -> Result<Self> {
+        let mut it = self.collations.locales.iter_mut();
+        let fallback = it.next().unwrap();
+        while let Some(collation) = it.next() {
+            collation.inherit(&self.config, &self.options, fallback)?;
         }
         Ok(self)
     }
@@ -615,6 +622,8 @@ pub async fn compile<P: AsRef<Path>>(
         // WARN: above then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to await (above) and
         // WARN: then await again here.
+        let builder = builder.inherit().await?;
+
         let builder = if builder.get_syntax().is_some() {
             builder.syntax().await?
         } else {
