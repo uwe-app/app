@@ -20,6 +20,12 @@ pub struct Collation {
     pub locale: Arc<CollateInfo>,
 }
 
+impl Collation {
+    pub fn is_fallback(&self) -> bool {
+        self.fallback.lang == self.locale.lang
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct CollateInfo {
     /// The language for this collation.
@@ -139,17 +145,23 @@ impl Collate for Collation {
     }
 
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        // NOTE: we should only iterate a single collation here
-        // NOTE: otherwise we can get duplicates processed
-        self.fallback.resources()
+        // The fallback entry will have the same language so no need to iterate both!
+        if self.is_fallback() {
+            return self.fallback.resources();
+        }
+
+        Box::new(self.locale.resources.union(&self.fallback.resources))
     }
 
     fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
-        // NOTE: we should only iterate a single collation here
-        // NOTE: otherwise we can get duplicates processed
-        self.fallback.pages()
+        // The fallback entry will have the same language so no need to iterate both!
+        if self.is_fallback() {
+            return self.fallback.pages();
+        }
+
+        Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
     }
 }
 
