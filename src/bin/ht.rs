@@ -19,6 +19,48 @@ use publisher::PublishProvider;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
 
+fn get_server_config(
+    target: &PathBuf,
+    opts: &WebServerOpts,
+    default_port: u16,
+    default_port_ssl: u16) -> ServerConfig {
+
+    let serve: ServerConfig = Default::default();
+    let mut host = &serve.listen;
+    let mut port = &default_port;
+    let mut tls = serve.tls.clone();
+
+    let ssl_port = if let Some(ssl_port) = opts.ssl_port {
+        ssl_port
+    } else {
+        default_port_ssl
+    };
+
+    if let Some(ref h) = opts.host {
+        host = h;
+    }
+    if let Some(ref p) = opts.port {
+        port = p;
+    }
+
+    if opts.ssl_cert.is_some() && opts.ssl_key.is_some() {
+        tls = Some(TlsConfig {
+            cert: opts.ssl_cert.as_ref().unwrap().to_path_buf(),
+            key: opts.ssl_key.as_ref().unwrap().to_path_buf(),
+            port: ssl_port,
+        });
+    }
+
+    let host = HostConfig::new(
+        target.clone(),
+        host.to_owned(),
+        None,
+        None,
+    );
+
+    ServerConfig::new_host(host, port.to_owned(), tls)
+}
+
 fn compiler_error(e: &compiler::Error) {
     match e {
         compiler::Error::Multi { ref errs } => {
@@ -268,7 +310,10 @@ struct WebServerOpts {
 }
 
 #[derive(StructOpt, Debug)]
-struct DocsOpts {}
+struct DocsOpts {
+    #[structopt(flatten)]
+    server: WebServerOpts,
+}
 
 #[derive(StructOpt, Debug)]
 enum Site {
@@ -357,7 +402,7 @@ impl Command {
     }
 }
 
-async fn process_command(cmd: &Command) {
+async fn process_command(cmd: &Command) -> Result<(), Error> {
     match cmd {
         Command::Book { ref action } => match action {
             Book::Add {
@@ -443,8 +488,15 @@ async fn process_command(cmd: &Command) {
             }
         }
 
-        Command::Docs { .. } => {
-            if let Err(e) = command::docs::open().await {
+        Command::Docs { ref args } => {
+            let target = command::docs::get_target().await?;
+            let opts = get_server_config(
+                &target,
+                &args.server,
+                config::PORT_DOCS,
+                config::PORT_DOCS_SSL);
+
+            if let Err(e) = command::docs::open(opts).await {
                 fatal(e);
             }
         }
@@ -452,47 +504,21 @@ async fn process_command(cmd: &Command) {
         Command::Run { ref args } => {
             if !args.target.exists() || !args.target.is_dir() {
                 fatal(Error::NotDirectory(args.target.to_path_buf()));
-                return;
+                return Ok(());
             }
 
-            let serve: ServerConfig = Default::default();
-            let mut host = &serve.listen;
-            let mut port = &serve.port;
-            let mut tls = serve.tls.clone();
+            let opts = get_server_config(
+                &args.target,
+                &args.server,
+                config::PORT,
+                config::PORT_SSL);
 
-            let ssl_port = if let Some(ssl_port) = args.server.ssl_port {
-                ssl_port
-            } else {
-                config::PORT_SSL
-            };
-
-            if let Some(h) = &args.server.host {
-                host = h;
-            }
-            if let Some(p) = &args.server.port {
-                port = p;
-            }
-
-            if args.server.ssl_cert.is_some() && args.server.ssl_key.is_some() {
-                tls = Some(TlsConfig {
-                    cert: args.server.ssl_cert.as_ref().unwrap().to_path_buf(),
-                    key: args.server.ssl_key.as_ref().unwrap().to_path_buf(),
-                    port: ssl_port,
-                });
-            }
-
-            let host = HostConfig::new(
-                args.target.clone(),
-                host.to_owned(),
-                None,
-                None,
-            );
-            let opts = ServerConfig::new_host(host, port.to_owned(), tls);
             let launch = LaunchConfig { open: true };
 
             // Convert to &'static reference
             let opts = server::configure(opts);
             let mut channels = Default::default();
+
             match server::launch(opts, launch, &mut channels).await {
                 Err(e) => fatal(Error::from(e)),
                 _ => {}
@@ -590,10 +616,12 @@ async fn process_command(cmd: &Command) {
             }
         }
     }
+
+    Ok(())
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error> {
     let root_args = Cli::from_args();
 
     // Fluent templates panics if an error is caught parsing the
@@ -619,7 +647,7 @@ async fn main() {
             env::set_var(LOG_ENV_NAME, "error");
             pretty_env_logger::init_custom_env(LOG_ENV_NAME);
             fatal(Error::UnknownLogLevel(level.to_string()));
-            return;
+            return Ok(());
         }
     }
 
@@ -633,10 +661,16 @@ async fn main() {
 
     match &root_args.cmd {
         Some(cmd) => {
-            process_command(cmd).await;
+            if let Err(e) = process_command(cmd).await {
+                fatal(e);
+            }
         }
         None => {
-            process_command(&Command::default(root_args)).await;
+            if let Err(e) = process_command(&Command::default(root_args)).await {
+                fatal(e);
+            }
         }
     }
+
+    Ok(())
 }

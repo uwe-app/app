@@ -1,27 +1,24 @@
-use crate::Error;
+use std::path::PathBuf;
+
+use crate::Result;
 use cache::{self, CacheComponent};
-use config::server::{HostConfig, LaunchConfig, ServerConfig};
+use config::server::{LaunchConfig, ServerConfig};
 
 static DOCS_DIR: &str = "docs";
 
-pub async fn open() -> Result<(), Error> {
-    let prefs = preference::load()?;
-    let docs_prefs = prefs.docs.as_ref().unwrap();
-
+pub async fn get_target() -> Result<PathBuf> {
     // Served from a sub-directory
     let target = cache::get_docs_dir()?;
 
     if !target.exists() {
+        let prefs = preference::load()?;
         cache::update(&prefs, vec![CacheComponent::Documentation])?;
     }
 
-    let target = target.join(DOCS_DIR);
+    Ok(target.join(DOCS_DIR))
+}
 
-    //println!("Docs target is {:#?}", target);
-
-    let tls = None;
-    let host = HostConfig::new(target, docs_prefs.host.to_owned(), None, None);
-    let opts = ServerConfig::new_host(host, docs_prefs.port.to_owned(), tls);
+pub async fn open(opts: ServerConfig) -> Result<()> {
     let launch = LaunchConfig { open: true };
 
     // Convert to &'static reference
