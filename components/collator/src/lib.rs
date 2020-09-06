@@ -6,9 +6,11 @@ pub mod collation;
 pub mod collator;
 pub mod loader;
 pub mod manifest;
+pub mod resource;
 
 pub use collation::*;
 pub use collator::*;
+pub use resource::*;
 
 use config::LocaleName;
 
