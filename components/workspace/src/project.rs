@@ -12,7 +12,7 @@ use cache::CacheComponent;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
-use compiler::{BuildContext, CompileInfo};
+use compiler::BuildContext;
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
@@ -23,7 +23,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{renderer::Renderer, Error, Result};
+use crate::{renderer::{CompilerInput, Renderer}, Error, Result};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -138,7 +138,7 @@ pub struct RenderBuilder {
     collations: CollationBuilder,
 }
 
-impl RenderBuilder {
+impl<'r> RenderBuilder {
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
@@ -373,7 +373,7 @@ impl RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(self) -> Result<Render> {
+    pub fn build(self) -> Result<Render<'r>> {
         let sources = Arc::new(self.sources);
         let config = Arc::new(self.config);
         let options = Arc::new(self.options);
@@ -389,11 +389,9 @@ impl RenderBuilder {
                 collation: Arc::new(collation),
             };
 
-            let info = CompileInfo {
-                sources: Arc::clone(&sources),
-                context,
-            };
-            renderers.push(Renderer { info });
+            let info = CompilerInput { sources: Arc::clone(&sources), context };
+            let renderer = Renderer::new(info)?;
+            renderers.push(renderer);
             Ok::<(), Error>(())
         })?;
 
@@ -420,17 +418,17 @@ impl RenderBuilder {
 }
 
 #[derive(Debug, Default)]
-pub struct Render {
+pub struct Render<'r> {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Locales,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub renderers: Vec<Renderer>,
+    pub renderers: Vec<Renderer<'r>>,
 }
 
-impl Render {
+impl<'r> Render<'r> {
     pub fn get_fallback_context(&self) -> &BuildContext {
         &self.get_fallback_renderer().info.context
     }
@@ -584,18 +582,16 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 }
 
 #[derive(Debug, Default)]
-pub struct CompileResult {
-    pub projects: Vec<Render>,
+pub struct CompileResult<'p> {
+    pub projects: Vec<Render<'p>>,
 }
 
 /// Compile a project.
 ///
 /// The project may contain workspace members in which case all
 /// member projects will be compiled.
-pub async fn compile<P: AsRef<Path>>(
-    project: P,
-    args: &ProfileSettings,
-) -> Result<CompileResult> {
+pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Result<CompileResult<'_>> {
+
     let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 

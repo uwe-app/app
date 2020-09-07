@@ -1293,6 +1293,7 @@ dependencies = [
  "locale",
  "log",
  "notify",
+ "once_cell",
  "open",
  "preference",
  "pretty_env_logger",

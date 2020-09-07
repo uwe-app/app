@@ -17,6 +17,7 @@ use super::helpers;
 static TEMPLATE_EXT: &str = ".hbs";
 
 // Render templates using handlebars.
+#[derive(Debug)]
 pub struct Parser<'a> {
     context: &'a BuildContext,
     handlebars: Handlebars<'a>,

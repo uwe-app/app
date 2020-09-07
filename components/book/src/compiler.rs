@@ -15,6 +15,7 @@ use super::{Error, Result};
 static BOOK_TOML: &str = "book.toml";
 static BOOK_THEME_KEY: &str = "output.html.theme";
 
+#[derive(Debug)]
 pub struct BookCompiler {
     source: PathBuf,
     target: PathBuf,

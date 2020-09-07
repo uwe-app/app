@@ -67,6 +67,7 @@ serde_json = "1"
 toml = { version = "0.5", features = ["preserve_order"] }
 semver = "0.10"
 scopeguard = "1.1.0"
+once_cell = "1.4"
 
 tokio = { version = "0.2.22", features = ["full"] }
 #warp = { version = "0.2.4", features = ["tls", "websocket"] }

@@ -191,7 +191,6 @@ pub(crate) fn prepare(
 
     // Inherit the profile settings from the root
     let mut root = cfg.build.as_ref().unwrap().clone();
-
     let mut input = args.clone();
 
     // Handle profiles, eg: [profile.dist] that mutate the

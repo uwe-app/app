@@ -10,7 +10,7 @@ mod livereload;
 
 pub async fn compile<P: AsRef<Path>>(
     project: P,
-    args: &mut ProfileSettings,
+    args: &'static mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
     let lock_path = project.as_ref().join("site.lock");
@@ -19,6 +19,7 @@ pub async fn compile<P: AsRef<Path>>(
 
     let live = args.live.is_some() && args.live.unwrap();
     if live {
+        let args = Box::leak(Box::new(args));
         livereload::start(project, args, error_cb).await?;
     } else {
         workspace::compile(project, args).await?;

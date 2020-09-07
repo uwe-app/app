@@ -562,7 +562,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 });
             }
 
-            let mut build_args = ProfileSettings {
+            let build_args = ProfileSettings {
                 paths,
                 profile: args.profile.clone(),
                 live: Some(args.live),
@@ -574,7 +574,12 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             };
 
             let now = SystemTime::now();
-            match command::build::compile(&project, &mut build_args, fatal)
+
+            // WARN: Hack for live reload lifetimes!
+            // FIXME: use once_cell for the static lifetime!
+            let build_args: &'static mut ProfileSettings = Box::leak(Box::new(build_args));
+
+            match command::build::compile(&project, build_args, fatal)
                 .await
             {
                 Ok(_) => {

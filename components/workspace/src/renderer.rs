@@ -1,4 +1,6 @@
+use std::path::PathBuf;
 use std::fs::{self, File};
+use std::sync::Arc;
 
 use log::info;
 use url::Url;
@@ -6,7 +8,7 @@ use url::Url;
 use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
-use compiler::{parser::Parser, CompileInfo, Compiler, ParseData};
+use compiler::{parser::Parser, Compiler, ParseData, BuildContext};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
 use search::{
@@ -15,17 +17,40 @@ use search::{
 
 use crate::Result;
 
+#[derive(Debug, Default)]
+pub struct CompilerInput {
+    pub context: BuildContext,
+    pub sources: Arc<Vec<PathBuf>>,
+}
+
 #[derive(Debug)]
 pub struct RenderResult {
     pub sitemap: Option<Url>,
 }
 
 #[derive(Debug)]
-pub struct Renderer {
-    pub info: CompileInfo,
+pub struct Renderer<'a> {
+    builder: Option<Compiler<'a>>,
+    parser: Option<Parser<'a>>,
+    pub info: CompilerInput,
 }
 
-impl Renderer {
+impl<'a> Renderer<'a> {
+
+    pub fn new(info: CompilerInput) -> Result<Self> {
+        //let parser = Parser::new(&info.context, locales)?;
+        //let builder = Compiler::new(&info.context);
+
+        //let parser = Parser::new(&self.info.context, &locales)?;
+        //let builder = Compiler::new(&info.context);
+
+        Ok(Self {
+            info,
+            builder: None,
+            parser: None,
+        })
+    }
+
     /// Render a locale for a project.
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
         let (_, _, parse_list) = self.build(locales).await?;
@@ -34,7 +59,7 @@ impl Renderer {
         })
     }
 
-    fn finish<'a>(&self, parse_list: Vec<ParseData>) -> Result<Option<Url>> {
+    fn finish(&self, parse_list: Vec<ParseData>) -> Result<Option<Url>> {
         self.create_search_indices(&parse_list)?;
         Ok(self.create_site_map(&parse_list)?)
     }
@@ -161,8 +186,8 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn build<'a>(
-        &'a self,
+    async fn build(
+        &self,
         locales: &'a Locales,
     ) -> std::result::Result<
         (Compiler<'_>, Parser<'_>, Vec<ParseData>),
@@ -176,6 +201,7 @@ impl Renderer {
 
         let parser = Parser::new(&self.info.context, &locales)?;
         let builder = Compiler::new(&self.info.context);
+
         let parse_list = builder.all(&parser, &self.info.sources).await?;
         Ok((builder, parser, parse_list))
     }

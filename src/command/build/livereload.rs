@@ -22,21 +22,22 @@ use workspace::{Render, Invalidator};
 
 use crate::{Error, ErrorCallback};
 
-struct LiveHost {
+struct LiveHost<'s> {
     source: PathBuf,
     receiver: mpsc::Receiver<DebouncedEvent>,
     watcher: INotifyWatcher,
-    state: Render,
+    state: Render<'s>,
     websocket: broadcast::Sender<Message>,
 }
 
 pub async fn start<P: AsRef<Path>>(
     project: P,
-    args: &mut ProfileSettings,
+    args: &'static mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
+
     // Prepare the server settings
-    let port = args.get_port();
+    let port = args.get_port().clone();
     if port == 0 {
         return Err(Error::NoLiveEphemeralPort);
     }
@@ -55,7 +56,7 @@ pub async fn start<P: AsRef<Path>>(
     // otherwise we can just run using the standard `localhost`.
     let multiple = result.projects.len() > 1;
 
-    let mut watchers: Vec<LiveHost> = Vec::new();
+    let mut watchers: Vec<LiveHost<'_>> = Vec::new();
 
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
@@ -106,14 +107,13 @@ pub async fn start<P: AsRef<Path>>(
         // Configure the watcher
         let watcher = notify::watcher(tx, Duration::from_secs(1))?;
 
-        let live_host = LiveHost {
+        watchers.push(LiveHost {
             source,
             watcher,
             state,
             websocket: ws_tx,
             receiver: rx,
-        };
-        watchers.push(live_host);
+        });
 
         Ok::<(), Error>(())
     })?;
@@ -140,6 +140,19 @@ pub async fn start<P: AsRef<Path>>(
         });
     });
 
+    watch(watchers, error_cb);
+
+    // Convert to &'static reference
+    let opts = server::configure(opts);
+
+    // Start the webserver
+    server::start(opts, &mut channels).await?;
+
+    Ok(())
+}
+
+
+fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
     for mut w in watchers {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
@@ -224,12 +237,4 @@ pub async fn start<P: AsRef<Path>>(
             });
         });
     }
-
-    // Convert to &'static reference
-    let opts = server::configure(opts);
-
-    // Start the webserver
-    server::start(opts, &mut channels).await?;
-
-    Ok(())
 }

@@ -96,7 +96,7 @@ pub struct BookRule {
 }
 
 pub struct Invalidator<'a> {
-    state: &'a Render, 
+    state: &'a Render<'a>, 
     builder: Compiler<'a>,
     parser: Parser<'a>,
 }

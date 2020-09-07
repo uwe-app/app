@@ -13,6 +13,7 @@ use crate::parser::Parser;
 use crate::run::{self, ParseData};
 use crate::{Error, Result};
 
+#[derive(Debug)]
 pub struct Compiler<'a> {
     pub context: &'a BuildContext,
     pub book: BookCompiler,
