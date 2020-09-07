@@ -75,6 +75,7 @@ warp = { features = ["tls", "websocket"], path = "/home/muji/git/warp" }
 notify = { version = "4.0.0" }
 
 [profile.release]
+panic = "abort"
 lto = true
 codegen-units = 1
 opt-level = "z"
