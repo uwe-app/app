@@ -24,8 +24,6 @@ use crate::{Error, ErrorCallback};
 
 struct LiveHost<'s> {
     source: PathBuf,
-    receiver: mpsc::Receiver<DebouncedEvent>,
-    sender: mpsc::Sender<DebouncedEvent>,
     state: Render<'s>,
     websocket: broadcast::Sender<Message>,
 }
@@ -101,15 +99,11 @@ pub async fn start<P: AsRef<Path>>(
 
         // Get the source directory to configure the watcher
         let source = state.options.source.clone();
-        // Create a channel to receive the events.
-        let (tx, rx) = mpsc::channel();
 
         watchers.push(LiveHost {
             source,
             state,
             websocket: ws_tx,
-            receiver: rx,
-            sender: tx,
         });
 
         Ok::<(), Error>(())
@@ -153,8 +147,9 @@ fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                let rx = w.receiver;
-                let tx = w.sender;
+
+                // Create a channel to receive the events.
+                let (tx, rx) = mpsc::channel();
 
                 // Configure the watcher
                 let mut watcher = notify::watcher(tx, Duration::from_secs(1))
