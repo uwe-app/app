@@ -44,6 +44,13 @@ where
     })
 }
 
+#[derive(Serialize)]
+pub struct CollatedPage<'a> {
+    #[serde(flatten)]
+    pub page: &'a Page,
+    pub lang: &'a str,
+}
+
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileContext {

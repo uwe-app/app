@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use log::warn;
 
+use serde::Serialize;
+
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
@@ -236,28 +238,32 @@ impl<'a> Parser<'a> {
         frontmatter::Config::new_markdown(false)
     }
 
-    fn layout(&self, data: &Page, layout: &PathBuf) -> Result<String> {
+    fn layout(&self, data: impl Serialize, layout: &PathBuf) -> Result<String> {
         let layout_name = layout.to_string_lossy().into_owned();
         return self
             .handlebars
-            .render(&layout_name, data)
+            .render(&layout_name, &data)
             .map_err(Error::from);
     }
 
-    fn standalone(&self, file: &PathBuf, data: &Page) -> Result<String> {
+    fn standalone(&self, file: &PathBuf, data: impl Serialize) -> Result<String> {
         let (content, _has_fm, _fm) =
             frontmatter::load(file, self.get_front_matter_config(file))?;
         self.handlebars
-            .render_template(&content, data)
+            .render_template(&content, &data)
             .map_err(Error::from)
     }
 
-    pub fn parse(&self, file: &PathBuf, data: &Page) -> Result<String> {
+    pub fn parse(&self, file: &PathBuf, data: impl Serialize, standalone: bool) -> Result<String> {
         // Explicitly marked as standalone
-        if let Some(standalone) = data.standalone {
-            if standalone {
-                return self.standalone(file, data);
-            }
+        //if let Some(standalone) = data.standalone {
+            //if standalone {
+                //return self.standalone(file, data);
+            //}
+        //}
+
+        if standalone {
+            return self.standalone(file, data);
         }
 
         let layout = self.context.collation.find_layout(file);

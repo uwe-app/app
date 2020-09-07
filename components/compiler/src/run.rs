@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use log::info;
 
-use config::{Config, Page, ProfileName};
+use config::{Config, Page, CollatedPage, ProfileName};
+use collator::Collate;
 
 use crate::context::BuildContext;
 use crate::draft;
@@ -106,10 +107,14 @@ pub async fn parse(
         &ctx.config,
     );
 
+    let standalone = data.standalone.is_some();
+    let lang = ctx.collation.get_lang();
+    let page_data = CollatedPage {page: data, lang};
+
     let mut s = if minify_html {
-        minify::html(parser.parse(file, &data)?)
+        minify::html(parser.parse(file, page_data, standalone)?)
     } else {
-        parser.parse(file, &data)?
+        parser.parse(file, page_data, standalone)?
     };
 
     let mut res = ParseData::new(data.file.as_ref().unwrap().source.clone());

@@ -110,7 +110,7 @@ pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use locale::*;
-pub use page::{Author, Page, PageLink, PaginateInfo};
+pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
 pub use redirect::*;
 pub use search::{SEARCH_JS, SEARCH_WASM};
