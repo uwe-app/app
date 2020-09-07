@@ -99,21 +99,18 @@ pub struct Invalidator<'a> {
     state: &'a Render, 
     builder: Compiler<'a>,
     parser: Parser<'a>,
-    datasource: &'a DataSourceMap,
 }
 
 impl<'a> Invalidator<'a> {
     pub fn new(state: &'a mut Render) -> Self {
         let context = state.get_fallback_context();
         let locales = &state.locales;
-        let datasource = &state.datasource;
         let parser = Parser::new(context, locales).unwrap();
         let builder = Compiler::new(context);
         Self {
             state,
             builder,
             parser,
-            datasource,
         }
     }
 
@@ -179,9 +176,7 @@ impl<'a> Invalidator<'a> {
                 .collect::<Vec<_>>();
         }
 
-        let generator_paths: Vec<PathBuf> = self
-            .datasource
-            .map
+        let generator_paths: Vec<PathBuf> = self.state.datasource.map
             .values()
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();
