@@ -381,6 +381,8 @@ impl<'r> RenderBuilder {
         // Get a map of collations keyed by locale wrapper
         let collations = self.collations.build()?;
 
+        let locales = Arc::new(self.locales);
+
         let mut renderers: Vec<Renderer> = Vec::new();
         collations.into_iter().try_for_each(|collation| {
             let context = BuildContext {
@@ -389,11 +391,13 @@ impl<'r> RenderBuilder {
                 collation: Arc::new(collation),
             };
 
-            let info = CompilerInput { sources: Arc::clone(&sources), context: Arc::new(context) };
-            //let builder = Compiler::new(&info.context);
-            let mut renderer = Renderer::new(info);
-            //renderer.set_compiler(builder);
-            renderers.push(renderer);
+            let info = CompilerInput {
+                sources: Arc::clone(&sources),
+                locales: Arc::clone(&locales),
+                context: Arc::new(context),
+            };
+
+            renderers.push(Renderer::new(info)?);
             Ok::<(), Error>(())
         })?;
 
@@ -401,7 +405,7 @@ impl<'r> RenderBuilder {
             config,
             options,
             renderers,
-            locales: self.locales,
+            locales,
             redirects: self.redirects,
             datasource: self.datasource,
             cache: self.cache,
@@ -424,7 +428,7 @@ pub struct Render<'r> {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
-    pub locales: Locales,
+    pub locales: Arc<Locales>,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
     pub renderers: Vec<Renderer<'r>>,
@@ -638,7 +642,7 @@ pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Resu
                 renderer.info.context.collation.get_path().display()
             );
 
-            let mut res = renderer.render(&state.locales).await?;
+            let mut res = renderer.render(Arc::clone(&state.locales)).await?;
             if let Some(url) = res.sitemap.take() {
                 sitemaps.push(url);
             }

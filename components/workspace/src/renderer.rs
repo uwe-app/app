@@ -21,6 +21,7 @@ use crate::Result;
 pub struct CompilerInput {
     pub context: Arc<BuildContext>,
     pub sources: Arc<Vec<PathBuf>>,
+    pub locales: Arc<Locales>,
 }
 
 #[derive(Debug, Default)]
@@ -36,22 +37,24 @@ pub struct RenderResult {
 #[derive(Debug)]
 pub struct Renderer<'a> {
     compiler: Compiler,
-    parser: Option<Parser<'a>>,
+    parser: Parser<'a>,
     pub info: CompilerInput,
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(info: CompilerInput) -> Self {
+    pub fn new(info: CompilerInput) -> Result<Self> {
         let compiler = Compiler::new(Arc::clone(&info.context));
-        Self {
+        let parser = Parser::new(Arc::clone(&info.context), Arc::clone(&info.locales))?;
+
+        Ok(Self {
             info,
             compiler,
-            parser: None,
-        }
+            parser,
+        })
     }
 
     /// Render a locale for a project.
-    pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
+    pub async fn render(&self, locales: Arc<Locales>) -> Result<RenderResult> {
         let output = self.build(locales).await?;
         Ok(RenderResult {
             sitemap: self.finish(output)?,
@@ -187,7 +190,7 @@ impl<'a> Renderer<'a> {
 
     async fn build(
         &self,
-        locales: &'a Locales,
+        locales: Arc<Locales>,
     ) -> Result<CompilerOutput> {
 
         // When working with multi-lingual sites the target may not exist yet
@@ -196,17 +199,15 @@ impl<'a> Renderer<'a> {
             fs::create_dir_all(path)?;
         }
 
-        let (builder, parser) = Renderer::compiler(&self.info, &locales)?;
+        //let parser = Renderer::compiler(&self.info, locales)?;
 
-        let data = self.compiler.all(&parser, &self.info.sources).await?;
+        let data = self.compiler.all(&self.parser, &self.info.sources).await?;
 
         Ok(CompilerOutput{ data })
     }
 
-    /// Generate a compiler and parser.
-    pub(crate) fn compiler<'c>(info: &'c CompilerInput, locales: &'c Locales) -> Result<(Compiler, Parser<'c>)> {
-        let builder = Compiler::new(Arc::clone(&info.context));
-        let parser = Parser::new(Arc::clone(&info.context), locales)?;
-        Ok((builder, parser))
-    }
+    //pub(crate) fn compiler<'c>(info: &'c CompilerInput, locales: Arc<Locales>) -> Result<Parser<'c>> {
+        //let parser = Parser::new(Arc::clone(&info.context), &locales)?;
+        //Ok(parser)
+    //}
 }
