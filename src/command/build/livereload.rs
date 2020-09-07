@@ -13,8 +13,6 @@ use notify::{INotifyWatcher, Watcher};
 use std::thread::sleep;
 use std::time::Duration;
 
-use compiler::parser::Parser;
-use compiler::Compiler;
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 use config::ProfileSettings;
 
@@ -155,19 +153,7 @@ pub async fn start<P: AsRef<Path>>(
                     .expect("Failed to start watcher");
                 info!("Watch {}", w.source.display());
 
-                // FIXME: this logic needs to handle multiple locales!!
-                let context = w.state.get_fallback_context();
-                let locales = &w.state.locales;
-                let datasource = &w.state.datasource;
-
-                // Invalidator wraps the builder receiving filesystem change
-                // notifications and sending messages over the `tx` channel
-                // to connected websockets when necessary
-                //
-                let parser = Parser::new(context, locales).unwrap();
-                let compiler = Compiler::new(context);
-                let mut invalidator =
-                    Invalidator::new(compiler, parser, datasource);
+                let mut invalidator = Invalidator::new(&mut w.state);
                 let ws_tx = &w.websocket;
 
                 loop {

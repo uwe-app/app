@@ -10,6 +10,8 @@ use compiler::parser::Parser;
 use compiler::Compiler;
 use compiler::Error;
 
+use crate::Render;
+
 /*
  *  Invalidation rules.
  *
@@ -94,18 +96,21 @@ pub struct BookRule {
 }
 
 pub struct Invalidator<'a> {
+    state: &'a Render, 
     builder: Compiler<'a>,
     parser: Parser<'a>,
     datasource: &'a DataSourceMap,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(
-        builder: Compiler<'a>,
-        parser: Parser<'a>,
-        datasource: &'a DataSourceMap,
-    ) -> Self {
+    pub fn new(state: &'a mut Render) -> Self {
+        let context = state.get_fallback_context();
+        let locales = &state.locales;
+        let datasource = &state.datasource;
+        let parser = Parser::new(context, locales).unwrap();
+        let builder = Compiler::new(context);
         Self {
+            state,
             builder,
             parser,
             datasource,
