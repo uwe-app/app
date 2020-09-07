@@ -1280,7 +1280,7 @@ dependencies = [
 
 [[package]]
 name = "hypertext"
-version = "0.20.10"
+version = "0.20.11"
 dependencies = [
  "book",
  "cache",

@@ -577,11 +577,10 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
 
             // WARN: Hack for live reload lifetimes!
             // FIXME: use once_cell for the static lifetime!
-            let build_args: &'static mut ProfileSettings = Box::leak(Box::new(build_args));
+            let build_args: &'static mut ProfileSettings =
+                Box::leak(Box::new(build_args));
 
-            match command::build::compile(&project, build_args, fatal)
-                .await
-            {
+            match command::build::compile(&project, build_args, fatal).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);

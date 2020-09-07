@@ -9,7 +9,6 @@ use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
 use collator::LayoutCollate;
-use config::Page;
 use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
@@ -98,70 +97,108 @@ impl<'a> Parser<'a> {
         // Configure helpers
         handlebars.register_helper(
             "author",
-            Box::new(helpers::author::AuthorMeta { context: Arc::clone(&context) }),
+            Box::new(helpers::author::AuthorMeta {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "partial",
-            Box::new(helpers::partial::Partial { context: Arc::clone(&context) }),
+            Box::new(helpers::partial::Partial {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "children",
-            Box::new(helpers::children::Children { context: Arc::clone(&context) }),
+            Box::new(helpers::children::Children {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "livereload",
-            Box::new(helpers::livereload::LiveReload { context: Arc::clone(&context) }),
+            Box::new(helpers::livereload::LiveReload {
+                context: Arc::clone(&context),
+            }),
         );
-        handlebars
-            .register_helper("feed", Box::new(helpers::feed::Feed { context: Arc::clone(&context) }));
+        handlebars.register_helper(
+            "feed",
+            Box::new(helpers::feed::Feed {
+                context: Arc::clone(&context),
+            }),
+        );
         handlebars.register_helper(
             "parent",
-            Box::new(helpers::parent::Parent { context: Arc::clone(&context) }),
+            Box::new(helpers::parent::Parent {
+                context: Arc::clone(&context),
+            }),
         );
-        handlebars
-            .register_helper("link", Box::new(helpers::link::Link { context: Arc::clone(&context) }));
+        handlebars.register_helper(
+            "link",
+            Box::new(helpers::link::Link {
+                context: Arc::clone(&context),
+            }),
+        );
         handlebars.register_helper(
             "md",
-            Box::new(helpers::markdown::Markdown { context: Arc::clone(&context) }),
+            Box::new(helpers::markdown::Markdown {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "components",
-            Box::new(helpers::components::Components { context: Arc::clone(&context) }),
+            Box::new(helpers::components::Components {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "match",
-            Box::new(helpers::matcher::Match { context: Arc::clone(&context) }),
+            Box::new(helpers::matcher::Match {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "series",
-            Box::new(helpers::series::Series { context: Arc::clone(&context) }),
+            Box::new(helpers::series::Series {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "favicon",
-            Box::new(helpers::favicon::Icon { context: Arc::clone(&context) }),
+            Box::new(helpers::favicon::Icon {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "bookmark",
-            Box::new(helpers::bookmark::Link { context: Arc::clone(&context) }),
+            Box::new(helpers::bookmark::Link {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "permalink",
-            Box::new(helpers::bookmark::PermaLink { context: Arc::clone(&context) }),
+            Box::new(helpers::bookmark::PermaLink {
+                context: Arc::clone(&context),
+            }),
         );
 
         handlebars.register_helper(
             "styles",
-            Box::new(helpers::styles::Styles { context: Arc::clone(&context) }),
+            Box::new(helpers::styles::Styles {
+                context: Arc::clone(&context),
+            }),
         );
         handlebars.register_helper(
             "scripts",
-            Box::new(helpers::scripts::Scripts { context: Arc::clone(&context) }),
+            Box::new(helpers::scripts::Scripts {
+                context: Arc::clone(&context),
+            }),
         );
 
         if context.config.search.is_some() {
             handlebars.register_helper(
                 "search",
-                Box::new(helpers::search::Embed { context: Arc::clone(&context) }),
+                Box::new(helpers::search::Embed {
+                    context: Arc::clone(&context),
+                }),
             );
         }
 
@@ -246,7 +283,11 @@ impl<'a> Parser<'a> {
             .map_err(Error::from);
     }
 
-    fn standalone(&self, file: &PathBuf, data: impl Serialize) -> Result<String> {
+    fn standalone(
+        &self,
+        file: &PathBuf,
+        data: impl Serialize,
+    ) -> Result<String> {
         let (content, _has_fm, _fm) =
             frontmatter::load(file, self.get_front_matter_config(file))?;
         self.handlebars
@@ -254,14 +295,13 @@ impl<'a> Parser<'a> {
             .map_err(Error::from)
     }
 
-    pub fn parse(&self, file: &PathBuf, data: impl Serialize, standalone: bool) -> Result<String> {
+    pub fn parse(
+        &self,
+        file: &PathBuf,
+        data: impl Serialize,
+        standalone: bool,
+    ) -> Result<String> {
         // Explicitly marked as standalone
-        //if let Some(standalone) = data.standalone {
-            //if standalone {
-                //return self.standalone(file, data);
-            //}
-        //}
-
         if standalone {
             return self.standalone(file, data);
         }

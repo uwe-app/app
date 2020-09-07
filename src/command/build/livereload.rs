@@ -18,7 +18,7 @@ use config::ProfileSettings;
 
 use server::{Channels, HostChannel};
 
-use workspace::{Render, Invalidator};
+use workspace::{Invalidator, Render};
 
 use crate::{Error, ErrorCallback};
 
@@ -35,7 +35,6 @@ pub async fn start<P: AsRef<Path>>(
     args: &'static mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-
     // Prepare the server settings
     let port = args.get_port().clone();
     if port == 0 {
@@ -150,7 +149,6 @@ pub async fn start<P: AsRef<Path>>(
 
     Ok(())
 }
-
 
 fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
     for mut w in watchers {

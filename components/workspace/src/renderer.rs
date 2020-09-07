@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::fs::{self, File};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use log::info;
@@ -8,7 +8,7 @@ use url::Url;
 use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
-use compiler::{parser::Parser, Compiler, ParseData, BuildContext};
+use compiler::{parser::Parser, BuildContext, Compiler, ParseData};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
 use search::{
@@ -38,7 +38,7 @@ pub struct RenderResult {
 pub struct Renderer<'a> {
     compiler: Compiler,
 
-    // FIXME: cannot create the parser ahead of time so 
+    // FIXME: cannot create the parser ahead of time so
     // FIXME: may need to remove this as it is not used :(
     parser: Option<&'a Parser<'a>>,
 
@@ -46,7 +46,6 @@ pub struct Renderer<'a> {
 }
 
 impl<'a> Renderer<'a> {
-
     pub fn new(info: CompilerInput) -> Self {
         let compiler = Compiler::new(Arc::clone(&info.context));
         Self {
@@ -57,9 +56,9 @@ impl<'a> Renderer<'a> {
     }
 
     //pub fn set_parser(&'a mut self, locales: &'a Locales) -> Result<()> {
-        //let parser = Renderer::parser(&self.info, &locales)?;
-        //self.parser = Some(parser);
-        //Ok(())
+    //let parser = Renderer::parser(&self.info, &locales)?;
+    //self.parser = Some(parser);
+    //Ok(())
     //}
 
     /// Render a locale for a project.
@@ -197,11 +196,7 @@ impl<'a> Renderer<'a> {
         Ok(res)
     }
 
-    async fn build(
-        &self,
-        locales: &Locales,
-    ) -> Result<CompilerOutput> {
-
+    async fn build(&self, locales: &Locales) -> Result<CompilerOutput> {
         // When working with multi-lingual sites the target may not exist yet
         let path = self.info.context.collation.get_path();
         if !path.exists() {
@@ -210,10 +205,13 @@ impl<'a> Renderer<'a> {
 
         let parser = Renderer::parser(&self.info, &locales)?;
         let data = self.compiler.all(&parser, &self.info.sources).await?;
-        Ok(CompilerOutput{ data })
+        Ok(CompilerOutput { data })
     }
 
-    pub(crate) fn parser<'c>(info: &'c CompilerInput, locales: &'c Locales) -> Result<Parser<'c>> {
+    pub(crate) fn parser<'c>(
+        info: &'c CompilerInput,
+        locales: &'c Locales,
+    ) -> Result<Parser<'c>> {
         let parser = Parser::new(Arc::clone(&info.context), &locales)?;
         Ok(parser)
     }

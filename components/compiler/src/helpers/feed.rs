@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use handlebars::*;
+use std::sync::Arc;
 
 use crate::BuildContext;
 use collator::Collate;

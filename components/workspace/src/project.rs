@@ -23,7 +23,10 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
-use crate::{renderer::{CompilerInput, Renderer}, Error, Result};
+use crate::{
+    renderer::{CompilerInput, Renderer},
+    Error, Result,
+};
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
@@ -402,7 +405,7 @@ impl<'r> RenderBuilder {
         })?;
 
         //for renderer in renderers.iter_mut() {
-            //renderer.set_parser(&locales)?;
+        //renderer.set_parser(&locales)?;
         //}
 
         Ok(Render {
@@ -600,8 +603,10 @@ pub struct CompileResult<'p> {
 ///
 /// The project may contain workspace members in which case all
 /// member projects will be compiled.
-pub async fn compile<P: AsRef<Path>>(project: P, args: &ProfileSettings) -> Result<CompileResult<'_>> {
-
+pub async fn compile<P: AsRef<Path>>(
+    project: P,
+    args: &ProfileSettings,
+) -> Result<CompileResult<'_>> {
     let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 

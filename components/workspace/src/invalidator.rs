@@ -97,7 +97,7 @@ pub struct BookRule {
 }
 
 pub struct Invalidator<'a> {
-    state: &'a Render<'a>, 
+    state: &'a Render<'a>,
     builder: Compiler,
     parser: Parser<'a>,
 }
@@ -128,7 +128,6 @@ impl<'a> Invalidator<'a> {
         &mut self,
         paths: Vec<PathBuf>,
     ) -> Result<Rule, Error> {
-
         let config = self.builder.context.config.clone();
         let options = self.builder.context.options.clone();
 
@@ -164,7 +163,10 @@ impl<'a> Invalidator<'a> {
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = self.builder.context.config
+        let book_theme = self
+            .builder
+            .context
+            .config
             .get_book_theme_path(&self.builder.context.options.source)
             .map(|v| self.canonical(v));
 
@@ -177,7 +179,10 @@ impl<'a> Invalidator<'a> {
                 .collect::<Vec<_>>();
         }
 
-        let generator_paths: Vec<PathBuf> = self.state.datasource.map
+        let generator_paths: Vec<PathBuf> = self
+            .state
+            .datasource
+            .map
             .values()
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();
@@ -193,8 +198,7 @@ impl<'a> Invalidator<'a> {
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&options.source)
-                                    .unwrap(),
+                                hook.get_source_path(&options.source).unwrap(),
                             );
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
@@ -215,8 +219,10 @@ impl<'a> Invalidator<'a> {
                         }
 
                         if path.starts_with(book_path) {
-                            if let Some(md) =
-                                self.builder.book.locate(&self.builder.context.config, &book)
+                            if let Some(md) = self
+                                .builder
+                                .book
+                                .locate(&self.builder.context.config, &book)
                             {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
@@ -283,8 +289,10 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     } else {
-                        let file_type =
-                            FileInfo::get_type(&path, &self.builder.context.options.settings);
+                        let file_type = FileInfo::get_type(
+                            &path,
+                            &self.builder.context.options.settings,
+                        );
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
