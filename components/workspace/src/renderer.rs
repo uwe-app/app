@@ -35,16 +35,17 @@ pub struct RenderResult {
 
 #[derive(Debug)]
 pub struct Renderer<'a> {
-    builder: Option<Compiler>,
+    compiler: Compiler,
     parser: Option<Parser<'a>>,
     pub info: CompilerInput,
 }
 
 impl<'a> Renderer<'a> {
     pub fn new(info: CompilerInput) -> Self {
+        let compiler = Compiler::new(Arc::clone(&info.context));
         Self {
             info,
-            builder: None,
+            compiler,
             parser: None,
         }
     }
@@ -197,14 +198,7 @@ impl<'a> Renderer<'a> {
 
         let (builder, parser) = Renderer::compiler(&self.info, &locales)?;
 
-        //let builder = self.builder.as_ref().unwrap_or(Compiler::new(&self.info.context));
-        //let parser = self.parser.as_ref().unwrap_or(Parser::new(&self.info.context, locales)?);
-
-
-        let data = builder.all(&parser, &self.info.sources).await?;
-
-        //self.builder = Some(builder);
-        //self.parser = Some(parser);
+        let data = self.compiler.all(&parser, &self.info.sources).await?;
 
         Ok(CompilerOutput{ data })
     }
