@@ -20,9 +20,8 @@ use config::ProfileSettings;
 
 use server::{Channels, HostChannel};
 
-use workspace::Render;
+use workspace::{Render, Invalidator};
 
-use super::invalidator::Invalidator;
 use crate::{Error, ErrorCallback};
 
 struct LiveHost {

@@ -66,9 +66,11 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod invalidator;
 pub mod lock;
 mod options;
 mod project;
 mod renderer;
 
+pub use invalidator::Invalidator;
 pub use project::*;

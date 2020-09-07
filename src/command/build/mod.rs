@@ -6,7 +6,6 @@ use config::ProfileSettings;
 use scopeguard::defer;
 use workspace::lock;
 
-mod invalidator;
 mod livereload;
 
 pub async fn compile<P: AsRef<Path>>(
