@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use handlebars::*;
 
 use crate::BuildContext;
@@ -5,12 +6,12 @@ use serde_json::from_value;
 
 use config::Author;
 
-#[derive(Clone, Copy)]
-pub struct AuthorMeta<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct AuthorMeta {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for AuthorMeta<'_> {
+impl HelperDef for AuthorMeta {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,

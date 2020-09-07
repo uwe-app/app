@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use handlebars::*;
 use serde_json::Value;
@@ -6,12 +7,12 @@ use serde_json::Value;
 use crate::tree::{self, ListOptions};
 use crate::BuildContext;
 
-#[derive(Clone, Copy)]
-pub struct Children<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Children {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Children<'_> {
+impl HelperDef for Children {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -48,7 +49,7 @@ impl HelperDef for Children<'_> {
             depth: 1,
         };
 
-        let list_result = tree::listing(self.context, &list_opts);
+        let list_result = tree::listing(&self.context, &list_opts);
         match list_result {
             Ok(entries) => {
                 for li in entries {

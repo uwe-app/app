@@ -1,14 +1,15 @@
+use std::sync::Arc;
 use handlebars::*;
 
 use crate::BuildContext;
 use collator::Collate;
 
-#[derive(Clone, Copy)]
-pub struct Feed<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Feed {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Feed<'_> {
+impl HelperDef for Feed {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

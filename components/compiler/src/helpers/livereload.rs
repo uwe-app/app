@@ -1,13 +1,15 @@
+use std::sync::Arc;
+
 use handlebars::*;
 
 use crate::BuildContext;
 
-#[derive(Clone, Copy)]
-pub struct LiveReload<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct LiveReload {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for LiveReload<'_> {
+impl HelperDef for LiveReload {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,

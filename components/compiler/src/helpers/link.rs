@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use handlebars::*;
 use log::debug;
@@ -9,12 +10,12 @@ use serde_json::json;
 use crate::lookup;
 use crate::BuildContext;
 
-#[derive(Clone, Copy)]
-pub struct Link<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Link {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Link<'_> {
+impl HelperDef for Link {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -91,7 +92,7 @@ impl HelperDef for Link<'_> {
         if let Some(verify) = link_config.verify {
             if verify {
                 //println!("Verify with input {:?}", &input);
-                if !lookup::exists(self.context, &input) {
+                if !lookup::exists(&self.context, &input) {
                     return Err(RenderError::new(format!(
                         "Type error for `link`, missing url {}",
                         input

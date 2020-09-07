@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use log::warn;
 
@@ -19,13 +20,13 @@ static TEMPLATE_EXT: &str = ".hbs";
 // Render templates using handlebars.
 #[derive(Debug)]
 pub struct Parser<'a> {
-    context: &'a BuildContext,
+    context: Arc<BuildContext>,
     handlebars: Handlebars<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(
-        context: &'a BuildContext,
+        context: Arc<BuildContext>,
         locales: &'a Locales,
     ) -> Result<Self> {
         let mut handlebars = Handlebars::new();
@@ -95,70 +96,70 @@ impl<'a> Parser<'a> {
         // Configure helpers
         handlebars.register_helper(
             "author",
-            Box::new(helpers::author::AuthorMeta { context }),
+            Box::new(helpers::author::AuthorMeta { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "partial",
-            Box::new(helpers::partial::Partial { context }),
+            Box::new(helpers::partial::Partial { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "children",
-            Box::new(helpers::children::Children { context }),
+            Box::new(helpers::children::Children { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "livereload",
-            Box::new(helpers::livereload::LiveReload { context }),
+            Box::new(helpers::livereload::LiveReload { context: Arc::clone(&context) }),
         );
         handlebars
-            .register_helper("feed", Box::new(helpers::feed::Feed { context }));
+            .register_helper("feed", Box::new(helpers::feed::Feed { context: Arc::clone(&context) }));
         handlebars.register_helper(
             "parent",
-            Box::new(helpers::parent::Parent { context }),
+            Box::new(helpers::parent::Parent { context: Arc::clone(&context) }),
         );
         handlebars
-            .register_helper("link", Box::new(helpers::link::Link { context }));
+            .register_helper("link", Box::new(helpers::link::Link { context: Arc::clone(&context) }));
         handlebars.register_helper(
             "md",
-            Box::new(helpers::markdown::Markdown { context }),
+            Box::new(helpers::markdown::Markdown { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "components",
-            Box::new(helpers::components::Components { context }),
+            Box::new(helpers::components::Components { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "match",
-            Box::new(helpers::matcher::Match { context }),
+            Box::new(helpers::matcher::Match { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "series",
-            Box::new(helpers::series::Series { context }),
+            Box::new(helpers::series::Series { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "favicon",
-            Box::new(helpers::favicon::Icon { context }),
+            Box::new(helpers::favicon::Icon { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "bookmark",
-            Box::new(helpers::bookmark::Link { context }),
+            Box::new(helpers::bookmark::Link { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "permalink",
-            Box::new(helpers::bookmark::PermaLink { context }),
+            Box::new(helpers::bookmark::PermaLink { context: Arc::clone(&context) }),
         );
 
         handlebars.register_helper(
             "styles",
-            Box::new(helpers::styles::Styles { context }),
+            Box::new(helpers::styles::Styles { context: Arc::clone(&context) }),
         );
         handlebars.register_helper(
             "scripts",
-            Box::new(helpers::scripts::Scripts { context }),
+            Box::new(helpers::scripts::Scripts { context: Arc::clone(&context) }),
         );
 
         if context.config.search.is_some() {
             handlebars.register_helper(
                 "search",
-                Box::new(helpers::search::Embed { context }),
+                Box::new(helpers::search::Embed { context: Arc::clone(&context) }),
             );
         }
 

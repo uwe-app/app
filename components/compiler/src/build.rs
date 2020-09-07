@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crossbeam::channel;
 use log::error;
@@ -14,13 +15,13 @@ use crate::run::{self, ParseData};
 use crate::{Error, Result};
 
 #[derive(Debug)]
-pub struct Compiler<'a> {
-    pub context: &'a BuildContext,
+pub struct Compiler {
+    pub context: Arc<BuildContext>,
     pub book: BookCompiler,
 }
 
-impl<'a> Compiler<'a> {
-    pub fn new(context: &'a BuildContext) -> Self {
+impl Compiler {
+    pub fn new(context: Arc<BuildContext>) -> Self {
         let book = BookCompiler::new(
             context.options.source.clone(),
             context.options.base.clone(),
@@ -74,7 +75,7 @@ impl<'a> Compiler<'a> {
                             let dest =
                                 self.context.collation.get_path().join(&rel);
                             run::parse(
-                                self.context,
+                                Arc::clone(&self.context),
                                 parser,
                                 page.get_template(),
                                 page,
@@ -212,7 +213,7 @@ impl<'a> Compiler<'a> {
 
         if let Some(hooks) = &self.context.config.hook {
             hook::run(
-                self.context,
+                Arc::clone(&self.context),
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::Before,
@@ -242,7 +243,7 @@ impl<'a> Compiler<'a> {
 
         if let Some(hooks) = &self.context.config.hook {
             hook::run(
-                self.context,
+                Arc::clone(&self.context),
                 hook::collect(
                     hooks.clone(),
                     hook::Phase::After,

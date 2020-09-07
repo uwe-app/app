@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
@@ -97,7 +98,7 @@ pub struct BookRule {
 
 pub struct Invalidator<'a> {
     state: &'a Render<'a>, 
-    builder: Compiler<'a>,
+    builder: Compiler,
     parser: Parser<'a>,
 }
 
@@ -105,8 +106,8 @@ impl<'a> Invalidator<'a> {
     pub fn new(state: &'a mut Render) -> Self {
         let context = state.get_fallback_context();
         let locales = &state.locales;
-        let parser = Parser::new(context, locales).unwrap();
-        let builder = Compiler::new(context);
+        let parser = Parser::new(Arc::clone(&context), locales).unwrap();
+        let builder = Compiler::new(Arc::clone(&context));
         Self {
             state,
             builder,
@@ -128,7 +129,9 @@ impl<'a> Invalidator<'a> {
         &mut self,
         paths: Vec<PathBuf>,
     ) -> Result<Rule, Error> {
-        let ctx = self.builder.context;
+
+        let config = self.builder.context.config.clone();
+        let options = self.builder.context.options.clone();
 
         let mut rule = Rule {
             notify: true,
@@ -144,33 +147,32 @@ impl<'a> Invalidator<'a> {
             actions: Vec::new(),
         };
 
-        let config_file = &ctx.config.file.as_ref().unwrap();
+        let config_file = config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = ctx.config.hook.as_ref().unwrap();
+        let hooks = config.hook.as_ref().unwrap();
 
-        let build_output = self.canonical(ctx.options.output.clone());
+        let build_output = self.canonical(options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let layout_file = self.canonical(ctx.options.get_layout_path());
-        let assets = self.canonical(ctx.options.get_assets_path());
-        let partials = self.canonical(ctx.options.get_partials_path());
+        let layout_file = self.canonical(options.get_layout_path());
+        let assets = self.canonical(options.get_assets_path());
+        let partials = self.canonical(options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators = self.canonical(ctx.options.get_data_sources_path());
+        let generators = self.canonical(options.get_data_sources_path());
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = ctx
-            .config
-            .get_book_theme_path(&ctx.options.source)
+        let book_theme = self.builder.context.config
+            .get_book_theme_path(&self.builder.context.options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = ctx.config.book {
+        if let Some(ref book) = self.builder.context.config.book {
             books = book
-                .get_paths(&ctx.options.source)
+                .get_paths(&self.builder.context.options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
@@ -192,7 +194,7 @@ impl<'a> Invalidator<'a> {
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&ctx.options.source)
+                                hook.get_source_path(&options.source)
                                     .unwrap(),
                             );
                             if path.starts_with(hook_base) {
@@ -215,7 +217,7 @@ impl<'a> Invalidator<'a> {
 
                         if path.starts_with(book_path) {
                             if let Some(md) =
-                                self.builder.book.locate(&ctx.config, &book)
+                                self.builder.book.locate(&self.builder.context.config, &book)
                             {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
@@ -283,7 +285,7 @@ impl<'a> Invalidator<'a> {
                         }
                     } else {
                         let file_type =
-                            FileInfo::get_type(&path, &ctx.options.settings);
+                            FileInfo::get_type(&path, &self.builder.context.options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -325,7 +327,7 @@ impl<'a> Invalidator<'a> {
         target: &PathBuf,
         rule: &Rule,
     ) -> Result<(), Error> {
-        let ctx = self.builder.context;
+        let ctx = &self.builder.context;
         let livereload = context::livereload().read().unwrap();
 
         let config = &ctx.config;
@@ -343,7 +345,7 @@ impl<'a> Invalidator<'a> {
             if let Action::Hook(id, _path) = hook {
                 if let Some(hook_config) = config.hook.as_ref().unwrap().get(id)
                 {
-                    hook::exec(self.builder.context, hook_config)?;
+                    hook::exec(Arc::clone(&self.builder.context), hook_config)?;
                 }
             }
         }

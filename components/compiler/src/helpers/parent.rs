@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use handlebars::*;
 
@@ -7,12 +8,12 @@ use crate::BuildContext;
 
 use super::with_parent_context;
 
-#[derive(Clone, Copy)]
-pub struct Parent<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Parent {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Parent<'_> {
+impl HelperDef for Parent {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -37,7 +38,7 @@ impl HelperDef for Parent<'_> {
         })?;
 
         let path = PathBuf::from(&base_path);
-        if let Some(data) = tree::parent(self.context, &path) {
+        if let Some(data) = tree::parent(&self.context, &path) {
             let mut page = data.clone();
             let mut local_rc = rc.clone();
             let local_ctx = with_parent_context(ctx, &mut page)?;

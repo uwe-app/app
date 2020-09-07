@@ -1,14 +1,15 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::BuildContext;
 use handlebars::*;
 
-#[derive(Clone, Copy)]
-pub struct Match<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Match {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Match<'_> {
+impl HelperDef for Match {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

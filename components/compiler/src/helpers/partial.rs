@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use handlebars::*;
 
@@ -15,12 +16,12 @@ fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
     frontmatter::Config::new_markdown(false)
 }
 
-#[derive(Clone, Copy)]
-pub struct Partial<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Partial {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Partial<'_> {
+impl HelperDef for Partial {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,

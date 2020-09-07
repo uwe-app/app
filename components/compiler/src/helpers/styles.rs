@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use handlebars::*;
 use serde_json::json;
@@ -6,12 +7,12 @@ use serde_json::json;
 use crate::BuildContext;
 use config::style::StyleFile;
 
-#[derive(Clone, Copy)]
-pub struct Styles<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Styles {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Styles<'_> {
+impl HelperDef for Styles {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

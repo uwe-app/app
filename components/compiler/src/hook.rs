@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
+use std::sync::Arc;
 
 use log::{debug, info};
 
@@ -12,7 +13,7 @@ pub enum Phase {
     After,
 }
 
-pub fn exec(ctx: &BuildContext, hook: &HookConfig) -> Result<(), Error> {
+pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<(), Error> {
     let project_root = ctx.config.get_project();
     debug!("hook root {}", project_root.display());
     if let Ok(root) = project_root.canonicalize() {
@@ -94,12 +95,12 @@ pub fn collect(
 }
 
 pub fn run(
-    ctx: &BuildContext,
+    ctx: Arc<BuildContext>,
     hooks: Vec<(String, HookConfig)>,
 ) -> Result<(), Error> {
     for (k, hook) in hooks {
         info!("hook {}", k);
-        exec(ctx, &hook)?;
+        exec(Arc::clone(&ctx), &hook)?;
     }
     Ok(())
 }

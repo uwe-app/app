@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use handlebars::*;
 
 use crate::{BuildContext, Result};
@@ -53,12 +55,12 @@ fn get_permalink_href<'rc, 'a>(
     get_permalink(href, permalink, context)
 }
 
-#[derive(Clone, Copy)]
-pub struct PermaLink<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct PermaLink {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for PermaLink<'_> {
+impl HelperDef for PermaLink {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,
@@ -67,19 +69,19 @@ impl HelperDef for PermaLink<'_> {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        if let Ok(href) = get_permalink_href(ctx, self.context) {
+        if let Ok(href) = get_permalink_href(ctx, &self.context) {
             out.write(&href)?;
         }
         Ok(())
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Link<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Link {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Link<'_> {
+impl HelperDef for Link {
     fn call<'reg: 'rc, 'rc>(
         &self,
         _h: &Helper<'reg, 'rc>,
@@ -88,7 +90,7 @@ impl HelperDef for Link<'_> {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        if let Ok(href) = get_permalink_href(ctx, self.context) {
+        if let Ok(href) = get_permalink_href(ctx, &self.context) {
             let markup = format!("<link rel=\"bookmark\" href=\"{}\">", &href);
             out.write(&markup)?;
         }

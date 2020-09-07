@@ -19,9 +19,8 @@ use crate::Result;
 
 #[derive(Debug, Default)]
 pub struct CompilerInput {
-    pub context: BuildContext,
+    pub context: Arc<BuildContext>,
     pub sources: Arc<Vec<PathBuf>>,
-    //pub locales: &'a Locales,
 }
 
 #[derive(Debug, Default)]
@@ -36,7 +35,7 @@ pub struct RenderResult {
 
 #[derive(Debug)]
 pub struct Renderer<'a> {
-    builder: Option<Compiler<'a>>,
+    builder: Option<Compiler>,
     parser: Option<Parser<'a>>,
     pub info: CompilerInput,
 }
@@ -49,10 +48,6 @@ impl<'a> Renderer<'a> {
             parser: None,
         }
     }
-
-    //pub fn set_compiler(&mut self, builder: Compiler<'_>) {
-    
-    //}
 
     /// Render a locale for a project.
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
@@ -215,9 +210,9 @@ impl<'a> Renderer<'a> {
     }
 
     /// Generate a compiler and parser.
-    pub(crate) fn compiler<'c>(info: &'c CompilerInput, locales: &'c Locales) -> Result<(Compiler<'c>, Parser<'c>)> {
-        let builder = Compiler::new(&info.context);
-        let parser = Parser::new(&info.context, locales)?;
+    pub(crate) fn compiler<'c>(info: &'c CompilerInput, locales: &'c Locales) -> Result<(Compiler, Parser<'c>)> {
+        let builder = Compiler::new(Arc::clone(&info.context));
+        let parser = Parser::new(Arc::clone(&info.context), locales)?;
         Ok((builder, parser))
     }
 }

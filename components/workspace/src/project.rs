@@ -9,7 +9,6 @@ use url::Url;
 
 use cache::CacheComponent;
 //use collator::manifest::Manifest;
-use compiler::Compiler;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
@@ -390,7 +389,7 @@ impl<'r> RenderBuilder {
                 collation: Arc::new(collation),
             };
 
-            let info = CompilerInput { sources: Arc::clone(&sources), context };
+            let info = CompilerInput { sources: Arc::clone(&sources), context: Arc::new(context) };
             //let builder = Compiler::new(&info.context);
             let mut renderer = Renderer::new(info);
             //renderer.set_compiler(builder);
@@ -432,8 +431,8 @@ pub struct Render<'r> {
 }
 
 impl<'r> Render<'r> {
-    pub fn get_fallback_context(&self) -> &BuildContext {
-        &self.get_fallback_renderer().info.context
+    pub fn get_fallback_context(&self) -> Arc<BuildContext> {
+        Arc::clone(&self.get_fallback_renderer().info.context)
     }
 
     pub fn get_fallback_renderer(&self) -> &Renderer {

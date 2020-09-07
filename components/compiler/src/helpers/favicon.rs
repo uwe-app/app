@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::BuildContext;
 use handlebars::*;
@@ -9,12 +10,12 @@ static DEFAULT_ICON: &str = "/assets/favicon.png";
 static INLINE_ICON: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
 
-#[derive(Clone, Copy)]
-pub struct Icon<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Icon {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Icon<'_> {
+impl HelperDef for Icon {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

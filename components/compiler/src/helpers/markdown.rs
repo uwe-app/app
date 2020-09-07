@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use handlebars::*;
 
@@ -9,12 +10,12 @@ use super::BufferedOutput;
 use crate::markdown::render_markdown_string;
 use crate::BuildContext;
 
-#[derive(Clone, Copy)]
-pub struct Markdown<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Markdown {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Markdown<'_> {
+impl HelperDef for Markdown {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

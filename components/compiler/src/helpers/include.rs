@@ -4,7 +4,7 @@ use std::path::Path;
 
 use utils;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Include;
 
 impl HelperDef for Include {

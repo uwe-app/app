@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use log::info;
 
@@ -86,7 +87,7 @@ pub async fn link<'a>(
 }
 
 pub async fn parse(
-    ctx: &BuildContext,
+    ctx: Arc<BuildContext>,
     parser: &Parser<'_>,
     file: &PathBuf,
     data: &Page,

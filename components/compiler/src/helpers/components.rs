@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use handlebars::*;
 use serde_json::Value;
@@ -6,12 +7,12 @@ use serde_json::Value;
 use crate::tree;
 use crate::BuildContext;
 
-#[derive(Clone, Copy)]
-pub struct Components<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Components {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Components<'_> {
+impl HelperDef for Components {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -38,7 +39,7 @@ impl HelperDef for Components<'_> {
         })?;
 
         let source_path = PathBuf::from(&base_path);
-        let components = tree::ancestors(self.context, &source_path);
+        let components = tree::ancestors(&self.context, &source_path);
         let amount = components.len() - 1;
 
         for (i, page) in components.iter().rev().enumerate() {

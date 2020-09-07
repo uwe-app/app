@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use handlebars::*;
 use serde_json::json;
@@ -6,12 +7,12 @@ use serde_json::json;
 use crate::BuildContext;
 use config::script::ScriptFile;
 
-#[derive(Clone, Copy)]
-pub struct Scripts<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Scripts {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Scripts<'_> {
+impl HelperDef for Scripts {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,

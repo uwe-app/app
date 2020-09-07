@@ -1,17 +1,19 @@
-use handlebars::*;
 use std::path::PathBuf;
+use std::sync::Arc;
+
+use handlebars::*;
 
 use serde_json::Value;
 
 use crate::BuildContext;
 use collator::{Collate, SeriesCollate};
 
-#[derive(Clone, Copy)]
-pub struct Series<'a> {
-    pub context: &'a BuildContext,
+#[derive(Clone)]
+pub struct Series {
+    pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Series<'_> {
+impl HelperDef for Series {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
