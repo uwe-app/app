@@ -37,22 +37,30 @@ pub struct RenderResult {
 #[derive(Debug)]
 pub struct Renderer<'a> {
     compiler: Compiler,
+
     // FIXME: cannot create the parser ahead of time so 
     // FIXME: may need to remove this as it is not used :(
-    parser: Option<Parser<'a>>,
+    parser: Option<&'a Parser<'a>>,
 
     pub info: CompilerInput,
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(info: CompilerInput) -> Result<Self> {
+
+    pub fn new(info: CompilerInput) -> Self {
         let compiler = Compiler::new(Arc::clone(&info.context));
-        Ok(Self {
+        Self {
             info,
             compiler,
             parser: None,
-        })
+        }
     }
+
+    //pub fn set_parser(&'a mut self, locales: &'a Locales) -> Result<()> {
+        //let parser = Renderer::parser(&self.info, &locales)?;
+        //self.parser = Some(parser);
+        //Ok(())
+    //}
 
     /// Render a locale for a project.
     pub async fn render(&self, locales: Arc<Locales>) -> Result<RenderResult> {

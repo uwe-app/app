@@ -397,9 +397,13 @@ impl<'r> RenderBuilder {
                 context: Arc::new(context),
             };
 
-            renderers.push(Renderer::new(info)?);
+            renderers.push(Renderer::new(info));
             Ok::<(), Error>(())
         })?;
+
+        //for renderer in renderers.iter_mut() {
+            //renderer.set_parser(&locales)?;
+        //}
 
         Ok(Render {
             config,
