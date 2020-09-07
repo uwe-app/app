@@ -9,7 +9,7 @@ use warp::ws::Message;
 
 use notify::DebouncedEvent::{self, Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
-use notify::{INotifyWatcher, Watcher};
+use notify::Watcher;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -25,7 +25,7 @@ use crate::{Error, ErrorCallback};
 struct LiveHost<'s> {
     source: PathBuf,
     receiver: mpsc::Receiver<DebouncedEvent>,
-    watcher: INotifyWatcher,
+    sender: mpsc::Sender<DebouncedEvent>,
     state: Render<'s>,
     websocket: broadcast::Sender<Message>,
 }
@@ -103,15 +103,13 @@ pub async fn start<P: AsRef<Path>>(
         let source = state.options.source.clone();
         // Create a channel to receive the events.
         let (tx, rx) = mpsc::channel();
-        // Configure the watcher
-        let watcher = notify::watcher(tx, Duration::from_secs(1))?;
 
         watchers.push(LiveHost {
             source,
-            watcher,
             state,
             websocket: ws_tx,
             receiver: rx,
+            sender: tx,
         });
 
         Ok::<(), Error>(())
@@ -156,10 +154,15 @@ fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
                 let rx = w.receiver;
+                let tx = w.sender;
+
+                // Configure the watcher
+                let mut watcher = notify::watcher(tx, Duration::from_secs(1))
+                    .expect("Failed to create watcher");
 
                 // NOTE: must start watching in this thread otherwise
                 // NOTE: the `rx` channel will be closed prematurely
-                w.watcher
+                watcher
                     .watch(&w.source, Recursive)
                     .expect("Failed to start watcher");
                 info!("Watch {}", w.source.display());
