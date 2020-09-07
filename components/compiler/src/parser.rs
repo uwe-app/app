@@ -27,7 +27,7 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(
         context: Arc<BuildContext>,
-        locales: Arc<Locales>,
+        locales: &'a Locales,
     ) -> Result<Self> {
         let mut handlebars = Handlebars::new();
 
@@ -185,7 +185,6 @@ impl<'a> Parser<'a> {
             }),
         );
 
-        /*
         if let Some(loader) = &locales.loader.arc {
             handlebars.register_helper(
                 "fluent",
@@ -197,7 +196,6 @@ impl<'a> Parser<'a> {
                 Box::new(FluentLoader::new(&*LOCALES)),
             );
         }
-        */
 
         // Conditional helpers
         if let Some(ref transform) = context.config.transform {

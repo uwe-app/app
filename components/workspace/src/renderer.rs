@@ -37,25 +37,26 @@ pub struct RenderResult {
 #[derive(Debug)]
 pub struct Renderer<'a> {
     compiler: Compiler,
-    parser: Parser<'a>,
+    // FIXME: cannot create the parser ahead of time so 
+    // FIXME: may need to remove this as it is not used :(
+    parser: Option<Parser<'a>>,
+
     pub info: CompilerInput,
 }
 
 impl<'a> Renderer<'a> {
     pub fn new(info: CompilerInput) -> Result<Self> {
         let compiler = Compiler::new(Arc::clone(&info.context));
-        let parser = Parser::new(Arc::clone(&info.context), Arc::clone(&info.locales))?;
-
         Ok(Self {
             info,
             compiler,
-            parser,
+            parser: None,
         })
     }
 
     /// Render a locale for a project.
     pub async fn render(&self, locales: Arc<Locales>) -> Result<RenderResult> {
-        let output = self.build(locales).await?;
+        let output = self.build(&locales).await?;
         Ok(RenderResult {
             sitemap: self.finish(output)?,
         })
@@ -190,7 +191,7 @@ impl<'a> Renderer<'a> {
 
     async fn build(
         &self,
-        locales: Arc<Locales>,
+        locales: &Locales,
     ) -> Result<CompilerOutput> {
 
         // When working with multi-lingual sites the target may not exist yet
@@ -199,15 +200,13 @@ impl<'a> Renderer<'a> {
             fs::create_dir_all(path)?;
         }
 
-        //let parser = Renderer::compiler(&self.info, locales)?;
-
-        let data = self.compiler.all(&self.parser, &self.info.sources).await?;
-
+        let parser = Renderer::parser(&self.info, &locales)?;
+        let data = self.compiler.all(&parser, &self.info.sources).await?;
         Ok(CompilerOutput{ data })
     }
 
-    //pub(crate) fn compiler<'c>(info: &'c CompilerInput, locales: Arc<Locales>) -> Result<Parser<'c>> {
-        //let parser = Parser::new(Arc::clone(&info.context), &locales)?;
-        //Ok(parser)
-    //}
+    pub(crate) fn parser<'c>(info: &'c CompilerInput, locales: &'c Locales) -> Result<Parser<'c>> {
+        let parser = Parser::new(Arc::clone(&info.context), &locales)?;
+        Ok(parser)
+    }
 }

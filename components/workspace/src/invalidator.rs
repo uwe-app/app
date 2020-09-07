@@ -105,7 +105,7 @@ pub struct Invalidator<'a> {
 impl<'a> Invalidator<'a> {
     pub fn new(state: &'a mut Render) -> Self {
         let context = state.get_fallback_context();
-        let parser = Parser::new(Arc::clone(&context), Arc::clone(&state.locales)).unwrap();
+        let parser = Parser::new(Arc::clone(&context), &state.locales).unwrap();
         let builder = Compiler::new(Arc::clone(&context));
         Self {
             state,
