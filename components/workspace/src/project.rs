@@ -9,6 +9,7 @@ use url::Url;
 
 use cache::CacheComponent;
 //use collator::manifest::Manifest;
+use compiler::Compiler;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
@@ -390,7 +391,9 @@ impl<'r> RenderBuilder {
             };
 
             let info = CompilerInput { sources: Arc::clone(&sources), context };
-            let renderer = Renderer::new(info)?;
+            //let builder = Compiler::new(&info.context);
+            let mut renderer = Renderer::new(info);
+            //renderer.set_compiler(builder);
             renderers.push(renderer);
             Ok::<(), Error>(())
         })?;

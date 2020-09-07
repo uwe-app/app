@@ -21,6 +21,12 @@ use crate::Result;
 pub struct CompilerInput {
     pub context: BuildContext,
     pub sources: Arc<Vec<PathBuf>>,
+    //pub locales: &'a Locales,
+}
+
+#[derive(Debug, Default)]
+pub struct CompilerOutput {
+    pub data: Vec<ParseData>,
 }
 
 #[derive(Debug)]
@@ -36,32 +42,29 @@ pub struct Renderer<'a> {
 }
 
 impl<'a> Renderer<'a> {
-
-    pub fn new(info: CompilerInput) -> Result<Self> {
-        //let parser = Parser::new(&info.context, locales)?;
-        //let builder = Compiler::new(&info.context);
-
-        //let parser = Parser::new(&self.info.context, &locales)?;
-        //let builder = Compiler::new(&info.context);
-
-        Ok(Self {
+    pub fn new(info: CompilerInput) -> Self {
+        Self {
             info,
             builder: None,
             parser: None,
-        })
+        }
     }
+
+    //pub fn set_compiler(&mut self, builder: Compiler<'_>) {
+    
+    //}
 
     /// Render a locale for a project.
     pub async fn render(&self, locales: &Locales) -> Result<RenderResult> {
-        let (_, _, parse_list) = self.build(locales).await?;
+        let output = self.build(locales).await?;
         Ok(RenderResult {
-            sitemap: self.finish(parse_list)?,
+            sitemap: self.finish(output)?,
         })
     }
 
-    fn finish(&self, parse_list: Vec<ParseData>) -> Result<Option<Url>> {
-        self.create_search_indices(&parse_list)?;
-        Ok(self.create_site_map(&parse_list)?)
+    fn finish(&self, output: CompilerOutput) -> Result<Option<Url>> {
+        self.create_search_indices(&output.data)?;
+        Ok(self.create_site_map(&output.data)?)
     }
 
     fn create_search_indices(&self, parse_list: &Vec<ParseData>) -> Result<()> {
@@ -189,20 +192,32 @@ impl<'a> Renderer<'a> {
     async fn build(
         &self,
         locales: &'a Locales,
-    ) -> std::result::Result<
-        (Compiler<'_>, Parser<'_>, Vec<ParseData>),
-        compiler::Error,
-    > {
+    ) -> Result<CompilerOutput> {
+
         // When working with multi-lingual sites the target may not exist yet
         let path = self.info.context.collation.get_path();
         if !path.exists() {
             fs::create_dir_all(path)?;
         }
 
-        let parser = Parser::new(&self.info.context, &locales)?;
-        let builder = Compiler::new(&self.info.context);
+        let (builder, parser) = Renderer::compiler(&self.info, &locales)?;
 
-        let parse_list = builder.all(&parser, &self.info.sources).await?;
-        Ok((builder, parser, parse_list))
+        //let builder = self.builder.as_ref().unwrap_or(Compiler::new(&self.info.context));
+        //let parser = self.parser.as_ref().unwrap_or(Parser::new(&self.info.context, locales)?);
+
+
+        let data = builder.all(&parser, &self.info.sources).await?;
+
+        //self.builder = Some(builder);
+        //self.parser = Some(parser);
+
+        Ok(CompilerOutput{ data })
+    }
+
+    /// Generate a compiler and parser.
+    pub(crate) fn compiler<'c>(info: &'c CompilerInput, locales: &'c Locales) -> Result<(Compiler<'c>, Parser<'c>)> {
+        let builder = Compiler::new(&info.context);
+        let parser = Parser::new(&info.context, locales)?;
+        Ok((builder, parser))
     }
 }
