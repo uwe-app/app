@@ -389,6 +389,7 @@ impl<'r> RenderBuilder {
             let context = BuildContext {
                 config: Arc::clone(&config),
                 options: Arc::clone(&options),
+                locales: Arc::clone(&locales),
                 collation: Arc::new(collation),
             };
 

@@ -3,12 +3,14 @@ use std::sync::{Arc, RwLock};
 
 use collator::{self, Collation};
 use config::{Config, RuntimeOptions};
+use locale::Locales;
 
 #[derive(Debug, Default)]
 pub struct BuildContext {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
     pub collation: Arc<Collation>,
+    pub locales: Arc<Locales>,
 }
 
 pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {
