@@ -367,7 +367,7 @@ impl<'r> RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(self) -> Result<Render<'r>> {
+    pub fn build(self) -> Result<Render> {
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.options);
         let manifest = if self.options.settings.is_incremental() {
@@ -400,7 +400,11 @@ impl<'r> RenderBuilder {
                 context: Arc::new(context),
             };
 
-            renderers.push(Renderer::new(info));
+            // TODO: store the parser along with the renderer!!!
+            let parser = Renderer::parser(Arc::clone(&info.context), &locales)?;
+            let renderer = Renderer::new(info);
+
+            renderers.push(renderer);
             Ok::<(), Error>(())
         })?;
 
@@ -433,18 +437,18 @@ pub struct RenderResult {
 }
 
 #[derive(Debug, Default)]
-pub struct Render<'r> {
+pub struct Render {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Arc<Locales>,
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
-    pub renderers: Vec<Renderer<'r>>,
+    pub renderers: Vec<Renderer>,
     manifest: Option<Arc<RwLock<Manifest>>>,
 }
 
-impl<'r> Render<'r> {
+impl Render {
     pub(crate) async fn render(
         &self,
         render_type: RenderType,
@@ -620,8 +624,8 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 }
 
 #[derive(Debug, Default)]
-pub struct CompileResult<'p> {
-    pub projects: Vec<Render<'p>>,
+pub struct CompileResult {
+    pub projects: Vec<Render>,
 }
 
 /// Compile a project.
@@ -631,7 +635,7 @@ pub struct CompileResult<'p> {
 pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
-) -> Result<CompileResult<'_>> {
+) -> Result<CompileResult> {
     let project = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 

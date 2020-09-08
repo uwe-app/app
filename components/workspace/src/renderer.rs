@@ -41,38 +41,37 @@ pub struct RenderResult {
 
 /// Renderer for a single language.
 #[derive(Debug)]
-pub struct Renderer<'a> {
+pub struct Renderer {
     compiler: Compiler,
-
-    // FIXME: cannot create the parser ahead of time so
-    // FIXME: may need to remove this as it is not used :(
-    parser: Option<Parser<'a>>,
-
     pub info: CompilerInput,
 }
 
-impl<'a> Renderer<'a> {
+impl Renderer {
     pub fn new(info: CompilerInput) -> Self {
         let compiler = Compiler::new(Arc::clone(&info.context));
         Self {
             info,
             compiler,
-            parser: None,
         }
     }
+
+    //pub fn set_parser(&'a mut self) -> Result<()> {
+        //if self.parser.is_none() {
+            //self.parser = Some(Box::new(Renderer::parser(&self.info, &self.info.context.locales)?)); 
+        //}
+        //Ok(())
+    //}
 
     /// Render a locale for a project.
     pub async fn render(
         &self,
         render_type: RenderType,
     ) -> Result<RenderResult> {
-        let parser = Renderer::parser(&self.info, &self.info.context.locales)?;
-        
-        //if self.parser.is_none() {
-            //self.parser = Some(Renderer::parser(&self.info, &self.info.context.locales)?); 
-        //}
 
-        let parser = self.parser.as_ref().unwrap();
+        // FIXME: we should not re-create the Parser on every render!!!!
+        let parser = Renderer::parser(Arc::clone(&self.info.context), &self.info.context.locales)?;
+        //let parser = self.parser.as_ref().unwrap();
+
         let mut output: CompilerOutput = Default::default();
 
         match render_type {
@@ -220,7 +219,6 @@ impl<'a> Renderer<'a> {
         &self,
         parser: &Parser<'_>,
         file: &PathBuf) -> Result<()> {
-        let parser = Renderer::parser(&self.info, &self.info.context.locales)?;
         self.compiler.one(&parser, &file).await?;
         Ok(())
     }
@@ -235,18 +233,17 @@ impl<'a> Renderer<'a> {
         if !path.exists() {
             fs::create_dir_all(path)?;
         }
-
         self.compiler
             .all(&parser, &self.info.sources, output)
             .await?;
         Ok(())
     }
 
-    fn parser<'c>(
-        info: &'c CompilerInput,
+    pub fn parser<'c>(
+        context: Arc<BuildContext>,
         locales: &'c Locales,
     ) -> Result<Parser<'c>> {
-        let parser = Parser::new(Arc::clone(&info.context), &locales)?;
+        let parser = Parser::new(context, &locales)?;
         Ok(parser)
     }
 }

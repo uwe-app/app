@@ -38,7 +38,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
 
 async fn do_publish(
     options: &PublishOptions,
-    state: &Render<'_>,
+    state: &Render,
 ) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
@@ -83,7 +83,7 @@ async fn do_publish(
 }
 
 async fn publish_aws(
-    state: &Render<'_>,
+    state: &Render,
     request: PublishRequest,
     env: &AwsPublishEnvironment,
 ) -> Result<()> {

@@ -97,7 +97,7 @@ pub struct BookRule {
 }
 
 pub struct Invalidator<'a> {
-    state: &'a Render<'a>,
+    state: &'a mut Render,
 }
 
 impl<'a> Invalidator<'a> {
@@ -105,7 +105,7 @@ impl<'a> Invalidator<'a> {
         Self { state }
     }
 
-    fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
+    fn canonical<P: AsRef<Path>>(&self, src: P) -> PathBuf {
         let file = src.as_ref().to_path_buf();
         if file.exists() {
             if let Ok(canonical) = file.canonicalize() {
@@ -116,8 +116,8 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
-        let config = &self.state.config;
-        let options = &self.state.options;
+        //let config = &self.state.config;
+        //let options = &self.state.options;
 
         let mut rule = Rule {
             notify: true,
@@ -133,32 +133,32 @@ impl<'a> Invalidator<'a> {
             actions: Vec::new(),
         };
 
-        let config_file = config.file.as_ref().unwrap();
+        let config_file = self.state.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = config.hook.as_ref().unwrap();
+        let hooks = self.state.config.hook.as_ref().unwrap();
 
-        let build_output = self.canonical(options.output.clone());
+        let build_output = self.canonical(self.state.options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let layout_file = self.canonical(options.get_layout_path());
-        let assets = self.canonical(options.get_assets_path());
-        let partials = self.canonical(options.get_partials_path());
+        let layout_file = self.canonical(self.state.options.get_layout_path());
+        let assets = self.canonical(self.state.options.get_assets_path());
+        let partials = self.canonical(self.state.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators = self.canonical(options.get_data_sources_path());
+        let generators = self.canonical(self.state.options.get_data_sources_path());
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = config
-            .get_book_theme_path(&options.source)
+        let book_theme = self.state.config
+            .get_book_theme_path(&self.state.options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = config.book {
+        if let Some(ref book) = self.state.config.book {
             books = book
-                .get_paths(&options.source)
+                .get_paths(&self.state.options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
@@ -183,7 +183,7 @@ impl<'a> Invalidator<'a> {
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&options.source).unwrap(),
+                                hook.get_source_path(&self.state.options.source).unwrap(),
                             );
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
@@ -277,7 +277,7 @@ impl<'a> Invalidator<'a> {
                         }
                     } else {
                         let file_type =
-                            FileInfo::get_type(&path, &options.settings);
+                            FileInfo::get_type(&path, &self.state.options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -317,8 +317,8 @@ impl<'a> Invalidator<'a> {
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
         let livereload = context::livereload().read().unwrap();
 
-        let config = &self.state.config;
-        let options = &self.state.options;
+        //let config = &self.state.config;
+        //let options = &self.state.options;
 
         // Reload the config data!
         if rule.reload {
@@ -401,8 +401,8 @@ impl<'a> Invalidator<'a> {
                             // as the notify crate gives us an absolute path
                             let file = FileInfo::relative_to(
                                 path,
-                                &options.source,
-                                &options.source,
+                                &self.state.options.source,
+                                &self.state.options.source,
                             )?;
 
                             self.one(&file).await?;
@@ -440,7 +440,7 @@ impl<'a> Invalidator<'a> {
     }
 
     /// Find the renderer for a language.
-    fn find_renderer(&self, lang: &str) -> &Renderer<'_> {
+    fn find_renderer(&self, lang: &str) -> &Renderer {
         if lang != self.state.config.lang {
             for renderer in self.state.renderers.iter() {
                 if renderer.info.context.collation.get_lang() == lang {

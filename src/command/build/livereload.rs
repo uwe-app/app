@@ -22,9 +22,9 @@ use workspace::{Invalidator, Render};
 
 use crate::{Error, ErrorCallback};
 
-struct LiveHost<'s> {
+struct LiveHost {
     source: PathBuf,
-    state: Render<'s>,
+    state: Render,
     websocket: broadcast::Sender<Message>,
 }
 
@@ -53,7 +53,7 @@ pub async fn start<P: AsRef<Path>>(
     // otherwise we can just run using the standard `localhost`.
     let multiple = result.projects.len() > 1;
 
-    let mut watchers: Vec<LiveHost<'_>> = Vec::new();
+    let mut watchers: Vec<LiveHost> = Vec::new();
 
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
@@ -145,7 +145,7 @@ pub async fn start<P: AsRef<Path>>(
     Ok(())
 }
 
-fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
+fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
     for mut w in watchers {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
