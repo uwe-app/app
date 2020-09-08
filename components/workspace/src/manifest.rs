@@ -13,12 +13,15 @@ pub struct ManifestEntry {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Manifest {
+    #[serde(skip)]
+    pub file: PathBuf,
     pub map: HashMap<PathBuf, ManifestEntry>,
 }
 
 impl Manifest {
-    pub fn new() -> Self {
+    pub fn new(file: PathBuf) -> Self {
         Manifest {
+            file,
             map: HashMap::new(),
         }
     }
@@ -64,16 +67,17 @@ impl Manifest {
     pub fn load<P: AsRef<Path>>(p: P) -> Result<Manifest> {
         let file = p.as_ref();
         if file.exists() && file.is_file() {
-            let json = utils::fs::read_string(file)?;
-            return Ok(serde_json::from_str(&json)?);
+            let mut manifest: Manifest = serde_json::from_str(
+                &utils::fs::read_string(file)?)?;
+            manifest.file = file.to_path_buf();
+            return Ok(manifest);
         }
-        Ok(Manifest::new())
+        Ok(Manifest::new(file.to_path_buf()))
     }
 
-    pub fn save<P: AsRef<Path>>(p: P, manifest: &Manifest) -> Result<()> {
-        let file = p.as_ref();
-        let json = serde_json::to_string(manifest)?;
-        utils::fs::write_string(file, json)?;
+    pub fn save(&self) -> Result<()> {
+        let json = serde_json::to_string(self)?;
+        utils::fs::write_string(&self.file, json)?;
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use log::info;
 
@@ -8,7 +8,6 @@ use futures::TryFutureExt;
 use url::Url;
 
 use cache::CacheComponent;
-//use collator::manifest::Manifest;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
@@ -25,6 +24,7 @@ use locale::Locales;
 
 use crate::{
     renderer::{CompilerInput, Renderer},
+    manifest::Manifest,
     Error, Result,
 };
 
@@ -207,17 +207,6 @@ impl<'r> RenderBuilder {
     /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
-        // FIXME: restore manifest handling?
-        // Set up the manifest for incremental builds
-        /*
-        let manifest_file = get_manifest_file(&self.options);
-        let manifest: Option<Manifest> = if self.options.settings.is_incremental() {
-            Some(Manifest::load(&manifest_file)?)
-        } else {
-            None
-        };
-        */
-
         let req = CollateRequest {
             locales: &self.locales.languages,
             config: &self.config,
@@ -379,6 +368,13 @@ impl<'r> RenderBuilder {
     }
 
     pub fn build(self) -> Result<Render<'r>> {
+
+        // Set up the manifest for incremental builds
+        let manifest_file = get_manifest_file(&self.options);
+        let manifest = if self.options.settings.is_incremental() {
+            Some(Arc::new(RwLock::new(Manifest::load(&manifest_file)?)))
+        } else { None };
+
         let sources = Arc::new(self.sources);
         let config = Arc::new(self.config);
         let options = Arc::new(self.options);
@@ -412,6 +408,7 @@ impl<'r> RenderBuilder {
             options,
             renderers,
             locales,
+            manifest,
             redirects: self.redirects,
             datasource: self.datasource,
             cache: self.cache,
@@ -443,6 +440,7 @@ pub struct Render<'r> {
     pub datasource: DataSourceMap,
     pub cache: QueryCache,
     pub renderers: Vec<Renderer<'r>>,
+    manifest: Option<Arc<RwLock<Manifest>>>,
 }
 
 impl<'r> Render<'r> {
@@ -490,19 +488,14 @@ impl<'r> Render<'r> {
         Ok(())
     }
 
-    /*
-    pub fn write_manifest(&mut self) -> Result<()> {
+    pub fn write_manifest(&self) -> Result<()> {
         // Write the manifest for incremental builds
-        if let Some(ref mut manifest) = self.collation.manifest {
-            let manifest_file = get_manifest_file(&self.options);
-            for p in self.collation.resources.iter() {
-                manifest.touch(&p.to_path_buf());
-            }
-            Manifest::save(&manifest_file, manifest)?;
+        if let Some(ref manifest) = self.manifest {
+            let mut writer = manifest.write().unwrap(); 
+            writer.save()?;
         }
         Ok(())
     }
-    */
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
         let output_robots =
@@ -672,28 +665,16 @@ pub async fn compile<P: AsRef<Path>>(
 
         let state = builder.build()?;
 
+        // Render all the languages
         let result = state.render().await?;
 
-        // Renderer is generated for each locale to compile
-        //for renderer in state.renderers.iter() {
-            //info!(
-                //"Render {} -> {}",
-                //renderer.info.context.collation.get_lang(),
-                //renderer.info.context.collation.get_path().display()
-            //);
-
-            //let mut res = renderer.render(Arc::clone(&state.locales)).await?;
-            //if let Some(url) = res.sitemap.take() {
-                //sitemaps.push(url);
-            //}
-            //// TODO: ensure redirects work in multi-lingual config
-            //state.write_redirects(&renderer.info.context.options)?;
-        //}
-
-        // FIXME: restore manifest logic - requires decoupling from the collation
-        //state.write_manifest()?;
-
+        // Write the robots file containing any 
+        // generated sitemaps
         state.write_robots(result.sitemaps)?;
+
+        // Write out manifest for incremental builds
+        state.write_manifest()?;
+
         compiled.projects.push(state);
     }
 

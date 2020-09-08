@@ -55,12 +55,6 @@ impl<'a> Renderer<'a> {
         }
     }
 
-    //pub fn set_parser(&'a mut self, locales: &'a Locales) -> Result<()> {
-    //let parser = Renderer::parser(&self.info, &locales)?;
-    //self.parser = Some(parser);
-    //Ok(())
-    //}
-
     /// Render a locale for a project.
     pub async fn render(&self, locales: Arc<Locales>) -> Result<RenderResult> {
         let output = self.build(&locales).await?;
