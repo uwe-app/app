@@ -12,10 +12,12 @@ use ignore::{WalkBuilder, WalkState};
 use config::indexer::QueryList;
 use config::link::{self, LinkOptions};
 use config::{
-    Config, FileInfo, FileOptions, LocaleMap, LocaleName, Page, RuntimeOptions,
+    Config, FileInfo, FileOptions, Page, RuntimeOptions,
 };
 
-use crate::locale::*;
+use locale::{LocaleMap, LocaleName};
+
+use crate::locale_utils::*;
 
 use super::loader;
 use super::{

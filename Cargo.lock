@@ -335,6 +335,7 @@ dependencies = [
  "frontmatter",
  "futures",
  "ignore",
+ "locale",
  "log",
  "serde",
  "serde_json",

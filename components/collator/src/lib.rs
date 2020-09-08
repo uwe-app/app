@@ -2,19 +2,19 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use thiserror::Error;
 
+use locale::LocaleName;
+
 pub mod collation;
 pub mod collator;
 pub mod loader;
-pub mod locale;
+pub mod locale_utils;
 pub mod manifest;
 pub mod resource;
 
 pub use collation::*;
 pub use collator::*;
-pub use locale::*;
 pub use resource::*;
-
-use config::LocaleName;
+pub use locale_utils::*;
 
 #[derive(Error, Debug)]
 pub enum Error {

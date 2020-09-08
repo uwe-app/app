@@ -420,7 +420,7 @@ impl<'a> Invalidator<'a> {
                             // Raw source files might be localized variants
                             // we need to strip the locale identifier from the
                             // file path before compiling
-                            let file = ctx.strip_locale(&file);
+                            let file = self.strip_locale(&file);
 
                             self.builder.one(&self.parser, &file).await?;
                         }
@@ -432,5 +432,15 @@ impl<'a> Invalidator<'a> {
             }
         }
         Ok(())
+    }
+
+    fn strip_locale(&self, file: &PathBuf) -> PathBuf {
+        let languages = self.state.locales.languages.get_translations();
+        if let Some((_lang, path)) =
+            collator::get_locale_file_info(&file.as_path(), &languages)
+        {
+            return path;
+        }
+        file.to_path_buf()
     }
 }

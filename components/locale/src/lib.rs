@@ -7,7 +7,7 @@ use thiserror::Error;
 use fluent_templates::{static_loader, ArcLoader, Loader};
 use unic_langid::LanguageIdentifier;
 
-use config::{Config, FluentConfig, LocaleMap, RuntimeOptions};
+use config::{Config, FluentConfig, RuntimeOptions};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -24,21 +24,45 @@ static_loader! {
     pub static LOCALES = {locales: "./locales", fallback_language: "en"};
 }
 
-#[derive(Debug)]
-pub struct Locales {
-    pub loader: LocalesLoader,
+pub type LocaleName = String;
+pub type LocaleIdentifier = HashMap<LocaleName, LanguageIdentifier>;
+
+#[derive(Debug, Clone, Default)]
+pub struct LocaleMap {
+    /// The fallback language is inherited
+    /// from the top-level config `lang`
+    pub fallback: LocaleName,
+    /// Enabled is active when we are able to load
+    /// locale files at runtime.
+    pub enabled: bool,
+    /// Determine if multiple locales are active.
+    pub multi: bool,
+    /// Map of all locales to the parsed language identifiers.
+    pub map: LocaleIdentifier,
+    /// List of languages other than the primary fallback language.
+    pub translations: Vec<String>,
 }
 
-impl Default for Locales {
-    fn default() -> Self {
-        Self {
-            loader: Default::default(),
-        }
+impl LocaleMap {
+    /// Get all locale identifiers.
+    pub fn get_locales(&self) -> Vec<&str> {
+        self.map.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get all locale identifiers excluding the fallback.
+    pub fn get_translations(&self) -> &Vec<String> {
+        &self.translations
     }
 }
 
+#[derive(Debug, Default)]
+pub struct Locales {
+    pub loader: LocalesLoader,
+    pub languages: LocaleMap,
+}
+
 impl Locales {
-    pub fn get_locale_map(&self, fallback: &str) -> Result<LocaleMap> {
+    fn get_locale_map(&self, fallback: &str) -> Result<LocaleMap> {
         let mut res = LocaleMap {
             fallback: fallback.to_string(),
             map: HashMap::new(),
@@ -74,19 +98,16 @@ impl Locales {
         &mut self,
         config: &Config,
         options: &RuntimeOptions,
-    ) -> Result<()> {
-        self.loader.load(config, options)
+    ) -> Result<&LocaleMap> {
+        self.loader.load(config, options)?;
+        self.languages = self.get_locale_map(&config.lang)?;
+        Ok(&self.languages)
     }
 }
 
+#[derive(Default)]
 pub struct LocalesLoader {
     pub arc: Option<Box<ArcLoader>>,
-}
-
-impl Default for LocalesLoader {
-    fn default() -> Self {
-        Self { arc: None }
-    }
 }
 
 impl fmt::Debug for LocalesLoader {

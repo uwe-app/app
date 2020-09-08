@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use config::indexer::QueryList;
-use config::{Config, FileInfo, FileOptions, LocaleName, Page, RuntimeOptions};
+use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
+use locale::LocaleName;
 
 use crate::manifest::Manifest;
 use crate::resource::*;

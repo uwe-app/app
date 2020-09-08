@@ -162,8 +162,6 @@ impl<'r> RenderBuilder {
     /// Load locale message files (.ftl).
     pub async fn locales(mut self) -> Result<Self> {
         self.locales.load(&self.config, &self.options)?;
-        let locales = self.locales.get_locale_map(&self.config.lang)?;
-        self.options.locales = locales;
         Ok(self)
     }
 
@@ -221,15 +219,15 @@ impl<'r> RenderBuilder {
         */
 
         let req = CollateRequest {
-            locales: &self.options.locales,
+            locales: &self.locales.languages,
             config: &self.config,
             options: &self.options,
         };
 
         let mut res = CollateResult::new(
-            &self.options.locales.fallback,
+            &self.config.lang,
             &self.options.base,
-            &self.options.locales,
+            &self.locales.languages,
         );
 
         let mut errors = collator::walk(req, &mut res).await?;

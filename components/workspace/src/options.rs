@@ -118,7 +118,6 @@ fn to_options(
         output: settings.target.clone(),
         base,
         settings,
-        locales: Default::default(),
     };
 
     debug!("{:?}", &cfg);

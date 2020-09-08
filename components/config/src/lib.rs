@@ -67,7 +67,6 @@ pub mod feed;
 mod file;
 pub mod indexer;
 pub mod link;
-pub mod locale;
 mod matcher;
 mod page;
 pub mod path;
@@ -109,7 +108,6 @@ pub fn to_url_string(
 pub use crate::config::*;
 pub use file::{FileInfo, FileOptions, FileType};
 pub use indexer::{IndexQuery, KeyType, QueryResult};
-pub use locale::*;
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};
 pub use redirect::*;

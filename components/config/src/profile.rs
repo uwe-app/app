@@ -10,7 +10,6 @@ use serde_with::skip_serializing_none;
 use url::Url;
 
 use super::config::{self, Config};
-use super::locale::LocaleMap;
 use super::matcher::GlobPatternMatcher;
 use super::robots::RobotsConfig;
 use super::server::TlsConfig;
@@ -433,8 +432,6 @@ pub struct RuntimeOptions {
     //pub target: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
-    // Determine id this build is configured for multi-lingual support
-    pub locales: LocaleMap,
 }
 
 impl RuntimeOptions {
@@ -444,11 +441,12 @@ impl RuntimeOptions {
         include_lang: Option<&str>,
     ) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
-        if self.locales.multi {
-            if let Some(lang) = include_lang {
-                base = base.join(lang)?;
-            }
-        }
+        // FIXME: RESTORE
+        //if self.locales.multi {
+            //if let Some(lang) = include_lang {
+                //base = base.join(lang)?;
+            //}
+        //}
         Ok(base)
     }
 

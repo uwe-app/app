@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use config::{LocaleMap, LocaleName};
+use locale::{LocaleMap, LocaleName};
 
 /// Extract a locale identifier from a file path and return
 /// a new normalized path without the locale identifier.
