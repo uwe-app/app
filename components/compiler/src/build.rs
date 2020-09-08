@@ -213,7 +213,6 @@ impl Compiler {
         targets: &Vec<PathBuf>,
         output: &mut CompilerOutput,
     ) -> Result<()> {
-        //resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
             hook::run(

@@ -17,6 +17,14 @@ use search::{
 
 use crate::Result;
 
+#[derive(Clone)]
+pub enum RenderType {
+    /// Render everything for this locale.
+    All,
+    /// Render a single file.
+    File(PathBuf),
+}
+
 #[derive(Debug, Default)]
 pub struct CompilerInput {
     pub context: Arc<BuildContext>,
@@ -29,6 +37,7 @@ pub struct RenderResult {
     pub sitemap: Option<Url>,
 }
 
+/// Renderer for a single language.
 #[derive(Debug)]
 pub struct Renderer<'a> {
     compiler: Compiler,
@@ -51,9 +60,17 @@ impl<'a> Renderer<'a> {
     }
 
     /// Render a locale for a project.
-    pub async fn render(&self, locales: Arc<Locales>) -> Result<RenderResult> {
+    pub async fn render(&self, render_type: RenderType) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
-        self.build(&locales, &mut output).await?;
+
+        match render_type {
+            RenderType::All => {
+                self.build(&self.info.locales, &mut output).await?;
+            } 
+            RenderType::File(ref path) => {
+                self.one(path).await?;
+            }
+        }
 
         Ok(RenderResult {
             sitemap: self.finish(output)?,
@@ -187,13 +204,13 @@ impl<'a> Renderer<'a> {
         Ok(res)
     }
 
-    pub(crate) async fn one(&self, file: &PathBuf) -> Result<()> {
+    async fn one(&self, file: &PathBuf) -> Result<()> {
         let parser = Renderer::parser(&self.info, &self.info.context.locales)?;
         self.compiler.one(&parser, &file).await?;
         Ok(())
     }
 
-    pub(crate) async fn build(
+    async fn build(
         &self,
         locales: &Locales,
         output: &mut CompilerOutput,
@@ -209,7 +226,7 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub(crate) fn parser<'c>(
+    fn parser<'c>(
         info: &'c CompilerInput,
         locales: &'c Locales,
     ) -> Result<Parser<'c>> {

@@ -1,16 +1,14 @@
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use collator::Collate;
 use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
 
 use compiler::context;
-use compiler::hook;
-use compiler::Compiler;
+//use compiler::hook;
 
-use crate::{Error, Result, Render, renderer::Renderer};
+use crate::{Error, Result, Render, renderer::{Renderer, RenderType}};
 
 /*
  *  Invalidation rules.
@@ -423,7 +421,7 @@ impl<'a> Invalidator<'a> {
 
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
-        self.state.render().await?;
+        self.state.render(RenderType::All).await?;
         Ok(())
     }
 
@@ -439,7 +437,8 @@ impl<'a> Invalidator<'a> {
             &self.state.config.lang
         };
         let renderer = self.find_renderer(lang);
-        Ok(renderer.one(&file).await?)
+        let _ = renderer.render(RenderType::File(file)).await?;
+        Ok(())
     }
 
     /// Find the renderer for a language.

@@ -23,7 +23,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
-    renderer::{CompilerInput, Renderer},
+    renderer::{CompilerInput, Renderer, RenderType},
     manifest::Manifest,
     Error, Result,
 };
@@ -445,7 +445,7 @@ pub struct Render<'r> {
 
 impl<'r> Render<'r> {
 
-    pub(crate) async fn render(&self) -> Result<RenderResult> {
+    pub(crate) async fn render(&self, render_type: RenderType) -> Result<RenderResult> {
 
         let mut result: RenderResult = Default::default();
 
@@ -457,12 +457,13 @@ impl<'r> Render<'r> {
                 renderer.info.context.collation.get_path().display()
             );
 
-            let mut res = renderer.render(Arc::clone(&self.locales)).await?;
+            let mut res = renderer.render(render_type.clone()).await?;
             if let Some(url) = res.sitemap.take() {
                 result.sitemaps.push(url);
             }
 
             // TODO: ensure redirects work in multi-lingual config
+            // TODO: respect the render_type !!!!
             self.write_redirects(&renderer.info.context.options)?;
         }
 
@@ -666,7 +667,7 @@ pub async fn compile<P: AsRef<Path>>(
         let state = builder.build()?;
 
         // Render all the languages
-        let result = state.render().await?;
+        let result = state.render(RenderType::All).await?;
 
         // Write the robots file containing any 
         // generated sitemaps
