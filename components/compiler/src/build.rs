@@ -53,14 +53,14 @@ impl Compiler {
         let all = self
             .context
             .collation
-            .resources()
-            .filter(|p| {
-                if !filter_active {
-                    return true;
-                }
-                p.starts_with(target)
-            })
-            .filter(|_p| {
+            .resources();
+            //.filter(|p| {
+                //if !filter_active {
+                    //return true;
+                //}
+                //p.starts_with(target)
+            //})
+            //.filter(|_p| {
                 /*
                 if let Some(ref manifest) = self.context.collation.manifest {
                     if let Some(ref resource) =
@@ -85,10 +85,8 @@ impl Compiler {
                     }
                 }
                 */
-                true
-            });
-
-        //let mut data: Vec<ParseData> = Vec::new();
+                //true
+            //});
 
         if parallel {
             let (tx, rx) = channel::unbounded();
@@ -99,10 +97,10 @@ impl Compiler {
                 for p in all {
                     let tx = tx.clone();
                     s.spawn(move |_t| {
+                        let mut rt = tokio::runtime::Runtime::new().unwrap();
                         // NOTE: we pay a price for creating another runtime
                         // NOTE: inside the rayon thread but it gives us a
                         // NOTE: consistent futures based API
-                        let mut rt = tokio::runtime::Runtime::new().unwrap();
                         rt.block_on(async move {
                             let res = run::one(context, parser, p).await;
                             if fail_fast && res.is_err() {
