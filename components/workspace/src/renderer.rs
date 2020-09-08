@@ -60,25 +60,12 @@ impl Renderer {
         Self { info, compiler }
     }
 
-    //pub fn set_parser(&'a mut self) -> Result<()> {
-    //if self.parser.is_none() {
-    //self.parser = Some(Box::new(Renderer::parser(&self.info, &self.info.context.locales)?));
-    //}
-    //Ok(())
-    //}
-
     /// Render a locale for a project.
     pub async fn render(
         &self,
+        parser: Parser<'_>,
         render_type: RenderType,
     ) -> Result<RenderResult> {
-        // FIXME: we should not re-create the Parser on every render!!!!
-        let parser = Renderer::parser(
-            Arc::clone(&self.info.context),
-            &self.info.context.locales,
-        )?;
-        //let parser = self.parser.as_ref().unwrap();
-
         let mut output: CompilerOutput = Default::default();
 
         match render_type {
@@ -243,11 +230,4 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn parser<'c>(
-        context: Arc<BuildContext>,
-        locales: &'c Locales,
-    ) -> Result<Parser<'c>> {
-        let parser = Parser::new(context, &locales)?;
-        Ok(parser)
-    }
 }

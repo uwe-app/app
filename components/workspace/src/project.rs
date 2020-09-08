@@ -11,7 +11,7 @@ use cache::CacheComponent;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
-use compiler::BuildContext;
+use compiler::{BuildContext, parser::Parser};
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
@@ -141,7 +141,7 @@ pub struct RenderBuilder {
     collations: CollationBuilder,
 }
 
-impl<'r> RenderBuilder {
+impl<'a> RenderBuilder {
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
@@ -400,11 +400,7 @@ impl<'r> RenderBuilder {
                 context: Arc::new(context),
             };
 
-            // TODO: store the parser along with the renderer!!!
-            let parser = Renderer::parser(Arc::clone(&info.context), &locales)?;
-            let renderer = Renderer::new(info);
-
-            renderers.push(renderer);
+            renderers.push(Renderer::new(info));
             Ok::<(), Error>(())
         })?;
 
@@ -449,6 +445,7 @@ pub struct Render {
 }
 
 impl Render {
+
     pub(crate) async fn render(
         &self,
         render_type: RenderType,
@@ -470,36 +467,19 @@ impl Render {
                 renderer.info.context.collation.get_path().display()
             );
 
-            let mut res = renderer.render(render_type.clone()).await?;
+            let parser = Parser::new(Arc::clone(&renderer.info.context), &self.locales)?;
+
+            let mut res = renderer.render(parser, render_type.clone()).await?;
             if let Some(url) = res.sitemap.take() {
                 result.sitemaps.push(url);
             }
 
             // TODO: ensure redirects work in multi-lingual config
             // TODO: respect the render_type !!!!
-            self.write_redirects(&renderer.info.context.options)?;
+            self.redirects.write(&renderer.info.context.options)?;
         }
 
         Ok(result)
-    }
-
-    pub fn get_fallback_context(&self) -> Arc<BuildContext> {
-        Arc::clone(&self.get_fallback_renderer().info.context)
-    }
-
-    fn get_fallback_renderer(&self) -> &Renderer {
-        self.renderers.get(0).unwrap()
-    }
-
-    fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
-        let write_redirects = options.settings.write_redirects.is_some()
-            && options.settings.write_redirects.unwrap();
-
-        if write_redirects {
-            self.redirects.write(&options.base)?;
-        }
-
-        Ok(())
     }
 
     pub fn write_manifest(&self) -> Result<()> {

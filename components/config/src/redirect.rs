@@ -7,7 +7,7 @@ use log::info;
 
 use http::Uri;
 
-use crate::{Error, Result};
+use crate::{Error, Result, RuntimeOptions};
 
 static MAX_REDIRECTS: usize = 4;
 
@@ -75,7 +75,16 @@ impl RedirectConfig {
         Ok(())
     }
 
-    pub fn write<P: AsRef<Path>>(&self, target: P) -> Result<()> {
+    pub fn write(&self, options: &RuntimeOptions) -> Result<()> {
+        let write_redirects = options.settings.write_redirects.is_some()
+            && options.settings.write_redirects.unwrap();
+        if write_redirects {
+            self.write_all(&options.base)?;
+        }
+        Ok(())
+    }
+
+    fn write_all<P: AsRef<Path>>(&self, target: P) -> Result<()> {
         for (k, v) in self.map.iter() {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX
@@ -98,6 +107,7 @@ impl RedirectConfig {
         }
         Ok(())
     }
+
 
     fn write_file<P: AsRef<Path>>(
         &self,
