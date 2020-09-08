@@ -274,7 +274,9 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn fluent(mut self, locales: &'a Locales) -> Result<Self> {
-        if let Some(loader) = &locales.loader.arc {
+        let loader = locales.loader(&self.context.config, &self.context.options);
+
+        if let Some(loader) = loader {
             self.handlebars.register_helper(
                 "fluent",
                 Box::new(FluentLoader::new(loader.as_ref())),
@@ -285,6 +287,7 @@ impl<'a> ParserBuilder<'a> {
                 Box::new(FluentLoader::new(&*LOCALES)),
             );
         }
+        
         Ok(self)
     }
 
@@ -296,7 +299,7 @@ impl<'a> ParserBuilder<'a> {
         Ok(self)
     }
 
-    pub fn build(mut self) -> Result<Parser<'a>> {
+    pub fn build(self) -> Result<Parser<'a>> {
         Ok(Parser {
             context: self.context,
             handlebars: self.handlebars,

@@ -1557,6 +1557,7 @@ version = "0.1.0"
 dependencies = [
  "config",
  "fluent-templates",
+ "once_cell",
  "serde",
  "thiserror",
  "unic-langid",

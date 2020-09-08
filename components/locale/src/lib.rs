@@ -1,11 +1,12 @@
 use std::collections::HashMap;
-use std::fmt;
 use std::path::Path;
 
 use thiserror::Error;
 
 use fluent_templates::{static_loader, ArcLoader, Loader};
 use unic_langid::LanguageIdentifier;
+
+use once_cell::sync::OnceCell;
 
 use config::{Config, FluentConfig, RuntimeOptions};
 
@@ -57,21 +58,20 @@ impl LocaleMap {
 
 #[derive(Debug, Default)]
 pub struct Locales {
-    pub loader: LocalesLoader,
     pub languages: LocaleMap,
 }
 
 impl Locales {
-    fn get_locale_map(&self, fallback: &str) -> Result<LocaleMap> {
+    fn get_locale_map(&self, arc: &Option<Box<ArcLoader>>, fallback: &str) -> Result<LocaleMap> {
         let mut res = LocaleMap {
             fallback: fallback.to_string(),
             map: HashMap::new(),
-            enabled: self.loader.arc.is_some(),
+            enabled: arc.is_some(),
             multi: false,
             translations: vec![],
         };
 
-        if let Some(ref arc) = self.loader.arc {
+        if let Some(ref arc) = arc {
             let langs = arc.locales();
             for lang_id in langs {
                 res.map.insert(lang_id.to_string(), lang_id.clone());
@@ -94,62 +94,51 @@ impl Locales {
         Ok(res)
     }
 
+    pub fn loader(
+        &self,
+        config: &Config,
+        options: &RuntimeOptions) -> &'static Option<Box<ArcLoader>> {
+
+        static CELL: OnceCell<Option<Box<ArcLoader>>> = OnceCell::new();
+        CELL.get_or_init(|| {
+            let locales_dir = options.get_locales();
+            if locales_dir.exists() && locales_dir.is_dir()  {
+                if let Some(ref fluent) = config.fluent {
+                    let result = arc(locales_dir, fluent).unwrap();
+                    return Some(Box::new(result));
+                }
+            }
+            None
+        })
+    }
+
     pub fn load(
         &mut self,
         config: &Config,
         options: &RuntimeOptions,
     ) -> Result<&LocaleMap> {
-        self.loader.load(config, options)?;
-        self.languages = self.get_locale_map(&config.lang)?;
+        let arc = self.loader(config, options);
+        self.languages = self.get_locale_map(arc, &config.lang)?;
         Ok(&self.languages)
     }
 }
 
-#[derive(Default)]
-pub struct LocalesLoader {
-    pub arc: Option<Box<ArcLoader>>,
-}
-
-impl fmt::Debug for LocalesLoader {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("").finish()
-    }
-}
-
-impl LocalesLoader {
-    pub fn load(
-        &mut self,
-        config: &Config,
-        options: &RuntimeOptions,
-    ) -> Result<()> {
-        let locales_dir = options.get_locales();
-        if locales_dir.exists() && locales_dir.is_dir() {
-            if let Some(ref fluent) = config.fluent {
-                let result = self.arc(locales_dir, fluent)?;
-                self.arc = Some(Box::new(result));
-            }
-        }
-        Ok(())
+fn arc<'a, P: AsRef<Path>>(
+    dir: P,
+    fluent: &FluentConfig,
+) -> std::result::Result<ArcLoader, Box<dyn std::error::Error>> {
+    let file = dir.as_ref();
+    if let Some(core_file) = &fluent.shared {
+        let mut core = file.to_path_buf();
+        core.push(core_file);
+        return ArcLoader::builder(
+            dir.as_ref(),
+            fluent.fallback_id.clone(),
+        )
+        .shared_resources(Some(&[core]))
+        .build();
     }
 
-    fn arc<'a, P: AsRef<Path>>(
-        &mut self,
-        dir: P,
-        fluent: &FluentConfig,
-    ) -> std::result::Result<ArcLoader, Box<dyn std::error::Error>> {
-        let file = dir.as_ref();
-        if let Some(core_file) = &fluent.shared {
-            let mut core = file.to_path_buf();
-            core.push(core_file);
-            return ArcLoader::builder(
-                dir.as_ref(),
-                fluent.fallback_id.clone(),
-            )
-            .shared_resources(Some(&[core]))
-            .build();
-        }
-
-        ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone()).build()
-        //.customize(|bundle| bundle.set_use_isolating(false));
-    }
+    ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone()).build()
+    //.customize(|bundle| bundle.set_use_isolating(false));
 }

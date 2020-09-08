@@ -142,10 +142,12 @@ pub struct RenderBuilder {
 }
 
 impl<'a> RenderBuilder {
+
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
         let source = self.options.source.clone();
+
         let paths: Vec<PathBuf> =
             if let Some(ref paths) = self.options.settings.paths {
                 self.verify(paths)?;
