@@ -127,8 +127,8 @@ impl<'a> Invalidator<'a> {
         &mut self,
         paths: Vec<PathBuf>,
     ) -> Result<Rule> {
-        let config = self.builder.context.config.clone();
-        let options = self.builder.context.options.clone();
+        let config = &self.state.config;
+        let options = &self.state.options;
 
         let mut rule = Rule {
             notify: true,
@@ -162,17 +162,14 @@ impl<'a> Invalidator<'a> {
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = self
-            .builder
-            .context
-            .config
-            .get_book_theme_path(&self.builder.context.options.source)
+        let book_theme = config
+            .get_book_theme_path(&options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = self.builder.context.config.book {
+        if let Some(ref book) = config.book {
             books = book
-                .get_paths(&self.builder.context.options.source)
+                .get_paths(&options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
@@ -221,7 +218,7 @@ impl<'a> Invalidator<'a> {
                             if let Some(md) = self
                                 .builder
                                 .book
-                                .locate(&self.builder.context.config, &book)
+                                .locate(config, &book)
                             {
                                 let src_dir = &md.config.book.src;
                                 let build_dir = &md.config.build.build_dir;
@@ -290,7 +287,7 @@ impl<'a> Invalidator<'a> {
                     } else {
                         let file_type = FileInfo::get_type(
                             &path,
-                            &self.builder.context.options.settings,
+                            &options.settings,
                         );
                         match file_type {
                             FileType::Unknown => {
@@ -410,8 +407,8 @@ impl<'a> Invalidator<'a> {
                             // as the notify crate gives us an absolute path
                             let file = FileInfo::relative_to(
                                 path,
-                                &self.builder.context.options.source,
-                                &self.builder.context.options.source,
+                                &options.source,
+                                &options.source,
                             )?;
 
                             self.one(&file).await?;
