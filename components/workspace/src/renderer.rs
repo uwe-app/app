@@ -12,12 +12,20 @@ use compiler::{
     parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
-use locale::Locales;
+use locale::{Locales, LocaleName};
 use search::{
     compile as compile_index, intermediate, Index, IntermediateEntry,
 };
 
 use crate::Result;
+
+#[derive(Clone)]
+pub enum RenderFilter {
+    /// Render every locale.
+    All,
+    /// Render a single locale.
+    One(LocaleName),
+}
 
 #[derive(Clone)]
 pub enum RenderType {

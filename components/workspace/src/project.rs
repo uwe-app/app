@@ -24,7 +24,7 @@ use locale::Locales;
 
 use crate::{
     manifest::Manifest,
-    renderer::{CompilerInput, RenderType, Renderer},
+    renderer::{CompilerInput, RenderType, RenderFilter, Renderer},
     Error, Result,
 };
 
@@ -452,11 +452,21 @@ impl Render {
     pub(crate) async fn render(
         &self,
         render_type: RenderType,
+        render_filter: RenderFilter,
     ) -> Result<RenderResult> {
         let mut result: RenderResult = Default::default();
 
         // Renderer is generated for each locale to compile
-        for renderer in self.renderers.iter() {
+        for renderer in self.renderers
+            .iter()
+            .filter(|r| {
+                let language = r.info.context.collation.get_lang();
+                match render_filter {
+                    RenderFilter::One(ref lang) => language == lang.as_str(),
+                    RenderFilter::All => true,
+                }  
+            })
+            {
             info!(
                 "Render {} -> {}",
                 renderer.info.context.collation.get_lang(),
@@ -673,7 +683,7 @@ pub async fn compile<P: AsRef<Path>>(
         let state = builder.build()?;
 
         // Render all the languages
-        let result = state.render(RenderType::All).await?;
+        let result = state.render(RenderType::All, RenderFilter::All).await?;
 
         // Write the robots file containing any
         // generated sitemaps

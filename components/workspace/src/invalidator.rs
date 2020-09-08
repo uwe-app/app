@@ -9,7 +9,7 @@ use compiler::context;
 //use compiler::hook;
 
 use crate::{
-    renderer::{RenderType, Renderer},
+    renderer::{RenderType, RenderFilter, Renderer},
     Error, Render, Result,
 };
 
@@ -419,7 +419,7 @@ impl<'a> Invalidator<'a> {
 
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
-        self.state.render(RenderType::All).await?;
+        self.state.render(RenderType::All, RenderFilter::All).await?;
         Ok(())
     }
 
@@ -434,21 +434,8 @@ impl<'a> Invalidator<'a> {
         } else {
             &self.state.config.lang
         };
-        let renderer = self.find_renderer(lang);
-        let _ = renderer.render(RenderType::File(file)).await?;
+        self.state.render(RenderType::File(file), RenderFilter::One(lang.to_string())).await?;
         Ok(())
-    }
-
-    /// Find the renderer for a language.
-    fn find_renderer(&self, lang: &str) -> &Renderer {
-        if lang != self.state.config.lang {
-            for renderer in self.state.renderers.iter() {
-                if renderer.info.context.collation.get_lang() == lang {
-                    return renderer;
-                }
-            }
-        }
-        self.state.renderers.iter().take(1).next().unwrap()
     }
 
     /// Extract locale identifier from a file name when possible.
