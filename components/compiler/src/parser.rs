@@ -13,6 +13,8 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
+use config::CollatedPage;
+
 use super::context::BuildContext;
 use super::helpers;
 
@@ -22,13 +24,15 @@ pub trait Parser {
     fn parse(
         &self,
         file: &PathBuf,
-        data: impl Serialize,
+        // NOTE: we would like to use `impl Serialize` here
+        // NOTE: but cannot due to E0038
+        data: CollatedPage,
         standalone: bool,
     ) -> Result<String>;
 }
 
 /// Generate the standard parser.
-pub fn handlebars<'a>(context: Arc<BuildContext>, locales: &'a Locales) -> Result<Box<impl Parser + Send + Sync + 'a>> {
+pub fn handlebars<'a>(context: Arc<BuildContext>, locales: Arc<Locales>) -> Result<Box<impl Parser + Send + Sync + 'a>> {
     let builder = ParserBuilder::new(context)
         .short_codes()?
         .builtins()?
@@ -282,7 +286,7 @@ impl<'a> ParserBuilder<'a> {
         Ok(self)
     }
 
-    pub fn fluent(mut self, locales: &'a Locales) -> Result<Self> {
+    pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
         let loader = locales.loader(&self.context.config, &self.context.options);
 
         if let Some(loader) = loader {
@@ -358,7 +362,7 @@ impl Parser for HandlebarsParser<'_> {
     fn parse(
         &self,
         file: &PathBuf,
-        data: impl Serialize,
+        data: CollatedPage,
         standalone: bool,
     ) -> Result<String> {
         if standalone { return self.standalone(file, data); }

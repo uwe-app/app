@@ -64,7 +64,7 @@ impl Renderer {
     /// Render a locale for a project.
     pub async fn render(
         &self,
-        parser: &Box<impl Parser + Send + Sync>,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
         render_type: RenderType,
     ) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
@@ -210,14 +210,14 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn one(&self, parser: &Box<impl Parser + Send + Sync>, file: &PathBuf) -> Result<()> {
+    async fn one(&self, parser: &Box<impl Parser + Send + Sync + ?Sized>, file: &PathBuf) -> Result<()> {
         run::one(&self.info.context, parser, &file).await?;
         Ok(())
     }
 
     async fn build(
         &self,
-        parser: &Box<impl Parser + Send + Sync>,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
         output: &mut CompilerOutput,
     ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet

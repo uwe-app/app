@@ -33,7 +33,7 @@ impl Compiler {
 
     pub async fn build(
         &self,
-        parser: &Box<impl Parser + Send + Sync>,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
         target: &PathBuf,
         output: &mut CompilerOutput,
     ) -> Result<()> {
@@ -145,7 +145,7 @@ impl Compiler {
     // Build all target paths
     pub async fn all(
         &self,
-        parser: &Box<impl Parser + Send + Sync>,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
         targets: &Vec<PathBuf>,
         output: &mut CompilerOutput,
     ) -> Result<()> {

@@ -11,7 +11,7 @@ use cache::CacheComponent;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
-use compiler::{BuildContext, parser};
+use compiler::{BuildContext, parser, parser::Parser};
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
@@ -388,6 +388,8 @@ impl<'a> RenderBuilder {
         let locales = Arc::new(self.locales);
 
         let mut renderers: Vec<Renderer> = Vec::new();
+        let mut parsers: Vec<Box<dyn Parser + Send + Sync>> = Vec::new();
+
         collations.into_iter().try_for_each(|collation| {
             let context = BuildContext {
                 config: Arc::clone(&config),
@@ -402,6 +404,11 @@ impl<'a> RenderBuilder {
                 context: Arc::new(context),
             };
 
+            parsers.push(
+                parser::handlebars(
+                    Arc::clone(&info.context),
+                    Arc::clone(&locales))?);
+
             renderers.push(Renderer::new(info));
             Ok::<(), Error>(())
         })?;
@@ -409,6 +416,7 @@ impl<'a> RenderBuilder {
         Ok(Render {
             config,
             options,
+            parsers,
             renderers,
             locales,
             manifest,
@@ -434,15 +442,17 @@ pub struct ProjectResult {
     sitemaps: Vec<Url>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Render {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Arc<Locales>,
     pub datasource: DataSourceMap,
-    pub cache: QueryCache,
-    pub renderers: Vec<Renderer>,
+
+    cache: QueryCache,
+    parsers: Vec<Box<dyn Parser + Send + Sync>>,
+    renderers: Vec<Renderer>,
     manifest: Option<Arc<RwLock<Manifest>>>,
 }
 
@@ -456,22 +466,22 @@ impl Render {
         let mut result: ProjectResult = Default::default();
 
         // Renderer is generated for each locale to compile
-        for renderer in self.renderers.iter().filter(|r| {
-            let language = r.info.context.collation.get_lang();
-            match render_filter {
-                RenderFilter::One(ref lang) => language == lang.as_str(),
-                RenderFilter::All => true,
-            }
-        }) {
+        for (parser, renderer) in self.parsers.iter().zip(self.renderers.iter())
+            .filter(|(_, r)| {
+                let language = r.info.context.collation.get_lang();
+                match render_filter {
+                    RenderFilter::One(ref lang) => language == lang.as_str(),
+                    RenderFilter::All => true,
+                }
+            })
+        {
             info!(
                 "Render {} -> {}",
                 renderer.info.context.collation.get_lang(),
                 renderer.info.context.collation.get_path().display()
             );
 
-            let parser = parser::handlebars(Arc::clone(&renderer.info.context), &self.locales)?;
-
-            let mut res = renderer.render(&parser, render_type.clone()).await?;
+            let mut res = renderer.render(parser, render_type.clone()).await?;
             if let Some(url) = res.sitemap.take() {
                 result.sitemaps.push(url);
             }
@@ -612,7 +622,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     Ok(workspace)
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct CompileResult {
     pub projects: Vec<Render>,
 }
