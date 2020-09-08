@@ -12,7 +12,7 @@ use compiler::{
     parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
-use locale::{Locales, LocaleName};
+use locale::{LocaleName, Locales};
 use search::{
     compile as compile_index, intermediate, Index, IntermediateEntry,
 };
@@ -57,17 +57,14 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(info: CompilerInput) -> Self {
         let compiler = Compiler::new(Arc::clone(&info.context));
-        Self {
-            info,
-            compiler,
-        }
+        Self { info, compiler }
     }
 
     //pub fn set_parser(&'a mut self) -> Result<()> {
-        //if self.parser.is_none() {
-            //self.parser = Some(Box::new(Renderer::parser(&self.info, &self.info.context.locales)?)); 
-        //}
-        //Ok(())
+    //if self.parser.is_none() {
+    //self.parser = Some(Box::new(Renderer::parser(&self.info, &self.info.context.locales)?));
+    //}
+    //Ok(())
     //}
 
     /// Render a locale for a project.
@@ -75,9 +72,11 @@ impl Renderer {
         &self,
         render_type: RenderType,
     ) -> Result<RenderResult> {
-
         // FIXME: we should not re-create the Parser on every render!!!!
-        let parser = Renderer::parser(Arc::clone(&self.info.context), &self.info.context.locales)?;
+        let parser = Renderer::parser(
+            Arc::clone(&self.info.context),
+            &self.info.context.locales,
+        )?;
         //let parser = self.parser.as_ref().unwrap();
 
         let mut output: CompilerOutput = Default::default();
@@ -223,10 +222,7 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn one(
-        &self,
-        parser: &Parser<'_>,
-        file: &PathBuf) -> Result<()> {
+    async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<()> {
         self.compiler.one(&parser, &file).await?;
         Ok(())
     }

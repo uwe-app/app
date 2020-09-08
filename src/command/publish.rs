@@ -36,10 +36,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     Ok(())
 }
 
-async fn do_publish(
-    options: &PublishOptions,
-    state: &Render,
-) -> Result<()> {
+async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
             if let Some(ref publish_config) =

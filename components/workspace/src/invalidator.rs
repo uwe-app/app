@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use collator::Collate;
 use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
 
@@ -9,7 +8,7 @@ use compiler::context;
 //use compiler::hook;
 
 use crate::{
-    renderer::{RenderType, RenderFilter, Renderer},
+    renderer::{RenderFilter, RenderType, Renderer},
     Error, Render, Result,
 };
 
@@ -147,11 +146,14 @@ impl<'a> Invalidator<'a> {
         let partials = self.canonical(self.state.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators = self.canonical(self.state.options.get_data_sources_path());
+        let generators =
+            self.canonical(self.state.options.get_data_sources_path());
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = self.state.config
+        let book_theme = self
+            .state
+            .config
             .get_book_theme_path(&self.state.options.source)
             .map(|v| self.canonical(v));
 
@@ -183,7 +185,10 @@ impl<'a> Invalidator<'a> {
                     for (k, hook) in hooks {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
-                                hook.get_source_path(&self.state.options.source).unwrap(),
+                                hook.get_source_path(
+                                    &self.state.options.source,
+                                )
+                                .unwrap(),
                             );
                             if path.starts_with(hook_base) {
                                 rule.hooks.push(Action::Hook(k.clone(), path));
@@ -276,8 +281,10 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     } else {
-                        let file_type =
-                            FileInfo::get_type(&path, &self.state.options.settings);
+                        let file_type = FileInfo::get_type(
+                            &path,
+                            &self.state.options.settings,
+                        );
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -419,7 +426,9 @@ impl<'a> Invalidator<'a> {
 
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
-        self.state.render(RenderType::All, RenderFilter::All).await?;
+        self.state
+            .render(RenderType::All, RenderFilter::All)
+            .await?;
         Ok(())
     }
 
@@ -434,7 +443,11 @@ impl<'a> Invalidator<'a> {
         } else {
             &self.state.config.lang
         };
-        self.state.render(RenderType::File(file), RenderFilter::One(lang.to_string())).await?;
+
+        self.state
+            .render(RenderType::File(file), RenderFilter::One(lang.to_string()))
+            .await?;
+
         Ok(())
     }
 

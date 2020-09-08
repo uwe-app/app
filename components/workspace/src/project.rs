@@ -24,7 +24,7 @@ use locale::Locales;
 
 use crate::{
     manifest::Manifest,
-    renderer::{CompilerInput, RenderType, RenderFilter, Renderer},
+    renderer::{CompilerInput, RenderFilter, RenderType, Renderer},
     Error, Result,
 };
 
@@ -432,7 +432,7 @@ impl<'r> RenderBuilder {
 }
 
 #[derive(Debug, Default)]
-pub struct RenderResult {
+pub struct ProjectResult {
     sitemaps: Vec<Url>,
 }
 
@@ -453,20 +453,17 @@ impl Render {
         &self,
         render_type: RenderType,
         render_filter: RenderFilter,
-    ) -> Result<RenderResult> {
-        let mut result: RenderResult = Default::default();
+    ) -> Result<ProjectResult> {
+        let mut result: ProjectResult = Default::default();
 
         // Renderer is generated for each locale to compile
-        for renderer in self.renderers
-            .iter()
-            .filter(|r| {
-                let language = r.info.context.collation.get_lang();
-                match render_filter {
-                    RenderFilter::One(ref lang) => language == lang.as_str(),
-                    RenderFilter::All => true,
-                }  
-            })
-            {
+        for renderer in self.renderers.iter().filter(|r| {
+            let language = r.info.context.collation.get_lang();
+            match render_filter {
+                RenderFilter::One(ref lang) => language == lang.as_str(),
+                RenderFilter::All => true,
+            }
+        }) {
             info!(
                 "Render {} -> {}",
                 renderer.info.context.collation.get_lang(),
