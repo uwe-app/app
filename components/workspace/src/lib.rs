@@ -73,6 +73,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 mod invalidator;
 pub mod lock;
+mod manifest;
 mod options;
 mod project;
 mod renderer;

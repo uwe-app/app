@@ -8,7 +8,6 @@ pub mod collation;
 pub mod collator;
 pub mod loader;
 pub mod locale_utils;
-pub mod manifest;
 pub mod resource;
 
 pub use collation::*;

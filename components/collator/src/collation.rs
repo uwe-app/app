@@ -7,7 +7,6 @@ use config::indexer::QueryList;
 use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
 use locale::LocaleName;
 
-use crate::manifest::Manifest;
 use crate::resource::*;
 use crate::Result;
 
@@ -72,9 +71,6 @@ pub struct CollateInfo {
 
     // TODO: books too!
     pub(crate) links: LinkMap,
-
-    // Manifest for incremental builds
-    pub manifest: Option<Manifest>,
 }
 
 #[derive(Debug, Default, Clone)]
