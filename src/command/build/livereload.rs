@@ -199,7 +199,7 @@ fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
                         match result {
                             Ok(invalidation) => {
                                 if let Err(e) = invalidator
-                                    .invalidate(&w.source, &invalidation)
+                                    .invalidate(&invalidation)
                                     .await
                                 {
                                     error!("{}", e);

@@ -430,6 +430,11 @@ impl<'r> RenderBuilder {
 }
 
 #[derive(Debug, Default)]
+pub struct RenderResult {
+    sitemaps: Vec<Url>,
+}
+
+#[derive(Debug, Default)]
 pub struct Render<'r> {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
@@ -441,15 +446,40 @@ pub struct Render<'r> {
 }
 
 impl<'r> Render<'r> {
+
+    pub(crate) async fn render(&self) -> Result<RenderResult> {
+
+        let mut result: RenderResult = Default::default();
+
+        // Renderer is generated for each locale to compile
+        for renderer in self.renderers.iter() {
+            info!(
+                "Render {} -> {}",
+                renderer.info.context.collation.get_lang(),
+                renderer.info.context.collation.get_path().display()
+            );
+
+            let mut res = renderer.render(Arc::clone(&self.locales)).await?;
+            if let Some(url) = res.sitemap.take() {
+                result.sitemaps.push(url);
+            }
+
+            // TODO: ensure redirects work in multi-lingual config
+            self.write_redirects(&renderer.info.context.options)?;
+        }
+
+        Ok(result)
+    }
+
     pub fn get_fallback_context(&self) -> Arc<BuildContext> {
         Arc::clone(&self.get_fallback_renderer().info.context)
     }
 
-    pub fn get_fallback_renderer(&self) -> &Renderer {
+    fn get_fallback_renderer(&self) -> &Renderer {
         self.renderers.get(0).unwrap()
     }
 
-    pub fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
+    fn write_redirects(&self, options: &RuntimeOptions) -> Result<()> {
         let write_redirects = options.settings.write_redirects.is_some()
             && options.settings.write_redirects.unwrap();
 
@@ -610,7 +640,7 @@ pub async fn compile<P: AsRef<Path>>(
     let mut compiled: CompileResult = Default::default();
 
     for entry in project.into_iter() {
-        let mut sitemaps: Vec<Url> = Vec::new();
+        //let mut sitemaps: Vec<Url> = Vec::new();
 
         let builder = entry.builder(args)?;
         let builder = builder
@@ -642,26 +672,28 @@ pub async fn compile<P: AsRef<Path>>(
 
         let state = builder.build()?;
 
-        // Renderer is generated for each locale to compile
-        for renderer in state.renderers.iter() {
-            info!(
-                "Render {} -> {}",
-                renderer.info.context.collation.get_lang(),
-                renderer.info.context.collation.get_path().display()
-            );
+        let result = state.render().await?;
 
-            let mut res = renderer.render(Arc::clone(&state.locales)).await?;
-            if let Some(url) = res.sitemap.take() {
-                sitemaps.push(url);
-            }
-            // TODO: ensure redirects work in multi-lingual config
-            state.write_redirects(&renderer.info.context.options)?;
-        }
+        // Renderer is generated for each locale to compile
+        //for renderer in state.renderers.iter() {
+            //info!(
+                //"Render {} -> {}",
+                //renderer.info.context.collation.get_lang(),
+                //renderer.info.context.collation.get_path().display()
+            //);
+
+            //let mut res = renderer.render(Arc::clone(&state.locales)).await?;
+            //if let Some(url) = res.sitemap.take() {
+                //sitemaps.push(url);
+            //}
+            //// TODO: ensure redirects work in multi-lingual config
+            //state.write_redirects(&renderer.info.context.options)?;
+        //}
 
         // FIXME: restore manifest logic - requires decoupling from the collation
         //state.write_manifest()?;
 
-        state.write_robots(sitemaps)?;
+        state.write_robots(result.sitemaps)?;
         compiled.projects.push(state);
     }
 

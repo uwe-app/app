@@ -8,10 +8,9 @@ use datasource::{self, DataSourceMap};
 
 use compiler::context;
 use compiler::hook;
-use compiler::parser::Parser;
 use compiler::Compiler;
 
-use crate::{renderer::Renderer, Error, Render, Result};
+use crate::{Error, Result, Render, renderer::Renderer};
 
 /*
  *  Invalidation rules.
@@ -99,18 +98,18 @@ pub struct BookRule {
 pub struct Invalidator<'a> {
     state: &'a Render<'a>,
     builder: Compiler,
-    parser: Parser<'a>,
 }
 
 impl<'a> Invalidator<'a> {
     pub fn new(state: &'a mut Render) -> Self {
+
+        // FIXME: remove this builder!!!
         let context = state.get_fallback_context();
-        let parser = Parser::new(Arc::clone(&context), &state.locales).unwrap();
         let builder = Compiler::new(Arc::clone(&context));
+
         Self {
             state,
             builder,
-            parser,
         }
     }
 
@@ -124,7 +123,10 @@ impl<'a> Invalidator<'a> {
         file
     }
 
-    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
+    pub fn get_invalidation(
+        &mut self,
+        paths: Vec<PathBuf>,
+    ) -> Result<Rule> {
         let config = self.builder.context.config.clone();
         let options = self.builder.context.options.clone();
 
@@ -326,16 +328,12 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    pub async fn invalidate(
-        &mut self,
-        target: &PathBuf,
-        rule: &Rule,
-    ) -> Result<()> {
-        //let ctx = &self.builder.context;
+    pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
+
         let livereload = context::livereload().read().unwrap();
 
-        let config = &self.builder.context.config;
-        let options = &self.builder.context.options;
+        let config = &self.state.config;
+        let options = &self.state.options;
 
         // Reload the config data!
         if rule.reload {
@@ -398,9 +396,11 @@ impl<'a> Invalidator<'a> {
 
         match rule.strategy {
             Strategy::Full | Strategy::Page => {
+
                 // TODO: handle updating search index
-                let _parse_data =
-                    self.builder.build(&self.parser, target).await?;
+                //let _parse_data =
+                    //self.builder.build(&self.parser, target).await?;
+                self.render().await?;
             }
             _ => {
                 for action in &rule.actions {
@@ -426,7 +426,13 @@ impl<'a> Invalidator<'a> {
         Ok(())
     }
 
-    /// Compile a single file using the appropriate locale-specific renderer.
+    /// Render the entire project.
+    async fn render(&mut self) -> Result<()> {
+        self.state.render().await?;
+        Ok(())
+    }
+
+    /// Render a single file using the appropriate locale-specific renderer.
     async fn one(&mut self, file: &PathBuf) -> Result<()> {
         // Raw source files might be localized variants
         // we need to strip the locale identifier from the
@@ -447,8 +453,8 @@ impl<'a> Invalidator<'a> {
             for renderer in self.state.renderers.iter() {
                 if renderer.info.context.collation.get_lang() == lang {
                     return renderer;
-                }
-            }
+                }            
+            } 
         }
         self.state.renderers.iter().take(1).next().unwrap()
     }
