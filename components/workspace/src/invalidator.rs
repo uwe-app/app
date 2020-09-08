@@ -335,11 +335,15 @@ impl<'a> Invalidator<'a> {
         // Reload the config data!
         if rule.reload {
             // FIXME: to restore this we need to reload and parse the configuration!
+            //
             //if let Err(e) = loader::reload(config, options) {
             //error!("{}", e);
             //}
         }
 
+        // FIXME: restore hook execution on live reload?!
+
+        /*
         for hook in &rule.hooks {
             if let Action::Hook(id, _path) = hook {
                 if let Some(hook_config) = config.hook.as_ref().unwrap().get(id)
@@ -348,6 +352,7 @@ impl<'a> Invalidator<'a> {
                 }
             }
         }
+        */
 
         let book = &rule.book;
 
