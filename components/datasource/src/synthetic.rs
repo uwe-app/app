@@ -11,6 +11,8 @@ use config::{
     Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions,
 };
 
+use locale::Locales;
+
 use crate::{DataSourceMap, Error, QueryCache, Result};
 
 // Helper to inject synthetic pages.
@@ -67,13 +69,19 @@ fn create_file(
 
 fn build_feed(
     name: &str,
+    locales: &Locales,
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     feed_cfg: &FeedConfig,
     channel_cfg: &ChannelConfig,
 ) -> Result<Feed> {
-    let base_url = options.get_canonical_url(config, Some(info.get_lang()))?;
+
+    let url_path = if locales.languages.multi {
+        Some(info.get_lang())
+    } else { None };
+
+    let base_url = options.get_canonical_url(config, url_path)?;
 
     let mut feed: Feed = Default::default();
     feed.version = VERSION.to_string();
@@ -179,6 +187,7 @@ fn build_feed(
 
 // Create feed pages.
 pub fn feed(
+    locales: &Locales,
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
@@ -194,7 +203,7 @@ pub fn feed(
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
             data_source.feed =
-                Some(build_feed(name, config, options, info, feed, channel)?);
+                Some(build_feed(name, locales, config, options, info, feed, channel)?);
 
             for feed_type in channel.types.iter() {
                 let file_name = feed_type.get_name();
@@ -213,9 +222,13 @@ pub fn feed(
 
                 let mut item_data = data_source.clone();
 
+                let url_path = if locales.languages.multi {
+                    Some(info.get_lang())
+                } else { None };
+
                 // Update the feed url for this file
                 let base_url =
-                    options.get_canonical_url(config, Some(info.get_lang()))?;
+                    options.get_canonical_url(config, url_path)?;
                 if let Some(ref mut feed) = item_data.feed.as_mut() {
                     let path = format!("{}/{}", channel_href, file_name);
                     feed.feed_url = Some(base_url.join(&path)?.to_string());

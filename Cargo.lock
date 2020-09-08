@@ -572,6 +572,7 @@ dependencies = [
  "config",
  "futures",
  "jsonfeed",
+ "locale",
  "log",
  "serde",
  "serde_json",

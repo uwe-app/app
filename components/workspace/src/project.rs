@@ -291,7 +291,7 @@ impl<'r> RenderBuilder {
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
-            synthetic::feed(&self.config, &self.options, collation)?;
+            synthetic::feed(&self.locales, &self.config, &self.options, collation)?;
         }
         Ok(self)
     }

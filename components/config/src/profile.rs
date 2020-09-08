@@ -317,10 +317,7 @@ impl ProfileSettings {
         }
     }
 
-    pub fn get_canonical_url(
-        &self,
-        conf: &config::Config,
-    ) -> crate::Result<Url> {
+    pub fn get_canonical_url(&self, conf: &Config) -> crate::Result<Url> {
         if self.is_release() {
             let scheme = self.scheme.as_ref().unwrap();
             Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
@@ -435,18 +432,11 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
-    pub fn get_canonical_url(
-        &self,
-        config: &Config,
-        include_lang: Option<&str>,
-    ) -> crate::Result<Url> {
+    pub fn get_canonical_url(&self, config: &Config, path: Option<&str>) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
-        // FIXME: RESTORE
-        //if self.locales.multi {
-            //if let Some(lang) = include_lang {
-                //base = base.join(lang)?;
-            //}
-        //}
+        if let Some(path) = path {
+            base = base.join(path)?;
+        }
         Ok(base)
     }
 
