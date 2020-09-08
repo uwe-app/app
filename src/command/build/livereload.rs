@@ -7,7 +7,7 @@ use tokio::sync::broadcast;
 use tokio::sync::oneshot;
 use warp::ws::Message;
 
-use notify::DebouncedEvent::{self, Create, Remove, Rename, Write};
+use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
 use notify::Watcher;
 use std::thread::sleep;

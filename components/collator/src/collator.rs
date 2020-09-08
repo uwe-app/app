@@ -345,7 +345,6 @@ fn add_page(
         req.options,
         &file_info,
         None,
-        &info.lang,
     )?;
 
     if let Some(ref layout) = page_info.layout {

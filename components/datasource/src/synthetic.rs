@@ -38,7 +38,6 @@ fn create_synthetic(
         options,
         &file_info,
         Some(template),
-        &info.lang,
     )?;
 
     // Configure a link for the synthetic page

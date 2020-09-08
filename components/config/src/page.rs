@@ -182,8 +182,6 @@ pub struct Page {
     #[serde(skip_deserializing)]
     pub href: Option<String>,
     #[serde(skip_deserializing)]
-    pub lang: Option<String>,
-    #[serde(skip_deserializing)]
     pub file: Option<FileContext>,
     #[serde(skip_deserializing)]
     pub canonical: Option<String>,
@@ -230,7 +228,6 @@ impl Default for Page {
 
             host: None,
             href: None,
-            lang: None,
             file: None,
             canonical: None,
             paginate: None,
@@ -252,10 +249,6 @@ impl Page {
         &file_ctx.template
     }
 
-    pub fn set_language<S: AsRef<str>>(&mut self, lang: S) {
-        self.lang = Some(lang.as_ref().to_string());
-    }
-
     pub fn is_draft(&self) -> bool {
         self.draft.is_some() && self.draft.unwrap()
     }
@@ -267,9 +260,7 @@ impl Page {
         options: &RuntimeOptions,
         info: &FileInfo,
         template: Option<PathBuf>,
-        lang: &str,
     ) -> Result<(), Error> {
-        self.set_language(lang);
         self.host = Some(config.host.clone());
 
         let template = if let Some(template) = template {

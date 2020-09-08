@@ -307,8 +307,6 @@ impl CollateInfo {
         options: &RuntimeOptions,
         fallback: &mut CollateInfo,
     ) -> Result<()> {
-        let lang = &self.lang;
-
         let mut updated: HashMap<Arc<PathBuf>, Page> = HashMap::new();
         for (path, page) in self.pages.iter_mut() {
             let use_fallback =
@@ -349,7 +347,6 @@ impl CollateInfo {
                     options,
                     &file_info,
                     Some(template),
-                    lang,
                 )?;
 
                 updated.insert(path.to_owned(), sub_page);
