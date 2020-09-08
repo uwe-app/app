@@ -10,6 +10,25 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+
+    #[error("Failed to get user name when dropping privileges (getlogin)")]
+    DropPrivilegeGetLogin,
+
+    #[error("Failed to get user info when dropping privileges (getpwnam)")]
+    DropPrivilegeGetInfo,
+
+    #[error("Failed to drop privileges")]
+    DropPrivilegeFail,
+
+    #[error("Failed to set group when dropping privileges (setgid)")]
+    DropPrivilegeGroup,
+
+    #[error("Failed to set user when dropping privileges (setuid)")]
+    DropPrivilegeUser,
+
+    #[error("Failed to get user id when dropping privileges (getuid)")]
+    DropPrivilegeGetUserId,
+
     #[error(transparent)]
     Config(#[from] config::Error),
 
@@ -24,6 +43,7 @@ type WebsocketSender = broadcast::Sender<Message>;
 type BindSender = oneshot::Sender<ConnectionInfo>;
 type Result<T> = std::result::Result<T, Error>;
 
+mod drop_privileges;
 mod launch;
 pub mod redirect;
 mod router;

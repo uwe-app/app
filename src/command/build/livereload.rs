@@ -124,7 +124,10 @@ pub async fn start<P: AsRef<Path>>(
         rt.block_on(async move {
             // Get the server connection info
             let info = bind_rx.await.unwrap();
-            let url = info.to_url();
+            let mut url = info.to_url();
+
+            url.push_str(&format!("/?r={}", utils::generate_id(4)));
+
             info!("Serve {}", &url);
             // NOTE: only open the browser if initial build succeeds
             open::that(&url).map(|_| ()).unwrap_or(());

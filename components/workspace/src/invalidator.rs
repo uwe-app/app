@@ -114,10 +114,8 @@ impl<'a> Invalidator<'a> {
         file
     }
 
-    pub fn get_invalidation(
-        &mut self,
-        paths: Vec<PathBuf>,
-    ) -> Result<Rule> {
+    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
+
         let config = &self.state.config;
         let options = &self.state.options;
 

@@ -16,9 +16,9 @@ use warp::{Filter, Rejection, Reply};
 
 use serde::Serialize;
 
-use log::{error, trace};
+use log::{error, trace, info};
 
-use crate::{Channels, Error};
+use crate::{Channels, Error, drop_privileges::*};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
 macro_rules! server {
@@ -82,24 +82,16 @@ macro_rules! bind {
         $channels:expr
     ) => {
         let host = $opts.default_host.name.clone();
-        let use_tls = $opts.tls.is_some();
+        let tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
-        if use_tls {
+        if tls {
             let (addr, future) = warp::serve($routes)
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
                 .bind_ephemeral(*$addr);
 
-            if let Some(bind) = $channels.bind.take() {
-                let info = ConnectionInfo {
-                    addr,
-                    host,
-                    tls: true,
-                };
-                bind.send(info)
-                    .expect("Failed to send web server socket address");
-            }
+            info!("Bind TLS {}", addr.port());
 
             if redirect_insecure {
                 super::redirect::spawn($opts.clone()).unwrap_or_else(|_| {
@@ -107,24 +99,41 @@ macro_rules! bind {
                 });
             }
 
+            if is_root() {
+                drop_privileges()?; 
+            }
+
+            if let Some(bind) = $channels.bind.take() {
+                let info = ConnectionInfo {
+                    addr,
+                    host,
+                    tls,
+                };
+                bind.send(info)
+                    .expect("Failed to send web server socket address");
+            }
+
             future.await;
         } else {
             let bind_result = warp::serve($routes).try_bind_ephemeral(*$addr);
             match bind_result {
                 Ok((addr, future)) => {
+                    info!("Bind {}", addr.port());
+
+                    if is_root() {
+                        drop_privileges()?; 
+                    }
+
                     if let Some(bind) = $channels.bind.take() {
                         let info = ConnectionInfo {
                             addr,
                             host,
-                            tls: true,
+                            tls,
                         };
                         bind.send(info)
                             .expect("Failed to send web server socket address");
                     }
 
-                    //let info = ConnectionInfo {addr, host, tls: true};
-                    //$bind_tx.send(info)
-                    //.expect("Failed to send web server socket address");
                     future.await;
                 }
                 Err(e) => return Err(Error::from(e)),
@@ -133,23 +142,23 @@ macro_rules! bind {
     };
 }
 
-// TODO: fallback derived from IP address
-//fn get_fallback(
-//address: &SocketAddr) -> BoxedFilter<(impl Reply,)> {
-//let hostname = &format!("{}", address.to_string());
-//warp::host::exact(hostname)
-//.map(|| "Fallback")
-//.boxed()
-//}
-
 fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
     channels: &mut Channels,
 ) -> BoxedFilter<(impl Reply,)> {
+
+    let port = address.port();
+    let host_port = format!("{}:{}", host.name, port);
+
     let static_server = get_static_server(opts, host);
-    let hostname = &format!("{}:{}", host.name, address.port());
+    let hostname: &str = if port == 80 || port == 443 {
+        &host.name 
+    } else {
+        &host_port
+    };
+
     let livereload = get_live_reload(opts, host, channels).unwrap();
 
     // NOTE: We would like to conditionally add the livereload route
