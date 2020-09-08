@@ -8,7 +8,7 @@ use url::Url;
 use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
-use compiler::{parser::Parser, BuildContext, Compiler, ParseData};
+use compiler::{parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
 use search::{
@@ -22,11 +22,6 @@ pub struct CompilerInput {
     pub context: Arc<BuildContext>,
     pub sources: Arc<Vec<PathBuf>>,
     pub locales: Arc<Locales>,
-}
-
-#[derive(Debug, Default)]
-pub struct CompilerOutput {
-    pub data: Vec<ParseData>,
 }
 
 #[derive(Debug)]
@@ -57,7 +52,9 @@ impl<'a> Renderer<'a> {
 
     /// Render a locale for a project.
     pub async fn render(&self, locales: Arc<Locales>) -> Result<RenderResult> {
-        let output = self.build(&locales).await?;
+        let mut output: CompilerOutput = Default::default();
+        self.build(&locales, &mut output).await?;
+
         Ok(RenderResult {
             sitemap: self.finish(output)?,
         })
@@ -199,7 +196,8 @@ impl<'a> Renderer<'a> {
     pub(crate) async fn build(
         &self,
         locales: &Locales,
-    ) -> Result<CompilerOutput> {
+        output: &mut CompilerOutput,
+    ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet
         let path = self.info.context.collation.get_path();
         if !path.exists() {
@@ -207,8 +205,8 @@ impl<'a> Renderer<'a> {
         }
 
         let parser = Renderer::parser(&self.info, &locales)?;
-        let data = self.compiler.all(&parser, &self.info.sources).await?;
-        Ok(CompilerOutput { data })
+        self.compiler.all(&parser, &self.info.sources, output).await?;
+        Ok(())
     }
 
     pub(crate) fn parser<'c>(

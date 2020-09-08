@@ -8,7 +8,7 @@ use book::compiler::BookCompiler;
 
 use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
 
-use crate::context::BuildContext;
+use crate::context::{BuildContext, CompilerOutput};
 use crate::hook;
 use crate::parser::Parser;
 use crate::run::{self, ParseData};
@@ -36,9 +36,9 @@ impl Compiler {
         &self,
         file: &PathBuf,
         target: &ResourceTarget,
-    ) -> Result<Option<ParseData>> {
+    ) -> Result<()> {
         match target.operation {
-            ResourceOperation::Noop => Ok(None),
+            ResourceOperation::Noop => Ok(()),
             ResourceOperation::Copy => {
                 run::copy(
                     file,
@@ -74,30 +74,33 @@ impl Compiler {
                                 page.file.as_ref().unwrap().target.clone();
                             let dest =
                                 self.context.collation.get_path().join(&rel);
-                            run::parse(
+
+                            return run::parse(
                                 Arc::clone(&self.context),
                                 parser,
                                 page.get_template(),
                                 page,
                                 &dest,
-                            )
-                            .await
+                            ).await;
                         }
-                        _ => self.resource(file, target).await,
+                        _ => self.resource(file, target).await?,
                     }
                 } else {
-                    Err(Error::PageResolve(file.to_path_buf()))
+                    return Err(Error::PageResolve(file.to_path_buf()))
                 }
             }
-            Resource::File { ref target } => self.resource(file, target).await,
+            Resource::File { ref target } => self.resource(file, target).await?,
         }
+
+        Ok(None)
     }
 
     pub async fn build(
         &self,
         parser: &Parser<'_>,
         target: &PathBuf,
-    ) -> Result<Vec<ParseData>> {
+        output: &mut CompilerOutput,
+    ) -> Result<()> {
         let parallel = self.context.options.settings.is_parallel();
 
         // Filtering using the starts_with() below allows command line paths
@@ -149,7 +152,7 @@ impl Compiler {
                 true
             });
 
-        let mut data: Vec<ParseData> = Vec::new();
+        //let mut data: Vec<ParseData> = Vec::new();
 
         if parallel {
             let (tx, rx) = channel::unbounded();
@@ -184,7 +187,7 @@ impl Compiler {
                 } else {
                     let res = r.unwrap();
                     if let Some(parse_data) = res {
-                        data.push(parse_data);
+                        output.data.push(parse_data);
                     }
                 }
             });
@@ -195,12 +198,12 @@ impl Compiler {
         } else {
             for p in all {
                 if let Some(parse_data) = self.one(parser, p).await? {
-                    data.push(parse_data);
+                    output.data.push(parse_data);
                 }
             }
         }
 
-        Ok(data)
+        Ok(())
     }
 
     // Build all target paths
@@ -208,7 +211,8 @@ impl Compiler {
         &self,
         parser: &Parser<'_>,
         targets: &Vec<PathBuf>,
-    ) -> Result<Vec<ParseData>> {
+        output: &mut CompilerOutput,
+    ) -> Result<()> {
         //resource::link(&self.context)?;
 
         if let Some(hooks) = &self.context.config.hook {
@@ -222,15 +226,13 @@ impl Compiler {
             )?;
         }
 
-        let mut data: Vec<ParseData> = Vec::new();
-
         for p in targets {
             if p.is_file() {
                 if let Some(parse_data) = self.one(parser, &p).await? {
-                    data.push(parse_data);
+                    output.data.push(parse_data);
                 }
             } else {
-                data.append(&mut self.build(parser, &p).await?);
+                self.build(parser, &p, output).await?;
             }
         }
 
@@ -252,6 +254,6 @@ impl Compiler {
             )?;
         }
 
-        Ok(data)
+        Ok(())
     }
 }

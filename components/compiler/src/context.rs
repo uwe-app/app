@@ -5,6 +5,13 @@ use collator::{self, Collation};
 use config::{Config, RuntimeOptions};
 use locale::Locales;
 
+use crate::ParseData;
+
+#[derive(Debug, Default)]
+pub struct CompilerOutput {
+    pub data: Vec<ParseData>,
+}
+
 #[derive(Debug, Default)]
 pub struct BuildContext {
     pub config: Arc<Config>,

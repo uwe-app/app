@@ -58,16 +58,16 @@ fn should_minify_html<P: AsRef<Path>>(
 pub async fn copy<'a>(
     file: &PathBuf,
     dest: &PathBuf,
-) -> Result<Option<ParseData>> {
+) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, dest)?;
-    Ok(None)
+    Ok(())
 }
 
 pub async fn link<'a>(
     file: &PathBuf,
     dest: &PathBuf,
-) -> Result<Option<ParseData>> {
+) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
 
     // NOTE: prevent errors trying to symlink when the target
@@ -76,7 +76,7 @@ pub async fn link<'a>(
     // NOTE: complete message to never fire and the browser client
     // NOTE: will hang whilst building :(
     if dest.exists() {
-        return Ok(None);
+        return Ok(());
     }
 
     if let Some(parent) = dest.parent() {
@@ -84,7 +84,7 @@ pub async fn link<'a>(
     }
     let abs = file.canonicalize()?;
     utils::symlink::soft(&abs, dest)?;
-    Ok(None)
+    Ok(())
 }
 
 pub async fn parse(
