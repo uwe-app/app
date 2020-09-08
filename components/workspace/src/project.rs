@@ -53,7 +53,7 @@ impl Entry {
     ///
     /// This should only be called when you intend to render a project
     /// as it consumes the configuration entry.
-    pub fn builder(self, args: &ProfileSettings) -> Result<RenderBuilder> {
+    pub fn builder(self, args: &ProfileSettings) -> Result<ProjectBuilder> {
         let options = crate::options::prepare(&self.config, args)?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
             redirects.clone()
@@ -61,7 +61,7 @@ impl Entry {
             Default::default()
         };
 
-        let builder = RenderBuilder {
+        let builder = ProjectBuilder {
             config: self.config,
             options,
             redirects,
@@ -130,7 +130,7 @@ impl CollationBuilder {
 }
 
 #[derive(Debug, Default)]
-pub struct RenderBuilder {
+pub struct ProjectBuilder {
     pub locales: Locales,
     pub sources: Vec<PathBuf>,
     pub config: Config,
@@ -141,7 +141,7 @@ pub struct RenderBuilder {
     collations: CollationBuilder,
 }
 
-impl<'a> RenderBuilder {
+impl<'a> ProjectBuilder {
 
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
@@ -369,7 +369,7 @@ impl<'a> RenderBuilder {
         Ok(self)
     }
 
-    pub fn build(self) -> Result<Render> {
+    pub fn build(self) -> Result<Project> {
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.options);
         let manifest = if self.options.settings.is_incremental() {
@@ -413,7 +413,7 @@ impl<'a> RenderBuilder {
             Ok::<(), Error>(())
         })?;
 
-        Ok(Render {
+        Ok(Project {
             config,
             options,
             parsers,
@@ -442,8 +442,9 @@ pub struct ProjectResult {
     sitemaps: Vec<Url>,
 }
 
+/// Project contains all the information for a render.
 #[derive(Default)]
-pub struct Render {
+pub struct Project {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
@@ -456,8 +457,9 @@ pub struct Render {
     manifest: Option<Arc<RwLock<Manifest>>>,
 }
 
-impl Render {
+impl Project {
 
+    /// Render the project.
     pub(crate) async fn render(
         &self,
         render_type: RenderType,
@@ -624,7 +626,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
 #[derive(Default)]
 pub struct CompileResult {
-    pub projects: Vec<Render>,
+    pub projects: Vec<Project>,
 }
 
 /// Compile a project.

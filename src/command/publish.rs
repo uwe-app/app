@@ -9,7 +9,7 @@ use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
 use scopeguard::defer;
-use workspace::{compile, lock, Render};
+use workspace::{compile, lock, Project};
 
 use crate::Error;
 use crate::Result;
@@ -29,18 +29,18 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let args = ProfileSettings::new_release();
     let result = compile(&options.project, &args).await?;
 
-    for state in result.projects.into_iter() {
-        do_publish(&options, &state).await?;
+    for project in result.projects.into_iter() {
+        do_publish(&options, &project).await?;
     }
 
     Ok(())
 }
 
-async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
+async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
     match options.provider {
         PublishProvider::Aws => {
             if let Some(ref publish_config) =
-                state.config.publish.as_ref().unwrap().aws
+                project.config.publish.as_ref().unwrap().aws
             {
                 if let Some(env) = publish_config.environments.get(&options.env)
                 {
@@ -49,7 +49,7 @@ async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
-                        state.config.host.clone()
+                        project.config.host.clone()
                     };
 
                     info!("Bucket {}", &bucket);
@@ -64,7 +64,7 @@ async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
                         prefix: env.prefix.clone(),
                     };
 
-                    publish_aws(state, request, &publish_env).await?
+                    publish_aws(project, request, &publish_env).await?
                 } else {
                     return Err(Error::UnknownPublishEnvironment(
                         options.env.to_string(),
@@ -80,7 +80,7 @@ async fn do_publish(options: &PublishOptions, state: &Render) -> Result<()> {
 }
 
 async fn publish_aws(
-    state: &Render,
+    project: &Project,
     request: PublishRequest,
     env: &AwsPublishEnvironment,
 ) -> Result<()> {
@@ -88,7 +88,7 @@ async fn publish_aws(
 
     // Create the list of local build files
     let mut file_builder =
-        FileBuilder::new(state.options.base.clone(), env.prefix.clone());
+        FileBuilder::new(project.options.base.clone(), env.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

@@ -8,8 +8,8 @@ use compiler::context;
 //use compiler::hook;
 
 use crate::{
-    renderer::{RenderFilter, RenderType, Renderer},
-    Error, Render, Result,
+    renderer::{RenderFilter, RenderType},
+    Error, Project, Result,
 };
 
 /*
@@ -96,12 +96,12 @@ pub struct BookRule {
 }
 
 pub struct Invalidator<'a> {
-    state: &'a mut Render,
+    project: &'a mut Project,
 }
 
 impl<'a> Invalidator<'a> {
-    pub fn new(state: &'a mut Render) -> Self {
-        Self { state }
+    pub fn new(project: &'a mut Project) -> Self {
+        Self { project }
     }
 
     fn canonical<P: AsRef<Path>>(&self, src: P) -> PathBuf {
@@ -115,8 +115,8 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
-        //let config = &self.state.config;
-        //let options = &self.state.options;
+        //let config = &self.project.config;
+        //let options = &self.project.options;
 
         let mut rule = Rule {
             notify: true,
@@ -132,42 +132,42 @@ impl<'a> Invalidator<'a> {
             actions: Vec::new(),
         };
 
-        let config_file = self.state.config.file.as_ref().unwrap();
+        let config_file = self.project.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = self.state.config.hook.as_ref().unwrap();
+        let hooks = self.project.config.hook.as_ref().unwrap();
 
-        let build_output = self.canonical(self.state.options.output.clone());
+        let build_output = self.canonical(self.project.options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let layout_file = self.canonical(self.state.options.get_layout_path());
-        let assets = self.canonical(self.state.options.get_assets_path());
-        let partials = self.canonical(self.state.options.get_partials_path());
+        let layout_file = self.canonical(self.project.options.get_layout_path());
+        let assets = self.canonical(self.project.options.get_assets_path());
+        let partials = self.canonical(self.project.options.get_partials_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators =
-            self.canonical(self.state.options.get_data_sources_path());
+            self.canonical(self.project.options.get_data_sources_path());
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
         let book_theme = self
-            .state
+            .project
             .config
-            .get_book_theme_path(&self.state.options.source)
+            .get_book_theme_path(&self.project.options.source)
             .map(|v| self.canonical(v));
 
         let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = self.state.config.book {
+        if let Some(ref book) = self.project.config.book {
             books = book
-                .get_paths(&self.state.options.source)
+                .get_paths(&self.project.options.source)
                 .iter()
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
         }
 
         let generator_paths: Vec<PathBuf> = self
-            .state
+            .project
             .datasource
             .map
             .values()
@@ -186,7 +186,7 @@ impl<'a> Invalidator<'a> {
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
                                 hook.get_source_path(
-                                    &self.state.options.source,
+                                    &self.project.options.source,
                                 )
                                 .unwrap(),
                             );
@@ -283,7 +283,7 @@ impl<'a> Invalidator<'a> {
                     } else {
                         let file_type = FileInfo::get_type(
                             &path,
-                            &self.state.options.settings,
+                            &self.project.options.settings,
                         );
                         match file_type {
                             FileType::Unknown => {
@@ -324,8 +324,8 @@ impl<'a> Invalidator<'a> {
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
         let livereload = context::livereload().read().unwrap();
 
-        //let config = &self.state.config;
-        //let options = &self.state.options;
+        //let config = &self.project.config;
+        //let options = &self.project.options;
 
         // Reload the config data!
         if rule.reload {
@@ -408,8 +408,8 @@ impl<'a> Invalidator<'a> {
                             // as the notify crate gives us an absolute path
                             let file = FileInfo::relative_to(
                                 path,
-                                &self.state.options.source,
-                                &self.state.options.source,
+                                &self.project.options.source,
+                                &self.project.options.source,
                             )?;
 
                             self.one(&file).await?;
@@ -426,7 +426,7 @@ impl<'a> Invalidator<'a> {
 
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
-        self.state
+        self.project
             .render(RenderType::All, RenderFilter::All)
             .await?;
         Ok(())
@@ -441,10 +441,10 @@ impl<'a> Invalidator<'a> {
         let lang: &str = if let Some(ref lang) = lang {
             lang.as_str()
         } else {
-            &self.state.config.lang
+            &self.project.config.lang
         };
 
-        self.state
+        self.project
             .render(RenderType::File(file), RenderFilter::One(lang.to_string()))
             .await?;
 
@@ -453,7 +453,7 @@ impl<'a> Invalidator<'a> {
 
     /// Extract locale identifier from a file name when possible.
     fn extract_locale(&self, file: &PathBuf) -> (Option<String>, PathBuf) {
-        let languages = self.state.locales.languages.get_translations();
+        let languages = self.project.locales.languages.get_translations();
         if let Some((lang, path)) =
             collator::get_locale_file_info(&file.as_path(), &languages)
         {

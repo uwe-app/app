@@ -18,13 +18,13 @@ use config::ProfileSettings;
 
 use server::{Channels, HostChannel};
 
-use workspace::{Invalidator, Render};
+use workspace::{Invalidator, Project};
 
 use crate::{Error, ErrorCallback};
 
 struct LiveHost {
     source: PathBuf,
-    state: Render,
+    project: Project,
     websocket: broadcast::Sender<Message>,
 }
 
@@ -57,10 +57,10 @@ pub async fn start<P: AsRef<Path>>(
 
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
-    result.projects.into_iter().try_for_each(|state| {
-        let target = state.options.base.clone();
-        let redirect_uris = state.redirects.collect()?;
-        let hostname = state.config.get_local_host_name(multiple);
+    result.projects.into_iter().try_for_each(|project| {
+        let target = project.options.base.clone();
+        let redirect_uris = project.redirects.collect()?;
+        let hostname = project.config.get_local_host_name(multiple);
         let host = HostConfig::new(
             target,
             hostname,
@@ -79,7 +79,7 @@ pub async fn start<P: AsRef<Path>>(
 
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
-        livereload::write(&state.config, &host.directory, &ws_url)?;
+        livereload::write(&project.config, &host.directory, &ws_url)?;
 
         // Configure the live reload relay channels
         let (ws_tx, _rx) = broadcast::channel::<Message>(100);
@@ -98,11 +98,11 @@ pub async fn start<P: AsRef<Path>>(
         hosts.push(host);
 
         // Get the source directory to configure the watcher
-        let source = state.options.source.clone();
+        let source = project.options.source.clone();
 
         watchers.push(LiveHost {
             source,
-            state,
+            project,
             websocket: ws_tx,
         });
 
@@ -164,7 +164,7 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                     .expect("Failed to start watcher");
                 info!("Watch {}", w.source.display());
 
-                let mut invalidator = Invalidator::new(&mut w.state);
+                let mut invalidator = Invalidator::new(&mut w.project);
                 let ws_tx = &w.websocket;
 
                 loop {
