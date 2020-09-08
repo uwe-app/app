@@ -10,7 +10,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-
     #[error("Failed to get user name when dropping privileges (getlogin)")]
     DropPrivilegeGetLogin,
 

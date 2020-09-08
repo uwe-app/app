@@ -55,19 +55,13 @@ fn should_minify_html<P: AsRef<Path>>(
     release && html_extension
 }
 
-pub async fn copy<'a>(
-    file: &PathBuf,
-    dest: &PathBuf,
-) -> Result<()> {
+pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, dest)?;
     Ok(())
 }
 
-pub async fn link<'a>(
-    file: &PathBuf,
-    dest: &PathBuf,
-) -> Result<()> {
+pub async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
 
     // NOTE: prevent errors trying to symlink when the target

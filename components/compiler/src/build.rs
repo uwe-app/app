@@ -81,15 +81,18 @@ impl Compiler {
                                 page.get_template(),
                                 page,
                                 &dest,
-                            ).await;
+                            )
+                            .await;
                         }
                         _ => self.resource(file, target).await?,
                     }
                 } else {
-                    return Err(Error::PageResolve(file.to_path_buf()))
+                    return Err(Error::PageResolve(file.to_path_buf()));
                 }
             }
-            Resource::File { ref target } => self.resource(file, target).await?,
+            Resource::File { ref target } => {
+                self.resource(file, target).await?
+            }
         }
 
         Ok(None)
@@ -213,7 +216,6 @@ impl Compiler {
         targets: &Vec<PathBuf>,
         output: &mut CompilerOutput,
     ) -> Result<()> {
-
         if let Some(hooks) = &self.context.config.hook {
             hook::run(
                 Arc::clone(&self.context),

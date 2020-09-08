@@ -93,12 +93,7 @@ pub fn to_url_string(
 ) -> String {
     let url = if let Some(port) = port.into() {
         if port == 80 || port == 443 {
-            format!(
-                "{}{}{}",
-                scheme,
-                crate::config::SCHEME_DELIMITER,
-                host
-            )
+            format!("{}{}{}", scheme, crate::config::SCHEME_DELIMITER, host)
         } else {
             format!(
                 "{}{}{}:{}",
@@ -108,7 +103,6 @@ pub fn to_url_string(
                 port
             )
         }
-
     } else {
         format!("{}{}{}", scheme, crate::config::SCHEME_DELIMITER, host)
     };

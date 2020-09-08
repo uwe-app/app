@@ -201,9 +201,8 @@ fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
                         let result = invalidator.get_invalidation(paths);
                         match result {
                             Ok(invalidation) => {
-                                if let Err(e) = invalidator
-                                    .invalidate(&invalidation)
-                                    .await
+                                if let Err(e) =
+                                    invalidator.invalidate(&invalidation).await
                                 {
                                     error!("{}", e);
 

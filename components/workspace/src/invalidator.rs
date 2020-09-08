@@ -8,7 +8,10 @@ use datasource::{self, DataSourceMap};
 use compiler::context;
 //use compiler::hook;
 
-use crate::{Error, Result, Render, renderer::{Renderer, RenderType}};
+use crate::{
+    renderer::{RenderType, Renderer},
+    Error, Render, Result,
+};
 
 /*
  *  Invalidation rules.
@@ -113,7 +116,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
-
         let config = &self.state.config;
         let options = &self.state.options;
 
@@ -274,10 +276,8 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     } else {
-                        let file_type = FileInfo::get_type(
-                            &path,
-                            &options.settings,
-                        );
+                        let file_type =
+                            FileInfo::get_type(&path, &options.settings);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -315,7 +315,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
-
         let livereload = context::livereload().read().unwrap();
 
         let config = &self.state.config;
@@ -389,10 +388,9 @@ impl<'a> Invalidator<'a> {
 
         match rule.strategy {
             Strategy::Full | Strategy::Page => {
-
                 // TODO: handle updating search index
                 //let _parse_data =
-                    //self.builder.build(&self.parser, target).await?;
+                //self.builder.build(&self.parser, target).await?;
                 self.render().await?;
             }
             _ => {
@@ -447,8 +445,8 @@ impl<'a> Invalidator<'a> {
             for renderer in self.state.renderers.iter() {
                 if renderer.info.context.collation.get_lang() == lang {
                     return renderer;
-                }            
-            } 
+                }
+            }
         }
         self.state.renderers.iter().take(1).next().unwrap()
     }

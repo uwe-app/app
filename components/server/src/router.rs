@@ -16,9 +16,9 @@ use warp::{Filter, Rejection, Reply};
 
 use serde::Serialize;
 
-use log::{error, trace, info};
+use log::{error, info, trace};
 
-use crate::{Channels, Error, drop_privileges::*};
+use crate::{drop_privileges::*, Channels, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
 macro_rules! server {
@@ -100,15 +100,11 @@ macro_rules! bind {
             }
 
             if is_root() {
-                drop_privileges()?; 
+                drop_privileges()?;
             }
 
             if let Some(bind) = $channels.bind.take() {
-                let info = ConnectionInfo {
-                    addr,
-                    host,
-                    tls,
-                };
+                let info = ConnectionInfo { addr, host, tls };
                 bind.send(info)
                     .expect("Failed to send web server socket address");
             }
@@ -121,15 +117,11 @@ macro_rules! bind {
                     info!("Bind {}", addr.port());
 
                     if is_root() {
-                        drop_privileges()?; 
+                        drop_privileges()?;
                     }
 
                     if let Some(bind) = $channels.bind.take() {
-                        let info = ConnectionInfo {
-                            addr,
-                            host,
-                            tls,
-                        };
+                        let info = ConnectionInfo { addr, host, tls };
                         bind.send(info)
                             .expect("Failed to send web server socket address");
                     }
@@ -148,13 +140,12 @@ fn get_host_filter(
     host: &'static HostConfig,
     channels: &mut Channels,
 ) -> BoxedFilter<(impl Reply,)> {
-
     let port = address.port();
     let host_port = format!("{}:{}", host.name, port);
 
     let static_server = get_static_server(opts, host);
     let hostname: &str = if port == 80 || port == 443 {
-        &host.name 
+        &host.name
     } else {
         &host_port
     };

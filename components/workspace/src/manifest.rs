@@ -67,8 +67,8 @@ impl Manifest {
     pub fn load<P: AsRef<Path>>(p: P) -> Result<Manifest> {
         let file = p.as_ref();
         if file.exists() && file.is_file() {
-            let mut manifest: Manifest = serde_json::from_str(
-                &utils::fs::read_string(file)?)?;
+            let mut manifest: Manifest =
+                serde_json::from_str(&utils::fs::read_string(file)?)?;
             manifest.file = file.to_path_buf();
             return Ok(manifest);
         }

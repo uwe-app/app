@@ -23,8 +23,8 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
-    renderer::{CompilerInput, Renderer, RenderType},
     manifest::Manifest,
+    renderer::{CompilerInput, RenderType, Renderer},
     Error, Result,
 };
 
@@ -368,12 +368,13 @@ impl<'r> RenderBuilder {
     }
 
     pub fn build(self) -> Result<Render<'r>> {
-
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.options);
         let manifest = if self.options.settings.is_incremental() {
             Some(Arc::new(RwLock::new(Manifest::load(&manifest_file)?)))
-        } else { None };
+        } else {
+            None
+        };
 
         let sources = Arc::new(self.sources);
         let config = Arc::new(self.config);
@@ -444,9 +445,10 @@ pub struct Render<'r> {
 }
 
 impl<'r> Render<'r> {
-
-    pub(crate) async fn render(&self, render_type: RenderType) -> Result<RenderResult> {
-
+    pub(crate) async fn render(
+        &self,
+        render_type: RenderType,
+    ) -> Result<RenderResult> {
         let mut result: RenderResult = Default::default();
 
         // Renderer is generated for each locale to compile
@@ -492,7 +494,7 @@ impl<'r> Render<'r> {
     pub fn write_manifest(&self) -> Result<()> {
         // Write the manifest for incremental builds
         if let Some(ref manifest) = self.manifest {
-            let mut writer = manifest.write().unwrap(); 
+            let mut writer = manifest.write().unwrap();
             writer.save()?;
         }
         Ok(())
@@ -669,7 +671,7 @@ pub async fn compile<P: AsRef<Path>>(
         // Render all the languages
         let result = state.render(RenderType::All).await?;
 
-        // Write the robots file containing any 
+        // Write the robots file containing any
         // generated sitemaps
         state.write_robots(result.sitemaps)?;
 

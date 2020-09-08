@@ -8,7 +8,9 @@ use url::Url;
 use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
-use compiler::{parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData};
+use compiler::{
+    parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData,
+};
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::Locales;
 use search::{
@@ -44,7 +46,7 @@ pub struct Renderer<'a> {
 
     // FIXME: cannot create the parser ahead of time so
     // FIXME: may need to remove this as it is not used :(
-    parser: Option<&'a Parser<'a>>,
+    parser: Option<Parser<'a>>,
 
     pub info: CompilerInput,
 }
@@ -60,15 +62,25 @@ impl<'a> Renderer<'a> {
     }
 
     /// Render a locale for a project.
-    pub async fn render(&self, render_type: RenderType) -> Result<RenderResult> {
+    pub async fn render(
+        &self,
+        render_type: RenderType,
+    ) -> Result<RenderResult> {
+        let parser = Renderer::parser(&self.info, &self.info.context.locales)?;
+        
+        //if self.parser.is_none() {
+            //self.parser = Some(Renderer::parser(&self.info, &self.info.context.locales)?); 
+        //}
+
+        let parser = self.parser.as_ref().unwrap();
         let mut output: CompilerOutput = Default::default();
 
         match render_type {
             RenderType::All => {
-                self.build(&self.info.locales, &mut output).await?;
-            } 
+                self.build(&parser, &mut output).await?;
+            }
             RenderType::File(ref path) => {
-                self.one(path).await?;
+                self.one(&parser, path).await?;
             }
         }
 
@@ -204,7 +216,10 @@ impl<'a> Renderer<'a> {
         Ok(res)
     }
 
-    async fn one(&self, file: &PathBuf) -> Result<()> {
+    async fn one(
+        &self,
+        parser: &Parser<'_>,
+        file: &PathBuf) -> Result<()> {
         let parser = Renderer::parser(&self.info, &self.info.context.locales)?;
         self.compiler.one(&parser, &file).await?;
         Ok(())
@@ -212,7 +227,7 @@ impl<'a> Renderer<'a> {
 
     async fn build(
         &self,
-        locales: &Locales,
+        parser: &Parser<'_>,
         output: &mut CompilerOutput,
     ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet
@@ -221,8 +236,9 @@ impl<'a> Renderer<'a> {
             fs::create_dir_all(path)?;
         }
 
-        let parser = Renderer::parser(&self.info, &locales)?;
-        self.compiler.all(&parser, &self.info.sources, output).await?;
+        self.compiler
+            .all(&parser, &self.info.sources, output)
+            .await?;
         Ok(())
     }
 

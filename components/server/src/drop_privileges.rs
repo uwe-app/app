@@ -35,7 +35,6 @@ pub(crate) fn is_root() -> bool {
 }
 
 pub(crate) fn drop_privileges() -> Result<()> {
-
     debug!("Dropping privileges...");
 
     let (saved_uid, saved_gid, username) = get_saved_ids()?;
