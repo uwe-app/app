@@ -97,20 +97,11 @@ pub struct BookRule {
 
 pub struct Invalidator<'a> {
     state: &'a Render<'a>,
-    builder: Compiler,
 }
 
 impl<'a> Invalidator<'a> {
     pub fn new(state: &'a mut Render) -> Self {
-
-        // FIXME: remove this builder!!!
-        let context = state.get_fallback_context();
-        let builder = Compiler::new(Arc::clone(&context));
-
-        Self {
-            state,
-            builder,
-        }
+        Self { state }
     }
 
     fn canonical<P: AsRef<Path>>(&mut self, src: P) -> PathBuf {
@@ -203,6 +194,7 @@ impl<'a> Invalidator<'a> {
                         }
                     }
 
+                    /*
                     for book_path in &books {
                         let book = self.canonical(book_path);
 
@@ -245,6 +237,7 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     }
+                    */
 
                     if let Some(theme) = &book_theme {
                         if path.starts_with(theme) {
@@ -354,6 +347,7 @@ impl<'a> Invalidator<'a> {
         }
         */
 
+        /*
         let book = &rule.book;
 
         if !book.reload.is_empty() {
@@ -395,6 +389,7 @@ impl<'a> Invalidator<'a> {
                 }
             }
         }
+        */
 
         match rule.strategy {
             Strategy::Full | Strategy::Page => {
