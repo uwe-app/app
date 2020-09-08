@@ -8,7 +8,7 @@ use config::{CollatedPage, Config, Page, ProfileName};
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
 
-use crate::{Error, Result, draft, parser::Parser, context::BuildContext};
+use crate::{Error, Result, draft, context::BuildContext, parser::Parser};
 
 #[derive(Debug)]
 pub struct ParseData {
@@ -28,7 +28,7 @@ impl ParseData {
 /// Build a single file, negotiates pages and resource files.
 pub async fn one(
     context: &BuildContext,
-    parser: &Parser<'_>,
+    parser: &Box<impl Parser>,
     file: &PathBuf,
 ) -> Result<Option<ParseData>> {
     match context.collation.get_resource(file).unwrap() {
@@ -144,7 +144,7 @@ async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
 
 pub async fn parse(
     ctx: &BuildContext,
-    parser: &Parser<'_>,
+    parser: &Box<impl Parser>,
     file: &PathBuf,
     data: &Page,
     dest: &PathBuf,

@@ -9,7 +9,8 @@ use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
 use compiler::{
-    run, parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData,
+    run, BuildContext, Compiler, CompilerOutput, ParseData,
+    parser::Parser,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::{LocaleName, Locales};
@@ -63,17 +64,17 @@ impl Renderer {
     /// Render a locale for a project.
     pub async fn render(
         &self,
-        parser: Parser<'_>,
+        parser: &Box<impl Parser + Send + Sync>,
         render_type: RenderType,
     ) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
 
         match render_type {
             RenderType::All => {
-                self.build(&parser, &mut output).await?;
+                self.build(parser, &mut output).await?;
             }
             RenderType::File(ref path) => {
-                self.one(&parser, path).await?;
+                self.one(parser, path).await?;
             }
         }
 
@@ -209,14 +210,14 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<()> {
-        run::one(&self.info.context, &parser, &file).await?;
+    async fn one(&self, parser: &Box<impl Parser + Send + Sync>, file: &PathBuf) -> Result<()> {
+        run::one(&self.info.context, parser, &file).await?;
         Ok(())
     }
 
     async fn build(
         &self,
-        parser: &Parser<'_>,
+        parser: &Box<impl Parser + Send + Sync>,
         output: &mut CompilerOutput,
     ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet
@@ -225,7 +226,7 @@ impl Renderer {
             fs::create_dir_all(path)?;
         }
         self.compiler
-            .all(&parser, &self.info.sources, output)
+            .all(parser, &self.info.sources, output)
             .await?;
         Ok(())
     }

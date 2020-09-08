@@ -469,9 +469,9 @@ impl Render {
                 renderer.info.context.collation.get_path().display()
             );
 
-            let parser = parser::std(Arc::clone(&renderer.info.context), &self.locales)?;
+            let parser = parser::handlebars(Arc::clone(&renderer.info.context), &self.locales)?;
 
-            let mut res = renderer.render(parser, render_type.clone()).await?;
+            let mut res = renderer.render(&parser, render_type.clone()).await?;
             if let Some(url) = res.sitemap.take() {
                 result.sitemaps.push(url);
             }
