@@ -11,7 +11,7 @@ use cache::CacheComponent;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
-use compiler::{BuildContext, parser::Parser};
+use compiler::{BuildContext, parser};
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
@@ -467,7 +467,7 @@ impl Render {
                 renderer.info.context.collation.get_path().display()
             );
 
-            let parser = Parser::new(Arc::clone(&renderer.info.context), &self.locales)?;
+            let parser = parser::std(Arc::clone(&renderer.info.context), &self.locales)?;
 
             let mut res = renderer.render(parser, render_type.clone()).await?;
             if let Some(url) = res.sitemap.take() {
