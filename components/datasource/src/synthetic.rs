@@ -34,13 +34,7 @@ fn create_synthetic(
     };
 
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(
-        &dest,
-        config,
-        options,
-        &file_info,
-        Some(template),
-    )?;
+    page_info.seal(&dest, config, options, &file_info, Some(template))?;
 
     // Configure a link for the synthetic page
     let href = collator::href(&source, options, rewrite_index, None)?;
@@ -76,10 +70,11 @@ fn build_feed(
     feed_cfg: &FeedConfig,
     channel_cfg: &ChannelConfig,
 ) -> Result<Feed> {
-
     let url_path = if locales.languages.multi {
         Some(info.get_lang())
-    } else { None };
+    } else {
+        None
+    };
 
     let base_url = options.get_canonical_url(config, url_path)?;
 
@@ -202,8 +197,9 @@ pub fn feed(
             // Data is the same for each feed
             let mut data_source: Page = Default::default();
             data_source.standalone = Some(true);
-            data_source.feed =
-                Some(build_feed(name, locales, config, options, info, feed, channel)?);
+            data_source.feed = Some(build_feed(
+                name, locales, config, options, info, feed, channel,
+            )?);
 
             for feed_type in channel.types.iter() {
                 let file_name = feed_type.get_name();
@@ -224,11 +220,12 @@ pub fn feed(
 
                 let url_path = if locales.languages.multi {
                     Some(info.get_lang())
-                } else { None };
+                } else {
+                    None
+                };
 
                 // Update the feed url for this file
-                let base_url =
-                    options.get_canonical_url(config, url_path)?;
+                let base_url = options.get_canonical_url(config, url_path)?;
                 if let Some(ref mut feed) = item_data.feed.as_mut() {
                     let path = format!("{}/{}", channel_href, file_name);
                     feed.feed_url = Some(base_url.join(&path)?.to_string());

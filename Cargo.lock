@@ -3904,6 +3904,7 @@ dependencies = [
 name = "workspace"
 version = "0.1.0"
 dependencies = [
+ "book",
  "cache",
  "collator",
  "compiler",

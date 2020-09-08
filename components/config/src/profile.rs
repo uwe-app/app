@@ -432,7 +432,11 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
-    pub fn get_canonical_url(&self, config: &Config, path: Option<&str>) -> crate::Result<Url> {
+    pub fn get_canonical_url(
+        &self,
+        config: &Config,
+        path: Option<&str>,
+    ) -> crate::Result<Url> {
         let mut base = self.settings.get_canonical_url(config)?;
         if let Some(path) = path {
             base = base.join(path)?;

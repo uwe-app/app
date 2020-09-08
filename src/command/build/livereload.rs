@@ -147,7 +147,6 @@ fn watch(watchers: Vec<LiveHost<'static>>, error_cb: ErrorCallback) {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-
                 // Create a channel to receive the events.
                 let (tx, rx) = mpsc::channel();
 

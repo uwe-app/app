@@ -2,6 +2,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use collator::Collate;
 use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
 
@@ -9,9 +10,8 @@ use compiler::context;
 use compiler::hook;
 use compiler::parser::Parser;
 use compiler::Compiler;
-use compiler::Error;
 
-use crate::Render;
+use crate::{renderer::Renderer, Error, Render, Result};
 
 /*
  *  Invalidation rules.
@@ -124,10 +124,7 @@ impl<'a> Invalidator<'a> {
         file
     }
 
-    pub fn get_invalidation(
-        &mut self,
-        paths: Vec<PathBuf>,
-    ) -> Result<Rule, Error> {
+    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
         let config = self.builder.context.config.clone();
         let options = self.builder.context.options.clone();
 
@@ -333,12 +330,12 @@ impl<'a> Invalidator<'a> {
         &mut self,
         target: &PathBuf,
         rule: &Rule,
-    ) -> Result<(), Error> {
-        let ctx = &self.builder.context;
+    ) -> Result<()> {
+        //let ctx = &self.builder.context;
         let livereload = context::livereload().read().unwrap();
 
-        let config = &ctx.config;
-        let options = &ctx.options;
+        let config = &self.builder.context.config;
+        let options = &self.builder.context.options;
 
         // Reload the config data!
         if rule.reload {
@@ -413,16 +410,11 @@ impl<'a> Invalidator<'a> {
                             // as the notify crate gives us an absolute path
                             let file = FileInfo::relative_to(
                                 path,
-                                &ctx.options.source,
-                                &ctx.options.source,
+                                &self.builder.context.options.source,
+                                &self.builder.context.options.source,
                             )?;
 
-                            // Raw source files might be localized variants
-                            // we need to strip the locale identifier from the
-                            // file path before compiling
-                            let file = self.strip_locale(&file);
-
-                            self.builder.one(&self.parser, &file).await?;
+                            self.one(&file).await?;
                         }
                         _ => {
                             return Err(Error::InvalidationActionNotHandled);
@@ -434,13 +426,41 @@ impl<'a> Invalidator<'a> {
         Ok(())
     }
 
-    fn strip_locale(&self, file: &PathBuf) -> PathBuf {
+    /// Compile a single file using the appropriate locale-specific renderer.
+    async fn one(&mut self, file: &PathBuf) -> Result<()> {
+        // Raw source files might be localized variants
+        // we need to strip the locale identifier from the
+        // file path before compiling
+        let (lang, file) = self.extract_locale(&file);
+        let lang: &str = if let Some(ref lang) = lang {
+            lang.as_str()
+        } else {
+            &self.state.config.lang
+        };
+        let renderer = self.find_renderer(lang);
+        Ok(renderer.one(&file).await?)
+    }
+
+    /// Find the renderer for a language.
+    fn find_renderer(&self, lang: &str) -> &Renderer<'_> {
+        if lang != self.state.config.lang {
+            for renderer in self.state.renderers.iter() {
+                if renderer.info.context.collation.get_lang() == lang {
+                    return renderer;
+                }
+            }
+        }
+        self.state.renderers.iter().take(1).next().unwrap()
+    }
+
+    /// Extract locale identifier from a file name when possible.
+    fn extract_locale(&self, file: &PathBuf) -> (Option<String>, PathBuf) {
         let languages = self.state.locales.languages.get_translations();
-        if let Some((_lang, path)) =
+        if let Some((lang, path)) =
             collator::get_locale_file_info(&file.as_path(), &languages)
         {
-            return path;
+            return (Some(lang), path);
         }
-        file.to_path_buf()
+        (None, file.to_path_buf())
     }
 }

@@ -25,6 +25,9 @@ pub enum Error {
     #[error("Live reload is not available for release builds")]
     LiveReloadRelease,
 
+    #[error("Invalidation action not handled")]
+    InvalidationActionNotHandled,
+
     #[error("Missing layout file {0}")]
     NoLayout(PathBuf),
 
@@ -52,6 +55,8 @@ pub enum Error {
     Preference(#[from] preference::Error),
     #[error(transparent)]
     Compiler(#[from] compiler::Error),
+    #[error(transparent)]
+    Book(#[from] book::Error),
     #[error(transparent)]
     Locale(#[from] locale::Error),
     #[error(transparent)]

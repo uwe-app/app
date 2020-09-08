@@ -13,8 +13,8 @@ pub mod resource;
 
 pub use collation::*;
 pub use collator::*;
-pub use resource::*;
 pub use locale_utils::*;
+pub use resource::*;
 
 #[derive(Error, Debug)]
 pub enum Error {

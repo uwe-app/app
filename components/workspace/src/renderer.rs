@@ -196,7 +196,16 @@ impl<'a> Renderer<'a> {
         Ok(res)
     }
 
-    async fn build(&self, locales: &Locales) -> Result<CompilerOutput> {
+    pub(crate) async fn one(&self, file: &PathBuf) -> Result<()> {
+        let parser = Renderer::parser(&self.info, &self.info.context.locales)?;
+        self.compiler.one(&parser, &file).await?;
+        Ok(())
+    }
+
+    pub(crate) async fn build(
+        &self,
+        locales: &Locales,
+    ) -> Result<CompilerOutput> {
         // When working with multi-lingual sites the target may not exist yet
         let path = self.info.context.collation.get_path();
         if !path.exists() {

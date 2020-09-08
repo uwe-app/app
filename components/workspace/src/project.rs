@@ -284,14 +284,18 @@ impl<'r> RenderBuilder {
         for collation in self.collations.iter_mut() {
             synthetic::search(&self.config, &self.options, collation)?;
         }
-
         Ok(self)
     }
 
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
-            synthetic::feed(&self.locales, &self.config, &self.options, collation)?;
+            synthetic::feed(
+                &self.locales,
+                &self.config,
+                &self.options,
+                collation,
+            )?;
         }
         Ok(self)
     }
@@ -402,10 +406,6 @@ impl<'r> RenderBuilder {
             renderers.push(Renderer::new(info));
             Ok::<(), Error>(())
         })?;
-
-        //for renderer in renderers.iter_mut() {
-        //renderer.set_parser(&locales)?;
-        //}
 
         Ok(Render {
             config,

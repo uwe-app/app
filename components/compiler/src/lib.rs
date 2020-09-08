@@ -13,9 +13,6 @@ pub enum Error {
     #[error("Parser got invalid file type")]
     ParserFileType,
 
-    #[error("Invalidation action not handled")]
-    InvalidationActionNotHandled,
-
     #[error("Short code cache is not a directory {0}")]
     NoShortCodeCache(PathBuf),
 
