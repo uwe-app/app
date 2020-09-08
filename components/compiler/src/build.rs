@@ -6,12 +6,12 @@ use log::error;
 
 use book::compiler::BookCompiler;
 
-use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
+use collator::{Collate};
 
 use crate::context::{BuildContext, CompilerOutput};
 use crate::hook;
 use crate::parser::Parser;
-use crate::run::{self, ParseData};
+use crate::run;
 use crate::{Error, Result};
 
 #[derive(Debug)]
@@ -29,73 +29,6 @@ impl Compiler {
         );
 
         Self { context, book }
-    }
-
-    /// Handle a resource file depending upon the resource operation.
-    pub async fn resource(
-        &self,
-        file: &PathBuf,
-        target: &ResourceTarget,
-    ) -> Result<()> {
-        match target.operation {
-            ResourceOperation::Noop => Ok(()),
-            ResourceOperation::Copy => {
-                run::copy(
-                    file,
-                    &target.get_output(self.context.collation.get_path()),
-                )
-                .await
-            }
-            ResourceOperation::Link => {
-                run::link(
-                    file,
-                    &target.get_output(self.context.collation.get_path()),
-                )
-                .await
-            }
-            _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
-        }
-    }
-
-    /// Build a single file, negotiates pages and resource files.
-    pub async fn one(
-        &self,
-        parser: &Parser<'_>,
-        file: &PathBuf,
-    ) -> Result<Option<ParseData>> {
-        let resource = self.context.collation.get_resource(file).unwrap();
-
-        match resource {
-            Resource::Page { ref target } => {
-                if let Some(page) = self.context.collation.resolve(file) {
-                    match target.operation {
-                        ResourceOperation::Render => {
-                            let rel =
-                                page.file.as_ref().unwrap().target.clone();
-                            let dest =
-                                self.context.collation.get_path().join(&rel);
-
-                            return run::parse(
-                                Arc::clone(&self.context),
-                                parser,
-                                page.get_template(),
-                                page,
-                                &dest,
-                            )
-                            .await;
-                        }
-                        _ => self.resource(file, target).await?,
-                    }
-                } else {
-                    return Err(Error::PageResolve(file.to_path_buf()));
-                }
-            }
-            Resource::File { ref target } => {
-                self.resource(file, target).await?
-            }
-        }
-
-        Ok(None)
     }
 
     pub async fn build(
@@ -160,6 +93,8 @@ impl Compiler {
         if parallel {
             let (tx, rx) = channel::unbounded();
 
+            let context = &self.context;
+
             rayon::scope(|s| {
                 for p in all {
                     let tx = tx.clone();
@@ -169,7 +104,7 @@ impl Compiler {
                         // NOTE: consistent futures based API
                         let mut rt = tokio::runtime::Runtime::new().unwrap();
                         rt.block_on(async move {
-                            let res = self.one(parser, p).await;
+                            let res = run::one(context, parser, p).await;
                             if fail_fast && res.is_err() {
                                 error!("{}", res.err().unwrap());
                                 panic!("Build failed");
@@ -200,7 +135,7 @@ impl Compiler {
             }
         } else {
             for p in all {
-                if let Some(parse_data) = self.one(parser, p).await? {
+                if let Some(parse_data) = run::one(&self.context, parser, p).await? {
                     output.data.push(parse_data);
                 }
             }
@@ -229,7 +164,7 @@ impl Compiler {
 
         for p in targets {
             if p.is_file() {
-                if let Some(parse_data) = self.one(parser, &p).await? {
+                if let Some(parse_data) = run::one(&self.context, parser, &p).await? {
                     output.data.push(parse_data);
                 }
             } else {

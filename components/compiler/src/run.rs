@@ -1,18 +1,14 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use log::info;
 
-use collator::Collate;
+use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
 use config::{CollatedPage, Config, Page, ProfileName};
-
-use crate::context::BuildContext;
-use crate::draft;
-use crate::parser::Parser;
-use crate::Result;
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
+
+use crate::{Error, Result, draft, parser::Parser, context::BuildContext};
 
 #[derive(Debug)]
 pub struct ParseData {
@@ -26,6 +22,71 @@ impl ParseData {
             file,
             extract: None,
         }
+    }
+}
+
+/// Build a single file, negotiates pages and resource files.
+pub async fn one(
+    context: &BuildContext,
+    parser: &Parser<'_>,
+    file: &PathBuf,
+) -> Result<Option<ParseData>> {
+    match context.collation.get_resource(file).unwrap() {
+        Resource::Page { ref target } => {
+            if let Some(page) = context.collation.resolve(file) {
+                match target.operation {
+                    ResourceOperation::Render => {
+                        let rel =
+                            page.file.as_ref().unwrap().target.clone();
+                        let dest =
+                            context.collation.get_path().join(&rel);
+
+                        return parse(
+                            context,
+                            parser,
+                            page.get_template(),
+                            page,
+                            &dest,
+                        )
+                        .await;
+                    }
+                    _ => resource(context, file, target).await?,
+                }
+            } else {
+                return Err(Error::PageResolve(file.to_path_buf()));
+            }
+        }
+        Resource::File { ref target } => {
+            resource(context, file, target).await?
+        }
+    }
+
+    Ok(None)
+}
+
+/// Handle a resource file depending upon the resource operation.
+pub async fn resource(
+    context: &BuildContext,
+    file: &PathBuf,
+    target: &ResourceTarget,
+) -> Result<()> {
+    match target.operation {
+        ResourceOperation::Noop => Ok(()),
+        ResourceOperation::Copy => {
+            copy(
+                file,
+                &target.get_output(context.collation.get_path()),
+            )
+            .await
+        }
+        ResourceOperation::Link => {
+            link(
+                file,
+                &target.get_output(context.collation.get_path()),
+            )
+            .await
+        }
+        _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
     }
 }
 
@@ -55,13 +116,13 @@ fn should_minify_html<P: AsRef<Path>>(
     release && html_extension
 }
 
-pub async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
+async fn copy<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
     utils::fs::copy(file, dest)?;
     Ok(())
 }
 
-pub async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
+async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
     info!("{} -> {}", file.display(), dest.display());
 
     // NOTE: prevent errors trying to symlink when the target
@@ -82,7 +143,7 @@ pub async fn link<'a>(file: &PathBuf, dest: &PathBuf) -> Result<()> {
 }
 
 pub async fn parse(
-    ctx: Arc<BuildContext>,
+    ctx: &BuildContext,
     parser: &Parser<'_>,
     file: &PathBuf,
     data: &Page,
@@ -161,3 +222,5 @@ pub async fn parse(
 
     Ok(Some(res))
 }
+
+

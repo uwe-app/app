@@ -9,7 +9,7 @@ use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
 use compiler::{
-    parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData,
+    run, parser::Parser, BuildContext, Compiler, CompilerOutput, ParseData,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::{LocaleName, Locales};
@@ -223,7 +223,7 @@ impl Renderer {
     }
 
     async fn one(&self, parser: &Parser<'_>, file: &PathBuf) -> Result<()> {
-        self.compiler.one(&parser, &file).await?;
+        run::one(&self.info.context, &parser, &file).await?;
         Ok(())
     }
 
