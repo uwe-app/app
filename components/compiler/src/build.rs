@@ -30,78 +30,41 @@ impl Compiler {
         Self { context }
     }
 
-    pub async fn build(
+    pub async fn build<F>(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
         output: &mut CompilerOutput,
-        filters: &Option<Vec<PathBuf>>,
-    ) -> Result<()> {
+        filter: F,
+    ) -> Result<()>
+        where F: FnMut(&&Arc<PathBuf>) -> bool + Send
+    {
+
         let parallel = self.context.options.settings.is_parallel();
 
         // TODO: support allowing this in the settings
         let fail_fast = true;
 
-        let all = self.context.collation.resources().filter(|p| {
-            if let Some(ref filters) = filters {
-                for f in filters.iter() {
-                    // NOTE: the starts_with() is important so that directory
-                    // NOTE: filters will compile everything in the directory
-                    if p.starts_with(f) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            true
-        });
-        //.filter(|_p| {
-        /*
-        if let Some(ref manifest) = self.context.collation.manifest {
-            if let Some(ref resource) =
-                self.context.collation.all.get(*p)
-            {
-                match resource {
-                    Resource::Page { ref target }
-                    | Resource::File { ref target } => {
-                        let file = p.to_path_buf();
-                        if manifest.exists(&file)
-                            && !manifest.is_dirty(
-                                &file,
-                                &target.destination,
-                                false,
-                            )
-                        {
-                            debug!("[NOOP] {}", file.display());
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-        */
-        //true
-        //});
+        let it = self.context.collation.resources().filter(filter);
 
         if parallel {
             let (tx, rx) = channel::unbounded();
-
             let context = &self.context;
 
             rayon::scope(|s| {
-                for p in all {
+                for p in it {
                     let tx = tx.clone();
                     s.spawn(move |_t| {
-                        let mut rt = tokio::runtime::Runtime::new().unwrap();
                         // NOTE: we pay a price for creating another runtime
                         // NOTE: inside the rayon thread but it gives us a
                         // NOTE: consistent futures based API
+                        let mut rt = tokio::runtime::Runtime::new().unwrap();
                         rt.block_on(async move {
                             let res = run::one(context, parser, p).await;
                             if fail_fast && res.is_err() {
                                 error!("{}", res.err().unwrap());
                                 panic!("Build failed");
                             } else {
-                                tx.send(res).unwrap();
+                                tx.send((p, res)).unwrap();
                             }
                         });
                     })
@@ -111,7 +74,7 @@ impl Compiler {
             drop(tx);
 
             let mut errs: Vec<Error> = Vec::new();
-            rx.iter().for_each(|r| {
+            rx.iter().for_each(|(p, r)| {
                 if r.is_err() {
                     errs.push(r.err().unwrap());
                 } else {
@@ -120,17 +83,19 @@ impl Compiler {
                         output.data.push(parse_data);
                     }
                 }
+                output.files.push(Arc::clone(p));
             });
 
             if !errs.is_empty() {
                 return Err(Error::Multi { errs });
             }
         } else {
-            for p in all {
+            for p in it {
                 if let Some(parse_data) =
                     run::one(&self.context, parser, p).await?
                 {
                     output.data.push(parse_data);
+                    output.files.push(Arc::clone(p));
                 }
             }
         }

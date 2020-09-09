@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use once_cell::sync::OnceCell;
 use std::sync::{Arc, RwLock};
 
@@ -10,6 +11,9 @@ use crate::ParseData;
 #[derive(Debug, Default)]
 pub struct CompilerOutput {
     pub data: Vec<ParseData>,
+    // Files that were processed so the renderer
+    // can update the manifest
+    pub files: Vec<Arc<PathBuf>>,
 }
 
 #[derive(Debug, Default)]

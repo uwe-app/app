@@ -1,13 +1,13 @@
 use std::fs::{self, File};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use log::info;
+use log::{debug, info};
 use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::{Collate, LinkCollate};
+use collator::{Collate, LinkCollate, resource::Resource};
 use compiler::{
     parser::Parser, run, BuildContext, Compiler, CompilerOutput, ParseData,
 };
@@ -17,8 +17,11 @@ use search::{
     compile as compile_index, intermediate, Index, IntermediateEntry,
 };
 
-use crate::hook;
-use crate::Result;
+use crate::{
+    hook,
+    manifest::Manifest,
+    Result,
+};
 
 #[derive(Clone)]
 pub enum RenderFilter {
@@ -46,6 +49,7 @@ pub struct CompilerInput {
     pub sources: Arc<Sources>,
     pub context: Arc<BuildContext>,
     pub locales: Arc<Locales>,
+    pub manifest: Option<Arc<RwLock<Manifest>>>,
 }
 
 #[derive(Debug)]
@@ -215,15 +219,6 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn one(
-        &self,
-        parser: &Box<impl Parser + Send + Sync + ?Sized>,
-        file: &PathBuf,
-    ) -> Result<()> {
-        run::one(&self.info.context, parser, &file).await?;
-        Ok(())
-    }
-
     async fn run_before_hooks(&self) -> Result<()> {
         if let Some(ref hooks) = self.info.context.config.hook {
             hook::run(
@@ -265,12 +260,82 @@ impl Renderer {
 
         self.run_before_hooks().await?;
 
+        let is_incremental = self.info.manifest.is_some();
+        let mut manifest_filter = |p: &&Arc<PathBuf>| -> bool {
+            if let Some(ref manifest) = self.info.manifest {
+                let manifest = manifest.read().unwrap();
+                if let Some(ref resource) =
+                    self.info.context.collation.get_resource(*p)
+                {
+                    match resource {
+                        Resource::Page { ref target }
+                        | Resource::File { ref target } => {
+                            let dest = target.get_output(self.info.context.collation.get_path());
+                            if manifest.exists(p)
+                                && !manifest.is_dirty(
+                                    p,
+                                    &dest,
+                                    false,
+                                )
+                            {
+                                debug!("[NOOP] {}", p.display());
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            true
+        };
+
+        let filters = &self.info.sources.filters;
+        let mut path_filter = |p: &&Arc<PathBuf>| -> bool {
+            if let Some(ref filters) = filters {
+                for f in filters.iter() {
+                    // NOTE: the starts_with() is important so that directory
+                    // NOTE: filters will compile everything in the directory
+                    if p.starts_with(f) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            true 
+        };
+
+        let mut filter = |p: &&Arc<PathBuf>| -> bool {
+            let filtered = path_filter(p);
+            if filtered && is_incremental { return manifest_filter(p) }
+            filtered
+        };
+
         self.compiler
-            .build(parser, output, &self.info.sources.filters)
+            .build(parser, output, filter)
             .await?;
 
         self.run_after_hooks().await?;
 
+        if is_incremental {
+            if let Some(ref manifest) = self.info.manifest {
+                debug!("Incremental build update: {}", output.files.len());
+                let mut manifest = manifest.write().unwrap();
+                manifest.update(&output.files);
+                manifest.save()?;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn one(
+        &self,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
+        file: &PathBuf,
+    ) -> Result<()> {
+        let _ = run::one(&self.info.context, parser, &file).await?;
+
+        // TODO: update the manifest in single file mode!
+        
         Ok(())
     }
 }

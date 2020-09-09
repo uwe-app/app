@@ -410,6 +410,7 @@ impl<'a> ProjectBuilder {
                 sources: Arc::clone(&sources),
                 locales: Arc::clone(&locales),
                 context: Arc::new(context),
+                manifest: manifest.clone(),
             };
 
             parsers.push(parser::handlebars(

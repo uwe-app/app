@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -35,16 +36,16 @@ impl Manifest {
         None
     }
 
-    pub fn is_dirty<P: AsRef<Path>, D: AsRef<Path>>(
+    pub fn is_dirty(
         &self,
-        file: P,
-        dest: D,
+        file: &PathBuf,
+        dest: &PathBuf,
         force: bool,
     ) -> bool {
-        if force || !dest.as_ref().exists() {
+        if force || !dest.exists() {
             return true;
         }
-        if let Some(entry) = self.map.get(&file.as_ref().to_path_buf()) {
+        if let Some(entry) = self.map.get(file) {
             if let Some(current) = self.get_entry(file) {
                 if current.modified > entry.modified {
                     return true;
@@ -54,14 +55,20 @@ impl Manifest {
         false
     }
 
-    pub fn exists<P: AsRef<Path>>(&self, file: P) -> bool {
-        return self.map.contains_key(&file.as_ref().to_path_buf());
+    pub fn exists(&self, file: &PathBuf) -> bool {
+        self.map.contains_key(file)
     }
 
-    pub fn touch<P: AsRef<Path>>(&mut self, file: P) {
-        if let Some(value) = self.get_entry(file.as_ref()) {
-            self.map.insert(file.as_ref().to_path_buf(), value);
+    pub fn touch(&mut self, file: &PathBuf) {
+        if let Some(value) = self.get_entry(file) {
+            self.map.insert(file.to_path_buf(), value);
         }
+    }
+
+    pub fn update(&mut self, files: &Vec<Arc<PathBuf>>) {
+        for f in files {
+            self.touch(&f);
+        } 
     }
 
     pub fn load<P: AsRef<Path>>(p: P) -> Result<Manifest> {

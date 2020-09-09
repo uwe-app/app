@@ -36,8 +36,10 @@ pub async fn one(
             if let Some(page) = context.collation.resolve(file) {
                 match target.operation {
                     ResourceOperation::Render => {
-                        let rel = page.file.as_ref().unwrap().target.clone();
-                        let dest = context.collation.get_path().join(&rel);
+                        //let rel = page.file.as_ref().unwrap().target.clone();
+                        //let dest = context.collation.get_path().join(&rel);
+
+                        let dest = target.get_output(context.collation.get_path());
 
                         return parse(
                             context,

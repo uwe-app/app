@@ -26,6 +26,10 @@ impl Collation {
     pub fn is_fallback(&self) -> bool {
         self.fallback.lang == self.locale.lang
     }
+
+    pub fn get_resource(&self, file: &PathBuf) -> Option<&Resource> {
+        self.fallback.all.get(file)
+    }
 }
 
 #[derive(Debug, Default, Clone)]
