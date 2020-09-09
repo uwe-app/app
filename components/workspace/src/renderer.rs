@@ -261,6 +261,8 @@ impl Renderer {
         self.run_before_hooks().await?;
 
         let is_incremental = self.info.manifest.is_some();
+        if is_incremental { info!("Incremental build enabled"); }
+
         let mut manifest_filter = |p: &&Arc<PathBuf>| -> bool {
             if let Some(ref manifest) = self.info.manifest {
                 let manifest = manifest.read().unwrap();

@@ -8,15 +8,10 @@ use serde::{Deserialize, Serialize};
 use crate::Result;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ManifestEntry {
-    modified: SystemTime,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Manifest {
     #[serde(skip)]
     pub file: PathBuf,
-    pub map: HashMap<PathBuf, ManifestEntry>,
+    map: HashMap<PathBuf, SystemTime>,
 }
 
 impl Manifest {
@@ -27,10 +22,10 @@ impl Manifest {
         }
     }
 
-    fn get_entry<P: AsRef<Path>>(&self, file: P) -> Option<ManifestEntry> {
+    fn get_entry<P: AsRef<Path>>(&self, file: P) -> Option<SystemTime> {
         if let Ok(meta) = file.as_ref().metadata() {
             if let Ok(modified) = meta.modified() {
-                return Some(ManifestEntry { modified });
+                return Some(modified);
             }
         }
         None
@@ -42,15 +37,9 @@ impl Manifest {
         dest: &PathBuf,
         force: bool,
     ) -> bool {
-        if force || !dest.exists() {
-            return true;
-        }
-        if let Some(entry) = self.map.get(file) {
-            if let Some(current) = self.get_entry(file) {
-                if current.modified > entry.modified {
-                    return true;
-                }
-            }
+        if force || !dest.exists() { return true; }
+        if let (Some(entry), Some(current)) = (self.map.get(file), self.get_entry(file)) {
+            return &current > entry;
         }
         false
     }
@@ -66,9 +55,7 @@ impl Manifest {
     }
 
     pub fn update(&mut self, files: &Vec<Arc<PathBuf>>) {
-        for f in files {
-            self.touch(&f);
-        } 
+        for f in files { self.touch(&f); } 
     }
 
     pub fn load<P: AsRef<Path>>(p: P) -> Result<Manifest> {
