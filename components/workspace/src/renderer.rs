@@ -19,6 +19,7 @@ use search::{
 };
 
 use crate::Result;
+use crate::hook;
 
 #[derive(Clone)]
 pub enum RenderFilter {
@@ -215,6 +216,34 @@ impl Renderer {
         Ok(())
     }
 
+    async fn run_before_hooks(&self) -> Result<()> {
+        if let Some(ref hooks) = self.info.context.config.hook {
+            hook::run(
+                Arc::clone(&self.info.context),
+                hook::collect(
+                    hooks.clone(),
+                    hook::Phase::Before,
+                    &self.info.context.options.settings.name,
+                ),
+            )?;
+        }
+        Ok(())
+    }
+
+    async fn run_after_hooks(&self) -> Result<()> {
+        if let Some(ref hooks) = self.info.context.config.hook {
+            hook::run(
+                Arc::clone(&self.info.context),
+                hook::collect(
+                    hooks.clone(),
+                    hook::Phase::After,
+                    &self.info.context.options.settings.name,
+                ),
+            )?;
+        }
+        Ok(())
+    }
+
     async fn build(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
@@ -225,9 +254,15 @@ impl Renderer {
         if !path.exists() {
             fs::create_dir_all(path)?;
         }
+
+        self.run_before_hooks().await?;
+
         self.compiler
             .all(parser, &self.info.sources, output)
             .await?;
+
+        self.run_after_hooks().await?;
+
         Ok(())
     }
 

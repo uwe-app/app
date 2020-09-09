@@ -23,6 +23,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
+    hook,
     manifest::Manifest,
     renderer::{CompilerInput, RenderFilter, RenderType, Renderer},
     Error, Result,

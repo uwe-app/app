@@ -4,16 +4,18 @@ use std::sync::Arc;
 
 use log::{debug, info};
 
-use crate::{BuildContext, Error};
+use compiler::BuildContext;
 use collator::Collate;
 use config::{HookConfig, ProfileName};
+
+use crate::{Error, Result};
 
 pub enum Phase {
     Before,
     After,
 }
 
-pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<(), Error> {
+pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
     let project_root = ctx.config.get_project();
     debug!("hook root {}", project_root.display());
     if let Ok(root) = project_root.canonicalize() {
@@ -97,7 +99,7 @@ pub fn collect(
 pub fn run(
     ctx: Arc<BuildContext>,
     hooks: Vec<(String, HookConfig)>,
-) -> Result<(), Error> {
+) -> Result<()> {
     for (k, hook) in hooks {
         info!("hook {}", k);
         exec(Arc::clone(&ctx), &hook)?;

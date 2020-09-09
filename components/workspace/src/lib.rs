@@ -34,16 +34,15 @@ pub enum Error {
     #[error("Profiles may not define a build profile, please remove it")]
     NoProfileInProfile,
 
-    //#[error("Redirect file {0} already exists")]
-    //RedirectFileExists(PathBuf),
+    #[error("Failed to get canonical path for project root {0}")]
+    CanonicalProjectRoot(PathBuf),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
-    //#[error(transparent)]
-    //InvalidUri(#[from] http::uri::InvalidUri),
     #[error(transparent)]
     Json(#[from] serde_json::error::Error),
 
@@ -71,6 +70,7 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod hook;
 mod invalidator;
 pub mod lock;
 mod manifest;

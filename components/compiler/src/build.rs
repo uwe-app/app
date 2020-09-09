@@ -9,7 +9,6 @@ use book::compiler::BookCompiler;
 use collator::{Collate};
 
 use crate::context::{BuildContext, CompilerOutput};
-use crate::hook;
 use crate::parser::Parser;
 use crate::run;
 use crate::{Error, Result};
@@ -149,16 +148,6 @@ impl Compiler {
         targets: &Vec<PathBuf>,
         output: &mut CompilerOutput,
     ) -> Result<()> {
-        if let Some(hooks) = &self.context.config.hook {
-            hook::run(
-                Arc::clone(&self.context),
-                hook::collect(
-                    hooks.clone(),
-                    hook::Phase::Before,
-                    &self.context.options.settings.name,
-                ),
-            )?;
-        }
 
         for p in targets {
             if p.is_file() {
@@ -175,17 +164,6 @@ impl Compiler {
         if let Some(ref _book) = self.context.config.book {
             let livereload = crate::context::livereload().read().unwrap();
             self.book.all(&self.context.config, livereload.clone())?;
-        }
-
-        if let Some(hooks) = &self.context.config.hook {
-            hook::run(
-                Arc::clone(&self.context),
-                hook::collect(
-                    hooks.clone(),
-                    hook::Phase::After,
-                    &self.context.options.settings.name,
-                ),
-            )?;
         }
 
         Ok(())
