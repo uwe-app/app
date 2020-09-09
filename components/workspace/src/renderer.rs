@@ -323,7 +323,6 @@ impl Renderer {
                 debug!("Incremental build update: {}", output.files.len());
                 let mut manifest = manifest.write().unwrap();
                 manifest.update(&output.files);
-                manifest.save()?;
             }
         }
 
