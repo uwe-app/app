@@ -257,8 +257,7 @@ impl Renderer {
 
         self.run_before_hooks().await?;
 
-        self.compiler
-            .all(parser, &self.info.sources, output)
+        self.all(parser, &self.info.sources, output)
             .await?;
 
         self.run_after_hooks().await?;
@@ -266,4 +265,32 @@ impl Renderer {
         Ok(())
     }
 
+    async fn all(
+        &self,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
+        targets: &Vec<PathBuf>,
+        output: &mut CompilerOutput,
+    ) -> Result<()> {
+
+        for p in targets {
+            if p.is_file() {
+                if let Some(parse_data) = run::one(&self.info.context, parser, &p).await? {
+                    output.data.push(parse_data);
+                }
+            } else {
+                self.compiler.build(parser, &p, output).await?;
+            }
+        }
+
+        // Now compile the books
+        // FIXME: refactor books
+        /*
+        if let Some(ref _book) = self.context.config.book {
+            let livereload = crate::context::livereload().read().unwrap();
+            self.book.all(&self.context.config, livereload.clone())?;
+        }
+        */
+
+        Ok(())
+    }
 }

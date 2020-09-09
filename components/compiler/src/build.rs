@@ -16,18 +16,18 @@ use crate::{Error, Result};
 #[derive(Debug)]
 pub struct Compiler {
     pub context: Arc<BuildContext>,
-    pub book: BookCompiler,
+    //pub book: BookCompiler,
 }
 
 impl Compiler {
     pub fn new(context: Arc<BuildContext>) -> Self {
-        let book = BookCompiler::new(
-            context.options.source.clone(),
-            context.options.base.clone(),
-            context.options.settings.is_release(),
-        );
+        //let book = BookCompiler::new(
+            //context.options.source.clone(),
+            //context.options.base.clone(),
+            //context.options.settings.is_release(),
+        //);
 
-        Self { context, book }
+        Self { context }
     }
 
     pub async fn build(
@@ -142,6 +142,7 @@ impl Compiler {
     }
 
     // Build all target paths
+    /*
     pub async fn all(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
@@ -168,4 +169,5 @@ impl Compiler {
 
         Ok(())
     }
+    */
 }
