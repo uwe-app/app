@@ -283,8 +283,7 @@ impl DataSourceMap {
                         options.source.clone()
                     };
 
-                    let data_source =
-                        DataSourceMap::to_data_source(&from, v);
+                    let data_source = DataSourceMap::to_data_source(&from, v);
                     map.insert(k.to_string(), data_source);
                 }
             }

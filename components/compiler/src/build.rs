@@ -6,7 +6,7 @@ use log::error;
 
 use book::compiler::BookCompiler;
 
-use collator::{Collate};
+use collator::Collate;
 
 use crate::context::{BuildContext, CompilerOutput};
 use crate::parser::Parser;
@@ -22,9 +22,9 @@ pub struct Compiler {
 impl Compiler {
     pub fn new(context: Arc<BuildContext>) -> Self {
         //let book = BookCompiler::new(
-            //context.options.source.clone(),
-            //context.options.base.clone(),
-            //context.options.settings.is_release(),
+        //context.options.source.clone(),
+        //context.options.base.clone(),
+        //context.options.settings.is_release(),
         //);
 
         Self { context }
@@ -33,59 +33,54 @@ impl Compiler {
     pub async fn build(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
-        target: &PathBuf,
         output: &mut CompilerOutput,
+        filters: &Option<Vec<PathBuf>>,
     ) -> Result<()> {
         let parallel = self.context.options.settings.is_parallel();
-
-        // Filtering using the starts_with() below allows command line paths
-        // to filter the files that get compiled. However if we apply this filtering
-        // logic when the target is the main input source directory we will also
-        // ignore synthetic asset files outside of the source directory such as
-        // those copied over for the search runtime. This is a workaround for now
-        // but really we should rewrite the path filtering logic.
-        let filter_active = *target != self.context.options.source;
 
         // TODO: support allowing this in the settings
         let fail_fast = true;
 
-        let all = self
-            .context
-            .collation
-            .resources();
-            //.filter(|p| {
-                //if !filter_active {
-                    //return true;
-                //}
-                //p.starts_with(target)
-            //})
-            //.filter(|_p| {
-                /*
-                if let Some(ref manifest) = self.context.collation.manifest {
-                    if let Some(ref resource) =
-                        self.context.collation.all.get(*p)
-                    {
-                        match resource {
-                            Resource::Page { ref target }
-                            | Resource::File { ref target } => {
-                                let file = p.to_path_buf();
-                                if manifest.exists(&file)
-                                    && !manifest.is_dirty(
-                                        &file,
-                                        &target.destination,
-                                        false,
-                                    )
-                                {
-                                    debug!("[NOOP] {}", file.display());
-                                    return false;
-                                }
-                            }
+        let all = self.context.collation.resources().filter(|p| {
+            if let Some(ref filters) = filters {
+                for f in filters.iter() {
+                    // NOTE: the starts_with() is important so that directory
+                    // NOTE: filters will compile everything in the directory
+                    if p.starts_with(f) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            true
+        });
+        //.filter(|_p| {
+        /*
+        if let Some(ref manifest) = self.context.collation.manifest {
+            if let Some(ref resource) =
+                self.context.collation.all.get(*p)
+            {
+                match resource {
+                    Resource::Page { ref target }
+                    | Resource::File { ref target } => {
+                        let file = p.to_path_buf();
+                        if manifest.exists(&file)
+                            && !manifest.is_dirty(
+                                &file,
+                                &target.destination,
+                                false,
+                            )
+                        {
+                            debug!("[NOOP] {}", file.display());
+                            return false;
                         }
                     }
                 }
-                */
-                //true
-            //});
+            }
+        }
+        */
+        //true
+        //});
 
         if parallel {
             let (tx, rx) = channel::unbounded();
@@ -132,7 +127,9 @@ impl Compiler {
             }
         } else {
             for p in all {
-                if let Some(parse_data) = run::one(&self.context, parser, p).await? {
+                if let Some(parse_data) =
+                    run::one(&self.context, parser, p).await?
+                {
                     output.data.push(parse_data);
                 }
             }

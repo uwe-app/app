@@ -11,7 +11,7 @@ use cache::CacheComponent;
 use collator::{
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
-use compiler::{BuildContext, parser, parser::Parser};
+use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
@@ -23,9 +23,8 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
-    hook,
     manifest::Manifest,
-    renderer::{CompilerInput, RenderFilter, RenderType, Renderer},
+    renderer::{CompilerInput, RenderFilter, RenderType, Renderer, Sources},
     Error, Result,
 };
 
@@ -133,7 +132,7 @@ impl CollationBuilder {
 #[derive(Debug, Default)]
 pub struct ProjectBuilder {
     pub locales: Locales,
-    pub sources: Vec<PathBuf>,
+    pub sources: Sources,
     pub config: Config,
     pub options: RuntimeOptions,
     pub redirects: RedirectConfig,
@@ -143,21 +142,29 @@ pub struct ProjectBuilder {
 }
 
 impl<'a> ProjectBuilder {
-
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         // Get source paths from the profile settings
-        let source = self.options.source.clone();
+        //let source = self.options.source.clone();
 
-        let paths: Vec<PathBuf> =
-            if let Some(ref paths) = self.options.settings.paths {
-                self.verify(paths)?;
-                paths.clone()
-            } else {
-                vec![source]
-            };
+        let mut sources: Sources = Default::default();
 
-        self.sources = paths;
+        if let Some(ref paths) = self.options.settings.paths {
+            self.verify(paths)?;
+            sources.filters = Some(paths.clone());
+        }
+
+        //let paths: Vec<PathBuf> =
+        //if let Some(ref paths) = self.options.settings.paths {
+        //self.verify(paths)?;
+        //paths.clone()
+        //} else {
+        //vec![source]
+        //};
+
+        //self.sources = paths;
+
+        self.sources = sources;
 
         Ok(self)
     }
@@ -405,10 +412,10 @@ impl<'a> ProjectBuilder {
                 context: Arc::new(context),
             };
 
-            parsers.push(
-                parser::handlebars(
-                    Arc::clone(&info.context),
-                    Arc::clone(&locales))?);
+            parsers.push(parser::handlebars(
+                Arc::clone(&info.context),
+                Arc::clone(&locales),
+            )?);
 
             renderers.push(Renderer::new(info));
             Ok::<(), Error>(())
@@ -459,7 +466,6 @@ pub struct Project {
 }
 
 impl Project {
-
     /// Render the project.
     pub(crate) async fn render(
         &self,
@@ -469,7 +475,10 @@ impl Project {
         let mut result: ProjectResult = Default::default();
 
         // Renderer is generated for each locale to compile
-        for (parser, renderer) in self.parsers.iter().zip(self.renderers.iter())
+        for (parser, renderer) in self
+            .parsers
+            .iter()
+            .zip(self.renderers.iter())
             .filter(|(_, r)| {
                 let language = r.info.context.collation.get_lang();
                 match render_filter {

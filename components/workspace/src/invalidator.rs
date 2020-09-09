@@ -141,7 +141,8 @@ impl<'a> Invalidator<'a> {
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        let layout_file = self.canonical(self.project.options.get_layout_path());
+        let layout_file =
+            self.canonical(self.project.options.get_layout_path());
         let assets = self.canonical(self.project.options.get_assets_path());
         let partials = self.canonical(self.project.options.get_partials_path());
 

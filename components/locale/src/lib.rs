@@ -61,7 +61,11 @@ pub struct Locales {
 }
 
 impl Locales {
-    fn get_locale_map(&self, arc: &Option<Box<ArcLoader>>, fallback: &str) -> Result<LocaleMap> {
+    fn get_locale_map(
+        &self,
+        arc: &Option<Box<ArcLoader>>,
+        fallback: &str,
+    ) -> Result<LocaleMap> {
         let mut res = LocaleMap {
             fallback: fallback.to_string(),
             map: HashMap::new(),
@@ -96,9 +100,10 @@ impl Locales {
     fn init(
         &mut self,
         config: &Config,
-        options: &RuntimeOptions) -> (Option<Box<ArcLoader>>, Option<Box<dyn std::error::Error>>) {
+        options: &RuntimeOptions,
+    ) -> (Option<Box<ArcLoader>>, Option<Box<dyn std::error::Error>>) {
         let locales_dir = options.get_locales();
-        if locales_dir.exists() && locales_dir.is_dir()  {
+        if locales_dir.exists() && locales_dir.is_dir() {
             if let Some(ref fluent) = config.fluent {
                 match arc(locales_dir, fluent) {
                     Ok(result) => {
@@ -113,9 +118,12 @@ impl Locales {
         (None, None)
     }
 
-    fn wrap(&self, loader: Option<Box<ArcLoader>>) -> &'static Option<Box<ArcLoader>> {
+    fn wrap(
+        &self,
+        loader: Option<Box<ArcLoader>>,
+    ) -> &'static Option<Box<ArcLoader>> {
         static CELL: OnceCell<Option<Box<ArcLoader>>> = OnceCell::new();
-        CELL.get_or_init(|| loader )
+        CELL.get_or_init(|| loader)
     }
 
     pub fn loader(&self) -> &'static Option<Box<ArcLoader>> {
@@ -125,8 +133,8 @@ impl Locales {
     pub fn load(
         &mut self,
         config: &Config,
-        options: &RuntimeOptions) -> Result<&LocaleMap> {
-
+        options: &RuntimeOptions,
+    ) -> Result<&LocaleMap> {
         let arc = match self.init(config, options) {
             (arc, err) => {
                 match err {
@@ -152,12 +160,9 @@ fn arc<'a, P: AsRef<Path>>(
     if let Some(core_file) = &fluent.shared {
         let mut core = file.to_path_buf();
         core.push(core_file);
-        return ArcLoader::builder(
-            dir.as_ref(),
-            fluent.fallback_id.clone(),
-        )
-        .shared_resources(Some(&[core]))
-        .build();
+        return ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone())
+            .shared_resources(Some(&[core]))
+            .build();
     }
 
     ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone()).build()

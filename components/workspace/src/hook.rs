@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use log::{debug, info};
 
-use compiler::BuildContext;
 use collator::Collate;
+use compiler::BuildContext;
 use config::{HookConfig, ProfileName};
 
 use crate::{Error, Result};

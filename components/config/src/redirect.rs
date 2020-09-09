@@ -108,7 +108,6 @@ impl RedirectConfig {
         Ok(())
     }
 
-
     fn write_file<P: AsRef<Path>>(
         &self,
         location: &str,

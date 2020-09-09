@@ -8,7 +8,7 @@ use config::{CollatedPage, Config, Page, ProfileName};
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
 
-use crate::{Error, Result, context::BuildContext, parser::Parser};
+use crate::{context::BuildContext, parser::Parser, Error, Result};
 
 #[derive(Debug)]
 pub struct ParseData {
@@ -36,10 +36,8 @@ pub async fn one(
             if let Some(page) = context.collation.resolve(file) {
                 match target.operation {
                     ResourceOperation::Render => {
-                        let rel =
-                            page.file.as_ref().unwrap().target.clone();
-                        let dest =
-                            context.collation.get_path().join(&rel);
+                        let rel = page.file.as_ref().unwrap().target.clone();
+                        let dest = context.collation.get_path().join(&rel);
 
                         return parse(
                             context,
@@ -73,18 +71,10 @@ pub async fn resource(
     match target.operation {
         ResourceOperation::Noop => Ok(()),
         ResourceOperation::Copy => {
-            copy(
-                file,
-                &target.get_output(context.collation.get_path()),
-            )
-            .await
+            copy(file, &target.get_output(context.collation.get_path())).await
         }
         ResourceOperation::Link => {
-            link(
-                file,
-                &target.get_output(context.collation.get_path()),
-            )
-            .await
+            link(file, &target.get_output(context.collation.get_path())).await
         }
         _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
     }
@@ -222,5 +212,3 @@ pub async fn parse(
 
     Ok(Some(res))
 }
-
-

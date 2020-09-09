@@ -9,8 +9,7 @@ use human_bytes::human_bytes;
 
 use collator::{Collate, LinkCollate};
 use compiler::{
-    run, BuildContext, Compiler, CompilerOutput, ParseData,
-    parser::Parser,
+    parser::Parser, run, BuildContext, Compiler, CompilerOutput, ParseData,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::{LocaleName, Locales};
@@ -18,8 +17,8 @@ use search::{
     compile as compile_index, intermediate, Index, IntermediateEntry,
 };
 
-use crate::Result;
 use crate::hook;
+use crate::Result;
 
 #[derive(Clone)]
 pub enum RenderFilter {
@@ -38,9 +37,14 @@ pub enum RenderType {
 }
 
 #[derive(Debug, Default)]
+pub struct Sources {
+    pub filters: Option<Vec<PathBuf>>,
+}
+
+#[derive(Debug, Default)]
 pub struct CompilerInput {
+    pub sources: Arc<Sources>,
     pub context: Arc<BuildContext>,
-    pub sources: Arc<Vec<PathBuf>>,
     pub locales: Arc<Locales>,
 }
 
@@ -211,7 +215,11 @@ impl Renderer {
         Ok(res)
     }
 
-    async fn one(&self, parser: &Box<impl Parser + Send + Sync + ?Sized>, file: &PathBuf) -> Result<()> {
+    async fn one(
+        &self,
+        parser: &Box<impl Parser + Send + Sync + ?Sized>,
+        file: &PathBuf,
+    ) -> Result<()> {
         run::one(&self.info.context, parser, &file).await?;
         Ok(())
     }
@@ -257,39 +265,11 @@ impl Renderer {
 
         self.run_before_hooks().await?;
 
-        self.all(parser, &self.info.sources, output)
+        self.compiler
+            .build(parser, output, &self.info.sources.filters)
             .await?;
 
         self.run_after_hooks().await?;
-
-        Ok(())
-    }
-
-    async fn all(
-        &self,
-        parser: &Box<impl Parser + Send + Sync + ?Sized>,
-        targets: &Vec<PathBuf>,
-        output: &mut CompilerOutput,
-    ) -> Result<()> {
-
-        for p in targets {
-            if p.is_file() {
-                if let Some(parse_data) = run::one(&self.info.context, parser, &p).await? {
-                    output.data.push(parse_data);
-                }
-            } else {
-                self.compiler.build(parser, &p, output).await?;
-            }
-        }
-
-        // Now compile the books
-        // FIXME: refactor books
-        /*
-        if let Some(ref _book) = self.context.config.book {
-            let livereload = crate::context::livereload().read().unwrap();
-            self.book.all(&self.context.config, livereload.clone())?;
-        }
-        */
 
         Ok(())
     }

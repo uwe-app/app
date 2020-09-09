@@ -32,7 +32,10 @@ pub trait Parser {
 }
 
 /// Generate the standard parser.
-pub fn handlebars<'a>(context: Arc<BuildContext>, locales: Arc<Locales>) -> Result<Box<impl Parser + Send + Sync + 'a>> {
+pub fn handlebars<'a>(
+    context: Arc<BuildContext>,
+    locales: Arc<Locales>,
+) -> Result<Box<impl Parser + Send + Sync + 'a>> {
     let builder = ParserBuilder::new(context)
         .short_codes()?
         .builtins()?
@@ -59,8 +62,8 @@ impl<'a> ParserBuilder<'a> {
 
         Self {
             context,
-            handlebars
-        } 
+            handlebars,
+        }
     }
 
     pub fn short_codes(mut self) -> Result<Self> {
@@ -133,7 +136,6 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn helpers(mut self) -> Result<Self> {
-
         // Configure helpers
         self.handlebars.register_helper(
             "author",
@@ -242,12 +244,16 @@ impl<'a> ParserBuilder<'a> {
             );
         }
 
-        self.handlebars.register_helper("json", Box::new(helpers::json::Debug));
+        self.handlebars
+            .register_helper("json", Box::new(helpers::json::Debug));
         self.handlebars
             .register_helper("include", Box::new(helpers::include::Include));
-        self.handlebars.register_helper("random", Box::new(helpers::random::Random));
-        self.handlebars.register_helper("slug", Box::new(helpers::slug::Slug));
-        self.handlebars.register_helper("date", Box::new(helpers::date::DateFormat));
+        self.handlebars
+            .register_helper("random", Box::new(helpers::random::Random));
+        self.handlebars
+            .register_helper("slug", Box::new(helpers::slug::Slug));
+        self.handlebars
+            .register_helper("date", Box::new(helpers::date::DateFormat));
 
         self.handlebars.register_helper(
             "next",
@@ -287,7 +293,6 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
-        
         let loader = locales.loader();
         if let Some(loader) = loader {
             self.handlebars.register_helper(
@@ -300,7 +305,7 @@ impl<'a> ParserBuilder<'a> {
                 Box::new(FluentLoader::new(&*LOCALES)),
             );
         }
-        
+
         Ok(self)
     }
 
@@ -365,7 +370,9 @@ impl Parser for HandlebarsParser<'_> {
         data: CollatedPage,
         standalone: bool,
     ) -> Result<String> {
-        if standalone { return self.standalone(file, data); }
+        if standalone {
+            return self.standalone(file, data);
+        }
         let layout = self.context.collation.find_layout(file);
         if let Some(ref layout_path) = layout {
             self.layout(data, layout_path)
