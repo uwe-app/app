@@ -8,7 +8,7 @@ use config::{CollatedPage, Config, Page, ProfileName};
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
 
-use crate::{Error, Result, draft, context::BuildContext, parser::Parser};
+use crate::{Error, Result, context::BuildContext, parser::Parser};
 
 #[derive(Debug)]
 pub struct ParseData {
@@ -149,7 +149,7 @@ pub async fn parse(
     data: &Page,
     dest: &PathBuf,
 ) -> Result<Option<ParseData>> {
-    if draft::is_draft(&data, &ctx.options) {
+    if data.is_draft(&ctx.options) {
         return Ok(None);
     }
 

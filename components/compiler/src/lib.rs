@@ -69,13 +69,11 @@ type Result<T> = std::result::Result<T, Error>;
 
 pub mod build;
 pub mod context;
-pub mod draft;
 pub mod helpers;
 pub mod hook;
 pub mod lookup;
 pub mod markdown;
 pub mod parser;
-//pub mod redirect;
 pub mod run;
 pub mod tree;
 

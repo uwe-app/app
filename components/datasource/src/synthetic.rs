@@ -131,7 +131,7 @@ fn build_feed(
 
     feed.items = pages
         .iter()
-        .filter(|p| !p.is_draft())
+        .filter(|p| !p.is_draft(options))
         .map(|p| {
             let mut item: Item = Default::default();
             item.id =

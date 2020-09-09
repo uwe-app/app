@@ -249,8 +249,11 @@ impl Page {
         &file_ctx.template
     }
 
-    pub fn is_draft(&self) -> bool {
-        self.draft.is_some() && self.draft.unwrap()
+    pub fn is_draft(&self, options: &RuntimeOptions) -> bool {
+        if options.settings.is_release() {
+            return self.draft.is_some() && self.draft.unwrap();
+        }
+        false
     }
 
     pub fn seal(
