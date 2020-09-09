@@ -14,9 +14,8 @@ use config::{Config, FluentConfig, RuntimeOptions};
 pub enum Error {
     #[error(transparent)]
     LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
-    // For fluent template loader
-    #[error(transparent)]
-    Boxed(#[from] Box<dyn std::error::Error>),
+    #[error("{0}")]
+    Message(String),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -94,31 +93,53 @@ impl Locales {
         Ok(res)
     }
 
-    pub fn loader(
-        &self,
+    fn init(
+        &mut self,
         config: &Config,
-        options: &RuntimeOptions) -> &'static Option<Box<ArcLoader>> {
-
-        static CELL: OnceCell<Option<Box<ArcLoader>>> = OnceCell::new();
-        CELL.get_or_init(|| {
-            let locales_dir = options.get_locales();
-            if locales_dir.exists() && locales_dir.is_dir()  {
-                if let Some(ref fluent) = config.fluent {
-                    let result = arc(locales_dir, fluent).unwrap();
-                    return Some(Box::new(result));
+        options: &RuntimeOptions) -> (Option<Box<ArcLoader>>, Option<Box<dyn std::error::Error>>) {
+        let locales_dir = options.get_locales();
+        if locales_dir.exists() && locales_dir.is_dir()  {
+            if let Some(ref fluent) = config.fluent {
+                match arc(locales_dir, fluent) {
+                    Ok(result) => {
+                        return (Some(Box::new(result)), None);
+                    }
+                    Err(e) => {
+                        return (None, Some(e));
+                    }
                 }
             }
-            None
-        })
+        }
+        (None, None)
+    }
+
+    fn wrap(&self, loader: Option<Box<ArcLoader>>) -> &'static Option<Box<ArcLoader>> {
+        static CELL: OnceCell<Option<Box<ArcLoader>>> = OnceCell::new();
+        CELL.get_or_init(|| loader )
+    }
+
+    pub fn loader(&self) -> &'static Option<Box<ArcLoader>> {
+        self.wrap(None)
     }
 
     pub fn load(
         &mut self,
         config: &Config,
-        options: &RuntimeOptions,
-    ) -> Result<&LocaleMap> {
-        let arc = self.loader(config, options);
-        self.languages = self.get_locale_map(arc, &config.lang)?;
+        options: &RuntimeOptions) -> Result<&LocaleMap> {
+
+        let arc = match self.init(config, options) {
+            (arc, err) => {
+                match err {
+                    Some(e) => return Err(Error::Message(e.to_string())),
+                    _ => {}
+                }
+                arc
+            }
+        };
+
+        let arc_ref = self.wrap(arc);
+
+        self.languages = self.get_locale_map(arc_ref, &config.lang)?;
         Ok(&self.languages)
     }
 }

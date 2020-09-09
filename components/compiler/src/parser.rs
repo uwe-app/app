@@ -287,8 +287,8 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
-        let loader = locales.loader(&self.context.config, &self.context.options);
-
+        
+        let loader = locales.loader();
         if let Some(loader) = loader {
             self.handlebars.register_helper(
                 "fluent",
