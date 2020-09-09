@@ -274,20 +274,18 @@ impl DataSourceMap {
         let mut map: BTreeMap<String, DataSource> = BTreeMap::new();
 
         // Map configurations for collations
-        if options.settings.should_collate() {
-            if let Some(ref db) = config.db {
-                if let Some(ref sources) = db.load {
-                    for (k, v) in sources {
-                        let from = if v.from.is_some() {
-                            v.from.as_ref().unwrap().clone()
-                        } else {
-                            options.source.clone()
-                        };
+        if let Some(ref db) = config.db {
+            if let Some(ref sources) = db.load {
+                for (k, v) in sources {
+                    let from = if v.from.is_some() {
+                        v.from.as_ref().unwrap().clone()
+                    } else {
+                        options.source.clone()
+                    };
 
-                        let data_source =
-                            DataSourceMap::to_data_source(&from, v);
-                        map.insert(k.to_string(), data_source);
-                    }
+                    let data_source =
+                        DataSourceMap::to_data_source(&from, v);
+                    map.insert(k.to_string(), data_source);
                 }
             }
         }

@@ -130,8 +130,6 @@ pub struct ProfileSettings {
     pub incremental: Option<bool>,
     pub pristine: Option<bool>,
     pub force: Option<bool>,
-    // Collate page data when defined
-    pub collate: Option<bool>,
 
     pub write_redirects: Option<bool>,
 
@@ -190,7 +188,6 @@ impl Default for ProfileSettings {
             incremental: None,
             pristine: None,
             force: None,
-            collate: None,
             write_redirects: None,
             base: None,
             paths: None,
@@ -286,9 +283,6 @@ impl ProfileSettings {
         if other.force.is_some() {
             self.force = mem::take(&mut other.force)
         }
-        if other.collate.is_some() {
-            self.collate = mem::take(&mut other.collate)
-        }
         if other.write_redirects.is_some() {
             self.write_redirects = mem::take(&mut other.write_redirects)
         }
@@ -348,9 +342,6 @@ impl ProfileSettings {
         if let None = self.incremental {
             self.incremental = Some(false);
         }
-        if let None = self.collate {
-            self.collate = Some(true);
-        }
     }
 
     pub fn get_host(&self) -> String {
@@ -391,10 +382,6 @@ impl ProfileSettings {
 
     pub fn is_pristine(&self) -> bool {
         self.pristine.is_some() && self.pristine.unwrap()
-    }
-
-    pub fn should_collate(&self) -> bool {
-        self.collate.is_some() && self.collate.unwrap()
     }
 
     pub fn should_use_layout(&self) -> bool {
