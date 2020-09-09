@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use config::indexer::QueryList;
 use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
@@ -48,7 +48,7 @@ pub struct CollateInfo {
     pub(crate) resources: HashSet<Arc<PathBuf>>,
 
     /// Lookup table for page data resolved by locale identifier and source path.
-    pub(crate) pages: HashMap<Arc<PathBuf>, Page>,
+    pub(crate) pages: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>>,
 
     // Pages that have permalinks map the
     // permalink to the computed href so that
@@ -88,11 +88,11 @@ pub trait Collate {
     fn get_lang(&self) -> &str;
     fn get_path(&self) -> &PathBuf;
     fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
-    fn resolve(&self, key: &PathBuf) -> Option<&Page>;
+    fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>>;
     fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
     fn pages(
         &self,
-    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_>;
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>;
 }
 
 /// Access to the collated series.
@@ -145,7 +145,7 @@ impl Collate for Collation {
             .or(self.fallback.get_resource(key))
     }
 
-    fn resolve(&self, key: &PathBuf) -> Option<&Page> {
+    fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
         self.locale.resolve(key).or(self.fallback.resolve(key))
     }
 
@@ -159,7 +159,7 @@ impl Collate for Collation {
 
     fn pages(
         &self,
-    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_> {
         if self.is_fallback() {
             return self.fallback.pages();
         }
@@ -217,7 +217,7 @@ impl Collate for CollateInfo {
         self.all.get(key)
     }
 
-    fn resolve(&self, key: &PathBuf) -> Option<&Page> {
+    fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
         self.pages.get(key)
     }
 
@@ -227,7 +227,7 @@ impl Collate for CollateInfo {
 
     fn pages(
         &self,
-    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Page)> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_> {
         Box::new(self.pages.iter())
     }
 }
@@ -288,15 +288,15 @@ impl CollateInfo {
         }
     }
 
-    pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Page> {
+    pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Arc<RwLock<Page>>> {
         &self.pages
     }
 
-    pub fn get_page_mut(&mut self, key: &PathBuf) -> Option<&mut Page> {
+    pub fn get_page_mut(&mut self, key: &PathBuf) -> Option<&mut Arc<RwLock<Page>>> {
         self.pages.get_mut(key)
     }
 
-    pub fn remove_page(&mut self, p: &PathBuf) -> Option<Page> {
+    pub fn remove_page(&mut self, p: &PathBuf) -> Option<Arc<RwLock<Page>>> {
         self.resources.remove(p);
         self.pages.remove(p)
     }
@@ -308,12 +308,15 @@ impl CollateInfo {
         options: &RuntimeOptions,
         fallback: &mut CollateInfo,
     ) -> Result<()> {
-        let mut updated: HashMap<Arc<PathBuf>, Page> = HashMap::new();
-        for (path, page) in self.pages.iter_mut() {
+        let mut updated: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>> = HashMap::new();
+        for (path, raw_page) in self.pages.iter_mut() {
+            let mut page = raw_page.write().unwrap();
             let use_fallback =
                 page.fallback.is_some() && page.fallback.unwrap();
-            let mut fallback_page = fallback.pages.get_mut(path);
-            if let Some(ref mut fallback_page) = fallback_page {
+            let fallback_page = fallback.pages.get(path);
+            if let Some(ref fallback_page) = fallback_page {
+                let fallback_page = fallback_page.read().unwrap();
+
                 let file_context = fallback_page.file.as_ref().unwrap();
                 let source = file_context.source.clone();
 
@@ -325,7 +328,9 @@ impl CollateInfo {
                     page.file.as_ref().unwrap().template.clone()
                 };
 
-                sub_page.append(page);
+                // FIXME: !!!
+
+                sub_page.append(&mut page);
 
                 let mut rewrite_index = options.settings.should_rewrite_index();
                 // Override with rewrite-index page level setting
@@ -350,9 +355,9 @@ impl CollateInfo {
                     Some(template),
                 )?;
 
-                updated.insert(path.to_owned(), sub_page);
+                updated.insert(path.to_owned(), Arc::new(RwLock::new(sub_page)));
             } else {
-                updated.insert(path.to_owned(), page.to_owned());
+                updated.insert(path.to_owned(), raw_page.to_owned());
             }
         }
         self.pages = updated;

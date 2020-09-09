@@ -191,6 +191,7 @@ impl Renderer {
                             ctx.collation.get_link_source(&d.file).unwrap();
                         // Get the last modification data from the page
                         let page = ctx.collation.resolve(&d.file).unwrap();
+                        let page = &*page.read().unwrap();
                         // Generate the absolute location
                         let location = base.join(href).unwrap();
                         let lastmod = page.lastmod();

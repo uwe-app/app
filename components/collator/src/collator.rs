@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use log::debug;
 
@@ -373,7 +373,7 @@ fn add_page(
         }
     }
 
-    add_page_reference(info, req.config, req.options, key, dest, page_info);
+    add_page_reference(info, req.config, req.options, key, dest, Arc::new(RwLock::new(page_info)));
 
     Ok(())
 }
@@ -386,10 +386,10 @@ pub fn add_page_reference(
     _options: &RuntimeOptions,
     key: &Arc<PathBuf>,
     dest: PathBuf,
-    page_info: Page,
+    page_info: Arc<RwLock<Page>>,
 ) {
     let mut resource = Resource::new_page(dest);
-    if let Some(ref render) = page_info.render {
+    if let Some(ref render) = page_info.read().unwrap().render {
         if !render {
             resource.set_operation(ResourceOperation::Copy);
         }

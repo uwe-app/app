@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use chrono::prelude::*;
 use jsonfeed::{Feed, Item, VERSION};
@@ -22,7 +22,7 @@ fn create_synthetic(
     info: &mut CollateInfo,
     source: PathBuf,
     template: PathBuf,
-    mut page_info: Page,
+    mut page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
     let mut file_info = FileInfo::new(config, options, &source, true);
@@ -33,8 +33,10 @@ fn create_synthetic(
         ..Default::default()
     };
 
+    let mut writer = page_info.write().unwrap();
     let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, config, options, &file_info, Some(template))?;
+    writer.seal(&dest, config, options, &file_info, Some(template))?;
+    drop(writer);
 
     // Configure a link for the synthetic page
     let href = collator::href(&source, options, rewrite_index, None)?;
@@ -102,12 +104,15 @@ fn build_feed(
     }
 
     let page_paths = info.feeds.get(name).unwrap();
-    let mut pages: Vec<&Page> = page_paths
+    let mut pages: Vec<&Arc<RwLock<Page>>> = page_paths
         .iter()
         .map(|pth| info.resolve(pth).unwrap())
         .collect();
 
     pages.sort_by(|a, b| {
+        let a = &*a.read().unwrap();
+        let b = &*b.read().unwrap();
+
         let a_val: &DateTime<Utc>;
         let b_val: &DateTime<Utc>;
         if a.created.is_some() && b.created.is_some() {
@@ -131,8 +136,13 @@ fn build_feed(
 
     feed.items = pages
         .iter()
-        .filter(|p| !p.is_draft(options))
+        .filter(|p| {
+            let p = &*p.read().unwrap();
+            !p.is_draft(options)
+        })
         .map(|p| {
+            let p = &*p.read().unwrap();
+
             let mut item: Item = Default::default();
             item.id =
                 base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
@@ -232,7 +242,7 @@ pub fn feed(
                 }
 
                 create_synthetic(
-                    config, options, info, source, template, item_data,
+                    config, options, info, source, template, Arc::new(RwLock::new(item_data)),
                     // NOTE: must be false otherwise we get a collision
                     // NOTE: on feed.xml and feed.json
                     false,
@@ -315,8 +325,10 @@ pub fn assign(
                 .map(|v| v.to_value(query).unwrap())
                 .collect::<Vec<_>>();
 
+            let mut writer = page.write().unwrap();
+
             // TODO: error or warn on overwriting existing key
-            page.extra.insert(query.get_parameter(), json!(res));
+            writer.extra.insert(query.get_parameter(), json!(res));
         }
     }
 
@@ -342,6 +354,7 @@ pub fn each(
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
         let page = info.remove_page(p).unwrap();
+        let page = page.write().unwrap();
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -376,7 +389,7 @@ pub fn each(
                         info,
                         mock,
                         p.to_path_buf(),
-                        item_data,
+                        Arc::new(RwLock::new(item_data)),
                         rewrite_index,
                     )?;
                 } else {
@@ -407,6 +420,7 @@ pub fn pages(
         // Should have raw page data - note that we remove
         // the page as it is being used as an iterator
         let page = info.remove_page(p).unwrap();
+        let page = page.read().unwrap();
 
         let mut rewrite_index = options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -556,7 +570,7 @@ pub fn pages(
                     info,
                     mock,
                     file_source,
-                    item_data,
+                    Arc::new(RwLock::new(item_data)),
                     rewrite_index,
                 )?;
             }

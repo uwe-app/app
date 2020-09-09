@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 
 use crate::{BuildContext, Result};
 use collator::Collate;
@@ -11,7 +12,7 @@ pub struct ListOptions<'a> {
     pub depth: usize,
 }
 
-pub fn parent<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Option<&'a Page> {
+pub fn parent<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Option<&'a Arc<RwLock<Page>>> {
     let types = ctx.options.settings.types.as_ref().unwrap();
     let render_types = types.render();
 
@@ -38,8 +39,8 @@ pub fn parent<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Option<&'a Page> {
     None
 }
 
-pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
-    let mut pages: Vec<&'a Page> = Vec::new();
+pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Arc<RwLock<Page>>> {
+    let mut pages: Vec<&'a Arc<RwLock<Page>>> = Vec::new();
     let types = ctx.options.settings.types.as_ref().unwrap();
     let render_types = types.render();
 
@@ -77,7 +78,7 @@ pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Page> {
 pub fn listing<'a>(
     ctx: &'a BuildContext,
     list: &'a ListOptions,
-) -> Result<Vec<&'a Page>> {
+) -> Result<Vec<&'a Arc<RwLock<Page>>>> {
     let depth = list.dir.components().count() + list.depth;
 
     //let pages = ctx
@@ -111,6 +112,9 @@ pub fn listing<'a>(
 
     if let Some(ref sort_key) = list.sort {
         values.sort_by(|a, b| {
+            let a = &*a.read().unwrap();
+            let b = &*b.read().unwrap();
+
             let mut s1 = "";
             let mut s2 = "";
             if sort_key == "title" {
@@ -122,4 +126,5 @@ pub fn listing<'a>(
     }
 
     Ok(values)
+    //Ok(vec![])
 }

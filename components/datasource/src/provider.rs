@@ -109,8 +109,8 @@ impl Provider {
             .try_for_each_concurrent(limit, |(count, (path, _))| {
                 // Convert the page data to a Value for indexing
                 let data = req.collation.resolve(path).unwrap();
-
-                let result = serde_json::to_value(data);
+                let page = data.read().unwrap();
+                let result = serde_json::to_value(&*page);
                 match result {
                     Ok(document) => {
                         let key = ComputeIdentifier::id(

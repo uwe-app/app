@@ -53,6 +53,8 @@ impl HelperDef for Children {
         match list_result {
             Ok(entries) => {
                 for li in entries {
+                    let li = &*li.read().unwrap();
+
                     let mut local_rc = rc.clone();
                     let mut local_ctx = Context::wraps(li)?;
                     if let Some(ref file_ctx) = li.file {

@@ -39,7 +39,8 @@ impl HelperDef for Parent {
 
         let path = PathBuf::from(&base_path);
         if let Some(data) = tree::parent(&self.context, &path) {
-            let mut page = data.clone();
+            let mut page = data.write().unwrap();
+            //let mut page = data.clone();
             let mut local_rc = rc.clone();
             let local_ctx = with_parent_context(ctx, &mut page)?;
             template.render(r, &local_ctx, &mut local_rc, out)?;

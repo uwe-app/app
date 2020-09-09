@@ -43,6 +43,7 @@ impl HelperDef for Components {
         let amount = components.len() - 1;
 
         for (i, page) in components.iter().rev().enumerate() {
+            let page = &*page.read().unwrap();
             let first = i == 0;
             let last = i == amount;
             let href = std::iter::repeat("..")
