@@ -1,10 +1,13 @@
-use super::Error;
 use std::path::{Path, PathBuf};
 
-use super::profile::{ProfileSettings, RenderTypes, RuntimeOptions};
-use super::Config;
-
-use crate::config::{HTML, INDEX_STEM};
+use crate::{
+    Error,
+    Config,
+    RuntimeOptions,
+    HTML,
+    INDEX_STEM,
+    profile::{ProfileSettings, RenderTypes},
+};
 
 #[derive(Debug, Clone)]
 pub enum FileType {

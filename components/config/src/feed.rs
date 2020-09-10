@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use super::matcher::GlobPatternMatcher;
+use crate::matcher::GlobPatternMatcher;
 
 static JSON: &str = "json";
 static XML: &str = "xml";

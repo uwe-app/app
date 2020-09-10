@@ -83,11 +83,10 @@ impl HelperDef for Scripts {
                 .iter()
                 .map(|script| {
                     let mut tag = script.to_tag();
-                    tag.src = config::link_utils::relative(
+                    tag.src = opts.relative(
                         script.get_source(),
                         path,
                         &opts.source,
-                        opts,
                     )
                     .map_err(|_e| {
                         RenderError::new(

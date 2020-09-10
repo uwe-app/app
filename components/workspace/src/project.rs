@@ -431,7 +431,7 @@ impl<'a> ProjectBuilder {
             manifest,
             redirects: self.redirects,
             datasource: self.datasource,
-            cache: self.cache,
+            //cache: self.cache,
         })
     }
 
@@ -460,7 +460,7 @@ pub struct Project {
     pub locales: Arc<Locales>,
     pub datasource: DataSourceMap,
 
-    cache: QueryCache,
+    //cache: QueryCache,
     parsers: Vec<Box<dyn Parser + Send + Sync>>,
     renderers: Vec<Renderer>,
     manifest: Option<Arc<RwLock<Manifest>>>,

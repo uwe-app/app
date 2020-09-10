@@ -11,7 +11,7 @@ use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    indexer::QueryList, link_utils as link, script::ScriptFile,
+    indexer::QueryList, script::ScriptFile,
     style::StyleFile, Config, Error, FileInfo, RuntimeOptions,
 };
 
@@ -298,7 +298,7 @@ impl Page {
         p: P,
         opts: &RuntimeOptions,
     ) -> Result<String, Error> {
-        link::absolute(p.as_ref(), opts, Default::default())
+        opts.absolute(p.as_ref(), Default::default())
     }
 
     pub fn compute(

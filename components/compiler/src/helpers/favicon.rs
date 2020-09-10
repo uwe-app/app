@@ -68,11 +68,10 @@ impl HelperDef for Icon {
                     })?
                     .to_string();
                 let path = Path::new(&base_path);
-                href = if let Ok(val) = config::link_utils::relative(
+                href = if let Ok(val) = opts.relative(
                     &href,
                     path,
                     &opts.source,
-                    opts,
                 ) {
                     val
                 } else {

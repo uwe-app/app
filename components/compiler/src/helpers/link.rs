@@ -111,7 +111,7 @@ impl HelperDef for Link {
 
         let value = if make_relative {
             if let Ok(val) =
-                config::link_utils::relative(&input, path, base, opts)
+                opts.relative(&input, path, base)
             {
                 val
             } else {

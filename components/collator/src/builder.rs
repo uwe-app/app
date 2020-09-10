@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::{loader, CollateInfo, Error, Result};
 use config::{
     indexer::QueryList,
-    link_utils::{self, LinkOptions},
+    LinkOptions,
     Config, FileInfo, FileOptions, Page, RuntimeOptions,
 };
 
@@ -32,7 +32,7 @@ pub fn to_href(
     href_opts.rewrite = rewrite;
     href_opts.trailing = false;
     href_opts.include_index = true;
-    link_utils::absolute(file, options, href_opts).map_err(Error::from)
+    options.absolute(file, href_opts).map_err(Error::from)
 }
 
 /// Builds a single page and mutates the collation with necessary

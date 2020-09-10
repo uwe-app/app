@@ -10,6 +10,7 @@ use log::debug;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
+    Error,
     book::BookConfig,
     date::DateConfig,
     feed::FeedConfig,
@@ -26,7 +27,6 @@ use crate::{
     style::StyleSheetConfig,
     syntax::SyntaxConfig,
     transform::TransformConfig,
-    Error,
 };
 
 pub static SITE: &str = "site";

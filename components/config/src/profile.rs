@@ -401,62 +401,6 @@ impl ProfileSettings {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct RuntimeOptions {
-    // Project root
-    pub project: PathBuf,
-    // Root for the input source files
-    pub source: PathBuf,
-    // Root of the output
-    pub output: PathBuf,
-    // Target output directory including a build tag
-    pub base: PathBuf,
-    // Target output directory including a build tag and
-    // a locale identifier when multilingual
-    //pub target: PathBuf,
-    // The computed profile to use
-    pub settings: ProfileSettings,
-}
-
-impl RuntimeOptions {
-    pub fn get_canonical_url(
-        &self,
-        config: &Config,
-        path: Option<&str>,
-    ) -> crate::Result<Url> {
-        let mut base = self.settings.get_canonical_url(config)?;
-        if let Some(path) = path {
-            base = base.join(path)?;
-        }
-        Ok(base)
-    }
-
-    pub fn get_layout_path(&self) -> PathBuf {
-        self.source.join(self.settings.layout.as_ref().unwrap())
-    }
-
-    pub fn get_assets_path(&self) -> PathBuf {
-        self.source.join(self.settings.assets.as_ref().unwrap())
-    }
-
-    pub fn get_includes_path(&self) -> PathBuf {
-        self.source.join(self.settings.includes.as_ref().unwrap())
-    }
-
-    pub fn get_partials_path(&self) -> PathBuf {
-        self.source.join(self.settings.partials.as_ref().unwrap())
-    }
-
-    pub fn get_data_sources_path(&self) -> PathBuf {
-        self.source
-            .join(self.settings.data_sources.as_ref().unwrap())
-    }
-
-    pub fn get_locales(&self) -> PathBuf {
-        self.source.join(self.settings.locales.as_ref().unwrap())
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RenderTypes {
     #[serde(flatten)]
