@@ -221,7 +221,7 @@ impl Renderer {
             hook::run(
                 Arc::clone(&self.info.context),
                 hook::collect(
-                    hooks.clone(),
+                    hooks.map.clone(),
                     hook::Phase::Before,
                     &self.info.context.options.settings.name,
                 ),
@@ -235,7 +235,7 @@ impl Renderer {
             hook::run(
                 Arc::clone(&self.info.context),
                 hook::collect(
-                    hooks.clone(),
+                    hooks.map.clone(),
                     hook::Phase::After,
                     &self.info.context.options.settings.name,
                 ),
@@ -302,7 +302,7 @@ impl Renderer {
             true
         };
 
-        let mut filter = |p: &&Arc<PathBuf>| -> bool {
+        let filter = |p: &&Arc<PathBuf>| -> bool {
             let filtered = path_filter(p);
             if filtered && is_incremental {
                 return manifest_filter(p);

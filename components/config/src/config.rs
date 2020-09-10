@@ -5,16 +5,19 @@ use url::Url;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use toml;
 
 use log::debug;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
-    Error,
     book::BookConfig,
+    date::DateConfig,
     feed::FeedConfig,
+    fluent::FluentConfig,
+    hook::HookMap,
     indexer::{DataBase, IndexRequest},
+    link::LinkConfig,
+    live_reload::LiveReload,
     page::{Author, Page},
     profile::{ProfileName, ProfileSettings},
     redirect::RedirectConfig,
@@ -23,12 +26,12 @@ use crate::{
     style::StyleSheetConfig,
     syntax::SyntaxConfig,
     transform::TransformConfig,
+    Error,
 };
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
 pub static LOCALES: &str = "locales";
-pub static CORE_FTL: &str = "core.ftl";
 pub static MAIN_FTL: &str = "main.ftl";
 pub static SITE_TOML: &str = "site.toml";
 pub static LANG_KEY: &str = "lang";
@@ -44,14 +47,12 @@ pub static LAYOUT_HBS: &str = "layout.hbs";
 pub static MD: &str = "md";
 pub static TOML: &str = "toml";
 pub static JSON: &str = "json";
-pub static BOOK_TOML: &str = "book.toml";
 pub static ASSETS: &str = "assets";
 pub static PARTIALS: &str = "partials";
 pub static INCLUDES: &str = "includes";
 pub static DATASOURCES: &str = "data-sources";
 pub static RESOURCES: &str = "resources";
 pub static LANG: &str = "en";
-pub static LIVERELOAD_FILE: &str = "__livereload.js";
 pub static TAGS: &str = "tags";
 
 /// Used when multiple virtual hosts and inferring
@@ -136,7 +137,7 @@ pub struct Config {
     pub workspace: Option<WorkspaceConfig>,
     pub book: Option<BookConfig>,
     pub fluent: Option<FluentConfig>,
-    pub hook: Option<HashMap<String, HookConfig>>,
+    pub hook: Option<HookMap>,
     pub node: Option<NodeConfig>,
     pub page: Option<Page>,
     pub pages: Option<HashMap<String, Page>>,
@@ -179,7 +180,7 @@ impl Default for Config {
             workspace: None,
             fluent: Some(Default::default()),
             book: None,
-            hook: None,
+            hook: Some(Default::default()),
             node: Some(Default::default()),
             page: Some(Default::default()),
             pages: None,
@@ -246,142 +247,44 @@ impl Config {
                 cfg.file = Some(path.to_path_buf());
 
                 // Ensure that lang is a valid identifier
-                parse_language(&cfg.lang)?;
+                let lang_id = parse_language(&cfg.lang)?;
 
                 // Ensure the host is a valid Url
                 parse_host(&cfg.host)?;
 
-                if let Some(fluent) = cfg.fluent.as_mut() {
-                    fluent.fallback = Some(cfg.lang.to_string());
-                    fluent.fallback_id =
-                        fluent.fallback.as_ref().unwrap().parse()?;
-                }
-
-                // Assume default build settings for the site
-                if cfg.build.is_none() {
-                    cfg.build = Some(Default::default());
-                }
-
+                // Ensure source and target paths are relative
+                // to the base
                 let mut build = cfg.build.as_mut().unwrap();
-
                 if build.source.is_relative() {
-                    let mut bp = base.to_path_buf();
-                    bp.push(&build.source);
-                    build.source = bp;
+                    build.source = base.to_path_buf().join(&build.source);
                 }
-
                 if build.target.is_relative() {
-                    let mut bp = base.to_path_buf();
-                    bp.push(&build.target);
-                    build.target = bp;
+                    build.target = base.to_path_buf().join(&build.target);
                 }
 
-                if let Some(ref book) = cfg.book {
-                    let book_paths = book.get_paths(&build.source);
-                    for mut p in book_paths {
-                        if !p.exists() || !p.is_dir() {
-                            return Err(Error::NotDirectory(p));
-                        }
-
-                        p.push(BOOK_TOML);
-                        if !p.exists() || !p.is_file() {
-                            return Err(Error::NoBookConfig(p));
-                        }
-                    }
+                if let Some(fluent) = cfg.fluent.as_mut() {
+                    fluent.prepare(&cfg.lang, lang_id);
                 }
-
+                if let Some(book) = cfg.book.as_mut() {
+                    book.prepare(&build.source)?;
+                }
                 if let Some(hooks) = cfg.hook.as_mut() {
-                    for (k, v) in hooks.iter_mut() {
-                        if v.path.is_none() {
-                            v.path = Some(k.clone());
-                        }
-                        if v.stdout.is_none() {
-                            v.stdout = Some(true);
-                        }
-                        if v.stderr.is_none() {
-                            v.stderr = Some(true);
-                        }
-                    }
-                } else {
-                    // Create a default value so we can always
-                    // unwrap()
-                    cfg.hook = Some(HashMap::new());
+                    hooks.prepare();
                 }
-
                 if let Some(date) = cfg.date.as_mut() {
-                    let mut datetime_formats = HashMap::new();
-                    datetime_formats
-                        .insert("date-short".to_string(), "%F".to_string());
-                    datetime_formats.insert(
-                        "date-medium".to_string(),
-                        "%a %b %e %Y".to_string(),
-                    );
-                    datetime_formats.insert(
-                        "date-long".to_string(),
-                        "%A %B %e %Y".to_string(),
-                    );
-
-                    datetime_formats
-                        .insert("time-short".to_string(), "%R".to_string());
-                    datetime_formats
-                        .insert("time-medium".to_string(), "%X".to_string());
-                    datetime_formats
-                        .insert("time-long".to_string(), "%r".to_string());
-
-                    datetime_formats.insert(
-                        "datetime-short".to_string(),
-                        "%F %R".to_string(),
-                    );
-                    datetime_formats.insert(
-                        "datetime-medium".to_string(),
-                        "%a %b %e %Y %X".to_string(),
-                    );
-                    datetime_formats.insert(
-                        "datetime-long".to_string(),
-                        "%A %B %e %Y %r".to_string(),
-                    );
-
-                    for (k, v) in datetime_formats {
-                        if !date.formats.contains_key(&k) {
-                            date.formats.insert(k, v);
-                        }
-                    }
-
-                    // FIXME: validate date time format specifiers
+                    date.prepare();
                 }
-
                 if let Some(db) = cfg.db.as_mut() {
-                    if let Some(collators) = db.load.as_mut() {
-                        for (_, v) in collators {
-                            if let Some(ref from) = v.from {
-                                if from.is_relative() {
-                                    let mut tmp = build.source.clone();
-                                    tmp.push(from);
-                                    v.from = Some(tmp);
-                                }
-                            }
-                        }
-                    }
+                    db.prepare(&build.source);
                 }
-
                 if let Some(search) = cfg.search.as_mut() {
                     search.prepare();
                 }
                 if let Some(feed) = cfg.feed.as_mut() {
                     feed.prepare();
                 }
-
-                let mut livereload = cfg.livereload.as_mut().unwrap();
-                if livereload.file.is_none() {
-                    livereload.file = Some(PathBuf::from(LIVERELOAD_FILE));
-                }
-
-                let mut link = cfg.link.as_mut().unwrap();
-                if let Some(ref catalog) = link.catalog {
-                    let catalog_path = build.source.clone().join(catalog);
-                    let content = utils::fs::read_string(&catalog_path)
-                        .map_err(|_| Error::LinkCatalog(catalog_path))?;
-                    link.catalog_content = Some(content);
+                if let Some(link) = cfg.link.as_mut() {
+                    link.prepare(&build.source)?;
                 }
 
                 return Ok(cfg);
@@ -445,8 +348,6 @@ impl Config {
     ) -> Option<PathBuf> {
         if let Some(ref book) = self.book {
             if let Some(ref theme) = book.theme {
-                //let mut pth = source.as_ref().to_path_buf();
-                //pth.push(book.theme.clone());
                 return Some(source.as_ref().to_path_buf().join(theme));
             }
         }
@@ -460,102 +361,11 @@ pub struct WorkspaceConfig {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FluentConfig {
-    pub shared: Option<String>,
-    #[serde(skip)]
-    pub fallback: Option<String>,
-    #[serde(skip)]
-    pub fallback_id: LanguageIdentifier,
-}
-
-impl Default for FluentConfig {
-    fn default() -> Self {
-        Self {
-            fallback: None,
-            shared: Some(String::from(CORE_FTL)),
-            fallback_id: String::from(LANG).parse().unwrap(),
-        }
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub struct HookConfig {
-    pub path: Option<String>,
-    pub args: Option<Vec<String>>,
-    pub source: Option<PathBuf>,
-    pub stdout: Option<bool>,
-    pub stderr: Option<bool>,
-    // Marks the hook to run after a build
-    pub after: Option<bool>,
-    // Only run for these profiles
-    pub profiles: Option<Vec<ProfileName>>,
-}
-
-impl HookConfig {
-    pub fn get_source_path<P: AsRef<Path>>(
-        &self,
-        source: P,
-    ) -> Option<PathBuf> {
-        if let Some(src) = self.source.as_ref() {
-            let mut pth = source.as_ref().to_path_buf();
-            pth.push(src);
-            return Some(pth);
-        }
-        None
-    }
-}
-
-#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct NodeConfig {
     // Allow custom mappings for NODE_ENV
     pub debug: Option<String>,
     pub release: Option<String>,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DateConfig {
-    pub formats: HashMap<String, String>,
-}
-
-impl Default for DateConfig {
-    fn default() -> Self {
-        Self {
-            formats: HashMap::new(),
-        }
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default)]
-pub struct LinkConfig {
-    /// Explicit list of paths that are allowed, should
-    /// not begin with a forward slash
-    pub allow: Option<Vec<String>>,
-    /// The link helper should verify links
-    pub verify: Option<bool>,
-    /// The link helper should make links relative
-    pub relative: Option<bool>,
-    /// Catalog for markdown documents
-    pub catalog: Option<PathBuf>,
-    #[serde(skip)]
-    pub catalog_content: Option<String>,
-}
-
-impl Default for LinkConfig {
-    fn default() -> Self {
-        Self {
-            allow: None,
-            verify: Some(true),
-            relative: Some(true),
-            catalog: None,
-            catalog_content: None,
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -571,23 +381,6 @@ pub struct MinifyConfig {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyFormat {
     pub profiles: Vec<ProfileName>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct LiveReload {
-    pub notify: Option<bool>,
-
-    // This is undocumented but here if it must be used
-    pub file: Option<PathBuf>,
-}
-
-impl Default for LiveReload {
-    fn default() -> Self {
-        Self {
-            notify: Some(true),
-            file: Some(PathBuf::from(LIVERELOAD_FILE)),
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

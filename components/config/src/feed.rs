@@ -102,7 +102,7 @@ impl Default for FeedConfig {
 
 impl FeedConfig {
     // Prepare the configuration by compiling the glob matchers.
-    pub fn prepare(&mut self) {
+    pub(crate) fn prepare(&mut self) {
         for (k, v) in self.channels.iter_mut() {
             v.target = Some(k.to_string());
             v.matcher.compile();

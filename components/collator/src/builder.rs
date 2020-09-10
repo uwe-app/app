@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::{loader, CollateInfo, Error, Result};
 use config::{
     indexer::QueryList,
-    link::{self, LinkOptions},
+    link_utils::{self, LinkOptions},
     Config, FileInfo, FileOptions, Page, RuntimeOptions,
 };
 
@@ -32,7 +32,7 @@ pub fn to_href(
     href_opts.rewrite = rewrite;
     href_opts.trailing = false;
     href_opts.include_index = true;
-    link::absolute(file, options, href_opts).map_err(Error::from)
+    link_utils::absolute(file, options, href_opts).map_err(Error::from)
 }
 
 /// Builds a single page and mutates the collation with necessary
@@ -51,7 +51,7 @@ pub(crate) struct PageBuilder<'a> {
 impl<'a> PageBuilder<'a> {
     /// Create a page builder.
     ///
-    /// Normally the key and path are the same however when handling locale 
+    /// Normally the key and path are the same however when handling locale
     /// specific overrides we need them to differ.
     pub fn new(
         info: &'a mut CollateInfo,

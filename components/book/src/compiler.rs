@@ -125,7 +125,7 @@ impl BookCompiler {
     ) -> Result<()> {
         let dir = p.as_ref();
         if let Some(ref book) = config.book {
-            if let Some(cfg) = book.find(rel.as_ref()) {
+            if let Some(cfg) = book.find(&rel.as_ref().to_path_buf()) {
                 let draft = cfg.draft.is_some() && cfg.draft.unwrap();
                 if draft && self.release {
                     return Ok(());

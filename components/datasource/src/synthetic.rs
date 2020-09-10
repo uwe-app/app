@@ -5,7 +5,7 @@ use chrono::prelude::*;
 use jsonfeed::{Feed, Item, VERSION};
 use serde_json::json;
 
-use collator::{Collate, CollateInfo, to_href};
+use collator::{to_href, Collate, CollateInfo};
 use config::feed::{ChannelConfig, FeedConfig};
 use config::{
     Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions,

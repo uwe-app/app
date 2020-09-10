@@ -3,17 +3,18 @@ use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 
-use log::debug;
 use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
+use log::debug;
 
 use config::{Config, FileInfo, FileOptions, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
+    builder::{to_href, PageBuilder},
     locale_utils::*,
-    builder::{PageBuilder, to_href}, Collate, CollateInfo, Error, Resource, ResourceKind,
-    ResourceOperation, Result,
+    Collate, CollateInfo, Error, Resource, ResourceKind, ResourceOperation,
+    Result,
 };
 
 pub struct CollateRequest<'a> {
@@ -160,7 +161,9 @@ async fn find(
                             }
                         }
 
-                        if let Err(e) = add_other(info, req.config, req.options, key) {
+                        if let Err(e) =
+                            add_other(info, req.config, req.options, key)
+                        {
                             let _ = tx.send(Error::from(e));
                         }
                     }
@@ -239,7 +242,6 @@ fn add_page(
     key: &Arc<PathBuf>,
     path: &Path,
 ) -> Result<()> {
-
     let builder = PageBuilder::new(info, config, options, key, path)
         .compute()?
         .queries()?

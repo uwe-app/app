@@ -1,7 +1,11 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+
+use crate::{Error, Result};
+
+static BOOK_TOML: &str = "book.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BookConfig {
@@ -11,24 +15,38 @@ pub struct BookConfig {
 }
 
 impl BookConfig {
-    pub fn get_paths<P: AsRef<Path>>(&self, base: P) -> Vec<PathBuf> {
+    pub(crate) fn prepare(&mut self, source: &PathBuf) -> Result<()> {
+        let book_paths = self.get_paths(source);
+        for mut p in book_paths {
+            if !p.exists() || !p.is_dir() {
+                return Err(Error::NotDirectory(p));
+            }
+
+            p.push(BOOK_TOML);
+            if !p.exists() || !p.is_file() {
+                return Err(Error::NoBookConfig(p));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get a list of paths for all books.
+    pub fn get_paths(&self, base: &PathBuf) -> Vec<PathBuf> {
         let mut out: Vec<PathBuf> = Vec::new();
-        let source = base.as_ref().to_path_buf();
-        for (_, map) in &self.members {
-            for (_, value) in map {
-                let mut tmp = source.clone();
-                tmp.push(value.path.clone());
-                out.push(tmp);
+        for (_, map) in self.members.iter() {
+            for (_, value) in map.iter() {
+                out.push(base.join(&value.path));
             }
         }
         out
     }
 
-    pub fn find<P: AsRef<Path>>(&self, path: P) -> Option<BookItem> {
-        let needle = path.as_ref().to_path_buf();
-        for (_, map) in &self.members {
-            for (_, value) in map {
-                if value.path == needle {
+    /// Find a book by path.
+    pub fn find(&self, needle: &PathBuf) -> Option<BookItem> {
+        for (_, map) in self.members.iter() {
+            for (_, value) in map.iter() {
+                if &value.path == needle {
                     return Some(value.clone());
                 }
             }
@@ -42,4 +60,3 @@ pub struct BookItem {
     pub path: PathBuf,
     pub draft: Option<bool>,
 }
-

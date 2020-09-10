@@ -10,12 +10,10 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
-use super::indexer::QueryList;
-use super::link;
-use super::script::ScriptFile;
-use super::style::StyleFile;
-use super::Error;
-use super::{Config, FileInfo, RuntimeOptions};
+use crate::{
+    indexer::QueryList, link_utils as link, script::ScriptFile,
+    style::StyleFile, Config, Error, FileInfo, RuntimeOptions,
+};
 
 /// Attribute to convert from TOML date time to chronos UTC variant
 pub fn from_toml_datetime<'de, D>(

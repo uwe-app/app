@@ -84,7 +84,7 @@ impl HelperDef for Styles {
             sheets
                 .iter()
                 .map(|style| {
-                    let rel = config::link::relative(
+                    let rel = config::link_utils::relative(
                         style.get_source(),
                         path,
                         &opts.source,

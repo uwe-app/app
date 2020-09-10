@@ -61,27 +61,6 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub mod app;
-pub mod book;
-mod config;
-pub mod feed;
-mod file;
-pub mod indexer;
-pub mod link;
-mod matcher;
-mod page;
-pub mod path;
-mod profile;
-pub mod redirect;
-pub mod robots;
-pub mod script;
-pub mod search;
-pub mod server;
-pub mod sitemap;
-pub mod style;
-pub mod syntax;
-pub mod transform;
-
 pub fn get_short_codes_location() -> Result<PathBuf> {
     //self.source.join(config::SHORT_CODES.to_string())
     Ok(dirs::get_root_dir()?.join("shortcodes/site/partials"))
@@ -110,8 +89,36 @@ pub fn to_url_string(
     url
 }
 
-pub use crate::config::*;
+pub mod app;
+pub mod book;
+mod config;
+mod date;
+pub mod feed;
+mod file;
+mod fluent;
+mod hook;
+pub mod indexer;
+mod link;
+pub mod link_utils;
+mod live_reload;
+mod matcher;
+mod page;
+pub mod path;
+mod profile;
+pub mod redirect;
+pub mod robots;
+pub mod script;
+pub mod search;
+pub mod server;
+pub mod sitemap;
+pub mod style;
+pub mod syntax;
+pub mod transform;
+
+pub use config::*;
 pub use file::{FileInfo, FileOptions, FileType};
+pub use fluent::{FluentConfig, CORE_FTL};
+pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes, RuntimeOptions};

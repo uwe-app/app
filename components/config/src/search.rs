@@ -43,7 +43,7 @@ impl Default for SearchConfig {
 impl SearchConfig {
     // Prepare the configuration by assigning id fields
     // and compiling the glob matchers
-    pub fn prepare(&mut self) {
+    pub(crate) fn prepare(&mut self) {
         for (k, v) in self.items.iter_mut() {
             v.id = Some(k.to_string());
             v.matcher.compile();

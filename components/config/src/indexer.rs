@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
@@ -45,6 +45,20 @@ impl Default for SourceProvider {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DataBase {
     pub load: Option<HashMap<String, DataSource>>,
+}
+
+impl DataBase {
+    pub(crate) fn prepare<P: AsRef<Path>>(&mut self, source: P) {
+        if let Some(collators) = self.load.as_mut() {
+            for (_, v) in collators {
+                if let Some(ref from) = v.from {
+                    if from.is_relative() {
+                        v.from = Some(source.as_ref().to_path_buf().join(from));
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
