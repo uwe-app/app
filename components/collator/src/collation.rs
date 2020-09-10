@@ -8,7 +8,7 @@ use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
 use locale::LocaleName;
 
 use crate::resource::*;
-use crate::Result;
+use crate::{Error, Result};
 
 fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     let layout = l.to_path_buf();
@@ -288,6 +288,54 @@ impl CollateInfo {
         }
     }
 
+    /// Create a page in this collation.
+    ///
+    /// The `key` is the file system path to the source file that 
+    /// generates this entry and maps to an output file.
+    ///
+    /// The `dest` is the link href path; so for the input file 
+    /// of `site/faq.md` the `dest` will be `faq/index.html` asssuming 
+    /// that the `rewrite_index` setting is on.
+    pub fn add_page(
+        &mut self,
+        key: &Arc<PathBuf>,
+        dest: PathBuf,
+        page_info: Arc<RwLock<Page>>) {
+
+        let mut resource = Resource::new_page(dest);
+        if let Some(ref render) = page_info.read().unwrap().render {
+            if !render {
+                resource.set_operation(ResourceOperation::Copy);
+            }
+        }
+
+        self.all.insert(Arc::clone(key), resource);
+        self.resources.insert(Arc::clone(key));
+        self.pages.entry(Arc::clone(key)).or_insert(page_info);
+    }
+
+    pub fn link(
+        &mut self,
+        source: Arc<PathBuf>,
+        href: Arc<String>,
+    ) -> Result<()> {
+        if let Some(existing) = self.links.reverse.get(&href) {
+            return Err(Error::LinkCollision(
+                href.to_string(),
+                existing.to_path_buf(),
+                source.to_path_buf(),
+            ));
+        }
+
+        //println!("Link href {:?}", &href);
+        self.links
+            .reverse
+            .entry(Arc::clone(&href))
+            .or_insert(Arc::clone(&source));
+        self.links.sources.entry(source).or_insert(href);
+        Ok(())
+    }
+
     pub fn get_pages(&self) -> &HashMap<Arc<PathBuf>, Arc<RwLock<Page>>> {
         &self.pages
     }
@@ -297,6 +345,7 @@ impl CollateInfo {
     }
 
     pub fn remove_page(&mut self, p: &PathBuf) -> Option<Arc<RwLock<Page>>> {
+        self.all.remove(p);
         self.resources.remove(p);
         self.pages.remove(p)
     }

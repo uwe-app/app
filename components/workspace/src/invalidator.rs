@@ -445,6 +445,8 @@ impl<'a> Invalidator<'a> {
             &self.project.config.lang
         };
 
+        // TODO: reload the collated page data before compiing!
+
         self.project
             .render(RenderType::File(file), RenderFilter::One(lang.to_string()))
             .await?;

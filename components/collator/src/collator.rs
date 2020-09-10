@@ -193,7 +193,7 @@ fn compute_links(
             for s in allow {
                 let src = req.options.source.join(s.trim_start_matches("/"));
                 let href = href(&src, req.options, false, None)?;
-                link(&mut info, Arc::new(src), Arc::new(href))?;
+                info.link(Arc::new(src), Arc::new(href))?;
             }
         }
     }
@@ -250,28 +250,6 @@ pub fn get_destination(
         ..Default::default()
     };
     Ok(info.destination(&file_opts)?)
-}
-
-pub fn link(
-    info: &mut CollateInfo,
-    source: Arc<PathBuf>,
-    href: Arc<String>,
-) -> Result<()> {
-    if let Some(existing) = info.links.reverse.get(&href) {
-        return Err(Error::LinkCollision(
-            href.to_string(),
-            existing.to_path_buf(),
-            source.to_path_buf(),
-        ));
-    }
-
-    //println!("Link href {:?}", &href);
-    info.links
-        .reverse
-        .entry(Arc::clone(&href))
-        .or_insert(Arc::clone(&source));
-    info.links.sources.entry(source).or_insert(href);
-    Ok(())
 }
 
 pub fn href(
@@ -347,7 +325,7 @@ fn add_page(
     }
 
     let href = href(&pth, req.options, rewrite_index, None)?;
-    link(&mut info, Arc::clone(key), Arc::new(href.clone()))?;
+    info.link(Arc::clone(key), Arc::new(href.clone()))?;
 
     // Map permalinks to be converted to redirects later
     if let Some(ref permalink) = page_info.permalink {
@@ -373,31 +351,9 @@ fn add_page(
         }
     }
 
-    add_page_reference(info, req.config, req.options, key, dest, Arc::new(RwLock::new(page_info)));
+    info.add_page(key, dest, Arc::new(RwLock::new(page_info)));
 
     Ok(())
-}
-
-// Note that this is also used when creating synthetic pages from
-// data sources, pagination etc.
-pub fn add_page_reference(
-    info: &mut CollateInfo,
-    _config: &Config,
-    _options: &RuntimeOptions,
-    key: &Arc<PathBuf>,
-    dest: PathBuf,
-    page_info: Arc<RwLock<Page>>,
-) {
-    let mut resource = Resource::new_page(dest);
-    if let Some(ref render) = page_info.read().unwrap().render {
-        if !render {
-            resource.set_operation(ResourceOperation::Copy);
-        }
-    }
-    info.all.insert(Arc::clone(key), resource);
-    info.resources.insert(Arc::clone(key));
-
-    info.pages.entry(Arc::clone(key)).or_insert(page_info);
 }
 
 pub fn add_file(
@@ -430,7 +386,7 @@ pub fn add_file(
     match kind {
         ResourceKind::File | ResourceKind::Asset => {
             info.resources.insert(Arc::clone(&key));
-            link(info, Arc::clone(key), Arc::new(href))?;
+            info.link(Arc::clone(key), Arc::new(href))?;
         }
         _ => {}
     }
