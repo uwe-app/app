@@ -50,6 +50,9 @@ pub(crate) struct PageBuilder<'a> {
 
 impl<'a> PageBuilder<'a> {
     /// Create a page builder.
+    ///
+    /// Normally the key and path are the same however when handling locale 
+    /// specific overrides we need them to differ.
     pub fn new(
         info: &'a mut CollateInfo,
         config: &'a Config,

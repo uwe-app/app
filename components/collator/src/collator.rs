@@ -115,11 +115,11 @@ async fn find(
                     // Check if this is a locale specific file by testing
                     // an extensions prefix,eg: `.fr.md` indicates this is
                     // a French language file.
-                    if let Some((lang, fallback)) =
+                    if let Some((lang, normalized_path)) =
                         get_locale_file_info(&path, languages)
                     {
                         // Update the path for the new file
-                        buf = fallback;
+                        buf = normalized_path;
                         // Switch the collation to put the file into
                         info = translations.get_mut(&lang).unwrap();
                     }

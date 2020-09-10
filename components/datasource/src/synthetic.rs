@@ -22,7 +22,7 @@ fn create_synthetic(
     info: &mut CollateInfo,
     source: PathBuf,
     template: PathBuf,
-    mut page_info: Arc<RwLock<Page>>,
+    page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
     let mut file_info = FileInfo::new(config, options, &source, true);

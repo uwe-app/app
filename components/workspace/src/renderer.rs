@@ -262,7 +262,7 @@ impl Renderer {
             info!("Incremental build enabled");
         }
 
-        let mut manifest_filter = |p: &&Arc<PathBuf>| -> bool {
+        let manifest_filter = |p: &&Arc<PathBuf>| -> bool {
             if let Some(ref manifest) = self.info.manifest {
                 let manifest = manifest.read().unwrap();
                 if let Some(ref resource) =
@@ -288,7 +288,7 @@ impl Renderer {
         };
 
         let filters = &self.info.sources.filters;
-        let mut path_filter = |p: &&Arc<PathBuf>| -> bool {
+        let path_filter = |p: &&Arc<PathBuf>| -> bool {
             if let Some(ref filters) = filters {
                 for f in filters.iter() {
                     // NOTE: the starts_with() is important so that directory

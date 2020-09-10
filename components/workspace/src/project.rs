@@ -510,7 +510,7 @@ impl Project {
     pub fn write_manifest(&self) -> Result<()> {
         // Write the manifest for incremental builds
         if let Some(ref manifest) = self.manifest {
-            let mut writer = manifest.write().unwrap();
+            let writer = manifest.write().unwrap();
             writer.save()?;
         }
         Ok(())
