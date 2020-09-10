@@ -10,17 +10,20 @@ use toml;
 use log::debug;
 use unic_langid::LanguageIdentifier;
 
-use super::feed::FeedConfig;
-use super::indexer::{DataBase, IndexRequest};
-use super::page::{Author, Page};
-use super::profile::{ProfileName, ProfileSettings};
-use super::redirect::RedirectConfig;
-use super::script::JavaScriptConfig;
-use super::search::SearchConfig;
-use super::style::StyleSheetConfig;
-use super::syntax::SyntaxConfig;
-use super::transform::TransformConfig;
-use super::Error;
+use crate::{
+    Error,
+    book::BookConfig,
+    feed::FeedConfig,
+    indexer::{DataBase, IndexRequest},
+    page::{Author, Page},
+    profile::{ProfileName, ProfileSettings},
+    redirect::RedirectConfig,
+    script::JavaScriptConfig,
+    search::SearchConfig,
+    style::StyleSheetConfig,
+    syntax::SyntaxConfig,
+    transform::TransformConfig,
+};
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
@@ -440,10 +443,12 @@ impl Config {
         &self,
         source: P,
     ) -> Option<PathBuf> {
-        if let Some(book) = &self.book {
-            let mut pth = source.as_ref().to_path_buf();
-            pth.push(book.theme.clone());
-            return Some(pth);
+        if let Some(ref book) = self.book {
+            if let Some(ref theme) = book.theme {
+                //let mut pth = source.as_ref().to_path_buf();
+                //pth.push(book.theme.clone());
+                return Some(source.as_ref().to_path_buf().join(theme));
+            }
         }
         None
     }
@@ -452,47 +457,6 @@ impl Config {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceConfig {
     pub members: Vec<PathBuf>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BookConfig {
-    pub theme: PathBuf,
-    //pub groups: Vec<String>,
-    #[serde(flatten)]
-    pub members: HashMap<String, HashMap<String, BookItem>>,
-}
-
-impl BookConfig {
-    pub fn get_paths<P: AsRef<Path>>(&self, base: P) -> Vec<PathBuf> {
-        let mut out: Vec<PathBuf> = Vec::new();
-        let source = base.as_ref().to_path_buf();
-        for (_, map) in &self.members {
-            for (_, value) in map {
-                let mut tmp = source.clone();
-                tmp.push(value.path.clone());
-                out.push(tmp);
-            }
-        }
-        out
-    }
-
-    pub fn find<P: AsRef<Path>>(&self, path: P) -> Option<BookItem> {
-        let needle = path.as_ref().to_path_buf();
-        for (_, map) in &self.members {
-            for (_, value) in map {
-                if value.path == needle {
-                    return Some(value.clone());
-                }
-            }
-        }
-        None
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub struct BookItem {
-    pub path: PathBuf,
-    pub draft: Option<bool>,
 }
 
 #[skip_serializing_none]

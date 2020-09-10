@@ -62,6 +62,7 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 pub mod app;
+pub mod book;
 mod config;
 pub mod feed;
 mod file;
