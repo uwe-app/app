@@ -42,6 +42,7 @@ impl Output for BufferedOutput {
 }
 
 // Capture the inner template as a string.
+/*
 pub fn render_buffer<'reg: 'rc, 'rc>(
     h: &Helper<'reg, 'rc>,
     r: &'reg Handlebars<'_>,
@@ -60,6 +61,7 @@ pub fn render_buffer<'reg: 'rc, 'rc>(
     }
     Err(RenderError::new("No template for render buffer"))
 }
+*/
 
 // This dance keeps the parent context data intact
 // so that the `link` helper can be called inside another

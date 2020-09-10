@@ -9,7 +9,8 @@ use human_bytes::human_bytes;
 
 use collator::{resource::Resource, Collate, LinkCollate};
 use compiler::{
-    parser::Parser, run, BuildContext, Compiler, CompilerOutput, ParseData,
+    compile,
+    parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::{LocaleName, Locales};
@@ -56,14 +57,12 @@ pub struct RenderResult {
 /// Renderer for a single language.
 #[derive(Debug)]
 pub struct Renderer {
-    compiler: Compiler,
     pub info: CompilerInput,
 }
 
 impl Renderer {
     pub fn new(info: CompilerInput) -> Self {
-        let compiler = Compiler::new(Arc::clone(&info.context));
-        Self { info, compiler }
+        Self { info }
     }
 
     /// Render a locale for a project.
@@ -255,8 +254,6 @@ impl Renderer {
             fs::create_dir_all(path)?;
         }
 
-        self.run_before_hooks().await?;
-
         let is_incremental = self.info.manifest.is_some();
         if is_incremental {
             info!("Incremental build enabled");
@@ -310,7 +307,9 @@ impl Renderer {
             filtered
         };
 
-        self.compiler.build(parser, output, filter).await?;
+        self.run_before_hooks().await?;
+
+        compile(&self.info.context, parser, output, filter).await?;
 
         self.run_after_hooks().await?;
 

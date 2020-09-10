@@ -67,15 +67,15 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub mod build;
-pub mod context;
-pub mod helpers;
-pub mod lookup;
-pub mod markdown;
+mod compile;
+mod context;
+mod helpers;
+mod lookup;
+mod markdown;
 pub mod parser;
 pub mod run;
-pub mod tree;
+mod tree;
 
-pub use build::Compiler;
+pub use compile::compile;
 pub use context::*;
 pub use run::ParseData;

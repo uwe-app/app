@@ -4,8 +4,7 @@ use std::path::PathBuf;
 use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
 
-use compiler::context;
-//use compiler::hook;
+//use compiler::context;
 
 use crate::{
     renderer::{RenderFilter, RenderType},
@@ -323,7 +322,7 @@ impl<'a> Invalidator<'a> {
     }
 
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
-        let livereload = context::livereload().read().unwrap();
+        //let livereload = context::livereload().read().unwrap();
 
         //let config = &self.project.config;
         //let options = &self.project.options;

@@ -1,6 +1,5 @@
-use once_cell::sync::OnceCell;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use collator::{self, Collation};
 use config::{Config, RuntimeOptions};
@@ -22,9 +21,4 @@ pub struct BuildContext {
     pub options: Arc<RuntimeOptions>,
     pub collation: Arc<Collation>,
     pub locales: Arc<Locales>,
-}
-
-pub fn livereload() -> &'static Arc<RwLock<Option<String>>> {
-    static INSTANCE: OnceCell<Arc<RwLock<Option<String>>>> = OnceCell::new();
-    INSTANCE.get_or_init(|| Arc::new(RwLock::new(None)))
 }
