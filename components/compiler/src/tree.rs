@@ -12,7 +12,10 @@ pub struct ListOptions<'a> {
     pub depth: usize,
 }
 
-pub fn parent<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Option<&'a Arc<RwLock<Page>>> {
+pub fn parent<'a>(
+    ctx: &'a BuildContext,
+    file: &PathBuf,
+) -> Option<&'a Arc<RwLock<Page>>> {
     let types = ctx.options.settings.types.as_ref().unwrap();
     let render_types = types.render();
 
@@ -39,7 +42,10 @@ pub fn parent<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Option<&'a Arc<RwLoc
     None
 }
 
-pub fn ancestors<'a>(ctx: &'a BuildContext, file: &PathBuf) -> Vec<&'a Arc<RwLock<Page>>> {
+pub fn ancestors<'a>(
+    ctx: &'a BuildContext,
+    file: &PathBuf,
+) -> Vec<&'a Arc<RwLock<Page>>> {
     let mut pages: Vec<&'a Arc<RwLock<Page>>> = Vec::new();
     let types = ctx.options.settings.types.as_ref().unwrap();
     let render_types = types.render();

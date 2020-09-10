@@ -5,7 +5,7 @@ use chrono::prelude::*;
 use jsonfeed::{Feed, Item, VERSION};
 use serde_json::json;
 
-use collator::{Collate, CollateInfo};
+use collator::{Collate, CollateInfo, to_href};
 use config::feed::{ChannelConfig, FeedConfig};
 use config::{
     Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions,
@@ -39,7 +39,7 @@ fn create_synthetic(
     drop(writer);
 
     // Configure a link for the synthetic page
-    let href = collator::href(&source, options, rewrite_index, None)?;
+    let href = to_href(&source, options, rewrite_index, None)?;
     let key = Arc::new(source);
 
     info.link(Arc::clone(&key), Arc::new(href))?;
@@ -58,8 +58,7 @@ fn create_file(
     source: PathBuf,
     target: PathBuf,
 ) -> Result<()> {
-    let key = Arc::new(source);
-    collator::add_file(&key, target, href, info, config, options)?;
+    info.add_file(Arc::new(source), target, href, config, options)?;
     Ok(())
 }
 
@@ -242,7 +241,12 @@ pub fn feed(
                 }
 
                 create_synthetic(
-                    config, options, info, source, template, Arc::new(RwLock::new(item_data)),
+                    config,
+                    options,
+                    info,
+                    source,
+                    template,
+                    Arc::new(RwLock::new(item_data)),
                     // NOTE: must be false otherwise we get a collision
                     // NOTE: on feed.xml and feed.json
                     false,

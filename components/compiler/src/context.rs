@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use once_cell::sync::OnceCell;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use collator::{self, Collation};

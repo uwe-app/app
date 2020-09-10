@@ -7,8 +7,10 @@ use config::indexer::QueryList;
 use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
 use locale::LocaleName;
 
-use crate::resource::*;
-use crate::{Error, Result};
+use crate::{
+    resource::{Resource, ResourceKind, ResourceOperation},
+    Error, Result,
+};
 
 fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     let layout = l.to_path_buf();
@@ -159,7 +161,8 @@ impl Collate for Collation {
 
     fn pages(
         &self,
-    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
+    {
         if self.is_fallback() {
             return self.fallback.pages();
         }
@@ -227,7 +230,8 @@ impl Collate for CollateInfo {
 
     fn pages(
         &self,
-    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
+    {
         Box::new(self.pages.iter())
     }
 }
@@ -290,18 +294,18 @@ impl CollateInfo {
 
     /// Create a page in this collation.
     ///
-    /// The `key` is the file system path to the source file that 
+    /// The `key` is the file system path to the source file that
     /// generates this entry and maps to an output file.
     ///
-    /// The `dest` is the link href path; so for the input file 
-    /// of `site/faq.md` the `dest` will be `faq/index.html` asssuming 
+    /// The `dest` is the link href path; so for the input file
+    /// of `site/faq.md` the `dest` will be `faq/index.html` asssuming
     /// that the `rewrite_index` setting is on.
     pub fn add_page(
         &mut self,
         key: &Arc<PathBuf>,
         dest: PathBuf,
-        page_info: Arc<RwLock<Page>>) {
-
+        page_info: Arc<RwLock<Page>>,
+    ) {
         let mut resource = Resource::new_page(dest);
         if let Some(ref render) = page_info.read().unwrap().render {
             if !render {
@@ -340,7 +344,10 @@ impl CollateInfo {
         &self.pages
     }
 
-    pub fn get_page_mut(&mut self, key: &PathBuf) -> Option<&mut Arc<RwLock<Page>>> {
+    pub fn get_page_mut(
+        &mut self,
+        key: &PathBuf,
+    ) -> Option<&mut Arc<RwLock<Page>>> {
         self.pages.get_mut(key)
     }
 
@@ -350,6 +357,66 @@ impl CollateInfo {
         self.pages.remove(p)
     }
 
+    pub fn add_file(
+        &mut self,
+        key: Arc<PathBuf>,
+        dest: PathBuf,
+        href: String,
+        _config: &Config,
+        options: &RuntimeOptions,
+    ) -> Result<()> {
+        // Set up the default resource operation
+        let mut op = if options.settings.is_release() {
+            ResourceOperation::Copy
+        } else {
+            ResourceOperation::Link
+        };
+
+        // Allow the profile settings to control the resource operation
+        if let Some(ref resources) = options.settings.resources {
+            if resources.ignore.matcher.matches(&href) {
+                op = ResourceOperation::Noop;
+            } else if resources.symlink.matcher.matches(&href) {
+                op = ResourceOperation::Link;
+            } else if resources.copy.matcher.matches(&href) {
+                op = ResourceOperation::Copy;
+            }
+        }
+
+        let kind = self.get_file_kind(&key, options);
+        match kind {
+            ResourceKind::File | ResourceKind::Asset => {
+                self.resources.insert(Arc::clone(&key));
+                self.link(Arc::clone(&key), Arc::new(href))?;
+            }
+            _ => {}
+        }
+
+        self.all.insert(key, Resource::new(dest, kind, op));
+
+        Ok(())
+    }
+
+    fn get_file_kind(
+        &self,
+        key: &Arc<PathBuf>,
+        options: &RuntimeOptions,
+    ) -> ResourceKind {
+        let mut kind = ResourceKind::File;
+        if key.starts_with(options.get_assets_path()) {
+            kind = ResourceKind::Asset;
+        } else if key.starts_with(options.get_partials_path()) {
+            kind = ResourceKind::Partial;
+        } else if key.starts_with(options.get_includes_path()) {
+            kind = ResourceKind::Include;
+        } else if key.starts_with(options.get_locales()) {
+            kind = ResourceKind::Locale;
+        } else if key.starts_with(options.get_data_sources_path()) {
+            kind = ResourceKind::DataSource;
+        }
+        kind
+    }
+
     /// Inherit page data from a fallback locale.
     pub fn inherit(
         &mut self,
@@ -357,7 +424,8 @@ impl CollateInfo {
         options: &RuntimeOptions,
         fallback: &mut CollateInfo,
     ) -> Result<()> {
-        let mut updated: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>> = HashMap::new();
+        let mut updated: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>> =
+            HashMap::new();
         for (path, raw_page) in self.pages.iter_mut() {
             let mut page = raw_page.write().unwrap();
             let use_fallback =
@@ -404,7 +472,8 @@ impl CollateInfo {
                     Some(template),
                 )?;
 
-                updated.insert(path.to_owned(), Arc::new(RwLock::new(sub_page)));
+                updated
+                    .insert(path.to_owned(), Arc::new(RwLock::new(sub_page)));
             } else {
                 updated.insert(path.to_owned(), raw_page.to_owned());
             }

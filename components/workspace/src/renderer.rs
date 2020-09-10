@@ -7,7 +7,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::{Collate, LinkCollate, resource::Resource};
+use collator::{resource::Resource, Collate, LinkCollate};
 use compiler::{
     parser::Parser, run, BuildContext, Compiler, CompilerOutput, ParseData,
 };
@@ -17,11 +17,7 @@ use search::{
     compile as compile_index, intermediate, Index, IntermediateEntry,
 };
 
-use crate::{
-    hook,
-    manifest::Manifest,
-    Result,
-};
+use crate::{hook, manifest::Manifest, Result};
 
 #[derive(Clone)]
 pub enum RenderFilter {
@@ -262,7 +258,9 @@ impl Renderer {
         self.run_before_hooks().await?;
 
         let is_incremental = self.info.manifest.is_some();
-        if is_incremental { info!("Incremental build enabled"); }
+        if is_incremental {
+            info!("Incremental build enabled");
+        }
 
         let mut manifest_filter = |p: &&Arc<PathBuf>| -> bool {
             if let Some(ref manifest) = self.info.manifest {
@@ -273,13 +271,11 @@ impl Renderer {
                     match resource {
                         Resource::Page { ref target }
                         | Resource::File { ref target } => {
-                            let dest = target.get_output(self.info.context.collation.get_path());
+                            let dest = target.get_output(
+                                self.info.context.collation.get_path(),
+                            );
                             if manifest.exists(p)
-                                && !manifest.is_dirty(
-                                    p,
-                                    &dest,
-                                    false,
-                                )
+                                && !manifest.is_dirty(p, &dest, false)
                             {
                                 debug!("[NOOP] {}", p.display());
                                 return false;
@@ -303,18 +299,18 @@ impl Renderer {
                 }
                 return false;
             }
-            true 
+            true
         };
 
         let mut filter = |p: &&Arc<PathBuf>| -> bool {
             let filtered = path_filter(p);
-            if filtered && is_incremental { return manifest_filter(p) }
+            if filtered && is_incremental {
+                return manifest_filter(p);
+            }
             filtered
         };
 
-        self.compiler
-            .build(parser, output, filter)
-            .await?;
+        self.compiler.build(parser, output, filter).await?;
 
         self.run_after_hooks().await?;
 
@@ -337,7 +333,7 @@ impl Renderer {
         let _ = run::one(&self.info.context, parser, &file).await?;
 
         // TODO: update the manifest in single file mode!
-        
+
         Ok(())
     }
 }

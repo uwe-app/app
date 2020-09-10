@@ -4,23 +4,16 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 
 use log::debug;
-
 use crossbeam::channel;
-
 use ignore::{WalkBuilder, WalkState};
 
-use config::indexer::QueryList;
-use config::link::{self, LinkOptions};
-use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
-
+use config::{Config, FileInfo, FileOptions, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
-use crate::locale_utils::*;
-
-use super::loader;
-use super::{
-    Collate, CollateInfo, Error, Resource, ResourceKind, ResourceOperation,
-    Result,
+use crate::{
+    locale_utils::*,
+    builder::{PageBuilder, to_href}, Collate, CollateInfo, Error, Resource, ResourceKind,
+    ResourceOperation, Result,
 };
 
 pub struct CollateRequest<'a> {
@@ -153,7 +146,9 @@ async fn find(
                         && FileInfo::is_page(&path, req.options);
 
                     if is_page {
-                        if let Err(e) = add_page(req, info, &key, &path) {
+                        if let Err(e) =
+                            add_page(info, req.config, req.options, &key, &path)
+                        {
                             let _ = tx.send(e);
                         }
                     } else {
@@ -165,7 +160,7 @@ async fn find(
                             }
                         }
 
-                        if let Err(e) = add_other(req, info, &key) {
+                        if let Err(e) = add_other(info, req.config, req.options, key) {
                             let _ = tx.send(Error::from(e));
                         }
                     }
@@ -192,7 +187,7 @@ fn compute_links(
         if let Some(ref allow) = links.allow {
             for s in allow {
                 let src = req.options.source.join(s.trim_start_matches("/"));
-                let href = href(&src, req.options, false, None)?;
+                let href = to_href(&src, req.options, false, None)?;
                 info.link(Arc::new(src), Arc::new(href))?;
             }
         }
@@ -237,189 +232,45 @@ pub fn series(
     Ok(())
 }
 
-pub fn get_destination(
-    file: &PathBuf,
+fn add_page(
+    info: &mut CollateInfo,
     config: &Config,
     options: &RuntimeOptions,
-) -> Result<PathBuf> {
-    let mut info = FileInfo::new(&config, &options, file, false);
-
-    let file_opts = FileOptions {
-        exact: true,
-        base_href: &options.settings.base_href,
-        ..Default::default()
-    };
-    Ok(info.destination(&file_opts)?)
-}
-
-pub fn href(
-    file: &PathBuf,
-    options: &RuntimeOptions,
-    rewrite: bool,
-    strip: Option<PathBuf>,
-) -> Result<String> {
-    let mut href_opts: LinkOptions = Default::default();
-    href_opts.strip = strip;
-    href_opts.rewrite = rewrite;
-    href_opts.trailing = false;
-    href_opts.include_index = true;
-    link::absolute(file, options, href_opts).map_err(Error::from)
-}
-
-fn verify_query(list: &QueryList) -> Result<()> {
-    let queries = list.to_vec();
-    for q in queries {
-        let each = q.each.is_some() && q.each.unwrap();
-        if q.page.is_some() && each {
-            return Err(Error::QueryConflict);
-        }
-    }
-    Ok(())
-}
-
-fn add_page(
-    req: &CollateRequest<'_>,
-    mut info: &mut CollateInfo,
     key: &Arc<PathBuf>,
     path: &Path,
 ) -> Result<()> {
-    let pth = path.to_path_buf();
 
-    let mut page_info = loader::compute(path, req.config, req.options, true)?;
+    let builder = PageBuilder::new(info, config, options, key, path)
+        .compute()?
+        .queries()?
+        .layouts()?
+        .seal()?
+        .link()?
+        .permalinks()?
+        .feeds()?;
 
-    if let Some(ref query) = page_info.query {
-        verify_query(query)?;
-        info.queries.push((query.clone(), Arc::clone(key)));
-    }
-
-    // Rewrite layouts relative to the source directory
-    if let Some(ref layout) = page_info.layout {
-        let layout_path = req.options.source.join(layout);
-        if !layout_path.exists() {
-            return Err(Error::NoLayout(layout_path, layout.clone()));
-        }
-
-        page_info.layout = Some(layout_path);
-    }
-
-    let mut file_info = FileInfo::new(req.config, req.options, &pth, false);
-
-    let mut rewrite_index = req.options.settings.should_rewrite_index();
-    // Override with rewrite-index page level setting
-    if let Some(val) = page_info.rewrite_index {
-        rewrite_index = val;
-    }
-
-    let file_opts = FileOptions {
-        rewrite_index,
-        base_href: &req.options.settings.base_href,
-        ..Default::default()
-    };
-
-    let dest = file_info.destination(&file_opts)?;
-    page_info.seal(&dest, req.config, req.options, &file_info, None)?;
-
-    if let Some(ref layout) = page_info.layout {
-        // Register the layout
-        info.layouts.insert(Arc::clone(key), layout.clone());
-    }
-
-    let href = href(&pth, req.options, rewrite_index, None)?;
-    info.link(Arc::clone(key), Arc::new(href.clone()))?;
-
-    // Map permalinks to be converted to redirects later
-    if let Some(ref permalink) = page_info.permalink {
-        let key = permalink.trim_end_matches("/").to_string();
-
-        if info.permalinks.contains_key(&key) {
-            return Err(Error::DuplicatePermalink(key));
-        }
-
-        info.permalinks
-            .insert(key, page_info.href.as_ref().unwrap().to_string());
-    }
-
-    // Collate feed pages
-    if let Some(ref feed) = req.config.feed {
-        for (name, cfg) in feed.channels.iter() {
-            let href = page_info.href.as_ref().unwrap();
-            if cfg.matcher.filter(href) {
-                let items =
-                    info.feeds.entry(name.to_string()).or_insert(vec![]);
-                items.push(Arc::clone(key));
-            }
-        }
-    }
-
-    info.add_page(key, dest, Arc::new(RwLock::new(page_info)));
+    let (info, key, destination, page) = builder.build();
+    info.add_page(key, destination, Arc::new(RwLock::new(page)));
 
     Ok(())
-}
-
-pub fn add_file(
-    key: &Arc<PathBuf>,
-    dest: PathBuf,
-    href: String,
-    info: &mut CollateInfo,
-    _config: &Config,
-    options: &RuntimeOptions,
-) -> Result<()> {
-    // Set up the default resource operation
-    let mut op = if options.settings.is_release() {
-        ResourceOperation::Copy
-    } else {
-        ResourceOperation::Link
-    };
-
-    // Allow the profile settings to control the resource operation
-    if let Some(ref resources) = options.settings.resources {
-        if resources.ignore.matcher.matches(&href) {
-            op = ResourceOperation::Noop;
-        } else if resources.symlink.matcher.matches(&href) {
-            op = ResourceOperation::Link;
-        } else if resources.copy.matcher.matches(&href) {
-            op = ResourceOperation::Copy;
-        }
-    }
-
-    let kind = get_file_kind(key, options);
-    match kind {
-        ResourceKind::File | ResourceKind::Asset => {
-            info.resources.insert(Arc::clone(&key));
-            info.link(Arc::clone(key), Arc::new(href))?;
-        }
-        _ => {}
-    }
-
-    info.all
-        .insert(Arc::clone(key), Resource::new(dest, kind, op));
-
-    Ok(())
-}
-
-fn get_file_kind(key: &Arc<PathBuf>, options: &RuntimeOptions) -> ResourceKind {
-    let mut kind = ResourceKind::File;
-    if key.starts_with(options.get_assets_path()) {
-        kind = ResourceKind::Asset;
-    } else if key.starts_with(options.get_partials_path()) {
-        kind = ResourceKind::Partial;
-    } else if key.starts_with(options.get_includes_path()) {
-        kind = ResourceKind::Include;
-    } else if key.starts_with(options.get_locales()) {
-        kind = ResourceKind::Locale;
-    } else if key.starts_with(options.get_data_sources_path()) {
-        kind = ResourceKind::DataSource;
-    }
-    kind
 }
 
 fn add_other(
-    req: &CollateRequest<'_>,
     info: &mut CollateInfo,
-    key: &Arc<PathBuf>,
+    config: &Config,
+    options: &RuntimeOptions,
+    key: Arc<PathBuf>,
 ) -> Result<()> {
-    let pth = key.to_path_buf();
-    let dest = get_destination(&pth, req.config, req.options)?;
-    let href = href(&pth, req.options, false, None)?;
-    Ok(add_file(key, dest, href, info, req.config, req.options)?)
+    let dest = {
+        let mut info = FileInfo::new(&config, &options, &key, false);
+        let file_opts = FileOptions {
+            exact: true,
+            base_href: &options.settings.base_href,
+            ..Default::default()
+        };
+        info.destination(&file_opts)?
+    };
+
+    let href = to_href(&key, options, false, None)?;
+    Ok(info.add_file(key, dest, href, config, options)?)
 }

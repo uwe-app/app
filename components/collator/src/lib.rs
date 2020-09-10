@@ -4,17 +4,6 @@ use thiserror::Error;
 
 use locale::LocaleName;
 
-pub mod collation;
-pub mod collator;
-pub mod loader;
-pub mod locale_utils;
-pub mod resource;
-
-pub use collation::*;
-pub use collator::*;
-pub use locale_utils::*;
-pub use resource::*;
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("No layout file found in source {0} with value {1}")]
@@ -71,3 +60,17 @@ pub enum Error {
 }
 
 type Result<T> = std::result::Result<T, Error>;
+
+mod builder;
+pub mod collation;
+pub mod collator;
+pub mod loader;
+pub mod locale_utils;
+pub mod resource;
+
+pub use builder::to_href;
+pub use collation::*;
+pub use collator::*;
+pub use locale_utils::*;
+pub use resource::*;
+

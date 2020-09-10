@@ -36,9 +36,9 @@ impl Compiler {
         output: &mut CompilerOutput,
         filter: F,
     ) -> Result<()>
-        where F: FnMut(&&Arc<PathBuf>) -> bool + Send
+    where
+        F: FnMut(&&Arc<PathBuf>) -> bool + Send,
     {
-
         let parallel = self.context.options.settings.is_parallel();
 
         // TODO: support allowing this in the settings

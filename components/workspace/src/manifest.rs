@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 
@@ -37,8 +37,12 @@ impl Manifest {
         dest: &PathBuf,
         force: bool,
     ) -> bool {
-        if force || !dest.exists() { return true; }
-        if let (Some(entry), Some(current)) = (self.map.get(file), self.get_entry(file)) {
+        if force || !dest.exists() {
+            return true;
+        }
+        if let (Some(entry), Some(current)) =
+            (self.map.get(file), self.get_entry(file))
+        {
             return &current > entry;
         }
         false
@@ -55,7 +59,9 @@ impl Manifest {
     }
 
     pub fn update(&mut self, files: &Vec<Arc<PathBuf>>) {
-        for f in files { self.touch(&f); } 
+        for f in files {
+            self.touch(&f);
+        }
     }
 
     pub fn load<P: AsRef<Path>>(p: P) -> Result<Manifest> {
