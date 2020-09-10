@@ -13,10 +13,14 @@ use config::indexer::{
     QueryResult, QueryValue,
 };
 use config::{Config, RuntimeOptions};
+use utils::json_path;
 
-use crate::identifier;
-use crate::provider;
-use crate::{Error, Result};
+use crate::{
+    Error,
+    Result,
+    identifier,
+    provider,
+};
 
 pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 pub type IndexValue = (IndexKey, Arc<Value>);
@@ -134,7 +138,7 @@ impl ValueIndex {
             let (key, arc) = v;
 
             let doc = &*arc.clone();
-            let group_key = config::path::find_path(&group.path, doc);
+            let group_key = json_path::find_path(&group.path, doc);
 
             let candidates = if group_key.is_array() && expand {
                 group_key.as_array().unwrap().to_vec()
@@ -203,8 +207,8 @@ impl ValueIndex {
                 let doc_a = &*arc.clone();
                 let doc_b = &*brc.clone();
 
-                let sort_a = config::path::find_path(sort_key, doc_a);
-                let sort_b = config::path::find_path(sort_key, doc_b);
+                let sort_a = json_path::find_path(sort_key, doc_a);
+                let sort_b = json_path::find_path(sort_key, doc_b);
 
                 let str_a = sort_a.to_string();
                 let str_b = sort_b.to_string();
@@ -355,7 +359,7 @@ impl DataSourceMap {
                         if let Some(ref filters) = def.filters {
                             for (path, flag) in filters {
                                 let truthy =
-                                    config::path::truthy(path, document);
+                                    json_path::truthy(path, document);
                                 if (*flag && truthy) || (!*flag && !truthy) {
                                     return false;
                                 }
@@ -367,7 +371,7 @@ impl DataSourceMap {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
-                        config::path::find_path(&key, document)
+                        json_path::find_path(&key, document)
                     };
 
                     if let Value::Null = key_val {

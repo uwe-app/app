@@ -103,7 +103,6 @@ pub mod link_utils;
 mod live_reload;
 mod matcher;
 mod page;
-pub mod path;
 mod profile;
 pub mod redirect;
 pub mod robots;
