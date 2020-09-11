@@ -471,8 +471,6 @@ impl Project {
     pub(crate) async fn render(
         &self,
         render_options: RenderOptions,
-        //render_type: RenderTarget,
-        //render_filter: RenderFilter,
     ) -> Result<ProjectResult> {
         let mut result: ProjectResult = Default::default();
 
@@ -495,7 +493,7 @@ impl Project {
                 renderer.info.context.collation.get_path().display()
             );
 
-            let mut res = renderer.render(parser, render_options.target.clone()).await?;
+            let mut res = renderer.render(parser, &render_options).await?;
             if let Some(url) = res.sitemap.take() {
                 result.sitemaps.push(url);
             }

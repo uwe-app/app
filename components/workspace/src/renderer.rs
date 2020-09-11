@@ -93,11 +93,11 @@ impl Renderer {
     pub async fn render(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
-        render_target: RenderTarget,
+        render_options: &RenderOptions,
     ) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
 
-        match render_target {
+        match render_options.target {
             RenderTarget::All => {
                 self.build(parser, &mut output).await?;
             }
