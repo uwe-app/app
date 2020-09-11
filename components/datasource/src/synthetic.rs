@@ -462,7 +462,7 @@ pub fn pages(
 
                 let page_name = format!("{}", current + 1);
 
-                let mut item_data = page.clone();
+                let item_data = page.clone();
 
                 let file_ctx = item_data.file.as_ref().unwrap();
                 let file_source = file_ctx.source.clone();
@@ -511,7 +511,7 @@ pub fn pages(
                 let link = PageLink {
                     index: current,
                     name: page_name,
-                    href: item_data.get_href(&mock, options)?,
+                    href: options.absolute(&mock, Default::default())?,
                     preserve: false,
                 };
 

@@ -1,132 +1,33 @@
 use std::collections::HashMap;
-use std::io;
 use std::mem;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use chrono::prelude::*;
 pub use jsonfeed::{Attachment, Author, Feed};
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
     indexer::QueryList, script::ScriptFile,
     style::StyleFile, Config, Error, FileInfo, RuntimeOptions,
+    utils::toml_datetime::from_toml_datetime,
 };
 
+use self::file_context::FileContext;
+
 pub(crate) mod file;
+pub(crate) mod file_context;
+pub(crate) mod paginate;
 
-/// Attribute to convert from TOML date time to chronos UTC variant
-pub fn from_toml_datetime<'de, D>(
-    deserializer: D,
-) -> Result<Option<DateTime<Utc>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    toml::value::Datetime::deserialize(deserializer).map(|s| {
-        let d = s.to_string();
-        let dt = if d.contains('T') {
-            DateTime::parse_from_rfc3339(&d)
-                .ok()
-                .map(|s| s.naive_local())
-        } else {
-            NaiveDate::parse_from_str(&d, "%Y-%m-%d")
-                .ok()
-                .map(|s| s.and_hms(0, 0, 0))
-        };
-
-        if let Some(dt) = dt {
-            return Some(DateTime::<Utc>::from_utc(dt, Utc));
-        }
-
-        None
-    })
-}
+pub use paginate::{PaginateInfo, PageLink};
 
 #[derive(Serialize)]
 pub struct CollatedPage<'a> {
     #[serde(flatten)]
     pub page: &'a Page,
     pub lang: &'a str,
-}
-
-#[skip_serializing_none]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FileContext {
-    pub source: PathBuf,
-    pub target: PathBuf,
-    pub template: PathBuf,
-    pub name: Option<String>,
-    pub modified: DateTime<Utc>,
-}
-
-impl FileContext {
-    pub fn new(source: PathBuf, target: PathBuf, template: PathBuf) -> Self {
-        let mut name = None;
-        if let Some(stem) = &source.file_stem() {
-            name = Some(stem.to_string_lossy().into_owned());
-        }
-
-        Self {
-            source,
-            target,
-            template,
-            name,
-            modified: Utc::now(),
-        }
-    }
-
-    pub fn resolve_metadata(&mut self) -> io::Result<()> {
-        if let Ok(ref metadata) = self.source.metadata() {
-            if let Ok(modified) = metadata.modified() {
-                self.modified = DateTime::from(modified);
-            }
-        }
-        Ok(())
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PageLink {
-    pub index: usize,
-    pub name: String,
-    pub href: String,
-    pub preserve: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PaginateInfo {
-    // Total number of pages.
-    pub total: usize,
-    // Current page number.
-    pub current: usize,
-    // Total number of items in the collection.
-    pub length: usize,
-    // The index into the collection for the
-    // first item on this page.
-    pub first: usize,
-    // The index into the collection for the
-    // last item on this page.
-    pub last: usize,
-    // The actual length of the items in this page,
-    // normally the page size but may be less.
-    pub size: usize,
-    // List of links for each page
-    pub links: Vec<PageLink>,
-    // Links for next and previous pages when available
-    pub prev: Option<PageLink>,
-    pub next: Option<PageLink>,
-}
-
-#[skip_serializing_none]
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FeedEntry {
-    pub language: Option<String>,
-    pub external_url: Option<String>,
-    pub image: Option<String>,
-    pub banner_image: Option<String>,
-    pub attachments: Option<Vec<Attachment>>,
 }
 
 #[skip_serializing_none]
@@ -276,7 +177,7 @@ impl Page {
             FileContext::new(info.file.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
-        self.href = Some(self.get_href(&file_context.source, options)?);
+        self.href = Some(options.absolute(&file_context.source, Default::default())?);
 
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {
@@ -293,14 +194,6 @@ impl Page {
         }
 
         Ok(())
-    }
-
-    pub fn get_href<P: AsRef<Path>>(
-        &mut self,
-        p: P,
-        opts: &RuntimeOptions,
-    ) -> Result<String, Error> {
-        opts.absolute(p.as_ref(), Default::default())
     }
 
     pub fn compute(
@@ -427,3 +320,14 @@ impl Page {
         self.extra.append(&mut other.extra);
     }
 }
+
+#[skip_serializing_none]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct FeedEntry {
+    pub language: Option<String>,
+    pub external_url: Option<String>,
+    pub image: Option<String>,
+    pub banner_image: Option<String>,
+    pub attachments: Option<Vec<Attachment>>,
+}
+

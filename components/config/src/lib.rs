@@ -112,7 +112,7 @@ pub mod style;
 pub mod syntax;
 pub mod transform;
 
-mod utils;
+pub(crate) mod utils;
 
 pub use config::*;
 pub use options::{RuntimeOptions, LinkOptions};
