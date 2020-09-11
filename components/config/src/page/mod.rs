@@ -15,6 +15,8 @@ use crate::{
     style::StyleFile, Config, Error, FileInfo, RuntimeOptions,
 };
 
+pub(crate) mod file;
+
 /// Attribute to convert from TOML date time to chronos UTC variant
 pub fn from_toml_datetime<'de, D>(
     deserializer: D,

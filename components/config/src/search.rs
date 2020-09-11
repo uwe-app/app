@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use super::matcher::GlobPatternMatcher;
+use crate::utils::matcher::GlobPatternMatcher;
 
 pub static SEARCH_JS: &str = "search.js";
 pub static SEARCH_WASM: &str = "search.wasm";

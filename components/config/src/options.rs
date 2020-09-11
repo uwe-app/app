@@ -7,7 +7,7 @@ use crate::{
     Result,
     Config,
     ProfileSettings,
-    file::FileInfo,
+    page::file::FileInfo,
     INDEX_STEM,
 };
 

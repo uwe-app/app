@@ -9,11 +9,13 @@ use serde_with::skip_serializing_none;
 
 use url::Url;
 
-use super::config::{self, Config};
-use super::matcher::GlobPatternMatcher;
-use super::robots::RobotsConfig;
-use super::server::TlsConfig;
-use super::sitemap::SiteMapConfig;
+use crate::{
+    config::{self, Config},
+    robots::RobotsConfig,
+    server::TlsConfig,
+    sitemap::SiteMapConfig,
+    utils::matcher::GlobPatternMatcher,
+};
 
 static DEBUG: &str = "debug";
 static RELEASE: &str = "release";
