@@ -252,6 +252,23 @@ fn add_page(
         .feeds()?;
 
     let (info, key, destination, page) = builder.build();
+
+    if let Some(ref menu) = page.menu {
+        // Verify file references as early as possible
+        for (_, v) in menu.iter() {
+            v.verify_files(&options.source)?;
+
+            let def = v.definition.clone();
+
+            let entries = info.graph.menus.entry(def).or_insert(vec![]);
+            entries.push(Arc::clone(key));
+        }
+
+
+        // Store pages with menus for processing later
+        //info.graph.menus.push(Arc::clone(key));
+    }
+
     info.add_page(key, destination, Arc::new(RwLock::new(page)));
 
     Ok(())

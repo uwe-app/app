@@ -15,10 +15,16 @@ use crate::{
     utils::toml_datetime::from_toml_datetime,
 };
 
-use self::file_context::FileContext;
+use self::{
+    feed::FeedEntry,
+    file_context::FileContext,
+    menu::MenuEntry,
+};
 
+pub(crate) mod feed;
 pub(crate) mod file;
 pub(crate) mod file_context;
+pub(crate) mod menu;
 pub(crate) mod paginate;
 
 pub use paginate::{PaginateInfo, PageLink};
@@ -64,6 +70,9 @@ pub struct Page {
 
     // Custom values for feed entry
     pub entry: Option<FeedEntry>,
+
+    // Menus keyed by name
+    pub menu: Option<HashMap<String, MenuEntry>>,
 
     // Automatically assigned
 
@@ -121,6 +130,7 @@ impl Default for Page {
             styles: None,
             permalink: None,
             entry: None,
+            menu: None,
 
             created: None,
             updated: None,
@@ -319,15 +329,5 @@ impl Page {
 
         self.extra.append(&mut other.extra);
     }
-}
-
-#[skip_serializing_none]
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FeedEntry {
-    pub language: Option<String>,
-    pub external_url: Option<String>,
-    pub image: Option<String>,
-    pub banner_image: Option<String>,
-    pub attachments: Option<Vec<Attachment>>,
 }
 

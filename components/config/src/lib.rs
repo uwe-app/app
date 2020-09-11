@@ -13,6 +13,9 @@ pub enum Error {
     #[error("No socket address for {0}")]
     NoSocketAddress(String),
 
+    #[error("No menu {0} resolving to file {1}")]
+    NoMenuFile(String, PathBuf),
+
     #[error("Missing book configuration {0}")]
     NoBookConfig(PathBuf),
 
@@ -121,6 +124,7 @@ pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use page::file::{FileInfo, FileOptions, FileType};
+pub use page::menu::MenuReference;
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
 pub use search::{SEARCH_JS, SEARCH_WASM};

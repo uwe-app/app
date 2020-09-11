@@ -469,7 +469,7 @@ pub struct Project {
 impl Project {
     /// Render the project.
     pub(crate) async fn render(
-        &self,
+        &mut self,
         render_options: RenderOptions,
     ) -> Result<ProjectResult> {
         let mut result: ProjectResult = Default::default();
@@ -681,7 +681,7 @@ pub async fn compile<P: AsRef<Path>>(
             builder
         };
 
-        let state = builder.build()?;
+        let mut state = builder.build()?;
 
         // Render all the languages
         let result = state.render(Default::default()).await?;

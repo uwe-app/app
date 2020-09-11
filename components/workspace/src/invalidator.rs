@@ -5,8 +5,8 @@ use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
 
 use crate::{
-    renderer::{RenderOptions, RenderFilter, RenderTarget},
     Error, Project, Result,
+    renderer::RenderOptions,
 };
 
 /*

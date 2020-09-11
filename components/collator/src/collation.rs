@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use config::indexer::QueryList;
-use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions};
+use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions, MenuReference};
 use locale::LocaleName;
 
 use crate::{
@@ -52,6 +52,9 @@ pub struct CollateInfo {
     /// Lookup table for page data resolved by locale identifier and source path.
     pub(crate) pages: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>>,
 
+    /// Graph of page relationships.
+    pub(crate) graph: Graph,
+
     // Pages that have permalinks map the
     // permalink to the computed href so that
     // we can configure redirects for permalinks.
@@ -77,6 +80,12 @@ pub struct CollateInfo {
 
     // TODO: books too!
     pub(crate) links: LinkMap,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct Graph {
+    /// List of pages with menus that need to be compiled.
+    pub(crate) menus: HashMap<MenuReference, Vec<Arc<PathBuf>>>,
 }
 
 #[derive(Debug, Default, Clone)]

@@ -99,7 +99,7 @@ impl Renderer {
 
         match render_options.target {
             RenderTarget::All => {
-                self.build(parser, &mut output).await?;
+                self.build(parser, render_options, &mut output).await?;
             }
             RenderTarget::File(ref path) => {
                 self.one(parser, path).await?;
@@ -270,6 +270,7 @@ impl Renderer {
     async fn build(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
+        render_options: &RenderOptions,
         output: &mut CompilerOutput,
     ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet
