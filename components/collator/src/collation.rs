@@ -470,7 +470,7 @@ impl CollateInfo {
 
                 // Must seal() again so the file paths are correct
                 let mut file_info =
-                    FileInfo::new(config, options, &source, false);
+                    FileInfo::new(options, &source, false);
                 let file_opts = FileOptions {
                     rewrite_index,
                     base_href: &options.settings.base_href,

@@ -114,7 +114,7 @@ impl<'a> PageBuilder<'a> {
     /// Seal the page with file context information.
     pub fn seal(mut self) -> Result<Self> {
         let mut file_info =
-            FileInfo::new(self.config, self.options, &self.path, false);
+            FileInfo::new(self.options, &self.path, false);
 
         let mut rewrite_index = self.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting

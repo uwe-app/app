@@ -281,7 +281,7 @@ fn add_other(
     key: Arc<PathBuf>,
 ) -> Result<()> {
     let dest = {
-        let mut info = FileInfo::new(&config, &options, &key, false);
+        let mut info = FileInfo::new(&options, &key, false);
         let file_opts = FileOptions {
             exact: true,
             base_href: &options.settings.base_href,

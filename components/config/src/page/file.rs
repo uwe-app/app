@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     Error,
-    Config,
     RuntimeOptions,
     HTML,
     INDEX_STEM,
@@ -38,8 +37,6 @@ impl Default for FileOptions<'_> {
 
 #[derive(Debug, Clone)]
 pub struct FileInfo<'a> {
-    // The configuration
-    pub config: &'a Config,
     // The runtime options
     pub options: &'a RuntimeOptions,
     // The root of the source files
@@ -54,14 +51,12 @@ pub struct FileInfo<'a> {
 
 impl<'a> FileInfo<'a> {
     pub fn new(
-        config: &'a Config,
         options: &'a RuntimeOptions,
         file: &'a PathBuf,
         synthetic: bool,
     ) -> Self {
         let file_type = FileInfo::get_type(file, &options.settings);
         Self {
-            config,
             options,
             source: &options.source,
             file,

@@ -25,7 +25,7 @@ fn create_synthetic(
     page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
-    let mut file_info = FileInfo::new(config, options, &source, true);
+    let mut file_info = FileInfo::new(options, &source, true);
 
     let file_opts = FileOptions {
         rewrite_index,

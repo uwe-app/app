@@ -155,7 +155,7 @@ impl Page {
         let mut page: Page = Default::default();
 
         let mut file_info =
-            FileInfo::new(config, options, file, false);
+            FileInfo::new(options, file, false);
 
         let rewrite_index = options.settings.should_rewrite_index();
         let file_opts = FileOptions {
