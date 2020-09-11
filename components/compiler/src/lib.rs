@@ -79,3 +79,4 @@ mod tree;
 pub use compile::compile;
 pub use context::*;
 pub use run::ParseData;
+pub use markdown::render_markdown;

@@ -251,22 +251,22 @@ fn add_page(
         .permalinks()?
         .feeds()?;
 
-    let (info, key, destination, page) = builder.build();
+    let (info, key, destination, mut page) = builder.build();
 
-    if let Some(ref menu) = page.menu {
+    if let Some(menu) = page.menu.as_mut() {
         // Verify file references as early as possible
-        for (_, v) in menu.iter() {
+        for (k, v) in menu.iter_mut() {
             v.verify_files(&options.source)?;
+
+            // Assign the key name so we can use it 
+            // later when re-assigning the compiled value
+            v.set_name(k);
 
             let def = v.definition.clone();
 
             let entries = info.graph.menus.entry(def).or_insert(vec![]);
             entries.push(Arc::clone(key));
         }
-
-
-        // Store pages with menus for processing later
-        //info.graph.menus.push(Arc::clone(key));
     }
 
     info.add_page(key, destination, Arc::new(RwLock::new(page)));

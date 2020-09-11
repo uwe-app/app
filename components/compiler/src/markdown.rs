@@ -4,7 +4,7 @@ use config::Config;
 
 use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
 
-pub fn render_markdown_string(
+pub fn render_markdown(
     content: &mut Cow<str>,
     config: &Config,
 ) -> String {

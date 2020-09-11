@@ -99,6 +99,13 @@ impl RuntimeOptions {
         Ok(value)
     }
 
+    /// Convert a href path into a PathBuf relative to the source 
+    /// directory.
+    pub fn resolve_source(&self, href: &str) -> PathBuf {
+        self.source.join(
+            utils::url::to_path_separator(href.trim_start_matches("/")))
+    }
+
     // Attempt to get an absolute URL path for a page
     // relative to the source. The resulting href
     // can be passed to the link helper to get a

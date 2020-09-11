@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use handlebars::*;
 
-use crate::markdown::render_markdown_string;
+use crate::markdown::render_markdown;
 use crate::BuildContext;
 
 fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
@@ -66,7 +66,7 @@ impl HelperDef for Partial {
         //.map_err(|e| RenderError::new(format!("{}", e)))?;
 
         if parse_markdown {
-            let parsed = render_markdown_string(
+            let parsed = render_markdown(
                 &mut Cow::from(result),
                 &self.context.config,
             );

@@ -400,29 +400,31 @@ impl<'a> ProjectBuilder {
         let mut parsers: Vec<Box<dyn Parser + Send + Sync>> = Vec::new();
 
         //collations.iter_mut().try_for_each(|collation| {
-            //menu::compile(&config, &options, &locales, collation)
         //})?;
 
         collations.into_iter().try_for_each(|collation| {
-            let context = BuildContext {
+            let context = Arc::new(BuildContext {
                 config: Arc::clone(&config),
                 options: Arc::clone(&options),
                 locales: Arc::clone(&locales),
                 collation: Arc::new(RwLock::new(collation)),
-            };
+            });
+
+            let parser: Box<dyn Parser + Send + Sync> = parser::handlebars(
+                Arc::clone(&context),
+                Arc::clone(&locales),
+            )?;
+
+            menu::compile(&context, &parser)?;
 
             let info = CompilerInput {
                 sources: Arc::clone(&sources),
                 locales: Arc::clone(&locales),
-                context: Arc::new(context),
+                context,
                 manifest: manifest.clone(),
             };
 
-            parsers.push(parser::handlebars(
-                Arc::clone(&info.context),
-                Arc::clone(&locales),
-            )?);
-
+            parsers.push(parser);
             renderers.push(Renderer::new(info));
             Ok::<(), Error>(())
         })?;

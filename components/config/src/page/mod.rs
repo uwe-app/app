@@ -10,6 +10,8 @@ use serde_json::{json, Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
+    Result,
+    FileOptions,
     indexer::QueryList, script::ScriptFile,
     style::StyleFile, Config, Error, FileInfo, RuntimeOptions,
     utils::toml_datetime::from_toml_datetime,
@@ -148,6 +150,32 @@ impl Default for Page {
 }
 
 impl Page {
+
+    pub fn new(config: &Config, options: &RuntimeOptions, file: &PathBuf) -> Result<Self> {
+        let mut page: Page = Default::default();
+
+        let mut file_info =
+            FileInfo::new(config, options, file, false);
+
+        let rewrite_index = options.settings.should_rewrite_index();
+        let file_opts = FileOptions {
+            rewrite_index,
+            base_href: &options.settings.base_href,
+            ..Default::default()
+        };
+
+        let destination = file_info.destination(&file_opts)?;
+        page.seal(
+            &destination,
+            config,
+            options,
+            &file_info,
+            None,
+        )?;
+
+        Ok(page)
+    }
+
     // This should be a W3C Datetime string suitable for a
     // sitemap lastmod field.
     pub fn lastmod(&self) -> String {
@@ -174,7 +202,7 @@ impl Page {
         options: &RuntimeOptions,
         info: &FileInfo,
         template: Option<PathBuf>,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         self.host = Some(config.host.clone());
 
         let template = if let Some(template) = template {
@@ -206,11 +234,8 @@ impl Page {
         Ok(())
     }
 
-    pub fn compute(
-        &mut self,
-        config: &Config,
-        _opts: &RuntimeOptions,
-    ) -> Result<(), Error> {
+    pub fn compute(&mut self, config: &Config, _opts: &RuntimeOptions) -> Result<()> {
+
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
         } else {

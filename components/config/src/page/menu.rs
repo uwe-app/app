@@ -21,7 +21,7 @@ pub struct MenuEntry {
 impl MenuEntry {
     pub fn verify_files(&self, base: &PathBuf) -> Result<()> {
         match self.definition {
-            MenuReference::File { ref file } => {
+            MenuReference::File { ref file, .. } => {
                 let buf = base.join(
                     utils::url::to_path_separator(
                         file.trim_start_matches("/")));
@@ -35,18 +35,37 @@ impl MenuEntry {
         }
         Ok(())
     }
+
+    pub fn set_name(&mut self, key: &str) {
+        match self.definition {
+            MenuReference::File { ref mut name, .. } => {
+                *name = key.to_string();
+            }
+            MenuReference::Pages { ref mut name, .. } => {
+                *name = key.to_string();
+            }
+        } 
+    }
 }
 
 /// References the definition of a menu.
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum MenuReference {
-    File{ file: UrlPath },
-    Pages{ pages: Vec<UrlPath> },
+    File{
+        file: UrlPath,
+        #[serde(skip)]
+        name: String,
+    },
+    Pages{
+        pages: Vec<UrlPath>,
+        #[serde(skip)]
+        name: String,
+    },
 }
 
 impl Default for MenuReference {
     fn default() -> Self {
-        Self::Pages {pages: Vec::new()}
+        Self::Pages {pages: Vec::new(), name: Default::default()}
     }
 }
