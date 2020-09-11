@@ -408,7 +408,7 @@ impl<'a> ProjectBuilder {
                 config: Arc::clone(&config),
                 options: Arc::clone(&options),
                 locales: Arc::clone(&locales),
-                collation: Arc::new(collation),
+                collation: Arc::new(RwLock::new(collation)),
             };
 
             let info = CompilerInput {
@@ -485,17 +485,19 @@ impl Project {
             .iter()
             .zip(self.renderers.iter())
             .filter(|(_, r)| {
-                let language = r.info.context.collation.get_lang();
+                let collation = r.info.context.collation.read().unwrap();
+                let language = collation.get_lang();
                 match render_options.filter {
                     RenderFilter::One(ref lang) => language == lang.as_str(),
                     RenderFilter::All => true,
                 }
             })
         {
+            let collation = renderer.info.context.collation.read().unwrap();
             info!(
                 "Render {} -> {}",
-                renderer.info.context.collation.get_lang(),
-                renderer.info.context.collation.get_path().display()
+                collation.get_lang(),
+                collation.get_path().display()
             );
 
             let mut res = renderer.render(parser, &render_options).await?;

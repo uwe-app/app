@@ -27,12 +27,13 @@ impl HelperDef for Feed {
             ))?
             .to_string();
 
+        let collation = &*self.context.collation.read().unwrap();
         let base_url = self
             .context
             .options
             .get_canonical_url(
                 &self.context.config,
-                Some(self.context.collation.get_lang()),
+                Some(collation.get_lang()),
             )
             .map_err(|_e| {
                 RenderError::new(

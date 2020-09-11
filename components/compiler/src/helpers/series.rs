@@ -55,9 +55,10 @@ impl HelperDef for Series {
             RenderError::new("Type error in `series`, block template expected")
         })?;
 
-        if let Some(set) = self.context.collation.get_series(name) {
+        let collation = &*self.context.collation.read().unwrap();
+        if let Some(set) = collation.get_series(name) {
             for p in set {
-                if let Some(li) = self.context.collation.resolve(p) {
+                if let Some(li) = collation.resolve(p) {
                     let li = &*li.read().unwrap();
                     let mut local_rc = rc.clone();
                     let mut local_ctx = Context::wraps(li)?;

@@ -118,6 +118,7 @@ impl Renderer {
 
     fn create_search_indices(&self, parse_list: &Vec<ParseData>) -> Result<()> {
         let ctx = &self.info.context;
+        let collation = ctx.collation.read().unwrap();
         let include_index = ctx.options.settings.should_include_index();
         if let Some(ref search) = ctx.config.search {
             for (_id, search) in search.items.iter() {
@@ -126,7 +127,7 @@ impl Renderer {
                 for parse_data in parse_list {
                     if let Some(ref extraction) = parse_data.extract {
                         let href =
-                            ctx.collation.get_link_source(&parse_data.file);
+                            collation.get_link_source(&parse_data.file);
 
                         let buffer = extraction.to_chunk_string();
                         let title = if let Some(ref title) = extraction.title {
@@ -157,7 +158,7 @@ impl Renderer {
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
                 let index_file =
-                    search.get_output_path(ctx.collation.get_path());
+                    search.get_output_path(collation.get_path());
                 info!("Write search index to {}", index_file.display());
                 let bytes_written = search::writer::write(&idx, index_file)?;
                 info!("Search index {}", human_bytes(bytes_written as f64));
@@ -171,6 +172,7 @@ impl Renderer {
         parse_list: &Vec<ParseData>,
     ) -> Result<Option<Url>> {
         let ctx = &self.info.context;
+        let collation = ctx.collation.read().unwrap();
 
         let mut res: Option<Url> = None;
         if let Some(ref sitemap) = ctx.options.settings.sitemap {
@@ -180,14 +182,14 @@ impl Renderer {
             // Base canonical URL
             let base = ctx.options.get_canonical_url(
                 &ctx.config,
-                Some(self.info.context.collation.get_lang()),
+                Some(collation.get_lang()),
             )?;
 
             // Create the top-level index of all sitemaps
             let folder = sitemap.name.as_ref().unwrap().to_string();
             let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
 
-            let base_folder = ctx.collation.get_path().join(&folder);
+            let base_folder = collation.get_path().join(&folder);
 
             if !base_folder.exists() {
                 fs::create_dir_all(&base_folder)?;
@@ -207,9 +209,9 @@ impl Renderer {
                     .map(|d| {
                         // Get the href to use to build the location
                         let href =
-                            ctx.collation.get_link_source(&d.file).unwrap();
+                            collation.get_link_source(&d.file).unwrap();
                         // Get the last modification data from the page
-                        let page = ctx.collation.resolve(&d.file).unwrap();
+                        let page = collation.resolve(&d.file).unwrap();
                         let page = &*page.read().unwrap();
                         // Generate the absolute location
                         let location = base.join(href).unwrap();
@@ -274,7 +276,8 @@ impl Renderer {
         output: &mut CompilerOutput,
     ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet
-        let path = self.info.context.collation.get_path();
+        let collation = self.info.context.collation.read().unwrap();
+        let path = collation.get_path();
         if !path.exists() {
             fs::create_dir_all(path)?;
         }
@@ -288,13 +291,13 @@ impl Renderer {
             if let Some(ref manifest) = self.info.manifest {
                 let manifest = manifest.read().unwrap();
                 if let Some(ref resource) =
-                    self.info.context.collation.get_resource(*p)
+                    collation.get_resource(*p)
                 {
                     match resource {
                         Resource::Page { ref target }
                         | Resource::File { ref target } => {
                             let dest = target.get_output(
-                                self.info.context.collation.get_path(),
+                                collation.get_path(),
                             );
                             if manifest.exists(p)
                                 && !manifest.is_dirty(p, &dest, false)

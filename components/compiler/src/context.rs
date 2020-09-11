@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use collator::{self, Collation};
 use config::{Config, RuntimeOptions};
@@ -19,6 +19,6 @@ pub struct CompilerOutput {
 pub struct BuildContext {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
-    pub collation: Arc<Collation>,
     pub locales: Arc<Locales>,
+    pub collation: Arc<RwLock<Collation>>,
 }

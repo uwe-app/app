@@ -17,15 +17,16 @@ fn normalize<S: AsRef<str>>(_ctx: &BuildContext, s: S) -> String {
 
 // Try to find a source file for the given URL
 pub fn lookup(ctx: &BuildContext, href: &str) -> Option<PathBuf> {
+    let collation = &*ctx.collation.read().unwrap();
     let mut key = normalize(ctx, href);
-    if let Some(path) = ctx.collation.get_link(&key) {
+    if let Some(path) = collation.get_link(&key) {
         return Some(path.to_path_buf());
     } else {
         // Sometimes we have directory references without a trailing slash
         // so try again with an index page
         key.push('/');
         key.push_str(config::INDEX_HTML);
-        if let Some(path) = ctx.collation.get_link(&key) {
+        if let Some(path) = collation.get_link(&key) {
             return Some(path.to_path_buf());
         }
     }

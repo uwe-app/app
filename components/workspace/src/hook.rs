@@ -16,6 +16,8 @@ pub enum Phase {
 }
 
 pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
+    let collation = ctx.collation.read().unwrap();
+
     let project_root = ctx.config.get_project();
     debug!("hook root {}", project_root.display());
     if let Ok(root) = project_root.canonicalize() {
@@ -32,7 +34,7 @@ pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
-        let mut build_target = ctx.collation.get_path().canonicalize()?;
+        let mut build_target = collation.get_path().canonicalize()?;
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
         let node = ctx.config.node.as_ref().unwrap();

@@ -310,7 +310,7 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn layouts(mut self) -> Result<Self> {
-        let layouts = self.context.collation.layouts();
+        let layouts = self.context.collation.read().unwrap().layouts();
         for (name, path) in layouts.iter() {
             self.handlebars.register_template_file(name, path)?;
         }
@@ -373,7 +373,8 @@ impl Parser for HandlebarsParser<'_> {
         if standalone {
             return self.standalone(file, data);
         }
-        let layout = self.context.collation.find_layout(file);
+        let collation = &*self.context.collation.read().unwrap();
+        let layout = collation.find_layout(file);
         if let Some(ref layout_path) = layout {
             self.layout(data, layout_path)
         } else {

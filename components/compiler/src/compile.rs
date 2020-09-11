@@ -27,7 +27,8 @@ where
     // TODO: support allowing this in the settings
     let fail_fast = true;
 
-    let it = context.collation.resources().filter(filter);
+    let collation = &*context.collation.read().unwrap();
+    let it = collation.resources().filter(filter);
 
     if parallel {
         let (tx, rx) = channel::unbounded();

@@ -31,9 +31,11 @@ pub async fn one(
     parser: &Box<impl Parser + Send + Sync + ?Sized>,
     file: &PathBuf,
 ) -> Result<Option<ParseData>> {
-    match context.collation.get_resource(file).unwrap() {
+
+    let collation = &*context.collation.read().unwrap();
+    match collation.get_resource(file).unwrap() {
         Resource::Page { ref target } => {
-            if let Some(page) = context.collation.resolve(file) {
+            if let Some(page) = collation.resolve(file) {
                 let page = &*page.read().unwrap();
 
                 match target.operation {
@@ -42,7 +44,7 @@ pub async fn one(
                         //let dest = context.collation.get_path().join(&rel);
 
                         let dest =
-                            target.get_output(context.collation.get_path());
+                            target.get_output(collation.get_path());
 
                         return parse(
                             context,
@@ -73,13 +75,14 @@ pub async fn resource(
     file: &PathBuf,
     target: &ResourceTarget,
 ) -> Result<()> {
+    let collation = &*context.collation.read().unwrap();
     match target.operation {
         ResourceOperation::Noop => Ok(()),
         ResourceOperation::Copy => {
-            copy(file, &target.get_output(context.collation.get_path())).await
+            copy(file, &target.get_output(collation.get_path())).await
         }
         ResourceOperation::Link => {
-            link(file, &target.get_output(context.collation.get_path())).await
+            link(file, &target.get_output(collation.get_path())).await
         }
         _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
     }
@@ -158,7 +161,9 @@ pub async fn parse(
     );
 
     let standalone = data.standalone.is_some();
-    let lang = ctx.collation.get_lang();
+
+    let collation = &*ctx.collation.read().unwrap();
+    let lang = collation.get_lang();
     let page_data = CollatedPage { page: data, lang };
 
     let mut s = if minify_html {

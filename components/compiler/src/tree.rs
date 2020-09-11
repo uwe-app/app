@@ -15,7 +15,10 @@ pub struct ListOptions<'a> {
 pub fn parent<'a>(
     ctx: &'a BuildContext,
     file: &PathBuf,
-) -> Option<&'a Arc<RwLock<Page>>> {
+) -> Option<Arc<RwLock<Page>>> {
+
+    let collation = ctx.collation.read().unwrap();
+
     let types = ctx.options.settings.types.as_ref().unwrap();
     let render_types = types.render();
 
@@ -33,8 +36,8 @@ pub fn parent<'a>(
         let mut parent = p.join(config::INDEX_STEM);
         for ext in render_types.iter() {
             parent.set_extension(ext);
-            if let Some(ref page) = ctx.collation.resolve(&parent) {
-                return Some(page);
+            if let Some(ref page) = collation.resolve(&parent) {
+                return Some(Arc::clone(page));
             }
         }
     }
@@ -45,8 +48,11 @@ pub fn parent<'a>(
 pub fn ancestors<'a>(
     ctx: &'a BuildContext,
     file: &PathBuf,
-) -> Vec<&'a Arc<RwLock<Page>>> {
-    let mut pages: Vec<&'a Arc<RwLock<Page>>> = Vec::new();
+) -> Vec<Arc<RwLock<Page>>> {
+
+    let collation = ctx.collation.read().unwrap();
+
+    let mut pages: Vec<Arc<RwLock<Page>>> = Vec::new();
     let types = ctx.options.settings.types.as_ref().unwrap();
     let render_types = types.render();
 
@@ -61,18 +67,20 @@ pub fn ancestors<'a>(
     };
 
     for p in file.ancestors().skip(skip) {
-        if let Some(ref page) = ctx.collation.resolve(&p.to_path_buf()) {
-            pages.push(page);
+        if let Some(ref page) = collation.resolve(&p.to_path_buf()) {
+            pages.push(Arc::clone(page));
             continue;
         }
 
         let mut parent = p.join(config::INDEX_STEM);
+
         for ext in render_types.iter() {
             parent.set_extension(ext);
-            if let Some(ref page) = ctx.collation.resolve(&parent) {
-                pages.push(page);
+            if let Some(ref page) = collation.resolve(&parent) {
+                pages.push(Arc::clone(page));
             }
         }
+    
         if p == ctx.options.source {
             break;
         }
@@ -84,17 +92,13 @@ pub fn ancestors<'a>(
 pub fn listing<'a>(
     ctx: &'a BuildContext,
     list: &'a ListOptions,
-) -> Result<Vec<&'a Arc<RwLock<Page>>>> {
+) -> Result<Vec<Arc<RwLock<Page>>>> {
+
     let depth = list.dir.components().count() + list.depth;
 
-    //let pages = ctx
-    //.collation
-    //.pages
-    ////.get(&ctx.options.locales.fallback)
-    //.unwrap();
+    let collation = ctx.collation.read().unwrap();
 
-    let keys = ctx
-        .collation
+    let keys = collation
         .pages()
         .filter(|(k, _)| {
             let key_count = k.components().count();
@@ -113,7 +117,10 @@ pub fn listing<'a>(
 
     let mut values = keys
         .iter()
-        .map(|k| ctx.collation.resolve(*k).unwrap())
+        .map(|k| {
+            //let collation = &*ctx.collation.read().unwrap();
+            Arc::clone(collation.resolve(*k).unwrap())
+        })
         .collect::<Vec<_>>();
 
     if let Some(ref sort_key) = list.sort {
@@ -132,5 +139,6 @@ pub fn listing<'a>(
     }
 
     Ok(values)
+    
     //Ok(vec![])
 }
