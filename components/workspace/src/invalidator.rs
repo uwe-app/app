@@ -4,10 +4,8 @@ use std::path::PathBuf;
 use config::{FileInfo, FileType};
 use datasource::{self, DataSourceMap};
 
-//use compiler::context;
-
 use crate::{
-    renderer::{RenderFilter, RenderType},
+    renderer::{RenderOptions, RenderFilter, RenderTarget},
     Error, Project, Result,
 };
 
@@ -427,7 +425,7 @@ impl<'a> Invalidator<'a> {
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
         self.project
-            .render(RenderType::All, RenderFilter::All)
+            .render(Default::default())
             .await?;
         Ok(())
     }
@@ -445,9 +443,11 @@ impl<'a> Invalidator<'a> {
         };
 
         // TODO: reload the collated page data before compiing!
+        //
+        let options = RenderOptions::new_file_lang(file, lang.to_string());
 
         self.project
-            .render(RenderType::File(file), RenderFilter::One(lang.to_string()))
+            .render(options)
             .await?;
 
         Ok(())

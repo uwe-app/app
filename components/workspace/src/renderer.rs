@@ -20,6 +20,32 @@ use search::{
 
 use crate::{hook, manifest::Manifest, Result};
 
+#[derive(Clone, Default)]
+pub struct RenderOptions {
+    pub target: RenderTarget,
+    pub filter: RenderFilter,
+}
+
+impl RenderOptions {
+    pub fn new_file_lang(file: PathBuf, lang: String) -> Self {
+        Self{ target: RenderTarget::File(file), filter: RenderFilter::One(lang) }
+    }
+}
+
+#[derive(Clone)]
+pub enum RenderTarget {
+    /// Render everything for this locale.
+    All,
+    /// Render a single file.
+    File(PathBuf),
+}
+
+impl Default for RenderTarget {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
 #[derive(Clone)]
 pub enum RenderFilter {
     /// Render every locale.
@@ -28,12 +54,10 @@ pub enum RenderFilter {
     One(LocaleName),
 }
 
-#[derive(Clone)]
-pub enum RenderType {
-    /// Render everything for this locale.
-    All,
-    /// Render a single file.
-    File(PathBuf),
+impl Default for RenderFilter {
+    fn default() -> Self {
+        Self::All
+    }
 }
 
 #[derive(Debug, Default)]
@@ -69,15 +93,15 @@ impl Renderer {
     pub async fn render(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
-        render_type: RenderType,
+        render_target: RenderTarget,
     ) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
 
-        match render_type {
-            RenderType::All => {
+        match render_target {
+            RenderTarget::All => {
                 self.build(parser, &mut output).await?;
             }
-            RenderType::File(ref path) => {
+            RenderTarget::File(ref path) => {
                 self.one(parser, path).await?;
             }
         }

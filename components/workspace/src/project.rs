@@ -24,7 +24,7 @@ use locale::Locales;
 
 use crate::{
     manifest::Manifest,
-    renderer::{CompilerInput, RenderFilter, RenderType, Renderer, Sources},
+    renderer::{CompilerInput, RenderOptions, RenderFilter, RenderTarget, Renderer, Sources},
     Error, Result,
 };
 
@@ -470,8 +470,9 @@ impl Project {
     /// Render the project.
     pub(crate) async fn render(
         &self,
-        render_type: RenderType,
-        render_filter: RenderFilter,
+        render_options: RenderOptions,
+        //render_type: RenderTarget,
+        //render_filter: RenderFilter,
     ) -> Result<ProjectResult> {
         let mut result: ProjectResult = Default::default();
 
@@ -482,7 +483,7 @@ impl Project {
             .zip(self.renderers.iter())
             .filter(|(_, r)| {
                 let language = r.info.context.collation.get_lang();
-                match render_filter {
+                match render_options.filter {
                     RenderFilter::One(ref lang) => language == lang.as_str(),
                     RenderFilter::All => true,
                 }
@@ -494,7 +495,7 @@ impl Project {
                 renderer.info.context.collation.get_path().display()
             );
 
-            let mut res = renderer.render(parser, render_type.clone()).await?;
+            let mut res = renderer.render(parser, render_options.target.clone()).await?;
             if let Some(url) = res.sitemap.take() {
                 result.sitemaps.push(url);
             }
@@ -685,7 +686,7 @@ pub async fn compile<P: AsRef<Path>>(
         let state = builder.build()?;
 
         // Render all the languages
-        let result = state.render(RenderType::All, RenderFilter::All).await?;
+        let result = state.render(Default::default()).await?;
 
         // Write the robots file containing any
         // generated sitemaps
