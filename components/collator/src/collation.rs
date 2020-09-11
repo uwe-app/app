@@ -32,6 +32,10 @@ impl Collation {
     pub fn get_resource(&self, file: &PathBuf) -> Option<&Resource> {
         self.fallback.all.get(file)
     }
+
+    pub fn get_graph(&self) -> &Graph {
+        &self.locale.graph 
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -85,7 +89,7 @@ pub struct CollateInfo {
 #[derive(Debug, Default, Clone)]
 pub struct Graph {
     /// List of pages with menus that need to be compiled.
-    pub(crate) menus: HashMap<MenuReference, Vec<Arc<PathBuf>>>,
+    pub menus: HashMap<MenuReference, Vec<Arc<PathBuf>>>,
 }
 
 #[derive(Debug, Default, Clone)]

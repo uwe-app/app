@@ -24,6 +24,7 @@ use locale::Locales;
 
 use crate::{
     manifest::Manifest,
+    menu,
     renderer::{CompilerInput, RenderOptions, RenderFilter, RenderTarget, Renderer, Sources},
     Error, Result,
 };
@@ -391,12 +392,16 @@ impl<'a> ProjectBuilder {
         let options = Arc::new(self.options);
 
         // Get a map of collations keyed by locale wrapper
-        let collations = self.collations.build()?;
+        let mut collations = self.collations.build()?;
 
         let locales = Arc::new(self.locales);
 
         let mut renderers: Vec<Renderer> = Vec::new();
         let mut parsers: Vec<Box<dyn Parser + Send + Sync>> = Vec::new();
+
+        //collations.iter_mut().try_for_each(|collation| {
+            //menu::compile(&config, &options, &locales, collation)
+        //})?;
 
         collations.into_iter().try_for_each(|collation| {
             let context = BuildContext {

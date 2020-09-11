@@ -74,6 +74,7 @@ mod hook;
 mod invalidator;
 pub mod lock;
 mod manifest;
+mod menu;
 mod options;
 mod project;
 mod renderer;
