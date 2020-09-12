@@ -133,6 +133,10 @@ pub trait LayoutCollate {
 pub trait LinkCollate {
     fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>>;
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>>;
+
+    /// Normalize a URL path so that it begins with a leading slash 
+    /// and is given an `index.html` suffix if it ends with a slash.
+    fn normalize<S: AsRef<str>>(&self, s: S) -> String;
 }
 
 impl LinkCollate for LinkMap {
@@ -142,6 +146,18 @@ impl LinkCollate for LinkMap {
 
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
         self.sources.get(key)
+    }
+
+    fn normalize<S: AsRef<str>>(&self, s: S) -> String {
+        let mut s = s.as_ref().to_string();
+        if !s.starts_with("/") {
+            s = format!("/{}", s);
+        }
+        // We got a hint with the trailing slash that we should look for an index page
+        if s != "/" && s.ends_with("/") {
+            s.push_str(config::INDEX_HTML);
+        }
+        s
     }
 }
 
@@ -218,6 +234,11 @@ impl LinkCollate for Collation {
             .get_link_source(key)
             .or(self.fallback.get_link_source(key))
     }
+
+    fn normalize<S: AsRef<str>>(&self, s: S) -> String {
+        self.locale.normalize(s)
+    }
+
 }
 
 impl Collate for CollateInfo {
@@ -293,6 +314,10 @@ impl LinkCollate for CollateInfo {
 
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
         self.links.get_link_source(key)
+    }
+
+    fn normalize<S: AsRef<str>>(&self, s: S) -> String {
+        self.links.normalize(s)
     }
 }
 
