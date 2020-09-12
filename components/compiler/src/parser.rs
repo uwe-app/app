@@ -150,6 +150,12 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
         self.handlebars.register_helper(
+            "menu",
+            Box::new(helpers::menu::Menu {
+                context: Arc::clone(&self.context),
+            }),
+        );
+        self.handlebars.register_helper(
             "children",
             Box::new(helpers::children::Children {
                 context: Arc::clone(&self.context),

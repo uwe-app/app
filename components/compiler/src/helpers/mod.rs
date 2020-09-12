@@ -18,6 +18,7 @@ pub mod link;
 pub mod livereload;
 pub mod markdown;
 pub mod matcher;
+pub mod menu;
 pub mod parent;
 pub mod partial;
 pub mod random;
