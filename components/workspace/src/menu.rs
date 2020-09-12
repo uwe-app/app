@@ -44,7 +44,7 @@ pub fn compile(
             MenuReference::File { ref file, ref name } => {
                 let file = options.resolve_source(file);
                 let page = Page::new(&context.config, &context.options, &file)?;
-                let data = CollatedPage { page: &page, lang };
+                let data = CollatedPage::new(&context.config, &page, lang);
                 result = parser.parse(&file, data, true)?;
 
                 if let Some(ext) = file.extension() {

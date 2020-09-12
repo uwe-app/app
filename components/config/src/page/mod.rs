@@ -11,6 +11,7 @@ use serde_with::skip_serializing_none;
 
 use crate::{
     Result,
+    date::DateConfig,
     indexer::QueryList, script::ScriptFile,
     style::StyleFile, Config, Error, RuntimeOptions,
     utils::toml_datetime::from_toml_datetime,
@@ -30,11 +31,20 @@ pub(crate) mod paginate;
 
 pub use paginate::{PaginateInfo, PageLink};
 
+#[skip_serializing_none]
 #[derive(Serialize)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct CollatedPage<'a> {
     #[serde(flatten)]
     pub page: &'a Page,
     pub lang: &'a str,
+    pub date: &'a Option<DateConfig>,
+}
+
+impl<'a> CollatedPage<'a> {
+    pub fn new(config: &'a Config, page: &'a Page, lang: &'a str) -> Self {
+        Self {page, lang, date: &config.date} 
+    }
 }
 
 #[skip_serializing_none]
@@ -218,10 +228,10 @@ impl Page {
         self.canonical = Some(options.settings.get_host_url(config));
 
         // Some useful shortcuts
-        if let Some(ref date) = config.date {
-            self.extra
-                .insert("date-formats".to_string(), json!(date.formats));
-        }
+        //if let Some(ref date) = config.date {
+            //self.extra
+                //.insert("date-formats".to_string(), json!(date.formats));
+        //}
 
         Ok(())
     }

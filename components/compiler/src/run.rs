@@ -164,7 +164,7 @@ pub async fn parse(
 
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
-    let page_data = CollatedPage { page: data, lang };
+    let page_data = CollatedPage::new(&ctx.config, data, lang);
 
     let mut s = if minify_html {
         minify::html(parser.parse(file, page_data, standalone)?)
