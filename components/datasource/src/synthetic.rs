@@ -34,10 +34,12 @@ fn create_synthetic(
     //};
     //let dest = file_info.destination(&file_opts)?;
     //
-    let dest = options.destination().build(&source)?;
+    let dest = options.destination()
+        .exact(true)
+        .build(&source)?;
 
     let mut writer = page_info.write().unwrap();
-    writer.seal(&dest, config, options, &source, Some(template))?;
+    writer.seal(config, options, &source, &dest, Some(template))?;
     drop(writer);
 
     // Configure a link for the synthetic page

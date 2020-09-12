@@ -158,10 +158,10 @@ impl Page {
             .build(file)?;
 
         page.seal(
-            &destination,
             config,
             options,
             &file,
+            &destination,
             None,
         )?;
 
@@ -189,10 +189,10 @@ impl Page {
 
     pub fn seal(
         &mut self,
-        output: &PathBuf,
         config: &Config,
         options: &RuntimeOptions,
         source: &PathBuf,
+        output: &PathBuf,
         template: Option<PathBuf>,
     ) -> Result<()> {
         self.host = Some(config.host.clone());

@@ -136,10 +136,10 @@ impl<'a> PageBuilder<'a> {
             .build(&self.path)?;
 
         self.page.seal(
-            &self.destination,
             self.config,
             self.options,
             &self.path,
+            &self.destination,
             None,
         )?;
 

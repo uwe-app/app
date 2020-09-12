@@ -483,10 +483,10 @@ impl CollateInfo {
                     .build(&source)?;
 
                 sub_page.seal(
-                    &dest,
                     config,
                     options,
                     &source,
+                    &dest,
                     Some(template),
                 )?;
 
