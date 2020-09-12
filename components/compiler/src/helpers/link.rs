@@ -5,9 +5,8 @@ use handlebars::*;
 use log::debug;
 use serde_json::json;
 
-//use config::FileInfo;
+use collator::LinkCollate;
 
-use crate::lookup;
 use crate::BuildContext;
 
 #[derive(Clone)]
@@ -44,8 +43,6 @@ impl HelperDef for Link {
             })?
             .to_string();
 
-        //let types = self.context.options.settings.types.as_ref().unwrap();
-
         let opts = &self.context.options;
         let path = Path::new(&base_path);
 
@@ -62,6 +59,8 @@ impl HelperDef for Link {
                     "Type error in `link`, expected string parameter",
                 )
             })?;
+
+        let collation = self.context.collation.read().unwrap();
 
         let link_config = self.context.config.link.as_ref().unwrap();
         let include_index = opts.settings.should_include_index();
@@ -92,7 +91,7 @@ impl HelperDef for Link {
         if let Some(verify) = link_config.verify {
             if verify {
                 //println!("Verify with input {:?}", &input);
-                if !lookup::exists(&self.context, &input) {
+                if !collation.find_link(&input).is_some() {
                     return Err(RenderError::new(format!(
                         "Type error for `link`, missing url {}",
                         input

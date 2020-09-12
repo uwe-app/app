@@ -70,13 +70,12 @@ type Result<T> = std::result::Result<T, Error>;
 mod compile;
 mod context;
 mod helpers;
-mod lookup;
 mod markdown;
 pub mod parser;
 pub mod run;
 mod tree;
 
 pub use compile::compile;
-pub use context::*;
+pub use context::{CompilerOutput, BuildContext};
 pub use run::ParseData;
 pub use markdown::render_markdown;

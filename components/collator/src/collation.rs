@@ -137,6 +137,9 @@ pub trait LinkCollate {
     /// Normalize a URL path so that it begins with a leading slash 
     /// and is given an `index.html` suffix if it ends with a slash.
     fn normalize<S: AsRef<str>>(&self, s: S) -> String;
+
+    /// Try to find a source file corresponging to a link URL path.
+    fn find_link(&self, href: &str) -> Option<PathBuf>;
 }
 
 impl LinkCollate for LinkMap {
@@ -158,6 +161,22 @@ impl LinkCollate for LinkMap {
             s.push_str(config::INDEX_HTML);
         }
         s
+    }
+
+    fn find_link(&self, href: &str) -> Option<PathBuf> {
+        let mut key = self.normalize(href);
+        if let Some(path) = self.get_link(&key) {
+            return Some(path.to_path_buf());
+        } else {
+            // Sometimes we have directory references without a trailing slash
+            // so try again with an index page
+            key.push('/');
+            key.push_str(config::INDEX_HTML);
+            if let Some(path) = self.get_link(&key) {
+                return Some(path.to_path_buf());
+            }
+        }
+        None
     }
 }
 
@@ -239,6 +258,9 @@ impl LinkCollate for Collation {
         self.locale.normalize(s)
     }
 
+    fn find_link(&self, href: &str) -> Option<PathBuf> {
+        self.locale.find_link(href)
+    }
 }
 
 impl Collate for CollateInfo {
@@ -318,6 +340,10 @@ impl LinkCollate for CollateInfo {
 
     fn normalize<S: AsRef<str>>(&self, s: S) -> String {
         self.links.normalize(s)
+    }
+
+    fn find_link(&self, href: &str) -> Option<PathBuf> {
+        self.links.find_link(href)
     }
 }
 
