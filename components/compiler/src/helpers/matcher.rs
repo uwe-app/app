@@ -1,8 +1,9 @@
-use std::path::Path;
 use std::sync::Arc;
 
-use crate::BuildContext;
 use handlebars::*;
+use serde_json::json;
+
+use crate::BuildContext;
 
 #[derive(Clone)]
 pub struct Match {
@@ -18,66 +19,71 @@ impl HelperDef for Match {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        // TODO: use pre-computed href field!!!
 
-        let base_path = rc
-            .evaluate(ctx, "@root/file.target")?
+        // TODO: support block inner template syntax
+
+        // Determine the href for this page
+        let href = rc
+            .evaluate(ctx, "@root/href")?
             .as_json()
             .as_str()
             .ok_or_else(|| {
                 RenderError::new(
-                    "Type error for `file.target`, string expected",
+                    "Type error for `match` helper, unable to get page `href`",
                 )
             })?
+            .trim_end_matches("/")
             .to_string();
 
-        let path = Path::new(&base_path).to_path_buf();
+        // Get the target match destination and strip any trailing slash
+        let target = h
+            .params()
+            .get(0)
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `match`, expected parameter at index 0",
+                )
+            })?
+            .value()
+            .as_str()
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `match`, expected string parameter at index 0",
+                )
+            })?
+            .trim_end_matches("/");
 
-        if h.params().len() != 2 && h.params().len() != 3 {
-            return Err(RenderError::new(
-                "Type error for `match`, two parameters expected",
-            ));
-        }
+        // Get the output to write when a match is detected
+        let output = h
+            .params()
+            .get(1)
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `match`, expected parameter at index 1",
+                )
+            })?
+            .value()
+            .as_str()
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error in `match`, expected string parameter at index 1",
+                )
+            })?;
 
-        let mut target = "".to_owned();
-        let mut output = "".to_owned();
-        let mut exact = false;
+        // Determine if an exact match is required
+        let exact = h
+            .hash_get("exact")
+            .map(|v| v.value())
+            .or(Some(&json!(false)))
+            .and_then(|v| v.as_bool())
+            .ok_or(RenderError::new(
+                "Type error for `match` helper, hash parameter `exact` must be a boolean",
+            ))?;
 
-        if let Some(p) = h.params().get(0) {
-            if !p.is_value_missing() {
-                target = p.value().as_str().unwrap_or("").to_string();
-            }
-        }
-
-        if target.ends_with("/") {
-            target = target.trim_end_matches("/").to_string();
-        }
-
-        if let Some(p) = h.params().get(1) {
-            if !p.is_value_missing() {
-                output = p.value().as_str().unwrap_or("").to_string();
-            }
-        }
-
-        if let Some(p) = h.params().get(2) {
-            if !p.is_value_missing() {
-                exact = p.value().as_bool().unwrap_or(true);
-            }
-        }
-
-        let mut pth = "".to_string();
-        pth.push('/');
-        pth.push_str(&path.to_string_lossy().into_owned());
-        if pth.ends_with(config::INDEX_HTML) {
-            pth = pth.trim_end_matches(config::INDEX_HTML).to_string();
-        }
-        if pth.ends_with("/") {
-            pth = pth.trim_end_matches("/").to_string();
-        }
-
-        let matches = (exact && pth == target)
-            || (!exact && target != "" && pth.starts_with(&target))
-            || (!exact && target == "" && pth == "");
+        // Perform the match logic
+        let matches = (exact && href == target)
+            || (!exact && target != "" && href.starts_with(&target))
+            || (!exact && target == "" && href == "");
 
         if matches {
             out.write(&output)?;

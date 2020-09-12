@@ -10,10 +10,11 @@ use serde_with::skip_serializing_none;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileContext {
     pub source: PathBuf,
-    pub target: PathBuf,
     pub template: PathBuf,
     pub name: Option<String>,
     pub modified: DateTime<Utc>,
+    #[serde(skip)]
+    pub target: PathBuf,
 }
 
 impl FileContext {
