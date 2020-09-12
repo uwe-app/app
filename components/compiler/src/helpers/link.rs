@@ -23,6 +23,7 @@ impl HelperDef for Link {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let abs = h
             .hash_get("abs")
             .map(|v| v.value())
@@ -125,44 +126,6 @@ impl HelperDef for Link {
         debug!("Link {:?}", value);
 
         out.write(&value)?;
-
-        /*
-        if let Ok(rel) = path.strip_prefix(base) {
-            let value = if make_relative {
-                let up = "../";
-                let mut value: String = "".to_string();
-                if let Some(p) = rel.parent() {
-                    if opts.settings.should_rewrite_index() && FileInfo::is_clean(&path, types) {
-                        value.push_str(up);
-                    }
-                    for _ in p.components() {
-                        value.push_str(up);
-                    }
-                }
-
-                value.push_str(&input);
-
-                if include_index && (value.ends_with("/") || value == "") {
-                    value.push_str(config::INDEX_HTML);
-                }
-
-                if !opts.settings.should_rewrite_index() && value == "" {
-                    value = up.to_string();
-                }
-                value
-            } else {
-                format!("/{}", input)
-            };
-
-            debug!("Link {:?}", value);
-
-            out.write(&value)?;
-        } else {
-            return Err(RenderError::new(
-                "Type error for `link`, file is outside source!",
-            ));
-        }
-        */
 
         Ok(())
     }

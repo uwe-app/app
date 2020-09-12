@@ -153,7 +153,6 @@ impl LinkCollate for LinkMap {
 
     fn normalize<S: AsRef<str>>(&self, s: S) -> String {
         let mut s = s.as_ref().to_string();
-
         if !s.starts_with("/") {
             s = format!("/{}", s);
         }
@@ -519,16 +518,6 @@ impl CollateInfo {
                 if let Some(val) = sub_page.rewrite_index {
                     rewrite_index = val;
                 }
-
-                // Must seal() again so the file paths are correct
-                //let mut file_info =
-                    //FileInfo::new(options, &source, false);
-                //let file_opts = FileOptions {
-                    //rewrite_index,
-                    //base_href: &options.settings.base_href,
-                    //..Default::default()
-                //};
-                //let dest = file_info.destination(&file_opts)?;
 
                 let dest = options.destination()
                     .rewrite_index(rewrite_index)

@@ -113,8 +113,6 @@ impl<'a> PageBuilder<'a> {
 
     /// Seal the page with file context information.
     pub fn seal(mut self) -> Result<Self> {
-        //let mut file_info =
-            //FileInfo::new(self.options, &self.path, false);
 
         let mut rewrite_index = self.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
@@ -122,14 +120,7 @@ impl<'a> PageBuilder<'a> {
             rewrite_index = val;
         }
 
-        //let file_opts = FileOptions {
-            //rewrite_index,
-            //base_href: &self.options.settings.base_href,
-            //..Default::default()
-        //};
-
         self.rewrite_index = rewrite_index;
-        //self.destination = file_info.destination(&file_opts)?;
         self.destination = self.options
             .destination()
             .rewrite_index(rewrite_index)

@@ -280,18 +280,8 @@ fn add_other(
     options: &RuntimeOptions,
     key: Arc<PathBuf>,
 ) -> Result<()> {
-    //let dest = {
-        //let mut info = FileInfo::new(&options, &key, false);
-        //let file_opts = FileOptions {
-            //exact: true,
-            //base_href: &options.settings.base_href,
-            //..Default::default()
-        //};
-        //info.destination(&file_opts)?
-    //};
 
-    let dest = options.destination()
-        .build(&key)?;
+    let dest = options.destination().build(&key)?;
 
     let href = to_href(&key, options, false, None)?;
     Ok(info.add_file(key, dest, href, config, options)?)

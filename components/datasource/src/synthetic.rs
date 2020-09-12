@@ -26,14 +26,6 @@ fn create_synthetic(
     rewrite_index: bool,
 ) -> Result<()> {
 
-    //let mut file_info = FileInfo::new(options, &source, true);
-    //let file_opts = FileOptions {
-        //rewrite_index,
-        //base_href: &options.settings.base_href,
-        //..Default::default()
-    //};
-    //let dest = file_info.destination(&file_opts)?;
-    //
     let dest = options.destination()
         .exact(true)
         .build(&source)?;

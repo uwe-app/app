@@ -123,7 +123,6 @@ pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
-//pub use page::file::{FileInfo, FileOptions};
 pub use page::menu::MenuReference;
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;

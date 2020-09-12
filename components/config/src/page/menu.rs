@@ -36,6 +36,9 @@ impl MenuEntry {
         Ok(())
     }
 
+    /// Stores the hash map key as the name so that after 
+    /// the menu is compiled it can be re-assigned to the 
+    /// correct page menu entry.
     pub fn set_name(&mut self, key: &str) {
         match self.definition {
             MenuReference::File { ref mut name, .. } => {
