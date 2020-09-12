@@ -7,8 +7,8 @@ use once_cell::sync::OnceCell;
 
 use collator::Collate;
 use compiler::{parser::Parser, BuildContext, render_markdown};
-use config::{Page, CollatedPage, Config, RuntimeOptions, MenuReference};
-use locale::Locales;
+use config::{Page, CollatedPage, MenuReference};
+//use locale::Locales;
 
 use crate::Result;
 
@@ -38,10 +38,13 @@ pub fn compile(
     // as &'static lifetimes, see: MenuEntry
     let mut compiled = cache().write().unwrap();
 
-    for (menu, paths) in menus {
+    for (menu, _) in menus {
+
+        #[allow(unused_assignments)]
         let mut result: String = Default::default();
+
         match menu {
-            MenuReference::File { ref file, ref name } => {
+            MenuReference::File { ref file, .. } => {
                 let file = options.resolve_source(file);
                 let page = Page::new(&context.config, &context.options, &file)?;
                 let data = CollatedPage::new(&context.config, &page, lang);

@@ -25,7 +25,7 @@ use locale::Locales;
 use crate::{
     manifest::Manifest,
     menu,
-    renderer::{CompilerInput, RenderOptions, RenderFilter, RenderTarget, Renderer, Sources},
+    renderer::{CompilerInput, RenderOptions, RenderFilter, Renderer, Sources},
     Error, Result,
 };
 

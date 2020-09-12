@@ -6,7 +6,7 @@ use chrono::prelude::*;
 pub use jsonfeed::{Attachment, Author, Feed};
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
@@ -226,12 +226,6 @@ impl Page {
 
         self.file = Some(file_context);
         self.canonical = Some(options.settings.get_host_url(config));
-
-        // Some useful shortcuts
-        //if let Some(ref date) = config.date {
-            //self.extra
-                //.insert("date-formats".to_string(), json!(date.formats));
-        //}
 
         Ok(())
     }
