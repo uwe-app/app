@@ -153,6 +153,7 @@ impl LinkCollate for LinkMap {
 
     fn normalize<S: AsRef<str>>(&self, s: S) -> String {
         let mut s = s.as_ref().to_string();
+
         if !s.starts_with("/") {
             s = format!("/{}", s);
         }
@@ -259,7 +260,7 @@ impl LinkCollate for Collation {
     }
 
     fn find_link(&self, href: &str) -> Option<PathBuf> {
-        self.locale.find_link(href)
+        self.locale.find_link(href).or(self.fallback.find_link(href))
     }
 }
 
