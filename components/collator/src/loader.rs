@@ -3,7 +3,7 @@ use std::path::Path;
 use inflector::Inflector;
 use log::warn;
 
-use config::{Config, FileInfo, FileType, Page, RuntimeOptions};
+use config::{Config, FileType, Page, RuntimeOptions};
 
 use crate::{Error, Result};
 
@@ -63,7 +63,7 @@ pub fn compute<P: AsRef<Path>>(
     }
 
     if frontmatter {
-        let file_type = FileInfo::get_type(f.as_ref(), &opts.settings);
+        let file_type = opts.get_type(f.as_ref());
         let mut conf: frontmatter::Config = Default::default();
         match file_type {
             FileType::Markdown => {

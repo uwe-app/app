@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use config::{FileInfo, FileType};
+use config::FileType;
 use datasource::{self, DataSourceMap};
 
 use crate::{
@@ -279,10 +279,7 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     } else {
-                        let file_type = FileInfo::get_type(
-                            &path,
-                            &self.project.options.settings,
-                        );
+                        let file_type = self.project.options.get_type(&path);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -373,7 +370,7 @@ impl<'a> Invalidator<'a> {
                     Action::BookSource(base, _) => {
                         // Make the path relative to the project source
                         // as the notify crate gives us an absolute path
-                        let file = FileInfo::relative_to(
+                        let file = options.relative_to(
                             base,
                             &options.source,
                             &options.source,
@@ -404,7 +401,7 @@ impl<'a> Invalidator<'a> {
                         Action::Page(path) | Action::File(path) => {
                             // Make the path relative to the project source
                             // as the notify crate gives us an absolute path
-                            let file = FileInfo::relative_to(
+                            let file = self.project.options.relative_to(
                                 path,
                                 &self.project.options.source,
                                 &self.project.options.source,

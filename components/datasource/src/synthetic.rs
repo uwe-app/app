@@ -8,7 +8,7 @@ use serde_json::json;
 use collator::{to_href, Collate, CollateInfo};
 use config::feed::{ChannelConfig, FeedConfig};
 use config::{
-    Config, FileInfo, FileOptions, Page, PageLink, PaginateInfo, RuntimeOptions,
+    Config, Page, PageLink, PaginateInfo, RuntimeOptions,
 };
 
 use locale::Locales;
@@ -25,17 +25,19 @@ fn create_synthetic(
     page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
-    let mut file_info = FileInfo::new(options, &source, true);
 
-    let file_opts = FileOptions {
-        rewrite_index,
-        base_href: &options.settings.base_href,
-        ..Default::default()
-    };
+    //let mut file_info = FileInfo::new(options, &source, true);
+    //let file_opts = FileOptions {
+        //rewrite_index,
+        //base_href: &options.settings.base_href,
+        //..Default::default()
+    //};
+    //let dest = file_info.destination(&file_opts)?;
+    //
+    let dest = options.destination().build(&source)?;
 
     let mut writer = page_info.write().unwrap();
-    let dest = file_info.destination(&file_opts)?;
-    writer.seal(&dest, config, options, &file_info, Some(template))?;
+    writer.seal(&dest, config, options, &source, Some(template))?;
     drop(writer);
 
     // Configure a link for the synthetic page

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use config::indexer::QueryList;
-use config::{Config, FileInfo, FileOptions, Page, RuntimeOptions, MenuReference};
+use config::{Config, Page, RuntimeOptions, MenuReference};
 use locale::LocaleName;
 
 use crate::{
@@ -469,19 +469,24 @@ impl CollateInfo {
                 }
 
                 // Must seal() again so the file paths are correct
-                let mut file_info =
-                    FileInfo::new(options, &source, false);
-                let file_opts = FileOptions {
-                    rewrite_index,
-                    base_href: &options.settings.base_href,
-                    ..Default::default()
-                };
-                let dest = file_info.destination(&file_opts)?;
+                //let mut file_info =
+                    //FileInfo::new(options, &source, false);
+                //let file_opts = FileOptions {
+                    //rewrite_index,
+                    //base_href: &options.settings.base_href,
+                    //..Default::default()
+                //};
+                //let dest = file_info.destination(&file_opts)?;
+
+                let dest = options.destination()
+                    .rewrite_index(rewrite_index)
+                    .build(&source)?;
+
                 sub_page.seal(
                     &dest,
                     config,
                     options,
-                    &file_info,
+                    &source,
                     Some(template),
                 )?;
 

@@ -7,9 +7,18 @@ use crate::{
     Result,
     Config,
     ProfileSettings,
-    page::file::FileInfo,
+    RenderTypes,
     INDEX_STEM,
+    HTML,
 };
+
+#[derive(Debug, Clone)]
+pub enum FileType {
+    Markdown,
+    Template,
+    Unknown,
+}
+
 
 #[derive(Debug, Clone, Default)]
 pub struct RuntimeOptions {
@@ -26,6 +35,109 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
+
+    fn is_index<P: AsRef<Path>>(file: P) -> bool {
+        if let Some(nm) = file.as_ref().file_stem() {
+            if nm == INDEX_STEM {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn is_clean<P: AsRef<Path>>(&self, file: P, types: &RenderTypes) -> bool {
+        let target = file.as_ref().to_path_buf();
+        let result = target.clone();
+        return self.rewrite_index_file(target, result, types).is_some();
+    }
+
+    fn has_parse_file_match<P: AsRef<Path>>(
+        &self,
+        file: P,
+        types: &RenderTypes,
+    ) -> bool {
+        let path = file.as_ref();
+        let mut copy = path.to_path_buf();
+        for ext in types.render() {
+            copy.set_extension(ext);
+            if copy.exists() {
+                return true;
+            }
+        }
+        false
+    }
+
+    // FIXME: make this private again!
+    pub(crate) fn rewrite_index_file<P: AsRef<Path>, Q: AsRef<Path>>(
+        &self,
+        file: P,
+        result: Q,
+        types: &RenderTypes,
+    ) -> Option<PathBuf> {
+        let clean_target = file.as_ref();
+        if !RuntimeOptions::is_index(&clean_target) {
+            if let Some(parent) = clean_target.parent() {
+                if let Some(stem) = clean_target.file_stem() {
+                    let mut target = parent.to_path_buf();
+                    target.push(stem);
+                    target.push(INDEX_STEM);
+
+                    if !self.has_parse_file_match(&target, types) {
+                        let clean_result = result.as_ref().clone();
+                        if let Some(parent) = clean_result.parent() {
+                            if let Some(stem) = clean_result.file_stem() {
+                                let mut res = parent.to_path_buf();
+                                res.push(stem);
+                                res.push(INDEX_STEM);
+                                res.set_extension(HTML);
+                                return Some(res);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_type<P: AsRef<Path>>(
+        &self,
+        p: P,
+    ) -> FileType {
+        let types = &self.settings.types.as_ref().unwrap();
+        let file = p.as_ref();
+        if let Some(ext) = file.extension() {
+            let ext = ext.to_string_lossy().into_owned();
+            if types.render().contains(&ext) {
+                if types.markdown().contains(&ext) {
+                    return FileType::Markdown;
+                } else {
+                    return FileType::Template;
+                }
+            }
+        }
+        FileType::Unknown
+    }
+
+    pub fn is_page<P: AsRef<Path>>(&self, p: P) -> bool {
+        match self.get_type(p) {
+            FileType::Markdown | FileType::Template => true,
+            _ => false,
+        }
+    }
+
+    pub fn relative_to<P: AsRef<Path>>(
+        &self,
+        file: P,
+        base: P,
+        target: P,
+    ) -> Result<PathBuf> {
+        let f = file.as_ref().canonicalize()?;
+        let b = base.as_ref().canonicalize()?;
+        let t = target.as_ref().to_path_buf();
+        Ok(t.join(f.strip_prefix(b)?))
+    }
+
     pub fn get_canonical_url(
         &self,
         config: &Config,
@@ -63,6 +175,17 @@ impl RuntimeOptions {
         self.source.join(self.settings.locales.as_ref().unwrap())
     }
 
+    pub fn get_render_types(&self) -> &RenderTypes {
+        self.settings.types.as_ref().unwrap()
+    }
+
+    /// Convert a href path into a PathBuf relative to the source 
+    /// directory.
+    pub fn resolve_source(&self, href: &str) -> PathBuf {
+        self.source.join(
+            utils::url::to_path_separator(href.trim_start_matches("/")))
+    }
+
 
     pub fn relative<P: AsRef<Path>, B: AsRef<Path>>(
         &self,
@@ -79,7 +202,7 @@ impl RuntimeOptions {
         let up = "../";
         let mut value: String = "".to_string();
         if let Some(p) = rel.parent() {
-            if rewrite_index && FileInfo::is_clean(path.as_ref(), types) {
+            if rewrite_index && self.is_clean(path.as_ref(), types) {
                 value.push_str(up);
             }
             for _ in p.components() {
@@ -97,13 +220,6 @@ impl RuntimeOptions {
             value = up.to_string();
         }
         Ok(value)
-    }
-
-    /// Convert a href path into a PathBuf relative to the source 
-    /// directory.
-    pub fn resolve_source(&self, href: &str) -> PathBuf {
-        self.source.join(
-            utils::url::to_path_separator(href.trim_start_matches("/")))
     }
 
     // Attempt to get an absolute URL path for a page
@@ -169,6 +285,9 @@ impl RuntimeOptions {
         to_href(rel, options)
     }
 
+    pub fn destination(&self) -> DestinationBuilder {
+        DestinationBuilder::new(self) 
+    }
 }
 
 pub struct LinkOptions {
@@ -236,20 +355,109 @@ fn to_href<R: AsRef<Path>>(rel: R, options: LinkOptions) -> Result<String> {
     Ok(href)
 }
 
-// Attempt to get an absolute URL path
-// for an asset relative to a source.
-/*
-pub fn asset<F: AsRef<Path>, S: AsRef<Path>>(file: F, source: S, options: LinkOptions) -> Result<String> {
-    let file = file.as_ref();
-    let source = source.as_ref();
-    if !file.starts_with(source) {
-        return Err(
-            Error::PageOutsideSource(
-                file.to_path_buf(), source.to_path_buf()));
-    }
-    to_href(file.strip_prefix(source)?, options)
+#[derive(Debug)]
+pub struct DestinationBuilder<'a> {
+    pub options: &'a RuntimeOptions,
+    // Request a 1:1 output file
+    pub exact: bool,
+    // Rewrite to directory index.html file
+    pub rewrite_index: bool,
+    // A base href used to extract sub-directories
+    pub base_href: &'a Option<String>,
 }
-*/
+
+impl<'a> DestinationBuilder<'a> {
+
+    pub fn new(options: &'a RuntimeOptions) -> Self {
+        Self {
+            options,
+            exact: false,
+            rewrite_index: options.settings.should_rewrite_index(),
+            base_href: &options.settings.base_href,
+        } 
+    }
+
+    pub fn exact(mut self, exact: bool) -> Self {
+        self.exact = exact; 
+        self
+    }
+
+    pub fn rewrite_index(mut self, rewrite_index: bool) -> Self {
+        self.rewrite_index = rewrite_index; 
+        self
+    }
+
+    pub fn base_href(mut self, base_href: &'a Option<String>) -> Self {
+        self.base_href = base_href; 
+        self
+    }
+
+    // Build the output file path.
+    //
+    // Does not modify the file extension, rewrite the index of change the slug,
+    // this is used when we copy over files with a direct 1:1 correlation.
+    //
+    fn output(&self, pth:  &PathBuf) -> Result<PathBuf> {
+        //let pth = self.file.clone();
+
+        // NOTE: When watching files we can get absolute
+        // NOTE: paths passed for `file` even when `source`
+        // NOTE: is relative. This handles that case by making
+        // NOTE: the `source` absolute based on the current working
+        // NOTE: directory.
+        let mut src: PathBuf = self.options.source.clone();
+        if pth.is_absolute() && src.is_relative() {
+            if let Ok(cwd) = std::env::current_dir() {
+                src = cwd.clone();
+                src.push(&self.options.source);
+            }
+        }
+
+        let mut relative = pth.strip_prefix(src)?;
+        if let Some(ref base) = self.base_href {
+            if relative.starts_with(base) {
+                relative = relative.strip_prefix(base)?;
+            }
+        }
+
+        //let result = self.target.clone().join(relative);
+        return Ok(relative.to_path_buf());
+    }
+
+    // Build the destination file path and update the file extension.
+    pub fn build(&mut self, pth: &PathBuf) -> Result<PathBuf> {
+        let mut result = self.output(pth)?;
+        if !self.exact {
+            let file_type = self.options.get_type(pth);
+            match file_type {
+                FileType::Markdown | FileType::Template => {
+                    let settings = &self.options.settings;
+                    let types = settings.types.as_ref().unwrap();
+
+                    if let Some(ext) = pth.extension() {
+                        let ext = ext.to_string_lossy().into_owned();
+                        for (k, v) in types.map() {
+                            if ext == *k {
+                                result.set_extension(v);
+                                break;
+                            }
+                        }
+                    }
+
+                    if self.rewrite_index {
+                        if let Some(res) =
+                            self.options.rewrite_index_file(pth, &result, types)
+                        {
+                            result = res;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        return Ok(result);
+    }
+}
 
 #[cfg(test)]
 mod tests {

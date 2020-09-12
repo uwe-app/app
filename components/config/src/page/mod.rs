@@ -11,9 +11,8 @@ use serde_with::skip_serializing_none;
 
 use crate::{
     Result,
-    FileOptions,
     indexer::QueryList, script::ScriptFile,
-    style::StyleFile, Config, Error, FileInfo, RuntimeOptions,
+    style::StyleFile, Config, Error, RuntimeOptions,
     utils::toml_datetime::from_toml_datetime,
 };
 
@@ -24,7 +23,7 @@ use self::{
 };
 
 pub(crate) mod feed;
-pub(crate) mod file;
+//pub(crate) mod file;
 pub(crate) mod file_context;
 pub(crate) mod menu;
 pub(crate) mod paginate;
@@ -154,22 +153,15 @@ impl Page {
     pub fn new(config: &Config, options: &RuntimeOptions, file: &PathBuf) -> Result<Self> {
         let mut page: Page = Default::default();
 
-        let mut file_info =
-            FileInfo::new(options, file, false);
+        let destination = options
+            .destination()
+            .build(file)?;
 
-        let rewrite_index = options.settings.should_rewrite_index();
-        let file_opts = FileOptions {
-            rewrite_index,
-            base_href: &options.settings.base_href,
-            ..Default::default()
-        };
-
-        let destination = file_info.destination(&file_opts)?;
         page.seal(
             &destination,
             config,
             options,
-            &file_info,
+            &file,
             None,
         )?;
 
@@ -200,7 +192,7 @@ impl Page {
         output: &PathBuf,
         config: &Config,
         options: &RuntimeOptions,
-        info: &FileInfo,
+        source: &PathBuf,
         template: Option<PathBuf>,
     ) -> Result<()> {
         self.host = Some(config.host.clone());
@@ -208,11 +200,11 @@ impl Page {
         let template = if let Some(template) = template {
             template
         } else {
-            info.file.clone()
+            source.clone()
         };
 
         let mut file_context =
-            FileContext::new(info.file.clone(), output.clone(), template);
+            FileContext::new(source.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
         self.href = Some(options.absolute(&file_context.source, Default::default())?);

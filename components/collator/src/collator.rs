@@ -7,7 +7,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, FileInfo, FileOptions, RuntimeOptions};
+use config::{Config, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
@@ -144,7 +144,7 @@ async fn find(
 
                     let is_page = !is_data_source
                         && path.is_file()
-                        && FileInfo::is_page(&path, req.options);
+                        && req.options.is_page(&path);
 
                     if is_page {
                         if let Err(e) =
@@ -280,15 +280,18 @@ fn add_other(
     options: &RuntimeOptions,
     key: Arc<PathBuf>,
 ) -> Result<()> {
-    let dest = {
-        let mut info = FileInfo::new(&options, &key, false);
-        let file_opts = FileOptions {
-            exact: true,
-            base_href: &options.settings.base_href,
-            ..Default::default()
-        };
-        info.destination(&file_opts)?
-    };
+    //let dest = {
+        //let mut info = FileInfo::new(&options, &key, false);
+        //let file_opts = FileOptions {
+            //exact: true,
+            //base_href: &options.settings.base_href,
+            //..Default::default()
+        //};
+        //info.destination(&file_opts)?
+    //};
+
+    let dest = options.destination()
+        .build(&key)?;
 
     let href = to_href(&key, options, false, None)?;
     Ok(info.add_file(key, dest, href, config, options)?)
