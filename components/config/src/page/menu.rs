@@ -9,13 +9,39 @@ use crate::{
     utils::href::UrlPath,
 };
 
+#[derive(Debug)]
+pub enum MenuType {
+    Markdown,
+    Html,
+}
+
+impl Default for MenuType {
+    fn default() -> Self {
+        Self::Html
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct MenuResult {
+    pub kind: MenuType,
+    pub value: String,
+}
+
 #[skip_serializing_none]
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, Hash, Eq, PartialEq)]
 pub struct MenuEntry {
     #[serde(flatten, skip_serializing)]
     pub definition: MenuReference,
-    #[serde(skip_deserializing)]
-    pub result: &'static str,
+
+    /// Stores the hash map key as the name so that after 
+    /// the menu is compiled it can be re-assigned to the 
+    /// correct page menu entry.
+    #[serde(skip)]
+    pub name: String,
+
+    /// The compiled menu as HTML but before template parsing.
+    #[serde(skip)]
+    pub result: String,
 }
 
 impl MenuEntry {
@@ -35,20 +61,6 @@ impl MenuEntry {
         }
         Ok(())
     }
-
-    /// Stores the hash map key as the name so that after 
-    /// the menu is compiled it can be re-assigned to the 
-    /// correct page menu entry.
-    pub fn set_name(&mut self, key: &str) {
-        match self.definition {
-            MenuReference::File { ref mut name, .. } => {
-                *name = key.to_string();
-            }
-            MenuReference::Pages { ref mut name, .. } => {
-                *name = key.to_string();
-            }
-        } 
-    }
 }
 
 /// References the definition of a menu.
@@ -57,18 +69,14 @@ impl MenuEntry {
 pub enum MenuReference {
     File{
         file: UrlPath,
-        #[serde(skip)]
-        name: String,
     },
     Pages{
         pages: Vec<UrlPath>,
-        #[serde(skip)]
-        name: String,
     },
 }
 
 impl Default for MenuReference {
     fn default() -> Self {
-        Self::Pages {pages: Vec::new(), name: Default::default()}
+        Self::Pages {pages: Vec::new()}
     }
 }

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use config::indexer::QueryList;
-use config::{Config, Page, RuntimeOptions, MenuReference};
+use config::{Config, Page, RuntimeOptions, MenuEntry, MenuResult};
 use locale::LocaleName;
 
 use crate::{
@@ -33,9 +33,6 @@ impl Collation {
         self.fallback.all.get(file)
     }
 
-    pub fn get_graph(&self) -> &Graph {
-        &self.locale.graph 
-    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -88,8 +85,20 @@ pub struct CollateInfo {
 
 #[derive(Debug, Default, Clone)]
 pub struct Graph {
+    pub menus: MenuMap,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct MenuMap {
     /// List of pages with menus that need to be compiled.
-    pub menus: HashMap<MenuReference, Vec<Arc<PathBuf>>>,
+    pub sources: HashMap<Arc<MenuEntry>, Vec<Arc<PathBuf>>>,
+
+    /// Compiled results for each menu.
+    pub results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
+
+    /// Lookup table by file and menu name so the menu helper
+    /// can easily locale the menu results.
+    pub mapping: HashMap<Arc<PathBuf>, HashMap<String, Arc<MenuResult>>>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -108,6 +117,7 @@ pub trait Collate {
     fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>;
+    fn get_graph(&self) -> &Graph;
 }
 
 /// Access to the collated series.
@@ -181,6 +191,10 @@ impl LinkCollate for LinkMap {
 }
 
 impl Collate for Collation {
+    fn get_graph(&self) -> &Graph {
+        self.locale.get_graph()
+    }
+
     fn get_lang(&self) -> &str {
         self.locale.get_lang()
     }
@@ -264,6 +278,11 @@ impl LinkCollate for Collation {
 }
 
 impl Collate for CollateInfo {
+
+    fn get_graph(&self) -> &Graph {
+        &self.graph
+    }
+
     fn get_lang(&self) -> &str {
         &self.lang
     }
@@ -354,6 +373,10 @@ impl CollateInfo {
             path,
             ..Default::default()
         }
+    }
+
+    pub fn get_graph_mut(&mut self) -> &mut Graph {
+        &mut self.graph
     }
 
     /// Create a page in this collation.

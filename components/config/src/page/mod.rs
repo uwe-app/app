@@ -24,7 +24,6 @@ use self::{
 };
 
 pub(crate) mod feed;
-//pub(crate) mod file;
 pub(crate) mod file_context;
 pub(crate) mod menu;
 pub(crate) mod paginate;
@@ -39,6 +38,7 @@ pub struct CollatedPage<'a> {
     pub page: &'a Page,
     pub lang: &'a str,
     pub date: &'a Option<DateConfig>,
+    //pub menu: HashMap<&'a str, &'a MenuResult>,
 }
 
 impl<'a> CollatedPage<'a> {
@@ -83,6 +83,7 @@ pub struct Page {
     pub entry: Option<FeedEntry>,
 
     // Menus keyed by name
+    #[serde(skip_serializing)]
     pub menu: Option<HashMap<String, MenuEntry>>,
 
     // Automatically assigned

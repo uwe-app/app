@@ -3917,7 +3917,6 @@ dependencies = [
  "human_bytes",
  "locale",
  "log",
- "once_cell",
  "preference",
  "search",
  "serde",

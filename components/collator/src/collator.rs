@@ -258,13 +258,12 @@ fn add_page(
         for (k, v) in menu.iter_mut() {
             v.verify_files(&options.source)?;
 
+            let mut def = v.clone();
             // Assign the key name so we can use it 
             // later when re-assigning the compiled value
-            v.set_name(k);
+            def.name = k.clone();
 
-            let def = v.definition.clone();
-
-            let entries = info.graph.menus.entry(def).or_insert(vec![]);
+            let entries = info.graph.menus.sources.entry(Arc::new(def)).or_insert(vec![]);
             entries.push(Arc::clone(key));
         }
     }

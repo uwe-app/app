@@ -360,6 +360,14 @@ impl<'a> ProjectBuilder {
         Ok(self)
     }
 
+    /// Process menu references.
+    pub async fn menus(mut self) -> Result<Self> {
+        for collation in self.collations.iter_mut() {
+            menu::compile(&self.options, collation)?;
+        }
+        Ok(self)
+    }
+
     /// Determine if syntax highlighting is enabled.
     pub fn get_syntax(&self) -> &Option<SyntaxConfig> {
         if self.config.is_syntax_enabled(&self.options.settings.name) {
@@ -392,15 +400,12 @@ impl<'a> ProjectBuilder {
         let options = Arc::new(self.options);
 
         // Get a map of collations keyed by locale wrapper
-        let mut collations = self.collations.build()?;
+        let collations = self.collations.build()?;
 
         let locales = Arc::new(self.locales);
 
         let mut renderers: Vec<Renderer> = Vec::new();
         let mut parsers: Vec<Box<dyn Parser + Send + Sync>> = Vec::new();
-
-        //collations.iter_mut().try_for_each(|collation| {
-        //})?;
 
         collations.into_iter().try_for_each(|collation| {
             let context = Arc::new(BuildContext {
@@ -415,7 +420,7 @@ impl<'a> ProjectBuilder {
                 Arc::clone(&locales),
             )?;
 
-            menu::compile(&context, &parser)?;
+            // NOTE: if we need to pre-compile with the parser this is the place.
 
             let info = CompilerInput {
                 sources: Arc::clone(&sources),
@@ -426,6 +431,7 @@ impl<'a> ProjectBuilder {
 
             parsers.push(parser);
             renderers.push(Renderer::new(info));
+
             Ok::<(), Error>(())
         })?;
 
@@ -682,7 +688,10 @@ pub async fn compile<P: AsRef<Path>>(
         // WARN: above then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to await (above) and
         // WARN: then await again here.
-        let builder = builder.inherit().await?;
+        let builder = builder
+            .inherit()
+            .and_then(|s| s.menus())
+            .await?;
 
         let builder = if builder.get_syntax().is_some() {
             builder.syntax().await?
