@@ -118,12 +118,12 @@ pub mod transform;
 pub(crate) mod utils;
 
 pub use config::*;
-pub use options::{FileType, RuntimeOptions, LinkOptions, DestinationBuilder};
 pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
-pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
+pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::menu::{MenuEntry, MenuReference, MenuResult, MenuType};
+pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
 pub use search::{SEARCH_JS, SEARCH_WASM};

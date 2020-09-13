@@ -44,13 +44,14 @@ impl Output for BufferedOutput {
     }
 }
 
-/// Determine if the template for this page 
+/// Determine if the template for this page
 /// indicates a markdown context.
 pub fn is_markdown_template<'reg: 'rc, 'rc>(
     options: &RuntimeOptions,
     ctx: &'rc Context,
     rc: &mut RenderContext<'reg, 'rc>,
-    file: Option<PathBuf>) -> std::result::Result<bool, RenderError> {
+    file: Option<PathBuf>,
+) -> std::result::Result<bool, RenderError> {
     let file = if let Some(file) = file {
         file
     } else {

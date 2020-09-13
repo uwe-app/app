@@ -84,17 +84,14 @@ impl HelperDef for Styles {
             sheets
                 .iter()
                 .map(|style| {
-                    let rel = opts.relative(
-                        style.get_source(),
-                        path,
-                        &opts.source,
-                    )
-                    .map_err(|_e| {
-                        RenderError::new(
+                    let rel = opts
+                        .relative(style.get_source(), path, &opts.source)
+                        .map_err(|_e| {
+                            RenderError::new(
                             "Type error for `styles`, file is outside source!",
                         )
-                    })
-                    .unwrap();
+                        })
+                        .unwrap();
                     StyleFile::Source(rel)
                 })
                 .collect()

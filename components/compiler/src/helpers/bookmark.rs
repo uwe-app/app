@@ -10,12 +10,10 @@ pub fn get_permalink<'a>(
     permalink: Option<&'a str>,
     context: &'a BuildContext,
 ) -> Result<String> {
-
     let collation = &*context.collation.read().unwrap();
-    let base = context.options.get_canonical_url(
-        &context.config,
-        Some(collation.get_lang()),
-    )?;
+    let base = context
+        .options
+        .get_canonical_url(&context.config, Some(collation.get_lang()))?;
 
     let path = if let Some(ref href) = permalink {
         href

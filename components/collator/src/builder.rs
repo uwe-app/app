@@ -2,11 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::{loader, CollateInfo, Error, Result};
-use config::{
-    indexer::QueryList,
-    LinkOptions,
-    Config, Page, RuntimeOptions,
-};
+use config::{indexer::QueryList, Config, LinkOptions, Page, RuntimeOptions};
 
 /// Runtime validation of queries.
 fn verify_query(list: &QueryList) -> Result<()> {
@@ -113,7 +109,6 @@ impl<'a> PageBuilder<'a> {
 
     /// Seal the page with file context information.
     pub fn seal(mut self) -> Result<Self> {
-
         let mut rewrite_index = self.options.settings.should_rewrite_index();
         // Override with rewrite-index page level setting
         if let Some(val) = self.page.rewrite_index {
@@ -121,7 +116,8 @@ impl<'a> PageBuilder<'a> {
         }
 
         self.rewrite_index = rewrite_index;
-        self.destination = self.options
+        self.destination = self
+            .options
             .destination()
             .rewrite_index(rewrite_index)
             .build(&self.path)?;

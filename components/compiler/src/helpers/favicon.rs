@@ -68,11 +68,8 @@ impl HelperDef for Icon {
                     })?
                     .to_string();
                 let path = Path::new(&base_path);
-                href = if let Ok(val) = opts.relative(
-                    &href,
-                    path,
-                    &opts.source,
-                ) {
+                href = if let Ok(val) = opts.relative(&href, path, &opts.source)
+                {
                     val
                 } else {
                     return Err(RenderError::new(

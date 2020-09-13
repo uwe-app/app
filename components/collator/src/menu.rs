@@ -1,46 +1,57 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::fmt::Write;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use config::{RuntimeOptions, Page, MenuEntry, MenuReference, MenuResult, MenuType};
+use config::{
+    MenuEntry, MenuReference, MenuResult, MenuType, Page, RuntimeOptions,
+};
 
-use crate::{Error, Result, CollateInfo, Collate, LinkCollate};
+use crate::{Collate, CollateInfo, Error, LinkCollate, Result};
 
 fn write<W: Write>(f: &mut W, s: &str) -> Result<()> {
     f.write_str(s).map_err(Error::from)
 }
 
 fn start_list<W: Write>(f: &mut W, name: &str) -> Result<()> {
-    write(f, &format!("<ul class=\"{}\">", utils::entity::escape(name)))
+    write(
+        f,
+        &format!("<ul class=\"{}\">", utils::entity::escape(name)),
+    )
 }
 
 fn pages_list<W: Write>(
     f: &mut W,
-    pages: &Vec<(&String, &Arc<RwLock<Page>>)>,
+    pages: &Vec<(String, &Arc<RwLock<Page>>)>,
     include_description: bool,
 ) -> Result<()> {
     for (href, page) in pages {
         let reader = page.read().unwrap();
         write(f, "<li>")?;
         if let Some(ref title) = reader.title {
-
             let link_title = utils::entity::escape(title);
 
-            // NOTE: we pass the `href` through via the `link` helper so 
+            // NOTE: we pass the `href` through via the `link` helper so
             // NOTE: that links will be resolved relative to the page
             // NOTE: embedding the menu
-            write(f, &format!(
-                "<a href=\"{{{{ link \"{}\" }}}}\" title=\"{}\">{}</a>",
-                href, link_title, link_title
-            ))?;
+            write(
+                f,
+                &format!(
+                    "<a href=\"{{{{ link \"{}\" }}}}\" title=\"{}\">{}</a>",
+                    href, link_title, link_title
+                ),
+            )?;
 
             if include_description {
                 if let Some(ref description) = reader.description {
-                    write(f, &format!(
-                        "<p>{}</p>", utils::entity::escape(description)
-                    ))?;
-                }     
+                    write(
+                        f,
+                        &format!(
+                            "<p>{}</p>",
+                            utils::entity::escape(description)
+                        ),
+                    )?;
+                }
             }
         }
 
@@ -58,18 +69,19 @@ fn end_list<W: Write>(f: &mut W) -> Result<()> {
 fn build(
     menu: &Arc<MenuEntry>,
     options: &RuntimeOptions,
-    collation: &CollateInfo) -> Result<MenuResult> {
+    collation: &CollateInfo,
+) -> Result<MenuResult> {
+    let markdown = options.settings.types.as_ref().unwrap().markdown();
 
-    let markdown = options.settings.types
-        .as_ref().unwrap().markdown();
-
+    let all_pages = collation.get_pages();
     let mut result: MenuResult = Default::default();
     let mut buf = &mut result.value;
+    let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
 
     match menu.definition {
         MenuReference::File { ref file } => {
             let file = options.resolve_source(file);
-            result.value = utils::fs::read_string(&file)?;
+            write(buf, &utils::fs::read_string(&file)?)?;
             // Check if we need to transform from markdown when
             // the helper renders the menu
             if let Some(ext) = file.extension() {
@@ -79,43 +91,70 @@ fn build(
                 }
             }
         }
-        MenuReference::Pages { ref pages, description } => {
+        MenuReference::Pages { ref pages, .. } => {
             // Resolve page references to the underlying page data
-            let mut page_data: Vec<(&String, &Arc<RwLock<Page>>)> = Vec::new();
+
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
-                let page_path = collation.get_link(
-                    &collation.normalize(page_href));
+                let page_path =
+                    collation.get_link(&collation.normalize(page_href));
 
                 if let Some(ref page_path) = page_path {
                     if let Some(page) = collation.resolve(&page_path) {
-                        acc.push((page_href, page));
+                        acc.push((page_href.clone(), page));
                     } else {
-                        return Err(Error::NoMenuItemPage(page_path.to_path_buf())) 
+                        return Err(Error::NoMenuItemPage(
+                            page_path.to_path_buf(),
+                        ));
                     }
                 } else {
-                    return Err(Error::NoMenuItem(page_href.to_string())) 
+                    return Err(Error::NoMenuItem(page_href.to_string()));
                 }
 
                 Ok::<_, Error>(acc)
             })?;
+        }
+        MenuReference::Directory { ref directory, .. } => {
+            let dir = utils::url::to_path_separator(
+                directory.trim_start_matches("/"),
+            );
+            let dir_buf = options.source.join(dir);
+            all_pages.iter().try_fold(
+                &mut page_data,
+                |acc, (path, page)| {
+                    if path.starts_with(&dir_buf) {
+                        let reader = page.read().unwrap();
+                        let href = reader.href.as_ref().unwrap();
+                        acc.push((href.clone(), page));
+                    }
 
+                    Ok::<_, Error>(acc)
+                },
+            )?;
+        }
+    }
+
+    match menu.definition {
+        MenuReference::Pages { description, .. }
+        | MenuReference::Directory { description, .. } => {
             start_list(&mut buf, &menu.name)?;
             pages_list(&mut buf, &page_data, description)?;
             end_list(&mut buf)?;
         }
+        _ => {}
     }
 
     Ok(result)
 }
 
-/// Compile all the menus in a collation and assign references to 
-/// the compiled HTML strings to each of the pages that referenced 
+/// Compile all the menus in a collation and assign references to
+/// the compiled HTML strings to each of the pages that referenced
 /// the menu.
 pub fn compile(
     options: &RuntimeOptions,
-    collation: &mut CollateInfo) -> Result<()> {
-
-    let mut compiled: Vec<(Arc<MenuEntry>, MenuResult, Vec<Arc<PathBuf>>)> = Vec::new();
+    collation: &mut CollateInfo,
+) -> Result<()> {
+    let mut compiled: Vec<(Arc<MenuEntry>, MenuResult, Vec<Arc<PathBuf>>)> =
+        Vec::new();
 
     for (menu, paths) in collation.get_graph().menus.sources.iter() {
         let result = build(&menu, options, collation)?;

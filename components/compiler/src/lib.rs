@@ -76,6 +76,6 @@ pub mod run;
 mod tree;
 
 pub use compile::compile;
-pub use context::{CompilerOutput, BuildContext};
-pub use run::ParseData;
+pub use context::{BuildContext, CompilerOutput};
 pub use markdown::render_markdown;
+pub use run::ParseData;

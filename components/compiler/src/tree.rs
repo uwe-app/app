@@ -16,7 +16,6 @@ pub fn parent<'a>(
     ctx: &'a BuildContext,
     file: &PathBuf,
 ) -> Option<Arc<RwLock<Page>>> {
-
     let collation = ctx.collation.read().unwrap();
 
     let types = ctx.options.settings.types.as_ref().unwrap();
@@ -49,7 +48,6 @@ pub fn ancestors<'a>(
     ctx: &'a BuildContext,
     file: &PathBuf,
 ) -> Vec<Arc<RwLock<Page>>> {
-
     let collation = ctx.collation.read().unwrap();
 
     let mut pages: Vec<Arc<RwLock<Page>>> = Vec::new();
@@ -80,7 +78,7 @@ pub fn ancestors<'a>(
                 pages.push(Arc::clone(page));
             }
         }
-    
+
         if p == ctx.options.source {
             break;
         }
@@ -93,7 +91,6 @@ pub fn listing<'a>(
     ctx: &'a BuildContext,
     list: &'a ListOptions,
 ) -> Result<Vec<Arc<RwLock<Page>>>> {
-
     let depth = list.dir.components().count() + list.depth;
 
     let collation = ctx.collation.read().unwrap();
@@ -139,6 +136,6 @@ pub fn listing<'a>(
     }
 
     Ok(values)
-    
+
     //Ok(vec![])
 }

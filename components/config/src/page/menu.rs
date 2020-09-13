@@ -3,11 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::{
-    Error,
-    Result,
-    utils::href::UrlPath,
-};
+use crate::{utils::href::UrlPath, Error, Result};
 
 #[derive(Debug)]
 pub enum MenuType {
@@ -33,8 +29,8 @@ pub struct MenuEntry {
     #[serde(flatten, skip_serializing)]
     pub definition: MenuReference,
 
-    /// Stores the hash map key as the name so that after 
-    /// the menu is compiled it can be re-assigned to the 
+    /// Stores the hash map key as the name so that after
+    /// the menu is compiled it can be re-assigned to the
     /// correct page menu entry.
     #[serde(skip)]
     pub name: String,
@@ -48,11 +44,11 @@ impl MenuEntry {
     pub fn verify_files(&self, base: &PathBuf) -> Result<()> {
         match self.definition {
             MenuReference::File { ref file, .. } => {
-                let buf = base.join(
-                    utils::url::to_path_separator(
-                        file.trim_start_matches("/")));
+                let buf = base.join(utils::url::to_path_separator(
+                    file.trim_start_matches("/"),
+                ));
                 if !buf.exists() || !buf.is_file() {
-                    return Err(Error::NoMenuFile(file.to_string(), buf))           
+                    return Err(Error::NoMenuFile(file.to_string(), buf));
                 }
             }
             // NOTE: other variants must be verified elsewhere once
@@ -67,17 +63,27 @@ impl MenuEntry {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum MenuReference {
-    File{
-        file: UrlPath,
-    },
-    Pages{
+    /// Render the context of a template file as the menu.
+    File { file: UrlPath },
+
+    /// Render a collection of specific pages.
+    Pages {
         pages: Vec<UrlPath>,
+        description: bool,
+    },
+
+    /// Render all the pages starting with the given directory.
+    Directory {
+        directory: UrlPath,
         description: bool,
     },
 }
 
 impl Default for MenuReference {
     fn default() -> Self {
-        Self::Pages {pages: Vec::new(), description: false}
+        Self::Pages {
+            pages: Vec::new(),
+            description: false,
+        }
     }
 }

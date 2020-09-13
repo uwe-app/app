@@ -83,17 +83,14 @@ impl HelperDef for Scripts {
                 .iter()
                 .map(|script| {
                     let mut tag = script.to_tag();
-                    tag.src = opts.relative(
-                        script.get_source(),
-                        path,
-                        &opts.source,
-                    )
-                    .map_err(|_e| {
-                        RenderError::new(
+                    tag.src = opts
+                        .relative(script.get_source(), path, &opts.source)
+                        .map_err(|_e| {
+                            RenderError::new(
                             "Type error for `scripts`, file is outside source!",
                         )
-                    })
-                    .unwrap();
+                        })
+                        .unwrap();
                     ScriptFile::Tag(tag)
                 })
                 .collect()

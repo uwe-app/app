@@ -10,25 +10,19 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    Result,
-    date::DateConfig,
-    indexer::QueryList, script::ScriptFile,
-    style::StyleFile, Config, Error, RuntimeOptions,
-    utils::toml_datetime::from_toml_datetime,
+    date::DateConfig, indexer::QueryList, script::ScriptFile, style::StyleFile,
+    utils::toml_datetime::from_toml_datetime, Config, Error, Result,
+    RuntimeOptions,
 };
 
-use self::{
-    feed::FeedEntry,
-    file_context::FileContext,
-    menu::MenuEntry,
-};
+use self::{feed::FeedEntry, file_context::FileContext, menu::MenuEntry};
 
 pub(crate) mod feed;
 pub(crate) mod file_context;
 pub(crate) mod menu;
 pub(crate) mod paginate;
 
-pub use paginate::{PaginateInfo, PageLink};
+pub use paginate::{PageLink, PaginateInfo};
 
 #[skip_serializing_none]
 #[derive(Serialize)]
@@ -43,7 +37,11 @@ pub struct CollatedPage<'a> {
 
 impl<'a> CollatedPage<'a> {
     pub fn new(config: &'a Config, page: &'a Page, lang: &'a str) -> Self {
-        Self {page, lang, date: &config.date} 
+        Self {
+            page,
+            lang,
+            date: &config.date,
+        }
     }
 }
 
@@ -160,21 +158,16 @@ impl Default for Page {
 }
 
 impl Page {
-
-    pub fn new(config: &Config, options: &RuntimeOptions, file: &PathBuf) -> Result<Self> {
+    pub fn new(
+        config: &Config,
+        options: &RuntimeOptions,
+        file: &PathBuf,
+    ) -> Result<Self> {
         let mut page: Page = Default::default();
 
-        let destination = options
-            .destination()
-            .build(file)?;
+        let destination = options.destination().build(file)?;
 
-        page.seal(
-            config,
-            options,
-            &file,
-            &destination,
-            None,
-        )?;
+        page.seal(config, options, &file, &destination, None)?;
 
         Ok(page)
     }
@@ -218,7 +211,8 @@ impl Page {
             FileContext::new(source.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
-        self.href = Some(options.absolute(&file_context.source, Default::default())?);
+        self.href =
+            Some(options.absolute(&file_context.source, Default::default())?);
 
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {
@@ -231,8 +225,11 @@ impl Page {
         Ok(())
     }
 
-    pub fn compute(&mut self, config: &Config, _opts: &RuntimeOptions) -> Result<()> {
-
+    pub fn compute(
+        &mut self,
+        config: &Config,
+        _opts: &RuntimeOptions,
+    ) -> Result<()> {
         let mut authors_list = if let Some(ref author) = self.authors {
             author.clone()
         } else {
@@ -352,4 +349,3 @@ impl Page {
         self.extra.append(&mut other.extra);
     }
 }
-

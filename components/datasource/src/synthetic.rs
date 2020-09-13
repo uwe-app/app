@@ -7,9 +7,7 @@ use serde_json::json;
 
 use collator::{to_href, Collate, CollateInfo};
 use config::feed::{ChannelConfig, FeedConfig};
-use config::{
-    Config, Page, PageLink, PaginateInfo, RuntimeOptions,
-};
+use config::{Config, Page, PageLink, PaginateInfo, RuntimeOptions};
 
 use locale::Locales;
 
@@ -25,10 +23,7 @@ fn create_synthetic(
     page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
-
-    let dest = options.destination()
-        .exact(true)
-        .build(&source)?;
+    let dest = options.destination().exact(true).build(&source)?;
 
     let mut writer = page_info.write().unwrap();
     writer.seal(config, options, &source, &dest, Some(template))?;

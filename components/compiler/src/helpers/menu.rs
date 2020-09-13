@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::borrow::Cow;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use handlebars::*;
@@ -24,7 +24,6 @@ impl HelperDef for Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let source_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -55,15 +54,17 @@ impl HelperDef for Menu {
         let source_file = PathBuf::from(&source_path);
         let collation = self.context.collation.read().unwrap();
         if let Some(ref menu_result) = collation.find_menu(&source_file, key) {
-            let mut result = r.render_template(
-                &menu_result.value, ctx.data()
-            ).map_err(|e| {
-                RenderError::new(
-                    format!("Menu error {} ({})", &source_path, e))
-            })?;
+            let mut result = r
+                .render_template(&menu_result.value, ctx.data())
+                .map_err(|e| {
+                    RenderError::new(format!(
+                        "Menu error {} ({})",
+                        &source_path, e
+                    ))
+                })?;
 
             match menu_result.kind {
-                // When we are in the context of an HTML page and 
+                // When we are in the context of an HTML page and
                 // we encounter a menu template formatted as markdown
                 // it needs to be transformed to HTML before being written
                 MenuType::Markdown => {
@@ -71,7 +72,6 @@ impl HelperDef for Menu {
                         &mut Cow::from(result),
                         &self.context.config,
                     );
-
                 }
                 _ => {}
             }

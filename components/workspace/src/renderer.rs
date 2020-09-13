@@ -9,8 +9,7 @@ use human_bytes::human_bytes;
 
 use collator::{resource::Resource, Collate, LinkCollate};
 use compiler::{
-    compile,
-    parser::Parser, run, BuildContext, CompilerOutput, ParseData,
+    compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
 use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
 use locale::{LocaleName, Locales};
@@ -28,7 +27,10 @@ pub struct RenderOptions {
 
 impl RenderOptions {
     pub fn new_file_lang(file: PathBuf, lang: String) -> Self {
-        Self{ target: RenderTarget::File(file), filter: RenderFilter::One(lang) }
+        Self {
+            target: RenderTarget::File(file),
+            filter: RenderFilter::One(lang),
+        }
     }
 }
 
@@ -126,8 +128,7 @@ impl Renderer {
                 info!("Prepare search index ({})", parse_list.len());
                 for parse_data in parse_list {
                     if let Some(ref extraction) = parse_data.extract {
-                        let href =
-                            collation.get_link_source(&parse_data.file);
+                        let href = collation.get_link_source(&parse_data.file);
 
                         let buffer = extraction.to_chunk_string();
                         let title = if let Some(ref title) = extraction.title {
@@ -157,8 +158,7 @@ impl Renderer {
 
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
-                let index_file =
-                    search.get_output_path(collation.get_path());
+                let index_file = search.get_output_path(collation.get_path());
                 info!("Write search index to {}", index_file.display());
                 let bytes_written = search::writer::write(&idx, index_file)?;
                 info!("Search index {}", human_bytes(bytes_written as f64));
@@ -180,10 +180,9 @@ impl Renderer {
             let entries = sitemap.entries.as_ref().unwrap();
 
             // Base canonical URL
-            let base = ctx.options.get_canonical_url(
-                &ctx.config,
-                Some(collation.get_lang()),
-            )?;
+            let base = ctx
+                .options
+                .get_canonical_url(&ctx.config, Some(collation.get_lang()))?;
 
             // Create the top-level index of all sitemaps
             let folder = sitemap.name.as_ref().unwrap().to_string();
@@ -208,8 +207,7 @@ impl Renderer {
                     .filter(|d| !d.file.ends_with("404.html"))
                     .map(|d| {
                         // Get the href to use to build the location
-                        let href =
-                            collation.get_link_source(&d.file).unwrap();
+                        let href = collation.get_link_source(&d.file).unwrap();
                         // Get the last modification data from the page
                         let page = collation.resolve(&d.file).unwrap();
                         let page = &*page.read().unwrap();
@@ -290,15 +288,11 @@ impl Renderer {
         let manifest_filter = |p: &&Arc<PathBuf>| -> bool {
             if let Some(ref manifest) = self.info.manifest {
                 let manifest = manifest.read().unwrap();
-                if let Some(ref resource) =
-                    collation.get_resource(*p)
-                {
+                if let Some(ref resource) = collation.get_resource(*p) {
                     match resource {
                         Resource::Page { ref target }
                         | Resource::File { ref target } => {
-                            let dest = target.get_output(
-                                collation.get_path(),
-                            );
+                            let dest = target.get_output(collation.get_path());
                             if manifest.exists(p)
                                 && !manifest.is_dirty(p, &dest, false)
                             {

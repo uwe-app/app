@@ -15,12 +15,7 @@ use config::indexer::{
 use config::{Config, RuntimeOptions};
 use utils::json_path;
 
-use crate::{
-    Error,
-    Result,
-    identifier,
-    provider,
-};
+use crate::{identifier, provider, Error, Result};
 
 pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 pub type IndexValue = (IndexKey, Arc<Value>);
@@ -358,8 +353,7 @@ impl DataSourceMap {
                     generator.all.iter().filter(|(_id, document)| {
                         if let Some(ref filters) = def.filters {
                             for (path, flag) in filters {
-                                let truthy =
-                                    json_path::truthy(path, document);
+                                let truthy = json_path::truthy(path, document);
                                 if (*flag && truthy) || (!*flag && !truthy) {
                                     return false;
                                 }

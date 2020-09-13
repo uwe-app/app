@@ -7,10 +7,9 @@ use log::error;
 use collator::Collate;
 
 use crate::{
-    Error, Result,
     context::{BuildContext, CompilerOutput},
     parser::Parser,
-    run,
+    run, Error, Result,
 };
 
 pub async fn compile<F>(
@@ -75,9 +74,7 @@ where
         }
     } else {
         for p in it {
-            if let Some(parse_data) =
-                run::one(context, parser, p).await?
-            {
+            if let Some(parse_data) = run::one(context, parser, p).await? {
                 output.data.push(parse_data);
                 output.files.push(Arc::clone(p));
             }

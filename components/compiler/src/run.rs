@@ -31,7 +31,6 @@ pub async fn one(
     parser: &Box<impl Parser + Send + Sync + ?Sized>,
     file: &PathBuf,
 ) -> Result<Option<ParseData>> {
-
     let collation = &*context.collation.read().unwrap();
     match collation.get_resource(file).unwrap() {
         Resource::Page { ref target } => {
@@ -43,8 +42,7 @@ pub async fn one(
                         //let rel = page.file.as_ref().unwrap().target.clone();
                         //let dest = context.collation.get_path().join(&rel);
 
-                        let dest =
-                            target.get_output(collation.get_path());
+                        let dest = target.get_output(collation.get_path());
 
                         return parse(
                             context,

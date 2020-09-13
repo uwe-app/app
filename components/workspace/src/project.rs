@@ -9,8 +9,7 @@ use url::Url;
 
 use cache::CacheComponent;
 use collator::{
-    menu,
-    Collate, CollateInfo, CollateRequest, CollateResult, Collation,
+    menu, Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
 use compiler::{parser, parser::Parser, BuildContext};
 
@@ -25,7 +24,7 @@ use locale::Locales;
 
 use crate::{
     manifest::Manifest,
-    renderer::{CompilerInput, RenderOptions, RenderFilter, Renderer, Sources},
+    renderer::{CompilerInput, RenderFilter, RenderOptions, Renderer, Sources},
     Error, Result,
 };
 
@@ -415,10 +414,8 @@ impl<'a> ProjectBuilder {
                 collation: Arc::new(RwLock::new(collation)),
             });
 
-            let parser: Box<dyn Parser + Send + Sync> = parser::handlebars(
-                Arc::clone(&context),
-                Arc::clone(&locales),
-            )?;
+            let parser: Box<dyn Parser + Send + Sync> =
+                parser::handlebars(Arc::clone(&context), Arc::clone(&locales))?;
 
             // NOTE: if we need to pre-compile with the parser this is the place.
 
@@ -688,10 +685,7 @@ pub async fn compile<P: AsRef<Path>>(
         // WARN: above then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to await (above) and
         // WARN: then await again here.
-        let builder = builder
-            .inherit()
-            .and_then(|s| s.menus())
-            .await?;
+        let builder = builder.inherit().and_then(|s| s.menus()).await?;
 
         let builder = if builder.get_syntax().is_some() {
             builder.syntax().await?

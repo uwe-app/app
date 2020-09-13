@@ -259,11 +259,16 @@ fn add_page(
             v.verify_files(&options.source)?;
 
             let mut def = v.clone();
-            // Assign the key name so we can use it 
+            // Assign the key name so we can use it
             // later when re-assigning the compiled value
             def.name = k.clone();
 
-            let entries = info.graph.menus.sources.entry(Arc::new(def)).or_insert(vec![]);
+            let entries = info
+                .graph
+                .menus
+                .sources
+                .entry(Arc::new(def))
+                .or_insert(vec![]);
             entries.push(Arc::clone(key));
         }
     }
@@ -279,7 +284,6 @@ fn add_other(
     options: &RuntimeOptions,
     key: Arc<PathBuf>,
 ) -> Result<()> {
-
     let dest = options.destination().build(&key)?;
 
     let href = to_href(&key, options, false, None)?;

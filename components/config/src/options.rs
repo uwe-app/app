@@ -3,13 +3,7 @@ use std::path::{Path, PathBuf};
 use url::Url;
 
 use crate::{
-    Error,
-    Result,
-    Config,
-    ProfileSettings,
-    RenderTypes,
-    INDEX_STEM,
-    HTML,
+    Config, Error, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]
@@ -18,7 +12,6 @@ pub enum FileType {
     Template,
     Unknown,
 }
-
 
 #[derive(Debug, Clone, Default)]
 pub struct RuntimeOptions {
@@ -35,7 +28,6 @@ pub struct RuntimeOptions {
 }
 
 impl RuntimeOptions {
-
     fn is_index<P: AsRef<Path>>(file: P) -> bool {
         if let Some(nm) = file.as_ref().file_stem() {
             if nm == INDEX_STEM {
@@ -45,7 +37,11 @@ impl RuntimeOptions {
         false
     }
 
-    pub fn is_clean<P: AsRef<Path>>(&self, file: P, types: &RenderTypes) -> bool {
+    pub fn is_clean<P: AsRef<Path>>(
+        &self,
+        file: P,
+        types: &RenderTypes,
+    ) -> bool {
         let target = file.as_ref().to_path_buf();
         let result = target.clone();
         return self.rewrite_index_file(target, result, types).is_some();
@@ -100,10 +96,7 @@ impl RuntimeOptions {
         None
     }
 
-    pub fn get_type<P: AsRef<Path>>(
-        &self,
-        p: P,
-    ) -> FileType {
+    pub fn get_type<P: AsRef<Path>>(&self, p: P) -> FileType {
         let types = &self.settings.types.as_ref().unwrap();
         let file = p.as_ref();
         if let Some(ext) = file.extension() {
@@ -179,13 +172,12 @@ impl RuntimeOptions {
         self.settings.types.as_ref().unwrap()
     }
 
-    /// Convert a href path into a PathBuf relative to the source 
+    /// Convert a href path into a PathBuf relative to the source
     /// directory.
     pub fn resolve_source(&self, href: &str) -> PathBuf {
-        self.source.join(
-            utils::url::to_path_separator(href.trim_start_matches("/")))
+        self.source
+            .join(utils::url::to_path_separator(href.trim_start_matches("/")))
     }
-
 
     pub fn relative<P: AsRef<Path>, B: AsRef<Path>>(
         &self,
@@ -286,7 +278,7 @@ impl RuntimeOptions {
     }
 
     pub fn destination(&self) -> DestinationBuilder {
-        DestinationBuilder::new(self) 
+        DestinationBuilder::new(self)
     }
 }
 
@@ -367,28 +359,27 @@ pub struct DestinationBuilder<'a> {
 }
 
 impl<'a> DestinationBuilder<'a> {
-
     pub fn new(options: &'a RuntimeOptions) -> Self {
         Self {
             options,
             exact: false,
             rewrite_index: options.settings.should_rewrite_index(),
             base_href: &options.settings.base_href,
-        } 
+        }
     }
 
     pub fn exact(mut self, exact: bool) -> Self {
-        self.exact = exact; 
+        self.exact = exact;
         self
     }
 
     pub fn rewrite_index(mut self, rewrite_index: bool) -> Self {
-        self.rewrite_index = rewrite_index; 
+        self.rewrite_index = rewrite_index;
         self
     }
 
     pub fn base_href(mut self, base_href: &'a Option<String>) -> Self {
-        self.base_href = base_href; 
+        self.base_href = base_href;
         self
     }
 
@@ -397,7 +388,7 @@ impl<'a> DestinationBuilder<'a> {
     // Does not modify the file extension, rewrite the index of change the slug,
     // this is used when we copy over files with a direct 1:1 correlation.
     //
-    fn output(&self, pth:  &PathBuf) -> Result<PathBuf> {
+    fn output(&self, pth: &PathBuf) -> Result<PathBuf> {
         //let pth = self.file.clone();
 
         // NOTE: When watching files we can get absolute

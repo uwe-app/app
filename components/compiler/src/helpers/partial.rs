@@ -46,7 +46,11 @@ impl HelperDef for Partial {
         let file = PathBuf::from(&template_path);
 
         let is_markdown = is_markdown_template(
-            &self.context.options, ctx, rc, Some(file.clone()))?;
+            &self.context.options,
+            ctx,
+            rc,
+            Some(file.clone()),
+        )?;
 
         let (content, _has_fm, _fm) =
             frontmatter::load(&file, get_front_matter_config(&file)).map_err(
@@ -59,15 +63,16 @@ impl HelperDef for Partial {
             )?;
 
         let result = r.render_template(&content, ctx.data()).map_err(|e| {
-            RenderError::new(format!("Partial error {} ({})", &template_path, e))
+            RenderError::new(format!(
+                "Partial error {} ({})",
+                &template_path, e
+            ))
         })?;
         //.map_err(|e| RenderError::new(format!("{}", e)))?;
 
         if is_markdown {
-            let parsed = render_markdown(
-                &mut Cow::from(result),
-                &self.context.config,
-            );
+            let parsed =
+                render_markdown(&mut Cow::from(result), &self.context.config);
             out.write(&parsed)?;
         } else {
             out.write(&result)?;

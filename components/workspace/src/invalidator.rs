@@ -4,10 +4,7 @@ use std::path::PathBuf;
 use config::FileType;
 use datasource::{self, DataSourceMap};
 
-use crate::{
-    Error, Project, Result,
-    renderer::RenderOptions,
-};
+use crate::{renderer::RenderOptions, Error, Project, Result};
 
 /*
  *  Invalidation rules.
@@ -421,9 +418,7 @@ impl<'a> Invalidator<'a> {
 
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
-        self.project
-            .render(Default::default())
-            .await?;
+        self.project.render(Default::default()).await?;
         Ok(())
     }
 
@@ -443,9 +438,7 @@ impl<'a> Invalidator<'a> {
         //
         let options = RenderOptions::new_file_lang(file, lang.to_string());
 
-        self.project
-            .render(options)
-            .await?;
+        self.project.render(options).await?;
 
         Ok(())
     }

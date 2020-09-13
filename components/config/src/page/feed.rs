@@ -1,4 +1,4 @@
-pub use jsonfeed::{Attachment};
+pub use jsonfeed::Attachment;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -12,4 +12,3 @@ pub struct FeedEntry {
     pub banner_image: Option<String>,
     pub attachments: Option<Vec<Attachment>>,
 }
-

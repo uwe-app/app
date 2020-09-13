@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use config::indexer::QueryList;
-use config::{Config, Page, RuntimeOptions, MenuEntry, MenuResult};
+use config::{Config, MenuEntry, MenuResult, Page, RuntimeOptions};
 use locale::LocaleName;
 
 use crate::{
@@ -32,7 +32,6 @@ impl Collation {
     pub fn get_resource(&self, file: &PathBuf) -> Option<&Resource> {
         self.fallback.all.get(file)
     }
-
 }
 
 #[derive(Debug, Default, Clone)]
@@ -146,7 +145,7 @@ pub trait LinkCollate {
     fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>>;
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>>;
 
-    /// Normalize a URL path so that it begins with a leading slash 
+    /// Normalize a URL path so that it begins with a leading slash
     /// and is given an `index.html` suffix if it ends with a slash.
     fn normalize<S: AsRef<str>>(&self, s: S) -> String;
 
@@ -193,8 +192,6 @@ impl LinkCollate for LinkMap {
 }
 
 impl Collate for Collation {
-
-
     fn get_lang(&self) -> &str {
         self.locale.get_lang()
     }
@@ -235,7 +232,6 @@ impl Collate for Collation {
     fn get_graph(&self) -> &Graph {
         self.locale.get_graph()
     }
-
 
     fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult> {
         self.locale.find_menu(path, name)
@@ -282,12 +278,13 @@ impl LinkCollate for Collation {
     }
 
     fn find_link(&self, href: &str) -> Option<PathBuf> {
-        self.locale.find_link(href).or(self.fallback.find_link(href))
+        self.locale
+            .find_link(href)
+            .or(self.fallback.find_link(href))
     }
 }
 
 impl Collate for CollateInfo {
-
     fn get_lang(&self) -> &str {
         &self.lang
     }
@@ -322,8 +319,8 @@ impl Collate for CollateInfo {
     fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult> {
         if let Some(menu) = self.graph.menus.mapping.get(path) {
             if let Some(result) = menu.get(name) {
-                return Some(result)
-            } 
+                return Some(result);
+            }
         }
         None
     }
@@ -560,7 +557,8 @@ impl CollateInfo {
                     rewrite_index = val;
                 }
 
-                let dest = options.destination()
+                let dest = options
+                    .destination()
                     .rewrite_index(rewrite_index)
                     .build(&source)?;
 

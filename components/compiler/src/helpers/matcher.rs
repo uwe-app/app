@@ -19,7 +19,6 @@ impl HelperDef for Match {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // TODO: support block inner template syntax
 
         // Determine the href for this page

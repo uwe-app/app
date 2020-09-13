@@ -23,7 +23,6 @@ impl HelperDef for Link {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let abs = h
             .hash_get("abs")
             .map(|v| v.value())
@@ -110,9 +109,7 @@ impl HelperDef for Link {
         }
 
         let value = if make_relative {
-            if let Ok(val) =
-                opts.relative(&input, path, base)
-            {
+            if let Ok(val) = opts.relative(&input, path, base) {
                 val
             } else {
                 return Err(RenderError::new(

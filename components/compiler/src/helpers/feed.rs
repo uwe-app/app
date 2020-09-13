@@ -31,10 +31,7 @@ impl HelperDef for Feed {
         let base_url = self
             .context
             .options
-            .get_canonical_url(
-                &self.context.config,
-                Some(collation.get_lang()),
-            )
+            .get_canonical_url(&self.context.config, Some(collation.get_lang()))
             .map_err(|_e| {
                 RenderError::new(
                     "Error in `feed` helper, failed to parse base URL",
