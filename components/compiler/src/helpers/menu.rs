@@ -10,8 +10,6 @@ use config::MenuType;
 use crate::markdown::render_markdown;
 use crate::BuildContext;
 
-use super::is_markdown_template;
-
 #[derive(Clone)]
 pub struct Menu {
     pub context: Arc<BuildContext>,
@@ -68,19 +66,14 @@ impl HelperDef for Menu {
                 })?;
 
                 match menu_result.kind {
+                    // When we are in the context of an HTML page and 
+                    // we encounter a menu template formatted as markdown
+                    // it needs to be transformed to HTML before being written
                     MenuType::Markdown => {
-                        let is_markdown = is_markdown_template(
-                            &self.context.options, ctx, rc, None)?;
-
-                        // When we are in the context of an HTML page and 
-                        // we encounter a menu template formatted as markdown
-                        // it needs to be transformed to HTML before being written
-                        if !is_markdown {
-                            result = render_markdown(
-                                &mut Cow::from(result),
-                                &self.context.config,
-                            );
-                        }
+                        result = render_markdown(
+                            &mut Cow::from(result),
+                            &self.context.config,
+                        );
 
                     }
                     _ => {}
