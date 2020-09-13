@@ -62,7 +62,8 @@ impl HelperDef for Partial {
                 },
             )?;
 
-        let result = r.render_template(&content, ctx.data()).map_err(|e| {
+        //let result = r.render_template(&content, ctx.data()).map_err(|e| {
+        let result = r.render_template_with_context(&content, ctx).map_err(|e| {
             RenderError::new(format!(
                 "Partial error {} ({})",
                 &template_path, e
