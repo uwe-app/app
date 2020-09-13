@@ -69,13 +69,13 @@ pub enum MenuReference {
     /// Render a collection of specific pages.
     Pages {
         pages: Vec<UrlPath>,
-        description: bool,
+        description: Option<bool>,
     },
 
     /// Render all the pages starting with the given directory.
     Directory {
         directory: UrlPath,
-        description: bool,
+        description: Option<bool>,
     },
 }
 
@@ -83,7 +83,7 @@ impl Default for MenuReference {
     fn default() -> Self {
         Self::Pages {
             pages: Vec::new(),
-            description: false,
+            description: None,
         }
     }
 }

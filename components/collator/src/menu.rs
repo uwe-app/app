@@ -92,8 +92,6 @@ fn build(
             }
         }
         MenuReference::Pages { ref pages, .. } => {
-            // Resolve page references to the underlying page data
-
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
                 let page_path =
                     collation.get_link(&collation.normalize(page_href));
@@ -126,10 +124,19 @@ fn build(
                         let href = reader.href.as_ref().unwrap();
                         acc.push((href.clone(), page));
                     }
-
                     Ok::<_, Error>(acc)
                 },
             )?;
+
+            // Sort by title.
+            page_data.sort_by(|(_, a), (_, b)| {
+                let a = &*a.read().unwrap();
+                let b = &*b.read().unwrap();
+                let s1 = a.title.as_ref().map(|x| &**x).unwrap_or("");
+                let s2 = b.title.as_ref().map(|x| &**x).unwrap_or("");
+                s1.partial_cmp(s2).unwrap()
+            });
+
         }
     }
 
@@ -137,7 +144,7 @@ fn build(
         MenuReference::Pages { description, .. }
         | MenuReference::Directory { description, .. } => {
             start_list(&mut buf, &menu.name)?;
-            pages_list(&mut buf, &page_data, description)?;
+            pages_list(&mut buf, &page_data, description.is_some() && description.unwrap())?;
             end_list(&mut buf)?;
         }
         _ => {}
