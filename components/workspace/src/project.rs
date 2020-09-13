@@ -9,6 +9,7 @@ use url::Url;
 
 use cache::CacheComponent;
 use collator::{
+    menu,
     Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
 use compiler::{parser, parser::Parser, BuildContext};
@@ -24,7 +25,6 @@ use locale::Locales;
 
 use crate::{
     manifest::Manifest,
-    menu,
     renderer::{CompilerInput, RenderOptions, RenderFilter, Renderer, Sources},
     Error, Result,
 };

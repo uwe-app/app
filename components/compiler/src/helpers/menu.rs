@@ -54,33 +54,29 @@ impl HelperDef for Menu {
 
         let source_file = PathBuf::from(&source_path);
         let collation = self.context.collation.read().unwrap();
-        let menus = &collation.get_graph().menus.mapping;
+        if let Some(ref menu_result) = collation.find_menu(&source_file, key) {
+            let mut result = r.render_template(
+                &menu_result.value, ctx.data()
+            ).map_err(|e| {
+                RenderError::new(
+                    format!("Menu error {} ({})", &source_path, e))
+            })?;
 
-        if let Some(ref menu) = menus.get(&source_file) {
-            if let Some(ref menu_result) = menu.get(key) {
-                let mut result = r.render_template(
-                    &menu_result.value, ctx.data()
-                ).map_err(|e| {
-                    RenderError::new(
-                        format!("Menu error {} ({})", &source_path, e))
-                })?;
+            match menu_result.kind {
+                // When we are in the context of an HTML page and 
+                // we encounter a menu template formatted as markdown
+                // it needs to be transformed to HTML before being written
+                MenuType::Markdown => {
+                    result = render_markdown(
+                        &mut Cow::from(result),
+                        &self.context.config,
+                    );
 
-                match menu_result.kind {
-                    // When we are in the context of an HTML page and 
-                    // we encounter a menu template formatted as markdown
-                    // it needs to be transformed to HTML before being written
-                    MenuType::Markdown => {
-                        result = render_markdown(
-                            &mut Cow::from(result),
-                            &self.context.config,
-                        );
-
-                    }
-                    _ => {}
                 }
-
-                out.write(&result)?;
+                _ => {}
             }
+
+            out.write(&result)?;
         }
 
         Ok(())

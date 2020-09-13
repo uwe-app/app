@@ -85,20 +85,20 @@ pub struct CollateInfo {
 
 #[derive(Debug, Default, Clone)]
 pub struct Graph {
-    pub menus: MenuMap,
+    pub(crate) menus: MenuMap,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct MenuMap {
     /// List of pages with menus that need to be compiled.
-    pub sources: HashMap<Arc<MenuEntry>, Vec<Arc<PathBuf>>>,
+    pub(crate) sources: HashMap<Arc<MenuEntry>, Vec<Arc<PathBuf>>>,
 
     /// Compiled results for each menu.
-    pub results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
+    pub(crate) results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
 
     /// Lookup table by file and menu name so the menu helper
     /// can easily locale the menu results.
-    pub mapping: HashMap<Arc<PathBuf>, HashMap<String, Arc<MenuResult>>>,
+    pub(crate) mapping: HashMap<Arc<PathBuf>, HashMap<String, Arc<MenuResult>>>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -118,6 +118,8 @@ pub trait Collate {
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>;
     fn get_graph(&self) -> &Graph;
+
+    fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult>;
 }
 
 /// Access to the collated series.
@@ -191,9 +193,7 @@ impl LinkCollate for LinkMap {
 }
 
 impl Collate for Collation {
-    fn get_graph(&self) -> &Graph {
-        self.locale.get_graph()
-    }
+
 
     fn get_lang(&self) -> &str {
         self.locale.get_lang()
@@ -230,6 +230,15 @@ impl Collate for Collation {
         }
 
         Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
+    }
+
+    fn get_graph(&self) -> &Graph {
+        self.locale.get_graph()
+    }
+
+
+    fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult> {
+        self.locale.find_menu(path, name)
     }
 }
 
@@ -279,10 +288,6 @@ impl LinkCollate for Collation {
 
 impl Collate for CollateInfo {
 
-    fn get_graph(&self) -> &Graph {
-        &self.graph
-    }
-
     fn get_lang(&self) -> &str {
         &self.lang
     }
@@ -308,6 +313,19 @@ impl Collate for CollateInfo {
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
     {
         Box::new(self.pages.iter())
+    }
+
+    fn get_graph(&self) -> &Graph {
+        &self.graph
+    }
+
+    fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult> {
+        if let Some(menu) = self.graph.menus.mapping.get(path) {
+            if let Some(result) = menu.get(name) {
+                return Some(result)
+            } 
+        }
+        None
     }
 }
 

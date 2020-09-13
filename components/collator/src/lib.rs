@@ -32,6 +32,15 @@ pub enum Error {
     #[error("Query may not combine 'each' with 'page'")]
     QueryConflict,
 
+    #[error("No page found for menu item reference {0}")]
+    NoMenuItem(String),
+
+    #[error("No page data found for menu item path {0}")]
+    NoMenuItemPage(PathBuf),
+
+    #[error(transparent)]
+    Format(#[from] std::fmt::Error),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
@@ -66,6 +75,7 @@ pub mod collation;
 pub mod collator;
 pub mod loader;
 pub mod locale_utils;
+pub mod menu;
 pub mod resource;
 
 pub use builder::to_href;

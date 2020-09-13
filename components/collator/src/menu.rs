@@ -3,10 +3,9 @@ use std::path::PathBuf;
 use std::fmt::Write;
 use std::sync::{Arc, RwLock};
 
-use collator::{CollateInfo, Collate, LinkCollate};
-use config::{Config, RuntimeOptions, Page, MenuEntry, MenuReference, MenuResult, MenuType};
+use config::{RuntimeOptions, Page, MenuEntry, MenuReference, MenuResult, MenuType};
 
-use crate::{Error, Result};
+use crate::{Error, Result, CollateInfo, Collate, LinkCollate};
 
 fn write<W: Write>(f: &mut W, s: &str) -> Result<()> {
     f.write_str(s).map_err(Error::from)
@@ -120,9 +119,6 @@ pub fn compile(
         }
         graph.menus.results.entry(Arc::clone(&menu)).or_insert(res);
     }
-
-    //println!("Menu IR {:#?}", graph.menus.mapping);
-    //std::process::exit(1);
 
     Ok(())
 }

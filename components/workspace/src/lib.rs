@@ -37,15 +37,6 @@ pub enum Error {
     #[error("Failed to get canonical path for project root {0}")]
     CanonicalProjectRoot(PathBuf),
 
-    #[error("No page found for menu item reference {0}")]
-    NoMenuItem(String),
-
-    #[error("no page data found for menu item path {0}")]
-    NoMenuItemPage(PathBuf),
-
-    #[error(transparent)]
-    Format(#[from] std::fmt::Error),
-
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -83,7 +74,6 @@ mod hook;
 mod invalidator;
 pub mod lock;
 mod manifest;
-mod menu;
 mod options;
 mod project;
 mod renderer;
