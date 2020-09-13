@@ -15,7 +15,11 @@ fn start_list<W: Write>(f: &mut W, name: &str) -> Result<()> {
     write(f, &format!("<ul class=\"{}\">", utils::entity::escape(name)))
 }
 
-fn pages_list<W: Write>(f: &mut W, pages: &Vec<(&String, &Arc<RwLock<Page>>)>) -> Result<()> {
+fn pages_list<W: Write>(
+    f: &mut W,
+    pages: &Vec<(&String, &Arc<RwLock<Page>>)>,
+    include_description: bool,
+) -> Result<()> {
     for (href, page) in pages {
         let reader = page.read().unwrap();
         write(f, "<li>")?;
@@ -31,7 +35,15 @@ fn pages_list<W: Write>(f: &mut W, pages: &Vec<(&String, &Arc<RwLock<Page>>)>) -
                 href, link_title, link_title
             ))?;
 
+            if include_description {
+                if let Some(ref description) = reader.description {
+                    write(f, &format!(
+                        "<p>{}</p>", utils::entity::escape(description)
+                    ))?;
+                }     
+            }
         }
+
         write(f, "</li>")?;
     }
 
@@ -67,7 +79,7 @@ fn build(
                 }
             }
         }
-        MenuReference::Pages { ref pages } => {
+        MenuReference::Pages { ref pages, description } => {
             // Resolve page references to the underlying page data
             let mut page_data: Vec<(&String, &Arc<RwLock<Page>>)> = Vec::new();
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
@@ -88,7 +100,7 @@ fn build(
             })?;
 
             start_list(&mut buf, &menu.name)?;
-            pages_list(&mut buf, &page_data)?;
+            pages_list(&mut buf, &page_data, description)?;
             end_list(&mut buf)?;
         }
     }
