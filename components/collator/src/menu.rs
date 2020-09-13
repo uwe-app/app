@@ -3,6 +3,8 @@ use std::fmt::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
+use serde_json::json;
+
 use config::{
     MenuEntry, MenuReference, MenuResult, MenuType, Page, RuntimeOptions,
 };
@@ -37,8 +39,8 @@ fn pages_list<W: Write>(
             write(
                 f,
                 &format!(
-                    "<a href=\"{{{{ link \"{}\" }}}}\" title=\"{}\">{}</a>",
-                    href, link_title, link_title
+                    "<a href=\"{{{{ link {} }}}}\" title=\"{}\">{}</a>",
+                    json!(href), link_title, link_title
                 ),
             )?;
 
@@ -111,19 +113,31 @@ fn build(
                 Ok::<_, Error>(acc)
             })?;
         }
-        MenuReference::Directory { ref directory, .. } => {
+        MenuReference::Directory { ref directory, ref depth, .. } => {
             let dir = utils::url::to_path_separator(
                 directory.trim_start_matches("/"),
             );
             let dir_buf = options.source.join(dir);
+            let dir_len = dir_buf.components().count();
+
+            let depth = if let Some(depth) = depth {
+                depth.clone()
+            } else { 1 };
+
             all_pages.iter().try_fold(
                 &mut page_data,
                 |acc, (path, page)| {
-                    if path.starts_with(&dir_buf) {
-                        let reader = page.read().unwrap();
-                        let href = reader.href.as_ref().unwrap();
-                        acc.push((href.clone(), page));
+
+                    let path_len = path.components().count();
+
+                    if depth == 0 || path_len <= dir_len + depth {
+                        if path.starts_with(&dir_buf) {
+                            let reader = page.read().unwrap();
+                            let href = reader.href.as_ref().unwrap();
+                            acc.push((href.clone(), page));
+                        }
                     }
+
                     Ok::<_, Error>(acc)
                 },
             )?;

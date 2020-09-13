@@ -76,6 +76,7 @@ pub enum MenuReference {
     Directory {
         directory: UrlPath,
         description: Option<bool>,
+        depth: Option<usize>,
     },
 }
 
