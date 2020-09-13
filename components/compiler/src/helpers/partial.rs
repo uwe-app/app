@@ -7,6 +7,8 @@ use handlebars::*;
 use crate::markdown::render_markdown;
 use crate::BuildContext;
 
+use super::is_markdown_template;
+
 fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
     if let Some(ext) = file.extension() {
         if ext == config::HTML {
@@ -30,7 +32,7 @@ impl HelperDef for Partial {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let source_path = rc
+        let template_path = rc
             .evaluate(ctx, "@root/file.template")?
             .as_json()
             .as_str()
@@ -41,31 +43,27 @@ impl HelperDef for Partial {
             })?
             .to_string();
 
-        let types = self.context.options.settings.types.as_ref().unwrap();
-        let mut parse_markdown = false;
+        let file = PathBuf::from(&template_path);
 
-        let file = PathBuf::from(&source_path);
-        if let Some(ext) = file.extension() {
-            let s = ext.to_string_lossy().into_owned();
-            parse_markdown = types.markdown().contains(&s);
-        }
+        let is_markdown = is_markdown_template(
+            &self.context.options, ctx, rc, Some(file.clone()))?;
 
         let (content, _has_fm, _fm) =
             frontmatter::load(&file, get_front_matter_config(&file)).map_err(
                 |e| {
                     RenderError::new(format!(
                         "Partial front matter error {} ({})",
-                        &source_path, e
+                        &template_path, e
                     ))
                 },
             )?;
 
         let result = r.render_template(&content, ctx.data()).map_err(|e| {
-            RenderError::new(format!("Partial error {} ({})", &source_path, e))
+            RenderError::new(format!("Partial error {} ({})", &template_path, e))
         })?;
         //.map_err(|e| RenderError::new(format!("{}", e)))?;
 
-        if parse_markdown {
+        if is_markdown {
             let parsed = render_markdown(
                 &mut Cow::from(result),
                 &self.context.config,

@@ -1,9 +1,11 @@
-use handlebars::*;
 use std::io;
+use std::path::PathBuf;
+
+use handlebars::*;
 
 use serde_json::{to_value, Value};
 
-use config::Page;
+use config::{Page, RuntimeOptions};
 
 pub mod author;
 pub mod bookmark;
@@ -42,27 +44,37 @@ impl Output for BufferedOutput {
     }
 }
 
-// Capture the inner template as a string.
-/*
-pub fn render_buffer<'reg: 'rc, 'rc>(
-    h: &Helper<'reg, 'rc>,
-    r: &'reg Handlebars<'_>,
+/// Determine if the template for this page 
+/// indicates a markdown context.
+pub fn is_markdown_template<'reg: 'rc, 'rc>(
+    options: &RuntimeOptions,
     ctx: &'rc Context,
     rc: &mut RenderContext<'reg, 'rc>,
-) -> Result<String, RenderError> {
-    if let Some(t) = h.template() {
-        let mut buf = BufferedOutput {
-            buffer: "".to_owned(),
-        };
-        let result = t.render(r, ctx, rc, &mut buf);
-        match result {
-            Ok(_) => return Ok(buf.buffer),
-            Err(e) => return Err(RenderError::new(e.to_string())),
-        }
+    file: Option<PathBuf>) -> std::result::Result<bool, RenderError> {
+    let file = if let Some(file) = file {
+        file
+    } else {
+        let template_path = rc
+            .evaluate(ctx, "@root/file.template")?
+            .as_json()
+            .as_str()
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `file.template`, string expected",
+                )
+            })?
+            .to_string();
+        PathBuf::from(&template_path)
+    };
+
+    let mut parse_markdown = false;
+    if let Some(ext) = file.extension() {
+        let s = ext.to_string_lossy().into_owned();
+        let types = options.settings.types.as_ref().unwrap();
+        parse_markdown = types.markdown().contains(&s);
     }
-    Err(RenderError::new("No template for render buffer"))
+    Ok(parse_markdown)
 }
-*/
 
 // This dance keeps the parent context data intact
 // so that the `link` helper can be called inside another
@@ -71,8 +83,6 @@ pub fn with_parent_context<'rc>(
     ctx: &'rc Context,
     data: &mut Page,
 ) -> Result<Context, RenderError> {
-    // NOTE: The old version (below) using Context::wraps() breaks data handling
-    // NOTE: by serializing using from_value()
     let mut local_ctx = ctx.clone();
     let existing_data = local_ctx.data_mut();
     match existing_data {
@@ -88,8 +98,4 @@ pub fn with_parent_context<'rc>(
         _ => {}
     }
     Ok(local_ctx)
-
-    //let mut scope: Page = serde_json::from_value(ctx.data().clone())?;
-    //scope.append(&mut data);
-    //return Context::wraps(&scope);
 }
