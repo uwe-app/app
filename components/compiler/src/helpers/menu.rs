@@ -54,8 +54,9 @@ impl HelperDef for Menu {
         let source_file = PathBuf::from(&source_path);
         let collation = self.context.collation.read().unwrap();
         if let Some(ref menu_result) = collation.find_menu(&source_file, key) {
+            // TODO: use render_with_context()
             let mut result = r
-                .render_template(&menu_result.value, ctx.data())
+                .render_template_with_context(&menu_result.value, ctx)
                 .map_err(|e| {
                     RenderError::new(format!(
                         "Menu error {} ({})",
