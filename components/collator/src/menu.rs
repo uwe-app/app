@@ -75,7 +75,7 @@ fn build(
 ) -> Result<MenuResult> {
     let markdown = options.settings.types.as_ref().unwrap().markdown();
 
-    let all_pages = collation.get_pages();
+    //let all_pages = collation.get_pages();
     let mut result: MenuResult = Default::default();
     let mut buf = &mut result.value;
     let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
@@ -93,6 +93,38 @@ fn build(
                 }
             }
         }
+        MenuReference::Pages { .. } => {
+            page_data = find(&menu.definition, options, collation)?;
+        }
+        MenuReference::Directory { .. } => {
+            page_data = find(&menu.definition, options, collation)?;
+        }
+    }
+
+    match menu.definition {
+        MenuReference::Pages { description, .. }
+        | MenuReference::Directory { description, .. } => {
+            start_list(&mut buf, &menu.name)?;
+            pages_list(&mut buf, &page_data, description.is_some() && description.unwrap())?;
+            end_list(&mut buf)?;
+        }
+        _ => {}
+    }
+
+    Ok(result)
+}
+
+/// Find a list of pages that match a menu reference definition.
+pub fn find<'c>(
+    definition: &MenuReference,
+    options: &RuntimeOptions,
+    collation: &'c CollateInfo,
+) -> Result<Vec<(String, &'c Arc<RwLock<Page>>)>> {
+
+    let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
+    let mut should_sort = false;
+
+    match definition {
         MenuReference::Pages { ref pages, .. } => {
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
                 let page_path =
@@ -114,6 +146,10 @@ fn build(
             })?;
         }
         MenuReference::Directory { ref directory, ref depth, .. } => {
+            should_sort = true;
+
+            let all_pages = collation.get_pages();
+
             let dir = utils::url::to_path_separator(
                 directory.trim_start_matches("/"),
             );
@@ -141,30 +177,22 @@ fn build(
                     Ok::<_, Error>(acc)
                 },
             )?;
-
-            // Sort by title.
-            page_data.sort_by(|(_, a), (_, b)| {
-                let a = &*a.read().unwrap();
-                let b = &*b.read().unwrap();
-                let s1 = a.title.as_ref().map(|x| &**x).unwrap_or("");
-                let s2 = b.title.as_ref().map(|x| &**x).unwrap_or("");
-                s1.partial_cmp(s2).unwrap()
-            });
-
-        }
-    }
-
-    match menu.definition {
-        MenuReference::Pages { description, .. }
-        | MenuReference::Directory { description, .. } => {
-            start_list(&mut buf, &menu.name)?;
-            pages_list(&mut buf, &page_data, description.is_some() && description.unwrap())?;
-            end_list(&mut buf)?;
         }
         _ => {}
     }
 
-    Ok(result)
+    if should_sort {
+        // Sort by title.
+        page_data.sort_by(|(_, a), (_, b)| {
+            let a = &*a.read().unwrap();
+            let b = &*b.read().unwrap();
+            let s1 = a.title.as_ref().map(|x| &**x).unwrap_or("");
+            let s2 = b.title.as_ref().map(|x| &**x).unwrap_or("");
+            s1.partial_cmp(s2).unwrap()
+        });
+    }
+
+    Ok(page_data)
 }
 
 /// Compile all the menus in a collation and assign references to

@@ -87,6 +87,7 @@ pub fn ancestors<'a>(
     pages
 }
 
+#[deprecated(since = "0.20.14", note = "Use collator::menu::find() instead.")]
 pub fn listing<'a>(
     ctx: &'a BuildContext,
     list: &'a ListOptions,
