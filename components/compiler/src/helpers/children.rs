@@ -4,7 +4,10 @@ use std::sync::Arc;
 use handlebars::*;
 use serde_json::Value;
 
-use crate::tree::{self, ListOptions};
+use collator::menu;
+
+use config::MenuReference;
+
 use crate::BuildContext;
 
 #[derive(Clone)]
@@ -21,6 +24,7 @@ impl HelperDef for Children {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -41,15 +45,47 @@ impl HelperDef for Children {
         let path = PathBuf::from(&base_path);
         let dir = path.parent().unwrap().to_path_buf();
 
+        let dir_path = dir.strip_prefix(&self.context.options.source)
+            .unwrap().to_string_lossy().to_owned().to_string();
+
+        let menu = MenuReference::Directory {directory: dir_path, depth: Some(1), description: None};
+        let collation = self.context.collation.read().unwrap();
+
+        let pages = menu::find(&menu, &self.context.options, &collation.locale)
+            .map_err(|e| RenderError::new(e.to_string()))?;
+
+        //println!("Got pages length {}", pages.len());
+
+        for (_href, page) in pages.iter() {
+            let li = &*page.read().unwrap();
+
+            let mut local_rc = rc.clone();
+            let mut local_ctx = Context::wraps(li)?;
+            if let Some(ref file_ctx) = li.file {
+                if file_ctx.source == path {
+                    local_ctx
+                        .data_mut()
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("self".to_string(), Value::Bool(true));
+                }
+            }
+            template.render(r, &local_ctx, &mut local_rc, out)?;
+        }
+
+        Ok(())
+
         // TODO: See if we should render a specific directory
 
-        let list_opts = ListOptions {
-            sort: Some("title".to_string()),
-            dir: &dir,
-            depth: 1,
-        };
+        //let list_opts = ListOptions {
+            //sort: Some("title".to_string()),
+            //dir: &dir,
+            //depth: 1,
+        //};
 
-        let list_result = tree::listing(&self.context, &list_opts);
+        //let list_result = tree::listing(&self.context, &list_opts);
+
+        /*
         match list_result {
             Ok(entries) => {
                 for li in entries {
@@ -74,5 +110,6 @@ impl HelperDef for Children {
             // SEE: https://stackoverflow.com/a/58337971/7625589
             Err(e) => return Err(RenderError::new(e.to_string())),
         }
+        */
     }
 }

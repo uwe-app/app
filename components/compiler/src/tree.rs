@@ -5,12 +5,14 @@ use crate::{BuildContext, Result};
 use collator::Collate;
 use config::Page;
 
+/*
 #[derive(Debug)]
 pub struct ListOptions<'a> {
     pub sort: Option<String>,
     pub dir: &'a PathBuf,
     pub depth: usize,
 }
+*/
 
 pub fn parent<'a>(
     ctx: &'a BuildContext,
@@ -87,6 +89,7 @@ pub fn ancestors<'a>(
     pages
 }
 
+/*
 #[deprecated(since = "0.20.14", note = "Use collator::menu::find() instead.")]
 pub fn listing<'a>(
     ctx: &'a BuildContext,
@@ -140,3 +143,4 @@ pub fn listing<'a>(
 
     //Ok(vec![])
 }
+*/

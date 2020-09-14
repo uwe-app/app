@@ -146,7 +146,6 @@ pub fn find<'c>(
             })?;
         }
         MenuReference::Directory { ref directory, ref depth, .. } => {
-
             should_sort = true;
 
             let all_pages = collation.get_pages();
