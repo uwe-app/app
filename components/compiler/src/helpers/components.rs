@@ -45,7 +45,7 @@ impl HelperDef for Components {
         let components = menu::components(&self.context.options, &*collation, &source_path);
         let amount = components.len() - 1;
 
-        let mut block_context = BlockContext::new();
+        let block_context = BlockContext::new();
         rc.push_block(block_context);
 
         for (i, page) in components.iter().rev().enumerate() {

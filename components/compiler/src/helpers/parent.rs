@@ -2,12 +2,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use handlebars::*;
+use serde_json::json;
 
 use collator::menu;
 
 use crate::BuildContext;
-
-use super::with_parent_context;
 
 #[derive(Clone)]
 pub struct Parent {
@@ -23,6 +22,11 @@ impl HelperDef for Parent {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
+        let template = h.template().ok_or_else(|| {
+            RenderError::new("Type error in `parent`, block template expected")
+        })?;
+
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -34,20 +38,22 @@ impl HelperDef for Parent {
             })?
             .to_string();
 
-        let template = h.template().ok_or_else(|| {
-            RenderError::new("Type error in `parent`, block template expected")
-        })?;
-
         let path = PathBuf::from(&base_path);
         let collation = self.context.collation.read().unwrap();
-        if let Some(data) = menu::parent(&self.context.options, &*collation, &path) {
-            let mut page = data.write().unwrap();
-            //let mut page = data.clone();
-            let mut local_rc = rc.clone();
-            let local_ctx = with_parent_context(ctx, &mut page)?;
-            template.render(r, &local_ctx, &mut local_rc, out)?;
-            return Ok(());
+
+        let block_context = BlockContext::new();
+        rc.push_block(block_context);
+
+        if let Some(page_lock) = menu::parent(&self.context.options, &*collation, &path) {
+            let page = page_lock.read().unwrap();
+            if let Some(ref mut block) = rc.block_mut() {
+                block.set_base_value(json!(&*page));
+            }
+            template.render(r, ctx, rc, out)?;
         }
+
+        rc.pop_block();
+
         Ok(())
     }
 }

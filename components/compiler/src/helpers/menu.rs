@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use handlebars::*;
-use serde_json::{json, Value};
+use serde_json::json;
 
 use collator::{Collate, menu};
 
@@ -41,7 +41,7 @@ impl Menu {
             })?
             .to_string();
 
-        let mut block_context = BlockContext::new();
+        let block_context = BlockContext::new();
         rc.push_block(block_context);
         for (href, page) in pages.iter() {
             let li = &*page.read().unwrap();
