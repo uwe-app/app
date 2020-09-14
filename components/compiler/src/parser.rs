@@ -158,12 +158,12 @@ impl<'a> ParserBuilder<'a> {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.handlebars.register_helper(
-            "children",
-            Box::new(helpers::children::Children {
-                context: Arc::clone(&self.context),
-            }),
-        );
+        //self.handlebars.register_helper(
+            //"children",
+            //Box::new(helpers::children::Children {
+                //context: Arc::clone(&self.context),
+            //}),
+        //);
         self.handlebars.register_helper(
             "livereload",
             Box::new(helpers::livereload::LiveReload {

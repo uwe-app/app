@@ -9,7 +9,7 @@ use config::{Page, RuntimeOptions};
 
 pub mod author;
 pub mod bookmark;
-pub mod children;
+//pub mod children;
 pub mod components;
 pub mod date;
 pub mod favicon;
