@@ -1,13 +1,9 @@
-use std::borrow::Cow;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use handlebars::*;
 
 use collator::Collate;
-use config::MenuType;
 
-use crate::markdown::render_markdown;
 use crate::BuildContext;
 
 #[derive(Clone)]
@@ -21,7 +17,7 @@ impl HelperDef for Menu {
         h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
+        _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
         let key = h
