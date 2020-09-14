@@ -9,7 +9,6 @@ use config::{Page, RuntimeOptions};
 
 pub mod author;
 pub mod bookmark;
-//pub mod children;
 pub mod components;
 pub mod date;
 pub mod favicon;
@@ -75,28 +74,4 @@ pub fn is_markdown_template<'reg: 'rc, 'rc>(
         parse_markdown = types.markdown().contains(&s);
     }
     Ok(parse_markdown)
-}
-
-// This dance keeps the parent context data intact
-// so that the `link` helper can be called inside another
-// context
-pub fn with_parent_context<'rc>(
-    ctx: &'rc Context,
-    data: &mut Page,
-) -> Result<Context, RenderError> {
-    let mut local_ctx = ctx.clone();
-    let existing_data = local_ctx.data_mut();
-    match existing_data {
-        Value::Object(ref mut map) => {
-            let mut val = to_value(&data)?;
-            match val {
-                Value::Object(ref mut val) => {
-                    map.append(val);
-                }
-                _ => {}
-            }
-        }
-        _ => {}
-    }
-    Ok(local_ctx)
 }

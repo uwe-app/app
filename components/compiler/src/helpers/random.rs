@@ -4,8 +4,6 @@ use serde_json::json;
 
 use config::Page;
 
-use super::with_parent_context;
-
 #[derive(Clone, Copy)]
 pub struct Random;
 
@@ -36,21 +34,17 @@ impl HelperDef for Random {
             RenderError::new("Type error in `random`, block template expected")
         })?;
 
-        if let Some(element) = list.choose(&mut rand::thread_rng()) {
-            let mut local_rc = rc.clone();
-            let mut data: Page = Default::default();
+        let block_context = BlockContext::new();
+        rc.push_block(block_context);
 
-            let mut local_ctx = with_parent_context(ctx, &mut data)?;
-
-            local_ctx
-                .data_mut()
-                .as_object_mut()
-                .unwrap()
-                .insert("entry".to_string(), json!(element));
-
-            template.render(r, &local_ctx, &mut local_rc, out)?;
-            return Ok(());
+        if let Some(entry) = list.choose(&mut rand::thread_rng()) {
+            if let Some(ref mut block) = rc.block_mut() {
+                block.set_base_value(json!(entry));
+            }
+            template.render(r, ctx, rc, out)?;
         }
+
+        rc.pop_block();
 
         Ok(())
     }
