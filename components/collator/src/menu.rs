@@ -146,6 +146,7 @@ pub fn find<'c>(
             })?;
         }
         MenuReference::Directory { ref directory, ref depth, .. } => {
+
             should_sort = true;
 
             let all_pages = collation.get_pages();
@@ -154,26 +155,35 @@ pub fn find<'c>(
                 directory.trim_start_matches("/"),
             );
             let dir_buf = options.source.join(dir);
-            let dir_len = dir_buf.components().count();
+            let dir_count = dir_buf.components().count();
 
-            let depth = if let Some(depth) = depth {
-                depth.clone()
-            } else { 1 };
+            let max_depth = if let Some(depth) = depth { depth.clone() } else { 1 };
+            let target_depth = dir_count + max_depth;
 
-            all_pages.iter().try_fold(
-                &mut page_data,
-                |acc, (path, page)| {
+            all_pages
+                .iter()
+                .filter(|(k, _)| {
+                    let key_count = k.components().count();
 
-                    let path_len = path.components().count();
+                    //if key_count <= dir_count {
+                        //return false;
+                    //}
 
-                    if depth == 0 || path_len <= dir_len + depth {
-                        if path.starts_with(&dir_buf) {
-                            let reader = page.read().unwrap();
-                            let href = reader.href.as_ref().unwrap();
-                            acc.push((href.clone(), page));
+                    if key_count == target_depth + 1 {
+                        if let Some(stem) = k.file_stem() {
+                            stem == config::INDEX_STEM
+                        } else {
+                            false
                         }
+                    } else {
+                        println!("k : {}", k.display());
+                        k.starts_with(&dir_buf) && key_count <= target_depth
                     }
-
+                })
+                .try_fold(&mut page_data, |acc, (_path, page)| {
+                    let reader = page.read().unwrap();
+                    let href = reader.href.as_ref().unwrap();
+                    acc.push((href.clone(), page));
                     Ok::<_, Error>(acc)
                 },
             )?;
