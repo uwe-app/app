@@ -163,11 +163,12 @@ pub fn find<'c>(
             all_pages
                 .iter()
                 .filter(|(k, _)| {
-                    let key_count = k.components().count();
 
-                    //if key_count <= dir_count {
-                        //return false;
-                    //}
+                    if max_depth == 0 {
+                        return k.starts_with(&dir_buf);
+                    }
+
+                    let key_count = k.components().count();
 
                     if key_count == target_depth + 1 {
                         if let Some(stem) = k.file_stem() {
@@ -176,7 +177,7 @@ pub fn find<'c>(
                             false
                         }
                     } else {
-                        println!("k : {}", k.display());
+                        //println!("k : {}", k.display());
                         k.starts_with(&dir_buf) && key_count <= target_depth
                     }
                 })
