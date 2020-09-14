@@ -233,6 +233,39 @@ pub fn compile(
     Ok(())
 }
 
+/// Try to get the parent page for a source file path.
+pub fn parent(
+    options: &RuntimeOptions,
+    collation: &Collation,
+    file: &PathBuf,
+) -> Option<Arc<RwLock<Page>>> {
+
+    let types = options.settings.types.as_ref().unwrap();
+    let render_types = types.render();
+
+    let skip = if let Some(stem) = file.file_stem() {
+        if stem == config::INDEX_STEM {
+            1
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+
+    for p in file.ancestors().skip(skip + 1).take(1) {
+        let mut parent = p.join(config::INDEX_STEM);
+        for ext in render_types.iter() {
+            parent.set_extension(ext);
+            if let Some(ref page) = collation.resolve(&parent) {
+                return Some(Arc::clone(page));
+            }
+        }
+    }
+
+    None
+}
+
 /// Get the pages for the components of a source file path.
 pub fn components(
     options: &RuntimeOptions,

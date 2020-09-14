@@ -73,7 +73,6 @@ mod helpers;
 mod markdown;
 pub mod parser;
 pub mod run;
-mod tree;
 
 pub use compile::compile;
 pub use context::{BuildContext, CompilerOutput};

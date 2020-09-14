@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use handlebars::*;
 
-use crate::tree;
+use collator::menu;
+
 use crate::BuildContext;
 
 use super::with_parent_context;
@@ -38,7 +39,8 @@ impl HelperDef for Parent {
         })?;
 
         let path = PathBuf::from(&base_path);
-        if let Some(data) = tree::parent(&self.context, &path) {
+        let collation = self.context.collation.read().unwrap();
+        if let Some(data) = menu::parent(&self.context.options, &*collation, &path) {
             let mut page = data.write().unwrap();
             //let mut page = data.clone();
             let mut local_rc = rc.clone();
