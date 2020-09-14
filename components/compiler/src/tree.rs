@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use crate::{BuildContext, Result};
+use crate::BuildContext;
 use collator::Collate;
 use config::Page;
 

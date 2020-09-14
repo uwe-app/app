@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use handlebars::*;
-use serde_json::Value;
+use serde_json::json;
 
 use crate::tree;
 use crate::BuildContext;
@@ -42,6 +42,9 @@ impl HelperDef for Components {
         let components = tree::ancestors(&self.context, &source_path);
         let amount = components.len() - 1;
 
+        let mut block_context = BlockContext::new();
+        rc.push_block(block_context);
+
         for (i, page) in components.iter().rev().enumerate() {
             let page = &*page.read().unwrap();
             let first = i == 0;
@@ -51,16 +54,16 @@ impl HelperDef for Components {
                 .collect::<Vec<_>>()
                 .join("/");
 
-            let mut local_rc = rc.clone();
-            let mut local_ctx = Context::wraps(page)?;
-            let ctx_data = local_ctx.data_mut().as_object_mut().unwrap();
-
-            ctx_data.insert("href".to_string(), Value::String(href));
-            ctx_data.insert("first".to_string(), Value::Bool(first));
-            ctx_data.insert("last".to_string(), Value::Bool(last));
-
-            template.render(r, &local_ctx, &mut local_rc, out)?;
+            if let Some(ref mut block) = rc.block_mut() {
+                block.set_local_var("@first".to_string(), json!(first));
+                block.set_local_var("@last".to_string(), json!(last));
+                block.set_local_var("@href".to_string(), json!(href));
+                block.set_base_value(json!(page));
+            }
+            template.render(r, ctx, rc, out)?;
         }
+
+        rc.pop_block();
 
         Ok(())
     }
