@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet, hash_map};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
@@ -11,6 +10,8 @@ use crate::{
     resource::{Resource, ResourceKind, ResourceOperation},
     Error, Result,
 };
+
+static MENU_TEMPLATE_PREFIX: &str = "@menu";
 
 fn get_layout(l: &PathBuf) -> (String, PathBuf) {
     let layout = l.to_path_buf();
@@ -87,6 +88,12 @@ pub struct Graph {
     pub(crate) menus: MenuMap,
 }
 
+impl Graph {
+    pub fn get_menus(&self) -> &MenuMap {
+        &self.menus
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct MenuMap {
     /// List of pages with menus that need to be compiled.
@@ -98,6 +105,17 @@ pub struct MenuMap {
     /// Lookup table by file and menu name so the menu helper
     /// can easily locale the menu results.
     pub(crate) mapping: HashMap<Arc<PathBuf>, HashMap<String, Arc<MenuResult>>>,
+}
+
+impl MenuMap {
+
+    pub fn get_menu_template_name(&self, name: &str) -> String {
+        format!("{}/{}", MENU_TEMPLATE_PREFIX, name) 
+    }
+
+    pub fn results(&self) -> hash_map::Iter<'_, Arc<MenuEntry>, Arc<MenuResult>> {
+        self.results.iter() 
+    }
 }
 
 #[derive(Debug, Default, Clone)]

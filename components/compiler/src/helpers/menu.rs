@@ -24,17 +24,6 @@ impl HelperDef for Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let source_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.source`, string expected",
-                )
-            })?
-            .to_string();
-
         let key = h
             .params()
             .get(0)
@@ -51,32 +40,29 @@ impl HelperDef for Menu {
                 )
             })?;
 
+
+        /*
+        let source_path = rc
+            .evaluate(ctx, "@root/file.source")?
+            .as_json()
+            .as_str()
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `file.source`, string expected",
+                )
+            })?
+            .to_string();
         let source_file = PathBuf::from(&source_path);
+        */
+
+        // TODO: handle file-specific menu overrides
+
         let collation = self.context.collation.read().unwrap();
-        if let Some(ref menu_result) = collation.find_menu(&source_file, key) {
-            // TODO: use render_with_context()
-            let mut result = r
-                .render_template_with_context(&menu_result.value, ctx)
-                .map_err(|e| {
-                    RenderError::new(format!(
-                        "Menu error {} ({})",
-                        &source_path, e
-                    ))
-                })?;
+        let menus = collation.get_graph().get_menus();
+        let name = menus.get_menu_template_name(key);
 
-            match menu_result.kind {
-                // When we are in the context of an HTML page and
-                // we encounter a menu template formatted as markdown
-                // it needs to be transformed to HTML before being written
-                MenuType::Markdown => {
-                    result = render_markdown(
-                        &mut Cow::from(result),
-                        &self.context.config,
-                    );
-                }
-                _ => {}
-            }
-
+        if let Some(_tpl) = r.get_template(&name) {
+            let result = r.render_with_context(&name, ctx)?;
             out.write(&result)?;
         }
 

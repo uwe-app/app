@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use log::warn;
@@ -8,15 +9,16 @@ use serde::Serialize;
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
 
-use collator::LayoutCollate;
+use collator::{Collate, LayoutCollate};
 use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::CollatedPage;
+use config::{CollatedPage, MenuType};
 
 use super::context::BuildContext;
 use super::helpers;
+use super::markdown::render_markdown;
 
 static TEMPLATE_EXT: &str = ".hbs";
 
@@ -41,6 +43,7 @@ pub fn handlebars<'a>(
         .builtins()?
         .partials()?
         .helpers()?
+        .menus()?
         .fluent(locales)?
         .layouts()?;
     Ok(Box::new(builder.build()?))
@@ -294,6 +297,37 @@ impl<'a> ParserBuilder<'a> {
                 }
             }
         }
+
+        Ok(self)
+    }
+
+    pub fn menus(mut self) -> Result<Self> {
+
+        let collation = self.context.collation.read().unwrap();
+        let menus = collation.get_graph().get_menus();
+
+        for (entry, result) in menus.results() {
+            let name = menus.get_menu_template_name(&entry.name);
+            //println!("Got result name {}", name);
+            let mut template = Cow::from(&result.value);
+
+            match result.kind {
+                // When we are in the context of an HTML page and
+                // we encounter a menu template formatted as markdown
+                // it needs to be transformed to HTML before being written
+                MenuType::Markdown => {
+                    template = Cow::from(render_markdown(
+                        &mut Cow::from(&result.value),
+                        &self.context.config,
+                    ));
+                }
+                _ => {}
+            }
+
+            self.handlebars.register_template_string(&name, template);
+        }
+
+        drop(collation);
 
         Ok(self)
     }
