@@ -9,7 +9,7 @@ use config::{
     MenuEntry, MenuReference, MenuResult, MenuType, Page, RuntimeOptions,
 };
 
-use crate::{Collate, CollateInfo, Error, LinkCollate, Result};
+use crate::{Collate, Collation, CollateInfo, Error, LinkCollate, Result};
 
 fn write<W: Write>(f: &mut W, s: &str) -> Result<()> {
     f.write_str(s).map_err(Error::from)
@@ -231,4 +231,47 @@ pub fn compile(
     }
 
     Ok(())
+}
+
+/// Get the pages for the components of a source file path.
+pub fn components(
+    options: &RuntimeOptions,
+    collation: &Collation,
+    file: &PathBuf,
+) -> Vec<Arc<RwLock<Page>>> {
+    let mut pages: Vec<Arc<RwLock<Page>>> = Vec::new();
+    let types = options.settings.types.as_ref().unwrap();
+    let render_types = types.render();
+
+    let skip = if let Some(stem) = file.file_stem() {
+        if stem == config::INDEX_STEM {
+            1
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+
+    for p in file.ancestors().skip(skip) {
+        if let Some(ref page) = collation.resolve(&p.to_path_buf()) {
+            pages.push(Arc::clone(page));
+            continue;
+        }
+
+        let mut parent = p.join(config::INDEX_STEM);
+
+        for ext in render_types.iter() {
+            parent.set_extension(ext);
+            if let Some(ref page) = collation.resolve(&parent) {
+                pages.push(Arc::clone(page));
+            }
+        }
+
+        if p == options.source {
+            break;
+        }
+    }
+
+    pages
 }

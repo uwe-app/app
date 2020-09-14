@@ -46,6 +46,7 @@ pub fn parent<'a>(
     None
 }
 
+/*
 pub fn ancestors<'a>(
     ctx: &'a BuildContext,
     file: &PathBuf,
@@ -88,6 +89,7 @@ pub fn ancestors<'a>(
 
     pages
 }
+*/
 
 /*
 #[deprecated(since = "0.20.14", note = "Use collator::menu::find() instead.")]

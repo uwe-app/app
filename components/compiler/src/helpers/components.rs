@@ -4,7 +4,8 @@ use std::sync::Arc;
 use handlebars::*;
 use serde_json::json;
 
-use crate::tree;
+use collator::menu;
+
 use crate::BuildContext;
 
 #[derive(Clone)]
@@ -39,7 +40,9 @@ impl HelperDef for Components {
         })?;
 
         let source_path = PathBuf::from(&base_path);
-        let components = tree::ancestors(&self.context, &source_path);
+
+        let collation = self.context.collation.read().unwrap();
+        let components = menu::components(&self.context.options, &*collation, &source_path);
         let amount = components.len() - 1;
 
         let mut block_context = BlockContext::new();
