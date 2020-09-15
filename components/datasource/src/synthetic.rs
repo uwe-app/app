@@ -6,8 +6,15 @@ use jsonfeed::{Feed, Item, VERSION};
 use serde_json::json;
 
 use collator::{to_href, Collate, CollateInfo};
-use config::feed::{ChannelConfig, FeedConfig};
-use config::{Config, Page, PageLink, PaginateInfo, RuntimeOptions};
+use config::{
+    Config,
+    SearchConfig,
+    Page,
+    PageLink,
+    PaginateInfo,
+    RuntimeOptions,
+    feed::{ChannelConfig, FeedConfig},
+};
 
 use locale::Locales;
 
@@ -23,7 +30,9 @@ fn create_synthetic(
     page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
-    let dest = options.destination().exact(true).build(&source)?;
+    let dest = options.destination()
+        .rewrite_index(rewrite_index)
+        .build(&source)?;
 
     let mut writer = page_info.write().unwrap();
     writer.seal(config, options, &source, &dest, Some(template))?;
@@ -182,67 +191,66 @@ fn build_feed(
 
 // Create feed pages.
 pub fn feed(
+    feed: &FeedConfig,
     locales: &Locales,
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
 ) -> Result<()> {
-    if let Some(ref feed) = config.feed {
-        for (name, channel) in feed.channels.iter() {
-            let channel_href =
-                channel.target.as_ref().unwrap().trim_start_matches("/");
-            let channel_target = utils::url::to_path_separator(channel_href);
-            let source_dir = options.source.join(&channel_target);
+    for (name, channel) in feed.channels.iter() {
+        let channel_href =
+            channel.target.as_ref().unwrap().trim_start_matches("/");
+        let channel_target = utils::url::to_path_separator(channel_href);
+        let source_dir = options.source.join(&channel_target);
 
-            // Data is the same for each feed
-            let mut data_source: Page = Default::default();
-            data_source.standalone = Some(true);
-            data_source.feed = Some(build_feed(
-                name, locales, config, options, info, feed, channel,
-            )?);
+        // Data is the same for each feed
+        let mut data_source: Page = Default::default();
+        data_source.standalone = Some(true);
+        data_source.feed = Some(build_feed(
+            name, locales, config, options, info, feed, channel,
+        )?);
 
-            for feed_type in channel.types.iter() {
-                let file_name = feed_type.get_name();
-                let source = source_dir.join(&file_name);
+        for feed_type in channel.types.iter() {
+            let file_name = feed_type.get_name();
+            let source = source_dir.join(&file_name);
 
-                let template =
-                    if let Some(ref tpl) = feed.templates.get(feed_type) {
-                        options.source.join(tpl)
-                    } else {
-                        cache::get_feed_dir()?.join(&file_name)
-                    };
-
-                if !template.exists() {
-                    return Err(Error::NoFeedTemplate(template));
-                }
-
-                let mut item_data = data_source.clone();
-
-                let url_path = if locales.languages.multi {
-                    Some(info.get_lang())
+            let template =
+                if let Some(ref tpl) = feed.templates.get(feed_type) {
+                    options.source.join(tpl)
                 } else {
-                    None
+                    cache::get_feed_dir()?.join(&file_name)
                 };
 
-                // Update the feed url for this file
-                let base_url = options.get_canonical_url(config, url_path)?;
-                if let Some(ref mut feed) = item_data.feed.as_mut() {
-                    let path = format!("{}/{}", channel_href, file_name);
-                    feed.feed_url = Some(base_url.join(&path)?.to_string());
-                }
-
-                create_synthetic(
-                    config,
-                    options,
-                    info,
-                    source,
-                    template,
-                    Arc::new(RwLock::new(item_data)),
-                    // NOTE: must be false otherwise we get a collision
-                    // NOTE: on feed.xml and feed.json
-                    false,
-                )?;
+            if !template.exists() {
+                return Err(Error::NoFeedTemplate(template));
             }
+
+            let mut item_data = data_source.clone();
+
+            let url_path = if locales.languages.multi {
+                Some(info.get_lang())
+            } else {
+                None
+            };
+
+            // Update the feed url for this file
+            let base_url = options.get_canonical_url(config, url_path)?;
+            if let Some(ref mut feed) = item_data.feed.as_mut() {
+                let path = format!("{}/{}", channel_href, file_name);
+                feed.feed_url = Some(base_url.join(&path)?.to_string());
+            }
+
+            create_synthetic(
+                config,
+                options,
+                info,
+                source,
+                template,
+                Arc::new(RwLock::new(item_data)),
+                // NOTE: must be false otherwise we get a collision
+                // NOTE: on feed.xml and feed.json
+                false,
+            )?;
         }
     }
     Ok(())
@@ -250,48 +258,47 @@ pub fn feed(
 
 // Copy search runtime files.
 pub fn search(
+    search: &SearchConfig,
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
 ) -> Result<()> {
-    if let Some(ref search) = config.search {
-        let bundle = search.bundle.is_some() && search.bundle.unwrap();
-        if bundle {
-            let search_dir = cache::get_search_dir()?;
+    let bundle = search.bundle.is_some() && search.bundle.unwrap();
+    if bundle {
+        let search_dir = cache::get_search_dir()?;
 
-            let js_source = search_dir.join(config::SEARCH_JS);
-            let wasm_source = search_dir.join(config::SEARCH_WASM);
+        let js_source = search_dir.join(config::SEARCH_JS);
+        let wasm_source = search_dir.join(config::SEARCH_WASM);
 
-            let js_value = search.js.as_ref().unwrap().to_string();
-            let wasm_value = search.wasm.as_ref().unwrap().to_string();
-            let js_path =
-                utils::url::to_path_separator(js_value.trim_start_matches("/"));
-            let wasm_path = utils::url::to_path_separator(
-                wasm_value.trim_start_matches("/"),
-            );
+        let js_value = search.js.as_ref().unwrap().to_string();
+        let wasm_value = search.wasm.as_ref().unwrap().to_string();
+        let js_path =
+            utils::url::to_path_separator(js_value.trim_start_matches("/"));
+        let wasm_path = utils::url::to_path_separator(
+            wasm_value.trim_start_matches("/"),
+        );
 
-            let js_target = PathBuf::from(js_path);
-            let wasm_target = PathBuf::from(wasm_path);
+        let js_target = PathBuf::from(js_path);
+        let wasm_target = PathBuf::from(wasm_path);
 
-            create_file(
-                config,
-                options,
-                info,
-                js_value,
-                &search_dir,
-                js_source,
-                js_target,
-            )?;
-            create_file(
-                config,
-                options,
-                info,
-                wasm_value,
-                &search_dir,
-                wasm_source,
-                wasm_target,
-            )?;
-        }
+        create_file(
+            config,
+            options,
+            info,
+            js_value,
+            &search_dir,
+            js_source,
+            js_target,
+        )?;
+        create_file(
+            config,
+            options,
+            info,
+            wasm_value,
+            &search_dir,
+            wasm_source,
+            wasm_target,
+        )?;
     }
 
     Ok(())

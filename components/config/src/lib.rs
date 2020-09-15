@@ -125,4 +125,4 @@ pub use page::menu::{MenuEntry, MenuReference, MenuResult, MenuType};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
-pub use search::{SEARCH_JS, SEARCH_WASM};
+pub use search::{SearchConfig, SEARCH_JS, SEARCH_WASM};

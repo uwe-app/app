@@ -287,24 +287,50 @@ impl<'a> ProjectBuilder {
 
     /// Copy the search runtime files if we need them.
     pub async fn search(mut self) -> Result<Self> {
-        for collation in self.collations.iter_mut() {
-            synthetic::search(&self.config, &self.options, collation)?;
+        if let Some(ref search) = self.config.search {
+            for collation in self.collations.iter_mut() {
+                synthetic::search(
+                    search,
+                    &self.config,
+                    &self.options,
+                    collation,
+                )?;
+            }
         }
         Ok(self)
     }
 
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
-        for collation in self.collations.iter_mut() {
-            synthetic::feed(
-                &self.locales,
-                &self.config,
-                &self.options,
-                collation,
-            )?;
+        if let Some(ref feed) = self.config.feed {
+            for collation in self.collations.iter_mut() {
+                synthetic::feed(
+                    feed,
+                    &self.locales,
+                    &self.config,
+                    &self.options,
+                    collation,
+                )?;
+            }
         }
         Ok(self)
     }
+
+    /// Create book pages.
+    pub async fn book(mut self) -> Result<Self> {
+        if let Some(ref book) = self.config.book {
+            let mut it = self.collations.iter_mut();
+            let collation = it.next().unwrap();
+            //synthetic::book(
+                //book,
+                //&self.config,
+                //&self.options,
+                //collation,
+            //)?;
+        }
+        Ok(self)
+    }
+
 
     /// Collate series data.
     pub async fn series(mut self) -> Result<Self> {
@@ -691,11 +717,41 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.assign())
             .await?;
 
+        /*
+         *
+
+        // Resolve sources, locales and collate the page data
+        let builder = builder
+            .sources()
+            .and_then(|s| s.locales())
+            .and_then(|s| s.fetch())
+            .and_then(|s| s.collate())
+            .and_then(|s| s.redirects())
+            .await?;
+
+        // Load collections, resolve synthetic assets
+        let builder = builder
+            .load_data()
+            .and_then(|s| s.search())
+            .and_then(|s| s.feed())
+            .and_then(|s| s.book())
+            .and_then(|s| s.series())
+            .await?;
+
+        // Pagination, collections etc
+        let builder = builder
+            .pages()
+            .and_then(|s| s.each())
+            .and_then(|s| s.assign())
+            .await?;
+        */
+
         // WARN: If we add the future from syntax() to the chain
         // WARN: above then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to await (above) and
         // WARN: then await again here.
-        let builder = builder.inherit().and_then(|s| s.menus()).await?;
+        let builder = builder.inherit()
+            .and_then(|s| s.menus()).await?;
 
         let builder = if builder.get_syntax().is_some() {
             builder.syntax().await?
