@@ -55,8 +55,6 @@ pub enum Error {
     #[error(transparent)]
     Compiler(#[from] compiler::Error),
     #[error(transparent)]
-    Book(#[from] book::Error),
-    #[error(transparent)]
     Locale(#[from] locale::Error),
     #[error(transparent)]
     DataSource(#[from] datasource::Error),

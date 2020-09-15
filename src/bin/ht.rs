@@ -123,6 +123,7 @@ struct Cli {
     build_opts: BuildOpts,
 }
 
+/*
 #[derive(StructOpt, Debug)]
 enum Book {
     /// Add a book
@@ -153,6 +154,7 @@ enum Book {
         target: Vec<PathBuf>,
     },
 }
+*/
 
 #[derive(StructOpt, Debug)]
 struct BuildOpts {
@@ -338,11 +340,13 @@ enum Site {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+    /*
     /// Create, list and build books
     Book {
         #[structopt(flatten)]
         action: Book,
     },
+    */
 
     /// Create a new project
     Init {
@@ -403,6 +407,7 @@ impl Command {
 
 async fn process_command(cmd: &Command) -> Result<(), Error> {
     match cmd {
+        /*
         Command::Book { ref action } => match action {
             Book::Add {
                 ref project,
@@ -434,6 +439,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 command::book::build(opts)?;
             }
         },
+        */
 
         Command::Init { ref args } => {
             let opts = command::init::InitOptions {

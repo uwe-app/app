@@ -18,11 +18,13 @@ pub enum Error {
     #[error("Target {0} exists, please move it away")]
     TargetExists(PathBuf),
 
+    /*
     #[error("Book creation requires a path")]
     BookCreatePath,
 
     #[error("Book creation requires a project not a workspace")]
     BookCreateWorkspace,
+    */
 
     #[error("Language {0} does not exist in the locales {1}")]
     LanguageMissingFromLocales(String, String),
@@ -60,8 +62,6 @@ pub enum Error {
 
     #[error(transparent)]
     Config(#[from] config::Error),
-    #[error(transparent)]
-    Book(#[from] book::Error),
     #[error(transparent)]
     Compiler(#[from] compiler::Error),
     #[error(transparent)]

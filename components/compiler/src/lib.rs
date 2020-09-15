@@ -52,8 +52,6 @@ pub enum Error {
     Render(#[from] handlebars::RenderError),
 
     #[error(transparent)]
-    Book(#[from] book::Error),
-    #[error(transparent)]
     DataSource(#[from] datasource::Error),
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),

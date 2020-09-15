@@ -35,12 +35,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b602bfe940d21c130f3895acd65221e8a61270debe89d628b9cb4e3ccb8569b"
-
-[[package]]
 name = "arc-swap"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -183,18 +177,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa79dedbb091f449f1f39e53edf88d5dbe95f895dae6135a8d7b881fb5af73f5"
 dependencies = [
  "byte-tools",
-]
-
-[[package]]
-name = "book"
-version = "0.1.0"
-dependencies = [
- "config",
- "ignore",
- "log",
- "mdbook",
- "thiserror",
- "utils",
 ]
 
 [[package]]
@@ -348,7 +330,6 @@ dependencies = [
 name = "compiler"
 version = "0.1.0"
 dependencies = [
- "book",
  "chrono",
  "collator",
  "config",
@@ -1023,15 +1004,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "getopts"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14dbbfd5c71d70241ecf9e6f13737f7b5ce823821063188d7e46c41d371eebd5"
-dependencies = [
- "unicode-width",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1284,7 +1256,6 @@ dependencies = [
 name = "hypertext"
 version = "0.20.14"
 dependencies = [
- "book",
  "cache",
  "compiler",
  "config",
@@ -1624,31 +1595,6 @@ name = "md5"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
-
-[[package]]
-name = "mdbook"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b75e31ae4eaa0e45e17ee2b6b9e3ed969c3c6ff12bb4c2e352c42493f4ebb706"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "env_logger",
- "handlebars",
- "lazy_static",
- "log",
- "memchr",
- "open",
- "pulldown-cmark",
- "regex",
- "serde",
- "serde_derive",
- "serde_json",
- "shlex",
- "tempfile",
- "toml",
-]
 
 [[package]]
 name = "memchr"
@@ -2199,7 +2145,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca36dea94d187597e104a5c8e4b07576a8a45aa5db48a65e12940d3eb7461f55"
 dependencies = [
  "bitflags",
- "getopts",
  "memchr",
  "unicase",
 ]
@@ -3906,7 +3851,6 @@ dependencies = [
 name = "workspace"
 version = "0.1.0"
 dependencies = [
- "book",
  "cache",
  "collator",
  "compiler",
