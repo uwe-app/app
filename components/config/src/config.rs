@@ -12,6 +12,7 @@ use unic_langid::LanguageIdentifier;
 use crate::{
     book::BookConfig,
     date::DateConfig,
+    engine::TemplateEngine,
     feed::FeedConfig,
     fluent::FluentConfig,
     hook::HookMap,
@@ -129,6 +130,8 @@ pub struct Config {
     pub lang: String,
     pub host: String,
 
+    pub engine: Option<TemplateEngine>,
+
     // Host name when running locally which overrides the inferred
     // localhost subdomain
     pub localhost: Option<String>,
@@ -175,6 +178,7 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
+            engine: Some(Default::default()),
             localhost: None,
             build: Some(Default::default()),
             workspace: None,
@@ -209,6 +213,11 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn engine(&self) -> TemplateEngine {
+        self.engine.as_ref().map_or_else(|| TemplateEngine::default(), |e| e.clone())
+    }
+
     pub fn get_local_host_name(&self, infer_from_host: bool) -> String {
         if let Some(ref hostname) = self.localhost {
             hostname.clone()

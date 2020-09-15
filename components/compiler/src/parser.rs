@@ -1,23 +1,14 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use serde::{Serialize, Deserialize};
-
 use locale::{Locales};
-use config::CollatedPage;
+use config::{TemplateEngine, CollatedPage};
 
 use crate::{
     Result,
     context::BuildContext,
     hbs,
 };
-
-/// The supported template engines.
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TemplateEngine {
-    #[serde(rename = "handlebars")]
-    Handlebars,
-}
 
 /// The trait all template engines must implement.
 pub trait Parser {

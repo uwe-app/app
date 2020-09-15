@@ -96,6 +96,7 @@ pub mod app;
 pub mod book;
 mod config;
 mod date;
+mod engine;
 pub mod feed;
 mod fluent;
 mod hook;
@@ -118,6 +119,7 @@ pub mod transform;
 pub(crate) mod utils;
 
 pub use config::*;
+pub use engine::TemplateEngine;
 pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
