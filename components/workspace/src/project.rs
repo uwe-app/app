@@ -319,18 +319,17 @@ impl<'a> ProjectBuilder {
     /// Create book pages.
     pub async fn book(mut self) -> Result<Self> {
         if let Some(ref book) = self.config.book {
-            let mut it = self.collations.iter_mut();
-            let collation = it.next().unwrap();
-            //synthetic::book(
-                //book,
-                //&self.config,
-                //&self.options,
-                //collation,
-            //)?;
+            for collation in self.collations.iter_mut() {
+                synthetic::book(
+                    book,
+                    &self.config,
+                    &self.options,
+                    collation,
+                )?;
+            }
         }
         Ok(self)
     }
-
 
     /// Collate series data.
     pub async fn series(mut self) -> Result<Self> {
@@ -701,7 +700,14 @@ pub async fn compile<P: AsRef<Path>>(
     for entry in project.into_iter() {
         //let mut sitemaps: Vec<Url> = Vec::new();
 
+        // WARN: If we add too many futures to the chain
+        // WARN: then the compiler overflows resolving trait
+        // WARN: bounds. The workaround is to break the chain 
+        // WARN: with multiple await statements. 
+
         let builder = entry.builder(args)?;
+
+        /*
         let builder = builder
             .sources()
             .and_then(|s| s.locales())
@@ -716,9 +722,7 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.each())
             .and_then(|s| s.assign())
             .await?;
-
-        /*
-         *
+        */
 
         // Resolve sources, locales and collate the page data
         let builder = builder
@@ -744,20 +748,20 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.each())
             .and_then(|s| s.assign())
             .await?;
-        */
 
-        // WARN: If we add the future from syntax() to the chain
-        // WARN: above then the compiler overflows resolving trait
-        // WARN: bounds. The workaround is to await (above) and
-        // WARN: then await again here.
+        // Inherit locale overrides, dynamic menu templates, syntax highlighting
         let builder = builder.inherit()
-            .and_then(|s| s.menus()).await?;
+            .and_then(|s| s.menus())
+            .and_then(|s| s.syntax())
+            .await?;
 
+        /*
         let builder = if builder.get_syntax().is_some() {
             builder.syntax().await?
         } else {
             builder
         };
+        */
 
         let mut state = builder.build()?;
 

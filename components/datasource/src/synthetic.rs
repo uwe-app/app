@@ -13,6 +13,7 @@ use config::{
     PageLink,
     PaginateInfo,
     RuntimeOptions,
+    book::BookConfig,
     feed::{ChannelConfig, FeedConfig},
 };
 
@@ -300,6 +301,36 @@ pub fn search(
             wasm_target,
         )?;
     }
+
+    Ok(())
+}
+
+// Copy book theme runtime files.
+pub fn book(
+    book: &BookConfig,
+    config: &Config,
+    options: &RuntimeOptions,
+    info: &mut CollateInfo,
+) -> Result<()> {
+
+    // First resolve by book theme name
+    let base_dir = cache::get_book_dir()?;
+    let theme_dir = base_dir.join(book.theme_name());
+    if !theme_dir.exists() || !theme_dir.is_dir() {
+        return Err(Error::NoBookThemeDirectory(theme_dir))
+    }
+
+    // Then by template engine identifier 
+    let engine = config.engine();
+    let theme_dir = theme_dir.join(engine.to_string());
+    if !theme_dir.exists() || !theme_dir.is_dir() {
+        return Err(Error::NoBookThemeDirectory(theme_dir))
+    }
+
+    let target = info.get_path().join(book.target());
+
+    //println!("COPY BOOK FILES FROM {}", theme_dir.display());
+    //println!("COPY BOOK FILES TO {}", target.display());
 
     Ok(())
 }
