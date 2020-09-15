@@ -2,8 +2,6 @@ use handlebars::*;
 use rand::seq::SliceRandom;
 use serde_json::json;
 
-use config::Page;
-
 #[derive(Clone, Copy)]
 pub struct Random;
 

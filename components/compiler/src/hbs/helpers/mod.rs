@@ -3,9 +3,7 @@ use std::path::PathBuf;
 
 use handlebars::*;
 
-use serde_json::{to_value, Value};
-
-use config::{Page, RuntimeOptions};
+use config::RuntimeOptions;
 
 pub mod author;
 pub mod bookmark;

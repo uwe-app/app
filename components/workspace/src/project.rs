@@ -11,7 +11,7 @@ use cache::CacheComponent;
 use collator::{
     menu, Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
-use compiler::{parser, parser::Parser, BuildContext};
+use compiler::{parser, parser::Parser, parser::TemplateEngine, BuildContext};
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
@@ -415,7 +415,10 @@ impl<'a> ProjectBuilder {
             });
 
             let parser: Box<dyn Parser + Send + Sync> =
-                parser::handlebars(Arc::clone(&context), Arc::clone(&locales))?;
+                parser::build(
+                    TemplateEngine::Handlebars,
+                    Arc::clone(&context),
+                    Arc::clone(&locales))?;
 
             // NOTE: if we need to pre-compile with the parser this is the place.
 
