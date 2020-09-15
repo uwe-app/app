@@ -30,7 +30,7 @@ pub fn build<'a>(
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
     match engine {
         TemplateEngine::Handlebars => {
-            hbs::parser(context, locales)   
+            hbs::parser(engine, context, locales)   
         }
     }
 }

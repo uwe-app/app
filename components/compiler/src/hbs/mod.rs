@@ -14,35 +14,21 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::{CollatedPage, MenuType};
+use config::{CollatedPage, MenuType, TemplateEngine};
 
 use crate::parser::Parser;
 use crate::context::BuildContext;
 use crate::markdown::render_markdown;
 
-static TEMPLATE_EXT: &str = ".hbs";
-
 mod helpers;
-
-/*
-pub trait Parser {
-    fn parse(
-        &self,
-        file: &PathBuf,
-        // NOTE: we would like to use `impl Serialize` here
-        // NOTE: but cannot due to E0038
-        data: CollatedPage,
-        standalone: bool,
-    ) -> Result<String>;
-}
-*/
 
 /// Generate the standard parser.
 pub fn parser<'a>(
+    engine: TemplateEngine,
     context: Arc<BuildContext>,
     locales: Arc<Locales>,
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
-    let builder = ParserBuilder::new(context)
+    let builder = ParserBuilder::new(engine, context)
         .short_codes()?
         .builtins()?
         .partials()?
@@ -55,12 +41,13 @@ pub fn parser<'a>(
 
 #[derive(Debug)]
 struct ParserBuilder<'a> {
+    engine: TemplateEngine,
     context: Arc<BuildContext>,
     handlebars: Handlebars<'a>,
 }
 
 impl<'a> ParserBuilder<'a> {
-    pub fn new(context: Arc<BuildContext>) -> Self {
+    pub fn new(engine: TemplateEngine, context: Arc<BuildContext>) -> Self {
         let mut handlebars = Handlebars::new();
 
         let strict = context.options.settings.strict.is_some()
@@ -68,6 +55,7 @@ impl<'a> ParserBuilder<'a> {
         handlebars.set_strict_mode(strict);
 
         Self {
+            engine,
             context,
             handlebars,
         }
@@ -79,7 +67,8 @@ impl<'a> ParserBuilder<'a> {
             let short_codes = config::get_short_codes_location()?;
             if short_codes.exists() && short_codes.is_dir() {
                 self.handlebars
-                    .register_templates_directory(TEMPLATE_EXT, &short_codes)?;
+                    .register_templates_directory(
+                        self.engine.get_template_extension(), &short_codes)?;
             } else {
                 warn!("Short codes are enabled but the short code cache does not exist.");
                 warn!("Use the `fetch` command to download the short codes repository.");
@@ -137,7 +126,8 @@ impl<'a> ParserBuilder<'a> {
         let templates = self.context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
             self.handlebars
-                .register_templates_directory(TEMPLATE_EXT, &templates)?;
+                .register_templates_directory(
+                    self.engine.get_template_extension(), &templates)?;
         }
         Ok(self)
     }

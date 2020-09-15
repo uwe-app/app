@@ -5,6 +5,9 @@ use chrono::prelude::*;
 use jsonfeed::{Feed, Item, VERSION};
 use serde_json::json;
 
+use crossbeam::channel;
+use ignore::{WalkBuilder, WalkState};
+
 use collator::{to_href, Collate, CollateInfo};
 use config::{
     Config,
@@ -22,7 +25,7 @@ use locale::Locales;
 use crate::{DataSourceMap, Error, QueryCache, Result};
 
 // Helper to inject synthetic pages.
-fn create_synthetic(
+fn create_page(
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
@@ -51,15 +54,13 @@ fn create_synthetic(
 
 // Helper to create synthetic files.
 fn create_file(
-    config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
-    href: String,
-    _base: &PathBuf,
     source: PathBuf,
     target: PathBuf,
+    href: String,
 ) -> Result<()> {
-    info.add_file(Arc::new(source), target, href, config, options)?;
+    info.add_file(options, Arc::new(source), target, href)?;
     Ok(())
 }
 
@@ -241,7 +242,7 @@ pub fn feed(
                 feed.feed_url = Some(base_url.join(&path)?.to_string());
             }
 
-            create_synthetic(
+            create_page(
                 config,
                 options,
                 info,
@@ -283,26 +284,46 @@ pub fn search(
         let wasm_target = PathBuf::from(wasm_path);
 
         create_file(
-            config,
             options,
             info,
-            js_value,
-            &search_dir,
             js_source,
             js_target,
+            js_value,
         )?;
         create_file(
-            config,
             options,
             info,
-            wasm_value,
-            &search_dir,
             wasm_source,
             wasm_target,
+            wasm_value,
         )?;
     }
 
     Ok(())
+}
+
+fn find_files<F>(dir: &PathBuf, filter: F) -> Vec<Result<PathBuf>>
+where
+    F: Fn(&PathBuf) -> bool + Sync
+{
+    let (tx, rx) = channel::unbounded();
+
+    WalkBuilder::new(dir)
+        .follow_links(true)
+        .build_parallel()
+        .run(|| {
+            Box::new(|result| {
+                if let Ok(entry) = result {
+                    let path = entry.path().to_path_buf();
+                    if filter(&path) { let _ = tx.send(Ok(path)); }
+                }
+                WalkState::Continue
+            })
+        });
+
+    drop(tx);
+
+    rx.iter().collect()
 }
 
 // Copy book theme runtime files.
@@ -327,10 +348,44 @@ pub fn book(
         return Err(Error::NoBookThemeDirectory(theme_dir))
     }
 
-    let target = info.get_path().join(book.target());
+    let base = info.get_path().clone();
+    let target = base.join(book.target());
 
-    //println!("COPY BOOK FILES FROM {}", theme_dir.display());
-    //println!("COPY BOOK FILES TO {}", target.display());
+    let layout_file = theme_dir.join(engine.get_layout_name());
+    if !layout_file.exists() || !layout_file.is_file() {
+        return Err(Error::NoBookThemeLayout(layout_file, theme_dir))
+    }
+
+    let filter = |p: &PathBuf| -> bool { p != &layout_file && p.is_file() };
+    let results = find_files(&theme_dir, filter);
+
+    println!("COPY BOOK FILES FROM {}", theme_dir.display());
+    println!("COPY BOOK FILES TO {}", target.display());
+    println!("USE BOOK LAYOUT {}", layout_file.display());
+
+    for r in results {
+        let book_source = r?.strip_prefix(&theme_dir)?.to_path_buf();
+        let book_target = target.join(&book_source);
+
+        println!("Got file result {}", book_source.display());
+        println!("Got file result {}", book_target.display());
+
+        let book_href = to_href(&book_target, options, false, Some(base.clone()))?;
+
+        println!("Book href is {}", book_href);
+
+        /*
+        create_file(
+            options,
+            info,
+            book_source,
+            book_target,
+            book_href,
+        )?;
+        */
+    }
+
+    // TODO: assign layout file to the collation.
 
     Ok(())
 }
@@ -416,7 +471,7 @@ pub fn each(
                         mock.set_extension(ext);
                     }
 
-                    create_synthetic(
+                    create_page(
                         config,
                         options,
                         info,
@@ -597,7 +652,7 @@ pub fn pages(
                     .extra
                     .insert(page_query.get_parameter(), json!(items));
 
-                create_synthetic(
+                create_page(
                     config,
                     options,
                     info,

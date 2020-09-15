@@ -22,8 +22,8 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
-    #[error("Page {0} is outside the source directory {1}")]
-    PageOutsideSource(PathBuf, PathBuf),
+    //#[error("Page {0} is outside the source directory {1}")]
+    //PageOutsideSource(PathBuf, PathBuf),
 
     #[error("Failed to read link catalog {0}")]
     LinkCatalog(PathBuf),

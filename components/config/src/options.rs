@@ -230,12 +230,15 @@ impl RuntimeOptions {
         };
 
         let page = file.as_ref();
+
+        /*
         if !page.starts_with(src) {
             return Err(Error::PageOutsideSource(
                 page.to_path_buf(),
                 src.to_path_buf(),
             ));
         }
+        */
 
         let mut rel = page.strip_prefix(src)?.to_path_buf();
 

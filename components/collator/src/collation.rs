@@ -479,11 +479,10 @@ impl CollateInfo {
 
     pub fn add_file(
         &mut self,
+        options: &RuntimeOptions,
         key: Arc<PathBuf>,
         dest: PathBuf,
         href: String,
-        _config: &Config,
-        options: &RuntimeOptions,
     ) -> Result<()> {
         // Set up the default resource operation
         let mut op = if options.settings.is_release() {
