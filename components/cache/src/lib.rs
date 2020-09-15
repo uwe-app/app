@@ -34,6 +34,9 @@ static SEARCH_NAME: &str = "search-runtime";
 static FEED_REPO: &str = "https://github.com/hypertext-live/feed";
 static FEED_NAME: &str = "feed";
 
+static BOOK_REPO: &str = "https://github.com/hypertext-live/book";
+static BOOK_NAME: &str = "book";
+
 static VERSION_BASE: &str =
     "https://raw.githubusercontent.com/hypertext-live/release-";
 static VERSION_FILE: &str = "/master/version.toml";
@@ -57,6 +60,7 @@ pub enum CacheComponent {
     Syntax,
     Search,
     Feed,
+    Book,
 }
 
 pub fn get_workspace_dir() -> io::Result<PathBuf> {
@@ -148,6 +152,14 @@ pub fn get_feed_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(FEED_NAME))
 }
 
+pub fn get_book_url() -> String {
+    BOOK_REPO.to_string()
+}
+
+pub fn get_book_dir() -> io::Result<PathBuf> {
+    Ok(dirs::get_root_dir()?.join(BOOK_NAME))
+}
+
 #[cfg(target_os = "windows")]
 pub fn get_release_version() -> String {
     format!("{}{}{}", VERSION_BASE, "windows", VERSION_FILE)
@@ -234,6 +246,11 @@ pub fn update(
             CacheComponent::Feed => {
                 let url = get_feed_url();
                 let dir = get_feed_dir()?;
+                git::clone_or_fetch(&url, &dir, false)?;
+            }
+            CacheComponent::Book => {
+                let url = get_book_url();
+                let dir = get_book_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
         }

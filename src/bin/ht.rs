@@ -255,6 +255,10 @@ struct FetchOpts {
     /// Update the feed templates
     #[structopt(short = "f", long)]
     feed: bool,
+
+    /// Update the book templates
+    #[structopt(short = "o", long)]
+    book: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -461,6 +465,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 syntax: args.syntax,
                 search: args.search,
                 feed: args.feed,
+                book: args.book,
             };
 
             command::fetch::update(opts)?;
