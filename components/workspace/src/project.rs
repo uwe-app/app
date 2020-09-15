@@ -179,6 +179,13 @@ impl<'a> ProjectBuilder {
     pub async fn fetch(self) -> Result<Self> {
         let mut components: Vec<CacheComponent> = Vec::new();
 
+        if self.config.book.is_some() {
+            let book_dir = cache::get_book_dir()?;
+            if !book_dir.exists() {
+                components.push(CacheComponent::Book);
+            }
+        }
+
         if self.config.syntax.is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
