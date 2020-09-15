@@ -359,22 +359,16 @@ pub fn book(
     let filter = |p: &PathBuf| -> bool { p != &layout_file && p.is_file() };
     let results = find_files(&theme_dir, filter);
 
-    println!("COPY BOOK FILES FROM {}", theme_dir.display());
-    println!("COPY BOOK FILES TO {}", target.display());
-    println!("USE BOOK LAYOUT {}", layout_file.display());
-
     for r in results {
-        let book_source = r?.strip_prefix(&theme_dir)?.to_path_buf();
-        let book_target = target.join(&book_source);
+        let book_source = r?;
+        let book_rel = book_source.strip_prefix(&theme_dir)?.to_path_buf();
+        let book_target = book.target().join(&book_rel);
+        let book_href = to_href(&book_source, options, false, Some(theme_dir.clone()))?;
 
-        println!("Got file result {}", book_source.display());
-        println!("Got file result {}", book_target.display());
-
-        let book_href = to_href(&book_target, options, false, Some(base.clone()))?;
-
-        println!("Book href is {}", book_href);
-
-        /*
+        //println!("book source is {}", book_source.display());
+        //println!("book target is {}", book_target.display());
+        //println!("book href is {}", book_href);
+        
         create_file(
             options,
             info,
@@ -382,7 +376,6 @@ pub fn book(
             book_target,
             book_href,
         )?;
-        */
     }
 
     // TODO: assign layout file to the collation.
