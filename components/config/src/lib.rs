@@ -16,9 +16,6 @@ pub enum Error {
     #[error("No menu {0} resolving to file {1}")]
     NoMenuFile(String, PathBuf),
 
-    #[error("Missing book configuration {0}")]
-    NoBookConfig(PathBuf),
-
     #[error("No site configuration in {0}")]
     NoSiteConfig(PathBuf),
 

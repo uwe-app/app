@@ -270,7 +270,7 @@ impl Renderer {
     async fn build(
         &self,
         parser: &Box<impl Parser + Send + Sync + ?Sized>,
-        render_options: &RenderOptions,
+        _render_options: &RenderOptions,
         output: &mut CompilerOutput,
     ) -> Result<()> {
         // When working with multi-lingual sites the target may not exist yet

@@ -23,7 +23,7 @@ impl Menu {
         &self,
         template: &'reg Template,
         pages: Vec<(String, &Arc<RwLock<Page>>)>,
-        h: &Helper<'reg, 'rc>,
+        _h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         rc: &mut RenderContext<'reg, 'rc>,
@@ -115,7 +115,7 @@ impl Menu {
         h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
+        _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
         let key = h

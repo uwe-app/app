@@ -274,9 +274,6 @@ impl Config {
                 if let Some(fluent) = cfg.fluent.as_mut() {
                     fluent.prepare(&cfg.lang, lang_id);
                 }
-                if let Some(book) = cfg.book.as_mut() {
-                    book.prepare(&build.source)?;
-                }
                 if let Some(hooks) = cfg.hook.as_mut() {
                     hooks.prepare();
                 }

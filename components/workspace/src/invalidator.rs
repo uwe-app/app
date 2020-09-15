@@ -152,6 +152,7 @@ impl<'a> Invalidator<'a> {
             .get_book_theme_path(&self.project.options.source)
             .map(|v| self.canonical(v));
 
+        /*
         let mut books: Vec<PathBuf> = Vec::new();
         if let Some(ref book) = self.project.config.book {
             books = book
@@ -160,6 +161,7 @@ impl<'a> Invalidator<'a> {
                 .map(|p| self.canonical(p))
                 .collect::<Vec<_>>();
         }
+        */
 
         let generator_paths: Vec<PathBuf> = self
             .project
