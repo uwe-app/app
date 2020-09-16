@@ -37,7 +37,7 @@ impl Default for BookConfig {
 impl BookConfig {
 
     pub(crate) fn prepare(&mut self) {
-        // TODO: define default menu using SUMMARY.md
+        // TODO: define default menu using MENU.md
     }
 
     pub fn theme_name(&self) -> &str {
@@ -48,15 +48,7 @@ impl BookConfig {
         self.target.as_ref().unwrap()
     }
 
-    /// Get a list of paths for all books.
-    pub fn get_paths(&self, base: &PathBuf) -> HashMap<&str, PathBuf> {
-        let mut out: HashMap<&str, PathBuf> = HashMap::new();
-        for (key, value) in self.members.iter() {
-            out.insert(key, base.join(&value.path));
-        }
-        out
-    }
-
+    /*
     /// Find a book by path.
     pub fn find(&self, needle: &PathBuf) -> Option<BookItem> {
         for (_, value) in self.members.iter() {
@@ -66,6 +58,7 @@ impl BookConfig {
         }
         None
     }
+    */
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]

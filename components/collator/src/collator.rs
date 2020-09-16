@@ -294,9 +294,15 @@ fn add_page(
     }
 
     if let Some(ref book) = config.book {
-        let paths = book.get_paths(&options.source);
-        for (k, p) in paths {
+        for (k, item) in book.members.iter() {
+            let p = options.source.join(&item.path);
+
             if key.starts_with(p) && !MenuEntry::is_menu(&key) {
+                // All pages inherit the draft status from the book.
+                if item.draft.is_some() {
+                    page.draft = item.draft.clone();
+                }
+
                 let files = info.books.entry(k.to_string()).or_insert(Vec::new());
                 files.push(Arc::clone(key));
             }
