@@ -71,6 +71,10 @@ pub struct CollateInfo {
     // Store queries for expansion later
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 
+    // Map of books files so that we can assign the theme template 
+    // and book menu.
+    pub(crate) books: HashMap<String, Vec<Arc<PathBuf>>>,
+
     // List of series
     pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
 
@@ -79,7 +83,6 @@ pub struct CollateInfo {
     // The default layout
     pub(crate) layout: Option<Arc<PathBuf>>,
 
-    // TODO: books too!
     pub(crate) links: LinkMap,
 }
 
@@ -411,6 +414,10 @@ impl CollateInfo {
     pub fn get_graph_mut(&mut self) -> &mut Graph {
         &mut self.graph
     }
+
+    //pub fn get_books_mut(&mut self) -> &mut HashMap<String, Vec<Arc<PathBuf>>> {
+        //&mut self.books
+    //}
 
     /// Create a page in this collation.
     ///

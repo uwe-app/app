@@ -273,6 +273,16 @@ fn add_page(
         }
     }
 
+    if let Some(ref book) = config.book {
+        let paths = book.get_paths(&options.source);
+        for (k, p) in paths {
+            if key.starts_with(p) && !book.is_summary_menu(&key) {
+                let files = info.books.entry(k.to_string()).or_insert(Vec::new());
+                files.push(Arc::clone(key));
+            }
+        }
+    }
+
     info.add_page(key, destination, Arc::new(RwLock::new(page)));
 
     Ok(())

@@ -286,6 +286,9 @@ impl Config {
                 if let Some(search) = cfg.search.as_mut() {
                     search.prepare();
                 }
+                if let Some(book) = cfg.book.as_mut() {
+                    book.prepare();
+                }
                 if let Some(feed) = cfg.feed.as_mut() {
                     feed.prepare();
                 }

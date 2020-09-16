@@ -5,16 +5,22 @@ use serde::{Deserialize, Serialize};
 
 static THEME_NAME: &str = "default";
 static THEME_TARGET: &str = "assets/book/theme";
+static SUMMARY_MENU: &str = "SUMMARY.md";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct BookConfig {
-    pub theme: Option<String>,
+
     #[serde(flatten)]
     pub members: HashMap<String, BookItem>,
 
+    /// Name of a book theme to use.
+    pub theme: Option<String>,
+
+    /// Target output directory.
     #[serde(skip)]
     pub target: Option<PathBuf>,
+
 }
 
 impl Default for BookConfig {
@@ -31,6 +37,10 @@ impl Default for BookConfig {
 
 impl BookConfig {
 
+    pub(crate) fn prepare(&mut self) {
+        // TODO: define default menu using SUMMARY.md
+    }
+
     pub fn theme_name(&self) -> &str {
         self.theme.as_ref().map(|s| s.as_str()).unwrap_or(THEME_NAME) 
     }
@@ -40,12 +50,17 @@ impl BookConfig {
     }
 
     /// Get a list of paths for all books.
-    pub fn get_paths(&self, base: &PathBuf) -> Vec<PathBuf> {
-        let mut out: Vec<PathBuf> = Vec::new();
-        for (_, value) in self.members.iter() {
-            out.push(base.join(&value.path));
+    pub fn get_paths(&self, base: &PathBuf) -> HashMap<&str, PathBuf> {
+        let mut out: HashMap<&str, PathBuf> = HashMap::new();
+        for (key, value) in self.members.iter() {
+            out.insert(key, base.join(&value.path));
         }
         out
+    }
+
+    /// Determine if a file appears to be the summary menu.
+    pub fn is_summary_menu(&self, file: &PathBuf) -> bool {
+        file.ends_with(SUMMARY_MENU) 
     }
 
     /// Find a book by path.
