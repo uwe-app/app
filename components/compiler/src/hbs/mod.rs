@@ -411,20 +411,5 @@ impl Parser for HandlebarsParser<'_> {
         } else {
             self.standalone(file, data)
         }
-
-        /*
-        if standalone {
-            return self.standalone(file, data);
-        }
-
-        let collation = &*self.context.collation.read().unwrap();
-        let layout = collation.find_layout(file);
-
-        if let Some(ref layout_path) = layout {
-            self.layout(data, layout_path)
-        } else {
-            self.standalone(file, data)
-        }
-        */
     }
 }

@@ -160,7 +160,7 @@ pub trait LayoutCollate {
     /// Attempt to find a layout for a file path searching
     /// custom layouts and falling back to the default layout
     /// if no custom layout was found for the key.
-    fn find_layout(&self, key: &Option<String>) -> Option<&PathBuf>;
+    fn find_layout(&self, key: &Option<String>, default: bool) -> Option<&PathBuf>;
 }
 
 pub trait LinkCollate {
@@ -278,9 +278,9 @@ impl LayoutCollate for Collation {
         self.fallback.layouts()
     }
 
-    fn find_layout(&self, key: &Option<String>) -> Option<&PathBuf> {
+    fn find_layout(&self, key: &Option<String>, default: bool) -> Option<&PathBuf> {
         // TODO: prefer locale layouts?
-        self.fallback.find_layout(key)
+        self.fallback.find_layout(key, default)
     }
 }
 
@@ -374,7 +374,7 @@ impl LayoutCollate for CollateInfo {
         map
     }
 
-    fn find_layout(&self, key: &Option<String>) -> Option<&PathBuf> {
+    fn find_layout(&self, key: &Option<String>, default: bool) -> Option<&PathBuf> {
 
         // Try to lookup a named layout.
         if let Some(ref key) = key {
@@ -384,9 +384,12 @@ impl LayoutCollate for CollateInfo {
         }
 
         // Use the default layout.
-        if let Some(ref layout) = self.layout {
-            return Some(layout);
+        if default {
+            if let Some(ref layout) = self.layout {
+                return Some(layout);
+            }
         }
+
         None
     }
 }
