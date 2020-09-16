@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,12 @@ use serde_with::skip_serializing_none;
 use crate::{utils::href::UrlPath, Error, Result};
 
 static MENU: &str = "MENU.md";
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct MenuConfig {
+    #[serde(flatten)]
+    pub entries: HashMap<String, MenuEntry>,
+}
 
 #[derive(Debug)]
 pub enum MenuType {
@@ -43,6 +50,14 @@ pub struct MenuEntry {
 }
 
 impl MenuEntry {
+
+    pub fn new(name: String, file: UrlPath) -> Self {
+        Self {
+            name,
+            definition: MenuReference::File {file},
+            result: Default::default(),
+        }
+    }
 
     /// Determine if a file appears to be a menu using the convention.
     pub fn is_menu(file: &PathBuf) -> bool {

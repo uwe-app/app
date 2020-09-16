@@ -222,6 +222,17 @@ impl Config {
         self.engine.as_ref().map_or_else(|| TemplateEngine::default(), |e| e.clone())
     }
 
+    /*
+    pub fn get_global_menu(&self) -> Option<&MenuConfig> {
+        if let Some(ref page) = self.page {
+            if let Some(ref menu) = page.menu {
+                return Some(menu) 
+            }
+        }
+        None
+    }
+    */
+
     pub fn get_local_host_name(&self, infer_from_host: bool) -> String {
         if let Some(ref hostname) = self.localhost {
             hostname.clone()

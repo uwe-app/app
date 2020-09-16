@@ -15,7 +15,7 @@ use crate::{
     RuntimeOptions,
 };
 
-use self::{feed::FeedEntry, file_context::FileContext, menu::MenuEntry};
+use self::{feed::FeedEntry, file_context::FileContext};
 
 pub(crate) mod feed;
 pub(crate) mod file_context;
@@ -82,7 +82,7 @@ pub struct Page {
 
     // Menus keyed by name
     #[serde(skip_serializing)]
-    pub menu: Option<HashMap<String, MenuEntry>>,
+    pub menu: Option<menu::MenuConfig>,
 
     // Automatically assigned
 

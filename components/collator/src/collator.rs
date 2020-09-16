@@ -81,6 +81,31 @@ impl TryInto<Vec<CollateInfo>> for CollateResult {
     }
 }
 
+fn add_menu(
+    info: &mut CollateInfo,
+    _config: &Config,
+    options: &RuntimeOptions,
+    key: &Arc<PathBuf>) -> Result<()> {
+
+
+    let url_path = utils::url::to_href_separator(
+        key.strip_prefix(&options.source)?);
+
+    // NOTE: use the parent directory as the menu key 
+    // NOTE: if possible
+    let name = if let Some(parent) = key.parent() {
+        parent.to_string_lossy().into_owned()
+    } else {
+        key.to_string_lossy().into_owned()
+    };
+
+    // Inject the menu entry for processing later.
+    let entry = MenuEntry::new(name, url_path);
+    info.graph.menus.sources.insert(Arc::new(entry), Vec::new());
+
+    Ok(())
+}
+
 pub async fn walk(
     req: CollateRequest<'_>,
     res: &mut CollateResult,
@@ -148,7 +173,16 @@ async fn find(
                         && path.is_file()
                         && req.options.is_page(&path);
 
-                    if is_page {
+                    // Detect special handling for MENU.md files.
+                    let is_menu = is_page && MenuEntry::is_menu(&key);
+
+                    if is_menu {
+                        if let Err(e) =
+                            add_menu(info, req.config, req.options, &key)
+                        {
+                            let _ = tx.send(e);
+                        }
+                    } else if is_page {
                         if let Err(e) =
                             add_page(info, req.config, req.options, &key, &path)
                         {
@@ -275,7 +309,7 @@ fn add_page(
 
     if let Some(menu) = page.menu.as_mut() {
         // Verify file references as early as possible
-        for (k, v) in menu.iter_mut() {
+        for (k, v) in menu.entries.iter_mut() {
             v.verify_files(&options.source)?;
 
             let mut def = v.clone();
@@ -296,13 +330,11 @@ fn add_page(
     if let Some(ref book) = config.book {
         for (k, item) in book.members.iter() {
             let p = options.source.join(&item.path);
-
             if key.starts_with(p) && !MenuEntry::is_menu(&key) {
                 // All pages inherit the draft status from the book.
                 if item.draft.is_some() {
                     page.draft = item.draft.clone();
                 }
-
                 let files = info.books.entry(k.to_string()).or_insert(Vec::new());
                 files.push(Arc::clone(key));
             }
