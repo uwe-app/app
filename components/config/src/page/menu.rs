@@ -5,6 +5,8 @@ use serde_with::skip_serializing_none;
 
 use crate::{utils::href::UrlPath, Error, Result};
 
+static MENU: &str = "MENU.md";
+
 #[derive(Debug)]
 pub enum MenuType {
     Markdown,
@@ -41,6 +43,12 @@ pub struct MenuEntry {
 }
 
 impl MenuEntry {
+
+    /// Determine if a file appears to be a menu using the convention.
+    pub fn is_menu(file: &PathBuf) -> bool {
+        file.ends_with(MENU) 
+    }
+
     pub fn verify_files(&self, base: &PathBuf) -> Result<()> {
         match self.definition {
             MenuReference::File { ref file, .. } => {

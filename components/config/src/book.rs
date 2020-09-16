@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 
 static THEME_NAME: &str = "default";
 static THEME_TARGET: &str = "assets/book/theme";
-static SUMMARY_MENU: &str = "SUMMARY.md";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -56,11 +55,6 @@ impl BookConfig {
             out.insert(key, base.join(&value.path));
         }
         out
-    }
-
-    /// Determine if a file appears to be the summary menu.
-    pub fn is_summary_menu(&self, file: &PathBuf) -> bool {
-        file.ends_with(SUMMARY_MENU) 
     }
 
     /// Find a book by path.
