@@ -374,9 +374,18 @@ pub fn book(
         )?;
     }
 
-    //let books = info.books;
-
-    // TODO: assign layout file to the collation.
+    // Update the collated page information with 
+    // the book layout
+    for (_k, pages) in info.books.iter_mut() {
+        for p in pages.iter() {
+            if let Some(ref mut page_lock) = info.pages.get_mut(p) {
+                let mut writer = page_lock.write().unwrap();
+                writer.layout = Some(layout_file.clone());
+                //println!("Got book page layout {} {:?}", p.display(), &writer.layout);
+            }
+            info.layouts.insert(Arc::new(p.to_path_buf()), layout_file.clone());
+        } 
+    }
 
     Ok(())
 }
