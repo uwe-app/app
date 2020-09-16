@@ -6,8 +6,8 @@ use locale::LocaleName;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("No layout file found in source {0} with value {1}")]
-    NoLayout(PathBuf, PathBuf),
+    #[error("No layout definition {0} found for page {1}")]
+    NoLayoutDefinition(String, PathBuf),
 
     #[error("Collision detected on {0} ({1} <-> {2})")]
     LinkCollision(String, PathBuf, PathBuf),

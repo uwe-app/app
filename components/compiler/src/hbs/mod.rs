@@ -403,17 +403,28 @@ impl Parser for HandlebarsParser<'_> {
         &self,
         file: &PathBuf,
         data: CollatedPage,
-        standalone: bool,
+        layout: Option<&PathBuf>,
     ) -> Result<String> {
+
+        if let Some(layout) = layout {
+            self.layout(data, layout)
+        } else {
+            self.standalone(file, data)
+        }
+
+        /*
         if standalone {
             return self.standalone(file, data);
         }
+
         let collation = &*self.context.collation.read().unwrap();
         let layout = collation.find_layout(file);
+
         if let Some(ref layout_path) = layout {
             self.layout(data, layout_path)
         } else {
             self.standalone(file, data)
         }
+        */
     }
 }

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
-use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
+use collator::{Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget};
 use config::{CollatedPage, Config, Page, ProfileName};
 
 use config::transform::HtmlTransformFlags;
@@ -164,10 +164,16 @@ pub async fn parse(
     let lang = collation.get_lang();
     let page_data = CollatedPage::new(&ctx.config, data, lang);
 
-    let mut s = if minify_html {
-        minify::html(parser.parse(file, page_data, standalone)?)
+    let layout = if !standalone {
+        collation.find_layout(&data.layout)
     } else {
-        parser.parse(file, page_data, standalone)?
+        None 
+    };
+
+    let mut s = if minify_html {
+        minify::html(parser.parse(file, page_data, layout)?)
+    } else {
+        parser.parse(file, page_data, layout)?
     };
 
     let mut res = ParseData::new(data.file.as_ref().unwrap().source.clone());

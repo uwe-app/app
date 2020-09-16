@@ -70,7 +70,7 @@ pub struct Page {
 
     pub query: Option<QueryList>,
 
-    pub layout: Option<PathBuf>,
+    pub layout: Option<String>,
     pub meta: Option<HashMap<String, Vec<String>>>,
 
     pub scripts: Option<Vec<ScriptFile>>,

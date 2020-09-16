@@ -344,9 +344,6 @@ pub fn book(
         return Err(Error::NoBookThemeDirectory(theme_dir))
     }
 
-    //let base = info.get_path().clone();
-    //let target = base.join(book.target());
-
     let layout_file = theme_dir.join(engine.get_layout_name());
     if !layout_file.exists() || !layout_file.is_file() {
         return Err(Error::NoBookThemeLayout(layout_file, theme_dir))
@@ -360,11 +357,6 @@ pub fn book(
         let book_rel = book_source.strip_prefix(&theme_dir)?.to_path_buf();
         let book_target = book.target().join(&book_rel);
         let book_href = to_href(&book_source, options, false, Some(theme_dir.clone()))?;
-
-        //println!("book source is {}", book_source.display());
-        //println!("book target is {}", book_target.display());
-        //println!("book href is {}", book_href);
-        
         create_file(
             options,
             info,
@@ -374,16 +366,17 @@ pub fn book(
         )?;
     }
 
+    let layout_key = "book".to_string();
+    info.layouts.insert(layout_key.clone(), layout_file.clone());
+
     // Update the collated page information with 
     // the book layout
     for (_k, pages) in info.books.iter_mut() {
         for p in pages.iter() {
             if let Some(ref mut page_lock) = info.pages.get_mut(p) {
                 let mut writer = page_lock.write().unwrap();
-                writer.layout = Some(layout_file.clone());
-                //println!("Got book page layout {} {:?}", p.display(), &writer.layout);
+                writer.layout = Some(layout_key.clone());
             }
-            info.layouts.insert(Arc::new(p.to_path_buf()), layout_file.clone());
         } 
     }
 

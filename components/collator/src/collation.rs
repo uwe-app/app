@@ -79,7 +79,8 @@ pub struct CollateInfo {
     pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
 
     // Custom page specific layouts
-    pub(crate) layouts: HashMap<Arc<PathBuf>, PathBuf>,
+    pub(crate) layouts: HashMap<String, PathBuf>,
+
     // The default layout
     pub(crate) layout: Option<Arc<PathBuf>>,
 
@@ -159,7 +160,7 @@ pub trait LayoutCollate {
     /// Attempt to find a layout for a file path searching
     /// custom layouts and falling back to the default layout
     /// if no custom layout was found for the key.
-    fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf>;
+    fn find_layout(&self, key: &Option<String>) -> Option<&PathBuf>;
 }
 
 pub trait LinkCollate {
@@ -277,7 +278,7 @@ impl LayoutCollate for Collation {
         self.fallback.layouts()
     }
 
-    fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
+    fn find_layout(&self, key: &Option<String>) -> Option<&PathBuf> {
         // TODO: prefer locale layouts?
         self.fallback.find_layout(key)
     }
@@ -373,10 +374,16 @@ impl LayoutCollate for CollateInfo {
         map
     }
 
-    fn find_layout(&self, key: &PathBuf) -> Option<&PathBuf> {
-        if let Some(ref layout) = self.layouts.get(key) {
-            return Some(layout);
+    fn find_layout(&self, key: &Option<String>) -> Option<&PathBuf> {
+
+        // Try to lookup a named layout.
+        if let Some(ref key) = key {
+            if let Some(ref layout) = self.layouts.get(key) {
+                return Some(layout);
+            }
         }
+
+        // Use the default layout.
         if let Some(ref layout) = self.layout {
             return Some(layout);
         }

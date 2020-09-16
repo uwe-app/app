@@ -17,6 +17,7 @@ use crate::{
     fluent::FluentConfig,
     hook::HookMap,
     indexer::{DataBase, IndexRequest},
+    layout::LayoutConfig,
     link::LinkConfig,
     live_reload::LiveReload,
     page::{Author, Page},
@@ -152,6 +153,8 @@ pub struct Config {
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
 
+    pub layout: Option<LayoutConfig>,
+
     pub syntax: Option<SyntaxConfig>,
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
@@ -195,6 +198,7 @@ impl Default for Config {
             publish: Some(Default::default()),
             index: None,
             authors: None,
+            layout: None,
             syntax: None,
             transform: Some(Default::default()),
             search: None,

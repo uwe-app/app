@@ -87,23 +87,13 @@ impl<'a> PageBuilder<'a> {
         Ok(self)
     }
 
-    /// Rewrite layouts relative to the source directory and register
-    /// layouts with the collation.
-    pub fn layouts(mut self) -> Result<Self> {
+    /// Verify that layout references exist in the collated map.
+    pub fn layouts(self) -> Result<Self> {
         if let Some(ref layout) = self.page.layout {
-            let layout_path = self.options.source.join(layout);
-            if !layout_path.exists() {
-                return Err(Error::NoLayout(layout_path, layout.clone()));
+            if self.info.layouts.get(layout).is_none() {
+                return Err(Error::NoLayoutDefinition(layout.clone(), self.path.clone()));
             }
-            self.page.layout = Some(layout_path);
         }
-
-        if let Some(ref layout) = self.page.layout {
-            self.info
-                .layouts
-                .insert(Arc::clone(self.key), layout.clone());
-        }
-
         Ok(self)
     }
 

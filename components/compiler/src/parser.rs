@@ -18,7 +18,7 @@ pub trait Parser {
         // NOTE: we would like to use `impl Serialize` here
         // NOTE: but cannot due to E0038
         data: CollatedPage,
-        standalone: bool,
+        layout: Option<&PathBuf>,
     ) -> Result<String>;
 }
 

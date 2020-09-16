@@ -98,6 +98,7 @@ pub mod feed;
 mod fluent;
 mod hook;
 pub mod indexer;
+mod layout;
 mod link;
 mod live_reload;
 mod options;
