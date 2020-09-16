@@ -38,6 +38,15 @@ pub enum Error {
     #[error("No page data found for menu item path {0}")]
     NoMenuItemPage(PathBuf),
 
+    #[error("No feed template file {0}")]
+    NoFeedTemplate(PathBuf),
+
+    #[error("No book theme directory {0}")]
+    NoBookThemeDirectory(PathBuf),
+
+    #[error("No layout file {0} for book theme directory {1}")]
+    NoBookThemeLayout(PathBuf, PathBuf),
+
     #[error(transparent)]
     Format(#[from] std::fmt::Error),
 
@@ -59,6 +68,9 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    Url(#[from] url::ParseError),
+
+    #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
@@ -77,9 +89,11 @@ pub mod loader;
 pub mod locale_utils;
 pub mod menu;
 pub mod resource;
+mod synthetic;
 
 pub use builder::to_href;
 pub use collation::*;
 pub use collator::*;
 pub use locale_utils::*;
 pub use resource::*;
+pub use synthetic::{create_page, create_file, feed, search, book};

@@ -290,7 +290,7 @@ fn add_page(
 
 fn add_other(
     info: &mut CollateInfo,
-    config: &Config,
+    _config: &Config,
     options: &RuntimeOptions,
     key: Arc<PathBuf>,
 ) -> Result<()> {

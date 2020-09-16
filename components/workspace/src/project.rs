@@ -9,7 +9,7 @@ use url::Url;
 
 use cache::CacheComponent;
 use collator::{
-    menu, Collate, CollateInfo, CollateRequest, CollateResult, Collation,
+    self, menu, Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
 use compiler::{parser, parser::Parser, BuildContext};
 
@@ -289,7 +289,7 @@ impl<'a> ProjectBuilder {
     pub async fn search(mut self) -> Result<Self> {
         if let Some(ref search) = self.config.search {
             for collation in self.collations.iter_mut() {
-                synthetic::search(
+                collator::search(
                     search,
                     &self.config,
                     &self.options,
@@ -304,7 +304,7 @@ impl<'a> ProjectBuilder {
     pub async fn feed(mut self) -> Result<Self> {
         if let Some(ref feed) = self.config.feed {
             for collation in self.collations.iter_mut() {
-                synthetic::feed(
+                collator::feed(
                     feed,
                     &self.locales,
                     &self.config,
@@ -320,7 +320,7 @@ impl<'a> ProjectBuilder {
     pub async fn book(mut self) -> Result<Self> {
         if let Some(ref book) = self.config.book {
             for collation in self.collations.iter_mut() {
-                synthetic::book(
+                collator::book(
                     book,
                     &self.config,
                     &self.options,

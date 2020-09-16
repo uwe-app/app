@@ -28,14 +28,8 @@ pub enum Error {
     #[error("No index with name {0}")]
     NoIndex(String),
 
-    #[error("No feed template file {0}")]
-    NoFeedTemplate(PathBuf),
-
-    #[error("No book theme directory {0}")]
-    NoBookThemeDirectory(PathBuf),
-
-    #[error("No layout file {0} for book theme directory {1}")]
-    NoBookThemeLayout(PathBuf, PathBuf),
+    //#[error("No feed template file {0}")]
+    //NoFeedTemplate(PathBuf),
 
     #[error("No configuration {conf} for data source {key}")]
     NoDataSourceConf { conf: String, key: String },
@@ -54,9 +48,6 @@ pub enum Error {
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
-
-    #[error(transparent)]
-    Url(#[from] url::ParseError),
 
     #[error(transparent)]
     Config(#[from] config::Error),

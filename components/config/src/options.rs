@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use url::Url;
 
 use crate::{
-    Config, Error, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM,
+    Config, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]

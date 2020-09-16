@@ -312,17 +312,21 @@ name = "collator"
 version = "0.1.0"
 dependencies = [
  "Inflector",
+ "cache",
+ "chrono",
  "config",
  "crossbeam",
  "frontmatter",
  "futures",
  "ignore",
+ "jsonfeed",
  "locale",
  "log",
  "serde",
  "serde_json",
  "thiserror",
  "toml",
+ "url",
  "utils",
 ]
 
@@ -548,14 +552,9 @@ name = "datasource"
 version = "0.1.0"
 dependencies = [
  "cache",
- "chrono",
  "collator",
  "config",
- "crossbeam",
  "futures",
- "ignore",
- "jsonfeed",
- "locale",
  "log",
  "serde",
  "serde_json",
@@ -563,7 +562,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
- "url",
  "utils",
 ]
 
