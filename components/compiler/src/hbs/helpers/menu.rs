@@ -109,31 +109,16 @@ impl Menu {
         self.list_parent_pages(template, h, r, ctx, rc, out)
     }
 
-    /// Render a menu reference.
-    fn render_menu<'reg: 'rc, 'rc>(
+    /// Render a menu reference by name.
+    fn render_menu_by_name<'reg: 'rc, 'rc>(
         &self,
+        key: &str,
         h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let key = h
-            .params()
-            .get(0)
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `menu`, expected parameter at index 0",
-                )
-            })?
-            .value()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `menu`, expected string parameter at index 0",
-                )
-            })?;
-
 
         // TODO: handle file-specific menu overrides
 
@@ -147,6 +132,58 @@ impl Menu {
         }
 
         Ok(())
+    }
+
+    /// Render a menu reference.
+    fn render_menu<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'reg, 'rc>,
+        r: &'reg Handlebars<'_>,
+        ctx: &'rc Context,
+        rc: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+
+        // Render the MENU.md folder convention
+        let key: String = if h.params().is_empty() {
+            let source_path = rc
+                .evaluate(ctx, "@root/file.source")?
+                .as_json()
+                .as_str()
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error for `file.source`, string expected",
+                    )
+                })?
+                .to_string();
+
+            let path = PathBuf::from(&source_path);
+
+            if let Some(parent) = path.parent() {
+                parent.to_string_lossy().into_owned() 
+            } else {
+                source_path
+            }
+
+        // Render a named argument
+        } else {
+            h.params()
+                .get(0)
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error in `menu`, expected parameter at index 0",
+                    )
+                })?
+                .value()
+                .as_str()
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error in `menu`, expected string parameter at index 0",
+                    )
+                })?.to_string()
+        };
+
+        self.render_menu_by_name(&key, h, r, ctx, rc, out)
     }
 }
 
