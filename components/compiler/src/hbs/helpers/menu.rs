@@ -113,7 +113,7 @@ impl Menu {
     fn render_menu_by_name<'reg: 'rc, 'rc>(
         &self,
         key: &str,
-        h: &Helper<'reg, 'rc>,
+        _h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         _rc: &mut RenderContext<'reg, 'rc>,

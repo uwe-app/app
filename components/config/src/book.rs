@@ -35,11 +35,6 @@ impl Default for BookConfig {
 }
 
 impl BookConfig {
-
-    pub(crate) fn prepare(&mut self) {
-        // TODO: define default menu using MENU.md
-    }
-
     pub fn theme_name(&self) -> &str {
         self.theme.as_ref().map(|s| s.as_str()).unwrap_or(THEME_NAME) 
     }
@@ -47,18 +42,6 @@ impl BookConfig {
     pub fn target(&self) -> &PathBuf {
         self.target.as_ref().unwrap()
     }
-
-    /*
-    /// Find a book by path.
-    pub fn find(&self, needle: &PathBuf) -> Option<BookItem> {
-        for (_, value) in self.members.iter() {
-            if &value.path == needle {
-                return Some(value.clone());
-            }
-        }
-        None
-    }
-    */
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]

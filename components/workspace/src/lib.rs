@@ -31,6 +31,9 @@ pub enum Error {
     #[error("Missing layout file {0}")]
     NoLayout(PathBuf),
 
+    #[error("Expected menu file {0} for book path {1}")]
+    NoBookMenu(PathBuf, PathBuf),
+
     #[error("Profiles may not define a build profile, please remove it")]
     NoProfileInProfile,
 

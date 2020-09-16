@@ -6,7 +6,7 @@ use serde_with::skip_serializing_none;
 
 use crate::{utils::href::UrlPath, Error, Result};
 
-static MENU: &str = "MENU.md";
+pub static MENU: &str = "MENU.md";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct MenuConfig {

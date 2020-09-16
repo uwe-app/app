@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use log::{debug, info};
 
 use config::{Config, ProfileSettings};
-use config::{ProfileName, RuntimeOptions};
+use config::{ProfileName, RuntimeOptions, MENU};
 
 use crate::{Error, Result};
 
@@ -110,6 +110,17 @@ fn to_options(
     let mut settings = args.clone();
     if let Some(resources) = settings.resources.as_mut() {
         resources.prepare();
+    }
+
+    if let Some(ref book) = cfg.book {
+        for (k, item) in book.members.iter() {
+            let book_path = source.join(&item.path);
+            let book_menu = book_path.join(MENU);
+
+            if !book_menu.exists() || !book_menu.is_file() {
+                return Err(Error::NoBookMenu(book_menu, item.path.clone()));
+            }
+        } 
     }
 
     let opts = RuntimeOptions {
