@@ -90,6 +90,7 @@ impl HelperDef for Link {
 
         if let Some(verify) = link_config.verify {
             if verify {
+                //println!("Trying to verify link with input {}", input);
                 //println!("Verify with input {:?}", &input);
                 if !collation.find_link(&input).is_some() {
                     return Err(RenderError::new(format!(

@@ -320,5 +320,5 @@ fn add_other(
         .build(&key)?;
 
     let href = to_href(&key, options, false, None)?;
-    Ok(info.add_file(options, key, dest, href)?)
+    Ok(info.add_file(options, key, dest, href, None)?)
 }

@@ -198,6 +198,8 @@ impl LinkCollate for LinkMap {
 
     fn find_link(&self, href: &str) -> Option<PathBuf> {
         let mut key = self.normalize(href);
+        //println!("Looking for link with key {}", key);
+
         if let Some(path) = self.get_link(&key) {
             return Some(path.to_path_buf());
         } else {
@@ -500,6 +502,11 @@ impl CollateInfo {
         key: Arc<PathBuf>,
         dest: PathBuf,
         href: String,
+        // For files outside the source we need to 
+        // add to the link map using an alternative base
+        // that is stripped then made relative to the source 
+        // so that links are located correctly.
+        _base: Option<&PathBuf>,
     ) -> Result<()> {
         // Set up the default resource operation
         let mut op = if options.settings.is_release() {
@@ -522,7 +529,22 @@ impl CollateInfo {
         let kind = self.get_file_kind(&key, options);
         match kind {
             ResourceKind::File | ResourceKind::Asset => {
+                //println!("Adding file link for key {}", key.display());
+                //println!("Adding file link for href {}", href);
+
                 self.resources.insert(Arc::clone(&key));
+
+                // Ensure link paths are always relative to the source even
+                // when using synthetic files outside the source directory
+                /*
+                let link_key = if let Some(base) = base {
+                    let path = options.source.join(key.strip_prefix(base)?);
+                    Arc::new(path)
+                } else {
+                    Arc::clone(&key)
+                };
+                */
+
                 self.link(Arc::clone(&key), Arc::new(href))?;
             }
             _ => {}

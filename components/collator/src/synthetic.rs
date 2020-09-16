@@ -55,8 +55,9 @@ pub fn create_file(
     source: PathBuf,
     target: PathBuf,
     href: String,
+    base: Option<&PathBuf>,
 ) -> Result<()> {
-    info.add_file(options, Arc::new(source), target, href)?;
+    info.add_file(options, Arc::new(source), target, href, base)?;
     Ok(())
 }
 
@@ -285,6 +286,7 @@ pub fn search(
             js_source,
             js_target,
             js_value,
+            Some(&search_dir),
         )?;
         create_file(
             options,
@@ -292,6 +294,7 @@ pub fn search(
             wasm_source,
             wasm_target,
             wasm_value,
+            Some(&search_dir),
         )?;
     }
 
@@ -356,13 +359,19 @@ pub fn book(
         let book_source = r?;
         let book_rel = book_source.strip_prefix(&theme_dir)?.to_path_buf();
         let book_target = book.target().join(&book_rel);
-        let book_href = to_href(&book_source, options, false, Some(theme_dir.clone()))?;
+        let rel_href = to_href(&book_source, options, false, Some(theme_dir.clone()))?;
+
+        let mut book_href = utils::url::to_href_separator(book.target());
+        book_href.push_str(&rel_href);
+        let book_href = format!("/{}", book_href.trim_start_matches("/"));
+
         create_file(
             options,
             info,
             book_source,
             book_target,
             book_href,
+            Some(&theme_dir),
         )?;
     }
 
