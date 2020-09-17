@@ -124,6 +124,7 @@ impl RedirectConfig {
         );
         content.push_str("<html>");
         content.push_str("<head>");
+        content.push_str(&format!("<link rel=\"canonical\"  href=\"{}\">", location));
         content.push_str(&meta);
         content.push_str("</head>");
         content.push_str(&body);
