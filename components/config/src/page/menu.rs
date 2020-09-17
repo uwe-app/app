@@ -38,10 +38,10 @@ pub struct MenuEntry {
 
 impl MenuEntry {
 
-    pub fn new(name: String, file: UrlPath) -> Self {
+    pub fn new(name: String, file: UrlPath, relative: bool) -> Self {
         Self {
             name,
-            definition: MenuReference::File {file},
+            definition: MenuReference::File {file, relative},
             result: Default::default(),
         }
     }
@@ -74,7 +74,7 @@ impl MenuEntry {
 #[serde(untagged)]
 pub enum MenuReference {
     /// Render the context of a template file as the menu.
-    File { file: UrlPath },
+    File { file: UrlPath, relative: bool },
 
     /// Render a collection of specific pages.
     Pages {

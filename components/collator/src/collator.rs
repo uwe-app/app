@@ -100,7 +100,7 @@ fn add_menu(
     };
 
     // Inject the menu entry for processing later.
-    let entry = MenuEntry::new(name, url_path);
+    let entry = MenuEntry::new(name, url_path, true);
     info.graph.menus.sources.insert(Arc::new(entry), Vec::new());
 
     Ok(())

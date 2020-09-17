@@ -74,8 +74,8 @@ fn compile_file_menu<'c>(
     options: &RuntimeOptions,
     collation: &'c CollateInfo,
     file: &PathBuf,
-    result: &mut MenuResult
-) -> Result<Vec<(String, &'c Arc<RwLock<Page>>)>> {
+    definition: &MenuReference,
+) -> Result<(MenuResult, Vec<(String, &'c Arc<RwLock<Page>>)>)> {
 
     let parent = file.parent().unwrap();
     let contents = utils::fs::read_string(&file)?;
@@ -85,6 +85,7 @@ fn compile_file_menu<'c>(
     //
     //println!("Got menu result {}", &result.value);
 
+    let mut result: MenuResult = Default::default();
     let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
 
     let mut source = Cow::from(contents);
@@ -92,6 +93,11 @@ fn compile_file_menu<'c>(
 
     let mut in_link = false;
     let mut errs: Vec<Error> = Vec::new();
+
+    let relative = match definition {
+        MenuReference::File {relative, ..} => relative.clone(),
+        _ => false,
+    };
 
     let parser = parser.map(|event| {
         match event {
@@ -118,6 +124,15 @@ fn compile_file_menu<'c>(
                                             href.to_string(),
                                             target_file.clone()));
                                 } else {
+
+                                    let parent_href = match options.absolute(&parent, Default::default()) {
+                                        Ok(href) => href,
+                                        Err(e) => {
+                                            errs.push(Error::from(e));
+                                            String::new()
+                                        }
+                                    };
+
                                     match options.absolute(&target_file, Default::default()) {
                                         Ok(href) => {
 
@@ -130,6 +145,15 @@ fn compile_file_menu<'c>(
                                                     // NOTE converts the braces to HTML entities :(
 
                                                     //let href_template = format!("{{ link \"{}\" }}", href);
+                                                    
+                                                    //let href_path = page_path.to_path_buf();
+                                                    //let rel_href = options.relative(&href, &href_path, &parent).unwrap();
+
+                                                    let href = if relative {
+                                                        href.trim_start_matches(&parent_href).to_string()
+                                                    } else {
+                                                        href
+                                                    };
 
                                                     let event_href = CowStr::from(href.to_string());
                                                     let event_title = CowStr::from(title.to_string());
@@ -195,7 +219,7 @@ fn compile_file_menu<'c>(
 
     result.value = markup;
 
-    Ok(page_data)
+    Ok((result, page_data))
 }
 
 /// Build a single menu reference.
@@ -209,9 +233,11 @@ fn build(
     let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
 
     match menu.definition {
-        MenuReference::File { ref file } => {
+        MenuReference::File { ref file, .. } => {
             let file = options.resolve_source(file);
-            page_data = compile_file_menu(options, collation, &file, &mut result)?;
+            let (menu_result, menu_pages) = compile_file_menu(options, collation, &file, &menu.definition)?;
+            result = menu_result;
+            page_data = menu_pages;
         }
         MenuReference::Pages { .. } => {
             page_data = find(options, collation, &menu.definition)?;
@@ -230,10 +256,8 @@ fn build(
             end_list(&mut buf)?;
         }
         _ => {
-        
-    //println!("Got value {}", &result.value);
-    //std::process::exit(1);
-
+            println!("Got value {}", &result.value);
+            std::process::exit(1);
         }
     }
 
@@ -251,6 +275,11 @@ pub fn find<'c>(
     let mut should_sort = false;
 
     match definition {
+        MenuReference::File { ref file, .. } => {
+            let file = options.resolve_source(file);
+            let (_, menu_pages) = compile_file_menu(options, collation, &file, definition)?;
+            page_data = menu_pages;
+        }
         MenuReference::Pages { ref pages, .. } => {
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
                 let page_path =
@@ -314,7 +343,6 @@ pub fn find<'c>(
                 },
             )?;
         }
-        _ => {}
     }
 
     if should_sort {
