@@ -87,7 +87,7 @@ impl Menu {
         let menu = MenuReference::Directory {directory: dir_path, depth: Some(1), description: None};
         let collation = self.context.collation.read().unwrap();
 
-        let pages = menu::find(&menu, &self.context.options, &collation.locale)
+        let pages = menu::find(&self.context.options, &collation.locale, &menu)
             .map_err(|e| RenderError::new(e.to_string()))?;
 
         self.render_pages(template, pages, h, r, ctx, rc, out)

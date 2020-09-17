@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use serde_json::json;
-use pulldown_cmark::{Event, Tag};
+use pulldown_cmark::{Event, Tag, LinkType, CowStr};
 
 use config::{
     MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
@@ -70,6 +70,134 @@ fn end_list<W: Write>(f: &mut W) -> Result<()> {
     write(f, "</ul>")
 }
 
+fn compile_file_menu<'c>(
+    options: &RuntimeOptions,
+    collation: &'c CollateInfo,
+    file: &PathBuf,
+    result: &mut MenuResult
+) -> Result<Vec<(String, &'c Arc<RwLock<Page>>)>> {
+
+    let parent = file.parent().unwrap();
+    let contents = utils::fs::read_string(&file)?;
+
+    // TODO: rewrite link references
+    // TODO: transform markdown to HTML
+    //
+    //println!("Got menu result {}", &result.value);
+
+    let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
+
+    let mut source = Cow::from(contents);
+    let parser = markdown::parser(&mut source);
+
+    let mut in_link = false;
+    let mut errs: Vec<Error> = Vec::new();
+
+    let parser = parser.map(|event| {
+        match event {
+            Event::Start(ref tag) => {
+                match tag {
+                    Tag::Link(ref kind, ref href, ref title) => {
+                        in_link = true;
+                        match kind {
+                            LinkType::Inline => {
+                                //println!("Got a link type {:?}", kind);
+                                //println!("Got a link type {}", href);
+                                //println!("Got a link type {}", title);
+
+                                let target_name = utils::url::to_path_separator(
+                                    href.trim_start_matches(".")
+                                    .trim_start_matches("/"));
+
+                                let target_file = parent.join(&target_name);
+
+                                if !target_file.exists() {
+                                    errs.push(
+                                        Error::NoMenuLink(
+                                            file.clone(),
+                                            href.to_string(),
+                                            target_file.clone()));
+                                } else {
+                                    match options.absolute(&target_file, Default::default()) {
+                                        Ok(href) => {
+
+                                            let file_href = collation.normalize(&href);
+                                            if let Some(page_path) = collation.get_link(&file_href) {
+                                                if let Some(page) = collation.resolve(page_path) {
+
+                                                    // NOTE: that we want to use the {{ link }} template
+                                                    // NOTE: call but cannot as the markdown parser
+                                                    // NOTE converts the braces to HTML entities :(
+
+                                                    //let href_template = format!("{{ link \"{}\" }}", href);
+
+                                                    let event_href = CowStr::from(href.to_string());
+                                                    let event_title = CowStr::from(title.to_string());
+
+                                                    page_data.push((href, page));
+
+                                                    return Event::Start(Tag::Link(LinkType::Inline, event_href, event_title))
+
+                                                } else {
+                                                    errs.push(Error::NoMenuPage(
+                                                        file.clone(),
+                                                        href.to_string(),
+                                                        page_path.to_path_buf()));
+                                                }
+                                            } else {
+                                                errs.push(
+                                                    Error::NoMenuPagePath(
+                                                        file.clone(), href.to_string()));
+                                            }
+                                        }
+                                        Err(e) => errs.push(Error::from(e))
+                                    }
+                                }
+
+                            }
+                            _ => {}
+                        }
+
+                        event
+                    }
+                    _ => event
+                }
+            }
+            Event::Text(ref text) => {
+                if in_link {
+                    //println!("Got text in the link {}", text);
+                }
+                event
+            }
+            Event::End(ref tag) => {
+                match tag {
+                    Tag::Link(..) => {
+                        in_link = false;
+                        event
+                    }
+                    _ => event
+                }
+            }
+            _ => event
+        }
+    });
+
+    let markup = markdown::html(parser);
+
+    // NOTE: must check errors after attempting to render 
+    // NOTE: so that the parser iterator is consumed
+    if !errs.is_empty() {
+        let err = errs.swap_remove(0);
+        return Err(err)
+    }
+
+    //println!("Got menu result {}", markup);
+
+    result.value = markup;
+
+    Ok(page_data)
+}
+
 /// Build a single menu reference.
 fn build(
     menu: &Arc<MenuEntry>,
@@ -77,100 +205,36 @@ fn build(
     collation: &CollateInfo,
 ) -> Result<MenuResult> {
 
-    //let all_pages = collation.get_pages();
     let mut result: MenuResult = Default::default();
-    let mut buf = &mut result.value;
     let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
 
     match menu.definition {
         MenuReference::File { ref file } => {
             let file = options.resolve_source(file);
-            let parent = file.parent().unwrap();
-            write(buf, &utils::fs::read_string(&file)?)?;
-
-            // TODO: rewrite link references
-            // TODO: transform markdown to HTML
-            //
-            //println!("Got menu result {}", &result.value);
-
-            let mut source = Cow::from(result.value);
-            let parser = markdown::parser(&mut source);
-
-            let mut in_link = false;
-            let mut errs: Vec<Error> = Vec::new();
-
-            let parser = parser.map(|event| {
-                match event {
-                    Event::Start(ref tag) => {
-                        match tag {
-                            Tag::Link(ref kind, ref href, ref title) => {
-
-                                //println!("Got a link type {:?}", kind);
-                                //println!("Got a link type {}", href);
-                                //println!("Got a link type {}", title);
-
-                                if href.starts_with(".") {
-                                    let target_name = utils::url::to_path_separator(href);
-                                    let target_file = parent.join(&target_name);
-                                    if !target_file.exists() {
-                                        errs.push(
-                                            Error::NoMenuLink(file.clone(), href.to_string(), target_file));
-                                    }
-                                }
-
-                                in_link = true;
-                                event
-                            }
-                            _ => event
-                        }
-                    }
-                    Event::Text(ref text) => {
-                        if in_link {
-                            //println!("Got text in the link {}", text);
-                        }
-                        event
-                    }
-                    Event::End(ref tag) => {
-                        match tag {
-                            Tag::Link(..) => {
-                                in_link = false;
-                                event
-                            }
-                            _ => event
-                        }
-                    }
-                    _ => event
-                }
-            });
-
-            let markup = markdown::html(parser);
-
-            if !errs.is_empty() {
-                let err = errs.swap_remove(0);
-                return Err(err)
-            }
-
-            //let result = compiler::markdown::render()?;
-            println!("Got menu result {}", markup);
-
-            std::process::exit(1);
+            page_data = compile_file_menu(options, collation, &file, &mut result)?;
         }
         MenuReference::Pages { .. } => {
-            page_data = find(&menu.definition, options, collation)?;
+            page_data = find(options, collation, &menu.definition)?;
         }
         MenuReference::Directory { .. } => {
-            page_data = find(&menu.definition, options, collation)?;
+            page_data = find(options, collation, &menu.definition)?;
         }
     }
 
     match menu.definition {
         MenuReference::Pages { description, .. }
         | MenuReference::Directory { description, .. } => {
+            let mut buf = &mut result.value;
             start_list(&mut buf, &menu.name)?;
             pages_list(&mut buf, &page_data, description.is_some() && description.unwrap())?;
             end_list(&mut buf)?;
         }
-        _ => {}
+        _ => {
+        
+    //println!("Got value {}", &result.value);
+    //std::process::exit(1);
+
+        }
     }
 
     Ok(result)
@@ -178,9 +242,9 @@ fn build(
 
 /// Find a list of pages that match a menu reference definition.
 pub fn find<'c>(
-    definition: &MenuReference,
     options: &RuntimeOptions,
     collation: &'c CollateInfo,
+    definition: &MenuReference,
 ) -> Result<Vec<(String, &'c Arc<RwLock<Page>>)>> {
 
     let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();

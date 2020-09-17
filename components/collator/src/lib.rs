@@ -41,6 +41,12 @@ pub enum Error {
     #[error("Menu file {0} contains a link {1} which does not exist ({2})")]
     NoMenuLink(PathBuf, String, PathBuf),
 
+    #[error("Menu file {0} contains a link {1} which could not be resolved to a path")]
+    NoMenuPagePath(PathBuf, String),
+
+    #[error("Menu file {0} contains a link {1} which could not be resolved to a page ({2})")]
+    NoMenuPage(PathBuf, String, PathBuf),
+
     #[error("No feed template file {0}")]
     NoFeedTemplate(PathBuf),
 
