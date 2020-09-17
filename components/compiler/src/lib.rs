@@ -68,11 +68,9 @@ type Result<T> = std::result::Result<T, Error>;
 mod compile;
 mod context;
 mod hbs;
-mod markdown;
 pub mod parser;
 pub mod run;
 
 pub use compile::compile;
 pub use context::{BuildContext, CompilerOutput};
-pub use markdown::render_markdown;
 pub use run::ParseData;

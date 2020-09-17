@@ -6,8 +6,9 @@ use handlebars::*;
 
 use serde_json::json;
 
+use config::markdown;
+
 use super::BufferedOutput;
-use crate::markdown::render_markdown;
 use crate::BuildContext;
 
 #[derive(Clone)]
@@ -101,7 +102,7 @@ impl HelperDef for Markdown {
         }
 
         if evaluate {
-            let parsed = render_markdown(
+            let parsed = markdown::render(
                 &mut Cow::from(buf.buffer),
                 &self.context.config,
             );

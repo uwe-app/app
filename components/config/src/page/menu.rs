@@ -14,21 +14,8 @@ pub struct MenuConfig {
     pub entries: HashMap<String, MenuEntry>,
 }
 
-#[derive(Debug)]
-pub enum MenuType {
-    Markdown,
-    Html,
-}
-
-impl Default for MenuType {
-    fn default() -> Self {
-        Self::Html
-    }
-}
-
 #[derive(Default, Debug)]
 pub struct MenuResult {
-    pub kind: MenuType,
     pub value: String,
 }
 

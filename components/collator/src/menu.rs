@@ -1,12 +1,15 @@
 use std::collections::HashMap;
+use std::borrow::Cow;
 use std::fmt::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use serde_json::json;
+use pulldown_cmark::{Event, Tag};
 
 use config::{
-    MenuEntry, MenuReference, MenuResult, MenuType, Page, RuntimeOptions,
+    MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
+    markdown,
 };
 
 use crate::{Collate, Collation, CollateInfo, Error, LinkCollate, Result};
@@ -73,7 +76,6 @@ fn build(
     options: &RuntimeOptions,
     collation: &CollateInfo,
 ) -> Result<MenuResult> {
-    let markdown = options.settings.types.as_ref().unwrap().markdown();
 
     //let all_pages = collation.get_pages();
     let mut result: MenuResult = Default::default();
@@ -83,17 +85,75 @@ fn build(
     match menu.definition {
         MenuReference::File { ref file } => {
             let file = options.resolve_source(file);
-            //let tmp = String::new();
+            let parent = file.parent().unwrap();
             write(buf, &utils::fs::read_string(&file)?)?;
 
-            // Check if we need to transform from markdown when
-            // the helper renders the menu
-            if let Some(ext) = file.extension() {
-                let ext = ext.to_string_lossy().into_owned();
-                if markdown.contains(&ext) {
-                    result.kind = MenuType::Markdown;
+            // TODO: rewrite link references
+            // TODO: transform markdown to HTML
+            //
+            //println!("Got menu result {}", &result.value);
+
+            let mut source = Cow::from(result.value);
+            let parser = markdown::parser(&mut source);
+
+            let mut in_link = false;
+            let mut errs: Vec<Error> = Vec::new();
+
+            let parser = parser.map(|event| {
+                match event {
+                    Event::Start(ref tag) => {
+                        match tag {
+                            Tag::Link(ref kind, ref href, ref title) => {
+
+                                //println!("Got a link type {:?}", kind);
+                                //println!("Got a link type {}", href);
+                                //println!("Got a link type {}", title);
+
+                                if href.starts_with(".") {
+                                    let target_name = utils::url::to_path_separator(href);
+                                    let target_file = parent.join(&target_name);
+                                    if !target_file.exists() {
+                                        errs.push(
+                                            Error::NoMenuLink(file.clone(), href.to_string(), target_file));
+                                    }
+                                }
+
+                                in_link = true;
+                                event
+                            }
+                            _ => event
+                        }
+                    }
+                    Event::Text(ref text) => {
+                        if in_link {
+                            //println!("Got text in the link {}", text);
+                        }
+                        event
+                    }
+                    Event::End(ref tag) => {
+                        match tag {
+                            Tag::Link(..) => {
+                                in_link = false;
+                                event
+                            }
+                            _ => event
+                        }
+                    }
+                    _ => event
                 }
+            });
+
+            let markup = markdown::html(parser);
+
+            if !errs.is_empty() {
+                let err = errs.swap_remove(0);
+                return Err(err)
             }
+
+            //let result = compiler::markdown::render()?;
+            println!("Got menu result {}", markup);
+
+            std::process::exit(1);
         }
         MenuReference::Pages { .. } => {
             page_data = find(&menu.definition, options, collation)?;

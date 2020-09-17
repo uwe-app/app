@@ -14,11 +14,10 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::{CollatedPage, MenuType, TemplateEngine};
+use config::{CollatedPage, TemplateEngine};
 
 use crate::parser::Parser;
 use crate::context::BuildContext;
-use crate::markdown::render_markdown;
 
 mod helpers;
 
@@ -305,20 +304,6 @@ impl<'a> ParserBuilder<'a> {
         for (entry, result) in menus.results() {
             let name = menus.get_menu_template_name(&entry.name);
             let mut template = Cow::from(&result.value);
-
-            match result.kind {
-                // When we are in the context of an HTML page and
-                // we encounter a menu template formatted as markdown
-                // it needs to be transformed to HTML before being written
-                MenuType::Markdown => {
-                    template = Cow::from(render_markdown(
-                        &mut Cow::from(&result.value),
-                        &self.context.config,
-                    ));
-                }
-                _ => {}
-            }
-
             self.handlebars.register_template_string(&name, template)?;
         }
 

@@ -38,6 +38,9 @@ pub enum Error {
     #[error("No page data found for menu item path {0}")]
     NoMenuItemPage(PathBuf),
 
+    #[error("Menu file {0} contains a link {1} which does not exist ({2})")]
+    NoMenuLink(PathBuf, String, PathBuf),
+
     #[error("No feed template file {0}")]
     NoFeedTemplate(PathBuf),
 

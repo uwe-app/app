@@ -22,4 +22,5 @@ toml = "0.5"
 crossbeam = "0.7"
 chrono = { version = "0.4", features = ["serde"] }
 url = "2.1.1"
+pulldown-cmark = { version = "0.8", default-features = false, features = ["simd"] }
 jsonfeed = {version = "0.3", path = "../../../jsonfeed"}
