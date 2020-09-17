@@ -60,7 +60,6 @@ impl HelperDef for Sibling {
             ))
         })?;
 
-
         if list.len() > 1 {
             let pos = list.iter().position(|i| i == current);
             if let Some(pos) = pos {

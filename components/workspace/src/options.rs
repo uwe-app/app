@@ -113,7 +113,7 @@ fn to_options(
     }
 
     if let Some(ref book) = cfg.book {
-        for (k, item) in book.members.iter() {
+        for (_k, item) in book.members.iter() {
             let book_path = source.join(&item.path);
             let book_menu = book_path.join(MENU);
 

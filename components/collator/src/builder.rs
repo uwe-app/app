@@ -140,12 +140,12 @@ impl<'a> PageBuilder<'a> {
         if let Some(ref permalink) = self.page.permalink {
             let key = permalink.trim_end_matches("/").to_string();
 
-            if self.info.permalinks.contains_key(&key) {
+            if self.info.redirects.contains_key(&key) {
                 return Err(Error::DuplicatePermalink(key));
             }
 
             self.info
-                .permalinks
+                .redirects
                 .insert(key, self.page.href.as_ref().unwrap().to_string());
         }
         Ok(self)

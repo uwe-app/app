@@ -144,28 +144,12 @@ pub struct ProjectBuilder {
 impl<'a> ProjectBuilder {
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
-        // Get source paths from the profile settings
-        //let source = self.options.source.clone();
-
         let mut sources: Sources = Default::default();
-
         if let Some(ref paths) = self.options.settings.paths {
             self.verify(paths)?;
             sources.filters = Some(paths.clone());
         }
-
-        //let paths: Vec<PathBuf> =
-        //if let Some(ref paths) = self.options.settings.paths {
-        //self.verify(paths)?;
-        //paths.clone()
-        //} else {
-        //vec![source]
-        //};
-
-        //self.sources = paths;
-
         self.sources = sources;
-
         Ok(self)
     }
 
@@ -251,15 +235,15 @@ impl<'a> ProjectBuilder {
     /// Map redirects from strings to Uris suitable for use
     /// on a local web server.
     pub async fn redirects(mut self) -> Result<Self> {
-        // Map permalink redirects
+        // Map additional redirects
         for collation in self.collations.iter_mut() {
-            if !collation.permalinks.is_empty() {
-                for (permalink, href) in collation.permalinks.iter() {
-                    let key = permalink.to_string();
-                    if self.redirects.map.contains_key(&key) {
-                        return Err(Error::RedirectPermalinkCollision(key));
+            let redirects = collation.get_redirects();
+            if !redirects.is_empty() {
+                for (source, target) in redirects.iter() {
+                    if self.redirects.map.contains_key(source) {
+                        return Err(Error::RedirectCollision(source.to_string()));
                     }
-                    self.redirects.map.insert(key, href.to_string());
+                    self.redirects.map.insert(source.to_string(), target.to_string());
                 }
             }
         }
@@ -707,30 +691,12 @@ pub async fn compile<P: AsRef<Path>>(
 
         let builder = entry.builder(args)?;
 
-        /*
-        let builder = builder
-            .sources()
-            .and_then(|s| s.locales())
-            .and_then(|s| s.fetch())
-            .and_then(|s| s.collate())
-            .and_then(|s| s.redirects())
-            .and_then(|s| s.load_data())
-            .and_then(|s| s.search())
-            .and_then(|s| s.feed())
-            .and_then(|s| s.series())
-            .and_then(|s| s.pages())
-            .and_then(|s| s.each())
-            .and_then(|s| s.assign())
-            .await?;
-        */
-
         // Resolve sources, locales and collate the page data
         let builder = builder
             .sources()
             .and_then(|s| s.locales())
             .and_then(|s| s.fetch())
             .and_then(|s| s.collate())
-            .and_then(|s| s.redirects())
             .await?;
 
         // Load collections, resolve synthetic assets
@@ -741,6 +707,12 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.book())
             .and_then(|s| s.series())
             .await?;
+
+        // Redirects come after synthetic assets in case 
+        // they need to create any redirects. Books need 
+        // to redirect from the book index to the first chapter 
+        // for example.
+        let builder = builder.redirects().await?;
 
         // Pagination, collections etc
         let builder = builder

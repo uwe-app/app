@@ -56,10 +56,11 @@ pub struct CollateInfo {
     /// Graph of page relationships.
     pub(crate) graph: Graph,
 
-    // Pages that have permalinks map the
-    // permalink to the computed href so that
-    // we can configure redirects for permalinks.
-    pub permalinks: HashMap<String, String>,
+    // Additional redirects, typically  from pages 
+    // that have permalinks map the permalink to the 
+    // computed href but also for books that need to 
+    // redirect to the first chapter.
+    pub(crate) redirects: HashMap<String, String>,
 
     // Pages located for feed configurations.
     //
@@ -421,6 +422,10 @@ impl CollateInfo {
             path,
             ..Default::default()
         }
+    }
+
+    pub fn get_redirects(&self) -> &HashMap<String, String> {
+        &self.redirects 
     }
 
     pub fn get_graph_mut(&mut self) -> &mut Graph {
