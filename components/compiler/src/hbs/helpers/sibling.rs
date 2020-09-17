@@ -60,23 +60,24 @@ impl HelperDef for Sibling {
             ))
         })?;
 
+
         if list.len() > 1 {
             let pos = list.iter().position(|i| i == current);
             if let Some(pos) = pos {
                 let next_pos = add(pos, self.amount);
                 if next_pos < list.len() {
+                    let block_context = BlockContext::new();
+                    rc.push_block(block_context);
+
                     let sibling = &list[next_pos];
-                    let mut local_rc = rc.clone();
-                    let mut local_ctx = Context::wraps(ctx.data())?;
 
-                    local_ctx
-                        .data_mut()
-                        .as_object_mut()
-                        .unwrap()
-                        .insert("entry".to_string(), json!(sibling));
+                    if let Some(ref mut block) = rc.block_mut() {
+                        block.set_base_value(json!(sibling));
+                    }
 
-                    template.render(r, &local_ctx, &mut local_rc, out)?;
-                    return Ok(());
+                    template.render(r, ctx, rc, out)?;
+
+                    rc.pop_block();
                 }
             } else {
                 return Err(RenderError::new(format!(
