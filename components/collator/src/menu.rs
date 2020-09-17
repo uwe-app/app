@@ -83,7 +83,9 @@ fn build(
     match menu.definition {
         MenuReference::File { ref file } => {
             let file = options.resolve_source(file);
+            //let tmp = String::new();
             write(buf, &utils::fs::read_string(&file)?)?;
+
             // Check if we need to transform from markdown when
             // the helper renders the menu
             if let Some(ext) = file.extension() {

@@ -26,7 +26,7 @@ slug = "0.1.4"
 rand = "0.7.3"
 url = "2"
 chrono = { version = "0.4", features = ["serde"] }
-pulldown-cmark = { version = "0.7", default-features = false, features = ["simd"] }
+pulldown-cmark = { version = "0.8", default-features = false, features = ["simd"] }
 fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
 
 rayon = "1.3"

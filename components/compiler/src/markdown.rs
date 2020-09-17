@@ -2,7 +2,16 @@ use std::borrow::Cow;
 
 use config::Config;
 
-use pulldown_cmark::{html, Options as MarkdownOptions, Parser};
+use pulldown_cmark::{html, Options, Parser};
+
+fn get_parser<'a>(content: &'a mut Cow<str>) -> Parser<'a> {
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_FOOTNOTES);
+    options.insert(Options::ENABLE_STRIKETHROUGH);
+    options.insert(Options::ENABLE_TASKLISTS);
+    Parser::new_ext(content, options)
+}
 
 pub fn render_markdown(content: &mut Cow<str>, config: &Config) -> String {
     if let Some(ref links) = config.link {
@@ -12,12 +21,7 @@ pub fn render_markdown(content: &mut Cow<str>, config: &Config) -> String {
         }
     }
 
-    let mut options = MarkdownOptions::empty();
-    options.insert(MarkdownOptions::ENABLE_TABLES);
-    options.insert(MarkdownOptions::ENABLE_FOOTNOTES);
-    options.insert(MarkdownOptions::ENABLE_STRIKETHROUGH);
-    options.insert(MarkdownOptions::ENABLE_TASKLISTS);
-    let parser = Parser::new_ext(content, options);
+    let parser = get_parser(content);
     let mut markup = String::new();
     html::push_html(&mut markup, parser);
     markup
