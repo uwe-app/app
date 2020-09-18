@@ -1,12 +1,15 @@
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use handlebars::*;
 use serde_json::json;
 
-use collator::{Collate, menu::{self, PageData}};
+use collator::{
+    menu::{self, PageData},
+    Collate,
+};
 
-use config::{MenuReference, Page};
+use config::{MenuEntry, MenuReference};
 
 use crate::BuildContext;
 
@@ -16,7 +19,6 @@ pub struct Menu {
 }
 
 impl Menu {
-
     /// Iterate the pages and render an inner block template
     /// for each page.
     fn render_pages<'reg: 'rc, 'rc>(
@@ -29,21 +31,18 @@ impl Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let page_href = rc
             .evaluate(ctx, "@root/href")?
             .as_json()
             .as_str()
             .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `href`, string expected",
-                )
+                RenderError::new("Type error for `href`, string expected")
             })?
             .to_string();
 
         let block_context = BlockContext::new();
         rc.push_block(block_context);
-        for (path, href, page) in pages.iter() {
+        for (_path, href, page) in pages.iter() {
             let li = &*page.read().unwrap();
             let is_self = href == &page_href;
             if let Some(ref mut block) = rc.block_mut() {
@@ -53,7 +52,7 @@ impl Menu {
             template.render(r, ctx, rc, out)?;
         }
         rc.pop_block();
-   
+
         Ok(())
     }
 
@@ -66,7 +65,6 @@ impl Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let base_path = rc
             .evaluate(ctx, "@root/file.source")?
             .as_json()
@@ -81,14 +79,26 @@ impl Menu {
         let path = PathBuf::from(&base_path);
         let dir = path.parent().unwrap().to_path_buf();
 
-        let dir_path = dir.strip_prefix(&self.context.options.source)
-            .unwrap().to_string_lossy().to_owned().to_string();
+        let dir_path = dir
+            .strip_prefix(&self.context.options.source)
+            .unwrap()
+            .to_string_lossy()
+            .to_owned()
+            .to_string();
 
-        let menu = MenuReference::Directory {directory: dir_path, depth: Some(1), description: None};
+        let definition = MenuReference::Directory {
+            directory: dir_path,
+            depth: Some(1),
+            description: None,
+        };
+
+        let menu = MenuEntry::new_reference(definition);
+
         let collation = self.context.collation.read().unwrap();
 
-        let pages = menu::find(&self.context.options, &collation.locale, &menu)
-            .map_err(|e| RenderError::new(e.to_string()))?;
+        let (_result, pages) =
+            menu::build(&self.context.options, &collation.locale, &menu)
+                .map_err(|e| RenderError::new(e.to_string()))?;
 
         self.render_pages(template, pages, h, r, ctx, rc, out)
     }
@@ -105,7 +115,7 @@ impl Menu {
     ) -> HelperResult {
         // TODO: handle dynamically rendering inner templates
         // TODO: from helper parameters!!!
-    
+
         self.list_parent_pages(template, h, r, ctx, rc, out)
     }
 
@@ -119,7 +129,6 @@ impl Menu {
         _rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // TODO: handle file-specific menu overrides
 
         let collation = self.context.collation.read().unwrap();
@@ -143,7 +152,6 @@ impl Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // Render the MENU.md folder convention
         let key: String = if h.params().is_empty() {
             let source_path = rc
@@ -160,7 +168,7 @@ impl Menu {
             let path = PathBuf::from(&source_path);
 
             if let Some(parent) = path.parent() {
-                parent.to_string_lossy().into_owned() 
+                parent.to_string_lossy().into_owned()
             } else {
                 source_path
             }
@@ -188,7 +196,6 @@ impl Menu {
 }
 
 impl HelperDef for Menu {
-
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -198,9 +205,9 @@ impl HelperDef for Menu {
         out: &mut dyn Output,
     ) -> HelperResult {
         if let Some(template) = h.template() {
-            self.render_template(template, h, r, ctx, rc, out) 
+            self.render_template(template, h, r, ctx, rc, out)
         } else {
-            self.render_menu(h, r, ctx, rc, out) 
+            self.render_menu(h, r, ctx, rc, out)
         }
     }
 }

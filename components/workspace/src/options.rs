@@ -120,7 +120,7 @@ fn to_options(
             if !book_menu.exists() || !book_menu.is_file() {
                 return Err(Error::NoBookMenu(book_menu, item.path.clone()));
             }
-        } 
+        }
     }
 
     let opts = RuntimeOptions {

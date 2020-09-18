@@ -7,7 +7,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, RuntimeOptions, MenuEntry};
+use config::{Config, MenuEntry, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
@@ -85,13 +85,12 @@ fn add_menu(
     info: &mut CollateInfo,
     _config: &Config,
     options: &RuntimeOptions,
-    key: &Arc<PathBuf>) -> Result<()> {
+    key: &Arc<PathBuf>,
+) -> Result<()> {
+    let url_path =
+        utils::url::to_href_separator(key.strip_prefix(&options.source)?);
 
-
-    let url_path = utils::url::to_href_separator(
-        key.strip_prefix(&options.source)?);
-
-    // NOTE: use the parent directory as the menu key 
+    // NOTE: use the parent directory as the menu key
     // NOTE: if possible
     let name = if let Some(parent) = key.parent() {
         parent.to_string_lossy().into_owned()
@@ -100,7 +99,7 @@ fn add_menu(
     };
 
     // Inject the menu entry for processing later.
-    let entry = MenuEntry::new(name, url_path, true);
+    let entry = MenuEntry::new(name, url_path);
     info.graph.menus.sources.insert(Arc::new(entry), Vec::new());
 
     Ok(())
@@ -222,8 +221,10 @@ fn compute_layouts(
     // Compute layout paths relative to the source directory.
     if let Some(ref layouts) = req.config.layout {
         for (k, v) in layouts.iter() {
-            let path = req.options.source.join(
-                v.strip_prefix(&req.options.source)?);
+            let path = req
+                .options
+                .source
+                .join(v.strip_prefix(&req.options.source)?);
             info.layouts.insert(k.clone(), path);
         }
     }
@@ -335,7 +336,8 @@ fn add_page(
                 if item.draft.is_some() {
                     page.draft = item.draft.clone();
                 }
-                let files = info.books.entry(k.to_string()).or_insert(Vec::new());
+                let files =
+                    info.books.entry(k.to_string()).or_insert(Vec::new());
                 files.push(Arc::clone(key));
             }
         }
@@ -352,10 +354,7 @@ fn add_other(
     options: &RuntimeOptions,
     key: Arc<PathBuf>,
 ) -> Result<()> {
-
-    let dest = options.destination()
-        .exact(true)
-        .build(&key)?;
+    let dest = options.destination().exact(true).build(&key)?;
 
     let href = to_href(&key, options, false, None)?;
     Ok(info.add_file(options, key, dest, href, None)?)

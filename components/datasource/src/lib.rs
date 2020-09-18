@@ -30,7 +30,6 @@ pub enum Error {
 
     //#[error("No feed template file {0}")]
     //NoFeedTemplate(PathBuf),
-
     #[error("No configuration {conf} for data source {key}")]
     NoDataSourceConf { conf: String, key: String },
 

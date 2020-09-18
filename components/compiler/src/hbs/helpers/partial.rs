@@ -6,8 +6,8 @@ use handlebars::*;
 
 use config::markdown;
 
-use crate::BuildContext;
 use super::is_markdown_template;
+use crate::BuildContext;
 
 fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
     if let Some(ext) = file.extension() {
@@ -63,12 +63,13 @@ impl HelperDef for Partial {
             )?;
 
         //let result = r.render_template(&content, ctx.data()).map_err(|e| {
-        let result = r.render_template_with_context(&content, ctx).map_err(|e| {
-            RenderError::new(format!(
-                "Partial error {} ({})",
-                &template_path, e
-            ))
-        })?;
+        let result =
+            r.render_template_with_context(&content, ctx).map_err(|e| {
+                RenderError::new(format!(
+                    "Partial error {} ({})",
+                    &template_path, e
+                ))
+            })?;
         //.map_err(|e| RenderError::new(format!("{}", e)))?;
 
         if is_markdown {

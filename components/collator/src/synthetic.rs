@@ -8,17 +8,14 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 
 use config::{
-    Config,
-    SearchConfig,
-    Page,
-    RuntimeOptions,
     book::BookConfig,
     feed::{ChannelConfig, FeedConfig},
+    Config, Page, RuntimeOptions, SearchConfig,
 };
 
 use locale::Locales;
 
-use crate::{Error, Result, to_href, Collate, CollateInfo};
+use crate::{to_href, Collate, CollateInfo, Error, Result};
 
 // Helper to inject synthetic pages.
 pub fn create_page(
@@ -30,7 +27,8 @@ pub fn create_page(
     page_info: Arc<RwLock<Page>>,
     rewrite_index: bool,
 ) -> Result<()> {
-    let dest = options.destination()
+    let dest = options
+        .destination()
         .rewrite_index(rewrite_index)
         .build(&source)?;
 
@@ -213,12 +211,12 @@ pub fn feed(
             let file_name = feed_type.get_name();
             let source = source_dir.join(&file_name);
 
-            let template =
-                if let Some(ref tpl) = feed.templates.get(feed_type) {
-                    options.source.join(tpl)
-                } else {
-                    cache::get_feed_dir()?.join(&file_name)
-                };
+            let template = if let Some(ref tpl) = feed.templates.get(feed_type)
+            {
+                options.source.join(tpl)
+            } else {
+                cache::get_feed_dir()?.join(&file_name)
+            };
 
             if !template.exists() {
                 return Err(Error::NoFeedTemplate(template));
@@ -273,9 +271,8 @@ pub fn search(
         let wasm_value = search.wasm.as_ref().unwrap().to_string();
         let js_path =
             utils::url::to_path_separator(js_value.trim_start_matches("/"));
-        let wasm_path = utils::url::to_path_separator(
-            wasm_value.trim_start_matches("/"),
-        );
+        let wasm_path =
+            utils::url::to_path_separator(wasm_value.trim_start_matches("/"));
 
         let js_target = PathBuf::from(js_path);
         let wasm_target = PathBuf::from(wasm_path);
@@ -303,7 +300,7 @@ pub fn search(
 
 fn find_files<F>(dir: &PathBuf, filter: F) -> Vec<Result<PathBuf>>
 where
-    F: Fn(&PathBuf) -> bool + Sync
+    F: Fn(&PathBuf) -> bool + Sync,
 {
     let (tx, rx) = channel::unbounded();
 
@@ -314,7 +311,9 @@ where
             Box::new(|result| {
                 if let Ok(entry) = result {
                     let path = entry.path().to_path_buf();
-                    if filter(&path) { let _ = tx.send(Ok(path)); }
+                    if filter(&path) {
+                        let _ = tx.send(Ok(path));
+                    }
                 }
                 WalkState::Continue
             })
@@ -332,24 +331,23 @@ pub fn book(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
 ) -> Result<()> {
-
     // First resolve by book theme name
     let base_dir = cache::get_book_dir()?;
     let theme_dir = base_dir.join(book.theme_name());
     if !theme_dir.exists() || !theme_dir.is_dir() {
-        return Err(Error::NoBookThemeDirectory(theme_dir))
+        return Err(Error::NoBookThemeDirectory(theme_dir));
     }
 
-    // Then by template engine identifier 
+    // Then by template engine identifier
     let engine = config.engine();
     let theme_dir = theme_dir.join(engine.to_string());
     if !theme_dir.exists() || !theme_dir.is_dir() {
-        return Err(Error::NoBookThemeDirectory(theme_dir))
+        return Err(Error::NoBookThemeDirectory(theme_dir));
     }
 
     let layout_file = theme_dir.join(engine.get_layout_name());
     if !layout_file.exists() || !layout_file.is_file() {
-        return Err(Error::NoBookThemeLayout(layout_file, theme_dir))
+        return Err(Error::NoBookThemeLayout(layout_file, theme_dir));
     }
 
     let filter = |p: &PathBuf| -> bool { p != &layout_file && p.is_file() };
@@ -359,7 +357,8 @@ pub fn book(
         let book_source = r?;
         let book_rel = book_source.strip_prefix(&theme_dir)?.to_path_buf();
         let book_target = book.target().join(&book_rel);
-        let rel_href = to_href(&book_source, options, false, Some(theme_dir.clone()))?;
+        let rel_href =
+            to_href(&book_source, options, false, Some(theme_dir.clone()))?;
 
         let mut book_href = utils::url::to_href_separator(book.target());
         book_href.push_str(&rel_href);
@@ -378,7 +377,7 @@ pub fn book(
     let layout_key = "book".to_string();
     info.layouts.insert(layout_key.clone(), layout_file.clone());
 
-    // Update the collated page information with 
+    // Update the collated page information with
     // the book layout
     for (_k, pages) in info.books.iter_mut() {
         for p in pages.iter() {
@@ -386,7 +385,7 @@ pub fn book(
                 let mut writer = page_lock.write().unwrap();
                 writer.layout = Some(layout_key.clone());
             }
-        } 
+        }
     }
 
     Ok(())

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, hash_map};
+use std::collections::{hash_map, HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
@@ -56,9 +56,9 @@ pub struct CollateInfo {
     /// Graph of page relationships.
     pub(crate) graph: Graph,
 
-    // Additional redirects, typically  from pages 
-    // that have permalinks map the permalink to the 
-    // computed href but also for books that need to 
+    // Additional redirects, typically  from pages
+    // that have permalinks map the permalink to the
+    // computed href but also for books that need to
     // redirect to the first chapter.
     pub(crate) redirects: HashMap<String, String>,
 
@@ -72,7 +72,7 @@ pub struct CollateInfo {
     // Store queries for expansion later
     pub queries: Vec<(QueryList, Arc<PathBuf>)>,
 
-    // Map of books files so that we can assign the theme template 
+    // Map of books files so that we can assign the theme template
     // and book menu.
     pub(crate) books: HashMap<String, Vec<Arc<PathBuf>>>,
 
@@ -113,13 +113,14 @@ pub struct MenuMap {
 }
 
 impl MenuMap {
-
     pub fn get_menu_template_name(&self, name: &str) -> String {
-        format!("{}/{}", MENU_TEMPLATE_PREFIX, name) 
+        format!("{}/{}", MENU_TEMPLATE_PREFIX, name)
     }
 
-    pub fn results(&self) -> hash_map::Iter<'_, Arc<MenuEntry>, Arc<MenuResult>> {
-        self.results.iter() 
+    pub fn results(
+        &self,
+    ) -> hash_map::Iter<'_, Arc<MenuEntry>, Arc<MenuResult>> {
+        self.results.iter()
     }
 }
 
@@ -161,7 +162,11 @@ pub trait LayoutCollate {
     /// Attempt to find a layout for a file path searching
     /// custom layouts and falling back to the default layout
     /// if no custom layout was found for the key.
-    fn find_layout(&self, key: &Option<String>, default: bool) -> Option<&PathBuf>;
+    fn find_layout(
+        &self,
+        key: &Option<String>,
+        default: bool,
+    ) -> Option<&PathBuf>;
 }
 
 pub trait LinkCollate {
@@ -281,7 +286,11 @@ impl LayoutCollate for Collation {
         self.fallback.layouts()
     }
 
-    fn find_layout(&self, key: &Option<String>, default: bool) -> Option<&PathBuf> {
+    fn find_layout(
+        &self,
+        key: &Option<String>,
+        default: bool,
+    ) -> Option<&PathBuf> {
         // TODO: prefer locale layouts?
         self.fallback.find_layout(key, default)
     }
@@ -377,8 +386,11 @@ impl LayoutCollate for CollateInfo {
         map
     }
 
-    fn find_layout(&self, key: &Option<String>, default: bool) -> Option<&PathBuf> {
-
+    fn find_layout(
+        &self,
+        key: &Option<String>,
+        default: bool,
+    ) -> Option<&PathBuf> {
         // Try to lookup a named layout.
         if let Some(ref key) = key {
             if let Some(ref layout) = self.layouts.get(key) {
@@ -425,7 +437,7 @@ impl CollateInfo {
     }
 
     pub fn get_redirects(&self) -> &HashMap<String, String> {
-        &self.redirects 
+        &self.redirects
     }
 
     pub fn get_graph_mut(&mut self) -> &mut Graph {
@@ -433,7 +445,7 @@ impl CollateInfo {
     }
 
     //pub fn get_books_mut(&mut self) -> &mut HashMap<String, Vec<Arc<PathBuf>>> {
-        //&mut self.books
+    //&mut self.books
     //}
 
     /// Create a page in this collation.
@@ -507,9 +519,9 @@ impl CollateInfo {
         key: Arc<PathBuf>,
         dest: PathBuf,
         href: String,
-        // For files outside the source we need to 
+        // For files outside the source we need to
         // add to the link map using an alternative base
-        // that is stripped then made relative to the source 
+        // that is stripped then made relative to the source
         // so that links are located correctly.
         _base: Option<&PathBuf>,
     ) -> Result<()> {

@@ -91,7 +91,10 @@ impl<'a> PageBuilder<'a> {
     pub fn layouts(self) -> Result<Self> {
         if let Some(ref layout) = self.page.layout {
             if self.info.layouts.get(layout).is_none() {
-                return Err(Error::NoLayoutDefinition(layout.clone(), self.path.clone()));
+                return Err(Error::NoLayoutDefinition(
+                    layout.clone(),
+                    self.path.clone(),
+                ));
             }
         }
         Ok(self)

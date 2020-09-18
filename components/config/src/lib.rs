@@ -24,7 +24,6 @@ pub enum Error {
 
     //#[error("Page {0} is outside the source directory {1}")]
     //PageOutsideSource(PathBuf, PathBuf),
-
     #[error("Failed to read link catalog {0}")]
     LinkCatalog(PathBuf),
 
@@ -116,6 +115,7 @@ pub mod transform;
 
 pub(crate) mod utils;
 
+pub use self::utils::markdown;
 pub use config::*;
 pub use engine::TemplateEngine;
 pub use fluent::{FluentConfig, CORE_FTL};
@@ -127,4 +127,3 @@ pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
 pub use search::{SearchConfig, SEARCH_JS, SEARCH_WASM};
-pub use self::utils::markdown;

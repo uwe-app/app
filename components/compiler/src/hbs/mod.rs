@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::borrow::Cow;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use log::warn;
@@ -16,8 +16,8 @@ use crate::{Error, Result};
 
 use config::{CollatedPage, TemplateEngine};
 
-use crate::parser::Parser;
 use crate::context::BuildContext;
+use crate::parser::Parser;
 
 mod helpers;
 
@@ -65,9 +65,10 @@ impl<'a> ParserBuilder<'a> {
         if self.context.options.settings.should_use_short_codes() {
             let short_codes = config::get_short_codes_location()?;
             if short_codes.exists() && short_codes.is_dir() {
-                self.handlebars
-                    .register_templates_directory(
-                        self.engine.get_template_extension(), &short_codes)?;
+                self.handlebars.register_templates_directory(
+                    self.engine.get_template_extension(),
+                    &short_codes,
+                )?;
             } else {
                 warn!("Short codes are enabled but the short code cache does not exist.");
                 warn!("Use the `fetch` command to download the short codes repository.");
@@ -124,9 +125,10 @@ impl<'a> ParserBuilder<'a> {
         // Configure partial directories
         let templates = self.context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
-            self.handlebars
-                .register_templates_directory(
-                    self.engine.get_template_extension(), &templates)?;
+            self.handlebars.register_templates_directory(
+                self.engine.get_template_extension(),
+                &templates,
+            )?;
         }
         Ok(self)
     }
@@ -152,10 +154,10 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
         //self.handlebars.register_helper(
-            //"children",
-            //Box::new(helpers::children::Children {
-                //context: Arc::clone(&self.context),
-            //}),
+        //"children",
+        //Box::new(helpers::children::Children {
+        //context: Arc::clone(&self.context),
+        //}),
         //);
         self.handlebars.register_helper(
             "livereload",
@@ -295,7 +297,6 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn menus(mut self) -> Result<Self> {
-
         let collation = self.context.collation.read().unwrap();
         let menus = collation.get_graph().get_menus();
 
@@ -390,7 +391,6 @@ impl Parser for HandlebarsParser<'_> {
         data: CollatedPage,
         layout: Option<&PathBuf>,
     ) -> Result<String> {
-
         if let Some(layout) = layout {
             self.layout(data, layout)
         } else {

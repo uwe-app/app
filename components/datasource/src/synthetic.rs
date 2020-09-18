@@ -3,13 +3,8 @@ use std::sync::{Arc, RwLock};
 
 use serde_json::json;
 
-use collator::{CollateInfo, create_page};
-use config::{
-    Config,
-    PageLink,
-    PaginateInfo,
-    RuntimeOptions,
-};
+use collator::{create_page, CollateInfo};
+use config::{Config, PageLink, PaginateInfo, RuntimeOptions};
 
 use crate::{DataSourceMap, Error, QueryCache, Result};
 

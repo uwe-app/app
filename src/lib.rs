@@ -25,7 +25,6 @@ pub enum Error {
     #[error("Book creation requires a project not a workspace")]
     BookCreateWorkspace,
     */
-
     #[error("Language {0} does not exist in the locales {1}")]
     LanguageMissingFromLocales(String, String),
 

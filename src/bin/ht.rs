@@ -347,7 +347,6 @@ enum Command {
         action: Book,
     },
     */
-
     /// Create a new project
     Init {
         #[structopt(flatten)]
@@ -440,7 +439,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             }
         },
         */
-
         Command::Init { ref args } => {
             let opts = command::init::InitOptions {
                 source: args.source.clone(),

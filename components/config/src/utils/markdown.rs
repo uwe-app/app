@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::Config;
 
-use pulldown_cmark::{html, Options, Parser, Event};
+use pulldown_cmark::{html, Event, Options, Parser};
 
 /// Get a markdown parser for the given source.
 pub fn parser<'a>(content: &'a mut Cow<str>) -> Parser<'a> {
@@ -16,7 +16,9 @@ pub fn parser<'a>(content: &'a mut Cow<str>) -> Parser<'a> {
 
 /// Covnert markdown to HTML.
 pub fn html<'a, I>(iter: I) -> String
-where I: Iterator<Item = Event<'a>> {
+where
+    I: Iterator<Item = Event<'a>>,
+{
     let mut markup = String::new();
     html::push_html(&mut markup, iter);
     markup

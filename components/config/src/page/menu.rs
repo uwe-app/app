@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -16,7 +17,11 @@ pub struct MenuConfig {
 
 #[derive(Default, Debug)]
 pub struct MenuResult {
+    /// Compiled HTML string, may contain template statements.
     pub value: String,
+    /// List of pages that were referenced by this menu so that
+    /// callers can easily iterate the page data for a menu.
+    pub pages: Vec<Arc<PathBuf>>,
 }
 
 #[skip_serializing_none]
@@ -37,18 +42,25 @@ pub struct MenuEntry {
 }
 
 impl MenuEntry {
-
-    pub fn new(name: String, file: UrlPath, relative: bool) -> Self {
+    pub fn new(name: String, file: UrlPath) -> Self {
         Self {
             name,
-            definition: MenuReference::File {file, relative},
+            definition: MenuReference::File { file },
+            result: Default::default(),
+        }
+    }
+
+    pub fn new_reference(definition: MenuReference) -> Self {
+        Self {
+            definition,
+            name: Default::default(),
             result: Default::default(),
         }
     }
 
     /// Determine if a file appears to be a menu using the convention.
     pub fn is_menu(file: &PathBuf) -> bool {
-        file.ends_with(MENU) 
+        file.ends_with(MENU)
     }
 
     pub fn verify_files(&self, base: &PathBuf) -> Result<()> {
@@ -74,7 +86,7 @@ impl MenuEntry {
 #[serde(untagged)]
 pub enum MenuReference {
     /// Render the context of a template file as the menu.
-    File { file: UrlPath, relative: bool },
+    File { file: UrlPath },
 
     /// Render a collection of specific pages.
     Pages {

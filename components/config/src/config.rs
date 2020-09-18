@@ -217,16 +217,17 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn engine(&self) -> TemplateEngine {
-        self.engine.as_ref().map_or_else(|| TemplateEngine::default(), |e| e.clone())
+        self.engine
+            .as_ref()
+            .map_or_else(|| TemplateEngine::default(), |e| e.clone())
     }
 
     /*
     pub fn get_global_menu(&self) -> Option<&MenuConfig> {
         if let Some(ref page) = self.page {
             if let Some(ref menu) = page.menu {
-                return Some(menu) 
+                return Some(menu)
             }
         }
         None

@@ -22,7 +22,6 @@ impl HelperDef for Parent {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let template = h.template().ok_or_else(|| {
             RenderError::new("Type error in `parent`, block template expected")
         })?;
@@ -44,7 +43,9 @@ impl HelperDef for Parent {
         let block_context = BlockContext::new();
         rc.push_block(block_context);
 
-        if let Some(page_lock) = menu::parent(&self.context.options, &*collation, &path) {
+        if let Some(page_lock) =
+            menu::parent(&self.context.options, &*collation, &path)
+        {
             let page = page_lock.read().unwrap();
             if let Some(ref mut block) = rc.block_mut() {
                 block.set_base_value(json!(&*page));

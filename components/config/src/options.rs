@@ -2,9 +2,7 @@ use std::path::{Path, PathBuf};
 
 use url::Url;
 
-use crate::{
-    Config, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM,
-};
+use crate::{Config, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM};
 
 #[derive(Debug, Clone)]
 pub enum FileType {

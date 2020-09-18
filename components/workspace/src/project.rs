@@ -241,9 +241,13 @@ impl<'a> ProjectBuilder {
             if !redirects.is_empty() {
                 for (source, target) in redirects.iter() {
                     if self.redirects.map.contains_key(source) {
-                        return Err(Error::RedirectCollision(source.to_string()));
+                        return Err(Error::RedirectCollision(
+                            source.to_string(),
+                        ));
                     }
-                    self.redirects.map.insert(source.to_string(), target.to_string());
+                    self.redirects
+                        .map
+                        .insert(source.to_string(), target.to_string());
                 }
             }
         }
@@ -304,12 +308,7 @@ impl<'a> ProjectBuilder {
     pub async fn book(mut self) -> Result<Self> {
         if let Some(ref book) = self.config.book {
             for collation in self.collations.iter_mut() {
-                collator::book(
-                    book,
-                    &self.config,
-                    &self.options,
-                    collation,
-                )?;
+                collator::book(book, &self.config, &self.options, collation)?;
             }
         }
         Ok(self)
@@ -430,11 +429,11 @@ impl<'a> ProjectBuilder {
                 collation: Arc::new(RwLock::new(collation)),
             });
 
-            let parser: Box<dyn Parser + Send + Sync> =
-                parser::build(
-                    config.engine(),
-                    Arc::clone(&context),
-                    Arc::clone(&locales))?;
+            let parser: Box<dyn Parser + Send + Sync> = parser::build(
+                config.engine(),
+                Arc::clone(&context),
+                Arc::clone(&locales),
+            )?;
 
             // NOTE: if we need to pre-compile with the parser this is the place.
 
@@ -686,8 +685,8 @@ pub async fn compile<P: AsRef<Path>>(
 
         // WARN: If we add too many futures to the chain
         // WARN: then the compiler overflows resolving trait
-        // WARN: bounds. The workaround is to break the chain 
-        // WARN: with multiple await statements. 
+        // WARN: bounds. The workaround is to break the chain
+        // WARN: with multiple await statements.
 
         let builder = entry.builder(args)?;
 
@@ -708,9 +707,9 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.series())
             .await?;
 
-        // Redirects come after synthetic assets in case 
-        // they need to create any redirects. Books need 
-        // to redirect from the book index to the first chapter 
+        // Redirects come after synthetic assets in case
+        // they need to create any redirects. Books need
+        // to redirect from the book index to the first chapter
         // for example.
         let builder = builder.redirects().await?;
 
@@ -722,7 +721,8 @@ pub async fn compile<P: AsRef<Path>>(
             .await?;
 
         // Inherit locale overrides, dynamic menu templates, syntax highlighting
-        let builder = builder.inherit()
+        let builder = builder
+            .inherit()
             .and_then(|s| s.menus())
             .and_then(|s| s.syntax())
             .await?;

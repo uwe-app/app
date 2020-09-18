@@ -2,7 +2,9 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
-use collator::{Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget};
+use collator::{
+    Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
+};
 use config::{CollatedPage, Config, Page, ProfileName};
 
 use config::transform::HtmlTransformFlags;
@@ -167,7 +169,7 @@ pub async fn parse(
     let layout = if !standalone {
         collation.find_layout(&data.layout, true)
     } else {
-        None 
+        None
     };
 
     let mut s = if minify_html {

@@ -1,14 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use locale::{Locales};
-use config::{TemplateEngine, CollatedPage};
+use config::{CollatedPage, TemplateEngine};
+use locale::Locales;
 
-use crate::{
-    Result,
-    context::BuildContext,
-    hbs,
-};
+use crate::{context::BuildContext, hbs, Result};
 
 /// The trait all template engines must implement.
 pub trait Parser {
@@ -29,9 +25,6 @@ pub fn build<'a>(
     locales: Arc<Locales>,
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
     match engine {
-        TemplateEngine::Handlebars => {
-            hbs::parser(engine, context, locales)   
-        }
+        TemplateEngine::Handlebars => hbs::parser(engine, context, locales),
     }
 }
-

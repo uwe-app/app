@@ -42,7 +42,8 @@ impl HelperDef for Components {
         let source_path = PathBuf::from(&base_path);
 
         let collation = self.context.collation.read().unwrap();
-        let components = menu::components(&self.context.options, &*collation, &source_path);
+        let components =
+            menu::components(&self.context.options, &*collation, &source_path);
         let amount = components.len() - 1;
 
         let block_context = BlockContext::new();
