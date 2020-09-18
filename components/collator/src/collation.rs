@@ -107,9 +107,11 @@ pub struct MenuMap {
     /// Compiled results for each menu.
     pub(crate) results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
 
+    /*
     /// Lookup table by file and menu name so the menu helper
     /// can easily locale the menu results.
     pub(crate) mapping: HashMap<Arc<PathBuf>, HashMap<String, Arc<MenuResult>>>,
+    */
 }
 
 impl MenuMap {
@@ -142,7 +144,7 @@ pub trait Collate {
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>;
     fn get_graph(&self) -> &Graph;
 
-    fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult>;
+    fn find_menu(&self, name: &str) -> Option<&MenuResult>;
 }
 
 /// Access to the collated series.
@@ -263,8 +265,8 @@ impl Collate for Collation {
         self.locale.get_graph()
     }
 
-    fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult> {
-        self.locale.find_menu(path, name)
+    fn find_menu(&self, name: &str) -> Option<&MenuResult> {
+        self.locale.find_menu(name)
     }
 }
 
@@ -350,11 +352,11 @@ impl Collate for CollateInfo {
         &self.graph
     }
 
-    fn find_menu(&self, path: &PathBuf, name: &str) -> Option<&MenuResult> {
-        if let Some(menu) = self.graph.menus.mapping.get(path) {
-            if let Some(result) = menu.get(name) {
+    fn find_menu(&self, name: &str) -> Option<&MenuResult> {
+        for (entry, result) in self.graph.menus.results.iter() {
+            if entry.name == name {
                 return Some(result);
-            }
+            } 
         }
         None
     }

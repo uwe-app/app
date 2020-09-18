@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::fmt::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
@@ -323,7 +322,8 @@ pub fn build<'c>(
 
     // Assign list of pages referenced by the menu to the compiled
     // menu result so that helpers can easily find referenced pages
-    result.pages = page_data.iter().map(|(p, _, _)| Arc::clone(p)).collect();
+    //result.pages = page_data.iter().map(|(p, _, _)| Arc::clone(p)).collect();
+    result.pages = page_data.iter().map(|(_, href, _)| Arc::new(href.clone())).collect();
 
     Ok((result, page_data))
 }
@@ -344,12 +344,12 @@ pub fn compile(
     }
 
     let graph = collation.get_graph_mut();
-    for (menu, result, paths) in compiled {
+    for (menu, result, _paths) in compiled {
         let res = Arc::new(result);
-        for path in paths {
-            let map = graph.menus.mapping.entry(path).or_insert(HashMap::new());
-            map.insert(menu.name.clone(), Arc::clone(&res));
-        }
+        //for path in paths {
+            //let map = graph.menus.mapping.entry(path).or_insert(HashMap::new());
+            //map.insert(menu.name.clone(), Arc::clone(&res));
+        //}
         graph.menus.results.entry(Arc::clone(&menu)).or_insert(res);
     }
 

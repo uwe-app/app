@@ -32,7 +32,8 @@ pub struct CollatedPage<'a> {
     pub page: &'a Page,
     pub lang: &'a str,
     pub date: &'a Option<DateConfig>,
-    //pub menu: HashMap<&'a str, &'a MenuResult>,
+    // Paths referenced in a menu when MENU.md convention is used
+    pub menu: Vec<&'a String>,
 }
 
 impl<'a> CollatedPage<'a> {
@@ -41,6 +42,7 @@ impl<'a> CollatedPage<'a> {
             page,
             lang,
             date: &config.date,
+            menu: Default::default(),
         }
     }
 }

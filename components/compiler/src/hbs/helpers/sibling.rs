@@ -3,7 +3,9 @@ use serde_json::json;
 
 fn add(u: usize, i: i32) -> usize {
     if i.is_negative() {
-        u - i.wrapping_abs() as u32 as usize
+        if u > 0 {
+            u - i.wrapping_abs() as u32 as usize
+        } else { 0 }
     } else {
         u + i as usize
     }

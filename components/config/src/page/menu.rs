@@ -21,7 +21,7 @@ pub struct MenuResult {
     pub value: String,
     /// List of pages that were referenced by this menu so that
     /// callers can easily iterate the page data for a menu.
-    pub pages: Vec<Arc<PathBuf>>,
+    pub pages: Vec<Arc<String>>,
 }
 
 #[skip_serializing_none]
