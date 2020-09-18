@@ -303,7 +303,7 @@ impl<'a> ParserBuilder<'a> {
 
         for (entry, result) in menus.results() {
             let name = menus.get_menu_template_name(&entry.name);
-            let mut template = Cow::from(&result.value);
+            let template = Cow::from(&result.value);
             self.handlebars.register_template_string(&name, template)?;
         }
 

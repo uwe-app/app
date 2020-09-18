@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use handlebars::*;
 use serde_json::json;
 
-use collator::{Collate, menu};
+use collator::{Collate, menu::{self, PageData}};
 
 use config::{MenuReference, Page};
 
@@ -22,7 +22,7 @@ impl Menu {
     fn render_pages<'reg: 'rc, 'rc>(
         &self,
         template: &'reg Template,
-        pages: Vec<(String, &Arc<RwLock<Page>>)>,
+        pages: PageData<'_>,
         _h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
@@ -43,7 +43,7 @@ impl Menu {
 
         let block_context = BlockContext::new();
         rc.push_block(block_context);
-        for (href, page) in pages.iter() {
+        for (path, href, page) in pages.iter() {
             let li = &*page.read().unwrap();
             let is_self = href == &page_href;
             if let Some(ref mut block) = rc.block_mut() {

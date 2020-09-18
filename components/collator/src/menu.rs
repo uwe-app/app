@@ -14,6 +14,9 @@ use config::{
 
 use crate::{Collate, Collation, CollateInfo, Error, LinkCollate, Result};
 
+/// Page data stores the page path, href and corresponding data.
+pub type PageData<'c> = Vec<(&'c Arc<PathBuf>, String, &'c Arc<RwLock<Page>>)>;
+
 fn write<W: Write>(f: &mut W, s: &str) -> Result<()> {
     f.write_str(s).map_err(Error::from)
 }
@@ -25,12 +28,12 @@ fn start_list<W: Write>(f: &mut W, name: &str) -> Result<()> {
     )
 }
 
-fn pages_list<W: Write>(
+fn pages_list<'c, W: Write>(
     f: &mut W,
-    pages: &Vec<(String, &Arc<RwLock<Page>>)>,
+    pages: &PageData<'c>,
     include_description: bool,
 ) -> Result<()> {
-    for (href, page) in pages {
+    for (path, href, page) in pages {
         let reader = page.read().unwrap();
         write(f, "<li>")?;
         if let Some(ref title) = reader.title {
@@ -75,7 +78,7 @@ fn compile_file_menu<'c>(
     collation: &'c CollateInfo,
     file: &PathBuf,
     definition: &MenuReference,
-) -> Result<(MenuResult, Vec<(String, &'c Arc<RwLock<Page>>)>)> {
+) -> Result<(MenuResult, PageData<'c>)> {
 
     let parent = file.parent().unwrap();
     let contents = utils::fs::read_string(&file)?;
@@ -86,7 +89,7 @@ fn compile_file_menu<'c>(
     //println!("Got menu result {}", &result.value);
 
     let mut result: MenuResult = Default::default();
-    let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
+    let mut page_data: PageData = Vec::new();
 
     let mut source = Cow::from(contents);
     let parser = markdown::parser(&mut source);
@@ -158,7 +161,7 @@ fn compile_file_menu<'c>(
                                                     let event_href = CowStr::from(href.to_string());
                                                     let event_title = CowStr::from(title.to_string());
 
-                                                    page_data.push((href, page));
+                                                    page_data.push((page_path, href, page));
 
                                                     return Event::Start(Tag::Link(LinkType::Inline, event_href, event_title))
 
@@ -187,7 +190,7 @@ fn compile_file_menu<'c>(
                     _ => event
                 }
             }
-            Event::Text(ref text) => {
+            Event::Text(ref _text) => {
                 if in_link {
                     //println!("Got text in the link {}", text);
                 }
@@ -230,7 +233,7 @@ fn build(
 ) -> Result<MenuResult> {
 
     let mut result: MenuResult = Default::default();
-    let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
+    let mut page_data: PageData = Vec::new();
 
     match menu.definition {
         MenuReference::File { ref file, .. } => {
@@ -256,8 +259,8 @@ fn build(
             end_list(&mut buf)?;
         }
         _ => {
-            println!("Got value {}", &result.value);
-            std::process::exit(1);
+            //println!("Got value {}", &result.value);
+            //std::process::exit(1);
         }
     }
 
@@ -269,9 +272,9 @@ pub fn find<'c>(
     options: &RuntimeOptions,
     collation: &'c CollateInfo,
     definition: &MenuReference,
-) -> Result<Vec<(String, &'c Arc<RwLock<Page>>)>> {
+) -> Result<PageData<'c>> {
 
-    let mut page_data: Vec<(String, &Arc<RwLock<Page>>)> = Vec::new();
+    let mut page_data: PageData = Vec::new();
     let mut should_sort = false;
 
     match definition {
@@ -287,7 +290,7 @@ pub fn find<'c>(
 
                 if let Some(ref page_path) = page_path {
                     if let Some(page) = collation.resolve(&page_path) {
-                        acc.push((page_href.clone(), page));
+                        acc.push((page_path, page_href.clone(), page));
                     } else {
                         return Err(Error::NoMenuItemPage(
                             page_path.to_path_buf(),
@@ -335,10 +338,10 @@ pub fn find<'c>(
                         k.starts_with(&dir_buf) && key_count <= target_depth
                     }
                 })
-                .try_fold(&mut page_data, |acc, (_path, page)| {
+                .try_fold(&mut page_data, |acc, (path, page)| {
                     let reader = page.read().unwrap();
                     let href = reader.href.as_ref().unwrap();
-                    acc.push((href.clone(), page));
+                    acc.push((path, href.clone(), page));
                     Ok::<_, Error>(acc)
                 },
             )?;
@@ -347,7 +350,7 @@ pub fn find<'c>(
 
     if should_sort {
         // Sort by title.
-        page_data.sort_by(|(_, a), (_, b)| {
+        page_data.sort_by(|(_, _, a), (_, _, b)| {
             let a = &*a.read().unwrap();
             let b = &*b.read().unwrap();
             let s1 = a.title.as_ref().map(|x| &**x).unwrap_or("");
@@ -366,6 +369,7 @@ pub fn compile(
     options: &RuntimeOptions,
     collation: &mut CollateInfo,
 ) -> Result<()> {
+
     let mut compiled: Vec<(Arc<MenuEntry>, MenuResult, Vec<Arc<PathBuf>>)> =
         Vec::new();
 
