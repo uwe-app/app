@@ -172,6 +172,12 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
         self.handlebars.register_helper(
+            "page",
+            Box::new(helpers::page::Page {
+                context: Arc::clone(&self.context),
+            }),
+        );
+        self.handlebars.register_helper(
             "parent",
             Box::new(helpers::parent::Parent {
                 context: Arc::clone(&self.context),

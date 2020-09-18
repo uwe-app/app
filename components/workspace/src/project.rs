@@ -703,6 +703,7 @@ pub async fn compile<P: AsRef<Path>>(
             .load_data()
             .and_then(|s| s.search())
             .and_then(|s| s.feed())
+            .and_then(|s| s.menus())
             .and_then(|s| s.book())
             .and_then(|s| s.series())
             .await?;
@@ -720,10 +721,9 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.assign())
             .await?;
 
-        // Inherit locale overrides, dynamic menu templates, syntax highlighting
+        // Inherit locale overrides, syntax highlighting
         let builder = builder
             .inherit()
-            .and_then(|s| s.menus())
             .and_then(|s| s.syntax())
             .await?;
 

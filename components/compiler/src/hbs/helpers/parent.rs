@@ -40,20 +40,18 @@ impl HelperDef for Parent {
         let path = PathBuf::from(&base_path);
         let collation = self.context.collation.read().unwrap();
 
-        let block_context = BlockContext::new();
-        rc.push_block(block_context);
-
         if let Some(page_lock) =
             menu::parent(&self.context.options, &*collation, &path)
         {
+            let block_context = BlockContext::new();
+            rc.push_block(block_context);
             let page = page_lock.read().unwrap();
             if let Some(ref mut block) = rc.block_mut() {
                 block.set_base_value(json!(&*page));
             }
             template.render(r, ctx, rc, out)?;
+            rc.pop_block();
         }
-
-        rc.pop_block();
 
         Ok(())
     }
