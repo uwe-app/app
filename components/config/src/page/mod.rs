@@ -65,6 +65,7 @@ pub struct Page {
     pub standalone: Option<bool>,
     pub listing: Option<bool>,
     pub noindex: Option<bool>,
+    pub print: Option<bool>,
     pub fallback: Option<bool>,
 
     pub authors: Option<Vec<Author>>,
@@ -134,6 +135,7 @@ impl Default for Page {
             standalone: None,
             listing: Some(true),
             noindex: None,
+            print: None,
             fallback: None,
             query: None,
             layout: None,
@@ -299,6 +301,10 @@ impl Page {
 
         if let Some(noindex) = other.noindex.as_mut() {
             self.noindex = Some(mem::take(noindex));
+        }
+
+        if let Some(print) = other.print.as_mut() {
+            self.print = Some(mem::take(print));
         }
 
         if let Some(fallback) = other.fallback.as_mut() {
