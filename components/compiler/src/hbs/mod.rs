@@ -208,12 +208,6 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
         self.handlebars.register_helper(
-            "series",
-            Box::new(helpers::series::Series {
-                context: Arc::clone(&self.context),
-            }),
-        );
-        self.handlebars.register_helper(
             "favicon",
             Box::new(helpers::favicon::Icon {
                 context: Arc::clone(&self.context),

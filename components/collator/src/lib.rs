@@ -23,12 +23,6 @@ pub enum Error {
     )]
     DuplicatePermalink(String),
 
-    #[error("Series '{0}' references missing page {1}")]
-    NoSeriesPage(String, PathBuf),
-
-    #[error("Series '{0}' has duplicate page {1}")]
-    DuplicateSeriesPage(String, PathBuf),
-
     #[error("Query may not combine 'each' with 'page'")]
     QueryConflict,
 

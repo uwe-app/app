@@ -314,14 +314,6 @@ impl<'a> ProjectBuilder {
         Ok(self)
     }
 
-    /// Collate series data.
-    pub async fn series(mut self) -> Result<Self> {
-        for collation in self.collations.iter_mut() {
-            collator::series(&self.config, &self.options, collation)?;
-        }
-        Ok(self)
-    }
-
     /// Perform pagination.
     pub async fn pages(mut self) -> Result<Self> {
         for collation in self.collations.iter_mut() {
@@ -705,7 +697,6 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.feed())
             .and_then(|s| s.menus())
             .and_then(|s| s.book())
-            .and_then(|s| s.series())
             .await?;
 
         // Redirects come after synthetic assets in case

@@ -13,7 +13,7 @@ use locale::{LocaleMap, LocaleName};
 use crate::{
     builder::{to_href, PageBuilder},
     locale_utils::*,
-    Collate, CollateInfo, Error, Resource, ResourceKind, ResourceOperation,
+    CollateInfo, Error, Resource, ResourceKind, ResourceOperation,
     Result,
 };
 
@@ -248,43 +248,6 @@ fn compute_links(
                 let href = to_href(&src, req.options, false, None)?;
                 info.link(Arc::new(src), Arc::new(href))?;
             }
-        }
-    }
-    Ok(())
-}
-
-pub fn series(
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-) -> Result<()> {
-    if let Some(ref series) = config.series {
-        for (k, v) in series {
-            let mut refs: Vec<Arc<PathBuf>> = Vec::new();
-            v.pages
-                .iter()
-                .map(|p| {
-                    if !p.starts_with(&options.source) {
-                        return options.source.join(p);
-                    }
-                    p.to_path_buf()
-                })
-                .try_for_each(|p| {
-                    if let Some(ref _page) = info.resolve(&p) {
-                        let item = Arc::new(p.clone());
-                        if refs.contains(&item) {
-                            return Err(Error::DuplicateSeriesPage(
-                                k.to_string(),
-                                p.to_path_buf(),
-                            ));
-                        }
-                        refs.push(item);
-                        return Ok(());
-                    }
-                    Err(Error::NoSeriesPage(k.to_string(), p.to_path_buf()))
-                })?;
-
-            info.series.entry(k.to_string()).or_insert(refs);
         }
     }
     Ok(())

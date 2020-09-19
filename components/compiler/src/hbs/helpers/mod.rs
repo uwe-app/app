@@ -24,7 +24,6 @@ pub mod partial;
 pub mod random;
 pub mod scripts;
 pub mod search;
-pub mod series;
 pub mod sibling;
 pub mod slug;
 pub mod styles;
