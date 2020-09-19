@@ -7,6 +7,22 @@ use serde::{Deserialize, Serialize};
 
 pub type DependencyMap = HashMap<String, Dependency>;
 
+/// Hint as to the type of plugin.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum PluginType {
+    /// Assets to be bundled with the website files.
+    ///
+    /// May also combine scripts and stylesheets.
+    #[serde(rename = "assets")]
+    Assets,
+    /// Single partial with a schema to define the partial parameters.
+    #[serde(rename = "shortcode")]
+    ShortCode,
+    /// Register one or more partial files.
+    #[serde(rename = "partial")]
+    Partial,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dependency {
 
@@ -35,14 +51,18 @@ pub struct Plugin {
     #[serde(with = "serde_with::rust::display_fromstr")]
     pub version: Version,
 
-    /// List of synethetic assets to include in the project.
-    pub assets: Vec<PathBuf>,
+    /// Type of the plugin.
+    #[serde(rename = "type")]
+    pub kind: Option<PluginType>,
+
+    /// List of synthetic assets to include in the project.
+    pub assets: Option<Vec<PathBuf>>,
 
     /// List of stylesheets to add to pages.
-    pub stylesheets: Vec<PathBuf>,
+    pub styles: Option<Vec<PathBuf>>,
 
     /// List of scripts to add to pages.
-    pub scripts: Vec<PathBuf>,
+    pub scripts: Option<Vec<PathBuf>>,
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
