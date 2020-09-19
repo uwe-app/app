@@ -102,6 +102,7 @@ mod link;
 mod live_reload;
 mod options;
 mod page;
+mod plugin;
 mod profile;
 pub mod redirect;
 pub mod robots;
@@ -124,6 +125,9 @@ pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::menu::{MenuEntry, MenuReference, MenuResult, MENU};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
+pub use plugin::{Dependency, DependencyMap, Plugin};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
 pub use search::{SearchConfig, SEARCH_JS, SEARCH_WASM};
+
+pub use semver;

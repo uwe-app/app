@@ -21,6 +21,7 @@ use crate::{
     link::LinkConfig,
     live_reload::LiveReload,
     page::{Author, Page},
+    plugin::DependencyMap,
     profile::{ProfileName, ProfileSettings},
     redirect::RedirectConfig,
     script::JavaScriptConfig,
@@ -153,6 +154,8 @@ pub struct Config {
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
 
+    pub dependencies: Option<DependencyMap>,
+
     pub layout: Option<LayoutConfig>,
 
     pub syntax: Option<SyntaxConfig>,
@@ -198,6 +201,7 @@ impl Default for Config {
             publish: Some(Default::default()),
             index: None,
             authors: None,
+            dependencies: None,
             layout: None,
             syntax: None,
             transform: Some(Default::default()),

@@ -119,12 +119,6 @@ impl CollationBuilder {
         let mut all = vec![default];
         all.append(&mut collations);
 
-        //map.insert(default.locale.lang.clone(), default);
-        //collations.into_iter()
-        //.for_each(|info| {
-        //map.insert(info.locale.lang.clone(), info);
-        //});
-
         Ok(all)
     }
 }
@@ -141,7 +135,7 @@ pub struct ProjectBuilder {
     collations: CollationBuilder,
 }
 
-impl<'a> ProjectBuilder {
+impl ProjectBuilder {
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
         let mut sources: Sources = Default::default();
@@ -255,6 +249,15 @@ impl<'a> ProjectBuilder {
         // Validate the redirects
         self.redirects.validate()?;
 
+        Ok(self)
+    }
+
+    /// Resolve plugin dependencies.
+    pub async fn resolve_plugins(mut self) -> Result<Self> {
+        if let Some(ref mut dependencies) = self.config.dependencies {
+            let mut stack: Vec<String> = Vec::new();
+            plugin::solve(dependencies, &mut stack).await?;
+        }
         Ok(self)
     }
 
@@ -673,8 +676,6 @@ pub async fn compile<P: AsRef<Path>>(
     let mut compiled: CompileResult = Default::default();
 
     for entry in project.into_iter() {
-        //let mut sitemaps: Vec<Url> = Vec::new();
-
         // WARN: If we add too many futures to the chain
         // WARN: then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to break the chain
@@ -688,6 +689,8 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.locales())
             .and_then(|s| s.fetch())
             .and_then(|s| s.collate())
+            .and_then(|s| s.inherit())
+            .and_then(|s| s.resolve_plugins())
             .await?;
 
         // Load collections, resolve synthetic assets
@@ -705,26 +708,13 @@ pub async fn compile<P: AsRef<Path>>(
         // for example.
         let builder = builder.redirects().await?;
 
-        // Pagination, collections etc
+        // Pagination, collections, syntax highlighting
         let builder = builder
             .pages()
             .and_then(|s| s.each())
             .and_then(|s| s.assign())
-            .await?;
-
-        // Inherit locale overrides, syntax highlighting
-        let builder = builder
-            .inherit()
             .and_then(|s| s.syntax())
             .await?;
-
-        /*
-        let builder = if builder.get_syntax().is_some() {
-            builder.syntax().await?
-        } else {
-            builder
-        };
-        */
 
         let mut state = builder.build()?;
 

@@ -67,6 +67,8 @@ pub enum Error {
     Syntax(#[from] syntax::Error),
     #[error(transparent)]
     Search(#[from] search::Error),
+    #[error(transparent)]
+    Plugin(#[from] plugin::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

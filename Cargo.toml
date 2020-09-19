@@ -23,6 +23,7 @@ members = [
   "components/livereload",
   "components/locale",
   "components/minify",
+  "components/plugin",
   "components/preference",
   "components/publisher",
   "components/report",
