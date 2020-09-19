@@ -115,6 +115,16 @@ pub struct MenuMap {
 }
 
 impl MenuMap {
+
+    pub fn find_result(&self, name: &str) -> Option<&Arc<MenuResult>> {
+        for (entry, result) in self.results() {
+            if entry.name == name {
+                return Some(result)
+            } 
+        } 
+        None
+    }
+
     pub fn get_menu_template_name(&self, name: &str) -> String {
         format!("{}/{}", MENU_TEMPLATE_PREFIX, name)
     }
