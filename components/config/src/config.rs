@@ -364,6 +364,7 @@ impl Config {
         self.project.as_ref().unwrap().clone()
     }
 
+    /*
     pub fn get_book_theme_path<P: AsRef<Path>>(
         &self,
         source: P,
@@ -375,6 +376,7 @@ impl Config {
         }
         None
     }
+    */
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

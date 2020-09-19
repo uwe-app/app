@@ -123,39 +123,6 @@ struct Cli {
     build_opts: BuildOpts,
 }
 
-/*
-#[derive(StructOpt, Debug)]
-enum Book {
-    /// Add a book
-    Add {
-        /// Project folder
-        #[structopt(parse(from_os_str))]
-        project: PathBuf,
-
-        /// Book path relative to project
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
-    },
-    /// List books
-    #[structopt(alias = "ls")]
-    List {
-        /// Project folder
-        #[structopt(parse(from_os_str), default_value = ".")]
-        project: PathBuf,
-    },
-    /// Build books
-    Build {
-        /// Project folder
-        #[structopt(parse(from_os_str))]
-        project: PathBuf,
-
-        /// Target book to build
-        #[structopt(parse(from_os_str))]
-        target: Vec<PathBuf>,
-    },
-}
-*/
-
 #[derive(StructOpt, Debug)]
 struct BuildOpts {
     /// Build profile name
@@ -340,13 +307,6 @@ enum Site {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    /*
-    /// Create, list and build books
-    Book {
-        #[structopt(flatten)]
-        action: Book,
-    },
-    */
     /// Create a new project
     Init {
         #[structopt(flatten)]
@@ -406,39 +366,6 @@ impl Command {
 
 async fn process_command(cmd: &Command) -> Result<(), Error> {
     match cmd {
-        /*
-        Command::Book { ref action } => match action {
-            Book::Add {
-                ref project,
-                ref path,
-            } => {
-                let opts = command::book::BookOptions {
-                    project: project.clone(),
-                    path: Some(path.clone()),
-                    ..Default::default()
-                };
-                command::book::add(opts)?;
-            }
-            Book::List { ref project } => {
-                let opts = command::book::BookOptions {
-                    project: project.clone(),
-                    ..Default::default()
-                };
-                command::book::list(opts)?;
-            }
-            Book::Build {
-                ref project,
-                ref target,
-            } => {
-                let opts = command::book::BookOptions {
-                    project: project.clone(),
-                    target: target.clone(),
-                    ..Default::default()
-                };
-                command::book::build(opts)?;
-            }
-        },
-        */
         Command::Init { ref args } => {
             let opts = command::init::InitOptions {
                 source: args.source.clone(),

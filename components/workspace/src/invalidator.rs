@@ -43,12 +43,14 @@ pub enum Action {
     Hook(String, PathBuf),
     DataSourceConfig(PathBuf),
     DataSourceDocument(PathBuf),
+    /*
     // NOTE: The first path is the root directory
     // NOTE: and the second is the matched file.
     BookTheme(PathBuf, PathBuf),
     BookConfig(PathBuf, PathBuf),
     BookSource(PathBuf, PathBuf),
     BookBuild(PathBuf, PathBuf),
+    */
 }
 
 #[derive(Debug)]
@@ -146,11 +148,11 @@ impl<'a> Invalidator<'a> {
 
         //let resources = self.canonical(ctx.options.get_resources_path());
 
-        let book_theme = self
-            .project
-            .config
-            .get_book_theme_path(&self.project.options.source)
-            .map(|v| self.canonical(v));
+        //let book_theme = self
+            //.project
+            //.config
+            //.get_book_theme_path(&self.project.options.source)
+            //.map(|v| self.canonical(v));
 
         /*
         let mut books: Vec<PathBuf> = Vec::new();
@@ -239,14 +241,14 @@ impl<'a> Invalidator<'a> {
                     }
                     */
 
-                    if let Some(theme) = &book_theme {
-                        if path.starts_with(theme) {
-                            rule.book.all = true;
-                            rule.ignores
-                                .push(Action::BookTheme(theme.clone(), path));
-                            continue 'paths;
-                        }
-                    }
+                    //if let Some(theme) = &book_theme {
+                        //if path.starts_with(theme) {
+                            //rule.book.all = true;
+                            //rule.ignores
+                                //.push(Action::BookTheme(theme.clone(), path));
+                            //continue 'paths;
+                        //}
+                    //}
 
                     if path == cfg_file {
                         rule.ignores.push(Action::SiteConfig(path));
