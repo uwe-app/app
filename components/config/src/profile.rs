@@ -96,6 +96,14 @@ impl ProfileName {
     }
 }
 
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum LayoutReference {
+    File(PathBuf),
+    Flag(bool),
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
@@ -115,7 +123,7 @@ pub struct ProfileSettings {
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
-    pub layout: Option<PathBuf>,
+    pub layout: Option<LayoutReference>,
 
     pub extend: Option<Vec<String>>,
 
@@ -124,7 +132,6 @@ pub struct ProfileSettings {
     pub release: Option<bool>,
 
     pub short_codes: Option<bool>,
-    pub use_layout: Option<bool>,
 
     pub rewrite_index: Option<bool>,
     pub include_index: Option<bool>,
@@ -170,7 +177,7 @@ impl Default for ProfileSettings {
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
-            layout: Some(PathBuf::from(config::LAYOUT_HBS)),
+            layout: None,
 
             rewrite_index: None,
             extend: None,
@@ -195,8 +202,6 @@ impl Default for ProfileSettings {
             paths: None,
             base_href: None,
 
-            use_layout: Some(true),
-
             robots: None,
             sitemap: None,
             resources: None,
@@ -209,6 +214,11 @@ impl ProfileSettings {
         let mut settings: ProfileSettings = Default::default();
         settings.release = Some(true);
         settings
+    }
+
+    pub fn set_default_layout(&mut self) {
+        self.layout = Some(
+            LayoutReference::File(PathBuf::from(config::LAYOUT_HBS)));
     }
 
     pub fn append(&mut self, other: &mut Self) {
@@ -298,10 +308,6 @@ impl ProfileSettings {
             self.base_href = mem::take(&mut other.base_href)
         }
 
-        if other.use_layout.is_some() {
-            self.use_layout = mem::take(&mut other.use_layout)
-        }
-
         if other.robots.is_some() {
             self.robots = mem::take(&mut other.robots)
         }
@@ -332,6 +338,9 @@ impl ProfileSettings {
     }
 
     pub fn set_defaults(&mut self) {
+        if let None = self.layout {
+            self.set_default_layout();
+        }
         if let None = self.strict {
             self.strict = Some(true);
         }
@@ -384,10 +393,6 @@ impl ProfileSettings {
 
     pub fn is_pristine(&self) -> bool {
         self.pristine.is_some() && self.pristine.unwrap()
-    }
-
-    pub fn should_use_layout(&self) -> bool {
-        self.use_layout.is_some() && self.use_layout.unwrap()
     }
 
     pub fn should_use_short_codes(&self) -> bool {

@@ -126,7 +126,7 @@ pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::menu::{MenuEntry, MenuReference, MenuResult, MENU};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use plugin::{Dependency, DependencyMap, Plugin};
-pub use profile::{ProfileName, ProfileSettings, RenderTypes};
+pub use profile::{ProfileName, ProfileSettings, RenderTypes, LayoutReference};
 pub use redirect::*;
 pub use search::{SearchConfig, SEARCH_JS, SEARCH_WASM};
 

@@ -118,6 +118,19 @@ impl<'a> ParserBuilder<'a> {
             include_str!("builtins/head.hbs"),
         )?;
 
+        self.handlebars.register_template_string(
+            "header",
+            include_str!("builtins/header.hbs"),
+        )?;
+        self.handlebars.register_template_string(
+            "footer",
+            include_str!("builtins/footer.hbs"),
+        )?;
+        self.handlebars.register_template_string(
+            "layout",
+            include_str!("builtins/layout.hbs"),
+        )?;
+
         Ok(self)
     }
 

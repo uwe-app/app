@@ -5,7 +5,7 @@ use log::info;
 use collator::{
     Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
 };
-use config::{CollatedPage, Config, Page, ProfileName};
+use config::{CollatedPage, Config, Page, ProfileName, LayoutReference};
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
@@ -166,17 +166,31 @@ pub async fn parse(
     let lang = collation.get_lang();
     let mut page_data = CollatedPage::new(&ctx.config, data, lang);
 
-    let layout = if !standalone {
+    let builtin_layout = PathBuf::from("layout");
+    let mut layout = if !standalone {
         collation.find_layout(&data.layout, true)
     } else {
         None
     };
 
+    if layout.is_none() {
+        if let Some(ref layout_conf) = ctx.options.settings.layout {
+            match layout_conf {
+                LayoutReference::Flag(flag) => {
+                    if *flag {
+                        layout = Some(&builtin_layout);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
     // Try to resolve a menu for the file
     if let Some(parent) = file.parent() {
         let parent_menu_name = parent.to_string_lossy();
         if let Some(ref menu_result) = collation.find_menu(&parent_menu_name) {
-            page_data.menu = 
+            page_data.menu =
                 menu_result.pages
                 .iter()
                 .map(|s| s.as_ref())

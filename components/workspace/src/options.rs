@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, ProfileSettings};
+use config::{Config, ProfileSettings, LayoutReference};
 use config::{ProfileName, RuntimeOptions, MENU};
 
 use crate::{Error, Result};
@@ -76,17 +76,6 @@ fn to_options(
         return Err(Error::NotDirectory(source.clone()));
     }
 
-    // TODO: always use a layout?
-    if args.should_use_layout() {
-        if let Some(ref layout) = args.layout {
-            let location = source.clone().join(layout);
-            if !location.exists() || !location.is_file() {
-                return Err(Error::NoLayout(location.to_path_buf()));
-            }
-            args.layout = Some(location);
-        }
-    }
-
     if let Some(ref mut paths) = args.paths.as_mut() {
         let paths = prefix(&source, paths);
         for p in paths.iter() {
@@ -120,6 +109,19 @@ fn to_options(
             if !book_menu.exists() || !book_menu.is_file() {
                 return Err(Error::NoBookMenu(book_menu, item.path.clone()));
             }
+        }
+    }
+
+    if let Some(ref layout) = settings.layout {
+        match layout {
+            LayoutReference::File(ref file) => {
+                let location = source.clone().join(file);
+                if !location.exists() || !location.is_file() {
+                    return Err(Error::NoLayout(location.to_path_buf()));
+                }
+                settings.layout = Some(LayoutReference::File(location));
+            }
+            _ => {}
         }
     }
 

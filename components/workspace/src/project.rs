@@ -689,7 +689,7 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.fetch())
             .and_then(|s| s.collate())
             .and_then(|s| s.inherit())
-            .and_then(|s| s.resolve_plugins())
+            //.and_then(|s| s.resolve_plugins())
             .await?;
 
         // Load collections, resolve synthetic assets

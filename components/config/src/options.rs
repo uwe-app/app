@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use url::Url;
 
-use crate::{Config, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM};
+use crate::{Config, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM, profile::LayoutReference};
 
 #[derive(Debug, Clone)]
 pub enum FileType {
@@ -142,7 +142,16 @@ impl RuntimeOptions {
     }
 
     pub fn get_layout_path(&self) -> PathBuf {
-        self.source.join(self.settings.layout.as_ref().unwrap())
+        let reference = self.settings.layout.as_ref().unwrap();
+
+        match reference {
+            LayoutReference::File(ref file) => {
+                self.source.join(file)
+            }
+            _ => PathBuf::from("")
+        }
+
+        //self.source.join(self.settings.layout.as_ref().unwrap())
     }
 
     pub fn get_assets_path(&self) -> PathBuf {

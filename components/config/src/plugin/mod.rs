@@ -11,16 +11,27 @@ pub type DependencyMap = HashMap<String, Dependency>;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PluginType {
     /// Assets to be bundled with the website files.
-    ///
-    /// May also combine scripts and stylesheets.
-    #[serde(rename = "assets")]
-    Assets,
+    #[serde(rename = "asset")]
+    Asset,
+    /// Script(s) to be included with pages.
+    #[serde(rename = "script")]
+    Script,
+    /// Style(s) to be included with pages.
+    #[serde(rename = "style")]
+    Style,
     /// Single partial with a schema to define the partial parameters.
     #[serde(rename = "shortcode")]
     ShortCode,
     /// Register one or more partial files.
     #[serde(rename = "partial")]
     Partial,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum PluginKind {
+    One(PluginType),
+    Many(Vec<PluginType>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,7 +64,7 @@ pub struct Plugin {
 
     /// Type of the plugin.
     #[serde(rename = "type")]
-    pub kind: Option<PluginType>,
+    pub kind: Option<PluginKind>,
 
     /// List of synthetic assets to include in the project.
     pub assets: Option<Vec<PathBuf>>,

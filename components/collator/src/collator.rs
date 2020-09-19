@@ -7,7 +7,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, MenuEntry, RuntimeOptions};
+use config::{Config, MenuEntry, RuntimeOptions, LayoutReference};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
@@ -190,9 +190,14 @@ async fn find(
                     } else {
                         // Store the primary layout
                         if let Some(ref layout) = req.options.settings.layout {
-                            if key.starts_with(layout) {
-                                info.layout = Some(Arc::clone(&key));
-                                return WalkState::Continue;
+                            match layout {
+                                LayoutReference::File(ref file) => {
+                                    if key.starts_with(file) {
+                                        info.layout = Some(Arc::clone(&key));
+                                        return WalkState::Continue;
+                                    }
+                                }
+                                _ => {}
                             }
                         }
 
