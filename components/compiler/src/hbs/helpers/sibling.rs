@@ -26,41 +26,45 @@ impl HelperDef for Sibling {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
+        // Indicates that an item *must* be located, default is `false`
+        let required = h
+            .hash_get("required")
+            .map(|v| v.value())
+            .or(Some(&json!(false)))
+            .and_then(|v| v.as_bool())
+            .ok_or(RenderError::new(format!(
+                "Type error in `{}`, hash parameter `required` must be a boolean",
+                self.name))
+            )?;
+
         let list = h
             .params()
             .get(0)
-            .ok_or_else(|| {
-                RenderError::new(format!(
-                    "Type error in `{}`, expected parameter at index 0",
-                    self.name
-                ))
-            })?
+            .ok_or(RenderError::new(format!(
+                "Type error in `{}`, expected parameter at index 0",
+                self.name))
+            )?
             .value()
             .as_array()
-            .ok_or_else(|| {
-                RenderError::new(format!(
-                    "Type error in `{}`, expected array parameter",
-                    self.name
-                ))
-            })?;
+            .ok_or(RenderError::new(format!(
+                "Type error in `{}`, expected array parameter",
+                self.name))
+            )?;
 
         let current = h
             .params()
             .get(1)
-            .ok_or_else(|| {
-                RenderError::new(format!(
-                    "Type error in `{}`, expected parameter at index 1",
-                    self.name
-                ))
-            })?
+            .ok_or(RenderError::new(format!(
+                "Type error in `{}`, expected parameter at index 1",
+                self.name))
+            )?
             .value();
 
-        let template = h.template().ok_or_else(|| {
-            RenderError::new(format!(
-                "Type error in `{}`, block template expected",
-                self.name
-            ))
-        })?;
+        let template = h.template().ok_or(RenderError::new(format!(
+            "Type error in `{}`, block template expected",
+            self.name))
+        )?;
 
         if list.len() > 1 {
             let pos = list.iter().position(|i| i == current);
@@ -81,10 +85,12 @@ impl HelperDef for Sibling {
                     rc.pop_block();
                 }
             } else {
-                return Err(RenderError::new(format!(
-                    "Type error in `{}`, element is not in the array",
-                    self.name
-                )));
+                if required {
+                    return Err(RenderError::new(format!(
+                        "Type error in `{}`, element is not in the array",
+                        self.name
+                    )));
+                }
             }
         }
 

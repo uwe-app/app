@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use handlebars::*;
 
+use collator::{Collate, LinkCollate};
 use config::markdown;
 
 use super::is_markdown_template;
@@ -26,22 +27,59 @@ pub struct Partial {
 impl HelperDef for Partial {
     fn call<'reg: 'rc, 'rc>(
         &self,
-        _h: &Helper<'reg, 'rc>,
+        h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let template_path = rc
-            .evaluate(ctx, "@root/file.template")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.template`, string expected",
-                )
-            })?
-            .to_string();
+
+        // The href of a page to render
+        let href = h.params().get(0);
+
+        let template_path = if let Some(href) = href {
+            let href = href
+                .value()
+                .as_str()
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error in `partial`, expected string parameter at index 0",
+                    )
+                })?.to_string();
+
+            let collation = self.context.collation.read().unwrap();
+            let normalized_href = collation.normalize(&href);
+            if let Some(page_path) = collation.get_link(&normalized_href) {
+                if let Some(page_lock) = collation.resolve(&page_path) {
+                    let page = page_lock.read().unwrap();
+                    page.file
+                        .as_ref()
+                        .unwrap()
+                        .template
+                        .to_string_lossy()
+                        .into_owned()
+                } else {
+                    return Err(RenderError::new(
+                        &format!("Type error in `partial`, no page found for {}", &href),
+                    ));
+                }
+            } else {
+                return Err(RenderError::new(
+                    &format!("Type error in `partial`, no path found for {}", &href),
+                ));
+            }
+        } else {
+            rc
+                .evaluate(ctx, "@root/file.template")?
+                .as_json()
+                .as_str()
+                .ok_or_else(|| {
+                    RenderError::new(
+                        "Type error for `file.template`, string expected",
+                    )
+                })?
+                .to_string()
+        };
 
         let file = PathBuf::from(&template_path);
 

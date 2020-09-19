@@ -34,7 +34,7 @@ impl HelperDef for Page {
             .or(Some(&json!(true)))
             .and_then(|v| v.as_bool())
             .ok_or(RenderError::new(
-                "Type error for `page` helper, hash parameter `rewuired` must be a boolean",
+                "Type error for `page` helper, hash parameter `required` must be a boolean",
             ))?;
 
         // The href or file system path
