@@ -5,8 +5,6 @@ use semver::{Version, VersionReq};
 
 use serde::{Deserialize, Serialize};
 
-use crate::Result;
-
 pub type DependencyMap = HashMap<String, Dependency>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,6 +28,9 @@ pub struct Plugin {
     /// Name of the plugin.
     pub name: String,
 
+    /// Description of the plugin function.
+    pub description: String,
+
     /// Plugin version.
     #[serde(with = "serde_with::rust::display_fromstr")]
     pub version: Version,
@@ -45,10 +46,4 @@ pub struct Plugin {
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
-}
-
-impl PartialEq for Plugin {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
 }

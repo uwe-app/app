@@ -8,7 +8,7 @@ pub enum Error {
     #[error("Plugin {0}@{1} does not satsify requirement {2}")]
     PluginVersionMismatch(String, String, String),
 
-    #[error("Plugin cyclic dependency {0}")]
+    #[error("Plugin cyclic dependency: {0}")]
     PluginCyclicDependency(String),
 
     #[error(transparent)]

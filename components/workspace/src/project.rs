@@ -255,8 +255,7 @@ impl ProjectBuilder {
     /// Resolve plugin dependencies.
     pub async fn resolve_plugins(mut self) -> Result<Self> {
         if let Some(ref mut dependencies) = self.config.dependencies {
-            let mut stack: Vec<String> = Vec::new();
-            plugin::solve(dependencies, &mut stack).await?;
+            plugin::solve(dependencies, &mut Default::default()).await?;
         }
         Ok(self)
     }

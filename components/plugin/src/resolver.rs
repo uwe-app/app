@@ -36,21 +36,12 @@ pub async fn solve(input: &mut DependencyMap, stack: &mut Vec<String>) -> Result
 
         stack.push(plugin.name.clone());
 
-        println!("Got plugin {:?}", plugin);
-
         if let Some(ref mut dependencies) = plugin.dependencies {
-            println!("Got nested dependencies");
             solve(dependencies, stack).await?;
         }
 
         dep.plugin = Some(plugin)
-
-
-        //let resolved = ResolvedPlugin::new(dep, plugin);
-        //output.entry(name.clone()).or_insert(resolved);
     }
-
-    std::process::exit(1);
 
     Ok(())
 }
