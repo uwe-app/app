@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::hash_map;
 use std::path::PathBuf;
 
 use semver::{Version, VersionReq};
@@ -9,7 +10,27 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use url::Url;
 
-pub type DependencyMap = HashMap<String, Dependency>;
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct DependencyMap {
+    #[serde(flatten)]
+    pub items: HashMap<String, Dependency>,
+}
+
+impl DependencyMap {
+    pub fn into_iter(self) -> hash_map::IntoIter<String, Dependency> {
+        self.items.into_iter()
+    }
+
+    pub fn to_vec(&self) -> Vec<(&String, &Dependency)> {
+        let out: Vec<(&String, &Dependency)> = Vec::new();
+        self.items
+            .iter()
+            .fold(out, |mut acc, (name, dep)| {
+                acc.push((name, dep));
+                acc
+            })
+    }
+}
 
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -57,7 +78,6 @@ pub enum PluginKind {
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dependency {
-
     /// Required version for the dependency.
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
@@ -84,6 +104,11 @@ pub struct Plugin {
     /// Plugin version.
     #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
+
+    /// Base path this plugin was loaded from,
+    /// used to resolve assets during collation.
+    #[serde(skip)]
+    pub base: PathBuf,
 
     /// Type of the plugin.
     #[serde(rename = "type")]
@@ -116,6 +141,7 @@ impl Default for Plugin {
             name: String::new(),
             description: String::new(),
             version,
+            base: PathBuf::from(String::new()),
             kind: None,
             origins: None,
             partial: None,

@@ -14,7 +14,9 @@ async fn load(dep: &Dependency) -> Result<Plugin> {
 
     let plugin_file = path.join(PLUGIN);
     let plugin_content = utils::fs::read_string(plugin_file)?;
-    Ok(toml::from_str(&plugin_content)?)
+    let mut plugin: Plugin = toml::from_str(&plugin_content)?;
+    plugin.base = path;
+    Ok(plugin)
 }
 
 #[async_recursion]
@@ -44,7 +46,7 @@ pub async fn solve(input: DependencyMap, output: &mut DependencyMap, stack: &mut
 
         dep.plugin = Some(plugin);
 
-        output.insert(name, dep);
+        output.items.insert(name, dep);
     }
 
     Ok(())

@@ -51,6 +51,7 @@ pub static MD: &str = "md";
 pub static TOML: &str = "toml";
 pub static JSON: &str = "json";
 pub static ASSETS: &str = "assets";
+pub static PLUGINS: &str = "plugins";
 pub static PARTIALS: &str = "partials";
 pub static INCLUDES: &str = "includes";
 pub static DATASOURCES: &str = "data-sources";

@@ -31,6 +31,12 @@ pub enum Error {
     #[error("Missing layout file {0}")]
     NoLayout(PathBuf),
 
+    #[error("Plugin {0} is missing asset file {1}")]
+    NoPluginAsset(String, PathBuf),
+
+    #[error("Plugin {0} references an absolute path {1}")]
+    PluginAbsolutePath(String, PathBuf),
+
     #[error("Expected menu file {0} for book path {1}")]
     NoBookMenu(PathBuf, PathBuf),
 
@@ -78,6 +84,7 @@ mod invalidator;
 pub mod lock;
 mod manifest;
 mod options;
+mod plugins;
 mod project;
 mod renderer;
 

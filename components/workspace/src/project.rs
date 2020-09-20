@@ -23,6 +23,7 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
+    plugins,
     manifest::Manifest,
     renderer::{CompilerInput, RenderFilter, RenderOptions, Renderer, Sources},
     Error, Result,
@@ -252,15 +253,20 @@ impl ProjectBuilder {
         Ok(self)
     }
 
-    /*
-    /// Resolve plugin dependencies.
-    pub async fn resolve_plugins(mut self) -> Result<Self> {
-        if let Some(ref mut dependencies) = self.config.dependencies {
-            plugin::solve(dependencies, &mut Default::default()).await?;
+    /// Collate plugin dependencies.
+    pub async fn collate_plugins(mut self) -> Result<Self> {
+        if let Some(ref plugins) = self.options.plugins {
+            for collation in self.collations.iter_mut() {
+                plugins::collate(
+                    &self.config,
+                    &self.options,
+                    collation,
+                    plugins,
+                )?;
+            }
         }
         Ok(self)
     }
-    */
 
     /// Load data sources.
     pub async fn load_data(mut self) -> Result<Self> {
@@ -691,6 +697,7 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.fetch())
             .and_then(|s| s.collate())
             .and_then(|s| s.inherit())
+            .and_then(|s| s.collate_plugins())
             .await?;
 
         // Load collections, resolve synthetic assets
