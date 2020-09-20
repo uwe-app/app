@@ -207,11 +207,3 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let (_, info) = version()?;
     Ok((NAME.to_string(), info, bin, bin_dir))
 }
-
-//#[cfg(test)]
-//mod tests {
-//#[test]
-//fn it_works() {
-//assert_eq!(2 + 2, 4);
-//}
-//}
