@@ -10,9 +10,9 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    date::DateConfig, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
-    utils::toml_datetime::from_toml_datetime, Config, Error, Result,
-    RuntimeOptions,
+    date::DateConfig, indexer::QueryList, script::ScriptAsset,
+    style::StyleAsset, utils::toml_datetime::from_toml_datetime, Config, Error,
+    Result, RuntimeOptions,
 };
 
 use self::{feed::FeedEntry, file_context::FileContext};

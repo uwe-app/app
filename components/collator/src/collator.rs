@@ -7,14 +7,13 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, MenuEntry, RuntimeOptions, LayoutReference};
+use config::{Config, LayoutReference, MenuEntry, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
     builder::{to_href, PageBuilder},
     locale_utils::*,
-    CollateInfo, Error, Resource, ResourceKind, ResourceOperation,
-    Result,
+    CollateInfo, Error, Resource, ResourceKind, ResourceOperation, Result,
 };
 
 pub struct CollateRequest<'a> {

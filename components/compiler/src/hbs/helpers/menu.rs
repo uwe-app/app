@@ -6,8 +6,7 @@ use serde_json::json;
 
 use collator::{
     menu::{self, PageData},
-    LinkCollate,
-    Collate,
+    Collate, LinkCollate,
 };
 
 use config::{MenuEntry, MenuReference};
@@ -114,14 +113,15 @@ impl Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         if let Some(name) = h.params().get(0) {
             let page_href = rc
                 .evaluate(ctx, "@root/href")?
                 .as_json()
                 .as_str()
                 .ok_or_else(|| {
-                    RenderError::new("Type error for `href` in `menu`, string expected")
+                    RenderError::new(
+                        "Type error for `href` in `menu`, string expected",
+                    )
                 })?
                 .to_string();
 
@@ -140,30 +140,36 @@ impl Menu {
                 let block_context = BlockContext::new();
                 rc.push_block(block_context);
                 for href in result.pages.iter() {
-                    if let Some(page_path) = collation.get_link(&collation.normalize(&**href)) {
+                    if let Some(page_path) =
+                        collation.get_link(&collation.normalize(&**href))
+                    {
                         if let Some(page) = collation.resolve(page_path) {
                             let li = &*page.read().unwrap();
                             let is_self = &**href == &page_href;
                             if let Some(ref mut block) = rc.block_mut() {
-                                block.set_local_var("@self".to_string(), json!(is_self));
+                                block.set_local_var(
+                                    "@self".to_string(),
+                                    json!(is_self),
+                                );
                                 block.set_base_value(json!(li));
                             }
                             template.render(r, ctx, rc, out)?;
-                        } 
+                        }
                     }
                 }
 
                 rc.pop_block();
             } else {
-                return Err(RenderError::new(
-                    format!("Type error in `menu`, no menu found for {}", name)))
+                return Err(RenderError::new(format!(
+                    "Type error in `menu`, no menu found for {}",
+                    name
+                )));
             }
 
             Ok(())
         } else {
             self.list_parent_pages(template, h, r, ctx, rc, out)
         }
-
     }
 
     /// Render a menu reference by name.

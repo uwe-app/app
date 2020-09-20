@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 
-use config::{Dependency, DependencyMap, Plugin};
 use crate::{Error, Result};
+use config::{Dependency, DependencyMap, Plugin};
 
 static PLUGIN: &str = "plugin.toml";
 
@@ -20,9 +20,12 @@ async fn load(dep: &Dependency) -> Result<Plugin> {
 }
 
 #[async_recursion]
-pub async fn solve(input: DependencyMap, output: &mut DependencyMap, stack: &mut Vec<String>) -> Result<()> {
-
-    for(name, mut dep) in input.into_iter() {
+pub async fn solve(
+    input: DependencyMap,
+    output: &mut DependencyMap,
+    stack: &mut Vec<String>,
+) -> Result<()> {
+    for (name, mut dep) in input.into_iter() {
         let mut plugin = load(&dep).await?;
 
         if stack.contains(&plugin.name) {
@@ -33,7 +36,8 @@ pub async fn solve(input: DependencyMap, output: &mut DependencyMap, stack: &mut
             return Err(Error::PluginVersionMismatch(
                 plugin.name.clone(),
                 plugin.version.to_string(),
-                dep.version.to_string()));
+                dep.version.to_string(),
+            ));
         }
 
         stack.push(plugin.name.clone());

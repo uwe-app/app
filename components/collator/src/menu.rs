@@ -323,7 +323,10 @@ pub fn build<'c>(
     // Assign list of pages referenced by the menu to the compiled
     // menu result so that helpers can easily find referenced pages
     //result.pages = page_data.iter().map(|(p, _, _)| Arc::clone(p)).collect();
-    result.pages = page_data.iter().map(|(_, href, _)| Arc::new(href.clone())).collect();
+    result.pages = page_data
+        .iter()
+        .map(|(_, href, _)| Arc::new(href.clone()))
+        .collect();
 
     Ok((result, page_data))
 }
@@ -347,8 +350,8 @@ pub fn compile(
     for (menu, result, _paths) in compiled {
         let res = Arc::new(result);
         //for path in paths {
-            //let map = graph.menus.mapping.entry(path).or_insert(HashMap::new());
-            //map.insert(menu.name.clone(), Arc::clone(&res));
+        //let map = graph.menus.mapping.entry(path).or_insert(HashMap::new());
+        //map.insert(menu.name.clone(), Arc::clone(&res));
         //}
         graph.menus.results.entry(Arc::clone(&menu)).or_insert(res);
     }

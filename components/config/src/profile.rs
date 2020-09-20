@@ -96,7 +96,6 @@ impl ProfileName {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum LayoutReference {
@@ -217,8 +216,8 @@ impl ProfileSettings {
     }
 
     pub fn set_default_layout(&mut self) {
-        self.layout = Some(
-            LayoutReference::File(PathBuf::from(config::LAYOUT_HBS)));
+        self.layout =
+            Some(LayoutReference::File(PathBuf::from(config::LAYOUT_HBS)));
     }
 
     pub fn append(&mut self, other: &mut Self) {

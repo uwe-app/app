@@ -22,7 +22,6 @@ impl HelperDef for Page {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let template = h.template().ok_or_else(|| {
             RenderError::new("Type error in `page`, block template expected")
         })?;
@@ -55,11 +54,12 @@ impl HelperDef for Page {
 
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href_or_path);
-        let page_path = if let Some(page_path) = collation.get_link(&normalized_href) {
-            page_path.to_path_buf() 
-        } else {
-            PathBuf::from(&href_or_path)
-        };
+        let page_path =
+            if let Some(page_path) = collation.get_link(&normalized_href) {
+                page_path.to_path_buf()
+            } else {
+                PathBuf::from(&href_or_path)
+            };
 
         if let Some(page_lock) = collation.resolve(&page_path) {
             let block_context = BlockContext::new();
@@ -72,9 +72,10 @@ impl HelperDef for Page {
             rc.pop_block();
         } else {
             if required {
-                return Err(RenderError::new(
-                    &format!("Type error in `page`, no page found for {}", &href_or_path),
-                ));
+                return Err(RenderError::new(&format!(
+                    "Type error in `page`, no page found for {}",
+                    &href_or_path
+                )));
             }
         }
 

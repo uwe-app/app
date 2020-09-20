@@ -4,7 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-
     #[error("Plugin {0}@{1} does not satsify requirement {2}")]
     PluginVersionMismatch(String, String, String),
 

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, ProfileSettings, LayoutReference, DependencyMap};
+use config::{Config, DependencyMap, LayoutReference, ProfileSettings};
 use config::{ProfileName, RuntimeOptions, MENU};
 
 use crate::{Error, Result};
@@ -227,7 +227,8 @@ pub(crate) async fn prepare(
 
     if let Some(dependencies) = cfg.dependencies.take() {
         let mut output: DependencyMap = Default::default();
-        plugin::solve(dependencies, &mut output, &mut Default::default()).await?;
+        plugin::solve(dependencies, &mut output, &mut Default::default())
+            .await?;
         //println!("Deps {:#?}", &output);
         //std::process::exit(1);
         opts.plugins = Some(output);

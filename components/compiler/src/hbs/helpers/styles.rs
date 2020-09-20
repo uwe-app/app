@@ -85,9 +85,13 @@ impl HelperDef for Styles {
             sheets
                 .iter()
                 .map(|style| {
-                    let rel = opts
-                        .relative(style.get_source(), path, &opts.source).unwrap();
-                    StyleAsset::Source(rel)
+                    let mut tag = style.to_tag();
+                    if let Some(ref src) = style.get_source() {
+                        tag.href = Some(
+                            opts.relative(src, path, &opts.source).unwrap(),
+                        );
+                    }
+                    StyleAsset::Tag(tag)
                 })
                 .collect()
         };

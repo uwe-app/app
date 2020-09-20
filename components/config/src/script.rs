@@ -15,7 +15,7 @@ pub struct JavaScriptConfig {
 pub enum ScriptAsset {
     Source(String),
     Tag(ScriptTag),
-    Inline{content: String},
+    Inline { content: String },
 }
 
 impl ScriptAsset {
@@ -23,7 +23,7 @@ impl ScriptAsset {
         match *self {
             Self::Source(ref s) => ScriptTag::new(s),
             Self::Tag(ref f) => f.clone(),
-            Self::Inline {ref content} => ScriptTag::new_content(content),
+            Self::Inline { ref content } => ScriptTag::new_content(content),
         }
     }
 
@@ -33,9 +33,11 @@ impl ScriptAsset {
             Self::Tag(ref f) => {
                 if let Some(ref src) = f.src {
                     Some(src)
-                } else { None }
-            },
-            Self::Inline {.. } => None,
+                } else {
+                    None
+                }
+            }
+            Self::Inline { .. } => None,
         }
     }
 }
@@ -46,15 +48,13 @@ impl fmt::Display for ScriptAsset {
             Self::Source(ref s) => {
                 write!(f, "<script src=\"{}\">", entity::escape(s))?;
             }
-            Self::Inline {ref content} => {
+            Self::Inline { ref content } => {
                 write!(f, "<script>{}</script>", content)?;
             }
             Self::Tag(ref script) => {
-
                 if let Some(ref src) = script.src {
                     write!(f, "<script src=\"{}\"", entity::escape(src))?;
                 } else {
-
                     write!(f, "<script")?;
                 }
 

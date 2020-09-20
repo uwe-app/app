@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::collections::hash_map;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use semver::{Version, VersionReq};
@@ -8,10 +8,7 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use url::Url;
 
-use crate::{
-    style::StyleAsset,
-    script::ScriptAsset,
-};
+use crate::{script::ScriptAsset, style::StyleAsset, utils::href::UrlPath};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
@@ -26,12 +23,10 @@ impl DependencyMap {
 
     pub fn to_vec(&self) -> Vec<(&String, &Dependency)> {
         let out: Vec<(&String, &Dependency)> = Vec::new();
-        self.items
-            .iter()
-            .fold(out, |mut acc, (name, dep)| {
-                acc.push((name, dep));
-                acc
-            })
+        self.items.iter().fold(out, |mut acc, (name, dep)| {
+            acc.push((name, dep));
+            acc
+        })
     }
 }
 
@@ -125,7 +120,7 @@ pub struct Plugin {
     pub partial: Option<PluginPartial>,
 
     /// List of synthetic assets to include in the project.
-    pub assets: Option<Vec<PathBuf>>,
+    pub assets: Option<Vec<UrlPath>>,
 
     /// List of stylesheets to add to pages.
     pub styles: Option<Vec<StyleAsset>>,

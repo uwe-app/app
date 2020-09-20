@@ -33,7 +33,6 @@ impl HelperDef for Partial {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // The href of a page to render
         let href = h.params().get(0);
 
@@ -59,18 +58,19 @@ impl HelperDef for Partial {
                         .to_string_lossy()
                         .into_owned()
                 } else {
-                    return Err(RenderError::new(
-                        &format!("Type error in `partial`, no page found for {}", &href),
-                    ));
+                    return Err(RenderError::new(&format!(
+                        "Type error in `partial`, no page found for {}",
+                        &href
+                    )));
                 }
             } else {
-                return Err(RenderError::new(
-                    &format!("Type error in `partial`, no path found for {}", &href),
-                ));
+                return Err(RenderError::new(&format!(
+                    "Type error in `partial`, no path found for {}",
+                    &href
+                )));
             }
         } else {
-            rc
-                .evaluate(ctx, "@root/file.template")?
+            rc.evaluate(ctx, "@root/file.template")?
                 .as_json()
                 .as_str()
                 .ok_or_else(|| {

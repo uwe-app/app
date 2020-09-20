@@ -149,10 +149,10 @@ impl<'a> Invalidator<'a> {
         //let resources = self.canonical(ctx.options.get_resources_path());
 
         //let book_theme = self
-            //.project
-            //.config
-            //.get_book_theme_path(&self.project.options.source)
-            //.map(|v| self.canonical(v));
+        //.project
+        //.config
+        //.get_book_theme_path(&self.project.options.source)
+        //.map(|v| self.canonical(v));
 
         /*
         let mut books: Vec<PathBuf> = Vec::new();
@@ -242,12 +242,12 @@ impl<'a> Invalidator<'a> {
                     */
 
                     //if let Some(theme) = &book_theme {
-                        //if path.starts_with(theme) {
-                            //rule.book.all = true;
-                            //rule.ignores
-                                //.push(Action::BookTheme(theme.clone(), path));
-                            //continue 'paths;
-                        //}
+                    //if path.starts_with(theme) {
+                    //rule.book.all = true;
+                    //rule.ignores
+                    //.push(Action::BookTheme(theme.clone(), path));
+                    //continue 'paths;
+                    //}
                     //}
 
                     if path == cfg_file {

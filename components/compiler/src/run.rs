@@ -5,7 +5,7 @@ use log::info;
 use collator::{
     Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
 };
-use config::{CollatedPage, Config, Page, ProfileName, LayoutReference};
+use config::{CollatedPage, Config, LayoutReference, Page, ProfileName};
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
@@ -191,10 +191,7 @@ pub async fn parse(
         let parent_menu_name = parent.to_string_lossy();
         if let Some(ref menu_result) = collation.find_menu(&parent_menu_name) {
             page_data.menu =
-                menu_result.pages
-                .iter()
-                .map(|s| s.as_ref())
-                .collect();
+                menu_result.pages.iter().map(|s| s.as_ref()).collect();
         }
     }
 

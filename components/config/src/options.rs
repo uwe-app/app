@@ -3,12 +3,8 @@ use std::path::{Path, PathBuf};
 use url::Url;
 
 use crate::{
-    Config,
-    ProfileSettings,
-    RenderTypes,
-    Result, HTML, INDEX_STEM,
-    profile::LayoutReference,
-    DependencyMap,
+    profile::LayoutReference, Config, DependencyMap, ProfileSettings,
+    RenderTypes, Result, HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]
@@ -154,10 +150,8 @@ impl RuntimeOptions {
         let reference = self.settings.layout.as_ref().unwrap();
 
         match reference {
-            LayoutReference::File(ref file) => {
-                self.source.join(file)
-            }
-            _ => PathBuf::from("")
+            LayoutReference::File(ref file) => self.source.join(file),
+            _ => PathBuf::from(""),
         }
 
         //self.source.join(self.settings.layout.as_ref().unwrap())

@@ -12,30 +12,86 @@ pub struct StyleSheetConfig {
 #[serde(untagged)]
 pub enum StyleAsset {
     Source(String),
-    // NOTE: We may want to assign more fields when declaring
-    // NOTE: stylesheets later, hence the enum!
-    // NOTE: See: script.rs for an example.
+    Tag(StyleTag),
+    Inline { content: String },
 }
 
 impl StyleAsset {
-    pub fn get_source(&self) -> &str {
+    pub fn to_tag(&self) -> StyleTag {
         match *self {
-            Self::Source(ref s) => s,
+            Self::Source(ref s) => StyleTag::new(s),
+            Self::Tag(ref f) => f.clone(),
+            Self::Inline { ref content } => StyleTag::new_content(content),
+        }
+    }
+
+    pub fn get_source(&self) -> Option<&str> {
+        match *self {
+            Self::Source(ref s) => Some(s),
+            Self::Tag(ref f) => {
+                if let Some(ref href) = f.href {
+                    Some(href)
+                } else {
+                    None
+                }
+            }
+            Self::Inline { .. } => None,
         }
     }
 }
 
 impl fmt::Display for StyleAsset {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::Source(ref s) => {
-                write!(
-                    f,
-                    "<link rel=\"stylesheet\" href=\"{}\">",
-                    entity::escape(s)
-                )?;
+        let href: Option<&str> = match *self {
+            Self::Source(ref s) => Some(s),
+
+            Self::Tag(ref t) => {
+                if let Some(ref href) = t.href {
+                    Some(href)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some(href) = href {
+            write!(
+                f,
+                "<link rel=\"stylesheet\" href=\"{}\">",
+                entity::escape(href)
+            )?;
+        } else {
+            match *self {
+                Self::Inline { ref content } => {
+                    write!(f, "<style>{}</style>", content)?;
+                }
+                _ => {}
             }
         }
+
         Ok(())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct StyleTag {
+    pub href: Option<String>,
+    pub content: Option<String>,
+}
+
+impl StyleTag {
+    pub fn new(s: &str) -> Self {
+        Self {
+            href: Some(s.to_string()),
+            content: None,
+        }
+    }
+
+    pub fn new_content(c: &str) -> Self {
+        Self {
+            href: None,
+            content: Some(c.to_string()),
+        }
     }
 }

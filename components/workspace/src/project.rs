@@ -23,8 +23,8 @@ use datasource::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
-    plugins,
     manifest::Manifest,
+    plugins,
     renderer::{CompilerInput, RenderFilter, RenderOptions, Renderer, Sources},
     Error, Result,
 };
@@ -54,7 +54,10 @@ impl Entry {
     ///
     /// This should only be called when you intend to render a project
     /// as it consumes the configuration entry.
-    pub async fn builder(mut self, args: &ProfileSettings) -> Result<ProjectBuilder> {
+    pub async fn builder(
+        mut self,
+        args: &ProfileSettings,
+    ) -> Result<ProjectBuilder> {
         let options = crate::options::prepare(&mut self.config, args).await?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
             redirects.clone()
@@ -257,11 +260,7 @@ impl ProjectBuilder {
     pub async fn collate_plugins(mut self) -> Result<Self> {
         if let Some(ref plugins) = self.options.plugins {
             for collation in self.collations.iter_mut() {
-                plugins::collate(
-                    &self.options,
-                    collation,
-                    plugins,
-                )?;
+                plugins::collate(&self.options, collation, plugins)?;
             }
         }
         Ok(self)

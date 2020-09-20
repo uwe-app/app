@@ -84,7 +84,9 @@ impl HelperDef for Scripts {
                 .map(|script| {
                     let mut tag = script.to_tag();
                     if let Some(ref src) = script.get_source() {
-                        tag.src = Some(opts.relative(src, path, &opts.source).unwrap());
+                        tag.src = Some(
+                            opts.relative(src, path, &opts.source).unwrap(),
+                        );
                     }
                     ScriptAsset::Tag(tag)
                 })

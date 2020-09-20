@@ -106,7 +106,6 @@ pub struct MenuMap {
 
     /// Compiled results for each menu.
     pub(crate) results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
-
     /*
     /// Lookup table by file and menu name so the menu helper
     /// can easily locale the menu results.
@@ -115,13 +114,12 @@ pub struct MenuMap {
 }
 
 impl MenuMap {
-
     pub fn find_result(&self, name: &str) -> Option<&Arc<MenuResult>> {
         for (entry, result) in self.results() {
             if entry.name == name {
-                return Some(result)
-            } 
-        } 
+                return Some(result);
+            }
+        }
         None
     }
 
@@ -366,7 +364,7 @@ impl Collate for CollateInfo {
         for (entry, result) in self.graph.menus.results.iter() {
             if entry.name == name {
                 return Some(result);
-            } 
+            }
         }
         None
     }

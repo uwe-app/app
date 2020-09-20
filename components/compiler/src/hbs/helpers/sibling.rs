@@ -5,7 +5,9 @@ fn add(u: usize, i: i32) -> usize {
     if i.is_negative() {
         if u > 0 {
             u - i.wrapping_abs() as u32 as usize
-        } else { 0 }
+        } else {
+            0
+        }
     } else {
         u + i as usize
     }
@@ -26,7 +28,6 @@ impl HelperDef for Sibling {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // Indicates that an item *must* be located, default is `false`
         let required = h
             .hash_get("required")
@@ -43,28 +44,28 @@ impl HelperDef for Sibling {
             .get(0)
             .ok_or(RenderError::new(format!(
                 "Type error in `{}`, expected parameter at index 0",
-                self.name))
-            )?
+                self.name
+            )))?
             .value()
             .as_array()
             .ok_or(RenderError::new(format!(
                 "Type error in `{}`, expected array parameter",
-                self.name))
-            )?;
+                self.name
+            )))?;
 
         let current = h
             .params()
             .get(1)
             .ok_or(RenderError::new(format!(
                 "Type error in `{}`, expected parameter at index 1",
-                self.name))
-            )?
+                self.name
+            )))?
             .value();
 
         let template = h.template().ok_or(RenderError::new(format!(
             "Type error in `{}`, block template expected",
-            self.name))
-        )?;
+            self.name
+        )))?;
 
         if list.len() > 1 {
             let pos = list.iter().position(|i| i == current);
