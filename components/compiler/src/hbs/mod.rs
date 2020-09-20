@@ -247,14 +247,12 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
 
-        if self.context.config.search.is_some() {
-            self.handlebars.register_helper(
-                "search",
-                Box::new(helpers::search::Embed {
-                    context: Arc::clone(&self.context),
-                }),
-            );
-        }
+        self.handlebars.register_helper(
+            "search",
+            Box::new(helpers::search::Embed {
+                context: Arc::clone(&self.context),
+            }),
+        );
 
         self.handlebars
             .register_helper("json", Box::new(helpers::json::Debug));

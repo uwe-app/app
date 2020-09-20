@@ -99,4 +99,4 @@ pub use collation::*;
 pub use collator::*;
 pub use locale_utils::*;
 pub use resource::*;
-pub use synthetic::{book, create_file, create_page, feed, search};
+pub use synthetic::{book, create_file, create_page, feed};

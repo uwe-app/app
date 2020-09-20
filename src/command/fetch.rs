@@ -10,7 +10,6 @@ pub struct FetchOptions {
     pub documentation: bool,
     pub release: bool,
     pub syntax: bool,
-    pub search: bool,
     pub feed: bool,
     pub book: bool,
 }
@@ -24,7 +23,6 @@ pub fn update(options: FetchOptions) -> Result<()> {
         CacheComponent::Documentation,
         CacheComponent::Release,
         CacheComponent::Syntax,
-        CacheComponent::Search,
         CacheComponent::Feed,
         CacheComponent::Book,
     ];
@@ -34,7 +32,6 @@ pub fn update(options: FetchOptions) -> Result<()> {
         || options.documentation
         || options.release
         || options.syntax
-        || options.search
         || options.feed
         || options.book
     {
@@ -54,9 +51,6 @@ pub fn update(options: FetchOptions) -> Result<()> {
         }
         if options.syntax {
             components.push(CacheComponent::Syntax);
-        }
-        if options.search {
-            components.push(CacheComponent::Search);
         }
         if options.feed {
             components.push(CacheComponent::Feed);

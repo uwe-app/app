@@ -177,17 +177,6 @@ impl ProjectBuilder {
             }
         }
 
-        if let Some(ref search) = self.config.search {
-            let fetch_search_runtime =
-                search.bundle.is_some() && search.bundle.unwrap();
-            if fetch_search_runtime {
-                let search_dir = cache::get_search_dir()?;
-                if !search_dir.exists() {
-                    components.push(CacheComponent::Search);
-                }
-            }
-        }
-
         if self.config.feed.is_some() {
             let feed_dir = cache::get_feed_dir()?;
             if !feed_dir.exists() {
@@ -278,21 +267,6 @@ impl ProjectBuilder {
         self.datasource =
             DataSourceMap::load(&self.config, &self.options, collation).await?;
 
-        Ok(self)
-    }
-
-    /// Copy the search runtime files if we need them.
-    pub async fn search(mut self) -> Result<Self> {
-        if let Some(ref search) = self.config.search {
-            for collation in self.collations.iter_mut() {
-                collator::search(
-                    search,
-                    &self.config,
-                    &self.options,
-                    collation,
-                )?;
-            }
-        }
         Ok(self)
     }
 
@@ -701,7 +675,6 @@ pub async fn compile<P: AsRef<Path>>(
         // Load collections, resolve synthetic assets
         let builder = builder
             .load_data()
-            .and_then(|s| s.search())
             .and_then(|s| s.feed())
             .and_then(|s| s.menus())
             .and_then(|s| s.book())

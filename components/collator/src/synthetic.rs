@@ -10,7 +10,7 @@ use ignore::{WalkBuilder, WalkState};
 use config::{
     book::BookConfig,
     feed::{ChannelConfig, FeedConfig},
-    Config, Page, RuntimeOptions, SearchConfig,
+    Config, Page, RuntimeOptions,
 };
 
 use locale::Locales;
@@ -250,51 +250,6 @@ pub fn feed(
             )?;
         }
     }
-    Ok(())
-}
-
-// Copy search runtime files.
-pub fn search(
-    search: &SearchConfig,
-    _config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-) -> Result<()> {
-    let bundle = search.bundle.is_some() && search.bundle.unwrap();
-    if bundle {
-        let search_dir = cache::get_search_dir()?;
-
-        let js_source = search_dir.join(config::SEARCH_JS);
-        let wasm_source = search_dir.join(config::SEARCH_WASM);
-
-        let js_value = search.js.as_ref().unwrap().to_string();
-        let wasm_value = search.wasm.as_ref().unwrap().to_string();
-        let js_path =
-            utils::url::to_path_separator(js_value.trim_start_matches("/"));
-        let wasm_path =
-            utils::url::to_path_separator(wasm_value.trim_start_matches("/"));
-
-        let js_target = PathBuf::from(js_path);
-        let wasm_target = PathBuf::from(wasm_path);
-
-        create_file(
-            options,
-            info,
-            js_source,
-            js_target,
-            js_value,
-            Some(&search_dir),
-        )?;
-        create_file(
-            options,
-            info,
-            wasm_source,
-            wasm_target,
-            wasm_value,
-            Some(&search_dir),
-        )?;
-    }
-
     Ok(())
 }
 

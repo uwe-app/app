@@ -123,6 +123,6 @@ pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
 pub use plugin::{Dependency, DependencyMap, Plugin};
 pub use profile::{LayoutReference, ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
-pub use search::{SearchConfig, SEARCH_JS, SEARCH_WASM};
+pub use search::{SearchConfig};
 
 pub use semver;

@@ -5,20 +5,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::matcher::GlobPatternMatcher;
 
-pub static SEARCH_JS: &str = "search.js";
-pub static SEARCH_WASM: &str = "search.wasm";
+//pub static SEARCH_JS: &str = "search.js";
+//pub static SEARCH_WASM: &str = "search.wasm";
 
 static ID: &str = "site-index";
 static INDEX: &str = "/search.idx";
-static JS: &str = "/search.js";
-static WASM: &str = "/search.wasm";
+static JS: &str = "/assets/plugins/search/search.js";
+static WASM: &str = "/assets/plugins/search/search.wasm";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct SearchConfig {
-    // Copy the `search.js` and `search.wasm` files to the URL paths
-    // referenced by `js` and `wasm`
-    pub bundle: Option<bool>,
     // The URL relative to the site root for the javascript file
     pub js: Option<String>,
     // The URL relative to the site root for the wasm file
@@ -32,7 +29,6 @@ pub struct SearchConfig {
 impl Default for SearchConfig {
     fn default() -> Self {
         Self {
-            bundle: Some(true),
             js: Some(JS.to_string()),
             wasm: Some(WASM.to_string()),
             items: HashMap::new(),

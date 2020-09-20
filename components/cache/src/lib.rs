@@ -25,9 +25,6 @@ static DOCUMENTATION_NAME: &str = "documentation";
 static SYNTAX_REPO: &str = "https://github.com/hypertext-live/syntax";
 static SYNTAX_NAME: &str = "syntax";
 
-static SEARCH_REPO: &str = "https://github.com/hypertext-live/search-runtime";
-static SEARCH_NAME: &str = "search-runtime";
-
 static FEED_REPO: &str = "https://github.com/hypertext-live/feed";
 static FEED_NAME: &str = "feed";
 
@@ -54,7 +51,6 @@ pub enum CacheComponent {
     Documentation,
     Release,
     Syntax,
-    Search,
     Feed,
     Book,
 }
@@ -122,14 +118,6 @@ pub fn get_syntax_url() -> String {
 
 pub fn get_syntax_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(SYNTAX_NAME))
-}
-
-pub fn get_search_url() -> String {
-    SEARCH_REPO.to_string()
-}
-
-pub fn get_search_dir() -> io::Result<PathBuf> {
-    Ok(dirs::get_root_dir()?.join(SEARCH_NAME))
 }
 
 pub fn get_feed_url() -> String {
@@ -219,11 +207,6 @@ pub fn update(
             CacheComponent::Syntax => {
                 let url = get_syntax_url();
                 let dir = get_syntax_dir()?;
-                git::clone_or_fetch(&url, &dir, false)?;
-            }
-            CacheComponent::Search => {
-                let url = get_search_url();
-                let dir = get_search_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
             CacheComponent::Feed => {
