@@ -12,7 +12,16 @@ async fn load(dep: &Dependency) -> Result<Plugin> {
         todo!();
     };
 
+    if !path.exists() || !path.is_dir() {
+        return Err(Error::BadPluginPath(path));
+    }
+
     let plugin_file = path.join(PLUGIN);
+
+    if !plugin_file.exists() || !plugin_file.is_file() {
+        return Err(Error::BadPluginFile(plugin_file));
+    }
+
     let plugin_content = utils::fs::read_string(plugin_file)?;
     let mut plugin: Plugin = toml::from_str(&plugin_content)?;
     plugin.base = path;

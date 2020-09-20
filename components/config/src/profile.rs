@@ -130,8 +130,6 @@ pub struct ProfileSettings {
     pub live: Option<bool>,
     pub release: Option<bool>,
 
-    pub short_codes: Option<bool>,
-
     pub rewrite_index: Option<bool>,
     pub include_index: Option<bool>,
 
@@ -180,7 +178,6 @@ impl Default for ProfileSettings {
 
             rewrite_index: None,
             extend: None,
-            short_codes: None,
 
             profile: None,
 
@@ -258,9 +255,6 @@ impl ProfileSettings {
         }
         if other.extend.is_some() {
             self.extend = mem::take(&mut other.extend)
-        }
-        if other.short_codes.is_some() {
-            self.short_codes = mem::take(&mut other.short_codes)
         }
 
         if other.host.is_some() {
@@ -392,10 +386,6 @@ impl ProfileSettings {
 
     pub fn is_pristine(&self) -> bool {
         self.pristine.is_some() && self.pristine.unwrap()
-    }
-
-    pub fn should_use_short_codes(&self) -> bool {
-        self.short_codes.is_some() && self.short_codes.unwrap()
     }
 
     pub fn should_include_index(&self) -> bool {

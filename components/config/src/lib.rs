@@ -60,11 +60,6 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub fn get_short_codes_location() -> Result<PathBuf> {
-    //self.source.join(config::SHORT_CODES.to_string())
-    Ok(dirs::get_root_dir()?.join("shortcodes/site/partials"))
-}
-
 pub fn to_url_string(
     scheme: &str,
     host: &str,

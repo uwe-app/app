@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::io;
 
 use thiserror::Error;
@@ -9,6 +10,12 @@ pub enum Error {
 
     #[error("Plugin cyclic dependency: {0}")]
     PluginCyclicDependency(String),
+
+    #[error("Plugin path {0} is not a directory")]
+    BadPluginPath(PathBuf),
+
+    #[error("Plugin file {0} is not a file")]
+    BadPluginFile(PathBuf),
 
     #[error(transparent)]
     Io(#[from] io::Error),

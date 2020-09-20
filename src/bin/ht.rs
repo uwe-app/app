@@ -209,10 +209,6 @@ struct FetchOpts {
     #[structopt(short = "t", long)]
     standalone: bool,
 
-    /// Update the short codes cache
-    #[structopt(short = "h", long)]
-    short_code: bool,
-
     /// Update the syntax highlighting cache
     #[structopt(short = "y", long)]
     syntax: bool,
@@ -392,7 +388,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 standalone: args.standalone,
                 documentation: args.documentation,
                 release: args.release,
-                short_code: args.short_code,
                 syntax: args.syntax,
                 search: args.search,
                 feed: args.feed,

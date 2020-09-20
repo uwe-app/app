@@ -22,9 +22,6 @@ static DOCUMENTATION_REPO: &str =
     "https://github.com/hypertext-live/documentation";
 static DOCUMENTATION_NAME: &str = "documentation";
 
-static SHORT_CODES_REPO: &str = "https://github.com/hypertext-live/shortcodes";
-static SHORT_CODES_NAME: &str = "shortcodes";
-
 static SYNTAX_REPO: &str = "https://github.com/hypertext-live/syntax";
 static SYNTAX_NAME: &str = "syntax";
 
@@ -56,7 +53,6 @@ pub enum CacheComponent {
     Standalone,
     Documentation,
     Release,
-    ShortCode,
     Syntax,
     Search,
     Feed,
@@ -118,14 +114,6 @@ pub fn get_docs_url() -> String {
 
 pub fn get_docs_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(DOCUMENTATION_NAME))
-}
-
-pub fn get_short_codes_url() -> String {
-    SHORT_CODES_REPO.to_string()
-}
-
-pub fn get_short_codes_dir() -> io::Result<PathBuf> {
-    Ok(dirs::get_root_dir()?.join(SHORT_CODES_NAME))
 }
 
 pub fn get_syntax_url() -> String {
@@ -226,11 +214,6 @@ pub fn update(
             CacheComponent::Release => {
                 let url = get_release_url();
                 let dir = get_release_dir()?;
-                git::clone_or_fetch(&url, &dir, false)?;
-            }
-            CacheComponent::ShortCode => {
-                let url = get_short_codes_url();
-                let dir = get_short_codes_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
             CacheComponent::Syntax => {
