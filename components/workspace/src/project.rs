@@ -258,7 +258,6 @@ impl ProjectBuilder {
         if let Some(ref plugins) = self.options.plugins {
             for collation in self.collations.iter_mut() {
                 plugins::collate(
-                    &self.config,
                     &self.options,
                     collation,
                     plugins,

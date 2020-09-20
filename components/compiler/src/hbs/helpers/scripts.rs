@@ -5,7 +5,7 @@ use handlebars::*;
 use serde_json::json;
 
 use crate::BuildContext;
-use config::script::ScriptFile;
+use config::script::ScriptAsset;
 
 #[derive(Clone)]
 pub struct Scripts {
@@ -49,7 +49,7 @@ impl HelperDef for Scripts {
             scripts
                 .iter()
                 .map(|v| {
-                    serde_json::from_value::<ScriptFile>(v.clone()).unwrap()
+                    serde_json::from_value::<ScriptAsset>(v.clone()).unwrap()
                 })
                 .collect()
         } else {
@@ -83,15 +83,10 @@ impl HelperDef for Scripts {
                 .iter()
                 .map(|script| {
                     let mut tag = script.to_tag();
-                    tag.src = opts
-                        .relative(script.get_source(), path, &opts.source)
-                        .map_err(|_e| {
-                            RenderError::new(
-                            "Type error for `scripts`, file is outside source!",
-                        )
-                        })
-                        .unwrap();
-                    ScriptFile::Tag(tag)
+                    if let Some(ref src) = script.get_source() {
+                        tag.src = Some(opts.relative(src, path, &opts.source).unwrap());
+                    }
+                    ScriptAsset::Tag(tag)
                 })
                 .collect()
         };

@@ -10,7 +10,7 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    date::DateConfig, indexer::QueryList, script::ScriptFile, style::StyleFile,
+    date::DateConfig, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
     utils::toml_datetime::from_toml_datetime, Config, Error, Result,
     RuntimeOptions,
 };
@@ -76,8 +76,8 @@ pub struct Page {
     pub layout: Option<String>,
     pub meta: Option<HashMap<String, Vec<String>>>,
 
-    pub scripts: Option<Vec<ScriptFile>>,
-    pub styles: Option<Vec<StyleFile>>,
+    pub scripts: Option<Vec<ScriptAsset>>,
+    pub styles: Option<Vec<StyleAsset>>,
     pub permalink: Option<String>,
 
     // Custom values for feed entry

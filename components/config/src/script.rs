@@ -7,40 +7,57 @@ use utils::entity;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JavaScriptConfig {
-    pub main: Vec<ScriptFile>,
+    pub main: Vec<ScriptAsset>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
-pub enum ScriptFile {
+pub enum ScriptAsset {
     Source(String),
     Tag(ScriptTag),
+    Inline{content: String},
 }
 
-impl ScriptFile {
+impl ScriptAsset {
     pub fn to_tag(&self) -> ScriptTag {
         match *self {
             Self::Source(ref s) => ScriptTag::new(s),
             Self::Tag(ref f) => f.clone(),
+            Self::Inline {ref content} => ScriptTag::new_content(content),
         }
     }
 
-    pub fn get_source(&self) -> &str {
+    pub fn get_source(&self) -> Option<&str> {
         match *self {
-            Self::Source(ref s) => s,
-            Self::Tag(ref f) => &f.src,
+            Self::Source(ref s) => Some(s),
+            Self::Tag(ref f) => {
+                if let Some(ref src) = f.src {
+                    Some(src)
+                } else { None }
+            },
+            Self::Inline {.. } => None,
         }
     }
 }
 
-impl fmt::Display for ScriptFile {
+impl fmt::Display for ScriptAsset {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Source(ref s) => {
                 write!(f, "<script src=\"{}\">", entity::escape(s))?;
             }
+            Self::Inline {ref content} => {
+                write!(f, "<script>{}</script>", content)?;
+            }
             Self::Tag(ref script) => {
-                write!(f, "<script src=\"{}\"", entity::escape(&script.src))?;
+
+                if let Some(ref src) = script.src {
+                    write!(f, "<script src=\"{}\"", entity::escape(src))?;
+                } else {
+
+                    write!(f, "<script")?;
+                }
+
                 if let Some(ref script_type) = script.script_type {
                     write!(f, " type=\"{}\"", entity::escape(script_type))?;
                 }
@@ -83,7 +100,7 @@ impl fmt::Display for ScriptFile {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScriptTag {
-    pub src: String,
+    pub src: Option<String>,
     pub nomodule: Option<bool>,
     pub nonce: Option<String>,
     pub integrity: Option<String>,
@@ -94,12 +111,14 @@ pub struct ScriptTag {
     pub script_type: Option<String>,
     #[serde(rename = "async")]
     pub script_async: Option<bool>,
+
+    pub content: Option<String>,
 }
 
 impl ScriptTag {
     pub fn new(s: &str) -> Self {
         Self {
-            src: s.to_string(),
+            src: Some(s.to_string()),
             nomodule: None,
             nonce: None,
             integrity: None,
@@ -107,6 +126,21 @@ impl ScriptTag {
             referrerpolicy: None,
             script_type: None,
             script_async: None,
+            content: None,
+        }
+    }
+
+    pub fn new_content(c: &str) -> Self {
+        Self {
+            src: None,
+            nomodule: None,
+            nonce: None,
+            integrity: None,
+            crossorigin: None,
+            referrerpolicy: None,
+            script_type: None,
+            script_async: None,
+            content: Some(c.to_string()),
         }
     }
 }

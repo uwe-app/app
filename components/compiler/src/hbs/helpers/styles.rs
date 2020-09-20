@@ -5,7 +5,7 @@ use handlebars::*;
 use serde_json::json;
 
 use crate::BuildContext;
-use config::style::StyleFile;
+use config::style::StyleAsset;
 
 #[derive(Clone)]
 pub struct Styles {
@@ -45,7 +45,7 @@ impl HelperDef for Styles {
             .and_then(|v| v.as_array());
 
         // Use global styles from the settings
-        let mut sheets: Vec<StyleFile> =
+        let mut sheets: Vec<StyleAsset> =
             if let Some(ref styles) = self.context.config.styles {
                 styles.main.clone()
             } else {
@@ -58,7 +58,7 @@ impl HelperDef for Styles {
             let mut page_styles = styles
                 .iter()
                 .map(|v| {
-                    serde_json::from_value::<StyleFile>(v.clone()).unwrap()
+                    serde_json::from_value::<StyleAsset>(v.clone()).unwrap()
                 })
                 .collect();
             sheets.append(&mut page_styles);
@@ -79,20 +79,15 @@ impl HelperDef for Styles {
                     )
                 })?
                 .to_string();
+
             let path = Path::new(&base_path);
 
             sheets
                 .iter()
                 .map(|style| {
                     let rel = opts
-                        .relative(style.get_source(), path, &opts.source)
-                        .map_err(|_e| {
-                            RenderError::new(
-                            "Type error for `styles`, file is outside source!",
-                        )
-                        })
-                        .unwrap();
-                    StyleFile::Source(rel)
+                        .relative(style.get_source(), path, &opts.source).unwrap();
+                    StyleAsset::Source(rel)
                 })
                 .collect()
         };

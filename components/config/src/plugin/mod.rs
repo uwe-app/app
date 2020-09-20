@@ -3,12 +3,15 @@ use std::collections::hash_map;
 use std::path::PathBuf;
 
 use semver::{Version, VersionReq};
-
 use serde::{Deserialize, Serialize};
-
 use serde_with::{serde_as, DisplayFromStr};
 
 use url::Url;
+
+use crate::{
+    style::StyleAsset,
+    script::ScriptAsset,
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
@@ -125,10 +128,10 @@ pub struct Plugin {
     pub assets: Option<Vec<PathBuf>>,
 
     /// List of stylesheets to add to pages.
-    pub styles: Option<Vec<PathBuf>>,
+    pub styles: Option<Vec<StyleAsset>>,
 
     /// List of scripts to add to pages.
-    pub scripts: Option<Vec<PathBuf>>,
+    pub scripts: Option<Vec<ScriptAsset>>,
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,

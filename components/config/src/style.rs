@@ -5,19 +5,19 @@ use utils::entity;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StyleSheetConfig {
-    pub main: Vec<StyleFile>,
+    pub main: Vec<StyleAsset>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
-pub enum StyleFile {
+pub enum StyleAsset {
     Source(String),
     // NOTE: We may want to assign more fields when declaring
     // NOTE: stylesheets later, hence the enum!
     // NOTE: See: script.rs for an example.
 }
 
-impl StyleFile {
+impl StyleAsset {
     pub fn get_source(&self) -> &str {
         match *self {
             Self::Source(ref s) => s,
@@ -25,7 +25,7 @@ impl StyleFile {
     }
 }
 
-impl fmt::Display for StyleFile {
+impl fmt::Display for StyleAsset {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Source(ref s) => {
