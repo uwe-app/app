@@ -11,7 +11,7 @@ static HANDLEBARS_EXT: &str = ".hbs";
 /// from cache components and must therefore be safe to use
 /// as a file system path component.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub enum TemplateEngine {
     #[serde(rename = "handlebars")]
     Handlebars,

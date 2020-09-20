@@ -28,7 +28,7 @@ pub fn parser<'a>(
     locales: Arc<Locales>,
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
     let builder = ParserBuilder::new(engine, context)
-        .short_codes()?
+        .plugins()?
         .builtins()?
         .partials()?
         .helpers()?
@@ -60,22 +60,23 @@ impl<'a> ParserBuilder<'a> {
         }
     }
 
-    pub fn short_codes(mut self) -> Result<Self> {
-        // Register short code directories
-        if self.context.options.settings.should_use_short_codes() {
-            let short_codes = config::get_short_codes_location()?;
-            if short_codes.exists() && short_codes.is_dir() {
-                self.handlebars.register_templates_directory(
-                    self.engine.get_template_extension(),
-                    &short_codes,
-                )?;
-            } else {
-                warn!("Short codes are enabled but the short code cache does not exist.");
-                warn!("Use the `fetch` command to download the short codes repository.");
-                return Err(Error::NoShortCodeCache(short_codes));
+    /// Register plugin partials.
+    pub fn plugins(mut self) -> Result<Self> {
+        if let Some(ref plugins) = self.context.options.plugins {
+            for (_name, dep) in plugins.to_vec() {
+                let plugin = dep.plugin.as_ref().unwrap();
+                if let Some(ref engine_templates) = plugin.templates {
+                    if let Some(ref templates) = engine_templates.get(&self.engine) {
+                        if let Some(ref partials) = templates.partials {
+                            for (nm, partial) in partials.iter() {
+                                self.handlebars.register_template_file(
+                                    nm, partial.to_path_buf(&plugin.base))?;
+                            }
+                        }
+                    }
+                }
             }
         }
-
         Ok(self)
     }
 

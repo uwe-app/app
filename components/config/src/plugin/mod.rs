@@ -8,7 +8,12 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use url::Url;
 
-use crate::{script::ScriptAsset, style::StyleAsset, utils::href::UrlPath};
+use crate::{
+    TemplateEngine,
+    script::ScriptAsset,
+    style::StyleAsset,
+    utils::href::UrlPath,
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
@@ -54,12 +59,6 @@ pub enum PluginType {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PartialAsset {
-    pub file: UrlPath,
-    pub schema: UrlPath,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum PluginKind {
     One(PluginType),
@@ -81,7 +80,7 @@ pub struct Dependency {
     pub plugin: Option<Plugin>,
 }
 
-/// Represents a single plugin definition.
+/// Represents a plugin definition.
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -96,21 +95,16 @@ pub struct Plugin {
     #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
 
-    /// Base path this plugin was loaded from,
-    /// used to resolve assets during collation.
-    #[serde(skip)]
-    pub base: PathBuf,
+    /// List of keywords.
+    pub keywords: Option<Vec<String>>,
 
     /// Type of the plugin.
     #[serde(rename = "type")]
     pub kind: Option<PluginKind>,
 
-    // List of remote orgins used by this plugin.
+    /// List of remote orgins used by this plugin.
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
     pub origins: Option<Vec<Url>>,
-
-    /// Partial definitions.
-    pub partials: Option<Vec<PartialAsset>>,
 
     /// List of synthetic assets to include in the project.
     pub assets: Option<Vec<UrlPath>>,
@@ -123,6 +117,15 @@ pub struct Plugin {
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
+
+    /// Collections of partials and layouts.
+    #[serde(flatten)]
+    pub templates: Option<HashMap<TemplateEngine, PluginTemplates>>,
+
+    /// Base path this plugin was loaded from,
+    /// used to resolve assets during collation.
+    #[serde(skip)]
+    pub base: PathBuf,
 }
 
 impl Default for Plugin {
@@ -132,14 +135,38 @@ impl Default for Plugin {
             name: String::new(),
             description: String::new(),
             version,
-            base: PathBuf::from(String::new()),
+            keywords: None,
             kind: None,
             origins: None,
-            partials: None,
             assets: None,
             styles: None,
             scripts: None,
             dependencies: None,
+            templates: None,
+            base: PathBuf::from(String::new()),
         }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PluginTemplates {
+    /// Partial definitions.
+    pub partials: Option<HashMap<String, PartialAsset>>,
+
+    /// Layout definitions.
+    pub layouts: Option<HashMap<String, UrlPath>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PartialAsset {
+    pub file: UrlPath,
+    pub schema: UrlPath,
+}
+
+impl PartialAsset {
+    pub fn to_path_buf(&self, base: &PathBuf) -> PathBuf {
+        base.join(
+            utils::url::to_path_separator(
+                self.file.trim_start_matches("/")))
     }
 }
