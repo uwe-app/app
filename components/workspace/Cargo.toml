@@ -13,7 +13,7 @@ datasource = {version = "0.1", path = "../datasource" }
 locale = {version = "0.1", path = "../locale" }
 plugin = {version = "0.1", path = "../plugin" }
 preference = {version = "0.1", path = "../preference" }
-search = {version = "0.1", path = "../search" }
+search = {version = "0.1", path = "../../../library/search/backend" }
 syntax = {version = "0.1", path = "../syntax" }
 utils = {version = "0.1", path = "../utils" }
 
