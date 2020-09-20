@@ -2,7 +2,14 @@ use std::path::{Path, PathBuf};
 
 use url::Url;
 
-use crate::{Config, ProfileSettings, RenderTypes, Result, HTML, INDEX_STEM, profile::LayoutReference};
+use crate::{
+    Config,
+    ProfileSettings,
+    RenderTypes,
+    Result, HTML, INDEX_STEM,
+    profile::LayoutReference,
+    DependencyMap,
+};
 
 #[derive(Debug, Clone)]
 pub enum FileType {
@@ -23,6 +30,8 @@ pub struct RuntimeOptions {
     pub base: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
+    // Computed plugins
+    pub plugins: Option<DependencyMap>,
 }
 
 impl RuntimeOptions {

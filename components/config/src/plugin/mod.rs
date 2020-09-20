@@ -5,6 +5,10 @@ use semver::{Version, VersionReq};
 
 use serde::{Deserialize, Serialize};
 
+use serde_with::{serde_as, DisplayFromStr};
+
+use url::Url;
+
 pub type DependencyMap = HashMap<String, Dependency>;
 
 /// Hint as to the type of plugin.
@@ -13,18 +17,34 @@ pub enum PluginType {
     /// Assets to be bundled with the website files.
     #[serde(rename = "asset")]
     Asset,
+    /// Icon assets to be bundled with the website files.
+    #[serde(rename = "icon")]
+    Icon,
     /// Script(s) to be included with pages.
     #[serde(rename = "script")]
     Script,
     /// Style(s) to be included with pages.
     #[serde(rename = "style")]
     Style,
-    /// Single partial with a schema to define the partial parameters.
-    #[serde(rename = "shortcode")]
-    ShortCode,
     /// Register one or more partial files.
     #[serde(rename = "partial")]
     Partial,
+    /// Font pack; assets and style files.
+    #[serde(rename = "font")]
+    Font,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Partial {
+    pub file: PathBuf,
+    pub schema: PathBuf,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum PluginPartial {
+    One(Partial),
+    Many(Vec<PluginPartial>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -34,11 +54,12 @@ pub enum PluginKind {
     Many(Vec<PluginType>),
 }
 
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dependency {
 
     /// Required version for the dependency.
-    #[serde(with = "serde_with::rust::display_fromstr")]
+    #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
 
     /// Path for a local file system plugin.
@@ -50,7 +71,9 @@ pub struct Dependency {
 }
 
 /// Represents a single plugin definition.
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct Plugin {
     /// Name of the plugin.
     pub name: String,
@@ -59,12 +82,19 @@ pub struct Plugin {
     pub description: String,
 
     /// Plugin version.
-    #[serde(with = "serde_with::rust::display_fromstr")]
+    #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
 
     /// Type of the plugin.
     #[serde(rename = "type")]
     pub kind: Option<PluginKind>,
+
+    // List of remote orgins used by this plugin.
+    #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
+    pub origins: Option<Vec<Url>>,
+
+    /// Partial definition.
+    pub partial: Option<PluginPartial>,
 
     /// List of synthetic assets to include in the project.
     pub assets: Option<Vec<PathBuf>>,
@@ -77,4 +107,22 @@ pub struct Plugin {
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
+}
+
+impl Default for Plugin {
+    fn default() -> Self {
+        let version: Version = "0.0.0".parse().unwrap();
+        Self {
+            name: String::new(),
+            description: String::new(),
+            version,
+            kind: None,
+            origins: None,
+            partial: None,
+            assets: None,
+            styles: None,
+            scripts: None,
+            dependencies: None,
+        }
+    }
 }

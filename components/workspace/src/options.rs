@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, ProfileSettings, LayoutReference};
+use config::{Config, ProfileSettings, LayoutReference, DependencyMap};
 use config::{ProfileName, RuntimeOptions, MENU};
 
 use crate::{Error, Result};
@@ -131,6 +131,7 @@ fn to_options(
         output: settings.target.clone(),
         base,
         settings,
+        plugins: None,
     };
 
     debug!("{:?}", &cfg);
@@ -195,8 +196,8 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     }
 }
 
-pub(crate) fn prepare(
-    cfg: &Config,
+pub(crate) async fn prepare(
+    cfg: &mut Config,
     args: &ProfileSettings,
 ) -> Result<RuntimeOptions> {
     let name = to_profile(args);
@@ -208,7 +209,7 @@ pub(crate) fn prepare(
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
     let profiles = cfg.profile.as_ref().unwrap();
-    if let Some(profile) = profiles.get(&name.to_string()) {
+    let mut opts = if let Some(profile) = profiles.get(&name.to_string()) {
         let mut copy = profile.clone();
         root.append(&mut copy);
 
@@ -217,10 +218,20 @@ pub(crate) fn prepare(
         }
 
         from_cli(&mut root, &mut input);
-        to_options(name, cfg, &mut root)
+        to_options(name, cfg, &mut root)?
     } else {
         root.append(&mut input);
         from_cli(&mut root, &mut input);
-        to_options(name, cfg, &mut root)
+        to_options(name, cfg, &mut root)?
+    };
+
+    if let Some(dependencies) = cfg.dependencies.take() {
+        let mut output: DependencyMap = Default::default();
+        plugin::solve(dependencies, &mut output, &mut Default::default()).await?;
+        //println!("Deps {:#?}", &output);
+        //std::process::exit(1);
+        opts.plugins = Some(output);
     }
+
+    Ok(opts)
 }

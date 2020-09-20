@@ -53,8 +53,8 @@ impl Entry {
     ///
     /// This should only be called when you intend to render a project
     /// as it consumes the configuration entry.
-    pub fn builder(self, args: &ProfileSettings) -> Result<ProjectBuilder> {
-        let options = crate::options::prepare(&self.config, args)?;
+    pub async fn builder(mut self, args: &ProfileSettings) -> Result<ProjectBuilder> {
+        let options = crate::options::prepare(&mut self.config, args).await?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
             redirects.clone()
         } else {
@@ -252,6 +252,7 @@ impl ProjectBuilder {
         Ok(self)
     }
 
+    /*
     /// Resolve plugin dependencies.
     pub async fn resolve_plugins(mut self) -> Result<Self> {
         if let Some(ref mut dependencies) = self.config.dependencies {
@@ -259,6 +260,7 @@ impl ProjectBuilder {
         }
         Ok(self)
     }
+    */
 
     /// Load data sources.
     pub async fn load_data(mut self) -> Result<Self> {
@@ -680,7 +682,7 @@ pub async fn compile<P: AsRef<Path>>(
         // WARN: bounds. The workaround is to break the chain
         // WARN: with multiple await statements.
 
-        let builder = entry.builder(args)?;
+        let builder = entry.builder(args).await?;
 
         // Resolve sources, locales and collate the page data
         let builder = builder
@@ -689,7 +691,6 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.fetch())
             .and_then(|s| s.collate())
             .and_then(|s| s.inherit())
-            //.and_then(|s| s.resolve_plugins())
             .await?;
 
         // Load collections, resolve synthetic assets
