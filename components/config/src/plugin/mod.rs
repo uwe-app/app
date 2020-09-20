@@ -54,16 +54,9 @@ pub enum PluginType {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Partial {
-    pub file: PathBuf,
-    pub schema: PathBuf,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum PluginPartial {
-    One(Partial),
-    Many(Vec<PluginPartial>),
+pub struct PartialAsset {
+    pub file: UrlPath,
+    pub schema: UrlPath,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -116,8 +109,8 @@ pub struct Plugin {
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
     pub origins: Option<Vec<Url>>,
 
-    /// Partial definition.
-    pub partial: Option<PluginPartial>,
+    /// Partial definitions.
+    pub partials: Option<Vec<PartialAsset>>,
 
     /// List of synthetic assets to include in the project.
     pub assets: Option<Vec<UrlPath>>,
@@ -142,7 +135,7 @@ impl Default for Plugin {
             base: PathBuf::from(String::new()),
             kind: None,
             origins: None,
-            partial: None,
+            partials: None,
             assets: None,
             styles: None,
             scripts: None,
