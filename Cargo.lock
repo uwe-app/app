@@ -216,30 +216,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
 
 [[package]]
-name = "bundle"
-version = "0.1.0"
-dependencies = [
- "bundler",
- "log",
- "pretty_env_logger",
- "structopt",
-]
-
-[[package]]
-name = "bundler"
-version = "0.1.0"
-dependencies = [
- "cache",
- "git",
- "human_bytes",
- "ignore",
- "log",
- "preference",
- "thiserror",
- "utils",
-]
-
-[[package]]
 name = "byte-tools"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

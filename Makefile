@@ -45,10 +45,6 @@ installer:
 	@mkdir -p $(SITE_RELEASE)
 	@cp -fv target/release/$(INSTALLER_BIN) $(SITE_RELEASE)/$(INSTALLER_BIN)
 
-bundler:
-	@(cd components/extras/bundle && cargo build --release --bin=$(BUNDLER_BIN))
-	@cp -f target/release/$(BUNDLER_BIN) $(HOME)/.hypertext/bin
-
 info:
 	@echo $(HOST_OS)
 	@echo $(VERSION_INFO)

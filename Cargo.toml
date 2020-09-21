@@ -9,8 +9,6 @@ default-run = "ht"
 
 [workspace]
 members = [
-  "components/extras/bundle",
-  "components/extras/bundler",
   "components/cache",
   "components/collator",
   "components/compiler",
