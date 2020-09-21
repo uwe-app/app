@@ -205,10 +205,6 @@ struct FetchOpts {
     #[structopt(short, long)]
     release: bool,
 
-    /// Update the standalone cache
-    #[structopt(short = "t", long)]
-    standalone: bool,
-
     /// Update the syntax highlighting cache
     #[structopt(short = "y", long)]
     syntax: bool,
@@ -377,7 +373,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         Command::Fetch { ref args } => {
             let opts = command::fetch::FetchOptions {
                 blueprint: args.blueprint,
-                standalone: args.standalone,
                 documentation: args.documentation,
                 release: args.release,
                 syntax: args.syntax,

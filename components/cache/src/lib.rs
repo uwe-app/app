@@ -15,9 +15,6 @@ static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
 
-static STANDALONE_REPO: &str = "https://github.com/hypertext-live/standalone";
-static STANDALONE_NAME: &str = "standalone";
-
 static DOCUMENTATION_REPO: &str =
     "https://github.com/hypertext-live/documentation";
 static DOCUMENTATION_NAME: &str = "documentation";
@@ -44,7 +41,6 @@ pub enum Error {
 
 pub enum CacheComponent {
     Blueprint,
-    Standalone,
     Documentation,
     Release,
     Syntax,
@@ -90,14 +86,6 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
 
 pub fn get_blueprint_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(BLUEPRINT_NAME))
-}
-
-pub fn get_standalone_url() -> String {
-    STANDALONE_REPO.to_string()
-}
-
-pub fn get_standalone_dir() -> io::Result<PathBuf> {
-    Ok(dirs::get_root_dir()?.join(STANDALONE_NAME))
 }
 
 pub fn get_docs_url() -> String {
@@ -176,11 +164,6 @@ pub fn update(
                 let url = get_blueprint_url(prefs);
                 let dir = get_blueprint_dir()?;
                 git::clone_or_fetch(&url, &dir, true)?;
-            }
-            CacheComponent::Standalone => {
-                let url = get_standalone_url();
-                let dir = get_standalone_dir()?;
-                git::clone_or_fetch(&url, &dir, false)?;
             }
             CacheComponent::Documentation => {
                 let url = get_docs_url();
