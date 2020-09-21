@@ -14,8 +14,8 @@ pub struct JavaScriptConfig {
 #[serde(untagged)]
 pub enum ScriptAsset {
     Source(String),
-    Tag(ScriptTag),
     Inline { content: String },
+    Tag(ScriptTag),
 }
 
 impl ScriptAsset {
@@ -40,6 +40,21 @@ impl ScriptAsset {
             Self::Inline { .. } => None,
         }
     }
+
+    pub fn set_source_prefix(&mut self, base: &str) -> bool {
+        match *self {
+            Self::Source(ref mut s) => {
+                *s = format!("{}/{}", base, s);
+            },
+            Self::Tag(ref mut t) => {
+                if let Some(ref mut src) = t.src {
+                    t.src = Some(format!("{}/{}", base, src));
+                }
+            }
+            Self::Inline { .. } => return false,
+        }
+        true
+    }
 }
 
 impl fmt::Display for ScriptAsset {
@@ -56,6 +71,10 @@ impl fmt::Display for ScriptAsset {
                     write!(f, "<script src=\"{}\"", entity::escape(src))?;
                 } else {
                     write!(f, "<script")?;
+                    if let Some(ref content) = script.content {
+                        write!(f, ">{}</script>", content)?;
+                        return Ok(())
+                    }
                 }
 
                 if let Some(ref script_type) = script.script_type {

@@ -58,11 +58,9 @@ pub async fn solve(
         if let Some(dependencies) = plugin.dependencies.take() {
             let mut deps: DependencyMap = Default::default();
             solve(dependencies, &mut deps, stack).await?;
-            //dep.plugin.as_mut().dependencies = Some(deps);
         }
 
         dep.plugin = Some(plugin);
-
         dep.prepare()?;
 
         output.items.insert(name, dep);

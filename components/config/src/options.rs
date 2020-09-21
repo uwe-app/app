@@ -5,6 +5,7 @@ use url::Url;
 use crate::{
     Config, DependencyMap, ProfileSettings,
     RenderTypes, Result, HTML, INDEX_STEM,
+    plugin::Dependency,
 };
 
 #[derive(Debug, Clone)]
@@ -26,11 +27,59 @@ pub struct RuntimeOptions {
     pub base: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
+
     // Computed plugins
     pub plugins: Option<DependencyMap>,
+
+    // Cache of plugin dependencies that should be applied to pages
+    pub styles_cache: Vec<Dependency>,
+    pub scripts_cache: Vec<Dependency>,
 }
 
 impl RuntimeOptions {
+
+    pub fn prepare(&mut self) -> Result<()> {
+        if let Some(ref mut plugins) = self.plugins {
+            for (name, dep) in plugins.to_vec() {
+                let plugin = dep.plugin.as_ref().unwrap();
+                if let Some(ref apply) = dep.apply {
+
+                    let assets_href_base = format!("/{}", utils::url::to_href_separator(
+                        plugin.assets()));
+
+                    if plugin.styles.is_some() && apply.styles.is_some() {
+
+                        let mut dep = dep.clone();
+                        let styles = dep.plugin.as_mut().unwrap()
+                            .styles.as_mut().unwrap();
+
+                        for s in styles.iter_mut() {
+                            s.set_source_prefix(&assets_href_base);
+                            //println!("Style {}", s);
+                        }
+
+                        self.styles_cache.push(dep);
+                    }
+                    if plugin.scripts.is_some() && apply.scripts.is_some() {
+                        let mut dep = dep.clone();
+                        let scripts = dep.plugin.as_mut().unwrap()
+                            .scripts.as_mut().unwrap();
+
+                        for s in scripts.iter_mut() {
+                            s.set_source_prefix(&assets_href_base);
+                            //println!("Script {}", s);
+                        }
+
+                        self.scripts_cache.push(dep);
+
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn is_index<P: AsRef<Path>>(file: P) -> bool {
         if let Some(nm) = file.as_ref().file_stem() {
             if nm == INDEX_STEM {

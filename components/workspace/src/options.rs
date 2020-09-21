@@ -119,6 +119,8 @@ fn to_options(
         base,
         settings,
         plugins: None,
+        styles_cache: Vec::new(),
+        scripts_cache: Vec::new(),
     };
 
     debug!("{:?}", &cfg);
@@ -218,6 +220,9 @@ pub(crate) async fn prepare(
             .await?;
         opts.plugins = Some(output);
     }
+
+    // Create plugin cache lookups for scripts, styles etc
+    opts.prepare()?;
 
     Ok(opts)
 }

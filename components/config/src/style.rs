@@ -12,8 +12,8 @@ pub struct StyleSheetConfig {
 #[serde(untagged)]
 pub enum StyleAsset {
     Source(String),
-    Tag(StyleTag),
     Inline { content: String },
+    Tag(StyleTag),
 }
 
 impl StyleAsset {
@@ -38,6 +38,22 @@ impl StyleAsset {
             Self::Inline { .. } => None,
         }
     }
+
+    pub fn set_source_prefix(&mut self, base: &str) -> bool {
+        match *self {
+            Self::Source(ref mut s) => {
+                *s = format!("{}/{}", base, s);
+            },
+            Self::Tag(ref mut t) => {
+                if let Some(ref mut href) = t.href {
+                    t.href = Some(format!("{}/{}", base, href));
+                }
+            }
+            Self::Inline { .. } => return false,
+        }
+        true
+    }
+
 }
 
 impl fmt::Display for StyleAsset {
@@ -63,6 +79,11 @@ impl fmt::Display for StyleAsset {
             )?;
         } else {
             match *self {
+                Self::Tag(ref style) => {
+                    if let Some(ref content) = style.content {
+                        write!(f, "<style>{}</style>", content)?;
+                    }
+                }
                 Self::Inline { ref content } => {
                     write!(f, "<style>{}</style>", content)?;
                 }

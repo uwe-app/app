@@ -253,6 +253,8 @@ fn add_page(
 
     let (info, key, destination, mut page) = builder.build();
 
+    let href = page.href.as_ref().unwrap();
+
     if let Some(menu) = page.menu.as_mut() {
         // Verify file references as early as possible
         for (k, v) in menu.entries.iter_mut() {
@@ -286,6 +288,47 @@ fn add_page(
                 files.push(Arc::clone(key));
             }
         }
+    }
+
+
+    // Add page-specific scripts from plugins
+    for dep in options.scripts_cache.iter() {
+        let plugin = dep.plugin.as_ref().unwrap();
+        let scripts = plugin.scripts.as_ref().unwrap();
+        let apply = dep.apply.as_ref().unwrap();
+        for matcher in apply.scripts_match.iter() {
+            if matcher.is_match(href) {
+                if page.scripts.is_none() {
+                    page.scripts = Some(Vec::new());
+                }
+                if let Some(ref mut page_scripts) = page.scripts {
+                    for s in scripts.iter().rev() {
+                        page_scripts.insert(0, s.clone());
+                    }
+                }
+            }
+        }
+
+    }
+
+    // Add page-specific styles from plugins
+    for dep in options.styles_cache.iter() {
+        let plugin = dep.plugin.as_ref().unwrap();
+        let styles = plugin.styles.as_ref().unwrap();
+        let apply = dep.apply.as_ref().unwrap();
+        for matcher in apply.styles_match.iter() {
+            if matcher.is_match(href) {
+                if page.styles.is_none() {
+                    page.styles = Some(Vec::new());
+                }
+                if let Some(ref mut page_styles) = page.styles {
+                    for s in styles.iter().rev() {
+                        page_styles.insert(0, s.clone());
+                    }
+                }
+            }
+        }
+
     }
 
     info.add_page(key, destination, Arc::new(RwLock::new(page)));
