@@ -9,6 +9,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
+    Result,
     TemplateEngine,
     script::ScriptAsset,
     style::StyleAsset,
@@ -87,6 +88,16 @@ pub struct Dependency {
     /// Resolved plugin for this dependency.
     #[serde(skip)]
     pub plugin: Option<Plugin>,
+}
+
+impl Dependency {
+
+    /// Cache glob patterns used to apply plugins to 
+    /// files.
+    pub fn prepare(&mut self) -> Result<()> {
+        println!("Dependency preparing...");
+        Ok(()) 
+    }
 }
 
 /// Represents a plugin definition.

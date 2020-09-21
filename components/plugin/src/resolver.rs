@@ -63,6 +63,8 @@ pub async fn solve(
 
         dep.plugin = Some(plugin);
 
+        dep.prepare()?;
+
         output.items.insert(name, dep);
     }
 

@@ -29,6 +29,9 @@ pub enum Error {
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    Config(#[from] config::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

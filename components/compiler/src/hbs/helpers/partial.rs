@@ -7,7 +7,6 @@ use handlebars::*;
 use collator::{Collate, LinkCollate};
 use config::markdown;
 
-use super::is_markdown_template;
 use crate::BuildContext;
 
 fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {

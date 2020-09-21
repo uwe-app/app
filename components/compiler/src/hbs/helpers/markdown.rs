@@ -36,10 +36,8 @@ impl HelperDef for Markdown {
             })?
             .to_string();
 
-        let types = self.context.options.settings.types.as_ref().unwrap();
-
         let mut buf = BufferedOutput {
-            buffer: "".to_owned(),
+            buffer: String::new(),
         };
 
         let mut evaluate = h
