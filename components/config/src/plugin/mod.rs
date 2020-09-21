@@ -18,6 +18,8 @@ use crate::{
     ASSETS, PLUGINS,
 };
 
+// TODO: spdx license for Plugin and ExternalLibrary
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
     #[serde(flatten)]
@@ -159,6 +161,9 @@ pub struct Plugin {
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
     pub origins: Option<Vec<Url>>,
 
+    /// List of third-party libraries the plugin depends on.
+    pub library: Option<Vec<ExternalLibrary>>,
+
     /// List of synthetic assets to include in the project.
     pub assets: Option<Vec<UrlPath>>,
 
@@ -196,6 +201,7 @@ impl Default for Plugin {
             scripts: None,
             dependencies: None,
             templates: None,
+            library: None,
             base: PathBuf::from(String::new()),
         }
     }
@@ -205,6 +211,22 @@ impl Plugin {
     pub fn assets(&self) -> PathBuf {
         PathBuf::from(ASSETS).join(PLUGINS).join(&self.name)
     }
+}
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExternalLibrary {
+    /// Library version.
+    #[serde_as(as = "DisplayFromStr")]
+    pub version: Version,
+
+    /// Library website.
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub website: Option<Url>,
+
+    /// Library repository.
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub repository: Option<Url>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

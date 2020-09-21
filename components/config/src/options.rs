@@ -40,7 +40,7 @@ impl RuntimeOptions {
 
     pub fn prepare(&mut self) -> Result<()> {
         if let Some(ref mut plugins) = self.plugins {
-            for (name, dep) in plugins.to_vec() {
+            for (_, dep) in plugins.to_vec() {
                 let plugin = dep.plugin.as_ref().unwrap();
                 if let Some(ref apply) = dep.apply {
 
