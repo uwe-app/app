@@ -96,13 +96,6 @@ impl ProfileName {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum LayoutReference {
-    File(PathBuf),
-    Flag(bool),
-}
-
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
@@ -122,7 +115,6 @@ pub struct ProfileSettings {
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
-    pub layout: Option<LayoutReference>,
 
     pub extend: Option<Vec<String>>,
 
@@ -174,7 +166,6 @@ impl Default for ProfileSettings {
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
-            layout: None,
 
             rewrite_index: None,
             extend: None,
@@ -212,11 +203,6 @@ impl ProfileSettings {
         settings
     }
 
-    pub fn set_default_layout(&mut self) {
-        self.layout =
-            Some(LayoutReference::File(PathBuf::from(config::LAYOUT_HBS)));
-    }
-
     pub fn append(&mut self, other: &mut Self) {
         self.source = mem::take(&mut other.source);
         self.target = mem::take(&mut other.target);
@@ -245,9 +231,6 @@ impl ProfileSettings {
         }
         if other.data_sources.is_some() {
             self.data_sources = mem::take(&mut other.data_sources)
-        }
-        if other.layout.is_some() {
-            self.layout = mem::take(&mut other.layout)
         }
 
         if other.rewrite_index.is_some() {
@@ -331,9 +314,6 @@ impl ProfileSettings {
     }
 
     pub fn set_defaults(&mut self) {
-        if let None = self.layout {
-            self.set_default_layout();
-        }
         if let None = self.strict {
             self.strict = Some(true);
         }

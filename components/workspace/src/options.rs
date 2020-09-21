@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, DependencyMap, LayoutReference, ProfileSettings};
+use config::{Config, DependencyMap, ProfileSettings};
 use config::{ProfileName, RuntimeOptions, MENU};
 
 use crate::{Error, Result};
@@ -112,19 +112,6 @@ fn to_options(
         }
     }
 
-    if let Some(ref layout) = settings.layout {
-        match layout {
-            LayoutReference::File(ref file) => {
-                let location = source.clone().join(file);
-                //if !location.exists() || !location.is_file() {
-                    //return Err(Error::NoLayout(location.to_path_buf()));
-                //}
-                settings.layout = Some(LayoutReference::File(location));
-            }
-            _ => {}
-        }
-    }
-
     let opts = RuntimeOptions {
         project,
         source,
@@ -229,8 +216,6 @@ pub(crate) async fn prepare(
         let mut output: DependencyMap = Default::default();
         plugin::solve(dependencies, &mut output, &mut Default::default())
             .await?;
-        //println!("Deps {:#?}", &output);
-        //std::process::exit(1);
         opts.plugins = Some(output);
     }
 

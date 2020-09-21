@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use url::Url;
 
 use crate::{
-    profile::LayoutReference, Config, DependencyMap, ProfileSettings,
+    Config, DependencyMap, ProfileSettings,
     RenderTypes, Result, HTML, INDEX_STEM,
 };
 
@@ -144,17 +144,6 @@ impl RuntimeOptions {
             base = base.join(path)?;
         }
         Ok(base)
-    }
-
-    pub fn get_layout_path(&self) -> PathBuf {
-        let reference = self.settings.layout.as_ref().unwrap();
-
-        match reference {
-            LayoutReference::File(ref file) => self.source.join(file),
-            _ => PathBuf::from(""),
-        }
-
-        //self.source.join(self.settings.layout.as_ref().unwrap())
     }
 
     pub fn get_assets_path(&self) -> PathBuf {

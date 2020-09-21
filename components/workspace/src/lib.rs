@@ -28,8 +28,8 @@ pub enum Error {
     #[error("Invalidation action not handled")]
     InvalidationActionNotHandled,
 
-    #[error("Missing layout file {0}")]
-    NoLayout(PathBuf),
+    //#[error("Missing layout file {0}")]
+    //NoLayout(PathBuf),
 
     #[error("Plugin {0} is missing asset file {1}")]
     NoPluginAsset(String, PathBuf),

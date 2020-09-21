@@ -7,7 +7,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, LayoutReference, MenuEntry, RuntimeOptions};
+use config::{Config, MenuEntry, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
@@ -110,7 +110,7 @@ pub async fn walk(
 ) -> Result<Vec<Error>> {
     let errors = find(&req, res).await?;
 
-    compute_layouts(&req, res)?;
+    //compute_layouts(&req, res)?;
     compute_links(&req, res)?;
     Ok(errors)
 }
@@ -120,6 +120,8 @@ async fn find(
     res: &mut CollateResult,
 ) -> Result<Vec<Error>> {
     let languages = req.locales.get_translations();
+
+    let primary_layout = req.options.source.join(config::LAYOUT_HBS);
 
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();
@@ -187,22 +189,14 @@ async fn find(
                             let _ = tx.send(e);
                         }
                     } else {
-                        // Store the primary layout
-                        if let Some(ref layout) = req.options.settings.layout {
-                            match layout {
-                                LayoutReference::File(ref file) => {
-                                    if key.starts_with(file) {
 
-                                        // Configure the default layout from a `layout.hbs` file
-                                        info.add_layout(
-                                            config::DEFAULT_LAYOUT_NAME.to_string(),
-                                            Arc::clone(&key));
+                        // Configure the default layout to use a `layout.hbs` file
+                        if &*key == &primary_layout {
+                            info.add_layout(
+                                config::DEFAULT_LAYOUT_NAME.to_string(),
+                                Arc::clone(&key));
 
-                                        return WalkState::Continue;
-                                    }
-                                }
-                                _ => {}
-                            }
+                            return WalkState::Continue;
                         }
 
                         if let Err(e) =
@@ -228,6 +222,7 @@ fn compute_layouts(
     let mut info = res.inner.lock().unwrap();
 
     // Compute layout paths relative to the source directory.
+    /*
     if let Some(ref layouts) = req.config.layout {
         for (k, v) in layouts.iter() {
             let path = req
@@ -237,6 +232,7 @@ fn compute_layouts(
             info.layouts.insert(k.clone(), Arc::new(path));
         }
     }
+    */
 
     Ok(())
 }

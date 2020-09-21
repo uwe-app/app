@@ -37,6 +37,10 @@ pub async fn solve(
     for (name, mut dep) in input.into_iter() {
         let mut plugin = load(&dep).await?;
 
+        if name != plugin.name {
+            return Err(Error::PluginNameMismatch(name, plugin.name));
+        }
+
         if stack.contains(&plugin.name) {
             return Err(Error::PluginCyclicDependency(plugin.name.clone()));
         }
