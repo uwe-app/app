@@ -44,29 +44,27 @@ impl HelperDef for Styles {
             .get("styles")
             .and_then(|v| v.as_array());
 
-        // Use global styles from the settings
-        let mut sheets: Vec<StyleAsset> =
-            if let Some(ref styles) = self.context.config.styles {
-                styles.main.clone()
-            } else {
-                vec![]
-            };
-
-        // NOTE: Unlike scripts which come beforehand page-level
-        // NOTE: styles come afterwards following the principle of specificity
-        if let Some(styles) = styles {
-            let mut page_styles = styles
+        // Get page-level styles
+        let mut styles = if let Some(styles) = styles {
+            styles
                 .iter()
                 .map(|v| {
                     serde_json::from_value::<StyleAsset>(v.clone()).unwrap()
                 })
-                .collect();
-            sheets.append(&mut page_styles);
+                .collect()
+        } else {
+            vec![]
+        };
+
+        // Use global styles from the settings
+        if let Some(ref css) = self.context.config.styles {
+            let mut main = css.main.clone();
+            styles.append(&mut main);
         }
 
         // Convert to relative paths if necessary
-        let sheets = if abs {
-            sheets
+        let styles = if abs {
+            styles
         } else {
             let opts = &self.context.options;
             let base_path = rc
@@ -82,7 +80,7 @@ impl HelperDef for Styles {
 
             let path = Path::new(&base_path);
 
-            sheets
+            styles
                 .iter()
                 .map(|style| {
                     let mut tag = style.to_tag();
@@ -96,7 +94,7 @@ impl HelperDef for Styles {
                 .collect()
         };
 
-        for style in sheets {
+        for style in styles {
             out.write(&style.to_string())?;
         }
 
