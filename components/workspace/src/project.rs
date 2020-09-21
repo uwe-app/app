@@ -249,7 +249,7 @@ impl ProjectBuilder {
     pub async fn collate_plugins(mut self) -> Result<Self> {
         if let Some(ref plugins) = self.options.plugins {
             for collation in self.collations.iter_mut() {
-                plugins::collate(&self.options, collation, plugins)?;
+                plugins::collate(&self.config, &self.options, collation, plugins)?;
             }
         }
         Ok(self)

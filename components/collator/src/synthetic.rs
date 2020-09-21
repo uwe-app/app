@@ -330,7 +330,7 @@ pub fn book(
     }
 
     let layout_key = "book".to_string();
-    info.layouts.insert(layout_key.clone(), layout_file.clone());
+    info.layouts.insert(layout_key.clone(), Arc::new(layout_file.clone()));
 
     // Update the collated page information with
     // the book layout

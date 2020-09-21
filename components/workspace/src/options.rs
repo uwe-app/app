@@ -116,9 +116,9 @@ fn to_options(
         match layout {
             LayoutReference::File(ref file) => {
                 let location = source.clone().join(file);
-                if !location.exists() || !location.is_file() {
-                    return Err(Error::NoLayout(location.to_path_buf()));
-                }
+                //if !location.exists() || !location.is_file() {
+                    //return Err(Error::NoLayout(location.to_path_buf()));
+                //}
                 settings.layout = Some(LayoutReference::File(location));
             }
             _ => {}

@@ -1,7 +1,8 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use collator::{create_file, CollateInfo};
-use config::{DependencyMap, Plugin, RuntimeOptions, ASSETS, PLUGINS};
+use config::{Config, DependencyMap, Plugin, RuntimeOptions, ASSETS, PLUGINS};
 
 use crate::{Error, Result};
 
@@ -92,8 +93,34 @@ fn styles(
     Ok(())
 }
 
+/// Inject template layouts.
+fn layouts(
+    config: &Config,
+    options: &RuntimeOptions,
+    info: &mut CollateInfo,
+    name: &String,
+    plugin: &Plugin,
+    plugin_target: &PathBuf,
+) -> Result<()> {
+
+    if let Some(ref engine_templates) = plugin.templates {
+        if let Some(ref templates) = engine_templates.get(&config.engine()) {
+            if let Some(ref layouts) = templates.layouts {
+                for (nm, layout) in layouts.iter() {
+                    let fqn = format!("{}::{}", plugin.name, nm);
+                    let layout_path = layout.to_path_buf(&plugin.base);
+                    info.add_layout(fqn, Arc::new(layout_path));
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 /// Add plugin files to the collation.
 pub fn collate(
+    config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     plugins: &DependencyMap,
@@ -107,6 +134,7 @@ pub fn collate(
         assets(options, info, name, plugin, &plugin_base)?;
         scripts(options, info, name, plugin, &plugin_base)?;
         styles(options, info, name, plugin, &plugin_base)?;
+        layouts(config, options, info, name, plugin, &plugin_base)?;
     }
 
     Ok(())

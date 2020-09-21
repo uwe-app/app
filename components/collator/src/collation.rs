@@ -80,10 +80,10 @@ pub struct CollateInfo {
     pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
 
     // Custom page specific layouts
-    pub(crate) layouts: HashMap<String, PathBuf>,
+    pub(crate) layouts: HashMap<String, Arc<PathBuf>>,
 
     // The default layout
-    pub(crate) layout: Option<Arc<PathBuf>>,
+    //pub(crate) layout: Option<Arc<PathBuf>>,
 
     pub(crate) links: LinkMap,
 }
@@ -163,7 +163,7 @@ pub trait SeriesCollate {
 /// Access to the layouts.
 pub trait LayoutCollate {
     /// Get the primary layout.
-    fn get_layout(&self) -> Option<Arc<PathBuf>>;
+    fn get_layout(&self) -> Option<&Arc<PathBuf>>;
 
     /// Get all layouts keyed by layout name suitable
     /// for configuring as templates.
@@ -287,7 +287,7 @@ impl SeriesCollate for Collation {
 }
 
 impl LayoutCollate for Collation {
-    fn get_layout(&self) -> Option<Arc<PathBuf>> {
+    fn get_layout(&self) -> Option<&Arc<PathBuf>> {
         self.locale.get_layout().or(self.fallback.get_layout())
     }
 
@@ -377,16 +377,17 @@ impl SeriesCollate for CollateInfo {
 }
 
 impl LayoutCollate for CollateInfo {
-    fn get_layout(&self) -> Option<Arc<PathBuf>> {
-        self.layout.clone()
+    fn get_layout(&self) -> Option<&Arc<PathBuf>> {
+        self.layouts.get(config::DEFAULT_LAYOUT_NAME)
+        //self.layout.clone()
     }
 
     fn layouts(&self) -> HashMap<String, PathBuf> {
         let mut map = HashMap::new();
-        if let Some(ref layout) = self.get_layout() {
-            let (name, path) = get_layout(&layout.to_path_buf());
-            map.insert(name, path);
-        }
+        //if let Some(ref layout) = self.get_layout() {
+            //let (name, path) = get_layout(&layout.to_path_buf());
+            //map.insert(name, path);
+        //}
 
         for (_, layout) in self.layouts.iter() {
             let (name, path) = get_layout(layout);
@@ -401,6 +402,7 @@ impl LayoutCollate for CollateInfo {
         key: &Option<String>,
         default: bool,
     ) -> Option<&PathBuf> {
+
         // Try to lookup a named layout.
         if let Some(ref key) = key {
             if let Some(ref layout) = self.layouts.get(key) {
@@ -410,7 +412,7 @@ impl LayoutCollate for CollateInfo {
 
         // Use the default layout.
         if default {
-            if let Some(ref layout) = self.layout {
+            if let Some(ref layout) = self.get_layout() {
                 return Some(layout);
             }
         }
@@ -446,6 +448,10 @@ impl CollateInfo {
         }
     }
 
+    pub fn add_layout(&mut self, key: String, file: Arc<PathBuf>) -> &mut Arc<PathBuf> {
+        self.layouts.entry(key).or_insert(file)
+    }
+
     pub fn get_redirects(&self) -> &HashMap<String, String> {
         &self.redirects
     }
@@ -453,10 +459,6 @@ impl CollateInfo {
     pub fn get_graph_mut(&mut self) -> &mut Graph {
         &mut self.graph
     }
-
-    //pub fn get_books_mut(&mut self) -> &mut HashMap<String, Vec<Arc<PathBuf>>> {
-    //&mut self.books
-    //}
 
     /// Create a page in this collation.
     ///

@@ -27,7 +27,6 @@ pub fn parser<'a>(
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
     let builder = ParserBuilder::new(engine, context)
         .plugins()?
-        .builtins()?
         .partials()?
         .helpers()?
         .menus()?
@@ -75,14 +74,6 @@ impl<'a> ParserBuilder<'a> {
                 }
             }
         }
-        Ok(self)
-    }
-
-    pub fn builtins(mut self) -> Result<Self> {
-        self.handlebars.register_template_string(
-            "layout",
-            include_str!("builtins/layout.hbs"),
-        )?;
         Ok(self)
     }
 

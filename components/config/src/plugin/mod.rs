@@ -159,19 +159,19 @@ impl Default for Plugin {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PluginTemplates {
     /// Partial definitions.
-    pub partials: Option<HashMap<String, PartialAsset>>,
+    pub partials: Option<HashMap<String, TemplateAsset>>,
 
     /// Layout definitions.
-    pub layouts: Option<HashMap<String, UrlPath>>,
+    pub layouts: Option<HashMap<String, TemplateAsset>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PartialAsset {
+pub struct TemplateAsset {
     pub file: UrlPath,
     pub schema: Option<UrlPath>,
 }
 
-impl PartialAsset {
+impl TemplateAsset {
     pub fn to_path_buf(&self, base: &PathBuf) -> PathBuf {
         base.join(
             utils::url::to_path_separator(

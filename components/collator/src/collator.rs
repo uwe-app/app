@@ -192,7 +192,12 @@ async fn find(
                             match layout {
                                 LayoutReference::File(ref file) => {
                                     if key.starts_with(file) {
-                                        info.layout = Some(Arc::clone(&key));
+
+                                        // Configure the default layout from a `layout.hbs` file
+                                        info.add_layout(
+                                            config::DEFAULT_LAYOUT_NAME.to_string(),
+                                            Arc::clone(&key));
+
                                         return WalkState::Continue;
                                     }
                                 }
@@ -229,7 +234,7 @@ fn compute_layouts(
                 .options
                 .source
                 .join(v.strip_prefix(&req.options.source)?);
-            info.layouts.insert(k.clone(), path);
+            info.layouts.insert(k.clone(), Arc::new(path));
         }
     }
 
