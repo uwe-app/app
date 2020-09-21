@@ -40,6 +40,15 @@ impl RuntimeOptions {
         false
     }
 
+    pub fn is_markdown_file(&self, file: &PathBuf) -> bool {
+        if let Some(ext) = file.extension() {
+            let s = ext.to_string_lossy().into_owned();
+            let types = self.settings.types.as_ref().unwrap();
+            return types.markdown().contains(&s)
+        }
+        false
+    }
+
     pub fn is_clean<P: AsRef<Path>>(
         &self,
         file: P,

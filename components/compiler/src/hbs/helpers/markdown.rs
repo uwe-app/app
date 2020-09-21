@@ -95,10 +95,7 @@ impl HelperDef for Markdown {
 
         if !evaluate {
             let source_buf = PathBuf::from(&source_path);
-            if let Some(ext) = source_buf.extension() {
-                let s = ext.to_string_lossy().into_owned();
-                evaluate = !types.markdown().contains(&s);
-            }
+            evaluate = self.context.options.is_markdown_file(&source_buf);
         }
 
         if evaluate {

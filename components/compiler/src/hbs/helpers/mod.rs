@@ -65,11 +65,5 @@ pub fn is_markdown_template<'reg: 'rc, 'rc>(
         PathBuf::from(&template_path)
     };
 
-    let mut parse_markdown = false;
-    if let Some(ext) = file.extension() {
-        let s = ext.to_string_lossy().into_owned();
-        let types = options.settings.types.as_ref().unwrap();
-        parse_markdown = types.markdown().contains(&s);
-    }
-    Ok(parse_markdown)
+    Ok(options.is_markdown_file(&file))
 }

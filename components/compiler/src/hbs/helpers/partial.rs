@@ -83,12 +83,7 @@ impl HelperDef for Partial {
 
         let file = PathBuf::from(&template_path);
 
-        let is_markdown = is_markdown_template(
-            &self.context.options,
-            ctx,
-            rc,
-            Some(file.clone()),
-        )?;
+        let is_markdown = self.context.options.is_markdown_file(&file);
 
         let (content, _has_fm, _fm) =
             frontmatter::load(&file, get_front_matter_config(&file)).map_err(

@@ -12,7 +12,7 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::{CollatedPage, TemplateEngine};
+use config::{markdown, CollatedPage, TemplateEngine};
 
 use crate::context::BuildContext;
 use crate::parser::Parser;
@@ -326,9 +326,24 @@ impl<'a> HandlebarsParser<'a> {
     ) -> Result<String> {
         let (content, _has_fm, _fm) =
             frontmatter::load(file, self.get_front_matter_config(file))?;
-        self.handlebars
+        let mut result = self.handlebars
             .render_template(&content, &data)
-            .map_err(Error::from)
+            .map_err(Error::from)?;
+
+        // Normally the `partial` helper will convert to markdown 
+        // when rendering a page but when standalone we don't expect 
+        // `partial` to be called and if the page is markdown it is not
+        // converted to HTML so this catches that case.
+        //
+        // This is particularly useful for plugins which ship their 
+        // own documentation via a standard website but don't want to 
+        // add any direct dependencies until we have a concept of `dev-dependencies`.
+        if self.context.options.is_markdown_file(file) {
+            result = markdown::render(
+                &mut Cow::from(result), &self.context.config);
+        }
+
+        Ok(result)
     }
 }
 
