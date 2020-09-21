@@ -29,6 +29,14 @@ impl DependencyMap {
     pub fn to_vec(&self) -> Vec<(&String, &Dependency)> {
         let out: Vec<(&String, &Dependency)> = Vec::new();
         self.items.iter().fold(out, |mut acc, (name, dep)| {
+
+            if let Some(ref plugin) = dep.plugin {
+                if let Some(ref dependencies) = plugin.dependencies {
+                    let mut deps = dependencies.to_vec(); 
+                    acc.append(&mut deps);
+                }
+            }
+
             acc.push((name, dep));
             acc
         })
