@@ -100,7 +100,6 @@ fn layouts(
     info: &mut CollateInfo,
     name: &String,
     plugin: &Plugin,
-    plugin_target: &PathBuf,
 ) -> Result<()> {
 
     if let Some(ref engine_templates) = plugin.templates {
@@ -134,7 +133,7 @@ pub fn collate(
         assets(options, info, name, plugin, &plugin_base)?;
         scripts(options, info, name, plugin, &plugin_base)?;
         styles(options, info, name, plugin, &plugin_base)?;
-        layouts(config, options, info, name, plugin, &plugin_base)?;
+        layouts(config, options, info, name, plugin)?;
     }
 
     Ok(())

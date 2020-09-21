@@ -177,13 +177,6 @@ impl ProjectBuilder {
             }
         }
 
-        if self.config.feed.is_some() {
-            let feed_dir = cache::get_feed_dir()?;
-            if !feed_dir.exists() {
-                components.push(CacheComponent::Feed);
-            }
-        }
-
         if !components.is_empty() {
             let prefs = preference::load()?;
             cache::update(&prefs, components)?;

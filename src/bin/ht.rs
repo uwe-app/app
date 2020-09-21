@@ -213,10 +213,6 @@ struct FetchOpts {
     #[structopt(short = "y", long)]
     syntax: bool,
 
-    /// Update the feed templates
-    #[structopt(short = "f", long)]
-    feed: bool,
-
     /// Update the book templates
     #[structopt(short = "o", long)]
     book: bool,
@@ -385,7 +381,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 documentation: args.documentation,
                 release: args.release,
                 syntax: args.syntax,
-                feed: args.feed,
                 book: args.book,
             };
 
