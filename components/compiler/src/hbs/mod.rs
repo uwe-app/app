@@ -79,57 +79,10 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn builtins(mut self) -> Result<Self> {
-        // Built-in partials
-        self.handlebars.register_template_string(
-            "charset",
-            include_str!("builtins/charset.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "title",
-            include_str!("builtins/title.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "viewport",
-            include_str!("builtins/viewport.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "edge",
-            include_str!("builtins/edge.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "description",
-            include_str!("builtins/description.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "keywords",
-            include_str!("builtins/keywords.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "canonical",
-            include_str!("builtins/canonical.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "noindex",
-            include_str!("builtins/noindex.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "head",
-            include_str!("builtins/head.hbs"),
-        )?;
-
-        self.handlebars.register_template_string(
-            "header",
-            include_str!("builtins/header.hbs"),
-        )?;
-        self.handlebars.register_template_string(
-            "footer",
-            include_str!("builtins/footer.hbs"),
-        )?;
         self.handlebars.register_template_string(
             "layout",
             include_str!("builtins/layout.hbs"),
         )?;
-
         Ok(self)
     }
 

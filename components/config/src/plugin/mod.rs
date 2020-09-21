@@ -160,7 +160,7 @@ pub struct PluginTemplates {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PartialAsset {
     pub file: UrlPath,
-    pub schema: UrlPath,
+    pub schema: Option<UrlPath>,
 }
 
 impl PartialAsset {
