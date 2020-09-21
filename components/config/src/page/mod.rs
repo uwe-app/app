@@ -31,6 +31,7 @@ pub struct CollatedPage<'a> {
     #[serde(flatten)]
     pub page: &'a Page,
     pub lang: &'a str,
+    pub charset: &'a str,
     pub date: &'a Option<DateConfig>,
     // Paths referenced in a menu when MENU.md convention is used
     pub menu: Vec<&'a String>,
@@ -41,6 +42,7 @@ impl<'a> CollatedPage<'a> {
         Self {
             page,
             lang,
+            charset: config.charset(),
             date: &config.date,
             menu: Default::default(),
         }

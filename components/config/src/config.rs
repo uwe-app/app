@@ -58,6 +58,7 @@ pub static INCLUDES: &str = "includes";
 pub static DATASOURCES: &str = "data-sources";
 pub static RESOURCES: &str = "resources";
 pub static LANG: &str = "en";
+pub static CHARSET: &str = "utf-8";
 pub static TAGS: &str = "tags";
 
 /// Used when multiple virtual hosts and inferring
@@ -134,6 +135,8 @@ pub struct Config {
     pub lang: String,
     pub host: String,
 
+    pub charset: Option<String>,
+
     pub engine: Option<TemplateEngine>,
 
     // Host name when running locally which overrides the inferred
@@ -186,6 +189,7 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
+            charset: Some(String::from(CHARSET)),
             engine: Some(Default::default()),
             localhost: None,
             build: Some(Default::default()),
@@ -227,6 +231,10 @@ impl Config {
         self.engine
             .as_ref()
             .map_or_else(|| TemplateEngine::default(), |e| e.clone())
+    }
+
+    pub fn charset(&self) -> &str {
+        self.charset.as_ref().unwrap()
     }
 
     /*
