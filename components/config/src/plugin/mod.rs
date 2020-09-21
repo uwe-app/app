@@ -22,6 +22,7 @@ pub struct DependencyMap {
 }
 
 impl DependencyMap {
+
     pub fn into_iter(self) -> hash_map::IntoIter<String, Dependency> {
         self.items.into_iter()
     }

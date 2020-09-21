@@ -1,5 +1,5 @@
+use std::fmt;
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,8 @@ static JSON_NAME: &str = "feed";
 static RSS_NAME: &str = "rss";
 static ATOM_NAME: &str = "atom";
 
+static PLUGIN_NAME: &str = "std::feed";
+
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum FeedType {
     #[serde(rename = "json")]
@@ -24,6 +26,12 @@ pub enum FeedType {
     Rss,
     #[serde(rename = "atom")]
     Atom,
+}
+
+impl fmt::Display for FeedType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.get_file_name())
+    }
 }
 
 impl FeedType {
@@ -55,15 +63,27 @@ impl FeedType {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct FeedTemplates {
-    pub json: Option<PathBuf>,
-    pub rss: Option<PathBuf>,
-    pub atom: Option<PathBuf>,
+// The partial names in the feed template plugin.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct FeedTemplateNames {
+    pub json: Option<String>,
+    pub rss: Option<String>,
+    pub atom: Option<String>,
 }
 
-impl FeedTemplates {
-    pub fn get(&self, feed_type: &FeedType) -> &Option<PathBuf> {
+impl Default for FeedTemplateNames {
+    fn default() -> Self {
+        Self {
+            json: Some(JSON_NAME.to_string()),
+            rss: Some(RSS_NAME.to_string()),
+            atom: Some(ATOM_NAME.to_string()),
+        }
+    }
+}
+
+impl FeedTemplateNames {
+    pub fn get(&self, feed_type: &FeedType) -> &Option<String> {
         match *feed_type {
             FeedType::Json => &self.json,
             FeedType::Rss => &self.rss,
@@ -80,11 +100,14 @@ pub struct FeedConfig {
     // The resulting list will be truncated to this value.
     pub limit: Option<usize>,
 
-    // List of custom templates to use for each feed.
+    // The name of the plugin defining the feed template partials.
+    pub plugin: Option<String>,
+
+    // List of custom template names to use for each feed.
     //
     // When specified they override the default templates
     // for each feed type.
-    pub templates: FeedTemplates,
+    pub names: FeedTemplateNames,
 
     #[serde(flatten)]
     pub channels: HashMap<String, ChannelConfig>,
@@ -94,7 +117,8 @@ impl Default for FeedConfig {
     fn default() -> Self {
         Self {
             limit: Some(100),
-            templates: Default::default(),
+            plugin: Some(PLUGIN_NAME.to_string()),
+            names: Default::default(),
             channels: HashMap::new(),
         }
     }

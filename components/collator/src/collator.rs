@@ -110,7 +110,6 @@ pub async fn walk(
 ) -> Result<Vec<Error>> {
     let errors = find(&req, res).await?;
 
-    //compute_layouts(&req, res)?;
     compute_links(&req, res)?;
     Ok(errors)
 }
@@ -213,28 +212,6 @@ async fn find(
     drop(tx);
 
     Ok(rx.iter().collect())
-}
-
-fn compute_layouts(
-    req: &CollateRequest<'_>,
-    res: &mut CollateResult,
-) -> Result<()> {
-    let mut info = res.inner.lock().unwrap();
-
-    // Compute layout paths relative to the source directory.
-    /*
-    if let Some(ref layouts) = req.config.layout {
-        for (k, v) in layouts.iter() {
-            let path = req
-                .options
-                .source
-                .join(v.strip_prefix(&req.options.source)?);
-            info.layouts.insert(k.clone(), Arc::new(path));
-        }
-    }
-    */
-
-    Ok(())
 }
 
 fn compute_links(

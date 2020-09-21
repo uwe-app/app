@@ -9,6 +9,24 @@ pub enum Error {
     #[error("No layout definition {0} found for page {1}")]
     NoLayoutDefinition(String, PathBuf),
 
+    #[error("No plugin located for feed templates using plugin name {0}")]
+    NoFeedPlugin(String),
+
+    #[error("The feed plugin {0} has no templates")]
+    NoFeedPluginTemplate(String),
+
+    #[error("The feed plugin {0} has no templates for the template engine {1}")]
+    NoFeedPluginTemplateEngine(String, String),
+
+    #[error("The feed plugin {0} has no template partials")]
+    NoFeedPluginPartial(String),
+
+    #[error("Unable to determine template path for feed type {0}")]
+    NoFeedPartialPath(String),
+
+    #[error("No feed template file {0}")]
+    NoFeedTemplate(PathBuf),
+
     #[error("Collision detected on {0} ({1} <-> {2})")]
     LinkCollision(String, PathBuf, PathBuf),
 
@@ -40,9 +58,6 @@ pub enum Error {
 
     #[error("Menu file {0} contains a link {1} which could not be resolved to a page ({2})")]
     NoMenuPage(PathBuf, String, PathBuf),
-
-    #[error("No feed template file {0}")]
-    NoFeedTemplate(PathBuf),
 
     #[error("No book theme directory {0}")]
     NoBookThemeDirectory(PathBuf),
