@@ -71,12 +71,32 @@ impl fmt::Display for StyleAsset {
             _ => None,
         };
 
+        let media: Option<&str> = match *self {
+            Self::Tag(ref t) => {
+                if let Some(ref media) = t.media {
+                    Some(media)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
         if let Some(href) = href {
-            write!(
-                f,
-                "<link rel=\"stylesheet\" href=\"{}\">",
-                entity::escape(href)
-            )?;
+            if let Some(ref media) = media {
+                write!(
+                    f,
+                    "<link rel=\"stylesheet\" href=\"{}\" media=\"{}\">",
+                    entity::escape(href),
+                    entity::escape(media)
+                )?;
+            } else {
+                write!(
+                    f,
+                    "<link rel=\"stylesheet\" href=\"{}\">",
+                    entity::escape(href)
+                )?;
+            }
         } else {
             match *self {
                 Self::Tag(ref style) => {
@@ -98,6 +118,7 @@ impl fmt::Display for StyleAsset {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StyleTag {
     pub href: Option<String>,
+    pub media: Option<String>,
     pub content: Option<String>,
 }
 
@@ -105,6 +126,7 @@ impl StyleTag {
     pub fn new(s: &str) -> Self {
         Self {
             href: Some(s.to_string()),
+            media: None,
             content: None,
         }
     }
@@ -112,6 +134,7 @@ impl StyleTag {
     pub fn new_content(c: &str) -> Self {
         Self {
             href: None,
+            media: None,
             content: Some(c.to_string()),
         }
     }
