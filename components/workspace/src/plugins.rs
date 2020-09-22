@@ -102,6 +102,8 @@ fn layouts(
     plugin: &Plugin,
 ) -> Result<()> {
 
+    println!("Plugin layouts {}", &plugin.name);
+
     if let Some(ref engine_templates) = plugin.templates {
         if let Some(ref templates) = engine_templates.get(&config.engine()) {
             if let Some(ref layouts) = templates.layouts {

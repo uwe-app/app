@@ -88,7 +88,8 @@ impl<'a> PageBuilder<'a> {
     }
 
     /// Verify that layout references exist in the collated map.
-    pub fn layouts(self) -> Result<Self> {
+    //pub fn layouts(self) -> Result<Self> {
+        /*
         if let Some(ref layout) = self.page.layout {
             if self.info.layouts.get(layout).is_none() {
                 return Err(Error::NoLayoutDefinition(
@@ -97,8 +98,9 @@ impl<'a> PageBuilder<'a> {
                 ));
             }
         }
-        Ok(self)
-    }
+        */
+        //Ok(self)
+    //}
 
     /// Seal the page with file context information.
     pub fn seal(mut self) -> Result<Self> {

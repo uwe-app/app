@@ -70,6 +70,9 @@ pub enum PluginType {
     /// Font pack; assets and style files.
     #[serde(rename = "font")]
     Font,
+    /// Format for a content type, eg: book or slideshow.
+    #[serde(rename = "format")]
+    Format,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

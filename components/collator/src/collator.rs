@@ -245,7 +245,7 @@ fn add_page(
     let builder = PageBuilder::new(info, config, options, key, path)
         .compute()?
         .queries()?
-        .layouts()?
+        //.layouts()?
         .seal()?
         .scripts()?
         .styles()?
@@ -254,8 +254,6 @@ fn add_page(
         .feeds()?;
 
     let (info, key, destination, mut page) = builder.build();
-
-    let href = page.href.as_ref().unwrap();
 
     if let Some(menu) = page.menu.as_mut() {
         // Verify file references as early as possible
@@ -277,6 +275,7 @@ fn add_page(
         }
     }
 
+    // FIXME: remove this once the book logic is migrated to a plugin
     if let Some(ref book) = config.book {
         for (k, item) in book.members.iter() {
             let p = options.source.join(&item.path);
