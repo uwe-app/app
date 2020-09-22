@@ -1,9 +1,36 @@
+use std::path::PathBuf;
+
 use async_recursion::async_recursion;
 
 use crate::{Error, Result};
 use config::{Dependency, DependencyMap, Plugin};
 
 static PLUGIN: &str = "plugin.toml";
+
+pub async fn read(path: &PathBuf) -> Result<Plugin> {
+    if !path.exists() || !path.is_dir() {
+        return Err(Error::BadPluginPath(path.to_path_buf()));
+    }
+
+    let file = if path.ends_with(PLUGIN) {
+        path.to_path_buf()
+    } else {
+        path.join(PLUGIN)
+    };
+
+    if !file.exists() || !file.is_file() {
+        return Err(Error::BadPluginFile(file));
+    }
+
+    let parent = file.parent()
+        .expect("Plugin file must have parent directory")
+        .to_path_buf();
+
+    let plugin_content = utils::fs::read_string(file)?;
+    let mut plugin: Plugin = toml::from_str(&plugin_content)?;
+    plugin.base = parent;
+    Ok(plugin)
+}
 
 async fn load(dep: &Dependency) -> Result<Plugin> {
     let path = if let Some(ref path) = dep.path {
@@ -12,20 +39,7 @@ async fn load(dep: &Dependency) -> Result<Plugin> {
         todo!();
     };
 
-    if !path.exists() || !path.is_dir() {
-        return Err(Error::BadPluginPath(path));
-    }
-
-    let plugin_file = path.join(PLUGIN);
-
-    if !plugin_file.exists() || !plugin_file.is_file() {
-        return Err(Error::BadPluginFile(plugin_file));
-    }
-
-    let plugin_content = utils::fs::read_string(plugin_file)?;
-    let mut plugin: Plugin = toml::from_str(&plugin_content)?;
-    plugin.base = path;
-    Ok(plugin)
+    Ok(read(&path).await?)
 }
 
 #[async_recursion]

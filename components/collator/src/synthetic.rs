@@ -244,16 +244,16 @@ pub fn feed(
             {
                 //options.source.join(tpl)
                 if let Some(ref partial) = plugin_partials.get(partial_key) {
-                    Some(partial.to_path_buf(&plugin.base)) 
+                    Some(partial.to_path_buf(&plugin.base))
                 } else { None }
             } else {
                 None
             };
 
             if template.is_none() {
-                return Err(Error::NoFeedPartialPath(feed_type.to_string())) 
+                return Err(Error::NoFeedPartialPath(feed_type.to_string()))
             }
-        
+
             let template = template.unwrap();
 
             if !template.exists() || !template.is_file() {
@@ -291,30 +291,3 @@ pub fn feed(
     Ok(())
 }
 
-/*
-fn find_files<F>(dir: &PathBuf, filter: F) -> Vec<Result<PathBuf>>
-where
-    F: Fn(&PathBuf) -> bool + Sync,
-{
-    let (tx, rx) = channel::unbounded();
-
-    WalkBuilder::new(dir)
-        .follow_links(true)
-        .build_parallel()
-        .run(|| {
-            Box::new(|result| {
-                if let Ok(entry) = result {
-                    let path = entry.path().to_path_buf();
-                    if filter(&path) {
-                        let _ = tx.send(Ok(path));
-                    }
-                }
-                WalkState::Continue
-            })
-        });
-
-    drop(tx);
-
-    rx.iter().collect()
-}
-*/

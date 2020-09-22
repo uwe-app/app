@@ -25,6 +25,9 @@ pub enum Error {
     Io(#[from] io::Error),
 
     #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
     Semver(#[from] config::semver::SemVerError),
 
     #[error(transparent)]
@@ -36,6 +39,8 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod archive;
 mod resolver;
+mod walk;
 
 pub use resolver::solve;
