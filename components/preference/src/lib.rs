@@ -10,7 +10,7 @@ use utils;
 
 static PREFERENCES: &str = "preferences.toml";
 static LANG: &str = "en";
-static DEFAULT_BLUEPRINT_PATH: &str = "style/normalize";
+static DEFAULT_BLUEPRINT_PATH: &str = "style/newcss";
 
 pub static BLUEPRINT_URL: &str = "https://github.com/hypertext-live/blueprint";
 
