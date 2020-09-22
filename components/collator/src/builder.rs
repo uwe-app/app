@@ -126,6 +126,57 @@ impl<'a> PageBuilder<'a> {
         Ok(self)
     }
 
+    /// Import scripts from the scripts cache into this page.
+    ///
+    /// Depends on the page `href` so must come after a call to `seal()`.
+    pub fn scripts(mut self) -> Result<Self> {
+        let href = self.page.href.as_ref().unwrap();
+        for dep in self.options.scripts_cache.iter() {
+            let plugin = dep.plugin.as_ref().unwrap();
+            let scripts = plugin.scripts.as_ref().unwrap();
+            let apply = dep.apply.as_ref().unwrap();
+            for matcher in apply.scripts_match.iter() {
+                if matcher.is_match(href) {
+                    if self.page.scripts.is_none() {
+                        self.page.scripts = Some(Vec::new());
+                    }
+                    if let Some(ref mut page_scripts) = self.page.scripts {
+                        for s in scripts.iter().rev() {
+                            page_scripts.insert(0, s.clone());
+                        }
+                    }
+                }
+            }
+        }
+        Ok(self)
+    }
+
+    /// Import styles from the styles cache into this page.
+    ///
+    /// Depends on the page `href` so must come after a call to `seal()`.
+    pub fn styles(mut self) -> Result<Self> {
+        let href = self.page.href.as_ref().unwrap();
+        for dep in self.options.styles_cache.iter() {
+            let plugin = dep.plugin.as_ref().unwrap();
+            let styles = plugin.styles.as_ref().unwrap();
+            let apply = dep.apply.as_ref().unwrap();
+            for matcher in apply.styles_match.iter() {
+                if matcher.is_match(href) {
+                    if self.page.styles.is_none() {
+                        self.page.styles = Some(Vec::new());
+                    }
+                    if let Some(ref mut page_styles) = self.page.styles {
+                        for s in styles.iter().rev() {
+                            page_styles.insert(0, s.clone());
+                        }
+                    }
+                }
+            }
+
+        }
+        Ok(self)
+    }
+
     /// Create the link mapping for this page.
     ///
     /// Depends on `rewrite_index` so must come after a call to `seal()`.
