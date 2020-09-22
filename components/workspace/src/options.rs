@@ -112,16 +112,19 @@ fn to_options(
         }
     }
 
-    let opts = RuntimeOptions {
-        project,
-        source,
-        output: settings.target.clone(),
-        base,
-        settings,
-        plugins: None,
-        styles_cache: Vec::new(),
-        scripts_cache: Vec::new(),
-    };
+    let opts= RuntimeOptions::new(project, source, base, settings);
+
+    //let opts = RuntimeOptions {
+        //project,
+        //source,
+        //output: settings.target.clone(),
+        //base,
+        //settings,
+        //plugins: None,
+        //styles_cache: Vec::new(),
+        //scripts_cache: Vec::new(),
+        //layouts_cache: HashMap::new(),
+    //};
 
     debug!("{:?}", &cfg);
 
@@ -222,7 +225,7 @@ pub(crate) async fn prepare(
     }
 
     // Create plugin cache lookups for scripts, styles etc
-    opts.prepare()?;
+    opts.prepare(cfg.engine())?;
 
     Ok(opts)
 }

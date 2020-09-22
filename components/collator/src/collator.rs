@@ -245,10 +245,10 @@ fn add_page(
     let builder = PageBuilder::new(info, config, options, key, path)
         .compute()?
         .queries()?
-        //.layouts()?
         .seal()?
         .scripts()?
         .styles()?
+        .layouts()?
         .link()?
         .permalinks()?
         .feeds()?;

@@ -397,7 +397,7 @@ impl ProjectBuilder {
             });
 
             let parser: Box<dyn Parser + Send + Sync> = parser::build(
-                config.engine(),
+                config.engine().clone(),
                 Arc::clone(&context),
                 Arc::clone(&locales),
             )?;

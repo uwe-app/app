@@ -1,11 +1,17 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+
+use log::debug;
+use globset::GlobMatcher;
 
 use url::Url;
 
 use crate::{
+    Error,
     Config, DependencyMap, ProfileSettings,
     RenderTypes, Result, HTML, INDEX_STEM,
-    plugin::Dependency,
+    TemplateEngine,
+    plugin::{Dependency, TemplateAsset},
 };
 
 #[derive(Debug, Clone)]
@@ -34,44 +40,84 @@ pub struct RuntimeOptions {
     // Cache of plugin dependencies that should be applied to pages
     pub styles_cache: Vec<Dependency>,
     pub scripts_cache: Vec<Dependency>,
+    pub layouts_cache: HashMap<String, (Vec<GlobMatcher>, TemplateAsset)>,
 }
 
 impl RuntimeOptions {
 
-    pub fn prepare(&mut self) -> Result<()> {
+    pub fn new(
+        project: PathBuf,
+        source: PathBuf,
+        base: PathBuf,
+        settings: ProfileSettings) -> Self {
+        Self {
+            project,
+            source,
+            output: settings.target.clone(),
+            base,
+            settings,
+            plugins: None,
+            styles_cache: Vec::new(),
+            scripts_cache: Vec::new(),
+            layouts_cache: HashMap::new(),
+        }
+    }
+
+    // FIXME: stricter error handling on mismatch
+    pub fn prepare(&mut self, engine: &TemplateEngine) -> Result<()> {
         if let Some(ref mut plugins) = self.plugins {
             for (_, dep) in plugins.to_vec() {
                 let plugin = dep.plugin.as_ref().unwrap();
-                if let Some(ref apply) = dep.apply {
 
+                debug!("Build plugin apply cache {:?}", &plugin.name);
+
+                if let Some(ref apply) = dep.apply {
                     let assets_href_base = format!("/{}", utils::url::to_href_separator(
                         plugin.assets()));
 
-                    if plugin.styles.is_some() && apply.styles.is_some() {
-
+                    if plugin.styles.is_some() && !apply.styles_match.is_empty() {
                         let mut dep = dep.clone();
                         let styles = dep.plugin.as_mut().unwrap()
                             .styles.as_mut().unwrap();
-
+                        // Make style paths relative to the plugin asset destination
                         for s in styles.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
-                            //println!("Style {}", s);
                         }
-
                         self.styles_cache.push(dep);
                     }
-                    if plugin.scripts.is_some() && apply.scripts.is_some() {
+                    if plugin.scripts.is_some() && !apply.scripts_match.is_empty() {
                         let mut dep = dep.clone();
                         let scripts = dep.plugin.as_mut().unwrap()
                             .scripts.as_mut().unwrap();
-
+                        // Make script paths relative to the plugin asset destination
                         for s in scripts.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
-                            //println!("Script {}", s);
                         }
-
                         self.scripts_cache.push(dep);
+                    }
 
+                    // Got some layouts to apply so add to the cache
+                    if !apply.layouts_match.is_empty() {
+                        let templates = plugin.templates.as_ref().ok_or_else(|| {
+                            Error::ApplyLayoutNoTemplate(dep.to_string())
+                        })?;
+                        let templates = templates.get(engine).ok_or_else(|| {
+                            Error::ApplyLayoutNoTemplateForEngine(dep.to_string(), engine.to_string())
+                        })?;
+                        let layouts = templates.layouts.as_ref().ok_or_else(|| {
+                            Error::ApplyLayoutNoLayouts(dep.to_string(), engine.to_string())
+                        })?;
+
+                        for (key, matches) in apply.layouts_match.iter() {
+                            if !layouts.contains_key(key) {
+                                return Err(
+                                    Error::ApplyLayoutNoLayoutForKey(
+                                        dep.to_string(), engine.to_string(), key.clone()));
+                            }
+                            let asset = layouts.get(key).unwrap().clone();
+                            let fqn = plugin.qualified(key);
+                            self.layouts_cache.insert(fqn, (matches.clone(), asset));
+                        }
                     }
                 }
             }

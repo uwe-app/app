@@ -22,6 +22,18 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
+    #[error("Dependency {0} wants to apply layouts but the plugin has no templates")]
+    ApplyLayoutNoTemplate(String),
+
+    #[error("Dependency {0} wants to apply layouts but the plugin has no templates for the engine {1}")]
+    ApplyLayoutNoTemplateForEngine(String, String),
+
+    #[error("Dependency {0} wants to apply layouts but the plugin has no layouts for the engine {1}")]
+    ApplyLayoutNoLayouts(String, String),
+
+    #[error("Dependency {0} wants to apply the layout {2} but the plugin does not have the layout: {2} (engine: {1})")]
+    ApplyLayoutNoLayoutForKey(String, String, String),
+
     //#[error("Page {0} is outside the source directory {1}")]
     //PageOutsideSource(PathBuf, PathBuf),
     #[error("Failed to read link catalog {0}")]

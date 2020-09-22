@@ -35,6 +35,7 @@ pub async fn solve(
     stack: &mut Vec<String>,
 ) -> Result<()> {
     for (name, mut dep) in input.into_iter() {
+        dep.name = Some(name.clone());
         let mut plugin = load(&dep).await?;
 
         if name != plugin.name {

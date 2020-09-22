@@ -79,6 +79,12 @@ pub static SCHEME_DELIMITER: &str = "//";
 pub static SCHEME_WSS: &str = "wss:";
 pub static SCHEME_WS: &str = "ws:";
 
+const fn get_default_engine() -> TemplateEngine {
+    TemplateEngine::Handlebars
+}
+
+pub static DEFAULT_ENGINE: TemplateEngine = get_default_engine();
+
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {
         return Some(cwd);
@@ -227,10 +233,12 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn engine(&self) -> TemplateEngine {
+    pub fn engine(&self) -> &TemplateEngine {
         self.engine
             .as_ref()
-            .map_or_else(|| TemplateEngine::default(), |e| e.clone())
+            .unwrap_or(&DEFAULT_ENGINE)
+
+            //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
     }
 
     pub fn charset(&self) -> &str {

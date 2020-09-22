@@ -87,21 +87,6 @@ impl<'a> PageBuilder<'a> {
         Ok(self)
     }
 
-    /// Verify that layout references exist in the collated map.
-    //pub fn layouts(self) -> Result<Self> {
-        /*
-        if let Some(ref layout) = self.page.layout {
-            if self.info.layouts.get(layout).is_none() {
-                return Err(Error::NoLayoutDefinition(
-                    layout.clone(),
-                    self.path.clone(),
-                ));
-            }
-        }
-        */
-        //Ok(self)
-    //}
-
     /// Seal the page with file context information.
     pub fn seal(mut self) -> Result<Self> {
         let mut rewrite_index = self.options.settings.should_rewrite_index();
@@ -176,6 +161,29 @@ impl<'a> PageBuilder<'a> {
             }
 
         }
+        Ok(self)
+    }
+
+    /// Import layouts from the layouts cache into this page.
+    ///
+    /// Depends on the page `href` so must come after a call to `seal()`.
+    pub fn layouts(self) -> Result<Self> {
+        let href = self.page.href.as_ref().unwrap();
+
+        /*
+        for dep in self.options.layouts_cache.iter() {
+            let plugin = dep.plugin.as_ref().unwrap();
+            let layouts = plugin.layouts.as_ref().unwrap();
+            let apply = dep.apply.as_ref().unwrap();
+            for matcher in apply.layouts_match.iter() {
+                if matcher.is_match(href) {
+                    //self.page.layout = Some();
+                }
+            }
+
+        }
+        */
+
         Ok(self)
     }
 

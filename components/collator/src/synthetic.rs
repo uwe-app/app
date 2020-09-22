@@ -218,7 +218,7 @@ pub fn feed(
             plugin_name.clone())
     })?;
 
-    let engine_templates = templates.get(&config.engine()).ok_or_else(|| {
+    let engine_templates = templates.get(config.engine()).ok_or_else(|| {
         Error::NoFeedPluginTemplateEngine(
             plugin_name.clone(), config.engine().to_string())
     })?;
@@ -336,13 +336,12 @@ pub fn book(
     }
 
     // Then by template engine identifier
-    let engine = config.engine();
-    let theme_dir = theme_dir.join(engine.to_string());
+    let theme_dir = theme_dir.join(config.engine().to_string());
     if !theme_dir.exists() || !theme_dir.is_dir() {
         return Err(Error::NoBookThemeDirectory(theme_dir));
     }
 
-    let layout_file = theme_dir.join(engine.get_layout_name());
+    let layout_file = theme_dir.join(config.engine().get_layout_name());
     if !layout_file.exists() || !layout_file.is_file() {
         return Err(Error::NoBookThemeLayout(layout_file, theme_dir));
     }

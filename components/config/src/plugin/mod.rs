@@ -1,6 +1,7 @@
 use std::collections::hash_map;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::fmt;
 
 use globset::{Glob, GlobMatcher};
 use semver::{Version, VersionReq};
@@ -92,13 +93,23 @@ pub struct Dependency {
     /// Path for a local file system plugin.
     pub path: Option<PathBuf>,
 
-    /// Patterns that determine how styles, scripts etc
+    /// Patterns that determine how styles, scripts and layouts 
     /// are applied to pages.
     pub apply: Option<Apply>,
 
     /// Resolved plugin for this dependency.
     #[serde(skip)]
     pub plugin: Option<Plugin>,
+
+    /// Injected when resolving dependencies from the hash map key.
+    #[serde(skip)]
+    pub name: Option<String>,
+}
+
+impl fmt::Display for Dependency {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}@{}", self.name.as_ref().unwrap(), self.version.to_string())
+    }
 }
 
 impl Dependency {
@@ -110,7 +121,6 @@ impl Dependency {
         }
         Ok(())
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -118,22 +128,37 @@ impl Dependency {
 pub struct Apply {
     pub styles: Option<Vec<Glob>>,
     pub scripts: Option<Vec<Glob>>,
+    pub layouts: Option<HashMap<String, Vec<Glob>>>,
 
     #[serde(skip)]
     pub styles_match: Vec<GlobMatcher>,
     #[serde(skip)]
     pub scripts_match: Vec<GlobMatcher>,
+    #[serde(skip)]
+    pub layouts_match: HashMap<String, Vec<GlobMatcher>>,
 }
 
 impl Apply {
+
+    /// Prepare the global patterns by compiling them.
+    ///
+    /// Original GlobSet declarations are moved out of the Option(s).
     pub(crate) fn prepare(&mut self) -> Result<()> {
-        self.styles_match = if let Some(ref styles) = self.styles {
+        self.styles_match = if let Some(styles) = self.styles.take() {
             styles.iter().map(|g| g.compile_matcher()).collect()
         } else { Vec::new() };
 
-        self.scripts_match = if let Some(ref scripts) = self.scripts {
+        self.scripts_match = if let Some(scripts) = self.scripts.take() {
             scripts.iter().map(|g| g.compile_matcher()).collect()
         } else { Vec::new() };
+
+        self.layouts_match = if let Some(layouts) = self.layouts.take() {
+            let mut tmp: HashMap<String, Vec<GlobMatcher>> = HashMap::new();
+            for (k, v) in layouts {
+                tmp.insert(k, v.iter().map(|g| g.compile_matcher()).collect());
+            }
+            tmp
+        } else { HashMap::new() };
         Ok(())
     }
 }
@@ -211,6 +236,12 @@ impl Default for Plugin {
 }
 
 impl Plugin {
+    /// Generate a qualified name relative to the plugin name.
+    pub fn qualified(&self, val: &str) -> String {
+        format!("{}::{}", &self.name, val)
+    }
+
+    /// Get the path for the plugin assets.
     pub fn assets(&self) -> PathBuf {
         PathBuf::from(ASSETS).join(PLUGINS).join(&self.name)
     }
