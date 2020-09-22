@@ -4,11 +4,7 @@ use std::sync::{Arc, RwLock};
 use chrono::prelude::*;
 use jsonfeed::{Feed, Item, VERSION};
 
-use crossbeam::channel;
-use ignore::{WalkBuilder, WalkState};
-
 use config::{
-    book::BookConfig,
     feed::{ChannelConfig, FeedConfig},
     Config, Page, RuntimeOptions, Plugin,
 };
@@ -295,6 +291,7 @@ pub fn feed(
     Ok(())
 }
 
+/*
 fn find_files<F>(dir: &PathBuf, filter: F) -> Vec<Result<PathBuf>>
 where
     F: Fn(&PathBuf) -> bool + Sync,
@@ -320,69 +317,4 @@ where
 
     rx.iter().collect()
 }
-
-// Copy book theme runtime files.
-pub fn book(
-    book: &BookConfig,
-    config: &Config,
-    options: &RuntimeOptions,
-    info: &mut CollateInfo,
-) -> Result<()> {
-    // First resolve by book theme name
-    let base_dir = cache::get_book_dir()?;
-    let theme_dir = base_dir.join(book.theme_name());
-    if !theme_dir.exists() || !theme_dir.is_dir() {
-        return Err(Error::NoBookThemeDirectory(theme_dir));
-    }
-
-    // Then by template engine identifier
-    let theme_dir = theme_dir.join(config.engine().to_string());
-    if !theme_dir.exists() || !theme_dir.is_dir() {
-        return Err(Error::NoBookThemeDirectory(theme_dir));
-    }
-
-    let layout_file = theme_dir.join(config.engine().get_layout_name());
-    if !layout_file.exists() || !layout_file.is_file() {
-        return Err(Error::NoBookThemeLayout(layout_file, theme_dir));
-    }
-
-    let filter = |p: &PathBuf| -> bool { p != &layout_file && p.is_file() };
-    let results = find_files(&theme_dir, filter);
-
-    for r in results {
-        let book_source = r?;
-        let book_rel = book_source.strip_prefix(&theme_dir)?.to_path_buf();
-        let book_target = book.target().join(&book_rel);
-        let rel_href =
-            to_href(&book_source, options, false, Some(theme_dir.clone()))?;
-
-        let mut book_href = utils::url::to_href_separator(book.target());
-        book_href.push_str(&rel_href);
-        let book_href = format!("/{}", book_href.trim_start_matches("/"));
-
-        create_file(
-            options,
-            info,
-            book_source,
-            book_target,
-            book_href,
-            Some(&theme_dir),
-        )?;
-    }
-
-    let layout_key = "book".to_string();
-    info.layouts.insert(layout_key.clone(), Arc::new(layout_file.clone()));
-
-    // Update the collated page information with
-    // the book layout
-    for (_k, pages) in info.books.iter_mut() {
-        for p in pages.iter() {
-            if let Some(ref mut page_lock) = info.pages.get_mut(p) {
-                let mut writer = page_lock.write().unwrap();
-                writer.layout = Some(layout_key.clone());
-            }
-        }
-    }
-
-    Ok(())
-}
+*/

@@ -161,13 +161,6 @@ impl ProjectBuilder {
     pub async fn fetch(self) -> Result<Self> {
         let mut components: Vec<CacheComponent> = Vec::new();
 
-        if self.config.book.is_some() {
-            let book_dir = cache::get_book_dir()?;
-            if !book_dir.exists() {
-                components.push(CacheComponent::Book);
-            }
-        }
-
         if self.config.syntax.is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
@@ -274,16 +267,6 @@ impl ProjectBuilder {
                     &self.options,
                     collation,
                 )?;
-            }
-        }
-        Ok(self)
-    }
-
-    /// Create book pages.
-    pub async fn book(mut self) -> Result<Self> {
-        if let Some(ref book) = self.config.book {
-            for collation in self.collations.iter_mut() {
-                collator::book(book, &self.config, &self.options, collation)?;
             }
         }
         Ok(self)
@@ -670,13 +653,10 @@ pub async fn compile<P: AsRef<Path>>(
             .load_data()
             .and_then(|s| s.feed())
             .and_then(|s| s.menus())
-            .and_then(|s| s.book())
             .await?;
 
         // Redirects come after synthetic assets in case
-        // they need to create any redirects. Books need
-        // to redirect from the book index to the first chapter
-        // for example.
+        // they need to create any redirects.
         let builder = builder.redirects().await?;
 
         // Pagination, collections, syntax highlighting

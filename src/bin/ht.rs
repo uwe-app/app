@@ -206,12 +206,8 @@ struct FetchOpts {
     release: bool,
 
     /// Update the syntax highlighting cache
-    #[structopt(short = "y", long)]
+    #[structopt(short, long)]
     syntax: bool,
-
-    /// Update the book templates
-    #[structopt(short = "o", long)]
-    book: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -376,7 +372,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 documentation: args.documentation,
                 release: args.release,
                 syntax: args.syntax,
-                book: args.book,
             };
 
             command::fetch::update(opts)?;
