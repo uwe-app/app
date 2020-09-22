@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use log::debug;
 use globset::GlobMatcher;
 
 use url::Url;
@@ -11,7 +10,7 @@ use crate::{
     Config, DependencyMap, ProfileSettings,
     RenderTypes, Result, HTML, INDEX_STEM,
     TemplateEngine,
-    plugin::{Dependency, TemplateAsset},
+    plugin::Dependency,
 };
 
 #[derive(Debug, Clone)]
@@ -40,7 +39,7 @@ pub struct RuntimeOptions {
     // Cache of plugin dependencies that should be applied to pages
     pub styles_cache: Vec<Dependency>,
     pub scripts_cache: Vec<Dependency>,
-    pub layouts_cache: HashMap<String, (Vec<GlobMatcher>, TemplateAsset)>,
+    pub layouts_cache: HashMap<String, Vec<GlobMatcher>>,
 }
 
 impl RuntimeOptions {
@@ -68,9 +67,6 @@ impl RuntimeOptions {
         if let Some(ref mut plugins) = self.plugins {
             for (_, dep) in plugins.to_vec() {
                 let plugin = dep.plugin.as_ref().unwrap();
-
-                debug!("Build plugin apply cache {:?}", &plugin.name);
-
                 if let Some(ref apply) = dep.apply {
                     let assets_href_base = format!("/{}", utils::url::to_href_separator(
                         plugin.assets()));
@@ -114,9 +110,8 @@ impl RuntimeOptions {
                                     Error::ApplyLayoutNoLayoutForKey(
                                         dep.to_string(), engine.to_string(), key.clone()));
                             }
-                            let asset = layouts.get(key).unwrap().clone();
                             let fqn = plugin.qualified(key);
-                            self.layouts_cache.insert(fqn, (matches.clone(), asset));
+                            self.layouts_cache.insert(fqn, matches.clone());
                         }
                     }
                 }

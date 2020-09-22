@@ -167,23 +167,16 @@ impl<'a> PageBuilder<'a> {
     /// Import layouts from the layouts cache into this page.
     ///
     /// Depends on the page `href` so must come after a call to `seal()`.
-    pub fn layouts(self) -> Result<Self> {
+    pub fn layouts(mut self) -> Result<Self> {
         let href = self.page.href.as_ref().unwrap();
-
-        /*
-        for dep in self.options.layouts_cache.iter() {
-            let plugin = dep.plugin.as_ref().unwrap();
-            let layouts = plugin.layouts.as_ref().unwrap();
-            let apply = dep.apply.as_ref().unwrap();
-            for matcher in apply.layouts_match.iter() {
+        for (fqn, patterns) in self.options.layouts_cache.iter() {
+            for matcher in patterns.iter() {
                 if matcher.is_match(href) {
-                    //self.page.layout = Some();
+                    self.page.layout = Some(fqn.clone());
+                    break;
                 }
             }
-
         }
-        */
-
         Ok(self)
     }
 
