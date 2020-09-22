@@ -21,6 +21,17 @@ impl HelperDef for Styles {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
+        // Embed the main script
+        let main = h
+            .hash_get("main")
+            .map(|v| v.value())
+            .or(Some(&json!(true)))
+            .and_then(|v| v.as_bool())
+            .ok_or(RenderError::new(
+                "Type error for `styles` helper, hash parameter `main` must be a boolean",
+            ))?;
+
         // Make links absolute (passthrough)
         let abs = h
             .hash_get("abs")
@@ -57,9 +68,11 @@ impl HelperDef for Styles {
         };
 
         // Use global styles from the settings
-        if let Some(ref css) = self.context.config.styles {
-            let mut main = css.main.clone();
-            styles.append(&mut main);
+        if main {
+            if let Some(ref css) = self.context.config.styles {
+                let mut main = css.main.clone();
+                styles.append(&mut main);
+            }
         }
 
         // Convert to relative paths if necessary
