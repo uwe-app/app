@@ -24,11 +24,17 @@ pub enum Error {
     #[error("Plugin name may not be empty")]
     LintPluginNameEmpty,
 
+    #[error("Plugin description may not be empty")]
+    LintPluginDescriptionEmpty,
+
     #[error("Plugin names must contain at least one namespace (::)")]
     LintPluginNameSpace,
 
     #[error("Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)")]
     LintPluginNameInvalidNameSpace(String),
+
+    #[error("The tar package {0} already exists, please move it away")]
+    TarPackageExists(PathBuf),
 
     #[error(transparent)]
     Io(#[from] io::Error),
@@ -41,6 +47,9 @@ pub enum Error {
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    Xz(#[from] xz2::stream::Error),
 
     #[error(transparent)]
     Regex(#[from] regex::Error),
@@ -56,5 +65,6 @@ mod resolver;
 mod linter;
 mod walk;
 
+pub use archive::PackageWriter;
 pub use linter::lint;
 pub use resolver::{solve, read};

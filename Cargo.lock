@@ -1293,6 +1293,7 @@ dependencies = [
  "config",
  "datasource",
  "dirs 0.1.0",
+ "futures",
  "git",
  "livereload",
  "locale",
@@ -1598,6 +1599,17 @@ dependencies = [
  "safemem",
  "selectors",
  "thiserror",
+]
+
+[[package]]
+name = "lzma-sys"
+version = "0.1.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f24f76ec44a8ac23a31915d6e326bca17ce88da03096f1ff194925dc714dac99"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
 ]
 
 [[package]]
@@ -2082,13 +2094,14 @@ dependencies = [
  "async-recursion",
  "config",
  "crossbeam",
- "flate2",
  "ignore",
+ "log",
  "regex",
  "tar",
  "thiserror",
  "toml",
  "utils",
+ "xz2",
 ]
 
 [[package]]
@@ -3971,6 +3984,15 @@ name = "xml-rs"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b07db065a5cf61a7e4ba64f29e67db906fb1787316516c4e6e5ff0fea1efcd8a"
+
+[[package]]
+name = "xz2"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c179869f34fc7c01830d3ce7ea2086bc3a07e0d35289b667d0a8bf910258926c"
+dependencies = [
+ "lzma-sys",
+]
 
 [[package]]
 name = "zeroize"

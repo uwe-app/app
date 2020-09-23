@@ -54,6 +54,7 @@ updater = {version = "0.1", path = "components/updater" }
 utils = {version = "0.1", path = "components/utils" }
 workspace = {version = "0.1", path = "components/workspace" }
 
+futures = "0.3"
 thiserror = "1"
 open = "1.1"
 structopt = "0.3"

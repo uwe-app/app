@@ -271,6 +271,12 @@ enum Plugin {
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
+    /// Package a plugin.
+    Pack {
+        /// Plugin folder.
+        #[structopt(parse(from_os_str))]
+        path: PathBuf,
+    },
 }
 
 #[derive(StructOpt, Debug)]
@@ -448,6 +454,12 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                     path: path.clone(),
                 };
                 command::plugin::lint(opts).await?;
+            }
+            Plugin::Pack { ref path } => {
+                let opts = command::plugin::PluginOptions {
+                    path: path.clone(),
+                };
+                command::plugin::pack(opts).await?;
             }
         }
 

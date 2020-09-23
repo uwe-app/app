@@ -10,9 +10,10 @@ utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 toml = "0.5"
+log = "0.4.8"
 async-recursion = "0.3.1"
 tar = "0.4"
-flate2 = "1.0.17"
+xz2 = "0.1.6"
 ignore = "0.4"
 crossbeam = "0.7"
 regex = "1.3.9"
