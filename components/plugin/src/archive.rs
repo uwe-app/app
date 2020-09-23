@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
-
 use std::io::prelude::*;
-use std::fs::File;
+use std::fs::{File, remove_file};
+
 use tar::Builder;
 use xz2::{write::XzEncoder, stream::Check, stream::Stream};
 
@@ -79,12 +79,13 @@ impl PackageWriter {
 
         let stream = Stream::new_easy_encoder(9, Check::Crc64)?;
         let mut reader = File::open(&source)?;
-        let mut writer = File::create(&self.target)?;
-        let mut encoder = XzEncoder::new_stream(writer, stream);
+        let mut encoder = XzEncoder::new_stream(File::create(&self.target)?, stream);
 
         std::io::copy(&mut reader, &mut encoder);
 
         encoder.try_finish()?;
+
+        remove_file(&source)?;
 
         Ok(self)
     }
