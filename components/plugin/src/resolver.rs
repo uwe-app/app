@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use async_recursion::async_recursion;
 
 use crate::{Error, Result};
-use config::{Dependency, DependencyMap, Plugin, PLUGIN};
+use config::{DependencyTarget, Dependency, DependencyMap, Plugin, PLUGIN};
 
 pub async fn read(path: &PathBuf) -> Result<Plugin> {
     if !path.exists() {
@@ -31,13 +31,12 @@ pub async fn read(path: &PathBuf) -> Result<Plugin> {
 }
 
 async fn load(dep: &Dependency) -> Result<Plugin> {
-    let path = if let Some(ref path) = dep.path {
-        path.to_path_buf()
-    } else {
-        todo!();
-    };
 
-    Ok(read(&path).await?)
+    match dep.target {
+        DependencyTarget::File {ref path} => {
+            return Ok(read(&path).await?)
+        }
+    }
 }
 
 #[async_recursion]

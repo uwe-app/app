@@ -83,6 +83,12 @@ pub enum PluginKind {
     Many(Vec<PluginType>),
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum DependencyTarget {
+    File{ path: PathBuf },
+}
+
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dependency {
@@ -91,7 +97,8 @@ pub struct Dependency {
     pub version: VersionReq,
 
     /// Path for a local file system plugin.
-    pub path: Option<PathBuf>,
+    #[serde(flatten)]
+    pub target: DependencyTarget,
 
     /// Patterns that determine how styles, scripts and layouts 
     /// are applied to pages.
@@ -194,6 +201,8 @@ pub struct Plugin {
 
     /// List of synthetic assets to include in the project.
     pub assets: Option<Vec<UrlPath>>,
+
+    // TODO: support arbitrary files which may be pages!
 
     /// List of stylesheets to add to pages.
     pub styles: Option<Vec<StyleAsset>>,
