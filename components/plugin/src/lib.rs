@@ -15,11 +15,20 @@ pub enum Error {
     #[error("Plugin cyclic dependency: {0}")]
     PluginCyclicDependency(String),
 
-    #[error("Plugin path {0} is not a directory")]
+    #[error("Plugin path {0} does not exist")]
     BadPluginPath(PathBuf),
 
     #[error("Plugin file {0} is not a file")]
     BadPluginFile(PathBuf),
+
+    #[error("Plugin name may not be empty")]
+    LintPluginNameEmpty,
+
+    #[error("Plugin names must contain at least one namespace (::)")]
+    LintPluginNameSpace,
+
+    #[error("Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)")]
+    LintPluginNameInvalidNameSpace(String),
 
     #[error(transparent)]
     Io(#[from] io::Error),
@@ -34,6 +43,9 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
+    Regex(#[from] regex::Error),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 }
 
@@ -41,6 +53,8 @@ type Result<T> = std::result::Result<T, Error>;
 
 mod archive;
 mod resolver;
+mod linter;
 mod walk;
 
-pub use resolver::solve;
+pub use linter::lint;
+pub use resolver::{solve, read};

@@ -264,6 +264,16 @@ struct DocsOpts {
 }
 
 #[derive(StructOpt, Debug)]
+enum Plugin {
+    /// Lint a plugin.
+    Lint {
+        /// Plugin folder.
+        #[structopt(parse(from_os_str))]
+        path: PathBuf,
+    },
+}
+
+#[derive(StructOpt, Debug)]
 enum Site {
     /// Add a site
     Add {
@@ -327,6 +337,12 @@ enum Command {
     Publish {
         #[structopt(flatten)]
         args: PublishOpts,
+    },
+
+    /// Manage sites
+    Plugin {
+        #[structopt(flatten)]
+        action: Plugin,
     },
 
     /// Manage sites
@@ -426,6 +442,15 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             command::publish::publish(opts).await?;
         }
 
+        Command::Plugin { ref action } => match action {
+            Plugin::Lint { ref path } => {
+                let opts = command::plugin::PluginOptions {
+                    path: path.clone(),
+                };
+                command::plugin::lint(opts).await?;
+            }
+        }
+
         Command::Site { ref action } => match action {
             Site::Add {
                 ref name,
@@ -446,7 +471,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             Site::List { .. } => {
                 command::site::list()?;
             }
-        },
+        }
 
         Command::Build { ref args } => {
             let project = get_project_path(args.project.clone());

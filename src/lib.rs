@@ -83,6 +83,8 @@ pub enum Error {
     Site(#[from] site::Error),
     #[error(transparent)]
     Server(#[from] server::Error),
+    #[error(transparent)]
+    Plugin(#[from] plugin::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

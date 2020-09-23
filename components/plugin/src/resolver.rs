@@ -3,12 +3,10 @@ use std::path::PathBuf;
 use async_recursion::async_recursion;
 
 use crate::{Error, Result};
-use config::{Dependency, DependencyMap, Plugin};
-
-static PLUGIN: &str = "plugin.toml";
+use config::{Dependency, DependencyMap, Plugin, PLUGIN};
 
 pub async fn read(path: &PathBuf) -> Result<Plugin> {
-    if !path.exists() || !path.is_dir() {
+    if !path.exists() {
         return Err(Error::BadPluginPath(path.to_path_buf()));
     }
 

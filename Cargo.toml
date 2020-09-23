@@ -44,6 +44,7 @@ dirs = {version = "0.1", path = "components/dirs" }
 git = {version = "0.1", path = "components/git" }
 livereload = {version = "0.1", path = "components/livereload" }
 locale = {version = "0.1", path = "components/locale" }
+plugin = {version = "0.1", path = "components/plugin" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 report = {version = "0.1", path = "components/report" }
