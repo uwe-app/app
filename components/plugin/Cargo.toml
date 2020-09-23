@@ -13,7 +13,7 @@ sha3 = "0.9.1"
 toml = "0.5"
 log = "0.4.8"
 async-recursion = "0.3.1"
-tar = "0.4"
+tar = { version = "0.4", default-features = false }
 xz2 = "0.1.6"
 ignore = "0.4"
 crossbeam = "0.7"
