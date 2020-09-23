@@ -214,6 +214,12 @@ pub struct Plugin {
     pub base: PathBuf,
 }
 
+impl fmt::Display for Plugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}@{}", &self.name, self.version.to_string())
+    }
+}
+
 impl Default for Plugin {
     fn default() -> Self {
         let version: Version = "0.0.0".parse().unwrap();
@@ -244,6 +250,13 @@ impl Plugin {
     /// Get the path for the plugin assets.
     pub fn assets(&self) -> PathBuf {
         PathBuf::from(ASSETS).join(PLUGINS).join(&self.name)
+    }
+
+    /// Resolve a URL path relative to this plugin.
+    pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
+        self.base.join(
+            utils::url::to_path_separator(
+                path.trim_start_matches("/")))
     }
 }
 

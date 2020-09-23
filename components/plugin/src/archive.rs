@@ -53,7 +53,7 @@ impl PackageWriter {
         let file = File::create(&self.target)?;
         let mut tarball = Builder::new(file);
 
-        let mut files = walk::find(src, |_| true);
+        let files = walk::find(src, |_| true);
         for file in files.into_iter() {
             if file.is_file() {
                 let rel = file.strip_prefix(src)?;

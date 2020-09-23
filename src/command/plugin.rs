@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use log::info;
+use log::{info, debug};
 
 use futures::TryFutureExt;
 
@@ -33,8 +33,8 @@ pub async fn pack(options: PluginOptions) -> Result<()> {
 
     let (pkg, digest) = writer.into_inner();
 
-    info!("{}", hex::encode(digest));
-    info!("{}@{} -> {}", &plugin.name, plugin.version.to_string(), pkg.display());
+    debug!("{}", hex::encode(digest));
+    info!("{} -> {}", plugin.to_string(), pkg.display());
 
     Ok(())
 }
