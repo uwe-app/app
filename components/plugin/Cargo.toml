@@ -9,6 +9,7 @@ config = {version = "0.1", path = "../config" }
 utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
+sha3 = "0.9.1"
 toml = "0.5"
 log = "0.4.8"
 async-recursion = "0.3.1"

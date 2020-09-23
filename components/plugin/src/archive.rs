@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
-use std::io::prelude::*;
 use std::fs::{File, remove_file};
 
 use tar::Builder;
 use xz2::{write::XzEncoder, stream::Check, stream::Stream};
+use sha3::{Digest, Sha3_256};
 
 use log::debug;
 
@@ -15,6 +15,7 @@ use crate::{Error, Result, walk};
 pub struct PackageWriter {
     source: PathBuf,
     target: PathBuf,
+    digest: Vec<u8>,
 }
 
 impl PackageWriter {
@@ -24,9 +25,10 @@ impl PackageWriter {
             source.parent().unwrap().to_path_buf()
         } else { source };
 
-        Self { source, target: PathBuf::new() }
+        Self { source, target: PathBuf::new(), digest: Vec::new() }
     }
 
+    /// Configure the destination target file.
     pub fn destination<D: AsRef<Path>>(mut self, dest: D, relative: bool) -> Result<Self> {
         // Make the destination relative to the source
         self.target = if relative {
@@ -37,6 +39,7 @@ impl PackageWriter {
         Ok(self)
     }
 
+    /// Create a tar archive from the source plugin.
     pub async fn tar(mut self) -> Result<Self> {
         let src = &self.source;
         self.target.set_extension("tar");
@@ -64,10 +67,9 @@ impl PackageWriter {
         Ok(self)
     }
 
+    /// Compress the tarball with lzma and update the target file extension.
     pub async fn xz(mut self) -> Result<Self> {
         let source = self.target.clone();
-
-        //println!("Compress with source file {}", source.display());
 
         self.target.set_extension("tar.xz");
 
@@ -75,27 +77,33 @@ impl PackageWriter {
             return Err(Error::TarPackageExists(self.target.clone()))
         }
 
-        //println!("Compress with target file {}", self.target.display());
-
         let stream = Stream::new_easy_encoder(9, Check::Crc64)?;
         let mut reader = File::open(&source)?;
         let mut encoder = XzEncoder::new_stream(File::create(&self.target)?, stream);
 
-        std::io::copy(&mut reader, &mut encoder);
+        std::io::copy(&mut reader, &mut encoder)?;
 
         encoder.try_finish()?;
-
         remove_file(&source)?;
 
         Ok(self)
     }
 
-    pub async fn checksum(mut self) -> Result<Self> {
-        todo!();
+    /// Compute the SHA3-256 checksum for the compressed archive.
+    pub async fn digest(mut self) -> Result<Self> {
+        let mut reader = File::open(&self.target)?;
+        let mut hasher = Sha3_256::new();
+        std::io::copy(&mut reader, &mut hasher)?;
+
+        //let result = hasher.finalize();
+        //println!("{:#?}", result);
+
+        self.digest = hasher.finalize().as_slice().to_owned();
         Ok(self)
     }
 
-    pub fn into_inner() {
-
+    /// Retrieve the final destination path and digest.
+    pub fn into_inner(self) -> (PathBuf, Vec<u8>) {
+        (self.target, self.digest)
     }
 }

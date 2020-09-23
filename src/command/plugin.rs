@@ -28,8 +28,13 @@ pub async fn pack(options: PluginOptions) -> Result<()> {
         .destination("package", true)?
         .tar()
         .and_then(|b| b.xz())
+        .and_then(|b| b.digest())
         .await?;
 
-    println!("Package the plugin...");
+    let (pkg, digest) = writer.into_inner();
+
+    info!("{}", hex::encode(digest));
+    info!("{}@{} -> {}", &plugin.name, plugin.version.to_string(), pkg.display());
+
     Ok(())
 }

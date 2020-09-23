@@ -3,8 +3,6 @@ use std::path::{Path, PathBuf};
 use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 
-use crate::Result;
-
 pub(crate) fn find<P: AsRef<Path>, F>(dir: P, filter: F) -> Vec<PathBuf>
 where
     F: Fn(&PathBuf) -> bool + Sync,
