@@ -45,7 +45,7 @@ impl PackageWriter {
         self.target.set_extension("tar");
 
         if self.target.exists() {
-            return Err(Error::TarPackageExists(self.target.clone()))
+            return Err(Error::PackageExists(self.target.clone()))
         }
 
         debug!("Create tar archive {}", self.target.display());
@@ -74,11 +74,14 @@ impl PackageWriter {
         self.target.set_extension("tar.xz");
 
         if self.target.exists() {
-            return Err(Error::TarPackageExists(self.target.clone()))
+            return Err(Error::PackageExists(self.target.clone()))
         }
 
         let stream = Stream::new_easy_encoder(9, Check::Crc64)?;
         let mut reader = File::open(&source)?;
+
+        println!("Compressing tarball with size {}", reader.metadata()?.len());
+
         let mut encoder = XzEncoder::new_stream(File::create(&self.target)?, stream);
 
         std::io::copy(&mut reader, &mut encoder)?;
@@ -94,9 +97,6 @@ impl PackageWriter {
         let mut reader = File::open(&self.target)?;
         let mut hasher = Sha3_256::new();
         std::io::copy(&mut reader, &mut hasher)?;
-
-        //let result = hasher.finalize();
-        //println!("{:#?}", result);
 
         self.digest = hasher.finalize().as_slice().to_owned();
         Ok(self)

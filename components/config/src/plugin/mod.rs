@@ -86,7 +86,10 @@ pub enum PluginKind {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum DependencyTarget {
+    /// Load plugin from a local folder.
     File{ path: PathBuf },
+    /// Load plugin from a compressed archive.
+    Archive{ archive: PathBuf },
 }
 
 #[serde_as]

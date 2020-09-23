@@ -33,8 +33,20 @@ pub enum Error {
     #[error("Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)")]
     LintPluginNameInvalidNameSpace(String),
 
-    #[error("The tar package {0} already exists, please move it away")]
-    TarPackageExists(PathBuf),
+    #[error("The archive package {0} already exists, please move it away")]
+    PackageExists(PathBuf),
+
+    #[error("The archive source path {0} is not a file")]
+    PackageSourceNotFile(PathBuf),
+
+    #[error("The archive target path {0} is not a directory")]
+    PackageTargetNotDirectory(PathBuf),
+
+    #[error("Package digests do not match")]
+    DigestMismatch(PathBuf),
+
+    #[error("Invalid archive {0} no {1} found")]
+    InvalidArchiveNoPluginFile(PathBuf, String),
 
     #[error(transparent)]
     Io(#[from] io::Error),
@@ -44,6 +56,9 @@ pub enum Error {
 
     #[error(transparent)]
     Semver(#[from] config::semver::SemVerError),
+
+    #[error(transparent)]
+    PathPersist(#[from] tempfile::PathPersistError),
 
     #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
@@ -65,6 +80,6 @@ mod resolver;
 mod linter;
 mod walk;
 
-pub use archive::PackageWriter;
+pub use archive::{writer::PackageWriter, reader::PackageReader};
 pub use linter::lint;
 pub use resolver::{solve, read};
