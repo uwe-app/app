@@ -7,13 +7,36 @@ use config::{plugin::Plugin};
 
 use crate::{Error, Result, packager, read, lint, registry, registry::RegistryAccess};
 
+async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
+
+    let registry_profile = option_env!("AB_PUBLISH_PROFILE")
+        .expect("Publish profile environment variable not set");
+    let registry_region = option_env!("AB_PUBLISH_REGION")
+        .expect("Publish region environment variable not set");
+    let registry_bucket = option_env!("AB_PUBLISH_BUCKET")
+        .expect("Publish bucket environment variable not set");
+
+    let region = publisher::parse_region(registry_region)?;
+    let key = format!("{}/{}/{}.xz", &plugin.name, plugin.version.to_string(), config::PACKAGE);
+
+    println!("Publish file {}", pkg.display());
+    println!("Publish key {}", &key);
+    println!("Publish bucket {}", registry_bucket);
+    println!("Publish profile {}", registry_profile);
+    println!("Publish region {:?}", region);
+
+    publisher::put_file(pkg, key, region, registry_bucket, registry_profile).await?;
+
+    Ok(())
+}
+
 /// Publish a plugin.
 pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let plugin = read(source).await?;
     lint(&plugin)?;
 
-    let registry_path = option_env!("PUBLISH_AB").unwrap();
-    let registry_repo = option_env!("PUBLISH_AB_REPO").unwrap();
+    let registry_path = option_env!("AB_PUBLISH").unwrap();
+    let registry_repo = option_env!("AB_PUBLISH_REPO").unwrap();
 
     // Pull latest version of the reader registry
     let prefs = preference::load()?;
@@ -50,8 +73,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
 
     let (pkg, digest, plugin) = packager::pack_plugin(source, &target, plugin).await?;
 
-    // TODO: upload the archive
-    println!("Upload the archve to s3... {} {}", pkg.display(), pkg.metadata()?.len());
+    upload(&pkg, &plugin).await?;
 
     // Inject version into the registry and save the changes
     let mut entry = entry.unwrap_or(Default::default());

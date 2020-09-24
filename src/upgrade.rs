@@ -1,12 +1,9 @@
 use log::info;
 use semver::Version;
 
-use updater;
-
 use crate::Result;
 
 pub fn try_upgrade(runtime: bool) -> Result<()> {
-
     let prefs = preference::load()?;
     cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
 
@@ -25,7 +22,7 @@ pub fn try_upgrade(runtime: bool) -> Result<()> {
     let installed = Version::parse(installed_version)?;
 
     if current == installed {
-        info!("Hypertext is up to date (v{})", current_version);
+        info!("Up to date (v{})", current_version);
     } else {
         let (_name, info, _bin, _bin_dir) = updater::update()?;
         info!("Upgraded to {}", info.version);

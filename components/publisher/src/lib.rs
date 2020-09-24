@@ -101,13 +101,17 @@ pub enum PublishProvider {
     Aws,
 }
 
-fn get_client(request: &PublishRequest) -> Result<S3Client> {
+fn get_client(profile: &str, region: &Region) -> Result<S3Client> {
     let mut provider = credential::ProfileProvider::new()?;
-    provider.set_profile(&request.profile_name);
+    provider.set_profile(profile);
     let dispatcher = HttpClient::new()?;
     let client =
-        S3Client::new_with(dispatcher, provider, request.region.clone());
+        S3Client::new_with(dispatcher, provider, region.clone());
     Ok(client)
+}
+
+fn get_client_request(request: &PublishRequest) -> Result<S3Client> {
+    get_client(&request.profile_name, &request.region)
 }
 
 pub fn diff(
@@ -209,20 +213,16 @@ pub async fn list_remote(
     remote: &mut HashSet<String>,
     etags: &mut HashMap<String, String>,
 ) -> Result<()> {
-    let client = get_client(request)?;
+    let client = get_client_request(request)?;
     fetch_bucket_remote(&client, &request, remote, etags).await?;
     Ok(())
 }
 
-async fn put_file<S: AsRef<str>, P: AsRef<Path>>(
+pub async fn put_object<P: AsRef<Path>>(
     client: &S3Client,
     mut req: PutObjectRequest,
-    key: S,
     path: P,
 ) -> Result<PutObjectOutput> {
-    info!("Upload {}", path.as_ref().display());
-    info!("    -> {}", key.as_ref());
-
     let file = std::fs::File::open(&path)?;
     let size = file.metadata()?.len();
 
@@ -237,15 +237,35 @@ async fn put_file<S: AsRef<str>, P: AsRef<Path>>(
             .first_or_octet_stream()
             .to_string(),
     );
+
     Ok(client.put_object(req).await?)
 }
 
-async fn delete_object<S: AsRef<str>>(
+/// Upload a single file creating a client for the request.
+///
+/// Use this for a single file upload; for multiple files 
+/// create  a client and call `put_object()`.
+pub async fn put_file<F: AsRef<Path>>(
+    file: F,
+    key: String,
+    region: Region,
+    bucket: &str,
+    profile: &str) -> Result<PutObjectOutput>{
+
+    let req = PutObjectRequest {
+        bucket: bucket.to_string(),
+        key,
+        ..Default::default()
+    };
+
+    let client = get_client(profile, &region)?;
+    put_object(&client, req, file.as_ref()).await
+}
+
+async fn delete_object(
     client: &S3Client,
     req: DeleteObjectRequest,
-    key: S,
 ) -> Result<DeleteObjectOutput> {
-    info!("Delete {}", key.as_ref());
     Ok(client.delete_object(req).await?)
 }
 
@@ -273,7 +293,7 @@ pub async fn publish(
     let mut errors: Vec<Error> = Vec::new();
     let mut uploaded: u64 = 0;
     let mut deleted: u64 = 0;
-    let client = get_client(request)?;
+    let client = get_client_request(request)?;
 
     let push: HashSet<_> = diff.upload.union(&diff.changed).collect();
     for k in push {
@@ -283,7 +303,11 @@ pub async fn publish(
             key: k.clone(),
             ..Default::default()
         };
-        if let Err(e) = put_file(&client, req, &k, &local_path).await {
+
+        info!("Upload {}", local_path.display());
+        info!("    -> {}", &k);
+
+        if let Err(e) = put_object(&client, req, &local_path).await {
             errors.push(e);
         } else {
             uploaded += 1;
@@ -296,7 +320,10 @@ pub async fn publish(
             key: k.clone(),
             ..Default::default()
         };
-        if let Err(e) = delete_object(&client, req, &k).await {
+
+        info!("Delete {}", &k);
+
+        if let Err(e) = delete_object(&client, req).await {
             errors.push(e);
         } else {
             deleted += 1;

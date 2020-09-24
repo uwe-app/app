@@ -8,6 +8,7 @@ edition = "2018"
 cache = {version = "0.1", path = "../cache" }
 config = {version = "0.1", path = "../config" }
 preference = {version = "0.1", path = "../preference" }
+publisher = {version = "0.1", path = "../publisher" }
 utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"

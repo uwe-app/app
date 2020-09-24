@@ -2116,6 +2116,7 @@ dependencies = [
  "ignore",
  "log",
  "preference",
+ "publisher",
  "regex",
  "scopeguard",
  "serde_json",

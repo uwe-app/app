@@ -26,7 +26,15 @@ release
 
 ## Plugins
 
-Plugin publishing is restricted to those that have access to the s3 bucket and the registry repository. In order to publish you must set the `PUBLISH_AB` environment variable to point to the local git repository that can push to the registry; you must also have the `.aws/credentials` file with a `publish-ab` profile that can publish to the bucket for plugins.
+Plugin publishing is restricted to those that have access to the s3 bucket and the registry repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
+
+```
+export AB_PUBLISH="$HOME/path/to/registry/folder"
+export AB_PUBLISH_REPO="$HOME/path/to/repo"
+export AB_PUBLISH_PROFILE="..."
+export AB_PUBLISH_REGION="ap-southeast-1"
+export AB_PUBLISH_BUCKET="..."
+```
 
 ## Linux
 

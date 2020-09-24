@@ -89,14 +89,17 @@ pub enum Error {
 
     #[error(transparent)]
     Preference(#[from] preference::Error),
+
+    #[error(transparent)]
+    Publisher(#[from] publisher::Error),
 }
 
 mod archive;
 mod packager;
-mod publisher;
 mod resolver;
 mod linter;
 mod registry;
+mod uploader;
 mod walk;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -104,5 +107,5 @@ type Result<T> = std::result::Result<T, Error>;
 pub use archive::{writer::PackageWriter, reader::PackageReader};
 pub use linter::lint;
 pub use packager::pack;
-pub use publisher::publish;
 pub use resolver::{solve, read};
+pub use uploader::publish;
