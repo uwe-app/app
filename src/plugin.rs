@@ -32,8 +32,10 @@ pub async fn pack(options: PluginOptions) -> Result<()> {
 
 /// Publish a plugin.
 pub async fn publish(options: PluginOptions) -> Result<()> {
-    let enabled = option_env!("PUBLISH_AB");
-    if enabled.is_none() {
+    let registry_path = option_env!("PUBLISH_AB");
+    let registry_repo = option_env!("PUBLISH_AB_REPO");
+
+    if registry_path.is_none() || registry_repo.is_none() {
         log::warn!("Plugin publishing is not available yet.");
         log::warn!("");
         log::warn!("During the alpha and beta plugins are curated, ");

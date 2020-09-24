@@ -6,6 +6,9 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum Error {
 
+    #[error("Not a directory {0}")]
+    NotDirectory(PathBuf),
+
     #[error("Plugin key {0} does not match plugin name {1}")]
     PluginNameMismatch(String, String),
 
@@ -80,6 +83,12 @@ pub enum Error {
 
     #[error(transparent)]
     Config(#[from] config::Error),
+
+    #[error(transparent)]
+    Cache(#[from] cache::Error),
+
+    #[error(transparent)]
+    Preference(#[from] preference::Error),
 }
 
 mod archive;

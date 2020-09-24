@@ -13,14 +13,21 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     lint(&plugin)?;
 
     let registry_path = option_env!("PUBLISH_AB").unwrap();
+    let registry_repo = option_env!("PUBLISH_AB_REPO").unwrap();
 
-    // TODO: use cache component repo for the reader side!
-    // TODO: pull latest version of the reader registry
+    // Pull latest version of the reader registry
+    let prefs = preference::load()?;
+    cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
 
-    let reader = PathBuf::from(registry_path);
+    let reader = cache::get_registry_dir()?;
     let writer = PathBuf::from(registry_path);
 
-    // TODO: update the reader side of the registry
+    let repo = PathBuf::from(registry_repo);
+
+    // This is a mis-configuration of the environment variable
+    if !repo.exists() || !repo.is_dir() {
+        return Err(Error::NotDirectory(repo));
+    }
 
     let registry = registry::RegistryFileAccess::new(reader, writer)?;
 

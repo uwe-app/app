@@ -4,8 +4,6 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-use dirs;
-use git;
 use preference::{self, Preferences};
 
 static BIN: &str = "bin";
@@ -19,6 +17,7 @@ static RUNTIME_REPO: &str =
     "https://github.com/hypertext-live/runtime";
 static RUNTIME_NAME: &str = "runtime";
 
+static REGISTRY_NAME: &str = "registry";
 static DOCUMENTATION_NAME: &str = "documentation/docs";
 static SYNTAX_NAME: &str = "syntax";
 
@@ -76,6 +75,10 @@ pub fn get_runtime_url() -> String {
 
 pub fn get_runtime_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(RUNTIME_NAME))
+}
+
+pub fn get_registry_dir() -> io::Result<PathBuf> {
+    Ok(get_runtime_dir()?.join(REGISTRY_NAME))
 }
 
 pub fn get_docs_dir() -> io::Result<PathBuf> {
