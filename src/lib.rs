@@ -13,4 +13,3 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);
 
 pub use error::Error;
-//pub use config::{Config, ProfileSettings};

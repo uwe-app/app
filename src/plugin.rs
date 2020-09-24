@@ -46,7 +46,7 @@ pub async fn publish(options: PluginOptions) -> Result<()> {
         return Err(Error::NoPluginPublishPermission)
     }
 
-    println!("Publish a plugin...");
+    plugin::publish(&options.path).await?;
 
     Ok(())
 }

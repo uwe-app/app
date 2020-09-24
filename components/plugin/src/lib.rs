@@ -2,9 +2,6 @@ use std::path::PathBuf;
 use std::io;
 
 use thiserror::Error;
-use futures::TryFutureExt;
-
-use config::Plugin;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -76,30 +73,17 @@ pub enum Error {
     Config(#[from] config::Error),
 }
 
-type Result<T> = std::result::Result<T, Error>;
-
 mod archive;
+mod packager;
+mod publisher;
 mod resolver;
 mod linter;
 mod walk;
 
+type Result<T> = std::result::Result<T, Error>;
+
 pub use archive::{writer::PackageWriter, reader::PackageReader};
 pub use linter::lint;
+pub use packager::pack;
+pub use publisher::publish;
 pub use resolver::{solve, read};
-
-/// Package a plugin.
-pub async fn pack(source: &PathBuf, target: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
-    let plugin = read(source).await?;
-    lint(&plugin)?;
-
-    let writer = PackageWriter::new(source.to_path_buf())
-        .destination(target)?
-        .tar()
-        .and_then(|b| b.xz())
-        .and_then(|b| b.digest())
-        .await?;
-
-    let (pkg, digest) = writer.into_inner();
-    Ok((pkg, digest, plugin))
-}
-
