@@ -5,7 +5,16 @@ use updater;
 
 use crate::Result;
 
-pub fn try_upgrade() -> Result<()> {
+pub fn try_upgrade(runtime: bool) -> Result<()> {
+
+    let prefs = preference::load()?;
+    cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+
+    // Only upgrading the runtime assets
+    if runtime {
+        return Ok(())
+    }
+
     let (_, info) = updater::version()?;
     let installed_version = &info.version;
 

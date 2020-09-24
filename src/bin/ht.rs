@@ -204,14 +204,14 @@ struct FetchOpts {
     /// Update the release cache
     #[structopt(short, long)]
     release: bool,
-
-    /// Update the syntax highlighting cache
-    #[structopt(short, long)]
-    syntax: bool,
 }
 
 #[derive(StructOpt, Debug)]
-struct UpgradeOpts {}
+struct UpgradeOpts {
+    /// Update the runtime assets
+    #[structopt(short, long)]
+    runtime: bool,
+}
 
 #[derive(StructOpt, Debug)]
 struct PublishOpts {
@@ -399,15 +399,13 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             let opts = ht::fetch::FetchOptions {
                 blueprint: args.blueprint,
                 release: args.release,
-                syntax: args.syntax,
             };
 
             ht::fetch::update(opts)?;
         }
-        Command::Upgrade { .. } => {
-            ht::upgrade::try_upgrade()?;
+        Command::Upgrade { ref args } => {
+            ht::upgrade::try_upgrade(args.runtime)?;
         }
-
         Command::Docs { ref args } => {
             let target = ht::docs::get_target().await?;
             let opts = get_server_config(
@@ -416,10 +414,8 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 config::PORT_DOCS,
                 config::PORT_DOCS_SSL,
             );
-
             ht::docs::open(opts).await?;
         }
-
         Command::Run { ref args } => {
             if !args.target.exists() || !args.target.is_dir() {
                 fatal(Error::NotDirectory(args.target.to_path_buf()));

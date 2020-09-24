@@ -7,7 +7,6 @@ use crate::Result;
 pub struct FetchOptions {
     pub blueprint: bool,
     pub release: bool,
-    pub syntax: bool,
 }
 
 pub fn update(options: FetchOptions) -> Result<()> {
@@ -16,12 +15,10 @@ pub fn update(options: FetchOptions) -> Result<()> {
     let mut components: Vec<CacheComponent> = vec![
         CacheComponent::Blueprint,
         CacheComponent::Release,
-        CacheComponent::Syntax,
     ];
 
     if options.blueprint
         || options.release
-        || options.syntax
     {
         components = Vec::new();
 
@@ -30,9 +27,6 @@ pub fn update(options: FetchOptions) -> Result<()> {
         }
         if options.release {
             components.push(CacheComponent::Release);
-        }
-        if options.syntax {
-            components.push(CacheComponent::Syntax);
         }
     }
 

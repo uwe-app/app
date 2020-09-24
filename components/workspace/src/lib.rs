@@ -28,6 +28,9 @@ pub enum Error {
     #[error("Invalidation action not handled")]
     InvalidationActionNotHandled,
 
+    #[error("Syntax highlighting path {0} is not a directory")]
+    NoSyntaxDirectory(PathBuf),
+
     //#[error("Missing layout file {0}")]
     //NoLayout(PathBuf),
 

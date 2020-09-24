@@ -20,8 +20,6 @@ static RUNTIME_REPO: &str =
 static RUNTIME_NAME: &str = "runtime";
 
 static DOCUMENTATION_NAME: &str = "documentation/docs";
-
-static SYNTAX_REPO: &str = "https://github.com/hypertext-live/syntax";
 static SYNTAX_NAME: &str = "syntax";
 
 static VERSION_BASE: &str =
@@ -42,7 +40,6 @@ pub enum CacheComponent {
     Runtime,
     Blueprint,
     Release,
-    Syntax,
 }
 
 pub fn get_workspace_dir() -> io::Result<PathBuf> {
@@ -85,6 +82,10 @@ pub fn get_docs_dir() -> io::Result<PathBuf> {
     Ok(get_runtime_dir()?.join(DOCUMENTATION_NAME))
 }
 
+pub fn get_syntax_dir() -> io::Result<PathBuf> {
+    Ok(get_runtime_dir()?.join(SYNTAX_NAME))
+}
+
 pub fn get_blueprint_url(prefs: &Preferences) -> String {
     if let Some(ref blueprint) = prefs.blueprint {
         if let Some(ref url) = blueprint.url {
@@ -96,14 +97,6 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
 
 pub fn get_blueprint_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(BLUEPRINT_NAME))
-}
-
-pub fn get_syntax_url() -> String {
-    SYNTAX_REPO.to_string()
-}
-
-pub fn get_syntax_dir() -> io::Result<PathBuf> {
-    Ok(dirs::get_root_dir()?.join(SYNTAX_NAME))
 }
 
 #[cfg(target_os = "windows")]
@@ -167,11 +160,6 @@ pub fn update(
             CacheComponent::Release => {
                 let url = get_release_url();
                 let dir = get_release_dir()?;
-                git::clone_or_fetch(&url, &dir, false)?;
-            }
-            CacheComponent::Syntax => {
-                let url = get_syntax_url();
-                let dir = get_syntax_dir()?;
                 git::clone_or_fetch(&url, &dir, false)?;
             }
         }

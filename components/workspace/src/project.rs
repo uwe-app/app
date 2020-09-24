@@ -7,7 +7,6 @@ use log::info;
 use futures::TryFutureExt;
 use url::Url;
 
-use cache::CacheComponent;
 use collator::{
     self, menu, Collate, CollateInfo, CollateRequest, CollateResult, Collation,
 };
@@ -157,24 +156,16 @@ impl ProjectBuilder {
         Ok(self)
     }
 
-    /// Fetch runtime dependencies on demand.
-    pub async fn fetch(self) -> Result<Self> {
-        let mut components: Vec<CacheComponent> = Vec::new();
-
+    /// Verify runtime assets.
+    pub async fn runtime(self) -> Result<Self> {
         if self.config.syntax.is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
                 if !syntax_dir.exists() {
-                    components.push(CacheComponent::Syntax);
+                    return Err(Error::NoSyntaxDirectory(syntax_dir));
                 }
             }
         }
-
-        if !components.is_empty() {
-            let prefs = preference::load()?;
-            cache::update(&prefs, components)?;
-        }
-
         Ok(self)
     }
 
@@ -642,7 +633,7 @@ pub async fn compile<P: AsRef<Path>>(
         let builder = builder
             .sources()
             .and_then(|s| s.locales())
-            .and_then(|s| s.fetch())
+            .and_then(|s| s.runtime())
             .and_then(|s| s.collate())
             .and_then(|s| s.inherit())
             .and_then(|s| s.collate_plugins())
