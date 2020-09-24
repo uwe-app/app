@@ -12,10 +12,14 @@ use structopt::StructOpt;
 
 use std::panic;
 
-use config::server::{HostConfig, LaunchConfig, ServerConfig, TlsConfig};
-use hypertext::command;
-use hypertext::{Error, ProfileSettings};
+use config::{
+    ProfileSettings,
+    server::{HostConfig, LaunchConfig, ServerConfig, TlsConfig},
+};
 use publisher::PublishProvider;
+
+use hypertext as ht;
+use ht::Error;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
 
@@ -376,7 +380,7 @@ impl Command {
 async fn process_command(cmd: &Command) -> Result<(), Error> {
     match cmd {
         Command::Init { ref args } => {
-            let opts = command::init::InitOptions {
+            let opts = ht::init::InitOptions {
                 source: args.source.clone(),
                 target: args.target.clone(),
                 private_key: args.private_key.clone(),
@@ -388,29 +392,29 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             if let Some(ref action) = args.action {
                 match action {
                     InitCommands::List {} => {
-                        command::init::list()?;
+                        ht::init::list()?;
                     }
                 }
             } else {
-                command::init::init(opts)?;
+                ht::init::init(opts)?;
             }
         }
         Command::Fetch { ref args } => {
-            let opts = command::fetch::FetchOptions {
+            let opts = ht::fetch::FetchOptions {
                 blueprint: args.blueprint,
                 documentation: args.documentation,
                 release: args.release,
                 syntax: args.syntax,
             };
 
-            command::fetch::update(opts)?;
+            ht::fetch::update(opts)?;
         }
         Command::Upgrade { .. } => {
-            command::upgrade::try_upgrade()?;
+            ht::upgrade::try_upgrade()?;
         }
 
         Command::Docs { ref args } => {
-            let target = command::docs::get_target().await?;
+            let target = ht::docs::get_target().await?;
             let opts = get_server_config(
                 &target,
                 &args.server,
@@ -418,7 +422,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 config::PORT_DOCS_SSL,
             );
 
-            command::docs::open(opts).await?;
+            ht::docs::open(opts).await?;
         }
 
         Command::Run { ref args } => {
@@ -446,13 +450,13 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         Command::Publish { ref args } => {
             let project = get_project_path(args.project.clone());
 
-            let opts = command::publish::PublishOptions {
+            let opts = ht::publish::PublishOptions {
                 provider: PublishProvider::Aws,
                 env: args.env.clone(),
                 project,
             };
 
-            command::publish::publish(opts).await?;
+            ht::publish::publish(opts).await?;
         }
 
         Command::Plugin { ref action } => {
@@ -460,20 +464,20 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 Plugin::Lint { ref path }
                  | Plugin::Pack {ref path}
                  | Plugin::Publish {ref path} => {
-                    command::plugin::PluginOptions {
+                    ht::plugin::PluginOptions {
                         path: path.clone(),
                     }
                 }
             };
             match action {
                 Plugin::Lint { .. } => {
-                    command::plugin::lint(opts).await?;
+                    ht::plugin::lint(opts).await?;
                 }
                 Plugin::Pack { .. } => {
-                    command::plugin::pack(opts).await?;
+                    ht::plugin::pack(opts).await?;
                 }
                 Plugin::Publish { .. } => {
-                    command::plugin::publish(opts).await?;
+                    ht::plugin::publish(opts).await?;
                 }
             }
         }
@@ -483,20 +487,20 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 ref name,
                 ref project,
             } => {
-                let opts = command::site::AddOptions {
+                let opts = ht::site::AddOptions {
                     project: project.clone(),
                     name: name.clone(),
                 };
-                command::site::add(opts)?;
+                ht::site::add(opts)?;
             }
             Site::Remove { ref name } => {
-                let opts = command::site::RemoveOptions {
+                let opts = ht::site::RemoveOptions {
                     name: name.to_string(),
                 };
-                command::site::remove(opts)?;
+                ht::site::remove(opts)?;
             }
             Site::List { .. } => {
-                command::site::list()?;
+                ht::site::list()?;
             }
         }
 
@@ -543,7 +547,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             let build_args: &'static mut ProfileSettings =
                 Box::leak(Box::new(build_args));
 
-            match command::build::compile(&project, build_args, fatal).await {
+            match ht::build::compile(&project, build_args, fatal).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);
