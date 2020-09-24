@@ -3,15 +3,16 @@ use std::path::PathBuf;
 use async_trait::async_trait;
 
 use config::{
-    plugin::RegistryEntry,
+    plugin::{Plugin, RegistryEntry, RegistryItem},
 };
 
-use crate::Result;
+use crate::{Error, Result};
 
 /// Defines the contract for plugin registry implementations.
 #[async_trait]
 pub trait RegistryAccess {
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
+    async fn register(&self, entry: &mut RegistryEntry, plugin: &Plugin, digest: &Vec<u8>) -> Result<()>;
 }
 
 /// Access a registry using a file system backing store.
@@ -25,13 +26,22 @@ pub struct RegistryFileAccess {
 }
 
 impl RegistryFileAccess {
-    pub fn new(reader: PathBuf, writer: PathBuf) -> Self {
-        Self {reader, writer}
+    pub fn new(reader: PathBuf, writer: PathBuf) -> Result<Self> {
+        if !reader.exists() || !reader.is_dir() {
+            return Err(Error::RegistryNotDirectory(reader));
+        }
+
+        if !writer.exists() || !writer.is_dir() {
+            return Err(Error::RegistryNotDirectory(writer));
+        }
+
+        Ok(Self {reader, writer})
     }
 }
 
 #[async_trait]
 impl RegistryAccess for RegistryFileAccess {
+
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>> {
         let mut file_path = self.reader.join(name);
         file_path.set_extension(config::JSON);
@@ -42,4 +52,22 @@ impl RegistryAccess for RegistryFileAccess {
         }
         Ok(None)
     }
+
+    async fn register(&self, entry: &mut RegistryEntry, plugin: &Plugin, digest: &Vec<u8>) -> Result<()> {
+
+        let mut item = RegistryItem::from(plugin);
+        item.digest = hex::encode(digest);
+
+        let version = plugin.version.clone();
+        entry.versions.entry(version).or_insert(item);
+
+        let content = serde_json::to_string(entry)?;
+
+        let mut file_path = self.writer.join(&plugin.name);
+        file_path.set_extension(config::JSON);
+        utils::fs::write_string(file_path, content)?;
+
+        Ok(())
+    }
+
 }

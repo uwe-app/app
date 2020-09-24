@@ -48,6 +48,12 @@ pub enum Error {
     #[error("Invalid archive {0} no {1} found")]
     InvalidArchiveNoPluginFile(PathBuf, String),
 
+    #[error("Registry {0} is not a directory")]
+    RegistryNotDirectory(PathBuf),
+
+    #[error("Plugin {0} already exists in the registry, use a different version")]
+    RegistryPluginVersionExists(String),
+
     #[error(transparent)]
     Io(#[from] io::Error),
 
