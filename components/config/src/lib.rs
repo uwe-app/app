@@ -109,7 +109,7 @@ mod link;
 mod live_reload;
 mod options;
 mod page;
-mod plugin;
+pub mod plugin;
 mod profile;
 pub mod redirect;
 pub mod robots;

@@ -55,6 +55,9 @@ pub enum Error {
     StripPrefix(#[from] std::path::StripPrefixError),
 
     #[error(transparent)]
+    Json(#[from] serde_json::Error),
+
+    #[error(transparent)]
     Semver(#[from] config::semver::SemVerError),
 
     #[error(transparent)]
@@ -78,6 +81,7 @@ mod packager;
 mod publisher;
 mod resolver;
 mod linter;
+mod registry;
 mod walk;
 
 type Result<T> = std::result::Result<T, Error>;
