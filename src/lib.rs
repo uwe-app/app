@@ -43,6 +43,9 @@ pub enum Error {
     #[error("Unknown publish environment {0}")]
     UnknownPublishEnvironment(String),
 
+    #[error("Plugin publishing is not available yet")]
+    NoPluginPublishPermission,
+
     //#[error("No socket address for {0}")]
     //NoSocketAddress(String),
     #[error(transparent)]

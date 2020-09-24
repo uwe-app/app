@@ -277,6 +277,13 @@ enum Plugin {
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
+    /// Publish a plugin.
+    #[structopt(alias = "pub")]
+    Publish {
+        /// Plugin folder.
+        #[structopt(parse(from_os_str))]
+        path: PathBuf,
+    },
 }
 
 #[derive(StructOpt, Debug)]
@@ -448,18 +455,26 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             command::publish::publish(opts).await?;
         }
 
-        Command::Plugin { ref action } => match action {
-            Plugin::Lint { ref path } => {
-                let opts = command::plugin::PluginOptions {
-                    path: path.clone(),
-                };
-                command::plugin::lint(opts).await?;
-            }
-            Plugin::Pack { ref path } => {
-                let opts = command::plugin::PluginOptions {
-                    path: path.clone(),
-                };
-                command::plugin::pack(opts).await?;
+        Command::Plugin { ref action } => {
+            let opts = match action {
+                Plugin::Lint { ref path }
+                 | Plugin::Pack {ref path}
+                 | Plugin::Publish {ref path} => {
+                    command::plugin::PluginOptions {
+                        path: path.clone(),
+                    }
+                }
+            };
+            match action {
+                Plugin::Lint { .. } => {
+                    command::plugin::lint(opts).await?;
+                }
+                Plugin::Pack { .. } => {
+                    command::plugin::pack(opts).await?;
+                }
+                Plugin::Publish { .. } => {
+                    command::plugin::publish(opts).await?;
+                }
             }
         }
 

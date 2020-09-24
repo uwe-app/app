@@ -1303,6 +1303,7 @@ dependencies = [
  "futures",
  "git",
  "hex",
+ "human_bytes",
  "livereload",
  "locale",
  "log",

@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
 use log::{info, debug};
+use human_bytes::human_bytes;
 
-use futures::TryFutureExt;
-
-use crate::Result;
+use crate::{Error, Result};
 
 #[derive(Debug)]
 pub struct PluginOptions {
@@ -21,20 +20,33 @@ pub async fn lint(options: PluginOptions) -> Result<()> {
 
 /// Package a plugin.
 pub async fn pack(options: PluginOptions) -> Result<()> {
-    let plugin = plugin::read(&options.path).await?;
-    plugin::lint(&plugin)?;
-
-    let writer = plugin::PackageWriter::new(options.path)
-        .destination("package", true)?
-        .tar()
-        .and_then(|b| b.xz())
-        .and_then(|b| b.digest())
-        .await?;
-
-    let (pkg, digest) = writer.into_inner();
-
+    let target = options.path.join(config::PACKAGE);
+    let source = options.path;
+    let (pkg, digest, plugin) = plugin::pack(&source, &target).await?;
+    let size = pkg.metadata()?.len();
     debug!("{}", hex::encode(digest));
-    info!("{} -> {}", plugin.to_string(), pkg.display());
+    info!("{}", plugin.to_string());
+    info!("{} ({})", pkg.display(), human_bytes(size as f64));
+    Ok(())
+}
+
+/// Publish a plugin.
+pub async fn publish(options: PluginOptions) -> Result<()> {
+    let enabled = option_env!("PUBLISH_AB");
+    if enabled.is_none() {
+        log::warn!("Plugin publishing is not available yet.");
+        log::warn!("");
+        log::warn!("During the alpha and beta plugins are curated, ");
+        log::warn!("you may still contribute a plugin by adding ");
+        log::warn!("a PR to this repository:");
+        log::warn!("");
+        log::warn!("https://github.com/hypertext-live/plugins");
+        log::warn!("");
+
+        return Err(Error::NoPluginPublishPermission)
+    }
+
+    println!("Publish a plugin...");
 
     Ok(())
 }

@@ -43,6 +43,7 @@ pub static FLUENT_KEY: &str = "fluent";
 pub static FALLBACK_KEY: &str = "fallback";
 pub static SHARED_KEY: &str = "shared";
 pub static REDIRECT_KEY: &str = "redirect";
+pub static PACKAGE: &str = "package";
 pub static HTML: &str = "html";
 pub static INDEX_STEM: &str = "index";
 pub static INDEX_HTML: &str = "index.html";

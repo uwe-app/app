@@ -29,13 +29,8 @@ impl PackageWriter {
     }
 
     /// Configure the destination target file.
-    pub fn destination<D: AsRef<Path>>(mut self, dest: D, relative: bool) -> Result<Self> {
-        // Make the destination relative to the source
-        self.target = if relative {
-            self.source.join(dest.as_ref())
-        } else {
-            dest.as_ref().to_path_buf()
-        };
+    pub fn destination<D: AsRef<Path>>(mut self, dest: D) -> Result<Self> {
+        self.target = dest.as_ref().to_path_buf();
         Ok(self)
     }
 
@@ -79,8 +74,6 @@ impl PackageWriter {
 
         let stream = Stream::new_easy_encoder(9, Check::Crc64)?;
         let mut reader = File::open(&source)?;
-
-        println!("Compressing tarball with size {}", reader.metadata()?.len());
 
         let mut encoder = XzEncoder::new_stream(File::create(&self.target)?, stream);
 
