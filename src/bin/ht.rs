@@ -201,10 +201,6 @@ struct FetchOpts {
     #[structopt(short, long)]
     blueprint: bool,
 
-    /// Update the documentation cache
-    #[structopt(short, long)]
-    documentation: bool,
-
     /// Update the release cache
     #[structopt(short, long)]
     release: bool,
@@ -402,7 +398,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         Command::Fetch { ref args } => {
             let opts = ht::fetch::FetchOptions {
                 blueprint: args.blueprint,
-                documentation: args.documentation,
                 release: args.release,
                 syntax: args.syntax,
             };

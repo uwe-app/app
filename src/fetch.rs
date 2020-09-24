@@ -6,7 +6,6 @@ use crate::Result;
 #[derive(Debug)]
 pub struct FetchOptions {
     pub blueprint: bool,
-    pub documentation: bool,
     pub release: bool,
     pub syntax: bool,
 }
@@ -16,13 +15,11 @@ pub fn update(options: FetchOptions) -> Result<()> {
 
     let mut components: Vec<CacheComponent> = vec![
         CacheComponent::Blueprint,
-        CacheComponent::Documentation,
         CacheComponent::Release,
         CacheComponent::Syntax,
     ];
 
     if options.blueprint
-        || options.documentation
         || options.release
         || options.syntax
     {
@@ -30,9 +27,6 @@ pub fn update(options: FetchOptions) -> Result<()> {
 
         if options.blueprint {
             components.push(CacheComponent::Blueprint);
-        }
-        if options.documentation {
-            components.push(CacheComponent::Documentation);
         }
         if options.release {
             components.push(CacheComponent::Release);

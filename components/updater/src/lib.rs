@@ -183,7 +183,7 @@ pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let prefs = preference::load()?;
     let version_file = get_version_file()?;
 
-    let components = vec![CacheComponent::Release];
+    let components = vec![CacheComponent::Runtime, CacheComponent::Release];
     cache::update(&prefs, components)?;
 
     let bin_dir = cache::get_bin_dir()?;

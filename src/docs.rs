@@ -1,21 +1,16 @@
 use std::path::PathBuf;
 
-use crate::Result;
-use cache::{self, CacheComponent};
+use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
-
-static DOCS_DIR: &str = "docs";
 
 pub async fn get_target() -> Result<PathBuf> {
     // Served from a sub-directory
     let target = cache::get_docs_dir()?;
-
     if !target.exists() {
-        let prefs = preference::load()?;
-        cache::update(&prefs, vec![CacheComponent::Documentation])?;
+        return Err(Error::NotDirectory(target))
     }
 
-    Ok(target.join(DOCS_DIR))
+    Ok(target)
 }
 
 pub async fn open(opts: ServerConfig) -> Result<()> {

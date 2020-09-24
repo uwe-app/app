@@ -50,5 +50,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let mut entry = entry.unwrap_or(Default::default());
     registry.register(&mut entry, &plugin, &digest).await?;
 
+    // TODO: commit and push the repository changes
+
     Ok((pkg, digest, plugin))
 }

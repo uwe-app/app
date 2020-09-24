@@ -15,9 +15,11 @@ static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
 
-static DOCUMENTATION_REPO: &str =
-    "https://github.com/hypertext-live/documentation";
-static DOCUMENTATION_NAME: &str = "documentation";
+static RUNTIME_REPO: &str =
+    "https://github.com/hypertext-live/runtime";
+static RUNTIME_NAME: &str = "runtime";
+
+static DOCUMENTATION_NAME: &str = "documentation/docs";
 
 static SYNTAX_REPO: &str = "https://github.com/hypertext-live/syntax";
 static SYNTAX_NAME: &str = "syntax";
@@ -37,8 +39,8 @@ pub enum Error {
 }
 
 pub enum CacheComponent {
+    Runtime,
     Blueprint,
-    Documentation,
     Release,
     Syntax,
 }
@@ -71,6 +73,18 @@ pub fn get_bin_dir() -> io::Result<PathBuf> {
     Ok(bin)
 }
 
+pub fn get_runtime_url() -> String {
+    RUNTIME_REPO.to_string()
+}
+
+pub fn get_runtime_dir() -> io::Result<PathBuf> {
+    Ok(dirs::get_root_dir()?.join(RUNTIME_NAME))
+}
+
+pub fn get_docs_dir() -> io::Result<PathBuf> {
+    Ok(get_runtime_dir()?.join(DOCUMENTATION_NAME))
+}
+
 pub fn get_blueprint_url(prefs: &Preferences) -> String {
     if let Some(ref blueprint) = prefs.blueprint {
         if let Some(ref url) = blueprint.url {
@@ -82,14 +96,6 @@ pub fn get_blueprint_url(prefs: &Preferences) -> String {
 
 pub fn get_blueprint_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(BLUEPRINT_NAME))
-}
-
-pub fn get_docs_url() -> String {
-    DOCUMENTATION_REPO.to_string()
-}
-
-pub fn get_docs_dir() -> io::Result<PathBuf> {
-    Ok(dirs::get_root_dir()?.join(DOCUMENTATION_NAME))
 }
 
 pub fn get_syntax_url() -> String {
@@ -148,15 +154,15 @@ pub fn update(
 ) -> Result<(), Error> {
     for c in components {
         match c {
+            CacheComponent::Runtime => {
+                let url = get_runtime_url();
+                let dir = get_runtime_dir()?;
+                git::clone_or_fetch(&url, &dir, true)?;
+            }
             CacheComponent::Blueprint => {
                 let url = get_blueprint_url(prefs);
                 let dir = get_blueprint_dir()?;
                 git::clone_or_fetch(&url, &dir, true)?;
-            }
-            CacheComponent::Documentation => {
-                let url = get_docs_url();
-                let dir = get_docs_dir()?;
-                git::clone_or_fetch(&url, &dir, false)?;
             }
             CacheComponent::Release => {
                 let url = get_release_url();
