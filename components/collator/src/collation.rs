@@ -84,7 +84,6 @@ pub struct CollateInfo {
 
     // The default layout
     //pub(crate) layout: Option<Arc<PathBuf>>,
-
     pub(crate) links: LinkMap,
 }
 
@@ -385,8 +384,8 @@ impl LayoutCollate for CollateInfo {
     fn layouts(&self) -> HashMap<String, PathBuf> {
         let mut map = HashMap::new();
         //if let Some(ref layout) = self.get_layout() {
-            //let (name, path) = get_layout(&layout.to_path_buf());
-            //map.insert(name, path);
+        //let (name, path) = get_layout(&layout.to_path_buf());
+        //map.insert(name, path);
         //}
 
         for (_, layout) in self.layouts.iter() {
@@ -402,7 +401,6 @@ impl LayoutCollate for CollateInfo {
         key: &Option<String>,
         default: bool,
     ) -> Option<&PathBuf> {
-
         // Try to lookup a named layout.
         if let Some(ref key) = key {
             if let Some(ref layout) = self.layouts.get(key) {
@@ -448,7 +446,11 @@ impl CollateInfo {
         }
     }
 
-    pub fn add_layout(&mut self, key: String, file: Arc<PathBuf>) -> &mut Arc<PathBuf> {
+    pub fn add_layout(
+        &mut self,
+        key: String,
+        file: Arc<PathBuf>,
+    ) -> &mut Arc<PathBuf> {
         self.layouts.entry(key).or_insert(file)
     }
 

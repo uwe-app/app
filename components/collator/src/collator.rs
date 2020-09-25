@@ -188,12 +188,12 @@ async fn find(
                             let _ = tx.send(e);
                         }
                     } else {
-
                         // Configure the default layout to use a `layout.hbs` file
                         if &*key == &primary_layout {
                             info.add_layout(
                                 config::DEFAULT_LAYOUT_NAME.to_string(),
-                                Arc::clone(&key));
+                                Arc::clone(&key),
+                            );
 
                             return WalkState::Continue;
                         }

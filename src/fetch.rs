@@ -12,14 +12,10 @@ pub struct FetchOptions {
 pub fn update(options: FetchOptions) -> Result<()> {
     let prefs = preference::load()?;
 
-    let mut components: Vec<CacheComponent> = vec![
-        CacheComponent::Blueprint,
-        CacheComponent::Release,
-    ];
+    let mut components: Vec<CacheComponent> =
+        vec![CacheComponent::Blueprint, CacheComponent::Release];
 
-    if options.blueprint
-        || options.release
-    {
+    if options.blueprint || options.release {
         components = Vec::new();
 
         if options.blueprint {

@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 cache = {version = "0.1", path = "../cache" }
 config = {version = "0.1", path = "../config" }
+git = {version = "0.1", path = "../git" }
 preference = {version = "0.1", path = "../preference" }
 publisher = {version = "0.1", path = "../publisher" }
 utils = {version = "0.1", path = "../utils" }

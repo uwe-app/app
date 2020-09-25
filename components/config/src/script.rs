@@ -45,7 +45,7 @@ impl ScriptAsset {
         match *self {
             Self::Source(ref mut s) => {
                 *s = format!("{}/{}", base, s);
-            },
+            }
             Self::Tag(ref mut t) => {
                 if let Some(ref mut src) = t.src {
                     t.src = Some(format!("{}/{}", base, src));
@@ -73,7 +73,7 @@ impl fmt::Display for ScriptAsset {
                     write!(f, "<script")?;
                     if let Some(ref content) = script.content {
                         write!(f, ">{}</script>", content)?;
-                        return Ok(())
+                        return Ok(());
                     }
                 }
 

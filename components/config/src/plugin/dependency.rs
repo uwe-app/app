@@ -1,7 +1,7 @@
 use std::collections::hash_map;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::fmt;
+use std::path::PathBuf;
 
 use globset::{Glob, GlobMatcher};
 use semver::VersionReq;
@@ -21,7 +21,6 @@ pub struct DependencyMap {
 }
 
 impl DependencyMap {
-
     pub fn into_iter(self) -> hash_map::IntoIter<String, Dependency> {
         self.items.into_iter()
     }
@@ -29,7 +28,6 @@ impl DependencyMap {
     pub fn to_vec(&self) -> Vec<(&String, &Dependency)> {
         let out: Vec<(&String, &Dependency)> = Vec::new();
         self.items.iter().fold(out, |mut acc, (name, dep)| {
-
             if let Some(ref plugin) = dep.plugin {
                 if let Some(ref dependencies) = plugin.dependencies {
                     let mut deps = dependencies.to_vec();
@@ -47,9 +45,9 @@ impl DependencyMap {
 #[serde(untagged)]
 pub enum DependencyTarget {
     /// Load plugin from a local folder.
-    File{ path: PathBuf },
+    File { path: PathBuf },
     /// Load plugin from a compressed archive.
-    Archive{ archive: PathBuf },
+    Archive { archive: PathBuf },
 }
 
 #[serde_as]
@@ -63,7 +61,7 @@ pub struct Dependency {
     #[serde(flatten)]
     pub target: DependencyTarget,
 
-    /// Patterns that determine how styles, scripts and layouts 
+    /// Patterns that determine how styles, scripts and layouts
     /// are applied to pages.
     pub apply: Option<Apply>,
 
@@ -78,7 +76,12 @@ pub struct Dependency {
 
 impl fmt::Display for Dependency {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}", self.name.as_ref().unwrap(), self.version.to_string())
+        write!(
+            f,
+            "{}@{}",
+            self.name.as_ref().unwrap(),
+            self.version.to_string()
+        )
     }
 }
 
@@ -109,18 +112,21 @@ pub struct Apply {
 }
 
 impl Apply {
-
     /// Prepare the global patterns by compiling them.
     ///
     /// Original GlobSet declarations are moved out of the Option(s).
     pub(crate) fn prepare(&mut self) -> Result<()> {
         self.styles_match = if let Some(styles) = self.styles.take() {
             styles.iter().map(|g| g.compile_matcher()).collect()
-        } else { Vec::new() };
+        } else {
+            Vec::new()
+        };
 
         self.scripts_match = if let Some(scripts) = self.scripts.take() {
             scripts.iter().map(|g| g.compile_matcher()).collect()
-        } else { Vec::new() };
+        } else {
+            Vec::new()
+        };
 
         self.layouts_match = if let Some(layouts) = self.layouts.take() {
             let mut tmp: HashMap<String, Vec<GlobMatcher>> = HashMap::new();
@@ -128,7 +134,9 @@ impl Apply {
                 tmp.insert(k, v.iter().map(|g| g.compile_matcher()).collect());
             }
             tmp
-        } else { HashMap::new() };
+        } else {
+            HashMap::new()
+        };
         Ok(())
     }
 }

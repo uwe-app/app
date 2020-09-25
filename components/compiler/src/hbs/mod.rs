@@ -63,11 +63,15 @@ impl<'a> ParserBuilder<'a> {
             for (_name, dep) in plugins.to_vec() {
                 let plugin = dep.plugin.as_ref().unwrap();
                 if let Some(ref engine_templates) = plugin.templates {
-                    if let Some(ref templates) = engine_templates.get(&self.engine) {
+                    if let Some(ref templates) =
+                        engine_templates.get(&self.engine)
+                    {
                         if let Some(ref partials) = templates.partials {
                             for (nm, partial) in partials.iter() {
                                 self.handlebars.register_template_file(
-                                    nm, partial.to_path_buf(&plugin.base))?;
+                                    nm,
+                                    partial.to_path_buf(&plugin.base),
+                                )?;
                             }
                         }
                     }
@@ -326,21 +330,22 @@ impl<'a> HandlebarsParser<'a> {
     ) -> Result<String> {
         let (content, _has_fm, _fm) =
             frontmatter::load(file, self.get_front_matter_config(file))?;
-        let mut result = self.handlebars
+        let mut result = self
+            .handlebars
             .render_template(&content, &data)
             .map_err(Error::from)?;
 
-        // Normally the `partial` helper will convert to markdown 
-        // when rendering a page but when standalone we don't expect 
+        // Normally the `partial` helper will convert to markdown
+        // when rendering a page but when standalone we don't expect
         // `partial` to be called and if the page is markdown it is not
         // converted to HTML so this catches that case.
         //
-        // This is particularly useful for plugins which ship their 
-        // own documentation via a standard website but don't want to 
+        // This is particularly useful for plugins which ship their
+        // own documentation via a standard website but don't want to
         // add any direct dependencies until we have a concept of `dev-dependencies`.
         if self.context.options.is_markdown_file(file) {
-            result = markdown::render(
-                &mut Cow::from(result), &self.context.config);
+            result =
+                markdown::render(&mut Cow::from(result), &self.context.config);
         }
 
         Ok(result)

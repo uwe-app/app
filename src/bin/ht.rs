@@ -13,13 +13,13 @@ use structopt::StructOpt;
 use std::panic;
 
 use config::{
-    ProfileSettings,
     server::{HostConfig, LaunchConfig, ServerConfig, TlsConfig},
+    ProfileSettings,
 };
 use publisher::PublishProvider;
 
-use hypertext as ht;
 use ht::Error;
+use hypertext as ht;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
 
@@ -453,11 +453,9 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         Command::Plugin { ref action } => {
             let opts = match action {
                 Plugin::Lint { ref path }
-                 | Plugin::Pack {ref path}
-                 | Plugin::Publish {ref path} => {
-                    ht::plugin::PluginOptions {
-                        path: path.clone(),
-                    }
+                | Plugin::Pack { ref path }
+                | Plugin::Publish { ref path } => {
+                    ht::plugin::PluginOptions { path: path.clone() }
                 }
             };
             match action {
@@ -493,7 +491,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             Site::List { .. } => {
                 ht::site::list()?;
             }
-        }
+        },
 
         Command::Build { ref args } => {
             let project = get_project_path(args.project.clone());

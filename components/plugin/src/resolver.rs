@@ -4,11 +4,12 @@ use futures::TryFutureExt;
 
 use async_recursion::async_recursion;
 
-use crate::{Error, Result, PackageReader};
-use config::{DependencyTarget, Dependency, DependencyMap, Plugin, PLUGIN};
+use crate::{Error, PackageReader, Result};
+use config::{Dependency, DependencyMap, DependencyTarget, Plugin, PLUGIN};
 
 pub async fn read_path(file: &PathBuf) -> Result<Plugin> {
-    let parent = file.parent()
+    let parent = file
+        .parent()
         .expect("Plugin file must have parent directory")
         .to_path_buf();
     let plugin_content = utils::fs::read_string(file)?;
@@ -37,18 +38,18 @@ pub async fn read(path: &PathBuf) -> Result<Plugin> {
 
 async fn load(dep: &Dependency) -> Result<Plugin> {
     match dep.target {
-        DependencyTarget::File {ref path} => {
-            return Ok(read(&path).await?)
-        }
-        DependencyTarget::Archive {ref archive} => {
+        DependencyTarget::File { ref path } => return Ok(read(&path).await?),
+        DependencyTarget::Archive { ref archive } => {
             let dir = tempfile::tempdir()?;
 
-            // Must go into the tempdir so it is not 
-            // automatically cleaned up before we 
+            // FIXME: extract this to a tmp dir that can be used for the build
+
+            // Must go into the tempdir so it is not
+            // automatically cleaned up before we
             // are done with it.
             let path = dir.into_path();
             let reader = PackageReader::new(archive.clone(), None)
-                .destination(&path, true)?
+                .destination(&path)?
                 .xz()
                 .and_then(|b| b.tar())
                 .await?;
@@ -61,7 +62,7 @@ async fn load(dep: &Dependency) -> Result<Plugin> {
             // Clean up the temp dir
             println!("Removing the temp archive {}", target.display());
             std::fs::remove_dir_all(target)?;
-            
+
             todo!()
         }
     }

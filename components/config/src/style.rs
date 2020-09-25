@@ -43,7 +43,7 @@ impl StyleAsset {
         match *self {
             Self::Source(ref mut s) => {
                 *s = format!("{}/{}", base, s);
-            },
+            }
             Self::Tag(ref mut t) => {
                 if let Some(ref mut href) = t.href {
                     t.href = Some(format!("{}/{}", base, href));
@@ -53,7 +53,6 @@ impl StyleAsset {
         }
         true
     }
-
 }
 
 impl fmt::Display for StyleAsset {

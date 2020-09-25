@@ -13,8 +13,7 @@ static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
 
-static RUNTIME_REPO: &str =
-    "https://github.com/hypertext-live/runtime";
+static RUNTIME_REPO: &str = "https://github.com/hypertext-live/runtime";
 static RUNTIME_NAME: &str = "runtime";
 
 static REGISTRY_NAME: &str = "registry";

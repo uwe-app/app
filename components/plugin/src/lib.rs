@@ -1,11 +1,10 @@
-use std::path::PathBuf;
 use std::io;
+use std::path::PathBuf;
 
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
@@ -33,7 +32,9 @@ pub enum Error {
     #[error("Plugin names must contain at least one namespace (::)")]
     LintPluginNameSpace,
 
-    #[error("Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)")]
+    #[error(
+        "Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)"
+    )]
     LintPluginNameInvalidNameSpace(String),
 
     #[error("The archive package {0} already exists, please move it away")]
@@ -54,8 +55,13 @@ pub enum Error {
     #[error("Registry {0} is not a directory")]
     RegistryNotDirectory(PathBuf),
 
-    #[error("Plugin {0} already exists in the registry, use a different version")]
+    #[error(
+        "Plugin {0} already exists in the registry, use a different version"
+    )]
     RegistryPluginVersionExists(String),
+
+    #[error("Plugin repository {0} must be in a clean state")]
+    RegistryNotClean(String),
 
     #[error(transparent)]
     Io(#[from] io::Error),
@@ -92,20 +98,23 @@ pub enum Error {
 
     #[error(transparent)]
     Publisher(#[from] publisher::Error),
+
+    #[error(transparent)]
+    Git(#[from] git::Error),
 }
 
 mod archive;
-mod packager;
-mod resolver;
 mod linter;
+mod packager;
 mod registry;
+mod resolver;
 mod uploader;
 mod walk;
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub use archive::{writer::PackageWriter, reader::PackageReader};
+pub use archive::{reader::PackageReader, writer::PackageWriter};
 pub use linter::lint;
 pub use packager::pack;
-pub use resolver::{solve, read};
+pub use resolver::{read, solve};
 pub use uploader::publish;

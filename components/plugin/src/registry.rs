@@ -2,9 +2,7 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 
-use config::{
-    plugin::{Plugin, RegistryEntry, RegistryItem},
-};
+use config::plugin::{Plugin, RegistryEntry, RegistryItem};
 
 use crate::{Error, Result};
 
@@ -12,13 +10,18 @@ use crate::{Error, Result};
 #[async_trait]
 pub trait RegistryAccess {
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
-    async fn register(&self, entry: &mut RegistryEntry, plugin: &Plugin, digest: &Vec<u8>) -> Result<()>;
+    async fn register(
+        &self,
+        entry: &mut RegistryEntry,
+        plugin: &Plugin,
+        digest: &Vec<u8>,
+    ) -> Result<PathBuf>;
 }
 
 /// Access a registry using a file system backing store.
 ///
-/// Uses separate paths for reading and writing so that during 
-/// development we can use a local file system path other than 
+/// Uses separate paths for reading and writing so that during
+/// development we can use a local file system path other than
 /// the public repository path used for reading.
 pub struct RegistryFileAccess {
     pub reader: PathBuf,
@@ -35,13 +38,12 @@ impl RegistryFileAccess {
             return Err(Error::RegistryNotDirectory(writer));
         }
 
-        Ok(Self {reader, writer})
+        Ok(Self { reader, writer })
     }
 }
 
 #[async_trait]
 impl RegistryAccess for RegistryFileAccess {
-
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>> {
         let mut file_path = self.reader.join(name);
         file_path.set_extension(config::JSON);
@@ -53,8 +55,12 @@ impl RegistryAccess for RegistryFileAccess {
         Ok(None)
     }
 
-    async fn register(&self, entry: &mut RegistryEntry, plugin: &Plugin, digest: &Vec<u8>) -> Result<()> {
-
+    async fn register(
+        &self,
+        entry: &mut RegistryEntry,
+        plugin: &Plugin,
+        digest: &Vec<u8>,
+    ) -> Result<PathBuf> {
         let mut item = RegistryItem::from(plugin);
         item.digest = hex::encode(digest);
 
@@ -65,9 +71,8 @@ impl RegistryAccess for RegistryFileAccess {
 
         let mut file_path = self.writer.join(&plugin.name);
         file_path.set_extension(config::JSON);
-        utils::fs::write_string(file_path, content)?;
+        utils::fs::write_string(&file_path, content)?;
 
-        Ok(())
+        Ok(file_path)
     }
-
 }

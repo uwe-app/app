@@ -6,7 +6,7 @@ use jsonfeed::{Feed, Item, VERSION};
 
 use config::{
     feed::{ChannelConfig, FeedConfig},
-    Config, Page, RuntimeOptions, Plugin,
+    Config, Page, Plugin, RuntimeOptions,
 };
 
 use locale::Locales;
@@ -182,13 +182,16 @@ fn build_feed(
     Ok(feed)
 }
 
-fn find_feed_plugin<'a>(feed: &FeedConfig, options: &'a RuntimeOptions) -> &'a Option<Plugin> {
+fn find_feed_plugin<'a>(
+    feed: &FeedConfig,
+    options: &'a RuntimeOptions,
+) -> &'a Option<Plugin> {
     let plugin_name = feed.plugin.as_ref().unwrap();
     if let Some(ref plugins) = options.plugins {
         // NOTE: we only look for a direct dependency at the moment
         for (name, dep) in plugins.items.iter() {
             if name == plugin_name {
-                return &dep.plugin
+                return &dep.plugin;
             }
         }
     }
@@ -203,25 +206,27 @@ pub fn feed(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
 ) -> Result<()> {
-
     let plugin_name = feed.plugin.as_ref().unwrap().clone();
-    let plugin = find_feed_plugin(feed, options).as_ref().ok_or_else(|| {
-        Error::NoFeedPlugin(plugin_name.clone())
-    })?;
+    let plugin = find_feed_plugin(feed, options)
+        .as_ref()
+        .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
-    let templates = plugin.templates.as_ref().ok_or_else(|| {
-        Error::NoFeedPluginTemplate(
-            plugin_name.clone())
-    })?;
+    let templates = plugin
+        .templates
+        .as_ref()
+        .ok_or_else(|| Error::NoFeedPluginTemplate(plugin_name.clone()))?;
 
     let engine_templates = templates.get(config.engine()).ok_or_else(|| {
         Error::NoFeedPluginTemplateEngine(
-            plugin_name.clone(), config.engine().to_string())
+            plugin_name.clone(),
+            config.engine().to_string(),
+        )
     })?;
 
-    let plugin_partials = engine_templates.partials.as_ref().ok_or_else(|| {
-        Error::NoFeedPluginPartial(plugin_name.clone())
-    })?;
+    let plugin_partials = engine_templates
+        .partials
+        .as_ref()
+        .ok_or_else(|| Error::NoFeedPluginPartial(plugin_name.clone()))?;
 
     for (name, channel) in feed.channels.iter() {
         let channel_href =
@@ -240,18 +245,21 @@ pub fn feed(
             let file_name = feed_type.get_name();
             let source = source_dir.join(&file_name);
 
-            let template: Option<PathBuf> = if let Some(ref partial_key) = feed.names.get(feed_type)
+            let template: Option<PathBuf> = if let Some(ref partial_key) =
+                feed.names.get(feed_type)
             {
                 //options.source.join(tpl)
                 if let Some(ref partial) = plugin_partials.get(partial_key) {
                     Some(partial.to_path_buf(&plugin.base))
-                } else { None }
+                } else {
+                    None
+                }
             } else {
                 None
             };
 
             if template.is_none() {
-                return Err(Error::NoFeedPartialPath(feed_type.to_string()))
+                return Err(Error::NoFeedPartialPath(feed_type.to_string()));
             }
 
             let template = template.unwrap();
@@ -290,4 +298,3 @@ pub fn feed(
     }
     Ok(())
 }
-

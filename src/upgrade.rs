@@ -9,7 +9,7 @@ pub fn try_upgrade(runtime: bool) -> Result<()> {
 
     // Only upgrading the runtime assets
     if runtime {
-        return Ok(())
+        return Ok(());
     }
 
     let (_, info) = updater::version()?;

@@ -101,7 +101,6 @@ fn layouts(
     name: &String,
     plugin: &Plugin,
 ) -> Result<()> {
-
     if let Some(ref engine_templates) = plugin.templates {
         if let Some(ref templates) = engine_templates.get(config.engine()) {
             if let Some(ref layouts) = templates.layouts {
@@ -124,7 +123,6 @@ pub fn collate(
     info: &mut CollateInfo,
     plugins: &DependencyMap,
 ) -> Result<()> {
-
     for (name, dep) in plugins.to_vec() {
         let plugin = dep.plugin.as_ref().unwrap();
         let plugin_base = plugin.assets();

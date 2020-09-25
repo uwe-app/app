@@ -17,7 +17,7 @@ pub struct RegistryEntry {
 
 impl RegistryEntry {
     pub fn get(&self, version: &Version) -> Option<&RegistryItem> {
-        self.versions.get(version) 
+        self.versions.get(version)
     }
 }
 

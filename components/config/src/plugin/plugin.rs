@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::fmt;
+use std::path::PathBuf;
 
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -9,11 +9,8 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    TemplateEngine,
-    script::ScriptAsset,
-    style::StyleAsset,
-    utils::href::UrlPath,
-    ASSETS, PLUGINS,
+    script::ScriptAsset, style::StyleAsset, utils::href::UrlPath,
+    TemplateEngine, ASSETS, PLUGINS,
 };
 
 use super::dependency::DependencyMap;
@@ -86,7 +83,6 @@ pub struct Plugin {
     pub assets: Option<Vec<UrlPath>>,
 
     // TODO: support arbitrary files which may be pages!
-
     /// List of stylesheets to add to pages.
     pub styles: Option<Vec<StyleAsset>>,
 
@@ -146,9 +142,8 @@ impl Plugin {
 
     /// Resolve a URL path relative to this plugin.
     pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
-        self.base.join(
-            utils::url::to_path_separator(
-                path.trim_start_matches("/")))
+        self.base
+            .join(utils::url::to_path_separator(path.trim_start_matches("/")))
     }
 }
 
@@ -185,8 +180,8 @@ pub struct TemplateAsset {
 
 impl TemplateAsset {
     pub fn to_path_buf(&self, base: &PathBuf) -> PathBuf {
-        base.join(
-            utils::url::to_path_separator(
-                self.file.trim_start_matches("/")))
+        base.join(utils::url::to_path_separator(
+            self.file.trim_start_matches("/"),
+        ))
     }
 }

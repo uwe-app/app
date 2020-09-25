@@ -105,8 +105,7 @@ fn get_client(profile: &str, region: &Region) -> Result<S3Client> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(profile);
     let dispatcher = HttpClient::new()?;
-    let client =
-        S3Client::new_with(dispatcher, provider, region.clone());
+    let client = S3Client::new_with(dispatcher, provider, region.clone());
     Ok(client)
 }
 
@@ -243,18 +242,18 @@ pub async fn put_object<P: AsRef<Path>>(
 
 /// Upload a single file creating a client for the request.
 ///
-/// Use this for a single file upload; for multiple files 
+/// Use this for a single file upload; for multiple files
 /// create  a client and call `put_object()`.
 pub async fn put_file<F: AsRef<Path>>(
     file: F,
-    key: String,
+    key: &str,
     region: Region,
     bucket: &str,
-    profile: &str) -> Result<PutObjectOutput>{
-
+    profile: &str,
+) -> Result<PutObjectOutput> {
     let req = PutObjectRequest {
         bucket: bucket.to_string(),
-        key,
+        key: key.to_string(),
         ..Default::default()
     };
 

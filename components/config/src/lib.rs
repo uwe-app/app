@@ -22,7 +22,9 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
-    #[error("Dependency {0} wants to apply layouts but the plugin has no templates")]
+    #[error(
+        "Dependency {0} wants to apply layouts but the plugin has no templates"
+    )]
     ApplyLayoutNoTemplate(String),
 
     #[error("Dependency {0} wants to apply layouts but the plugin has no templates for the engine {1}")]
@@ -132,9 +134,9 @@ pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::menu::{MenuEntry, MenuReference, MenuResult, MENU};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
-pub use plugin::{Dependency, DependencyMap, Plugin, DependencyTarget};
+pub use plugin::{Dependency, DependencyMap, DependencyTarget, Plugin};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
-pub use search::{SearchConfig};
+pub use search::SearchConfig;
 
 pub use semver;

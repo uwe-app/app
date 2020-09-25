@@ -7,7 +7,7 @@ pub async fn get_target() -> Result<PathBuf> {
     // Served from a sub-directory
     let target = cache::get_docs_dir()?;
     if !target.exists() {
-        return Err(Error::NotDirectory(target))
+        return Err(Error::NotDirectory(target));
     }
 
     Ok(target)

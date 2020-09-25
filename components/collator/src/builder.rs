@@ -159,7 +159,6 @@ impl<'a> PageBuilder<'a> {
                     }
                 }
             }
-
         }
         Ok(self)
     }

@@ -82,4 +82,3 @@ pub enum Error {
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
 }
-

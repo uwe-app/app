@@ -1,9 +1,9 @@
+use std::fs::{remove_file, File};
 use std::path::{Path, PathBuf};
-use std::fs::{File, remove_file};
 
+use sha3::{Digest, Sha3_256};
 use tar::Archive;
 use xz2::write::XzDecoder;
-use sha3::{Digest, Sha3_256};
 
 use log::debug;
 use scopeguard::defer;
@@ -23,12 +23,6 @@ pub struct PackageReader {
     /// Computed digest for the package.
     digest: Vec<u8>,
 
-    /// Infer additional path parts for extraction 
-    /// using the plugin name and version, eg: `std::core/1.0.0` 
-    /// will be appended to the target path once we have the 
-    /// plugin file from the archive.
-    infer: bool,
-
     /// Intermediary temp file used between decompression and extraction.
     tarball: Option<PathBuf>,
 
@@ -37,33 +31,30 @@ pub struct PackageReader {
 }
 
 impl PackageReader {
-
     pub fn new(source: PathBuf, expects: Option<Vec<u8>>) -> Self {
         Self {
             source,
             target: PathBuf::new(),
             expects,
             digest: Vec::new(),
-            infer: false,
             tarball: None,
             plugin: None,
         }
     }
 
     /// Configure the destination target directory for extraction.
-    pub fn destination<D: AsRef<Path>>(mut self, dest: D, infer: bool) -> Result<Self> {
+    pub fn destination<D: AsRef<Path>>(mut self, dest: D) -> Result<Self> {
         if !self.source.exists() || !self.source.is_file() {
-            return Err(
-                Error::PackageSourceNotFile(self.source))
+            return Err(Error::PackageSourceNotFile(self.source));
         }
 
         if !dest.as_ref().is_dir() {
-            return Err(
-                Error::PackageTargetNotDirectory(dest.as_ref().to_path_buf()))
+            return Err(Error::PackageTargetNotDirectory(
+                dest.as_ref().to_path_buf(),
+            ));
         }
 
         self.target = dest.as_ref().to_path_buf();
-        self.infer = infer;
 
         Ok(self)
     }
@@ -80,7 +71,7 @@ impl PackageReader {
             if expected != &self.digest {
                 debug!("Expected {}", hex::encode(expected));
                 debug!("Received {}", hex::encode(self.digest));
-                return Err(Error::DigestMismatch(self.source)) 
+                return Err(Error::DigestMismatch(self.source));
             }
         }
 
@@ -136,7 +127,9 @@ impl PackageReader {
 
         if plugin_path.is_none() {
             return Err(Error::InvalidArchiveNoPluginFile(
-                self.source, PLUGIN.to_string()));
+                self.source,
+                PLUGIN.to_string(),
+            ));
         }
 
         let plugin_temp_file = plugin_path.as_ref().unwrap();

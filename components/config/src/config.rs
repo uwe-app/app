@@ -238,11 +238,9 @@ impl Default for Config {
 
 impl Config {
     pub fn engine(&self) -> &TemplateEngine {
-        self.engine
-            .as_ref()
-            .unwrap_or(&DEFAULT_ENGINE)
+        self.engine.as_ref().unwrap_or(&DEFAULT_ENGINE)
 
-            //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
+        //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
     }
 
     pub fn charset(&self) -> &str {

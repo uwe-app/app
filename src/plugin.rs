@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use log::{info, debug};
 use human_bytes::human_bytes;
+use log::{debug, info};
 
 use crate::{Error, Result};
 
@@ -45,7 +45,7 @@ pub async fn publish(options: PluginOptions) -> Result<()> {
         log::warn!("https://github.com/hypertext-live/plugins");
         log::warn!("");
 
-        return Err(Error::NoPluginPublishPermission)
+        return Err(Error::NoPluginPublishPermission);
     }
 
     plugin::publish(&options.path).await?;

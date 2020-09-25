@@ -4,10 +4,9 @@ use std::path::PathBuf;
 
 use url::Url;
 
-use git2::build::RepoBuilder;
 use git2::{
-    Commit, Cred, ErrorClass, ErrorCode, FetchOptions, IndexAddOption,
-    RemoteCallbacks, Repository,
+    build::RepoBuilder, Commit, Cred, ErrorClass, ErrorCode, FetchOptions,
+    IndexAddOption, RemoteCallbacks, Repository, RepositoryState, Oid,
 };
 
 use log::info;
@@ -17,6 +16,10 @@ use dirs::home;
 
 #[derive(Error, Debug)]
 pub enum Error {
+
+    #[error("No commit available")]
+    NoCommit,
+
     #[error("Unable to handle source {0}")]
     BadSource(String),
 
@@ -29,6 +32,8 @@ pub enum Error {
     Io(#[from] std::io::Error),
 }
 
+type Result<T> = std::result::Result<T, Error>;
+
 pub mod progress;
 pub mod pull;
 
@@ -39,7 +44,7 @@ static NODE_MODULES: &str = "node_modules";
 pub fn detached<P: AsRef<Path>>(
     target: P,
     repo: Repository,
-) -> Result<(), Error> {
+) -> Result<()> {
     let git_dir = repo.path();
 
     // Remove the git directory is the easiest
@@ -84,12 +89,47 @@ pub fn detached<P: AsRef<Path>>(
     Ok(())
 }
 
+pub fn find_last_commit<'a>(repo: &'a Repository) -> Result<Option<Commit<'a>>> {
+    let mut revwalk = repo.revwalk()?;
+    revwalk.push_head()?;
+    for rev in revwalk {
+        let commit = repo.find_commit(rev?)?;
+        return Ok(Some(commit));
+    }
+    Ok(None)
+}
+
+/// Add and commit a file; the path must be relative to the repository.
+pub fn commit_file(
+    repo: &Repository,
+    path: &Path,
+    message: &str) -> Result<Oid> {
+
+    let sig = repo.signature()?;
+    let mut index = repo.index()?;
+    index.add_path(path)?;
+
+    // TODO: check for conflicts index.has_conflicts()?;
+
+    index.write()?;
+    let oid = index.write_tree()?;
+    let tree = repo.find_tree(oid)?;
+
+    let tip = find_last_commit(repo)?;
+    let commit = tip.ok_or_else(|| {
+        Error::NoCommit
+    })?;
+
+    let parents: [&Commit; 1] = [&commit];
+    Ok(repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?)
+}
+
 pub fn clone_ssh<P: AsRef<Path>>(
     src: String,
     target: P,
     key_file: PathBuf,
     password: Option<String>,
-) -> Result<Repository, Error> {
+) -> Result<Repository> {
     let passphrase = if let Some(ref phrase) = password {
         Some(phrase.as_str())
     } else {
@@ -129,7 +169,7 @@ pub fn clone_ssh<P: AsRef<Path>>(
 pub fn clone_standard<P: AsRef<Path>>(
     src: &str,
     target: P,
-) -> Result<Repository, Error> {
+) -> Result<Repository> {
     let mut callbacks = RemoteCallbacks::new();
     progress::add_progress_callbacks(&mut callbacks);
 
@@ -145,7 +185,7 @@ pub fn clone_standard<P: AsRef<Path>>(
 fn fetch_submodules<P: AsRef<Path>>(
     repo: &Repository,
     base: P,
-) -> Result<(), Error> {
+) -> Result<()> {
     let modules = repo.submodules()?;
     for mut sub in modules {
         sub.sync()?;
@@ -177,7 +217,7 @@ fn fetch_submodules<P: AsRef<Path>>(
     Ok(())
 }
 
-fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<(), Error> {
+fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     info!("Fetch {}", base.as_ref().display());
     repo.find_remote(ORIGIN)?
         .fetch(&["master"], None, None)
@@ -189,7 +229,7 @@ pub fn print_clone<P: AsRef<Path>>(from: &str, to: P) {
     info!("   -> {}", to.as_ref().display());
 }
 
-pub fn list_submodules(repo: Repository) -> Result<(), Error> {
+pub fn list_submodules(repo: Repository) -> Result<()> {
     let modules = repo.submodules()?;
     for sub in &modules {
         info!("{}", sub.path().display());
@@ -197,7 +237,7 @@ pub fn list_submodules(repo: Repository) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
+pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository> {
     let repo = match Repository::open(dir) {
         Ok(repo) => repo,
         Err(e) => return Err(Error::from(e)),
@@ -205,18 +245,15 @@ pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository, Error> {
     Ok(repo)
 }
 
-//pub fn clone_repo<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository, Error> {
-//let repo = match Repository::clone(from, dir) {
-//Ok(repo) => repo,
-//Err(e) => return Err(Error::from(e)),
-//};
-//Ok(repo)
-//}
+pub fn is_clean(repo: &Repository) -> bool {
+    let state = repo.state();
+    state == RepositoryState::Clean
+}
 
 pub fn clone_recurse<P: AsRef<Path>>(
     from: &str,
     dir: P,
-) -> Result<Repository, Error> {
+) -> Result<Repository> {
     let repo = match Repository::clone_recurse(from, dir) {
         Ok(repo) => repo,
         Err(e) => return Err(Error::from(e)),
@@ -228,7 +265,7 @@ pub fn open_or_clone<P: AsRef<Path>>(
     from: &str,
     to: P,
     submodules: bool,
-) -> Result<(Repository, bool), Error> {
+) -> Result<(Repository, bool)> {
     if !to.as_ref().exists() {
         let repo = if submodules {
             clone_recurse(from, to)?
@@ -246,7 +283,7 @@ pub fn clone_or_fetch<P: AsRef<Path>>(
     from: &str,
     to: P,
     submodules: bool,
-) -> Result<(), Error> {
+) -> Result<()> {
     if !to.as_ref().exists() {
         print_clone(from, to.as_ref().clone());
     }
@@ -271,7 +308,7 @@ pub fn create<P: AsRef<Path>>(
     key: Option<PathBuf>,
     repo_url: String,
     repo_dir: PathBuf,
-) -> Result<Repository, Error> {
+) -> Result<Repository> {
     let src_err = Err(Error::BadSource(src.clone()));
 
     let (repo, _cloned) = open_or_clone(&repo_url, &repo_dir, true)?;
@@ -315,11 +352,3 @@ pub fn create<P: AsRef<Path>>(
 
     src_err
 }
-
-//#[cfg(test)]
-//mod tests {
-//#[test]
-//fn it_works() {
-//assert_eq!(2 + 2, 4);
-//}
-//}

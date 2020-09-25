@@ -2112,6 +2112,7 @@ dependencies = [
  "config",
  "crossbeam",
  "futures",
+ "git",
  "hex",
  "ignore",
  "log",

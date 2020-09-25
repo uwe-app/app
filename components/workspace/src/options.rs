@@ -112,18 +112,18 @@ fn to_options(
         }
     }
 
-    let opts= RuntimeOptions::new(project, source, base, settings);
+    let opts = RuntimeOptions::new(project, source, base, settings);
 
     //let opts = RuntimeOptions {
-        //project,
-        //source,
-        //output: settings.target.clone(),
-        //base,
-        //settings,
-        //plugins: None,
-        //styles_cache: Vec::new(),
-        //scripts_cache: Vec::new(),
-        //layouts_cache: HashMap::new(),
+    //project,
+    //source,
+    //output: settings.target.clone(),
+    //base,
+    //settings,
+    //plugins: None,
+    //styles_cache: Vec::new(),
+    //scripts_cache: Vec::new(),
+    //layouts_cache: HashMap::new(),
     //};
 
     debug!("{:?}", &cfg);

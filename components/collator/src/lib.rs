@@ -8,14 +8,15 @@ use locale::LocaleName;
 pub enum Error {
     //#[error("No layout definition {0} found for page {1}")]
     //NoLayoutDefinition(String, PathBuf),
-
     #[error("No plugin located for feed templates using plugin name {0}")]
     NoFeedPlugin(String),
 
     #[error("The feed plugin {0} has no templates")]
     NoFeedPluginTemplate(String),
 
-    #[error("The feed plugin {0} has no templates for the template engine {1}")]
+    #[error(
+        "The feed plugin {0} has no templates for the template engine {1}"
+    )]
     NoFeedPluginTemplateEngine(String, String),
 
     #[error("The feed plugin {0} has no template partials")]

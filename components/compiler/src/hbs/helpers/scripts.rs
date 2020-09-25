@@ -21,7 +21,6 @@ impl HelperDef for Scripts {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         // Embed the main script
         let main = h
             .hash_get("main")

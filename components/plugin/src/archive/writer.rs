@@ -1,15 +1,15 @@
+use std::fs::{remove_file, File};
 use std::path::{Path, PathBuf};
-use std::fs::{File, remove_file};
 
-use tar::Builder;
-use xz2::{write::XzEncoder, stream::Check, stream::Stream};
 use sha3::{Digest, Sha3_256};
+use tar::Builder;
+use xz2::{stream::Check, stream::Stream, write::XzEncoder};
 
 use log::debug;
 
 use config::PLUGIN;
 
-use crate::{Error, Result, walk};
+use crate::{walk, Error, Result};
 
 #[derive(Debug, Default)]
 pub struct PackageWriter {
@@ -19,13 +19,18 @@ pub struct PackageWriter {
 }
 
 impl PackageWriter {
-
     pub fn new(source: PathBuf) -> Self {
         let source = if source.ends_with(PLUGIN) {
             source.parent().unwrap().to_path_buf()
-        } else { source };
+        } else {
+            source
+        };
 
-        Self { source, target: PathBuf::new(), digest: Vec::new() }
+        Self {
+            source,
+            target: PathBuf::new(),
+            digest: Vec::new(),
+        }
     }
 
     /// Configure the destination target file.
@@ -40,7 +45,7 @@ impl PackageWriter {
         self.target.set_extension("tar");
 
         if self.target.exists() {
-            return Err(Error::PackageExists(self.target.clone()))
+            return Err(Error::PackageExists(self.target.clone()));
         }
 
         debug!("Create tar archive {}", self.target.display());
@@ -69,13 +74,14 @@ impl PackageWriter {
         self.target.set_extension("tar.xz");
 
         if self.target.exists() {
-            return Err(Error::PackageExists(self.target.clone()))
+            return Err(Error::PackageExists(self.target.clone()));
         }
 
         let stream = Stream::new_easy_encoder(9, Check::Crc64)?;
         let mut reader = File::open(&source)?;
 
-        let mut encoder = XzEncoder::new_stream(File::create(&self.target)?, stream);
+        let mut encoder =
+            XzEncoder::new_stream(File::create(&self.target)?, stream);
 
         std::io::copy(&mut reader, &mut encoder)?;
 
