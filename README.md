@@ -36,6 +36,16 @@ export AB_PUBLISH_REGION="ap-southeast-1"
 export AB_PUBLISH_BUCKET="..."
 ```
 
+It is **required** to set the `pushurl` and `push` refspec:
+
+```
+[remote "origin"]
+	url = git@github.com:hypertext-live/runtime.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+  pushurl = git@github.com:hypertext-live/runtime.git
+	push = refs/heads/master:refs/heads/master
+```
+
 ## Linux
 
 Ensure you have a recent version of `llvm`, I cloned the repo and built from source to get:

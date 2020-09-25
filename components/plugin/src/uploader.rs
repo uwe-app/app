@@ -89,12 +89,17 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let mut entry = entry.unwrap_or(Default::default());
     let entry_file = registry.register(&mut entry, &plugin, &digest).await?;
 
+    let id = plugin.to_string();
+
     // Commit the updated registry entry
-    let rel = entry_file.strip_prefix(repo_path)?;
-    let msg = format!("Plugin publish {}.", plugin.to_string());
+    let rel = entry_file.strip_prefix(&repo_path)?;
+    let msg = format!("Plugin publish {}.", &id);
     git::commit_file(&repo, &rel, &msg)?;
 
-    // TODO: push the repository changes
+    info!("Push {}", repo_path.display());
+    git::push(&repo, git::ORIGIN, None, None)?;
+
+    info!("Published {} ✓", &id);
 
     Ok((pkg, digest, plugin))
 }

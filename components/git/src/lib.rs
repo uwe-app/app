@@ -6,7 +6,7 @@ use url::Url;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, ErrorClass, ErrorCode, FetchOptions,
-    IndexAddOption, RemoteCallbacks, Repository, RepositoryState, Oid,
+    IndexAddOption, RemoteCallbacks, Repository, RepositoryState, Oid, PushOptions,
 };
 
 use log::info;
@@ -37,9 +37,20 @@ type Result<T> = std::result::Result<T, Error>;
 pub mod progress;
 pub mod pull;
 
-static ORIGIN: &str = "origin";
+pub static ORIGIN: &str = "origin";
+pub static MASTER: &str = "master";
+pub static REFSPEC: &str = "refs/heads/master:refs/head/master";
+
 static GIT_IGNORE: &str = ".gitignore";
 static NODE_MODULES: &str = "node_modules";
+
+pub fn callbacks_ssh_agent<'a>() -> RemoteCallbacks<'a> {
+    let mut callbacks = RemoteCallbacks::new();
+    callbacks.credentials(|_url, username_from_url, _allowed_types| {
+        Cred::ssh_key_from_agent(username_from_url.unwrap())
+    });
+    callbacks
+}
 
 pub fn detached<P: AsRef<Path>>(
     target: P,
@@ -99,6 +110,53 @@ pub fn find_last_commit<'a>(repo: &'a Repository) -> Result<Option<Commit<'a>>> 
     Ok(None)
 }
 
+pub fn push(
+    repo: &Repository,
+    remote: &str,
+    cbs: Option<RemoteCallbacks<'_>>,
+    refspecs: Option<Vec<String>>,
+) -> Result<()> {
+
+    let mut cbs = cbs.unwrap_or(callbacks_ssh_agent());
+    let mut remote = repo.find_remote(remote)?;
+
+    let refspecs = refspecs.unwrap_or(
+        {
+            remote.push_refspecs()?
+                .iter()
+                .collect::<Vec<_>>()
+                .iter()
+                .map(|s| s.unwrap().to_string())
+                .collect::<Vec<_>>()
+        });
+
+    let refspecs = if !refspecs.is_empty() {
+        refspecs
+    } else {
+        vec![REFSPEC.to_string()]
+    };
+
+    //cbs.push_transfer_progress(|obj_sent, obj_total, bytes| {});
+
+    cbs.push_update_reference(|name, status| {
+        if status.is_none() {
+            info!("Pushed {}", name);
+        }
+        Ok(())
+    });
+
+    //println!("Remote {:?}", remote.pushurl());
+    //println!("Remote {:?}", remote.name());
+    //println!("Refspecs {:#?}", refspecs);
+
+    let mut push_options = PushOptions::new();
+    push_options.remote_callbacks(cbs);
+    let opts = Some(&mut push_options);
+    remote.push(&refspecs.as_slice(), opts)?;
+
+    Ok(())
+}
+
 /// Add and commit a file; the path must be relative to the repository.
 pub fn commit_file(
     repo: &Repository,
@@ -139,10 +197,11 @@ pub fn clone_ssh<P: AsRef<Path>>(
     let private_key = key_file.as_path();
 
     let mut callbacks = RemoteCallbacks::new();
-    progress::add_progress_callbacks(&mut callbacks);
     callbacks.credentials(|_url, username_from_url, _allowed_types| {
         Cred::ssh_key(username_from_url.unwrap(), None, private_key, passphrase)
     });
+
+    progress::add_progress_callbacks(&mut callbacks);
 
     let mut fo = FetchOptions::new();
     fo.remote_callbacks(callbacks);
