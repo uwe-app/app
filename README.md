@@ -1,18 +1,18 @@
 # Hyper Text
 
-Repositories must be siblings:
+Repositories must be siblings, for example:
 
 ```
 .
+├── blog
 ├── blueprint
-├── documentation
 ├── hypertext
+├── library
+├── plugins
 ├── release
-├── standalone
+├── runtime
+├── syntax
 └── website
-
-7 directories, 0 files
-⚡
 ```
 
 The release repositories take the following form; they must be in a `release` folder that is a sibling of this repo, eg:
@@ -40,10 +40,10 @@ It is **required** to set the `pushurl` and `push` refspec:
 
 ```
 [remote "origin"]
-	url = git@github.com:hypertext-live/runtime.git
-	fetch = +refs/heads/*:refs/remotes/origin/*
+  url = git@github.com:hypertext-live/runtime.git
+  fetch = +refs/heads/*:refs/remotes/origin/*
   pushurl = git@github.com:hypertext-live/runtime.git
-	push = refs/heads/master:refs/heads/master
+  push = refs/heads/master:refs/heads/master
 ```
 
 ## Linux
