@@ -9,6 +9,8 @@ use preference::{self, Preferences};
 static BIN: &str = "bin";
 static ENV: &str = "env";
 
+static CACHE_NAME: &str = "cache";
+static SRC_NAME: &str = "src";
 static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
@@ -74,6 +76,22 @@ pub fn get_runtime_url() -> String {
 
 pub fn get_runtime_dir() -> io::Result<PathBuf> {
     Ok(dirs::get_root_dir()?.join(RUNTIME_NAME))
+}
+
+pub fn get_cache_dir() -> io::Result<PathBuf> {
+    let cache = dirs::get_root_dir()?.join(CACHE_NAME);
+    if !cache.exists() {
+        fs::create_dir(&cache)?;
+    }
+    Ok(cache)
+}
+
+pub fn get_cache_src_dir() -> io::Result<PathBuf> {
+    let src = get_cache_dir()?.join(SRC_NAME);
+    if !src.exists() {
+        fs::create_dir(&src)?;
+    }
+    Ok(src)
 }
 
 pub fn get_registry_dir() -> io::Result<PathBuf> {

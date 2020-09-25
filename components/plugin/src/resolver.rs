@@ -1,12 +1,16 @@
 use std::path::PathBuf;
+use std::fs::{self, File};
 
 use futures::TryFutureExt;
+use tokio::prelude::*;
 
 use async_recursion::async_recursion;
 
 use config::{Dependency, DependencyMap, DependencyTarget, Plugin, PLUGIN};
 
 use crate::{Error, PackageReader, Result, registry, registry::RegistryAccess};
+
+static REGISTRY: &str = "https://registry.hypertext.live";
 
 pub async fn read_path(file: &PathBuf) -> Result<Plugin> {
     let parent = file
@@ -70,27 +74,64 @@ async fn load(dep: &Dependency) -> Result<Plugin> {
             }
         }
     } else {
-        let name = dep.name.as_ref().unwrap();
-        let reg = cache::get_registry_dir()?;
-        let registry = registry::RegistryFileAccess::new(reg.clone(), reg.clone())?;
-        let entry = registry.entry(name).await?.ok_or_else(|| {
-            Error::RegistryPackageNotFound(name.to_string()) 
-        })?;
-
-        let package = entry.find(&dep.version).ok_or_else(|| {
-            Error::RegistryPackageVersionNotFound(
-                name.to_string(), dep.version.to_string())
-        })?;
-
-        // TODO: 1) Check if cached version of the package exists
-        // TODO: 2) Fetch, cache and unpack plugin package (verify digest!)
-        // TODO: 3) Load the package plugin from the file system
-
-        println!("Got entry {:?}", entry);
-        println!("Got matched package {:?}", package);
-
-        todo!()
+        install(dep).await
     }
+}
+
+async fn install(dep: &Dependency) -> Result<Plugin> {
+    let name = dep.name.as_ref().unwrap();
+    let reg = cache::get_registry_dir()?;
+    let registry = registry::RegistryFileAccess::new(reg.clone(), reg.clone())?;
+    let entry = registry.entry(name).await?.ok_or_else(|| {
+        Error::RegistryPackageNotFound(name.to_string()) 
+    })?;
+
+    let (version, package) = entry.find(&dep.version).ok_or_else(|| {
+        Error::RegistryPackageVersionNotFound(
+            name.to_string(), dep.version.to_string())
+    })?;
+
+    // TODO: 1) Check if cached version of the package exists
+    // TODO: 2) Fetch, cache and unpack plugin package (verify digest!)
+    // TODO: 3) Load the package plugin from the file system
+
+    let download_dir = tempfile::tempdir()?;
+    let file_name = format!("{}.xz", config::PACKAGE);
+    let download_url = format!("{}/{}/{}/{}.xz",
+        REGISTRY, name, version.to_string(), config::PACKAGE);
+
+    let archive_path = download_dir.path().join(&file_name);
+    let dest = File::create(&archive_path)?;
+
+    //println!("Download from {:?}", download_url);
+
+    let mut response = reqwest::get(&download_url).await?;
+    let mut content_file = tokio::fs::File::from_std(dest);
+    while let Some(chunk) = response.chunk().await? {
+        //println!("Chunk: {:?}", chunk.len());
+        content_file.write_all(&chunk).await?;
+    }
+
+    let extract_dir = format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
+    let extract_target = cache::get_cache_src_dir()?.join(extract_dir);
+    if !extract_target.exists() {
+        fs::create_dir(&extract_target)?;
+    }
+
+    //println!("Got downloaded file {:?}", &archive_path);
+    //println!("Got extract target {:?}", extract_target);
+    //println!("Got downloaded file {:?}", archive_path.metadata()?.len());
+
+    let reader = PackageReader::new(archive_path, Some(hex::decode(&package.digest)?))
+        .destination(&extract_target)?
+        .digest()
+        .and_then(|b| b.xz())
+        .and_then(|b| b.tar())
+        .await?;
+
+    let (target, _digest, plugin) = reader.into_inner();
+
+    todo!()
 }
 
 #[async_recursion]

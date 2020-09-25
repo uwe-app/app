@@ -79,6 +79,9 @@ pub enum Error {
     Json(#[from] serde_json::Error),
 
     #[error(transparent)]
+    Hex(#[from] hex::FromHexError),
+
+    #[error(transparent)]
     Semver(#[from] config::semver::SemVerError),
 
     #[error(transparent)]
@@ -89,6 +92,9 @@ pub enum Error {
 
     #[error(transparent)]
     Xz(#[from] xz2::stream::Error),
+
+    #[error(transparent)]
+    Request(#[from] reqwest::Error),
 
     #[error(transparent)]
     Regex(#[from] regex::Error),
