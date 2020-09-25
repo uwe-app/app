@@ -218,6 +218,11 @@ pub(crate) async fn prepare(
     };
 
     if let Some(dependencies) = cfg.dependencies.take() {
+
+        // TODO: test lock file before fetching latest registry data
+        let prefs = preference::load()?;
+        cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+
         let mut output: DependencyMap = Default::default();
         plugin::solve(dependencies, &mut output, &mut Default::default())
             .await?;

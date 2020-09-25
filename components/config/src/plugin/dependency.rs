@@ -57,9 +57,9 @@ pub struct Dependency {
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
 
-    /// Path for a local file system plugin.
+    /// Optional target such as a folder, archive or git repository.
     #[serde(flatten)]
-    pub target: DependencyTarget,
+    pub target: Option<DependencyTarget>,
 
     /// Patterns that determine how styles, scripts and layouts
     /// are applied to pages.

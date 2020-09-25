@@ -63,6 +63,12 @@ pub enum Error {
     #[error("Plugin repository {0} must be in a clean state")]
     RegistryNotClean(String),
 
+    #[error("Package {0} does not exist in the registry")]
+    RegistryPackageNotFound(String),
+
+    #[error("Package {0} exists but no version found matching {1}")]
+    RegistryPackageVersionNotFound(String, String),
+
     #[error(transparent)]
     Io(#[from] io::Error),
 

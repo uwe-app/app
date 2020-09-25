@@ -4,8 +4,9 @@ use futures::TryFutureExt;
 
 use async_recursion::async_recursion;
 
-use crate::{Error, PackageReader, Result};
 use config::{Dependency, DependencyMap, DependencyTarget, Plugin, PLUGIN};
+
+use crate::{Error, PackageReader, Result, registry, registry::RegistryAccess};
 
 pub async fn read_path(file: &PathBuf) -> Result<Plugin> {
     let parent = file
@@ -37,34 +38,58 @@ pub async fn read(path: &PathBuf) -> Result<Plugin> {
 }
 
 async fn load(dep: &Dependency) -> Result<Plugin> {
-    match dep.target {
-        DependencyTarget::File { ref path } => return Ok(read(&path).await?),
-        DependencyTarget::Archive { ref archive } => {
-            let dir = tempfile::tempdir()?;
+    if let Some(ref target) = dep.target {
+        match target {
+            DependencyTarget::File { ref path } => return Ok(read(&path).await?),
+            DependencyTarget::Archive { ref archive } => {
+                let dir = tempfile::tempdir()?;
 
-            // FIXME: extract this to a tmp dir that can be used for the build
+                // FIXME: extract this to a tmp dir that can be used for the build
 
-            // Must go into the tempdir so it is not
-            // automatically cleaned up before we
-            // are done with it.
-            let path = dir.into_path();
-            let reader = PackageReader::new(archive.clone(), None)
-                .destination(&path)?
-                .xz()
-                .and_then(|b| b.tar())
-                .await?;
+                // Must go into the tempdir so it is not
+                // automatically cleaned up before we
+                // are done with it.
+                let path = dir.into_path();
 
-            let (target, _digest, plugin) = reader.into_inner();
+                let reader = PackageReader::new(archive.clone(), None)
+                    .destination(&path)?
+                    .xz()
+                    .and_then(|b| b.tar())
+                    .await?;
 
-            println!("Archive plugin {:#?}", &plugin);
-            println!("Archive plugin target {:#?}", &target);
+                let (target, _digest, plugin) = reader.into_inner();
 
-            // Clean up the temp dir
-            println!("Removing the temp archive {}", target.display());
-            std::fs::remove_dir_all(target)?;
+                println!("Archive plugin {:#?}", &plugin);
+                println!("Archive plugin target {:#?}", &target);
 
-            todo!()
+                // Clean up the temp dir
+                println!("Removing the temp archive {}", target.display());
+                std::fs::remove_dir_all(target)?;
+
+                todo!()
+            }
         }
+    } else {
+        let name = dep.name.as_ref().unwrap();
+        let reg = cache::get_registry_dir()?;
+        let registry = registry::RegistryFileAccess::new(reg.clone(), reg.clone())?;
+        let entry = registry.entry(name).await?.ok_or_else(|| {
+            Error::RegistryPackageNotFound(name.to_string()) 
+        })?;
+
+        let package = entry.find(&dep.version).ok_or_else(|| {
+            Error::RegistryPackageVersionNotFound(
+                name.to_string(), dep.version.to_string())
+        })?;
+
+        // TODO: 1) Check if cached version of the package exists
+        // TODO: 2) Fetch, cache and unpack plugin package (verify digest!)
+        // TODO: 3) Load the package plugin from the file system
+
+        println!("Got entry {:?}", entry);
+        println!("Got matched package {:?}", package);
+
+        todo!()
     }
 }
 
