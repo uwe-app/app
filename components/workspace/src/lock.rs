@@ -32,6 +32,6 @@ pub fn acquire(path: &PathBuf) -> Result<LockFile> {
 pub fn release(lock_file: LockFile) -> Result<()> {
     lock_file.file.unlock()?;
     debug!("Releasing lock {}", lock_file.path.display());
-    remove_file(lock_file.path)?;
+    //remove_file(lock_file.path)?;
     Ok(())
 }
