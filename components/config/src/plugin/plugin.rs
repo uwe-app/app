@@ -100,6 +100,14 @@ pub struct Plugin {
     /// used to resolve assets during collation.
     #[serde(skip)]
     pub base: PathBuf,
+
+    /// A checksum digest when extracted from a registry archive.
+    #[serde(skip)]
+    pub checksum: Option<String>,
+
+    /// A source URL the plugin was loaded from.
+    #[serde(skip)]
+    pub source: Option<Url>,
 }
 
 impl fmt::Display for Plugin {
@@ -125,6 +133,8 @@ impl Default for Plugin {
             templates: None,
             library: None,
             base: PathBuf::from(String::new()),
+            checksum: None,
+            source: None,
         }
     }
 }

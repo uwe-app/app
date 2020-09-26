@@ -1,26 +1,34 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs::{self, File};
 
 use futures::TryFutureExt;
 use tokio::prelude::*;
 
-use config::{Dependency, DependencyTarget, Plugin, PLUGIN};
+use url::Url;
+
+use config::{Dependency, DependencyTarget, Plugin, PLUGIN, LockFileEntry};
 
 use crate::{read, Error, PackageReader, Result, registry, registry::RegistryAccess};
 
 static REGISTRY: &str = "https://registry.hypertext.live";
 
-pub async fn install(dep: &Dependency) -> Result<Plugin> {
-    if let Some(ref target) = dep.target {
+pub async fn install(dep: &Dependency) -> Result<(Plugin, LockFileEntry)> {
+
+    let plugin = if let Some(ref target) = dep.target {
         match target {
-            DependencyTarget::File { ref path } => return install_file(path).await,
+            DependencyTarget::File { ref path } => {
+                install_file(path).await
+            }
             DependencyTarget::Archive { ref archive } => {
-                return install_archive(archive).await
+                install_archive(archive).await
             }
         }
     } else {
         install_registry(dep).await
-    }
+    }?;
+
+    let entry: LockFileEntry = LockFileEntry::from(&plugin);
+    Ok((plugin, entry))
 }
 
 /// Install a plugin from a file system path.
@@ -90,10 +98,20 @@ async fn install_registry(dep: &Dependency) -> Result<Plugin> {
     let extract_target = cache::get_cache_src_dir()?.join(extract_dir);
     let extract_target_plugin = extract_target.join(PLUGIN);
 
+    let source: Url = REGISTRY.parse()?;
+
+    let attributes = |plugin: &mut Plugin, base: &PathBuf, digest: &str, source: Url| {
+        plugin.base = base.clone();
+        plugin.checksum = Some(digest.to_string());
+        plugin.source = Some(source);
+    };
+
     // Got an existing plugin file in the target cache directory
     // so we should try to use that
     if extract_target_plugin.exists() {
-        return install_file(&extract_target).await 
+        let mut plugin = install_file(&extract_target).await?;
+        attributes(&mut plugin, &extract_target, &package.digest, source);
+        return Ok(plugin)
     }
 
     // We will extract the temporary archive file here so the 
@@ -123,11 +141,7 @@ async fn install_registry(dep: &Dependency) -> Result<Plugin> {
         .and_then(|b| b.tar())
         .await?;
 
-    let (target, _digest, mut plugin) = reader.into_inner();
-
-    // Must update the base path for the plugin to 
-    // the extracted directory
-    plugin.base = extract_target;
-
+    let (target, digest, mut plugin) = reader.into_inner();
+    attributes(&mut plugin, &extract_target, &package.digest, source);
     Ok(plugin)
 }

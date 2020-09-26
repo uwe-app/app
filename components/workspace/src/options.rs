@@ -3,8 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, DependencyMap, ProfileSettings};
-use config::{ProfileName, RuntimeOptions, MENU};
+use config::{Config, DependencyMap, ProfileSettings, ProfileName, RuntimeOptions, MENU, LockFile};
 
 use crate::{Error, Result};
 
@@ -218,15 +217,27 @@ pub(crate) async fn prepare(
     };
 
     if let Some(dependencies) = cfg.dependencies.take() {
+        let lock_file_path = LockFile::get_lock_file(&opts.project);
+        let lock_file_current = LockFile::load(&lock_file_path)?;
+        let mut lock_file_target: LockFile = Default::default();
 
         // TODO: test lock file before fetching latest registry data
         let prefs = preference::load()?;
         cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
 
         let mut output: DependencyMap = Default::default();
-        plugin::solve(dependencies, &mut output, &mut Default::default())
+        plugin::solve(
+            dependencies,
+            &mut output,
+            &lock_file_current,
+            &mut lock_file_target,
+            &mut Default::default())
             .await?;
         opts.plugins = Some(output);
+
+        if lock_file_current != lock_file_target {
+            lock_file_target.write(&lock_file_path)?;
+        }
     }
 
     // Create plugin cache lookups for scripts, styles etc

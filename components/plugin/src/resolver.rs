@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
 
-use config::{DependencyMap, Plugin, PLUGIN};
+use config::{DependencyMap, Plugin, PLUGIN, LockFile};
 
 use crate::{installer, Error, Result};
 
@@ -40,11 +40,16 @@ pub async fn read<P: AsRef<Path>>(path: P) -> Result<Plugin> {
 pub async fn solve(
     input: DependencyMap,
     output: &mut DependencyMap,
+    lock_file_current: &LockFile,
+    lock_file_target: &mut LockFile,
     stack: &mut Vec<String>,
 ) -> Result<()> {
     for (name, mut dep) in input.into_iter() {
         dep.name = Some(name.clone());
-        let mut plugin = installer::install(&dep).await?;
+
+        let (mut plugin, entry) = installer::install(&dep).await?;
+
+        lock_file_target.package.push(entry);
 
         if name != plugin.name {
             return Err(Error::PluginNameMismatch(name, plugin.name));
@@ -66,7 +71,13 @@ pub async fn solve(
 
         if let Some(dependencies) = plugin.dependencies.take() {
             let mut deps: DependencyMap = Default::default();
-            solve(dependencies, &mut deps, stack).await?;
+            solve(
+                dependencies,
+                &mut deps,
+                lock_file_current,
+                lock_file_target,
+                stack
+            ).await?;
         }
 
         dep.plugin = Some(plugin);

@@ -63,6 +63,9 @@ pub enum Error {
     Json(#[from] serde_json::Error),
 
     #[error(transparent)]
+    TomlSer(#[from] toml::ser::Error),
+
+    #[error(transparent)]
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
@@ -134,7 +137,7 @@ pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::menu::{MenuEntry, MenuReference, MenuResult, MENU};
 pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
-pub use plugin::{Dependency, DependencyMap, DependencyTarget, Plugin};
+pub use plugin::{Dependency, DependencyMap, DependencyTarget, Plugin, LockFile, LockFileEntry};
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;
 pub use search::SearchConfig;

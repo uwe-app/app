@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{Error, ErrorCallback};
-use config::{ProfileSettings, RuntimeOptions};
+use config::{ProfileSettings, LockFile};
 
 use scopeguard::defer;
 use workspace::lock;
@@ -13,7 +13,7 @@ pub async fn compile<P: AsRef<Path>>(
     args: &'static mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-    let lock_path = RuntimeOptions::get_lock_file(project.as_ref());
+    let lock_path = LockFile::get_lock_file(project.as_ref());
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 

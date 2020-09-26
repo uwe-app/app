@@ -30,3 +30,4 @@ serde_json = "1"
 async-trait = "0.1.40"
 reqwest = "0.10"
 tokio = { version = "0.2.22", features = ["full"] }
+url = "2"

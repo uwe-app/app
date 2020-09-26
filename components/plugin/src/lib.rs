@@ -82,6 +82,9 @@ pub enum Error {
     Hex(#[from] hex::FromHexError),
 
     #[error(transparent)]
+    Url(#[from] url::ParseError),
+
+    #[error(transparent)]
     Semver(#[from] config::semver::SemVerError),
 
     #[error(transparent)]
