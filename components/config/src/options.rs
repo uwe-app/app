@@ -59,6 +59,10 @@ impl RuntimeOptions {
         }
     }
 
+    pub fn get_lock_file<P: AsRef<Path>>(base: P) -> PathBuf {
+        base.as_ref().join(crate::SITE_LOCK)
+    }
+
     // FIXME: stricter error handling on mismatch
     pub fn prepare(&mut self, engine: &TemplateEngine) -> Result<()> {
         if let Some(ref mut plugins) = self.plugins {

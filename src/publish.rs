@@ -4,15 +4,14 @@ use std::path::PathBuf;
 use log::info;
 
 use config::AwsPublishEnvironment;
-use config::ProfileSettings;
+use config::{ProfileSettings, RuntimeOptions};
 use publisher::{self, PublishProvider, PublishRequest};
 use report::FileBuilder;
 
 use scopeguard::defer;
 use workspace::{compile, lock, Project};
 
-use crate::Error;
-use crate::Result;
+use crate::{Error, Result};
 
 #[derive(Debug)]
 pub struct PublishOptions {
@@ -22,7 +21,7 @@ pub struct PublishOptions {
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
-    let lock_path = options.project.join("site.lock");
+    let lock_path = RuntimeOptions::get_lock_file(&options.project);
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 
