@@ -12,6 +12,7 @@ use unic_langid::LanguageIdentifier;
 use crate::{
     book::BookConfig,
     date::DateConfig,
+    dependency::DependencyMap,
     engine::TemplateEngine,
     feed::FeedConfig,
     fluent::FluentConfig,
@@ -21,7 +22,6 @@ use crate::{
     link::LinkConfig,
     live_reload::LiveReload,
     page::{Author, Page},
-    plugin::DependencyMap,
     profile::{ProfileName, ProfileSettings},
     redirect::RedirectConfig,
     script::JavaScriptConfig,

@@ -1,34 +1,41 @@
-use std::path::{Path, PathBuf};
 use std::fs::{self, File};
+use std::path::{Path, PathBuf};
 
 use futures::TryFutureExt;
 use tokio::prelude::*;
 
 use url::Url;
 
-use config::{Dependency, DependencyTarget, Plugin, PLUGIN, LockFileEntry};
+use config::{
+    dependency::{Dependency, DependencyTarget},
+    lock_file::LockFileEntry,
+    registry::RegistryItem,
+    semver::{Version, VersionReq},
+    Plugin, PLUGIN,
+};
 
-use crate::{read, Error, PackageReader, Result, registry, registry::RegistryAccess};
+use crate::{
+    read, registry::RegistryAccess, Error, PackageReader, Registry, Result,
+};
 
 static REGISTRY: &str = "https://registry.hypertext.live";
 
-pub async fn install(dep: &Dependency) -> Result<(Plugin, LockFileEntry)> {
-
+pub async fn install(
+    registry: &Registry<'_>,
+    dep: &Dependency,
+) -> Result<Plugin> {
     let plugin = if let Some(ref target) = dep.target {
         match target {
-            DependencyTarget::File { ref path } => {
-                install_file(path).await
-            }
+            DependencyTarget::File { ref path } => install_file(path).await,
             DependencyTarget::Archive { ref archive } => {
                 install_archive(archive).await
             }
         }
     } else {
-        install_registry(dep).await
+        install_registry(registry, dep).await
     }?;
 
-    let entry: LockFileEntry = LockFileEntry::from(&plugin);
-    Ok((plugin, entry))
+    Ok(plugin)
 }
 
 /// Install a plugin from a file system path.
@@ -69,52 +76,71 @@ async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
     todo!()
 }
 
-/// Install a plugin using the local registry cache and archives 
+pub(crate) async fn resolve_package(
+    registry: &Registry<'_>,
+    name: &str,
+    version: &VersionReq,
+) -> Result<(Version, RegistryItem)> {
+
+    let entry = registry
+        .entry(name)
+        .await?
+        .ok_or_else(|| Error::RegistryPackageNotFound(name.to_string()))?;
+
+    let (version, package) = entry.find(version).ok_or_else(|| {
+        Error::RegistryPackageVersionNotFound(
+            name.to_string(),
+            version.to_string(),
+        )
+    })?;
+
+    Ok((version.clone(), package.clone()))
+}
+
+/// Install a plugin using the local registry cache and archives
 /// from an online service (s3 bucket).
 ///
-/// The registry stores plugin definitions by namespace such as `std::core.json` 
+/// The registry stores plugin definitions by namespace such as `std::core.json`
 /// which references the versions available for a plugin.
 ///
-/// Once we have a registry entry we attempt to download the archive from the 
+/// Once we have a registry entry we attempt to download the archive from the
 /// bucket using the path `std::core/1.0.0/package.xz`.
 ///
-/// Finally we extract the downloaded archive and verify the digest from the registry 
-/// entry to a local file system cache directory `cache/src/std::core::1.0.0` within 
+/// Finally we extract the downloaded archive and verify the digest from the registry
+/// entry to a local file system cache directory `cache/src/std::core::1.0.0` within
 /// the main program home directory, currently `~/.hypertext`.
-async fn install_registry(dep: &Dependency) -> Result<Plugin> {
+async fn install_registry(
+    registry: &Registry<'_>,
+    dep: &Dependency,
+) -> Result<Plugin> {
+
     let name = dep.name.as_ref().unwrap();
-    let reg = cache::get_registry_dir()?;
-    let registry = registry::RegistryFileAccess::new(reg.clone(), reg.clone())?;
-    let entry = registry.entry(name).await?.ok_or_else(|| {
-        Error::RegistryPackageNotFound(name.to_string()) 
-    })?;
+    let (version, package) =
+        resolve_package(registry, name, &dep.version).await?;
 
-    let (version, package) = entry.find(&dep.version).ok_or_else(|| {
-        Error::RegistryPackageVersionNotFound(
-            name.to_string(), dep.version.to_string())
-    })?;
-
-    let extract_dir = format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
+    let extract_dir =
+        format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
     let extract_target = cache::get_cache_src_dir()?.join(extract_dir);
     let extract_target_plugin = extract_target.join(PLUGIN);
 
     let source: Url = REGISTRY.parse()?;
 
-    let attributes = |plugin: &mut Plugin, base: &PathBuf, digest: &str, source: Url| {
-        plugin.base = base.clone();
-        plugin.checksum = Some(digest.to_string());
-        plugin.source = Some(source);
-    };
+    let attributes =
+        |plugin: &mut Plugin, base: &PathBuf, digest: &str, source: Url| {
+            plugin.base = base.clone();
+            plugin.checksum = Some(digest.to_string());
+            plugin.source = Some(source);
+        };
 
     // Got an existing plugin file in the target cache directory
     // so we should try to use that
     if extract_target_plugin.exists() {
         let mut plugin = install_file(&extract_target).await?;
         attributes(&mut plugin, &extract_target, &package.digest, source);
-        return Ok(plugin)
+        return Ok(plugin);
     }
 
-    // We will extract the temporary archive file here so the 
+    // We will extract the temporary archive file here so the
     // directory must exist
     if !extract_target.exists() {
         fs::create_dir(&extract_target)?;
@@ -122,8 +148,13 @@ async fn install_registry(dep: &Dependency) -> Result<Plugin> {
 
     let download_dir = tempfile::tempdir()?;
     let file_name = format!("{}.xz", config::PACKAGE);
-    let download_url = format!("{}/{}/{}/{}.xz",
-        REGISTRY, name, version.to_string(), config::PACKAGE);
+    let download_url = format!(
+        "{}/{}/{}/{}.xz",
+        REGISTRY,
+        name,
+        version.to_string(),
+        config::PACKAGE
+    );
 
     let archive_path = download_dir.path().join(&file_name);
     let dest = File::create(&archive_path)?;
@@ -134,12 +165,13 @@ async fn install_registry(dep: &Dependency) -> Result<Plugin> {
         content_file.write_all(&chunk).await?;
     }
 
-    let reader = PackageReader::new(archive_path, Some(hex::decode(&package.digest)?))
-        .destination(&extract_target)?
-        .digest()
-        .and_then(|b| b.xz())
-        .and_then(|b| b.tar())
-        .await?;
+    let reader =
+        PackageReader::new(archive_path, Some(hex::decode(&package.digest)?))
+            .destination(&extract_target)?
+            .digest()
+            .and_then(|b| b.xz())
+            .and_then(|b| b.tar())
+            .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
     attributes(&mut plugin, &extract_target, &package.digest, source);

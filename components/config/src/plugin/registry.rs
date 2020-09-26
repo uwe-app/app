@@ -23,7 +23,7 @@ impl RegistryEntry {
     pub fn find(&self, req: &VersionReq) -> Option<(&Version, &RegistryItem)> {
         for (v, item) in self.versions.iter().rev() {
             if req.matches(v) {
-                return Some((v, item)); 
+                return Some((v, item));
             }
         }
         None

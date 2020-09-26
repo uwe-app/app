@@ -1,23 +1,28 @@
+use std::collections::HashSet;
+use std::collections::hash_set::Difference;
+use std::collections::hash_map::RandomState;
 use std::path::{Path, PathBuf};
 
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
-use semver::Version;
 use url::Url;
 
-use crate::{Result, Plugin};
+use crate::Result;
+
+pub type PackageSet = HashSet<LockFileEntry>;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, Eq, PartialEq)]
 #[serde(default)]
 pub struct LockFile {
-    pub package: Vec<LockFileEntry>
+    pub package: PackageSet,
 }
 
 impl LockFile {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         let lock_file: LockFile = if path.exists() && path.is_file() {
-            let contents = utils::fs::read_string(path)?; 
+            let contents = utils::fs::read_string(path)?;
             toml::from_str(&contents)?
         } else {
             Default::default()
@@ -30,16 +35,20 @@ impl LockFile {
     }
 
     pub fn write<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let path = path.as_ref(); 
+        let path = path.as_ref();
         let content = toml::to_string(self)?;
         utils::fs::write_string(path, content)?;
         Ok(())
+    }
+
+    pub fn diff<'a>(&'a self, other: &'a LockFile) -> Difference<'a, LockFileEntry, RandomState> {
+        self.package.difference(&other.package) 
     }
 }
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(default)]
 pub struct LockFileEntry {
     pub name: String,
@@ -63,14 +72,14 @@ impl Default for LockFileEntry {
     }
 }
 
-impl From<&Plugin> for LockFileEntry {
-    fn from(plugin: &Plugin) -> Self {
-        Self {
-            name: plugin.name.clone(),
-            version: plugin.version.clone(),
-            source: plugin.source.clone(),
-            checksum: plugin.checksum.clone(),
-            dependencies: None,
-        } 
-    }
-}
+//impl From<&Plugin> for LockFileEntry {
+    //fn from(plugin: &Plugin) -> Self {
+        //Self {
+            //name: plugin.name.clone(),
+            //version: plugin.version.clone(),
+            //source: plugin.source.clone(),
+            //checksum: plugin.checksum.clone(),
+            //dependencies: None,
+        //}
+    //}
+//}

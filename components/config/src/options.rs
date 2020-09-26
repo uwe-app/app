@@ -6,8 +6,8 @@ use globset::GlobMatcher;
 use url::Url;
 
 use crate::{
-    plugin::Dependency, Config, DependencyMap, Error, ProfileSettings,
-    RenderTypes, Result, TemplateEngine, HTML, INDEX_STEM,
+    dependency::Dependency, dependency::DependencyMap, Config, Error,
+    ProfileSettings, RenderTypes, Result, TemplateEngine, HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]

@@ -6,7 +6,8 @@ use url::Url;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, ErrorClass, ErrorCode, FetchOptions,
-    IndexAddOption, RemoteCallbacks, Repository, RepositoryState, Oid, PushOptions,
+    IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
+    RepositoryState,
 };
 
 use log::info;
@@ -16,7 +17,6 @@ use dirs::home;
 
 #[derive(Error, Debug)]
 pub enum Error {
-
     #[error("No commit available")]
     NoCommit,
 
@@ -52,10 +52,7 @@ pub fn callbacks_ssh_agent<'a>() -> RemoteCallbacks<'a> {
     callbacks
 }
 
-pub fn detached<P: AsRef<Path>>(
-    target: P,
-    repo: Repository,
-) -> Result<()> {
+pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<()> {
     let git_dir = repo.path();
 
     // Remove the git directory is the easiest
@@ -100,7 +97,9 @@ pub fn detached<P: AsRef<Path>>(
     Ok(())
 }
 
-pub fn find_last_commit<'a>(repo: &'a Repository) -> Result<Option<Commit<'a>>> {
+pub fn find_last_commit<'a>(
+    repo: &'a Repository,
+) -> Result<Option<Commit<'a>>> {
     let mut revwalk = repo.revwalk()?;
     revwalk.push_head()?;
     for rev in revwalk {
@@ -116,19 +115,18 @@ pub fn push(
     cbs: Option<RemoteCallbacks<'_>>,
     refspecs: Option<Vec<String>>,
 ) -> Result<()> {
-
     let mut cbs = cbs.unwrap_or(callbacks_ssh_agent());
     let mut remote = repo.find_remote(remote)?;
 
-    let refspecs = refspecs.unwrap_or(
-        {
-            remote.push_refspecs()?
-                .iter()
-                .collect::<Vec<_>>()
-                .iter()
-                .map(|s| s.unwrap().to_string())
-                .collect::<Vec<_>>()
-        });
+    let refspecs = refspecs.unwrap_or({
+        remote
+            .push_refspecs()?
+            .iter()
+            .collect::<Vec<_>>()
+            .iter()
+            .map(|s| s.unwrap().to_string())
+            .collect::<Vec<_>>()
+    });
 
     let refspecs = if !refspecs.is_empty() {
         refspecs
@@ -161,8 +159,8 @@ pub fn push(
 pub fn commit_file(
     repo: &Repository,
     path: &Path,
-    message: &str) -> Result<Oid> {
-
+    message: &str,
+) -> Result<Oid> {
     let sig = repo.signature()?;
     let mut index = repo.index()?;
     index.add_path(path)?;
@@ -174,9 +172,7 @@ pub fn commit_file(
     let tree = repo.find_tree(oid)?;
 
     let tip = find_last_commit(repo)?;
-    let commit = tip.ok_or_else(|| {
-        Error::NoCommit
-    })?;
+    let commit = tip.ok_or_else(|| Error::NoCommit)?;
 
     let parents: [&Commit; 1] = [&commit];
     Ok(repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?)
@@ -241,10 +237,7 @@ pub fn clone_standard<P: AsRef<Path>>(
     builder.clone(src, target.as_ref()).map_err(Error::from)
 }
 
-fn fetch_submodules<P: AsRef<Path>>(
-    repo: &Repository,
-    base: P,
-) -> Result<()> {
+fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     let modules = repo.submodules()?;
     for mut sub in modules {
         sub.sync()?;
@@ -309,10 +302,7 @@ pub fn is_clean(repo: &Repository) -> bool {
     state == RepositoryState::Clean
 }
 
-pub fn clone_recurse<P: AsRef<Path>>(
-    from: &str,
-    dir: P,
-) -> Result<Repository> {
+pub fn clone_recurse<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository> {
     let repo = match Repository::clone_recurse(from, dir) {
         Ok(repo) => repo,
         Err(e) => return Err(Error::from(e)),

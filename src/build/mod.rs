@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{Error, ErrorCallback};
-use config::{ProfileSettings, LockFile};
+use config::{lock_file::LockFile, ProfileSettings};
 
 use scopeguard::defer;
 use workspace::lock;

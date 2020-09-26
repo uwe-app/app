@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 
-use config::plugin::{Plugin, RegistryEntry, RegistryItem};
+use config::{
+    registry::{RegistryEntry, RegistryItem},
+    Plugin,
+};
 
 use crate::{Error, Result};
 
@@ -24,8 +27,8 @@ pub trait RegistryAccess {
 /// development we can use a local file system path other than
 /// the public repository path used for reading.
 pub struct RegistryFileAccess {
-    pub reader: PathBuf,
-    pub writer: PathBuf,
+    reader: PathBuf,
+    writer: PathBuf,
 }
 
 impl RegistryFileAccess {

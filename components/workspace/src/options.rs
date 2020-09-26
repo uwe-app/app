@@ -1,9 +1,13 @@
 use std::fs;
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, DependencyMap, ProfileSettings, ProfileName, RuntimeOptions, MENU, LockFile};
+use config::{
+    dependency::DependencyMap, lock_file::{LockFile, LockFileEntry}, Config, ProfileName,
+    ProfileSettings, RuntimeOptions, MENU,
+};
 
 use crate::{Error, Result};
 
@@ -221,23 +225,40 @@ pub(crate) async fn prepare(
         let lock_file_current = LockFile::load(&lock_file_path)?;
         let mut lock_file_target: LockFile = Default::default();
 
-        // TODO: test lock file before fetching latest registry data
-        let prefs = preference::load()?;
-        cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+        let registry = Box::new(plugin::new_registry()?);
 
         let mut output: DependencyMap = Default::default();
         plugin::solve(
+            &registry,
             dependencies,
             &mut output,
             &lock_file_current,
             &mut lock_file_target,
-            &mut Default::default())
-            .await?;
+            &mut Default::default(),
+        )
+        .await?;
+
+        // TODO: install from the lock file diff
         opts.plugins = Some(output);
 
-        if lock_file_current != lock_file_target {
+        let difference = lock_file_target.diff(&lock_file_current)
+            .collect::<HashSet<&LockFileEntry>>();
+
+        if !difference.is_empty() {
+            info!("Update registry cache");
+
+            // TODO: test lock file before fetching latest registry data
+            let prefs = preference::load()?;
+            cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+
+            info!("Installing dependencies");
+            plugin::install(&registry, difference).await?;
+
+            info!("Writing lock file {}", lock_file_path.display());
             lock_file_target.write(&lock_file_path)?;
         }
+
+        std::process::exit(1);
     }
 
     // Create plugin cache lookups for scripts, styles etc

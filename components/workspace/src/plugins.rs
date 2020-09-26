@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use collator::{create_file, CollateInfo};
-use config::{Config, DependencyMap, Plugin, RuntimeOptions};
+use config::{dependency::DependencyMap, Config, Plugin, RuntimeOptions};
 
 use crate::{Error, Result};
 
