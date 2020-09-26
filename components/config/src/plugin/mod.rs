@@ -1,4 +1,5 @@
 mod dependency;
+mod lock_file;
 mod plugin;
 mod registry;
 
