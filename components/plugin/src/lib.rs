@@ -116,6 +116,7 @@ pub enum Error {
 }
 
 mod archive;
+mod installer;
 mod linter;
 mod packager;
 mod registry;
