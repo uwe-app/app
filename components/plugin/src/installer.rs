@@ -130,6 +130,7 @@ fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
 fn attributes(plugin: &mut Plugin, base: &PathBuf, digest: &str) -> Result<()> {
     let source: Url = REGISTRY.parse()?;
     plugin.base = base.clone();
+    println!("Assigning plugin base {:?}", base);
     plugin.checksum = Some(digest.to_string());
     plugin.source = Some(source);
     Ok(())

@@ -219,11 +219,13 @@ pub(crate) async fn prepare(
     if let Some(dependencies) = cfg.dependencies.take() {
         let plugins = plugin::resolve(&opts.project, dependencies).await?;
 
+        //println!("Plugins {:#?}", plugins);
+
         // Assign the resolved plugins for later computation
         opts.plugins = Some(plugins);
 
         // Test shortcut quit for now!
-        std::process::exit(1);
+        //std::process::exit(1);
     }
 
     // Create plugin cache lookups for scripts, styles etc

@@ -74,10 +74,7 @@ impl RuntimeOptions {
 
                     if plugin.styles.is_some() && !apply.styles_match.is_empty()
                     {
-                        let styles = plugin
-                            .styles
-                            .as_mut()
-                            .unwrap();
+                        let mut styles = plugin.styles.as_ref().unwrap().clone();
                         // Make style paths relative to the plugin asset destination
                         for s in styles.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
@@ -87,15 +84,12 @@ impl RuntimeOptions {
                     if plugin.scripts.is_some()
                         && !apply.scripts_match.is_empty()
                     {
-                        let scripts = plugin
-                            .scripts
-                            .as_mut()
-                            .unwrap();
+                        let mut scripts = plugin.scripts.as_ref().unwrap().clone();
                         // Make script paths relative to the plugin asset destination
                         for s in scripts.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
                         }
-                        self.scripts_cache.push((dep.clone(), scripts.clone()));
+                        self.scripts_cache.push((dep.clone(), scripts));
                     }
 
                     // Got some layouts to apply so add to the cache

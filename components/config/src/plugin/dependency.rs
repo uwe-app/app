@@ -45,6 +45,11 @@ pub enum DependencyTarget {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct Dependency {
+    /// Injected when resolving dependencies from the hash map key or 
+    /// converting from lock file entries or references.
+    #[serde(skip)]
+    pub name: Option<String>,
+
     /// Required version for the dependency.
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
@@ -67,10 +72,6 @@ pub struct Dependency {
     /// are applied to pages.
     pub apply: Option<Apply>,
 
-    /// Injected when resolving dependencies from the hash map key or 
-    /// converting from lock file entries.
-    #[serde(skip)]
-    pub name: Option<String>,
 }
 
 impl fmt::Display for Dependency {
@@ -92,6 +93,20 @@ impl Dependency {
             apply.prepare()?;
         }
         Ok(())
+    }
+}
+
+impl From<&DependencyRef> for Dependency {
+    fn from(dep_ref: &DependencyRef) -> Self {
+        Self {
+            name: Some(dep_ref.name.clone()),
+            version: dep_ref.version.clone(),
+            optional: None,
+            default_features: None,
+            features: None,
+            target: None,
+            apply: None,
+        }
     }
 }
 

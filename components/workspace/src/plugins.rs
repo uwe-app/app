@@ -15,6 +15,9 @@ fn create_asset(
     plugin_target: &PathBuf,
     asset: &str,
 ) -> Result<()> {
+
+    println!("Raw asset {:?}", asset);
+
     let asset = PathBuf::from(utils::url::to_path_separator(
         asset.trim_start_matches("/"),
     ));
@@ -26,7 +29,9 @@ fn create_asset(
         ));
     }
 
-    let asset_source = plugin.base.join(asset);
+    println!("Using asset path {:?}", &asset);
+
+    let asset_source = plugin.base.join(&asset);
     if !asset_source.exists() {
         return Err(Error::NoPluginAsset(name.clone(), asset_source));
     }

@@ -110,7 +110,8 @@ impl<'a> Resolver<'a> {
             .lock
             .target
             .diff(&self.lock.current)
-            .collect::<HashSet<&LockFileEntry>>();
+            .map(|l| l.clone())
+            .collect::<HashSet<LockFileEntry>>();
 
         // Find references that have already been solved
         let mut done: Vec<(Dependency, Plugin)> = 
@@ -160,16 +161,15 @@ impl<'a> Resolver<'a> {
 
     /// Install files from the lock file difference.
     async fn install_diff(
-        &self,
-        difference: HashSet<&LockFileEntry>,
+        &mut self,
+        difference: HashSet<LockFileEntry>,
     ) -> Result<()> {
         for entry in difference {
-            let (dep, solved) = self.intermediate.get(entry).take().unwrap();
-            println!("Install from lock file entry {}", &entry.name);
+            let (dep, solved) = self.intermediate.remove(&entry).take().unwrap();
             match solved {
                 SolvedReference::Package(ref _package) => {
-                    println!("Installing {:?}", &dep.name);
-                    let plugin = installer::install(&self.registry, dep).await?;
+                    let plugin = installer::install(&self.registry, &dep).await?;
+                    self.resolved.push((dep, plugin));
                 }
                 _ => {}
             }
@@ -274,16 +274,17 @@ async fn solver(
 
         stack.push(name.clone());
 
+        // FIXME: filter out based on dependency features
+
         let dependencies: DependencyMap = match solved {
             SolvedReference::Plugin(ref mut plugin) => {
                 if let Some(dependencies) = plugin.dependencies.take() {
                     dependencies 
-                } else {
-                    Default::default()
-                }
+                } else { Default::default() }
             }
-            // TODO: get dependencies from the package list
-            _ => Default::default()
+            SolvedReference::Package(ref mut package) => {
+                package.to_dependency_map()
+            }
         };
 
         // If we have nested dependencies recurse 

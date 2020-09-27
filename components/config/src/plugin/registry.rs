@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use crate::{plugin::Plugin, dependency::DependencyRef};
+use crate::{plugin::Plugin, dependency::{DependencyRef, DependencyMap, Dependency}};
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -48,6 +48,22 @@ pub struct RegistryItem {
 
     /// The feature names that the plugin declares.
     pub features: Option<Vec<String>>,
+}
+
+impl RegistryItem {
+    pub fn to_dependency_map(&self) -> DependencyMap {
+        if let Some(ref dependencies) = self.dependencies {
+            let mut map: DependencyMap = Default::default(); 
+            dependencies
+                .iter()
+                .for_each(|dep_ref| {
+                    let dep = Dependency::from(dep_ref);
+                    map.items.insert(dep_ref.name.clone(), dep);
+                });
+            return map
+        }
+        Default::default()
+    }
 }
 
 impl From<&Plugin> for RegistryItem {
