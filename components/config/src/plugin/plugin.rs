@@ -92,6 +92,9 @@ pub struct Plugin {
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
 
+    /// Collection of features for this plugin.
+    pub features: Option<HashMap<String, Vec<String>>>,
+
     /// Collections of partials and layouts.
     #[serde(flatten)]
     pub templates: Option<HashMap<TemplateEngine, PluginTemplates>>,
@@ -130,6 +133,7 @@ impl Default for Plugin {
             styles: None,
             scripts: None,
             dependencies: None,
+            features: None,
             templates: None,
             library: None,
             base: PathBuf::from(String::new()),

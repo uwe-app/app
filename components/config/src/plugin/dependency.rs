@@ -23,6 +23,10 @@ impl DependencyMap {
         self.items.into_iter()
     }
 
+    pub fn iter(&self) -> hash_map::Iter<'_, String, Dependency> {
+        self.items.iter()
+    }
+
     pub fn keys(&self) -> hash_map::Keys<String, Dependency> {
         self.items.keys()
     }
@@ -133,5 +137,24 @@ impl Apply {
             HashMap::new()
         };
         Ok(())
+    }
+}
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DependencyRef {
+    /// The dependency name.
+    pub name: String,
+    /// Required version for the dependency.
+    #[serde_as(as = "DisplayFromStr")]
+    pub version: VersionReq,
+}
+
+impl From<(&String, &Dependency)> for DependencyRef {
+    fn from(dep: (&String, &Dependency)) -> Self {
+        Self {
+            name: dep.0.clone(),
+            version: dep.1.version.clone(),
+        } 
     }
 }

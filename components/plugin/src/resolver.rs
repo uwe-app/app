@@ -291,6 +291,8 @@ async fn solver(
             solver(registry, dependencies, intermediate, lock, stack).await?;
         }
 
+        stack.pop();
+
         println!("Entry is {:#?}", entry);
 
         // Got a dependency that is already resolved so we need to ensure
