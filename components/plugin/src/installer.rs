@@ -15,7 +15,7 @@ use config::{
 };
 
 use crate::{
-    read, registry::RegistryAccess, Error, PackageReader, Registry, Result,
+    resolver::read, registry::RegistryAccess, Error, archive::reader::PackageReader, Registry, Result,
 };
 
 static REGISTRY: &str = "https://registry.hypertext.live";

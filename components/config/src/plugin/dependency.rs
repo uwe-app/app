@@ -58,7 +58,7 @@ pub struct Dependency {
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
 
-    /// Indicates this depndency is optional and should 
+    /// Indicates this dependency is optional and should 
     /// be activated via a feature flag.
     pub optional: Option<bool>,
 

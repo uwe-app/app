@@ -1,10 +1,16 @@
 use std::io;
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use log::info;
 
 use thiserror::Error;
 
-use config::lock_file::LockFileEntry;
+use config::{
+    dependency::DependencyMap,
+    lock_file::LockFile,
+    lock_file::LockFileEntry
+};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -132,30 +138,9 @@ mod walk;
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub use archive::{reader::PackageReader, writer::PackageWriter};
-pub use linter::lint;
-pub use packager::pack;
-pub use resolver::{read, solve};
-pub use uploader::publish;
-
 pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
-pub fn new_registry<'r>() -> Result<Registry<'r>> {
-    let reg = cache::get_registry_dir()?;
-    Ok(Box::new(registry::RegistryFileAccess::new(
-        reg.clone(),
-        reg.clone(),
-    )?))
-}
-
-pub async fn install(
-    registry: &Registry<'_>,
-    difference: HashSet<&LockFileEntry>) -> Result<()> {
-
-    for entry in difference {
-        println!("Install from lock file entry {}", &entry.name);
-        println!("Entry {:#?}", &entry)
-    }
-
-    Ok(())
-}
+pub use linter::lint;
+pub use packager::pack;
+pub use resolver::{resolve, read};
+pub use uploader::publish;

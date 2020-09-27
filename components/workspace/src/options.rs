@@ -1,11 +1,10 @@
 use std::fs;
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 use log::{debug, info};
 
 use config::{
-    dependency::DependencyMap, lock_file::{LockFile, LockFileEntry}, Config, ProfileName,
+    Config, ProfileName,
     ProfileSettings, RuntimeOptions, MENU,
 };
 
@@ -221,43 +220,12 @@ pub(crate) async fn prepare(
     };
 
     if let Some(dependencies) = cfg.dependencies.take() {
-        let lock_file_path = LockFile::get_lock_file(&opts.project);
-        let lock_file_current = LockFile::load(&lock_file_path)?;
-        let mut lock_file_target: LockFile = Default::default();
+        let plugins = plugin::resolve(&opts.project, dependencies).await?;
 
-        let registry = Box::new(plugin::new_registry()?);
+        // Assign the resolved plugins for later computation
+        opts.plugins = Some(plugins);
 
-        let mut output: DependencyMap = Default::default();
-        plugin::solve(
-            &registry,
-            dependencies,
-            &mut output,
-            &lock_file_current,
-            &mut lock_file_target,
-            &mut Default::default(),
-        )
-        .await?;
-
-        // TODO: install from the lock file diff
-        opts.plugins = Some(output);
-
-        let difference = lock_file_target.diff(&lock_file_current)
-            .collect::<HashSet<&LockFileEntry>>();
-
-        if !difference.is_empty() {
-            info!("Update registry cache");
-
-            // TODO: test lock file before fetching latest registry data
-            let prefs = preference::load()?;
-            cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
-
-            info!("Installing dependencies");
-            plugin::install(&registry, difference).await?;
-
-            info!("Writing lock file {}", lock_file_path.display());
-            lock_file_target.write(&lock_file_path)?;
-        }
-
+        // Test shortcut quit for now!
         std::process::exit(1);
     }
 

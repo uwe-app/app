@@ -1,4 +1,4 @@
-use std::fs::{remove_file, File};
+use std::fs::File;
 use std::path::PathBuf;
 
 use fs2::FileExt;

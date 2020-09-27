@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use config::Plugin;
 use futures::TryFutureExt;
 
-use crate::{archive::writer::PackageWriter, lint, read, Result};
+use crate::{archive::writer::PackageWriter, linter::lint, resolver::read, Result};
 
 /// Package a plugin directory.
 pub async fn pack(
