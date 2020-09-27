@@ -3,10 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{
-    Config, ProfileName,
-    ProfileSettings, RuntimeOptions, MENU,
-};
+use config::{Config, ProfileName, ProfileSettings, RuntimeOptions, MENU};
 
 use crate::{Error, Result};
 

@@ -15,7 +15,8 @@ use config::{
 };
 
 use crate::{
-    resolver::read, registry::RegistryAccess, Error, archive::reader::PackageReader, Registry, Result,
+    archive::reader::PackageReader, registry::RegistryAccess, resolver::read,
+    Error, Registry, Result,
 };
 
 static REGISTRY: &str = "https://registry.hypertext.live";
@@ -81,7 +82,6 @@ pub(crate) async fn resolve_package(
     name: &str,
     version: &VersionReq,
 ) -> Result<(Version, RegistryItem)> {
-
     let entry = registry
         .entry(name)
         .await?
@@ -95,6 +95,45 @@ pub(crate) async fn resolve_package(
     })?;
 
     Ok((version.clone(), package.clone()))
+}
+
+pub(crate) async fn get_cached(
+    registry: &Registry<'_>,
+    dep: &Dependency,
+) -> Result<Option<Plugin>> {
+    let name = dep.name.as_ref().unwrap();
+    let (version, package) =
+        resolve_package(registry, name, &dep.version).await?;
+
+    let extract_target = get_extract_dir(name, &version)?;
+    let extract_target_plugin = extract_target.join(PLUGIN);
+
+    let source: Url = REGISTRY.parse()?;
+
+    // Got an existing plugin file in the target cache directory
+    // so we should try to use that
+    if extract_target_plugin.exists() {
+        let mut plugin = install_file(&extract_target).await?;
+        attributes(&mut plugin, &extract_target, &package.digest)?;
+        return Ok(Some(plugin));
+    }
+
+    Ok(None)
+}
+
+fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
+    let extract_dir =
+        format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
+    Ok(cache::get_cache_src_dir()?.join(extract_dir))
+}
+
+/// Assign some private attributes to the plugin.
+fn attributes(plugin: &mut Plugin, base: &PathBuf, digest: &str) -> Result<()> {
+    let source: Url = REGISTRY.parse()?;
+    plugin.base = base.clone();
+    plugin.checksum = Some(digest.to_string());
+    plugin.source = Some(source);
+    Ok(())
 }
 
 /// Install a plugin using the local registry cache and archives
@@ -113,30 +152,12 @@ async fn install_registry(
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Plugin> {
-
     let name = dep.name.as_ref().unwrap();
     let (version, package) =
         resolve_package(registry, name, &dep.version).await?;
 
-    let extract_dir =
-        format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
-    let extract_target = cache::get_cache_src_dir()?.join(extract_dir);
-    let extract_target_plugin = extract_target.join(PLUGIN);
-
-    let source: Url = REGISTRY.parse()?;
-
-    let attributes =
-        |plugin: &mut Plugin, base: &PathBuf, digest: &str, source: Url| {
-            plugin.base = base.clone();
-            plugin.checksum = Some(digest.to_string());
-            plugin.source = Some(source);
-        };
-
-    // Got an existing plugin file in the target cache directory
-    // so we should try to use that
-    if extract_target_plugin.exists() {
-        let mut plugin = install_file(&extract_target).await?;
-        attributes(&mut plugin, &extract_target, &package.digest, source);
+    let extract_target = get_extract_dir(name, &version)?;
+    if let Some(plugin) = get_cached(registry, dep).await?.take() {
         return Ok(plugin);
     }
 
@@ -174,6 +195,6 @@ async fn install_registry(
             .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
-    attributes(&mut plugin, &extract_target, &package.digest, source);
+    attributes(&mut plugin, &extract_target, &package.digest)?;
     Ok(plugin)
 }

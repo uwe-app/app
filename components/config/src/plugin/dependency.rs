@@ -25,6 +25,10 @@ impl DependencyMap {
         self.items.into_iter()
     }
 
+    pub fn keys(&self) -> hash_map::Keys<String, Dependency> {
+        self.items.keys()
+    }
+
     pub fn to_vec(&self) -> Vec<(&String, &Dependency)> {
         let out: Vec<(&String, &Dependency)> = Vec::new();
         self.items.iter().fold(out, |mut acc, (name, dep)| {
@@ -58,7 +62,7 @@ pub struct Dependency {
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
 
-    /// Indicates this dependency is optional and should 
+    /// Indicates this dependency is optional and should
     /// be activated via a feature flag.
     pub optional: Option<bool>,
 
@@ -80,7 +84,8 @@ pub struct Dependency {
     #[serde(skip)]
     pub plugin: Option<Plugin>,
 
-    /// Injected when resolving dependencies from the hash map key.
+    /// Injected when resolving dependencies from the hash map key or 
+    /// converting from lock file entries.
     #[serde(skip)]
     pub name: Option<String>,
 }

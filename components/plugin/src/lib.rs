@@ -1,5 +1,5 @@
-use std::io;
 use std::collections::HashSet;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use log::info;
@@ -7,15 +7,19 @@ use log::info;
 use thiserror::Error;
 
 use config::{
-    dependency::DependencyMap,
-    lock_file::LockFile,
-    lock_file::LockFileEntry
+    dependency::DependencyMap, lock_file::LockFile, lock_file::LockFileEntry,
 };
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
+
+    #[error("No package or plugin could be found for dependency {0}")]
+    DependencyNotFound(String),
+
+    #[error("Incompatible dependency versions; {0} does not satisfy existing version {1}")]
+    IncompatibleDependency(String, String),
 
     #[error("Plugin key {0} does not match plugin name {1}")]
     PluginNameMismatch(String, String),
@@ -142,5 +146,5 @@ pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
 pub use linter::lint;
 pub use packager::pack;
-pub use resolver::{resolve, read};
+pub use resolver::{read, resolve};
 pub use uploader::publish;

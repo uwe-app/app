@@ -1,6 +1,6 @@
-use std::collections::HashSet;
-use std::collections::hash_set::Difference;
 use std::collections::hash_map::RandomState;
+use std::collections::hash_set::Difference;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use semver::Version;
@@ -41,8 +41,11 @@ impl LockFile {
         Ok(())
     }
 
-    pub fn diff<'a>(&'a self, other: &'a LockFile) -> Difference<'a, LockFileEntry, RandomState> {
-        self.package.difference(&other.package) 
+    pub fn diff<'a>(
+        &'a self,
+        other: &'a LockFile,
+    ) -> Difference<'a, LockFileEntry, RandomState> {
+        self.package.difference(&other.package)
     }
 }
 
@@ -73,13 +76,13 @@ impl Default for LockFileEntry {
 }
 
 //impl From<&Plugin> for LockFileEntry {
-    //fn from(plugin: &Plugin) -> Self {
-        //Self {
-            //name: plugin.name.clone(),
-            //version: plugin.version.clone(),
-            //source: plugin.source.clone(),
-            //checksum: plugin.checksum.clone(),
-            //dependencies: None,
-        //}
-    //}
+//fn from(plugin: &Plugin) -> Self {
+//Self {
+//name: plugin.name.clone(),
+//version: plugin.version.clone(),
+//source: plugin.source.clone(),
+//checksum: plugin.checksum.clone(),
+//dependencies: None,
+//}
+//}
 //}

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use crate::plugin::Plugin;
 
@@ -30,10 +30,17 @@ impl RegistryEntry {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RegistryItem {
     pub name: String,
     pub digest: String,
+    // TODO
+    pub dependencies: Option<Vec<String>>,
+    // TODO
+    pub optional: Option<Vec<String>>,
+    // TODO
+    pub features: Option<Vec<String>>,
 }
 
 impl From<&Plugin> for RegistryItem {

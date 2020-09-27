@@ -7,7 +7,7 @@ use config::{
     Plugin,
 };
 
-use crate::{Error, Result, Registry};
+use crate::{Error, Registry, Result};
 
 /// Defines the contract for plugin registry implementations.
 #[async_trait]
@@ -82,8 +82,5 @@ impl RegistryAccess for RegistryFileAccess {
 
 pub(crate) fn new_registry<'r>() -> Result<Registry<'r>> {
     let reg = cache::get_registry_dir()?;
-    Ok(Box::new(RegistryFileAccess::new(
-        reg.clone(),
-        reg.clone(),
-    )?))
+    Ok(Box::new(RegistryFileAccess::new(reg.clone(), reg.clone())?))
 }
