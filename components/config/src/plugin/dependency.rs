@@ -52,10 +52,21 @@ pub enum DependencyTarget {
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "kebab-case")]
 pub struct Dependency {
     /// Required version for the dependency.
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
+
+    /// Indicates this depndency is optional and should 
+    /// be activated via a feature flag.
+    pub optional: Option<bool>,
+
+    /// Enable or disable the default features for a plugin.
+    pub default_features: Option<bool>,
+
+    /// Explicit list of feature flags for the plugin.
+    pub features: Option<Vec<String>>,
 
     /// Optional target such as a folder, archive or git repository.
     #[serde(flatten)]
