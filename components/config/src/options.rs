@@ -6,7 +6,9 @@ use globset::GlobMatcher;
 use url::Url;
 
 use crate::{
-    dependency::Dependency, dependency::DependencyMap, Config, Error,
+    plugin::ResolvedPlugins,
+    dependency::Dependency, Config, Error,
+    script::ScriptAsset, style::StyleAsset,
     ProfileSettings, RenderTypes, Result, TemplateEngine, HTML, INDEX_STEM,
 };
 
@@ -31,11 +33,11 @@ pub struct RuntimeOptions {
     pub settings: ProfileSettings,
 
     // Computed plugins
-    pub plugins: Option<DependencyMap>,
+    pub plugins: Option<ResolvedPlugins>,
 
     // Cache of plugin dependencies that should be applied to pages
-    pub styles_cache: Vec<Dependency>,
-    pub scripts_cache: Vec<Dependency>,
+    pub styles_cache: Vec<(Dependency, Vec<StyleAsset>)>,
+    pub scripts_cache: Vec<(Dependency, Vec<ScriptAsset>)>,
     pub layouts_cache: HashMap<String, Vec<GlobMatcher>>,
 }
 
@@ -62,8 +64,8 @@ impl RuntimeOptions {
     // FIXME: stricter error handling on mismatch
     pub fn prepare(&mut self, engine: &TemplateEngine) -> Result<()> {
         if let Some(ref mut plugins) = self.plugins {
-            for (_, dep) in plugins.to_vec() {
-                let plugin = dep.plugin.as_ref().unwrap();
+            for (dep, plugin) in plugins.iter_mut() {
+                //let plugin = dep.plugin.as_ref().unwrap();
                 if let Some(ref apply) = dep.apply {
                     let assets_href_base = format!(
                         "/{}",
@@ -72,11 +74,7 @@ impl RuntimeOptions {
 
                     if plugin.styles.is_some() && !apply.styles_match.is_empty()
                     {
-                        let mut dep = dep.clone();
-                        let styles = dep
-                            .plugin
-                            .as_mut()
-                            .unwrap()
+                        let styles = plugin
                             .styles
                             .as_mut()
                             .unwrap();
@@ -84,16 +82,12 @@ impl RuntimeOptions {
                         for s in styles.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
                         }
-                        self.styles_cache.push(dep);
+                        self.styles_cache.push((dep.clone(), styles.clone()));
                     }
                     if plugin.scripts.is_some()
                         && !apply.scripts_match.is_empty()
                     {
-                        let mut dep = dep.clone();
-                        let scripts = dep
-                            .plugin
-                            .as_mut()
-                            .unwrap()
+                        let scripts = plugin
                             .scripts
                             .as_mut()
                             .unwrap();
@@ -101,7 +95,7 @@ impl RuntimeOptions {
                         for s in scripts.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
                         }
-                        self.scripts_cache.push(dep);
+                        self.scripts_cache.push((dep.clone(), scripts.clone()));
                     }
 
                     // Got some layouts to apply so add to the cache

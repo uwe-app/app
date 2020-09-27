@@ -118,9 +118,7 @@ impl<'a> PageBuilder<'a> {
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn scripts(mut self) -> Result<Self> {
         let href = self.page.href.as_ref().unwrap();
-        for dep in self.options.scripts_cache.iter() {
-            let plugin = dep.plugin.as_ref().unwrap();
-            let scripts = plugin.scripts.as_ref().unwrap();
+        for (dep, scripts) in self.options.scripts_cache.iter() {
             let apply = dep.apply.as_ref().unwrap();
             for matcher in apply.scripts_match.iter() {
                 if matcher.is_match(href) {
@@ -143,9 +141,7 @@ impl<'a> PageBuilder<'a> {
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn styles(mut self) -> Result<Self> {
         let href = self.page.href.as_ref().unwrap();
-        for dep in self.options.styles_cache.iter() {
-            let plugin = dep.plugin.as_ref().unwrap();
-            let styles = plugin.styles.as_ref().unwrap();
+        for (dep, styles) in self.options.styles_cache.iter() {
             let apply = dep.apply.as_ref().unwrap();
             for matcher in apply.styles_match.iter() {
                 if matcher.is_match(href) {

@@ -185,17 +185,17 @@ fn build_feed(
 fn find_feed_plugin<'a>(
     feed: &FeedConfig,
     options: &'a RuntimeOptions,
-) -> &'a Option<Plugin> {
+) -> Option<&'a Plugin> {
     let plugin_name = feed.plugin.as_ref().unwrap();
     if let Some(ref plugins) = options.plugins {
         // NOTE: we only look for a direct dependency at the moment
-        for (name, dep) in plugins.items.iter() {
-            if name == plugin_name {
-                return &dep.plugin;
+        for (_, plugin) in plugins.iter() {
+            if &plugin.name == plugin_name {
+                return Some(plugin);
             }
         }
     }
-    &None
+    None
 }
 
 // Create feed pages.
@@ -207,8 +207,8 @@ pub fn feed(
     info: &mut CollateInfo,
 ) -> Result<()> {
     let plugin_name = feed.plugin.as_ref().unwrap().clone();
+
     let plugin = find_feed_plugin(feed, options)
-        .as_ref()
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
     let templates = plugin

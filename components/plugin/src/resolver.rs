@@ -5,6 +5,7 @@ use async_recursion::async_recursion;
 use log::{info, debug};
 
 use config::{
+    plugin::ResolvedPlugins,
     dependency::{Dependency, DependencyMap, DependencyTarget},
     lock_file::LockFile,
     lock_file::LockFileEntry,
@@ -31,13 +32,12 @@ enum SolvedReference {
 }
 
 type IntermediateMap = HashMap<LockFileEntry, (Dependency, SolvedReference)>;
-type Resolved = Vec<(Dependency, Plugin)>;
 
 /// Resolve the plugins for a collection of dependencies.
 pub async fn resolve<P: AsRef<Path>>(
     project: P,
     dependencies: DependencyMap,
-) -> Result<DependencyMap> {
+) -> Result<ResolvedPlugins> {
     let mut resolver =
         Resolver::new(project.as_ref().to_path_buf(), dependencies)?;
     resolver.solve().await?;
@@ -71,8 +71,7 @@ struct Resolver<'a> {
     registry: Registry<'a>,
     lock: ResolverLock,
     intermediate: IntermediateMap,
-    resolved: Resolved,
-    output: DependencyMap,
+    resolved: ResolvedPlugins,
 }
 
 impl<'a> Resolver<'a> {
@@ -87,7 +86,6 @@ impl<'a> Resolver<'a> {
             lock,
             intermediate: HashMap::new(),
             resolved: Vec::new(),
-            output: Default::default(),
         })
     }
 
@@ -183,13 +181,12 @@ impl<'a> Resolver<'a> {
         for (dep, _) in self.resolved.iter_mut() {
             dep.prepare()?;
         }
-        //dep.plugin = Some(plugin);
         Ok(())
     }
 
     /// Get the computed dependency map.
-    fn into_inner(self) -> DependencyMap {
-        self.output
+    fn into_inner(self) -> ResolvedPlugins {
+        self.resolved
     }
 }
 

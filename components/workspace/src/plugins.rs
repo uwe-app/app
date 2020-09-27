@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use collator::{create_file, CollateInfo};
-use config::{dependency::DependencyMap, Config, Plugin, RuntimeOptions};
+use config::{plugin::ResolvedPlugins, dependency::DependencyMap, Config, Plugin, RuntimeOptions};
 
 use crate::{Error, Result};
 
@@ -121,10 +121,10 @@ pub fn collate(
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
-    plugins: &DependencyMap,
+    plugins: &ResolvedPlugins,
 ) -> Result<()> {
-    for (name, dep) in plugins.to_vec() {
-        let plugin = dep.plugin.as_ref().unwrap();
+    for (_dep, plugin) in plugins.iter() {
+        let name = &plugin.name;
         let plugin_base = plugin.assets();
 
         assets(options, info, name, plugin, &plugin_base)?;

@@ -1,14 +1,9 @@
-use std::collections::HashSet;
 use std::io;
 use std::path::{Path, PathBuf};
 
 use log::info;
 
 use thiserror::Error;
-
-use config::{
-    dependency::DependencyMap, lock_file::LockFile, lock_file::LockFileEntry,
-};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -141,7 +136,6 @@ mod uploader;
 mod walk;
 
 type Result<T> = std::result::Result<T, Error>;
-
 pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
 pub use linter::lint;

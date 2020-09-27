@@ -10,8 +10,6 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
 
-use super::plugin::Plugin;
-
 // TODO: spdx license for Plugin and ExternalLibrary
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -27,21 +25,6 @@ impl DependencyMap {
 
     pub fn keys(&self) -> hash_map::Keys<String, Dependency> {
         self.items.keys()
-    }
-
-    pub fn to_vec(&self) -> Vec<(&String, &Dependency)> {
-        let out: Vec<(&String, &Dependency)> = Vec::new();
-        self.items.iter().fold(out, |mut acc, (name, dep)| {
-            if let Some(ref plugin) = dep.plugin {
-                if let Some(ref dependencies) = plugin.dependencies {
-                    let mut deps = dependencies.to_vec();
-                    acc.append(&mut deps);
-                }
-            }
-
-            acc.push((name, dep));
-            acc
-        })
     }
 }
 
@@ -79,10 +62,6 @@ pub struct Dependency {
     /// Patterns that determine how styles, scripts and layouts
     /// are applied to pages.
     pub apply: Option<Apply>,
-
-    /// Resolved plugin for this dependency.
-    #[serde(skip)]
-    pub plugin: Option<Plugin>,
 
     /// Injected when resolving dependencies from the hash map key or 
     /// converting from lock file entries.

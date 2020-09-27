@@ -8,14 +8,13 @@ use url::Url;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
-    lock_file::LockFileEntry,
     registry::RegistryItem,
     semver::{Version, VersionReq},
     Plugin, PLUGIN,
 };
 
 use crate::{
-    archive::reader::PackageReader, registry::RegistryAccess, resolver::read,
+    archive::reader::PackageReader, resolver::read,
     Error, Registry, Result,
 };
 
