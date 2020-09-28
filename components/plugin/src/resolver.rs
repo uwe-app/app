@@ -312,7 +312,7 @@ async fn solver(
                 }
             };
 
-            let dependencies = dependencies.filter(&dep.features, feature_map);
+            let dependencies = dependencies.filter(&dep, feature_map)?;
             solver(registry, dependencies, intermediate, lock, stack).await?;
         }
 

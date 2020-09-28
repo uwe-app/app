@@ -8,7 +8,7 @@ use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
-use crate::Result;
+use crate::{Error, Result};
 
 use super::features::{FeatureFlags, FeatureMap};
 
@@ -45,17 +45,79 @@ impl DependencyMap {
         self.items.contains_key(s.as_ref()) 
     }
 
+    fn resolve_features(&self, names: &Vec<String>) -> DependencyMap {
+        let mut deps: DependencyMap = Default::default();
+        names
+            .iter()
+            .filter(|n| {
+                self.items.contains_key(n.as_str())
+            })
+            .for_each(|n| {
+                let dep = self.items.get(n).unwrap().clone();
+                deps.items.insert(n.to_string(), dep);
+            });
+        deps
+    }
+
+    pub fn append(&mut self, other: DependencyMap) {
+        other
+            .into_iter()
+            .for_each(|(k, v)| { self.items.insert(k, v); });
+    }
+
     /// Filter this dependency map using the feature flags from a 
     /// source dependency.
-    pub fn filter(self, flags: &Option<FeatureFlags>, map: &Option<FeatureMap>) -> DependencyMap {
-        if let Some(ref flags) = flags {
-            let default_features = flags.default_features.is_none()
-                || (flags.default_features.is_some() && flags.default_features.unwrap());
+    pub fn filter(self,
+        src: &Dependency,
+        map: &Option<FeatureMap>) -> Result<DependencyMap> {
 
-            println!("Flags {:#?}", flags);
-            println!("Map {:#?}", map);
+        let flags = &src.features;
+
+        let mut out: DependencyMap = Default::default();
+
+        // Collect non-optional dependencies
+        self.iter()
+            .filter(|(_, d)| !d.is_optional())
+            .for_each(|(k, d)| { out.items.insert(k.to_string(), d.clone()); });
+
+        // Determine if we need default features
+        let default_features = if let Some(ref flags) = flags {
+            flags.default_features.is_none()
+                || (flags.default_features.is_some() && flags.default_features.unwrap())
+        } else { true };
+
+        // Collect default features if available
+        let defaults = if let Some(ref map) = map {
+            map.default()
+        } else { None };
+
+        // Assign default features if required and available
+        if default_features {
+            if let Some(default) = defaults {
+                let deps = self.resolve_features(default);
+                out.append(deps);
+            }
         }
-        self
+
+        // Resolve requested features
+        if let (Some(ref specs), Some(ref features)) = (flags, map) {
+            if let Some(ref include_flags) = specs.flags {
+                for flag_name in include_flags.iter() {
+                    if !features.contains_key(flag_name) {
+                        return Err(
+                            Error::NoFeature(src.to_string(), flag_name.to_string()));
+                    }
+                    println!("Got flag name {}", flag_name);
+                    let names = vec![flag_name.clone()];
+                    println!("Using feature names {:?}", &names);
+                    let deps = self.resolve_features(&names);
+                    println!("Got resolved deps {:?}", &deps);
+                    out.append(deps);
+                }
+            }
+        }
+
+        Ok(out)
     }
 }
 

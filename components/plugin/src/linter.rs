@@ -33,7 +33,7 @@ pub fn lint(plugin: &Plugin) -> Result<()> {
 
 /// Lint the feature definitions.
 fn lint_features(plugin: &Plugin, map: &FeatureMap) -> Result<()> {
-    let names = Plugin::features(map);
+    let names = map.names();
     for nm in names.iter() {
         if let Some(ref deps) = plugin.dependencies {
             if deps.contains_key(nm) {

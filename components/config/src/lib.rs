@@ -22,6 +22,9 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
+    #[error("Dependency {0} wants the feature {1} but the feature is not available")]
+    NoFeature(String, String),
+
     #[error(
         "Dependency {0} wants to apply layouts but the plugin has no templates"
     )]
