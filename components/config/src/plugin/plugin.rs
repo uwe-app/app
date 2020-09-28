@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::iter::FromIterator;
 use std::path::PathBuf;
 
 use semver::Version;
@@ -92,8 +93,7 @@ pub struct Plugin {
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
 
-    /// Collection of features for this plugggin.
-    #[serde(flatten)]
+    /// Collection of features for this plugin.
     pub features: Option<FeatureMap>,
 
     /// Collections of partials and layouts
@@ -145,6 +145,28 @@ impl Default for Plugin {
 }
 
 impl Plugin {
+
+    /// Resolve feature names to a set of expected dependency names.
+    pub fn features<'a>(map: &'a FeatureMap) -> HashSet<&'a String> {
+        let flat: Vec<&String> = map
+            .iter()
+            .flat_map(|(_, v)| v)
+            .flat_map(|n| {
+                if map.contains_key(n) {
+                    return map
+                        .get(n)
+                        .unwrap()
+                        .iter()
+                        .collect::<Vec<&String>>()
+                        .into_iter();
+                }
+                vec![n].into_iter()
+            })
+            .collect();
+
+        HashSet::from_iter(flat.into_iter())
+    }
+
     /// Generate a qualified name relative to the plugin name.
     pub fn qualified(&self, val: &str) -> String {
         format!("{}::{}", &self.name, val)

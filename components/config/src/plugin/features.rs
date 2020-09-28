@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::hash_map;
 
 use serde::{Deserialize, Serialize};
 
@@ -20,9 +21,23 @@ pub struct FeatureFlags {
 /// Map of features to dependencies used by plugin definitions 
 /// to indicate which dependencies should be resolved for a given 
 /// set of feature flags.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct FeatureMap {
     #[serde(flatten)]
-    pub map: Option<HashMap<FeatureName, Vec<DependencyName>>>,
-    pub default: Vec<DependencyName>,
+    map: HashMap<FeatureName, Vec<DependencyName>>,
+}
+
+impl FeatureMap {
+
+    pub fn get(&self, name: &FeatureName) -> Option<&Vec<DependencyName>> {
+        self.map.get(name) 
+    }
+
+    pub fn iter(&self) -> hash_map::Iter<'_, FeatureName, Vec<DependencyName>> {
+        self.map.iter() 
+    }
+
+    pub fn contains_key<S: AsRef<str>>(&self, s: S) -> bool {
+        self.map.contains_key(s.as_ref())
+    }
 }

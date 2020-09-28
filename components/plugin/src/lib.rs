@@ -45,6 +45,12 @@ pub enum Error {
     )]
     LintPluginNameInvalidNameSpace(String),
 
+    #[error("Plugin {0} has invalid feature reference {1}")]
+    LintFeatureMissing(String, String),
+
+    #[error("Feature references dependency {0}@{1} which is not optional")]
+    LintFeatureDependencyNotOptional(String, String),
+
     #[error("The archive package {0} already exists, please move it away")]
     PackageExists(PathBuf),
 

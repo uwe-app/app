@@ -10,14 +10,14 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
 
-use super::features::FeatureFlags;
+use super::features::{FeatureFlags, FeatureMap};
 
 // TODO: spdx license for Plugin and ExternalLibrary
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
     #[serde(flatten)]
-    pub items: HashMap<String, Dependency>,
+    items: HashMap<String, Dependency>,
 }
 
 impl DependencyMap {
@@ -31,6 +31,31 @@ impl DependencyMap {
 
     pub fn keys(&self) -> hash_map::Keys<String, Dependency> {
         self.items.keys()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
+    pub fn get<S: AsRef<str>>(&self, s: S) -> Option<&Dependency> {
+        self.items.get(s.as_ref()) 
+    }
+
+    pub fn contains_key<S: AsRef<str>>(&self, s: S) -> bool {
+        self.items.contains_key(s.as_ref()) 
+    }
+
+    /// Filter this dependency map using the feature flags from a 
+    /// source dependency.
+    pub fn filter(self, flags: &Option<FeatureFlags>, map: &Option<FeatureMap>) -> DependencyMap {
+        if let Some(ref flags) = flags {
+            let default_features = flags.default_features.is_none()
+                || (flags.default_features.is_some() && flags.default_features.unwrap());
+
+            println!("Flags {:#?}", flags);
+            println!("Map {:#?}", map);
+        }
+        self
     }
 }
 
@@ -75,12 +100,20 @@ pub struct Dependency {
 
 impl fmt::Display for Dependency {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}@{}",
-            self.name.as_ref().unwrap(),
-            self.version.to_string()
-        )
+        if let Some(ref name) = self.name {
+            write!(
+                f,
+                "{}@{}",
+                name,
+                self.version.to_string()
+            )
+        } else {
+            write!(
+                f,
+                "{}",
+                self.version.to_string()
+            )
+        }
     }
 }
 
@@ -92,6 +125,10 @@ impl Dependency {
             apply.prepare()?;
         }
         Ok(())
+    }
+
+    pub fn is_optional(&self) -> bool {
+        self.optional.is_some() && self.optional.unwrap()
     }
 }
 

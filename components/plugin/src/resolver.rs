@@ -7,6 +7,7 @@ use log::{info, debug};
 use config::{
     plugin::ResolvedPlugins,
     dependency::{Dependency, DependencyMap, DependencyTarget},
+    features::FeatureMap,
     lock_file::LockFile,
     lock_file::LockFileEntry,
     plugin::Plugin,
@@ -21,6 +22,7 @@ use crate::{
     Error, Registry, Result,
 };
 
+#[derive(Debug)]
 enum SolvedReference {
     /// Local file system packages can be solved to plugins
     /// directly.
@@ -227,7 +229,14 @@ async fn solver(
     intermediate: &mut IntermediateMap,
     lock: &mut ResolverLock,
     stack: &mut Vec<String>,
+    //parent: Option<&'async_recursion Dependency>,
 ) -> Result<()> {
+
+    //let input = if let Some(parent) = parent {
+        //println!("SOLVER GOT PARENT DEPENDENCY REFERENCE");
+        //input
+    //} else { input };
+
     for (name, mut dep) in input.into_iter() {
         dep.name = Some(name.clone());
 
@@ -288,7 +297,22 @@ async fn solver(
         };
 
         // If we have nested dependencies recurse 
-        if !dependencies.items.is_empty() {
+        if !dependencies.is_empty() {
+
+            println!("Entering {:#?}", dep.name);
+
+            println!("Solved {:#?}", solved);
+
+            let feature_map: &Option<FeatureMap> = match solved {
+                SolvedReference::Plugin(ref plugin) => {
+                    &plugin.features
+                }
+                SolvedReference::Package(ref package) => {
+                    &package.features
+                }
+            };
+
+            let dependencies = dependencies.filter(&dep.features, feature_map);
             solver(registry, dependencies, intermediate, lock, stack).await?;
         }
 
