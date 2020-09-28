@@ -9,7 +9,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    script::ScriptAsset, style::StyleAsset, utils::href::UrlPath,
+    script::ScriptAsset, style::StyleAsset, href::UrlPath,
     TemplateEngine, ASSETS, PLUGINS,
 };
 

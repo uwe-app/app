@@ -225,7 +225,7 @@ pub(crate) async fn prepare(
         opts.plugins = Some(plugins);
 
         // Test shortcut quit for now!
-        std::process::exit(1);
+        //std::process::exit(1);
     }
 
     // Create plugin cache lookups for scripts, styles etc

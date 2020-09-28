@@ -9,7 +9,7 @@ use collator::{
     Collate, LinkCollate,
 };
 
-use config::{MenuEntry, MenuReference};
+use config::{MenuEntry, MenuReference, href::UrlPath};
 
 use crate::BuildContext;
 
@@ -87,7 +87,7 @@ impl Menu {
             .to_string();
 
         let definition = MenuReference::Directory {
-            directory: dir_path,
+            directory: UrlPath::from(dir_path),
             depth: Some(1),
             description: None,
         };

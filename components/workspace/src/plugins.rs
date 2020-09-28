@@ -7,14 +7,16 @@ use config::{plugin::ResolvedPlugins, Config, Plugin, RuntimeOptions};
 use crate::{Error, Result};
 
 /// Helper to create a synthetic asset from the plugin.
-fn create_asset(
+fn create_asset<S: AsRef<str>>(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     name: &String,
     plugin: &Plugin,
     plugin_target: &PathBuf,
-    asset: &str,
+    asset: S,
 ) -> Result<()> {
+    let asset = asset.as_ref();
+
     let asset = PathBuf::from(utils::url::to_path_separator(
         asset.trim_start_matches("/"),
     ));
@@ -51,7 +53,7 @@ fn assets(
 ) -> Result<()> {
     if let Some(ref assets) = plugin.assets {
         for asset in assets {
-            create_asset(options, info, name, plugin, plugin_target, &asset)?;
+            create_asset(options, info, name, plugin, plugin_target, asset)?;
         }
     }
     Ok(())

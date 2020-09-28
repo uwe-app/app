@@ -43,6 +43,12 @@ pub enum Error {
     #[error("Plugin names must contain at least one namespace (::)")]
     LintPluginNameSpace,
 
+    #[error("Plugin paths may not be absolute {0}")]
+    LintNoAbsolutePath(String),
+
+    #[error("Plugin asset {0} for path {1} is not a file")]
+    LintNoPluginFile(PathBuf, String),
+
     #[error(
         "Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)"
     )]

@@ -217,7 +217,7 @@ pub fn build<'c>(
 
     match menu.definition {
         MenuReference::File { ref file } => {
-            let file = options.resolve_source(file);
+            let file = options.resolve_source(file.as_ref());
             let (menu_result, menu_pages) =
                 compile_file_menu(options, collation, &file)?;
             result = menu_result;
@@ -230,7 +230,7 @@ pub fn build<'c>(
 
                 if let Some(ref page_path) = page_path {
                     if let Some(page) = collation.resolve(&page_path) {
-                        acc.push((page_path, page_href.clone(), page));
+                        acc.push((page_path, page_href.to_string(), page));
                     } else {
                         return Err(Error::NoMenuItemPage(
                             page_path.to_path_buf(),

@@ -7,7 +7,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, MenuEntry, RuntimeOptions};
+use config::{Config, MenuEntry, RuntimeOptions, href::UrlPath};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
@@ -98,7 +98,7 @@ fn add_menu(
     };
 
     // Inject the menu entry for processing later.
-    let entry = MenuEntry::new(name, url_path);
+    let entry = MenuEntry::new(name, UrlPath::from(url_path));
     info.graph.menus.sources.insert(Arc::new(entry), Vec::new());
 
     Ok(())
