@@ -10,6 +10,8 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
 
+use super::features::FeatureFlags;
+
 // TODO: spdx license for Plugin and ExternalLibrary
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -54,15 +56,12 @@ pub struct Dependency {
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
 
-    /// Indicates this dependency is optional and should
+    /// Indicates this dependency is optional and may 
     /// be activated via a feature flag.
     pub optional: Option<bool>,
 
-    /// Enable or disable the default features for a plugin.
-    pub default_features: Option<bool>,
-
-    /// Explicit list of feature flags for the plugin.
-    pub features: Option<Vec<String>>,
+    #[serde(flatten)]
+    pub features: Option<FeatureFlags>,
 
     /// Optional target such as a folder, archive or git repository.
     #[serde(flatten)]
@@ -93,20 +92,6 @@ impl Dependency {
             apply.prepare()?;
         }
         Ok(())
-    }
-}
-
-impl From<&DependencyRef> for Dependency {
-    fn from(dep_ref: &DependencyRef) -> Self {
-        Self {
-            name: Some(dep_ref.name.clone()),
-            version: dep_ref.version.clone(),
-            optional: None,
-            default_features: None,
-            features: None,
-            target: None,
-            apply: None,
-        }
     }
 }
 
@@ -152,24 +137,5 @@ impl Apply {
             HashMap::new()
         };
         Ok(())
-    }
-}
-
-#[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DependencyRef {
-    /// The dependency name.
-    pub name: String,
-    /// Required version for the dependency.
-    #[serde_as(as = "DisplayFromStr")]
-    pub version: VersionReq,
-}
-
-impl From<(&String, &Dependency)> for DependencyRef {
-    fn from(dep: (&String, &Dependency)) -> Self {
-        Self {
-            name: dep.0.clone(),
-            version: dep.1.version.clone(),
-        } 
     }
 }

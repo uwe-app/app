@@ -13,7 +13,7 @@ use crate::{
     TemplateEngine, ASSETS, PLUGINS,
 };
 
-use super::dependency::DependencyMap;
+use super::{dependency::DependencyMap, features::FeatureMap};
 
 // TODO: spdx license for Plugin and ExternalLibrary
 
@@ -92,10 +92,11 @@ pub struct Plugin {
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
 
-    /// Collection of features for this plugin.
-    pub features: Option<HashMap<String, Vec<String>>>,
+    /// Collection of features for this plugggin.
+    #[serde(flatten)]
+    pub features: Option<FeatureMap>,
 
-    /// Collections of partials and layouts.
+    /// Collections of partials and layouts
     #[serde(flatten)]
     pub templates: Option<HashMap<TemplateEngine, PluginTemplates>>,
 

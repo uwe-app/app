@@ -1,4 +1,5 @@
 pub mod dependency;
+pub mod features;
 pub mod lock_file;
 mod plugin;
 pub mod registry;
