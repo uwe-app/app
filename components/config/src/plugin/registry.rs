@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use crate::{plugin::Plugin, dependency::DependencyMap, features::FeatureMap};
+use crate::{dependency::DependencyMap, features::FeatureMap, plugin::Plugin};
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -38,8 +38,8 @@ pub struct RegistryItem {
     /// Checksum for the compressed archive.
     pub digest: String,
 
-    /// The plugin dependency specifications. We must store these 
-    /// so the solver can determine nested dependencies before the 
+    /// The plugin dependency specifications. We must store these
+    /// so the solver can determine nested dependencies before the
     /// plugin has been downloaded and extracted.
     pub dependencies: Option<DependencyMap>,
 

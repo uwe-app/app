@@ -2,15 +2,15 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{info, debug};
+use log::{debug, info};
 
 use config::{
-    plugin::ResolvedPlugins,
     dependency::{Dependency, DependencyMap, DependencyTarget},
     features::FeatureMap,
     lock_file::LockFile,
     lock_file::LockFileEntry,
     plugin::Plugin,
+    plugin::ResolvedPlugins,
     registry::RegistryItem,
     semver::Version,
     PLUGIN,
@@ -21,6 +21,8 @@ use crate::{
     registry::{self, RegistryAccess},
     Error, Registry, Result,
 };
+
+static DEPENDENCY_STACK_SIZE: usize = 32;
 
 #[derive(Debug)]
 enum SolvedReference {
@@ -116,21 +118,23 @@ impl<'a> Resolver<'a> {
             .collect::<HashSet<LockFileEntry>>();
 
         // Find references that have already been solved
-        let mut done: Vec<(Dependency, Plugin)> = 
-            self.lock.target.package
+        let mut done: Vec<(Dependency, Plugin)> = self
+            .lock
+            .target
+            .package
             .iter()
             .filter(|entry| {
-                let (_dep, solved) = self.intermediate.get(entry).as_ref().unwrap();
+                let (_dep, solved) =
+                    self.intermediate.get(entry).as_ref().unwrap();
                 match solved {
-                    SolvedReference::Plugin(_) => {
-                        return true
-                    }
+                    SolvedReference::Plugin(_) => return true,
                     _ => {}
                 }
                 false
             })
             .map(|entry| {
-                let (dep, solved) = self.intermediate.get(entry).as_ref().unwrap();
+                let (dep, solved) =
+                    self.intermediate.get(entry).as_ref().unwrap();
                 match solved {
                     SolvedReference::Plugin(ref plugin) => {
                         return Some((dep.clone(), plugin.clone()))
@@ -167,10 +171,12 @@ impl<'a> Resolver<'a> {
         difference: HashSet<LockFileEntry>,
     ) -> Result<()> {
         for entry in difference {
-            let (dep, solved) = self.intermediate.remove(&entry).take().unwrap();
+            let (dep, solved) =
+                self.intermediate.remove(&entry).take().unwrap();
             match solved {
                 SolvedReference::Package(ref _package) => {
-                    let plugin = installer::install(&self.registry, &dep).await?;
+                    let plugin =
+                        installer::install(&self.registry, &dep).await?;
                     self.resolved.push((dep, plugin));
                 }
                 _ => {}
@@ -229,15 +235,16 @@ async fn solver(
     intermediate: &mut IntermediateMap,
     lock: &mut ResolverLock,
     stack: &mut Vec<String>,
-    //parent: Option<&'async_recursion Dependency>,
 ) -> Result<()> {
 
-    //let input = if let Some(parent) = parent {
-        //println!("SOLVER GOT PARENT DEPENDENCY REFERENCE");
-        //input
-    //} else { input };
-
     for (name, mut dep) in input.into_iter() {
+
+        if stack.len() > DEPENDENCY_STACK_SIZE {
+            return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
+        } else if stack.contains(&name) {
+            return Err(Error::CyclicDependency(name));
+        }
+
         dep.name = Some(name.clone());
 
         let mut entry = lock
@@ -263,7 +270,7 @@ async fn solver(
         };
 
         let mut solved = if let Some(plugin) = plugin.take() {
-            check_plugin(&name, &dep, &plugin, stack)?;
+            check_plugin(&name, &dep, &plugin)?;
             SolvedReference::Plugin(plugin)
         } else if let Some(package) = package.take() {
             SolvedReference::Package(package)
@@ -281,39 +288,36 @@ async fn solver(
             }
         }
 
-        stack.push(name.clone());
-
         // FIXME: filter out based on dependency features
 
         let dependencies: DependencyMap = match solved {
             SolvedReference::Plugin(ref mut plugin) => {
                 if let Some(dependencies) = plugin.dependencies.take() {
-                    dependencies 
-                } else { Default::default() }
+                    dependencies
+                } else {
+                    Default::default()
+                }
             }
             SolvedReference::Package(ref mut package) => {
                 package.to_dependency_map()
             }
         };
 
-        // If we have nested dependencies recurse 
+        // If we have nested dependencies recurse
         if !dependencies.is_empty() {
-
-            println!("Entering {:#?}", dep.name);
-
-            println!("Solved {:#?}", solved);
+            //println!("Entering {:#?}", dep.name);
+            //println!("Solved {:#?}", solved);
 
             let feature_map: &Option<FeatureMap> = match solved {
-                SolvedReference::Plugin(ref plugin) => {
-                    &plugin.features
-                }
-                SolvedReference::Package(ref package) => {
-                    &package.features
-                }
+                SolvedReference::Plugin(ref plugin) => &plugin.features,
+                SolvedReference::Package(ref package) => &package.features,
             };
 
             let dependencies = dependencies.filter(&dep, feature_map)?;
+
+            stack.push(name.clone());
             solver(registry, dependencies, intermediate, lock, stack).await?;
+            stack.pop();
         }
 
         stack.pop();
@@ -349,17 +353,12 @@ fn check_plugin(
     name: &str,
     dep: &Dependency,
     plugin: &Plugin,
-    stack: &mut Vec<String>,
 ) -> Result<()> {
     if name != plugin.name {
         return Err(Error::PluginNameMismatch(
             name.to_string(),
             plugin.name.clone(),
         ));
-    }
-
-    if stack.contains(&plugin.name) {
-        return Err(Error::PluginCyclicDependency(plugin.name.clone()));
     }
 
     if !dep.version.matches(&plugin.version) {
@@ -386,7 +385,6 @@ async fn resolve_version(
             DependencyTarget::Archive { ref archive } => todo!(),
         }
     } else {
-
         // Get version from registry
         let name = dep.name.as_ref().unwrap();
         let (version, package) =

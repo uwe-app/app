@@ -22,7 +22,9 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
-    #[error("Dependency {0} wants the feature {1} but the feature is not available")]
+    #[error(
+        "Dependency {0} wants the feature {1} but the feature is not available"
+    )]
     NoFeature(String, String),
 
     #[error(
@@ -47,8 +49,14 @@ pub enum Error {
     #[error("Too many redirects, limit is {0}")]
     TooManyRedirects(usize),
 
-    #[error("Cyclic redirect: {stack} <-> {key}")]
+    #[error("Cyclic redirect {stack} <-> {key}")]
     CyclicRedirect { stack: String, key: String },
+
+    #[error("Cyclic feature {0}")]
+    CyclicFeature(String),
+
+    #[error("Feature stack depth has exceeded the maximum {0}")]
+    FeatureStackTooLarge(usize),
 
     #[error("Redirect file {0} already exists")]
     RedirectFileExists(PathBuf),

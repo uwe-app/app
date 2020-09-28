@@ -144,7 +144,6 @@ impl Default for Plugin {
 }
 
 impl Plugin {
-
     /// Generate a qualified name relative to the plugin name.
     pub fn qualified(&self, val: &str) -> String {
         format!("{}::{}", &self.name, val)

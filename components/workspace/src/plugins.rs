@@ -15,7 +15,6 @@ fn create_asset(
     plugin_target: &PathBuf,
     asset: &str,
 ) -> Result<()> {
-
     let asset = PathBuf::from(utils::url::to_path_separator(
         asset.trim_start_matches("/"),
     ));

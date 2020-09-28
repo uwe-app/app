@@ -1,7 +1,7 @@
 use regex::Regex;
 
 use crate::{Error, Result};
-use config::{Plugin, PLUGIN_NS, features::FeatureMap};
+use config::{features::FeatureMap, Plugin, PLUGIN_NS};
 
 pub fn lint(plugin: &Plugin) -> Result<()> {
     let ns_re = Regex::new("^[a-zA-Z0-9_-]+$")?;
@@ -39,15 +39,18 @@ fn lint_features(plugin: &Plugin, map: &FeatureMap) -> Result<()> {
             if deps.contains_key(nm) {
                 let dep = deps.get(nm).unwrap();
                 if !dep.is_optional() {
-                    return Err(
-                        Error::LintFeatureDependencyNotOptional(
-                            nm.to_string(), dep.to_string()));
+                    return Err(Error::LintFeatureDependencyNotOptional(
+                        nm.to_string(),
+                        dep.to_string(),
+                    ));
                 }
                 continue;
             }
         }
-        return Err(
-            Error::LintFeatureMissing(plugin.to_string(), nm.to_string()));
+        return Err(Error::LintFeatureMissing(
+            plugin.to_string(),
+            nm.to_string(),
+        ));
     }
     Ok(())
 }

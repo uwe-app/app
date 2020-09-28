@@ -12,6 +12,8 @@ use crate::{Error, Result};
 
 use super::features::{FeatureFlags, FeatureMap};
 
+static FEATURE_STACK_SIZE: usize = 16;
+
 // TODO: spdx license for Plugin and ExternalLibrary
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -38,39 +40,71 @@ impl DependencyMap {
     }
 
     pub fn get<S: AsRef<str>>(&self, s: S) -> Option<&Dependency> {
-        self.items.get(s.as_ref()) 
+        self.items.get(s.as_ref())
     }
 
     pub fn contains_key<S: AsRef<str>>(&self, s: S) -> bool {
-        self.items.contains_key(s.as_ref()) 
-    }
-
-    fn resolve_features(&self, names: &Vec<String>) -> DependencyMap {
-        let mut deps: DependencyMap = Default::default();
-        names
-            .iter()
-            .filter(|n| {
-                self.items.contains_key(n.as_str())
-            })
-            .for_each(|n| {
-                let dep = self.items.get(n).unwrap().clone();
-                deps.items.insert(n.to_string(), dep);
-            });
-        deps
+        self.items.contains_key(s.as_ref())
     }
 
     pub fn append(&mut self, other: DependencyMap) {
-        other
-            .into_iter()
-            .for_each(|(k, v)| { self.items.insert(k, v); });
+        other.into_iter().for_each(|(k, v)| {
+            self.items.insert(k, v);
+        });
     }
 
-    /// Filter this dependency map using the feature flags from a 
-    /// source dependency.
-    pub fn filter(self,
+    /// Recursive feature resolver.
+    fn resolver(
+        &self,
         src: &Dependency,
-        map: &Option<FeatureMap>) -> Result<DependencyMap> {
+        map: &Option<FeatureMap>,
+        features: &Vec<String>,
+        out: &mut DependencyMap,
+        stack: &mut Vec<String>,
+    ) -> Result<()> {
+        let feature_map = map.clone().unwrap_or(Default::default());
 
+        features.iter().try_for_each(|n| {
+            if stack.len() > FEATURE_STACK_SIZE {
+                return Err(Error::FeatureStackTooLarge(FEATURE_STACK_SIZE));
+            } else if stack.contains(n) {
+                return Err(Error::CyclicFeature(n.to_string()));
+            }
+
+            if let Some(dep) = self.get(n) {
+                out.items.insert(n.clone(), dep.clone());
+            } else if let Some(item) = feature_map.get(n) {
+                stack.push(n.clone());
+                self.resolver(src, map, item, out, stack)?;
+                stack.pop();
+            } else {
+                return Err(Error::NoFeature(src.to_string(), n.to_string()));
+            }
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    /// Resolve feature flags.
+    fn resolve(
+        &self,
+        src: &Dependency,
+        map: &Option<FeatureMap>,
+        features: &Vec<String>,
+    ) -> Result<DependencyMap> {
+        let mut out: DependencyMap = Default::default();
+        self.resolver(src, map, features, &mut out, &mut Default::default())?;
+        Ok(out)
+    }
+
+    /// Filter this dependency map using the feature flags from a
+    /// source dependency.
+    pub fn filter(
+        &self,
+        src: &Dependency,
+        map: &Option<FeatureMap>,
+    ) -> Result<DependencyMap> {
         let flags = &src.features;
 
         let mut out: DependencyMap = Default::default();
@@ -78,42 +112,39 @@ impl DependencyMap {
         // Collect non-optional dependencies
         self.iter()
             .filter(|(_, d)| !d.is_optional())
-            .for_each(|(k, d)| { out.items.insert(k.to_string(), d.clone()); });
+            .for_each(|(k, d)| {
+                out.items.insert(k.to_string(), d.clone());
+            });
 
         // Determine if we need default features
         let default_features = if let Some(ref flags) = flags {
             flags.default_features.is_none()
-                || (flags.default_features.is_some() && flags.default_features.unwrap())
-        } else { true };
+                || (flags.default_features.is_some()
+                    && flags.default_features.unwrap())
+        } else {
+            true
+        };
 
         // Collect default features if available
         let defaults = if let Some(ref map) = map {
             map.default()
-        } else { None };
+        } else {
+            None
+        };
 
         // Assign default features if required and available
         if default_features {
             if let Some(default) = defaults {
-                let deps = self.resolve_features(default);
+                let deps = self.resolve(src, map, default)?;
                 out.append(deps);
             }
         }
 
         // Resolve requested features
-        if let (Some(ref specs), Some(ref features)) = (flags, map) {
+        if let Some(ref specs) = flags {
             if let Some(ref include_flags) = specs.flags {
-                for flag_name in include_flags.iter() {
-                    if !features.contains_key(flag_name) {
-                        return Err(
-                            Error::NoFeature(src.to_string(), flag_name.to_string()));
-                    }
-                    println!("Got flag name {}", flag_name);
-                    let names = vec![flag_name.clone()];
-                    println!("Using feature names {:?}", &names);
-                    let deps = self.resolve_features(&names);
-                    println!("Got resolved deps {:?}", &deps);
-                    out.append(deps);
-                }
+                let deps = self.resolve(src, map, include_flags)?;
+                out.append(deps);
             }
         }
 
@@ -134,7 +165,7 @@ pub enum DependencyTarget {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct Dependency {
-    /// Injected when resolving dependencies from the hash map key or 
+    /// Injected when resolving dependencies from the hash map key or
     /// converting from lock file entries or references.
     #[serde(skip)]
     pub name: Option<String>,
@@ -143,7 +174,7 @@ pub struct Dependency {
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
 
-    /// Indicates this dependency is optional and may 
+    /// Indicates this dependency is optional and may
     /// be activated via a feature flag.
     pub optional: Option<bool>,
 
@@ -157,24 +188,14 @@ pub struct Dependency {
     /// Patterns that determine how styles, scripts and layouts
     /// are applied to pages.
     pub apply: Option<Apply>,
-
 }
 
 impl fmt::Display for Dependency {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref name) = self.name {
-            write!(
-                f,
-                "{}@{}",
-                name,
-                self.version.to_string()
-            )
+            write!(f, "{}@{}", name, self.version.to_string())
         } else {
-            write!(
-                f,
-                "{}",
-                self.version.to_string()
-            )
+            write!(f, "{}", self.version.to_string())
         }
     }
 }

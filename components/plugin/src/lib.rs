@@ -22,8 +22,11 @@ pub enum Error {
     #[error("Plugin {0}@{1} does not satsify requirement {2}")]
     PluginVersionMismatch(String, String, String),
 
-    #[error("Plugin cyclic dependency: {0}")]
-    PluginCyclicDependency(String),
+    #[error("Cyclic dependency {0}")]
+    CyclicDependency(String),
+
+    #[error("Dependency stack depth has exceeded the maximum {0}")]
+    DependencyStackTooLarge(usize),
 
     #[error("Plugin path {0} does not exist")]
     BadPluginPath(PathBuf),

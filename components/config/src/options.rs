@@ -6,10 +6,9 @@ use globset::GlobMatcher;
 use url::Url;
 
 use crate::{
-    plugin::ResolvedPlugins,
-    dependency::Dependency, Config, Error,
-    script::ScriptAsset, style::StyleAsset,
-    ProfileSettings, RenderTypes, Result, TemplateEngine, HTML, INDEX_STEM,
+    dependency::Dependency, plugin::ResolvedPlugins, script::ScriptAsset,
+    style::StyleAsset, Config, Error, ProfileSettings, RenderTypes, Result,
+    TemplateEngine, HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]
@@ -74,7 +73,8 @@ impl RuntimeOptions {
 
                     if plugin.styles.is_some() && !apply.styles_match.is_empty()
                     {
-                        let mut styles = plugin.styles.as_ref().unwrap().clone();
+                        let mut styles =
+                            plugin.styles.as_ref().unwrap().clone();
                         // Make style paths relative to the plugin asset destination
                         for s in styles.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
@@ -84,7 +84,8 @@ impl RuntimeOptions {
                     if plugin.scripts.is_some()
                         && !apply.scripts_match.is_empty()
                     {
-                        let mut scripts = plugin.scripts.as_ref().unwrap().clone();
+                        let mut scripts =
+                            plugin.scripts.as_ref().unwrap().clone();
                         // Make script paths relative to the plugin asset destination
                         for s in scripts.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
