@@ -73,23 +73,40 @@ impl RuntimeOptions {
 
                     if plugin.styles.is_some() && !apply.styles_match.is_empty()
                     {
-                        let mut styles =
-                            plugin.styles.as_ref().unwrap().clone();
+
                         // Make style paths relative to the plugin asset destination
-                        for s in styles.iter_mut() {
-                            s.set_source_prefix(&assets_href_base);
-                        }
-                        self.styles_cache.push((dep.clone(), styles.clone()));
+                        let styles =
+                            plugin.styles
+                                .clone()
+                                .unwrap()
+                                .drain()
+                                .map(|mut s| {
+                                    s.set_source_prefix(&assets_href_base);
+                                    s                            
+                                }).collect::<Vec<StyleAsset>>();
+                        self.styles_cache.push((dep.clone(), styles));
                     }
                     if plugin.scripts.is_some()
                         && !apply.scripts_match.is_empty()
                     {
+                        /*
                         let mut scripts =
                             plugin.scripts.as_ref().unwrap().clone();
                         // Make script paths relative to the plugin asset destination
                         for s in scripts.iter_mut() {
                             s.set_source_prefix(&assets_href_base);
                         }
+                        */
+
+                        let scripts =
+                            plugin.scripts
+                                .clone()
+                                .unwrap()
+                                .drain()
+                                .map(|mut s| {
+                                    s.set_source_prefix(&assets_href_base);
+                                    s                            
+                                }).collect::<Vec<ScriptAsset>>();
                         self.scripts_cache.push((dep.clone(), scripts));
                     }
 

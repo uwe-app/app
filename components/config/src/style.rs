@@ -8,7 +8,7 @@ pub struct StyleSheetConfig {
     pub main: Vec<StyleAsset>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
 pub enum StyleAsset {
     Source(String),
@@ -114,7 +114,7 @@ impl fmt::Display for StyleAsset {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct StyleTag {
     pub href: Option<String>,
     pub media: Option<String>,

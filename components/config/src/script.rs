@@ -10,7 +10,7 @@ pub struct JavaScriptConfig {
     pub main: Vec<ScriptAsset>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
 pub enum ScriptAsset {
     Source(String),
@@ -117,7 +117,7 @@ impl fmt::Display for ScriptAsset {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct ScriptTag {
     pub src: Option<String>,
     pub nomodule: Option<bool>,
@@ -164,7 +164,7 @@ impl ScriptTag {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum CrossOrigin {
     #[serde(rename = "anonymous")]
     Anonymous,
@@ -172,7 +172,7 @@ pub enum CrossOrigin {
     UseCredentials,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum ReferrerPolicy {
     #[serde(rename = "no-referrer")]
     NoReferrer,

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::path::PathBuf;
 
@@ -80,14 +80,13 @@ pub struct Plugin {
     pub library: Option<Vec<ExternalLibrary>>,
 
     /// List of synthetic assets to include in the project.
-    pub assets: Option<Vec<UrlPath>>,
+    pub assets: Option<HashSet<UrlPath>>,
 
-    // TODO: support arbitrary files which may be pages!
     /// List of stylesheets to add to pages.
-    pub styles: Option<Vec<StyleAsset>>,
+    pub styles: Option<HashSet<StyleAsset>>,
 
     /// List of scripts to add to pages.
-    pub scripts: Option<Vec<ScriptAsset>>,
+    pub scripts: Option<HashSet<ScriptAsset>>,
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
