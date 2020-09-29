@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
+use jsonfeed::Author;
 
 use url::Url;
 
@@ -64,6 +65,9 @@ pub struct Plugin {
     /// Plugin version.
     #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
+
+    /// Plugin author(s).
+    pub authors: Option<Vec<Author>>,
 
     /// List of keywords.
     pub keywords: Option<Vec<String>>,
@@ -125,6 +129,7 @@ impl Default for Plugin {
             name: String::new(),
             description: String::new(),
             version,
+            authors: None,
             keywords: None,
             kind: None,
             origins: None,

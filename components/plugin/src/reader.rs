@@ -42,10 +42,17 @@ pub async fn normalize<P: AsRef<Path>>(file: P) -> Result<(String, String)> {
 }
 
 /// Compute plugin information by convention from the file system.
-async fn compute<P: AsRef<Path>>(file: P) -> Result<()> {
+async fn compute<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
     let original = read_path(file).await?;
-    //let source = original.base;
-    Ok(())
+    let computed = original.clone();
+
+    let assets = original.base().join(config::ASSETS);
+    let scripts = original.base().join(config::SCRIPTS);
+    let styles = original.base().join(config::STYLES);
+
+    //let fonts = original.base().join(config::FONTS);
+
+    Ok((original, computed))
 }
 
 pub async fn read_path<P: AsRef<Path>>(file: P) -> Result<Plugin> {
