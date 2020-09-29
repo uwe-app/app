@@ -2,7 +2,7 @@ use std::fmt;
 
 use serde::{
     de::{self, Visitor},
-    Deserialize, Deserializer, Serialize,
+    Deserialize, Deserializer, Serialize, Serializer,
 };
 
 /// A marker type for platform agnostic URL paths that should always
@@ -11,7 +11,7 @@ use serde::{
 
 //pub type UrlPath = String;
 
-#[derive(Debug, Serialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct UrlPath {
     value: String,
 }
@@ -52,6 +52,15 @@ impl From<&str> for UrlPath {
     }
 }
 
+impl Serialize for UrlPath {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.value)
+    }
+}
+
 impl<'de> Deserialize<'de> for UrlPath {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -66,16 +75,11 @@ impl<'de> Deserialize<'de> for UrlPath {
                 formatter.write_str("`string`")
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<String, E>
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
                 Ok(value.to_owned())
-                //match value {
-                //"secs" => Ok(Field::Secs),
-                //"nanos" => Ok(Field::Nanos),
-                //_ => Err(de::Error::unknown_field(value, FIELDS)),
-                //}
             }
         }
 
