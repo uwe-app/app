@@ -1,8 +1,15 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
 
-use config::{Plugin, href::UrlPath, style::StyleAsset, script::ScriptAsset};
+use config::{
+    Plugin,
+    href::UrlPath,
+    style::StyleAsset,
+    script::ScriptAsset,
+    plugin::TemplateAsset,
+    engine::{TemplateEngine, ENGINES},
+};
 
 use crate::{Result, walk};
 
@@ -34,8 +41,15 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         load_scripts(&base, &scripts, &mut computed);
     }
 
-    println!("Computed data {:?}", computed);
-    println!("Computed data {}", toml::to_string(&computed)?);
+    for engine in ENGINES.iter() {
+        let dir = base.join(engine.to_string());
+        if dir.exists() && dir.is_dir() {
+            load_engine(&base, &dir, &mut computed, &engine);
+        }
+    }
+
+    //println!("Computed data {:?}", computed);
+    //println!("Computed data {}", toml::to_string(&computed)?);
 
     Ok(computed)
 }
@@ -50,7 +64,11 @@ fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
                 UrlPath::from(e.strip_prefix(&base).unwrap()) 
             })
             .collect::<HashSet<_>>();
-        let existing = computed.assets.clone().unwrap_or(Default::default());
+        let existing = computed
+            .assets
+            .clone()
+            .unwrap_or(Default::default());
+
         let assets: HashSet<_> = items.union(&existing).cloned().collect();
         computed.assets = Some(assets);
     }
@@ -117,5 +135,112 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         items.retain(|e| uniques.insert(e.clone()));
 
         computed.scripts = Some(items);
+    }
+}
+
+fn load_engine(
+    base: &PathBuf,
+    dir: &Path,
+    computed: &mut Plugin,
+    engine: &TemplateEngine) {
+
+    let partials = dir.join(config::PARTIALS);
+    let layouts = dir.join(config::LAYOUTS);
+
+    if partials.exists() && partials.is_dir() {
+        load_partials(base, &partials, computed, engine);
+    }
+    if layouts.exists() && layouts.is_dir() {
+        load_layouts(base, &layouts, computed, engine);
+    }
+}
+
+fn load_partials(
+    base: &PathBuf,
+    dir: &Path,
+    computed: &mut Plugin,
+    engine: &TemplateEngine) {
+
+    let ext = OsStr::new(engine.get_raw_extension());
+    let files = walk::find(dir, |e| {
+        if let Some(extension) = e.extension() {
+            return extension == ext;
+        }
+        false 
+    });
+
+    if !files.is_empty() {
+        let mut master_templates = computed.templates
+            .get_or_insert(Default::default());
+        let mut engine_templates =
+            master_templates
+            .entry(engine.clone())
+            .or_insert(Default::default());
+        let mut partials = engine_templates.partials
+            .get_or_insert(Default::default());
+        files
+            .iter()
+            .filter(|e| e.is_file())
+            .for_each(|e| {
+                let mut tpl = TemplateAsset{
+                    file: UrlPath::from(e.strip_prefix(&base).unwrap()),
+                    schema: None,
+                };
+                let key = e.file_stem()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned();
+
+                let mut s = e.to_path_buf();
+                s.set_extension(config::JSON);
+                if s.exists() && s.is_file() {
+                    tpl.schema = Some(
+                        UrlPath::from(s.strip_prefix(&base).unwrap())
+                    ); 
+                }
+
+                partials.entry(key).or_insert(tpl);
+
+            });
+    }
+}
+
+fn load_layouts(
+    base: &PathBuf,
+    dir: &Path,
+    computed: &mut Plugin,
+    engine: &TemplateEngine) {
+
+    let ext = OsStr::new(engine.get_raw_extension());
+    let files = walk::find(dir, |e| {
+        if let Some(extension) = e.extension() {
+            return extension == ext;
+        }
+        false 
+    });
+
+    if !files.is_empty() {
+        let mut master_templates = computed.templates
+            .get_or_insert(Default::default());
+        let mut engine_templates =
+            master_templates
+            .entry(engine.clone())
+            .or_insert(Default::default());
+        let mut layouts = engine_templates.layouts
+            .get_or_insert(Default::default());
+        files
+            .iter()
+            .filter(|e| e.is_file())
+            .for_each(|e| {
+                let mut tpl = TemplateAsset{
+                    file: UrlPath::from(e.strip_prefix(&base).unwrap()),
+                    schema: None,
+                };
+                let key = e.file_stem()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned();
+                layouts.entry(key).or_insert(tpl);
+            });
     }
 }

@@ -8,7 +8,7 @@ use url::Url;
 use crate::{
     dependency::Dependency, plugin::ResolvedPlugins, script::ScriptAsset,
     style::StyleAsset, Config, Error, ProfileSettings, RenderTypes, Result,
-    TemplateEngine, HTML, INDEX_STEM,
+    engine::TemplateEngine, HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]

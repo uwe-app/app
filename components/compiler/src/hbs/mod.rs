@@ -12,7 +12,7 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::{markdown, CollatedPage, TemplateEngine};
+use config::{markdown, CollatedPage, engine::TemplateEngine};
 
 use crate::context::BuildContext;
 use crate::parser::Parser;

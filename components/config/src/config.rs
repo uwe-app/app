@@ -59,6 +59,7 @@ pub static SCRIPTS: &str = "scripts";
 pub static FONTS: &str = "fonts";
 pub static PLUGINS: &str = "plugins";
 pub static PARTIALS: &str = "partials";
+pub static LAYOUTS: &str = "layouts";
 pub static INCLUDES: &str = "includes";
 pub static DATASOURCES: &str = "data-sources";
 pub static RESOURCES: &str = "resources";

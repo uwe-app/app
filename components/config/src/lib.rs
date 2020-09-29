@@ -61,6 +61,9 @@ pub enum Error {
     #[error("Redirect file {0} already exists")]
     RedirectFileExists(PathBuf),
 
+    #[error("Template engine {0} is not supported")]
+    UnsupportedTemplateEngine(String),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
@@ -115,7 +118,7 @@ pub mod app;
 pub mod book;
 mod config;
 mod date;
-mod engine;
+pub mod engine;
 pub mod feed;
 mod fluent;
 mod hook;
@@ -141,7 +144,7 @@ pub(crate) mod utils;
 
 pub use self::utils::{href, markdown};
 pub use config::*;
-pub use engine::TemplateEngine;
+//pub use engine::TemplateEngine;
 pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};

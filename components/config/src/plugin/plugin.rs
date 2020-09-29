@@ -10,7 +10,7 @@ use jsonfeed::Author;
 use url::Url;
 
 use crate::{
-    href::UrlPath, script::ScriptAsset, style::StyleAsset, TemplateEngine,
+    href::UrlPath, script::ScriptAsset, style::StyleAsset, engine::TemplateEngine,
     ASSETS, PLUGINS,
 };
 
@@ -104,6 +104,7 @@ pub struct Plugin {
 
     /// Collections of partials and layouts
     #[serde(flatten)]
+    //#[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub templates: Option<HashMap<TemplateEngine, PluginTemplates>>,
 
     /// Base path this plugin was loaded from,
@@ -210,7 +211,7 @@ pub struct ExternalLibrary {
     pub repository: Option<Url>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct PluginTemplates {
     /// Partial definitions.
     pub partials: Option<HashMap<String, TemplateAsset>>,
@@ -228,7 +229,7 @@ pub struct TemplateAsset {
 impl TemplateAsset {
     pub fn to_path_buf(&self, base: &PathBuf) -> PathBuf {
         base.join(utils::url::to_path_separator(
-            self.file.trim_start_matches("/"),
+            self.file.trim_start_matches("/")
         ))
     }
 }
