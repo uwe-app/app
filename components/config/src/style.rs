@@ -124,7 +124,7 @@ impl fmt::Display for StyleAsset {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct StyleTag {
     pub href: Option<String>,
     pub media: Option<String>,
@@ -148,3 +148,11 @@ impl StyleTag {
         }
     }
 }
+
+impl PartialEq for StyleTag {
+    fn eq(&self, other: &Self) -> bool {
+        self.href == other.href
+    }
+}
+
+impl Eq for StyleTag {}

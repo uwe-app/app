@@ -117,7 +117,7 @@ impl fmt::Display for ScriptAsset {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct ScriptTag {
     pub src: Option<String>,
     pub nomodule: Option<bool>,
@@ -163,6 +163,14 @@ impl ScriptTag {
         }
     }
 }
+
+impl PartialEq for ScriptTag {
+    fn eq(&self, other: &Self) -> bool {
+        self.src == other.src
+    }
+}
+
+impl Eq for ScriptTag {}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum CrossOrigin {
