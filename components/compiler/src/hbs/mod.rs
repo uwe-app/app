@@ -69,7 +69,7 @@ impl<'a> ParserBuilder<'a> {
                             for (nm, partial) in partials.iter() {
                                 self.handlebars.register_template_file(
                                     nm,
-                                    partial.to_path_buf(&plugin.base),
+                                    partial.to_path_buf(plugin.base()),
                                 )?;
                             }
                         }

@@ -29,6 +29,8 @@ async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
     Ok((original, plugin))
 }
 
+/// Create a normalized portable representation of a plugin suitable for 
+/// packaging to an archive.
 pub async fn normalize<P: AsRef<Path>>(file: P) -> Result<(String, String)> {
     let (original, plugin) = normalize_plugin(&file).await?;
     let original = utils::fs::read_string(file)?;
@@ -39,6 +41,13 @@ pub async fn normalize<P: AsRef<Path>>(file: P) -> Result<(String, String)> {
     Ok((original, out))
 }
 
+/// Compute plugin information by convention from the file system.
+async fn compute<P: AsRef<Path>>(file: P) -> Result<()> {
+    let original = read_path(file).await?;
+    //let source = original.base;
+    Ok(())
+}
+
 pub async fn read_path<P: AsRef<Path>>(file: P) -> Result<Plugin> {
     let file = file.as_ref();
     let parent = file
@@ -47,7 +56,7 @@ pub async fn read_path<P: AsRef<Path>>(file: P) -> Result<Plugin> {
         .to_path_buf();
     let plugin_content = utils::fs::read_string(file)?;
     let mut plugin: Plugin = toml::from_str(&plugin_content)?;
-    plugin.base = parent;
+    plugin.set_base(parent);
     Ok(plugin)
 }
 

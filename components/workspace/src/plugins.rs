@@ -28,12 +28,12 @@ fn create_asset<S: AsRef<str>>(
         ));
     }
 
-    let asset_source = plugin.base.join(&asset);
+    let asset_source = plugin.base().join(&asset);
     if !asset_source.exists() {
         return Err(Error::NoPluginAsset(name.clone(), asset_source));
     }
 
-    let asset_rel = asset_source.strip_prefix(&plugin.base)?.to_path_buf();
+    let asset_rel = asset_source.strip_prefix(plugin.base())?.to_path_buf();
     let asset_target = plugin_target.join(&asset_rel);
     let asset_href = utils::url::to_href_separator(&asset_target);
     let asset_href = format!("/{}", asset_href.trim_start_matches("/"));
@@ -108,7 +108,7 @@ fn layouts(
             if let Some(ref layouts) = templates.layouts {
                 for (nm, layout) in layouts.iter() {
                     let fqn = plugin.qualified(nm);
-                    let layout_path = layout.to_path_buf(&plugin.base);
+                    let layout_path = layout.to_path_buf(plugin.base());
                     info.add_layout(fqn, Arc::new(layout_path));
                 }
             }

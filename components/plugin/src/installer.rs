@@ -128,9 +128,9 @@ fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
 /// Assign some private attributes to the plugin.
 fn attributes(plugin: &mut Plugin, base: &PathBuf, digest: &str) -> Result<()> {
     let source: Url = REGISTRY.parse()?;
-    plugin.base = base.clone();
-    plugin.checksum = Some(digest.to_string());
-    plugin.source = Some(source);
+    plugin.set_base(base);
+    plugin.set_checksum(digest);
+    plugin.set_source(source);
     Ok(())
 }
 

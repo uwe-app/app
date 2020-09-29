@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -101,15 +101,15 @@ pub struct Plugin {
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
     #[serde(skip)]
-    pub base: PathBuf,
+    base: PathBuf,
 
     /// A checksum digest when extracted from a registry archive.
     #[serde(skip)]
-    pub checksum: Option<String>,
+    checksum: Option<String>,
 
     /// A source URL the plugin was loaded from.
     #[serde(skip)]
-    pub source: Option<Url>,
+    source: Option<Url>,
 }
 
 impl fmt::Display for Plugin {
@@ -143,6 +143,31 @@ impl Default for Plugin {
 }
 
 impl Plugin {
+
+    pub fn base(&self) -> &PathBuf {
+        &self.base
+    }
+
+    pub fn set_base<P: AsRef<Path>>(&mut self, p: P) {
+        self.base = p.as_ref().to_path_buf(); 
+    }
+
+    pub fn source(&self) -> &Option<Url> {
+        &self.source
+    }
+
+    pub fn set_source(&mut self, u: Url) {
+        self.source = Some(u); 
+    }
+
+    pub fn checksum(&self) -> &Option<String> {
+        &self.checksum
+    }
+
+    pub fn set_checksum<S: AsRef<str>>(&mut self, s: S) {
+        self.checksum = Some(s.as_ref().to_string()); 
+    }
+
     /// Generate a qualified name relative to the plugin name.
     pub fn qualified(&self, val: &str) -> String {
         format!("{}::{}", &self.name, val)

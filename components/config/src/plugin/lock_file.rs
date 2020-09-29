@@ -74,15 +74,3 @@ impl Default for LockFileEntry {
         }
     }
 }
-
-//impl From<&Plugin> for LockFileEntry {
-//fn from(plugin: &Plugin) -> Self {
-//Self {
-//name: plugin.name.clone(),
-//version: plugin.version.clone(),
-//source: plugin.source.clone(),
-//checksum: plugin.checksum.clone(),
-//dependencies: None,
-//}
-//}
-//}

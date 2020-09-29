@@ -250,7 +250,7 @@ pub fn feed(
             {
                 //options.source.join(tpl)
                 if let Some(ref partial) = plugin_partials.get(partial_key) {
-                    Some(partial.to_path_buf(&plugin.base))
+                    Some(partial.to_path_buf(plugin.base()))
                 } else {
                     None
                 }
