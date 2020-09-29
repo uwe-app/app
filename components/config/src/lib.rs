@@ -139,7 +139,7 @@ pub mod transform;
 
 pub(crate) mod utils;
 
-pub use self::utils::{markdown, href};
+pub use self::utils::{href, markdown};
 pub use config::*;
 pub use engine::TemplateEngine;
 pub use fluent::{FluentConfig, CORE_FTL};

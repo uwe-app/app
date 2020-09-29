@@ -4,7 +4,7 @@ use config::Plugin;
 use futures::TryFutureExt;
 
 use crate::{
-    archive::writer::PackageWriter, linter::lint, resolver::read, Result,
+    archive::writer::PackageWriter, linter::lint, reader::read, Result,
 };
 
 /// Package a plugin directory.

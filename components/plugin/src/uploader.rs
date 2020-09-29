@@ -7,7 +7,7 @@ use scopeguard::defer;
 use config::plugin::Plugin;
 
 use crate::{
-    linter::lint, packager, registry, registry::RegistryAccess, resolver::read,
+    linter::lint, packager, reader::read, registry, registry::RegistryAccess,
     Error, Result,
 };
 

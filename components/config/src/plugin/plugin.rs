@@ -9,8 +9,8 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    script::ScriptAsset, style::StyleAsset, href::UrlPath,
-    TemplateEngine, ASSETS, PLUGINS,
+    href::UrlPath, script::ScriptAsset, style::StyleAsset, TemplateEngine,
+    ASSETS, PLUGINS,
 };
 
 use super::{dependency::DependencyMap, features::FeatureMap};

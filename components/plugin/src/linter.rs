@@ -1,7 +1,7 @@
 use regex::Regex;
 
 use crate::{Error, Result};
-use config::{features::FeatureMap, Plugin, PLUGIN_NS, href::UrlPath};
+use config::{features::FeatureMap, href::UrlPath, Plugin, PLUGIN_NS};
 
 pub fn lint(plugin: &Plugin) -> Result<()> {
     let ns_re = Regex::new("^[a-zA-Z0-9_-]+$")?;
@@ -65,7 +65,6 @@ pub fn lint(plugin: &Plugin) -> Result<()> {
                 }
             }
         }
-
     }
 
     Ok(())
@@ -73,12 +72,12 @@ pub fn lint(plugin: &Plugin) -> Result<()> {
 
 fn lint_path(plugin: &Plugin, path: &UrlPath) -> Result<()> {
     if path.starts_with("/") {
-        return Err(Error::LintNoAbsolutePath(path.to_string()))
+        return Err(Error::LintNoAbsolutePath(path.to_string()));
     }
 
     let buf = plugin.to_path_buf(path);
     if !buf.exists() || !buf.is_file() {
-        return Err(Error::LintNoPluginFile(buf, path.to_string()))
+        return Err(Error::LintNoPluginFile(buf, path.to_string()));
     }
     Ok(())
 }

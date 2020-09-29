@@ -1,7 +1,5 @@
 use std::io;
-use std::path::{Path, PathBuf};
-
-use log::info;
+use std::path::PathBuf;
 
 use thiserror::Error;
 
@@ -117,6 +115,9 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
+    TomlSer(#[from] toml::ser::Error),
+
+    #[error(transparent)]
     Xz(#[from] xz2::stream::Error),
 
     #[error(transparent)]
@@ -145,6 +146,7 @@ mod archive;
 mod installer;
 mod linter;
 mod packager;
+mod reader;
 mod registry;
 mod resolver;
 mod uploader;
@@ -155,5 +157,6 @@ pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
 pub use linter::lint;
 pub use packager::pack;
-pub use resolver::{read, resolve};
+pub use reader::read;
+pub use resolver::resolve;
 pub use uploader::publish;

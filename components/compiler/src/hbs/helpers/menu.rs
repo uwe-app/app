@@ -9,7 +9,7 @@ use collator::{
     Collate, LinkCollate,
 };
 
-use config::{MenuEntry, MenuReference, href::UrlPath};
+use config::{href::UrlPath, MenuEntry, MenuReference};
 
 use crate::BuildContext;
 

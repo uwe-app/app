@@ -7,7 +7,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{Config, MenuEntry, RuntimeOptions, href::UrlPath};
+use config::{href::UrlPath, Config, MenuEntry, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{

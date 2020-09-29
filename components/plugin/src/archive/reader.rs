@@ -8,7 +8,7 @@ use xz2::write::XzDecoder;
 use log::debug;
 use scopeguard::defer;
 
-use crate::{resolver::read_path, Error, Result};
+use crate::{reader::read_path, Error, Result};
 
 use config::{Plugin, PLUGIN};
 

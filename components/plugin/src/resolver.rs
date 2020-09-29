@@ -18,6 +18,7 @@ use config::{
 
 use crate::{
     installer,
+    reader::read,
     registry::{self, RegistryAccess},
     Error, Registry, Result,
 };
@@ -198,36 +199,6 @@ impl<'a> Resolver<'a> {
     }
 }
 
-pub async fn read_path(file: &PathBuf) -> Result<Plugin> {
-    let parent = file
-        .parent()
-        .expect("Plugin file must have parent directory")
-        .to_path_buf();
-    let plugin_content = utils::fs::read_string(file)?;
-    let mut plugin: Plugin = toml::from_str(&plugin_content)?;
-    plugin.base = parent;
-    Ok(plugin)
-}
-
-pub async fn read<P: AsRef<Path>>(path: P) -> Result<Plugin> {
-    let path = path.as_ref();
-    if !path.exists() {
-        return Err(Error::BadPluginPath(path.to_path_buf()));
-    }
-
-    let file = if path.ends_with(PLUGIN) {
-        path.to_path_buf()
-    } else {
-        path.join(PLUGIN)
-    };
-
-    if !file.exists() || !file.is_file() {
-        return Err(Error::BadPluginFile(file));
-    }
-
-    read_path(&file).await
-}
-
 #[async_recursion]
 async fn solver(
     registry: &Box<dyn RegistryAccess + Send + Sync + 'async_recursion>,
@@ -236,9 +207,7 @@ async fn solver(
     lock: &mut ResolverLock,
     stack: &mut Vec<String>,
 ) -> Result<()> {
-
     for (name, mut dep) in input.into_iter() {
-
         if stack.len() > DEPENDENCY_STACK_SIZE {
             return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
         } else if stack.contains(&name) {
@@ -349,11 +318,7 @@ async fn solver(
     Ok(())
 }
 
-fn check_plugin(
-    name: &str,
-    dep: &Dependency,
-    plugin: &Plugin,
-) -> Result<()> {
+fn check_plugin(name: &str, dep: &Dependency, plugin: &Plugin) -> Result<()> {
     if name != plugin.name {
         return Err(Error::PluginNameMismatch(
             name.to_string(),

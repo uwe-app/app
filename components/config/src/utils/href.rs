@@ -1,6 +1,9 @@
 use std::fmt;
 
-use serde::{Deserialize, Serialize, Deserializer, de::{self, Visitor}};
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize,
+};
 
 /// A marker type for platform agnostic URL paths that should always
 /// be delimited by a forward slash. We use this to reference
@@ -15,11 +18,11 @@ pub struct UrlPath {
 
 impl UrlPath {
     pub fn trim_start_matches(&self, val: &str) -> &str {
-        self.value.trim_start_matches(val) 
+        self.value.trim_start_matches(val)
     }
 
     pub fn starts_with(&self, val: &str) -> bool {
-        self.value.starts_with(val) 
+        self.value.starts_with(val)
     }
 }
 
@@ -31,27 +34,29 @@ impl fmt::Display for UrlPath {
 
 impl AsRef<str> for UrlPath {
     fn as_ref(&self) -> &str {
-        &self.value 
+        &self.value
     }
 }
 
 impl From<String> for UrlPath {
     fn from(s: String) -> Self {
-        Self {value: s} 
+        Self { value: s }
     }
 }
 
 impl From<&str> for UrlPath {
     fn from(s: &str) -> Self {
-        Self {value: s.to_owned()} 
+        Self {
+            value: s.to_owned(),
+        }
     }
 }
 
 impl<'de> Deserialize<'de> for UrlPath {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de> {
-
+    where
+        D: Deserializer<'de>,
+    {
         struct StringVisitor;
 
         impl<'de> Visitor<'de> for StringVisitor {
@@ -67,14 +72,14 @@ impl<'de> Deserialize<'de> for UrlPath {
             {
                 Ok(value.to_owned())
                 //match value {
-                    //"secs" => Ok(Field::Secs),
-                    //"nanos" => Ok(Field::Nanos),
-                    //_ => Err(de::Error::unknown_field(value, FIELDS)),
+                //"secs" => Ok(Field::Secs),
+                //"nanos" => Ok(Field::Nanos),
+                //_ => Err(de::Error::unknown_field(value, FIELDS)),
                 //}
             }
         }
 
         let value = deserializer.deserialize_string(StringVisitor)?;
-        Ok(Self {value})
+        Ok(Self { value })
     }
 }

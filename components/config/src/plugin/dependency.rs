@@ -31,6 +31,10 @@ impl DependencyMap {
         self.items.iter()
     }
 
+    pub fn iter_mut(&mut self) -> hash_map::IterMut<'_, String, Dependency> {
+        self.items.iter_mut()
+    }
+
     pub fn keys(&self) -> hash_map::Keys<String, Dependency> {
         self.items.keys()
     }

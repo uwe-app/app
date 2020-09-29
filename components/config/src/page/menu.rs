@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none};
+use serde_with::skip_serializing_none;
 
 use crate::{utils::href::UrlPath, Error, Result};
 
@@ -86,7 +86,7 @@ impl MenuEntry {
 #[serde(untagged)]
 pub enum MenuReference {
     /// Render the context of a template file as the menu.
-    File {file: UrlPath},
+    File { file: UrlPath },
 
     /// Render a collection of specific pages.
     Pages {

@@ -1,15 +1,16 @@
 use std::fs::{remove_file, File};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use sha3::{Digest, Sha3_256};
-use tar::Builder;
+use tar::{Builder, EntryType, Header};
 use xz2::{stream::Check, stream::Stream, write::XzEncoder};
 
 use log::debug;
 
 use config::PLUGIN;
 
-use crate::{walk, Error, Result};
+use crate::{reader::normalize, walk, Error, Result};
 
 #[derive(Debug, Default)]
 pub struct PackageWriter {
@@ -44,11 +45,20 @@ impl PackageWriter {
         let src = &self.source;
         self.target.set_extension("tar");
 
+        let mut xz_file = self.target.clone();
+        xz_file.set_extension("tar.xz");
+
         if self.target.exists() {
             return Err(Error::PackageExists(self.target.clone()));
+        } else if xz_file.exists() {
+            return Err(Error::PackageExists(xz_file));
         }
 
         debug!("Create tar archive {}", self.target.display());
+
+        let plugin_path = Path::new(PLUGIN);
+        let mut plugin_original = PathBuf::from(plugin_path);
+        plugin_original.set_extension(".orig.toml");
 
         let file = File::create(&self.target)?;
         let mut tarball = Builder::new(file);
@@ -56,9 +66,28 @@ impl PackageWriter {
         let files = walk::find(src, |_| true);
         for file in files.into_iter() {
             if file.is_file() {
+                // Protect against recursively adding the package.tar file
+                if file.canonicalize()? == self.target.canonicalize()? {
+                    continue;
+                }
+
                 let rel = file.strip_prefix(src)?;
-                //println!("Got tarball file {} {}", rel.display(), file.display());
-                tarball.append_file(rel, &mut File::open(&file)?)?;
+                if rel == plugin_path {
+                    debug!(
+                        "Create normalized plugin file {}",
+                        plugin_path.display()
+                    );
+
+                    let (original, plugin) = normalize(&file).await?;
+                    append_file(
+                        &mut tarball,
+                        &plugin_original,
+                        original.as_bytes(),
+                    )?;
+                    append_file(&mut tarball, &plugin_path, plugin.as_bytes())?;
+                } else {
+                    tarball.append_file(rel, &mut File::open(&file)?)?;
+                }
             }
         }
 
@@ -105,4 +134,25 @@ impl PackageWriter {
     pub fn into_inner(self) -> (PathBuf, Vec<u8>) {
         (self.target, self.digest)
     }
+}
+
+/// Helper to append a byte slice to a tarball archive.
+fn append_file<P: AsRef<Path>>(
+    tarball: &mut Builder<File>,
+    path: P,
+    contents: &[u8],
+) -> Result<()> {
+    let mut header = Header::new_gnu();
+    header.set_entry_type(EntryType::file());
+    header.set_mode(0o644);
+    header.set_mtime(
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+    );
+    header.set_size(contents.len() as u64);
+    header.set_cksum();
+    tarball.append_data(&mut header, path.as_ref(), contents)?;
+    Ok(())
 }
