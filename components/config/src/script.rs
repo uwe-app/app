@@ -3,6 +3,8 @@ use std::fmt;
 
 use utils::entity;
 
+use crate::href::UrlPath;
+
 // SEE: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -54,6 +56,12 @@ impl ScriptAsset {
             Self::Inline { .. } => return false,
         }
         true
+    }
+}
+
+impl From<UrlPath> for ScriptAsset {
+    fn from(path: UrlPath) -> Self {
+        ScriptAsset::Source(path.to_string())    
     }
 }
 

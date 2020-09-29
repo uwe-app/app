@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
 
-use config::{Plugin, href::UrlPath, style::StyleAsset};
+use config::{Plugin, href::UrlPath, style::StyleAsset, script::ScriptAsset};
 
 use crate::{Result, walk};
 
@@ -12,8 +12,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
     let base = computed.base().clone();
     let assets = base.join(config::ASSETS);
     let fonts = base.join(config::FONTS);
-    let scripts = base.join(config::SCRIPTS);
     let styles = base.join(config::STYLES);
+    let scripts = base.join(config::SCRIPTS);
 
     if assets.exists() && assets.is_dir() {
         load_assets(&base, &assets, &mut computed);
@@ -28,6 +28,10 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 
     if styles.exists() && styles.is_dir() {
         load_styles(&base, &styles, &mut computed);
+    }
+
+    if scripts.exists() && scripts.is_dir() {
+        load_scripts(&base, &scripts, &mut computed);
     }
 
     println!("Computed data {:?}", computed);
@@ -45,7 +49,7 @@ fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .map(|e| {
                 UrlPath::from(e.strip_prefix(&base).unwrap()) 
             })
-            .collect::<HashSet<UrlPath>>();
+            .collect::<HashSet<_>>();
         let existing = computed.assets.clone().unwrap_or(Default::default());
         let assets: HashSet<_> = items.union(&existing).cloned().collect();
         computed.assets = Some(assets);
@@ -68,7 +72,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
                 StyleAsset::from(
                     UrlPath::from(e.strip_prefix(&base).unwrap()))
             })
-            .collect::<Vec<StyleAsset>>();
+            .collect::<Vec<_>>();
 
         let mut existing = computed.styles
             .clone()
@@ -84,3 +88,34 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
     }
 }
 
+fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
+    let ext = OsStr::new("js");
+    let files = walk::find(dir, |e| {
+        if let Some(extension) = e.extension() {
+            return extension == ext;
+        }
+        false 
+    });
+    if !files.is_empty() {
+        let mut items = files
+            .iter()
+            .filter(|e| e.is_file())
+            .map(|e| {
+                ScriptAsset::from(
+                    UrlPath::from(e.strip_prefix(&base).unwrap()))
+            })
+            .collect::<Vec<_>>();
+
+        let mut existing = computed.scripts
+            .clone()
+            .unwrap_or(Default::default());
+
+        items.append(&mut existing);
+
+        // Ensure we don't have any duplicates
+        let mut uniques = HashSet::new();
+        items.retain(|e| uniques.insert(e.clone()));
+
+        computed.scripts = Some(items);
+    }
+}

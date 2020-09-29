@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-// FIXME: use UrlPath here!
-
 use crate::href::UrlPath;
 
 use utils::entity;
