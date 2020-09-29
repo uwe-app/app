@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+// FIXME: use UrlPath here!
+
+use crate::href::UrlPath;
+
 use utils::entity;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -52,6 +56,12 @@ impl StyleAsset {
             Self::Inline { .. } => return false,
         }
         true
+    }
+}
+
+impl From<UrlPath> for StyleAsset {
+    fn from(path: UrlPath) -> Self {
+        StyleAsset::Source(path.to_string())    
     }
 }
 

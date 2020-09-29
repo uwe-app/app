@@ -86,11 +86,15 @@ pub struct Plugin {
     /// List of synthetic assets to include in the project.
     pub assets: Option<HashSet<UrlPath>>,
 
+    // NOTE: we want to use HashSet for styles and scripts
+    // NOTE: so there are no duplicates but ordering is important
+    // NOTE: for these types so we just use a Vec for now.
+
     /// List of stylesheets to add to pages.
-    pub styles: Option<HashSet<StyleAsset>>,
+    pub styles: Option<Vec<StyleAsset>>,
 
     /// List of scripts to add to pages.
-    pub scripts: Option<HashSet<ScriptAsset>>,
+    pub scripts: Option<Vec<ScriptAsset>>,
 
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,

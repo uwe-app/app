@@ -53,7 +53,7 @@ pub fn lint(plugin: &Plugin) -> Result<()> {
     }
 
     if let Some(ref templates) = plugin.templates {
-        for (engine, templates) in templates.iter() {
+        for (_engine, templates) in templates.iter() {
             if let Some(ref partials) = templates.partials {
                 for (_, asset) in partials {
                     lint_path(plugin, &asset.file)?;

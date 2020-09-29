@@ -1,4 +1,5 @@
 use std::fmt;
+use std::path::Path;
 
 use serde::{
     de::{self, Visitor},
@@ -41,6 +42,12 @@ impl AsRef<str> for UrlPath {
 impl From<String> for UrlPath {
     fn from(s: String) -> Self {
         Self { value: s }
+    }
+}
+
+impl From<&Path> for UrlPath {
+    fn from(p: &Path) -> Self {
+        Self { value: p.to_string_lossy().into_owned() }
     }
 }
 

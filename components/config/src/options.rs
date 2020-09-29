@@ -79,7 +79,7 @@ impl RuntimeOptions {
                             plugin.styles
                                 .clone()
                                 .unwrap()
-                                .drain()
+                                .into_iter()
                                 .map(|mut s| {
                                     s.set_source_prefix(&assets_href_base);
                                     s                            
@@ -89,20 +89,11 @@ impl RuntimeOptions {
                     if plugin.scripts.is_some()
                         && !apply.scripts_match.is_empty()
                     {
-                        /*
-                        let mut scripts =
-                            plugin.scripts.as_ref().unwrap().clone();
-                        // Make script paths relative to the plugin asset destination
-                        for s in scripts.iter_mut() {
-                            s.set_source_prefix(&assets_href_base);
-                        }
-                        */
-
                         let scripts =
                             plugin.scripts
                                 .clone()
                                 .unwrap()
-                                .drain()
+                                .into_iter()
                                 .map(|mut s| {
                                     s.set_source_prefix(&assets_href_base);
                                     s                            

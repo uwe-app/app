@@ -1,8 +1,8 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use config::{Plugin, PLUGIN, dependency::DependencyTarget};
 
-use crate::{Error, Result};
+use crate::{Error, Result, compute};
 
 static NORMALIZED_HEADER: &str = "\
 # Automatically generated plugin file, see plugin.orig.toml for the raw content.
@@ -31,28 +31,20 @@ async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
 
 /// Create a normalized portable representation of a plugin suitable for 
 /// packaging to an archive.
-pub async fn normalize<P: AsRef<Path>>(file: P) -> Result<(String, String)> {
-    let (original, plugin) = normalize_plugin(&file).await?;
+pub async fn normalize<P: AsRef<Path>>(file: P, computed: bool) -> Result<(String, String)> {
+    let (_original, plugin) = normalize_plugin(&file).await?;
     let original = utils::fs::read_string(file)?;
+
+    let plugin = if computed {
+        compute::transform(&plugin).await?
+    } else { plugin };
+
     let plugin = &toml::to_string(&plugin)?;
+
     let mut out = String::new();
     out.push_str(NORMALIZED_HEADER);
     out.push_str(&plugin);
     Ok((original, out))
-}
-
-/// Compute plugin information by convention from the file system.
-async fn compute<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
-    let original = read_path(file).await?;
-    let computed = original.clone();
-
-    let assets = original.base().join(config::ASSETS);
-    let scripts = original.base().join(config::SCRIPTS);
-    let styles = original.base().join(config::STYLES);
-
-    //let fonts = original.base().join(config::FONTS);
-
-    Ok((original, computed))
 }
 
 pub async fn read_path<P: AsRef<Path>>(file: P) -> Result<Plugin> {

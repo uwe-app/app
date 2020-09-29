@@ -106,8 +106,6 @@ pub(crate) async fn get_cached(
     let extract_target = get_extract_dir(name, &version)?;
     let extract_target_plugin = extract_target.join(PLUGIN);
 
-    let source: Url = REGISTRY.parse()?;
-
     // Got an existing plugin file in the target cache directory
     // so we should try to use that
     if extract_target_plugin.exists() {
@@ -192,7 +190,7 @@ async fn install_registry(
             .and_then(|b| b.tar())
             .await?;
 
-    let (target, digest, mut plugin) = reader.into_inner();
+    let (_target, _digest, mut plugin) = reader.into_inner();
     attributes(&mut plugin, &extract_target, &package.digest)?;
     Ok(plugin)
 }

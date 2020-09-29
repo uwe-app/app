@@ -13,7 +13,6 @@ use config::{
     plugin::ResolvedPlugins,
     registry::RegistryItem,
     semver::Version,
-    PLUGIN,
 };
 
 use crate::{
@@ -71,7 +70,6 @@ impl ResolverLock {
 
 /// Manges the information required to solve all dependencies.
 struct Resolver<'a> {
-    project: PathBuf,
     dependencies: DependencyMap,
     registry: Registry<'a>,
     lock: ResolverLock,
@@ -85,7 +83,6 @@ impl<'a> Resolver<'a> {
         let path = LockFile::get_lock_file(&project);
         let lock = ResolverLock::new(path)?;
         Ok(Self {
-            project,
             dependencies,
             registry,
             lock,
@@ -347,7 +344,7 @@ async fn resolve_version(
                 let plugin = read(path).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
-            DependencyTarget::Archive { ref archive } => todo!(),
+            DependencyTarget::Archive { .. } => todo!(),
         }
     } else {
         // Get version from registry

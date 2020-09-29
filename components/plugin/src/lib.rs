@@ -143,6 +143,7 @@ pub enum Error {
 }
 
 mod archive;
+mod compute;
 mod installer;
 mod linter;
 mod packager;

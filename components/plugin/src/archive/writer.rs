@@ -78,7 +78,7 @@ impl PackageWriter {
                         plugin_path.display()
                     );
 
-                    let (original, plugin) = normalize(&file).await?;
+                    let (original, plugin) = normalize(&file, true).await?;
                     append_file(
                         &mut tarball,
                         &plugin_original,
