@@ -322,7 +322,7 @@ enum Command {
         args: BuildOpts,
     },
 
-    /// Serve site files
+    /// Serve static files
     Run {
         #[structopt(flatten)]
         args: RunOpts,
@@ -352,7 +352,7 @@ enum Command {
         args: PublishOpts,
     },
 
-    /// Manage sites
+    /// Plugin packaging
     Plugin {
         #[structopt(flatten)]
         action: Plugin,
