@@ -18,7 +18,7 @@ static FEATURE_STACK_SIZE: usize = 16;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
-    #[serde(flatten)]
+    #[serde(flatten, serialize_with = "toml::ser::tables_last")]
     items: HashMap<String, Dependency>,
 }
 

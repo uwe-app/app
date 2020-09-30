@@ -48,8 +48,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         }
     }
 
-    println!("Computed data {:#?}", &computed);
-    println!("Computed data {}", toml::to_string(&computed)?);
+    //println!("Computed data {:#?}", &computed);
+    //println!("Computed data {}", toml::to_string(&computed)?);
 
     Ok(computed)
 }

@@ -79,6 +79,9 @@ impl PackageReader {
 
     /// Compute the SHA3-256 checksum for the compressed archive.
     pub async fn digest(mut self) -> Result<Self> {
+
+        println!("Calculate digest for source {}", self.source.display());
+
         let mut reader = File::open(&self.source)?;
         let mut hasher = Sha3_256::new();
         std::io::copy(&mut reader, &mut hasher)?;
@@ -87,8 +90,8 @@ impl PackageReader {
 
         if let Some(ref expected) = self.expects {
             if expected != &self.digest {
-                debug!("Expected {}", hex::encode(expected));
-                debug!("Received {}", hex::encode(self.digest));
+                log::info!("Expected {}", hex::encode(expected));
+                log::info!("Received {}", hex::encode(self.digest));
                 return Err(Error::DigestMismatch(self.source));
             }
         }

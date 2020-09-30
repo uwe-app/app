@@ -1,4 +1,4 @@
-use std::fs::remove_dir_all;
+use std::fs::{File, remove_dir_all};
 use std::path::PathBuf;
 
 use log::{debug, info};
@@ -22,7 +22,7 @@ async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
 
     let region = publisher::parse_region(registry_region)?;
     let key = format!(
-        "{}/{}/{}.xz",
+        "{}/{}/{}.tar.xz",
         &plugin.name,
         plugin.version.to_string(),
         config::PACKAGE
@@ -61,8 +61,9 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let prefs = preference::load()?;
     cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
 
-    let reader = cache::get_registry_dir()?;
     let writer = PathBuf::from(registry_path);
+    //let reader = cache::get_registry_dir()?;
+    let reader = writer.clone();
 
     let registry = registry::RegistryFileAccess::new(reader, writer)?;
 
@@ -83,7 +84,10 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let (pkg, digest, plugin) =
         packager::pack_plugin(source, &target, plugin).await?;
 
-    debug!("Archive {}", pkg.display());
+    let pkg_file = File::open(&pkg)?;
+    let size = pkg_file.metadata()?.len();
+    info!("Archive {} ({} bytes)", pkg.display(), size);
+    info!("Checksum {}", hex::encode(&digest));
     upload(&pkg, &plugin).await?;
 
     // Inject version into the registry and save the changes

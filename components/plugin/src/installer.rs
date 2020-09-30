@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use futures::TryFutureExt;
 use tokio::prelude::*;
+use http::StatusCode;
 
 use url::Url;
 
@@ -191,23 +192,34 @@ async fn install_registry(
     }
 
     let download_dir = tempfile::tempdir()?;
-    let file_name = format!("{}.xz", config::PACKAGE);
+    let file_name = format!("{}.tar.xz", config::PACKAGE);
     let download_url = format!(
-        "{}/{}/{}/{}.xz",
+        "{}/{}/{}/{}.tar.xz",
         REGISTRY,
         name,
         version.to_string(),
         config::PACKAGE
     );
 
+    //log::info!("Download {}", download_url);
+
     let archive_path = download_dir.path().join(&file_name);
     let dest = File::create(&archive_path)?;
 
     let mut response = reqwest::get(&download_url).await?;
+
+    if response.status() != StatusCode::OK {
+        return Err(
+            Error::RegistryDownloadFail(response.status().to_string(), download_url));
+    }
+
     let mut content_file = tokio::fs::File::from_std(dest);
     while let Some(chunk) = response.chunk().await? {
         content_file.write_all(&chunk).await?;
     }
+
+    //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());
+    //println!("Downloaded {:?} bytes", File::open(&archive_path)?.metadata()?.len());
 
     let reader =
         PackageReader::new(archive_path, Some(hex::decode(&package.digest)?), None)

@@ -16,7 +16,7 @@ use crate::{
 
 use super::{dependency::DependencyMap, features::FeatureMap};
 
-// TODO: spdx license for Plugin and ExternalLibrary
+// TODO: spdx support for license info
 
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -66,6 +66,9 @@ pub struct Plugin {
     #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
 
+    /// Plugin license.
+    pub license: Option<String>,
+
     /// Plugin author(s).
     pub authors: Option<Vec<Author>>,
 
@@ -80,9 +83,6 @@ pub struct Plugin {
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
     pub origins: Option<Vec<Url>>,
 
-    /// List of third-party libraries the plugin depends on.
-    pub library: Option<Vec<ExternalLibrary>>,
-
     /// List of synthetic assets to include in the project.
     pub assets: Option<HashSet<UrlPath>>,
 
@@ -96,11 +96,14 @@ pub struct Plugin {
     /// List of scripts to add to pages.
     pub scripts: Option<Vec<ScriptAsset>>,
 
+    /// Collection of features for this plugin.
+    pub features: Option<FeatureMap>,
+
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
 
-    /// Collection of features for this plugin.
-    pub features: Option<FeatureMap>,
+    /// List of third-party libraries the plugin depends on.
+    pub library: Option<HashMap<String, ExternalLibrary>>,
 
     /// Collections of partials and layouts
     #[serde(flatten, serialize_with = "toml::ser::tables_last")]
@@ -133,6 +136,7 @@ impl Default for Plugin {
             name: String::new(),
             description: String::new(),
             version,
+            license: None,
             authors: None,
             keywords: None,
             kind: None,

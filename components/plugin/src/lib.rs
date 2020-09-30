@@ -67,7 +67,7 @@ pub enum Error {
     #[error("The archive target path {0} is not a directory")]
     PackageTargetNotDirectory(PathBuf),
 
-    #[error("Package digests do not match")]
+    #[error("Package digests do not match {0}")]
     DigestMismatch(PathBuf),
 
     #[error("Invalid archive {0} no {1} found")]
@@ -75,6 +75,9 @@ pub enum Error {
 
     #[error("Registry {0} is not a directory")]
     RegistryNotDirectory(PathBuf),
+
+    #[error("Download from registry failed; status: {0}, url: {1}")]
+    RegistryDownloadFail(String, String),
 
     #[error(
         "Plugin {0} already exists in the registry, use a different version"
