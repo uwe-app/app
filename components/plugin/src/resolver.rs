@@ -305,7 +305,6 @@ async fn solver(
         }
 
         let mut solved = if let Some(plugin) = plugin.take() {
-            check_plugin(&name, &dep, &plugin)?;
             if let Some(ref source) = plugin.source() {
                 entry.source.get_or_insert(source.clone());
             }
@@ -318,6 +317,9 @@ async fn solver(
         } else {
             return Err(Error::DependencyNotFound(dep.to_string()));
         };
+
+
+        check(&name, &dep, &solved)?;
 
         // FIXME: filter out based on dependency features
 
@@ -380,25 +382,6 @@ async fn solver(
     Ok(())
 }
 
-fn check_plugin(name: &str, dep: &Dependency, plugin: &Plugin) -> Result<()> {
-    if name != plugin.name {
-        return Err(Error::PluginNameMismatch(
-            name.to_string(),
-            plugin.name.clone(),
-        ));
-    }
-
-    if !dep.version.matches(&plugin.version) {
-        return Err(Error::PluginVersionMismatch(
-            plugin.name.clone(),
-            plugin.version.to_string(),
-            dep.version.to_string(),
-        ));
-    }
-
-    Ok(())
-}
-
 async fn resolve_version(
     registry: &Registry<'_>,
     dep: &Dependency,
@@ -428,4 +411,36 @@ async fn resolve_version(
 
         Ok((version, Some(package), None))
     }
+}
+
+fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
+
+    let (s_name, s_version) = match solved {
+        SolvedReference::Plugin(ref plugin) => {
+            (&plugin.name, &plugin.version)    
+        }
+        SolvedReference::Package(ref package) => {
+            (&package.name, &package.version)    
+        }
+    };
+
+    if name != s_name {
+        return Err(Error::PluginNameMismatch(
+            name.to_string(),
+            s_name.clone(),
+        ));
+    }
+
+    if !dep.version.matches(s_version) {
+        return Err(Error::PluginVersionMismatch(
+            s_name.clone(),
+            s_version.to_string(),
+            dep.version.to_string(),
+        ));
+    }
+
+    /*
+    */
+
+    Ok(())
 }

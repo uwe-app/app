@@ -222,3 +222,4 @@ async fn install_registry(
     attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
     Ok(plugin)
 }
+

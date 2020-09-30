@@ -30,10 +30,14 @@ impl RegistryEntry {
     }
 }
 
+#[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RegistryItem {
     pub name: String,
+
+    #[serde_as(as = "DisplayFromStr")]
+    pub version: Version,
 
     /// Checksum for the compressed archive.
     pub digest: String,
@@ -45,6 +49,18 @@ pub struct RegistryItem {
 
     /// The feature names that the plugin declares.
     pub features: Option<FeatureMap>,
+}
+
+impl Default for RegistryItem {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            version: "0.0.0".parse().unwrap(),
+            digest: String::new(),
+            dependencies: None,
+            features: None,
+        }
+    }
 }
 
 impl RegistryItem {
@@ -60,15 +76,13 @@ impl From<&Plugin> for RegistryItem {
     fn from(plugin: &Plugin) -> RegistryItem {
         let mut item: RegistryItem = Default::default();
         item.name = plugin.name.clone();
-
+        item.version = plugin.version.clone();
         if let Some(ref dependencies) = plugin.dependencies {
             item.dependencies = Some(dependencies.clone());
         }
-
         if let Some(ref features) = plugin.features {
             item.features = Some(features.clone());
         }
-
         item
     }
 }
