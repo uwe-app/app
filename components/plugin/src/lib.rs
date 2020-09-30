@@ -48,7 +48,7 @@ pub enum Error {
     LintNoPluginFile(PathBuf, String),
 
     #[error(
-        "Plugin names contains invalid namespace {0} ([a-zA-Z0-9_-] only)"
+        "Plugin names contains invalid namespace {0} ([a-zA-Z0-9-] only)"
     )]
     LintPluginNameInvalidNameSpace(String),
 

@@ -4,7 +4,7 @@ use crate::{Error, Result};
 use config::{features::FeatureMap, href::UrlPath, Plugin, PLUGIN_NS};
 
 pub fn lint(plugin: &Plugin) -> Result<()> {
-    let ns_re = Regex::new("^[a-zA-Z0-9_-]+$")?;
+    let ns_re = Regex::new("^[a-zA-Z0-9-]+$")?;
 
     if plugin.name.trim().is_empty() {
         return Err(Error::LintPluginNameEmpty);
