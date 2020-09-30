@@ -19,7 +19,6 @@ use config::{
 
 use crate::{
     installer,
-    reader::read,
     registry::{self, RegistryAccess},
     Error, Registry, Result,
 };
@@ -295,15 +294,6 @@ async fn solver(
             None
         };
 
-        let mut solved = if let Some(plugin) = plugin.take() {
-            check_plugin(&name, &dep, &plugin)?;
-            SolvedReference::Plugin(plugin)
-        } else if let Some(package) = package.take() {
-            SolvedReference::Package(package)
-        } else {
-            return Err(Error::DependencyNotFound(dep.to_string()));
-        };
-
         if entry == LockFileEntry::default() {
             entry = LockFileEntry {
                 name: name.to_string(),
@@ -313,6 +303,21 @@ async fn solver(
                 dependencies: None,
             }
         }
+
+        let mut solved = if let Some(plugin) = plugin.take() {
+            check_plugin(&name, &dep, &plugin)?;
+            if let Some(ref source) = plugin.source() {
+                entry.source.get_or_insert(source.clone());
+            }
+            if let Some(ref checksum) = plugin.checksum() {
+                entry.checksum.get_or_insert(checksum.clone());
+            }
+            SolvedReference::Plugin(plugin)
+        } else if let Some(package) = package.take() {
+            SolvedReference::Package(package)
+        } else {
+            return Err(Error::DependencyNotFound(dep.to_string()));
+        };
 
         // FIXME: filter out based on dependency features
 
@@ -401,10 +406,13 @@ async fn resolve_version(
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
-                let plugin = read(path).await?;
+                let plugin = installer::install_path(path).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
-            DependencyTarget::Archive { .. } => todo!(),
+            DependencyTarget::Archive { ref archive } => {
+                let plugin = installer::install_archive(archive).await?; 
+                Ok((plugin.version.clone(), None, Some(plugin)))
+            }
         }
     } else {
         // Get version from registry

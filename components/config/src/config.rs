@@ -88,6 +88,9 @@ pub static SCHEME_WS: &str = "ws:";
 pub static PLUGIN: &str = "plugin.toml";
 pub static PLUGIN_NS: &str = "::";
 
+/// Prefix applied when extracting packages from archives.
+pub static PLUGIN_ARCHIVE_PREFIX: &str = "pkg";
+
 const fn get_default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }

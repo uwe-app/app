@@ -14,7 +14,8 @@ use config::{
 };
 
 use crate::{
-    archive::reader::PackageReader, reader::read, Error, Registry, Result,
+    archive::reader::PackageReader,
+    reader::read, compute, Error, Registry, Result,
 };
 
 static REGISTRY: &str = "https://registry.hypertext.live";
@@ -25,7 +26,7 @@ pub async fn install(
 ) -> Result<Plugin> {
     let plugin = if let Some(ref target) = dep.target {
         match target {
-            DependencyTarget::File { ref path } => install_file(path).await,
+            DependencyTarget::File { ref path } => install_path(path).await,
             DependencyTarget::Archive { ref archive } => {
                 install_archive(archive).await
             }
@@ -42,37 +43,61 @@ async fn install_file<P: AsRef<Path>>(path: P) -> Result<Plugin> {
     read(path.as_ref()).await
 }
 
+/// Install a plugin from a file system path and compute the 
+/// plugin data.
+pub(crate) async fn install_path<P: AsRef<Path>>(path: P) -> Result<Plugin> {
+    let mut plugin = install_file(path.as_ref()).await?;
+
+    let target = path.as_ref().to_path_buf();
+    let canonical = path.as_ref().canonicalize()?;
+    let url_target = format!(
+        "file:{}",
+        utils::url::to_href_separator(&canonical));
+    let source: Url = url_target.parse()?;
+    attributes(&mut plugin, &target, source, None)?;
+
+    compute::transform(&plugin).await
+}
+
 /// Install from a local archive file.
 ///
-/// No digest is available so this method is unsafe.
-async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
-    let archive = path.as_ref();
+/// No expected digest is available so this method should be treated with caution 
+/// and only used with packages created using the `plugin pack` command.
+pub(crate) async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
 
-    let dir = tempfile::tempdir()?;
+    // Determine the location to extract the archive to.
+    let builder = |_: &PathBuf, plugin: &Plugin, digest: &Vec<u8>| -> Result<PathBuf> {
+        let name = format!(
+            "{}{}{}{}{}{}{}",
+            config::PLUGIN_ARCHIVE_PREFIX,
+            config::PLUGIN_NS,
+            &plugin.name,
+            config::PLUGIN_NS,
+            plugin.version.to_string(),
+            config::PLUGIN_NS,
+            hex::encode(digest),
+        );
 
-    // FIXME: extract this to a tmp dir that can be used for the build
+        Ok(cache::get_cache_src_dir()?.join(name))
+    };
 
-    // Must go into the tempdir so it is not
-    // automatically cleaned up before we
-    // are done with it.
-    let path = dir.into_path();
-
-    let reader = PackageReader::new(archive.to_path_buf(), None)
-        .destination(&path)?
-        .xz()
+    // Extract the archive
+    let reader = PackageReader::new(path.as_ref().to_path_buf(), None, Some(Box::new(builder)))
+        .destination(PathBuf::from("."))?
+        .set_overwrite(true)
+        .digest()
+        .and_then(|b| b.xz())
         .and_then(|b| b.tar())
         .await?;
 
-    let (target, _digest, plugin) = reader.into_inner();
-
-    println!("Archive plugin {:#?}", &plugin);
-    println!("Archive plugin target {:#?}", &target);
-
-    // Clean up the temp dir
-    println!("Removing the temp archive {}", target.display());
-    std::fs::remove_dir_all(target)?;
-
-    todo!()
+    let (target, digest, mut plugin) = reader.into_inner();
+    let canonical = path.as_ref().canonicalize()?;
+    let url_target = format!(
+        "tar:{}",
+        utils::url::to_href_separator(&canonical));
+    let source: Url = url_target.parse()?;
+    attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
+    Ok(plugin)
 }
 
 pub(crate) async fn resolve_package(
@@ -110,7 +135,8 @@ pub(crate) async fn get_cached(
     // so we should try to use that
     if extract_target_plugin.exists() {
         let mut plugin = install_file(&extract_target).await?;
-        attributes(&mut plugin, &extract_target, &package.digest)?;
+        let source: Url = REGISTRY.parse()?;
+        attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
         return Ok(Some(plugin));
     }
 
@@ -124,11 +150,12 @@ fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
 }
 
 /// Assign some private attributes to the plugin.
-fn attributes(plugin: &mut Plugin, base: &PathBuf, digest: &str) -> Result<()> {
-    let source: Url = REGISTRY.parse()?;
+fn attributes(plugin: &mut Plugin, base: &PathBuf, source: Url, digest: Option<&str>) -> Result<()> {
     plugin.set_base(base);
-    plugin.set_checksum(digest);
     plugin.set_source(source);
+    if let Some(digest) = digest {
+        plugin.set_checksum(digest);
+    }
     Ok(())
 }
 
@@ -183,7 +210,7 @@ async fn install_registry(
     }
 
     let reader =
-        PackageReader::new(archive_path, Some(hex::decode(&package.digest)?))
+        PackageReader::new(archive_path, Some(hex::decode(&package.digest)?), None)
             .destination(&extract_target)?
             .digest()
             .and_then(|b| b.xz())
@@ -191,6 +218,7 @@ async fn install_registry(
             .await?;
 
     let (_target, _digest, mut plugin) = reader.into_inner();
-    attributes(&mut plugin, &extract_target, &package.digest)?;
+    let source: Url = REGISTRY.parse()?;
+    attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
     Ok(plugin)
 }

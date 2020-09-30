@@ -12,7 +12,9 @@ use crate::{reader::read_path, Error, Result};
 
 use config::{Plugin, PLUGIN};
 
-#[derive(Debug, Default)]
+type PackagePathBuilder = Box<dyn Fn(&PathBuf, &Plugin, &Vec<u8>) -> Result<PathBuf> + Send>;
+
+#[derive(Default)]
 pub struct PackageReader {
     source: PathBuf,
     target: PathBuf,
@@ -28,10 +30,19 @@ pub struct PackageReader {
 
     /// The plugin information.
     plugin: Option<Plugin>,
+
+    /// Path builder callback function.
+    path_builder: Option<PackagePathBuilder>,
+
+    overwrite: bool,
 }
 
 impl PackageReader {
-    pub fn new(source: PathBuf, expects: Option<Vec<u8>>) -> Self {
+    pub fn new(
+        source: PathBuf,
+        expects: Option<Vec<u8>>,
+        path_builder: Option<PackagePathBuilder>) -> Self {
+
         Self {
             source,
             target: PathBuf::new(),
@@ -39,6 +50,8 @@ impl PackageReader {
             digest: Vec::new(),
             tarball: None,
             plugin: None,
+            path_builder,
+            overwrite: false,
         }
     }
 
@@ -57,6 +70,11 @@ impl PackageReader {
         self.target = dest.as_ref().to_path_buf();
 
         Ok(self)
+    }
+
+    pub fn set_overwrite(mut self, overwrite: bool) -> Self {
+        self.overwrite = overwrite;
+        self
     }
 
     /// Compute the SHA3-256 checksum for the compressed archive.
@@ -139,15 +157,26 @@ impl PackageReader {
         }
 
         // Read in the plugin data before unpacking the entire archive
-        self.plugin = Some(read_path(plugin_temp_file).await?);
+        let plugin = read_path(plugin_temp_file).await?;
 
         // Now unpack the entire archive
         drop(archive);
         drop(tarball);
 
+        // Determine the target extraction path
+        let target = if let Some(ref builder) = self.path_builder {
+            builder(&self.target, &plugin, &self.digest)?
+        } else {
+            self.target.clone()
+        };
+
         let mut tarball = File::open(&tarball_path)?;
         let mut archive = Archive::new(&mut tarball);
-        archive.unpack(&self.target)?;
+        archive.set_overwrite(self.overwrite);
+        archive.unpack(&target)?;
+
+        self.plugin = Some(plugin);
+        self.target = target;
 
         Ok(self)
     }

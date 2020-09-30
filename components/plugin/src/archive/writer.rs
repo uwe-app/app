@@ -58,7 +58,7 @@ impl PackageWriter {
 
         let plugin_path = Path::new(PLUGIN);
         let mut plugin_original = PathBuf::from(plugin_path);
-        plugin_original.set_extension(".orig.toml");
+        plugin_original.set_extension("orig.toml");
 
         let file = File::create(&self.target)?;
         let mut tarball = Builder::new(file);
