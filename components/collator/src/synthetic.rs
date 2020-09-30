@@ -211,12 +211,7 @@ pub fn feed(
     let plugin = find_feed_plugin(feed, options)
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
-    let templates = plugin
-        .templates
-        .as_ref()
-        .ok_or_else(|| Error::NoFeedPluginTemplate(plugin_name.clone()))?;
-
-    let engine_templates = templates.get(config.engine()).ok_or_else(|| {
+    let engine_templates = plugin.templates.get(config.engine()).ok_or_else(|| {
         Error::NoFeedPluginTemplateEngine(
             plugin_name.clone(),
             config.engine().to_string(),

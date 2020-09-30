@@ -61,17 +61,15 @@ impl<'a> ParserBuilder<'a> {
     pub fn plugins(mut self) -> Result<Self> {
         if let Some(ref plugins) = self.context.options.plugins {
             for (_dep, plugin) in plugins.iter() {
-                if let Some(ref engine_templates) = plugin.templates {
-                    if let Some(ref templates) =
-                        engine_templates.get(&self.engine)
-                    {
-                        if let Some(ref partials) = templates.partials {
-                            for (nm, partial) in partials.iter() {
-                                self.handlebars.register_template_file(
-                                    nm,
-                                    partial.to_path_buf(plugin.base()),
-                                )?;
-                            }
+                if let Some(ref templates) =
+                    plugin.templates.get(&self.engine)
+                {
+                    if let Some(ref partials) = templates.partials {
+                        for (nm, partial) in partials.iter() {
+                            self.handlebars.register_template_file(
+                                nm,
+                                partial.to_path_buf(plugin.base()),
+                            )?;
                         }
                     }
                 }

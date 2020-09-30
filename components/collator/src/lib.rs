@@ -11,9 +11,6 @@ pub enum Error {
     #[error("No plugin located for feed templates using plugin name {0}")]
     NoFeedPlugin(String),
 
-    #[error("The feed plugin {0} has no templates")]
-    NoFeedPluginTemplate(String),
-
     #[error(
         "The feed plugin {0} has no templates for the template engine {1}"
     )]

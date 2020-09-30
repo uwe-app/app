@@ -48,7 +48,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         }
     }
 
-    //println!("Computed data {}", toml::to_string(&computed)?);
+    println!("Computed data {:#?}", &computed);
+    println!("Computed data {}", toml::to_string(&computed)?);
 
     Ok(computed)
 }
@@ -169,10 +170,10 @@ fn load_partials(
     });
 
     if !files.is_empty() {
-        let master_templates = computed.templates
-            .get_or_insert(Default::default());
+        //let master_templates = computed.templates;
+            //.get_or_insert(Default::default());
         let engine_templates =
-            master_templates
+            computed.templates
             .entry(engine.clone())
             .or_insert(Default::default());
         let partials = engine_templates.partials
@@ -218,10 +219,10 @@ fn load_layouts(
     });
 
     if !files.is_empty() {
-        let master_templates = computed.templates
-            .get_or_insert(Default::default());
+        //let master_templates = computed.templates;
+            //.get_or_insert(Default::default());
         let engine_templates =
-            master_templates
+            computed.templates
             .entry(engine.clone())
             .or_insert(Default::default());
         let layouts = engine_templates.layouts

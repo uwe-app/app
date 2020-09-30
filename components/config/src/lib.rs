@@ -27,11 +27,6 @@ pub enum Error {
     )]
     NoFeature(String, String),
 
-    #[error(
-        "Dependency {0} wants to apply layouts but the plugin has no templates"
-    )]
-    ApplyLayoutNoTemplate(String),
-
     #[error("Dependency {0} wants to apply layouts but the plugin has no templates for the engine {1}")]
     ApplyLayoutNoTemplateForEngine(String, String),
 

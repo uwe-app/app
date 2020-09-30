@@ -104,11 +104,7 @@ impl RuntimeOptions {
                     // Got some layouts to apply so add to the cache
                     if !apply.layouts_match.is_empty() {
                         let templates =
-                            plugin.templates.as_ref().ok_or_else(|| {
-                                Error::ApplyLayoutNoTemplate(dep.to_string())
-                            })?;
-                        let templates =
-                            templates.get(engine).ok_or_else(|| {
+                            plugin.templates.get(engine).ok_or_else(|| {
                                 Error::ApplyLayoutNoTemplateForEngine(
                                     dep.to_string(),
                                     engine.to_string(),

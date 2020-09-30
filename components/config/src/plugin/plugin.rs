@@ -103,9 +103,8 @@ pub struct Plugin {
     pub features: Option<FeatureMap>,
 
     /// Collections of partials and layouts
-    #[serde(flatten)]
-    //#[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
-    pub templates: Option<HashMap<TemplateEngine, PluginTemplates>>,
+    #[serde(flatten, serialize_with = "toml::ser::tables_last")]
+    pub templates: HashMap<TemplateEngine, PluginTemplates>,
 
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
@@ -143,7 +142,7 @@ impl Default for Plugin {
             scripts: None,
             dependencies: None,
             features: None,
-            templates: None,
+            templates: HashMap::new(),
             library: None,
             base: PathBuf::from(String::new()),
             checksum: None,
