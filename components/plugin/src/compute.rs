@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
 
@@ -48,7 +48,6 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         }
     }
 
-    //println!("Computed data {:?}", computed);
     //println!("Computed data {}", toml::to_string(&computed)?);
 
     Ok(computed)
@@ -170,13 +169,13 @@ fn load_partials(
     });
 
     if !files.is_empty() {
-        let mut master_templates = computed.templates
+        let master_templates = computed.templates
             .get_or_insert(Default::default());
-        let mut engine_templates =
+        let engine_templates =
             master_templates
             .entry(engine.clone())
             .or_insert(Default::default());
-        let mut partials = engine_templates.partials
+        let partials = engine_templates.partials
             .get_or_insert(Default::default());
         files
             .iter()
@@ -200,7 +199,6 @@ fn load_partials(
                 }
 
                 partials.entry(key).or_insert(tpl);
-
             });
     }
 }
@@ -220,19 +218,19 @@ fn load_layouts(
     });
 
     if !files.is_empty() {
-        let mut master_templates = computed.templates
+        let master_templates = computed.templates
             .get_or_insert(Default::default());
-        let mut engine_templates =
+        let engine_templates =
             master_templates
             .entry(engine.clone())
             .or_insert(Default::default());
-        let mut layouts = engine_templates.layouts
+        let layouts = engine_templates.layouts
             .get_or_insert(Default::default());
         files
             .iter()
             .filter(|e| e.is_file())
             .for_each(|e| {
-                let mut tpl = TemplateAsset{
+                let tpl = TemplateAsset{
                     file: UrlPath::from(e.strip_prefix(&base).unwrap()),
                     schema: None,
                 };

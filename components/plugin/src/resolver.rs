@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 use async_recursion::async_recursion;
 use log::{debug, info};
 
+use futures::future;
+
 use config::{
     dependency::{Dependency, DependencyMap, DependencyTarget},
     features::FeatureMap,
@@ -108,7 +110,7 @@ impl<'a> Resolver<'a> {
     /// Calculate the lock file difference and install plugins when
     /// the difference is not empty.
     async fn install(&mut self) -> Result<&mut Resolver<'a>> {
-        let difference = self
+        let mut difference = self
             .lock
             .target
             .diff(&self.lock.current)
@@ -152,8 +154,13 @@ impl<'a> Resolver<'a> {
             let prefs = preference::load()?;
             cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
 
+            // Refresh the lock file entries in case we can resolve 
+            // newer versions from the updated registry information
+            // FIXME: only run this if the cache registry changed
+            let diff = self.refresh(&mut difference).await?;
+
             debug!("Installing dependencies");
-            self.install_diff(difference).await?;
+            self.install_diff(diff).await?;
 
             debug!("Writing lock file {}", self.lock.path.display());
             // FIXME: restore writing out the new lock file
@@ -161,6 +168,59 @@ impl<'a> Resolver<'a> {
         }
 
         Ok(self)
+    }
+
+    async fn refresh(&mut self, difference: &mut HashSet<LockFileEntry>) -> Result<HashSet<LockFileEntry>> {
+        let mut refreshed = self.refresh_lock(difference).await?;
+
+        // We need to update the intermediate map to reflect the change
+        // to the lock file entry
+        for (entry, refresh) in refreshed.iter_mut() {
+            if let Some(ref replacement) = refresh {
+                let (dep, solved) = 
+                    self.intermediate.remove(entry).take().unwrap();
+                self.intermediate.insert(replacement.clone(), (dep, solved));
+            } 
+        }
+
+        Ok(refreshed
+            .drain(..)
+            .map(|(e, r)| r.unwrap_or(e.clone()))
+            .collect::<HashSet<_>>())
+    }
+
+    /// Update lock file entries after the registry has been 
+    /// updated in case a newer version can be located in the 
+    /// fresh registry.
+    async fn refresh_lock<'b>(&self, diff: &'b mut HashSet<LockFileEntry>)
+        -> Result<Vec<(&'b LockFileEntry, Option<LockFileEntry>)>> {
+        let items = diff
+            .iter()
+            .map(|e| self.refresh_lock_entry(e))
+            .collect::<Vec<_>>();
+        Ok(future::try_join_all(items).await?)
+    }
+
+    /// Refresh a single lock file entry, if a newer version can
+    /// be resolved in the registry we also return a copy with 
+    /// the newer version.
+    async fn refresh_lock_entry<'b>(&self, e: &'b LockFileEntry)
+        -> Result<(&'b LockFileEntry, Option<LockFileEntry>)> {
+        // Need the source dependency for the version request
+        let (dep, _solved) =
+            self.intermediate.get(&e).as_ref().unwrap();
+
+        // Try to resolve the package again
+        let (version, _package) = installer::resolve_package(
+            &self.registry, &e.name, &dep.version).await?;
+
+        let mut output: Option<LockFileEntry> = None;
+        if version > e.version {
+            let mut copy = e.clone();
+            copy.version = version;
+            output = Some(copy);
+        }
+        Ok((e, output))
     }
 
     /// Install files from the lock file difference.
