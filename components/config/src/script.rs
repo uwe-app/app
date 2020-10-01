@@ -1,6 +1,7 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 use utils::entity;
 
@@ -126,6 +127,7 @@ impl fmt::Display for ScriptAsset {
     }
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct ScriptTag {
     pub src: Option<String>,
