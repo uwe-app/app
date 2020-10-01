@@ -14,6 +14,7 @@ use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
+    plugin_cache::PluginCache,
     RuntimeOptions,
 };
 
@@ -128,13 +129,14 @@ impl CollationBuilder {
 
 #[derive(Debug, Default)]
 pub struct ProjectBuilder {
-    pub locales: Locales,
-    pub sources: Sources,
-    pub config: Config,
-    pub options: RuntimeOptions,
-    pub redirects: RedirectConfig,
-    pub datasource: DataSourceMap,
-    pub cache: QueryCache,
+    locales: Locales,
+    sources: Sources,
+    config: Config,
+    options: RuntimeOptions,
+    plugins: Option<PluginCache>,
+    redirects: RedirectConfig,
+    datasource: DataSourceMap,
+    cache: QueryCache,
     collations: CollationBuilder,
 }
 
@@ -147,6 +149,21 @@ impl ProjectBuilder {
             sources.filters = Some(paths.clone());
         }
         self.sources = sources;
+        Ok(self)
+    }
+
+    /// Resolve plugins.
+    pub async fn plugins(mut self) -> Result<Self> {
+
+        if let Some(dependencies) = self.config.dependencies.take() {
+            let plugins = plugin::resolve(&self.options.project, dependencies).await?;
+
+            // Create plugin cache lookups for scripts, styles etc
+            let mut plugin_cache = PluginCache::new(plugins);
+            plugin_cache.prepare(self.config.engine())?;
+            self.plugins = Some(plugin_cache);
+        }
+
         Ok(self)
     }
 
@@ -176,6 +193,7 @@ impl ProjectBuilder {
             locales: &self.locales.languages,
             config: &self.config,
             options: &self.options,
+            plugins: self.plugins.as_ref(),
         };
 
         let mut res = CollateResult::new(
@@ -224,13 +242,13 @@ impl ProjectBuilder {
 
     /// Collate plugin dependencies.
     pub async fn collate_plugins(mut self) -> Result<Self> {
-        if let Some(ref plugins) = self.options.plugins {
+        if let Some(ref plugin_cache) = self.plugins {
             for collation in self.collations.iter_mut() {
                 plugins::collate(
                     &self.config,
                     &self.options,
                     collation,
-                    plugins,
+                    plugin_cache.plugins(),
                 )?;
             }
         }
@@ -261,6 +279,7 @@ impl ProjectBuilder {
                     &self.locales,
                     &self.config,
                     &self.options,
+                    self.plugins.as_ref(),
                     collation,
                 )?;
             }
@@ -364,6 +383,12 @@ impl ProjectBuilder {
 
         let locales = Arc::new(self.locales);
 
+        let plugins = if let Some(cache) = self.plugins {
+            Some(Arc::new(cache))
+        } else {
+            None
+        };
+
         let mut renderers: Vec<Renderer> = Vec::new();
         let mut parsers: Vec<Box<dyn Parser + Send + Sync>> = Vec::new();
 
@@ -373,6 +398,7 @@ impl ProjectBuilder {
                 options: Arc::clone(&options),
                 locales: Arc::clone(&locales),
                 collation: Arc::new(RwLock::new(collation)),
+                plugins: plugins.clone(),
             });
 
             let parser: Box<dyn Parser + Send + Sync> = parser::build(
@@ -637,6 +663,7 @@ pub async fn compile<P: AsRef<Path>>(
         // Resolve sources, locales and collate the page data
         let builder = builder
             .sources()
+            .and_then(|s| s.plugins())
             .and_then(|s| s.locales())
             .and_then(|s| s.runtime())
             .and_then(|s| s.collate())

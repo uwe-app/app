@@ -163,6 +163,7 @@ fn load_partials(
 
     let ext = OsStr::new(engine.get_raw_extension());
     let files = walk::find(dir, |e| {
+        //true
         if let Some(extension) = e.extension() {
             return extension == ext;
         }
@@ -210,17 +211,12 @@ fn load_layouts(
     computed: &mut Plugin,
     engine: &TemplateEngine) {
 
-    let ext = OsStr::new(engine.get_raw_extension());
-    let files = walk::find(dir, |e| {
-        if let Some(extension) = e.extension() {
-            return extension == ext;
-        }
-        false 
-    });
+    // NOTE: we do not test file extension here as some 
+    // NOTE: layouts (eg: std::core::feed) require different
+    // NOTE: file extensions
+    let files = walk::find(dir, |e| true);
 
     if !files.is_empty() {
-        //let master_templates = computed.templates;
-            //.get_or_insert(Default::default());
         let engine_templates =
             computed.templates
             .entry(engine.clone())

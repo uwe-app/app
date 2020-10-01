@@ -59,6 +59,8 @@ pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<()> {
     // way to purge the history
     fs::remove_dir_all(git_dir)?;
 
+    // FIXME: remove this .gitignore + node_modules hack
+    // FIXME: once the tailwind logic is moved to a plugin
     let git_ignore = target.as_ref().join(GIT_IGNORE);
     let node_modules = target.as_ref().join(NODE_MODULES);
     if git_ignore.exists() && node_modules.exists() {

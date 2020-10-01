@@ -16,8 +16,8 @@ pub enum Error {
     )]
     NoFeedPluginTemplateEngine(String, String),
 
-    #[error("The feed plugin {0} has no template partials")]
-    NoFeedPluginPartial(String),
+    #[error("The feed plugin {0} has no template layout")]
+    NoFeedPluginLayout(String),
 
     #[error("Unable to determine template path for feed type {0}")]
     NoFeedPartialPath(String),

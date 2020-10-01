@@ -158,10 +158,10 @@ impl<'a> Resolver<'a> {
             // FIXME: only run this if the cache registry changed
             let diff = self.refresh(&mut difference).await?;
 
-            debug!("Installing dependencies");
+            info!("Installing dependencies");
             self.install_diff(diff).await?;
 
-            debug!("Writing lock file {}", self.lock.path.display());
+            info!("Writing lock file {}", self.lock.path.display());
             // FIXME: restore writing out the new lock file
             //self.lock.target.write(&self.lock.path)?;
         }
@@ -230,6 +230,7 @@ impl<'a> Resolver<'a> {
         for entry in difference {
             let (dep, solved) =
                 self.intermediate.remove(&entry).take().unwrap();
+
             match solved {
                 SolvedReference::Package(ref _package) => {
                     let plugin =
@@ -264,6 +265,7 @@ async fn solver(
     stack: &mut Vec<String>,
 ) -> Result<()> {
     for (name, mut dep) in input.into_iter() {
+
         if stack.len() > DEPENDENCY_STACK_SIZE {
             return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
         } else if stack.contains(&name) {
@@ -338,9 +340,6 @@ async fn solver(
 
         // If we have nested dependencies recurse
         if !dependencies.is_empty() {
-            //println!("Entering {:#?}", dep.name);
-            //println!("Solved {:#?}", solved);
-
             let feature_map: &Option<FeatureMap> = match solved {
                 SolvedReference::Plugin(ref plugin) => &plugin.features,
                 SolvedReference::Package(ref package) => &package.features,
@@ -386,6 +385,7 @@ async fn resolve_version(
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
+
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
@@ -438,9 +438,6 @@ fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
             dep.version.to_string(),
         ));
     }
-
-    /*
-    */
 
     Ok(())
 }

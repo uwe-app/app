@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use futures::TryFutureExt;
 use tokio::prelude::*;
 use http::StatusCode;
-
 use url::Url;
+use log::info;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
@@ -25,6 +25,9 @@ pub async fn install(
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Plugin> {
+
+    println!("Installing dep {:?}", &dep.name);
+
     let plugin = if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => install_path(path).await,
@@ -201,21 +204,23 @@ async fn install_registry(
         config::PACKAGE
     );
 
-    //log::info!("Download {}", download_url);
+    info!("Download {}", download_url);
 
     let archive_path = download_dir.path().join(&file_name);
     let dest = File::create(&archive_path)?;
 
     let mut response = reqwest::get(&download_url).await?;
-
     if response.status() != StatusCode::OK {
         return Err(
             Error::RegistryDownloadFail(response.status().to_string(), download_url));
     }
 
     let mut content_file = tokio::fs::File::from_std(dest);
+    let mut bytes_read = 0usize;
     while let Some(chunk) = response.chunk().await? {
+        info!("Downloaded {} bytes", bytes_read);
         content_file.write_all(&chunk).await?;
+        bytes_read += chunk.len();
     }
 
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());

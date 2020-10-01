@@ -124,6 +124,7 @@ mod live_reload;
 mod options;
 mod page;
 pub mod plugin;
+pub mod plugin_cache;
 mod profile;
 pub mod redirect;
 pub mod robots;

@@ -7,8 +7,8 @@ use crate::utils::matcher::GlobPatternMatcher;
 
 static ID: &str = "site-index";
 static INDEX: &str = "/search.idx";
-static JS: &str = "/assets/plugins/std::search/search.js";
-static WASM: &str = "/assets/plugins/std::search/search.wasm";
+static JS: &str = "/assets/plugins/std::search/scripts/search.js";
+static WASM: &str = "/assets/plugins/std::search/assets/search.wasm";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]

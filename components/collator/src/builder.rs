@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::{loader, CollateInfo, Error, Result};
-use config::{indexer::QueryList, Config, LinkOptions, Page, RuntimeOptions};
+use config::{indexer::QueryList, Config, LinkOptions, Page, RuntimeOptions, plugin_cache::PluginCache};
 
 /// Runtime validation of queries.
 fn verify_query(list: &QueryList) -> Result<()> {
@@ -37,6 +37,7 @@ pub(crate) struct PageBuilder<'a> {
     info: &'a mut CollateInfo,
     config: &'a Config,
     options: &'a RuntimeOptions,
+    plugins: Option<&'a PluginCache>,
     key: &'a Arc<PathBuf>,
     path: PathBuf,
     page: Page,
@@ -53,6 +54,7 @@ impl<'a> PageBuilder<'a> {
         info: &'a mut CollateInfo,
         config: &'a Config,
         options: &'a RuntimeOptions,
+        plugins: Option<&'a PluginCache>,
         key: &'a Arc<PathBuf>,
         path: &'a Path,
     ) -> Self {
@@ -60,6 +62,7 @@ impl<'a> PageBuilder<'a> {
             info,
             config,
             options,
+            plugins,
             key,
             path: path.to_path_buf(),
             page: Default::default(),
@@ -117,22 +120,25 @@ impl<'a> PageBuilder<'a> {
     ///
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn scripts(mut self) -> Result<Self> {
-        let href = self.page.href.as_ref().unwrap();
-        for (dep, scripts) in self.options.scripts_cache.iter() {
-            let apply = dep.apply.as_ref().unwrap();
-            for matcher in apply.scripts_match.iter() {
-                if matcher.is_match(href) {
-                    if self.page.scripts.is_none() {
-                        self.page.scripts = Some(Vec::new());
-                    }
-                    if let Some(ref mut page_scripts) = self.page.scripts {
-                        for s in scripts.iter().rev() {
-                            page_scripts.insert(0, s.clone());
+        if let Some(cache) = self.plugins {
+            let href = self.page.href.as_ref().unwrap();
+            for (dep, scripts) in cache.scripts().iter() {
+                let apply = dep.apply.as_ref().unwrap();
+                for matcher in apply.scripts_match.iter() {
+                    if matcher.is_match(href) {
+                        if self.page.scripts.is_none() {
+                            self.page.scripts = Some(Vec::new());
+                        }
+                        if let Some(ref mut page_scripts) = self.page.scripts {
+                            for s in scripts.iter().rev() {
+                                page_scripts.insert(0, s.clone());
+                            }
                         }
                     }
                 }
             }
         }
+
         Ok(self)
     }
 
@@ -140,17 +146,19 @@ impl<'a> PageBuilder<'a> {
     ///
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn styles(mut self) -> Result<Self> {
-        let href = self.page.href.as_ref().unwrap();
-        for (dep, styles) in self.options.styles_cache.iter() {
-            let apply = dep.apply.as_ref().unwrap();
-            for matcher in apply.styles_match.iter() {
-                if matcher.is_match(href) {
-                    if self.page.styles.is_none() {
-                        self.page.styles = Some(Vec::new());
-                    }
-                    if let Some(ref mut page_styles) = self.page.styles {
-                        for s in styles.iter().rev() {
-                            page_styles.insert(0, s.clone());
+        if let Some(cache) = self.plugins {
+            let href = self.page.href.as_ref().unwrap();
+            for (dep, styles) in cache.styles().iter() {
+                let apply = dep.apply.as_ref().unwrap();
+                for matcher in apply.styles_match.iter() {
+                    if matcher.is_match(href) {
+                        if self.page.styles.is_none() {
+                            self.page.styles = Some(Vec::new());
+                        }
+                        if let Some(ref mut page_styles) = self.page.styles {
+                            for s in styles.iter().rev() {
+                                page_styles.insert(0, s.clone());
+                            }
                         }
                     }
                 }
@@ -163,12 +171,14 @@ impl<'a> PageBuilder<'a> {
     ///
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn layouts(mut self) -> Result<Self> {
-        let href = self.page.href.as_ref().unwrap();
-        for (fqn, patterns) in self.options.layouts_cache.iter() {
-            for matcher in patterns.iter() {
-                if matcher.is_match(href) {
-                    self.page.layout = Some(fqn.clone());
-                    break;
+        if let Some(cache) = self.plugins {
+            let href = self.page.href.as_ref().unwrap();
+            for (fqn, patterns) in cache.layouts().iter() {
+                for matcher in patterns.iter() {
+                    if matcher.is_match(href) {
+                        self.page.layout = Some(fqn.clone());
+                        break;
+                    }
                 }
             }
         }

@@ -59,8 +59,8 @@ impl<'a> ParserBuilder<'a> {
 
     /// Register plugin partials.
     pub fn plugins(mut self) -> Result<Self> {
-        if let Some(ref plugins) = self.context.options.plugins {
-            for (_dep, plugin) in plugins.iter() {
+        if let Some(ref cache) = self.context.plugins {
+            for (_dep, plugin) in cache.plugins().iter() {
                 if let Some(ref templates) =
                     plugin.templates.get(&self.engine)
                 {

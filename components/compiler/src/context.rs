@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use collator::{self, Collation};
-use config::{Config, RuntimeOptions};
+use config::{Config, RuntimeOptions, plugin_cache::PluginCache};
 use locale::Locales;
 
 use crate::ParseData;
@@ -19,6 +19,7 @@ pub struct CompilerOutput {
 pub struct BuildContext {
     pub config: Arc<Config>,
     pub options: Arc<RuntimeOptions>,
+    pub plugins: Option<Arc<PluginCache>>,
     pub locales: Arc<Locales>,
     pub collation: Arc<RwLock<Collation>>,
 }

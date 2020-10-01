@@ -30,14 +30,6 @@ pub struct RuntimeOptions {
     pub base: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
-
-    // Computed plugins
-    pub plugins: Option<ResolvedPlugins>,
-
-    // Cache of plugin dependencies that should be applied to pages
-    pub styles_cache: Vec<(Dependency, Vec<StyleAsset>)>,
-    pub scripts_cache: Vec<(Dependency, Vec<ScriptAsset>)>,
-    pub layouts_cache: HashMap<String, Vec<GlobMatcher>>,
 }
 
 impl RuntimeOptions {
@@ -53,88 +45,7 @@ impl RuntimeOptions {
             output: settings.target.clone(),
             base,
             settings,
-            plugins: None,
-            styles_cache: Vec::new(),
-            scripts_cache: Vec::new(),
-            layouts_cache: HashMap::new(),
         }
-    }
-
-    // FIXME: stricter error handling on mismatch
-    pub fn prepare(&mut self, engine: &TemplateEngine) -> Result<()> {
-        if let Some(ref mut plugins) = self.plugins {
-            for (dep, plugin) in plugins.iter_mut() {
-                //let plugin = dep.plugin.as_ref().unwrap();
-                if let Some(ref apply) = dep.apply {
-                    let assets_href_base = format!(
-                        "/{}",
-                        utils::url::to_href_separator(plugin.assets())
-                    );
-
-                    if plugin.styles.is_some() && !apply.styles_match.is_empty()
-                    {
-
-                        // Make style paths relative to the plugin asset destination
-                        let styles =
-                            plugin.styles
-                                .clone()
-                                .unwrap()
-                                .into_iter()
-                                .map(|mut s| {
-                                    s.set_source_prefix(&assets_href_base);
-                                    s                            
-                                }).collect::<Vec<StyleAsset>>();
-                        self.styles_cache.push((dep.clone(), styles));
-                    }
-                    if plugin.scripts.is_some()
-                        && !apply.scripts_match.is_empty()
-                    {
-                        let scripts =
-                            plugin.scripts
-                                .clone()
-                                .unwrap()
-                                .into_iter()
-                                .map(|mut s| {
-                                    s.set_source_prefix(&assets_href_base);
-                                    s                            
-                                }).collect::<Vec<ScriptAsset>>();
-                        self.scripts_cache.push((dep.clone(), scripts));
-                    }
-
-                    // Got some layouts to apply so add to the cache
-                    if !apply.layouts_match.is_empty() {
-                        let templates =
-                            plugin.templates.get(engine).ok_or_else(|| {
-                                Error::ApplyLayoutNoTemplateForEngine(
-                                    dep.to_string(),
-                                    engine.to_string(),
-                                )
-                            })?;
-                        let layouts =
-                            templates.layouts.as_ref().ok_or_else(|| {
-                                Error::ApplyLayoutNoLayouts(
-                                    dep.to_string(),
-                                    engine.to_string(),
-                                )
-                            })?;
-
-                        for (key, matches) in apply.layouts_match.iter() {
-                            if !layouts.contains_key(key) {
-                                return Err(Error::ApplyLayoutNoLayoutForKey(
-                                    dep.to_string(),
-                                    engine.to_string(),
-                                    key.clone(),
-                                ));
-                            }
-                            let fqn = plugin.qualified(key);
-                            self.layouts_cache.insert(fqn, matches.clone());
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
     }
 
     fn is_index<P: AsRef<Path>>(file: P) -> bool {

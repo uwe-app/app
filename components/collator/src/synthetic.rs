@@ -7,6 +7,7 @@ use jsonfeed::{Feed, Item, VERSION};
 use config::{
     feed::{ChannelConfig, FeedConfig},
     Config, Page, Plugin, RuntimeOptions,
+    plugin_cache::PluginCache,
 };
 
 use locale::Locales;
@@ -185,11 +186,12 @@ fn build_feed(
 fn find_feed_plugin<'a>(
     feed: &FeedConfig,
     options: &'a RuntimeOptions,
+    plugins: Option<&'a PluginCache>,
 ) -> Option<&'a Plugin> {
     let plugin_name = feed.plugin.as_ref().unwrap();
-    if let Some(ref plugins) = options.plugins {
+    if let Some(cache) = plugins {
         // NOTE: we only look for a direct dependency at the moment
-        for (_, plugin) in plugins.iter() {
+        for (_, plugin) in cache.plugins().iter() {
             if &plugin.name == plugin_name {
                 return Some(plugin);
             }
@@ -204,12 +206,15 @@ pub fn feed(
     locales: &Locales,
     config: &Config,
     options: &RuntimeOptions,
+    plugins: Option<&PluginCache>,
     info: &mut CollateInfo,
 ) -> Result<()> {
     let plugin_name = feed.plugin.as_ref().unwrap().clone();
 
-    let plugin = find_feed_plugin(feed, options)
+    let plugin = find_feed_plugin(feed, options, plugins)
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
+
+    println!("Feed plugin {:}", plugin);
 
     let engine_templates = plugin.templates.get(config.engine()).ok_or_else(|| {
         Error::NoFeedPluginTemplateEngine(
@@ -218,10 +223,10 @@ pub fn feed(
         )
     })?;
 
-    let plugin_partials = engine_templates
-        .partials
+    let plugin_layouts = engine_templates
+        .layouts
         .as_ref()
-        .ok_or_else(|| Error::NoFeedPluginPartial(plugin_name.clone()))?;
+        .ok_or_else(|| Error::NoFeedPluginLayout(plugin_name.clone()))?;
 
     for (name, channel) in feed.channels.iter() {
         let channel_href =
@@ -244,7 +249,7 @@ pub fn feed(
                 feed.names.get(feed_type)
             {
                 //options.source.join(tpl)
-                if let Some(ref partial) = plugin_partials.get(partial_key) {
+                if let Some(ref partial) = plugin_layouts.get(partial_key) {
                     Some(partial.to_path_buf(plugin.base()))
                 } else {
                     None
