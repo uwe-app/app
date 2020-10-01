@@ -228,7 +228,7 @@ fn load_layouts(
     // NOTE: we do not test file extension here as some 
     // NOTE: layouts (eg: std::core::feed) require different
     // NOTE: file extensions
-    let files = walk::find(dir, |e| true);
+    let files = walk::find(dir, |_| true);
 
     if !files.is_empty() {
         let engine_templates =

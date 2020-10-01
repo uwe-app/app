@@ -163,6 +163,8 @@ pub enum DependencyTarget {
     File { path: PathBuf },
     /// Load plugin from a compressed archive.
     Archive { archive: PathBuf },
+    /// Load plugin from a git repository.
+    Repo { git: String },
 }
 
 #[serde_as]

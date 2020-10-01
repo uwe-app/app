@@ -200,7 +200,7 @@ pub(crate) async fn prepare(
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
     let profiles = cfg.profile.as_ref().unwrap();
-    let mut opts = if let Some(profile) = profiles.get(&name.to_string()) {
+    let opts = if let Some(profile) = profiles.get(&name.to_string()) {
         let mut copy = profile.clone();
         root.append(&mut copy);
 

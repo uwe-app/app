@@ -185,7 +185,6 @@ fn build_feed(
 
 fn find_feed_plugin<'a>(
     feed: &FeedConfig,
-    options: &'a RuntimeOptions,
     plugins: Option<&'a PluginCache>,
 ) -> Option<&'a Plugin> {
     let plugin_name = feed.plugin.as_ref().unwrap();
@@ -211,7 +210,7 @@ pub fn feed(
 ) -> Result<()> {
     let plugin_name = feed.plugin.as_ref().unwrap().clone();
 
-    let plugin = find_feed_plugin(feed, options, plugins)
+    let plugin = find_feed_plugin(feed, plugins)
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
     println!("Feed plugin {:}", plugin);

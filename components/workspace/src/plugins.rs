@@ -98,9 +98,9 @@ fn styles(
 /// Inject template layouts.
 fn layouts(
     config: &Config,
-    options: &RuntimeOptions,
+    _options: &RuntimeOptions,
     info: &mut CollateInfo,
-    name: &String,
+    _name: &String,
     plugin: &Plugin,
 ) -> Result<()> {
     if let Some(ref templates) = plugin.templates.get(config.engine()) {

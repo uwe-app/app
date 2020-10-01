@@ -34,6 +34,9 @@ pub async fn install(
             DependencyTarget::Archive { ref archive } => {
                 install_archive(archive).await
             }
+            DependencyTarget::Repo { ref git } => {
+                install_repo(git).await
+            }
         }
     } else {
         install_registry(registry, dep).await
@@ -101,6 +104,15 @@ pub(crate) async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
         utils::url::to_href_separator(&canonical));
     let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
+    Ok(plugin)
+}
+
+pub(crate) async fn install_repo<S: AsRef<str>>(git: S) -> Result<Plugin> {
+    let git_url: Url = git.as_ref().parse()?;
+
+    println!("Install from repo {:?}", git_url);
+
+    let plugin: Plugin = Default::default();
     Ok(plugin)
 }
 

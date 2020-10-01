@@ -19,7 +19,9 @@ async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
         for (_, dep) in deps.iter_mut() {
             if let Some(ref target) = dep.target {
                 match target {
-                    DependencyTarget::File {..} | DependencyTarget::Archive {..} => {
+                    DependencyTarget::File {..}
+                        | DependencyTarget::Archive {..}
+                        | DependencyTarget::Repo {..} => {
                         dep.target = None;
                     }
                 }

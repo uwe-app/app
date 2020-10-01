@@ -86,8 +86,8 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
 
     let pkg_file = File::open(&pkg)?;
     let size = pkg_file.metadata()?.len();
-    info!("Archive {} ({} bytes)", pkg.display(), size);
-    info!("Checksum {}", hex::encode(&digest));
+    debug!("Archive {} ({} bytes)", pkg.display(), size);
+    debug!("Checksum {}", hex::encode(&digest));
     upload(&pkg, &plugin).await?;
 
     // Inject version into the registry and save the changes

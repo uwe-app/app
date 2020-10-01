@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{debug, info};
+use log::info;
 
 use futures::future;
 
@@ -394,6 +394,10 @@ async fn resolve_version(
             }
             DependencyTarget::Archive { ref archive } => {
                 let plugin = installer::install_archive(archive).await?; 
+                Ok((plugin.version.clone(), None, Some(plugin)))
+            }
+            DependencyTarget::Repo { ref git } => {
+                let plugin = installer::install_repo(git).await?; 
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
         }
