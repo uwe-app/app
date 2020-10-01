@@ -35,7 +35,7 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 pub mod progress;
-pub mod pull;
+mod pull;
 
 pub static ORIGIN: &str = "origin";
 pub static MASTER: &str = "master";
@@ -43,6 +43,14 @@ pub static REFSPEC: &str = "refs/heads/master:refs/head/master";
 
 static GIT_IGNORE: &str = ".gitignore";
 static NODE_MODULES: &str = "node_modules";
+
+pub fn pull<P: AsRef<Path>>(
+    path: P,
+    remote: Option<String>,
+    branch: Option<String>,
+) -> Result<()> {
+    pull::pull(path, remote, branch).map_err(Error::from)
+}
 
 pub fn callbacks_ssh_agent<'a>() -> RemoteCallbacks<'a> {
     let mut callbacks = RemoteCallbacks::new();
@@ -180,25 +188,26 @@ pub fn commit_file(
     Ok(repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?)
 }
 
-pub fn clone_ssh<P: AsRef<Path>>(
-    src: String,
+pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
+    src: S,
     target: P,
-    key_file: PathBuf,
-    password: Option<String>,
+    //key_file: PathBuf,
+    //password: Option<String>,
 ) -> Result<Repository> {
-    let passphrase = if let Some(ref phrase) = password {
-        Some(phrase.as_str())
-    } else {
-        None
-    };
 
-    let private_key = key_file.as_path();
+    //let passphrase = if let Some(ref phrase) = password {
+        //Some(phrase.as_str())
+    //} else {
+        //None
+    //};
 
-    let mut callbacks = RemoteCallbacks::new();
-    callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        Cred::ssh_key(username_from_url.unwrap(), None, private_key, passphrase)
-    });
+    //let private_key = key_file.as_path();
+    //let mut callbacks = RemoteCallbacks::new();
+    //callbacks.credentials(|_url, username_from_url, _allowed_types| {
+        //Cred::ssh_key(username_from_url.unwrap(), None, private_key, passphrase)
+    //});
 
+    let mut callbacks = callbacks_ssh_agent();
     progress::add_progress_callbacks(&mut callbacks);
 
     let mut fo = FetchOptions::new();
@@ -207,18 +216,20 @@ pub fn clone_ssh<P: AsRef<Path>>(
     let mut builder = RepoBuilder::new();
     builder.fetch_options(fo);
 
-    let result = builder.clone(&src, target.as_ref());
+    let result = builder.clone(src.as_ref(), target.as_ref());
 
+    /*
     if let Err(ref e) = result {
         if let ErrorClass::Ssh = e.class() {
             // Sadly cannot find a better way to detect this particular error
             if e.message().contains("Wrong passphrase") {
                 let pass =
                     rpassword::read_password_from_tty(Some("Passphrase: "))?;
-                return clone_ssh(src, target, key_file.clone(), Some(pass));
+                return clone(src, target, key_file.clone(), Some(pass));
             }
         }
     }
+    */
 
     result.map_err(Error::from)
 }
@@ -344,7 +355,7 @@ pub fn clone_or_fetch<P: AsRef<Path>>(
         //fetch(&repo, &base)?;
         // FIXME: merge from origin/master
 
-        pull::pull(to.as_ref(), None, None)?;
+        pull(to.as_ref(), None, None)?;
         if submodules {
             fetch_submodules(&repo, to.as_ref())?
         }
@@ -384,20 +395,21 @@ pub fn create<P: AsRef<Path>>(
             }
 
             // Now we have SSH style git@github.com: URLs to deal with
-            if let Some(mut key_file) = home::home_dir() {
-                if let Some(ref ssh_key) = key {
-                    key_file.push(ssh_key);
+            return clone(src, target).map_err(Error::from);
+            //if let Some(mut key_file) = home::home_dir() {
+                //if let Some(ref ssh_key) = key {
+                    //key_file.push(ssh_key);
 
-                    info!("Private key {}", key_file.display());
+                    //info!("Private key {}", key_file.display());
 
-                    print_clone(&src, target.as_ref().clone());
+                    //print_clone(&src, target.as_ref().clone());
 
-                    return clone_ssh(src, target, key_file, None)
-                        .map_err(Error::from);
-                } else {
-                    return Err(Error::PrivateKeyRequired);
-                }
-            }
+                    //return clone(src, target, key_file, None)
+                        //.map_err(Error::from);
+                //} else {
+                    //return Err(Error::PrivateKeyRequired);
+                //}
+            //}
         }
     }
 

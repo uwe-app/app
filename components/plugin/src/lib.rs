@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Cyclic dependency {0}")]
     CyclicDependency(String),
 
+    #[error("Could not parse git repository URL ({0})")]
+    GitUrl(url::ParseError),
+
     #[error("Dependency stack depth has exceeded the maximum {0}")]
     DependencyStackTooLarge(usize),
 
@@ -107,6 +110,9 @@ pub enum Error {
 
     #[error(transparent)]
     Url(#[from] url::ParseError),
+
+    #[error(transparent)]
+    UrlEncoding(#[from] urlencoding::FromUrlEncodingError),
 
     #[error(transparent)]
     Semver(#[from] config::semver::SemVerError),

@@ -6,6 +6,7 @@ use tokio::prelude::*;
 use http::StatusCode;
 use url::Url;
 use log::info;
+use slug::slugify;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
@@ -21,13 +22,13 @@ use crate::{
 
 static REGISTRY: &str = "https://registry.hypertext.live";
 
+static GIT_SCHEME: &str = "git";
+static FILE_SCHEME: &str = "file";
+
 pub async fn install(
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Plugin> {
-
-    println!("Installing dep {:?}", &dep.name);
-
     let plugin = if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => install_path(path).await,
@@ -58,7 +59,8 @@ pub(crate) async fn install_path<P: AsRef<Path>>(path: P) -> Result<Plugin> {
     let target = path.as_ref().to_path_buf();
     let canonical = path.as_ref().canonicalize()?;
     let url_target = format!(
-        "file:{}",
+        "{}:{}",
+        FILE_SCHEME,
         utils::url::to_href_separator(&canonical));
     let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, None)?;
@@ -108,12 +110,45 @@ pub(crate) async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
 }
 
 pub(crate) async fn install_repo<S: AsRef<str>>(git: S) -> Result<Plugin> {
-    let git_url: Url = git.as_ref().parse()?;
+    let git_url: Url = git.as_ref().parse().map_err(|e| Error::GitUrl(e))?;
 
-    println!("Install from repo {:?}", git_url);
+    // TODO: ensure the plugin source is "git+file" scheme
 
-    let plugin: Plugin = Default::default();
-    Ok(plugin)
+    let scheme = git_url.scheme();
+    if scheme == FILE_SCHEME {
+        let path = urlencoding::decode(git_url.path())?;
+        let repo_path = Path::new(&path);
+        let _ = git::open_repo(&repo_path)?;
+        return install_path(&repo_path).await
+    }
+
+    let host = if let Some(host) = git_url.host_str() {
+        host
+    } else { config::HOST };
+
+    let base = cache::get_cache_src_dir()?;
+    let git_url_str = format!(
+        "{}{}{}-{}",
+        GIT_SCHEME,
+        config::PLUGIN_NS,
+        slugify(host),
+        slugify(urlencoding::decode(git_url.path())?));
+
+    let git_target = base.join(git_url_str);
+
+    let _ = if git_target.exists() && git_target.is_dir() {
+        let repo = git::open_repo(&git_target)?;
+        git::pull(&git_target, None, None)?;
+        repo
+    } else {
+        git::clone(&git_url, &git_target)? 
+    };
+
+    //println!("Install from repo {:?}", git_url);
+    //println!("Target path is {:?}", &git_target);
+    //std::process::exit(1);
+
+    return install_path(&git_target).await
 }
 
 pub(crate) async fn resolve_package(
@@ -226,6 +261,8 @@ async fn install_registry(
         return Err(
             Error::RegistryDownloadFail(response.status().to_string(), download_url));
     }
+
+    // FIXME: show progress bar for download (#220)
 
     let mut content_file = tokio::fs::File::from_std(dest);
     let mut bytes_read = 0usize;
