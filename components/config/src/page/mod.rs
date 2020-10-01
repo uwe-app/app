@@ -35,6 +35,7 @@ pub struct CollatedPage<'a> {
     pub date: &'a Option<DateConfig>,
     // Paths referenced in a menu when MENU.md convention is used
     pub menu: Vec<&'a String>,
+    pub generator: &'a str,
 }
 
 impl<'a> CollatedPage<'a> {
@@ -45,6 +46,7 @@ impl<'a> CollatedPage<'a> {
             charset: config.charset(),
             date: &config.date,
             menu: Default::default(),
+            generator: crate::generator::id(),
         }
     }
 }

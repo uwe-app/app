@@ -583,11 +583,19 @@ async fn main() -> Result<(), Error> {
 
     pretty_env_logger::init_custom_env(LOG_ENV_NAME);
 
+    // Configure the generator meta data ahead of time
+
     // Must configure the version here otherwise option_env!() will
     // use the version from the workspace package which we don't really
     // care about, the top-level version is the one that interests us.
-    let semver = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
-    config::app::version(Some(semver));
+    let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
+    let version = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
+    let app_data = config::generator::AppData {
+        name,
+        version,
+        ..Default::default()
+    };
+    config::generator::get(Some(app_data));
 
     match &root_args.cmd {
         Some(cmd) => {

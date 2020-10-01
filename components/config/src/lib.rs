@@ -109,13 +109,13 @@ pub fn to_url_string(
     url
 }
 
-pub mod app;
 pub mod book;
 mod config;
 mod date;
 pub mod engine;
 pub mod feed;
 mod fluent;
+pub mod generator;
 mod hook;
 pub mod indexer;
 mod layout;

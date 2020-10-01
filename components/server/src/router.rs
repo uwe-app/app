@@ -259,8 +259,7 @@ async fn redirect_trailing_slash(
 }
 
 fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
-    let server_id = format!("hypertext/{}", config::app::version(None));
-    warp::reply::with::header("server", &server_id)
+    warp::reply::with::header("server", config::generator::id())
 }
 
 fn get_static_server(
