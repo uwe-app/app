@@ -1,14 +1,10 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-
-use globset::GlobMatcher;
 
 use url::Url;
 
 use crate::{
-    dependency::Dependency, plugin::ResolvedPlugins, script::ScriptAsset,
-    style::StyleAsset, Config, Error, ProfileSettings, RenderTypes, Result,
-    engine::TemplateEngine, HTML, INDEX_STEM,
+    Config, ProfileSettings, RenderTypes, Result,
+    HTML, INDEX_STEM,
 };
 
 #[derive(Debug, Clone)]

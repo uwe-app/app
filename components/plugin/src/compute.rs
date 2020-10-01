@@ -98,6 +98,13 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
 
         items.append(&mut existing);
 
+        // NOTE: Normalize to tags so that we avoid the TOML
+        // NOTE: error 'values must be emitted before tables' 
+        items = items
+            .iter()
+            .map(|s| StyleAsset::Tag(s.to_tag()))
+            .collect::<Vec<_>>();
+
         // Ensure we don't have any duplicates
         let mut uniques = HashSet::new();
         items.retain(|e| uniques.insert(e.clone()));
@@ -129,6 +136,13 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .unwrap_or(Default::default());
 
         items.append(&mut existing);
+
+        // NOTE: Normalize to tags so that we avoid the TOML
+        // NOTE: error 'values must be emitted before tables' 
+        items = items
+            .iter()
+            .map(|s| ScriptAsset::Tag(s.to_tag()))
+            .collect::<Vec<_>>();
 
         // Ensure we don't have any duplicates
         let mut uniques = HashSet::new();
