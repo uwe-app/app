@@ -20,7 +20,8 @@ use crate::{
     reader::read, compute, Error, Registry, Result,
 };
 
-static REGISTRY: &str = "https://registry.hypertext.live";
+//static REGISTRY: &str = "https://registry.hypertext.live";
+static REGISTRY: &str = "https://s3-ap-southeast-1.amazonaws.com/registry.hypertext.live";
 
 static GIT_SCHEME: &str = "git";
 static FILE_SCHEME: &str = "file";
@@ -144,10 +145,6 @@ pub(crate) async fn install_repo<S: AsRef<str>>(git: S) -> Result<Plugin> {
         git::clone(&git_url, &git_target)? 
     };
 
-    //println!("Install from repo {:?}", git_url);
-    //println!("Target path is {:?}", &git_target);
-    //std::process::exit(1);
-
     return install_path(&git_target).await
 }
 
@@ -262,14 +259,17 @@ async fn install_registry(
             Error::RegistryDownloadFail(response.status().to_string(), download_url));
     }
 
+    //let len = response.content_length().unwrap_or(0u64);
+    //println!("Expected content length {}", len);
+
     // FIXME: show progress bar for download (#220)
 
     let mut content_file = tokio::fs::File::from_std(dest);
     let mut bytes_read = 0usize;
     while let Some(chunk) = response.chunk().await? {
-        info!("Downloaded {} bytes", bytes_read);
         content_file.write_all(&chunk).await?;
         bytes_read += chunk.len();
+        info!("Downloaded {} bytes", bytes_read);
     }
 
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());

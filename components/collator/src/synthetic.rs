@@ -213,8 +213,6 @@ pub fn feed(
     let plugin = find_feed_plugin(feed, plugins)
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
-    println!("Feed plugin {:}", plugin);
-
     let engine_templates = plugin.templates.get(config.engine()).ok_or_else(|| {
         Error::NoFeedPluginTemplateEngine(
             plugin_name.clone(),
