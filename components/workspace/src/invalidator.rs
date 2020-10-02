@@ -183,6 +183,7 @@ impl<'a> Invalidator<'a> {
                     // NOTE: point anywhere in the source directory
                     // NOTE: and should take precedence
                     for (k, hook) in hooks.iter() {
+                        /*
                         if hook.source.is_some() {
                             let hook_base = self.canonical(
                                 hook.get_source_path(
@@ -195,6 +196,7 @@ impl<'a> Invalidator<'a> {
                                 continue 'paths;
                             }
                         }
+                        */
                     }
 
                     /*

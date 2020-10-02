@@ -20,8 +20,10 @@ pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
 
     let project_root = ctx.config.get_project();
     debug!("hook root {}", project_root.display());
+
     if let Ok(root) = project_root.canonicalize() {
-        let mut cmd = hook.path.as_ref().unwrap().clone();
+
+        let mut cmd = hook.path.clone();
         let mut args: Vec<String> = vec![];
         if let Some(arguments) = &hook.args {
             args = arguments.to_vec();
@@ -34,6 +36,8 @@ pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
             cmd = buf.to_string_lossy().into_owned();
         }
 
+        let build_source = &ctx.options.source;
+
         let mut build_target = collation.get_path().canonicalize()?;
         build_target = build_target.strip_prefix(&root)?.to_path_buf();
 
@@ -45,7 +49,8 @@ pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
             .get_node_env(node.debug.clone(), node.release.clone());
 
         info!("{} {}", cmd, args.join(" "));
-        debug!("PROJECT_ROOT {}", root.display());
+        debug!("BUILD_PROJECT {}", root.display());
+        debug!("BUILD_SOURCE {}", build_source.display());
         debug!("BUILD_TARGET {}", build_target.display());
         debug!("NODE_ENV {}", &node_env);
 
@@ -54,8 +59,9 @@ pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
         command
             .current_dir(&root)
             .env("NODE_ENV", node_env)
+            .env("BUILD_PROJECT", root.to_string_lossy().into_owned())
+            .env("BUILD_SOURCE", build_source.to_string_lossy().into_owned())
             .env("BUILD_TARGET", build_target.to_string_lossy().into_owned())
-            .env("PROJECT_ROOT", root.to_string_lossy().into_owned())
             .args(args);
 
         if hook.stdout.is_some() && hook.stdout.unwrap() {

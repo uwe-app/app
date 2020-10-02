@@ -320,7 +320,7 @@ impl Config {
                     fluent.prepare(&cfg.lang, lang_id);
                 }
                 if let Some(hooks) = cfg.hooks.as_mut() {
-                    hooks.prepare();
+                    hooks.prepare(cfg.project.as_ref().unwrap())?;
                 }
                 if let Some(date) = cfg.date.as_mut() {
                     date.prepare();

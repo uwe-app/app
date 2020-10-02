@@ -101,7 +101,6 @@ fn to_options(
     }
 
     let opts = RuntimeOptions::new(project, source, base, settings);
-
     debug!("{:?}", &cfg);
 
     Ok(opts)

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::{profile::ProfileName, utils::href::UrlPath};
+use crate::{profile::ProfileName, utils::href::UrlPath, Error, Result};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookMap {
@@ -19,26 +19,25 @@ impl HookMap {
         self.map.iter()
     }
 
-    pub(crate) fn prepare(&mut self) {
+    pub(crate) fn prepare(&mut self, base: &PathBuf) -> Result<()> {
         for (k, v) in self.map.iter_mut() {
-            if v.path.is_none() {
-                v.path = Some(k.clone());
+            if v.path.is_empty() {
+                return Err(Error::HookPathEmpty(k.to_string(), base.to_path_buf()))
             }
-            if v.stdout.is_none() {
-                v.stdout = Some(true);
-            }
-            if v.stderr.is_none() {
-                v.stderr = Some(true);
-            }
+            v.base = base.to_path_buf();
         }
+
+        Ok(())
     }
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct HookConfig {
     // Command path.
-    pub path: Option<String>,
+    pub path: String,
+
     // Command arguments.
     pub args: Option<Vec<String>>,
 
@@ -58,9 +57,31 @@ pub struct HookConfig {
     // expected files changes.
     pub watch: Option<bool>,
 
-    pub source: Option<PathBuf>,
+    // The base path for this hook. When declared on
+    // a site this should be the site project root.
+    //
+    // When declared on a plugin this should point
+    // to th plugin base directory.
+    base: PathBuf,
 }
 
+impl Default for HookConfig {
+    fn default() -> Self {
+        Self {
+            path: String::new(),
+            args: None,
+            stdout: Some(true),
+            stderr: Some(true),
+            after: None,
+            profiles: None,
+            files: None,
+            watch: None,
+            base: PathBuf::new(),
+        }
+    }
+}
+
+/*
 impl HookConfig {
     pub fn get_source_path<P: AsRef<Path>>(&self, base: P) -> Option<PathBuf> {
         if let Some(ref src) = self.source {
@@ -69,3 +90,4 @@ impl HookConfig {
         None
     }
 }
+*/
