@@ -1,5 +1,5 @@
 use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{
     de::{self, Visitor},
@@ -24,6 +24,12 @@ impl UrlPath {
 
     pub fn starts_with(&self, val: &str) -> bool {
         self.value.starts_with(val)
+    }
+
+    pub fn to_path_buf(&self) -> PathBuf {
+        PathBuf::from(
+            utils::url::to_path_separator(
+                self.trim_start_matches("/")))
     }
 }
 

@@ -192,5 +192,12 @@ pub(crate) async fn prepare(
         to_options(name, cfg, &mut root)?
     };
 
+
+    // Configure project level hooks
+    let project = cfg.project().clone();
+    if let Some(hooks) = cfg.hooks.as_mut() {
+        hooks.prepare(&opts.source, &project)?;
+    }
+
     Ok(opts)
 }

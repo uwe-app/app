@@ -175,7 +175,7 @@ impl ProjectBuilder {
                 if dep.grants(AccessGrant::Hooks) {
                     let mut master_hooks =
                         self.config.hooks.get_or_insert(Default::default());
-                    hooks.prepare(plugin.base())?;
+                    hooks.prepare(&self.options.source, plugin.base())?;
                     master_hooks.append(&mut hooks);
                 } else {
                     return Err(Error::NoHooksGrant(

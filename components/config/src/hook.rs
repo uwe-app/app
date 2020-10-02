@@ -21,13 +21,23 @@ impl HookMap {
         self.exec.iter()
     }
 
-    pub fn prepare(&mut self, base: &PathBuf) -> Result<()> {
+    pub fn prepare(&mut self, source: &PathBuf, base: &PathBuf) -> Result<()> {
         let mut out: HashSet<HookConfig> = HashSet::new();
         for mut v in self.exec.drain() {
             if v.path.is_empty() {
                 return Err(Error::HookPathEmpty(base.to_path_buf()));
             }
+
             v.base = base.to_path_buf();
+
+            if let Some(ref files) = v.files {
+                for f in files.iter() {
+                    let file = source.join(f.to_path_buf());
+                    if !file.exists() {
+                        return Err(Error::NoHookFile(file))
+                    }
+                }
+            }
 
             out.insert(v);
         }

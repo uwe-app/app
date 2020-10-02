@@ -197,7 +197,7 @@ pub struct Config {
     pub file: Option<PathBuf>,
 
     #[serde(skip)]
-    pub project: Option<PathBuf>,
+    pub project: PathBuf,
 }
 
 impl Default for Config {
@@ -236,7 +236,7 @@ impl Default for Config {
             series: None,
 
             file: None,
-            project: None,
+            project: PathBuf::from(""),
         }
     }
 }
@@ -291,10 +291,12 @@ impl Config {
                 let content = utils::fs::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
 
-                cfg.project = resolve_project(&file);
-                if cfg.project.is_none() {
+                let project = resolve_project(&file);
+                if project.is_none() {
                     return Err(Error::ProjectResolve(file.to_path_buf()));
                 }
+
+                cfg.project = project.unwrap();
 
                 // Must be a canonical path
                 let path = file.canonicalize()?;
@@ -318,9 +320,6 @@ impl Config {
 
                 if let Some(fluent) = cfg.fluent.as_mut() {
                     fluent.prepare(&cfg.lang, lang_id);
-                }
-                if let Some(hooks) = cfg.hooks.as_mut() {
-                    hooks.prepare(cfg.project.as_ref().unwrap())?;
                 }
                 if let Some(date) = cfg.date.as_mut() {
                     date.prepare();
@@ -389,8 +388,13 @@ impl Config {
         Err(Error::NoSiteConfig(target_pth))
     }
 
+    #[deprecated(since = "0.30.0", note = "Use project().")]
     pub fn get_project(&self) -> PathBuf {
-        self.project.as_ref().unwrap().clone()
+        self.project.clone()
+    }
+
+    pub fn project(&self) -> &PathBuf {
+        &self.project
     }
 }
 

@@ -25,6 +25,9 @@ pub enum Error {
     #[error("Hook defined in {0} has an empty command path")]
     HookPathEmpty(PathBuf),
 
+    #[error("Hook requires the file {0}")]
+    NoHookFile(PathBuf),
+
     #[error(
         "Dependency {0} wants the feature {1} but the feature is not available"
     )]
