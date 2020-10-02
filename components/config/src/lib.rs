@@ -121,7 +121,7 @@ pub mod engine;
 pub mod feed;
 mod fluent;
 pub mod generator;
-mod hook;
+pub mod hook;
 pub mod indexer;
 mod layout;
 mod link;

@@ -13,8 +13,11 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    dependency::AccessGrant, plugin_cache::PluginCache, syntax::SyntaxConfig,
     Config, ProfileSettings, RedirectConfig, RuntimeOptions,
+    dependency::AccessGrant,
+    plugin_cache::PluginCache,
+    syntax::SyntaxConfig,
+    hook::HookConfig,
 };
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
@@ -527,6 +530,14 @@ impl Project {
         }
 
         Ok(result)
+    }
+
+
+    pub(crate) async fn run_hook(&self, hook: &HookConfig) -> Result<()> {
+        for renderer in self.renderers.iter() {
+            renderer.run_hook(hook).await?;
+        }
+        Ok(())
     }
 
     pub fn write_manifest(&self) -> Result<()> {

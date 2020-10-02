@@ -1,10 +1,10 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use config::FileType;
+use config::{FileType, hook::HookConfig};
 use datasource::{self, DataSourceMap};
 
-use crate::{renderer::RenderOptions, Error, Project, Result};
+use crate::{renderer::RenderOptions, hook, Error, Project, Result};
 
 /*
  *  Invalidation rules.
@@ -37,7 +37,7 @@ pub enum Action {
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
-    Hook(String, PathBuf),
+    Hook(HookConfig, PathBuf),
     DataSourceConfig(PathBuf),
     DataSourceDocument(PathBuf),
 }
@@ -88,9 +88,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
-        //let config = &self.project.config;
-        //let options = &self.project.options;
-
         let mut rule = Rule {
             notify: true,
             reload: false,
@@ -103,14 +100,30 @@ impl<'a> Invalidator<'a> {
         let config_file = self.project.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = self.project.config.hooks.as_ref().unwrap();
+        let hooks = if let Some(ref hooks) = self.project.config.hooks {
+            hooks
+                .iter()
+                .filter(|h| h.files.is_some() && h.watch.is_some() && h.watch.unwrap())
+                .map(|h| {
+                    let files = h.files.as_ref().unwrap()
+                        .iter()
+                        .map(|url_path| {
+                            self.canonical(
+                                self.project.options.source.join(
+                                    url_path.to_path_buf()))
+                        })
+                        .collect::<Vec<_>>();
+                    (h, files)
+                })
+                .collect::<Vec<_>>()
+        } else {
+            vec![]
+        };
 
         let build_output = self.canonical(self.project.options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
-        //let layout_file =
-        //self.canonical(self.project.options.get_layout_path());
 
         let assets = self.canonical(self.project.options.get_assets_path());
         let partials = self.canonical(self.project.options.get_partials_path());
@@ -135,21 +148,13 @@ impl<'a> Invalidator<'a> {
                     // NOTE: must test for hooks first as they can
                     // NOTE: point anywhere in the source directory
                     // NOTE: and should take precedence
-                    for hook in hooks.iter() {
-                        /*
-                        if hook.source.is_some() {
-                            let hook_base = self.canonical(
-                                hook.get_source_path(
-                                    &self.project.options.source,
-                                )
-                                .unwrap(),
-                            );
-                            if path.starts_with(hook_base) {
-                                rule.hooks.push(Action::Hook(k.clone(), path));
+                    for (hook, files) in hooks.iter() {
+                        for f in files.iter() {
+                            if &path == f {
+                                rule.hooks.push(Action::Hook((*hook).clone(), f.to_path_buf()));
                                 continue 'paths;
                             }
                         }
-                        */
                     }
 
                     if path == cfg_file {
@@ -201,10 +206,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
-        //let livereload = context::livereload().read().unwrap();
-
-        //let config = &self.project.config;
-        //let options = &self.project.options;
 
         // Reload the config data!
         if rule.reload {
@@ -215,18 +216,11 @@ impl<'a> Invalidator<'a> {
             //}
         }
 
-        // FIXME: restore hook execution on live reload?!
-
-        /*
         for hook in &rule.hooks {
-            if let Action::Hook(id, _path) = hook {
-                if let Some(hook_config) = config.hook.as_ref().unwrap().get(id)
-                {
-                    hook::exec(Arc::clone(&self.builder.context), hook_config)?;
-                }
+            if let Action::Hook(hook, _file) = hook {
+                self.project.run_hook(hook).await?;
             }
         }
-        */
 
         match rule.strategy {
             Strategy::Full | Strategy::Page => {

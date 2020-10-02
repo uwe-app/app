@@ -11,7 +11,10 @@ use collator::{resource::Resource, Collate, LinkCollate};
 use compiler::{
     compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
-use config::sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex};
+use config::{
+    hook::HookConfig,
+    sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex},
+};
 use locale::{LocaleName, Locales};
 use search::{
     compile as compile_index, intermediate, Index, IntermediateEntry,
@@ -237,6 +240,10 @@ impl Renderer {
         }
 
         Ok(res)
+    }
+
+    pub(crate) async fn run_hook(&self, hook: &HookConfig) -> Result<()> {
+        Ok(hook::run(&self.info.context, vec![hook])?)
     }
 
     async fn run_before_hooks(&self) -> Result<()> {
