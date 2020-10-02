@@ -44,17 +44,20 @@ pub async fn install<P: AsRef<Path>>(
     Ok(plugin)
 }
 
-/// Install a plugin from a file system path.
-async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F)
-    -> Result<(PathBuf, Plugin)> {
-
+/// Resolve to a canonical path.
+fn canonical<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F) -> Result<PathBuf> {
     let mut file = path.as_ref().to_path_buf();
-
     if !path.as_ref().is_absolute() {
         file = project.as_ref().canonicalize()?
             .join(path.as_ref()).canonicalize()?;
     }
+    Ok(file)
+}
 
+/// Install a plugin from a file system path.
+async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F)
+    -> Result<(PathBuf, Plugin)> {
+    let file = canonical(project, path)?;
     let plugin = read(&file).await?;
     Ok((file, plugin))
 }
@@ -97,8 +100,10 @@ pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(project: P, 
         Ok(cache::get_cache_src_dir()?.join(name))
     };
 
+    let file = canonical(project, path)?;
+
     // Extract the archive
-    let reader = PackageReader::new(path.as_ref().to_path_buf(), None, Some(Box::new(builder)))
+    let reader = PackageReader::new(file.clone(), None, Some(Box::new(builder)))
         .destination(PathBuf::from("."))?
         .set_overwrite(true)
         .digest()
@@ -107,10 +112,9 @@ pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(project: P, 
         .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
-    let canonical = path.as_ref().canonicalize()?;
     let url_target = format!(
         "tar:{}",
-        utils::url::to_href_separator(&canonical));
+        utils::url::to_href_separator(&file));
     let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
     Ok(plugin)

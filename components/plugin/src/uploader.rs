@@ -1,7 +1,7 @@
 use std::fs::{File, remove_dir_all};
 use std::path::PathBuf;
 
-use log::{debug, info};
+use log::info;
 use scopeguard::defer;
 
 use config::plugin::Plugin;

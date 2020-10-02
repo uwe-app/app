@@ -21,6 +21,9 @@ use super::{dependency::DependencyMap, features::FeatureMap};
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PluginType {
+    /// Build tool hook.
+    #[serde(rename = "hook")]
+    Hook,
     /// Assets to be bundled with the website files.
     #[serde(rename = "asset")]
     Asset,
@@ -162,7 +165,7 @@ impl Plugin {
     }
 
     pub fn set_base<P: AsRef<Path>>(&mut self, p: P) {
-        self.base = p.as_ref().to_path_buf(); 
+        self.base = p.as_ref().to_path_buf();
     }
 
     pub fn source(&self) -> &Option<Url> {
@@ -170,7 +173,7 @@ impl Plugin {
     }
 
     pub fn set_source(&mut self, u: Url) {
-        self.source = Some(u); 
+        self.source = Some(u);
     }
 
     pub fn checksum(&self) -> &Option<String> {
@@ -178,7 +181,7 @@ impl Plugin {
     }
 
     pub fn set_checksum<S: AsRef<str>>(&mut self, s: S) {
-        self.checksum = Some(s.as_ref().to_string()); 
+        self.checksum = Some(s.as_ref().to_string());
     }
 
     /// Generate a qualified name relative to the plugin name.
