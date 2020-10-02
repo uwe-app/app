@@ -168,7 +168,9 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         let site_toml = target.join(config::SITE_TOML);
         if !site_toml.exists() {
             return Err(Error::NoSiteSettings(
-                target, config::SITE_TOML.to_string()));
+                target,
+                config::SITE_TOML.to_string(),
+            ));
         }
 
         write_settings(&target, &prefs, language, options.host, locale_ids)?;

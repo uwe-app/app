@@ -61,7 +61,7 @@ impl StyleAsset {
 
 impl From<UrlPath> for StyleAsset {
     fn from(path: UrlPath) -> Self {
-        StyleAsset::Source(path.to_string())    
+        StyleAsset::Source(path.to_string())
     }
 }
 

@@ -182,7 +182,7 @@ impl<'a> Invalidator<'a> {
                     // NOTE: must test for hooks first as they can
                     // NOTE: point anywhere in the source directory
                     // NOTE: and should take precedence
-                    for (k, hook) in hooks.iter() {
+                    for hook in hooks.iter() {
                         /*
                         if hook.source.is_some() {
                             let hook_base = self.canonical(

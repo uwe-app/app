@@ -8,8 +8,7 @@ pub struct FetchOptions {
 }
 
 pub fn update(options: FetchOptions) -> Result<()> {
-    let mut components: Vec<CacheComponent> =
-        vec![CacheComponent::Release];
+    let mut components: Vec<CacheComponent> = vec![CacheComponent::Release];
 
     if options.release {
         components = Vec::new();

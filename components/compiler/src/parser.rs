@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use config::{CollatedPage, engine::TemplateEngine};
+use config::{engine::TemplateEngine, CollatedPage};
 use locale::Locales;
 
 use crate::{context::BuildContext, hbs, Result};

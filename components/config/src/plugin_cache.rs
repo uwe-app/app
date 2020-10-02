@@ -3,12 +3,8 @@ use std::collections::HashMap;
 use globset::GlobMatcher;
 
 use crate::{
-    Error, Result,
-    dependency::Dependency,
-    plugin::ResolvedPlugins,
-    script::ScriptAsset,
-    style::StyleAsset, 
-    engine::TemplateEngine,
+    dependency::Dependency, engine::TemplateEngine, plugin::ResolvedPlugins,
+    script::ScriptAsset, style::StyleAsset, Error, Result,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -33,7 +29,11 @@ impl PluginCache {
     }
 
     pub fn plugins(&self) -> &ResolvedPlugins {
-        &self.plugins 
+        &self.plugins
+    }
+
+    pub fn plugins_mut(&mut self) -> &mut ResolvedPlugins {
+        &mut self.plugins
     }
 
     pub fn styles(&self) -> &Vec<(Dependency, Vec<StyleAsset>)> {
@@ -57,33 +57,31 @@ impl PluginCache {
                     utils::url::to_href_separator(plugin.assets())
                 );
 
-                if plugin.styles.is_some() && !apply.styles_match.is_empty()
-                {
-
+                if plugin.styles.is_some() && !apply.styles_match.is_empty() {
                     // Make style paths relative to the plugin asset destination
-                    let styles =
-                        plugin.styles
-                            .clone()
-                            .unwrap()
-                            .into_iter()
-                            .map(|mut s| {
-                                s.set_source_prefix(&assets_href_base);
-                                s                            
-                            }).collect::<Vec<StyleAsset>>();
+                    let styles = plugin
+                        .styles
+                        .clone()
+                        .unwrap()
+                        .into_iter()
+                        .map(|mut s| {
+                            s.set_source_prefix(&assets_href_base);
+                            s
+                        })
+                        .collect::<Vec<StyleAsset>>();
                     self.styles_cache.push((dep.clone(), styles));
                 }
-                if plugin.scripts.is_some()
-                    && !apply.scripts_match.is_empty()
-                {
-                    let scripts =
-                        plugin.scripts
-                            .clone()
-                            .unwrap()
-                            .into_iter()
-                            .map(|mut s| {
-                                s.set_source_prefix(&assets_href_base);
-                                s                            
-                            }).collect::<Vec<ScriptAsset>>();
+                if plugin.scripts.is_some() && !apply.scripts_match.is_empty() {
+                    let scripts = plugin
+                        .scripts
+                        .clone()
+                        .unwrap()
+                        .into_iter()
+                        .map(|mut s| {
+                            s.set_source_prefix(&assets_href_base);
+                            s
+                        })
+                        .collect::<Vec<ScriptAsset>>();
                     self.scripts_cache.push((dep.clone(), scripts));
                 }
 

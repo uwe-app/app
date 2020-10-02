@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
@@ -15,86 +15,92 @@ pub enum Phase {
     After,
 }
 
-pub fn exec(ctx: Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
+pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
     let collation = ctx.collation.read().unwrap();
 
-    let project_root = ctx.config.get_project();
-    debug!("hook root {}", project_root.display());
+    let project_root =
+        ctx.config.get_project().canonicalize().map_err(|_| {
+            Error::CanonicalProjectRoot(ctx.config.get_project().to_path_buf())
+        })?;
 
-    if let Ok(root) = project_root.canonicalize() {
+    let hook_root = hook
+        .base()
+        .canonicalize()
+        .map_err(|_| Error::CanonicalProjectRoot(hook.base().to_path_buf()))?;
 
-        let mut cmd = hook.path.clone();
-        let mut args: Vec<String> = vec![];
-        if let Some(arguments) = &hook.args {
-            args = arguments.to_vec();
-        }
+    debug!("Hook root {}", hook_root.display());
 
-        // Looks like a relative command, resolve to the project root
-        if cmd.starts_with(".") {
-            let mut buf = root.clone();
-            buf.push(cmd.clone());
-            cmd = buf.to_string_lossy().into_owned();
-        }
-
-        let build_source = &ctx.options.source;
-
-        let mut build_target = collation.get_path().canonicalize()?;
-        build_target = build_target.strip_prefix(&root)?.to_path_buf();
-
-        let node = ctx.config.node.as_ref().unwrap();
-        let node_env = ctx
-            .options
-            .settings
-            .name
-            .get_node_env(node.debug.clone(), node.release.clone());
-
-        info!("{} {}", cmd, args.join(" "));
-        debug!("BUILD_PROJECT {}", root.display());
-        debug!("BUILD_SOURCE {}", build_source.display());
-        debug!("BUILD_TARGET {}", build_target.display());
-        debug!("NODE_ENV {}", &node_env);
-
-        let mut command = Command::new(cmd);
-
-        command
-            .current_dir(&root)
-            .env("NODE_ENV", node_env)
-            .env("BUILD_PROJECT", root.to_string_lossy().into_owned())
-            .env("BUILD_SOURCE", build_source.to_string_lossy().into_owned())
-            .env("BUILD_TARGET", build_target.to_string_lossy().into_owned())
-            .args(args);
-
-        if hook.stdout.is_some() && hook.stdout.unwrap() {
-            command.stdout(Stdio::inherit());
-        }
-
-        if hook.stderr.is_some() && hook.stderr.unwrap() {
-            command.stderr(Stdio::inherit());
-        }
-
-        command.output()?;
-    } else {
-        return Err(Error::CanonicalProjectRoot(project_root));
+    let mut cmd = hook.path.clone();
+    let mut args: Vec<String> = vec![];
+    if let Some(arguments) = &hook.args {
+        args = arguments.to_vec();
     }
+
+    //let cmd_path = PathBuf::from(cmd);
+
+    // Looks like a relative command, resolve to the project root
+    if cmd.starts_with(".") {
+        let mut buf = hook_root.clone();
+        buf.push(cmd.clone());
+        cmd = buf.to_string_lossy().into_owned();
+    }
+
+    let build_source = ctx.options.source.canonicalize()?;
+    let build_target = collation.get_path().canonicalize()?;
+
+    let node = ctx.config.node.as_ref().unwrap();
+    let node_env = ctx
+        .options
+        .settings
+        .name
+        .get_node_env(node.debug.clone(), node.release.clone());
+
+    info!("{} {}", cmd, args.join(" "));
+    debug!("BUILD_PROJECT {}", project_root.display());
+    debug!("BUILD_SOURCE {}", build_source.display());
+    debug!("BUILD_TARGET {}", build_target.display());
+    debug!("BUILD_HOOK {}", hook_root.display());
+    debug!("NODE_ENV {}", &node_env);
+
+    let mut command = Command::new(cmd);
+
+    command
+        .current_dir(&hook_root)
+        .env("NODE_ENV", node_env)
+        .env("BUILD_PROJECT", project_root.to_string_lossy().into_owned())
+        .env("BUILD_SOURCE", build_source.to_string_lossy().into_owned())
+        .env("BUILD_TARGET", build_target.to_string_lossy().into_owned())
+        .env("BUILD_HOOK", hook_root.to_string_lossy().into_owned())
+        .args(args);
+
+    if hook.stdout.is_some() && hook.stdout.unwrap() {
+        command.stdout(Stdio::inherit());
+    }
+
+    if hook.stderr.is_some() && hook.stderr.unwrap() {
+        command.stderr(Stdio::inherit());
+    }
+
+    command.output()?;
 
     Ok(())
 }
 
-pub fn collect(
-    hooks: HashMap<String, HookConfig>,
+pub fn collect<'a>(
+    hooks: &'a HashSet<HookConfig>,
     phase: Phase,
     name: &ProfileName,
-) -> Vec<(String, HookConfig)> {
+) -> Vec<&'a HookConfig> {
     hooks
         .into_iter()
-        .filter(|(_, v)| {
+        .filter(|v| {
             let result = match phase {
                 Phase::Before => v.after.is_none(),
                 Phase::After => v.after.is_some() && v.after.unwrap(),
             };
             result
         })
-        .filter(|(_, v)| {
+        .filter(|v| {
             if let Some(ref profiles) = v.profiles {
                 profiles.contains(name)
             } else {
@@ -104,13 +110,9 @@ pub fn collect(
         .collect::<Vec<_>>()
 }
 
-pub fn run(
-    ctx: Arc<BuildContext>,
-    hooks: Vec<(String, HookConfig)>,
-) -> Result<()> {
-    for (k, hook) in hooks {
-        info!("hook {}", k);
-        exec(Arc::clone(&ctx), &hook)?;
+pub fn run(ctx: &Arc<BuildContext>, hooks: Vec<&HookConfig>) -> Result<()> {
+    for hook in hooks {
+        exec(ctx, hook)?;
     }
     Ok(())
 }

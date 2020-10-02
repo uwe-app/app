@@ -1,5 +1,8 @@
-use std::{io, fs::{self, File}};
 use std::path::{Path, PathBuf};
+use std::{
+    fs::{self, File},
+    io,
+};
 
 use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
@@ -39,7 +42,11 @@ where
 /// Copy all the files returned by a walk and write to the destination
 /// directory. Any existing files will be overwritten so it is the caller's
 /// responsibility to detect if a target already exists.
-pub fn copy<P: AsRef<Path>, Q: AsRef<Path>, F>(from: P, to: Q, filter: F) -> Result<()>
+pub fn copy<P: AsRef<Path>, Q: AsRef<Path>, F>(
+    from: P,
+    to: Q,
+    filter: F,
+) -> Result<()>
 where
     F: Fn(&PathBuf) -> bool + Sync,
 {

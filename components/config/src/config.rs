@@ -392,7 +392,6 @@ impl Config {
     pub fn get_project(&self) -> PathBuf {
         self.project.as_ref().unwrap().clone()
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

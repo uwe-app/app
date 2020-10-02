@@ -54,7 +54,11 @@ pub fn callbacks_ssh_agent<'a>() -> RemoteCallbacks<'a> {
 
 /// Detach a repository from upstream by removing the entire commit
 /// history and creating a fresh repository.
-pub fn pristine<P: AsRef<Path>>(target: P, repo: Repository, message: &str) -> Result<()> {
+pub fn pristine<P: AsRef<Path>>(
+    target: P,
+    repo: Repository,
+    message: &str,
+) -> Result<()> {
     let git_dir = repo.path();
     // Remove the git directory is the easiest
     // way to purge the history
@@ -172,7 +176,6 @@ pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
 ) -> Result<Repository> {
-
     let mut callbacks = callbacks_ssh_agent();
     progress::add_progress_callbacks(&mut callbacks);
 

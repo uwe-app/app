@@ -2,11 +2,11 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 
 use futures::TryFutureExt;
-use tokio::prelude::*;
 use http::StatusCode;
-use url::Url;
 use log::info;
 use slug::slugify;
+use tokio::prelude::*;
+use url::Url;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
@@ -16,12 +16,13 @@ use config::{
 };
 
 use crate::{
-    archive::reader::PackageReader,
-    reader::read, compute, Error, Registry, Result,
+    archive::reader::PackageReader, compute, reader::read, Error, Registry,
+    Result,
 };
 
 //static REGISTRY: &str = "https://registry.hypertext.live";
-static REGISTRY: &str = "https://s3-ap-southeast-1.amazonaws.com/registry.hypertext.live";
+static REGISTRY: &str =
+    "https://s3-ap-southeast-1.amazonaws.com/registry.hypertext.live";
 
 static GIT_SCHEME: &str = "git";
 static FILE_SCHEME: &str = "file";
@@ -33,9 +34,15 @@ pub async fn install<P: AsRef<Path>>(
 ) -> Result<Plugin> {
     let plugin = if let Some(ref target) = dep.target {
         match target {
-            DependencyTarget::File { ref path } => install_path(project, path).await,
-            DependencyTarget::Archive { ref archive } => install_archive(project, archive).await,
-            DependencyTarget::Repo { ref git } => install_repo(project, git).await,
+            DependencyTarget::File { ref path } => {
+                install_path(project, path).await
+            }
+            DependencyTarget::Archive { ref archive } => {
+                install_archive(project, archive).await
+            }
+            DependencyTarget::Repo { ref git } => {
+                install_repo(project, git).await
+            }
         }
     } else {
         install_registry(project, registry, dep).await
@@ -45,18 +52,26 @@ pub async fn install<P: AsRef<Path>>(
 }
 
 /// Resolve to a canonical path.
-fn canonical<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F) -> Result<PathBuf> {
+fn canonical<P: AsRef<Path>, F: AsRef<Path>>(
+    project: P,
+    path: F,
+) -> Result<PathBuf> {
     let mut file = path.as_ref().to_path_buf();
     if !path.as_ref().is_absolute() {
-        file = project.as_ref().canonicalize()?
-            .join(path.as_ref()).canonicalize()?;
+        file = project
+            .as_ref()
+            .canonicalize()?
+            .join(path.as_ref())
+            .canonicalize()?;
     }
     Ok(file)
 }
 
 /// Install a plugin from a file system path.
-async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F)
-    -> Result<(PathBuf, Plugin)> {
+async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(
+    project: P,
+    path: F,
+) -> Result<(PathBuf, Plugin)> {
     let file = canonical(project, path)?;
     let plugin = read(&file).await?;
     Ok((file, plugin))
@@ -64,14 +79,15 @@ async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F)
 
 /// Install a plugin from a file system path and compute the
 /// plugin data.
-pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F) -> Result<Plugin> {
-    let (target, mut plugin) = install_file(
-        project.as_ref(), path.as_ref()).await?;
+pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
+    project: P,
+    path: F,
+) -> Result<Plugin> {
+    let (target, mut plugin) =
+        install_file(project.as_ref(), path.as_ref()).await?;
 
-    let url_target = format!(
-        "{}:{}",
-        FILE_SCHEME,
-        utils::url::to_href_separator(&target));
+    let url_target =
+        format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
     let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, None)?;
 
@@ -82,45 +98,50 @@ pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(project: P, pat
 ///
 /// No expected digest is available so this method should be treated with caution
 /// and only used with packages created using the `plugin pack` command.
-pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F) -> Result<Plugin> {
-
+pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
+    project: P,
+    path: F,
+) -> Result<Plugin> {
     // Determine the location to extract the archive to.
-    let builder = |_: &PathBuf, plugin: &Plugin, digest: &Vec<u8>| -> Result<PathBuf> {
-        let name = format!(
-            "{}{}{}{}{}{}{}",
-            config::PLUGIN_ARCHIVE_PREFIX,
-            config::PLUGIN_NS,
-            &plugin.name,
-            config::PLUGIN_NS,
-            plugin.version.to_string(),
-            config::PLUGIN_NS,
-            hex::encode(digest),
-        );
+    let builder =
+        |_: &PathBuf, plugin: &Plugin, digest: &Vec<u8>| -> Result<PathBuf> {
+            let name = format!(
+                "{}{}{}{}{}{}{}",
+                config::PLUGIN_ARCHIVE_PREFIX,
+                config::PLUGIN_NS,
+                &plugin.name,
+                config::PLUGIN_NS,
+                plugin.version.to_string(),
+                config::PLUGIN_NS,
+                hex::encode(digest),
+            );
 
-        Ok(cache::get_cache_src_dir()?.join(name))
-    };
+            Ok(cache::get_cache_src_dir()?.join(name))
+        };
 
     let file = canonical(project, path)?;
 
     // Extract the archive
-    let reader = PackageReader::new(file.clone(), None, Some(Box::new(builder)))
-        .destination(PathBuf::from("."))?
-        .set_overwrite(true)
-        .digest()
-        .and_then(|b| b.xz())
-        .and_then(|b| b.tar())
-        .await?;
+    let reader =
+        PackageReader::new(file.clone(), None, Some(Box::new(builder)))
+            .destination(PathBuf::from("."))?
+            .set_overwrite(true)
+            .digest()
+            .and_then(|b| b.xz())
+            .and_then(|b| b.tar())
+            .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
-    let url_target = format!(
-        "tar:{}",
-        utils::url::to_href_separator(&file));
+    let url_target = format!("tar:{}", utils::url::to_href_separator(&file));
     let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
     Ok(plugin)
 }
 
-pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(project: P, git: S) -> Result<Plugin> {
+pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
+    project: P,
+    git: S,
+) -> Result<Plugin> {
     let git_url: Url = git.as_ref().parse().map_err(|e| Error::GitUrl(e))?;
 
     // TODO: ensure the plugin source is "git+file" scheme
@@ -130,12 +151,14 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(project: P, git:
         let path = urlencoding::decode(git_url.path())?;
         let repo_path = Path::new(&path);
         let _ = git::open_repo(&repo_path)?;
-        return install_path(project, &repo_path).await
+        return install_path(project, &repo_path).await;
     }
 
     let host = if let Some(host) = git_url.host_str() {
         host
-    } else { config::HOST };
+    } else {
+        config::HOST
+    };
 
     let base = cache::get_cache_src_dir()?;
     let git_url_str = format!(
@@ -143,7 +166,8 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(project: P, git:
         GIT_SCHEME,
         config::PLUGIN_NS,
         slugify(host),
-        slugify(urlencoding::decode(git_url.path())?));
+        slugify(urlencoding::decode(git_url.path())?)
+    );
 
     let git_target = base.join(git_url_str);
 
@@ -155,7 +179,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(project: P, git:
         git::clone(&git_url, &git_target)?
     };
 
-    return install_path(project, &git_target).await
+    return install_path(project, &git_target).await;
 }
 
 pub(crate) async fn resolve_package(
@@ -193,7 +217,8 @@ pub(crate) async fn get_cached<P: AsRef<Path>>(
     // Got an existing plugin file in the target cache directory
     // so we should try to use that
     if extract_target_plugin.exists() {
-        let (target, mut plugin) = install_file(project, &extract_target).await?;
+        let (target, mut plugin) =
+            install_file(project, &extract_target).await?;
         let source: Url = REGISTRY.parse()?;
         attributes(&mut plugin, &target, source, Some(&package.digest))?;
         return Ok(Some(plugin));
@@ -209,7 +234,12 @@ fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
 }
 
 /// Assign some private attributes to the plugin.
-fn attributes(plugin: &mut Plugin, base: &PathBuf, source: Url, digest: Option<&str>) -> Result<()> {
+fn attributes(
+    plugin: &mut Plugin,
+    base: &PathBuf,
+    source: Url,
+    digest: Option<&str>,
+) -> Result<()> {
     plugin.set_base(base);
     plugin.set_source(source);
     if let Some(digest) = digest {
@@ -267,8 +297,10 @@ async fn install_registry<P: AsRef<Path>>(
 
     let mut response = reqwest::get(&download_url).await?;
     if response.status() != StatusCode::OK {
-        return Err(
-            Error::RegistryDownloadFail(response.status().to_string(), download_url));
+        return Err(Error::RegistryDownloadFail(
+            response.status().to_string(),
+            download_url,
+        ));
     }
 
     //let len = response.content_length().unwrap_or(0u64);
@@ -287,17 +319,19 @@ async fn install_registry<P: AsRef<Path>>(
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());
     //println!("Downloaded {:?} bytes", File::open(&archive_path)?.metadata()?.len());
 
-    let reader =
-        PackageReader::new(archive_path, Some(hex::decode(&package.digest)?), None)
-            .destination(&extract_target)?
-            .digest()
-            .and_then(|b| b.xz())
-            .and_then(|b| b.tar())
-            .await?;
+    let reader = PackageReader::new(
+        archive_path,
+        Some(hex::decode(&package.digest)?),
+        None,
+    )
+    .destination(&extract_target)?
+    .digest()
+    .and_then(|b| b.xz())
+    .and_then(|b| b.tar())
+    .await?;
 
     let (_target, _digest, mut plugin) = reader.into_inner();
     let source: Url = REGISTRY.parse()?;
     attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
     Ok(plugin)
 }
-

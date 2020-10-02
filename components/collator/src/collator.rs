@@ -7,7 +7,9 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{href::UrlPath, Config, MenuEntry, RuntimeOptions, plugin_cache::PluginCache};
+use config::{
+    href::UrlPath, plugin_cache::PluginCache, Config, MenuEntry, RuntimeOptions,
+};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{
@@ -20,7 +22,7 @@ pub struct CollateRequest<'a> {
     pub config: &'a Config,
     pub options: &'a RuntimeOptions,
     pub locales: &'a LocaleMap,
-    pub plugins: Option<&'a PluginCache>
+    pub plugins: Option<&'a PluginCache>,
 }
 
 pub struct CollateResult {
@@ -183,9 +185,14 @@ async fn find(
                             let _ = tx.send(e);
                         }
                     } else if is_page {
-                        if let Err(e) =
-                            add_page(info, req.config, req.options, req.plugins, &key, &path)
-                        {
+                        if let Err(e) = add_page(
+                            info,
+                            req.config,
+                            req.options,
+                            req.plugins,
+                            &key,
+                            &path,
+                        ) {
                             let _ = tx.send(e);
                         }
                     } else {

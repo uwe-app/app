@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{hash_set, HashSet};
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -8,31 +8,43 @@ use crate::{profile::ProfileName, utils::href::UrlPath, Error, Result};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookMap {
-    #[serde(flatten)]
-    pub map: HashMap<String, HookConfig>,
+    #[serde(rename = "run")]
+    exec: HashSet<HookConfig>,
 }
 
 impl HookMap {
-    pub fn iter(
-        &self,
-    ) -> std::collections::hash_map::Iter<'_, String, HookConfig> {
-        self.map.iter()
+    pub fn exec(&self) -> &HashSet<HookConfig> {
+        &self.exec
     }
 
-    pub(crate) fn prepare(&mut self, base: &PathBuf) -> Result<()> {
-        for (k, v) in self.map.iter_mut() {
+    pub fn iter(&self) -> hash_set::Iter<'_, HookConfig> {
+        self.exec.iter()
+    }
+
+    pub fn prepare(&mut self, base: &PathBuf) -> Result<()> {
+        let mut out: HashSet<HookConfig> = HashSet::new();
+        for mut v in self.exec.drain() {
             if v.path.is_empty() {
-                return Err(Error::HookPathEmpty(k.to_string(), base.to_path_buf()))
+                return Err(Error::HookPathEmpty(base.to_path_buf()));
             }
             v.base = base.to_path_buf();
+
+            out.insert(v);
         }
 
+        self.exec = out;
         Ok(())
+    }
+
+    pub fn append(&mut self, other: &mut HookMap) {
+        for v in other.exec.drain() {
+            self.exec.insert(v);
+        }
     }
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(default)]
 pub struct HookConfig {
     // Command path.
@@ -81,13 +93,8 @@ impl Default for HookConfig {
     }
 }
 
-/*
 impl HookConfig {
-    pub fn get_source_path<P: AsRef<Path>>(&self, base: P) -> Option<PathBuf> {
-        if let Some(ref src) = self.source {
-            return Some(base.as_ref().to_path_buf().join(src));
-        }
-        None
+    pub fn base(&self) -> &PathBuf {
+        &self.base
     }
 }
-*/

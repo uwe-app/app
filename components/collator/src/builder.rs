@@ -2,7 +2,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::{loader, CollateInfo, Error, Result};
-use config::{indexer::QueryList, Config, LinkOptions, Page, RuntimeOptions, plugin_cache::PluginCache};
+use config::{
+    indexer::QueryList, plugin_cache::PluginCache, Config, LinkOptions, Page,
+    RuntimeOptions,
+};
 
 /// Runtime validation of queries.
 fn verify_query(list: &QueryList) -> Result<()> {

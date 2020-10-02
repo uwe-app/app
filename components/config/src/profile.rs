@@ -23,7 +23,7 @@ static RELEASE: &str = "release";
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
 
-#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[serde(from = "String", untagged)]
 pub enum ProfileName {
     Debug,

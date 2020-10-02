@@ -47,7 +47,9 @@ impl From<String> for UrlPath {
 
 impl From<&Path> for UrlPath {
     fn from(p: &Path) -> Self {
-        Self { value: p.to_string_lossy().into_owned() }
+        Self {
+            value: p.to_string_lossy().into_owned(),
+        }
     }
 }
 

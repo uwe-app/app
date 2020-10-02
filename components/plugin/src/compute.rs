@@ -1,14 +1,14 @@
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 
 use config::{
-    Plugin,
-    href::UrlPath,
-    style::StyleAsset,
-    script::ScriptAsset,
-    plugin::TemplateAsset,
     engine::{TemplateEngine, ENGINES},
+    href::UrlPath,
+    plugin::TemplateAsset,
+    script::ScriptAsset,
+    style::StyleAsset,
+    Plugin,
 };
 
 use utils::walk;
@@ -57,19 +57,14 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 }
 
 fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
-    let files = walk::find(dir, |_| {true});
+    let files = walk::find(dir, |_| true);
     if !files.is_empty() {
         let items = files
             .iter()
             .filter(|e| e.is_file())
-            .map(|e| {
-                UrlPath::from(e.strip_prefix(&base).unwrap())
-            })
+            .map(|e| UrlPath::from(e.strip_prefix(&base).unwrap()))
             .collect::<HashSet<_>>();
-        let existing = computed
-            .assets
-            .clone()
-            .unwrap_or(Default::default());
+        let existing = computed.assets.clone().unwrap_or(Default::default());
 
         let assets: HashSet<_> = items.union(&existing).cloned().collect();
         computed.assets = Some(assets);
@@ -89,14 +84,12 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                StyleAsset::from(
-                    UrlPath::from(e.strip_prefix(&base).unwrap()))
+                StyleAsset::from(UrlPath::from(e.strip_prefix(&base).unwrap()))
             })
             .collect::<Vec<_>>();
 
-        let mut existing = computed.styles
-            .clone()
-            .unwrap_or(Default::default());
+        let mut existing =
+            computed.styles.clone().unwrap_or(Default::default());
 
         items.append(&mut existing);
 
@@ -128,14 +121,12 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                ScriptAsset::from(
-                    UrlPath::from(e.strip_prefix(&base).unwrap()))
+                ScriptAsset::from(UrlPath::from(e.strip_prefix(&base).unwrap()))
             })
             .collect::<Vec<_>>();
 
-        let mut existing = computed.scripts
-            .clone()
-            .unwrap_or(Default::default());
+        let mut existing =
+            computed.scripts.clone().unwrap_or(Default::default());
 
         items.append(&mut existing);
 
@@ -158,8 +149,8 @@ fn load_engine(
     base: &PathBuf,
     dir: &Path,
     computed: &mut Plugin,
-    engine: &TemplateEngine) {
-
+    engine: &TemplateEngine,
+) {
     let partials = dir.join(config::PARTIALS);
     let layouts = dir.join(config::LAYOUTS);
 
@@ -175,8 +166,8 @@ fn load_partials(
     base: &PathBuf,
     dir: &Path,
     computed: &mut Plugin,
-    engine: &TemplateEngine) {
-
+    engine: &TemplateEngine,
+) {
     let ext = OsStr::new(engine.get_raw_extension());
     let files = walk::find(dir, |e| {
         //true
@@ -188,36 +179,29 @@ fn load_partials(
 
     if !files.is_empty() {
         //let master_templates = computed.templates;
-            //.get_or_insert(Default::default());
-        let engine_templates =
-            computed.templates
+        //.get_or_insert(Default::default());
+        let engine_templates = computed
+            .templates
             .entry(engine.clone())
             .or_insert(Default::default());
-        let partials = engine_templates.partials
-            .get_or_insert(Default::default());
-        files
-            .iter()
-            .filter(|e| e.is_file())
-            .for_each(|e| {
-                let mut tpl = TemplateAsset{
-                    file: UrlPath::from(e.strip_prefix(&base).unwrap()),
-                    schema: None,
-                };
-                let key = e.file_stem()
-                    .unwrap()
-                    .to_string_lossy()
-                    .into_owned();
+        let partials =
+            engine_templates.partials.get_or_insert(Default::default());
+        files.iter().filter(|e| e.is_file()).for_each(|e| {
+            let mut tpl = TemplateAsset {
+                file: UrlPath::from(e.strip_prefix(&base).unwrap()),
+                schema: None,
+            };
+            let key = e.file_stem().unwrap().to_string_lossy().into_owned();
 
-                let mut s = e.to_path_buf();
-                s.set_extension(config::JSON);
-                if s.exists() && s.is_file() {
-                    tpl.schema = Some(
-                        UrlPath::from(s.strip_prefix(&base).unwrap())
-                    );
-                }
+            let mut s = e.to_path_buf();
+            s.set_extension(config::JSON);
+            if s.exists() && s.is_file() {
+                tpl.schema =
+                    Some(UrlPath::from(s.strip_prefix(&base).unwrap()));
+            }
 
-                partials.entry(key).or_insert(tpl);
-            });
+            partials.entry(key).or_insert(tpl);
+        });
     }
 }
 
@@ -225,33 +209,27 @@ fn load_layouts(
     base: &PathBuf,
     dir: &Path,
     computed: &mut Plugin,
-    engine: &TemplateEngine) {
-
+    engine: &TemplateEngine,
+) {
     // NOTE: we do not test file extension here as some
     // NOTE: layouts (eg: std::core::feed) require different
     // NOTE: file extensions
     let files = walk::find(dir, |_| true);
 
     if !files.is_empty() {
-        let engine_templates =
-            computed.templates
+        let engine_templates = computed
+            .templates
             .entry(engine.clone())
             .or_insert(Default::default());
-        let layouts = engine_templates.layouts
-            .get_or_insert(Default::default());
-        files
-            .iter()
-            .filter(|e| e.is_file())
-            .for_each(|e| {
-                let tpl = TemplateAsset{
-                    file: UrlPath::from(e.strip_prefix(&base).unwrap()),
-                    schema: None,
-                };
-                let key = e.file_stem()
-                    .unwrap()
-                    .to_string_lossy()
-                    .into_owned();
-                layouts.entry(key).or_insert(tpl);
-            });
+        let layouts =
+            engine_templates.layouts.get_or_insert(Default::default());
+        files.iter().filter(|e| e.is_file()).for_each(|e| {
+            let tpl = TemplateAsset {
+                file: UrlPath::from(e.strip_prefix(&base).unwrap()),
+                schema: None,
+            };
+            let key = e.file_stem().unwrap().to_string_lossy().into_owned();
+            layouts.entry(key).or_insert(tpl);
+        });
     }
 }

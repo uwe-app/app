@@ -171,7 +171,10 @@ impl<'a> Resolver<'a> {
         Ok(self)
     }
 
-    async fn refresh(&mut self, difference: &mut HashSet<LockFileEntry>) -> Result<HashSet<LockFileEntry>> {
+    async fn refresh(
+        &mut self,
+        difference: &mut HashSet<LockFileEntry>,
+    ) -> Result<HashSet<LockFileEntry>> {
         let mut refreshed = self.refresh_lock(difference).await?;
 
         // We need to update the intermediate map to reflect the change
@@ -193,8 +196,10 @@ impl<'a> Resolver<'a> {
     /// Update lock file entries after the registry has been
     /// updated in case a newer version can be located in the
     /// fresh registry.
-    async fn refresh_lock<'b>(&self, diff: &'b mut HashSet<LockFileEntry>)
-        -> Result<Vec<(&'b LockFileEntry, Option<LockFileEntry>)>> {
+    async fn refresh_lock<'b>(
+        &self,
+        diff: &'b mut HashSet<LockFileEntry>,
+    ) -> Result<Vec<(&'b LockFileEntry, Option<LockFileEntry>)>> {
         let items = diff
             .iter()
             .map(|e| self.refresh_lock_entry(e))
@@ -205,11 +210,12 @@ impl<'a> Resolver<'a> {
     /// Refresh a single lock file entry, if a newer version can
     /// be resolved in the registry we also return a copy with
     /// the newer version.
-    async fn refresh_lock_entry<'b>(&self, e: &'b LockFileEntry)
-        -> Result<(&'b LockFileEntry, Option<LockFileEntry>)> {
+    async fn refresh_lock_entry<'b>(
+        &self,
+        e: &'b LockFileEntry,
+    ) -> Result<(&'b LockFileEntry, Option<LockFileEntry>)> {
         // Need the source dependency for the version request
-        let (dep, _solved) =
-            self.intermediate.get(&e).as_ref().unwrap();
+        let (dep, _solved) = self.intermediate.get(&e).as_ref().unwrap();
 
         let mut output: Option<LockFileEntry> = None;
 
@@ -218,7 +224,11 @@ impl<'a> Resolver<'a> {
         if dep.target.is_none() {
             // Try to resolve the package again
             let (version, _package) = installer::resolve_package(
-                &self.registry, &e.name, &dep.version).await?;
+                &self.registry,
+                &e.name,
+                &dep.version,
+            )
+            .await?;
             if version > e.version {
                 let mut copy = e.clone();
                 copy.version = version;
@@ -241,7 +251,8 @@ impl<'a> Resolver<'a> {
             match solved {
                 SolvedReference::Package(ref _package) => {
                     let plugin =
-                        installer::install(&self.project, &self.registry, &dep).await?;
+                        installer::install(&self.project, &self.registry, &dep)
+                            .await?;
                     self.resolved.push((dep, plugin));
                 }
                 _ => {}
@@ -273,7 +284,6 @@ async fn solver(
     stack: &mut Vec<String>,
 ) -> Result<()> {
     for (name, mut dep) in input.into_iter() {
-
         if stack.len() > DEPENDENCY_STACK_SIZE {
             return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
         } else if stack.contains(&name) {
@@ -328,7 +338,6 @@ async fn solver(
             return Err(Error::DependencyNotFound(dep.to_string()));
         };
 
-
         check(&name, &dep, &solved)?;
 
         // FIXME: filter out based on dependency features
@@ -356,7 +365,8 @@ async fn solver(
             let dependencies = dependencies.filter(&dep, feature_map)?;
 
             stack.push(name.clone());
-            solver(project, registry, dependencies, intermediate, lock, stack).await?;
+            solver(project, registry, dependencies, intermediate, lock, stack)
+                .await?;
             stack.pop();
         }
 
@@ -394,7 +404,6 @@ async fn resolve_version<P: AsRef<Path>>(
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
-
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
@@ -402,7 +411,8 @@ async fn resolve_version<P: AsRef<Path>>(
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {
-                let plugin = installer::install_archive(project, archive).await?;
+                let plugin =
+                    installer::install_archive(project, archive).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {
@@ -417,7 +427,8 @@ async fn resolve_version<P: AsRef<Path>>(
             installer::resolve_package(registry, name, &dep.version).await?;
 
         // Resolve a cached plugin if possible
-        if let Some(plugin) = installer::get_cached(project, registry, dep).await?.take()
+        if let Some(plugin) =
+            installer::get_cached(project, registry, dep).await?.take()
         {
             return Ok((version, Some(package), Some(plugin)));
         }
@@ -427,11 +438,8 @@ async fn resolve_version<P: AsRef<Path>>(
 }
 
 fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
-
     let (s_name, s_version) = match solved {
-        SolvedReference::Plugin(ref plugin) => {
-            (&plugin.name, &plugin.version)
-        }
+        SolvedReference::Plugin(ref plugin) => (&plugin.name, &plugin.version),
         SolvedReference::Package(ref package) => {
             (&package.name, &package.version)
         }

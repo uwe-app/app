@@ -22,8 +22,8 @@ pub enum Error {
     #[error("No author found for {0}")]
     NoAuthor(String),
 
-    #[error("The hook {0} has an empty command path ({1})")]
-    HookPathEmpty(String, PathBuf),
+    #[error("Hook defined in {0} has an empty command path")]
+    HookPathEmpty(PathBuf),
 
     #[error(
         "Dependency {0} wants the feature {1} but the feature is not available"

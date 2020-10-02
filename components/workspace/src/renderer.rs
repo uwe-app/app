@@ -242,9 +242,9 @@ impl Renderer {
     async fn run_before_hooks(&self) -> Result<()> {
         if let Some(ref hooks) = self.info.context.config.hooks {
             hook::run(
-                Arc::clone(&self.info.context),
+                &self.info.context,
                 hook::collect(
-                    hooks.map.clone(),
+                    hooks.exec(),
                     hook::Phase::Before,
                     &self.info.context.options.settings.name,
                 ),
@@ -256,9 +256,9 @@ impl Renderer {
     async fn run_after_hooks(&self) -> Result<()> {
         if let Some(ref hooks) = self.info.context.config.hooks {
             hook::run(
-                Arc::clone(&self.info.context),
+                &self.info.context,
                 hook::collect(
-                    hooks.map.clone(),
+                    hooks.exec(),
                     hook::Phase::After,
                     &self.info.context.options.settings.name,
                 ),

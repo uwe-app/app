@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use config::{Plugin, PLUGIN, dependency::DependencyTarget};
+use config::{dependency::DependencyTarget, Plugin, PLUGIN};
 
-use crate::{Error, Result, compute};
+use crate::{compute, Error, Result};
 
 static NORMALIZED_HEADER: &str = "\
 # Automatically generated plugin file, see plugin.orig.toml for the raw content.
@@ -19,9 +19,9 @@ async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
         for (_, dep) in deps.iter_mut() {
             if let Some(ref target) = dep.target {
                 match target {
-                    DependencyTarget::File {..}
-                        | DependencyTarget::Archive {..}
-                        | DependencyTarget::Repo {..} => {
+                    DependencyTarget::File { .. }
+                    | DependencyTarget::Archive { .. }
+                    | DependencyTarget::Repo { .. } => {
                         dep.target = None;
                     }
                 }
@@ -33,13 +33,18 @@ async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
 
 /// Create a normalized portable representation of a plugin suitable for
 /// packaging to an archive.
-pub async fn normalize<P: AsRef<Path>>(file: P, computed: bool) -> Result<(String, String)> {
+pub async fn normalize<P: AsRef<Path>>(
+    file: P,
+    computed: bool,
+) -> Result<(String, String)> {
     let (_original, plugin) = normalize_plugin(&file).await?;
     let original = utils::fs::read_string(file)?;
 
     let plugin = if computed {
         compute::transform(&plugin).await?
-    } else { plugin };
+    } else {
+        plugin
+    };
 
     let plugin = &toml::to_string(&plugin)?;
 

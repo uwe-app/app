@@ -6,8 +6,8 @@ use jsonfeed::{Feed, Item, VERSION};
 
 use config::{
     feed::{ChannelConfig, FeedConfig},
-    Config, Page, Plugin, RuntimeOptions,
     plugin_cache::PluginCache,
+    Config, Page, Plugin, RuntimeOptions,
 };
 
 use locale::Locales;
@@ -213,12 +213,13 @@ pub fn feed(
     let plugin = find_feed_plugin(feed, plugins)
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
-    let engine_templates = plugin.templates.get(config.engine()).ok_or_else(|| {
-        Error::NoFeedPluginTemplateEngine(
-            plugin_name.clone(),
-            config.engine().to_string(),
-        )
-    })?;
+    let engine_templates =
+        plugin.templates.get(config.engine()).ok_or_else(|| {
+            Error::NoFeedPluginTemplateEngine(
+                plugin_name.clone(),
+                config.engine().to_string(),
+            )
+        })?;
 
     let plugin_layouts = engine_templates
         .layouts
@@ -242,18 +243,17 @@ pub fn feed(
             let file_name = feed_type.get_name();
             let source = source_dir.join(&file_name);
 
-            let template: Option<PathBuf> = if let Some(ref partial_key) =
-                feed.names.get(feed_type)
-            {
-                //options.source.join(tpl)
-                if let Some(ref partial) = plugin_layouts.get(partial_key) {
-                    Some(partial.to_path_buf(plugin.base()))
+            let template: Option<PathBuf> =
+                if let Some(ref partial_key) = feed.names.get(feed_type) {
+                    //options.source.join(tpl)
+                    if let Some(ref partial) = plugin_layouts.get(partial_key) {
+                        Some(partial.to_path_buf(plugin.base()))
+                    } else {
+                        None
+                    }
                 } else {
                     None
-                }
-            } else {
-                None
-            };
+                };
 
             if template.is_none() {
                 return Err(Error::NoFeedPartialPath(feed_type.to_string()));

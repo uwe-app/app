@@ -63,7 +63,7 @@ impl ScriptAsset {
 
 impl From<UrlPath> for ScriptAsset {
     fn from(path: UrlPath) -> Self {
-        ScriptAsset::Source(path.to_string())    
+        ScriptAsset::Source(path.to_string())
     }
 }
 

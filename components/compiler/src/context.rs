@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use collator::{self, Collation};
-use config::{Config, RuntimeOptions, plugin_cache::PluginCache};
+use config::{plugin_cache::PluginCache, Config, RuntimeOptions};
 use locale::Locales;
 
 use crate::ParseData;

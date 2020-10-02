@@ -3,7 +3,7 @@ use once_cell::sync::OnceCell;
 #[derive(Debug, Default)]
 pub struct AppData {
     pub name: String,
-    pub version: String,    
+    pub version: String,
     pub id: String,
 }
 

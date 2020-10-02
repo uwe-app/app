@@ -50,9 +50,7 @@ pub enum Error {
     #[error("Plugin asset {0} for path {1} is not a file")]
     LintNoPluginFile(PathBuf, String),
 
-    #[error(
-        "Plugin names contains invalid namespace {0} ([a-zA-Z0-9-] only)"
-    )]
+    #[error("Plugin names contains invalid namespace {0} ([a-zA-Z0-9-] only)")]
     LintPluginNameInvalidNameSpace(String),
 
     #[error("Plugin {0} has invalid feature reference {1}")]
@@ -146,7 +144,6 @@ pub enum Error {
 
     #[error(transparent)]
     Git(#[from] git::Error),
-
 }
 
 mod archive;

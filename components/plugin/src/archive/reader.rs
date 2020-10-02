@@ -12,7 +12,8 @@ use crate::{reader::read_path, Error, Result};
 
 use config::{Plugin, PLUGIN};
 
-type PackagePathBuilder = Box<dyn Fn(&PathBuf, &Plugin, &Vec<u8>) -> Result<PathBuf> + Send>;
+type PackagePathBuilder =
+    Box<dyn Fn(&PathBuf, &Plugin, &Vec<u8>) -> Result<PathBuf> + Send>;
 
 #[derive(Default)]
 pub struct PackageReader {
@@ -41,8 +42,8 @@ impl PackageReader {
     pub fn new(
         source: PathBuf,
         expects: Option<Vec<u8>>,
-        path_builder: Option<PackagePathBuilder>) -> Self {
-
+        path_builder: Option<PackagePathBuilder>,
+    ) -> Self {
         Self {
             source,
             target: PathBuf::new(),

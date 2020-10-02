@@ -13,9 +13,8 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
-    plugin_cache::PluginCache,
-    RuntimeOptions,
+    dependency::AccessGrant, plugin_cache::PluginCache, syntax::SyntaxConfig,
+    Config, ProfileSettings, RedirectConfig, RuntimeOptions,
 };
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
@@ -154,17 +153,39 @@ impl ProjectBuilder {
 
     /// Resolve plugins.
     pub async fn plugins(mut self) -> Result<Self> {
-
         if let Some(dependencies) = self.config.dependencies.take() {
-            let plugins = plugin::resolve(&self.options.project, dependencies).await?;
+            let plugins =
+                plugin::resolve(&self.options.project, dependencies).await?;
 
             // Create plugin cache lookups for scripts, styles etc
             let mut plugin_cache = PluginCache::new(plugins);
             plugin_cache.prepare(self.config.engine())?;
+
+            self.plugin_hooks(&mut plugin_cache)?;
+
             self.plugins = Some(plugin_cache);
         }
 
         Ok(self)
+    }
+
+    fn plugin_hooks(&mut self, cache: &mut PluginCache) -> Result<()> {
+        for (dep, plugin) in cache.plugins_mut().iter_mut() {
+            if let Some(mut hooks) = plugin.hooks.take() {
+                if dep.grants(AccessGrant::Hooks) {
+                    let mut master_hooks =
+                        self.config.hooks.get_or_insert(Default::default());
+                    hooks.prepare(plugin.base())?;
+                    master_hooks.append(&mut hooks);
+                } else {
+                    return Err(Error::NoHooksGrant(
+                        plugin.to_string(),
+                        dep.to_string(),
+                    ));
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Load locale message files (.ftl).

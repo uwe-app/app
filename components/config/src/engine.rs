@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize, Serializer};
-use std::str::FromStr;
 use std::fmt;
+use std::str::FromStr;
 
 use crate::Error;
 
@@ -61,7 +61,7 @@ impl FromStr for TemplateEngine {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s == HANDLEBARS {
-            return Ok(TemplateEngine::Handlebars) 
+            return Ok(TemplateEngine::Handlebars);
         }
         Err(Error::UnsupportedTemplateEngine(s.to_string()))
     }

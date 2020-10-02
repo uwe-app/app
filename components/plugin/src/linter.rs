@@ -53,18 +53,18 @@ pub fn lint(plugin: &Plugin) -> Result<()> {
     }
 
     //if let Some(ref templates) = plugin.templates {
-        for (_engine, templates) in plugin.templates.iter() {
-            if let Some(ref partials) = templates.partials {
-                for (_, asset) in partials {
-                    lint_path(plugin, &asset.file)?;
-                }
-            }
-            if let Some(ref layouts) = templates.layouts {
-                for (_, asset) in layouts {
-                    lint_path(plugin, &asset.file)?;
-                }
+    for (_engine, templates) in plugin.templates.iter() {
+        if let Some(ref partials) = templates.partials {
+            for (_, asset) in partials {
+                lint_path(plugin, &asset.file)?;
             }
         }
+        if let Some(ref layouts) = templates.layouts {
+            for (_, asset) in layouts {
+                lint_path(plugin, &asset.file)?;
+            }
+        }
+    }
     //}
 
     Ok(())

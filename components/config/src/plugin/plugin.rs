@@ -2,20 +2,16 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::path::{Path, PathBuf};
 
+use jsonfeed::Author;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
-use jsonfeed::Author;
 
 use url::Url;
 
 use crate::{
-    href::UrlPath,
-    hook::HookMap,
-    script::ScriptAsset,
-    style::StyleAsset,
-    engine::TemplateEngine,
-    ASSETS, PLUGINS,
+    engine::TemplateEngine, hook::HookMap, href::UrlPath, script::ScriptAsset,
+    style::StyleAsset, ASSETS, PLUGINS,
 };
 
 use super::{dependency::DependencyMap, features::FeatureMap};
@@ -96,7 +92,6 @@ pub struct Plugin {
     // NOTE: we want to use HashSet for styles and scripts
     // NOTE: so there are no duplicates but ordering is important
     // NOTE: for these types so we just use a Vec for now.
-
     /// List of stylesheets to add to pages.
     pub styles: Option<Vec<StyleAsset>>,
 
@@ -167,7 +162,6 @@ impl Default for Plugin {
 }
 
 impl Plugin {
-
     pub fn base(&self) -> &PathBuf {
         &self.base
     }
@@ -243,7 +237,7 @@ pub struct TemplateAsset {
 impl TemplateAsset {
     pub fn to_path_buf(&self, base: &PathBuf) -> PathBuf {
         base.join(utils::url::to_path_separator(
-            self.file.trim_start_matches("/")
+            self.file.trim_start_matches("/"),
         ))
     }
 }
