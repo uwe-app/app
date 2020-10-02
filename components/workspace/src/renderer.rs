@@ -240,7 +240,7 @@ impl Renderer {
     }
 
     async fn run_before_hooks(&self) -> Result<()> {
-        if let Some(ref hooks) = self.info.context.config.hook {
+        if let Some(ref hooks) = self.info.context.config.hooks {
             hook::run(
                 Arc::clone(&self.info.context),
                 hook::collect(
@@ -254,7 +254,7 @@ impl Renderer {
     }
 
     async fn run_after_hooks(&self) -> Result<()> {
-        if let Some(ref hooks) = self.info.context.config.hook {
+        if let Some(ref hooks) = self.info.context.config.hooks {
             hook::run(
                 Arc::clone(&self.info.context),
                 hook::collect(

@@ -131,7 +131,7 @@ impl<'a> Invalidator<'a> {
         let config_file = self.project.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = self.project.config.hook.as_ref().unwrap();
+        let hooks = self.project.config.hooks.as_ref().unwrap();
 
         let build_output = self.canonical(self.project.options.output.clone());
 

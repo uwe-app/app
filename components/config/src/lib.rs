@@ -109,7 +109,6 @@ pub fn to_url_string(
     url
 }
 
-pub mod book;
 mod config;
 mod date;
 pub mod engine;

@@ -100,30 +100,7 @@ fn to_options(
         resources.prepare();
     }
 
-    if let Some(ref book) = cfg.book {
-        for (_k, item) in book.members.iter() {
-            let book_path = source.join(&item.path);
-            let book_menu = book_path.join(MENU);
-
-            if !book_menu.exists() || !book_menu.is_file() {
-                return Err(Error::NoBookMenu(book_menu, item.path.clone()));
-            }
-        }
-    }
-
     let opts = RuntimeOptions::new(project, source, base, settings);
-
-    //let opts = RuntimeOptions {
-    //project,
-    //source,
-    //output: settings.target.clone(),
-    //base,
-    //settings,
-    //plugins: None,
-    //styles_cache: Vec::new(),
-    //scripts_cache: Vec::new(),
-    //layouts_cache: HashMap::new(),
-    //};
 
     debug!("{:?}", &cfg);
 

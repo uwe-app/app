@@ -10,7 +10,11 @@ use jsonfeed::Author;
 use url::Url;
 
 use crate::{
-    href::UrlPath, script::ScriptAsset, style::StyleAsset, engine::TemplateEngine,
+    href::UrlPath,
+    hook::HookMap,
+    script::ScriptAsset,
+    style::StyleAsset,
+    engine::TemplateEngine,
     ASSETS, PLUGINS,
 };
 
@@ -108,6 +112,9 @@ pub struct Plugin {
     /// List of third-party libraries the plugin depends on.
     pub library: Option<HashMap<String, ExternalLibrary>>,
 
+    /// List of hooks in this plugin.
+    pub hooks: Option<HookMap>,
+
     /// Collections of partials and layouts
     #[serde(flatten, serialize_with = "toml::ser::tables_last")]
     pub templates: HashMap<TemplateEngine, PluginTemplates>,
@@ -147,6 +154,7 @@ impl Default for Plugin {
             assets: None,
             styles: None,
             scripts: None,
+            hooks: None,
             dependencies: None,
             features: None,
             templates: HashMap::new(),

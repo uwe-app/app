@@ -277,22 +277,6 @@ fn add_page(
         }
     }
 
-    // FIXME: remove this once the book logic is migrated to a plugin
-    if let Some(ref book) = config.book {
-        for (k, item) in book.members.iter() {
-            let p = options.source.join(&item.path);
-            if key.starts_with(p) && !MenuEntry::is_menu(&key) {
-                // All pages inherit the draft status from the book.
-                if item.draft.is_some() {
-                    page.draft = item.draft.clone();
-                }
-                let files =
-                    info.books.entry(k.to_string()).or_insert(Vec::new());
-                files.push(Arc::clone(key));
-            }
-        }
-    }
-
     info.add_page(key, destination, Arc::new(RwLock::new(page)));
 
     Ok(())

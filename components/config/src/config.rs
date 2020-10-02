@@ -10,7 +10,6 @@ use log::debug;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
-    book::BookConfig,
     date::DateConfig,
     dependency::DependencyMap,
     engine::TemplateEngine,
@@ -163,9 +162,8 @@ pub struct Config {
 
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
-    pub book: Option<BookConfig>,
     pub fluent: Option<FluentConfig>,
-    pub hook: Option<HookMap>,
+    pub hooks: Option<HookMap>,
     pub node: Option<NodeConfig>,
     pub page: Option<Page>,
     pub pages: Option<HashMap<String, Page>>,
@@ -213,8 +211,7 @@ impl Default for Config {
             build: Some(Default::default()),
             workspace: None,
             fluent: Some(Default::default()),
-            book: None,
-            hook: Some(Default::default()),
+            hooks: Some(Default::default()),
             node: Some(Default::default()),
             page: Some(Default::default()),
             pages: None,
@@ -322,7 +319,7 @@ impl Config {
                 if let Some(fluent) = cfg.fluent.as_mut() {
                     fluent.prepare(&cfg.lang, lang_id);
                 }
-                if let Some(hooks) = cfg.hook.as_mut() {
+                if let Some(hooks) = cfg.hooks.as_mut() {
                     hooks.prepare();
                 }
                 if let Some(date) = cfg.date.as_mut() {
@@ -396,19 +393,6 @@ impl Config {
         self.project.as_ref().unwrap().clone()
     }
 
-    /*
-    pub fn get_book_theme_path<P: AsRef<Path>>(
-        &self,
-        source: P,
-    ) -> Option<PathBuf> {
-        if let Some(ref book) = self.book {
-            if let Some(ref theme) = book.theme {
-                return Some(source.as_ref().to_path_buf().join(theme));
-            }
-        }
-        None
-    }
-    */
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

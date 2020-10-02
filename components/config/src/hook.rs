@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::profile::ProfileName;
+use crate::{profile::ProfileName, utils::href::UrlPath};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookMap {
@@ -37,15 +37,28 @@ impl HookMap {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookConfig {
+    // Command path.
     pub path: Option<String>,
+    // Command arguments.
     pub args: Option<Vec<String>>,
-    pub source: Option<PathBuf>,
+
     pub stdout: Option<bool>,
     pub stderr: Option<bool>,
+
     // Marks the hook to run after a build
     pub after: Option<bool>,
+
     // Only run for these profiles
     pub profiles: Option<Vec<ProfileName>>,
+
+    // List of files expected by this hook
+    pub files: Option<Vec<UrlPath>>,
+
+    // Whether to trigger the hook when the
+    // expected files changes.
+    pub watch: Option<bool>,
+
+    pub source: Option<PathBuf>,
 }
 
 impl HookConfig {
