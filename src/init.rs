@@ -162,6 +162,7 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
                 fs::create_dir_all(parent)?;
             }
         }
+
         let repo = git::clone(source, &target)?;
 
         let site_toml = target.join(config::SITE_TOML);

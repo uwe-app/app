@@ -55,6 +55,10 @@ It is **required** to set the `pushurl` and `push` refspec:
   push = refs/heads/master:refs/heads/master
 ```
 
+## Preferences
+
+This component is currently in limbo but may be restored in the future.
+
 ## Notes
 
 Additional information some of which may be obsolete in [NOTES](/NOTES.md).
