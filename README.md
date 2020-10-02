@@ -5,7 +5,6 @@ Repositories must be siblings, for example:
 ```
 .
 ├── blog
-├── blueprint
 ├── hypertext
 ├── library
 ├── plugins

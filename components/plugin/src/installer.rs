@@ -26,43 +26,49 @@ static REGISTRY: &str = "https://s3-ap-southeast-1.amazonaws.com/registry.hypert
 static GIT_SCHEME: &str = "git";
 static FILE_SCHEME: &str = "file";
 
-pub async fn install(
+pub async fn install<P: AsRef<Path>>(
+    project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Plugin> {
     let plugin = if let Some(ref target) = dep.target {
         match target {
-            DependencyTarget::File { ref path } => install_path(path).await,
-            DependencyTarget::Archive { ref archive } => {
-                install_archive(archive).await
-            }
-            DependencyTarget::Repo { ref git } => {
-                install_repo(git).await
-            }
+            DependencyTarget::File { ref path } => install_path(project, path).await,
+            DependencyTarget::Archive { ref archive } => install_archive(project, archive).await,
+            DependencyTarget::Repo { ref git } => install_repo(project, git).await,
         }
     } else {
-        install_registry(registry, dep).await
+        install_registry(project, registry, dep).await
     }?;
 
     Ok(plugin)
 }
 
 /// Install a plugin from a file system path.
-async fn install_file<P: AsRef<Path>>(path: P) -> Result<Plugin> {
-    read(path.as_ref()).await
+async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F)
+    -> Result<(PathBuf, Plugin)> {
+
+    let mut file = path.as_ref().to_path_buf();
+
+    if !path.as_ref().is_absolute() {
+        file = project.as_ref().canonicalize()?
+            .join(path.as_ref()).canonicalize()?;
+    }
+
+    let plugin = read(&file).await?;
+    Ok((file, plugin))
 }
 
-/// Install a plugin from a file system path and compute the 
+/// Install a plugin from a file system path and compute the
 /// plugin data.
-pub(crate) async fn install_path<P: AsRef<Path>>(path: P) -> Result<Plugin> {
-    let mut plugin = install_file(path.as_ref()).await?;
+pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F) -> Result<Plugin> {
+    let (target, mut plugin) = install_file(
+        project.as_ref(), path.as_ref()).await?;
 
-    let target = path.as_ref().to_path_buf();
-    let canonical = path.as_ref().canonicalize()?;
     let url_target = format!(
         "{}:{}",
         FILE_SCHEME,
-        utils::url::to_href_separator(&canonical));
+        utils::url::to_href_separator(&target));
     let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, None)?;
 
@@ -71,9 +77,9 @@ pub(crate) async fn install_path<P: AsRef<Path>>(path: P) -> Result<Plugin> {
 
 /// Install from a local archive file.
 ///
-/// No expected digest is available so this method should be treated with caution 
+/// No expected digest is available so this method should be treated with caution
 /// and only used with packages created using the `plugin pack` command.
-pub(crate) async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
+pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(project: P, path: F) -> Result<Plugin> {
 
     // Determine the location to extract the archive to.
     let builder = |_: &PathBuf, plugin: &Plugin, digest: &Vec<u8>| -> Result<PathBuf> {
@@ -110,7 +116,7 @@ pub(crate) async fn install_archive<P: AsRef<Path>>(path: P) -> Result<Plugin> {
     Ok(plugin)
 }
 
-pub(crate) async fn install_repo<S: AsRef<str>>(git: S) -> Result<Plugin> {
+pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(project: P, git: S) -> Result<Plugin> {
     let git_url: Url = git.as_ref().parse().map_err(|e| Error::GitUrl(e))?;
 
     // TODO: ensure the plugin source is "git+file" scheme
@@ -120,7 +126,7 @@ pub(crate) async fn install_repo<S: AsRef<str>>(git: S) -> Result<Plugin> {
         let path = urlencoding::decode(git_url.path())?;
         let repo_path = Path::new(&path);
         let _ = git::open_repo(&repo_path)?;
-        return install_path(&repo_path).await
+        return install_path(project, &repo_path).await
     }
 
     let host = if let Some(host) = git_url.host_str() {
@@ -142,10 +148,10 @@ pub(crate) async fn install_repo<S: AsRef<str>>(git: S) -> Result<Plugin> {
         git::pull(&git_target, None, None)?;
         repo
     } else {
-        git::clone(&git_url, &git_target)? 
+        git::clone(&git_url, &git_target)?
     };
 
-    return install_path(&git_target).await
+    return install_path(project, &git_target).await
 }
 
 pub(crate) async fn resolve_package(
@@ -168,7 +174,8 @@ pub(crate) async fn resolve_package(
     Ok((version.clone(), package.clone()))
 }
 
-pub(crate) async fn get_cached(
+pub(crate) async fn get_cached<P: AsRef<Path>>(
+    project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Option<Plugin>> {
@@ -182,9 +189,9 @@ pub(crate) async fn get_cached(
     // Got an existing plugin file in the target cache directory
     // so we should try to use that
     if extract_target_plugin.exists() {
-        let mut plugin = install_file(&extract_target).await?;
+        let (target, mut plugin) = install_file(project, &extract_target).await?;
         let source: Url = REGISTRY.parse()?;
-        attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
+        attributes(&mut plugin, &target, source, Some(&package.digest))?;
         return Ok(Some(plugin));
     }
 
@@ -219,7 +226,8 @@ fn attributes(plugin: &mut Plugin, base: &PathBuf, source: Url, digest: Option<&
 /// Finally we extract the downloaded archive and verify the digest from the registry
 /// entry to a local file system cache directory `cache/src/std::core::1.0.0` within
 /// the main program home directory, currently `~/.hypertext`.
-async fn install_registry(
+async fn install_registry<P: AsRef<Path>>(
+    project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Plugin> {
@@ -228,7 +236,7 @@ async fn install_registry(
         resolve_package(registry, name, &dep.version).await?;
 
     let extract_target = get_extract_dir(name, &version)?;
-    if let Some(plugin) = get_cached(registry, dep).await?.take() {
+    if let Some(plugin) = get_cached(project, registry, dep).await?.take() {
         return Ok(plugin);
     }
 

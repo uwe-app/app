@@ -71,6 +71,7 @@ impl ResolverLock {
 
 /// Manges the information required to solve all dependencies.
 struct Resolver<'a> {
+    project: PathBuf,
     dependencies: DependencyMap,
     registry: Registry<'a>,
     lock: ResolverLock,
@@ -84,6 +85,7 @@ impl<'a> Resolver<'a> {
         let path = LockFile::get_lock_file(&project);
         let lock = ResolverLock::new(path)?;
         Ok(Self {
+            project,
             dependencies,
             registry,
             lock,
@@ -96,6 +98,7 @@ impl<'a> Resolver<'a> {
     /// target lock files.
     async fn solve(&mut self) -> Result<&mut Resolver<'a>> {
         solver(
+            &self.project,
             &self.registry,
             std::mem::take(&mut self.dependencies),
             &mut self.intermediate,
@@ -208,16 +211,21 @@ impl<'a> Resolver<'a> {
         let (dep, _solved) =
             self.intermediate.get(&e).as_ref().unwrap();
 
-        // Try to resolve the package again
-        let (version, _package) = installer::resolve_package(
-            &self.registry, &e.name, &dep.version).await?;
-
         let mut output: Option<LockFileEntry> = None;
-        if version > e.version {
-            let mut copy = e.clone();
-            copy.version = version;
-            output = Some(copy);
+
+        // Ensure we only refresh for registry dependencies
+        // otherwise this can error for `path` references
+        if dep.target.is_none() {
+            // Try to resolve the package again
+            let (version, _package) = installer::resolve_package(
+                &self.registry, &e.name, &dep.version).await?;
+            if version > e.version {
+                let mut copy = e.clone();
+                copy.version = version;
+                output = Some(copy);
+            }
         }
+
         Ok((e, output))
     }
 
@@ -233,7 +241,7 @@ impl<'a> Resolver<'a> {
             match solved {
                 SolvedReference::Package(ref _package) => {
                     let plugin =
-                        installer::install(&self.registry, &dep).await?;
+                        installer::install(&self.project, &self.registry, &dep).await?;
                     self.resolved.push((dep, plugin));
                 }
                 _ => {}
@@ -257,6 +265,7 @@ impl<'a> Resolver<'a> {
 
 #[async_recursion]
 async fn solver(
+    project: &PathBuf,
     registry: &Box<dyn RegistryAccess + Send + Sync + 'async_recursion>,
     input: DependencyMap,
     intermediate: &mut IntermediateMap,
@@ -287,7 +296,7 @@ async fn solver(
             .unwrap_or(Default::default());
 
         let (version, mut package, mut plugin) =
-            resolve_version(registry, &dep).await?;
+            resolve_version(project, registry, &dep).await?;
 
         let checksum = if let Some(ref pkg) = package {
             Some(pkg.digest.clone())
@@ -347,7 +356,7 @@ async fn solver(
             let dependencies = dependencies.filter(&dep, feature_map)?;
 
             stack.push(name.clone());
-            solver(registry, dependencies, intermediate, lock, stack).await?;
+            solver(project, registry, dependencies, intermediate, lock, stack).await?;
             stack.pop();
         }
 
@@ -380,7 +389,8 @@ async fn solver(
     Ok(())
 }
 
-async fn resolve_version(
+async fn resolve_version<P: AsRef<Path>>(
+    project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
@@ -388,15 +398,15 @@ async fn resolve_version(
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
-                let plugin = installer::install_path(path).await?;
+                let plugin = installer::install_path(project, path).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {
-                let plugin = installer::install_archive(archive).await?;
+                let plugin = installer::install_archive(project, archive).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {
-                let plugin = installer::install_repo(git).await?;
+                let plugin = installer::install_repo(project, git).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
         }
@@ -407,7 +417,7 @@ async fn resolve_version(
             installer::resolve_package(registry, name, &dep.version).await?;
 
         // Resolve a cached plugin if possible
-        if let Some(plugin) = installer::get_cached(registry, dep).await?.take()
+        if let Some(plugin) = installer::get_cached(project, registry, dep).await?.take()
         {
             return Ok((version, Some(package), Some(plugin)));
         }
