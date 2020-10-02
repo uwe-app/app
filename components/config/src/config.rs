@@ -388,11 +388,6 @@ impl Config {
         Err(Error::NoSiteConfig(target_pth))
     }
 
-    #[deprecated(since = "0.30.0", note = "Use project().")]
-    pub fn get_project(&self) -> PathBuf {
-        self.project.clone()
-    }
-
     pub fn project(&self) -> &PathBuf {
         &self.project
     }

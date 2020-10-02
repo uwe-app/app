@@ -19,8 +19,8 @@ pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
     let collation = ctx.collation.read().unwrap();
 
     let project_root =
-        ctx.config.get_project().canonicalize().map_err(|_| {
-            Error::CanonicalProjectRoot(ctx.config.get_project().to_path_buf())
+        ctx.config.project().canonicalize().map_err(|_| {
+            Error::CanonicalProjectRoot(ctx.config.project().to_path_buf())
         })?;
 
     let hook_root = hook

@@ -635,7 +635,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Entry> = Vec::new();
         for space in &projects.members {
-            let mut root = config.get_project();
+            let mut root = config.project().to_path_buf();
             root.push(space);
             if !root.exists() || !root.is_dir() {
                 return Err(Error::NotDirectory(root));

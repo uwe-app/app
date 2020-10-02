@@ -20,9 +20,6 @@ use crate::{renderer::RenderOptions, Error, Project, Result};
  *  - Hook: execute the hook.
  *  - DataSourceConfig: TODO.
  *  - DataSourceDocument: TODO.
- *  - BookTheme: build all books.
- *  - BookConfig: TODO.
- *  - BookSource: build the book.
  */
 #[derive(Debug)]
 pub enum Action {
@@ -43,14 +40,6 @@ pub enum Action {
     Hook(String, PathBuf),
     DataSourceConfig(PathBuf),
     DataSourceDocument(PathBuf),
-    /*
-    // NOTE: The first path is the root directory
-    // NOTE: and the second is the matched file.
-    BookTheme(PathBuf, PathBuf),
-    BookConfig(PathBuf, PathBuf),
-    BookSource(PathBuf, PathBuf),
-    BookBuild(PathBuf, PathBuf),
-    */
 }
 
 #[derive(Debug)]
@@ -71,24 +60,12 @@ pub struct Rule {
     reload: bool,
     // Build strategy
     strategy: Strategy,
-    // Books have their own rules
-    book: BookRule,
     // Actions that are ignored but we track for debugging
     ignores: Vec<Action>,
     // Hooks are a special case so we store them separately
     hooks: Vec<Action>,
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
-}
-
-#[derive(Debug)]
-pub struct BookRule {
-    // Should we build all books
-    all: bool,
-    // List of books that need their configurations reloaded
-    reload: Vec<Action>,
-    // List of books that have source file changes and should be built
-    source: Vec<Action>,
 }
 
 pub struct Invalidator<'a> {
@@ -120,11 +97,6 @@ impl<'a> Invalidator<'a> {
             strategy: Strategy::Mixed,
             ignores: Vec::new(),
             hooks: Vec::new(),
-            book: BookRule {
-                all: false,
-                reload: Vec::new(),
-                source: Vec::new(),
-            },
             actions: Vec::new(),
         };
 
@@ -146,25 +118,6 @@ impl<'a> Invalidator<'a> {
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators =
             self.canonical(self.project.options.get_data_sources_path());
-
-        //let resources = self.canonical(ctx.options.get_resources_path());
-
-        //let book_theme = self
-        //.project
-        //.config
-        //.get_book_theme_path(&self.project.options.source)
-        //.map(|v| self.canonical(v));
-
-        /*
-        let mut books: Vec<PathBuf> = Vec::new();
-        if let Some(ref book) = self.project.config.book {
-            books = book
-                .get_paths(&self.project.options.source)
-                .iter()
-                .map(|p| self.canonical(p))
-                .collect::<Vec<_>>();
-        }
-        */
 
         let generator_paths: Vec<PathBuf> = self
             .project
@@ -198,60 +151,6 @@ impl<'a> Invalidator<'a> {
                         }
                         */
                     }
-
-                    /*
-                    for book_path in &books {
-                        let book = self.canonical(book_path);
-
-                        let cfg = self.builder.book.get_book_config(&book);
-                        if path == cfg {
-                            rule.book
-                                .reload
-                                .push(Action::BookConfig(book.clone(), path));
-                            continue 'paths;
-                        }
-
-                        if path.starts_with(book_path) {
-                            if let Some(md) = self
-                                .builder
-                                .book
-                                .locate(config, &book)
-                            {
-                                let src_dir = &md.config.book.src;
-                                let build_dir = &md.config.build.build_dir;
-
-                                let mut src = book.clone();
-                                src.push(src_dir);
-
-                                let mut build = book.clone();
-                                build.push(build_dir);
-
-                                if path.starts_with(build) {
-                                    rule.ignores.push(Action::BookBuild(
-                                        book.clone(),
-                                        path,
-                                    ));
-                                    continue 'paths;
-                                } else if path.starts_with(src) {
-                                    rule.book.source.push(Action::BookSource(
-                                        book.clone(),
-                                        path,
-                                    ));
-                                    continue 'paths;
-                                }
-                            }
-                        }
-                    }
-                    */
-
-                    //if let Some(theme) = &book_theme {
-                    //if path.starts_with(theme) {
-                    //rule.book.all = true;
-                    //rule.ignores
-                    //.push(Action::BookTheme(theme.clone(), path));
-                    //continue 'paths;
-                    //}
-                    //}
 
                     if path == cfg_file {
                         rule.ignores.push(Action::SiteConfig(path));
@@ -298,25 +197,6 @@ impl<'a> Invalidator<'a> {
             }
         }
 
-        // This is a fix for double location.reload on books,
-        // the `book` build directory is also watched which
-        // would generate a lot of ignores and trigger a
-        // second websocket notification, this check disables it.
-        //
-        // Once the logic for selecting watch directories is implemented
-        // this can probably be removed.
-        let is_empty = rule.actions.is_empty()
-            && rule.hooks.is_empty()
-            && rule.book.source.is_empty();
-        match rule.strategy {
-            Strategy::Mixed => {
-                if is_empty {
-                    rule.notify = false;
-                }
-            }
-            _ => {}
-        }
-
         Ok(rule)
     }
 
@@ -343,50 +223,6 @@ impl<'a> Invalidator<'a> {
                 if let Some(hook_config) = config.hook.as_ref().unwrap().get(id)
                 {
                     hook::exec(Arc::clone(&self.builder.context), hook_config)?;
-                }
-            }
-        }
-        */
-
-        /*
-        let book = &rule.book;
-
-        if !book.reload.is_empty() {
-            for action in &book.reload {
-                match action {
-                    Action::BookConfig(base, _) => {
-                        self.builder.book.load(
-                            config,
-                            base,
-                            livereload.clone(),
-                        )?;
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        if book.all {
-            self.builder.book.all(config, livereload.clone())?;
-        } else {
-            for action in &book.source {
-                match action {
-                    Action::BookSource(base, _) => {
-                        // Make the path relative to the project source
-                        // as the notify crate gives us an absolute path
-                        let file = options.relative_to(
-                            base,
-                            &options.source,
-                            &options.source,
-                        )?;
-
-                        self.builder.book.build(
-                            config,
-                            &file,
-                            livereload.clone(),
-                        )?;
-                    }
-                    _ => {}
                 }
             }
         }

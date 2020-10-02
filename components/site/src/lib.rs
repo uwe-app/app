@@ -74,7 +74,7 @@ pub fn add(project: PathBuf, site_name: Option<String>) -> Result<String> {
 
     // Must have a valid config
     let config = Config::load(&project, false)?;
-    let project = config.get_project().canonicalize()?;
+    let project = config.project().canonicalize()?;
 
     // Use specific name or infer from the directory name
     let mut name = "".to_string();

@@ -30,6 +30,7 @@ impl HookMap {
 
             v.base = base.to_path_buf();
 
+            // Check that hook files exist
             if let Some(ref files) = v.files {
                 for f in files.iter() {
                     let file = source.join(f.to_path_buf());

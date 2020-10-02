@@ -32,9 +32,8 @@ fn to_options(
         args.base = Some(utils::url::to_path_separator(base));
     }
 
-    let project = cfg.get_project();
-
-    let source = get_profile_source(cfg, args);
+    let project = cfg.project();
+    let source = project.join(&args.source);
 
     let release = args.is_release();
 
@@ -100,15 +99,10 @@ fn to_options(
         resources.prepare();
     }
 
-    let opts = RuntimeOptions::new(project, source, base, settings);
+    let opts = RuntimeOptions::new(project.to_path_buf(), source, base, settings);
     debug!("{:?}", &cfg);
 
     Ok(opts)
-}
-
-fn get_profile_source(cfg: &Config, args: &ProfileSettings) -> PathBuf {
-    let base_dir = cfg.get_project();
-    base_dir.join(&args.source.clone())
 }
 
 fn to_profile(args: &ProfileSettings) -> ProfileName {
