@@ -58,8 +58,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     }
 
     // Pull latest version of the reader registry
-    let prefs = preference::load()?;
-    cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+    cache::update(vec![cache::CacheComponent::Runtime])?;
 
     let writer = PathBuf::from(registry_path);
     //let reader = cache::get_registry_dir()?;

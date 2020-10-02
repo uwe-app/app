@@ -150,10 +150,9 @@ impl<'a> Resolver<'a> {
 
         if !difference.is_empty() {
             info!("Update registry cache");
-            let prefs = preference::load()?;
-            cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+            cache::update(vec![cache::CacheComponent::Runtime])?;
 
-            // Refresh the lock file entries in case we can resolve 
+            // Refresh the lock file entries in case we can resolve
             // newer versions from the updated registry information
             // FIXME: only run this if the cache registry changed
             let diff = self.refresh(&mut difference).await?;
@@ -176,10 +175,10 @@ impl<'a> Resolver<'a> {
         // to the lock file entry
         for (entry, refresh) in refreshed.iter_mut() {
             if let Some(ref replacement) = refresh {
-                let (dep, solved) = 
+                let (dep, solved) =
                     self.intermediate.remove(entry).take().unwrap();
                 self.intermediate.insert(replacement.clone(), (dep, solved));
-            } 
+            }
         }
 
         Ok(refreshed
@@ -188,8 +187,8 @@ impl<'a> Resolver<'a> {
             .collect::<HashSet<_>>())
     }
 
-    /// Update lock file entries after the registry has been 
-    /// updated in case a newer version can be located in the 
+    /// Update lock file entries after the registry has been
+    /// updated in case a newer version can be located in the
     /// fresh registry.
     async fn refresh_lock<'b>(&self, diff: &'b mut HashSet<LockFileEntry>)
         -> Result<Vec<(&'b LockFileEntry, Option<LockFileEntry>)>> {
@@ -201,7 +200,7 @@ impl<'a> Resolver<'a> {
     }
 
     /// Refresh a single lock file entry, if a newer version can
-    /// be resolved in the registry we also return a copy with 
+    /// be resolved in the registry we also return a copy with
     /// the newer version.
     async fn refresh_lock_entry<'b>(&self, e: &'b LockFileEntry)
         -> Result<(&'b LockFileEntry, Option<LockFileEntry>)> {
@@ -393,11 +392,11 @@ async fn resolve_version(
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {
-                let plugin = installer::install_archive(archive).await?; 
+                let plugin = installer::install_archive(archive).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {
-                let plugin = installer::install_repo(git).await?; 
+                let plugin = installer::install_repo(git).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
         }
@@ -421,10 +420,10 @@ fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
 
     let (s_name, s_version) = match solved {
         SolvedReference::Plugin(ref plugin) => {
-            (&plugin.name, &plugin.version)    
+            (&plugin.name, &plugin.version)
         }
         SolvedReference::Package(ref package) => {
-            (&package.name, &package.version)    
+            (&package.name, &package.version)
         }
     };
 

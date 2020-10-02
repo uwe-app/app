@@ -12,17 +12,14 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
-    #[error("Target directory is required")]
-    TargetRequired,
-
     #[error("Target {0} exists, please move it away")]
     TargetExists(PathBuf),
 
+    #[error("New project {0} has no settings file {1}")]
+    NoSiteSettings(PathBuf, String),
+
     #[error("Language {0} does not exist in the locales {1}")]
     LanguageMissingFromLocales(String, String),
-
-    #[error("Could not determine default source path")]
-    SourceEmpty,
 
     #[error("No virtual hosts for live reload")]
     NoLiveHosts,
@@ -81,4 +78,6 @@ pub enum Error {
     Server(#[from] server::Error),
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
+    #[error(transparent)]
+    Utils(#[from] utils::Error),
 }

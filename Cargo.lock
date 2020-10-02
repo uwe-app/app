@@ -246,7 +246,6 @@ version = "0.1.0"
 dependencies = [
  "dirs 0.1.0",
  "git",
- "preference",
  "thiserror",
 ]
 
@@ -1054,12 +1053,9 @@ dependencies = [
 name = "git"
 version = "0.1.0"
 dependencies = [
- "dirs 0.1.0",
  "git2",
  "log",
- "rpassword",
  "thiserror",
- "url",
  "utils",
 ]
 
@@ -2110,14 +2106,11 @@ dependencies = [
  "async-trait",
  "cache",
  "config",
- "crossbeam",
  "futures",
  "git",
  "hex",
  "http",
- "ignore",
  "log",
- "preference",
  "publisher",
  "regex",
  "reqwest",
@@ -2596,16 +2589,6 @@ dependencies = [
  "byteorder",
  "rmp",
  "serde",
-]
-
-[[package]]
-name = "rpassword"
-version = "4.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99371657d3c8e4d816fb6221db98fa408242b0b53bac08f8676a41f8554fe99f"
-dependencies = [
- "libc",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -3720,7 +3703,6 @@ dependencies = [
  "cache",
  "dirs 0.1.0",
  "log",
- "preference",
  "reqwest",
  "serde",
  "thiserror",
@@ -3755,9 +3737,12 @@ checksum = "05e42f7c18b8f902290b009cde6d651262f956c98bc51bca4cd1d511c9cd85c7"
 name = "utils"
 version = "0.1.0"
 dependencies = [
+ "crossbeam",
+ "ignore",
  "rand 0.7.3",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]

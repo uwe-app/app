@@ -4,13 +4,12 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-use preference::{self, Preferences};
-
 static BIN: &str = "bin";
 static ENV: &str = "env";
 
 static CACHE_NAME: &str = "cache";
 static SRC_NAME: &str = "src";
+static DEFAULT_NAME: &str = "default";
 static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
@@ -38,7 +37,6 @@ pub enum Error {
 
 pub enum CacheComponent {
     Runtime,
-    Blueprint,
     Release,
 }
 
@@ -106,17 +104,8 @@ pub fn get_syntax_dir() -> io::Result<PathBuf> {
     Ok(get_runtime_dir()?.join(SYNTAX_NAME))
 }
 
-pub fn get_blueprint_url(prefs: &Preferences) -> String {
-    if let Some(ref blueprint) = prefs.blueprint {
-        if let Some(ref url) = blueprint.url {
-            return url.clone();
-        }
-    }
-    return preference::BLUEPRINT_URL.to_string();
-}
-
-pub fn get_blueprint_dir() -> io::Result<PathBuf> {
-    Ok(dirs::get_root_dir()?.join(BLUEPRINT_NAME))
+pub fn get_default_blueprint() -> io::Result<PathBuf> {
+    Ok(get_runtime_dir()?.join(BLUEPRINT_NAME).join(DEFAULT_NAME))
 }
 
 #[cfg(target_os = "windows")]
@@ -161,20 +150,12 @@ pub fn get_release_bin_dir() -> io::Result<PathBuf> {
     Ok(buf)
 }
 
-pub fn update(
-    prefs: &Preferences,
-    components: Vec<CacheComponent>,
-) -> Result<(), Error> {
+pub fn update(components: Vec<CacheComponent>) -> Result<(), Error> {
     for c in components {
         match c {
             CacheComponent::Runtime => {
                 let url = get_runtime_url();
                 let dir = get_runtime_dir()?;
-                git::clone_or_fetch(&url, &dir, true)?;
-            }
-            CacheComponent::Blueprint => {
-                let url = get_blueprint_url(prefs);
-                let dir = get_blueprint_dir()?;
                 git::clone_or_fetch(&url, &dir, true)?;
             }
             CacheComponent::Release => {

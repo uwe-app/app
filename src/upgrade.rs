@@ -4,8 +4,7 @@ use semver::Version;
 use crate::Result;
 
 pub fn try_upgrade(runtime: bool) -> Result<()> {
-    let prefs = preference::load()?;
-    cache::update(&prefs, vec![cache::CacheComponent::Runtime])?;
+    cache::update(vec![cache::CacheComponent::Runtime])?;
 
     // Only upgrading the runtime assets
     if runtime {

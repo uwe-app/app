@@ -6,23 +6,22 @@ use toml::map::Map;
 use toml::value::Value;
 
 use preference::{self, Preferences};
+use utils::walk;
 
 use crate::Error;
 
 #[derive(Debug)]
 pub struct InitOptions {
+    pub target: PathBuf,
     pub source: Option<String>,
-    pub target: Option<PathBuf>,
-    pub private_key: Option<PathBuf>,
-
     pub language: Option<String>,
     pub host: Option<String>,
     pub locales: Option<String>,
 }
 
 // Read, modify and write the site configuration
-// with options for language, host and multilingual locales
-fn write_options<P: AsRef<Path>>(
+// with options for language, host and locales.
+fn write_settings<P: AsRef<Path>>(
     output: P,
     prefs: &Preferences,
     lang: Option<String>,
@@ -106,29 +105,12 @@ fn write_options<P: AsRef<Path>>(
     }
 
     utils::fs::write_string(&config_file, toml::to_string(&site_config)?)?;
-    Ok(())
-}
 
-fn prepare() -> Result<(Preferences, String, PathBuf), Error> {
-    let prefs = preference::load()?;
-    let url = cache::get_blueprint_url(&prefs);
-    let blueprint_cache_dir = cache::get_blueprint_dir()?;
-    if !blueprint_cache_dir.exists() {
-        git::print_clone(&url, &blueprint_cache_dir);
-    }
-    Ok((prefs, url, blueprint_cache_dir))
-}
-
-pub fn list() -> Result<(), Error> {
-    let (_, url, blueprint_cache_dir) = prepare()?;
-    let (repo, _cloned) = git::open_or_clone(&url, &blueprint_cache_dir, true)?;
-    git::list_submodules(repo)?;
     Ok(())
 }
 
 pub fn init(options: InitOptions) -> Result<(), Error> {
-    let (prefs, _url, _blueprint_cache_dir) = prepare()?;
-
+    let prefs = preference::load()?;
     let mut language = None;
 
     if let Some(ref lang) = options.language {
@@ -166,54 +148,36 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         }
     }
 
-    if let Some(ref target) = options.target {
-        if target.exists() {
-            return Err(Error::TargetExists(target.clone()));
-        }
+    let target = options.target;
+    let message = "Initial files.";
 
-        let repo;
-        let repo_url = cache::get_blueprint_url(&prefs);
-        let repo_dir = cache::get_blueprint_dir()?;
+    if target.exists() {
+        return Err(Error::TargetExists(target.clone()));
+    }
 
-        let source = if let Some(ref source) = options.source {
-            source.clone()
-        } else {
-            if let Some(ref source) =
-                prefs.blueprint.as_ref().unwrap().default_path
-            {
-                source.clone()
-            } else {
-                "".to_string()
-            }
-        };
-
-        if source.is_empty() {
-            return Err(Error::SourceEmpty);
-        }
-
+    // Clone an existing blueprint
+    if let Some(ref source) = options.source {
         if let Some(ref parent) = target.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent)?;
             }
         }
+        let repo = git::clone(source, &target)?;
 
-        repo = git::create(
-            source,
-            target,
-            options.private_key.clone(),
-            repo_url,
-            repo_dir,
-        )?;
+        let site_toml = target.join(config::SITE_TOML);
+        if !site_toml.exists() {
+            return Err(Error::NoSiteSettings(
+                target, config::SITE_TOML.to_string()));
+        }
 
-        write_options(target, &prefs, language, options.host, locale_ids)?;
-
-        // Finalize the git repo
-        // FIXME: support tracking upstream blueprint
-        //repo.remote_delete("origin")?;
-        git::detached(target, repo)?;
+        write_settings(&target, &prefs, language, options.host, locale_ids)?;
+        git::pristine(&target, repo, message)?;
     } else {
-        return Err(Error::TargetRequired);
-    }
+        let source = cache::get_default_blueprint()?;
+        walk::copy(&source, &target, |_| true)?;
+        write_settings(&target, &prefs, language, options.host, locale_ids)?;
+        git::init(&target, message)?;
+    };
 
     Ok(())
 }

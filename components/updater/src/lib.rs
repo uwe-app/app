@@ -8,10 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use cache::{self, CacheComponent};
-use dirs;
 use dirs::home;
-use preference;
-use utils;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -26,9 +23,6 @@ pub enum Error {
 
     #[error(transparent)]
     Cache(#[from] cache::Error),
-
-    #[error(transparent)]
-    Preference(#[from] preference::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -147,8 +141,6 @@ pub fn install() -> Result<()> {
             // Write out the env file
             write_env(&bin_dir)?;
 
-            preference::init_if_none()?;
-
             // Try to configure the shell paths
             let (shell_ok, shell_write, shell_name, shell_file) =
                 source_env(&bin_dir)?;
@@ -180,11 +172,10 @@ pub fn install() -> Result<()> {
 }
 
 pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
-    let prefs = preference::load()?;
     let version_file = get_version_file()?;
 
     let components = vec![CacheComponent::Runtime, CacheComponent::Release];
-    cache::update(&prefs, components)?;
+    cache::update(components)?;
 
     let bin_dir = cache::get_bin_dir()?;
     let mut bin = bin_dir.clone();

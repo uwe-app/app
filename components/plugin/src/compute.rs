@@ -11,7 +11,9 @@ use config::{
     engine::{TemplateEngine, ENGINES},
 };
 
-use crate::{Result, walk};
+use utils::walk;
+
+use crate::Result;
 
 /// Compute plugin information by convention from the file system.
 pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
@@ -26,8 +28,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         load_assets(&base, &assets, &mut computed);
     }
 
-    // Fonts just get placed in the assets collection, this 
-    // convention is for convenience so plugin authors can 
+    // Fonts just get placed in the assets collection, this
+    // convention is for convenience so plugin authors can
     // be more explicit using the file system layout.
     if fonts.exists() && fonts.is_dir() {
         load_assets(&base, &fonts, &mut computed);
@@ -61,7 +63,7 @@ fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                UrlPath::from(e.strip_prefix(&base).unwrap()) 
+                UrlPath::from(e.strip_prefix(&base).unwrap())
             })
             .collect::<HashSet<_>>();
         let existing = computed
@@ -80,7 +82,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         if let Some(extension) = e.extension() {
             return extension == ext;
         }
-        false 
+        false
     });
     if !files.is_empty() {
         let mut items = files
@@ -99,7 +101,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         items.append(&mut existing);
 
         // NOTE: Normalize to tags so that we avoid the TOML
-        // NOTE: error 'values must be emitted before tables' 
+        // NOTE: error 'values must be emitted before tables'
         items = items
             .iter()
             .map(|s| StyleAsset::Tag(s.to_tag()))
@@ -119,7 +121,7 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         if let Some(extension) = e.extension() {
             return extension == ext;
         }
-        false 
+        false
     });
     if !files.is_empty() {
         let mut items = files
@@ -138,7 +140,7 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         items.append(&mut existing);
 
         // NOTE: Normalize to tags so that we avoid the TOML
-        // NOTE: error 'values must be emitted before tables' 
+        // NOTE: error 'values must be emitted before tables'
         items = items
             .iter()
             .map(|s| ScriptAsset::Tag(s.to_tag()))
@@ -181,7 +183,7 @@ fn load_partials(
         if let Some(extension) = e.extension() {
             return extension == ext;
         }
-        false 
+        false
     });
 
     if !files.is_empty() {
@@ -211,7 +213,7 @@ fn load_partials(
                 if s.exists() && s.is_file() {
                     tpl.schema = Some(
                         UrlPath::from(s.strip_prefix(&base).unwrap())
-                    ); 
+                    );
                 }
 
                 partials.entry(key).or_insert(tpl);
@@ -225,7 +227,7 @@ fn load_layouts(
     computed: &mut Plugin,
     engine: &TemplateEngine) {
 
-    // NOTE: we do not test file extension here as some 
+    // NOTE: we do not test file extension here as some
     // NOTE: layouts (eg: std::core::feed) require different
     // NOTE: file extensions
     let files = walk::find(dir, |_| true);

@@ -155,9 +155,6 @@ struct BuildOpts {
 
 #[derive(StructOpt, Debug)]
 struct InitOpts {
-    #[structopt(subcommand)]
-    action: Option<InitCommands>,
-
     /// Language for the new project
     #[structopt(short, long)]
     language: Option<String>,
@@ -170,37 +167,17 @@ struct InitOpts {
     #[structopt(short = "L", long)]
     locales: Option<String>,
 
-    /// Private key to use for SSH connections
-    #[structopt(
-        short,
-        long,
-        env = "HT_SSH_PRIVATE_KEY",
-        hide_env_values = true
-    )]
-    private_key: Option<PathBuf>,
-
-    /// Output directory for the project
+    /// Output directory for the new project
     #[structopt(parse(from_os_str))]
-    target: Option<PathBuf>,
+    target: PathBuf,
 
-    /// A blueprint source path or URL
+    /// A repository URL
     #[structopt()]
     source: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
-enum InitCommands {
-    /// List available blueprints
-    #[structopt(alias = "ls")]
-    List {},
-}
-
-#[derive(StructOpt, Debug)]
 struct FetchOpts {
-    /// Update the blueprint cache
-    #[structopt(short, long)]
-    blueprint: bool,
-
     /// Update the release cache
     #[structopt(short, long)]
     release: bool,
@@ -379,25 +356,14 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             let opts = ht::init::InitOptions {
                 source: args.source.clone(),
                 target: args.target.clone(),
-                private_key: args.private_key.clone(),
                 language: args.language.clone(),
                 host: args.host.clone(),
                 locales: args.locales.clone(),
             };
-
-            if let Some(ref action) = args.action {
-                match action {
-                    InitCommands::List {} => {
-                        ht::init::list()?;
-                    }
-                }
-            } else {
-                ht::init::init(opts)?;
-            }
+            ht::init::init(opts)?;
         }
         Command::Fetch { ref args } => {
             let opts = ht::fetch::FetchOptions {
-                blueprint: args.blueprint,
                 release: args.release,
             };
 

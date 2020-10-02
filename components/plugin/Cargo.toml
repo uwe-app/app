@@ -8,7 +8,6 @@ edition = "2018"
 cache = {version = "0.1", path = "../cache" }
 config = {version = "0.1", path = "../config" }
 git = {version = "0.1", path = "../git" }
-preference = {version = "0.1", path = "../preference" }
 publisher = {version = "0.1", path = "../publisher" }
 utils = {version = "0.1", path = "../utils" }
 
@@ -20,8 +19,6 @@ log = "0.4.8"
 async-recursion = "0.3.1"
 tar = { version = "0.4", default-features = false }
 xz2 = "0.1.6"
-ignore = "0.4"
-crossbeam = "0.7"
 regex = "1.3.9"
 hex = "0.4.2"
 tempfile = "3.1.0"

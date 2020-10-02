@@ -1,8 +1,5 @@
 use std::fs;
 use std::path::Path;
-use std::path::PathBuf;
-
-use url::Url;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, ErrorClass, ErrorCode, FetchOptions,
@@ -12,8 +9,6 @@ use git2::{
 
 use log::info;
 use thiserror::Error;
-
-use dirs::home;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -41,9 +36,6 @@ pub static ORIGIN: &str = "origin";
 pub static MASTER: &str = "master";
 pub static REFSPEC: &str = "refs/heads/master:refs/head/master";
 
-static GIT_IGNORE: &str = ".gitignore";
-static NODE_MODULES: &str = "node_modules";
-
 pub fn pull<P: AsRef<Path>>(
     path: P,
     remote: Option<String>,
@@ -60,30 +52,26 @@ pub fn callbacks_ssh_agent<'a>() -> RemoteCallbacks<'a> {
     callbacks
 }
 
-pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<()> {
+/// Detach a repository from upstream by removing the entire commit
+/// history and creating a fresh repository.
+pub fn pristine<P: AsRef<Path>>(target: P, repo: Repository, message: &str) -> Result<()> {
     let git_dir = repo.path();
-
     // Remove the git directory is the easiest
     // way to purge the history
     fs::remove_dir_all(git_dir)?;
+    init(target, message)?;
+    Ok(())
+}
 
-    // FIXME: remove this .gitignore + node_modules hack
-    // FIXME: once the tailwind logic is moved to a plugin
-    let git_ignore = target.as_ref().join(GIT_IGNORE);
-    let node_modules = target.as_ref().join(NODE_MODULES);
-    if git_ignore.exists() && node_modules.exists() {
-        let mut ignore_file = utils::fs::read_string(&git_ignore)?;
-        ignore_file = ignore_file.trim_end_matches("\n").to_string();
-        ignore_file.push_str(&format!("\n/{}", NODE_MODULES));
-        utils::fs::write_string(git_ignore, ignore_file)?;
-    }
-
+/// Initialize a repository and perform an initial commit.
+pub fn init<P: AsRef<Path>>(target: P, message: &str) -> Result<Oid> {
     // Create fresh repository
-    let new_repo = Repository::init(target)?;
+    let new_repo = Repository::init(target.as_ref())?;
 
     // Add all the files
     let mut index = new_repo.index()?;
     index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+
     // NOTE: must call `write` and `write_tree`
     index.write()?;
     let oid = index.write_tree()?;
@@ -93,18 +81,10 @@ pub fn detached<P: AsRef<Path>>(target: P, repo: Repository) -> Result<()> {
     //let name = conf.get_string("user.name")?;
     //let email = conf.get_string("user.email")?;
 
-    let sig = repo.signature()?;
-
-    // TODO: allow prefernce for this
-    let message = "Initial files.";
-
+    let sig = new_repo.signature()?;
     let tree = new_repo.find_tree(oid)?;
     let parents: &[&Commit] = &[];
-
-    let _commit_id =
-        new_repo.commit(Some("HEAD"), &sig, &sig, message, &tree, parents)?;
-
-    Ok(())
+    Ok(new_repo.commit(Some("HEAD"), &sig, &sig, message, &tree, parents)?)
 }
 
 pub fn find_last_commit<'a>(
@@ -191,21 +171,7 @@ pub fn commit_file(
 pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
-    //key_file: PathBuf,
-    //password: Option<String>,
 ) -> Result<Repository> {
-
-    //let passphrase = if let Some(ref phrase) = password {
-        //Some(phrase.as_str())
-    //} else {
-        //None
-    //};
-
-    //let private_key = key_file.as_path();
-    //let mut callbacks = RemoteCallbacks::new();
-    //callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        //Cred::ssh_key(username_from_url.unwrap(), None, private_key, passphrase)
-    //});
 
     let mut callbacks = callbacks_ssh_agent();
     progress::add_progress_callbacks(&mut callbacks);
@@ -217,20 +183,6 @@ pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
     builder.fetch_options(fo);
 
     let result = builder.clone(src.as_ref(), target.as_ref());
-
-    /*
-    if let Err(ref e) = result {
-        if let ErrorClass::Ssh = e.class() {
-            // Sadly cannot find a better way to detect this particular error
-            if e.message().contains("Wrong passphrase") {
-                let pass =
-                    rpassword::read_password_from_tty(Some("Passphrase: "))?;
-                return clone(src, target, key_file.clone(), Some(pass));
-            }
-        }
-    }
-    */
-
     result.map_err(Error::from)
 }
 
@@ -361,57 +313,4 @@ pub fn clone_or_fetch<P: AsRef<Path>>(
         }
     }
     Ok(())
-}
-
-// Create from a blueprint template
-pub fn create<P: AsRef<Path>>(
-    src: String,
-    target: P,
-    key: Option<PathBuf>,
-    repo_url: String,
-    repo_dir: PathBuf,
-) -> Result<Repository> {
-    let src_err = Err(Error::BadSource(src.clone()));
-
-    let (repo, _cloned) = open_or_clone(&repo_url, &repo_dir, true)?;
-
-    // Try a https: URL first
-    match Url::parse(&src) {
-        Ok(_) => {
-            print_clone(&src, target.as_ref().clone());
-            return clone_standard(&src, target).map_err(Error::from);
-        }
-        Err(_) => {
-            // Look for a submodule path
-            let modules = repo.submodules()?;
-            for sub in modules {
-                if sub.path() == Path::new(&src) {
-                    let mut tmp = repo_dir.clone();
-                    tmp.push(sub.path());
-                    let src = tmp.to_string_lossy().into_owned();
-                    print_clone(&src, target.as_ref().clone());
-                    return clone_standard(&src, target).map_err(Error::from);
-                }
-            }
-
-            // Now we have SSH style git@github.com: URLs to deal with
-            return clone(src, target).map_err(Error::from);
-            //if let Some(mut key_file) = home::home_dir() {
-                //if let Some(ref ssh_key) = key {
-                    //key_file.push(ssh_key);
-
-                    //info!("Private key {}", key_file.display());
-
-                    //print_clone(&src, target.as_ref().clone());
-
-                    //return clone(src, target, key_file, None)
-                        //.map_err(Error::from);
-                //} else {
-                    //return Err(Error::PrivateKeyRequired);
-                //}
-            //}
-        }
-    }
-
-    src_err
 }

@@ -9,8 +9,9 @@ use xz2::{stream::Check, stream::Stream, write::XzEncoder};
 use log::debug;
 
 use config::PLUGIN;
+use utils::walk;
 
-use crate::{reader::normalize, walk, Error, Result};
+use crate::{reader::normalize, Error, Result};
 
 #[derive(Debug, Default)]
 pub struct PackageWriter {

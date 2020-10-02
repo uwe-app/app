@@ -5,13 +5,10 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
-dirs = {version = "0.1", path = "../dirs" }
 utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
-url = "2"
 log = "0.4.8"
-rpassword = "4.0"
 
 [dependencies.git2]
 version = "0.13"

@@ -142,13 +142,11 @@ pub enum Error {
     Cache(#[from] cache::Error),
 
     #[error(transparent)]
-    Preference(#[from] preference::Error),
-
-    #[error(transparent)]
     Publisher(#[from] publisher::Error),
 
     #[error(transparent)]
     Git(#[from] git::Error),
+
 }
 
 mod archive;
@@ -160,7 +158,6 @@ mod reader;
 mod registry;
 mod resolver;
 mod uploader;
-mod walk;
 
 type Result<T> = std::result::Result<T, Error>;
 pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;

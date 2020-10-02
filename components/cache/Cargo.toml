@@ -7,6 +7,5 @@ edition = "2018"
 [dependencies]
 dirs = {version = "0.1", path = "../dirs" }
 git = {version = "0.1", path = "../git" }
-preference = {version = "0.1", path = "../preference" }
 
 thiserror = "1"
