@@ -177,13 +177,6 @@ struct InitOpts {
 }
 
 #[derive(StructOpt, Debug)]
-struct FetchOpts {
-    /// Update the release cache
-    #[structopt(short, long)]
-    release: bool,
-}
-
-#[derive(StructOpt, Debug)]
 struct UpgradeOpts {
     /// Update the runtime assets
     #[structopt(short, long)]
@@ -311,12 +304,6 @@ enum Command {
         args: DocsOpts,
     },
 
-    /// Update cached repositories
-    Fetch {
-        #[structopt(flatten)]
-        args: FetchOpts,
-    },
-
     /// Upgrade to latest
     Upgrade {
         #[structopt(flatten)]
@@ -361,13 +348,6 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
                 locales: args.locales.clone(),
             };
             ht::init::init(opts)?;
-        }
-        Command::Fetch { ref args } => {
-            let opts = ht::fetch::FetchOptions {
-                release: args.release,
-            };
-
-            ht::fetch::update(opts)?;
         }
         Command::Upgrade { ref args } => {
             ht::upgrade::try_upgrade(args.runtime)?;

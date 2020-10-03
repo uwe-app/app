@@ -1,7 +1,6 @@
 pub mod build;
 pub mod docs;
 pub mod error;
-pub mod fetch;
 pub mod init;
 pub mod plugin;
 pub mod publish;
