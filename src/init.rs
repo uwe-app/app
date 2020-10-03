@@ -4,30 +4,42 @@ use std::path::PathBuf;
 
 use toml::map::Map;
 use toml::value::Value;
+use url::Url;
 
-use preference::{self, Preferences};
 use utils::walk;
 
-use crate::Error;
+use crate::{Error, Result};
+
+static DEFAULT_NAME: &str = "default";
+static DEFAULT_MESSAGE: &str = "Initial files.";
 
 #[derive(Debug)]
 pub struct InitOptions {
     pub target: PathBuf,
+    pub message: Option<String>,
     pub source: Option<String>,
     pub language: Option<String>,
     pub host: Option<String>,
     pub locales: Option<String>,
 }
 
+struct InitSettings {
+    language: Option<String>,
+    host: Option<String>,
+    locale_ids: Vec<String>,
+}
+
 // Read, modify and write the site configuration
 // with options for language, host and locales.
 fn write_settings<P: AsRef<Path>>(
     output: P,
-    prefs: &Preferences,
-    lang: Option<String>,
-    host: Option<String>,
-    locale_ids: Vec<String>,
-) -> Result<(), Error> {
+    settings: InitSettings,
+) -> Result<()> {
+    let prefs = preference::load()?;
+    let lang = settings.language;
+    let host = settings.host;
+    let locale_ids = settings.locale_ids;
+
     // This is used later to determine whether a redirect should be created
     let has_custom_lang = lang.is_some() || !locale_ids.is_empty();
 
@@ -109,8 +121,45 @@ fn write_settings<P: AsRef<Path>>(
     Ok(())
 }
 
-pub fn init(options: InitOptions) -> Result<(), Error> {
-    let prefs = preference::load()?;
+/// Initialize a project copying files from a source folder.
+fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
+    source: S,
+    target: T,
+    settings: InitSettings,
+    message: &str,
+) -> Result<()> {
+    create_target_parents(target.as_ref())?;
+    walk::copy(source.as_ref(), target.as_ref(), |_| true)?;
+    write_settings(target.as_ref(), settings)?;
+    git::init(target.as_ref(), message)?;
+
+    Ok(())
+}
+
+/// Check a folder has the site settings configuration file.
+fn check_site_settings<T: AsRef<Path>>(target: T) -> Result<()> {
+    let site_toml = target.as_ref().join(config::SITE_TOML);
+    if !site_toml.exists() || !site_toml.is_file() {
+        return Err(Error::NoSiteSettings(
+            target.as_ref().to_path_buf(),
+            config::SITE_TOML.to_string(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Create parent directories for the target project.
+fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
+    if let Some(ref parent) = target.as_ref().parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    Ok(())
+}
+
+pub fn init(options: InitOptions) -> Result<()> {
     let mut language = None;
 
     if let Some(ref lang) = options.language {
@@ -148,38 +197,58 @@ pub fn init(options: InitOptions) -> Result<(), Error> {
         }
     }
 
+    let settings = InitSettings {
+        language,
+        host: options.host,
+        locale_ids,
+    };
+
     let target = options.target;
-    let message = "Initial files.";
+    let message: &str = if let Some(ref message) = options.message {
+        message
+    } else { DEFAULT_MESSAGE };
 
     if target.exists() {
         return Err(Error::TargetExists(target.clone()));
     }
 
-    // Clone an existing blueprint
+    // 1) Check for URL; if valid clone as a git repository
+    // 2) Check for local file system folder; if valid copy files.
+    // 3) Check for named blueprint folder; if valid copy files.
     if let Some(ref source) = options.source {
-        if let Some(ref parent) = target.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)?;
+        match source.parse::<Url>() {
+            Ok(url) => {
+                create_target_parents(&target)?;
+                let repo = git::clone(url, &target)?;
+                check_site_settings(&target)?;
+                write_settings(&target, settings)?;
+                git::pristine(target, repo, message)?;
+            }
+            Err(_) => {
+                let source_dir = PathBuf::from(source);
+                let is_local_folder =
+                    source_dir.exists() && source_dir.is_dir();
+                let source_dir = if is_local_folder {
+                    source_dir
+                } else {
+                    let blueprints = cache::get_blueprint_dir()?;
+                    blueprints.join(source)
+                };
+
+                if !source_dir.exists() {
+                    return Err(Error::NoInitSource)
+                }
+
+                check_site_settings(&source_dir)?;
+                init_folder(source_dir, target, settings, message)?;
             }
         }
 
-        let repo = git::clone(source, &target)?;
-
-        let site_toml = target.join(config::SITE_TOML);
-        if !site_toml.exists() {
-            return Err(Error::NoSiteSettings(
-                target,
-                config::SITE_TOML.to_string(),
-            ));
-        }
-
-        write_settings(&target, &prefs, language, options.host, locale_ids)?;
-        git::pristine(&target, repo, message)?;
+    // 4) No source specified so we just use the default blueprint.
     } else {
-        let source = cache::get_default_blueprint()?;
-        walk::copy(&source, &target, |_| true)?;
-        write_settings(&target, &prefs, language, options.host, locale_ids)?;
-        git::init(&target, message)?;
+        let source = cache::get_blueprint_dir()?.join(DEFAULT_NAME);
+        check_site_settings(&source)?;
+        init_folder(source, target, settings, message)?;
     };
 
     Ok(())

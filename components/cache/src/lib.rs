@@ -9,7 +9,6 @@ static ENV: &str = "env";
 
 static CACHE_NAME: &str = "cache";
 static SRC_NAME: &str = "src";
-static DEFAULT_NAME: &str = "default";
 static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
@@ -104,8 +103,8 @@ pub fn get_syntax_dir() -> io::Result<PathBuf> {
     Ok(get_runtime_dir()?.join(SYNTAX_NAME))
 }
 
-pub fn get_default_blueprint() -> io::Result<PathBuf> {
-    Ok(get_runtime_dir()?.join(BLUEPRINT_NAME).join(DEFAULT_NAME))
+pub fn get_blueprint_dir() -> io::Result<PathBuf> {
+    Ok(get_runtime_dir()?.join(BLUEPRINT_NAME))
 }
 
 #[cfg(target_os = "windows")]

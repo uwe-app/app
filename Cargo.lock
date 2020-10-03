@@ -1322,6 +1322,7 @@ dependencies = [
  "tokio",
  "toml",
  "updater",
+ "url",
  "utils",
  "warp",
  "workspace",

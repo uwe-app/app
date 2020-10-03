@@ -35,7 +35,7 @@ impl HookMap {
                 for f in files.iter() {
                     let file = source.join(f.to_path_buf());
                     if !file.exists() {
-                        return Err(Error::NoHookFile(file))
+                        return Err(Error::NoHookFile(file));
                     }
                 }
             }

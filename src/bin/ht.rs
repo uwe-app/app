@@ -155,6 +155,11 @@ struct BuildOpts {
 
 #[derive(StructOpt, Debug)]
 struct InitOpts {
+
+    /// Commit message.
+    #[structopt(short, long)]
+    message: Option<String>,
+
     /// Language for the new project
     #[structopt(short, long)]
     language: Option<String>,
@@ -171,7 +176,7 @@ struct InitOpts {
     #[structopt(parse(from_os_str))]
     target: PathBuf,
 
-    /// A repository URL
+    /// Repository URL, folder or blueprint name.
     #[structopt()]
     source: Option<String>,
 }
@@ -342,6 +347,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         Command::Init { ref args } => {
             let opts = ht::init::InitOptions {
                 source: args.source.clone(),
+                message: args.message.clone(),
                 target: args.target.clone(),
                 language: args.language.clone(),
                 host: args.host.clone(),

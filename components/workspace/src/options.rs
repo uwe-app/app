@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, ProfileName, ProfileSettings, RuntimeOptions, MENU};
+use config::{Config, ProfileName, ProfileSettings, RuntimeOptions};
 
 use crate::{Error, Result};
 
@@ -99,7 +99,8 @@ fn to_options(
         resources.prepare();
     }
 
-    let opts = RuntimeOptions::new(project.to_path_buf(), source, base, settings);
+    let opts =
+        RuntimeOptions::new(project.to_path_buf(), source, base, settings);
     debug!("{:?}", &cfg);
 
     Ok(opts)
@@ -185,7 +186,6 @@ pub(crate) async fn prepare(
         from_cli(&mut root, &mut input);
         to_options(name, cfg, &mut root)?
     };
-
 
     // Configure project level hooks
     let project = cfg.project().clone();

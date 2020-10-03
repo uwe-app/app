@@ -27,9 +27,9 @@ impl UrlPath {
     }
 
     pub fn to_path_buf(&self) -> PathBuf {
-        PathBuf::from(
-            utils::url::to_path_separator(
-                self.trim_start_matches("/")))
+        PathBuf::from(utils::url::to_path_separator(
+            self.trim_start_matches("/"),
+        ))
     }
 }
 

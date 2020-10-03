@@ -15,8 +15,11 @@ pub enum Error {
     #[error("Target {0} exists, please move it away")]
     TargetExists(PathBuf),
 
-    #[error("New project {0} has no settings file {1}")]
+    #[error("Folder {0} does not contain a settings file {1}")]
     NoSiteSettings(PathBuf, String),
+
+    #[error("Unable to determine a source for the new project, please check the <source> option")]
+    NoInitSource,
 
     #[error("Language {0} does not exist in the locales {1}")]
     LanguageMissingFromLocales(String, String),
@@ -40,6 +43,9 @@ pub enum Error {
     //NoSocketAddress(String),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Url(#[from] url::ParseError),
 
     #[error(transparent)]
     Notify(#[from] notify::Error),

@@ -18,10 +18,9 @@ pub enum Phase {
 pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
     let collation = ctx.collation.read().unwrap();
 
-    let project_root =
-        ctx.config.project().canonicalize().map_err(|_| {
-            Error::CanonicalProjectRoot(ctx.config.project().to_path_buf())
-        })?;
+    let project_root = ctx.config.project().canonicalize().map_err(|_| {
+        Error::CanonicalProjectRoot(ctx.config.project().to_path_buf())
+    })?;
 
     let hook_root = hook
         .base()

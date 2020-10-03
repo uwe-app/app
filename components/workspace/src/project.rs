@@ -13,11 +13,9 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    Config, ProfileSettings, RedirectConfig, RuntimeOptions,
-    dependency::AccessGrant,
-    plugin_cache::PluginCache,
-    syntax::SyntaxConfig,
-    hook::HookConfig,
+    dependency::AccessGrant, hook::HookConfig, plugin_cache::PluginCache,
+    syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
+    RuntimeOptions,
 };
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
@@ -176,7 +174,7 @@ impl ProjectBuilder {
         for (dep, plugin) in cache.plugins_mut().iter_mut() {
             if let Some(mut hooks) = plugin.hooks.take() {
                 if dep.grants(AccessGrant::Hooks) {
-                    let mut master_hooks =
+                    let master_hooks =
                         self.config.hooks.get_or_insert(Default::default());
                     hooks.prepare(&self.options.source, plugin.base())?;
                     master_hooks.append(&mut hooks);
@@ -531,7 +529,6 @@ impl Project {
 
         Ok(result)
     }
-
 
     pub(crate) async fn run_hook(&self, hook: &HookConfig) -> Result<()> {
         for renderer in self.renderers.iter() {

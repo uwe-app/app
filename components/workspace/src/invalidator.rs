@@ -1,10 +1,10 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use config::{FileType, hook::HookConfig};
+use config::{hook::HookConfig, FileType};
 use datasource::{self, DataSourceMap};
 
-use crate::{renderer::RenderOptions, hook, Error, Project, Result};
+use crate::{renderer::RenderOptions, Error, Project, Result};
 
 /*
  *  Invalidation rules.
@@ -103,14 +103,22 @@ impl<'a> Invalidator<'a> {
         let hooks = if let Some(ref hooks) = self.project.config.hooks {
             hooks
                 .iter()
-                .filter(|h| h.files.is_some() && h.watch.is_some() && h.watch.unwrap())
+                .filter(|h| {
+                    h.files.is_some() && h.watch.is_some() && h.watch.unwrap()
+                })
                 .map(|h| {
-                    let files = h.files.as_ref().unwrap()
+                    let files = h
+                        .files
+                        .as_ref()
+                        .unwrap()
                         .iter()
                         .map(|url_path| {
                             self.canonical(
-                                self.project.options.source.join(
-                                    url_path.to_path_buf()))
+                                self.project
+                                    .options
+                                    .source
+                                    .join(url_path.to_path_buf()),
+                            )
                         })
                         .collect::<Vec<_>>();
                     (h, files)
@@ -151,7 +159,10 @@ impl<'a> Invalidator<'a> {
                     for (hook, files) in hooks.iter() {
                         for f in files.iter() {
                             if &path == f {
-                                rule.hooks.push(Action::Hook((*hook).clone(), f.to_path_buf()));
+                                rule.hooks.push(Action::Hook(
+                                    (*hook).clone(),
+                                    f.to_path_buf(),
+                                ));
                                 continue 'paths;
                             }
                         }
@@ -206,7 +217,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
-
         // Reload the config data!
         if rule.reload {
             // FIXME: to restore this we need to reload and parse the configuration!
