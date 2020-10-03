@@ -124,6 +124,7 @@ pub mod generator;
 pub mod hook;
 pub mod indexer;
 mod layout;
+pub mod license;
 mod link;
 mod live_reload;
 mod options;

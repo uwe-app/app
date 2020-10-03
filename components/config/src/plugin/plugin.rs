@@ -10,13 +10,15 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    engine::TemplateEngine, hook::HookMap, href::UrlPath, script::ScriptAsset,
+    engine::TemplateEngine,
+    hook::HookMap,
+    href::UrlPath,
+    script::ScriptAsset,
+    license::LicenseGroup,
     style::StyleAsset, ASSETS, PLUGINS,
 };
 
 use super::{dependency::DependencyMap, features::FeatureMap};
-
-// TODO: spdx support for license info
 
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -70,7 +72,7 @@ pub struct Plugin {
     pub version: Version,
 
     /// Plugin license.
-    pub license: Option<String>,
+    pub license: Option<LicenseGroup>,
 
     /// Plugin author(s).
     pub authors: Option<Vec<Author>>,
@@ -210,6 +212,9 @@ pub struct ExternalLibrary {
     #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
 
+    /// Library license.
+    pub license: Option<LicenseGroup>,
+
     /// Library website.
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub website: Option<Url>,
@@ -217,6 +222,7 @@ pub struct ExternalLibrary {
     /// Library repository.
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub repository: Option<Url>,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
