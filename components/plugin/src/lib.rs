@@ -8,6 +8,9 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
+    #[error("Plugin path is not a directory {0}")]
+    PluginPathNotDirectory(PathBuf),
+
     #[error("No package or plugin could be found for dependency {0}")]
     DependencyNotFound(String),
 

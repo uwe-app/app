@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
-use log::info;
+use log::{info, debug};
 
 use futures::TryFutureExt;
 use url::Url;
@@ -143,6 +143,8 @@ pub struct ProjectBuilder {
 impl ProjectBuilder {
     /// Determine and verify input source files to compile.
     pub async fn sources(mut self) -> Result<Self> {
+        debug!("Preparing sources...");
+
         let mut sources: Sources = Default::default();
         if let Some(ref paths) = self.options.settings.paths {
             self.verify(paths)?;
@@ -154,6 +156,8 @@ impl ProjectBuilder {
 
     /// Resolve plugins.
     pub async fn plugins(mut self) -> Result<Self> {
+        debug!("Resolving plugins...");
+
         if let Some(dependencies) = self.config.dependencies.take() {
             let plugins =
                 plugin::resolve(&self.options.project, dependencies).await?;
@@ -171,6 +175,8 @@ impl ProjectBuilder {
     }
 
     fn plugin_hooks(&mut self, cache: &mut PluginCache) -> Result<()> {
+        debug!("Collating plugin hooks...");
+
         for (dep, plugin) in cache.plugins_mut().iter_mut() {
             if let Some(mut hooks) = plugin.hooks.take() {
                 if dep.grants(AccessGrant::Hooks) {
@@ -191,12 +197,16 @@ impl ProjectBuilder {
 
     /// Load locale message files (.ftl).
     pub async fn locales(mut self) -> Result<Self> {
+        debug!("Loading locales...");
+
         self.locales.load(&self.config, &self.options)?;
         Ok(self)
     }
 
     /// Verify runtime assets.
     pub async fn runtime(self) -> Result<Self> {
+        debug!("Verify runtime assets...");
+
         if self.config.syntax.is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
                 let syntax_dir = cache::get_syntax_dir()?;
@@ -211,6 +221,8 @@ impl ProjectBuilder {
     /// Load page front matter with inheritance, collate all files for compilation
     /// and map available links.
     pub async fn collate(mut self) -> Result<Self> {
+        debug!("Collate page data...");
+
         let req = CollateRequest {
             locales: &self.locales.languages,
             config: &self.config,
@@ -239,6 +251,8 @@ impl ProjectBuilder {
     /// Map redirects from strings to Uris suitable for use
     /// on a local web server.
     pub async fn redirects(mut self) -> Result<Self> {
+        debug!("Map redirects...");
+
         // Map additional redirects
         for collation in self.collations.iter_mut() {
             let redirects = collation.get_redirects();
@@ -264,6 +278,8 @@ impl ProjectBuilder {
 
     /// Collate plugin dependencies.
     pub async fn collate_plugins(mut self) -> Result<Self> {
+        debug!("Collate plugins...");
+
         if let Some(ref plugin_cache) = self.plugins {
             for collation in self.collations.iter_mut() {
                 plugins::collate(
@@ -279,6 +295,8 @@ impl ProjectBuilder {
 
     /// Load data sources.
     pub async fn load_data(mut self) -> Result<Self> {
+        debug!("Load collection data sources...");
+
         // TODO: how to iterate and store data sources?
         let collation = self.collations.get_fallback();
 
@@ -294,6 +312,8 @@ impl ProjectBuilder {
 
     /// Create feed pages.
     pub async fn feed(mut self) -> Result<Self> {
+        debug!("Collate feed pages...");
+
         if let Some(ref feed) = self.config.feed {
             for collation in self.collations.iter_mut() {
                 collator::feed(
@@ -311,6 +331,8 @@ impl ProjectBuilder {
 
     /// Perform pagination.
     pub async fn pages(mut self) -> Result<Self> {
+        debug!("Collate paginated pages...");
+
         for collation in self.collations.iter_mut() {
             synthetic::pages(
                 &self.config,
@@ -325,6 +347,8 @@ impl ProjectBuilder {
 
     /// Create collation entries for data source iterators.
     pub async fn each(mut self) -> Result<Self> {
+        debug!("Iterate collection each queries...");
+
         for collation in self.collations.iter_mut() {
             synthetic::each(
                 &self.config,
@@ -339,6 +363,8 @@ impl ProjectBuilder {
 
     /// Create collation entries for data source assignments.
     pub async fn assign(mut self) -> Result<Self> {
+        debug!("Assign query data...");
+
         for collation in self.collations.iter_mut() {
             synthetic::assign(
                 &self.config,
@@ -353,6 +379,8 @@ impl ProjectBuilder {
 
     /// Localized pages inherit data from the fallback.
     pub async fn inherit(mut self) -> Result<Self> {
+        debug!("Inherit locale page data...");
+
         let mut it = self.collations.locales.iter_mut();
         let fallback = it.next().unwrap();
         while let Some(collation) = it.next() {
@@ -363,6 +391,8 @@ impl ProjectBuilder {
 
     /// Process menu references.
     pub async fn menus(mut self) -> Result<Self> {
+        debug!("Compile menu references...");
+
         for collation in self.collations.iter_mut() {
             menu::compile(&self.options, collation)?;
         }
@@ -388,6 +418,8 @@ impl ProjectBuilder {
     }
 
     pub fn build(self) -> Result<Project> {
+        debug!("Creating project renderers...");
+
         // Set up the manifest for incremental builds
         let manifest_file = get_manifest_file(&self.options);
         let manifest = if self.options.settings.is_incremental() {

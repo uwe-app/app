@@ -21,6 +21,12 @@ pub struct PublishOptions {
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
+
+    let project = &options.project;
+    if !project.exists() || !project.is_dir() {
+        return Err(Error::NotDirectory(project.to_path_buf()))
+    }
+
     let lock_path = LockFile::get_lock_file(&options.project);
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }

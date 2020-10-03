@@ -18,7 +18,7 @@ use config::{
 };
 use publisher::PublishProvider;
 
-use ht::Error;
+use ht::{Result, Error};
 use hypertext as ht;
 
 const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
@@ -96,7 +96,7 @@ fn fatal(e: hypertext::Error) {
     std::process::exit(1);
 }
 
-fn get_project_path(input: PathBuf) -> PathBuf {
+fn get_project_path(input: &PathBuf) -> Result<PathBuf> {
     // NOTE: We want the help output to show "."
     // NOTE: to indicate that the current working
     // NOTE: directory is used but the period creates
@@ -104,12 +104,10 @@ fn get_project_path(input: PathBuf) -> PathBuf {
     // NOTE: live reload so this converts it to the
     // NOTE: empty string.
     let period = Path::new(".").to_path_buf();
-    let empty = Path::new("").to_path_buf();
-    let mut project = input.clone();
-    if project == period {
-        project = empty;
+    if input == &period {
+        return Ok(input.canonicalize()?);
     }
-    project
+    Ok(input.clone())
 }
 
 #[derive(Debug, StructOpt)]
@@ -342,7 +340,7 @@ impl Command {
     }
 }
 
-async fn process_command(cmd: &Command) -> Result<(), Error> {
+async fn process_command(cmd: &Command) -> Result<()> {
     match cmd {
         Command::Init { ref args } => {
             let opts = ht::init::InitOptions {
@@ -391,7 +389,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         }
 
         Command::Publish { ref args } => {
-            let project = get_project_path(args.project.clone());
+            let project = get_project_path(&args.project)?;
 
             let opts = ht::publish::PublishOptions {
                 provider: PublishProvider::Aws,
@@ -446,7 +444,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
         },
 
         Command::Build { ref args } => {
-            let project = get_project_path(args.project.clone());
+            let project = get_project_path(&args.project)?;
 
             let paths = if args.paths.len() > 0 {
                 Some(args.paths.clone())
@@ -488,6 +486,8 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
             let build_args: &'static mut ProfileSettings =
                 Box::leak(Box::new(build_args));
 
+            println!("Compiling with {:?}", &project);
+
             match ht::build::compile(&project, build_args, fatal).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
@@ -503,7 +503,7 @@ async fn process_command(cmd: &Command) -> Result<(), Error> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<()> {
     let root_args = Cli::from_args();
 
     // Fluent templates panics if an error is caught parsing the

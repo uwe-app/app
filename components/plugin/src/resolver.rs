@@ -404,6 +404,7 @@ async fn resolve_version<P: AsRef<Path>>(
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
+
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {

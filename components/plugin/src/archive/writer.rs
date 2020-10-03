@@ -66,6 +66,8 @@ impl PackageWriter {
 
         let files = walk::find(src, |_| true);
         for file in files.into_iter() {
+            debug!("Archive file {:?}", &file);
+
             if file.is_file() {
                 // Protect against recursively adding the package.tar file
                 if file.canonicalize()? == self.target.canonicalize()? {

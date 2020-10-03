@@ -60,9 +60,11 @@ fn canonical<P: AsRef<Path>, F: AsRef<Path>>(
     if !path.as_ref().is_absolute() {
         file = project
             .as_ref()
-            .canonicalize()?
+            .canonicalize()
+            .unwrap_or(project.as_ref().to_path_buf())
             .join(path.as_ref())
-            .canonicalize()?;
+            .canonicalize()
+            .unwrap_or(path.as_ref().to_path_buf());
     }
     Ok(file)
 }
@@ -73,6 +75,11 @@ async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(
     path: F,
 ) -> Result<(PathBuf, Plugin)> {
     let file = canonical(project, path)?;
+
+    if !file.exists() || !file.is_dir() {
+        return Err(Error::PluginPathNotDirectory(file));
+    }
+
     let plugin = read(&file).await?;
     Ok((file, plugin))
 }
@@ -83,8 +90,9 @@ pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
     path: F,
 ) -> Result<Plugin> {
+
     let (target, mut plugin) =
-        install_file(project.as_ref(), path.as_ref()).await?;
+        install_file(project.as_ref(), path).await?;
 
     let url_target =
         format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
