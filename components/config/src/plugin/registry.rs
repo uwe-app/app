@@ -33,6 +33,7 @@ impl RegistryEntry {
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct RegistryItem {
     pub name: String,
 
@@ -48,7 +49,6 @@ pub struct RegistryItem {
     pub dependencies: Option<DependencyMap>,
 
     /// The feature names that the plugin declares.
-
     #[serde(skip_serializing_if = "FeatureMap::is_empty")]
     features: FeatureMap,
 }

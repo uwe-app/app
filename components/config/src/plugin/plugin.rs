@@ -115,16 +115,16 @@ pub struct Plugin {
     #[serde(flatten, skip_serializing_if = "HashMap::is_empty")]
     templates: HashMap<TemplateEngine, PluginTemplates>,
 
-    /// Plugin features.
-    #[serde(skip_serializing_if = "FeatureMap::is_empty")]
-    features: FeatureMap,
-
     /// Plugin dependencies.
     pub dependencies: Option<DependencyMap>,
 
     /// Collection of scoped plugins.
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     plugins: HashMap<String, Plugin>,
+
+    /// Plugin features.
+    #[serde(skip_serializing_if = "FeatureMap::is_empty")]
+    features: FeatureMap,
 
     // WARN: the position of this is important. It must be
     // WARN: after plugin assets otherwise we get the TOML

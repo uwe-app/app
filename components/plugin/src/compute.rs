@@ -93,8 +93,9 @@ fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Re
                     let features_list = features.entry(feature_name).or_insert(Vec::new());
                     features_list.push(dependency_name);
 
-                    stack.pop();
+                    // TODO: add a scoped optional dependency!!!
 
+                    stack.pop();
                 }
             }
         }
