@@ -283,6 +283,7 @@ async fn solver(
     lock: &mut ResolverLock,
     stack: &mut Vec<String>,
 ) -> Result<()> {
+
     for (name, mut dep) in input.into_iter() {
         if stack.len() > DEPENDENCY_STACK_SIZE {
             return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
@@ -355,11 +356,13 @@ async fn solver(
             }
         };
 
+        let has_features = dep.features.is_some() && !dep.features.as_ref().unwrap().is_default();
+
         // If we have nested dependencies recurse
-        if !dependencies.is_empty() {
-            let feature_map: &Option<FeatureMap> = match solved {
-                SolvedReference::Plugin(ref plugin) => &plugin.features,
-                SolvedReference::Package(ref package) => &package.features,
+        if !dependencies.is_empty() || has_features {
+            let feature_map: &FeatureMap = match solved {
+                SolvedReference::Plugin(ref plugin) => plugin.features(),
+                SolvedReference::Package(ref package) => package.features(),
             };
 
             let dependencies = dependencies.filter(&dep, feature_map)?;

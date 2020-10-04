@@ -48,7 +48,9 @@ pub struct RegistryItem {
     pub dependencies: Option<DependencyMap>,
 
     /// The feature names that the plugin declares.
-    pub features: Option<FeatureMap>,
+
+    #[serde(skip_serializing_if = "FeatureMap::is_empty")]
+    features: FeatureMap,
 }
 
 impl Default for RegistryItem {
@@ -58,7 +60,7 @@ impl Default for RegistryItem {
             version: "0.0.0".parse().unwrap(),
             digest: String::new(),
             dependencies: None,
-            features: None,
+            features: Default::default(),
         }
     }
 }
@@ -70,6 +72,10 @@ impl RegistryItem {
         }
         Default::default()
     }
+
+    pub fn features(&self) -> &FeatureMap {
+        &self.features
+    }
 }
 
 impl From<&Plugin> for RegistryItem {
@@ -80,8 +86,8 @@ impl From<&Plugin> for RegistryItem {
         if let Some(ref dependencies) = plugin.dependencies {
             item.dependencies = Some(dependencies.clone());
         }
-        if let Some(ref features) = plugin.features {
-            item.features = Some(features.clone());
+        if !plugin.features().is_empty() {
+            item.features = plugin.features().clone();
         }
         item
     }

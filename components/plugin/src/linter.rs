@@ -44,8 +44,8 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
 
     lint_licenses(plugin)?;
 
-    if let Some(ref features) = plugin.features {
-        lint_features(plugin, features)?;
+    if !plugin.features().is_empty() {
+        lint_features(plugin, plugin.features())?;
     }
 
     plugin.assets().iter().try_for_each(|u| lint_path(plugin, u))?;
@@ -85,15 +85,13 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
 }
 
 fn lint_licenses(plugin: &Plugin) -> Result<(), LintError> {
-    if let Some(ref license) = plugin.license {
+    if let Some(ref license) = plugin.license() {
         lint_license(license)?;
     }
 
-    if let Some(ref library) = plugin.library {
-        for (_, v) in library {
-            if let Some(ref license) = v.license {
-                lint_license(license)?;
-            }
+    for (_, v) in plugin.library() {
+        if let Some(ref license) = v.license() {
+            lint_license(license)?;
         }
     }
 
@@ -131,7 +129,7 @@ fn lint_path(plugin: &Plugin, path: &UrlPath) -> Result<(), LintError> {
 /// Lint the feature definitions.
 fn lint_features(plugin: &Plugin, map: &FeatureMap) -> Result<(), LintError> {
     let names = map.names();
-    for nm in names.iter() {
+    'names: for nm in names {
         if let Some(ref deps) = plugin.dependencies {
             if deps.contains_key(nm) {
                 let dep = deps.get(nm).unwrap();
@@ -144,6 +142,13 @@ fn lint_features(plugin: &Plugin, map: &FeatureMap) -> Result<(), LintError> {
                 continue;
             }
         }
+
+        for (_, p) in plugin.plugins() {
+            if &p.name == nm {
+                continue 'names;
+            }
+        }
+
         return Err(LintError::LintFeatureMissing(
             plugin.to_string(),
             nm.to_string(),

@@ -11,7 +11,7 @@ use config::{
     plugin::TemplateAsset,
     script::ScriptAsset,
     style::StyleAsset,
-    plugin::{Plugin, PluginScope},
+    plugin::Plugin,
 };
 
 use utils::walk;
@@ -22,19 +22,17 @@ use crate::Result;
 pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
     let mut computed = original.clone();
     let base = computed.base().canonicalize()?;
-    let scope = computed.scope_mut();
 
-    let prefix = PathBuf::new();
     let mut stack: Vec<PathBuf> = Vec::new();
 
-    load_scope(base, prefix, scope, &mut stack)?;
+    load_scope(base, &mut computed, &mut stack)?;
 
     //println!("{:#?}", computed);
 
     Ok(computed)
 }
 
-fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut PluginScope, stack: &mut Vec<PathBuf>) -> Result<()> {
+fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Result<()> {
 
     // FIXME: check for maximum stack size
     // FIXME: check for cyclic plugins
@@ -46,26 +44,26 @@ fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut PluginScope, stack: &m
     let plugins = base.join(config::PLUGINS);
 
     if assets.exists() && assets.is_dir() {
-        load_assets(&base, &prefix, &assets, scope);
+        load_assets(&base, &assets, scope);
     }
 
     // Fonts just get placed in the assets collection, this
     // convention is for convenience so plugin authors can
     // be more explicit using the file system layout.
     if fonts.exists() && fonts.is_dir() {
-        load_assets(&base, &prefix, &fonts, scope);
+        load_assets(&base, &fonts, scope);
     }
 
     if styles.exists() && styles.is_dir() {
-        load_styles(&base, &prefix, &styles, scope);
+        load_styles(&base, &styles, scope);
     }
 
     if scripts.exists() && scripts.is_dir() {
-        load_scripts(&base, &prefix, &scripts, scope);
+        load_scripts(&base, &scripts, scope);
     }
 
     for engine in ENGINES.iter() {
-        load_engine(&base, &prefix, &engine, scope);
+        load_engine(&base, &engine, scope);
     }
 
     if plugins.exists() && plugins.is_dir() {
@@ -76,16 +74,24 @@ fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut PluginScope, stack: &m
                     let dir_name = name.to_string_lossy().into_owned();
                     let scope_name = slugify(dir_name);
 
-                    let mut child_scope: PluginScope = Default::default();
                     let scope_base = path.to_path_buf().canonicalize()?;
                     let scope_prefix = scope_base.strip_prefix(&base)?.to_path_buf();
+                    let prefix = UrlPath::from(&scope_prefix);
+                    let mut child_scope: Plugin = Plugin::new_scope(scope, &scope_name, prefix);
 
                     stack.push(scope_base.clone());
-                    load_scope(scope_base, scope_prefix, &mut child_scope, stack)?;
+                    load_scope(scope_base, &mut child_scope, stack)?;
+
+                    let feature_name = scope_name.clone();
+                    let dependency_name = child_scope.name.clone();
 
                     // NOTE: If a plugin with the same name has already been
                     // NOTE: defined manually then it will take precedence.
                     scope.plugins_mut().entry(scope_name).or_insert(child_scope);
+
+                    let features = scope.features_mut();
+                    let features_list = features.entry(feature_name).or_insert(Vec::new());
+                    features_list.push(dependency_name);
 
                     stack.pop();
 
@@ -99,13 +105,13 @@ fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut PluginScope, stack: &m
     Ok(())
 }
 
-fn load_assets(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut PluginScope) {
+fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
     let files = walk::find(dir, |_| true);
     if !files.is_empty() {
         let items = files
             .iter()
             .filter(|e| e.is_file())
-            .map(|e| UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())))
+            .map(|e| UrlPath::from(e.strip_prefix(&base).unwrap()))
             .collect::<HashSet<_>>();
 
         let existing = computed.assets();
@@ -114,7 +120,7 @@ fn load_assets(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plug
     }
 }
 
-fn load_styles(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut PluginScope) {
+fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
     let ext = OsStr::new("css");
     let files = walk::find(dir, |e| {
         if let Some(extension) = e.extension() {
@@ -127,7 +133,7 @@ fn load_styles(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plug
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                StyleAsset::from(UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())))
+                StyleAsset::from(UrlPath::from(e.strip_prefix(&base).unwrap()))
             })
             .collect::<Vec<_>>();
 
@@ -150,7 +156,7 @@ fn load_styles(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plug
     }
 }
 
-fn load_scripts(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut PluginScope) {
+fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
     let ext = OsStr::new("js");
     let files = walk::find(dir, |e| {
         if let Some(extension) = e.extension() {
@@ -163,7 +169,7 @@ fn load_scripts(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plu
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                ScriptAsset::from(UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())))
+                ScriptAsset::from(UrlPath::from(e.strip_prefix(&base).unwrap()))
             })
             .collect::<Vec<_>>();
 
@@ -187,26 +193,24 @@ fn load_scripts(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plu
 
 fn load_engine(
     base: &PathBuf,
-    prefix: &PathBuf,
     engine: &TemplateEngine,
-    computed: &mut PluginScope,
+    computed: &mut Plugin,
 ) {
     let partials = base.join(config::PARTIALS);
     let layouts = base.join(config::LAYOUTS);
     if partials.exists() && partials.is_dir() {
-        load_partials(base, prefix, &partials, engine, computed);
+        load_partials(base, &partials, engine, computed);
     }
     if layouts.exists() && layouts.is_dir() {
-        load_layouts(base, prefix, &layouts, engine, computed);
+        load_layouts(base, &layouts, engine, computed);
     }
 }
 
 fn load_partials(
     base: &PathBuf,
-    prefix: &PathBuf,
     dir: &Path,
     engine: &TemplateEngine,
-    computed: &mut PluginScope,
+    computed: &mut Plugin,
 ) {
     let ext = OsStr::new(engine.get_raw_extension());
     let files = walk::find(dir, |e| {
@@ -225,7 +229,7 @@ fn load_partials(
             engine_templates.partials.get_or_insert(Default::default());
         files.iter().filter(|e| e.is_file()).for_each(|e| {
             let mut tpl = TemplateAsset {
-                file: UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())),
+                file: UrlPath::from(e.strip_prefix(&base).unwrap()),
                 schema: None,
             };
             let key = e.file_stem().unwrap().to_string_lossy().into_owned();
@@ -234,7 +238,7 @@ fn load_partials(
             s.set_extension(config::JSON);
             if s.exists() && s.is_file() {
                 tpl.schema =
-                    Some(UrlPath::from(prefix.join(s.strip_prefix(&base).unwrap())));
+                    Some(UrlPath::from(s.strip_prefix(&base).unwrap()));
             }
 
             partials.entry(key).or_insert(tpl);
@@ -244,10 +248,9 @@ fn load_partials(
 
 fn load_layouts(
     base: &PathBuf,
-    prefix: &PathBuf,
     dir: &Path,
     engine: &TemplateEngine,
-    computed: &mut PluginScope,
+    computed: &mut Plugin,
 ) {
 
     let ext = OsStr::new(engine.get_raw_extension());
@@ -267,7 +270,7 @@ fn load_layouts(
             engine_templates.layouts.get_or_insert(Default::default());
         files.iter().filter(|e| e.is_file()).for_each(|e| {
             let tpl = TemplateAsset {
-                file: UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())),
+                file: UrlPath::from(e.strip_prefix(&base).unwrap()),
                 schema: None,
             };
             let key = e.file_stem().unwrap().to_string_lossy().into_owned();

@@ -127,9 +127,10 @@ impl fmt::Display for StyleAsset {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct StyleTag {
-    pub href: Option<String>,
-    pub media: Option<String>,
-    pub content: Option<String>,
+    #[serde(alias = "src")]
+    href: Option<String>,
+    media: Option<String>,
+    content: Option<String>,
 }
 
 impl StyleTag {
@@ -147,6 +148,10 @@ impl StyleTag {
             media: None,
             content: Some(c.to_string()),
         }
+    }
+
+    pub fn set_source<S: AsRef<str>>(&mut self, source: S) {
+        self.href = Some(source.as_ref().to_string());
     }
 }
 

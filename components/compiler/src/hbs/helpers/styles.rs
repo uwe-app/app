@@ -97,9 +97,8 @@ impl HelperDef for Styles {
                 .map(|style| {
                     let mut tag = style.to_tag();
                     if let Some(ref src) = style.get_source() {
-                        tag.href = Some(
-                            opts.relative(src, path, &opts.source).unwrap(),
-                        );
+                        tag.set_source(
+                            opts.relative(src, path, &opts.source).unwrap());
                     }
                     StyleAsset::Tag(tag)
                 })

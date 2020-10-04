@@ -67,13 +67,11 @@ impl DependencyMap {
     fn resolver(
         &self,
         src: &Dependency,
-        map: &Option<FeatureMap>,
+        map: &FeatureMap,
         features: &Vec<String>,
         out: &mut DependencyMap,
         stack: &mut Vec<String>,
     ) -> Result<()> {
-        let feature_map = map.clone().unwrap_or(Default::default());
-
         features.iter().try_for_each(|n| {
             if stack.len() > FEATURE_STACK_SIZE {
                 return Err(Error::FeatureStackTooLarge(FEATURE_STACK_SIZE));
@@ -83,7 +81,7 @@ impl DependencyMap {
 
             if let Some(dep) = self.get(n) {
                 out.items.insert(n.clone(), dep.clone());
-            } else if let Some(item) = feature_map.get(n) {
+            } else if let Some(item) = map.get(n) {
                 stack.push(n.clone());
                 self.resolver(src, map, item, out, stack)?;
                 stack.pop();
@@ -100,7 +98,7 @@ impl DependencyMap {
     fn resolve(
         &self,
         src: &Dependency,
-        map: &Option<FeatureMap>,
+        map: &FeatureMap,
         features: &Vec<String>,
     ) -> Result<DependencyMap> {
         let mut out: DependencyMap = Default::default();
@@ -113,8 +111,9 @@ impl DependencyMap {
     pub fn filter(
         &self,
         src: &Dependency,
-        map: &Option<FeatureMap>,
+        map: &FeatureMap,
     ) -> Result<DependencyMap> {
+
         let flags = &src.features;
 
         let mut out: DependencyMap = Default::default();
@@ -128,15 +127,13 @@ impl DependencyMap {
 
         // Determine if we need default features
         let default_features = if let Some(ref flags) = flags {
-            flags.default_features.is_none()
-                || (flags.default_features.is_some()
-                    && flags.default_features.unwrap())
+            flags.use_default_features()
         } else {
             true
         };
 
         // Collect default features if available
-        let defaults = if let Some(ref map) = map {
+        let defaults = if !map.is_empty() {
             map.default()
         } else {
             None

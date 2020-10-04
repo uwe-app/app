@@ -180,7 +180,7 @@ impl ProjectBuilder {
         for (dep, plugin) in cache.plugins_mut().iter_mut() {
             let base = plugin.base().clone();
             if !plugin.hooks().is_empty() {
-                let hooks = plugin.scope_mut().hooks_mut();
+                let hooks = plugin.hooks_mut();
                 if dep.grants(AccessGrant::Hooks) {
                     let master_hooks =
                         self.config.hooks.get_or_insert(Default::default());

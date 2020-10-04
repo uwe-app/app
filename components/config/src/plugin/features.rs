@@ -22,6 +22,20 @@ pub struct FeatureFlags {
     pub flags: Option<Vec<FeatureName>>,
 }
 
+impl FeatureFlags {
+    pub fn is_default(&self) -> bool {
+        self.use_default_features() && !self.has_flags()
+    }
+
+    pub fn use_default_features(&self) -> bool {
+        self.default_features.is_none() || self.default_features.unwrap()
+    }
+
+    pub fn has_flags(&self) -> bool {
+        self.flags.is_some() && !self.flags.as_ref().unwrap().is_empty()
+    }
+}
+
 /// Map of features to dependencies used by plugin definitions
 /// to indicate which dependencies should be resolved for a given
 /// set of feature flags.
@@ -32,6 +46,15 @@ pub struct FeatureMap {
 }
 
 impl FeatureMap {
+
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    pub fn entry(&mut self, name: String) -> hash_map::Entry<'_, FeatureName, Vec<DependencyName>> {
+        self.map.entry(name)
+    }
+
     pub fn get(&self, name: &FeatureName) -> Option<&Vec<DependencyName>> {
         self.map.get(name)
     }

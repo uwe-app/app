@@ -72,174 +72,25 @@ pub struct Plugin {
     pub version: Version,
 
     /// Plugin license.
-    pub license: Option<LicenseGroup>,
+    license: Option<LicenseGroup>,
 
     /// Plugin author(s).
-    pub authors: Option<Vec<Author>>,
+    authors: Option<Vec<Author>>,
 
     /// List of keywords.
-    pub keywords: Option<Vec<String>>,
+    keywords: Option<Vec<String>>,
 
     /// Type of the plugin.
     #[serde(rename = "type")]
-    pub kind: Option<PluginKind>,
+    kind: Option<PluginKind>,
+
+    /// Prefix for scoped plugins.
+    prefix: Option<UrlPath>,
 
     /// List of remote orgins used by this plugin.
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
-    pub origins: Option<Vec<Url>>,
+    origins: Option<Vec<Url>>,
 
-    // WARN: the position of this is important. It must be
-    // WARN: before the `library` otherwise we get the TOML
-    // WARN: error: `values must be emitted before tables`.
-    #[serde(flatten)]
-    scope: PluginScope,
-
-    /// Collection of features for this plugin.
-    pub features: Option<FeatureMap>,
-
-    /// Plugin dependencies.
-    pub dependencies: Option<DependencyMap>,
-
-    /// List of third-party libraries the plugin depends on.
-    pub library: Option<HashMap<String, ExternalLibrary>>,
-
-    /// Base path this plugin was loaded from,
-    /// used to resolve assets during collation.
-    #[serde(skip)]
-    base: PathBuf,
-
-    /// A checksum digest when extracted from a registry archive.
-    #[serde(skip)]
-    checksum: Option<String>,
-
-    /// A source URL the plugin was loaded from.
-    #[serde(skip)]
-    source: Option<Url>,
-
-}
-
-impl fmt::Display for Plugin {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}", &self.name, self.version.to_string())
-    }
-}
-
-impl Default for Plugin {
-    fn default() -> Self {
-        let version: Version = "0.0.0".parse().unwrap();
-        Self {
-            name: String::new(),
-            description: String::new(),
-            version,
-            license: None,
-            authors: None,
-            keywords: None,
-            kind: None,
-            origins: None,
-            scope: Default::default(),
-            dependencies: None,
-            features: None,
-            library: None,
-            base: PathBuf::from(String::new()),
-            checksum: None,
-            source: None,
-        }
-    }
-}
-
-impl Plugin {
-    pub fn base(&self) -> &PathBuf {
-        &self.base
-    }
-
-    pub fn set_base<P: AsRef<Path>>(&mut self, p: P) {
-        self.base = p.as_ref().to_path_buf();
-    }
-
-    pub fn source(&self) -> &Option<Url> {
-        &self.source
-    }
-
-    pub fn set_source(&mut self, u: Url) {
-        self.source = Some(u);
-    }
-
-    pub fn checksum(&self) -> &Option<String> {
-        &self.checksum
-    }
-
-    pub fn set_checksum<S: AsRef<str>>(&mut self, s: S) {
-        self.checksum = Some(s.as_ref().to_string());
-    }
-
-    /// Access to the plugin scope.
-    pub fn scope(&self) -> &PluginScope {
-        &self.scope
-    }
-
-    /// Mutable access to the plugin scope.
-    pub fn scope_mut(&mut self) -> &mut PluginScope {
-        &mut self.scope
-    }
-
-    /// Convenient proxy access to the scope assets.
-    pub fn assets(&self) -> &HashSet<UrlPath> {
-        self.scope.assets()
-    }
-
-    /// Convenient proxy access to the scope styles.
-    pub fn styles(&self) -> &Vec<StyleAsset> {
-        self.scope.styles()
-    }
-
-    /// Convenient proxy access to the scope scripts.
-    pub fn scripts(&self) -> &Vec<ScriptAsset> {
-        self.scope.scripts()
-    }
-
-    /// Convenient proxy access to the scope hooks.
-    pub fn hooks(&self) -> &HookMap {
-        self.scope.hooks()
-    }
-
-    /// Convenient proxy access to the scope templates.
-    pub fn templates(&self) -> &HashMap<TemplateEngine, PluginTemplates> {
-        self.scope.templates()
-    }
-
-    /// Collection of scoped plugins.
-    pub fn plugins(&self) -> &HashMap<String, PluginScope> {
-        self.scope.plugins()
-    }
-
-    /// Mutable collection of scoped plugins.
-    pub fn plugins_mut(&mut self) -> &mut HashMap<String, PluginScope> {
-        self.scope.plugins_mut()
-    }
-
-    /// Generate a qualified name relative to the plugin name.
-    pub fn qualified(&self, val: &str) -> String {
-        format!("{}::{}", &self.name, val)
-    }
-
-    /// Get the path for the plugin assets.
-    pub fn to_assets_path(&self) -> PathBuf {
-        PathBuf::from(ASSETS).join(PLUGINS).join(&self.name)
-    }
-
-    /// Resolve a URL path relative to this plugin.
-    pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
-        self.base
-            .join(utils::url::to_path_separator(path.trim_start_matches("/")))
-    }
-}
-
-/// A plugin scope encapsulates the references for a plugin
-/// that the application can action (as opposed to plugin
-/// meta data).
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default)]
-pub struct PluginScope {
     /// List of synthetic assets to include in the project.
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     assets: HashSet<UrlPath>,
@@ -264,25 +115,113 @@ pub struct PluginScope {
     #[serde(flatten, skip_serializing_if = "HashMap::is_empty")]
     templates: HashMap<TemplateEngine, PluginTemplates>,
 
+    /// Plugin features.
+    #[serde(skip_serializing_if = "FeatureMap::is_empty")]
+    features: FeatureMap,
+
+    /// Plugin dependencies.
+    pub dependencies: Option<DependencyMap>,
+
     /// Collection of scoped plugins.
     #[serde(skip_serializing_if = "HashMap::is_empty")]
-    plugins: HashMap<String, PluginScope>,
+    plugins: HashMap<String, Plugin>,
+
+    // WARN: the position of this is important. It must be
+    // WARN: after plugin assets otherwise we get the TOML
+    // WARN: error: `values must be emitted before tables`.
+    /// List of third-party libraries the plugin depends on.
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    library: HashMap<String, ExternalLibrary>,
+
+    /// Base path this plugin was loaded from,
+    /// used to resolve assets during collation.
+    #[serde(skip)]
+    base: PathBuf,
+
+    /// A checksum digest when extracted from a registry archive.
+    #[serde(skip)]
+    checksum: Option<String>,
+
+    /// A source URL the plugin was loaded from.
+    #[serde(skip)]
+    source: Option<Url>,
 }
 
-impl Default for PluginScope {
+impl fmt::Display for Plugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}@{}", &self.name, self.version.to_string())
+    }
+}
+
+impl Default for Plugin {
     fn default() -> Self {
+        let version: Version = "0.0.0".parse().unwrap();
         Self {
+            name: String::new(),
+            description: String::new(),
+            version,
+            license: None,
+            authors: None,
+            keywords: None,
+            kind: None,
+            origins: None,
             assets: HashSet::new(),
             styles: Vec::new(),
             scripts: Vec::new(),
             hooks: Default::default(),
             templates: HashMap::new(),
             plugins: HashMap::new(),
+            dependencies: None,
+            features: Default::default(),
+            library: HashMap::new(),
+            base: PathBuf::from(String::new()),
+            checksum: None,
+            source: None,
+            prefix: None,
         }
     }
 }
 
-impl PluginScope {
+impl Plugin {
+
+    pub fn new_scope(parent: &Plugin, name: &str, prefix: UrlPath) -> Self {
+        Self {
+            name: format!("{}{}{}", &parent.name, crate::PLUGIN_NS, name),
+            description: parent.description.clone(),
+            version: parent.version.clone(),
+            prefix: Some(prefix),
+            ..Default::default()
+        }
+    }
+
+    pub fn base(&self) -> &PathBuf {
+        &self.base
+    }
+
+    pub fn set_base<P: AsRef<Path>>(&mut self, p: P) {
+        self.base = p.as_ref().to_path_buf();
+    }
+
+    pub fn source(&self) -> &Option<Url> {
+        &self.source
+    }
+
+    pub fn set_source(&mut self, u: Url) {
+        self.source = Some(u);
+    }
+
+    pub fn checksum(&self) -> &Option<String> {
+        &self.checksum
+    }
+
+    pub fn license(&self) -> &Option<LicenseGroup> {
+        &self.license
+    }
+
+    pub fn set_checksum<S: AsRef<str>>(&mut self, s: S) {
+        self.checksum = Some(s.as_ref().to_string());
+    }
+
     pub fn assets(&self) -> &HashSet<UrlPath> {
         &self.assets
     }
@@ -331,14 +270,42 @@ impl PluginScope {
         &mut self.templates
     }
 
+    pub fn features(&self) -> &FeatureMap {
+        &self.features
+    }
+
+    pub fn features_mut(&mut self) -> &mut FeatureMap {
+        &mut self.features
+    }
+
     /// Collection of scoped plugins.
-    pub fn plugins(&self) -> &HashMap<String, PluginScope> {
+    pub fn plugins(&self) -> &HashMap<String, Plugin> {
         &self.plugins
     }
 
     /// Mutable collection of scoped plugins.
-    pub fn plugins_mut(&mut self) -> &mut HashMap<String, PluginScope> {
+    pub fn plugins_mut(&mut self) -> &mut HashMap<String, Plugin> {
         &mut self.plugins
+    }
+
+    pub fn library(&self) -> &HashMap<String, ExternalLibrary> {
+        &self.library
+    }
+
+    /// Generate a qualified name relative to the plugin name.
+    pub fn qualified(&self, val: &str) -> String {
+        format!("{}::{}", &self.name, val)
+    }
+
+    /// Get the path for the plugin assets.
+    pub fn to_assets_path(&self) -> PathBuf {
+        PathBuf::from(ASSETS).join(PLUGINS).join(&self.name)
+    }
+
+    /// Resolve a URL path relative to this plugin.
+    pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
+        self.base
+            .join(utils::url::to_path_separator(path.trim_start_matches("/")))
     }
 }
 
@@ -347,19 +314,36 @@ impl PluginScope {
 pub struct ExternalLibrary {
     /// Library version.
     #[serde_as(as = "DisplayFromStr")]
-    pub version: Version,
+    version: Version,
 
     /// Library license.
-    pub license: Option<LicenseGroup>,
+    license: Option<LicenseGroup>,
 
     /// Library website.
     #[serde_as(as = "Option<DisplayFromStr>")]
-    pub website: Option<Url>,
+    website: Option<Url>,
 
     /// Library repository.
     #[serde_as(as = "Option<DisplayFromStr>")]
-    pub repository: Option<Url>,
+    repository: Option<Url>,
+}
 
+impl ExternalLibrary {
+    pub fn version(&self) -> &Version {
+        &self.version
+    }
+
+    pub fn license(&self) -> &Option<LicenseGroup> {
+        &self.license
+    }
+
+    pub fn website(&self) -> &Option<Url> {
+        &self.website
+    }
+
+    pub fn repository(&self) -> &Option<Url> {
+        &self.repository
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
