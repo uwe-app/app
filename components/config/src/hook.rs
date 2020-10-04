@@ -68,11 +68,8 @@ pub struct HookConfig {
     // Command arguments.
     pub args: Option<Vec<String>>,
 
-    pub stdout: bool,
-    pub stderr: bool,
-
     // Marks the hook to run after a build
-    pub after: bool,
+    pub after: Option<bool>,
 
     // Only run for these profiles
     pub profiles: Option<Vec<ProfileName>>,
@@ -83,6 +80,9 @@ pub struct HookConfig {
     // Whether to trigger the hook when the
     // expected files changes.
     pub watch: Option<bool>,
+
+    pub stdout: Option<bool>,
+    pub stderr: Option<bool>,
 
     // The base path for this hook. When declared on
     // a site this should be the site project root.
@@ -98,9 +98,9 @@ impl Default for HookConfig {
         Self {
             path: String::new(),
             args: None,
-            stdout: true,
-            stderr: true,
-            after: false,
+            stdout: Some(true),
+            stderr: Some(true),
+            after: Some(false),
             profiles: None,
             files: None,
             watch: None,
