@@ -120,9 +120,7 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             })
             .collect::<Vec<_>>();
 
-        let mut existing =
-            computed.scripts.clone().unwrap_or(Default::default());
-
+        let mut existing = computed.scripts_mut();
         items.append(&mut existing);
 
         // NOTE: Normalize to tags so that we avoid the TOML
@@ -136,7 +134,7 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         let mut uniques = HashSet::new();
         items.retain(|e| uniques.insert(e.clone()));
 
-        computed.scripts = Some(items);
+        computed.set_scripts(items);
     }
 }
 

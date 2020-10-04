@@ -70,11 +70,10 @@ impl PluginCache {
                         .collect::<Vec<StyleAsset>>();
                     self.styles_cache.push((dep.clone(), styles));
                 }
-                if plugin.scripts.is_some() && !apply.scripts_match.is_empty() {
+                if !plugin.scripts().is_empty() && !apply.scripts_match.is_empty() {
                     let scripts = plugin
-                        .scripts
+                        .scripts()
                         .clone()
-                        .unwrap()
                         .into_iter()
                         .map(|mut s| {
                             s.set_source_prefix(&assets_href_base);

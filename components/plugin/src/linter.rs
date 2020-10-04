@@ -58,15 +58,13 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
         Ok::<(), LintError>(())
     })?;
 
-    if let Some(ref scripts) = plugin.scripts {
-        scripts.iter().try_for_each(|s| {
-            if let Some(src) = s.get_source() {
-                let u = UrlPath::from(src);
-                lint_path(plugin, &u)?;
-            }
-            Ok::<(), LintError>(())
-        })?;
-    }
+    plugin.scripts().iter().try_for_each(|s| {
+        if let Some(src) = s.get_source() {
+            let u = UrlPath::from(src);
+            lint_path(plugin, &u)?;
+        }
+        Ok::<(), LintError>(())
+    })?;
 
     //if let Some(ref templates) = plugin.templates {
     for (_engine, templates) in plugin.templates.iter() {

@@ -65,11 +65,9 @@ fn scripts(
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-    if let Some(ref scripts) = plugin.scripts {
-        for script in scripts {
-            if let Some(src) = script.get_source() {
-                create_asset(options, info, name, plugin, plugin_target, src)?;
-            }
+    for script in plugin.scripts() {
+        if let Some(src) = script.get_source() {
+            create_asset(options, info, name, plugin, plugin_target, src)?;
         }
     }
     Ok(())

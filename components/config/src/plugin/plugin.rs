@@ -107,7 +107,7 @@ pub struct Plugin {
     styles: Vec<StyleAsset>,
 
     /// List of scripts to add to pages.
-    pub scripts: Option<Vec<ScriptAsset>>,
+    scripts: Vec<ScriptAsset>,
 
     /// Collections of partials and layouts
     #[serde(flatten, serialize_with = "toml::ser::tables_last")]
@@ -150,7 +150,7 @@ impl Default for Plugin {
             origins: None,
             assets: HashSet::new(),
             styles: Vec::new(),
-            scripts: None,
+            scripts: Vec::new(),
             hooks: None,
             dependencies: None,
             features: None,
@@ -206,6 +206,18 @@ impl Plugin {
 
     pub fn set_styles(&mut self, styles: Vec<StyleAsset>) {
         self.styles = styles;
+    }
+
+    pub fn scripts(&self) -> &Vec<ScriptAsset> {
+        &self.scripts
+    }
+
+    pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
+        &mut self.scripts
+    }
+
+    pub fn set_scripts(&mut self, scripts: Vec<ScriptAsset>) {
+        self.scripts = scripts;
     }
 
     /// Generate a qualified name relative to the plugin name.
