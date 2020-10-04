@@ -44,10 +44,7 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
     }
 
     for engine in ENGINES.iter() {
-        let dir = base.join(engine.to_string());
-        if dir.exists() && dir.is_dir() {
-            load_engine(&base, &dir, &mut computed, &engine);
-        }
+        load_engine(&base, &mut computed, &engine);
     }
 
     //println!("Computed data {:#?}", &computed);
@@ -147,13 +144,11 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
 
 fn load_engine(
     base: &PathBuf,
-    dir: &Path,
     computed: &mut Plugin,
     engine: &TemplateEngine,
 ) {
-    let partials = dir.join(config::PARTIALS);
-    let layouts = dir.join(config::LAYOUTS);
-
+    let partials = base.join(config::PARTIALS);
+    let layouts = base.join(config::LAYOUTS);
     if partials.exists() && partials.is_dir() {
         load_partials(base, &partials, computed, engine);
     }
@@ -178,8 +173,6 @@ fn load_partials(
     });
 
     if !files.is_empty() {
-        //let master_templates = computed.templates;
-        //.get_or_insert(Default::default());
         let engine_templates = computed
             .templates
             .entry(engine.clone())
@@ -211,10 +204,15 @@ fn load_layouts(
     computed: &mut Plugin,
     engine: &TemplateEngine,
 ) {
-    // NOTE: we do not test file extension here as some
-    // NOTE: layouts (eg: std::core::feed) require different
-    // NOTE: file extensions
-    let files = walk::find(dir, |_| true);
+
+    let ext = OsStr::new(engine.get_raw_extension());
+    let files = walk::find(dir, |e| {
+        //true
+        if let Some(extension) = e.extension() {
+            return extension == ext;
+        }
+        false
+    });
 
     if !files.is_empty() {
         let engine_templates = computed

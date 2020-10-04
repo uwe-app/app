@@ -241,12 +241,14 @@ pub fn feed(
 
         for feed_type in channel.types.iter() {
             let file_name = feed_type.get_name();
+            let file_extension = feed_type.get_extension();
             let source = source_dir.join(&file_name);
 
             let template: Option<PathBuf> =
                 if let Some(ref partial_key) = feed.names.get(feed_type) {
-                    //options.source.join(tpl)
-                    if let Some(ref partial) = plugin_layouts.get(partial_key) {
+                    let full_partial_key = format!(
+                        "{}.{}", partial_key, &file_extension);
+                    if let Some(ref partial) = plugin_layouts.get(&full_partial_key) {
                         Some(partial.to_path_buf(plugin.base()))
                     } else {
                         None
