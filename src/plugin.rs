@@ -12,8 +12,7 @@ pub struct PluginOptions {
 
 /// Lint a plugin.
 pub async fn lint(options: PluginOptions) -> Result<()> {
-    let plugin = plugin::read(&options.path).await?;
-    plugin::lint(&plugin)?;
+    let plugin = plugin::lint(&options.path).await?;
     info!("Plugin {} ok ✓", &plugin.name);
     Ok(())
 }

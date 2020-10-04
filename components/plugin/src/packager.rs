@@ -4,7 +4,7 @@ use config::Plugin;
 use futures::TryFutureExt;
 
 use crate::{
-    archive::writer::PackageWriter, linter::lint, reader::read, Result,
+    archive::writer::PackageWriter, linter::lint_plugin, reader::read, Result,
 };
 
 /// Package a plugin directory.
@@ -13,7 +13,7 @@ pub async fn pack(
     target: &PathBuf,
 ) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let plugin = read(source).await?;
-    lint(&plugin)?;
+    lint_plugin(&plugin)?;
     pack_plugin(source, target, plugin).await
 }
 

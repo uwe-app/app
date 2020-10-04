@@ -1,7 +1,8 @@
+use std::path::Path;
 use regex::Regex;
 use spdx::license_id;
 
-use crate::{error::LintError};
+use crate::{error::LintError, reader::read, compute};
 use config::{
     features::FeatureMap,
     href::UrlPath,
@@ -9,8 +10,15 @@ use config::{
     license::{License, LicenseGroup},
 };
 
-pub fn lint(plugin: &Plugin) -> crate::Result<()> {
-    run(plugin).map_err(crate::Error::from)
+pub async fn lint<P: AsRef<Path>>(path: P) -> crate::Result<Plugin> {
+    let plugin = read(path).await?;
+    let plugin = compute::transform(&plugin).await?;
+    lint_plugin(&plugin)?;
+    Ok(plugin)
+}
+
+pub(crate) fn lint_plugin(plugin: &Plugin) -> crate::Result<()> {
+    Ok(run(&plugin).map_err(crate::Error::from)?)
 }
 
 fn run(plugin: &Plugin) -> Result<(), LintError> {
