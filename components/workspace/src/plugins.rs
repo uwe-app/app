@@ -97,7 +97,7 @@ fn layouts(
     _name: &String,
     plugin: &Plugin,
 ) -> Result<()> {
-    if let Some(ref templates) = plugin.templates.get(config.engine()) {
+    if let Some(ref templates) = plugin.templates().get(config.engine()) {
         if let Some(ref layouts) = templates.layouts {
             for (nm, layout) in layouts.iter() {
                 let fqn = plugin.qualified(nm);

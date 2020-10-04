@@ -113,8 +113,8 @@ pub struct Plugin {
     hooks: HookMap,
 
     /// Collections of partials and layouts
-    #[serde(flatten, serialize_with = "toml::ser::tables_last")]
-    pub templates: HashMap<TemplateEngine, PluginTemplates>,
+    #[serde(flatten)]
+    templates: HashMap<TemplateEngine, PluginTemplates>,
 
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
@@ -226,6 +226,14 @@ impl Plugin {
 
     pub fn hooks_mut(&mut self) -> &mut HookMap {
         &mut self.hooks
+    }
+
+    pub fn templates(&self) -> &HashMap<TemplateEngine, PluginTemplates> {
+        &self.templates
+    }
+
+    pub fn templates_mut(&mut self) -> &mut HashMap<TemplateEngine, PluginTemplates> {
+        &mut self.templates
     }
 
     /// Generate a qualified name relative to the plugin name.

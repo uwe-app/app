@@ -169,7 +169,7 @@ fn load_partials(
 
     if !files.is_empty() {
         let engine_templates = computed
-            .templates
+            .templates_mut()
             .entry(engine.clone())
             .or_insert(Default::default());
         let partials =
@@ -210,7 +210,7 @@ fn load_layouts(
 
     if !files.is_empty() {
         let engine_templates = computed
-            .templates
+            .templates_mut()
             .entry(engine.clone())
             .or_insert(Default::default());
         let layouts =

@@ -214,7 +214,7 @@ pub fn feed(
         .ok_or_else(|| Error::NoFeedPlugin(plugin_name.clone()))?;
 
     let engine_templates =
-        plugin.templates.get(config.engine()).ok_or_else(|| {
+        plugin.templates().get(config.engine()).ok_or_else(|| {
             Error::NoFeedPluginTemplateEngine(
                 plugin_name.clone(),
                 config.engine().to_string(),
