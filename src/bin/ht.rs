@@ -240,6 +240,10 @@ struct DocsOpts {
 enum Plugin {
     /// Lint a plugin.
     Lint {
+        /// Print the computed plugin information.
+        #[structopt(short, long)]
+        inspect: bool,
+
         /// Plugin folder.
         #[structopt(parse(from_os_str))]
         path: PathBuf,
@@ -340,7 +344,7 @@ impl Command {
     }
 }
 
-async fn process_command(cmd: &Command) -> Result<()> {
+async fn process_command(cmd: Command) -> Result<()> {
     match cmd {
         Command::Init { ref args } => {
             let opts = ht::init::InitOptions {
@@ -400,23 +404,16 @@ async fn process_command(cmd: &Command) -> Result<()> {
             ht::publish::publish(opts).await?;
         }
 
-        Command::Plugin { ref action } => {
-            let opts = match action {
-                Plugin::Lint { ref path }
-                | Plugin::Pack { ref path }
-                | Plugin::Publish { ref path } => {
-                    ht::plugin::PluginOptions { path: path.clone() }
-                }
-            };
+        Command::Plugin { action } => {
             match action {
-                Plugin::Lint { .. } => {
-                    ht::plugin::lint(opts).await?;
+                Plugin::Lint { path, inspect } => {
+                    ht::plugin::lint(path, inspect).await?;
                 }
-                Plugin::Pack { .. } => {
-                    ht::plugin::pack(opts).await?;
+                Plugin::Pack { path } => {
+                    ht::plugin::pack(path).await?;
                 }
-                Plugin::Publish { .. } => {
-                    ht::plugin::publish(opts).await?;
+                Plugin::Publish { path } => {
+                    ht::plugin::publish(path).await?;
                 }
             }
         }
@@ -549,14 +546,14 @@ async fn main() -> Result<()> {
     };
     config::generator::get(Some(app_data));
 
-    match &root_args.cmd {
+    match root_args.cmd {
         Some(cmd) => {
             if let Err(e) = process_command(cmd).await {
                 fatal(e);
             }
         }
         None => {
-            if let Err(e) = process_command(&Command::default(root_args)).await
+            if let Err(e) = process_command(Command::default(root_args)).await
             {
                 fatal(e);
             }
