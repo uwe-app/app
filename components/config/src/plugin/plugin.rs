@@ -109,12 +109,12 @@ pub struct Plugin {
     /// List of scripts to add to pages.
     scripts: Vec<ScriptAsset>,
 
+    /// List of hooks in this plugin.
+    hooks: HookMap,
+
     /// Collections of partials and layouts
     #[serde(flatten, serialize_with = "toml::ser::tables_last")]
     pub templates: HashMap<TemplateEngine, PluginTemplates>,
-
-    /// List of hooks in this plugin.
-    pub hooks: Option<HookMap>,
 
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
@@ -151,7 +151,7 @@ impl Default for Plugin {
             assets: HashSet::new(),
             styles: Vec::new(),
             scripts: Vec::new(),
-            hooks: None,
+            hooks: Default::default(),
             dependencies: None,
             features: None,
             templates: HashMap::new(),
@@ -218,6 +218,14 @@ impl Plugin {
 
     pub fn set_scripts(&mut self, scripts: Vec<ScriptAsset>) {
         self.scripts = scripts;
+    }
+
+    pub fn hooks(&self) -> &HookMap {
+        &self.hooks
+    }
+
+    pub fn hooks_mut(&mut self) -> &mut HookMap {
+        &mut self.hooks
     }
 
     /// Generate a qualified name relative to the plugin name.

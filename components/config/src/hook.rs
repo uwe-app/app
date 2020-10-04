@@ -21,6 +21,10 @@ impl HookMap {
         self.exec.iter()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.exec.is_empty()
+    }
+
     pub fn prepare(&mut self, source: &PathBuf, base: &PathBuf) -> Result<()> {
         let mut out: HashSet<HookConfig> = HashSet::new();
         for mut v in self.exec.drain() {

@@ -178,12 +178,14 @@ impl ProjectBuilder {
         debug!("Collating plugin hooks...");
 
         for (dep, plugin) in cache.plugins_mut().iter_mut() {
-            if let Some(mut hooks) = plugin.hooks.take() {
+            let base = plugin.base().clone();
+            if !plugin.hooks().is_empty() {
+                let hooks = plugin.hooks_mut();
                 if dep.grants(AccessGrant::Hooks) {
                     let master_hooks =
                         self.config.hooks.get_or_insert(Default::default());
-                    hooks.prepare(&self.options.source, plugin.base())?;
-                    master_hooks.append(&mut hooks);
+                    hooks.prepare(&self.options.source, &base)?;
+                    master_hooks.append(hooks);
                 } else {
                     return Err(Error::NoHooksGrant(
                         plugin.to_string(),
