@@ -94,6 +94,9 @@ pub struct Plugin {
     #[serde(flatten)]
     scope: PluginScope,
 
+    /// Collection of scoped plugins.
+    plugins: HashMap<String, PluginScope>,
+
     /// Collection of features for this plugin.
     pub features: Option<FeatureMap>,
 
@@ -137,6 +140,7 @@ impl Default for Plugin {
             kind: None,
             origins: None,
             scope: Default::default(),
+            plugins: HashMap::new(),
             dependencies: None,
             features: None,
             library: None,
@@ -218,6 +222,14 @@ impl Plugin {
 
     pub fn templates_mut(&mut self) -> &mut HashMap<TemplateEngine, PluginTemplates> {
         &mut self.scope.templates
+    }
+
+    pub fn plugins(&self) -> &HashMap<String, PluginScope> {
+        &self.plugins
+    }
+
+    pub fn plugins_mut(&mut self) -> &mut HashMap<String, PluginScope> {
+        &mut self.plugins
     }
 
     /// Generate a qualified name relative to the plugin name.
