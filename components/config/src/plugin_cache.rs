@@ -54,7 +54,7 @@ impl PluginCache {
             if let Some(ref apply) = dep.apply {
                 let assets_href_base = format!(
                     "/{}",
-                    utils::url::to_href_separator(plugin.assets())
+                    utils::url::to_href_separator(plugin.to_assets_path())
                 );
 
                 if plugin.styles.is_some() && !apply.styles_match.is_empty() {

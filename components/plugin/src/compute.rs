@@ -60,10 +60,10 @@ fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .filter(|e| e.is_file())
             .map(|e| UrlPath::from(e.strip_prefix(&base).unwrap()))
             .collect::<HashSet<_>>();
-        let existing = computed.assets.clone().unwrap_or(Default::default());
 
+        let existing = computed.assets();
         let assets: HashSet<_> = items.union(&existing).cloned().collect();
-        computed.assets = Some(assets);
+        computed.set_assets(assets);
     }
 }
 

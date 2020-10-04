@@ -48,9 +48,7 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
         lint_features(plugin, features)?;
     }
 
-    if let Some(ref assets) = plugin.assets {
-        assets.iter().try_for_each(|u| lint_path(plugin, u))?;
-    }
+    plugin.assets().iter().try_for_each(|u| lint_path(plugin, u))?;
 
     if let Some(ref styles) = plugin.styles {
         styles.iter().try_for_each(|s| {

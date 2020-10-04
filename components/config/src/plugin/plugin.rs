@@ -88,8 +88,17 @@ pub struct Plugin {
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
     pub origins: Option<Vec<Url>>,
 
+    /// Collection of features for this plugin.
+    pub features: Option<FeatureMap>,
+
+    /// Plugin dependencies.
+    pub dependencies: Option<DependencyMap>,
+
+    /// List of third-party libraries the plugin depends on.
+    pub library: Option<HashMap<String, ExternalLibrary>>,
+
     /// List of synthetic assets to include in the project.
-    pub assets: Option<HashSet<UrlPath>>,
+    assets: HashSet<UrlPath>,
 
     // NOTE: we want to use HashSet for styles and scripts
     // NOTE: so there are no duplicates but ordering is important
@@ -100,21 +109,12 @@ pub struct Plugin {
     /// List of scripts to add to pages.
     pub scripts: Option<Vec<ScriptAsset>>,
 
-    /// Collection of features for this plugin.
-    pub features: Option<FeatureMap>,
-
-    /// Plugin dependencies.
-    pub dependencies: Option<DependencyMap>,
-
-    /// List of third-party libraries the plugin depends on.
-    pub library: Option<HashMap<String, ExternalLibrary>>,
-
-    /// List of hooks in this plugin.
-    pub hooks: Option<HookMap>,
-
     /// Collections of partials and layouts
     #[serde(flatten, serialize_with = "toml::ser::tables_last")]
     pub templates: HashMap<TemplateEngine, PluginTemplates>,
+
+    /// List of hooks in this plugin.
+    pub hooks: Option<HookMap>,
 
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
@@ -148,7 +148,7 @@ impl Default for Plugin {
             keywords: None,
             kind: None,
             origins: None,
-            assets: None,
+            assets: HashSet::new(),
             styles: None,
             scripts: None,
             hooks: None,
@@ -188,13 +188,21 @@ impl Plugin {
         self.checksum = Some(s.as_ref().to_string());
     }
 
+    pub fn assets(&self) -> &HashSet<UrlPath> {
+        &self.assets
+    }
+
+    pub fn set_assets(&mut self, assets: HashSet<UrlPath>) {
+        self.assets = assets;
+    }
+
     /// Generate a qualified name relative to the plugin name.
     pub fn qualified(&self, val: &str) -> String {
         format!("{}::{}", &self.name, val)
     }
 
     /// Get the path for the plugin assets.
-    pub fn assets(&self) -> PathBuf {
+    pub fn to_assets_path(&self) -> PathBuf {
         PathBuf::from(ASSETS).join(PLUGINS).join(&self.name)
     }
 

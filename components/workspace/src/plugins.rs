@@ -51,10 +51,8 @@ fn assets(
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-    if let Some(ref assets) = plugin.assets {
-        for asset in assets {
-            create_asset(options, info, name, plugin, plugin_target, asset)?;
-        }
+    for asset in plugin.assets() {
+        create_asset(options, info, name, plugin, plugin_target, asset)?;
     }
     Ok(())
 }
@@ -124,7 +122,7 @@ pub fn collate(
 ) -> Result<()> {
     for (_dep, plugin) in plugins.iter() {
         let name = &plugin.name;
-        let plugin_base = plugin.assets();
+        let plugin_base = plugin.to_assets_path();
 
         assets(options, info, name, plugin, &plugin_base)?;
         scripts(options, info, name, plugin, &plugin_base)?;
