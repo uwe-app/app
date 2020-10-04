@@ -88,6 +88,12 @@ pub struct Plugin {
     #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
     pub origins: Option<Vec<Url>>,
 
+    // WARN: the position of this is important. It must be
+    // WARN: before the `library` otherwise we get the TOML
+    // WARN: error: `values must be emitted before tables`.
+    #[serde(flatten)]
+    scope: PluginScope,
+
     /// Collection of features for this plugin.
     pub features: Option<FeatureMap>,
 
@@ -96,25 +102,6 @@ pub struct Plugin {
 
     /// List of third-party libraries the plugin depends on.
     pub library: Option<HashMap<String, ExternalLibrary>>,
-
-    /// List of synthetic assets to include in the project.
-    assets: HashSet<UrlPath>,
-
-    // NOTE: we want to use HashSet for styles and scripts
-    // NOTE: so there are no duplicates but ordering is important
-    // NOTE: for these types so we just use a Vec for now.
-    /// List of stylesheets to add to pages.
-    styles: Vec<StyleAsset>,
-
-    /// List of scripts to add to pages.
-    scripts: Vec<ScriptAsset>,
-
-    /// List of hooks in this plugin.
-    hooks: HookMap,
-
-    /// Collections of partials and layouts
-    #[serde(flatten)]
-    templates: HashMap<TemplateEngine, PluginTemplates>,
 
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
@@ -128,6 +115,7 @@ pub struct Plugin {
     /// A source URL the plugin was loaded from.
     #[serde(skip)]
     source: Option<Url>,
+
 }
 
 impl fmt::Display for Plugin {
@@ -148,13 +136,9 @@ impl Default for Plugin {
             keywords: None,
             kind: None,
             origins: None,
-            assets: HashSet::new(),
-            styles: Vec::new(),
-            scripts: Vec::new(),
-            hooks: Default::default(),
+            scope: Default::default(),
             dependencies: None,
             features: None,
-            templates: HashMap::new(),
             library: None,
             base: PathBuf::from(String::new()),
             checksum: None,
@@ -189,51 +173,51 @@ impl Plugin {
     }
 
     pub fn assets(&self) -> &HashSet<UrlPath> {
-        &self.assets
+        &self.scope.assets
     }
 
     pub fn set_assets(&mut self, assets: HashSet<UrlPath>) {
-        self.assets = assets;
+        self.scope.assets = assets;
     }
 
     pub fn styles(&self) -> &Vec<StyleAsset> {
-        &self.styles
+        &self.scope.styles
     }
 
     pub fn styles_mut(&mut self) -> &mut Vec<StyleAsset> {
-        &mut self.styles
+        &mut self.scope.styles
     }
 
     pub fn set_styles(&mut self, styles: Vec<StyleAsset>) {
-        self.styles = styles;
+        self.scope.styles = styles;
     }
 
     pub fn scripts(&self) -> &Vec<ScriptAsset> {
-        &self.scripts
+        &self.scope.scripts
     }
 
     pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
-        &mut self.scripts
+        &mut self.scope.scripts
     }
 
     pub fn set_scripts(&mut self, scripts: Vec<ScriptAsset>) {
-        self.scripts = scripts;
+        self.scope.scripts = scripts;
     }
 
     pub fn hooks(&self) -> &HookMap {
-        &self.hooks
+        &self.scope.hooks
     }
 
     pub fn hooks_mut(&mut self) -> &mut HookMap {
-        &mut self.hooks
+        &mut self.scope.hooks
     }
 
     pub fn templates(&self) -> &HashMap<TemplateEngine, PluginTemplates> {
-        &self.templates
+        &self.scope.templates
     }
 
     pub fn templates_mut(&mut self) -> &mut HashMap<TemplateEngine, PluginTemplates> {
-        &mut self.templates
+        &mut self.scope.templates
     }
 
     /// Generate a qualified name relative to the plugin name.
@@ -250,6 +234,49 @@ impl Plugin {
     pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
         self.base
             .join(utils::url::to_path_separator(path.trim_start_matches("/")))
+    }
+}
+
+/// A plugin scope encapsulates the references for a plugin
+/// that the application can action (as opposed to plugin
+/// meta data).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct PluginScope {
+    /// List of synthetic assets to include in the project.
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    assets: HashSet<UrlPath>,
+
+    // NOTE: we want to use HashSet for styles and scripts
+    // NOTE: so there are no duplicates but ordering is important
+    // NOTE: for these types so we just use a Vec for now.
+
+    /// List of stylesheets to add to pages.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    styles: Vec<StyleAsset>,
+
+    /// List of scripts to add to pages.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    scripts: Vec<ScriptAsset>,
+
+    /// List of hooks in this plugin.
+    #[serde(skip_serializing_if = "HookMap::is_empty")]
+    hooks: HookMap,
+
+    /// Collections of partials and layouts
+    #[serde(flatten, skip_serializing_if = "HashMap::is_empty")]
+    templates: HashMap<TemplateEngine, PluginTemplates>,
+}
+
+impl Default for PluginScope {
+    fn default() -> Self {
+        Self {
+            assets: HashSet::new(),
+            styles: Vec::new(),
+            scripts: Vec::new(),
+            hooks: Default::default(),
+            templates: HashMap::new(),
+        }
     }
 }
 

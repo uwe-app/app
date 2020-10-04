@@ -72,11 +72,11 @@ pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
         .env("BUILD_HOOK", hook_root.to_string_lossy().into_owned())
         .args(args);
 
-    if hook.stdout.is_some() && hook.stdout.unwrap() {
+    if hook.stdout {
         command.stdout(Stdio::inherit());
     }
 
-    if hook.stderr.is_some() && hook.stderr.unwrap() {
+    if hook.stderr {
         command.stderr(Stdio::inherit());
     }
 
@@ -94,8 +94,8 @@ pub fn collect<'a>(
         .into_iter()
         .filter(|v| {
             let result = match phase {
-                Phase::Before => v.after.is_none(),
-                Phase::After => v.after.is_some() && v.after.unwrap(),
+                Phase::Before => !v.after,
+                Phase::After => v.after,
             };
             result
         })

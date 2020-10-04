@@ -47,6 +47,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         load_engine(&base, &mut computed, &engine);
     }
 
+    println!("{:#?}", computed);
+
     // TODO: support computing for `pages` and `files`
 
     Ok(computed)

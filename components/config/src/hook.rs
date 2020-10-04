@@ -68,11 +68,11 @@ pub struct HookConfig {
     // Command arguments.
     pub args: Option<Vec<String>>,
 
-    pub stdout: Option<bool>,
-    pub stderr: Option<bool>,
+    pub stdout: bool,
+    pub stderr: bool,
 
     // Marks the hook to run after a build
-    pub after: Option<bool>,
+    pub after: bool,
 
     // Only run for these profiles
     pub profiles: Option<Vec<ProfileName>>,
@@ -89,6 +89,7 @@ pub struct HookConfig {
     //
     // When declared on a plugin this should point
     // to th plugin base directory.
+    #[serde(skip)]
     base: PathBuf,
 }
 
@@ -97,9 +98,9 @@ impl Default for HookConfig {
         Self {
             path: String::new(),
             args: None,
-            stdout: Some(true),
-            stderr: Some(true),
-            after: None,
+            stdout: true,
+            stderr: true,
+            after: false,
             profiles: None,
             files: None,
             watch: None,
