@@ -104,7 +104,7 @@ pub struct Plugin {
     // NOTE: so there are no duplicates but ordering is important
     // NOTE: for these types so we just use a Vec for now.
     /// List of stylesheets to add to pages.
-    pub styles: Option<Vec<StyleAsset>>,
+    styles: Vec<StyleAsset>,
 
     /// List of scripts to add to pages.
     pub scripts: Option<Vec<ScriptAsset>>,
@@ -149,7 +149,7 @@ impl Default for Plugin {
             kind: None,
             origins: None,
             assets: HashSet::new(),
-            styles: None,
+            styles: Vec::new(),
             scripts: None,
             hooks: None,
             dependencies: None,
@@ -194,6 +194,18 @@ impl Plugin {
 
     pub fn set_assets(&mut self, assets: HashSet<UrlPath>) {
         self.assets = assets;
+    }
+
+    pub fn styles(&self) -> &Vec<StyleAsset> {
+        &self.styles
+    }
+
+    pub fn styles_mut(&mut self) -> &mut Vec<StyleAsset> {
+        &mut self.styles
+    }
+
+    pub fn set_styles(&mut self, styles: Vec<StyleAsset>) {
+        self.styles = styles;
     }
 
     /// Generate a qualified name relative to the plugin name.

@@ -50,15 +50,13 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
 
     plugin.assets().iter().try_for_each(|u| lint_path(plugin, u))?;
 
-    if let Some(ref styles) = plugin.styles {
-        styles.iter().try_for_each(|s| {
-            if let Some(src) = s.get_source() {
-                let u = UrlPath::from(src);
-                lint_path(plugin, &u)?;
-            }
-            Ok::<(), LintError>(())
-        })?;
-    }
+    plugin.styles().iter().try_for_each(|s| {
+        if let Some(src) = s.get_source() {
+            let u = UrlPath::from(src);
+            lint_path(plugin, &u)?;
+        }
+        Ok::<(), LintError>(())
+    })?;
 
     if let Some(ref scripts) = plugin.scripts {
         scripts.iter().try_for_each(|s| {

@@ -57,12 +57,11 @@ impl PluginCache {
                     utils::url::to_href_separator(plugin.to_assets_path())
                 );
 
-                if plugin.styles.is_some() && !apply.styles_match.is_empty() {
+                if !plugin.styles().is_empty() && !apply.styles_match.is_empty() {
                     // Make style paths relative to the plugin asset destination
                     let styles = plugin
-                        .styles
+                        .styles()
                         .clone()
-                        .unwrap()
                         .into_iter()
                         .map(|mut s| {
                             s.set_source_prefix(&assets_href_base);

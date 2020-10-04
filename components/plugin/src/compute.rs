@@ -84,8 +84,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             })
             .collect::<Vec<_>>();
 
-        let mut existing =
-            computed.styles.clone().unwrap_or(Default::default());
+        let mut existing = computed.styles_mut();
 
         items.append(&mut existing);
 
@@ -100,7 +99,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
         let mut uniques = HashSet::new();
         items.retain(|e| uniques.insert(e.clone()));
 
-        computed.styles = Some(items);
+        computed.set_styles(items);
     }
 }
 

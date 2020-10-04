@@ -83,11 +83,9 @@ fn styles(
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-    if let Some(ref styles) = plugin.styles {
-        for style in styles {
-            if let Some(src) = style.get_source() {
-                create_asset(options, info, name, plugin, plugin_target, src)?;
-            }
+    for style in plugin.styles() {
+        if let Some(src) = style.get_source() {
+            create_asset(options, info, name, plugin, plugin_target, src)?;
         }
     }
     Ok(())
