@@ -94,9 +94,6 @@ pub struct Plugin {
     #[serde(flatten)]
     scope: PluginScope,
 
-    /// Collection of scoped plugins.
-    plugins: HashMap<String, PluginScope>,
-
     /// Collection of features for this plugin.
     pub features: Option<FeatureMap>,
 
@@ -140,7 +137,6 @@ impl Default for Plugin {
             kind: None,
             origins: None,
             scope: Default::default(),
-            plugins: HashMap::new(),
             dependencies: None,
             features: None,
             library: None,
@@ -176,60 +172,49 @@ impl Plugin {
         self.checksum = Some(s.as_ref().to_string());
     }
 
+    /// Access to the plugin scope.
+    pub fn scope(&self) -> &PluginScope {
+        &self.scope
+    }
+
+    /// Mutable access to the plugin scope.
+    pub fn scope_mut(&mut self) -> &mut PluginScope {
+        &mut self.scope
+    }
+
+    /// Convenient proxy access to the scope assets.
     pub fn assets(&self) -> &HashSet<UrlPath> {
-        &self.scope.assets
+        self.scope.assets()
     }
 
-    pub fn set_assets(&mut self, assets: HashSet<UrlPath>) {
-        self.scope.assets = assets;
-    }
-
+    /// Convenient proxy access to the scope styles.
     pub fn styles(&self) -> &Vec<StyleAsset> {
-        &self.scope.styles
+        self.scope.styles()
     }
 
-    pub fn styles_mut(&mut self) -> &mut Vec<StyleAsset> {
-        &mut self.scope.styles
-    }
-
-    pub fn set_styles(&mut self, styles: Vec<StyleAsset>) {
-        self.scope.styles = styles;
-    }
-
+    /// Convenient proxy access to the scope scripts.
     pub fn scripts(&self) -> &Vec<ScriptAsset> {
-        &self.scope.scripts
+        self.scope.scripts()
     }
 
-    pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
-        &mut self.scope.scripts
-    }
-
-    pub fn set_scripts(&mut self, scripts: Vec<ScriptAsset>) {
-        self.scope.scripts = scripts;
-    }
-
+    /// Convenient proxy access to the scope hooks.
     pub fn hooks(&self) -> &HookMap {
-        &self.scope.hooks
+        self.scope.hooks()
     }
 
-    pub fn hooks_mut(&mut self) -> &mut HookMap {
-        &mut self.scope.hooks
-    }
-
+    /// Convenient proxy access to the scope templates.
     pub fn templates(&self) -> &HashMap<TemplateEngine, PluginTemplates> {
-        &self.scope.templates
+        self.scope.templates()
     }
 
-    pub fn templates_mut(&mut self) -> &mut HashMap<TemplateEngine, PluginTemplates> {
-        &mut self.scope.templates
-    }
-
+    /// Collection of scoped plugins.
     pub fn plugins(&self) -> &HashMap<String, PluginScope> {
-        &self.plugins
+        self.scope.plugins()
     }
 
+    /// Mutable collection of scoped plugins.
     pub fn plugins_mut(&mut self) -> &mut HashMap<String, PluginScope> {
-        &mut self.plugins
+        self.scope.plugins_mut()
     }
 
     /// Generate a qualified name relative to the plugin name.
@@ -278,6 +263,10 @@ pub struct PluginScope {
     /// Collections of partials and layouts
     #[serde(flatten, skip_serializing_if = "HashMap::is_empty")]
     templates: HashMap<TemplateEngine, PluginTemplates>,
+
+    /// Collection of scoped plugins.
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    plugins: HashMap<String, PluginScope>,
 }
 
 impl Default for PluginScope {
@@ -288,7 +277,68 @@ impl Default for PluginScope {
             scripts: Vec::new(),
             hooks: Default::default(),
             templates: HashMap::new(),
+            plugins: HashMap::new(),
         }
+    }
+}
+
+impl PluginScope {
+    pub fn assets(&self) -> &HashSet<UrlPath> {
+        &self.assets
+    }
+
+    pub fn set_assets(&mut self, assets: HashSet<UrlPath>) {
+        self.assets = assets;
+    }
+
+    pub fn styles(&self) -> &Vec<StyleAsset> {
+        &self.styles
+    }
+
+    pub fn styles_mut(&mut self) -> &mut Vec<StyleAsset> {
+        &mut self.styles
+    }
+
+    pub fn set_styles(&mut self, styles: Vec<StyleAsset>) {
+        self.styles = styles;
+    }
+
+    pub fn scripts(&self) -> &Vec<ScriptAsset> {
+        &self.scripts
+    }
+
+    pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
+        &mut self.scripts
+    }
+
+    pub fn set_scripts(&mut self, scripts: Vec<ScriptAsset>) {
+        self.scripts = scripts;
+    }
+
+    pub fn hooks(&self) -> &HookMap {
+        &self.hooks
+    }
+
+    pub fn hooks_mut(&mut self) -> &mut HookMap {
+        &mut self.hooks
+    }
+
+    pub fn templates(&self) -> &HashMap<TemplateEngine, PluginTemplates> {
+        &self.templates
+    }
+
+    pub fn templates_mut(&mut self) -> &mut HashMap<TemplateEngine, PluginTemplates> {
+        &mut self.templates
+    }
+
+    /// Collection of scoped plugins.
+    pub fn plugins(&self) -> &HashMap<String, PluginScope> {
+        &self.plugins
+    }
+
+    /// Mutable collection of scoped plugins.
+    pub fn plugins_mut(&mut self) -> &mut HashMap<String, PluginScope> {
+        &mut self.plugins
     }
 }
 

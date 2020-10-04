@@ -54,7 +54,17 @@ impl From<String> for UrlPath {
 impl From<&Path> for UrlPath {
     fn from(p: &Path) -> Self {
         Self {
-            value: p.to_string_lossy().into_owned(),
+            value: utils::url::to_href_separator(
+                p.to_string_lossy().into_owned()),
+        }
+    }
+}
+
+impl From<PathBuf> for UrlPath {
+    fn from(p: PathBuf) -> Self {
+        Self {
+            value: utils::url::to_href_separator(
+                p.to_string_lossy().into_owned()),
         }
     }
 }
