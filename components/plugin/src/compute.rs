@@ -47,8 +47,7 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
         load_engine(&base, &mut computed, &engine);
     }
 
-    //println!("Computed data {:#?}", &computed);
-    //println!("Computed data {}", toml::to_string(&computed)?);
+    // TODO: support computing for `pages` and `files`
 
     Ok(computed)
 }
@@ -165,7 +164,6 @@ fn load_partials(
 ) {
     let ext = OsStr::new(engine.get_raw_extension());
     let files = walk::find(dir, |e| {
-        //true
         if let Some(extension) = e.extension() {
             return extension == ext;
         }
@@ -207,7 +205,6 @@ fn load_layouts(
 
     let ext = OsStr::new(engine.get_raw_extension());
     let files = walk::find(dir, |e| {
-        //true
         if let Some(extension) = e.extension() {
             return extension == ext;
         }

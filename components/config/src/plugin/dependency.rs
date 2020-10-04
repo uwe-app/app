@@ -202,7 +202,7 @@ pub struct Dependency {
     pub apply: Option<Apply>,
 
     /// Grant permissions to the plugin.
-    pub access: Option<HashSet<AccessGrant>>,
+    enable: Option<HashSet<AccessGrant>>,
 }
 
 impl fmt::Display for Dependency {
@@ -218,7 +218,7 @@ impl fmt::Display for Dependency {
 impl Dependency {
     /// Determine if this dependency has the given access granted.
     pub fn grants(&self, access: AccessGrant) -> bool {
-        if let Some(ref grants) = self.access {
+        if let Some(ref grants) = self.enable {
             return grants.contains(&access);
         }
         false

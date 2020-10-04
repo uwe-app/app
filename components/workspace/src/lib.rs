@@ -36,7 +36,7 @@ pub enum Error {
     #[error("Plugin {0} is missing asset file {1}")]
     NoPluginAsset(String, PathBuf),
 
-    #[error("Plugin {0} defines hooks but access is denied {1} (needs `access = [\"hooks\"]`)")]
+    #[error("Plugin {0} defines hooks but access is denied {1} (needs `enable = [\"hooks\"]`)")]
     NoHooksGrant(String, String),
 
     #[error("Plugin {0} references an absolute path {1}")]
