@@ -15,15 +15,13 @@ static NORMALIZED_HEADER: &str = "\
 async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
     let original = read_path(file).await?;
     let mut plugin = original.clone();
-    if let Some(ref mut deps) = plugin.dependencies {
-        for (_, dep) in deps.iter_mut() {
-            if let Some(ref target) = dep.target {
-                match target {
-                    DependencyTarget::File { .. }
-                    | DependencyTarget::Archive { .. }
-                    | DependencyTarget::Repo { .. } => {
-                        dep.target = None;
-                    }
+    for (_, dep) in plugin.dependencies_mut().iter_mut() {
+        if let Some(ref target) = dep.target {
+            match target {
+                DependencyTarget::File { .. }
+                | DependencyTarget::Archive { .. }
+                | DependencyTarget::Repo { .. } => {
+                    dep.target = None;
                 }
             }
         }

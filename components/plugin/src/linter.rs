@@ -130,17 +130,14 @@ fn lint_path(plugin: &Plugin, path: &UrlPath) -> Result<(), LintError> {
 fn lint_features(plugin: &Plugin, map: &FeatureMap) -> Result<(), LintError> {
     let names = map.names();
     'names: for nm in names {
-        if let Some(ref deps) = plugin.dependencies {
-            if deps.contains_key(nm) {
-                let dep = deps.get(nm).unwrap();
-                if !dep.is_optional() {
-                    return Err(LintError::LintFeatureDependencyNotOptional(
-                        nm.to_string(),
-                        dep.to_string(),
-                    ));
-                }
-                continue;
+        if let Some(ref dep) = plugin.dependencies().get(nm) {
+            if !dep.is_optional() {
+                return Err(LintError::LintFeatureDependencyNotOptional(
+                    nm.to_string(),
+                    dep.to_string(),
+                ));
             }
+            continue;
         }
 
         for (_, p) in plugin.plugins() {

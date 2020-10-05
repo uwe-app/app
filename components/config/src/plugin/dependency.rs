@@ -14,8 +14,6 @@ use super::features::{FeatureFlags, FeatureMap};
 
 static FEATURE_STACK_SIZE: usize = 16;
 
-// TODO: spdx license for Plugin and ExternalLibrary
-
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum AccessGrant {
     #[serde(rename = "hooks")]

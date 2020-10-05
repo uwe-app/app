@@ -345,14 +345,14 @@ async fn solver(
 
         let dependencies: DependencyMap = match solved {
             SolvedReference::Plugin(ref mut plugin) => {
-                if let Some(dependencies) = plugin.dependencies.take() {
-                    dependencies
+                if !plugin.dependencies().is_empty() {
+                    plugin.dependencies().clone()
                 } else {
                     Default::default()
                 }
             }
             SolvedReference::Package(ref mut package) => {
-                package.to_dependency_map()
+                package.dependencies().clone()
             }
         };
 

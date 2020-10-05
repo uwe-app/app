@@ -116,7 +116,8 @@ pub struct Plugin {
     templates: HashMap<TemplateEngine, PluginTemplates>,
 
     /// Plugin dependencies.
-    pub dependencies: Option<DependencyMap>,
+    #[serde(flatten, skip_serializing_if = "DependencyMap::is_empty")]
+    dependencies: DependencyMap,
 
     /// Collection of scoped plugins.
     #[serde(skip_serializing_if = "HashMap::is_empty")]
@@ -171,7 +172,7 @@ impl Default for Plugin {
             hooks: Default::default(),
             templates: HashMap::new(),
             plugins: HashMap::new(),
-            dependencies: None,
+            dependencies: Default::default(),
             features: Default::default(),
             library: HashMap::new(),
             base: PathBuf::from(String::new()),
@@ -276,6 +277,16 @@ impl Plugin {
 
     pub fn features_mut(&mut self) -> &mut FeatureMap {
         &mut self.features
+    }
+
+    /// Collection of dependencies.
+    pub fn dependencies(&self) -> &DependencyMap {
+        &self.dependencies
+    }
+
+    /// Mutable collection of dependencies.
+    pub fn dependencies_mut(&mut self) -> &mut DependencyMap {
+        &mut self.dependencies
     }
 
     /// Collection of scoped plugins.

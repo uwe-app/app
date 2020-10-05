@@ -46,7 +46,8 @@ pub struct RegistryItem {
     /// The plugin dependency specifications. We must store these
     /// so the solver can determine nested dependencies before the
     /// plugin has been downloaded and extracted.
-    pub dependencies: Option<DependencyMap>,
+    #[serde(skip_serializing_if = "DependencyMap::is_empty")]
+    pub dependencies: DependencyMap,
 
     /// The feature names that the plugin declares.
     #[serde(skip_serializing_if = "FeatureMap::is_empty")]
@@ -59,18 +60,16 @@ impl Default for RegistryItem {
             name: String::new(),
             version: "0.0.0".parse().unwrap(),
             digest: String::new(),
-            dependencies: None,
+            dependencies: Default::default(),
             features: Default::default(),
         }
     }
 }
 
 impl RegistryItem {
-    pub fn to_dependency_map(&self) -> DependencyMap {
-        if let Some(ref dependencies) = self.dependencies {
-            return dependencies.clone();
-        }
-        Default::default()
+
+    pub fn dependencies(&self) -> &DependencyMap {
+        &self.dependencies
     }
 
     pub fn features(&self) -> &FeatureMap {
@@ -83,9 +82,11 @@ impl From<&Plugin> for RegistryItem {
         let mut item: RegistryItem = Default::default();
         item.name = plugin.name.clone();
         item.version = plugin.version.clone();
-        if let Some(ref dependencies) = plugin.dependencies {
-            item.dependencies = Some(dependencies.clone());
+
+        if !plugin.dependencies().is_empty() {
+            item.dependencies = plugin.dependencies().clone();
         }
+
         if !plugin.features().is_empty() {
             item.features = plugin.features().clone();
         }
