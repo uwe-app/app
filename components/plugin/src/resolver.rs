@@ -25,7 +25,7 @@ use crate::{
 
 static DEPENDENCY_STACK_SIZE: usize = 32;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum SolvedReference {
     /// Local file system packages can be solved to plugins
     /// directly.
@@ -104,6 +104,7 @@ impl<'a> Resolver<'a> {
             &mut self.intermediate,
             &mut self.lock,
             &mut Default::default(),
+            None,
         )
         .await?;
         Ok(self)
@@ -282,6 +283,7 @@ async fn solver(
     intermediate: &mut IntermediateMap,
     lock: &mut ResolverLock,
     stack: &mut Vec<String>,
+    parent: Option<SolvedReference>,
 ) -> Result<()> {
 
     for (name, mut dep) in input.into_iter() {
@@ -368,7 +370,7 @@ async fn solver(
             let dependencies = dependencies.filter(&dep, feature_map)?;
 
             stack.push(name.clone());
-            solver(project, registry, dependencies, intermediate, lock, stack)
+            solver(project, registry, dependencies, intermediate, lock, stack, Some(solved.clone()))
                 .await?;
             stack.pop();
         }
