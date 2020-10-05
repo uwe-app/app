@@ -12,6 +12,8 @@ use config::{
     script::ScriptAsset,
     style::StyleAsset,
     plugin::Plugin,
+    dependency::Dependency,
+    semver::VersionReq,
 };
 
 use utils::walk;
@@ -87,13 +89,21 @@ fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Re
 
                     // NOTE: If a plugin with the same name has already been
                     // NOTE: defined manually then it will take precedence.
-                    scope.plugins_mut().entry(scope_name).or_insert(child_scope);
+                    scope.plugins_mut().entry(scope_name.clone()).or_insert(child_scope);
 
+                    // Create a feature for the scoped plugin
                     let features = scope.features_mut();
                     let features_list = features.entry(feature_name).or_insert(Vec::new());
-                    features_list.push(dependency_name);
+                    features_list.push(dependency_name.clone());
 
-                    // TODO: add a scoped optional dependency!!!
+                    // Create an optional local scoped dependency for the
+                    // plugin so it can be resolved at build time
+                    let version_req = VersionReq::exact(&scope.version);
+                    let dependency = Dependency::new_scope(
+                        scope_name.clone(),
+                        version_req);
+                    scope.dependencies_mut()
+                        .entry(dependency_name).or_insert(dependency);
 
                     stack.pop();
                 }

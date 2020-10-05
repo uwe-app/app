@@ -118,7 +118,7 @@ pub struct Plugin {
     templates: HashMap<TemplateEngine, PluginTemplates>,
 
     /// Plugin dependencies.
-    #[serde(flatten, skip_serializing_if = "DependencyMap::is_empty")]
+    #[serde(skip_serializing_if = "DependencyMap::is_empty")]
     dependencies: DependencyMap,
 
     /// Collection of scoped plugins.

@@ -27,6 +27,11 @@ pub struct DependencyMap {
 }
 
 impl DependencyMap {
+
+    pub fn entry(&mut self, name: String) -> hash_map::Entry<'_, String, Dependency> {
+        self.items.entry(name)
+    }
+
     pub fn into_iter(self) -> hash_map::IntoIter<String, Dependency> {
         self.items.into_iter()
     }
@@ -200,6 +205,20 @@ pub struct Dependency {
 
     /// Grant permissions to the plugin.
     enable: Option<HashSet<AccessGrant>>,
+}
+
+impl Dependency {
+    pub fn new_scope(scope: String, version: VersionReq ) -> Self {
+        Self {
+            version,
+            target: Some(DependencyTarget::Local { scope }),
+            optional: Some(true),
+            name: None,
+            features: None,
+            apply: None,
+            enable: None,
+        }
+    }
 }
 
 impl fmt::Display for Dependency {
