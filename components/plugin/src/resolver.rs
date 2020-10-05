@@ -251,7 +251,7 @@ impl<'a> Resolver<'a> {
             match solved {
                 SolvedReference::Package(ref _package) => {
                     let plugin =
-                        installer::install(&self.project, &self.registry, &dep)
+                        installer::install(&self.project, &self.registry, &dep, None)
                             .await?;
                     self.resolved.push((dep, plugin));
                 }
@@ -421,6 +421,10 @@ async fn resolve_version<P: AsRef<Path>>(
             }
             DependencyTarget::Repo { ref git } => {
                 let plugin = installer::install_repo(project, git).await?;
+                Ok((plugin.version.clone(), None, Some(plugin)))
+            }
+            DependencyTarget::Local { ref scope } => {
+                let plugin = installer::install_local(project, scope, None).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
         }

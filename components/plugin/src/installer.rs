@@ -10,9 +10,10 @@ use url::Url;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
+    plugin::{Plugin, PluginMap},
     registry::RegistryItem,
     semver::{Version, VersionReq},
-    Plugin, PLUGIN,
+    PLUGIN,
 };
 
 use crate::{
@@ -31,6 +32,7 @@ pub async fn install<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
+    locals: Option<PluginMap>,
 ) -> Result<Plugin> {
     let plugin = if let Some(ref target) = dep.target {
         match target {
@@ -42,6 +44,9 @@ pub async fn install<P: AsRef<Path>>(
             }
             DependencyTarget::Repo { ref git } => {
                 install_repo(project, git).await
+            }
+            DependencyTarget::Local { ref scope } => {
+                install_local(project, scope, locals).await
             }
         }
     } else {
@@ -188,6 +193,23 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
     };
 
     return install_path(project, &git_target).await;
+}
+
+pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
+    project: P,
+    scope: S,
+    locals: Option<PluginMap>,
+) -> Result<Plugin> {
+    let scope = scope.as_ref();
+    if let Some(ref collection) = locals {
+        if let Some(plugin) = collection.get(scope) {
+            return Ok(plugin.clone())
+        } else {
+            Err(Error::PluginScopeNotFound(scope.to_string()))
+        }
+    } else {
+        Err(Error::PluginWithNoParentScope(scope.to_string()))
+    }
 }
 
 pub(crate) async fn resolve_package(

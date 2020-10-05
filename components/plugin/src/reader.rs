@@ -23,6 +23,7 @@ async fn normalize_plugin<P: AsRef<Path>>(file: P) -> Result<(Plugin, Plugin)> {
                 | DependencyTarget::Repo { .. } => {
                     dep.target = None;
                 }
+                _ => {}
             }
         }
     }

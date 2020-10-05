@@ -105,6 +105,12 @@ pub enum Error {
     #[error("Package {0} exists but no version found matching {1}")]
     RegistryPackageVersionNotFound(String, String),
 
+    #[error("Attempt to install local scope {0} without a parent plugins collection")]
+    PluginWithNoParentScope(String),
+
+    #[error("The scoped plugin {0} could not be found in the parent plugins collection")]
+    PluginScopeNotFound(String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

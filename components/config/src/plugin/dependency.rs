@@ -166,6 +166,8 @@ pub enum DependencyTarget {
     Archive { archive: PathBuf },
     /// Load plugin from a git repository.
     Repo { git: String },
+    /// Load plugin from a local scope.
+    Local { scope: String },
 }
 
 #[serde_as]

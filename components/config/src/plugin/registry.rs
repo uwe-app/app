@@ -1,11 +1,11 @@
-use std::collections::BTreeMap;
+use std::collections::{HashMap, BTreeMap};
 
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use crate::{dependency::DependencyMap, features::FeatureMap, plugin::Plugin};
+use crate::{dependency::DependencyMap, features::FeatureMap, plugin::{Plugin, PluginMap}};
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -47,7 +47,10 @@ pub struct RegistryItem {
     /// so the solver can determine nested dependencies before the
     /// plugin has been downloaded and extracted.
     #[serde(skip_serializing_if = "DependencyMap::is_empty")]
-    pub dependencies: DependencyMap,
+    dependencies: DependencyMap,
+
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    plugins: PluginMap,
 
     /// The feature names that the plugin declares.
     #[serde(skip_serializing_if = "FeatureMap::is_empty")]
@@ -61,15 +64,19 @@ impl Default for RegistryItem {
             version: "0.0.0".parse().unwrap(),
             digest: String::new(),
             dependencies: Default::default(),
+            plugins: Default::default(),
             features: Default::default(),
         }
     }
 }
 
 impl RegistryItem {
-
     pub fn dependencies(&self) -> &DependencyMap {
         &self.dependencies
+    }
+
+    pub fn plugins(&self) -> &PluginMap {
+        &self.plugins
     }
 
     pub fn features(&self) -> &FeatureMap {
@@ -85,6 +92,10 @@ impl From<&Plugin> for RegistryItem {
 
         if !plugin.dependencies().is_empty() {
             item.dependencies = plugin.dependencies().clone();
+        }
+
+        if !plugin.plugins().is_empty() {
+            item.plugins= plugin.plugins().clone();
         }
 
         if !plugin.features().is_empty() {

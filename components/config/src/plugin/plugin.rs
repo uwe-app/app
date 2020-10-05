@@ -20,6 +20,8 @@ use crate::{
 
 use super::{dependency::DependencyMap, features::FeatureMap};
 
+pub type PluginMap = HashMap<String, Plugin>;
+
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PluginType {
@@ -121,7 +123,7 @@ pub struct Plugin {
 
     /// Collection of scoped plugins.
     #[serde(skip_serializing_if = "HashMap::is_empty")]
-    plugins: HashMap<String, Plugin>,
+    plugins: PluginMap,
 
     /// Plugin features.
     #[serde(skip_serializing_if = "FeatureMap::is_empty")]
