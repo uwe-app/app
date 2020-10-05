@@ -197,6 +197,12 @@ impl Plugin {
         }
     }
 
+    pub fn parent(&self) -> String {
+        let mut parts = self.name.split(crate::PLUGIN_NS).collect::<Vec<_>>();
+        parts.pop();
+        parts.join(crate::PLUGIN_NS)
+    }
+
     pub fn base(&self) -> &PathBuf {
         &self.base
     }

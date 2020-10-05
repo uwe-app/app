@@ -167,9 +167,52 @@ impl<'a> Resolver<'a> {
             info!("Writing lock file {}", self.lock.path.display());
             // FIXME: restore writing out the new lock file
             //self.lock.target.write(&self.lock.path)?;
+
+            // Update local scoped plugins with correct attributes
+            self.scopes()?;
         }
 
         Ok(self)
+    }
+
+    fn scopes(&mut self) -> Result<()> {
+        let scoped = self.resolved
+            .iter()
+            .enumerate()
+            .filter(|(i, (d, _))| d.target.is_some())
+            .filter(|(i, (d, _))| {
+                if let DependencyTarget::Local { ref scope } = d.target.as_ref().unwrap() {
+                    true
+                } else { false }
+            })
+            .collect::<Vec<_>>();
+
+        let scoped = scoped
+            .into_iter()
+            .map(|(i, (dep, plugin))| {
+                let parent_name = plugin.parent();
+                let parent = self.resolved
+                    .iter()
+                    .cloned()
+                    .map(|(_, e)| e)
+                    .find(|e| e.name == parent_name);
+
+                (i, (plugin.clone(), parent))
+            })
+            .collect::<Vec<_>>();
+
+        for (index, (plugin, parent)) in scoped {
+            let parent = parent.as_ref().ok_or_else(
+                || Error::PluginParentNotFound(plugin.parent(), plugin.name))?;
+
+            //println!("Got scoped at {}", index);
+            //println!("Got scoped name {}", &plugin.name);
+            //println!("Got scoped parent name {:?}", &parent);
+            let (_, plugin) = self.resolved.get_mut(index).unwrap();
+            installer::update_local(plugin, parent)?;
+        }
+
+        Ok(())
     }
 
     async fn refresh(
@@ -309,7 +352,7 @@ async fn solver(
             .unwrap_or(Default::default());
 
         let (version, mut package, mut plugin) =
-            resolve_version(project, registry, &dep).await?;
+            resolve_version(project, registry, &dep, &parent).await?;
 
         let checksum = if let Some(ref pkg) = package {
             Some(pkg.digest.clone())
@@ -408,6 +451,7 @@ async fn resolve_version<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
+    parent: &Option<SolvedReference>,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
 
     if let Some(ref target) = dep.target {
@@ -426,7 +470,23 @@ async fn resolve_version<P: AsRef<Path>>(
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Local { ref scope } => {
-                let plugin = installer::install_local(project, scope, None).await?;
+
+                let locals = if let Some(ref parent) = parent {
+                    match parent {
+                        SolvedReference::Plugin(ref plugin) => {
+                            plugin.plugins().clone()
+                        }
+                        SolvedReference::Package(ref package) => {
+                           package.plugins().clone()
+                        }
+                    }
+                } else {
+                    return Err(
+                        Error::PluginScopeRequiresParent(
+                            dep.to_string(), scope.to_string()))
+                };
+
+                let plugin = installer::install_local(project, scope, Some(locals)).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
         }

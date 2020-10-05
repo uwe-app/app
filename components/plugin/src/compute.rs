@@ -27,14 +27,15 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 
     let mut stack: Vec<PathBuf> = Vec::new();
 
-    load_scope(base, &mut computed, &mut stack)?;
+    let prefix = PathBuf::new();
+    load_scope(base, prefix, &mut computed, &mut stack)?;
 
     //println!("{:#?}", computed);
 
     Ok(computed)
 }
 
-fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Result<()> {
+fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Result<()> {
 
     // FIXME: check for maximum stack size
     // FIXME: check for cyclic plugins
@@ -46,26 +47,26 @@ fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Re
     let plugins = base.join(config::PLUGINS);
 
     if assets.exists() && assets.is_dir() {
-        load_assets(&base, &assets, scope);
+        load_assets(&base, &prefix, &assets, scope);
     }
 
     // Fonts just get placed in the assets collection, this
     // convention is for convenience so plugin authors can
     // be more explicit using the file system layout.
     if fonts.exists() && fonts.is_dir() {
-        load_assets(&base, &fonts, scope);
+        load_assets(&base, &prefix, &fonts, scope);
     }
 
     if styles.exists() && styles.is_dir() {
-        load_styles(&base, &styles, scope);
+        load_styles(&base, &prefix, &styles, scope);
     }
 
     if scripts.exists() && scripts.is_dir() {
-        load_scripts(&base, &scripts, scope);
+        load_scripts(&base, &prefix, &scripts, scope);
     }
 
     for engine in ENGINES.iter() {
-        load_engine(&base, &engine, scope);
+        load_engine(&base, &prefix, &engine, scope);
     }
 
     if plugins.exists() && plugins.is_dir() {
@@ -82,7 +83,7 @@ fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Re
                     let mut child_scope: Plugin = Plugin::new_scope(scope, &scope_name, prefix);
 
                     stack.push(scope_base.clone());
-                    load_scope(scope_base, &mut child_scope, stack)?;
+                    load_scope(scope_base, scope_prefix, &mut child_scope, stack)?;
 
                     let feature_name = scope_name.clone();
                     let dependency_name = child_scope.name.clone();
@@ -116,13 +117,13 @@ fn load_scope(base: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Re
     Ok(())
 }
 
-fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
+fn load_assets(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plugin) {
     let files = walk::find(dir, |_| true);
     if !files.is_empty() {
         let items = files
             .iter()
             .filter(|e| e.is_file())
-            .map(|e| UrlPath::from(e.strip_prefix(&base).unwrap()))
+            .map(|e| UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())))
             .collect::<HashSet<_>>();
 
         let existing = computed.assets();
@@ -131,7 +132,7 @@ fn load_assets(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
     }
 }
 
-fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
+fn load_styles(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plugin) {
     let ext = OsStr::new("css");
     let files = walk::find(dir, |e| {
         if let Some(extension) = e.extension() {
@@ -144,7 +145,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                StyleAsset::from(UrlPath::from(e.strip_prefix(&base).unwrap()))
+                StyleAsset::from(UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())))
             })
             .collect::<Vec<_>>();
 
@@ -167,7 +168,7 @@ fn load_styles(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
     }
 }
 
-fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
+fn load_scripts(base: &PathBuf, prefix: &PathBuf, dir: &Path, computed: &mut Plugin) {
     let ext = OsStr::new("js");
     let files = walk::find(dir, |e| {
         if let Some(extension) = e.extension() {
@@ -180,7 +181,7 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
             .iter()
             .filter(|e| e.is_file())
             .map(|e| {
-                ScriptAsset::from(UrlPath::from(e.strip_prefix(&base).unwrap()))
+                ScriptAsset::from(UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())))
             })
             .collect::<Vec<_>>();
 
@@ -204,21 +205,23 @@ fn load_scripts(base: &PathBuf, dir: &Path, computed: &mut Plugin) {
 
 fn load_engine(
     base: &PathBuf,
+    prefix: &PathBuf,
     engine: &TemplateEngine,
     computed: &mut Plugin,
 ) {
     let partials = base.join(config::PARTIALS);
     let layouts = base.join(config::LAYOUTS);
     if partials.exists() && partials.is_dir() {
-        load_partials(base, &partials, engine, computed);
+        load_partials(base, prefix, &partials, engine, computed);
     }
     if layouts.exists() && layouts.is_dir() {
-        load_layouts(base, &layouts, engine, computed);
+        load_layouts(base, prefix, &layouts, engine, computed);
     }
 }
 
 fn load_partials(
     base: &PathBuf,
+    prefix: &PathBuf,
     dir: &Path,
     engine: &TemplateEngine,
     computed: &mut Plugin,
@@ -240,7 +243,7 @@ fn load_partials(
             engine_templates.partials.get_or_insert(Default::default());
         files.iter().filter(|e| e.is_file()).for_each(|e| {
             let mut tpl = TemplateAsset {
-                file: UrlPath::from(e.strip_prefix(&base).unwrap()),
+                file: UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())),
                 schema: None,
             };
             let key = e.file_stem().unwrap().to_string_lossy().into_owned();
@@ -249,7 +252,7 @@ fn load_partials(
             s.set_extension(config::JSON);
             if s.exists() && s.is_file() {
                 tpl.schema =
-                    Some(UrlPath::from(s.strip_prefix(&base).unwrap()));
+                    Some(UrlPath::from(prefix.join(s.strip_prefix(&base).unwrap())));
             }
 
             partials.entry(key).or_insert(tpl);
@@ -259,6 +262,7 @@ fn load_partials(
 
 fn load_layouts(
     base: &PathBuf,
+    prefix: &PathBuf,
     dir: &Path,
     engine: &TemplateEngine,
     computed: &mut Plugin,
@@ -281,7 +285,7 @@ fn load_layouts(
             engine_templates.layouts.get_or_insert(Default::default());
         files.iter().filter(|e| e.is_file()).for_each(|e| {
             let tpl = TemplateAsset {
-                file: UrlPath::from(e.strip_prefix(&base).unwrap()),
+                file: UrlPath::from(prefix.join(e.strip_prefix(&base).unwrap())),
                 schema: None,
             };
             let key = e.file_stem().unwrap().to_string_lossy().into_owned();
