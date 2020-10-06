@@ -92,24 +92,6 @@ async fn main() -> Result<()> {
         fatal(e);
     }
 
-    //match &*root_args.log_level {
-        //"trace" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        //"debug" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        //"info" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        //"warn" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        //"error" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        //_ => {
-            //// Jump a few hoops to pretty print this message
-            //let level = &root_args.log_level;
-            //env::set_var(LOG_ENV_NAME, "error");
-            //pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-            //fatal(Error::UnknownLogLevel(level.to_string()));
-            //return Ok(());
-        //}
-    //}
-
-    //pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-
     if let Err(e) = process_command(root_args.cmd).await {
         fatal(e);
     }
