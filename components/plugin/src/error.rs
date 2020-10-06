@@ -58,11 +58,17 @@ pub enum Error {
     #[error("Cyclic dependency {0}")]
     CyclicDependency(String),
 
+    #[error("Cyclic plugin {0}")]
+    CyclicPlugin(PathBuf),
+
     #[error("Could not parse git repository URL ({0})")]
     GitUrl(url::ParseError),
 
     #[error("Dependency stack depth has exceeded the maximum {0}")]
     DependencyStackTooLarge(usize),
+
+    #[error("Plugin stack depth has exceeded the maximum {0}")]
+    PluginStackTooLarge(usize),
 
     #[error("Plugin path {0} does not exist")]
     BadPluginPath(PathBuf),

@@ -18,7 +18,9 @@ use config::{
 
 use utils::walk;
 
-use crate::Result;
+use crate::{Error, Result};
+
+static PLUGIN_STACK_SIZE: usize = 8;
 
 /// Compute plugin information by convention from the file system.
 pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
@@ -37,8 +39,11 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 
 fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut Plugin, stack: &mut Vec<PathBuf>) -> Result<()> {
 
-    // FIXME: check for maximum stack size
-    // FIXME: check for cyclic plugins
+    if stack.len() > PLUGIN_STACK_SIZE {
+        return Err(Error::PluginStackTooLarge(PLUGIN_STACK_SIZE));
+    } else if stack.contains(&base) {
+        return Err(Error::CyclicPlugin(base));
+    }
 
     let assets = base.join(config::ASSETS);
     let fonts = base.join(config::FONTS);
