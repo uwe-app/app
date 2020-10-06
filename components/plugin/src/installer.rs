@@ -21,9 +21,9 @@ use crate::{
     Result,
 };
 
-//static REGISTRY: &str = "https://registry.hypertext.live";
+//static REGISTRY: &str = "https://registry.uwe.app";
 static REGISTRY: &str =
-    "https://s3-ap-southeast-1.amazonaws.com/registry.hypertext.live";
+    "https://s3-ap-southeast-1.amazonaws.com/registry.uwe.app";
 
 static GIT_SCHEME: &str = "git";
 static FILE_SCHEME: &str = "file";

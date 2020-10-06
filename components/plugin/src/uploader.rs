@@ -7,7 +7,7 @@ use scopeguard::defer;
 use config::plugin::Plugin;
 
 use crate::{
-    linter::lint_plugin, packager, reader::read, registry, registry::RegistryAccess,
+    linter::lint, packager, registry, registry::RegistryAccess,
     Error, Result,
 };
 
@@ -38,8 +38,8 @@ async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
 
 /// Publish a plugin.
 pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
-    let plugin = read(source).await?;
-    lint_plugin(&plugin)?;
+    let plugin = lint(source).await?;
+    //lint_plugin(&plugin)?;
 
     let registry_path = option_env!("AB_PUBLISH")
         .expect("Publish registry path environment variable not set");
