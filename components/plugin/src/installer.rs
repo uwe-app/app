@@ -225,7 +225,7 @@ pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
     }
 }
 
-pub(crate) fn update_local(local: &mut Plugin, parent: &Plugin) -> Result<()> {
+pub(crate) fn inherit(local: &mut Plugin, parent: &Plugin) -> Result<()> {
     local.set_source(PluginSource::Local(local.name.clone()));
     local.set_base(parent.base().clone());
     Ok(())

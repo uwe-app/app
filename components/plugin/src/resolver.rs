@@ -208,7 +208,7 @@ impl<'a> Resolver<'a> {
             //println!("Got scoped name {}", &plugin.name);
             //println!("Got scoped parent name {:?}", &parent);
             let (_, plugin) = self.resolved.get_mut(index).unwrap();
-            installer::update_local(plugin, parent)?;
+            installer::inherit(plugin, parent)?;
         }
 
         Ok(())
@@ -366,16 +366,6 @@ async fn solver(
                     dependencies: None,
                 }
             );
-
-        //if entry == LockFileEntry::default() {
-            //entry = LockFileEntry {
-                //name: name.to_string(),
-                //version: version.clone(),
-                //checksum,
-                //source: None,
-                //dependencies: None,
-            //}
-        //}
 
         let mut solved = if let Some(plugin) = plugin.take() {
             // TODO: ensure this is set for SolvedReference::Package
