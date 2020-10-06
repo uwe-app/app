@@ -18,9 +18,49 @@ use crate::{
     style::StyleAsset, ASSETS, PLUGINS,
 };
 
-use super::{dependency::DependencyMap, features::FeatureMap};
+use crate::{dependency::DependencyMap, features::FeatureMap, Result};
 
 pub type PluginMap = HashMap<String, Plugin>;
+
+#[derive(Debug, Clone)]
+pub enum PluginSource {
+    File(PathBuf),
+    Archive(PathBuf),
+    Repo(Url),
+    Local(String),
+    Registry(Url),
+}
+
+impl PluginSource {
+    pub fn to_url(&self) -> Result<Url> {
+        match *self {
+            Self::File(ref path) => {
+                let url_target =
+                    format!("{}{}",
+                        crate::SCHEME_FILE,
+                        utils::url::to_href_separator(path));
+                Ok(url_target.parse()?)
+            }
+            Self::Archive(ref path) => {
+                let url_target =
+                    format!("{}{}",
+                        crate::SCHEME_TAR_LZMA,
+                        utils::url::to_href_separator(path));
+                Ok(url_target.parse()?)
+            }
+            Self::Repo(ref url) | Self::Registry(ref url) => {
+                Ok(url.clone())
+            }
+            Self::Local(ref name) => {
+                // TODO: url encoding the name?
+                let url_target =
+                    format!("{}{}", crate::SCHEME_PLUGIN, name);
+                Ok(url_target.parse()?)
+            }
+        }
+
+    }
+}
 
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -147,7 +187,7 @@ pub struct Plugin {
 
     /// A source URL the plugin was loaded from.
     #[serde(skip)]
-    source: Option<Url>,
+    source: Option<PluginSource>,
 }
 
 impl fmt::Display for Plugin {
@@ -203,6 +243,11 @@ impl Plugin {
         parts.join(crate::PLUGIN_NS)
     }
 
+    //pub fn local_name(&self) -> String {
+        //let mut parts = self.name.split(crate::PLUGIN_NS).collect::<Vec<_>>();
+        //parts.pop()
+    //}
+
     pub fn base(&self) -> &PathBuf {
         &self.base
     }
@@ -211,11 +256,11 @@ impl Plugin {
         self.base = p.as_ref().to_path_buf();
     }
 
-    pub fn source(&self) -> &Option<Url> {
+    pub fn source(&self) -> &Option<PluginSource> {
         &self.source
     }
 
-    pub fn set_source(&mut self, u: Url) {
+    pub fn set_source(&mut self, u: PluginSource) {
         self.source = Some(u);
     }
 

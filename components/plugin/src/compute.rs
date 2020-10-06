@@ -41,8 +41,6 @@ fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut Plugin, stack: &mut Ve
 
     if stack.len() > PLUGIN_STACK_SIZE {
         return Err(Error::PluginStackTooLarge(PLUGIN_STACK_SIZE));
-    } else if stack.contains(&base) {
-        return Err(Error::CyclicPlugin(base));
     }
 
     let assets = base.join(config::ASSETS);
@@ -83,6 +81,11 @@ fn load_scope(base: PathBuf, prefix: PathBuf, scope: &mut Plugin, stack: &mut Ve
                     let scope_name = slugify(dir_name);
 
                     let scope_base = path.to_path_buf().canonicalize()?;
+
+                    if stack.contains(&scope_base) {
+                        return Err(Error::CyclicPlugin(base));
+                    }
+
                     let scope_prefix = scope_base.strip_prefix(&base)?.to_path_buf();
                     let prefix = UrlPath::from(&scope_prefix);
                     let mut child_scope: Plugin = Plugin::new_scope(scope, &scope_name, prefix);

@@ -11,8 +11,7 @@ use config::{
     features::FeatureMap,
     lock_file::LockFile,
     lock_file::LockFileEntry,
-    plugin::Plugin,
-    plugin::ResolvedPlugins,
+    plugin::{Plugin, PluginSource, ResolvedPlugins},
     registry::RegistryItem,
     semver::Version,
 };
@@ -153,8 +152,8 @@ impl<'a> Resolver<'a> {
         self.resolved.append(&mut done);
 
         if !difference.is_empty() {
-            info!("Update registry cache");
-            cache::update(vec![cache::CacheComponent::Runtime])?;
+            //info!("Update registry cache");
+            //cache::update(vec![cache::CacheComponent::Runtime])?;
 
             // Refresh the lock file entries in case we can resolve
             // newer versions from the updated registry information
@@ -338,6 +337,15 @@ async fn solver(
 
         dep.name = Some(name.clone());
 
+        let (version, mut package, mut plugin) =
+            resolve_version(project, registry, &dep, &parent).await?;
+
+        let checksum = if let Some(ref pkg) = package {
+            Some(pkg.digest.clone())
+        } else {
+            None
+        };
+
         let mut entry = lock
             .current
             .package
@@ -349,30 +357,32 @@ async fn solver(
                 None
             })
             .map(|e| e.clone())
-            .unwrap_or(Default::default());
+            .unwrap_or(
+                LockFileEntry {
+                    name: name.to_string(),
+                    version: version.clone(),
+                    checksum,
+                    source: None,
+                    dependencies: None,
+                }
+            );
 
-        let (version, mut package, mut plugin) =
-            resolve_version(project, registry, &dep, &parent).await?;
-
-        let checksum = if let Some(ref pkg) = package {
-            Some(pkg.digest.clone())
-        } else {
-            None
-        };
-
-        if entry == LockFileEntry::default() {
-            entry = LockFileEntry {
-                name: name.to_string(),
-                version: version.clone(),
-                checksum,
-                source: None,
-                dependencies: None,
-            }
-        }
+        //if entry == LockFileEntry::default() {
+            //entry = LockFileEntry {
+                //name: name.to_string(),
+                //version: version.clone(),
+                //checksum,
+                //source: None,
+                //dependencies: None,
+            //}
+        //}
 
         let mut solved = if let Some(plugin) = plugin.take() {
+            // TODO: ensure this is set for SolvedReference::Package
             if let Some(ref source) = plugin.source() {
-                entry.source.get_or_insert(source.clone());
+                if let PluginSource::Registry(ref url) = source {
+                    entry.source.get_or_insert(url.clone());
+                }
             }
             if let Some(ref checksum) = plugin.checksum() {
                 entry.checksum.get_or_insert(checksum.clone());
@@ -385,8 +395,6 @@ async fn solver(
         };
 
         check(&name, &dep, &solved)?;
-
-        // FIXME: filter out based on dependency features
 
         let dependencies: DependencyMap = match solved {
             SolvedReference::Plugin(ref mut plugin) => {
@@ -410,11 +418,20 @@ async fn solver(
                 SolvedReference::Package(ref package) => package.features(),
             };
 
+            // Filter nested dependencies to resolve depending upon the
+            // requested and declared features.
             let dependencies = dependencies.filter(&dep, feature_map)?;
 
             stack.push(name.clone());
-            solver(project, registry, dependencies, intermediate, lock, stack, Some(solved.clone()))
-                .await?;
+            solver(
+                project,
+                registry,
+                dependencies,
+                intermediate,
+                lock,
+                stack,
+                Some(solved.clone()),
+            ).await?;
             stack.pop();
         }
 
@@ -457,7 +474,7 @@ async fn resolve_version<P: AsRef<Path>>(
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
-                let plugin = installer::install_path(project, path).await?;
+                let plugin = installer::install_path(project, path, None).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {

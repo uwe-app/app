@@ -10,7 +10,7 @@ use url::Url;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
-    plugin::{Plugin, PluginMap},
+    plugin::{Plugin, PluginMap, PluginSource},
     registry::RegistryItem,
     semver::{Version, VersionReq},
     PLUGIN,
@@ -37,7 +37,7 @@ pub async fn install<P: AsRef<Path>>(
     let plugin = if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
-                install_path(project, path).await
+                install_path(project, path, None).await
             }
             DependencyTarget::Archive { ref archive } => {
                 install_archive(project, archive).await
@@ -94,14 +94,22 @@ async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(
 pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
     path: F,
+    source: Option<PluginSource>,
 ) -> Result<Plugin> {
 
     let (target, mut plugin) =
         install_file(project.as_ref(), path).await?;
 
-    let url_target =
-        format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
-    let source: Url = url_target.parse()?;
+    //let url_target =
+        //format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
+    //let source: Url = url_target.parse()?;
+
+    let source = if let Some(ref source) = source {
+        source.clone()
+    } else {
+        PluginSource::File(target.to_path_buf())
+    };
+
     attributes(&mut plugin, &target, source, None)?;
 
     compute::transform(&plugin).await
@@ -145,8 +153,11 @@ pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
             .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
-    let url_target = format!("tar:{}", utils::url::to_href_separator(&file));
-    let source: Url = url_target.parse()?;
+
+    let source = PluginSource::Archive(file.to_path_buf());
+
+    //let url_target = format!("tar:{}", utils::url::to_href_separator(&file));
+    //let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
     Ok(plugin)
 }
@@ -164,7 +175,8 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
         let path = urlencoding::decode(git_url.path())?;
         let repo_path = Path::new(&path);
         let _ = git::open_repo(&repo_path)?;
-        return install_path(project, &repo_path).await;
+        let source = Some(PluginSource::File(repo_path.to_path_buf()));
+        return install_path(project, &repo_path, source).await;
     }
 
     let host = if let Some(host) = git_url.host_str() {
@@ -192,7 +204,8 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
         git::clone(&git_url, &git_target)?
     };
 
-    return install_path(project, &git_target).await;
+    let source = Some(PluginSource::Repo(git_url));
+    return install_path(project, &git_target, source).await;
 }
 
 pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
@@ -213,8 +226,7 @@ pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
 }
 
 pub(crate) fn update_local(local: &mut Plugin, parent: &Plugin) -> Result<()> {
-    // TODO: SET PLUGIN SOURCE!
-
+    local.set_source(PluginSource::Local(local.name.clone()));
     local.set_base(parent.base().clone());
     Ok(())
 }
@@ -256,7 +268,7 @@ pub(crate) async fn get_cached<P: AsRef<Path>>(
     if extract_target_plugin.exists() {
         let (target, mut plugin) =
             install_file(project, &extract_target).await?;
-        let source: Url = REGISTRY.parse()?;
+        let source = PluginSource::Registry(REGISTRY.parse()?);
         attributes(&mut plugin, &target, source, Some(&package.digest))?;
         return Ok(Some(plugin));
     }
@@ -274,7 +286,7 @@ fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
 fn attributes(
     plugin: &mut Plugin,
     base: &PathBuf,
-    source: Url,
+    source: PluginSource,
     digest: Option<&str>,
 ) -> Result<()> {
     plugin.set_base(base);
@@ -368,7 +380,7 @@ async fn install_registry<P: AsRef<Path>>(
     .await?;
 
     let (_target, _digest, mut plugin) = reader.into_inner();
-    let source: Url = REGISTRY.parse()?;
+    let source = PluginSource::Registry(REGISTRY.parse()?);
     attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
     Ok(plugin)
 }

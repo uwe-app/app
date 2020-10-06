@@ -84,6 +84,10 @@ pub static SCHEME_DELIMITER: &str = "//";
 pub static SCHEME_WSS: &str = "wss:";
 pub static SCHEME_WS: &str = "ws:";
 
+pub static SCHEME_FILE: &str = "file:";
+pub static SCHEME_TAR_LZMA: &str = "tar+xz:";
+pub static SCHEME_PLUGIN: &str = "plugin:";
+
 pub static PLUGIN: &str = "plugin.toml";
 pub static PLUGIN_NS: &str = "::";
 
