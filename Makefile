@@ -26,16 +26,6 @@ all: init site-release
 docs:
 	@cargo doc --open --no-deps --lib --workspace
 
-init-newcss:
-	@rm -rf ./build/init-newcss
-	@cargo run -- init ./build/init-newcss style/newcss
-	@cargo run -- build ./build/init-newcss
-
-init-newcss-open: init-newcss
-	@(cd ./build/init-newcss && cargo run -- build --live)
-
-init: init-newcss
-
 build-release:
 	@cargo build --release --bin=ht
 
