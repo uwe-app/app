@@ -1289,47 +1289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hypertext"
-version = "0.30.0"
-dependencies = [
- "cache",
- "compiler",
- "config",
- "datasource",
- "dirs 0.1.0",
- "futures",
- "git",
- "hex",
- "human_bytes",
- "livereload",
- "locale",
- "log",
- "notify",
- "once_cell",
- "open",
- "plugin",
- "preference",
- "pretty_env_logger",
- "publisher",
- "report",
- "scopeguard",
- "semver 0.10.0",
- "serde",
- "serde_json",
- "server",
- "site",
- "structopt",
- "thiserror",
- "tokio",
- "toml",
- "updater",
- "url",
- "utils",
- "warp",
- "workspace",
-]
-
-[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1401,16 +1360,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19a8a95243d5a0398cae618ec29477c6e3cb631152be5c19481f80bc71559754"
 dependencies = [
  "bytes",
-]
-
-[[package]]
-name = "installer"
-version = "0.1.0"
-dependencies = [
- "log",
- "pretty_env_logger",
- "structopt",
- "updater",
 ]
 
 [[package]]
@@ -3757,6 +3706,47 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "uwe"
+version = "0.30.0"
+dependencies = [
+ "cache",
+ "compiler",
+ "config",
+ "datasource",
+ "dirs 0.1.0",
+ "futures",
+ "git",
+ "hex",
+ "human_bytes",
+ "livereload",
+ "locale",
+ "log",
+ "notify",
+ "once_cell",
+ "open",
+ "plugin",
+ "preference",
+ "pretty_env_logger",
+ "publisher",
+ "report",
+ "scopeguard",
+ "semver 0.10.0",
+ "serde",
+ "serde_json",
+ "server",
+ "site",
+ "structopt",
+ "thiserror",
+ "tokio",
+ "toml",
+ "updater",
+ "url",
+ "utils",
+ "warp",
+ "workspace",
 ]
 
 [[package]]

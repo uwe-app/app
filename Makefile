@@ -9,13 +9,12 @@ ifeq ($(HOST_OS),darwin)
 	HOST_OS = macos
 endif
 
-INSTALLER_BIN = hypertext-installer
-BUNDLER_BIN = ht-bundle
+INSTALLER_BIN = uwe-installer
 RELEASE_ROOT = ../release
 RELEASE_REPO = $(RELEASE_ROOT)/$(HOST_OS)
 
 VERSION_INFO := $(shell cargo run -- --version)
-VERSION := $(subst hypertext ,,$(VERSION_INFO))
+VERSION := $(subst uwe ,,$(VERSION_INFO))
 VERSION_TAG := "v$(VERSION)"
 VERSION_FILE = $(RELEASE_REPO)/version.toml
 
@@ -64,7 +63,7 @@ release: build-release current
 	@(cd $(RELEASE_REPO) && git tag -f $(VERSION_TAG) && git push origin master --tags --force)
 
 install: build-release
-	@mkdir -p $(HOME)/.hypertext/bin
-	@cp -f target/release/ht $(HOME)/.hypertext/bin
+	@mkdir -p $(HOME)/.uwe/bin
+	@cp -f target/release/ht $(HOME)/.uwe/bin
 
 .PHONY: all site-release install release

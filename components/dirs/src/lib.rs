@@ -2,7 +2,7 @@ pub use home;
 use std::io;
 use std::path::PathBuf;
 
-static ROOT_DIR: &str = ".hypertext";
+static ROOT_DIR: &str = ".uwe";
 
 pub fn get_root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();

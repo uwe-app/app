@@ -8,7 +8,7 @@ use structopt::StructOpt;
 use updater;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "hypertext-installer", version = "1.0.0")]
+#[structopt(name = "uwe-installer", version = "1.0.0")]
 struct Cli {}
 
 fn fatal(e: &str) {

@@ -1,11 +1,11 @@
 [package]
-name = "hypertext"
+name = "uwe"
 version = "0.30.0"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Fast and lean static site generator"
 repository = "https://github.com/uwe-app/app"
 edition = "2018"
-default-run = "ht"
+default-run = "uwe"
 
 [workspace]
 members = [
@@ -17,7 +17,6 @@ members = [
   "components/dirs",
   "components/frontmatter",
   "components/git",
-  "components/installer",
   "components/livereload",
   "components/locale",
   "components/minify",

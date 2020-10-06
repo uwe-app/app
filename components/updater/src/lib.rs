@@ -54,13 +54,13 @@ pub fn version() -> Result<(PathBuf, VersionInfo)> {
 
 #[cfg(unix)]
 pub fn get_source_env() -> String {
-    format!("source $HOME/.hypertext/env\n")
+    format!("source $HOME/.uwe/env\n")
 }
 
 #[cfg(windows)]
 pub fn get_source_env() -> String {
     println!("TODO: handle source env file for windows");
-    format!("source $HOME/.hypertext/env\n")
+    format!("source $HOME/.uwe/env\n")
 }
 
 // TODO: switch this for windows too!

@@ -62,7 +62,7 @@ Note that if the release tag already exists it is overwritten.
 To run the installer locally:
 
 ```
-cargo run --bin=hypertext-installer --
+cargo run --bin=uwe-installer --
 ```
 
 To build the installer and copy the files to the website:

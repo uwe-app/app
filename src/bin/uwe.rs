@@ -18,10 +18,10 @@ use config::{
 };
 use publisher::PublishProvider;
 
-use ht::{Result, Error};
-use hypertext as ht;
+use uwe::{Result, Error};
+use uwe as we;
 
-const LOG_ENV_NAME: &'static str = "HYPERTEXT_LOG";
+const LOG_ENV_NAME: &'static str = "UWE_LOG";
 
 fn get_server_config(
     target: &PathBuf,
@@ -75,12 +75,12 @@ fn compiler_error(e: &compiler::Error) {
     error!("{}", e);
 }
 
-fn print_error(e: hypertext::Error) {
+fn print_error(e: uwe::Error) {
     match e {
-        hypertext::Error::Compiler(ref e) => {
+        uwe::Error::Compiler(ref e) => {
             return compiler_error(e);
         }
-        hypertext::Error::Workspace(ref e) => match e {
+        uwe::Error::Workspace(ref e) => match e {
             workspace::Error::Compiler(ref e) => {
                 return compiler_error(e);
             }
@@ -91,7 +91,7 @@ fn print_error(e: hypertext::Error) {
     error!("{}", e);
 }
 
-fn fatal(e: hypertext::Error) {
+fn fatal(e: uwe::Error) {
     print_error(e);
     std::process::exit(1);
 }
@@ -111,8 +111,8 @@ fn get_project_path(input: &PathBuf) -> Result<PathBuf> {
 }
 
 #[derive(Debug, StructOpt)]
-/// Fast and elegant site generator
-#[structopt(name = "hypertext")]
+/// Universal web editor
+#[structopt(name = "uwe")]
 struct Cli {
     /// Log level
     #[structopt(long, default_value = "info")]
@@ -347,7 +347,7 @@ impl Command {
 async fn process_command(cmd: Command) -> Result<()> {
     match cmd {
         Command::Init { ref args } => {
-            let opts = ht::init::InitOptions {
+            let opts = we::init::InitOptions {
                 source: args.source.clone(),
                 message: args.message.clone(),
                 target: args.target.clone(),
@@ -355,20 +355,20 @@ async fn process_command(cmd: Command) -> Result<()> {
                 host: args.host.clone(),
                 locales: args.locales.clone(),
             };
-            ht::init::init(opts)?;
+            we::init::init(opts)?;
         }
         Command::Upgrade { ref args } => {
-            ht::upgrade::try_upgrade(args.runtime)?;
+            we::upgrade::try_upgrade(args.runtime)?;
         }
         Command::Docs { ref args } => {
-            let target = ht::docs::get_target().await?;
+            let target = we::docs::get_target().await?;
             let opts = get_server_config(
                 &target,
                 &args.server,
                 config::PORT_DOCS,
                 config::PORT_DOCS_SSL,
             );
-            ht::docs::open(opts).await?;
+            we::docs::open(opts).await?;
         }
         Command::Run { ref args } => {
             if !args.target.exists() || !args.target.is_dir() {
@@ -395,25 +395,25 @@ async fn process_command(cmd: Command) -> Result<()> {
         Command::Publish { ref args } => {
             let project = get_project_path(&args.project)?;
 
-            let opts = ht::publish::PublishOptions {
+            let opts = we::publish::PublishOptions {
                 provider: PublishProvider::Aws,
                 env: args.env.clone(),
                 project,
             };
 
-            ht::publish::publish(opts).await?;
+            we::publish::publish(opts).await?;
         }
 
         Command::Plugin { action } => {
             match action {
                 Plugin::Lint { path, inspect } => {
-                    ht::plugin::lint(path, inspect).await?;
+                    we::plugin::lint(path, inspect).await?;
                 }
                 Plugin::Pack { path } => {
-                    ht::plugin::pack(path).await?;
+                    we::plugin::pack(path).await?;
                 }
                 Plugin::Publish { path } => {
-                    ht::plugin::publish(path).await?;
+                    we::plugin::publish(path).await?;
                 }
             }
         }
@@ -423,20 +423,20 @@ async fn process_command(cmd: Command) -> Result<()> {
                 ref name,
                 ref project,
             } => {
-                let opts = ht::site::AddOptions {
+                let opts = we::site::AddOptions {
                     project: project.clone(),
                     name: name.clone(),
                 };
-                ht::site::add(opts)?;
+                we::site::add(opts)?;
             }
             Site::Remove { ref name } => {
-                let opts = ht::site::RemoveOptions {
+                let opts = we::site::RemoveOptions {
                     name: name.to_string(),
                 };
-                ht::site::remove(opts)?;
+                we::site::remove(opts)?;
             }
             Site::List { .. } => {
-                ht::site::list()?;
+                we::site::list()?;
             }
         },
 
@@ -485,7 +485,7 @@ async fn process_command(cmd: Command) -> Result<()> {
 
             println!("Compiling with {:?}", &project);
 
-            match ht::build::compile(&project, build_args, fatal).await {
+            match we::build::compile(&project, build_args, fatal).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);
