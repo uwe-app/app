@@ -7,6 +7,7 @@ pub mod publish;
 pub mod run;
 pub mod site;
 pub mod upgrade;
+pub mod utils;
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);

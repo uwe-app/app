@@ -4,7 +4,6 @@ extern crate pretty_env_logger;
 extern crate log;
 
 use log::info;
-use std::env;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::SystemTime;
@@ -18,10 +17,7 @@ use config::{
 };
 use publisher::PublishProvider;
 
-use uwe::{Result, Error};
-use uwe as we;
-
-const LOG_ENV_NAME: &'static str = "UWE_LOG";
+use uwe::{self, Result, Error};
 
 fn get_server_config(
     target: &PathBuf,
@@ -237,33 +233,6 @@ struct DocsOpts {
 }
 
 #[derive(StructOpt, Debug)]
-enum Plugin {
-    /// Lint a plugin.
-    Lint {
-        /// Print the computed plugin information.
-        #[structopt(short, long)]
-        inspect: bool,
-
-        /// Plugin folder.
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
-    },
-    /// Package a plugin.
-    Pack {
-        /// Plugin folder.
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
-    },
-    /// Publish a plugin.
-    #[structopt(alias = "pub")]
-    Publish {
-        /// Plugin folder.
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
-    },
-}
-
-#[derive(StructOpt, Debug)]
 enum Site {
     /// Add a site
     Add {
@@ -323,12 +292,6 @@ enum Command {
         args: PublishOpts,
     },
 
-    /// Plugin packaging
-    Plugin {
-        #[structopt(flatten)]
-        action: Plugin,
-    },
-
     /// Manage sites
     Site {
         #[structopt(flatten)]
@@ -347,7 +310,7 @@ impl Command {
 async fn process_command(cmd: Command) -> Result<()> {
     match cmd {
         Command::Init { ref args } => {
-            let opts = we::init::InitOptions {
+            let opts = uwe::init::InitOptions {
                 source: args.source.clone(),
                 message: args.message.clone(),
                 target: args.target.clone(),
@@ -355,20 +318,20 @@ async fn process_command(cmd: Command) -> Result<()> {
                 host: args.host.clone(),
                 locales: args.locales.clone(),
             };
-            we::init::init(opts)?;
+            uwe::init::init(opts)?;
         }
         Command::Upgrade { ref args } => {
-            we::upgrade::try_upgrade(args.runtime)?;
+            uwe::upgrade::try_upgrade(args.runtime)?;
         }
         Command::Docs { ref args } => {
-            let target = we::docs::get_target().await?;
+            let target = uwe::docs::get_target().await?;
             let opts = get_server_config(
                 &target,
                 &args.server,
                 config::PORT_DOCS,
                 config::PORT_DOCS_SSL,
             );
-            we::docs::open(opts).await?;
+            uwe::docs::open(opts).await?;
         }
         Command::Run { ref args } => {
             if !args.target.exists() || !args.target.is_dir() {
@@ -395,27 +358,13 @@ async fn process_command(cmd: Command) -> Result<()> {
         Command::Publish { ref args } => {
             let project = get_project_path(&args.project)?;
 
-            let opts = we::publish::PublishOptions {
+            let opts = uwe::publish::PublishOptions {
                 provider: PublishProvider::Aws,
                 env: args.env.clone(),
                 project,
             };
 
-            we::publish::publish(opts).await?;
-        }
-
-        Command::Plugin { action } => {
-            match action {
-                Plugin::Lint { path, inspect } => {
-                    we::plugin::lint(path, inspect).await?;
-                }
-                Plugin::Pack { path } => {
-                    we::plugin::pack(path).await?;
-                }
-                Plugin::Publish { path } => {
-                    we::plugin::publish(path).await?;
-                }
-            }
+            uwe::publish::publish(opts).await?;
         }
 
         Command::Site { ref action } => match action {
@@ -423,20 +372,20 @@ async fn process_command(cmd: Command) -> Result<()> {
                 ref name,
                 ref project,
             } => {
-                let opts = we::site::AddOptions {
+                let opts = uwe::site::AddOptions {
                     project: project.clone(),
                     name: name.clone(),
                 };
-                we::site::add(opts)?;
+                uwe::site::add(opts)?;
             }
             Site::Remove { ref name } => {
-                let opts = we::site::RemoveOptions {
+                let opts = uwe::site::RemoveOptions {
                     name: name.to_string(),
                 };
-                we::site::remove(opts)?;
+                uwe::site::remove(opts)?;
             }
             Site::List { .. } => {
-                we::site::list()?;
+                uwe::site::list()?;
             }
         },
 
@@ -485,7 +434,7 @@ async fn process_command(cmd: Command) -> Result<()> {
 
             println!("Compiling with {:?}", &project);
 
-            match we::build::compile(&project, build_args, fatal).await {
+            match uwe::build::compile(&project, build_args, fatal).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);
@@ -514,23 +463,9 @@ async fn main() -> Result<()> {
         print_error(Error::Panic(message));
     }));
 
-    match &*root_args.log_level {
-        "trace" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        "debug" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        "info" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        "warn" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        "error" => env::set_var(LOG_ENV_NAME, &root_args.log_level),
-        _ => {
-            // Jump a few hoops to pretty print this message
-            let level = &root_args.log_level;
-            env::set_var(LOG_ENV_NAME, "error");
-            pretty_env_logger::init_custom_env(LOG_ENV_NAME);
-            fatal(Error::UnknownLogLevel(level.to_string()));
-            return Ok(());
-        }
+    if let Err(e) = uwe::utils::log_level(&*root_args.log_level) {
+        fatal(e);
     }
-
-    pretty_env_logger::init_custom_env(LOG_ENV_NAME);
 
     // Configure the generator meta data ahead of time
 
