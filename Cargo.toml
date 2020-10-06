@@ -3,7 +3,7 @@ name = "hypertext"
 version = "0.30.0"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Fast and lean static site generator"
-repository = "https://github.com/hypertext-live/hypertext"
+repository = "https://github.com/uwe-app/app"
 edition = "2018"
 default-run = "ht"
 

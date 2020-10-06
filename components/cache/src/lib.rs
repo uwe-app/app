@@ -13,7 +13,7 @@ static BLUEPRINT_NAME: &str = "blueprint";
 static WORKSPACE_NAME: &str = "workspace";
 static WORKSPACE_FILE: &str = "workspace.toml";
 
-static RUNTIME_REPO: &str = "https://github.com/hypertext-live/runtime";
+static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
 static RUNTIME_NAME: &str = "runtime";
 
 static REGISTRY_NAME: &str = "registry";
@@ -21,7 +21,7 @@ static DOCUMENTATION_NAME: &str = "documentation/docs";
 static SYNTAX_NAME: &str = "syntax";
 
 static VERSION_BASE: &str =
-    "https://raw.githubusercontent.com/hypertext-live/release-";
+    "https://raw.githubusercontent.com/uwe-app/release-";
 static VERSION_FILE: &str = "/master/version.toml";
 
 static RELEASE_NAME: &str = "release";
@@ -124,17 +124,17 @@ pub fn get_release_version() -> String {
 
 #[cfg(target_os = "windows")]
 pub fn get_release_url() -> String {
-    String::from("https://github.com/hypertext-live/release-windows")
+    String::from("https://github.com/uwe-app/release-windows")
 }
 
 #[cfg(target_os = "macos")]
 pub fn get_release_url() -> String {
-    String::from("https://github.com/hypertext-live/release-macos")
+    String::from("https://github.com/uwe-app/release-macos")
 }
 
 #[cfg(target_os = "linux")]
 pub fn get_release_url() -> String {
-    String::from("https://github.com/hypertext-live/release-linux")
+    String::from("https://github.com/uwe-app/release-linux")
 }
 
 pub fn get_release_dir() -> io::Result<PathBuf> {

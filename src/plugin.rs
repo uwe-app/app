@@ -39,7 +39,7 @@ pub async fn publish(path: PathBuf) -> Result<()> {
         log::warn!("you may still contribute a plugin by adding ");
         log::warn!("a PR to this repository:");
         log::warn!("");
-        log::warn!("https://github.com/hypertext-live/plugins");
+        log::warn!("https://github.com/uwe-app/plugins");
         log::warn!("");
 
         return Err(Error::NoPluginPublishPermission);

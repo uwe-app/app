@@ -1,11 +1,11 @@
-# Hyper Text
+# Universal Web Editor
 
 Repositories must be siblings, for example:
 
 ```
 .
+├── app
 ├── blog
-├── hypertext
 ├── library
 ├── plugins
 ├── release
@@ -14,8 +14,8 @@ Repositories must be siblings, for example:
 └── website
 ```
 
+* `app`: Main source code (this repository).
 * `blog`: Canonical blog website.
-* `hypertext`: Main source code (this repository).
 * `library`: Additional libraries; search runtime and third-party forks.
 * `plugins`: Source code for the plugins.
 * `release`: Binary releases organized by platform.
@@ -48,9 +48,9 @@ It is **required** to set the `pushurl` and `push` refspec:
 
 ```
 [remote "origin"]
-  url = git@github.com:hypertext-live/runtime.git
+  url = git@github.com:uwe-app/runtime.git
   fetch = +refs/heads/*:refs/remotes/origin/*
-  pushurl = git@github.com:hypertext-live/runtime.git
+  pushurl = git@github.com:uwe-app/runtime.git
   push = refs/heads/master:refs/heads/master
 ```
 
