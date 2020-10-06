@@ -103,6 +103,7 @@ impl<'a> Resolver<'a> {
             &mut self.intermediate,
             &mut self.lock,
             &mut Default::default(),
+            &mut Default::default(),
             None,
         )
         .await?;
@@ -152,8 +153,8 @@ impl<'a> Resolver<'a> {
         self.resolved.append(&mut done);
 
         if !difference.is_empty() {
-            //info!("Update registry cache");
-            //cache::update(vec![cache::CacheComponent::Runtime])?;
+            info!("Update registry cache");
+            cache::update(vec![cache::CacheComponent::Runtime])?;
 
             // Refresh the lock file entries in case we can resolve
             // newer versions from the updated registry information
@@ -193,22 +194,23 @@ impl<'a> Resolver<'a> {
                 let parent = self.resolved
                     .iter()
                     .cloned()
-                    .map(|(_, e)| e)
-                    .find(|e| e.name == parent_name);
+                    .find(|(d, e)| e.name == parent_name);
 
-                (i, (plugin.clone(), parent))
+                (i, parent)
             })
             .collect::<Vec<_>>();
 
-        for (index, (plugin, parent)) in scoped {
-            let parent = parent.as_ref().ok_or_else(
-                || Error::PluginParentNotFound(plugin.parent(), plugin.name))?;
+        for (index, parent) in scoped {
+            let (dep, plugin) = self.resolved.get_mut(index).unwrap();
+
+            let (parent_dep, parent_plugin) = parent.as_ref().ok_or_else(
+                || Error::PluginParentNotFound(
+                    plugin.parent(), plugin.name.clone()))?;
 
             //println!("Got scoped at {}", index);
             //println!("Got scoped name {}", &plugin.name);
             //println!("Got scoped parent name {:?}", &parent);
-            let (_, plugin) = self.resolved.get_mut(index).unwrap();
-            installer::inherit(plugin, parent)?;
+            installer::inherit(dep, plugin, parent_plugin, parent_dep)?;
         }
 
         Ok(())
@@ -325,13 +327,18 @@ async fn solver(
     intermediate: &mut IntermediateMap,
     lock: &mut ResolverLock,
     stack: &mut Vec<String>,
+    tree: &mut Vec<Dependency>,
     parent: Option<SolvedReference>,
 ) -> Result<()> {
 
+    if stack.len() > DEPENDENCY_STACK_SIZE {
+        return Err(
+            Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
+    }
+
     for (name, mut dep) in input.into_iter() {
-        if stack.len() > DEPENDENCY_STACK_SIZE {
-            return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
-        } else if stack.contains(&name) {
+
+        if stack.contains(&name) {
             return Err(Error::CyclicDependency(name));
         }
 
@@ -413,6 +420,7 @@ async fn solver(
             let dependencies = dependencies.filter(&dep, feature_map)?;
 
             stack.push(name.clone());
+            tree.push(dep.clone());
             solver(
                 project,
                 registry,
@@ -420,12 +428,12 @@ async fn solver(
                 intermediate,
                 lock,
                 stack,
+                tree,
                 Some(solved.clone()),
             ).await?;
+            tree.pop();
             stack.pop();
         }
-
-        stack.pop();
 
         println!("Entry is {:#?}", entry);
 
