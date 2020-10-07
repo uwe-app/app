@@ -30,7 +30,6 @@ members = [
   "components/syntax",
   "components/toc",
   "components/transform",
-  "components/updater",
   "components/utils",
   "components/workspace",
 ]
@@ -51,7 +50,6 @@ release = {version = "0.1", path = "components/release" }
 report = {version = "0.1", path = "components/report" }
 server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }
-updater = {version = "0.1", path = "components/updater" }
 utils = {version = "0.1", path = "components/utils" }
 workspace = {version = "0.1", path = "components/workspace" }
 

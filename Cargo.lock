@@ -2520,7 +2520,6 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "serde",
- "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-tls",
@@ -3684,20 +3683,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
-name = "updater"
-version = "0.1.0"
-dependencies = [
- "cache",
- "dirs 0.1.0",
- "log",
- "reqwest",
- "serde",
- "thiserror",
- "toml",
- "utils",
-]
-
-[[package]]
 name = "url"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3767,7 +3752,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
- "updater",
  "url",
  "utils",
  "warp",

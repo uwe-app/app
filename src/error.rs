@@ -73,8 +73,6 @@ pub enum Error {
     #[error(transparent)]
     Cache(#[from] cache::Error),
     #[error(transparent)]
-    Updater(#[from] updater::Error),
-    #[error(transparent)]
     Report(#[from] report::Error),
     #[error(transparent)]
     Publish(#[from] publisher::Error),

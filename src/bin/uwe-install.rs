@@ -16,6 +16,10 @@ struct Cli {
     /// Update the runtime assets
     #[structopt(short, long)]
     runtime: bool,
+
+    /// Uninstall the program
+    #[structopt(long)]
+    remove: bool,
 }
 
 fn fatal(e: Error) -> Result<()> {
@@ -30,7 +34,12 @@ async fn main() -> Result<()> {
     uwe::utils::log_level(&*root_args.log_level)
         .or_else(fatal)?;
 
-    if root_args.runtime {
+    if root_args.remove {
+        // Update the runtime assets.
+        release::uninstall().await
+            .map_err(Error::from)
+            .or_else(fatal)?;
+    } else if root_args.runtime {
         // Update the runtime assets.
         release::runtime().await
             .map_err(Error::from)

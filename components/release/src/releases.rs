@@ -11,6 +11,7 @@ use crate::Result;
 
 static RELEASES_JSON: &str = "releases.json";
 
+pub static RUNTIME: &str = "runtime";
 pub static RELEASE: &str = "release";
 
 pub static LINUX: &str = "linux";
@@ -64,7 +65,7 @@ pub(crate) fn save<P: AsRef<Path>>(target: P, releases: &Releases) -> Result<()>
 pub(crate) fn repo_manifest_file<P: AsRef<Path>>(manifest: P) -> Result<PathBuf> {
     Ok(manifest.as_ref()
         .join("..")
-        .join("runtime")
+        .join(RUNTIME)
         .join(RELEASES_JSON)
         .canonicalize()?)
 }

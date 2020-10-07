@@ -54,9 +54,11 @@ mod env;
 mod install;
 mod publish;
 mod releases;
+mod uninstall;
 mod upgrade;
 mod version;
 
 pub use install::{install, runtime};
 pub use publish::publish;
+pub use uninstall::uninstall;
 pub use upgrade::upgrade;

@@ -2,13 +2,12 @@ use std::path::PathBuf;
 use std::fs::{self, File};
 use std::io::Write;
 
-use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
 use semver::Version;
 
-use crate::Result;
+use crate::{Result, releases};
 
 static VERSION_FILE: &str = "version.toml";
 
@@ -20,7 +19,9 @@ pub struct VersionInfo {
 }
 
 fn get_version_file() -> Result<PathBuf> {
-    Ok(cache::get_release_dir()?.join(VERSION_FILE))
+    Ok(cache::get_runtime_dir()?
+        .join(releases::RELEASE)
+        .join(VERSION_FILE))
 }
 
 /// Write out the version file.
