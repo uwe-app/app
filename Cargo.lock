@@ -2438,7 +2438,9 @@ version = "0.1.0"
 dependencies = [
  "cache",
  "config",
+ "dirs 0.1.0",
  "hex",
+ "http",
  "human_bytes",
  "log",
  "publisher",
@@ -2449,6 +2451,8 @@ dependencies = [
  "serde_with",
  "sha3",
  "thiserror",
+ "url",
+ "utils",
 ]
 
 [[package]]

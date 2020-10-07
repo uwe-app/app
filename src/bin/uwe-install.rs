@@ -20,7 +20,10 @@ async fn main() -> Result<()> {
     Cli::from_args();
     std::env::set_var("RUST_LOG", "info");
     pretty_env_logger::init();
-    if let Err(e) = release::install().await {
+
+    let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
+
+    if let Err(e) = release::install(name).await {
         fatal(&e.to_string());
     }
 

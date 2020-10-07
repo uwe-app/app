@@ -10,10 +10,6 @@ use crate::{Error, Result, checksum, releases};
 
 /// WARN: Assumes we are building on linux!
 
-static NAMES: [&str; 2] = ["uwe", "upm"];
-static LINUX: &str = "linux";
-static MACOS: &str = "macos";
-
 static LINUX_PREFIX: &str = "target/release";
 static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
 
@@ -47,14 +43,14 @@ fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
     let mut executables = HashMap::new();
 
     let platform_targets = vec![
-        (LINUX.to_string(), cwd.join(LINUX_PREFIX)),
-        (MACOS.to_string(), cwd.join(MACOS_PREFIX))
+        (releases::LINUX.to_string(), cwd.join(LINUX_PREFIX)),
+        (releases::MACOS.to_string(), cwd.join(MACOS_PREFIX))
     ];
 
     for (platform_name, target_dir) in platform_targets.into_iter() {
         let artifacts = executables.entry(platform_name)
             .or_insert(HashMap::new());
-        for name in NAMES.iter() {
+        for name in releases::PUBLIC_EXE_NAMES.iter() {
             let path = target_dir.join(name);
 
             if !path.exists() || !path.is_file() {

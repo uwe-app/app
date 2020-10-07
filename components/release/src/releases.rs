@@ -9,12 +9,30 @@ use semver::Version;
 
 use crate::Result;
 
+static RELEASES_JSON: &str = "releases.json";
+
+pub static RELEASE: &str = "release";
+
+pub static LINUX: &str = "linux";
+pub static MACOS: &str = "macos";
+pub static WINDOWS: &str = "windows";
+
+pub static PUBLIC_EXE_NAMES: [&str; 4] = [
+    "uwe", "upm",
+    "uwe-install", "uwe-upgrade"];
+
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct Releases {
     #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
     pub(crate) versions: BTreeMap<Version, ReleaseVersion>,
+}
+
+impl Releases {
+    pub fn latest(&self) -> (&Version, &ReleaseVersion) {
+        self.versions.iter().rev().take(1).next().unwrap()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -45,6 +63,29 @@ pub(crate) fn repo_manifest_file<P: AsRef<Path>>(manifest: P) -> Result<PathBuf>
     Ok(manifest.as_ref()
         .join("..")
         .join("runtime")
-        .join("releases.json")
+        .join(RELEASES_JSON)
         .canonicalize()?)
+}
+
+/// Get the release manifest file for the installed runtime used 
+/// for the install and upgrade processes.
+pub(crate) fn runtime_manifest_file() -> Result<PathBuf> {
+    Ok(cache::get_runtime_dir()?
+        .join(RELEASES_JSON)
+        .canonicalize()?)
+}
+
+#[cfg(target_os = "windows")]
+pub fn current_platform() -> String {
+    WINDOWS.to_string()
+}
+
+#[cfg(target_os = "macos")]
+pub fn current_platform() -> String {
+    MACOS.to_string()
+}
+
+#[cfg(target_os = "linux")]
+pub fn current_platform() -> String {
+    LINUX.to_string()
 }
