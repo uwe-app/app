@@ -14,12 +14,30 @@ struct Cli {
     log_level: String,
 
     /// Update the runtime assets
-    #[structopt(short, long)]
-    runtime: bool,
+    //#[structopt(short, long)]
+    //runtime: bool,
 
     /// Uninstall the program
-    #[structopt(long)]
-    remove: bool,
+    //#[structopt(long)]
+    //remove: bool,
+
+    #[structopt(subcommand)]
+    cmd: Option<Command>,
+}
+
+#[derive(StructOpt, Debug)]
+enum Command {
+    /// Update the runtime assets
+    Runtime {},
+
+    /// List release version
+    List {},
+
+    /// Upgrade to latest release
+    Latest {},
+
+    /// Uninstall the program
+    Remove {},
 }
 
 fn fatal(e: Error) -> Result<()> {
@@ -29,21 +47,30 @@ fn fatal(e: Error) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let root_args = Cli::from_args();
+    let mut args = Cli::from_args();
 
-    uwe::utils::log_level(&*root_args.log_level)
+    uwe::utils::log_level(&*args.log_level)
         .or_else(fatal)?;
 
-    if root_args.remove {
-        // Update the runtime assets.
-        release::uninstall().await
-            .map_err(Error::from)
-            .or_else(fatal)?;
-    } else if root_args.runtime {
-        // Update the runtime assets.
-        release::runtime().await
-            .map_err(Error::from)
-            .or_else(fatal)?;
+    if let Some(cmd) = args.cmd.take() {
+        match cmd {
+            Command::Runtime {} => {
+                release::runtime().await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Remove {} => {
+                release::uninstall().await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Latest {} => {
+                todo!("Intall latest")
+            }
+            Command::List {} => {
+                todo!("List versions")
+            }
+        } 
     } else {
         // Perform a standard installation.
         let name = option_env!("CARGO_PKG_NAME")
@@ -53,7 +80,6 @@ async fn main() -> Result<()> {
             .map_err(Error::from)
             .or_else(fatal)?;
     }
-
 
     Ok(())
 }
