@@ -6,9 +6,23 @@ use structopt::StructOpt;
 
 use uwe::Result;
 
+/// Package and publish a release.
 #[derive(Debug, StructOpt)]
 #[structopt(name = "uwe-release")]
 struct Cli {
+
+    /// The bucket name.
+    #[structopt(short, long, default_value = "release.uwe.app")]
+    bucket: String,
+
+    /// The bucket region.
+    #[structopt(short, long, default_value = "ap-southeast-1")]
+    region: String,
+
+    /// The credentials profile name.
+    #[structopt(short, long, default_value = "uwe")]
+    profile: String,
+
     /// Skip the build step.
     #[structopt(short, long)]
     skip_build: bool,
@@ -41,6 +55,9 @@ async fn main() -> Result<()> {
         manifest,
         name,
         version,
+        root_args.bucket,
+        root_args.region,
+        root_args.profile,
         root_args.skip_build,
         root_args.force,
         ).await {

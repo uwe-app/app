@@ -19,12 +19,19 @@ pub enum Error {
 
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Publisher(#[from] publisher::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
 
 mod checksum;
+mod install;
+mod publish;
 mod releases;
-mod publisher;
+mod upgrade;
 
-pub use publisher::publish;
+pub use install::install;
+pub use publish::publish;
+pub use upgrade::upgrade;

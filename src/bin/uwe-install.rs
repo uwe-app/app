@@ -4,10 +4,10 @@ extern crate pretty_env_logger;
 use log::error;
 use structopt::StructOpt;
 
-use updater;
+use uwe::Result;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "uwe-installer", version = "1.0.0")]
+#[structopt(name = "uwe-install")]
 struct Cli {}
 
 fn fatal(e: &str) {
@@ -15,11 +15,14 @@ fn fatal(e: &str) {
     std::process::exit(1);
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<()> {
     Cli::from_args();
     std::env::set_var("RUST_LOG", "info");
     pretty_env_logger::init();
-    if let Err(e) = updater::install() {
+    if let Err(e) = release::install().await {
         fatal(&e.to_string());
     }
+
+    Ok(())
 }

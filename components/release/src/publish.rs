@@ -4,6 +4,7 @@ use std::process::{Command, Stdio};
 
 use semver::Version;
 use log::{info, warn};
+use human_bytes::human_bytes;
 
 use crate::{Error, Result, checksum, releases};
 
@@ -13,12 +14,8 @@ static NAMES: [&str; 2] = ["uwe", "upm"];
 static LINUX: &str = "linux";
 static MACOS: &str = "macos";
 
-static BUCKET: &str = "release.uwe.app";
-static PROFILE: &str = "uwe";
-
 static LINUX_PREFIX: &str = "target/release";
 static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
-//static WINDOWS: &str = "windows";
 
 type Platform = String;
 type ExecutableName = String;
@@ -75,6 +72,34 @@ fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
     Ok(executables)
 }
 
+/// Upload the plugin package to the s3 bucket.
+async fn upload(
+    file: &PathBuf,
+    bucket: &str,
+    region: &str,
+    profile: &str,
+    version: &Version,
+    platform: &str,
+    name: &str) -> Result<()> {
+
+    let aws_region = publisher::parse_region(region)?;
+
+    let key = format!(
+        "{}/{}/{}",
+        version.to_string(),
+        platform,
+        name,
+    );
+
+    let bytes = file.metadata()?.len();
+
+    info!("Upload {} to {}/{} ({})", human_bytes(bytes as f64), bucket, key, region);
+    publisher::put_file(file, &key, aws_region, bucket, profile).await?;
+    info!("{} ✓", &key);
+
+    Ok(())
+}
+
 /// Publish all the release artifacts.
 ///
 /// 1) Compile the release artifacts.
@@ -86,6 +111,9 @@ pub async fn publish(
     manifest: String,
     name: String,
     version: String,
+    bucket: String,
+    region: String,
+    profile: String,
     skip_build: bool,
     force_overwrite: bool,
 ) -> Result<()> {
@@ -114,15 +142,25 @@ pub async fn publish(
 
     let artifacts = artifacts(&manifest)?;
     let release_versions = releases.versions
-        .entry(semver)
+        .entry(semver.clone())
         .or_insert(Default::default());
 
     for (platform, artifacts) in artifacts.into_iter() {
         let release_artifacts = release_versions.platforms
-            .entry(platform) 
+            .entry(platform.clone()) 
             .or_insert(Default::default());
 
         for (name, info) in artifacts.into_iter() {
+
+            upload(
+                &info.path,
+                &bucket,
+                &region,
+                &profile,
+                &semver,
+                &platform,
+                &name).await?;
+
             release_artifacts.insert(name, hex::encode(info.digest)); 
         }
     }

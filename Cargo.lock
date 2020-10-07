@@ -2436,8 +2436,13 @@ checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 name = "release"
 version = "0.1.0"
 dependencies = [
+ "cache",
+ "config",
  "hex",
+ "human_bytes",
  "log",
+ "publisher",
+ "reqwest",
  "semver 0.10.0",
  "serde",
  "serde_json",
