@@ -54,6 +54,10 @@ It is **required** to set the `pushurl` and `push` refspec:
   push = refs/heads/master:refs/heads/master
 ```
 
+## Cross Compiling
+
+To cross-compile from Linux for MacOs the [osxcross][] library is required and you must add the `bin` directory to your `PATH`; see `.cargo/config` and `Makefile` for more details.
+
 ## Preferences
 
 This component is currently in limbo but may be restored in the future.
@@ -61,3 +65,5 @@ This component is currently in limbo but may be restored in the future.
 ## Notes
 
 Additional information some of which may be obsolete in [NOTES](/NOTES.md).
+
+[osxcross]: https://github.com/tpoechtrager/osxcross

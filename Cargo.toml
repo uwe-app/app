@@ -2,7 +2,7 @@
 name = "uwe"
 version = "0.30.0"
 authors = ["muji <muji@tmpfs.org>"]
-description = "Fast and lean static site generator"
+description = "Universal web editor"
 repository = "https://github.com/uwe-app/app"
 edition = "2018"
 default-run = "uwe"
@@ -23,6 +23,7 @@ members = [
   "components/plugin",
   "components/preference",
   "components/publisher",
+  "components/release",
   "components/report",
   "components/server",
   "components/site",
@@ -46,6 +47,7 @@ locale = {version = "0.1", path = "components/locale" }
 plugin = {version = "0.1", path = "components/plugin" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
+release = {version = "0.1", path = "components/release" }
 report = {version = "0.1", path = "components/report" }
 server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }

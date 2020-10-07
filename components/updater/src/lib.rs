@@ -30,7 +30,7 @@ type Result<T> = std::result::Result<T, Error>;
 static BASH: &str = "bash";
 static ZSH: &str = "zsh";
 
-static NAME: &str = "ht";
+static NAME: &str = "uwe";
 static VERSION_FILE: &str = "version.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

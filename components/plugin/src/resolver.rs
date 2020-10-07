@@ -179,9 +179,9 @@ impl<'a> Resolver<'a> {
         let scoped = self.resolved
             .iter()
             .enumerate()
-            .filter(|(i, (d, _))| d.target.is_some())
-            .filter(|(i, (d, _))| {
-                if let DependencyTarget::Local { ref scope } = d.target.as_ref().unwrap() {
+            .filter(|(_, (d, _))| d.target.is_some())
+            .filter(|(_, (d, _))| {
+                if let DependencyTarget::Local { .. } = d.target.as_ref().unwrap() {
                     true
                 } else { false }
             })
@@ -189,12 +189,12 @@ impl<'a> Resolver<'a> {
 
         let scoped = scoped
             .into_iter()
-            .map(|(i, (dep, plugin))| {
+            .map(|(i, (_dep, plugin))| {
                 let parent_name = plugin.parent();
                 let parent = self.resolved
                     .iter()
                     .cloned()
-                    .find(|(d, e)| e.name == parent_name);
+                    .find(|(_, e)| e.name == parent_name);
 
                 (i, parent)
             })

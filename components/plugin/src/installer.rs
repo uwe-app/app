@@ -209,7 +209,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
 }
 
 pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
-    project: P,
+    _project: P,
     scope: S,
     locals: Option<PluginMap>,
 ) -> Result<Plugin> {
