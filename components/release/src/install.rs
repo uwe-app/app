@@ -4,7 +4,7 @@ use log::{info, warn};
 
 use cache::CacheComponent;
 
-use crate::{Result, releases, env, download, binary};
+use crate::{Result, releases, env, download, binary, version};
 
 fn finish() -> Result<PathBuf> {
     let bin_dir = cache::get_bin_dir()?;
@@ -61,6 +61,8 @@ pub async fn install(name: String) -> Result<()> {
     binary::symlink(&binaries)?;
 
     finish()?;
+
+    version::write(version)?;
 
     info!("Installed {}@{} ✓", name, version.to_string());
 

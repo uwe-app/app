@@ -27,6 +27,12 @@ pub enum Error {
     Json(#[from] serde_json::Error),
 
     #[error(transparent)]
+    TomlSer(#[from] toml::ser::Error),
+
+    #[error(transparent)]
+    TomlDe(#[from] toml::de::Error),
+
+    #[error(transparent)]
     Request(#[from] reqwest::Error),
 
     #[error(transparent)]
@@ -49,6 +55,7 @@ mod install;
 mod publish;
 mod releases;
 mod upgrade;
+mod version;
 
 pub use install::{install, runtime};
 pub use publish::publish;
