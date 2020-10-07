@@ -176,13 +176,6 @@ struct InitOpts {
 }
 
 #[derive(StructOpt, Debug)]
-struct UpgradeOpts {
-    /// Update the runtime assets
-    #[structopt(short, long)]
-    runtime: bool,
-}
-
-#[derive(StructOpt, Debug)]
 struct PublishOpts {
     /// Publish environment
     #[structopt()]
@@ -280,12 +273,6 @@ enum Command {
         args: DocsOpts,
     },
 
-    /// Upgrade to latest
-    Upgrade {
-        #[structopt(flatten)]
-        args: UpgradeOpts,
-    },
-
     /// Publish a site
     Publish {
         #[structopt(flatten)]
@@ -319,9 +306,6 @@ async fn process_command(cmd: Command) -> Result<()> {
                 locales: args.locales.clone(),
             };
             uwe::init::init(opts)?;
-        }
-        Command::Upgrade { ref args } => {
-            uwe::upgrade::try_upgrade(args.runtime)?;
         }
         Command::Docs { ref args } => {
             let target = uwe::docs::get_target().await?;

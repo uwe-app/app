@@ -6,7 +6,6 @@ pub mod plugin;
 pub mod publish;
 pub mod run;
 pub mod site;
-pub mod upgrade;
 pub mod utils;
 
 pub type Result<T> = std::result::Result<T, Error>;
