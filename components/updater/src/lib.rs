@@ -174,7 +174,7 @@ pub fn install() -> Result<()> {
 pub fn update() -> Result<(String, VersionInfo, PathBuf, PathBuf)> {
     let version_file = get_version_file()?;
 
-    let components = vec![CacheComponent::Runtime, CacheComponent::Release];
+    let components = vec![CacheComponent::Runtime];
     cache::update(components)?;
 
     let bin_dir = cache::get_bin_dir()?;

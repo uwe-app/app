@@ -36,7 +36,6 @@ pub enum Error {
 
 pub enum CacheComponent {
     Runtime,
-    Release,
 }
 
 pub fn get_workspace_dir() -> io::Result<PathBuf> {
@@ -156,11 +155,6 @@ pub fn update(components: Vec<CacheComponent>) -> Result<(), Error> {
                 let url = get_runtime_url();
                 let dir = get_runtime_dir()?;
                 git::clone_or_fetch(&url, &dir, true)?;
-            }
-            CacheComponent::Release => {
-                let url = get_release_url();
-                let dir = get_release_dir()?;
-                git::clone_or_fetch(&url, &dir, false)?;
             }
         }
     }
