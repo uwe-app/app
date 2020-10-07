@@ -50,6 +50,6 @@ mod publish;
 mod releases;
 mod upgrade;
 
-pub use install::install;
+pub use install::{install, runtime};
 pub use publish::publish;
 pub use upgrade::upgrade;

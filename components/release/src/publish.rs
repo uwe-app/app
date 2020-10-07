@@ -50,7 +50,7 @@ fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
     for (platform_name, target_dir) in platform_targets.into_iter() {
         let artifacts = executables.entry(platform_name)
             .or_insert(HashMap::new());
-        for name in releases::PUBLIC_EXE_NAMES.iter() {
+        for name in releases::PUBLISH_EXE_NAMES.iter() {
             let path = target_dir.join(name);
 
             if !path.exists() || !path.is_file() {

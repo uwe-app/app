@@ -36,12 +36,17 @@ fn finish() -> Result<PathBuf> {
     Ok(bin_dir)
 }
 
+pub async fn runtime() -> Result<()> {
+    let components = vec![CacheComponent::Runtime];
+    cache::update(components)?;
+    Ok(())
+}
+
 /// Install the application components.
 pub async fn install(name: String) -> Result<()> {
     // Ensure we have the runtime assets so we can
     // access the release definitions
-    let components = vec![CacheComponent::Runtime];
-    cache::update(components)?;
+    runtime().await?;
 
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;

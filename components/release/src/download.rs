@@ -43,7 +43,7 @@ pub(crate) async fn all(
 
     let mut output: HashMap<String, PathBuf> = HashMap::new();
 
-    for name in releases::PUBLIC_EXE_NAMES.iter() {
+    for name in releases::INSTALL_EXE_NAMES.iter() {
         let expected = platform_info.get(*name).unwrap();
 
         //info!("Download {}@{}", name, version.to_string());

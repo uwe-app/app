@@ -86,4 +86,6 @@ pub enum Error {
     Plugin(#[from] plugin::Error),
     #[error(transparent)]
     Utils(#[from] utils::Error),
+    #[error(transparent)]
+    Release(#[from] release::Error),
 }

@@ -13,7 +13,7 @@ fn print_error(e: uwe::Error) {
     error!("{}", e);
 }
 
-fn fatal(e: uwe::Error) {
+fn fatal(e: uwe::Error) -> Result<()> {
     print_error(e);
     std::process::exit(1);
 }
@@ -88,13 +88,11 @@ async fn main() -> Result<()> {
         print_error(Error::Panic(message));
     }));
 
-    if let Err(e) = uwe::utils::log_level(&*root_args.log_level) {
-        fatal(e);
-    }
+    uwe::utils::log_level(&*root_args.log_level)
+        .or_else(fatal)?;
 
-    if let Err(e) = process_command(root_args.cmd).await {
-        fatal(e);
-    }
+    process_command(root_args.cmd).await
+        .or_else(fatal)?;
 
     Ok(())
 }
