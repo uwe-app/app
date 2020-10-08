@@ -32,6 +32,24 @@ release
 └── windows
 ```
 
+## Releases
+
+A private executable `uwe-publish` performs all the steps for a release.
+
+1) Bump the version in `Cargo.toml`.
+2) Publish a new release: `cargo run --bin=uwe-publish`.
+3) Commit and push the new release version and checksums in the [runtime][] repository (`releases.json`).
+
+If you need them `uwe-publish` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. These flags are primarily used for testing and development purposes.
+
+To remove an installation run `cargo run --bin=uvm -- uninstall`.
+
+To test an installation using the quick install script:
+
+```
+curl https://release.uwe.app/install.sh | sh
+```
+
 ## Plugins
 
 Plugin publishing is restricted to those that have access to the s3 bucket and the registry repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
@@ -66,4 +84,5 @@ This component is currently in limbo but may be restored in the future.
 
 Additional information some of which may be obsolete in [NOTES](/NOTES.md).
 
+[runtime]: https://github.com/uwe-app/runtime
 [osxcross]: https://github.com/tpoechtrager/osxcross

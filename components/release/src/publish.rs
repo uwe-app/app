@@ -10,6 +10,7 @@ use crate::{Error, Result, checksum, releases::{self, ReleaseVersion}};
 
 /// WARN: Assumes we are building on linux!
 
+static INSTALL_SH: &str = "install.sh";
 static LINUX_PREFIX: &str = "target/release";
 static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
 
@@ -101,11 +102,9 @@ async fn redirects(
     region: &str,
     profile: &str,
     version: &Version,
-    release: &ReleaseVersion,
-    ) -> Result<()> {
+    release: &ReleaseVersion) -> Result<()> {
 
     let aws_region = publisher::parse_region(region)?;
-
     for (platform, targets) in release.platforms.iter() {
         for (name, _) in targets {
             let key = get_key(releases::LATEST, platform, name);
@@ -120,6 +119,21 @@ async fn redirects(
         }
     }
 
+    Ok(())
+}
+
+/// Upload the quick install script.
+async fn script(
+    bucket: &str,
+    region: &str,
+    profile: &str,
+    project: &PathBuf) -> Result<()> {
+
+    let aws_region = publisher::parse_region(region)?;
+    let file = project.join(INSTALL_SH);
+    let key = INSTALL_SH.to_string();
+    info!("Upload install script {}", INSTALL_SH);
+    publisher::put_file(&file, &key, aws_region, bucket, profile).await?;
     Ok(())
 }
 
@@ -195,7 +209,10 @@ pub async fn publish(
         &release_versions
         ).await?;
 
-    //info!("{:#?}", releases);
+    // TODO: invalidate the redirect paths in cloudfront!!!
+
+    // Upload the quick curl install script.
+    script(&bucket, &region, &profile, &manifest).await?;
 
     info!("Save {}", releases_file.display());
     releases::save(&releases_file, &releases)?;
