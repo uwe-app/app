@@ -6,7 +6,7 @@ use semver::Version;
 use log::{info, warn};
 use human_bytes::human_bytes;
 
-use crate::{Error, Result, checksum, releases};
+use crate::{Error, Result, checksum, releases::{self, ReleaseVersion}};
 
 /// WARN: Assumes we are building on linux!
 
@@ -68,6 +68,10 @@ fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
     Ok(executables)
 }
 
+fn get_key(version: &str, platform: &str, name: &str) -> String {
+    format!("{}/{}/{}", version, platform, name)
+}
+
 /// Upload the plugin package to the s3 bucket.
 async fn upload(
     file: &PathBuf,
@@ -80,12 +84,7 @@ async fn upload(
 
     let aws_region = publisher::parse_region(region)?;
 
-    let key = format!(
-        "{}/{}/{}",
-        version.to_string(),
-        platform,
-        name,
-    );
+    let key = get_key(&version.to_string(), platform, name);
 
     let bytes = file.metadata()?.len();
 
@@ -96,12 +95,39 @@ async fn upload(
     Ok(())
 }
 
+/// Configure redirects from `latest` to the new version.
+async fn redirects(
+    bucket: &str,
+    region: &str,
+    profile: &str,
+    version: &Version,
+    release: &ReleaseVersion,
+    ) -> Result<()> {
+
+    let aws_region = publisher::parse_region(region)?;
+
+    for (platform, targets) in release.platforms.iter() {
+        for (name, _) in targets {
+            let key = get_key(releases::LATEST, platform, name);
+            let location = format!("/{}", get_key(&version.to_string(), platform, name));
+            info!("Redirect {} -> {}", key, location);
+            publisher::put_redirect(
+                &location,
+                &key,
+                aws_region.clone(),
+                bucket,
+                profile).await?;
+        }
+    }
+
+    Ok(())
+}
+
 /// Publish all the release artifacts.
 ///
 /// 1) Compile the release artifacts.
 /// 2) Upload all the release executables.
 /// 3) Update the release registry index.
-/// 4) Copy the installer files to the website.
 ///
 pub async fn publish(
     manifest: String,
@@ -147,7 +173,6 @@ pub async fn publish(
             .or_insert(Default::default());
 
         for (name, info) in artifacts.into_iter() {
-
             upload(
                 &info.path,
                 &bucket,
@@ -160,6 +185,15 @@ pub async fn publish(
             release_artifacts.insert(name, hex::encode(info.digest)); 
         }
     }
+
+    // Set up the website redirects for latest.
+    redirects(
+        &bucket,
+        &region,
+        &profile,
+        &semver,
+        &release_versions
+        ).await?;
 
     //info!("{:#?}", releases);
 

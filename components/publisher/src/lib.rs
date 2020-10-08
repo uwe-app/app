@@ -261,6 +261,25 @@ pub async fn put_file<F: AsRef<Path>>(
     put_object(&client, req, file.as_ref()).await
 }
 
+/// Put a website redirect location.
+pub async fn put_redirect<S: AsRef<str>>(
+    location: S,
+    key: &str,
+    region: Region,
+    bucket: &str,
+    profile: &str,
+) -> Result<PutObjectOutput> {
+    let req = PutObjectRequest {
+        bucket: bucket.to_string(),
+        key: key.to_string(),
+        website_redirect_location: Some(location.as_ref().to_string()),
+        ..Default::default()
+    };
+
+    let client = get_client(profile, &region)?;
+    Ok(client.put_object(req).await?)
+}
+
 async fn delete_object(
     client: &S3Client,
     req: DeleteObjectRequest,

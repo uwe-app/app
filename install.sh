@@ -7,10 +7,36 @@ fatal() {
 
 BASE="${HOME}/.uwe";
 BIN="${BASE}/bin";
-UVM="https://release.uwe.app/latest/uvm";
+
+OS="`uname`"
+case $OS in
+  'Linux')
+    OS='linux'
+    ;;
+  'FreeBSD')
+    #OS='FreeBSD'
+    fatal "Operating system FreeBSD is not supported, sorry."
+    ;;
+  'WindowsNT')
+    #OS='windows'
+    fatal "Operating system Windows is not supported, sorry."
+    ;;
+  'Darwin') 
+    OS='macos'
+    ;;
+  'SunOS')
+    #OS='Solaris'
+    fatal "Operating system Solaaris is not supported, sorry."
+    ;;
+  'AIX') ;;
+  *) ;;
+esac
 
 command -v curl > /dev/null || fatal "Curl is required to use the install.sh script";
+mkdir -p "${BIN}" || fatal "Could not create bin directory ${BIN}";
 
-mkdir -p "${BIN}"
+URL="https://release.uwe.app/latest/${OS}/uvm";
+echo "Download ${URL}";
 
-(cd "${BIN}" && curl -OL --progress-bar "${UVM}" && chmod +x ./uvm && ./uvm)
+(cd "${BIN}" && curl -OL --fail --progress-bar "${URL}" || fatal "Download failed")
+(cd "${BIN}" && chmod +x ./uvm && ./uvm)

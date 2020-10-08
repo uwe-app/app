@@ -13,6 +13,7 @@ static RELEASES_JSON: &str = "releases.json";
 
 pub static RUNTIME: &str = "runtime";
 pub static RELEASE: &str = "release";
+pub static LATEST: &str = "latest";
 
 pub static LINUX: &str = "linux";
 pub static MACOS: &str = "macos";
