@@ -3,27 +3,59 @@ use std::fs;
 use semver::Version;
 use log::info;
 
-use crate::{Error, Result, releases, version};
+use crate::{Error, Result, releases, version, runtime};
 
 /// Remove an installed version.
-pub async fn remove(name: String, version: String) -> Result<()> {
-    let semver: Version = version.parse()
+pub async fn remove(version: String) -> Result<()> {
+    let version: Version = version.parse()
         .map_err(|_| Error::InvalidVersion(version))?;
+    delete(&version).await
+}
 
+/// Remove versions older than the current version.
+pub async fn prune() -> Result<()> {
+
+    // Must have latest runtime assets
+    runtime::update().await?;
+
+    // Load the releases manifest
+    let releases_file = releases::runtime_manifest_file()?;
+    let releases = releases::load(&releases_file)?;
+
+    // Get the current version
     let version_file = version::file()?;
-    if version_file.exists() {
-        let version_info = version::read(&version_file)?; 
-        if semver == version_info.version {
-            return Err(
-                Error::NoRemoveCurrent(semver.to_string()));
+    if !version_file.exists() {
+        return Err(Error::NotInstalled)
+    }
+
+    let info = version::read(&version_file)?;
+    let current = &info.version;
+
+    for (version, _) in releases.versions.iter() {
+        if version < current {
+            delete(version).await?;
         }
     }
 
-    let version_dir = releases::dir(&semver)?;
+    Ok(())
+}
+
+/// Delete a specific version.
+async fn delete(version: &Version) -> Result<()> {
+    let version_file = version::file()?;
+    if version_file.exists() {
+        let version_info = version::read(&version_file)?; 
+        if version == &version_info.version {
+            return Err(
+                Error::NoRemoveCurrent(version.to_string()));
+        }
+    }
+
+    let version_dir = releases::dir(&version)?;
     if !version_dir.exists() {
         return Err(
             Error::VersionNotInstalled(
-                semver.to_string(), version_dir));
+                version.to_string(), version_dir));
     }
 
     fs::remove_dir_all(&version_dir)?;

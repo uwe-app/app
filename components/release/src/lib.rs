@@ -78,7 +78,7 @@ mod version;
 pub use install::{install, latest, select};
 pub use list::list;
 pub use publish::publish;
-pub use remove::remove;
+pub use remove::{prune, remove};
 pub use runtime::update;
 pub use uninstall::uninstall;
 pub use upgrade::upgrade;

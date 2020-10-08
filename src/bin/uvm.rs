@@ -47,6 +47,9 @@ enum Command {
         version: String,
     },
 
+    /// Remove old versions
+    Prune{},
+
     /// Uninstall the program
     Uninstall {},
 }
@@ -94,7 +97,12 @@ async fn main() -> Result<()> {
                     .or_else(fatal)?;
             }
             Command::Remove { version } => {
-                release::remove(name, version).await
+                release::remove(version).await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Prune {} => {
+                release::prune().await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
