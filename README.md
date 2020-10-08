@@ -8,7 +8,6 @@ Repositories must be siblings, for example:
 ├── blog
 ├── library
 ├── plugins
-├── release
 ├── runtime
 ├── syntax
 └── website
@@ -18,19 +17,9 @@ Repositories must be siblings, for example:
 * `blog`: Canonical blog website.
 * `library`: Additional libraries; search runtime and third-party forks.
 * `plugins`: Source code for the plugins.
-* `release`: Binary releases organized by platform.
 * `runtime`: Runtime library; syntax highlighting and registry cache etc.
 * `syntax`: Builds the syntax highlighting runtime files to the `runtime`.
 * `website`: Source code for the project website.
-
-The release repositories take the following form; they must be in a `release` folder that is a sibling of this repo, eg:
-
-```
-release
-├── linux
-├── macos
-└── windows
-```
 
 ## Releases
 
@@ -40,9 +29,17 @@ A private executable `uwe-publish` performs all the steps for a release.
 2) Publish a new release: `cargo run --bin=uwe-publish`.
 3) Commit and push the new release version and checksums in the [runtime][] repository (`releases.json`).
 
-If you need them `uwe-publish` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. These flags are primarily used for testing and development purposes.
+If you need them `uwe-publish` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
+
+```
+cargo run --bin=uwe-publish -- --force --skip-build
+```
+
+## Uninstall
 
 To remove an installation run `cargo run --bin=uvm -- uninstall`.
+
+## Install
 
 To test an installation using the quick install script:
 
