@@ -53,12 +53,14 @@ mod download;
 mod env;
 mod install;
 mod publish;
+mod runtime;
 mod releases;
 mod uninstall;
 mod upgrade;
 mod version;
 
-pub use install::{install, runtime};
+pub use install::install;
 pub use publish::publish;
+pub use runtime::update;
 pub use uninstall::uninstall;
 pub use upgrade::upgrade;

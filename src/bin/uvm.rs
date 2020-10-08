@@ -6,20 +6,13 @@ use structopt::StructOpt;
 
 use uwe::{Error, Result};
 
+/// Universal (web editor) version manager
 #[derive(Debug, StructOpt)]
-#[structopt(name = "uwe-install")]
+#[structopt(name = "uvm")]
 struct Cli {
     /// Log level
     #[structopt(long, default_value = "info")]
     log_level: String,
-
-    /// Update the runtime assets
-    //#[structopt(short, long)]
-    //runtime: bool,
-
-    /// Uninstall the program
-    //#[structopt(long)]
-    //remove: bool,
 
     #[structopt(subcommand)]
     cmd: Option<Command>,
@@ -30,14 +23,14 @@ enum Command {
     /// Update the runtime assets
     Runtime {},
 
-    /// List release version
+    /// List release versions
     List {},
 
     /// Upgrade to latest release
     Latest {},
 
     /// Uninstall the program
-    Remove {},
+    Uninstall {},
 }
 
 fn fatal(e: Error) -> Result<()> {
@@ -55,11 +48,11 @@ async fn main() -> Result<()> {
     if let Some(cmd) = args.cmd.take() {
         match cmd {
             Command::Runtime {} => {
-                release::runtime().await
+                release::update().await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
-            Command::Remove {} => {
+            Command::Uninstall {} => {
                 release::uninstall().await
                     .map_err(Error::from)
                     .or_else(fatal)?;

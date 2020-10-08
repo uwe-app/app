@@ -18,10 +18,7 @@ pub static LINUX: &str = "linux";
 pub static MACOS: &str = "macos";
 pub static WINDOWS: &str = "windows";
 
-pub static PUBLISH_EXE_NAMES: [&str; 3] = [
-    "uwe", "upm",
-    "uwe-install"];
-
+pub static PUBLISH_EXE_NAMES: [&str; 3] = ["uwe", "upm", "uvm"];
 pub static INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
 
 #[serde_as]

@@ -2,9 +2,15 @@ use std::path::PathBuf;
 
 use log::{info, warn};
 
-use cache::CacheComponent;
-
-use crate::{Result, releases, env, download, binary, version};
+use crate::{
+    Result,
+    releases,
+    env,
+    download,
+    binary,
+    version,
+    runtime,
+};
 
 fn finish() -> Result<PathBuf> {
     let bin_dir = cache::get_bin_dir()?;
@@ -36,17 +42,11 @@ fn finish() -> Result<PathBuf> {
     Ok(bin_dir)
 }
 
-pub async fn runtime() -> Result<()> {
-    let components = vec![CacheComponent::Runtime];
-    cache::update(components)?;
-    Ok(())
-}
-
 /// Install the application components.
 pub async fn install(name: String) -> Result<()> {
     // Ensure we have the runtime assets so we can
     // access the release definitions
-    runtime().await?;
+    runtime::update().await?;
 
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;
@@ -55,6 +55,16 @@ pub async fn install(name: String) -> Result<()> {
     // Get the latest available version.
     let (version, info) = releases.latest();
 
+    let version_file = version::file()?;
+    if version_file.exists() {
+        let info = version::read(&version_file)?;
+        if &info.version == version {
+            info!("Current version {} is the latest", version.to_string());
+            return Ok(())
+        }
+    }
+
+
     // Download all the artifacts for the version.
     let binaries = download::all(version, info).await?;
     binary::permissions(&binaries)?;
@@ -62,7 +72,7 @@ pub async fn install(name: String) -> Result<()> {
 
     finish()?;
 
-    version::write(version)?;
+    version::write(&version_file, version)?;
 
     info!("Installed {}@{} ✓", name, version.to_string());
 

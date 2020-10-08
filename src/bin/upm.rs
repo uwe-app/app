@@ -19,7 +19,7 @@ fn fatal(e: uwe::Error) -> Result<()> {
 }
 
 #[derive(Debug, StructOpt)]
-/// Universal plugin manager
+/// Universal (web editor) plugin manager
 #[structopt(name = "upm")]
 struct Cli {
     /// Log level
