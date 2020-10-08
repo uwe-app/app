@@ -24,6 +24,7 @@ enum Command {
     Runtime {},
 
     /// List release versions
+    #[structopt(alias = "ls")]
     List {},
 
     /// Upgrade to latest release
@@ -45,6 +46,9 @@ async fn main() -> Result<()> {
     uwe::utils::log_level(&*args.log_level)
         .or_else(fatal)?;
 
+    let name = option_env!("CARGO_PKG_NAME")
+        .unwrap().to_string();
+
     if let Some(cmd) = args.cmd.take() {
         match cmd {
             Command::Runtime {} => {
@@ -58,17 +62,18 @@ async fn main() -> Result<()> {
                     .or_else(fatal)?;
             }
             Command::Latest {} => {
-                todo!("Intall latest")
+                release::latest(name).await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
             }
             Command::List {} => {
-                todo!("List versions")
+                release::list().await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
             }
         } 
     } else {
         // Perform a standard installation.
-        let name = option_env!("CARGO_PKG_NAME")
-            .unwrap().to_string();
-
         release::install(name).await
             .map_err(Error::from)
             .or_else(fatal)?;

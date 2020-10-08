@@ -35,6 +35,8 @@ If you need them `uwe-publish` supports `--force` to force overwrite an existing
 cargo run --bin=uwe-publish -- --force --skip-build
 ```
 
+Be aware force overwriting can cause a checksum mismatch when Cloudfront serves a stale executable version so you should invalidate the Cloudfront distribution.
+
 ## Uninstall
 
 To remove an installation run `cargo run --bin=uvm -- uninstall`.

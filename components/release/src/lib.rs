@@ -4,6 +4,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("No version available, perform an installation first")]
+    NotInstalled,
 
     #[error("Release version {0} already exists")]
     ReleaseVersionExists(String),
@@ -52,6 +54,7 @@ mod checksum;
 mod download;
 mod env;
 mod install;
+mod list;
 mod publish;
 mod runtime;
 mod releases;
@@ -59,7 +62,8 @@ mod uninstall;
 mod upgrade;
 mod version;
 
-pub use install::install;
+pub use install::{install, latest};
+pub use list::list;
 pub use publish::publish;
 pub use runtime::update;
 pub use uninstall::uninstall;

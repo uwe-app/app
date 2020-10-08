@@ -42,6 +42,11 @@ fn finish() -> Result<PathBuf> {
     Ok(bin_dir)
 }
 
+/// Attempt to upgrade to the latest version.
+pub async fn latest(name: String) -> Result<()> {
+   install(name).await
+}
+
 /// Install the application components.
 pub async fn install(name: String) -> Result<()> {
     // Ensure we have the runtime assets so we can
@@ -63,7 +68,6 @@ pub async fn install(name: String) -> Result<()> {
             return Ok(())
         }
     }
-
 
     // Download all the artifacts for the version.
     let binaries = download::all(version, info).await?;
