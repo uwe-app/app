@@ -27,8 +27,25 @@ enum Command {
     #[structopt(alias = "ls")]
     List {},
 
+    /// Use a specific version
+    Use {
+        version: String,
+    },
+
+    /// Install a specific version
+    Install {
+        version: String,
+    },
+
     /// Upgrade to latest release
     Latest {},
+
+
+    /// Delete a version
+    #[structopt(alias = "rm")]
+    Remove {
+        version: String,
+    },
 
     /// Uninstall the program
     Uninstall {},
@@ -56,8 +73,18 @@ async fn main() -> Result<()> {
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
-            Command::Uninstall {} => {
-                release::uninstall().await
+            Command::List {} => {
+                release::list().await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Use { version } => {
+                release::select(name, version).await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Install { version } => {
+                release::install(name, version).await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
@@ -66,15 +93,20 @@ async fn main() -> Result<()> {
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
-            Command::List {} => {
-                release::list().await
+            Command::Remove { version } => {
+                release::remove(name, version).await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Uninstall {} => {
+                release::uninstall().await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
         } 
     } else {
         // Perform a standard installation.
-        release::install(name).await
+        release::latest(name).await
             .map_err(Error::from)
             .or_else(fatal)?;
     }

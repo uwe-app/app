@@ -43,6 +43,11 @@ pub struct ReleaseVersion {
     pub(crate) platforms: HashMap<String, HashMap<String, String>>
 }
 
+pub(crate) fn dir(version: &Version) -> Result<PathBuf>{
+    Ok(cache::get_runtime_dir()?
+        .join(RELEASE).join(version.to_string()))
+}
+
 /// Load the release definition JSON.
 pub(crate) fn load<P: AsRef<Path>>(target: P) -> Result<Releases> {
     let contents = fs::read_to_string(target.as_ref())?;

@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 
 use log::{info, warn};
+use semver::Version;
 
 use crate::{
+    Error,
     Result,
     releases,
     env,
@@ -12,7 +14,7 @@ use crate::{
     runtime,
 };
 
-fn finish() -> Result<PathBuf> {
+fn welcome() -> Result<PathBuf> {
     let bin_dir = cache::get_bin_dir()?;
 
     // Write out the env file
@@ -44,24 +46,51 @@ fn finish() -> Result<PathBuf> {
 
 /// Attempt to upgrade to the latest version.
 pub async fn latest(name: String) -> Result<()> {
-   install(name).await
+    fetch(name, true, true, None).await
+}
+
+/// Install a version and select it so it is the current version.
+pub async fn select(name: String, version: String) -> Result<()> {
+    let semver: Version = version.parse()
+        .map_err(|_| Error::InvalidVersion(version))?;
+    fetch(name, true, false, Some(semver)).await
+}
+
+/// Install a version but do not select it.
+pub async fn install(name: String, version: String) -> Result<()> {
+    let semver: Version = version.parse()
+        .map_err(|_| Error::InvalidVersion(version))?;
+    fetch(name, false, false, Some(semver)).await
 }
 
 /// Install the application components.
-pub async fn install(name: String) -> Result<()> {
-    // Ensure we have the runtime assets so we can
-    // access the release definitions
+async fn fetch(
+    name: String,
+    select: bool,
+    latest: bool,
+    version: Option<Version>) -> Result<()> {
+
+    // Must have latest runtime assets
     runtime::update().await?;
 
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;
     let releases = releases::load(&releases_file)?;
 
-    // Get the latest available version.
-    let (version, info) = releases.latest();
+    let (version, info) = if let Some(ref request) = version {
+        let info = releases.versions.get(request)
+            .ok_or_else(|| Error::VersionNotFound(request.to_string()))?;
+        (request, info)
+    } else {
+        // Get the latest available version.
+        releases.latest()
+    };
 
     let version_file = version::file()?;
-    if version_file.exists() {
+
+    // If we want the latest version and currently are the latest
+    // version then no need to proceed
+    if latest && version_file.exists() {
         let info = version::read(&version_file)?;
         if &info.version == version {
             info!("Current version {} is the latest", version.to_string());
@@ -72,11 +101,19 @@ pub async fn install(name: String) -> Result<()> {
     // Download all the artifacts for the version.
     let binaries = download::all(version, info).await?;
     binary::permissions(&binaries)?;
-    binary::symlink(&binaries)?;
 
-    finish()?;
+    if select {
+        binary::symlink(&binaries)?;
+    }
 
-    version::write(&version_file, version)?;
+    let first_run = !version_file.exists();
+    if first_run {
+        welcome()?;
+    }
+
+    if select {
+        version::write(&version_file, version)?;
+    }
 
     info!("Installed {}@{} ✓", name, version.to_string());
 

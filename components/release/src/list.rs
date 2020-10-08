@@ -1,9 +1,12 @@
 use log::info;
 
-use crate::{Error, Result, releases, version};
+use crate::{Error, Result, releases, version, runtime};
 
 /// List versions.
 pub async fn list() -> Result<()> {
+
+    // Must have latest runtime assets
+    runtime::update().await?;
 
     // Load the releases manifest
     let releases_file = releases::runtime_manifest_file()?;
@@ -25,9 +28,8 @@ pub async fn list() -> Result<()> {
     info!("-------------------------------");
     info!("");
 
-    for (version, _) in releases.versions.iter() {
-        let version_dir = cache::get_runtime_dir()?
-            .join(releases::RELEASE).join(version.to_string());
+    for (version, _) in releases.versions.iter().rev() {
+        let version_dir = releases::dir(version)?;
         let is_installed = version_dir.exists() && version_dir.is_dir();
         let mark = if is_installed {"◯"} else {"-"};
         if current == version {
@@ -39,11 +41,10 @@ pub async fn list() -> Result<()> {
 
     let (latest, _) = releases.latest();
     let using_latest = latest == current;
-    let mark = if using_latest {", up to date <3"} else {", needs update!"};
+    let mark = if using_latest {", up to date <3"} else {", wants upgrade!"};
 
     info!("");
     info!("{} version(s){}", total, mark);
 
     Ok(())
 }
-

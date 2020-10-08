@@ -30,8 +30,7 @@ pub(crate) fn url(version: &Version, name: &str) -> Result<Url> {
 pub(crate) async fn all(
     version: &Version, info: &ReleaseVersion) -> Result<HashMap<String, PathBuf>> {
 
-    let version_dir = cache::get_runtime_dir()?
-        .join(releases::RELEASE).join(version.to_string());
+    let version_dir = releases::dir(version)?;
 
     if !version_dir.exists() {
         fs::create_dir_all(&version_dir)?;
@@ -54,7 +53,7 @@ pub(crate) async fn all(
 
         download(&url, &download_file).await?;
 
-        debug!("Calculate checksum {}", download_file.display());
+        debug!("Verify checksum {}", download_file.display());
         let received = hex::encode(checksum::digest(&download_file)?);
         if &received != expected {
             return Err(

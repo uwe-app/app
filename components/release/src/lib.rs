@@ -7,6 +7,18 @@ pub enum Error {
     #[error("No version available, perform an installation first")]
     NotInstalled,
 
+    #[error("Version {0} could not be found")]
+    VersionNotFound(String),
+
+    #[error("Version {0} is not installed ({1})")]
+    VersionNotInstalled(String, PathBuf),
+
+    #[error("Version {0} is the current version, use another version before removal")]
+    NoRemoveCurrent(String),
+
+    #[error("Version {0} is not a valid semver")]
+    InvalidVersion(String),
+
     #[error("Release version {0} already exists")]
     ReleaseVersionExists(String),
 
@@ -56,15 +68,17 @@ mod env;
 mod install;
 mod list;
 mod publish;
+mod remove;
 mod runtime;
 mod releases;
 mod uninstall;
 mod upgrade;
 mod version;
 
-pub use install::{install, latest};
+pub use install::{install, latest, select};
 pub use list::list;
 pub use publish::publish;
+pub use remove::remove;
 pub use runtime::update;
 pub use uninstall::uninstall;
 pub use upgrade::upgrade;
