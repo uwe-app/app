@@ -52,6 +52,10 @@ pub(crate) fn dir(version: &Version) -> Result<PathBuf> {
         .join(version.to_string()))
 }
 
+pub(crate) fn exists(version: &Version) -> Result<bool> {
+    Ok(dir(version)?.exists())
+}
+
 /// Load the release definition JSON.
 pub(crate) fn load<P: AsRef<Path>>(target: P) -> Result<Releases> {
     let contents = fs::read_to_string(target.as_ref())?;

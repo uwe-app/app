@@ -31,9 +31,11 @@ pub async fn prune() -> Result<()> {
     let info = version::read(&version_file)?;
     let current = &info.version;
 
-    for (version, _) in releases.versions.iter() {
+    for (version, _) in releases.versions.iter().rev() {
         if version < current {
-            delete(version).await?;
+            if releases::exists(version)? {
+                delete(version).await?;
+            }
         }
     }
 

@@ -33,7 +33,9 @@ pub async fn update(current: &str) -> Result<()> {
     binary::permissions(&binaries)?;
     binary::symlink(&binaries)?;
 
-    info!("Updated to uvm@{} ✓", version.to_string());
+    let exe = std::env::current_exe()?;
+    let name = exe.file_name().unwrap().to_string_lossy().to_owned();
+    info!("Updated to {}@{} ✓", name, version.to_string());
 
     Ok(())
 }

@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{Write, stderr, stdout};
-use std::path::{Path, PathBuf};
+use std::io::{self, Write, stderr, stdout};
+use std::path::PathBuf;
 
 use pbr::{ProgressBar, Units};
 use crossterm::{execute, terminal::{Clear, ClearType}, cursor::MoveUp};
 use human_bytes::human_bytes;
+use tempfile::NamedTempFile;
+use sha3::{Digest, Sha3_256};
 
 use log::{debug, info};
 use semver::Version;
@@ -65,10 +67,12 @@ pub(crate) async fn all(
         debug!("Download {}", url.to_string());
         debug!("File {}", download_file.display());
 
-        download(&url, &download_file, name).await?;
+        let mut temp_target = NamedTempFile::new()?;
+        let mut temp_download = temp_target.reopen()?;
 
-        debug!("Verify checksum {}", download_file.display());
-        let received = hex::encode(checksum::digest(&download_file)?);
+        let checksum = download(&url, &mut temp_download, name).await?;
+        let received = hex::encode(&checksum);
+
         if &received != expected {
             return Err(Error::DigestMismatch(
                 name.to_string(),
@@ -76,6 +80,17 @@ pub(crate) async fn all(
                 received,
             ));
         }
+
+        // Remove any existing target
+        if download_file.exists() {
+            fs::remove_file(&download_file)?;
+        }
+
+        // Copy the temporary download into place, cannot use fs::rename()
+        // as tempfile() does not yield a path!
+        let mut install_file = File::create(&download_file)?;
+        let mut temp_source = temp_target.reopen()?;
+        io::copy(&mut temp_source, &mut install_file)?;
 
         output.insert(name.to_string(), download_file);
     }
@@ -94,7 +109,7 @@ pub(crate) async fn all(
 }
 
 /// Download a single artifact.
-async fn download<P: AsRef<Path>>(url: &Url, path: P, name: &str) -> Result<()> {
+async fn download(url: &Url, content_file: &mut File, name: &str) -> Result<Vec<u8>> {
     let mut response = reqwest::get(url.clone()).await?;
     if response.status() != StatusCode::OK {
         return Err(Error::DownloadFail(
@@ -111,14 +126,19 @@ async fn download<P: AsRef<Path>>(url: &Url, path: P, name: &str) -> Result<()> 
     let msg = format!(" Downloading {}(1) ", name);
     pb.message(&msg);
 
-    let mut content_file = File::create(path.as_ref())?;
+    let mut hasher = Sha3_256::new();
+
+    //let mut content_file = File::create(path.as_ref())?;
     while let Some(chunk) = response.chunk().await? {
         content_file.write_all(&chunk)?;
         pb.add(chunk.len() as u64);
+
+        let mut bytes: &[u8] = chunk.as_ref();
+        std::io::copy(&mut bytes, &mut hasher)?;
     }
 
     let msg = format!(" Downloaded {} ({})", name, human_bytes(len as f64));
     pb.finish_print(&msg);
 
-    Ok(())
+    Ok(hasher.finalize().as_slice().to_owned())
 }
