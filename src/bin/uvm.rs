@@ -27,28 +27,24 @@ enum Command {
     #[structopt(alias = "ls")]
     List {},
 
-    /// Use a specific version
-    Use {
-        version: String,
-    },
+    /// Use a release version
+    Use { version: String },
 
-    /// Install a specific version
-    Install {
-        version: String,
-    },
+    /// Install a release version
+    Install { version: String },
 
     /// Upgrade to latest release
     Latest {},
 
+    /// Update the version manager (uvm)
+    Update {},
 
-    /// Delete a version
+    /// Delete a release version
     #[structopt(alias = "rm")]
-    Remove {
-        version: String,
-    },
+    Remove { version: String },
 
-    /// Remove old versions
-    Prune{},
+    /// Remove old release versions
+    Prune {},
 
     /// Uninstall the program
     Uninstall {},
@@ -63,58 +59,63 @@ fn fatal(e: Error) -> Result<()> {
 async fn main() -> Result<()> {
     let mut args = Cli::from_args();
 
-    uwe::utils::log_level(&*args.log_level)
-        .or_else(fatal)?;
+    uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 
-    let name = option_env!("CARGO_PKG_NAME")
-        .unwrap().to_string();
+    let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
+    let version = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
 
     if let Some(cmd) = args.cmd.take() {
         match cmd {
             Command::Runtime {} => {
-                release::update().await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
+                release::fetch().await.map_err(Error::from).or_else(fatal)?;
             }
             Command::List {} => {
-                release::list().await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
+                release::list().await.map_err(Error::from).or_else(fatal)?;
             }
             Command::Use { version } => {
-                release::select(name, version).await
+                release::select(name, version)
+                    .await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
             Command::Install { version } => {
-                release::install(name, version).await
+                release::install(name, version)
+                    .await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
             Command::Latest {} => {
-                release::latest(name).await
+                release::latest(name)
+                    .await
+                    .map_err(Error::from)
+                    .or_else(fatal)?;
+            }
+            Command::Update {} => {
+                release::update(version)
+                    .await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
             Command::Remove { version } => {
-                release::remove(version).await
+                release::remove(version)
+                    .await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
             Command::Prune {} => {
-                release::prune().await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
+                release::prune().await.map_err(Error::from).or_else(fatal)?;
             }
             Command::Uninstall {} => {
-                release::uninstall().await
+                release::uninstall()
+                    .await
                     .map_err(Error::from)
                     .or_else(fatal)?;
             }
-        } 
+        }
     } else {
         // Perform a standard installation.
-        release::latest(name).await
+        release::latest(name)
+            .await
             .map_err(Error::from)
             .or_else(fatal)?;
     }

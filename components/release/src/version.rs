@@ -1,13 +1,13 @@
-use std::path::{Path, PathBuf};
 use std::fs::{self, File};
 use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
 use semver::Version;
 
-use crate::{Result, releases};
+use crate::{releases, Result};
 
 static VERSION_FILE: &str = "version.toml";
 
@@ -26,7 +26,9 @@ pub(crate) fn file() -> Result<PathBuf> {
 
 /// Write out the version file.
 pub(crate) fn write<P: AsRef<Path>>(path: P, version: &Version) -> Result<()> {
-    let info = VersionInfo {version: version.clone()};
+    let info = VersionInfo {
+        version: version.clone(),
+    };
     let mut file = File::create(path.as_ref())?;
     let content = toml::to_string(&info)?;
     file.write_all(content.as_bytes())?;

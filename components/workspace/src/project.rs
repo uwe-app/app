@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
-use log::{info, debug};
+use log::{debug, info};
 
 use futures::TryFutureExt;
 use url::Url;

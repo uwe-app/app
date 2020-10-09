@@ -176,14 +176,19 @@ impl<'a> Resolver<'a> {
     }
 
     fn scopes(&mut self) -> Result<()> {
-        let scoped = self.resolved
+        let scoped = self
+            .resolved
             .iter()
             .enumerate()
             .filter(|(_, (d, _))| d.target.is_some())
             .filter(|(_, (d, _))| {
-                if let DependencyTarget::Local { .. } = d.target.as_ref().unwrap() {
+                if let DependencyTarget::Local { .. } =
+                    d.target.as_ref().unwrap()
+                {
                     true
-                } else { false }
+                } else {
+                    false
+                }
             })
             .collect::<Vec<_>>();
 
@@ -191,7 +196,8 @@ impl<'a> Resolver<'a> {
             .into_iter()
             .map(|(i, (_dep, plugin))| {
                 let parent_name = plugin.parent();
-                let parent = self.resolved
+                let parent = self
+                    .resolved
                     .iter()
                     .cloned()
                     .find(|(_, e)| e.name == parent_name);
@@ -203,9 +209,13 @@ impl<'a> Resolver<'a> {
         for (index, parent) in scoped {
             let (dep, plugin) = self.resolved.get_mut(index).unwrap();
 
-            let (parent_dep, parent_plugin) = parent.as_ref().ok_or_else(
-                || Error::PluginParentNotFound(
-                    plugin.parent(), plugin.name.clone()))?;
+            let (parent_dep, parent_plugin) =
+                parent.as_ref().ok_or_else(|| {
+                    Error::PluginParentNotFound(
+                        plugin.parent(),
+                        plugin.name.clone(),
+                    )
+                })?;
 
             //println!("Got scoped at {}", index);
             //println!("Got scoped name {}", &plugin.name);
@@ -295,9 +305,13 @@ impl<'a> Resolver<'a> {
 
             match solved {
                 SolvedReference::Package(ref _package) => {
-                    let plugin =
-                        installer::install(&self.project, &self.registry, &dep, None)
-                            .await?;
+                    let plugin = installer::install(
+                        &self.project,
+                        &self.registry,
+                        &dep,
+                        None,
+                    )
+                    .await?;
                     self.resolved.push((dep, plugin));
                 }
                 _ => {}
@@ -330,14 +344,11 @@ async fn solver(
     tree: &mut Vec<Dependency>,
     parent: Option<SolvedReference>,
 ) -> Result<()> {
-
     if stack.len() > DEPENDENCY_STACK_SIZE {
-        return Err(
-            Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
+        return Err(Error::DependencyStackTooLarge(DEPENDENCY_STACK_SIZE));
     }
 
     for (name, mut dep) in input.into_iter() {
-
         if stack.contains(&name) {
             return Err(Error::CyclicDependency(name));
         }
@@ -364,15 +375,13 @@ async fn solver(
                 None
             })
             .map(|e| e.clone())
-            .unwrap_or(
-                LockFileEntry {
-                    name: name.to_string(),
-                    version: version.clone(),
-                    checksum,
-                    source: None,
-                    dependencies: None,
-                }
-            );
+            .unwrap_or(LockFileEntry {
+                name: name.to_string(),
+                version: version.clone(),
+                checksum,
+                source: None,
+                dependencies: None,
+            });
 
         let mut solved = if let Some(plugin) = plugin.take() {
             // TODO: ensure this is set for SolvedReference::Package
@@ -406,7 +415,8 @@ async fn solver(
             }
         };
 
-        let has_features = dep.features.is_some() && !dep.features.as_ref().unwrap().is_default();
+        let has_features = dep.features.is_some()
+            && !dep.features.as_ref().unwrap().is_default();
 
         // If we have nested dependencies recurse
         if !dependencies.is_empty() || has_features {
@@ -430,7 +440,8 @@ async fn solver(
                 stack,
                 tree,
                 Some(solved.clone()),
-            ).await?;
+            )
+            .await?;
             tree.pop();
             stack.pop();
         }
@@ -468,11 +479,11 @@ async fn resolve_version<P: AsRef<Path>>(
     dep: &Dependency,
     parent: &Option<SolvedReference>,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
-
     if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
-                let plugin = installer::install_path(project, path, None).await?;
+                let plugin =
+                    installer::install_path(project, path, None).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {
@@ -485,23 +496,25 @@ async fn resolve_version<P: AsRef<Path>>(
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Local { ref scope } => {
-
                 let locals = if let Some(ref parent) = parent {
                     match parent {
                         SolvedReference::Plugin(ref plugin) => {
                             plugin.plugins().clone()
                         }
                         SolvedReference::Package(ref package) => {
-                           package.plugins().clone()
+                            package.plugins().clone()
                         }
                     }
                 } else {
-                    return Err(
-                        Error::PluginScopeRequiresParent(
-                            dep.to_string(), scope.to_string()))
+                    return Err(Error::PluginScopeRequiresParent(
+                        dep.to_string(),
+                        scope.to_string(),
+                    ));
                 };
 
-                let plugin = installer::install_local(project, scope, Some(locals)).await?;
+                let plugin =
+                    installer::install_local(project, scope, Some(locals))
+                        .await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
         }

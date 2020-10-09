@@ -206,7 +206,9 @@ pub fn init(options: InitOptions) -> Result<()> {
     let target = options.target;
     let message: &str = if let Some(ref message) = options.message {
         message
-    } else { DEFAULT_MESSAGE };
+    } else {
+        DEFAULT_MESSAGE
+    };
 
     if target.exists() {
         return Err(Error::TargetExists(target.clone()));
@@ -236,7 +238,7 @@ pub fn init(options: InitOptions) -> Result<()> {
                 };
 
                 if !source_dir.exists() {
-                    return Err(Error::NoInitSource)
+                    return Err(Error::NoInitSource);
                 }
 
                 check_site_settings(&source_dir)?;

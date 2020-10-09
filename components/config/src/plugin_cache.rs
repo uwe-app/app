@@ -57,7 +57,8 @@ impl PluginCache {
                     utils::url::to_href_separator(plugin.to_assets_path())
                 );
 
-                if !plugin.styles().is_empty() && !apply.styles_match.is_empty() {
+                if !plugin.styles().is_empty() && !apply.styles_match.is_empty()
+                {
                     // Make style paths relative to the plugin asset destination
                     let styles = plugin
                         .styles()
@@ -70,7 +71,9 @@ impl PluginCache {
                         .collect::<Vec<StyleAsset>>();
                     self.styles_cache.push((dep.clone(), styles));
                 }
-                if !plugin.scripts().is_empty() && !apply.scripts_match.is_empty() {
+                if !plugin.scripts().is_empty()
+                    && !apply.scripts_match.is_empty()
+                {
                     let scripts = plugin
                         .scripts()
                         .clone()

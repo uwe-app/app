@@ -1,22 +1,22 @@
 use std::fs;
 
-use semver::Version;
 use log::info;
+use semver::Version;
 
-use crate::{Error, Result, releases, version, runtime};
+use crate::{releases, runtime, version, Error, Result};
 
 /// Remove an installed version.
 pub async fn remove(version: String) -> Result<()> {
-    let version: Version = version.parse()
+    let version: Version = version
+        .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
     delete(&version).await
 }
 
 /// Remove versions older than the current version.
 pub async fn prune() -> Result<()> {
-
     // Must have latest runtime assets
-    runtime::update().await?;
+    runtime::fetch().await?;
 
     // Load the releases manifest
     let releases_file = releases::runtime_manifest_file()?;
@@ -25,7 +25,7 @@ pub async fn prune() -> Result<()> {
     // Get the current version
     let version_file = version::file()?;
     if !version_file.exists() {
-        return Err(Error::NotInstalled)
+        return Err(Error::NotInstalled);
     }
 
     let info = version::read(&version_file)?;
@@ -44,18 +44,18 @@ pub async fn prune() -> Result<()> {
 async fn delete(version: &Version) -> Result<()> {
     let version_file = version::file()?;
     if version_file.exists() {
-        let version_info = version::read(&version_file)?; 
+        let version_info = version::read(&version_file)?;
         if version == &version_info.version {
-            return Err(
-                Error::NoRemoveCurrent(version.to_string()));
+            return Err(Error::NoRemoveCurrent(version.to_string()));
         }
     }
 
     let version_dir = releases::dir(&version)?;
     if !version_dir.exists() {
-        return Err(
-            Error::VersionNotInstalled(
-                version.to_string(), version_dir));
+        return Err(Error::VersionNotInstalled(
+            version.to_string(),
+            version_dir,
+        ));
     }
 
     fs::remove_dir_all(&version_dir)?;

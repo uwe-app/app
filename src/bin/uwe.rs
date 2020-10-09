@@ -17,7 +17,7 @@ use config::{
 };
 use publisher::PublishProvider;
 
-use uwe::{self, Result, Error};
+use uwe::{self, Error, Result};
 
 fn get_server_config(
     target: &PathBuf,
@@ -149,7 +149,6 @@ struct BuildOpts {
 
 #[derive(StructOpt, Debug)]
 struct InitOpts {
-
     /// Commit message.
     #[structopt(short, long)]
     message: Option<String>,
@@ -472,8 +471,7 @@ async fn main() -> Result<()> {
             }
         }
         None => {
-            if let Err(e) = process_command(Command::default(root_args)).await
-            {
+            if let Err(e) = process_command(Command::default(root_args)).await {
                 fatal(e);
             }
         }

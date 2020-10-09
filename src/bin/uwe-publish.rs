@@ -10,7 +10,6 @@ use uwe::Result;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "uwe-release")]
 struct Cli {
-
     /// The bucket name.
     #[structopt(short, long, default_value = "release.uwe.app")]
     bucket: String,
@@ -60,8 +59,9 @@ async fn main() -> Result<()> {
         root_args.profile,
         root_args.skip_build,
         root_args.force,
-        ).await {
-
+    )
+    .await
+    {
         fatal(e.to_string());
     }
 

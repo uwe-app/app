@@ -46,12 +46,14 @@ pub struct FeatureMap {
 }
 
 impl FeatureMap {
-
     pub fn is_empty(&self) -> bool {
         self.map.is_empty()
     }
 
-    pub fn entry(&mut self, name: String) -> hash_map::Entry<'_, FeatureName, Vec<DependencyName>> {
+    pub fn entry(
+        &mut self,
+        name: String,
+    ) -> hash_map::Entry<'_, FeatureName, Vec<DependencyName>> {
         self.map.entry(name)
     }
 

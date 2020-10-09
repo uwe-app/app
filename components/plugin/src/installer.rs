@@ -96,12 +96,10 @@ pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     path: F,
     source: Option<PluginSource>,
 ) -> Result<Plugin> {
-
-    let (target, mut plugin) =
-        install_file(project.as_ref(), path).await?;
+    let (target, mut plugin) = install_file(project.as_ref(), path).await?;
 
     //let url_target =
-        //format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
+    //format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
     //let source: Url = url_target.parse()?;
 
     let source = if let Some(ref source) = source {
@@ -216,7 +214,7 @@ pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
     let scope = scope.as_ref();
     if let Some(ref collection) = locals {
         if let Some(plugin) = collection.get(scope) {
-            return Ok(plugin.clone())
+            return Ok(plugin.clone());
         } else {
             Err(Error::PluginScopeNotFound(scope.to_string()))
         }
@@ -229,15 +227,14 @@ pub(crate) fn inherit(
     local_dep: &mut Dependency,
     local_plugin: &mut Plugin,
     parent_plugin: &Plugin,
-    parent_dep: &Dependency) -> Result<()> {
-
+    parent_dep: &Dependency,
+) -> Result<()> {
     // FIXME: ensure we are using the local name only...
     //
 
     local_dep.apply = parent_dep.apply.clone();
 
-    local_plugin.set_source(
-        PluginSource::Local(local_plugin.name.clone()));
+    local_plugin.set_source(PluginSource::Local(local_plugin.name.clone()));
     local_plugin.set_base(parent_plugin.base().clone());
     Ok(())
 }

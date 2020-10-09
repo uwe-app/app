@@ -3,11 +3,11 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
+use std::panic;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use std::panic;
 
-use uwe::{self, Result, Error};
+use uwe::{self, Error, Result};
 
 fn print_error(e: uwe::Error) {
     error!("{}", e);
@@ -57,25 +57,9 @@ enum Plugin {
     },
 }
 
-async fn process_command(cmd: Plugin) -> Result<()> {
-    match cmd {
-        Plugin::Lint { path, inspect } => {
-            uwe::plugin::lint(path, inspect).await?;
-        }
-        Plugin::Pack { path } => {
-            uwe::plugin::pack(path).await?;
-        }
-        Plugin::Publish { path } => {
-            uwe::plugin::publish(path).await?;
-        }
-    }
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
-    let root_args = Cli::from_args();
+    let args = Cli::from_args();
 
     // Fluent templates panics if an error is caught parsing the
     // templates (for example attempting to override from a shared resource)
@@ -88,11 +72,28 @@ async fn main() -> Result<()> {
         print_error(Error::Panic(message));
     }));
 
-    uwe::utils::log_level(&*root_args.log_level)
-        .or_else(fatal)?;
+    uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 
-    process_command(root_args.cmd).await
-        .or_else(fatal)?;
+    match args.cmd {
+        Plugin::Lint { path, inspect } => {
+            uwe::plugin::lint(path, inspect)
+                .await
+                .map_err(Error::from)
+                .or_else(fatal)?;
+        }
+        Plugin::Pack { path } => {
+            uwe::plugin::pack(path)
+                .await
+                .map_err(Error::from)
+                .or_else(fatal)?;
+        }
+        Plugin::Publish { path } => {
+            uwe::plugin::publish(path)
+                .await
+                .map_err(Error::from)
+                .or_else(fatal)?;
+        }
+    }
 
     Ok(())
 }

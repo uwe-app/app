@@ -117,7 +117,9 @@ pub enum Error {
     #[error("The scoped plugin {0} could not be found in the plugins")]
     PluginScopeNotFound(String),
 
-    #[error("The parent plugin {0} could not be found for the scoped plugin {1}")]
+    #[error(
+        "The parent plugin {0} could not be found for the scoped plugin {1}"
+    )]
     PluginParentNotFound(String, String),
 
     #[error("The dependency {0} uses the local scope {1} but no plugins are available")]
@@ -161,7 +163,6 @@ pub enum Error {
 
     //#[error(transparent)]
     //Regex(#[from] regex::Error),
-
     #[error(transparent)]
     Lint(#[from] self::LintError),
 

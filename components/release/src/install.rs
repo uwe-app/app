@@ -6,12 +6,13 @@ use semver::Version;
 use crate::{
     Error,
     Result,
-    releases,
-    env,
-    download,
     binary,
-    version,
+    download,
+    env,
+    info,
+    releases,
     runtime,
+    version,
 };
 
 fn welcome() -> Result<PathBuf> {
@@ -51,14 +52,16 @@ pub async fn latest(name: String) -> Result<()> {
 
 /// Install a version and select it so it is the current version.
 pub async fn select(name: String, version: String) -> Result<()> {
-    let semver: Version = version.parse()
+    let semver: Version = version
+        .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
     fetch(name, true, false, Some(semver)).await
 }
 
 /// Install a version but do not select it.
 pub async fn install(name: String, version: String) -> Result<()> {
-    let semver: Version = version.parse()
+    let semver: Version = version
+        .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
     fetch(name, false, false, Some(semver)).await
 }
@@ -68,17 +71,19 @@ async fn fetch(
     name: String,
     select: bool,
     latest: bool,
-    version: Option<Version>) -> Result<()> {
-
+    version: Option<Version>,
+) -> Result<()> {
     // Must have latest runtime assets
-    runtime::update().await?;
+    runtime::fetch().await?;
 
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;
     let releases = releases::load(&releases_file)?;
 
     let (version, info) = if let Some(ref request) = version {
-        let info = releases.versions.get(request)
+        let info = releases
+            .versions
+            .get(request)
             .ok_or_else(|| Error::VersionNotFound(request.to_string()))?;
         (request, info)
     } else {
@@ -93,8 +98,7 @@ async fn fetch(
     if latest && version_file.exists() {
         let info = version::read(&version_file)?;
         if &info.version == version {
-            info!("Current version {} is the latest", version.to_string());
-            return Ok(())
+            return info::upto_date(&version);
         }
     }
 

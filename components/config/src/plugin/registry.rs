@@ -1,11 +1,15 @@
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use crate::{dependency::DependencyMap, features::FeatureMap, plugin::{Plugin, PluginMap}};
+use crate::{
+    dependency::DependencyMap,
+    features::FeatureMap,
+    plugin::{Plugin, PluginMap},
+};
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -95,7 +99,7 @@ impl From<&Plugin> for RegistryItem {
         }
 
         if !plugin.plugins().is_empty() {
-            item.plugins= plugin.plugins().clone();
+            item.plugins = plugin.plugins().clone();
         }
 
         if !plugin.features().is_empty() {

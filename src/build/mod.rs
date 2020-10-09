@@ -13,10 +13,9 @@ pub async fn compile<P: AsRef<Path>>(
     args: &'static mut ProfileSettings,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-
     let project = project.as_ref();
     if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project.to_path_buf()))
+        return Err(Error::NotDirectory(project.to_path_buf()));
     }
 
     let lock_path = LockFile::get_lock_file(project);

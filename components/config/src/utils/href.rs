@@ -55,7 +55,8 @@ impl From<&Path> for UrlPath {
     fn from(p: &Path) -> Self {
         Self {
             value: utils::url::to_href_separator(
-                p.to_string_lossy().into_owned()),
+                p.to_string_lossy().into_owned(),
+            ),
         }
     }
 }
@@ -64,7 +65,8 @@ impl From<&PathBuf> for UrlPath {
     fn from(p: &PathBuf) -> Self {
         Self {
             value: utils::url::to_href_separator(
-                p.to_string_lossy().into_owned()),
+                p.to_string_lossy().into_owned(),
+            ),
         }
     }
 }

@@ -244,18 +244,20 @@ pub fn feed(
             let file_extension = feed_type.get_extension();
             let source = source_dir.join(&file_name);
 
-            let template: Option<PathBuf> =
-                if let Some(ref partial_key) = feed.names.get(feed_type) {
-                    let full_partial_key = format!(
-                        "{}.{}", partial_key, &file_extension);
-                    if let Some(ref partial) = plugin_layouts.get(&full_partial_key) {
-                        Some(partial.to_path_buf(plugin.base()))
-                    } else {
-                        None
-                    }
+            let template: Option<PathBuf> = if let Some(ref partial_key) =
+                feed.names.get(feed_type)
+            {
+                let full_partial_key =
+                    format!("{}.{}", partial_key, &file_extension);
+                if let Some(ref partial) = plugin_layouts.get(&full_partial_key)
+                {
+                    Some(partial.to_path_buf(plugin.base()))
                 } else {
                     None
-                };
+                }
+            } else {
+                None
+            };
 
             if template.is_none() {
                 return Err(Error::NoFeedPartialPath(feed_type.to_string()));

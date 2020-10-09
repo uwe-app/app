@@ -1,15 +1,19 @@
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 
-use url::Url;
+use log::{debug, info};
 use semver::Version;
-use log::{info, debug};
+use url::Url;
 
 use http::StatusCode;
 
-use crate::{Error, Result, releases::{self, ReleaseVersion}, checksum};
+use crate::{
+    checksum,
+    releases::{self, ReleaseVersion},
+    Error, Result,
+};
 
 static RELEASE_URL: &str = "https://release.uwe.app";
 //static RELEASE_URL: &str = "http://release.uwe.app.s3-website-ap-southeast-1.amazonaws.com";
@@ -20,25 +24,26 @@ pub(crate) fn url(version: &Version, name: &str) -> Result<Url> {
         RELEASE_URL,
         version.to_string(),
         releases::current_platform(),
-        name);
+        name
+    );
 
     Ok(full_url.parse()?)
 }
 
-/// Download all the artifacts for a version and 
+/// Download all the artifacts for a version and
 /// verify that the checksums match.
 pub(crate) async fn all(
-    version: &Version, info: &ReleaseVersion) -> Result<HashMap<String, PathBuf>> {
-
+    version: &Version,
+    info: &ReleaseVersion,
+) -> Result<HashMap<String, PathBuf>> {
     let version_dir = releases::dir(version)?;
 
     if !version_dir.exists() {
         fs::create_dir_all(&version_dir)?;
     }
 
-    let platform_info = info.platforms
-        .get(&releases::current_platform())
-        .unwrap();
+    let platform_info =
+        info.platforms.get(&releases::current_platform()).unwrap();
 
     let mut output: HashMap<String, PathBuf> = HashMap::new();
 
@@ -56,9 +61,11 @@ pub(crate) async fn all(
         debug!("Verify checksum {}", download_file.display());
         let received = hex::encode(checksum::digest(&download_file)?);
         if &received != expected {
-            return Err(
-                Error::DigestMismatch(
-                    name.to_string(), expected.clone(), received));
+            return Err(Error::DigestMismatch(
+                name.to_string(),
+                expected.clone(),
+                received,
+            ));
         }
 
         output.insert(name.to_string(), download_file);

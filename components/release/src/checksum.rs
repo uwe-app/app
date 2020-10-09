@@ -12,4 +12,3 @@ pub(crate) fn digest<P: AsRef<Path>>(target: P) -> Result<Vec<u8>> {
     std::io::copy(&mut reader, &mut hasher)?;
     Ok(hasher.finalize().as_slice().to_owned())
 }
-

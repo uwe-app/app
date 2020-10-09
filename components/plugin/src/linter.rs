@@ -1,13 +1,13 @@
-use std::path::Path;
 use regex::Regex;
 use spdx::license_id;
+use std::path::Path;
 
-use crate::{error::LintError, reader::read, compute};
+use crate::{compute, error::LintError, reader::read};
 use config::{
     features::FeatureMap,
     href::UrlPath,
-    Plugin, PLUGIN_NS,
     license::{License, LicenseGroup},
+    Plugin, PLUGIN_NS,
 };
 
 pub async fn lint<P: AsRef<Path>>(path: P) -> crate::Result<Plugin> {
@@ -38,7 +38,9 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
 
     for ns in plugin.name.split(PLUGIN_NS) {
         if !ns_re.is_match(ns) {
-            return Err(LintError::LintPluginNameInvalidNameSpace(ns.to_string()));
+            return Err(LintError::LintPluginNameInvalidNameSpace(
+                ns.to_string(),
+            ));
         }
     }
 
@@ -48,7 +50,10 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
         lint_features(plugin, plugin.features())?;
     }
 
-    plugin.assets().iter().try_for_each(|u| lint_path(plugin, u))?;
+    plugin
+        .assets()
+        .iter()
+        .try_for_each(|u| lint_path(plugin, u))?;
 
     plugin.styles().iter().try_for_each(|s| {
         if let Some(src) = s.get_source() {
@@ -103,9 +108,9 @@ fn lint_license(license: &LicenseGroup) -> Result<(), LintError> {
         match license {
             License::Spdx(ref value) => {
                 if let None = license_id(value) {
-                    return Err(
-                        LintError::LintLicenseNotSpdx(
-                            value.to_string()));
+                    return Err(LintError::LintLicenseNotSpdx(
+                        value.to_string(),
+                    ));
                 }
             }
         }

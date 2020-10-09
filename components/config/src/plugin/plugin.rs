@@ -10,12 +10,9 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    engine::TemplateEngine,
-    hook::HookMap,
-    href::UrlPath,
-    script::ScriptAsset,
-    license::LicenseGroup,
-    style::StyleAsset, ASSETS, PLUGINS,
+    engine::TemplateEngine, hook::HookMap, href::UrlPath,
+    license::LicenseGroup, script::ScriptAsset, style::StyleAsset, ASSETS,
+    PLUGINS,
 };
 
 use crate::{dependency::DependencyMap, features::FeatureMap, Result};
@@ -35,30 +32,28 @@ impl PluginSource {
     pub fn to_url(&self) -> Result<Url> {
         match *self {
             Self::File(ref path) => {
-                let url_target =
-                    format!("{}{}",
-                        crate::SCHEME_FILE,
-                        utils::url::to_href_separator(path));
+                let url_target = format!(
+                    "{}{}",
+                    crate::SCHEME_FILE,
+                    utils::url::to_href_separator(path)
+                );
                 Ok(url_target.parse()?)
             }
             Self::Archive(ref path) => {
-                let url_target =
-                    format!("{}{}",
-                        crate::SCHEME_TAR_LZMA,
-                        utils::url::to_href_separator(path));
+                let url_target = format!(
+                    "{}{}",
+                    crate::SCHEME_TAR_LZMA,
+                    utils::url::to_href_separator(path)
+                );
                 Ok(url_target.parse()?)
             }
-            Self::Repo(ref url) | Self::Registry(ref url) => {
-                Ok(url.clone())
-            }
+            Self::Repo(ref url) | Self::Registry(ref url) => Ok(url.clone()),
             Self::Local(ref name) => {
                 // TODO: url encoding the name?
-                let url_target =
-                    format!("{}{}", crate::SCHEME_PLUGIN, name);
+                let url_target = format!("{}{}", crate::SCHEME_PLUGIN, name);
                 Ok(url_target.parse()?)
             }
         }
-
     }
 }
 
@@ -140,7 +135,6 @@ pub struct Plugin {
     // NOTE: we want to use HashSet for styles and scripts
     // NOTE: so there are no duplicates but ordering is important
     // NOTE: for these types so we just use a Vec for now.
-
     /// List of stylesheets to add to pages.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     styles: Vec<StyleAsset>,
@@ -226,7 +220,6 @@ impl Default for Plugin {
 }
 
 impl Plugin {
-
     pub fn new_scope(parent: &Plugin, name: &str, prefix: UrlPath) -> Self {
         Self {
             name: format!("{}{}{}", &parent.name, crate::PLUGIN_NS, name),
@@ -244,8 +237,8 @@ impl Plugin {
     }
 
     //pub fn local_name(&self) -> String {
-        //let mut parts = self.name.split(crate::PLUGIN_NS).collect::<Vec<_>>();
-        //parts.pop()
+    //let mut parts = self.name.split(crate::PLUGIN_NS).collect::<Vec<_>>();
+    //parts.pop()
     //}
 
     pub fn base(&self) -> &PathBuf {
@@ -320,7 +313,9 @@ impl Plugin {
         &self.templates
     }
 
-    pub fn templates_mut(&mut self) -> &mut HashMap<TemplateEngine, PluginTemplates> {
+    pub fn templates_mut(
+        &mut self,
+    ) -> &mut HashMap<TemplateEngine, PluginTemplates> {
         &mut self.templates
     }
 

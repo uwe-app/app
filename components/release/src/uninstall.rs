@@ -24,4 +24,3 @@ pub async fn uninstall() -> Result<()> {
 
     Ok(())
 }
-

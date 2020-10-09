@@ -27,8 +27,10 @@ pub struct DependencyMap {
 }
 
 impl DependencyMap {
-
-    pub fn entry(&mut self, name: String) -> hash_map::Entry<'_, String, Dependency> {
+    pub fn entry(
+        &mut self,
+        name: String,
+    ) -> hash_map::Entry<'_, String, Dependency> {
         self.items.entry(name)
     }
 
@@ -116,7 +118,6 @@ impl DependencyMap {
         src: &Dependency,
         map: &FeatureMap,
     ) -> Result<DependencyMap> {
-
         let flags = &src.features;
 
         let mut out: DependencyMap = Default::default();
@@ -136,11 +137,7 @@ impl DependencyMap {
         };
 
         // Collect default features if available
-        let defaults = if !map.is_empty() {
-            map.default()
-        } else {
-            None
-        };
+        let defaults = if !map.is_empty() { map.default() } else { None };
 
         // Assign default features if required and available
         if default_features {
@@ -208,7 +205,7 @@ pub struct Dependency {
 }
 
 impl Dependency {
-    pub fn new_scope(scope: String, version: VersionReq ) -> Self {
+    pub fn new_scope(scope: String, version: VersionReq) -> Self {
         Self {
             version,
             target: Some(DependencyTarget::Local { scope }),

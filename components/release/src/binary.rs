@@ -1,5 +1,5 @@
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
 
 use log::info;
@@ -26,7 +26,7 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
 pub(crate) fn symlink(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     let bin_dir = cache::get_bin_dir()?;
     for (name, src) in binaries {
-        let dest = bin_dir.join(name); 
+        let dest = bin_dir.join(name);
         if dest.exists() {
             fs::remove_file(&dest)?;
         }

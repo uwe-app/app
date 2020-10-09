@@ -1,5 +1,5 @@
-use std::fmt;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
@@ -11,9 +11,7 @@ pub enum LicenseGroup {
 impl LicenseGroup {
     pub fn to_vec(&self) -> Vec<&License> {
         match *self {
-            LicenseGroup::One(ref license) => {
-                vec![license]
-            }
+            LicenseGroup::One(ref license) => vec![license],
             LicenseGroup::Many(ref licenses) => {
                 licenses.iter().collect::<Vec<_>>()
             }
@@ -31,9 +29,7 @@ pub enum License {
 impl fmt::Display for License {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            License::Spdx(ref value) => {
-                write!(f, "{}", value)
-            }
+            License::Spdx(ref value) => write!(f, "{}", value),
         }
     }
 }
