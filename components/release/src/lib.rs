@@ -50,6 +50,9 @@ pub enum Error {
     Request(#[from] reqwest::Error),
 
     #[error(transparent)]
+    Crossterm(#[from] crossterm::ErrorKind),
+
+    #[error(transparent)]
     Url(#[from] url::ParseError),
 
     #[error(transparent)]
