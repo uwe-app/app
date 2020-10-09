@@ -35,6 +35,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
     Semver(#[from] semver::SemVerError),
 
     #[error(transparent)]
@@ -77,6 +80,7 @@ mod remove;
 mod runtime;
 mod uninstall;
 mod update;
+mod verify;
 mod version;
 
 pub use install::{install, latest, select};

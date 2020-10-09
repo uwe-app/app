@@ -12,6 +12,7 @@ use crate::{
     info,
     releases,
     runtime,
+    verify,
     version,
 };
 
@@ -102,9 +103,28 @@ async fn fetch(
         }
     }
 
+    let names = &releases::INSTALL_EXE_NAMES;
+
+    if releases::exists(version)? {
+        let version_dir = releases::dir(version)?;
+        info!("Verify {}", version_dir.display());
+        let verified = verify::test(version, names)?;
+        if verified {
+
+            if select {
+                binary::symlink_names(&version_dir, names)?;
+                version::write(&version_file, version)?;
+            }
+
+            info!("Installation {}@{} is ok ✓", name, version.to_string());
+            return Ok(())
+        } else {
+            warn!("Existing installation for {} may be corrupt", version);
+        }
+    }
+
     // Download all the artifacts for the version.
-    let binaries = download::all(
-        version, info, &releases::INSTALL_EXE_NAMES).await?;
+    let binaries = download::all(version, info, names).await?;
     binary::permissions(&binaries)?;
 
     if select {

@@ -8,7 +8,7 @@ use crate::Result;
 
 #[cfg(target_os = "windows")]
 pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
-    Ok(())
+    todo!()
 }
 
 #[cfg(unix)]
@@ -24,14 +24,29 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
 }
 
 pub(crate) fn symlink(binaries: &HashMap<String, PathBuf>) -> Result<()> {
+    let runtime_dir = cache::get_runtime_dir()?;
     let bin_dir = cache::get_bin_dir()?;
     for (name, src) in binaries {
         let dest = bin_dir.join(name);
         if dest.exists() {
             fs::remove_file(&dest)?;
         }
-        info!("Link {} -> {}", src.display(), dest.display());
+
+        let short_src = src.strip_prefix(&runtime_dir)?;
+        info!("Link {} -> {}", short_src.display(), dest.display());
+
         utils::symlink::soft(src, &dest)?;
     }
     Ok(())
+}
+
+pub(crate) fn symlink_names(dir: &PathBuf, names: &[&str]) -> Result<()> {
+    let mut out: HashMap<String, PathBuf> = HashMap::new();
+    for name in names {
+        let path = dir.join(name).to_path_buf();
+        if path.exists() {
+            out.insert(name.to_string(), path);
+        }
+    }
+    symlink(&out)
 }

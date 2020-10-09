@@ -16,7 +16,6 @@ use url::Url;
 use http::StatusCode;
 
 use crate::{
-    checksum,
     releases::{self, ReleaseVersion},
     Error, Result,
 };
@@ -67,7 +66,7 @@ pub(crate) async fn all(
         debug!("Download {}", url.to_string());
         debug!("File {}", download_file.display());
 
-        let mut temp_target = NamedTempFile::new()?;
+        let temp_target = NamedTempFile::new()?;
         let mut temp_download = temp_target.reopen()?;
 
         let checksum = download(&url, &mut temp_download, name).await?;
