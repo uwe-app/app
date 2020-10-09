@@ -61,8 +61,8 @@ async fn main() -> Result<()> {
 
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 
-    let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
-    let version = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
+    let name = env!("CARGO_PKG_NAME");
+    let version = env!("CARGO_PKG_VERSION");
 
     if let Some(cmd) = args.cmd.take() {
         match cmd {

@@ -10,7 +10,7 @@ use crate::{
     download,
 };
 
-pub async fn update(current: String) -> Result<()> {
+pub async fn update(current: &str) -> Result<()> {
     // Must have latest runtime assets
     runtime::fetch().await?;
 
@@ -33,7 +33,8 @@ pub async fn update(current: String) -> Result<()> {
     binary::permissions(&binaries)?;
     binary::symlink(&binaries)?;
 
-    let name = option_env!("CARGO_BIN_NAME").unwrap().to_string();
+    let exe = std::env::current_exe()?;
+    let name = exe.file_name().unwrap().to_string_lossy().to_owned();
     info!("Updated {}@{} ✓", name, version.to_string());
 
     Ok(())

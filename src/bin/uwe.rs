@@ -455,8 +455,8 @@ async fn main() -> Result<()> {
     // Must configure the version here otherwise option_env!() will
     // use the version from the workspace package which we don't really
     // care about, the top-level version is the one that interests us.
-    let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
-    let version = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
+    let name = env!("CARGO_PKG_NAME").to_string();
+    let version = env!("CARGO_PKG_VERSION").to_string();
     let app_data = config::generator::AppData {
         name,
         version,
