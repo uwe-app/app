@@ -103,7 +103,8 @@ async fn fetch(
     }
 
     // Download all the artifacts for the version.
-    let binaries = download::all(version, info).await?;
+    let binaries = download::all(
+        version, info, &releases::INSTALL_EXE_NAMES).await?;
     binary::permissions(&binaries)?;
 
     if select {

@@ -35,6 +35,7 @@ pub(crate) fn url(version: &Version, name: &str) -> Result<Url> {
 pub(crate) async fn all(
     version: &Version,
     info: &ReleaseVersion,
+    names: &[&str],
 ) -> Result<HashMap<String, PathBuf>> {
     let version_dir = releases::dir(version)?;
 
@@ -47,7 +48,8 @@ pub(crate) async fn all(
 
     let mut output: HashMap<String, PathBuf> = HashMap::new();
 
-    for name in releases::INSTALL_EXE_NAMES.iter() {
+    //for name in releases::INSTALL_EXE_NAMES.iter() {
+    for name in names.iter() {
         let expected = platform_info.get(*name).unwrap();
 
         //info!("Download {}@{}", name, version.to_string());
