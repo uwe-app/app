@@ -4,7 +4,7 @@ use std::io::{Write, stderr, stdout};
 use std::path::{Path, PathBuf};
 
 use pbr::{ProgressBar, Units};
-use crossterm::{execute, terminal::{Clear, ClearType}, cursor::{MoveUp, MoveRight}};
+use crossterm::{execute, terminal::{Clear, ClearType}, cursor::MoveUp};
 use human_bytes::human_bytes;
 
 use log::{debug, info};
