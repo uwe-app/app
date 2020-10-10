@@ -148,44 +148,6 @@ struct BuildOpts {
 }
 
 #[derive(StructOpt, Debug)]
-struct InitOpts {
-    /// Commit message.
-    #[structopt(short, long)]
-    message: Option<String>,
-
-    /// Language for the new project
-    #[structopt(short, long)]
-    language: Option<String>,
-
-    /// Host name for the new project
-    #[structopt(short, long)]
-    host: Option<String>,
-
-    /// Set multiple languages (comma delimited)
-    #[structopt(short = "L", long)]
-    locales: Option<String>,
-
-    /// Output directory for the new project
-    #[structopt(parse(from_os_str))]
-    target: PathBuf,
-
-    /// Repository URL, folder or blueprint name.
-    #[structopt()]
-    source: Option<String>,
-}
-
-#[derive(StructOpt, Debug)]
-struct PublishOpts {
-    /// Publish environment
-    #[structopt()]
-    env: String,
-
-    /// Project path
-    #[structopt(parse(from_os_str), default_value = ".")]
-    project: PathBuf,
-}
-
-#[derive(StructOpt, Debug)]
 struct RunOpts {
     #[structopt(flatten)]
     server: WebServerOpts,
@@ -251,7 +213,7 @@ enum Command {
     /// Create a new project
     Init {
         #[structopt(flatten)]
-        args: InitOpts,
+        args: uwe::opts::init::InitOpts,
     },
 
     /// Compile a site
@@ -275,7 +237,7 @@ enum Command {
     /// Publish a site
     Publish {
         #[structopt(flatten)]
-        args: PublishOpts,
+        args: uwe::opts::publish::PublishOpts,
     },
 
     /// Manage sites

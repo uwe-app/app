@@ -131,7 +131,7 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
     create_target_parents(target.as_ref())?;
     walk::copy(source.as_ref(), target.as_ref(), |_| true)?;
     write_settings(target.as_ref(), settings)?;
-    scm::bridge::create(target.as_ref(), message)?;
+    scm::init(target.as_ref(), message)?;
 
     Ok(())
 }
@@ -221,7 +221,7 @@ pub fn init(options: InitOptions) -> Result<()> {
         match source.parse::<Url>() {
             Ok(url) => {
                 create_target_parents(&target)?;
-                scm::bridge::clone(url.to_string(), &target, Some(message))?;
+                scm::clone(url.to_string(), &target, Some(message))?;
                 check_site_settings(&target)?;
                 write_settings(&target, settings)?;
             }

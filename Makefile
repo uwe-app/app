@@ -21,7 +21,7 @@ VERSION_FILE = $(RELEASE_REPO)/version.toml
 SITE_ROOT = ../website
 SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
-all: init site-release
+all: init
 
 docs:
 	@cargo doc --open --no-deps --lib --workspace
@@ -53,13 +53,15 @@ build-linux-macos-cross:
 		CXX=o64-clang++ \
 		cargo build --target=x86_64-apple-darwin --release
 
+release: build-release build-linux-macos-cross
+
 install: build-release
 	@mkdir -p $(HOME)/.uwe/bin
 	@cp -f \
-		target/release/uwe \ 
+		target/release/uwe \
 		target/release/upm \
 		target/release/uvm \
 		target/release/uws \
 		$(HOME)/.uwe/bin
 
-.PHONY: all site-release install release
+.PHONY: all install release

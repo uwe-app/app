@@ -30,7 +30,7 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub mod bridge;
+//pub mod bridge;
 mod callbacks;
 mod clone;
 mod progress;
@@ -52,14 +52,14 @@ pub fn pull<P: AsRef<Path>>(
 pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
-    message: Option<String>,
+    message: Option<&str>,
 ) -> Result<Repository> {
     let target = target.as_ref();
 
     let repo = clone::clone(src, target)
         .map_err(Error::from)?;
 
-    if let Some(ref message) = message {
+    if let Some(message) = message {
         pristine(target, &repo, message)? 
     }
 

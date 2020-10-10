@@ -103,7 +103,7 @@ fn clone(source: String, target: Option<PathBuf>, pristine: Option<String>) -> R
             Error::TargetExists(target.to_path_buf()));
     }
 
-    scm::clone(&source, &target, pristine)
+    scm::clone(&source, &target, None)
         .map(|_| ())
         .map_err(Error::from)
 }
