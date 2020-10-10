@@ -39,7 +39,13 @@ enum Command {
         /// Repository URL.
         source: String,
 
-        /// Destination folder.
+        /// Destination path.
+        target: Option<PathBuf>,
+    },
+
+    /// Pull a repository.
+    Pull {
+        /// Repository path.
         target: Option<PathBuf>,
     },
 }
@@ -56,8 +62,7 @@ async fn main() -> Result<()> {
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 
     match args.cmd {
-        Command::Clone { source, target} => {
-
+        Command::Clone { source, target } => {
             let target = if let Some(target) = target {
                 target.to_path_buf()
             } else {
@@ -84,6 +89,27 @@ async fn main() -> Result<()> {
                 .map(|_| ())
                 .map_err(Error::from)
                 .or_else(fatal)?;
+        }
+
+        Command::Pull { target } => {
+            let target = if let Some(target) = target {
+                target.to_path_buf()
+            } else {
+                std::env::current_dir()?
+            };
+
+            if !target.exists() || !target.is_dir() {
+                return fatal(Error::NotDirectory(target.to_path_buf()));
+            }
+
+            let _ = scm::open(&target)
+                .map_err(|_| fatal(Error::NotRepository(target.to_path_buf())));
+
+            scm::pull(&target, None, None)
+                .map(|_| ())
+                .map_err(Error::from)
+                .or_else(fatal)?;
+
         }
     }
 

@@ -270,11 +270,7 @@ pub fn list_submodules(repo: Repository) -> Result<()> {
 */
 
 pub fn open<P: AsRef<Path>>(dir: P) -> Result<Repository> {
-    let repo = match Repository::open(dir) {
-        Ok(repo) => repo,
-        Err(e) => return Err(Error::from(e)),
-    };
-    Ok(repo)
+    Ok(Repository::open(dir).map_err(Error::from)?)
 }
 
 pub fn is_clean(repo: &Repository) -> bool {

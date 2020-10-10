@@ -45,6 +45,9 @@ pub enum Error {
     #[error("Repository {0} is not a valid URL")]
     InvalidRepositoryUrl(String),
 
+    #[error("Not a repository {0}")]
+    NotRepository(PathBuf),
+
     //#[error("No socket address for {0}")]
     //NoSocketAddress(String),
     #[error(transparent)]
