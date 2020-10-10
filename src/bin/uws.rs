@@ -35,8 +35,8 @@ struct Cli {
 #[derive(StructOpt, Debug)]
 enum Command {
 
-    /// Initialize a repository with initial commit.
-    Init {
+    /// Initialize, add files and commit.
+    Create {
         #[structopt(short, long)]
         message: String,
 
@@ -46,6 +46,10 @@ enum Command {
 
     /// Clone a repository.
     Clone {
+        /// Remove history and replace with this commit message.
+        #[structopt(short, long)]
+        pristine: Option<String>,
+
         /// Repository URL.
         source: String,
 
@@ -66,7 +70,7 @@ enum Command {
     },
 }
 
-fn init(target: PathBuf, message: String) -> Result<()> {
+fn create(target: PathBuf, message: String) -> Result<()> {
     if !target.exists() || !target.is_dir() {
         return Err(Error::NotDirectory(target.to_path_buf()));
     }
@@ -76,7 +80,7 @@ fn init(target: PathBuf, message: String) -> Result<()> {
         .map_err(Error::from)
 }
 
-fn clone(source: String, target: Option<PathBuf>) -> Result<()> {
+fn clone(source: String, target: Option<PathBuf>, pristine: Option<String>) -> Result<()> {
     let target = if let Some(target) = target {
         target.to_path_buf()
     } else {
@@ -99,7 +103,7 @@ fn clone(source: String, target: Option<PathBuf>) -> Result<()> {
             Error::TargetExists(target.to_path_buf()));
     }
 
-    scm::clone(&source, &target)
+    scm::clone(&source, &target, pristine)
         .map(|_| ())
         .map_err(Error::from)
 }
@@ -135,11 +139,11 @@ async fn main() -> Result<()> {
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 
     match args.cmd {
-        Command::Init { target, message } => {
-            init(target, message).or_else(fatal)
+        Command::Create { target, message } => {
+            create(target, message).or_else(fatal)
         }
-        Command::Clone { source, target } => {
-            clone(source, target).or_else(fatal)
+        Command::Clone { source, target, pristine } => {
+            clone(source, target, pristine).or_else(fatal)
         }
         Command::Pull { target, remote, branch } => {
             pull(target, remote, branch).or_else(fatal)

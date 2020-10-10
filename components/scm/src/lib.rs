@@ -30,9 +30,10 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+pub mod bridge;
 mod callbacks;
 mod clone;
-pub mod progress;
+mod progress;
 mod pull;
 
 pub static ORIGIN: &str = "origin";
@@ -51,16 +52,25 @@ pub fn pull<P: AsRef<Path>>(
 pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
+    message: Option<String>,
 ) -> Result<Repository> {
-    clone::clone(src, target)
-        .map_err(Error::from)
+    let target = target.as_ref();
+
+    let repo = clone::clone(src, target)
+        .map_err(Error::from)?;
+
+    if let Some(ref message) = message {
+        pristine(target, &repo, message)? 
+    }
+
+    Ok(repo)
 }
 
 /// Detach a repository from upstream by removing the entire commit
 /// history and creating a fresh repository.
 pub fn pristine<P: AsRef<Path>>(
     target: P,
-    repo: Repository,
+    repo: &Repository,
     message: &str,
 ) -> Result<()> {
     let git_dir = repo.path();
@@ -284,7 +294,7 @@ pub fn clone_or_fetch<P: AsRef<Path>>(
     let to = to.as_ref();
     if !to.exists() {
         print_clone(from, to);
-        Ok(clone(from, to)?)
+        Ok(clone(from, to, None)?)
     } else {
         let repo = open(to)?;
         pull(to, None, None)?;

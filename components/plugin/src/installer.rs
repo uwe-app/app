@@ -199,7 +199,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
         scm::pull(&scm_target, None, None)?;
         repo
     } else {
-        scm::clone(&scm_url, &scm_target)?
+        scm::clone(&scm_url, &scm_target, None)?
     };
 
     let source = Some(PluginSource::Repo(scm_url));

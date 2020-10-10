@@ -55,6 +55,11 @@ build-linux-macos-cross:
 
 install: build-release
 	@mkdir -p $(HOME)/.uwe/bin
-	@cp -f target/release/uwe target/release/upm $(HOME)/.uwe/bin
+	@cp -f \
+		target/release/uwe \ 
+		target/release/upm \
+		target/release/uvm \
+		target/release/uws \
+		$(HOME)/.uwe/bin
 
 .PHONY: all site-release install release
