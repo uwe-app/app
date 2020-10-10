@@ -2,8 +2,6 @@ extern crate pretty_env_logger;
 extern crate log;
 
 use log::info;
-use std::path::Path;
-use std::path::PathBuf;
 use std::time::SystemTime;
 use structopt::StructOpt;
 
@@ -12,23 +10,7 @@ use config::{
     ProfileSettings,
 };
 
-use publisher::PublishProvider;
-
-use uwe::{self, Error, Result, opts::{Build, Docs, Init, Publish, Run, Site, fatal, print_error}};
-
-fn get_project_path(input: &PathBuf) -> Result<PathBuf> {
-    // NOTE: We want the help output to show "."
-    // NOTE: to indicate that the current working
-    // NOTE: directory is used but the period creates
-    // NOTE: problems with the strip prefix logic for
-    // NOTE: live reload so this converts it to the
-    // NOTE: empty string.
-    let period = Path::new(".").to_path_buf();
-    if input == &period {
-        return Ok(input.canonicalize()?);
-    }
-    Ok(input.clone())
-}
+use uwe::{self, Error, Result, opts::{self, Build, Docs, Run, Site, fatal}};
 
 #[derive(Debug, StructOpt)]
 /// Universal web editor
@@ -47,12 +29,6 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    /// Create a new project
-    Init {
-        #[structopt(flatten)]
-        args: Init,
-    },
-
     /// Compile a site
     Build {
         #[structopt(flatten)]
@@ -71,16 +47,10 @@ enum Command {
         args: Docs,
     },
 
-    /// Publish a site
-    Publish {
-        #[structopt(flatten)]
-        args: Publish,
-    },
-
     /// Manage sites
     Site {
         #[structopt(flatten)]
-        action: Site,
+        args: Site,
     },
 }
 
@@ -94,17 +64,6 @@ impl Command {
 
 async fn process_command(cmd: Command) -> Result<()> {
     match cmd {
-        Command::Init { ref args } => {
-            let opts = uwe::init::InitOptions {
-                source: args.source.clone(),
-                message: args.message.clone(),
-                target: args.target.clone(),
-                language: args.language.clone(),
-                host: args.host.clone(),
-                locales: args.locales.clone(),
-            };
-            uwe::init::init(opts)?;
-        }
         Command::Docs { ref args } => {
             let target = uwe::docs::get_target().await?;
             let opts = uwe::opts::server_config(
@@ -136,19 +95,7 @@ async fn process_command(cmd: Command) -> Result<()> {
             server::launch(opts, launch, &mut channels).await?;
         }
 
-        Command::Publish { ref args } => {
-            let project = get_project_path(&args.project)?;
-
-            let opts = uwe::publish::PublishOptions {
-                provider: PublishProvider::Aws,
-                env: args.env.clone(),
-                project,
-            };
-
-            uwe::publish::publish(opts).await?;
-        }
-
-        Command::Site { ref action } => match action {
+        Command::Site { args } => match args {
             Site::Add {
                 ref name,
                 ref project,
@@ -171,7 +118,7 @@ async fn process_command(cmd: Command) -> Result<()> {
         },
 
         Command::Build { ref args } => {
-            let project = get_project_path(&args.project)?;
+            let project = opts::project_path(&args.project)?;
 
             let paths = if args.paths.len() > 0 {
                 Some(args.paths.clone())
@@ -225,7 +172,7 @@ async fn process_command(cmd: Command) -> Result<()> {
                         info!("{:?}", t);
                     }
                 }
-                Err(e) => print_error(e),
+                Err(e) => opts::print_error(e),
             }
         }
     }
@@ -235,13 +182,10 @@ async fn process_command(cmd: Command) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let root_args = Cli::from_args();
+    let args = Cli::from_args();
 
     uwe::opts::panic_hook();
-
-    if let Err(e) = uwe::utils::log_level(&*root_args.log_level) {
-        return fatal(e);
-    }
+    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     // Configure the generator meta data ahead of time
 
@@ -257,16 +201,12 @@ async fn main() -> Result<()> {
     };
     config::generator::get(Some(app_data));
 
-    match root_args.cmd {
+    match args.cmd {
         Some(cmd) => {
-            if let Err(e) = process_command(cmd).await {
-                return fatal(e);
-            }
+            process_command(cmd).await.or_else(fatal)?;
         }
         None => {
-            if let Err(e) = process_command(Command::default(root_args)).await {
-                return fatal(e);
-            }
+            process_command(Command::default(args)).await.or_else(fatal)?;
         }
     }
 

@@ -30,7 +30,6 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-//pub mod bridge;
 mod callbacks;
 mod clone;
 mod progress;

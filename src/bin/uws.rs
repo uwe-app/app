@@ -6,7 +6,9 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use url::Url;
 
-use uwe::{self, Error, Result, opts::{fatal}};
+use publisher::PublishProvider;
+
+use uwe::{self, Error, Result, opts::{self, fatal, Init, Publish}};
 
 #[derive(Debug, StructOpt)]
 /// Universal (web editor) sync
@@ -22,6 +24,12 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+
+    /// Create a new project
+    Init {
+        #[structopt(flatten)]
+        args: Init,
+    },
 
     /// Initialize, add files and commit.
     Create {
@@ -56,6 +64,13 @@ enum Command {
         /// Repository path.
         target: Option<PathBuf>,
     },
+
+    /// Publish a site
+    Publish {
+        #[structopt(flatten)]
+        args: Publish,
+    },
+
 }
 
 fn create(target: PathBuf, message: String) -> Result<()> {
@@ -120,18 +135,45 @@ async fn main() -> Result<()> {
     let args = Cli::from_args();
 
     uwe::opts::panic_hook();
-
-    uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
+    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     match args.cmd {
+
+        Command::Init { args } => {
+            let opts = uwe::init::InitOptions {
+                source: args.source.clone(),
+                message: args.message.clone(),
+                target: args.target.clone(),
+                language: args.language.clone(),
+                host: args.host.clone(),
+                locales: args.locales.clone(),
+            };
+
+            uwe::init::init(opts).or_else(fatal)
+        }
+
         Command::Create { target, message } => {
             create(target, message).or_else(fatal)
         }
+
         Command::Clone { source, target, pristine } => {
             clone(source, target, pristine).or_else(fatal)
         }
+
         Command::Pull { target, remote, branch } => {
             pull(target, remote, branch).or_else(fatal)
         }
+
+        Command::Publish { args } => {
+            let project = opts::project_path(&args.project)?;
+            let opts = uwe::publish::PublishOptions {
+                provider: PublishProvider::Aws,
+                env: args.env,
+                project,
+            };
+
+            uwe::publish::publish(opts).await.or_else(fatal)
+        }
+
     }
 }

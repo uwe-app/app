@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::env;
 use std::panic;
 
 use log::error;
@@ -10,6 +11,56 @@ use config::{
 use web_server::WebServerOpts;
 
 use crate::{Error, Result};
+
+const LOG_ENV_NAME: &'static str = "UWE_LOG";
+
+pub fn panic_hook() {
+    // Fluent templates panics if an error is caught parsing the
+    // templates (for example attempting to override from a shared resource)
+    // so we catch it here and push it out via the log
+    panic::set_hook(Box::new(|info| {
+        let message = format!("{}", info);
+        // NOTE: We must NOT call `fatal` here which explictly exits the program;
+        // NOTE: if we did our defer! {} hooks would not get called which means
+        // NOTE: lock files would not be removed from disc correctly.
+        print_error(Error::Panic(message));
+    }));
+}
+
+pub fn log_level(level: &str) -> Result<()> {
+    match level {
+        "trace" => env::set_var(LOG_ENV_NAME, level),
+        "debug" => env::set_var(LOG_ENV_NAME, level),
+        "info" => env::set_var(LOG_ENV_NAME, level),
+        "warn" => env::set_var(LOG_ENV_NAME, level),
+        "error" => env::set_var(LOG_ENV_NAME, level),
+        _ => {
+            // Jump a few hoops to pretty print this message
+            env::set_var(LOG_ENV_NAME, "error");
+            pretty_env_logger::init_custom_env(LOG_ENV_NAME);
+            return Err(Error::UnknownLogLevel(level.to_string()));
+        }
+    }
+
+    pretty_env_logger::init_custom_env(LOG_ENV_NAME);
+
+    Ok(())
+}
+
+pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
+    // NOTE: We want the help output to show "."
+    // NOTE: to indicate that the current working
+    // NOTE: directory is used but the period creates
+    // NOTE: problems with the strip prefix logic for
+    // NOTE: live reload so this converts it to the
+    // NOTE: empty string.
+    let period = PathBuf::from(".");
+    if input == &period {
+        return Ok(input.canonicalize()?);
+    }
+    Ok(input.clone())
+}
+
 
 pub fn server_config(
     target: &PathBuf,
@@ -82,19 +133,6 @@ pub fn print_error(e: Error) {
 pub fn fatal(e: Error) -> Result<()> {
     print_error(e);
     std::process::exit(1);
-}
-
-pub fn panic_hook() {
-    // Fluent templates panics if an error is caught parsing the
-    // templates (for example attempting to override from a shared resource)
-    // so we catch it here and push it out via the log
-    panic::set_hook(Box::new(|info| {
-        let message = format!("{}", info);
-        // NOTE: We must NOT call `fatal` here which explictly exits the program;
-        // NOTE: if we did our defer! {} hooks would not get called which means
-        // NOTE: lock files would not be removed from disc correctly.
-        print_error(Error::Panic(message));
-    }));
 }
 
 pub mod build;

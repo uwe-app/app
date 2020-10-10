@@ -59,8 +59,7 @@ async fn main() -> Result<()> {
     let mut args = Cli::from_args();
 
     uwe::opts::panic_hook();
-
-    uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
+    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     let name = env!("CARGO_PKG_NAME");
     let version = env!("CARGO_PKG_VERSION");

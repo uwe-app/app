@@ -1,10 +1,9 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use log::error;
 use structopt::StructOpt;
 
-use uwe::Result;
+use uwe::{Error, Result, opts::fatal};
 
 /// Package and publish a release.
 #[derive(Debug, StructOpt)]
@@ -31,11 +30,6 @@ struct Cli {
     force: bool,
 }
 
-fn fatal(e: String) {
-    error!("{}", e);
-    std::process::exit(1);
-}
-
 /// Create a release for the current version.
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -51,7 +45,7 @@ async fn main() -> Result<()> {
     let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
     let version = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
 
-    if let Err(e) = release::publish(
+    release::publish(
         manifest,
         name,
         version,
@@ -61,10 +55,7 @@ async fn main() -> Result<()> {
         root_args.skip_build,
         root_args.force,
     )
-    .await
-    {
-        fatal(e.to_string());
-    }
+    .await.map_err(Error::from).or_else(fatal)?;
 
     Ok(())
 }

@@ -23,16 +23,16 @@ Repositories must be siblings, for example:
 
 ## Releases
 
-A private executable `uwe-publish` performs all the steps for a release.
+A private executable `release-manager` performs all the steps for a release.
 
 1) Bump the version in `Cargo.toml`.
-2) Publish a new release: `cargo run --bin=uwe-publish`.
+2) Publish a new release: `cargo run --bin=release-manager`.
 3) Commit and push the new release version and checksums in the [runtime][] repository (`releases.json`).
 
-If you need them `uwe-publish` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
+If you need them `release-manager` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
 
 ```
-cargo run --bin=uwe-publish -- --force --skip-build
+cargo run --bin=release-manager-- --force --skip-build
 ```
 
 Be aware force overwriting can cause a checksum mismatch when Cloudfront serves a stale executable version so you should invalidate the Cloudfront distribution.

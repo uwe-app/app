@@ -61,8 +61,7 @@ async fn main() -> Result<()> {
     let args = Cli::from_args();
 
     uwe::opts::panic_hook();
-
-    uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
+    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     match args.cmd {
         Plugin::Lint { path, inspect } => {
