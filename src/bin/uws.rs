@@ -34,6 +34,16 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+
+    /// Initialize a repository with initial commit.
+    Init {
+        #[structopt(short, long)]
+        message: String,
+
+        /// Destination path.
+        target: PathBuf,
+    },
+
     /// Clone a repository.
     Clone {
         /// Repository URL.
@@ -54,6 +64,16 @@ enum Command {
         /// Repository path.
         target: Option<PathBuf>,
     },
+}
+
+fn init(target: PathBuf, message: String) -> Result<()> {
+    if !target.exists() || !target.is_dir() {
+        return Err(Error::NotDirectory(target.to_path_buf()));
+    }
+
+    scm::init(&target, &message)
+        .map(|_| ())
+        .map_err(Error::from)
 }
 
 fn clone(source: String, target: Option<PathBuf>) -> Result<()> {
@@ -115,6 +135,9 @@ async fn main() -> Result<()> {
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 
     match args.cmd {
+        Command::Init { target, message } => {
+            init(target, message).or_else(fatal)
+        }
         Command::Clone { source, target } => {
             clone(source, target).or_else(fatal)
         }
