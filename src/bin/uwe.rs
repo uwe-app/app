@@ -10,7 +10,9 @@ use config::{
     ProfileSettings,
 };
 
-use uwe::{self, Error, Result, opts::{self, Build, Docs, Run, Site, fatal}};
+use publisher::PublishProvider;
+
+use uwe::{self, Error, Result, opts::{self, Build, Docs, Publish, Run, Site, fatal}};
 
 #[derive(Debug, StructOpt)]
 /// Universal web editor
@@ -52,6 +54,12 @@ enum Command {
         #[structopt(flatten)]
         args: Site,
     },
+
+    /// Publish a site
+    Publish {
+        #[structopt(flatten)]
+        args: Publish,
+    },
 }
 
 impl Command {
@@ -74,6 +82,7 @@ async fn process_command(cmd: Command) -> Result<()> {
             );
             uwe::docs::open(opts).await?;
         }
+
         Command::Run { ref args } => {
             if !args.target.exists() || !args.target.is_dir() {
                 return fatal(Error::NotDirectory(args.target.to_path_buf()));
@@ -116,6 +125,17 @@ async fn process_command(cmd: Command) -> Result<()> {
                 uwe::site::list()?;
             }
         },
+
+        Command::Publish { args } => {
+            let project = opts::project_path(&args.project)?;
+            let opts = uwe::publish::PublishOptions {
+                provider: PublishProvider::Aws,
+                env: args.env,
+                project,
+            };
+
+            uwe::publish::publish(opts).await?;
+        }
 
         Command::Build { ref args } => {
             let project = opts::project_path(&args.project)?;

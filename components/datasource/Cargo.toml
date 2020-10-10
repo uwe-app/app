@@ -11,7 +11,7 @@ utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 futures = "0.3"
-tokio = { version = "0.2.22", features = ["full"] }
+tokio = { version = "0.2.22", features = ["rt-core", "rt-threaded", "fs"] }
 log = "0.4.8"
 slug = "0.1.4"
 serde = "1"

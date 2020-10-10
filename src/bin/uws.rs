@@ -6,9 +6,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use url::Url;
 
-use publisher::PublishProvider;
-
-use uwe::{self, Error, Result, opts::{self, fatal, Init, Publish}};
+use uwe::{self, Error, Result, opts::{fatal, Init}};
 
 #[derive(Debug, StructOpt)]
 /// Universal (web editor) sync
@@ -63,12 +61,6 @@ enum Command {
 
         /// Repository path.
         target: Option<PathBuf>,
-    },
-
-    /// Publish a site
-    Publish {
-        #[structopt(flatten)]
-        args: Publish,
     },
 
 }
@@ -162,17 +154,6 @@ async fn main() -> Result<()> {
 
         Command::Pull { target, remote, branch } => {
             pull(target, remote, branch).or_else(fatal)
-        }
-
-        Command::Publish { args } => {
-            let project = opts::project_path(&args.project)?;
-            let opts = uwe::publish::PublishOptions {
-                provider: PublishProvider::Aws,
-                env: args.env,
-                project,
-            };
-
-            uwe::publish::publish(opts).await.or_else(fatal)
         }
 
     }
