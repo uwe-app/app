@@ -40,6 +40,7 @@ fn fatal(e: String) {
 #[tokio::main]
 async fn main() -> Result<()> {
     let root_args = Cli::from_args();
+
     std::env::set_var("RUST_LOG", "info");
     pretty_env_logger::init();
 

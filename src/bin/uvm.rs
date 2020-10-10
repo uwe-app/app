@@ -1,10 +1,9 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use log::error;
 use structopt::StructOpt;
 
-use uwe::{Error, Result};
+use uwe::{Error, Result, opts::{fatal}};
 
 /// Universal (web editor) version manager
 #[derive(Debug, StructOpt)]
@@ -50,14 +49,16 @@ enum Command {
     Uninstall {},
 }
 
-fn fatal(e: Error) -> Result<()> {
-    error!("{}", e.to_string());
-    std::process::exit(1);
-}
+//fn fatal(e: Error) -> Result<()> {
+    //error!("{}", e.to_string());
+    //std::process::exit(1);
+//}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut args = Cli::from_args();
+
+    uwe::opts::panic_hook();
 
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 

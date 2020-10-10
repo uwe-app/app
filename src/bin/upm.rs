@@ -3,7 +3,6 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
-use std::panic;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -61,16 +60,7 @@ enum Plugin {
 async fn main() -> Result<()> {
     let args = Cli::from_args();
 
-    // Fluent templates panics if an error is caught parsing the
-    // templates (for example attempting to override from a shared resource)
-    // so we catch it here and push it out via the log
-    panic::set_hook(Box::new(|info| {
-        let message = format!("{}", info);
-        // NOTE: We must NOT call `fatal` here which explictly exits the program;
-        // NOTE: if we did our defer! {} hooks would not get called which means
-        // NOTE: lock files would not be removed from disc correctly.
-        print_error(Error::Panic(message));
-    }));
+    uwe::opts::panic_hook();
 
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 

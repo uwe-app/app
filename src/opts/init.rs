@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-pub struct InitOpts {
+pub struct Init {
     /// Commit message.
     #[structopt(short, long)]
     pub message: Option<String>,

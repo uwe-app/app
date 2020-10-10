@@ -1,24 +1,12 @@
 extern crate pretty_env_logger;
-
-#[macro_use]
 extern crate log;
 
-use std::panic;
 use std::path::PathBuf;
 
 use structopt::StructOpt;
 use url::Url;
 
-use uwe::{self, Error, Result};
-
-fn print_error(e: uwe::Error) {
-    error!("{}", e);
-}
-
-fn fatal(e: uwe::Error) -> Result<()> {
-    print_error(e);
-    std::process::exit(1);
-}
+use uwe::{self, Error, Result, opts::{fatal}};
 
 #[derive(Debug, StructOpt)]
 /// Universal (web editor) sync
@@ -131,10 +119,7 @@ fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
 async fn main() -> Result<()> {
     let args = Cli::from_args();
 
-    panic::set_hook(Box::new(|info| {
-        let message = format!("{}", info);
-        print_error(Error::Panic(message));
-    }));
+    uwe::opts::panic_hook();
 
     uwe::utils::log_level(&*args.log_level).or_else(fatal)?;
 

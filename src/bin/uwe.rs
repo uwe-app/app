@@ -1,6 +1,4 @@
 extern crate pretty_env_logger;
-
-#[macro_use]
 extern crate log;
 
 use log::info;
@@ -9,88 +7,14 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 use structopt::StructOpt;
 
-use std::panic;
-
 use config::{
-    server::{HostConfig, LaunchConfig, ServerConfig, TlsConfig},
+    server::{LaunchConfig, TlsConfig},
     ProfileSettings,
 };
+
 use publisher::PublishProvider;
 
-use uwe::{self, Error, Result};
-
-fn get_server_config(
-    target: &PathBuf,
-    opts: &WebServerOpts,
-    default_port: u16,
-    default_port_ssl: u16,
-) -> ServerConfig {
-    let serve: ServerConfig = Default::default();
-    let mut host = &serve.listen;
-    let mut port = &default_port;
-    let mut tls = serve.tls.clone();
-
-    let ssl_port = if let Some(ssl_port) = opts.ssl_port {
-        ssl_port
-    } else {
-        default_port_ssl
-    };
-
-    if let Some(ref h) = opts.host {
-        host = h;
-    }
-    if let Some(ref p) = opts.port {
-        port = p;
-    }
-
-    if opts.ssl_cert.is_some() && opts.ssl_key.is_some() {
-        tls = Some(TlsConfig {
-            cert: opts.ssl_cert.as_ref().unwrap().to_path_buf(),
-            key: opts.ssl_key.as_ref().unwrap().to_path_buf(),
-            port: ssl_port,
-        });
-    }
-
-    let host = HostConfig::new(target.clone(), host.to_owned(), None, None);
-
-    ServerConfig::new_host(host, port.to_owned(), tls)
-}
-
-fn compiler_error(e: &compiler::Error) {
-    match e {
-        compiler::Error::Multi { ref errs } => {
-            error!("Compile error ({})", errs.len());
-            for e in errs {
-                error!("{}", e);
-            }
-            std::process::exit(1);
-        }
-        _ => {}
-    }
-
-    error!("{}", e);
-}
-
-fn print_error(e: uwe::Error) {
-    match e {
-        uwe::Error::Compiler(ref e) => {
-            return compiler_error(e);
-        }
-        uwe::Error::Workspace(ref e) => match e {
-            workspace::Error::Compiler(ref e) => {
-                return compiler_error(e);
-            }
-            _ => {}
-        },
-        _ => {}
-    }
-    error!("{}", e);
-}
-
-fn fatal(e: uwe::Error) {
-    print_error(e);
-    std::process::exit(1);
-}
+use uwe::{self, Error, Result, opts::{Build, Docs, Init, Publish, Run, Site, fatal, print_error}};
 
 fn get_project_path(input: &PathBuf) -> Result<PathBuf> {
     // NOTE: We want the help output to show "."
@@ -118,94 +42,7 @@ struct Cli {
     cmd: Option<Command>,
 
     #[structopt(flatten)]
-    build_opts: BuildOpts,
-}
-
-#[derive(StructOpt, Debug)]
-struct BuildOpts {
-    /// Build profile name
-    #[structopt(long)]
-    profile: Option<String>,
-
-    /// Enable live reload
-    #[structopt(short, long)]
-    live: bool,
-
-    /// Generate a release build
-    #[structopt(short, long)]
-    release: bool,
-
-    #[structopt(flatten)]
-    server: WebServerOpts,
-
-    /// Read config from directory
-    #[structopt(parse(from_os_str), default_value = ".")]
-    project: PathBuf,
-
-    /// Compile only these paths
-    #[structopt(parse(from_os_str))]
-    paths: Vec<PathBuf>,
-}
-
-#[derive(StructOpt, Debug)]
-struct RunOpts {
-    #[structopt(flatten)]
-    server: WebServerOpts,
-
-    /// Directory to serve files from
-    #[structopt(parse(from_os_str))]
-    target: PathBuf,
-}
-
-#[derive(StructOpt, Debug)]
-struct WebServerOpts {
-    /// The name of the host
-    #[structopt(short, long)]
-    host: Option<String>,
-
-    /// The port number
-    #[structopt(short, long)]
-    port: Option<u16>,
-
-    /// The port number for SSL
-    #[structopt(long)]
-    ssl_port: Option<u16>,
-
-    /// Path to an SSL certificate file
-    #[structopt(long, env, hide_env_values = true)]
-    ssl_cert: Option<PathBuf>,
-
-    /// Path to an SSL key file
-    #[structopt(long, env, hide_env_values = true)]
-    ssl_key: Option<PathBuf>,
-}
-
-#[derive(StructOpt, Debug)]
-struct DocsOpts {
-    #[structopt(flatten)]
-    server: WebServerOpts,
-}
-
-#[derive(StructOpt, Debug)]
-enum Site {
-    /// Add a site
-    Add {
-        /// Project folder
-        #[structopt(parse(from_os_str))]
-        project: PathBuf,
-
-        /// Project name
-        name: Option<String>,
-    },
-    /// Remove a site
-    #[structopt(alias = "rm")]
-    Remove {
-        /// The project name
-        name: String,
-    },
-    /// List sites
-    #[structopt(alias = "ls")]
-    List {},
+    build_opts: Build,
 }
 
 #[derive(StructOpt, Debug)]
@@ -213,31 +50,31 @@ enum Command {
     /// Create a new project
     Init {
         #[structopt(flatten)]
-        args: uwe::opts::init::InitOpts,
+        args: Init,
     },
 
     /// Compile a site
     Build {
         #[structopt(flatten)]
-        args: BuildOpts,
+        args: Build,
     },
 
     /// Serve static files
     Run {
         #[structopt(flatten)]
-        args: RunOpts,
+        args: Run,
     },
 
     /// Browse the documentation
     Docs {
         #[structopt(flatten)]
-        args: DocsOpts,
+        args: Docs,
     },
 
     /// Publish a site
     Publish {
         #[structopt(flatten)]
-        args: uwe::opts::publish::PublishOpts,
+        args: Publish,
     },
 
     /// Manage sites
@@ -270,7 +107,7 @@ async fn process_command(cmd: Command) -> Result<()> {
         }
         Command::Docs { ref args } => {
             let target = uwe::docs::get_target().await?;
-            let opts = get_server_config(
+            let opts = uwe::opts::server_config(
                 &target,
                 &args.server,
                 config::PORT_DOCS,
@@ -280,11 +117,10 @@ async fn process_command(cmd: Command) -> Result<()> {
         }
         Command::Run { ref args } => {
             if !args.target.exists() || !args.target.is_dir() {
-                fatal(Error::NotDirectory(args.target.to_path_buf()));
-                return Ok(());
+                return fatal(Error::NotDirectory(args.target.to_path_buf()));
             }
 
-            let opts = get_server_config(
+            let opts = uwe::opts::server_config(
                 &args.target,
                 &args.server,
                 config::PORT,
@@ -377,9 +213,13 @@ async fn process_command(cmd: Command) -> Result<()> {
             let build_args: &'static mut ProfileSettings =
                 Box::leak(Box::new(build_args));
 
-            println!("Compiling with {:?}", &project);
+            //println!("Compiling with {:?}", &project);
 
-            match uwe::build::compile(&project, build_args, fatal).await {
+            let error_cb = |e| {
+                let _ = fatal(e);
+            };
+
+            match uwe::build::compile(&project, build_args, error_cb).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);
@@ -397,19 +237,10 @@ async fn process_command(cmd: Command) -> Result<()> {
 async fn main() -> Result<()> {
     let root_args = Cli::from_args();
 
-    // Fluent templates panics if an error is caught parsing the
-    // templates (for example attempting to override from a shared resource)
-    // so we catch it here and push it out via the log
-    panic::set_hook(Box::new(|info| {
-        let message = format!("{}", info);
-        // NOTE: We must NOT call `fatal` here which explictly exits the program;
-        // NOTE: if we did our defer! {} hooks would not get called which means
-        // NOTE: lock files would not be removed from disc correctly.
-        print_error(Error::Panic(message));
-    }));
+    uwe::opts::panic_hook();
 
     if let Err(e) = uwe::utils::log_level(&*root_args.log_level) {
-        fatal(e);
+        return fatal(e);
     }
 
     // Configure the generator meta data ahead of time
@@ -429,12 +260,12 @@ async fn main() -> Result<()> {
     match root_args.cmd {
         Some(cmd) => {
             if let Err(e) = process_command(cmd).await {
-                fatal(e);
+                return fatal(e);
             }
         }
         None => {
             if let Err(e) = process_command(Command::default(root_args)).await {
-                fatal(e);
+                return fatal(e);
             }
         }
     }

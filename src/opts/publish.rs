@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-pub struct PublishOpts {
+pub struct Publish {
     /// Publish environment
     #[structopt()]
     pub env: String,
