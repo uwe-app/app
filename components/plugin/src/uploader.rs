@@ -51,8 +51,8 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
         return Err(Error::NotDirectory(repo_path));
     }
 
-    let repo = git::open_repo(registry_repo)?;
-    if !git::is_clean(&repo) {
+    let repo = scm::open_repo(registry_repo)?;
+    if !scm::is_clean(&repo) {
         return Err(Error::RegistryNotClean(registry_repo.to_string()));
     }
 
@@ -97,10 +97,10 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     // Commit the updated registry entry
     let rel = entry_file.strip_prefix(&repo_path)?;
     let msg = format!("Plugin publish {}.", &id);
-    git::commit_file(&repo, &rel, &msg)?;
+    scm::commit_file(&repo, &rel, &msg)?;
 
     info!("Push {}", repo_path.display());
-    git::push(&repo, git::ORIGIN, None, None)?;
+    scm::push(&repo, scm::ORIGIN, None, None)?;
 
     info!("Published {} ✓", &id);
 

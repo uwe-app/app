@@ -16,7 +16,6 @@ members = [
   "components/datasource",
   "components/dirs",
   "components/frontmatter",
-  "components/git",
   "components/livereload",
   "components/locale",
   "components/minify",
@@ -25,6 +24,7 @@ members = [
   "components/publisher",
   "components/release",
   "components/report",
+  "components/scm",
   "components/server",
   "components/site",
   "components/syntax",
@@ -40,7 +40,7 @@ compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
 datasource = {version = "0.1", path = "components/datasource" }
 dirs = {version = "0.1", path = "components/dirs" }
-git = {version = "0.1", path = "components/git" }
+scm = {version = "0.1", path = "components/scm" }
 livereload = {version = "0.1", path = "components/livereload" }
 locale = {version = "0.1", path = "components/locale" }
 plugin = {version = "0.1", path = "components/plugin" }

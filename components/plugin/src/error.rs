@@ -61,7 +61,7 @@ pub enum Error {
     #[error("Cyclic plugin {0}")]
     CyclicPlugin(PathBuf),
 
-    #[error("Could not parse git repository URL ({0})")]
+    #[error("Could not parse scm repository URL ({0})")]
     GitUrl(url::ParseError),
 
     #[error("Dependency stack depth has exceeded the maximum {0}")]
@@ -176,5 +176,5 @@ pub enum Error {
     Publisher(#[from] publisher::Error),
 
     #[error(transparent)]
-    Git(#[from] git::Error),
+    Scm(#[from] scm::Error),
 }

@@ -67,7 +67,7 @@ pub enum Error {
     #[error(transparent)]
     Workspace(#[from] workspace::Error),
     #[error(transparent)]
-    GitLib(#[from] git::Error),
+    Scm(#[from] scm::Error),
     #[error(transparent)]
     Preference(#[from] preference::Error),
     #[error(transparent)]

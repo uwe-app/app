@@ -25,7 +25,7 @@ use crate::{
 static REGISTRY: &str =
     "https://s3-ap-southeast-1.amazonaws.com/registry.uwe.app";
 
-static GIT_SCHEME: &str = "git";
+static GIT_SCHEME: &str = "scm";
 static FILE_SCHEME: &str = "file";
 
 pub async fn install<P: AsRef<Path>>(
@@ -162,48 +162,48 @@ pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
 
 pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
     project: P,
-    git: S,
+    scm: S,
 ) -> Result<Plugin> {
-    let git_url: Url = git.as_ref().parse().map_err(|e| Error::GitUrl(e))?;
+    let scm_url: Url = scm.as_ref().parse().map_err(|e| Error::GitUrl(e))?;
 
-    // TODO: ensure the plugin source is "git+file" scheme
+    // TODO: ensure the plugin source is "scm+file" scheme
 
-    let scheme = git_url.scheme();
+    let scheme = scm_url.scheme();
     if scheme == FILE_SCHEME {
-        let path = urlencoding::decode(git_url.path())?;
+        let path = urlencoding::decode(scm_url.path())?;
         let repo_path = Path::new(&path);
-        let _ = git::open_repo(&repo_path)?;
+        let _ = scm::open_repo(&repo_path)?;
         let source = Some(PluginSource::File(repo_path.to_path_buf()));
         return install_path(project, &repo_path, source).await;
     }
 
-    let host = if let Some(host) = git_url.host_str() {
+    let host = if let Some(host) = scm_url.host_str() {
         host
     } else {
         config::HOST
     };
 
     let base = cache::get_cache_src_dir()?;
-    let git_url_str = format!(
+    let scm_url_str = format!(
         "{}{}{}-{}",
         GIT_SCHEME,
         config::PLUGIN_NS,
         slugify(host),
-        slugify(urlencoding::decode(git_url.path())?)
+        slugify(urlencoding::decode(scm_url.path())?)
     );
 
-    let git_target = base.join(git_url_str);
+    let scm_target = base.join(scm_url_str);
 
-    let _ = if git_target.exists() && git_target.is_dir() {
-        let repo = git::open_repo(&git_target)?;
-        git::pull(&git_target, None, None)?;
+    let _ = if scm_target.exists() && scm_target.is_dir() {
+        let repo = scm::open_repo(&scm_target)?;
+        scm::pull(&scm_target, None, None)?;
         repo
     } else {
-        git::clone(&git_url, &git_target)?
+        scm::clone(&scm_url, &scm_target)?
     };
 
-    let source = Some(PluginSource::Repo(git_url));
-    return install_path(project, &git_target, source).await;
+    let source = Some(PluginSource::Repo(scm_url));
+    return install_path(project, &scm_target, source).await;
 }
 
 pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(

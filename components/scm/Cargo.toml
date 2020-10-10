@@ -1,5 +1,5 @@
 [package]
-name = "git"
+name = "scm"
 version = "0.1.0"
 authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"

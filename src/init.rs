@@ -131,7 +131,7 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
     create_target_parents(target.as_ref())?;
     walk::copy(source.as_ref(), target.as_ref(), |_| true)?;
     write_settings(target.as_ref(), settings)?;
-    git::init(target.as_ref(), message)?;
+    scm::init(target.as_ref(), message)?;
 
     Ok(())
 }
@@ -214,17 +214,17 @@ pub fn init(options: InitOptions) -> Result<()> {
         return Err(Error::TargetExists(target.clone()));
     }
 
-    // 1) Check for URL; if valid clone as a git repository
+    // 1) Check for URL; if valid clone as a scm repository
     // 2) Check for local file system folder; if valid copy files.
     // 3) Check for named blueprint folder; if valid copy files.
     if let Some(ref source) = options.source {
         match source.parse::<Url>() {
             Ok(url) => {
                 create_target_parents(&target)?;
-                let repo = git::clone(url, &target)?;
+                let repo = scm::clone(url, &target)?;
                 check_site_settings(&target)?;
                 write_settings(&target, settings)?;
-                git::pristine(target, repo, message)?;
+                scm::pristine(target, repo, message)?;
             }
             Err(_) => {
                 let source_dir = PathBuf::from(source);
