@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use git2::{
-    build::RepoBuilder, Commit, Cred, ErrorClass, ErrorCode, FetchOptions,
+    build::RepoBuilder, Commit, ErrorClass, ErrorCode, FetchOptions,
     IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
     RepositoryState,
 };
@@ -29,6 +29,8 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod callbacks;
+mod clone;
 pub mod progress;
 mod pull;
 
@@ -41,15 +43,8 @@ pub fn pull<P: AsRef<Path>>(
     remote: Option<String>,
     branch: Option<String>,
 ) -> Result<()> {
-    pull::pull(path, remote, branch).map_err(Error::from)
-}
-
-pub fn callbacks_ssh_agent<'a>() -> RemoteCallbacks<'a> {
-    let mut callbacks = RemoteCallbacks::new();
-    callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        Cred::ssh_key_from_agent(username_from_url.unwrap())
-    });
-    callbacks
+    pull::pull(path, remote, branch)
+        .map_err(Error::from)
 }
 
 /// Detach a repository from upstream by removing the entire commit
@@ -60,9 +55,11 @@ pub fn pristine<P: AsRef<Path>>(
     message: &str,
 ) -> Result<()> {
     let git_dir = repo.path();
+
     // Remove the git directory is the easiest
     // way to purge the history
     fs::remove_dir_all(git_dir)?;
+
     init(target, message)?;
     Ok(())
 }
@@ -109,7 +106,7 @@ pub fn push(
     cbs: Option<RemoteCallbacks<'_>>,
     refspecs: Option<Vec<String>>,
 ) -> Result<()> {
-    let mut cbs = cbs.unwrap_or(callbacks_ssh_agent());
+    let mut cbs = cbs.unwrap_or(callbacks::ssh_agent());
     let mut remote = repo.find_remote(remote)?;
 
     let refspecs = refspecs.unwrap_or({
@@ -172,23 +169,24 @@ pub fn commit_file(
     Ok(repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?)
 }
 
-pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
-    src: S,
-    target: P,
-) -> Result<Repository> {
-    let mut callbacks = callbacks_ssh_agent();
-    progress::add_progress_callbacks(&mut callbacks);
+//pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
+    //src: S,
+    //target: P,
+//) -> Result<Repository> {
+    //let mut callbacks = callbacks_ssh_agent();
+    //progress::add_progress_callbacks(&mut callbacks);
 
-    let mut fo = FetchOptions::new();
-    fo.remote_callbacks(callbacks);
+    //let mut fo = FetchOptions::new();
+    //fo.remote_callbacks(callbacks);
 
-    let mut builder = RepoBuilder::new();
-    builder.fetch_options(fo);
+    //let mut builder = RepoBuilder::new();
+    //builder.fetch_options(fo);
 
-    let result = builder.clone(src.as_ref(), target.as_ref());
-    result.map_err(Error::from)
-}
+    //let result = builder.clone(src.as_ref(), target.as_ref());
+    //result.map_err(Error::from)
+//}
 
+/*
 pub fn clone_standard<P: AsRef<Path>>(
     src: &str,
     target: P,
@@ -204,7 +202,9 @@ pub fn clone_standard<P: AsRef<Path>>(
 
     builder.clone(src, target.as_ref()).map_err(Error::from)
 }
+*/
 
+/*
 fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     let modules = repo.submodules()?;
     for mut sub in modules {
@@ -236,6 +236,7 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     }
     Ok(())
 }
+*/
 
 fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     info!("Fetch {}", base.as_ref().display());
@@ -249,6 +250,7 @@ pub fn print_clone<P: AsRef<Path>>(from: &str, to: P) {
     info!("   -> {}", to.as_ref().display());
 }
 
+/*
 pub fn list_submodules(repo: Repository) -> Result<()> {
     let modules = repo.submodules()?;
     for sub in &modules {
@@ -256,8 +258,9 @@ pub fn list_submodules(repo: Repository) -> Result<()> {
     }
     Ok(())
 }
+*/
 
-pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository> {
+pub fn open<P: AsRef<Path>>(dir: P) -> Result<Repository> {
     let repo = match Repository::open(dir) {
         Ok(repo) => repo,
         Err(e) => return Err(Error::from(e)),
@@ -266,54 +269,37 @@ pub fn open_repo<P: AsRef<Path>>(dir: P) -> Result<Repository> {
 }
 
 pub fn is_clean(repo: &Repository) -> bool {
-    let state = repo.state();
-    state == RepositoryState::Clean
-}
-
-pub fn clone_recurse<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository> {
-    let repo = match Repository::clone_recurse(from, dir) {
-        Ok(repo) => repo,
-        Err(e) => return Err(Error::from(e)),
-    };
-    Ok(repo)
-}
-
-pub fn open_or_clone<P: AsRef<Path>>(
-    from: &str,
-    to: P,
-    submodules: bool,
-) -> Result<(Repository, bool)> {
-    if !to.as_ref().exists() {
-        let repo = if submodules {
-            clone_recurse(from, to)?
-        } else {
-            clone_standard(from, to)?
-        };
-        return Ok((repo, true));
-    } else {
-        let repo = open_repo(to)?;
-        return Ok((repo, false));
-    }
+    repo.state() == RepositoryState::Clean
 }
 
 pub fn clone_or_fetch<P: AsRef<Path>>(
     from: &str,
     to: P,
-    submodules: bool,
-) -> Result<()> {
-    if !to.as_ref().exists() {
-        print_clone(from, to.as_ref().clone());
+) -> Result<Repository> {
+    let to = to.as_ref();
+    if !to.exists() {
+        print_clone(from, to);
+        Ok(clone(from, to)?)
+    } else {
+        let repo = open(to)?;
+        pull(to, None, None)?;
+        Ok(repo)
     }
 
-    let (repo, cloned) = open_or_clone(from, to.as_ref(), submodules)?;
-    if !cloned {
+    //let repo = open_repo(to)?;
+
+    //let (repo, cloned) = open_or_clone(from, to.as_ref(), submodules)?;
+    //if !cloned {
         //fetch(&repo, &base)?;
         // FIXME: merge from origin/master
 
-        pull(to.as_ref(), None, None)?;
-        if submodules {
-            fetch_submodules(&repo, to.as_ref())?
-        }
-    }
-    Ok(())
+    //pull(to, None, None)?;
+        //if submodules {
+            //fetch_submodules(&repo, to.as_ref())?
+        //}
+    //}
+
+    //Ok(repo)
 }
+
+pub use clone::clone;

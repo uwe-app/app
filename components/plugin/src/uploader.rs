@@ -51,7 +51,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
         return Err(Error::NotDirectory(repo_path));
     }
 
-    let repo = scm::open_repo(registry_repo)?;
+    let repo = scm::open(registry_repo)?;
     if !scm::is_clean(&repo) {
         return Err(Error::RegistryNotClean(registry_repo.to_string()));
     }

@@ -172,7 +172,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
     if scheme == FILE_SCHEME {
         let path = urlencoding::decode(scm_url.path())?;
         let repo_path = Path::new(&path);
-        let _ = scm::open_repo(&repo_path)?;
+        let _ = scm::open(&repo_path)?;
         let source = Some(PluginSource::File(repo_path.to_path_buf()));
         return install_path(project, &repo_path, source).await;
     }
@@ -195,7 +195,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
     let scm_target = base.join(scm_url_str);
 
     let _ = if scm_target.exists() && scm_target.is_dir() {
-        let repo = scm::open_repo(&scm_target)?;
+        let repo = scm::open(&scm_target)?;
         scm::pull(&scm_target, None, None)?;
         repo
     } else {
