@@ -19,7 +19,7 @@ pub struct VersionInfo {
 }
 
 pub(crate) fn file() -> Result<PathBuf> {
-    Ok(cache::get_runtime_dir()?
+    Ok(dirs::get_runtime_dir()?
         .join(releases::RELEASE)
         .join(VERSION_FILE))
 }

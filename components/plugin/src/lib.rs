@@ -7,6 +7,7 @@ mod packager;
 mod reader;
 mod registry;
 mod resolver;
+mod runtime;
 mod uploader;
 
 type Result<T> = std::result::Result<T, error::Error>;

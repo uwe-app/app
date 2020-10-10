@@ -5,11 +5,11 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
-cache = {version = "0.1", path = "../cache" }
 collator = {version = "0.1", path = "../collator" }
 compiler = {version = "0.1", path = "../compiler" }
 config = {version = "0.1", path = "../config" }
 datasource = {version = "0.1", path = "../datasource" }
+dirs = {version = "0.1", path = "../dirs" }
 locale = {version = "0.1", path = "../locale" }
 plugin = {version = "0.1", path = "../plugin" }
 preference = {version = "0.1", path = "../preference" }

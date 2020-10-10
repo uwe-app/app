@@ -60,30 +60,40 @@ pub enum Error {
 
     #[error(transparent)]
     Config(#[from] config::Error),
+
     #[error(transparent)]
     Compiler(#[from] compiler::Error),
+
     #[error(transparent)]
     Locale(#[from] locale::Error),
+
     #[error(transparent)]
     Workspace(#[from] workspace::Error),
+
     #[error(transparent)]
     Scm(#[from] scm::Error),
+
     #[error(transparent)]
     Preference(#[from] preference::Error),
-    #[error(transparent)]
-    Cache(#[from] cache::Error),
+
     #[error(transparent)]
     Report(#[from] report::Error),
+
     #[error(transparent)]
     Publish(#[from] publisher::Error),
+
     #[error(transparent)]
     Site(#[from] site::Error),
+
     #[error(transparent)]
     Server(#[from] server::Error),
+
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
+
     #[error(transparent)]
     Utils(#[from] utils::Error),
+
     #[error(transparent)]
     Release(#[from] release::Error),
 }

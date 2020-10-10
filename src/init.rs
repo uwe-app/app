@@ -233,7 +233,7 @@ pub fn init(options: InitOptions) -> Result<()> {
                 let source_dir = if is_local_folder {
                     source_dir
                 } else {
-                    let blueprints = cache::get_blueprint_dir()?;
+                    let blueprints = dirs::get_blueprint_dir()?;
                     blueprints.join(source)
                 };
 
@@ -248,7 +248,7 @@ pub fn init(options: InitOptions) -> Result<()> {
 
     // 4) No source specified so we just use the default blueprint.
     } else {
-        let source = cache::get_blueprint_dir()?.join(DEFAULT_NAME);
+        let source = dirs::get_blueprint_dir()?.join(DEFAULT_NAME);
         check_site_settings(&source)?;
         init_folder(source, target, settings, message)?;
     };

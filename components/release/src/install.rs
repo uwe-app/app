@@ -17,7 +17,7 @@ use crate::{
 };
 
 fn welcome() -> Result<PathBuf> {
-    let bin_dir = cache::get_bin_dir()?;
+    let bin_dir = dirs::get_bin_dir()?;
 
     // Write out the env file
     env::write(&bin_dir)?;

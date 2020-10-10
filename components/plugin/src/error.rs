@@ -161,6 +161,7 @@ pub enum Error {
     #[error(transparent)]
     Request(#[from] reqwest::Error),
 
+
     //#[error(transparent)]
     //Regex(#[from] regex::Error),
     #[error(transparent)]
@@ -168,9 +169,6 @@ pub enum Error {
 
     #[error(transparent)]
     Config(#[from] config::Error),
-
-    #[error(transparent)]
-    Cache(#[from] cache::Error),
 
     #[error(transparent)]
     Publisher(#[from] publisher::Error),

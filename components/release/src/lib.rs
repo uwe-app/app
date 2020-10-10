@@ -62,7 +62,7 @@ pub enum Error {
     Publisher(#[from] publisher::Error),
 
     #[error(transparent)]
-    Cache(#[from] cache::Error),
+    Scm(#[from] scm::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

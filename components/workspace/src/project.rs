@@ -217,7 +217,7 @@ impl ProjectBuilder {
 
         if self.config.syntax.is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
-                let syntax_dir = cache::get_syntax_dir()?;
+                let syntax_dir = dirs::get_syntax_dir()?;
                 if !syntax_dir.exists() {
                     return Err(Error::NoSyntaxDirectory(syntax_dir));
                 }
@@ -418,7 +418,7 @@ impl ProjectBuilder {
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
         if let Some(ref syntax_config) = self.get_syntax() {
-            let syntax_dir = cache::get_syntax_dir()?;
+            let syntax_dir = dirs::get_syntax_dir()?;
             info!("Syntax highlighting on");
             syntax::setup(&syntax_dir, syntax_config)?;
         }

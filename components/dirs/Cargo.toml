@@ -5,4 +5,5 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
+thiserror = "1"
 home = "0.5"

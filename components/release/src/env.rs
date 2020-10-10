@@ -31,7 +31,7 @@ pub fn get_env_content(bin_dir: &PathBuf) -> String {
 // Write out the env file
 pub(crate) fn write(bin_dir: &PathBuf) -> Result<()> {
     let content = get_env_content(bin_dir);
-    let env = cache::get_env_file()?;
+    let env = dirs::get_env_file()?;
     utils::fs::write_string(env, content)?;
     Ok(())
 }

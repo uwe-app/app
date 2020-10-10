@@ -7,7 +7,7 @@ use scopeguard::defer;
 use config::plugin::Plugin;
 
 use crate::{
-    linter::lint, packager, registry, registry::RegistryAccess, Error, Result,
+    linter::lint, packager, registry, runtime, registry::RegistryAccess, Error, Result,
 };
 
 /// Upload the plugin package to the s3 bucket.
@@ -57,7 +57,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     }
 
     // Pull latest version of the reader registry
-    cache::update(vec![cache::CacheComponent::Runtime])?;
+    runtime::fetch().await?;
 
     let writer = PathBuf::from(registry_path);
     //let reader = cache::get_registry_dir()?;

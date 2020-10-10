@@ -135,7 +135,7 @@ pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
                 hex::encode(digest),
             );
 
-            Ok(cache::get_cache_src_dir()?.join(name))
+            Ok(dirs::get_cache_src_dir()?.join(name))
         };
 
     let file = canonical(project, path)?;
@@ -183,7 +183,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
         config::HOST
     };
 
-    let base = cache::get_cache_src_dir()?;
+    let base = dirs::get_cache_src_dir()?;
     let scm_url_str = format!(
         "{}{}{}-{}",
         GIT_SCHEME,
@@ -287,7 +287,7 @@ pub(crate) async fn get_cached<P: AsRef<Path>>(
 fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
     let extract_dir =
         format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
-    Ok(cache::get_cache_src_dir()?.join(extract_dir))
+    Ok(dirs::get_cache_src_dir()?.join(extract_dir))
 }
 
 /// Assign some private attributes to the plugin.

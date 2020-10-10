@@ -241,15 +241,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
 
 [[package]]
-name = "cache"
-version = "0.1.0"
-dependencies = [
- "dirs 0.1.0",
- "scm",
- "thiserror",
-]
-
-[[package]]
 name = "cc"
 version = "1.0.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -314,7 +305,6 @@ name = "collator"
 version = "0.1.0"
 dependencies = [
  "Inflector",
- "cache",
  "chrono",
  "config",
  "crossbeam",
@@ -621,7 +611,6 @@ dependencies = [
 name = "datasource"
 version = "0.1.0"
 dependencies = [
- "cache",
  "collator",
  "config",
  "futures",
@@ -664,6 +653,7 @@ name = "dirs"
 version = "0.1.0"
 dependencies = [
  "home",
+ "thiserror",
 ]
 
 [[package]]
@@ -2157,8 +2147,8 @@ version = "0.1.0"
 dependencies = [
  "async-recursion",
  "async-trait",
- "cache",
  "config",
+ "dirs 0.1.0",
  "futures",
  "hex",
  "http",
@@ -2538,7 +2528,6 @@ checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 name = "release"
 version = "0.1.0"
 dependencies = [
- "cache",
  "config",
  "crossterm",
  "dirs 0.1.0",
@@ -2549,6 +2538,7 @@ dependencies = [
  "pbr",
  "publisher",
  "reqwest",
+ "scm",
  "semver 0.10.0",
  "serde",
  "serde_json",
@@ -3132,8 +3122,8 @@ checksum = "0b8de496cf83d4ed58b6be86c3a275b8602f6ffe98d3024a869e124147a9a3ac"
 name = "site"
 version = "0.1.0"
 dependencies = [
- "cache",
  "config",
+ "dirs 0.1.0",
  "log",
  "serde",
  "thiserror",
@@ -3847,7 +3837,6 @@ dependencies = [
 name = "uwe"
 version = "0.40.0"
 dependencies = [
- "cache",
  "compiler",
  "config",
  "datasource",
@@ -4106,11 +4095,11 @@ dependencies = [
 name = "workspace"
 version = "0.1.0"
 dependencies = [
- "cache",
  "collator",
  "compiler",
  "config",
  "datasource",
+ "dirs 0.1.0",
  "fs2",
  "futures",
  "human_bytes",

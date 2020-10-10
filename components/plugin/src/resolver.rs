@@ -18,6 +18,7 @@ use config::{
 
 use crate::{
     installer,
+    runtime,
     registry::{self, RegistryAccess},
     Error, Registry, Result,
 };
@@ -154,7 +155,7 @@ impl<'a> Resolver<'a> {
 
         if !difference.is_empty() {
             info!("Update registry cache");
-            cache::update(vec![cache::CacheComponent::Runtime])?;
+            runtime::fetch().await?;
 
             // Refresh the lock file entries in case we can resolve
             // newer versions from the updated registry information

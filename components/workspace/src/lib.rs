@@ -62,22 +62,28 @@ pub enum Error {
 
     #[error(transparent)]
     Config(#[from] config::Error),
-    #[error(transparent)]
-    Cache(#[from] cache::Error),
+
     #[error(transparent)]
     Preference(#[from] preference::Error),
+
     #[error(transparent)]
     Compiler(#[from] compiler::Error),
+
     #[error(transparent)]
     Locale(#[from] locale::Error),
+
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
+
     #[error(transparent)]
     Collator(#[from] collator::Error),
+
     #[error(transparent)]
     Syntax(#[from] syntax::Error),
+
     #[error(transparent)]
     Search(#[from] search::Error),
+
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
 }

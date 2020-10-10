@@ -4,9 +4,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use cache;
 use config::Config;
-use utils;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -53,7 +51,7 @@ pub struct SiteStatus {
 }
 
 fn load() -> Result<SiteManifest> {
-    let file = cache::get_workspace_manifest()?;
+    let file = dirs::get_workspace_manifest()?;
     if !file.exists() {
         return Ok(Default::default());
     }
@@ -63,7 +61,7 @@ fn load() -> Result<SiteManifest> {
 }
 
 fn save(manifest: SiteManifest) -> Result<()> {
-    let file = cache::get_workspace_manifest()?;
+    let file = dirs::get_workspace_manifest()?;
     let content = toml::to_string(&manifest)?;
     utils::fs::write_string(file, content)?;
     Ok(())
@@ -94,7 +92,7 @@ pub fn add(project: PathBuf, site_name: Option<String>) -> Result<String> {
         return Err(Error::Exists { name });
     }
 
-    let mut link_target = cache::get_workspace_dir()?;
+    let mut link_target = dirs::get_workspace_dir()?;
     link_target.push(&name);
 
     if link_target.exists() {
@@ -121,7 +119,7 @@ pub fn remove<S: AsRef<str>>(target: S) -> Result<()> {
     }
 
     // Remove the symlink
-    let mut link_target = cache::get_workspace_dir()?;
+    let mut link_target = dirs::get_workspace_dir()?;
     link_target.push(&name);
     std::fs::remove_file(&link_target)?;
 

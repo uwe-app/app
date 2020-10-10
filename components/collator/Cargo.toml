@@ -5,7 +5,6 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
-cache = {version = "0.1", path = "../cache" }
 config = {version = "0.1", path = "../config" }
 frontmatter = {version = "0.1", path = "../frontmatter" }
 locale = {version = "0.1", path = "../locale" }

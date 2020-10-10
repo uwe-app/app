@@ -9,7 +9,6 @@ default-run = "uwe"
 
 [workspace]
 members = [
-  "components/cache",
   "components/collator",
   "components/compiler",
   "components/config",
@@ -35,7 +34,6 @@ members = [
 ]
 
 [dependencies]
-cache = {version = "0.1", path = "components/cache" }
 compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
 datasource = {version = "0.1", path = "components/datasource" }
