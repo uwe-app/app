@@ -5,7 +5,7 @@ use config::server::{LaunchConfig, ServerConfig};
 
 pub async fn get_target() -> Result<PathBuf> {
     // Served from a sub-directory
-    let target = dirs::get_docs_dir()?;
+    let target = dirs::docs_dir()?;
     if !target.exists() {
         return Err(Error::NotDirectory(target));
     }

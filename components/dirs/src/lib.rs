@@ -10,8 +10,8 @@ static CACHE_NAME: &str = "cache";
 static SRC_NAME: &str = "src";
 static BLUEPRINT_NAME: &str = "blueprint";
 
-static WORKSPACE_NAME: &str = "sites";
-static WORKSPACE_FILE: &str = "sites.toml";
+static SITES_NAME: &str = "sites";
+static SITES_FILE: &str = "sites.toml";
 
 static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
 
@@ -22,7 +22,7 @@ static DOCUMENTATION_NAME: &str = "documentation/docs";
 static SYNTAX_NAME: &str = "syntax";
 static RELEASE_NAME: &str = "release";
 
-pub fn get_root_dir() -> io::Result<PathBuf> {
+pub fn root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();
     if let Some(ref cache) = cache {
         let mut buf = cache.clone();
@@ -38,27 +38,27 @@ pub fn get_root_dir() -> io::Result<PathBuf> {
     ))
 }
 
-pub fn get_workspace_dir() -> io::Result<PathBuf> {
-    let mut bin = get_root_dir()?;
-    bin.push(WORKSPACE_NAME);
+pub fn sites_dir() -> io::Result<PathBuf> {
+    let mut bin = root_dir()?;
+    bin.push(SITES_NAME);
     if !bin.exists() {
         fs::create_dir(&bin)?;
     }
     Ok(bin)
 }
 
-pub fn get_workspace_manifest() -> io::Result<PathBuf> {
-    Ok(get_root_dir()?.join(WORKSPACE_FILE))
+pub fn sites_manifest() -> io::Result<PathBuf> {
+    Ok(root_dir()?.join(SITES_FILE))
 }
 
-pub fn get_env_file() -> io::Result<PathBuf> {
-    let mut env = get_root_dir()?;
+pub fn env_file() -> io::Result<PathBuf> {
+    let mut env = root_dir()?;
     env.push(ENV);
     Ok(env)
 }
 
-pub fn get_bin_dir() -> io::Result<PathBuf> {
-    let mut bin = get_root_dir()?;
+pub fn bin_dir() -> io::Result<PathBuf> {
+    let mut bin = root_dir()?;
     bin.push(BIN);
     if !bin.exists() {
         fs::create_dir(&bin)?;
@@ -66,56 +66,56 @@ pub fn get_bin_dir() -> io::Result<PathBuf> {
     Ok(bin)
 }
 
-pub fn get_runtime_url() -> String {
+pub fn runtime_url() -> String {
     RUNTIME_REPO.to_string()
 }
 
-pub fn get_runtime_dir() -> io::Result<PathBuf> {
-    Ok(get_root_dir()?.join(RUNTIME_NAME))
+pub fn runtime_dir() -> io::Result<PathBuf> {
+    Ok(root_dir()?.join(RUNTIME_NAME))
 }
 
-pub fn get_cache_dir() -> io::Result<PathBuf> {
-    let cache = get_root_dir()?.join(CACHE_NAME);
+pub fn cache_dir() -> io::Result<PathBuf> {
+    let cache = root_dir()?.join(CACHE_NAME);
     if !cache.exists() {
         fs::create_dir(&cache)?;
     }
     Ok(cache)
 }
 
-pub fn get_cache_src_dir() -> io::Result<PathBuf> {
-    let src = get_cache_dir()?.join(SRC_NAME);
+pub fn cache_src_dir() -> io::Result<PathBuf> {
+    let src = cache_dir()?.join(SRC_NAME);
     if !src.exists() {
         fs::create_dir(&src)?;
     }
     Ok(src)
 }
 
-pub fn get_registry_dir() -> io::Result<PathBuf> {
-    Ok(get_runtime_dir()?.join(REGISTRY_NAME))
+pub fn registry_dir() -> io::Result<PathBuf> {
+    Ok(runtime_dir()?.join(REGISTRY_NAME))
 }
 
-pub fn get_docs_dir() -> io::Result<PathBuf> {
-    Ok(get_runtime_dir()?.join(DOCUMENTATION_NAME))
+pub fn docs_dir() -> io::Result<PathBuf> {
+    Ok(runtime_dir()?.join(DOCUMENTATION_NAME))
 }
 
-pub fn get_syntax_dir() -> io::Result<PathBuf> {
-    Ok(get_runtime_dir()?.join(SYNTAX_NAME))
+pub fn syntax_dir() -> io::Result<PathBuf> {
+    Ok(runtime_dir()?.join(SYNTAX_NAME))
 }
 
-pub fn get_blueprint_dir() -> io::Result<PathBuf> {
-    Ok(get_runtime_dir()?.join(BLUEPRINT_NAME))
+pub fn blueprint_dir() -> io::Result<PathBuf> {
+    Ok(runtime_dir()?.join(BLUEPRINT_NAME))
 }
 
-pub fn get_release_dir() -> io::Result<PathBuf> {
-    let mut buf = get_root_dir()?;
+pub fn release_dir() -> io::Result<PathBuf> {
+    let mut buf = root_dir()?;
     buf.push(RELEASE_NAME);
     Ok(buf)
 }
 
-pub fn get_release_bin_dir() -> io::Result<PathBuf> {
-    let mut buf = get_release_dir()?;
+pub fn release_bin_dir() -> io::Result<PathBuf> {
+    let mut buf = release_dir()?;
     buf.push(BIN);
     Ok(buf)
 }
 
-pub use home;
+pub use home::home_dir;

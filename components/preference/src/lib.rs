@@ -52,7 +52,7 @@ impl Default for SshPreferences {
 }
 
 pub fn get_prefs_file() -> io::Result<PathBuf> {
-    let mut buf = dirs::get_root_dir()?;
+    let mut buf = dirs::root_dir()?;
     buf.push(PREFERENCES);
     Ok(buf)
 }

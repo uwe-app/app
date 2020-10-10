@@ -7,7 +7,7 @@ use crate::Result;
 
 /// Uninstall the program.
 pub async fn uninstall() -> Result<()> {
-    let dir = dirs::get_root_dir()?;
+    let dir = dirs::root_dir()?;
 
     print!("Uninstall {}? (y/n) ", dir.display());
     io::stdout().flush()?;

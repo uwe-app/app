@@ -24,8 +24,8 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
 }
 
 pub(crate) fn symlink(binaries: &HashMap<String, PathBuf>) -> Result<()> {
-    let runtime_dir = dirs::get_runtime_dir()?;
-    let bin_dir = dirs::get_bin_dir()?;
+    let runtime_dir = dirs::runtime_dir()?;
+    let bin_dir = dirs::bin_dir()?;
     for (name, src) in binaries {
         let dest = bin_dir.join(name);
         if dest.exists() {

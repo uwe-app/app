@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use dirs::home;
-
 use crate::Result;
 
 static BASH: &str = "bash";
@@ -31,7 +29,7 @@ pub fn get_env_content(bin_dir: &PathBuf) -> String {
 // Write out the env file
 pub(crate) fn write(bin_dir: &PathBuf) -> Result<()> {
     let content = get_env_content(bin_dir);
-    let env = dirs::get_env_file()?;
+    let env = dirs::env_file()?;
     utils::fs::write_string(env, content)?;
     Ok(())
 }
@@ -53,7 +51,7 @@ pub(crate) fn update_shell_profile() -> Result<(bool, bool, String, PathBuf)> {
     let mut shell_name = String::from("");
     let mut shell_file = PathBuf::from("");
 
-    if let Some(home_dir) = home::home_dir() {
+    if let Some(home_dir) = dirs::home_dir() {
         let source_path = get_source_env();
         if let Ok(shell) = std::env::var("SHELL") {
             let shell_path = PathBuf::from(shell);

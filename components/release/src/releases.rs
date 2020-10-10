@@ -47,7 +47,7 @@ pub struct ReleaseVersion {
 }
 
 pub(crate) fn dir(version: &Version) -> Result<PathBuf> {
-    Ok(dirs::get_runtime_dir()?
+    Ok(dirs::runtime_dir()?
         .join(RELEASE)
         .join(version.to_string()))
 }
@@ -91,7 +91,7 @@ pub(crate) fn repo_manifest_file<P: AsRef<Path>>(
 /// Get the release manifest file for the installed runtime used
 /// for the install and upgrade processes.
 pub(crate) fn runtime_manifest_file() -> Result<PathBuf> {
-    Ok(dirs::get_runtime_dir()?
+    Ok(dirs::runtime_dir()?
         .join(RELEASE)
         .join(MANIFEST_JSON)
         .canonicalize()?)
