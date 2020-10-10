@@ -15,14 +15,15 @@ pub enum Error {
     #[error("No commit available")]
     NoCommit,
 
-    #[error("Unable to handle source {0}")]
-    BadSource(String),
+    //#[error("Unable to handle source {0}")]
+    //BadSource(String),
 
-    #[error("To use SSH specify the --private-key option")]
-    PrivateKeyRequired,
+    //#[error("To use SSH specify the --private-key option")]
+    //PrivateKeyRequired,
 
     #[error(transparent)]
     Git(#[from] git2::Error),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
@@ -44,6 +45,14 @@ pub fn pull<P: AsRef<Path>>(
     branch: Option<String>,
 ) -> Result<()> {
     pull::pull(path, remote, branch)
+        .map_err(Error::from)
+}
+
+pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
+    src: S,
+    target: P,
+) -> Result<Repository> {
+    clone::clone(src, target)
         .map_err(Error::from)
 }
 
@@ -302,4 +311,3 @@ pub fn clone_or_fetch<P: AsRef<Path>>(
     //Ok(repo)
 }
 
-pub use clone::clone;

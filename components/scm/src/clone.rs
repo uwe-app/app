@@ -6,7 +6,7 @@ use git2::{
 
 use crate::{Error, Result, callbacks, progress};
 
-pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
+pub(crate) fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
 ) -> Result<Repository> {

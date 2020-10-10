@@ -39,6 +39,12 @@ pub enum Error {
     #[error("Plugin publishing is not available yet")]
     NoPluginPublishPermission,
 
+    #[error("Could not determine a target name")]
+    NoTargetName,
+
+    #[error("Repository {0} is not a valid URL")]
+    InvalidRepositoryUrl(String),
+
     //#[error("No socket address for {0}")]
     //NoSocketAddress(String),
     #[error(transparent)]

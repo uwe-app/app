@@ -5,9 +5,8 @@ extern crate log;
 
 use std::panic;
 use std::path::PathBuf;
-use std::ffi::OsStr;
-use structopt::StructOpt;
 
+use structopt::StructOpt;
 use url::Url;
 
 use uwe::{self, Error, Result};
@@ -19,11 +18,6 @@ fn print_error(e: uwe::Error) {
 fn fatal(e: uwe::Error) -> Result<()> {
     print_error(e);
     std::process::exit(1);
-}
-
-fn parse_os_url(s: &OsStr) -> Url {
-    let u: Url = s.to_string_lossy().parse().unwrap();
-    u
 }
 
 #[derive(Debug, StructOpt)]
@@ -43,8 +37,7 @@ enum Command {
     /// Clone a repository.
     Clone {
         /// Repository URL.
-        #[structopt(parse(from_os_str = parse_os_url))]
-        source: Url,
+        source: String,
 
         /// Destination folder.
         target: Option<PathBuf>,
@@ -64,10 +57,33 @@ async fn main() -> Result<()> {
 
     match args.cmd {
         Command::Clone { source, target} => {
-            //uwe::plugin::lint(path, inspect)
-                //.await
-                //.map_err(Error::from)
-                //.or_else(fatal)?;
+
+            let target = if let Some(target) = target {
+                target.to_path_buf()
+            } else {
+                let base = std::env::current_dir()?;
+
+                let mut target_parts = source
+                    .trim_end_matches("/")
+                    .split("/").collect::<Vec<_>>();
+
+                let target_name = target_parts.pop().ok_or_else(
+                    || Error::NoTargetName)?;
+                base.join(target_name)
+            };
+
+            let _ = source.parse::<Url>()
+                .map_err(|_| fatal(Error::InvalidRepositoryUrl(source.to_string())));
+
+            if target.exists() {
+                return fatal(
+                    Error::TargetExists(target.to_path_buf()));
+            }
+
+            scm::clone(&source, &target)
+                .map(|_| ())
+                .map_err(Error::from)
+                .or_else(fatal)?;
         }
     }
 
