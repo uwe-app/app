@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use git2::{
-    build::RepoBuilder, Commit, ErrorClass, ErrorCode, FetchOptions,
+    Commit,
     IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
     RepositoryState,
 };

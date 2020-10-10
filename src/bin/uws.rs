@@ -45,9 +45,62 @@ enum Command {
 
     /// Pull a repository.
     Pull {
+        #[structopt(short, long, default_value = "origin")]
+        remote: String,
+
+        #[structopt(short, long, default_value = "master")]
+        branch: String,
+
         /// Repository path.
         target: Option<PathBuf>,
     },
+}
+
+fn clone(source: String, target: Option<PathBuf>) -> Result<()> {
+    let target = if let Some(target) = target {
+        target.to_path_buf()
+    } else {
+        let base = std::env::current_dir()?;
+
+        let mut target_parts = source
+            .trim_end_matches("/")
+            .split("/").collect::<Vec<_>>();
+
+        let target_name = target_parts.pop().ok_or_else(
+            || Error::NoTargetName)?;
+        base.join(target_name)
+    };
+
+    let _ = source.parse::<Url>()
+        .map_err(|_| Error::InvalidRepositoryUrl(source.to_string()))?;
+
+    if target.exists() {
+        return Err(
+            Error::TargetExists(target.to_path_buf()));
+    }
+
+    scm::clone(&source, &target)
+        .map(|_| ())
+        .map_err(Error::from)
+}
+
+fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
+    let target = if let Some(target) = target {
+        target.to_path_buf()
+    } else {
+        std::env::current_dir()?
+    };
+
+    if !target.exists() || !target.is_dir() {
+        return Err(Error::NotDirectory(target.to_path_buf()));
+    }
+
+    scm::open(&target)
+        .map_err(|_| Error::NotRepository(target.to_path_buf()))?;
+
+    scm::pull(&target, Some(remote), Some(branch))
+        .map(|_| ())
+        .map_err(Error::from)
 }
 
 #[tokio::main]
@@ -63,55 +116,10 @@ async fn main() -> Result<()> {
 
     match args.cmd {
         Command::Clone { source, target } => {
-            let target = if let Some(target) = target {
-                target.to_path_buf()
-            } else {
-                let base = std::env::current_dir()?;
-
-                let mut target_parts = source
-                    .trim_end_matches("/")
-                    .split("/").collect::<Vec<_>>();
-
-                let target_name = target_parts.pop().ok_or_else(
-                    || Error::NoTargetName)?;
-                base.join(target_name)
-            };
-
-            let _ = source.parse::<Url>()
-                .map_err(|_| fatal(Error::InvalidRepositoryUrl(source.to_string())));
-
-            if target.exists() {
-                return fatal(
-                    Error::TargetExists(target.to_path_buf()));
-            }
-
-            scm::clone(&source, &target)
-                .map(|_| ())
-                .map_err(Error::from)
-                .or_else(fatal)?;
+            clone(source, target).or_else(fatal)
         }
-
-        Command::Pull { target } => {
-            let target = if let Some(target) = target {
-                target.to_path_buf()
-            } else {
-                std::env::current_dir()?
-            };
-
-            if !target.exists() || !target.is_dir() {
-                return fatal(Error::NotDirectory(target.to_path_buf()));
-            }
-
-            let _ = scm::open(&target)
-                .map_err(|_| fatal(Error::NotRepository(target.to_path_buf())));
-
-            scm::pull(&target, None, None)
-                .map(|_| ())
-                .map_err(Error::from)
-                .or_else(fatal)?;
-
+        Command::Pull { target, remote, branch } => {
+            pull(target, remote, branch).or_else(fatal)
         }
     }
-
-    Ok(())
 }
