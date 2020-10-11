@@ -3,6 +3,7 @@ use std::io::{self, Write};
 
 use log::info;
 
+/*
 pub fn print_stats(stats: Progress) {
     if stats.local_objects() > 0 {
         info!(
@@ -21,7 +22,9 @@ pub fn print_stats(stats: Progress) {
         );
     }
 }
+*/
 
+/*
 pub fn add_progress_callbacks(cb: &mut RemoteCallbacks) {
     // Print out our transfer progress.
     cb.transfer_progress(|stats| {
@@ -44,3 +47,4 @@ pub fn add_progress_callbacks(cb: &mut RemoteCallbacks) {
         true
     });
 }
+*/

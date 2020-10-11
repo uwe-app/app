@@ -32,7 +32,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 mod callbacks;
 mod clone;
-mod progress;
+//mod progress;
 mod pull;
 
 pub static ORIGIN: &str = "origin";

@@ -12,12 +12,15 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-use git2::Repository;
 use std::path::Path;
-use std::str;
+use std::io::stderr;
 
-use super::progress;
-use log::info;
+use git2::Repository;
+use log::{info, debug};
+
+use pbr::ProgressBar;
+
+use crate::callbacks;
 
 fn do_fetch<'a>(
     repo: &'a git2::Repository,
@@ -25,8 +28,23 @@ fn do_fetch<'a>(
     remote: &'a mut git2::Remote,
     remote_name: &'a str,
 ) -> Result<git2::AnnotatedCommit<'a>, git2::Error> {
-    let mut cb = git2::RemoteCallbacks::new();
-    progress::add_progress_callbacks(&mut cb);
+
+    let mut cb = callbacks::ssh_agent();
+    let mut pb = ProgressBar::on(stderr(), 0);
+    pb.show_speed = false;
+
+    cb.transfer_progress(move |stats| {
+        if stats.received_objects() == stats.total_objects() {
+            pb.message(" Resolve deltas ");
+            pb.total = stats.total_deltas() as u64;
+            pb.set(stats.indexed_deltas() as u64);
+        } else if stats.total_objects() > 0 {
+            pb.message(" Fetch ");
+            pb.total = stats.total_objects() as u64;
+            pb.set(stats.received_objects() as u64);
+        }
+        true
+    });
 
     let mut fo = git2::FetchOptions::new();
     fo.remote_callbacks(cb);
@@ -34,16 +52,19 @@ fn do_fetch<'a>(
     // Always fetch all tags.
     // Perform a download and also update tips
     fo.download_tags(git2::AutotagOption::All);
-    info!("Fetching {}", remote.name().unwrap());
+
+    debug!("Fetching {}", remote.name().unwrap());
     remote.fetch(refs, Some(&mut fo), None)?;
+
+    //let stats = remote.stats();
+    //if stats.received_bytes() > 0 {
+        //let _ = clear_progress_bar();
+    //}
 
     // If there are local objects (we got a thin pack), then tell the user
     // how many objects we saved from having to cross the network.
-    let stats = remote.stats();
-    progress::print_stats(stats);
+    //let stats = remote.stats();
 
-    //let fetch_head = repo.find_reference("FETCH_HEAD")?;
-    //
     let fetch_ref = format!("refs/remotes/{}/{}", remote_name, refs[0]);
     let fetch_head = repo.find_reference(&fetch_ref)?;
     Ok(repo.reference_to_annotated_commit(&fetch_head)?)
@@ -58,8 +79,10 @@ fn fast_forward(
         Some(s) => s.to_string(),
         None => String::from_utf8_lossy(lb.name_bytes()).to_string(),
     };
+
     let msg = format!("Fast-Forward: Setting {} to id: {}", name, rc.id());
-    info!("{}", msg);
+    debug!("{}", msg);
+
     lb.set_target(rc.id(), &msg)?;
     repo.set_head(&name)?;
     repo.checkout_head(Some(
@@ -120,7 +143,7 @@ fn do_merge<'a>(
 
     // 2. Do the appopriate merge
     if analysis.0.is_fast_forward() {
-        info!("Doing a fast forward");
+        debug!("Doing a fast forward");
         // do a fast forward
         let refname = format!("refs/heads/{}", remote_branch);
         match repo.find_reference(&refname) {
@@ -155,7 +178,7 @@ fn do_merge<'a>(
         let head_commit = repo.reference_to_annotated_commit(&repo.head()?)?;
         normal_merge(&repo, &head_commit, &fetch_commit)?;
     } else {
-        info!("No merge needed");
+        debug!("No merge needed");
     }
     Ok(())
 }

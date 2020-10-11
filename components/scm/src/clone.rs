@@ -1,10 +1,13 @@
 use std::path::Path;
+use std::io::stderr;
 
 use git2::{
     build::RepoBuilder, FetchOptions, Repository,
 };
 
-use crate::{Error, Result, callbacks, progress};
+use pbr::ProgressBar;
+
+use crate::{Error, Result, callbacks};
 
 pub(crate) fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
@@ -12,7 +15,23 @@ pub(crate) fn clone<S: AsRef<str>, P: AsRef<Path>>(
 ) -> Result<Repository> {
 
     let mut callbacks = callbacks::ssh_agent();
-    progress::add_progress_callbacks(&mut callbacks);
+
+    let mut pb = ProgressBar::on(stderr(), 0);
+    pb.show_speed = false;
+    callbacks.transfer_progress(move |stats| {
+        if stats.received_objects() == stats.total_objects() {
+            pb.message(" Resolve deltas ");
+            pb.total = stats.total_deltas() as u64;
+            pb.set(stats.indexed_deltas() as u64);
+        } else if stats.total_objects() > 0 {
+            pb.message(" Fetch ");
+            pb.total = stats.total_objects() as u64;
+            pb.set(stats.received_objects() as u64);
+        }
+        true
+    });
+
+    //progress::add_progress_callbacks(&mut callbacks);
 
     let mut fo = FetchOptions::new();
     fo.remote_callbacks(callbacks);

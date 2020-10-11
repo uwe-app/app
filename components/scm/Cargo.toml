@@ -9,6 +9,7 @@ utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 log = "0.4.8"
+pbr = "1.0.3"
 
 [dependencies.git2]
 version = "0.13"

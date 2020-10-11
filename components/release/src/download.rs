@@ -127,7 +127,6 @@ async fn download(url: &Url, content_file: &mut File, name: &str) -> Result<Vec<
 
     let mut hasher = Sha3_256::new();
 
-    //let mut content_file = File::create(path.as_ref())?;
     while let Some(chunk) = response.chunk().await? {
         content_file.write_all(&chunk)?;
         pb.add(chunk.len() as u64);
