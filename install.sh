@@ -23,7 +23,7 @@ case $OS in
     fatal "Operating system Windows is not supported, sorry."
     ;;
   'SunOS')
-    fatal "Operating system Solaaris is not supported, sorry."
+    fatal "Operating system Solaris is not supported, sorry."
     ;;
   'AIX') ;;
   *) ;;
