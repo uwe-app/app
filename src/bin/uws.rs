@@ -2,6 +2,7 @@ extern crate log;
 extern crate pretty_env_logger;
 
 use std::path::PathBuf;
+use log::info;
 
 use structopt::StructOpt;
 use url::Url;
@@ -53,6 +54,10 @@ enum Command {
         /// Destination path.
         target: Option<PathBuf>,
     },
+
+    /// List project blueprints
+    #[structopt(alias = "ls")]
+    List {},
 
     /// Pull a repository.
     Pull {
@@ -133,6 +138,18 @@ fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
         .map_err(Error::from)
 }
 
+fn list() -> Result<()> {
+    let blueprints = dirs::blueprint_dir()?;
+    for entry in std::fs::read_dir(blueprints)? {
+        let path = entry?.path(); 
+        if path.is_dir() {
+            let name = path.file_name().unwrap().to_string_lossy(); 
+            info!("{} ({})", &*name, path.display());
+        }
+    }
+    Ok(())
+}
+
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
         Command::Clone {
@@ -149,15 +166,18 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Init { args } => {
             let opts = uwe::init::InitOptions {
-                source: args.source.clone(),
-                message: args.message.clone(),
-                target: args.target.clone(),
-                language: args.language.clone(),
-                host: args.host.clone(),
-                locales: args.locales.clone(),
+                source: args.source,
+                message: args.message,
+                target: args.target,
+                language: args.language,
+                host: args.host,
+                locales: args.locales,
             };
-
             uwe::init::init(opts)?;
+        }
+
+        Command::List {} => {
+            list()?;
         }
 
         Command::Pull {
