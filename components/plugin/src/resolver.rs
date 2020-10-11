@@ -166,8 +166,7 @@ impl<'a> Resolver<'a> {
             self.install_diff(diff).await?;
 
             info!("Writing lock file {}", self.lock.path.display());
-            // FIXME: restore writing out the new lock file
-            //self.lock.target.write(&self.lock.path)?;
+            self.lock.target.write(&self.lock.path)?;
 
             // Update local scoped plugins with correct attributes
             self.scopes()?;
