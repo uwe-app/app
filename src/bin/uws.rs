@@ -44,9 +44,18 @@ enum Command {
 
     /// Clone a repository.
     Clone {
-        /// Remove history and replace with this commit message.
+        /// Repository URL.
+        source: String,
+
+        /// Destination path.
+        target: Option<PathBuf>,
+    },
+
+    /// Copy a repository (clone and squash)
+    Copy {
+        /// Initial commit message.
         #[structopt(short, long)]
-        pristine: Option<String>,
+        message: String,
 
         /// Repository URL.
         source: String,
@@ -88,7 +97,7 @@ fn create(target: PathBuf, message: String) -> Result<()> {
         .map_err(Error::from)
 }
 
-fn clone(
+fn clone_or_copy(
     source: String,
     target: Option<PathBuf>,
     pristine: Option<String>,
@@ -114,9 +123,16 @@ fn clone(
         return Err(Error::TargetExists(target.to_path_buf()));
     }
 
-    scm::clone(&source, &target, None)
-        .map(|_| ())
-        .map_err(Error::from)
+    if let Some(ref message) = pristine {
+        scm::copy(&source, &target, message)
+            .map(|_| ())
+            .map_err(Error::from)
+    } else {
+        scm::clone(&source, &target)
+            .map(|_| ())
+            .map_err(Error::from)
+    }
+
 }
 
 fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
@@ -155,9 +171,16 @@ async fn run(cmd: Command) -> Result<()> {
         Command::Clone {
             source,
             target,
-            pristine,
         } => {
-            clone(source, target, pristine)?;
+            clone_or_copy(source, target, None)?;
+        }
+
+        Command::Copy {
+            source,
+            target,
+            message,
+        } => {
+            clone_or_copy(source, target, Some(message))?;
         }
 
         Command::Create { target, message } => {

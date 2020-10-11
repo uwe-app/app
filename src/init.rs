@@ -221,7 +221,7 @@ pub fn init(options: InitOptions) -> Result<()> {
         match source.parse::<Url>() {
             Ok(url) => {
                 create_target_parents(&target)?;
-                scm::clone(url.to_string(), &target, Some(message))?;
+                scm::copy(url.to_string(), &target, message)?;
                 check_site_settings(&target)?;
                 write_settings(&target, settings)?;
             }

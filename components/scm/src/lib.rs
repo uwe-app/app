@@ -48,16 +48,18 @@ pub fn pull<P: AsRef<Path>>(
 pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
-    message: Option<&str>,
+) -> Result<Repository> {
+    Ok(clone::clone(src, target).map_err(Error::from)?)
+}
+
+pub fn copy<S: AsRef<str>, P: AsRef<Path>>(
+    src: S,
+    target: P,
+    message: &str,
 ) -> Result<Repository> {
     let target = target.as_ref();
-
-    let repo = clone::clone(src, target).map_err(Error::from)?;
-
-    if let Some(message) = message {
-        pristine(target, &repo, message)?
-    }
-
+    let repo = clone(src, target).map_err(Error::from)?;
+    pristine(target, &repo, message)?;
     Ok(repo)
 }
 
@@ -286,7 +288,7 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
     let to = to.as_ref();
     if !to.exists() {
         print_clone(from, to);
-        Ok(clone(from, to, None)?)
+        Ok(clone(from, to)?)
     } else {
         let repo = open(to)?;
         pull(to, None, None)?;
