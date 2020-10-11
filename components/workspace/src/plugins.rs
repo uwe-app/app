@@ -29,6 +29,9 @@ fn create_asset<S: AsRef<str>>(
     }
 
     let asset_source = plugin.base().join(&asset);
+
+    //println!("Using plugin base {}", plugin.base().display());
+
     if !asset_source.exists() {
         return Err(Error::NoPluginAsset(name.clone(), asset_source));
     }

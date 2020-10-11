@@ -163,9 +163,9 @@ impl ProjectBuilder {
                 plugin::resolve(&self.options.project, dependencies).await?;
 
             for (_, plugin) in plugins.iter() {
-                //let src = plugin.source().as_ref().unwrap().to_url()?;
+                let src = plugin.source().as_ref().unwrap().to_url()?;
                 info!("Use {}", plugin.to_string());
-                //debug!(" -> {}", src.to_string());
+                debug!(" -> {}", src.to_string());
             }
 
             // Create plugin cache lookups for scripts, styles etc

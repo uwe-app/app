@@ -168,9 +168,10 @@ impl<'a> Resolver<'a> {
             info!("Writing lock file {}", self.lock.path.display());
             self.lock.target.write(&self.lock.path)?;
 
-            // Update local scoped plugins with correct attributes
-            self.scopes()?;
         }
+
+        // Update local scoped plugins with correct attributes
+        self.scopes()?;
 
         Ok(self)
     }
@@ -446,7 +447,7 @@ async fn solver(
             stack.pop();
         }
 
-        println!("Entry is {:#?}", entry);
+        //println!("Entry is {:#?}", entry);
 
         // Got a dependency that is already resolved so we need to ensure
         // if fills the same requirements as the previous plugin match
