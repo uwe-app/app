@@ -49,12 +49,6 @@ enum Command {
         args: Docs,
     },
 
-    /// Manage sites
-    Site {
-        #[structopt(flatten)]
-        args: Site,
-    },
-
     /// Publish a site
     Publish {
         #[structopt(flatten)]
@@ -103,28 +97,6 @@ async fn process_command(cmd: Command) -> Result<()> {
 
             server::launch(opts, launch, &mut channels).await?;
         }
-
-        Command::Site { args } => match args {
-            Site::Add {
-                ref name,
-                ref project,
-            } => {
-                let opts = uwe::site::AddOptions {
-                    project: project.clone(),
-                    name: name.clone(),
-                };
-                uwe::site::add(opts)?;
-            }
-            Site::Remove { ref name } => {
-                let opts = uwe::site::RemoveOptions {
-                    name: name.to_string(),
-                };
-                uwe::site::remove(opts)?;
-            }
-            Site::List { .. } => {
-                uwe::site::list()?;
-            }
-        },
 
         Command::Publish { args } => {
             let project = opts::project_path(&args.project)?;

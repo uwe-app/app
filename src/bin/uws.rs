@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use url::Url;
 
-use uwe::{self, Error, Result, opts::{fatal, Init}};
+use uwe::{self, Error, Result, opts::{fatal, Init, Site}};
 
 #[derive(Debug, StructOpt)]
 /// Universal (web editor) sync
@@ -61,6 +61,12 @@ enum Command {
 
         /// Repository path.
         target: Option<PathBuf>,
+    },
+
+    /// Manage site aliases
+    Site {
+        #[structopt(flatten)]
+        args: Site,
     },
 
 }
@@ -122,14 +128,17 @@ fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
         .map_err(Error::from)
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    let args = Cli::from_args();
 
-    uwe::opts::panic_hook();
-    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
+async fn run(cmd: Command) -> Result<()> {
+    match cmd {
 
-    match args.cmd {
+        Command::Clone { source, target, pristine } => {
+            clone(source, target, pristine)?;
+        }
+
+        Command::Create { target, message } => {
+            create(target, message)?;
+        }
 
         Command::Init { args } => {
             let opts = uwe::init::InitOptions {
@@ -141,20 +150,35 @@ async fn main() -> Result<()> {
                 locales: args.locales.clone(),
             };
 
-            uwe::init::init(opts).or_else(fatal)
-        }
-
-        Command::Create { target, message } => {
-            create(target, message).or_else(fatal)
-        }
-
-        Command::Clone { source, target, pristine } => {
-            clone(source, target, pristine).or_else(fatal)
+            uwe::init::init(opts)?;
         }
 
         Command::Pull { target, remote, branch } => {
-            pull(target, remote, branch).or_else(fatal)
+            pull(target, remote, branch)?;
         }
 
+        Command::Site { args } => match args {
+            Site::Add { name, project } => {
+                let opts = uwe::site::AddOptions { project, name };
+                uwe::site::add(opts)?;
+            }
+            Site::Remove { name } => {
+                let opts = uwe::site::RemoveOptions { name };
+                uwe::site::remove(opts)?;
+            }
+            Site::List { .. } => {
+                uwe::site::list()?;
+            }
+        }
     }
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let args = Cli::from_args();
+    uwe::opts::panic_hook();
+    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
+    Ok(run(args.cmd).await.or_else(fatal)?)
 }
