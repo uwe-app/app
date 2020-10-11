@@ -1,12 +1,10 @@
-use std::path::PathBuf;
 use std::env;
 use std::panic;
+use std::path::PathBuf;
 
 use log::error;
 
-use config::{
-    server::{HostConfig, ServerConfig, TlsConfig},
-};
+use config::server::{HostConfig, ServerConfig, TlsConfig};
 
 use web_server::WebServerOpts;
 
@@ -60,7 +58,6 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     }
     Ok(input.clone())
 }
-
 
 pub fn server_config(
     target: &PathBuf,

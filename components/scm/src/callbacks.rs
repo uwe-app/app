@@ -7,4 +7,3 @@ pub fn ssh_agent<'a>() -> RemoteCallbacks<'a> {
     });
     callbacks
 }
-

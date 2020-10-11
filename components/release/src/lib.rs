@@ -65,7 +65,7 @@ pub enum Error {
     Scm(#[from] scm::Error),
 }
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 mod binary;
 mod checksum;

@@ -3,7 +3,7 @@ extern crate pretty_env_logger;
 
 use structopt::StructOpt;
 
-use uwe::{Error, Result, opts::{fatal}};
+use uwe::{opts::fatal, Error, Result};
 
 /// Universal (web editor) version manager
 #[derive(Debug, StructOpt)]
@@ -49,15 +49,43 @@ enum Command {
     Uninstall {},
 }
 
-//fn fatal(e: Error) -> Result<()> {
-    //error!("{}", e.to_string());
-    //std::process::exit(1);
-//}
+async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
+    match cmd {
+        Command::Runtime {} => {
+            release::fetch().await?;
+        }
+        Command::List {} => {
+            release::list().await?;
+        }
+        Command::Use { version } => {
+            release::select(name, version).await?;
+        }
+        Command::Install { version } => {
+            release::install(name, version).await?;
+        }
+        Command::Latest {} => {
+            release::latest(name).await?;
+        }
+        Command::Update {} => {
+            release::update(version).await?;
+        }
+        Command::Remove { version } => {
+            release::remove(version).await?;
+        }
+        Command::Prune {} => {
+            release::prune().await?;
+        }
+        Command::Uninstall {} => {
+            release::uninstall().await?;
+        }
+    }
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut args = Cli::from_args();
-
     uwe::opts::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
@@ -65,53 +93,10 @@ async fn main() -> Result<()> {
     let version = env!("CARGO_PKG_VERSION");
 
     if let Some(cmd) = args.cmd.take() {
-        match cmd {
-            Command::Runtime {} => {
-                release::fetch().await.map_err(Error::from).or_else(fatal)?;
-            }
-            Command::List {} => {
-                release::list().await.map_err(Error::from).or_else(fatal)?;
-            }
-            Command::Use { version } => {
-                release::select(name, version)
-                    .await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
-            }
-            Command::Install { version } => {
-                release::install(name, version)
-                    .await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
-            }
-            Command::Latest {} => {
-                release::latest(name)
-                    .await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
-            }
-            Command::Update {} => {
-                release::update(version)
-                    .await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
-            }
-            Command::Remove { version } => {
-                release::remove(version)
-                    .await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
-            }
-            Command::Prune {} => {
-                release::prune().await.map_err(Error::from).or_else(fatal)?;
-            }
-            Command::Uninstall {} => {
-                release::uninstall()
-                    .await
-                    .map_err(Error::from)
-                    .or_else(fatal)?;
-            }
-        }
+        run(cmd, name, version)
+            .await
+            .map_err(Error::from)
+            .or_else(fatal)?;
     } else {
         // Perform a standard installation.
         release::latest(name)

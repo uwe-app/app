@@ -1,19 +1,16 @@
-use std::path::Path;
 use std::io::stderr;
+use std::path::Path;
 
-use git2::{
-    build::RepoBuilder, FetchOptions, Repository,
-};
+use git2::{build::RepoBuilder, FetchOptions, Repository};
 
 use pbr::ProgressBar;
 
-use crate::{Error, Result, callbacks};
+use crate::{callbacks, Error, Result};
 
 pub(crate) fn clone<S: AsRef<str>, P: AsRef<Path>>(
     src: S,
     target: P,
 ) -> Result<Repository> {
-
     let mut callbacks = callbacks::ssh_agent();
 
     let mut pb = ProgressBar::on(stderr(), 0);
@@ -44,11 +41,11 @@ pub(crate) fn clone<S: AsRef<str>, P: AsRef<Path>>(
 }
 
 //pub fn clone_recurse<P: AsRef<Path>>(from: &str, dir: P) -> Result<Repository> {
-    //let repo = match Repository::clone_recurse(from, dir) {
-        //Ok(repo) => repo,
-        //Err(e) => return Err(Error::from(e)),
-    //};
-    //Ok(repo)
+//let repo = match Repository::clone_recurse(from, dir) {
+//Ok(repo) => repo,
+//Err(e) => return Err(Error::from(e)),
+//};
+//Ok(repo)
 //}
 
 /*

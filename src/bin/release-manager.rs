@@ -3,7 +3,7 @@ extern crate pretty_env_logger;
 
 use structopt::StructOpt;
 
-use uwe::{Error, Result, opts::fatal};
+use uwe::{opts::fatal, Error, Result};
 
 /// Package and publish a release.
 #[derive(Debug, StructOpt)]
@@ -55,7 +55,9 @@ async fn main() -> Result<()> {
         root_args.skip_build,
         root_args.force,
     )
-    .await.map_err(Error::from).or_else(fatal)?;
+    .await
+    .map_err(Error::from)
+    .or_else(fatal)?;
 
     Ok(())
 }

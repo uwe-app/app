@@ -4,16 +4,8 @@ use log::{info, warn};
 use semver::Version;
 
 use crate::{
-    Error,
+    binary, download, env, info, releases, runtime, verify, version, Error,
     Result,
-    binary,
-    download,
-    env,
-    info,
-    releases,
-    runtime,
-    verify,
-    version,
 };
 
 fn welcome() -> Result<PathBuf> {
@@ -110,14 +102,13 @@ async fn fetch(
         info!("Verify {}", version_dir.display());
         let verified = verify::test(version, names)?;
         if verified {
-
             if select {
                 binary::symlink_names(&version_dir, names)?;
                 version::write(&version_file, version)?;
             }
 
             info!("Installation {}@{} is ok ✓", name, version.to_string());
-            return Ok(())
+            return Ok(());
         } else {
             warn!("Existing installation for {} may be corrupt", version);
         }

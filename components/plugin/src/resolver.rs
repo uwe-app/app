@@ -18,9 +18,8 @@ use config::{
 
 use crate::{
     installer,
-    runtime,
     registry::{self, RegistryAccess},
-    Error, Registry, Result,
+    runtime, Error, Registry, Result,
 };
 
 static DEPENDENCY_STACK_SIZE: usize = 32;
@@ -167,7 +166,6 @@ impl<'a> Resolver<'a> {
 
             info!("Writing lock file {}", self.lock.path.display());
             self.lock.target.write(&self.lock.path)?;
-
         }
 
         // Update local scoped plugins with correct attributes

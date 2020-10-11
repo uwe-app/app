@@ -2,8 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use git2::{
-    Commit,
-    IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
+    Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
     RepositoryState,
 };
 
@@ -20,7 +19,6 @@ pub enum Error {
 
     //#[error("To use SSH specify the --private-key option")]
     //PrivateKeyRequired,
-
     #[error(transparent)]
     Git(#[from] git2::Error),
 
@@ -44,8 +42,7 @@ pub fn pull<P: AsRef<Path>>(
     remote: Option<String>,
     branch: Option<String>,
 ) -> Result<()> {
-    pull::pull(path, remote, branch)
-        .map_err(Error::from)
+    pull::pull(path, remote, branch).map_err(Error::from)
 }
 
 pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
@@ -55,11 +52,10 @@ pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
 ) -> Result<Repository> {
     let target = target.as_ref();
 
-    let repo = clone::clone(src, target)
-        .map_err(Error::from)?;
+    let repo = clone::clone(src, target).map_err(Error::from)?;
 
     if let Some(message) = message {
-        pristine(target, &repo, message)? 
+        pristine(target, &repo, message)?
     }
 
     Ok(repo)
@@ -188,20 +184,20 @@ pub fn commit_file(
 }
 
 //pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
-    //src: S,
-    //target: P,
+//src: S,
+//target: P,
 //) -> Result<Repository> {
-    //let mut callbacks = callbacks_ssh_agent();
-    //progress::add_progress_callbacks(&mut callbacks);
+//let mut callbacks = callbacks_ssh_agent();
+//progress::add_progress_callbacks(&mut callbacks);
 
-    //let mut fo = FetchOptions::new();
-    //fo.remote_callbacks(callbacks);
+//let mut fo = FetchOptions::new();
+//fo.remote_callbacks(callbacks);
 
-    //let mut builder = RepoBuilder::new();
-    //builder.fetch_options(fo);
+//let mut builder = RepoBuilder::new();
+//builder.fetch_options(fo);
 
-    //let result = builder.clone(src.as_ref(), target.as_ref());
-    //result.map_err(Error::from)
+//let result = builder.clone(src.as_ref(), target.as_ref());
+//result.map_err(Error::from)
 //}
 
 /*
@@ -286,10 +282,7 @@ pub fn is_clean(repo: &Repository) -> bool {
     repo.state() == RepositoryState::Clean
 }
 
-pub fn clone_or_fetch<P: AsRef<Path>>(
-    from: &str,
-    to: P,
-) -> Result<Repository> {
+pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
     let to = to.as_ref();
     if !to.exists() {
         print_clone(from, to);
@@ -304,15 +297,14 @@ pub fn clone_or_fetch<P: AsRef<Path>>(
 
     //let (repo, cloned) = open_or_clone(from, to.as_ref(), submodules)?;
     //if !cloned {
-        //fetch(&repo, &base)?;
-        // FIXME: merge from origin/master
+    //fetch(&repo, &base)?;
+    // FIXME: merge from origin/master
 
     //pull(to, None, None)?;
-        //if submodules {
-            //fetch_submodules(&repo, to.as_ref())?
-        //}
+    //if submodules {
+    //fetch_submodules(&repo, to.as_ref())?
+    //}
     //}
 
     //Ok(repo)
 }
-

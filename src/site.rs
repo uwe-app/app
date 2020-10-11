@@ -1,31 +1,16 @@
+use crate::Result;
+use log::{error, info};
 use std::path::PathBuf;
 
-use log::{error, info};
-
-use site;
-
-use crate::Result;
-
-#[derive(Debug)]
-pub struct AddOptions {
-    pub name: Option<String>,
-    pub project: PathBuf,
-}
-
-#[derive(Debug)]
-pub struct RemoveOptions {
-    pub name: String,
-}
-
-pub fn add(options: AddOptions) -> Result<()> {
-    let name = site::add(options.project, options.name)?;
+pub fn add(project: PathBuf, name: Option<String>) -> Result<()> {
+    let name = site::add(project, name)?;
     info!("Added {}", &name);
     Ok(())
 }
 
-pub fn remove(options: RemoveOptions) -> Result<()> {
-    site::remove(&options.name)?;
-    info!("Removed {}", &options.name);
+pub fn remove(name: String) -> Result<()> {
+    site::remove(&name)?;
+    info!("Removed {}", &name);
     Ok(())
 }
 

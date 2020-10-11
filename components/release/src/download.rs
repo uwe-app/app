@@ -1,13 +1,17 @@
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{self, Write, stderr, stdout};
+use std::io::{self, stderr, stdout, Write};
 use std::path::PathBuf;
 
-use pbr::{ProgressBar, Units};
-use crossterm::{execute, terminal::{Clear, ClearType}, cursor::MoveUp};
+use crossterm::{
+    cursor::MoveUp,
+    execute,
+    terminal::{Clear, ClearType},
+};
 use human_bytes::human_bytes;
-use tempfile::NamedTempFile;
+use pbr::{ProgressBar, Units};
 use sha3::{Digest, Sha3_256};
+use tempfile::NamedTempFile;
 
 use log::{debug, info};
 use semver::Version;
@@ -108,7 +112,11 @@ pub(crate) async fn all(
 }
 
 /// Download a single artifact.
-async fn download(url: &Url, content_file: &mut File, name: &str) -> Result<Vec<u8>> {
+async fn download(
+    url: &Url,
+    content_file: &mut File,
+    name: &str,
+) -> Result<Vec<u8>> {
     let mut response = reqwest::get(url.clone()).await?;
     if response.status() != StatusCode::OK {
         return Err(Error::DownloadFail(

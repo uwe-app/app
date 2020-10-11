@@ -47,9 +47,7 @@ pub struct ReleaseVersion {
 }
 
 pub(crate) fn dir(version: &Version) -> Result<PathBuf> {
-    Ok(dirs::runtime_dir()?
-        .join(RELEASE)
-        .join(version.to_string()))
+    Ok(dirs::runtime_dir()?.join(RELEASE).join(version.to_string()))
 }
 
 pub(crate) fn exists(version: &Version) -> Result<bool> {

@@ -1,14 +1,7 @@
-use semver::Version;
 use log::info;
+use semver::Version;
 
-use crate::{
-    Result,
-    releases,
-    runtime,
-    binary,
-    info,
-    download,
-};
+use crate::{binary, download, info, releases, runtime, Result};
 
 pub async fn update(current: &str) -> Result<()> {
     // Must have latest runtime assets
@@ -28,8 +21,8 @@ pub async fn update(current: &str) -> Result<()> {
     }
 
     // Download the uvm artifact for the version.
-    let binaries = download::all(
-        version, info, &releases::VERSION_EXE_NAMES).await?;
+    let binaries =
+        download::all(version, info, &releases::VERSION_EXE_NAMES).await?;
     binary::permissions(&binaries)?;
     binary::symlink(&binaries)?;
 

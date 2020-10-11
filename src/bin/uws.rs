@@ -1,12 +1,16 @@
-extern crate pretty_env_logger;
 extern crate log;
+extern crate pretty_env_logger;
 
 use std::path::PathBuf;
 
 use structopt::StructOpt;
 use url::Url;
 
-use uwe::{self, Error, Result, opts::{fatal, Init, Site}};
+use uwe::{
+    self,
+    opts::{fatal, Init, Site},
+    Error, Result,
+};
 
 #[derive(Debug, StructOpt)]
 /// Universal (web editor) sync
@@ -22,7 +26,6 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-
     /// Create a new project
     Init {
         #[structopt(flatten)]
@@ -68,7 +71,6 @@ enum Command {
         #[structopt(flatten)]
         args: Site,
     },
-
 }
 
 fn create(target: PathBuf, message: String) -> Result<()> {
@@ -81,27 +83,30 @@ fn create(target: PathBuf, message: String) -> Result<()> {
         .map_err(Error::from)
 }
 
-fn clone(source: String, target: Option<PathBuf>, pristine: Option<String>) -> Result<()> {
+fn clone(
+    source: String,
+    target: Option<PathBuf>,
+    pristine: Option<String>,
+) -> Result<()> {
     let target = if let Some(target) = target {
         target.to_path_buf()
     } else {
         let base = std::env::current_dir()?;
 
-        let mut target_parts = source
-            .trim_end_matches("/")
-            .split("/").collect::<Vec<_>>();
+        let mut target_parts =
+            source.trim_end_matches("/").split("/").collect::<Vec<_>>();
 
-        let target_name = target_parts.pop().ok_or_else(
-            || Error::NoTargetName)?;
+        let target_name =
+            target_parts.pop().ok_or_else(|| Error::NoTargetName)?;
         base.join(target_name)
     };
 
-    let _ = source.parse::<Url>()
+    let _ = source
+        .parse::<Url>()
         .map_err(|_| Error::InvalidRepositoryUrl(source.to_string()))?;
 
     if target.exists() {
-        return Err(
-            Error::TargetExists(target.to_path_buf()));
+        return Err(Error::TargetExists(target.to_path_buf()));
     }
 
     scm::clone(&source, &target, None)
@@ -128,11 +133,13 @@ fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
         .map_err(Error::from)
 }
 
-
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
-
-        Command::Clone { source, target, pristine } => {
+        Command::Clone {
+            source,
+            target,
+            pristine,
+        } => {
             clone(source, target, pristine)?;
         }
 
@@ -153,23 +160,25 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::init::init(opts)?;
         }
 
-        Command::Pull { target, remote, branch } => {
+        Command::Pull {
+            target,
+            remote,
+            branch,
+        } => {
             pull(target, remote, branch)?;
         }
 
         Command::Site { args } => match args {
             Site::Add { name, project } => {
-                let opts = uwe::site::AddOptions { project, name };
-                uwe::site::add(opts)?;
+                uwe::site::add(project, name)?;
             }
             Site::Remove { name } => {
-                let opts = uwe::site::RemoveOptions { name };
-                uwe::site::remove(opts)?;
+                uwe::site::remove(name)?;
             }
             Site::List { .. } => {
                 uwe::site::list()?;
             }
-        }
+        },
     }
 
     Ok(())

@@ -7,7 +7,8 @@ use scopeguard::defer;
 use config::plugin::Plugin;
 
 use crate::{
-    linter::lint, packager, registry, runtime, registry::RegistryAccess, Error, Result,
+    linter::lint, packager, registry, registry::RegistryAccess, runtime, Error,
+    Result,
 };
 
 /// Upload the plugin package to the s3 bucket.

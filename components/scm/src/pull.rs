@@ -12,11 +12,11 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-use std::path::Path;
 use std::io::stderr;
+use std::path::Path;
 
 use git2::Repository;
-use log::{info, debug};
+use log::{debug, info};
 
 use pbr::ProgressBar;
 
@@ -28,7 +28,6 @@ fn do_fetch<'a>(
     remote: &'a mut git2::Remote,
     remote_name: &'a str,
 ) -> Result<git2::AnnotatedCommit<'a>, git2::Error> {
-
     let mut cb = callbacks::ssh_agent();
     let mut pb = ProgressBar::on(stderr(), 0);
     pb.show_speed = false;
@@ -58,7 +57,7 @@ fn do_fetch<'a>(
 
     //let stats = remote.stats();
     //if stats.received_bytes() > 0 {
-        //let _ = clear_progress_bar();
+    //let _ = clear_progress_bar();
     //}
 
     // If there are local objects (we got a thin pack), then tell the user

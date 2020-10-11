@@ -1,5 +1,5 @@
-extern crate pretty_env_logger;
 extern crate log;
+extern crate pretty_env_logger;
 
 use log::info;
 use std::time::SystemTime;
@@ -12,7 +12,11 @@ use config::{
 
 use publisher::PublishProvider;
 
-use uwe::{self, Error, Result, opts::{self, Build, Docs, Publish, Run, Site, fatal}};
+use uwe::{
+    self,
+    opts::{self, fatal, Build, Docs, Publish, Run},
+    Error, Result,
+};
 
 #[derive(Debug, StructOpt)]
 /// Universal web editor
@@ -64,9 +68,9 @@ impl Command {
     }
 }
 
-async fn process_command(cmd: Command) -> Result<()> {
+async fn run(cmd: Command) -> Result<()> {
     match cmd {
-        Command::Docs { ref args } => {
+        Command::Docs { args } => {
             let target = uwe::docs::get_target().await?;
             let opts = uwe::opts::server_config(
                 &target,
@@ -77,7 +81,7 @@ async fn process_command(cmd: Command) -> Result<()> {
             uwe::docs::open(opts).await?;
         }
 
-        Command::Run { ref args } => {
+        Command::Run { args } => {
             if !args.target.exists() || !args.target.is_dir() {
                 return fatal(Error::NotDirectory(args.target.to_path_buf()));
             }
@@ -105,15 +109,14 @@ async fn process_command(cmd: Command) -> Result<()> {
                 env: args.env,
                 project,
             };
-
             uwe::publish::publish(opts).await?;
         }
 
-        Command::Build { ref args } => {
+        Command::Build { args } => {
             let project = opts::project_path(&args.project)?;
 
             let paths = if args.paths.len() > 0 {
-                Some(args.paths.clone())
+                Some(args.paths)
             } else {
                 None
             };
@@ -136,11 +139,11 @@ async fn process_command(cmd: Command) -> Result<()> {
 
             let build_args = ProfileSettings {
                 paths,
-                profile: args.profile.clone(),
+                profile: args.profile,
                 live: Some(args.live),
                 release: Some(args.release),
-                host: args.server.host.clone(),
-                port: args.server.port.clone(),
+                host: args.server.host,
+                port: args.server.port,
                 tls,
                 ..Default::default()
             };
@@ -195,10 +198,10 @@ async fn main() -> Result<()> {
 
     match args.cmd {
         Some(cmd) => {
-            process_command(cmd).await.or_else(fatal)?;
+            run(cmd).await.or_else(fatal)?;
         }
         None => {
-            process_command(Command::default(args)).await.or_else(fatal)?;
+            run(Command::default(args)).await.or_else(fatal)?;
         }
     }
 

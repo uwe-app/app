@@ -28,4 +28,3 @@ pub struct Init {
     #[structopt()]
     pub source: Option<String>,
 }
-
