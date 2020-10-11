@@ -11,6 +11,7 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+pub mod command;
 pub mod entity;
 pub mod fs;
 pub mod json_path;

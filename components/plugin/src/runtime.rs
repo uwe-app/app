@@ -1,9 +1,7 @@
-use crate::Result;
+use crate::{Error, Result};
 
+// Fetch the updated runtime repository.
 pub async fn fetch() -> Result<()> {
-    // FIXME: call out to `uvm runtime`
-    let url = dirs::runtime_url();
-    let dir = dirs::runtime_dir()?;
-    scm::clone_or_fetch(&url, &dir)?;
-    Ok(())
+    utils::command::run("uvm", &["runtime"], None)
+        .map_err(Error::from)
 }
