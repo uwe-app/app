@@ -13,19 +13,16 @@ case $OS in
   'Linux')
     OS='linux'
     ;;
-  'FreeBSD')
-    #OS='FreeBSD'
-    fatal "Operating system FreeBSD is not supported, sorry."
-    ;;
-  'WindowsNT')
-    #OS='windows'
-    fatal "Operating system Windows is not supported, sorry."
-    ;;
   'Darwin') 
     OS='macos'
     ;;
+  'FreeBSD')
+    fatal "Operating system FreeBSD is not supported, sorry."
+    ;;
+  'WindowsNT')
+    fatal "Operating system Windows is not supported, sorry."
+    ;;
   'SunOS')
-    #OS='Solaris'
     fatal "Operating system Solaaris is not supported, sorry."
     ;;
   'AIX') ;;
