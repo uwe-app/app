@@ -5,9 +5,10 @@ use std::path::PathBuf;
 use chrono::prelude::*;
 pub use jsonfeed::{Attachment, Author, Feed};
 
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use serde_with::skip_serializing_none;
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use crate::{
     date::DateConfig, indexer::QueryList, script::ScriptAsset,
@@ -24,18 +25,22 @@ pub(crate) mod paginate;
 
 pub use paginate::{PageLink, PaginateInfo};
 
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct CollatedPage<'a> {
     #[serde(flatten)]
     pub page: &'a Page,
+
     pub lang: &'a str,
     pub charset: &'a str,
     pub date: &'a Option<DateConfig>,
     // Paths referenced in a menu when MENU.md convention is used
     pub menu: Vec<&'a String>,
     pub generator: &'a str,
+    #[serde_as(as = "DisplayFromStr")]
+    pub version: &'a Version,
 }
 
 impl<'a> CollatedPage<'a> {
@@ -47,6 +52,7 @@ impl<'a> CollatedPage<'a> {
             date: &config.date,
             menu: Default::default(),
             generator: crate::generator::id(),
+            version: config.version(),
         }
     }
 }

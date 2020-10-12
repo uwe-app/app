@@ -160,9 +160,8 @@ pub struct Config {
 
     /// Plugin version.
     #[serde_as(as = "DisplayFromStr")]
-    pub version: Version,
-
-    pub charset: Option<String>,
+    version: Version,
+    charset: Option<String>,
 
     pub engine: Option<TemplateEngine>,
 
@@ -257,6 +256,10 @@ impl Config {
         self.engine.as_ref().unwrap_or(&DEFAULT_ENGINE)
 
         //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
+    }
+
+    pub fn version(&self) -> &Version {
+        &self.version
     }
 
     pub fn charset(&self) -> &str {
