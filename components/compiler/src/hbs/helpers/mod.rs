@@ -4,7 +4,7 @@ use handlebars::*;
 
 pub mod author;
 pub mod bookmark;
-pub mod components;
+pub mod crumbtrail;
 pub mod date;
 pub mod favicon;
 pub mod feed;

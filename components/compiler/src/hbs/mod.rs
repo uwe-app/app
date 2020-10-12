@@ -147,8 +147,8 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
         self.handlebars.register_helper(
-            "components",
-            Box::new(helpers::components::Components {
+            "crumbtrail",
+            Box::new(helpers::crumbtrail::Components {
                 context: Arc::clone(&self.context),
             }),
         );
