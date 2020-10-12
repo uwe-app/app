@@ -5,12 +5,12 @@ Repositories must be siblings, for example:
 ```
 .
 ├── app
-├── blog
+├── archive
 ├── library
 ├── plugins
 ├── runtime
-├── syntax
-└── website
+├── sites
+└── syntax
 ```
 
 * `app`: Main source code (this repository).
