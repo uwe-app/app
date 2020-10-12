@@ -36,8 +36,12 @@ pub struct CollatedPage<'a> {
     pub lang: &'a str,
     pub charset: &'a str,
     pub date: &'a Option<DateConfig>,
+
     // Paths referenced in a menu when MENU.md convention is used
-    pub menu: Vec<&'a String>,
+    //  FIXME: use a better name for the main menu
+    pub main: Vec<&'a String>,
+    pub menus: HashMap<&'a String, Vec<&'a String>>,
+
     pub generator: &'a str,
     #[serde_as(as = "DisplayFromStr")]
     pub version: &'a Version,
@@ -50,7 +54,8 @@ impl<'a> CollatedPage<'a> {
             lang,
             charset: config.charset(),
             date: &config.date,
-            menu: Default::default(),
+            main: Default::default(),
+            menus: Default::default(),
             generator: crate::generator::id(),
             version: config.version(),
         }

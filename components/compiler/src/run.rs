@@ -176,9 +176,25 @@ pub async fn parse(
     if let Some(parent) = file.parent() {
         let parent_menu_name = parent.to_string_lossy();
         if let Some(ref menu_result) = collation.find_menu(&parent_menu_name) {
-            page_data.menu =
+            page_data.main =
                 menu_result.pages.iter().map(|s| s.as_ref()).collect();
         }
+    }
+
+    if let Some(ref menu) = data.menu {
+        for (key, value) in menu.entries.iter() {
+            if let Some(ref menu_result) = collation.find_menu(key) {
+                let mut refs = Vec::new();
+                menu_result.pages.iter()
+                    .for_each(|s| {
+                        refs.push(s.as_ref());
+                    });
+
+                page_data.menus.insert(key, refs);
+            }
+        }
+
+        //println!("Page data menus {:#?}", page_data.menus);
     }
 
     let mut s = if minify_html {
