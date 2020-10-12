@@ -3,8 +3,9 @@ use std::path::{Path, PathBuf};
 
 use url::Url;
 
+use semver::Version;
 use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use log::debug;
 use unic_langid::LanguageIdentifier;
@@ -149,12 +150,17 @@ pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
     ))?)
 }
 
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct Config {
     pub lang: String,
     pub host: String,
+
+    /// Plugin version.
+    #[serde_as(as = "DisplayFromStr")]
+    pub version: Version,
 
     pub charset: Option<String>,
 
@@ -209,6 +215,7 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
+            version: Version::from((1,0,0)),
             charset: Some(String::from(CHARSET)),
             engine: Some(Default::default()),
             localhost: None,
