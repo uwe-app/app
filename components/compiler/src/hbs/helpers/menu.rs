@@ -56,7 +56,7 @@ impl Menu {
         Ok(())
     }
 
-    fn list_parent_pages<'reg: 'rc, 'rc>(
+    fn render_listing<'reg: 'rc, 'rc>(
         &self,
         template: &'reg Template,
         h: &Helper<'reg, 'rc>,
@@ -168,7 +168,7 @@ impl Menu {
 
             Ok(())
         } else {
-            self.list_parent_pages(template, h, r, ctx, rc, out)
+            self.render_listing(template, h, r, ctx, rc, out)
         }
     }
 
@@ -257,8 +257,24 @@ impl HelperDef for Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
+        let list = h
+            .hash_get("list")
+            .map(|v| v.value())
+            .or(Some(&json!(false)))
+            .and_then(|v| v.as_bool())
+            .ok_or(RenderError::new(
+                "Type error for `menu` helper, hash parameter `list` must be a boolean",
+            ))?;
+
         if let Some(template) = h.template() {
-            self.render_template(template, h, r, ctx, rc, out)
+            // Explicitly requested a directory listing
+            if list {
+                self.render_listing(template, h, r, ctx, rc, out)
+            // Otherwise try to find a menu
+            } else {
+                self.render_template(template, h, r, ctx, rc, out)
+            }
         } else {
             self.render_menu(h, r, ctx, rc, out)
         }
