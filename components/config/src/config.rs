@@ -95,6 +95,13 @@ pub static PLUGIN_NS: &str = "::";
 /// Prefix applied when extracting packages from archives.
 pub static PLUGIN_ARCHIVE_PREFIX: &str = "pkg";
 
+// For open graph defaults.
+pub static OG_TYPE: &str = "type";
+pub static OG_WEBSITE: &str = "website";
+pub static OG_URL: &str = "url";
+pub static OG_TITLE: &str = "title";
+pub static OG_DESCRIPTION: &str = "description";
+
 const fn get_default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }

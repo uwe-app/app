@@ -74,6 +74,7 @@ pub struct Page {
     pub summary: Option<String>,
     pub keywords: Option<String>,
     pub meta: Option<HashMap<String, String>>,
+    pub open_graph: Option<HashMap<String, String>>,
 
     pub render: Option<bool>,
     pub rewrite_index: Option<bool>,
@@ -144,6 +145,7 @@ impl Default for Page {
             summary: None,
             keywords: None,
             meta: None,
+            open_graph: None,
             authors: None,
             byline: None,
             rewrite_index: None,
@@ -232,16 +234,37 @@ impl Page {
             FileContext::new(source.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
-        self.href =
-            Some(options.absolute(&file_context.source, Default::default())?);
+        let href = options.absolute(&file_context.source, Default::default())?;
 
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {
             self.updated = Some(file_context.modified.clone());
         }
 
+        // FIXME: add page page for canonical and
+        // FIXME: set host/domain/website for the page data (#252)
+
+        let mut canonical = options.settings.get_host_url(config);
+        canonical.push_str(href.trim_start_matches("/"));
+
+        let og = self.open_graph.get_or_insert(Default::default());
+        og.insert(crate::OG_URL.to_string(), canonical.clone());
+
+        og.entry(crate::OG_TYPE.to_string())
+            .or_insert(crate::OG_WEBSITE.to_string());
+
+        if let Some(ref title) = self.title {
+            og.entry(crate::OG_TITLE.to_string())
+                .or_insert(title.clone());
+        }
+        if let Some(ref description) = self.description {
+            og.entry(crate::OG_DESCRIPTION.to_string())
+                .or_insert(description.clone());
+        }
+
         self.file = Some(file_context);
-        self.canonical = Some(options.settings.get_host_url(config));
+        self.href = Some(href);
+        self.canonical = Some(canonical);
 
         Ok(())
     }
@@ -298,6 +321,10 @@ impl Page {
 
         if let Some(meta) = other.meta.as_mut() {
             self.meta = Some(mem::take(meta));
+        }
+
+        if let Some(open_graph) = other.open_graph.as_mut() {
+            self.open_graph = Some(mem::take(open_graph));
         }
 
         if let Some(render) = other.render.as_mut() {
