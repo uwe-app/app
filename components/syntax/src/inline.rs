@@ -38,7 +38,7 @@ pub fn highlighted_html_for_string(
     theme: &Theme,
 ) -> String {
     let mut highlighter = HighlightLines::new(syntax, theme);
-    let (mut output, bg) = start_highlighted_html_snippet(theme, IncludeBackground::No);
+    let (mut output, _bg) = start_highlighted_html_snippet(theme, IncludeBackground::No);
 
     for line in LinesWithEndings::from(s) {
         let regions = highlighter.highlight(line, ss);
