@@ -73,6 +73,7 @@ pub struct Page {
     pub description: Option<String>,
     pub summary: Option<String>,
     pub keywords: Option<String>,
+    //pub meta: Option<HashMap<String, String>>,
 
     pub render: Option<bool>,
     pub rewrite_index: Option<bool>,
@@ -89,7 +90,7 @@ pub struct Page {
     pub query: Option<QueryList>,
 
     pub layout: Option<String>,
-    pub meta: Option<HashMap<String, Vec<String>>>,
+    pub taxonomies: Option<HashMap<String, Vec<String>>>,
 
     pub scripts: Option<Vec<ScriptAsset>>,
     pub styles: Option<Vec<StyleAsset>>,
@@ -154,7 +155,7 @@ impl Default for Page {
             fallback: None,
             query: None,
             layout: None,
-            meta: None,
+            taxonomies: None,
             scripts: None,
             styles: None,
             permalink: None,
@@ -342,8 +343,8 @@ impl Page {
             self.layout = Some(mem::take(layout));
         }
 
-        if let Some(meta) = other.meta.as_mut() {
-            self.meta = Some(mem::take(meta));
+        if let Some(taxonomies) = other.taxonomies.as_mut() {
+            self.taxonomies = Some(mem::take(taxonomies));
         }
 
         if let Some(scripts) = other.scripts.as_mut() {

@@ -160,8 +160,8 @@ fn build_feed(
             item.authors = p.authors.clone();
 
             // Pass through tags from the `meta` taxonomies
-            if let Some(ref meta) = p.meta {
-                if let Some(ref tags) = meta.get(config::TAGS) {
+            if let Some(ref taxonomies) = p.taxonomies {
+                if let Some(ref tags) = taxonomies.get(config::TAGS) {
                     item.tags = Some(tags.to_vec());
                 }
             }
