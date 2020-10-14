@@ -13,6 +13,9 @@ pub struct Page {
     pub context: Arc<BuildContext>,
 }
 
+// NOTE: the `required` option is not documented and we have
+// NOTE: yet to find a reason to use it, consider removing it
+
 impl HelperDef for Page {
     fn call<'reg: 'rc, 'rc>(
         &self,

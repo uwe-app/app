@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use super::profile::ProfileName;
 
-static DEFAULT_THEME: &str = "base16-ocean.dark";
+static DEFAULT_THEME: &str = "base16-ocean.light";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]

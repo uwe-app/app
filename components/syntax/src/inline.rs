@@ -40,6 +40,7 @@ pub fn highlighted_html_for_string(
             &mut output,
         );
     }
-    output.push_str("</code>\n");
+    output.push_str("</code>");
+
     output
 }
