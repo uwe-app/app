@@ -276,7 +276,7 @@ pub fn build<'c>(
 
                     if key_count == target_depth + 1 {
                         if let Some(stem) = k.file_stem() {
-                            stem == config::INDEX_STEM
+                           k.starts_with(&dir_buf) && stem == config::INDEX_STEM
                         } else {
                             false
                         }
