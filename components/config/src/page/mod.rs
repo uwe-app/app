@@ -73,7 +73,7 @@ pub struct Page {
     pub description: Option<String>,
     pub summary: Option<String>,
     pub keywords: Option<String>,
-    //pub meta: Option<HashMap<String, String>>,
+    pub meta: Option<HashMap<String, String>>,
 
     pub render: Option<bool>,
     pub rewrite_index: Option<bool>,
@@ -143,6 +143,7 @@ impl Default for Page {
             description: None,
             summary: None,
             keywords: None,
+            meta: None,
             authors: None,
             byline: None,
             rewrite_index: None,
@@ -293,6 +294,10 @@ impl Page {
 
         if let Some(keywords) = other.keywords.as_mut() {
             self.keywords = Some(mem::take(keywords));
+        }
+
+        if let Some(meta) = other.meta.as_mut() {
+            self.meta = Some(mem::take(meta));
         }
 
         if let Some(render) = other.render.as_mut() {
