@@ -25,6 +25,7 @@ use crate::{
     page::{Author, Page},
     profile::{ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
+    robots::RobotsConfig,
     script::JavaScriptConfig,
     search::SearchConfig,
     sitemap::SiteMapConfig,
@@ -200,6 +201,9 @@ pub struct Config {
     // Optional sitemap config
     pub sitemap: Option<SiteMapConfig>,
 
+    // Optional robots config
+    pub robots: Option<RobotsConfig>,
+
     pub dependencies: Option<DependencyMap>,
 
     pub layout: Option<LayoutConfig>,
@@ -250,6 +254,7 @@ impl Default for Config {
             authors: None,
             menu: None,
             sitemap: Some(Default::default()),
+            robots: Some(Default::default()),
             dependencies: None,
             layout: None,
             syntax: None,

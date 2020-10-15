@@ -11,7 +11,6 @@ use url::Url;
 
 use crate::{
     config::{self, Config},
-    robots::RobotsConfig,
     server::TlsConfig,
     utils::matcher::GlobPatternMatcher,
 };
@@ -166,7 +165,6 @@ pub struct ProfileSettings {
     pub scheme: Option<String>,
     pub tls: Option<TlsConfig>,
 
-    pub robots: Option<RobotsConfig>,
     pub resources: Option<Resources>,
 }
 
@@ -209,7 +207,6 @@ impl Default for ProfileSettings {
             paths: None,
             base_href: None,
 
-            robots: None,
             resources: None,
         }
     }
@@ -303,9 +300,6 @@ impl ProfileSettings {
             self.base_href = mem::take(&mut other.base_href)
         }
 
-        if other.robots.is_some() {
-            self.robots = mem::take(&mut other.robots)
-        }
         if other.resources.is_some() {
             self.resources = mem::take(&mut other.resources)
         }

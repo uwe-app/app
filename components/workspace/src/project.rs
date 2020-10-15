@@ -13,6 +13,7 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
+    profile::Profiles,
     dependency::AccessGrant, hook::HookConfig, plugin_cache::PluginCache,
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
     RuntimeOptions,
@@ -588,24 +589,26 @@ impl Project {
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
         let output_robots =
-            self.options.settings.robots.is_some() || !sitemaps.is_empty();
+            self.config.robots.is_some() || !sitemaps.is_empty();
 
         if output_robots {
             let mut robots =
-                if let Some(ref robots) = self.options.settings.robots {
+                if let Some(ref robots) = self.config.robots {
                     robots.clone()
                 } else {
                     Default::default()
                 };
 
-            robots.sitemaps = sitemaps;
+            if robots.has_profile(self.options.profile()) || !sitemaps.is_empty() {
+                robots.sitemaps = sitemaps;
 
-            //// NOTE: robots must always be at the root regardless
-            //// NOTE: of multi-lingual support so we use `base` rather
-            //// NOTE: than the `target`
-            let robots_file = self.options.base.join(config::robots::FILE);
-            utils::fs::write_string(&robots_file, robots.to_string())?;
-            info!("Robots {}", robots_file.display());
+                //// NOTE: robots must always be at the root regardless
+                //// NOTE: of multi-lingual support so we use `base` rather
+                //// NOTE: than the `target`
+                let robots_file = self.options.base.join(config::robots::FILE);
+                utils::fs::write_string(&robots_file, robots.to_string())?;
+                info!("Robots {}", robots_file.display());
+            }
         }
 
         Ok(())

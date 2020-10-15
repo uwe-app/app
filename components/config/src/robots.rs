@@ -7,6 +7,8 @@ use url::Url;
 static WILDCARD: &str = "*";
 pub static FILE: &str = "robots.txt";
 
+use crate::profile::{Profiles, ProfileFilter, ProfileName};
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct RobotsConfig {
@@ -14,6 +16,18 @@ pub struct RobotsConfig {
     pub rules: HashMap<String, RobotsRule>,
     #[serde(skip)]
     pub sitemaps: Vec<Url>,
+
+    profiles: ProfileFilter,
+}
+
+impl Profiles for RobotsConfig {
+    fn has_profile(&self, name: &ProfileName) -> bool {
+        match self.profiles {
+            ProfileFilter::Flag(enabled) => enabled,
+            ProfileFilter::Name(ref target) => target == name,
+            ProfileFilter::List(ref target) => target.contains(name),
+        } 
+    }
 }
 
 impl Default for RobotsConfig {
@@ -24,6 +38,7 @@ impl Default for RobotsConfig {
         Self {
             rules,
             sitemaps: vec![],
+            profiles: ProfileFilter::Name(ProfileName::Release),
         }
     }
 }
