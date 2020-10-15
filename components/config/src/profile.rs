@@ -23,6 +23,28 @@ static RELEASE: &str = "release";
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
 
+/// Trait for settings that maintain a list of profiles.
+///
+/// Typically this is used to indicate that the settings 
+/// should only apply to the specified profiles.
+pub trait Profiles {
+    fn has_profile(&self, name: &ProfileName) -> bool;
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[serde(untagged)]
+pub enum ProfileFilter {
+    Flag(bool),
+    Name(ProfileName),
+    List(Vec<ProfileName>),
+}
+
+impl Default for ProfileFilter {
+    fn default() -> Self {
+        ProfileFilter::Flag(true)
+    }
+}
+
 #[derive(Debug, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[serde(from = "String", untagged)]
 pub enum ProfileName {

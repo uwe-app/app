@@ -23,7 +23,7 @@ use crate::{
     live_reload::LiveReload,
     menu::MenuConfig,
     page::{Author, Page},
-    profile::{ProfileName, ProfileSettings},
+    profile::{ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
     script::JavaScriptConfig,
     search::SearchConfig,
@@ -305,7 +305,7 @@ impl Config {
 
     pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
         if let Some(ref syntax) = self.syntax {
-            return syntax.is_enabled(name);
+            return syntax.has_profile(name);
         }
         false
     }
