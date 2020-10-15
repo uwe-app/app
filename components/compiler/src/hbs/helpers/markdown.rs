@@ -93,7 +93,7 @@ impl HelperDef for Markdown {
 
         if !evaluate {
             let source_buf = PathBuf::from(&source_path);
-            evaluate = self.context.options.is_markdown_file(&source_buf);
+            evaluate = !self.context.options.is_markdown_file(&source_buf);
         }
 
         if evaluate {
