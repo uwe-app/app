@@ -11,7 +11,7 @@ use serde_json::{Map, Value};
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use crate::{
-    date::DateConfig, indexer::QueryList, script::ScriptAsset,
+    date::DateConfig, indexer::QueryList, script::ScriptAsset, href::UrlPath,
     style::StyleAsset, utils::toml_datetime::from_toml_datetime, Config, Error,
     Result, RuntimeOptions,
 };
@@ -20,7 +20,6 @@ use self::{feed::FeedEntry, file_context::FileContext};
 
 pub(crate) mod feed;
 pub(crate) mod file_context;
-pub(crate) mod menu;
 pub(crate) mod paginate;
 
 pub use paginate::{PageLink, PaginateInfo};
@@ -72,7 +71,7 @@ pub struct Page {
     pub title: Option<String>,
     pub description: Option<String>,
     pub summary: Option<String>,
-    pub keywords: Option<String>,
+    pub image: Option<UrlPath>,
     pub meta: Option<HashMap<String, String>>,
     pub open_graph: Option<HashMap<String, String>>,
 
@@ -99,10 +98,6 @@ pub struct Page {
 
     // Custom values for feed entry
     pub entry: Option<FeedEntry>,
-
-    // Menus keyed by name
-    #[serde(skip_serializing)]
-    pub menu: Option<menu::MenuConfig>,
 
     // Automatically assigned
 
@@ -143,7 +138,7 @@ impl Default for Page {
             title: None,
             description: None,
             summary: None,
-            keywords: None,
+            image: None,
             meta: None,
             open_graph: None,
             authors: None,
@@ -163,7 +158,6 @@ impl Default for Page {
             styles: None,
             permalink: None,
             entry: None,
-            menu: None,
 
             created: None,
             updated: None,
@@ -244,7 +238,9 @@ impl Page {
         // FIXME: add page page for canonical and
         // FIXME: set host/domain/website for the page data (#252)
 
-        let mut canonical = options.settings.get_host_url(config);
+        let website = options.settings.get_host_url(config);
+
+        let mut canonical = website.clone();
         canonical.push_str(href.trim_start_matches("/"));
 
         let og = self.open_graph.get_or_insert(Default::default());
@@ -260,6 +256,11 @@ impl Page {
         if let Some(ref description) = self.description {
             og.entry(crate::OG_DESCRIPTION.to_string())
                 .or_insert(description.clone());
+        }
+        if let Some(ref image) = self.image {
+            let mut img = website.clone();
+            img.push_str(image.as_str().trim_start_matches("/"));
+            og.entry(crate::OG_IMAGE.to_string()).or_insert(img);
         }
 
         self.file = Some(file_context);
@@ -315,8 +316,8 @@ impl Page {
             self.summary = Some(mem::take(summary));
         }
 
-        if let Some(keywords) = other.keywords.as_mut() {
-            self.keywords = Some(mem::take(keywords));
+        if let Some(image) = other.image.as_mut() {
+            self.image = Some(mem::take(image));
         }
 
         if let Some(meta) = other.meta.as_mut() {

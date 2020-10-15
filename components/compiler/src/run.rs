@@ -181,8 +181,8 @@ pub async fn parse(
         }
     }
 
-    if let Some(ref menu) = data.menu {
-        for (key, value) in menu.entries.iter() {
+    if let Some(ref menu) = ctx.config.menu {
+        for (key, _value) in menu.entries.iter() {
             if let Some(ref menu_result) = collation.find_menu(key) {
                 let mut refs = Vec::new();
                 menu_result.pages.iter()

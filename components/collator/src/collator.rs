@@ -262,16 +262,18 @@ fn add_page(
         .permalinks()?
         .feeds()?;
 
-    let (info, key, destination, mut page) = builder.build();
+    let (info, key, destination, page) = builder.build();
 
-    if let Some(menu) = page.menu.as_mut() {
+    // FIXME: assign pages to menu result entries
+
+    if let Some(ref menu) = config.menu {
         // Verify file references as early as possible
-        for (k, v) in menu.entries.iter_mut() {
+        for (k, v) in menu.entries.iter() {
             v.verify_files(&options.source)?;
 
             let mut def = v.clone();
-            // Assign the key name so we can use it
-            // later when re-assigning the compiled value
+            //// Assign the key name so we can use it
+            //// later when re-assigning the compiled value
             def.name = k.clone();
 
             let entries = info
@@ -281,7 +283,7 @@ fn add_page(
                 .entry(Arc::new(def))
                 .or_insert(vec![]);
             entries.push(Arc::clone(key));
-        }
+       }
     }
 
     info.add_page(key, destination, Arc::new(RwLock::new(page)));

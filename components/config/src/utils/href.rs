@@ -10,9 +10,7 @@ use serde::{
 /// be delimited by a forward slash. We use this to reference
 /// pages which are resolved relative to the site root.
 
-//pub type UrlPath = String;
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct UrlPath {
     value: String,
 }
@@ -30,6 +28,10 @@ impl UrlPath {
         PathBuf::from(utils::url::to_path_separator(
             self.trim_start_matches("/"),
         ))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.value
     }
 }
 

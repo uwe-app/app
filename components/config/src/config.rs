@@ -21,6 +21,7 @@ use crate::{
     layout::LayoutConfig,
     link::LinkConfig,
     live_reload::LiveReload,
+    menu::MenuConfig,
     page::{Author, Page},
     profile::{ProfileName, ProfileSettings},
     redirect::RedirectConfig,
@@ -99,6 +100,7 @@ pub static PLUGIN_ARCHIVE_PREFIX: &str = "pkg";
 pub static OG_TYPE: &str = "type";
 pub static OG_WEBSITE: &str = "website";
 pub static OG_URL: &str = "url";
+pub static OG_IMAGE: &str = "image";
 pub static OG_TITLE: &str = "title";
 pub static OG_DESCRIPTION: &str = "description";
 
@@ -191,6 +193,9 @@ pub struct Config {
     pub index: Option<HashMap<String, IndexRequest>>,
     pub authors: Option<HashMap<String, Author>>,
 
+    // Menus keyed by name
+    pub menu: Option<MenuConfig>,
+
     pub dependencies: Option<DependencyMap>,
 
     pub layout: Option<LayoutConfig>,
@@ -239,6 +244,7 @@ impl Default for Config {
             publish: Some(Default::default()),
             index: None,
             authors: None,
+            menu: None,
             dependencies: None,
             layout: None,
             syntax: None,
