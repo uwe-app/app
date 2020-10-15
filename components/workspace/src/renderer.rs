@@ -133,7 +133,10 @@ impl Renderer {
     }
 
     fn finish(&self, output: CompilerOutput, render_options: &RenderOptions) -> Result<Option<Url>> {
-        self.create_search_indices(&output.data)?;
+
+        if render_options.search_index {
+            self.create_search_indices(&output.data)?;
+        }
 
         if render_options.sitemap {
             Ok(self.create_site_map(&output.data)?)
