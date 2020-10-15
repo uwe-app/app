@@ -45,7 +45,6 @@ impl SyntaxConfig {
 }
 
 impl Profiles for SyntaxConfig {
-
     fn has_profile(&self, name: &ProfileName) -> bool {
         match self.profiles {
             ProfileFilter::Flag(enabled) => enabled,

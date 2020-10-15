@@ -13,7 +13,6 @@ use crate::{
     config::{self, Config},
     robots::RobotsConfig,
     server::TlsConfig,
-    sitemap::SiteMapConfig,
     utils::matcher::GlobPatternMatcher,
 };
 
@@ -168,7 +167,6 @@ pub struct ProfileSettings {
     pub tls: Option<TlsConfig>,
 
     pub robots: Option<RobotsConfig>,
-    pub sitemap: Option<SiteMapConfig>,
     pub resources: Option<Resources>,
 }
 
@@ -212,7 +210,6 @@ impl Default for ProfileSettings {
             base_href: None,
 
             robots: None,
-            sitemap: None,
             resources: None,
         }
     }
@@ -308,9 +305,6 @@ impl ProfileSettings {
 
         if other.robots.is_some() {
             self.robots = mem::take(&mut other.robots)
-        }
-        if other.sitemap.is_some() {
-            self.sitemap = mem::take(&mut other.sitemap)
         }
         if other.resources.is_some() {
             self.resources = mem::take(&mut other.resources)

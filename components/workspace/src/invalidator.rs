@@ -283,7 +283,8 @@ impl<'a> Invalidator<'a> {
 
         // TODO: reload the collated page data before compiing!
         //
-        let options = RenderOptions::new_file_lang(file, lang.to_string());
+        let options = RenderOptions::new_file_lang(
+            file, lang.to_string(), false, false);
 
         self.project.render(options).await?;
 

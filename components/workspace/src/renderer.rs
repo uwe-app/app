@@ -13,6 +13,7 @@ use compiler::{
 };
 use config::{
     hook::HookConfig,
+    profile::Profiles,
     sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex},
 };
 use locale::{LocaleName, Locales};
@@ -22,17 +23,32 @@ use search::{
 
 use crate::{hook, manifest::Manifest, Result};
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct RenderOptions {
     pub target: RenderTarget,
     pub filter: RenderFilter,
+    pub sitemap: bool,
+    pub search_index: bool,
+}
+
+impl Default for RenderOptions {
+    fn default() -> Self {
+        Self {
+            target: Default::default(),
+            filter: Default::default(),
+            sitemap: true,
+            search_index: true,
+        }
+    }
 }
 
 impl RenderOptions {
-    pub fn new_file_lang(file: PathBuf, lang: String) -> Self {
+    pub fn new_file_lang(file: PathBuf, lang: String, sitemap: bool, search_index: bool) -> Self {
         Self {
             target: RenderTarget::File(file),
             filter: RenderFilter::One(lang),
+            sitemap,
+            search_index,
         }
     }
 }
@@ -112,13 +128,18 @@ impl Renderer {
         }
 
         Ok(RenderResult {
-            sitemap: self.finish(output)?,
+            sitemap: self.finish(output, render_options)?,
         })
     }
 
-    fn finish(&self, output: CompilerOutput) -> Result<Option<Url>> {
+    fn finish(&self, output: CompilerOutput, render_options: &RenderOptions) -> Result<Option<Url>> {
         self.create_search_indices(&output.data)?;
-        Ok(self.create_site_map(&output.data)?)
+
+        if render_options.sitemap {
+            Ok(self.create_site_map(&output.data)?)
+        } else {
+            Ok(None)
+        }
     }
 
     fn create_search_indices(&self, parse_list: &Vec<ParseData>) -> Result<()> {
@@ -178,65 +199,68 @@ impl Renderer {
         let collation = ctx.collation.read().unwrap();
 
         let mut res: Option<Url> = None;
-        if let Some(ref sitemap) = ctx.options.settings.sitemap {
-            // How many entries per chunk window?
-            let entries = sitemap.entries.as_ref().unwrap();
 
-            // Base canonical URL
-            let base = ctx
-                .options
-                .get_canonical_url(&ctx.config, Some(collation.get_lang()))?;
+        if let Some(ref sitemap) = ctx.config.sitemap {
+            if sitemap.has_profile(ctx.options.profile()) {
+                // How many entries per chunk window?
+                let entries = sitemap.entries.as_ref().unwrap();
 
-            // Create the top-level index of all sitemaps
-            let folder = sitemap.name.as_ref().unwrap().to_string();
-            let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
+                // Base canonical URL
+                let base = ctx
+                    .options
+                    .get_canonical_url(&ctx.config, Some(collation.get_lang()))?;
 
-            let base_folder = collation.get_path().join(&folder);
+                // Create the top-level index of all sitemaps
+                let folder = sitemap.name.as_ref().unwrap().to_string();
+                let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
 
-            if !base_folder.exists() {
-                fs::create_dir_all(&base_folder)?;
+                let base_folder = collation.get_path().join(&folder);
+
+                if !base_folder.exists() {
+                    fs::create_dir_all(&base_folder)?;
+                }
+
+                for (count, window) in parse_list.chunks(*entries).enumerate() {
+                    let href = format!("{}.xml", count + 1);
+                    let mut sitemap = SiteMapFile {
+                        href,
+                        entries: vec![],
+                    };
+                    let sitemap_path = base_folder.join(&sitemap.href);
+                    sitemap.entries = window
+                        .iter()
+                        // NOTE: quick hack to ignore error file, needs stronger logic
+                        .filter(|d| !d.file.ends_with("404.html"))
+                        .map(|d| {
+                            // Get the href to use to build the location
+                            let href = collation.get_link_source(&d.file).unwrap();
+                            // Get the last modification data from the page
+                            let page = collation.resolve(&d.file).unwrap();
+                            let page = &*page.read().unwrap();
+                            // Generate the absolute location
+                            let location = base.join(href).unwrap();
+                            let lastmod = page.lastmod();
+                            SiteMapEntry { location, lastmod }
+                        })
+                        .collect();
+
+                    let map_file = File::create(&sitemap_path)?;
+                    sitemap.to_writer(map_file)?;
+
+                    // Add the file to the index
+                    idx.maps.push(sitemap);
+                }
+
+                // Write out the master index file
+                let idx_path = base_folder.join(config::sitemap::FILE);
+                let idx_file = File::create(&idx_path)?;
+                idx.to_writer(idx_file)?;
+
+                let sitemap_url = idx.to_location();
+                info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
+
+                res = Some(sitemap_url);
             }
-
-            for (count, window) in parse_list.chunks(*entries).enumerate() {
-                let href = format!("{}.xml", count + 1);
-                let mut sitemap = SiteMapFile {
-                    href,
-                    entries: vec![],
-                };
-                let sitemap_path = base_folder.join(&sitemap.href);
-                sitemap.entries = window
-                    .iter()
-                    // NOTE: quick hack to ignore error file, needs stronger logic
-                    .filter(|d| !d.file.ends_with("404.html"))
-                    .map(|d| {
-                        // Get the href to use to build the location
-                        let href = collation.get_link_source(&d.file).unwrap();
-                        // Get the last modification data from the page
-                        let page = collation.resolve(&d.file).unwrap();
-                        let page = &*page.read().unwrap();
-                        // Generate the absolute location
-                        let location = base.join(href).unwrap();
-                        let lastmod = page.lastmod();
-                        SiteMapEntry { location, lastmod }
-                    })
-                    .collect();
-
-                let map_file = File::create(&sitemap_path)?;
-                sitemap.to_writer(map_file)?;
-
-                // Add the file to the index
-                idx.maps.push(sitemap);
-            }
-
-            // Write out the master index file
-            let idx_path = base_folder.join(config::sitemap::FILE);
-            let idx_file = File::create(&idx_path)?;
-            idx.to_writer(idx_file)?;
-
-            let sitemap_url = idx.to_location();
-            info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
-
-            res = Some(sitemap_url);
         }
 
         Ok(res)

@@ -6,6 +6,8 @@ use url::Url;
 pub static FILE: &str = "index.xml";
 pub static NAME: &str = "sitemap";
 
+use crate::profile::{Profiles, ProfileFilter, ProfileName};
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct SiteMapConfig {
@@ -13,6 +15,8 @@ pub struct SiteMapConfig {
     pub entries: Option<usize>,
     // The folder name used to put the files
     pub name: Option<String>,
+
+    profiles: ProfileFilter,
 }
 
 impl Default for SiteMapConfig {
@@ -20,7 +24,18 @@ impl Default for SiteMapConfig {
         Self {
             entries: Some(25000),
             name: Some(NAME.to_string()),
+            profiles: ProfileFilter::Name(ProfileName::Release),
         }
+    }
+}
+
+impl Profiles for SiteMapConfig {
+    fn has_profile(&self, name: &ProfileName) -> bool {
+        match self.profiles {
+            ProfileFilter::Flag(enabled) => enabled,
+            ProfileFilter::Name(ref target) => target == name,
+            ProfileFilter::List(ref target) => target.contains(name),
+        } 
     }
 }
 

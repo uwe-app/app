@@ -27,6 +27,7 @@ use crate::{
     redirect::RedirectConfig,
     script::JavaScriptConfig,
     search::SearchConfig,
+    sitemap::SiteMapConfig,
     style::StyleSheetConfig,
     syntax::SyntaxConfig,
     transform::TransformConfig,
@@ -196,6 +197,9 @@ pub struct Config {
     // Menus keyed by name
     pub menu: Option<MenuConfig>,
 
+    // Optional sitemap config
+    pub sitemap: Option<SiteMapConfig>,
+
     pub dependencies: Option<DependencyMap>,
 
     pub layout: Option<LayoutConfig>,
@@ -245,6 +249,7 @@ impl Default for Config {
             index: None,
             authors: None,
             menu: None,
+            sitemap: Some(Default::default()),
             dependencies: None,
             layout: None,
             syntax: None,
