@@ -167,7 +167,7 @@ impl Default for ProfileSettings {
             partials: Some(PathBuf::from(config::PARTIALS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
 
-            rewrite_index: None,
+            rewrite_index: Some(true),
             extend: None,
 
             profile: None,
