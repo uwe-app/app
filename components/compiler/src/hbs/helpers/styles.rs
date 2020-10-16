@@ -110,6 +110,11 @@ impl HelperDef for Styles {
             out.write(&style.to_string())?;
         }
 
+        if self.context.options.settings.is_live() {
+            let asset = StyleAsset::Source(livereload::stylesheet());
+            out.write(&asset.to_string())?;
+        }
+
         // Render block inline styles
         if let Some(tpl) = h.template() {
             out.write("<style>")?;

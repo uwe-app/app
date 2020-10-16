@@ -109,6 +109,11 @@ impl HelperDef for Scripts {
             out.write(&script.to_string())?;
         }
 
+        if self.context.options.settings.is_live() {
+            let asset = ScriptAsset::Source(livereload::javascript());
+            out.write(&asset.to_string())?;
+        }
+
         // Render block inline scripts
         if let Some(tpl) = h.template() {
             out.write("<script>")?;
