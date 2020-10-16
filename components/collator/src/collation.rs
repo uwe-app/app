@@ -378,16 +378,10 @@ impl SeriesCollate for CollateInfo {
 impl LayoutCollate for CollateInfo {
     fn get_layout(&self) -> Option<&Arc<PathBuf>> {
         self.layouts.get(config::DEFAULT_LAYOUT_NAME)
-        //self.layout.clone()
     }
 
     fn layouts(&self) -> HashMap<String, PathBuf> {
         let mut map = HashMap::new();
-        //if let Some(ref layout) = self.get_layout() {
-        //let (name, path) = get_layout(&layout.to_path_buf());
-        //map.insert(name, path);
-        //}
-
         for (_, layout) in self.layouts.iter() {
             let (name, path) = get_layout(layout);
             map.insert(name, path);

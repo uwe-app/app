@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
+use std::ffi::OsStr;
 
 use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
@@ -123,7 +124,13 @@ async fn find(
 ) -> Result<Vec<Error>> {
     let languages = req.locales.get_translations();
 
-    let primary_layout = req.options.source.join(config::LAYOUT_HBS);
+    let engine = req.config.engine();
+    let template_ext = engine.get_raw_extension();
+
+    let layouts_dir = req.options.source
+        .join(config::LAYOUTS);
+
+    let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
 
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();
@@ -158,6 +165,30 @@ async fn find(
 
                     let key = Arc::new(buf);
 
+                    if path.extension() == Some(OsStr::new(template_ext)) {
+                        // Configure the default layout to use a `layouts/main.hbs` file
+                        if &*key == &primary_layout {
+                            info.add_layout(
+                                config::DEFAULT_LAYOUT_NAME.to_string(),
+                                Arc::clone(&key),
+                            );
+
+                        } else if path.starts_with(&layouts_dir) {
+                            let name = path.file_stem()
+                                .unwrap()
+                                .to_string_lossy()
+                                .to_string();
+                            info.add_layout(
+                                name,
+                                Arc::clone(&key),
+                            );
+                        }
+
+                        // Always ignore files with the template engine extension
+                        return WalkState::Continue;
+                    }
+
+                    // Directories are stored in memory but do not represent pages
                     if path.is_dir() {
                         let res = Resource::new(
                             path.to_path_buf(),
@@ -196,16 +227,6 @@ async fn find(
                             let _ = tx.send(e);
                         }
                     } else {
-                        // Configure the default layout to use a `layout.hbs` file
-                        if &*key == &primary_layout {
-                            info.add_layout(
-                                config::DEFAULT_LAYOUT_NAME.to_string(),
-                                Arc::clone(&key),
-                            );
-
-                            return WalkState::Continue;
-                        }
-
                         if let Err(e) =
                             add_other(info, req.config, req.options, key)
                         {
