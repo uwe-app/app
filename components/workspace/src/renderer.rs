@@ -1,6 +1,7 @@
 use std::fs::{self, File};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
+use std::ffi::OsStr;
 
 use log::{debug, info};
 use url::Url;
@@ -216,10 +217,14 @@ impl Renderer {
                 // How many entries per chunk window?
                 let entries = sitemap.entries.as_ref().unwrap();
 
+                let with_lang = if ctx.locales.is_multi_lingual() {
+                    Some(collation.get_lang())
+                } else { None };
+
                 // Base canonical URL
                 let base = ctx.options.get_canonical_url(
                     &ctx.config,
-                    Some(collation.get_lang()),
+                    with_lang,
                 )?;
 
                 // Create the top-level index of all sitemaps
@@ -232,6 +237,8 @@ impl Renderer {
                     fs::create_dir_all(&base_folder)?;
                 }
 
+                let err_name = OsStr::new("404");
+
                 for (count, window) in parse_list.chunks(*entries).enumerate() {
                     let href = format!("{}.xml", count + 1);
                     let mut sitemap = SiteMapFile {
@@ -242,7 +249,12 @@ impl Renderer {
                     sitemap.entries = window
                         .iter()
                         // NOTE: quick hack to ignore error file, needs stronger logic
-                        .filter(|d| !d.file.ends_with("404.html"))
+                        .filter(|d| {
+                            if let Some(err_name) = d.file.file_stem() {
+                                return true
+                            }
+                            false
+                        })
                         .map(|d| {
                             // Get the href to use to build the location
                             let href =
