@@ -106,9 +106,6 @@ fn should_minify_html<P: AsRef<Path>>(
         if let Some(ref minify) = config.minify {
             if let Some(ref html) = minify.html {
                 return html.profiles().is_match(tag);
-                //if !html.profiles.is_empty() {
-                    //return html.profiles.contains(tag);
-                //}
             }
         }
     }
