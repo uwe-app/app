@@ -6,7 +6,7 @@ use url::Url;
 pub static FILE: &str = "index.xml";
 pub static NAME: &str = "sitemap";
 
-use crate::profile::{Profiles, ProfileFilter, ProfileName};
+use crate::profile::{ProfileFilter, ProfileName, Profiles};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
@@ -31,7 +31,7 @@ impl Default for SiteMapConfig {
 
 impl Profiles for SiteMapConfig {
     fn profiles(&self) -> &ProfileFilter {
-        &self.profiles 
+        &self.profiles
     }
 }
 

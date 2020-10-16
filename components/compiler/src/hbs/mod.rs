@@ -14,7 +14,7 @@ use crate::{Error, Result};
 
 use config::{engine::TemplateEngine, markdown};
 
-use crate::{context::BuildContext, parser::Parser, page::CollatedPage};
+use crate::{context::BuildContext, page::CollatedPage, parser::Parser};
 
 mod helpers;
 

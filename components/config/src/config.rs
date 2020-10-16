@@ -237,8 +237,10 @@ impl Default for Config {
         Config {
             lang: String::from(LANG),
             host: String::from(HOST),
-            version: Version::from((1,0,0)),
-            website: format!("{}{}:{}", SCHEME_HTTP, HOST, PORT).parse().unwrap(),
+            version: Version::from((1, 0, 0)),
+            website: format!("{}{}:{}", SCHEME_HTTP, HOST, PORT)
+                .parse()
+                .unwrap(),
             charset: Some(String::from(CHARSET)),
             engine: Some(Default::default()),
             localhost: None,
@@ -289,11 +291,11 @@ impl Config {
     }
 
     pub fn website(&self) -> &Url {
-        &self.website 
+        &self.website
     }
 
     pub fn set_website(&mut self, url: Url) {
-        self.website = url; 
+        self.website = url;
     }
 
     pub fn version(&self) -> &Version {

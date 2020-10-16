@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::io::Result;
+use std::path::PathBuf;
 
 use config::Config;
 
@@ -15,8 +15,10 @@ fn get_script(url: &str) -> String {
     // NOTE: we use an IIFE (immediately invoked function expression)
     // NOTE: and the template closes and calls the expression but we
     // NOTE: open it here
-    let mut script =
-        String::from(format!("(function() {{const socket = new WebSocket('{}');\n", url));
+    let mut script = String::from(format!(
+        "(function() {{const socket = new WebSocket('{}');\n",
+        url
+    ));
     script.push_str(SCRIPT);
     script
 }

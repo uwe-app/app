@@ -8,8 +8,6 @@ pub struct LiveReload {
 
 impl Default for LiveReload {
     fn default() -> Self {
-        Self {
-            notify: Some(true),
-        }
+        Self { notify: Some(true) }
     }
 }

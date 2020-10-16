@@ -2,7 +2,10 @@ use std::path::{Path, PathBuf};
 
 use url::Url;
 
-use crate::{Config, profile::{ProfileSettings, ProfileName}, RenderTypes, Result, HTML, INDEX_STEM};
+use crate::{
+    profile::{ProfileName, ProfileSettings},
+    Config, RenderTypes, Result, HTML, INDEX_STEM,
+};
 
 #[derive(Debug, Clone)]
 pub enum FileType {
@@ -42,7 +45,7 @@ impl RuntimeOptions {
     }
 
     pub fn profile(&self) -> &ProfileName {
-        &self.settings.name 
+        &self.settings.name
     }
 
     fn is_index<P: AsRef<Path>>(file: P) -> bool {

@@ -43,7 +43,12 @@ impl Default for RenderOptions {
 }
 
 impl RenderOptions {
-    pub fn new_file_lang(file: PathBuf, lang: String, sitemap: bool, search_index: bool) -> Self {
+    pub fn new_file_lang(
+        file: PathBuf,
+        lang: String,
+        sitemap: bool,
+        search_index: bool,
+    ) -> Self {
         Self {
             target: RenderTarget::File(file),
             filter: RenderFilter::One(lang),
@@ -132,8 +137,11 @@ impl Renderer {
         })
     }
 
-    fn finish(&self, output: CompilerOutput, render_options: &RenderOptions) -> Result<Option<Url>> {
-
+    fn finish(
+        &self,
+        output: CompilerOutput,
+        render_options: &RenderOptions,
+    ) -> Result<Option<Url>> {
         if render_options.search_index {
             self.create_search_indices(&output.data)?;
         }
@@ -209,9 +217,10 @@ impl Renderer {
                 let entries = sitemap.entries.as_ref().unwrap();
 
                 // Base canonical URL
-                let base = ctx
-                    .options
-                    .get_canonical_url(&ctx.config, Some(collation.get_lang()))?;
+                let base = ctx.options.get_canonical_url(
+                    &ctx.config,
+                    Some(collation.get_lang()),
+                )?;
 
                 // Create the top-level index of all sitemaps
                 let folder = sitemap.name.as_ref().unwrap().to_string();
@@ -236,7 +245,8 @@ impl Renderer {
                         .filter(|d| !d.file.ends_with("404.html"))
                         .map(|d| {
                             // Get the href to use to build the location
-                            let href = collation.get_link_source(&d.file).unwrap();
+                            let href =
+                                collation.get_link_source(&d.file).unwrap();
                             // Get the last modification data from the page
                             let page = collation.resolve(&d.file).unwrap();
                             let page = &*page.read().unwrap();
@@ -260,7 +270,11 @@ impl Renderer {
                 idx.to_writer(idx_file)?;
 
                 let sitemap_url = idx.to_location();
-                info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
+                info!(
+                    "Sitemap {} ({})",
+                    sitemap_url.to_string(),
+                    idx.maps.len()
+                );
 
                 res = Some(sitemap_url);
             }

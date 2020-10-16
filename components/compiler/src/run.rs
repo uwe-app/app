@@ -5,12 +5,17 @@ use log::info;
 use collator::{
     Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
 };
-use config::{Config, Page, profile::{Profiles, ProfileName}};
+use config::{
+    profile::{ProfileName, Profiles},
+    Config, Page,
+};
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
 
-use crate::{context::BuildContext, parser::Parser, Error, Result, page::CollatedPage};
+use crate::{
+    context::BuildContext, page::CollatedPage, parser::Parser, Error, Result,
+};
 
 #[derive(Debug)]
 pub struct ParseData {
@@ -162,7 +167,8 @@ pub async fn parse(
 
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
-    let mut page_data = CollatedPage::new(&ctx.config, &ctx.locales, data, lang);
+    let mut page_data =
+        CollatedPage::new(&ctx.config, &ctx.locales, data, lang);
 
     let layout = if !standalone {
         collation.find_layout(&data.layout, true)
@@ -183,10 +189,9 @@ pub async fn parse(
         for (key, _value) in menu.entries.iter() {
             if let Some(ref menu_result) = collation.find_menu(key) {
                 let mut refs = Vec::new();
-                menu_result.pages.iter()
-                    .for_each(|s| {
-                        refs.push(s.as_ref());
-                    });
+                menu_result.pages.iter().for_each(|s| {
+                    refs.push(s.as_ref());
+                });
 
                 page_data.menus.insert(key, refs);
             }

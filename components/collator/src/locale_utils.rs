@@ -38,7 +38,7 @@ pub(crate) fn get_locale_target(
     base: &PathBuf,
     locales: &LocaleMap,
 ) -> PathBuf {
-    if locales.multi {
+    if locales.is_multi_lingual() {
         base.join(lang)
     } else {
         base.clone()

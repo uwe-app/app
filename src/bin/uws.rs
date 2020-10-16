@@ -1,8 +1,8 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::path::PathBuf;
 use log::info;
+use std::path::PathBuf;
 
 use structopt::StructOpt;
 use url::Url;
@@ -132,7 +132,6 @@ fn clone_or_copy(
             .map(|_| ())
             .map_err(Error::from)
     }
-
 }
 
 fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
@@ -157,9 +156,9 @@ fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
 fn list() -> Result<()> {
     let blueprints = dirs::blueprint_dir()?;
     for entry in std::fs::read_dir(blueprints)? {
-        let path = entry?.path(); 
+        let path = entry?.path();
         if path.is_dir() {
-            let name = path.file_name().unwrap().to_string_lossy(); 
+            let name = path.file_name().unwrap().to_string_lossy();
             info!("{} ({})", &*name, path.display());
         }
     }
@@ -168,10 +167,7 @@ fn list() -> Result<()> {
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
-        Command::Clone {
-            source,
-            target,
-        } => {
+        Command::Clone { source, target } => {
             clone_or_copy(source, target, None)?;
         }
 

@@ -5,7 +5,7 @@ use log::info;
 
 use config::AwsPublishEnvironment;
 use config::{lock_file::LockFile, ProfileSettings};
-use publisher::{self, PublishProvider, PublishRequest, report::FileBuilder};
+use publisher::{self, report::FileBuilder, PublishProvider, PublishRequest};
 
 use scopeguard::defer;
 use workspace::{compile, lock, Project};

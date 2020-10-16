@@ -257,7 +257,6 @@ impl HelperDef for Menu {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
         let list = h
             .hash_get("list")
             .map(|v| v.value())

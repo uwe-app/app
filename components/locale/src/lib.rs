@@ -3,6 +3,8 @@ use std::path::Path;
 
 use thiserror::Error;
 
+use serde::Serialize;
+
 use fluent_templates::{static_loader, ArcLoader, Loader};
 use unic_langid::LanguageIdentifier;
 
@@ -27,31 +29,41 @@ static_loader! {
 pub type LocaleName = String;
 pub type LocaleIdentifier = HashMap<LocaleName, LanguageIdentifier>;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct LocaleMap {
     /// The fallback language is inherited
     /// from the top-level config `lang`
-    pub fallback: LocaleName,
+    fallback: LocaleName,
+    /// List of languages other than the primary fallback language.
+    alternate: Vec<String>,
+
+    // NOTE: We don't include `multi` when serializing because
+    // NOTE: serialization of `languages` is already conditional
+    // NOTE: on whether multiple languages are available.
+
+    /// Determine if multiple locales are active.
+    #[serde(skip)]
+    multi: bool,
+
     /// Enabled is active when we are able to load
     /// locale files at runtime.
-    pub enabled: bool,
-    /// Determine if multiple locales are active.
-    pub multi: bool,
+    #[serde(skip)]
+    enabled: bool,
+
     /// Map of all locales to the parsed language identifiers.
-    pub map: LocaleIdentifier,
-    /// List of languages other than the primary fallback language.
-    pub translations: Vec<String>,
+    #[serde(skip)]
+    map: LocaleIdentifier,
 }
 
 impl LocaleMap {
-    /// Get all locale identifiers.
-    pub fn get_locales(&self) -> Vec<&str> {
-        self.map.keys().map(|s| s.as_str()).collect()
+    /// Determine if this project has multiple languages.
+    pub fn is_multi_lingual(&self) -> bool {
+        self.multi
     }
 
     /// Get all locale identifiers excluding the fallback.
-    pub fn get_translations(&self) -> &Vec<String> {
-        &self.translations
+    pub fn alternate(&self) -> &Vec<String> {
+        &self.alternate
     }
 }
 
@@ -71,7 +83,7 @@ impl Locales {
             map: HashMap::new(),
             enabled: arc.is_some(),
             multi: false,
-            translations: vec![],
+            alternate: vec![],
         };
 
         if let Some(ref arc) = arc {
@@ -86,13 +98,14 @@ impl Locales {
 
         res.multi = res.map.len() > 1;
 
-        let translations: Vec<String> = res
+        let alternate: Vec<String> = res
             .map
             .keys()
             .filter(|s| s.as_str() != fallback)
             .map(|s| s.to_owned())
             .collect();
-        res.translations = translations;
+
+        res.alternate = alternate;
 
         Ok(res)
     }

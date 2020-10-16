@@ -12,11 +12,12 @@ use syntect::util::LinesWithEndings;
 // Lifted from syntect as we want to use `code` not `pre`
 //
 
-fn start_highlighted_html_snippet(t: &Theme, bg: IncludeBackground) -> (String, Color) {
+fn start_highlighted_html_snippet(
+    t: &Theme,
+    bg: IncludeBackground,
+) -> (String, Color) {
     match bg {
-        IncludeBackground::No => {
-            ("<code>".to_string(), Color::WHITE)
-        }
+        IncludeBackground::No => ("<code>".to_string(), Color::WHITE),
         _ => {
             let c = t.settings.background.unwrap_or(Color::WHITE);
             (
@@ -28,7 +29,6 @@ fn start_highlighted_html_snippet(t: &Theme, bg: IncludeBackground) -> (String, 
             )
         }
     }
-
 }
 
 pub fn highlighted_html_for_string(
@@ -38,7 +38,8 @@ pub fn highlighted_html_for_string(
     theme: &Theme,
 ) -> String {
     let mut highlighter = HighlightLines::new(syntax, theme);
-    let (mut output, _bg) = start_highlighted_html_snippet(theme, IncludeBackground::No);
+    let (mut output, _bg) =
+        start_highlighted_html_snippet(theme, IncludeBackground::No);
 
     for line in LinesWithEndings::from(s) {
         let regions = highlighter.highlight(line, ss);

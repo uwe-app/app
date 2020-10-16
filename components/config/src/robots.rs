@@ -7,7 +7,7 @@ use url::Url;
 static WILDCARD: &str = "*";
 pub static FILE: &str = "robots.txt";
 
-use crate::profile::{Profiles, ProfileFilter, ProfileName};
+use crate::profile::{ProfileFilter, ProfileName, Profiles};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
@@ -22,7 +22,7 @@ pub struct RobotsConfig {
 
 impl Profiles for RobotsConfig {
     fn profiles(&self) -> &ProfileFilter {
-        &self.profiles 
+        &self.profiles
     }
 }
 

@@ -8,12 +8,12 @@ pub use jsonfeed::{Attachment, Author, Feed};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
+use serde_with::skip_serializing_none;
 
 use crate::{
-    indexer::QueryList, script::ScriptAsset, href::UrlPath,
-    style::StyleAsset, utils::toml_datetime::from_toml_datetime, Config, Error,
-    Result, RuntimeOptions,
+    href::UrlPath, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
+    utils::toml_datetime::from_toml_datetime, Config, Error, Result,
+    RuntimeOptions,
 };
 
 use self::{feed::FeedEntry, file_context::FileContext};
@@ -173,7 +173,6 @@ impl Page {
         output: &PathBuf,
         template: Option<PathBuf>,
     ) -> Result<()> {
-
         let template = if let Some(template) = template {
             template
         } else {
@@ -184,7 +183,8 @@ impl Page {
             FileContext::new(source.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
-        let href = options.absolute(&file_context.source, Default::default())?;
+        let href =
+            options.absolute(&file_context.source, Default::default())?;
 
         // TODO: allow setting to control this behavior
         if self.updated.is_none() {

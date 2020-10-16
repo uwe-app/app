@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
-use std::ffi::OsStr;
 
 use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
@@ -34,7 +34,7 @@ pub struct CollateResult {
 
 impl CollateResult {
     pub fn new(lang: &str, base: &PathBuf, locales: &LocaleMap) -> Self {
-        let translations = locales.get_translations();
+        let translations = locales.alternate();
 
         let mut map: HashMap<LocaleName, CollateInfo> = HashMap::new();
         for lang in translations.iter() {
@@ -122,13 +122,12 @@ async fn find(
     req: &CollateRequest<'_>,
     res: &mut CollateResult,
 ) -> Result<Vec<Error>> {
-    let languages = req.locales.get_translations();
+    let languages = req.locales.alternate();
 
     let engine = req.config.engine();
     let template_ext = engine.get_raw_extension();
 
-    let layouts_dir = req.options.source
-        .join(config::LAYOUTS);
+    let layouts_dir = req.options.source.join(config::LAYOUTS);
 
     let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
 
@@ -172,16 +171,13 @@ async fn find(
                                 config::DEFAULT_LAYOUT_NAME.to_string(),
                                 Arc::clone(&key),
                             );
-
                         } else if path.starts_with(&layouts_dir) {
-                            let name = path.file_stem()
+                            let name = path
+                                .file_stem()
                                 .unwrap()
                                 .to_string_lossy()
                                 .to_string();
-                            info.add_layout(
-                                name,
-                                Arc::clone(&key),
-                            );
+                            info.add_layout(name, Arc::clone(&key));
                         }
 
                         // Always ignore files with the template engine extension
@@ -304,7 +300,7 @@ fn add_page(
                 .entry(Arc::new(def))
                 .or_insert(vec![]);
             entries.push(Arc::clone(key));
-       }
+        }
     }
 
     info.add_page(key, destination, Arc::new(RwLock::new(page)));

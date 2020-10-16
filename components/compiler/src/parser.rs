@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use config::{engine::TemplateEngine};
+use config::engine::TemplateEngine;
 use locale::Locales;
 
-use crate::{context::BuildContext, hbs, Result, page::CollatedPage};
+use crate::{context::BuildContext, hbs, page::CollatedPage, Result};
 
 /// The trait all template engines must implement.
 pub trait Parser {

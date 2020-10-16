@@ -18,7 +18,7 @@ use rusoto_s3::*;
 
 use log::{debug, error, info};
 
-use crate::{Error, Result, report::FileBuilder};
+use crate::{report::FileBuilder, Error, Result};
 
 // The folder delimiter
 static DELIMITER: &str = "/";

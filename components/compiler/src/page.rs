@@ -6,51 +6,58 @@ use config::semver::Version;
 use serde::Serialize;
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use config::{
-    Config,
-    date::DateConfig,
-    page::Page,
-};
+use config::{date::DateConfig, page::Page, Config};
 
-use locale::Locales;
+use locale::{LocaleMap, Locales};
 
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize)]
 #[serde(default, rename_all = "kebab-case")]
-pub struct CollatedPage<'a> {
+pub struct CollatedPage<'config, 'locale> {
     #[serde(flatten)]
-    page: &'a Page,
+    page: &'config Page,
 
-    lang: &'a str,
-    charset: &'a str,
-    host: &'a str,
+    lang: &'config str,
+    charset: &'config str,
+    host: &'config str,
     #[serde_as(as = "DisplayFromStr")]
-    website: &'a Url,
+    website: &'config Url,
 
-    multilingual: bool,
+    languages: Option<&'locale LocaleMap>,
 
-    date: &'a Option<DateConfig>,
+    date: &'config Option<DateConfig>,
 
     // Paths referenced in a menu when MENU.md convention is used
     //  FIXME: use a better name for the main menu
-    pub main: Vec<&'a String>,
-    pub menus: HashMap<&'a String, Vec<&'a String>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub main: Vec<&'config String>,
+    pub menus: HashMap<&'config String, Vec<&'config String>>,
 
-    generator: &'a str,
+    generator: &'config str,
     #[serde_as(as = "DisplayFromStr")]
-    version: &'a Version,
+    version: &'config Version,
 }
 
-impl<'a> CollatedPage<'a> {
-    pub fn new(config: &'a Config, locales: &'a Locales, page: &'a Page, lang: &'a str) -> Self {
+impl<'config, 'locale> CollatedPage<'config, 'locale> {
+    pub fn new(
+        config: &'config Config,
+        locales: &'locale Locales,
+        page: &'config Page,
+        lang: &'config str,
+    ) -> Self {
+
+        let languages = if locales.is_multi_lingual() {
+            Some(locales.languages())
+        } else { None };
+
         Self {
             page,
             lang,
             charset: config.charset(),
             host: config.host(),
             website: config.website(),
-            multilingual: locales.is_multi_lingual(),
+            languages,
             date: &config.date,
             main: Default::default(),
             menus: Default::default(),
@@ -59,4 +66,3 @@ impl<'a> CollatedPage<'a> {
         }
     }
 }
-

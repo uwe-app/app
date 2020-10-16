@@ -283,8 +283,8 @@ impl<'a> Invalidator<'a> {
 
         // TODO: reload the collated page data before compiing!
         //
-        let options = RenderOptions::new_file_lang(
-            file, lang.to_string(), false, false);
+        let options =
+            RenderOptions::new_file_lang(file, lang.to_string(), false, false);
 
         self.project.render(options).await?;
 
@@ -293,7 +293,7 @@ impl<'a> Invalidator<'a> {
 
     /// Extract locale identifier from a file name when possible.
     fn extract_locale(&self, file: &PathBuf) -> (Option<String>, PathBuf) {
-        let languages = self.project.locales.languages().get_translations();
+        let languages = self.project.locales.languages().alternate();
         if let Some((lang, path)) =
             collator::get_locale_file_info(&file.as_path(), &languages)
         {

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 static DEFAULT_THEME: &str = "base16-ocean.light";
 
-use crate::profile::{Profiles, ProfileFilter};
+use crate::profile::{ProfileFilter, Profiles};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -28,7 +28,6 @@ impl Default for SyntaxConfig {
 }
 
 impl SyntaxConfig {
-
     pub fn is_inline(&self) -> bool {
         self.inline.is_some() && self.inline.unwrap()
     }
@@ -44,6 +43,6 @@ impl SyntaxConfig {
 
 impl Profiles for SyntaxConfig {
     fn profiles(&self) -> &ProfileFilter {
-        &self.profiles 
+        &self.profiles
     }
 }

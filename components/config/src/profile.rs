@@ -23,7 +23,7 @@ static PRODUCTION: &str = "production";
 
 /// Trait for settings that maintain a list of profiles.
 ///
-/// Typically this is used to indicate that the settings 
+/// Typically this is used to indicate that the settings
 /// should only apply to the specified profiles.
 pub trait Profiles {
     fn profiles(&self) -> &ProfileFilter;
@@ -49,7 +49,7 @@ impl ProfileFilter {
             ProfileFilter::Flag(enabled) => enabled,
             ProfileFilter::Name(ref target) => target == name,
             ProfileFilter::List(ref target) => target.contains(name),
-        } 
+        }
     }
 }
 
@@ -322,11 +322,15 @@ impl ProfileSettings {
         } else {
             let scheme = if self.tls.is_some() {
                 config::SCHEME_HTTPS
-            } else { config::SCHEME_HTTP };
+            } else {
+                config::SCHEME_HTTP
+            };
 
             let port = if self.tls.is_some() {
                 self.tls.as_ref().unwrap().port
-            } else { self.port.unwrap_or(config::PORT) };
+            } else {
+                self.port.unwrap_or(config::PORT)
+            };
 
             Ok(Url::parse(&crate::to_url_string(
                 scheme,

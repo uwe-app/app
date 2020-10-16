@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::profile::{Profiles, ProfileFilter};
+use crate::profile::{ProfileFilter, Profiles};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyConfig {
@@ -15,6 +15,6 @@ pub struct MinifyFormat {
 
 impl Profiles for MinifyFormat {
     fn profiles(&self) -> &ProfileFilter {
-        &self.profiles 
+        &self.profiles
     }
 }

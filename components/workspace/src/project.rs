@@ -13,10 +13,9 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    profile::Profiles,
     dependency::AccessGrant, hook::HookConfig, plugin_cache::PluginCache,
-    syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
-    RuntimeOptions,
+    profile::Profiles, syntax::SyntaxConfig, Config, ProfileSettings,
+    RedirectConfig, RuntimeOptions,
 };
 
 use datasource::{synthetic, DataSourceMap, QueryCache};
@@ -592,14 +591,15 @@ impl Project {
             self.config.robots.is_some() || !sitemaps.is_empty();
 
         if output_robots {
-            let mut robots =
-                if let Some(ref robots) = self.config.robots {
-                    robots.clone()
-                } else {
-                    Default::default()
-                };
+            let mut robots = if let Some(ref robots) = self.config.robots {
+                robots.clone()
+            } else {
+                Default::default()
+            };
 
-            if robots.profiles().is_match(self.options.profile()) || !sitemaps.is_empty() {
+            if robots.profiles().is_match(self.options.profile())
+                || !sitemaps.is_empty()
+            {
                 robots.sitemaps = sitemaps;
 
                 //// NOTE: robots must always be at the root regardless
