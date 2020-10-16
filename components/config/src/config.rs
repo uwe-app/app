@@ -33,6 +33,7 @@ use crate::{
     style::StyleSheetConfig,
     syntax::SyntaxConfig,
     transform::TransformConfig,
+    utils::href::UrlPath,
     Error,
 };
 
@@ -107,6 +108,8 @@ pub static OG_IMAGE: &str = "image";
 pub static OG_TITLE: &str = "title";
 pub static OG_DESCRIPTION: &str = "description";
 
+static DEFAULT_ICON: &str = "/assets/favicon.png";
+
 const fn get_default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }
@@ -173,6 +176,7 @@ pub struct Config {
     /// Plugin version.
     #[serde_as(as = "DisplayFromStr")]
     version: Version,
+    favicon: UrlPath,
     charset: Option<String>,
 
     pub engine: Option<TemplateEngine>,
@@ -238,6 +242,7 @@ impl Default for Config {
             lang: String::from(LANG),
             host: String::from(HOST),
             version: Version::from((1, 0, 0)),
+            favicon: UrlPath::from(DEFAULT_ICON),
             website: format!("{}{}:{}", SCHEME_HTTP, HOST, PORT)
                 .parse()
                 .unwrap(),
@@ -288,6 +293,10 @@ impl Config {
 
     pub fn host(&self) -> &str {
         &self.host
+    }
+
+    pub fn favicon(&self) -> &UrlPath {
+        &self.favicon
     }
 
     pub fn website(&self) -> &Url {

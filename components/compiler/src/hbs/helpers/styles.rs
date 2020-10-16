@@ -47,10 +47,6 @@ impl HelperDef for Styles {
             .as_bool()
             .unwrap_or(false);
 
-        if abs {
-            println!("GOT ABSOLUTE FLAG ON");
-        }
-
         // List of page specific styles
         let styles = ctx
             .data()

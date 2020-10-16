@@ -5,7 +5,6 @@ use crate::BuildContext;
 use handlebars::*;
 use serde_json::json;
 
-static DEFAULT_ICON: &str = "/assets/favicon.png";
 // A transparent gif for the icon
 static INLINE_ICON: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
@@ -42,7 +41,7 @@ impl HelperDef for Icon {
         let mut href = h
             .hash_get("href")
             .map(|v| v.value())
-            .or(Some(&json!(DEFAULT_ICON)))
+            .or(Some(&json!(self.context.config.favicon().as_str())))
             .and_then(|v| v.as_str())
             .ok_or(RenderError::new(
                 "Type error for `favicon` helper, hash parameter `href` must be a string",
@@ -53,7 +52,9 @@ impl HelperDef for Icon {
             .context
             .options
             .source
-            .join(utils::url::to_path_separator(&href.trim_start_matches("/")));
+            .join(
+                utils::url::to_path_separator(
+                    &href.trim_start_matches("/")));
 
         let release = self.context.options.settings.is_release();
 
