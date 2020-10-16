@@ -30,12 +30,8 @@ impl Default for SiteMapConfig {
 }
 
 impl Profiles for SiteMapConfig {
-    fn has_profile(&self, name: &ProfileName) -> bool {
-        match self.profiles {
-            ProfileFilter::Flag(enabled) => enabled,
-            ProfileFilter::Name(ref target) => target == name,
-            ProfileFilter::List(ref target) => target.contains(name),
-        } 
+    fn profiles(&self) -> &ProfileFilter {
+        &self.profiles 
     }
 }
 

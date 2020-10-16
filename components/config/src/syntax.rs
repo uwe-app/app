@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::profile::ProfileName;
-
 static DEFAULT_THEME: &str = "base16-ocean.light";
 
 use crate::profile::{Profiles, ProfileFilter};
@@ -45,11 +43,7 @@ impl SyntaxConfig {
 }
 
 impl Profiles for SyntaxConfig {
-    fn has_profile(&self, name: &ProfileName) -> bool {
-        match self.profiles {
-            ProfileFilter::Flag(enabled) => enabled,
-            ProfileFilter::Name(ref target) => target == name,
-            ProfileFilter::List(ref target) => target.contains(name),
-        } 
+    fn profiles(&self) -> &ProfileFilter {
+        &self.profiles 
     }
 }

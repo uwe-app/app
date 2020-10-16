@@ -26,7 +26,7 @@ static PRODUCTION: &str = "production";
 /// Typically this is used to indicate that the settings 
 /// should only apply to the specified profiles.
 pub trait Profiles {
-    fn has_profile(&self, name: &ProfileName) -> bool;
+    fn profiles(&self) -> &ProfileFilter;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
@@ -40,6 +40,16 @@ pub enum ProfileFilter {
 impl Default for ProfileFilter {
     fn default() -> Self {
         ProfileFilter::Flag(true)
+    }
+}
+
+impl ProfileFilter {
+    pub fn is_match(&self, name: &ProfileName) -> bool {
+        match *self {
+            ProfileFilter::Flag(enabled) => enabled,
+            ProfileFilter::Name(ref target) => target == name,
+            ProfileFilter::List(ref target) => target.contains(name),
+        } 
     }
 }
 

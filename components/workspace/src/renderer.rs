@@ -204,7 +204,7 @@ impl Renderer {
         let mut res: Option<Url> = None;
 
         if let Some(ref sitemap) = ctx.config.sitemap {
-            if sitemap.has_profile(ctx.options.profile()) {
+            if sitemap.profiles().is_match(ctx.options.profile()) {
                 // How many entries per chunk window?
                 let entries = sitemap.entries.as_ref().unwrap();
 

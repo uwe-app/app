@@ -599,7 +599,7 @@ impl Project {
                     Default::default()
                 };
 
-            if robots.has_profile(self.options.profile()) || !sitemaps.is_empty() {
+            if robots.profiles().is_match(self.options.profile()) || !sitemaps.is_empty() {
                 robots.sitemaps = sitemaps;
 
                 //// NOTE: robots must always be at the root regardless

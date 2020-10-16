@@ -315,7 +315,7 @@ impl Config {
 
     pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
         if let Some(ref syntax) = self.syntax {
-            return syntax.has_profile(name);
+            return syntax.profiles().is_match(name);
         }
         false
     }
