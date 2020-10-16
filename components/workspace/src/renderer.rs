@@ -250,10 +250,10 @@ impl Renderer {
                         .iter()
                         // NOTE: quick hack to ignore error file, needs stronger logic
                         .filter(|d| {
-                            if let Some(err_name) = d.file.file_stem() {
-                                return true
+                            if Some(err_name) == d.file.file_stem() {
+                                return false
                             }
-                            false
+                            true
                         })
                         .map(|d| {
                             // Get the href to use to build the location

@@ -41,11 +41,20 @@ pub struct Page {
     pub render: Option<bool>,
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
-    pub standalone: Option<bool>,
     pub listing: Option<bool>,
-    pub noindex: Option<bool>,
-    pub print: Option<bool>,
     pub fallback: Option<bool>,
+
+    /// Do not render a layout for this page.
+    pub standalone: Option<bool>,
+
+    /// Flag to indicate this page is intended for print media.
+    print: Option<bool>,
+
+    /// Instruct robots not to index this page.
+    noindex: Option<bool>,
+
+    /// Instruction for helpers to make links absolute.
+    absolute: Option<bool>,
 
     pub authors: Option<Vec<Author>>,
     pub byline: Option<Vec<String>>,
@@ -109,6 +118,7 @@ impl Default for Page {
             noindex: None,
             print: None,
             fallback: None,
+            absolute: None,
             query: None,
             layout: None,
             taxonomies: None,
@@ -145,6 +155,10 @@ impl Page {
 
         Ok(page)
     }
+
+    //pub fn is_standalone(&self) -> bool {
+        //return self.standalone.is_some() && self.standalone.unwrap()
+    //}
 
     // This should be a W3C Datetime string suitable for a
     // sitemap lastmod field.
@@ -310,6 +324,10 @@ impl Page {
 
         if let Some(print) = other.print.as_mut() {
             self.print = Some(mem::take(print));
+        }
+
+        if let Some(absolute) = other.absolute.as_mut() {
+            self.absolute = Some(mem::take(absolute));
         }
 
         if let Some(fallback) = other.fallback.as_mut() {

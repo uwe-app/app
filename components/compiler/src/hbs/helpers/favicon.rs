@@ -24,14 +24,20 @@ impl HelperDef for Icon {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-        let abs = h
-            .hash_get("abs")
-            .map(|v| v.value())
-            .or(Some(&json!(false)))
-            .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
-                "Type error for `favicon` helper, hash parameter `abs` must be a boolean",
-            ))?;
+        //let abs = h
+            //.hash_get("abs")
+            //.map(|v| v.value())
+            //.or(Some(&json!(false)))
+            //.and_then(|v| v.as_bool())
+            //.ok_or(RenderError::new(
+                //"Type error for `favicon` helper, hash parameter `abs` must be a boolean",
+            //))?;
+
+        let abs = rc
+            .evaluate(ctx, "@root/absolute")?
+            .as_json()
+            .as_bool()
+            .unwrap_or(false);
 
         let mut href = h
             .hash_get("href")

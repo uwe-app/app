@@ -32,14 +32,20 @@ impl HelperDef for Scripts {
             ))?;
 
         // Make links absolute (passthrough)
-        let abs = h
-            .hash_get("abs")
-            .map(|v| v.value())
-            .or(Some(&json!(false)))
-            .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
-                "Type error for `scripts` helper, hash parameter `abs` must be a boolean",
-            ))?;
+        //let abs = h
+            //.hash_get("abs")
+            //.map(|v| v.value())
+            //.or(Some(&json!(false)))
+            //.and_then(|v| v.as_bool())
+            //.ok_or(RenderError::new(
+                //"Type error for `scripts` helper, hash parameter `abs` must be a boolean",
+            //))?;
+
+        let abs = rc
+            .evaluate(ctx, "@root/absolute")?
+            .as_json()
+            .as_bool()
+            .unwrap_or(false);
 
         // List of page specific scripts
         let scripts = ctx
