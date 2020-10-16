@@ -220,8 +220,6 @@ pub struct Config {
     pub minify: Option<MinifyConfig>,
     pub livereload: Option<LiveReload>,
 
-    pub series: Option<HashMap<String, SeriesConfig>>,
-
     #[serde(skip)]
     pub file: Option<PathBuf>,
 
@@ -266,7 +264,6 @@ impl Default for Config {
             db: None,
             minify: None,
             livereload: Some(Default::default()),
-            series: None,
 
             file: None,
             project: PathBuf::from(""),
@@ -441,11 +438,6 @@ pub struct NodeConfig {
     // Allow custom mappings for NODE_ENV
     pub debug: Option<String>,
     pub release: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct SeriesConfig {
-    pub pages: Vec<PathBuf>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
