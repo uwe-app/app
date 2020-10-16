@@ -284,6 +284,10 @@ impl Config {
         //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
     }
 
+    pub fn host(&self) -> &str {
+        &self.host
+    }
+
     pub fn website(&self) -> &Url {
         &self.website 
     }

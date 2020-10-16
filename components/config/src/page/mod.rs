@@ -32,23 +32,24 @@ pub use paginate::{PageLink, PaginateInfo};
 #[serde(default, rename_all = "kebab-case")]
 pub struct CollatedPage<'a> {
     #[serde(flatten)]
-    pub page: &'a Page,
+    page: &'a Page,
 
-    pub lang: &'a str,
-    pub charset: &'a str,
-    pub date: &'a Option<DateConfig>,
-
+    lang: &'a str,
+    charset: &'a str,
+    host: &'a str,
     #[serde_as(as = "DisplayFromStr")]
-    pub website: &'a Url,
+    website: &'a Url,
+
+    date: &'a Option<DateConfig>,
 
     // Paths referenced in a menu when MENU.md convention is used
     //  FIXME: use a better name for the main menu
     pub main: Vec<&'a String>,
     pub menus: HashMap<&'a String, Vec<&'a String>>,
 
-    pub generator: &'a str,
+    generator: &'a str,
     #[serde_as(as = "DisplayFromStr")]
-    pub version: &'a Version,
+    version: &'a Version,
 }
 
 impl<'a> CollatedPage<'a> {
@@ -57,8 +58,9 @@ impl<'a> CollatedPage<'a> {
             page,
             lang,
             charset: config.charset(),
-            date: &config.date,
+            host: config.host(),
             website: config.website(),
+            date: &config.date,
             main: Default::default(),
             menus: Default::default(),
             generator: crate::generator::id(),
@@ -119,8 +121,6 @@ pub struct Page {
     // Reserved
     //
     #[serde(skip_deserializing)]
-    pub host: Option<String>,
-    #[serde(skip_deserializing)]
     pub href: Option<String>,
     #[serde(skip_deserializing)]
     pub file: Option<FileContext>,
@@ -170,7 +170,6 @@ impl Default for Page {
 
             extra: Map::new(),
 
-            host: None,
             href: None,
             file: None,
             canonical: None,
@@ -222,7 +221,6 @@ impl Page {
         output: &PathBuf,
         template: Option<PathBuf>,
     ) -> Result<()> {
-        self.host = Some(config.host.clone());
 
         let template = if let Some(template) = template {
             template
