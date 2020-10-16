@@ -233,7 +233,7 @@ impl ProjectBuilder {
         debug!("Collate page data...");
 
         let req = CollateRequest {
-            locales: &self.locales.languages,
+            locales: self.locales.languages(),
             config: &self.config,
             options: &self.options,
             plugins: self.plugins.as_ref(),
@@ -242,7 +242,7 @@ impl ProjectBuilder {
         let mut res = CollateResult::new(
             &self.config.lang,
             &self.options.base,
-            &self.locales.languages,
+            self.locales.languages(),
         );
 
         let mut errors = collator::walk(req, &mut res).await?;

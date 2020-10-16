@@ -5,12 +5,12 @@ use log::info;
 use collator::{
     Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
 };
-use config::{CollatedPage, Config, Page, profile::{Profiles, ProfileName}};
+use config::{Config, Page, profile::{Profiles, ProfileName}};
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
 
-use crate::{context::BuildContext, parser::Parser, Error, Result};
+use crate::{context::BuildContext, parser::Parser, Error, Result, page::CollatedPage};
 
 #[derive(Debug)]
 pub struct ParseData {
@@ -162,7 +162,7 @@ pub async fn parse(
 
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
-    let mut page_data = CollatedPage::new(&ctx.config, data, lang);
+    let mut page_data = CollatedPage::new(&ctx.config, &ctx.locales, data, lang);
 
     let layout = if !standalone {
         collation.find_layout(&data.layout, true)

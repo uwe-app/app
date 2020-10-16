@@ -116,7 +116,7 @@ pub fn to_url_string(
 }
 
 mod config;
-mod date;
+pub mod date;
 pub mod engine;
 pub mod feed;
 mod fluent;
@@ -130,7 +130,7 @@ mod live_reload;
 mod menu;
 mod minify;
 mod options;
-mod page;
+pub mod page;
 pub mod plugin;
 pub mod plugin_cache;
 pub mod profile;
@@ -154,7 +154,7 @@ pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
 pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use menu::{MenuEntry, MenuReference, MenuResult, MENU};
-pub use page::{Author, CollatedPage, Page, PageLink, PaginateInfo};
+pub use page::{Author, Page, PageLink, PaginateInfo};
 pub use plugin::*;
 pub use profile::{ProfileName, ProfileSettings, RenderTypes};
 pub use redirect::*;

@@ -57,7 +57,7 @@ impl LocaleMap {
 
 #[derive(Debug, Default)]
 pub struct Locales {
-    pub languages: LocaleMap,
+    languages: LocaleMap,
 }
 
 impl Locales {
@@ -124,6 +124,14 @@ impl Locales {
     ) -> &'static Option<Box<ArcLoader>> {
         static CELL: OnceCell<Option<Box<ArcLoader>>> = OnceCell::new();
         CELL.get_or_init(|| loader)
+    }
+
+    pub fn languages(&self) -> &LocaleMap {
+        &self.languages
+    }
+
+    pub fn is_multi_lingual(&self) -> bool {
+        self.languages().multi
     }
 
     pub fn loader(&self) -> &'static Option<Box<ArcLoader>> {

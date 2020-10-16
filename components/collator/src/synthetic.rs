@@ -65,7 +65,7 @@ fn build_feed(
     feed_cfg: &FeedConfig,
     channel_cfg: &ChannelConfig,
 ) -> Result<Feed> {
-    let url_path = if locales.languages.multi {
+    let url_path = if locales.is_multi_lingual() {
         Some(info.get_lang())
     } else {
         None
@@ -271,7 +271,7 @@ pub fn feed(
 
             let mut item_data = data_source.clone();
 
-            let url_path = if locales.languages.multi {
+            let url_path = if locales.is_multi_lingual() {
                 Some(info.get_lang())
             } else {
                 None

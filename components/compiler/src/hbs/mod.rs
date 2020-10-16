@@ -12,10 +12,9 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::{engine::TemplateEngine, markdown, CollatedPage};
+use config::{engine::TemplateEngine, markdown};
 
-use crate::context::BuildContext;
-use crate::parser::Parser;
+use crate::{context::BuildContext, parser::Parser, page::CollatedPage};
 
 mod helpers;
 

@@ -2,18 +2,16 @@ use std::collections::HashMap;
 use std::mem;
 use std::path::PathBuf;
 
-use url::Url;
 use chrono::prelude::*;
 
 pub use jsonfeed::{Attachment, Author, Feed};
 
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use crate::{
-    date::DateConfig, indexer::QueryList, script::ScriptAsset, href::UrlPath,
+    indexer::QueryList, script::ScriptAsset, href::UrlPath,
     style::StyleAsset, utils::toml_datetime::from_toml_datetime, Config, Error,
     Result, RuntimeOptions,
 };
@@ -25,49 +23,6 @@ pub(crate) mod file_context;
 pub(crate) mod paginate;
 
 pub use paginate::{PageLink, PaginateInfo};
-
-#[serde_as]
-#[skip_serializing_none]
-#[derive(Serialize)]
-#[serde(default, rename_all = "kebab-case")]
-pub struct CollatedPage<'a> {
-    #[serde(flatten)]
-    page: &'a Page,
-
-    lang: &'a str,
-    charset: &'a str,
-    host: &'a str,
-    #[serde_as(as = "DisplayFromStr")]
-    website: &'a Url,
-
-    date: &'a Option<DateConfig>,
-
-    // Paths referenced in a menu when MENU.md convention is used
-    //  FIXME: use a better name for the main menu
-    pub main: Vec<&'a String>,
-    pub menus: HashMap<&'a String, Vec<&'a String>>,
-
-    generator: &'a str,
-    #[serde_as(as = "DisplayFromStr")]
-    version: &'a Version,
-}
-
-impl<'a> CollatedPage<'a> {
-    pub fn new(config: &'a Config, page: &'a Page, lang: &'a str) -> Self {
-        Self {
-            page,
-            lang,
-            charset: config.charset(),
-            host: config.host(),
-            website: config.website(),
-            date: &config.date,
-            main: Default::default(),
-            menus: Default::default(),
-            generator: crate::generator::id(),
-            version: config.version(),
-        }
-    }
-}
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -131,9 +86,6 @@ pub struct Page {
     #[serde(skip_deserializing)]
     pub feed: Option<Feed>,
 
-    // NOTE: that we do not define `context` as it would
-    // NOTE: create a recursive data type; the template
-    // NOTE: logic should inject it into `vars`
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }

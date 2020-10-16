@@ -68,6 +68,7 @@ type Result<T> = std::result::Result<T, Error>;
 mod compile;
 mod context;
 mod hbs;
+mod page;
 pub mod parser;
 pub mod run;
 

@@ -293,7 +293,7 @@ impl<'a> Invalidator<'a> {
 
     /// Extract locale identifier from a file name when possible.
     fn extract_locale(&self, file: &PathBuf) -> (Option<String>, PathBuf) {
-        let languages = self.project.locales.languages.get_translations();
+        let languages = self.project.locales.languages().get_translations();
         if let Some((lang, path)) =
             collator::get_locale_file_info(&file.as_path(), &languages)
         {

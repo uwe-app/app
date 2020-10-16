@@ -2,7 +2,6 @@ use std::io;
 
 use handlebars::*;
 
-//pub mod author;
 pub mod bookmark;
 pub mod crumbtrail;
 pub mod date;
@@ -11,7 +10,6 @@ pub mod feed;
 pub mod include;
 pub mod json;
 pub mod link;
-//pub mod livereload;
 pub mod markdown;
 pub mod matcher;
 pub mod menu;
