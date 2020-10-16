@@ -195,5 +195,8 @@ pub(crate) async fn prepare(
         hooks.prepare(&opts.source, &project)?;
     }
 
+    let website = opts.settings.get_canonical_url(cfg)?;
+    cfg.set_website(website);
+
     Ok(opts)
 }

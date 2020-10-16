@@ -226,6 +226,10 @@ pub struct Config {
 
     #[serde(skip)]
     pub project: PathBuf,
+
+    #[serde_as(as = "DisplayFromStr")]
+    #[serde(skip_deserializing)]
+    website: Url,
 }
 
 impl Default for Config {
@@ -234,6 +238,7 @@ impl Default for Config {
             lang: String::from(LANG),
             host: String::from(HOST),
             version: Version::from((1,0,0)),
+            website: format!("{}{}:{}", SCHEME_HTTP, HOST, PORT).parse().unwrap(),
             charset: Some(String::from(CHARSET)),
             engine: Some(Default::default()),
             localhost: None,
@@ -277,6 +282,14 @@ impl Config {
         self.engine.as_ref().unwrap_or(&DEFAULT_ENGINE)
 
         //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
+    }
+
+    pub fn website(&self) -> &Url {
+        &self.website 
+    }
+
+    pub fn set_website(&mut self, url: Url) {
+        self.website = url; 
     }
 
     pub fn version(&self) -> &Version {

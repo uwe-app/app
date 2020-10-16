@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::mem;
 use std::path::PathBuf;
 
+use url::Url;
 use chrono::prelude::*;
+
 pub use jsonfeed::{Attachment, Author, Feed};
 
 use semver::Version;
@@ -36,6 +38,9 @@ pub struct CollatedPage<'a> {
     pub charset: &'a str,
     pub date: &'a Option<DateConfig>,
 
+    #[serde_as(as = "DisplayFromStr")]
+    pub website: &'a Url,
+
     // Paths referenced in a menu when MENU.md convention is used
     //  FIXME: use a better name for the main menu
     pub main: Vec<&'a String>,
@@ -53,6 +58,7 @@ impl<'a> CollatedPage<'a> {
             lang,
             charset: config.charset(),
             date: &config.date,
+            website: config.website(),
             main: Default::default(),
             menus: Default::default(),
             generator: crate::generator::id(),
