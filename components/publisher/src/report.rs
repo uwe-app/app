@@ -3,17 +3,8 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use ignore::WalkBuilder;
-use thiserror::Error;
 
-use utils;
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error(transparent)]
-    StripPrefix(#[from] std::path::StripPrefixError),
-    #[error(transparent)]
-    Ignore(#[from] ignore::Error),
-}
+use crate::{Error, Result};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct ResultFile {
@@ -40,7 +31,7 @@ impl FileBuilder {
         }
     }
 
-    fn add<P: AsRef<Path>>(&mut self, raw: P) -> Result<(), Error> {
+    fn add<P: AsRef<Path>>(&mut self, raw: P) -> Result<()> {
         let mut key = raw.as_ref().strip_prefix(&self.base)?.to_path_buf();
         key = if let Some(ref prefix) = self.prefix {
             let mut tmp = PathBuf::from(prefix);
@@ -70,7 +61,7 @@ impl FileBuilder {
         pth
     }
 
-    pub fn walk(&mut self) -> Result<(), Error> {
+    pub fn walk(&mut self) -> Result<()> {
         for result in WalkBuilder::new(&self.base).follow_links(true).build() {
             match result {
                 Ok(entry) => {

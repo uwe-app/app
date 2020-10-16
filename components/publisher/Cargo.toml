@@ -5,12 +5,13 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
-report = {version = "0.1", path = "../report" }
+utils = {version = "0.1", path = "../utils" }
 
 thiserror = "1"
 log = "0.4.8"
 mime_guess = "2.0"
 md-5 = "0.9.0"
+ignore = "0.4"
 #rusoto_core = {version = "0.45.0", default-features = false, features = ["rustls"]}
 rusoto_core = "0.45.0"
 rusoto_signature = "0.45.0"

@@ -86,9 +86,6 @@ pub enum Error {
     Preference(#[from] preference::Error),
 
     #[error(transparent)]
-    Report(#[from] report::Error),
-
-    #[error(transparent)]
     Publish(#[from] publisher::Error),
 
     #[error(transparent)]

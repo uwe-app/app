@@ -2264,16 +2264,17 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "futures-util",
+ "ignore",
  "log",
  "md-5",
  "mime_guess",
- "report",
  "rusoto_core",
  "rusoto_s3",
  "rusoto_signature",
  "thiserror",
  "tokio",
  "tokio-util",
+ "utils",
 ]
 
 [[package]]
@@ -2579,15 +2580,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "report"
-version = "0.1.0"
-dependencies = [
- "ignore",
- "thiserror",
- "utils",
 ]
 
 [[package]]
@@ -3856,7 +3848,6 @@ dependencies = [
  "pretty_env_logger",
  "publisher",
  "release",
- "report",
  "scm",
  "scopeguard",
  "semver 0.10.0",

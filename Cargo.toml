@@ -22,7 +22,6 @@ members = [
   "components/preference",
   "components/publisher",
   "components/release",
-  "components/report",
   "components/scm",
   "components/server",
   "components/site",
@@ -45,7 +44,6 @@ plugin = {version = "0.1", path = "components/plugin" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 release = {version = "0.1", path = "components/release" }
-report = {version = "0.1", path = "components/report" }
 server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }
 utils = {version = "0.1", path = "components/utils" }
