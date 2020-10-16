@@ -2,7 +2,7 @@ use std::io;
 
 use handlebars::*;
 
-pub mod author;
+//pub mod author;
 pub mod bookmark;
 pub mod crumbtrail;
 pub mod date;

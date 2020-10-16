@@ -92,12 +92,13 @@ impl<'a> ParserBuilder<'a> {
 
     pub fn helpers(mut self) -> Result<Self> {
         // Configure helpers
-        self.handlebars.register_helper(
-            "author",
-            Box::new(helpers::author::AuthorMeta {
-                context: Arc::clone(&self.context),
-            }),
-        );
+        //self.handlebars.register_helper(
+            //"author",
+            //Box::new(helpers::author::AuthorMeta {
+                //context: Arc::clone(&self.context),
+            //}),
+        //);
+
         self.handlebars.register_helper(
             "partial",
             Box::new(helpers::partial::Partial {
