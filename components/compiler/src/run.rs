@@ -5,7 +5,7 @@ use log::info;
 use collator::{
     Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
 };
-use config::{CollatedPage, Config, Page, ProfileName};
+use config::{CollatedPage, Config, Page, profile::{Profiles, ProfileName}};
 
 use config::transform::HtmlTransformFlags;
 use transform::text::TextExtraction;
@@ -105,9 +105,10 @@ fn should_minify_html<P: AsRef<Path>>(
     if html_extension {
         if let Some(ref minify) = config.minify {
             if let Some(ref html) = minify.html {
-                if !html.profiles.is_empty() {
-                    return html.profiles.contains(tag);
-                }
+                return html.profiles().is_match(tag);
+                //if !html.profiles.is_empty() {
+                    //return html.profiles.contains(tag);
+                //}
             }
         }
     }

@@ -22,6 +22,7 @@ use crate::{
     link::LinkConfig,
     live_reload::LiveReload,
     menu::MenuConfig,
+    minify::MinifyConfig,
     page::{Author, Page},
     profile::{ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
@@ -438,16 +439,6 @@ pub struct NodeConfig {
     // Allow custom mappings for NODE_ENV
     pub debug: Option<String>,
     pub release: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct MinifyConfig {
-    pub html: Option<MinifyFormat>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct MinifyFormat {
-    pub profiles: Vec<ProfileName>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

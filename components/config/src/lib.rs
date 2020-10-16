@@ -128,6 +128,7 @@ pub mod license;
 mod link;
 mod live_reload;
 mod menu;
+mod minify;
 mod options;
 mod page;
 pub mod plugin;
