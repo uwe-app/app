@@ -158,6 +158,9 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     if args.port.is_some() {
         settings.port = args.port;
     }
+    if args.offline.is_some() {
+        settings.offline = args.offline.clone();
+    }
 }
 
 pub(crate) async fn prepare(

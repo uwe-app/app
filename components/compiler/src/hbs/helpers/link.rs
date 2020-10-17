@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use handlebars::*;
 use log::debug;
-use serde_json::json;
 
 use collator::LinkCollate;
 
@@ -23,15 +22,6 @@ impl HelperDef for Link {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
-
-        //let abs = h
-            //.hash_get("abs")
-            //.map(|v| v.value())
-            //.or(Some(&json!(false)))
-            //.and_then(|v| v.as_bool())
-            //.ok_or(RenderError::new(
-                //"Type error for `link` helper, hash parameter `abs` must be a boolean",
-            //))?;
 
         let abs = rc
             .evaluate(ctx, "@root/absolute")?

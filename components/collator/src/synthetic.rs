@@ -165,8 +165,8 @@ fn build_feed(
                 Some(config
                     .authors()
                     .iter()
-                    .filter(|(k, v)| author_refs.contains(k))
-                    .map(|(k, v)| v)
+                    .filter(|(k, _)| author_refs.contains(k))
+                    .map(|(_, v)| v)
                     .cloned()
                     .collect::<Vec<_>>())
             } else { None };

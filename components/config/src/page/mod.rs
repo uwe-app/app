@@ -12,7 +12,7 @@ use serde_with::skip_serializing_none;
 
 use crate::{
     href::UrlPath, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
-    utils::toml_datetime::from_toml_datetime, Config, Error, Result,
+    utils::toml_datetime::from_toml_datetime, Config, Result,
     RuntimeOptions,
 };
 

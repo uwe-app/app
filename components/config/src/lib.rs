@@ -19,9 +19,6 @@ pub enum Error {
     #[error("No site configuration in {0}")]
     NoSiteConfig(PathBuf),
 
-    #[error("No author found for {0}")]
-    NoAuthor(String),
-
     #[error("Hook defined in {0} has an empty command path")]
     HookPathEmpty(PathBuf),
 

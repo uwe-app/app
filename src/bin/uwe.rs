@@ -144,6 +144,7 @@ async fn run(cmd: Command) -> Result<()> {
                 release: Some(args.release),
                 host: args.server.host,
                 port: args.server.port,
+                offline: Some(args.offline),
                 tls,
                 ..Default::default()
             };

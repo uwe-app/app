@@ -10,6 +10,10 @@ pub struct Build {
     #[structopt(long)]
     pub profile: Option<String>,
 
+    /// Offline mode, do not attempt plugin installation
+    #[structopt(short, long)]
+    pub offline: bool,
+
     /// Enable live reload
     #[structopt(short, long)]
     pub live: bool,

@@ -10,6 +10,9 @@ pub enum Error {
     #[error("Invalid resource operation attempted on {0}")]
     InvalidResourceOperation(PathBuf),
 
+    #[error("Author references {0} not found in {1}")]
+    NoAuthor(String, PathBuf),
+
     #[error("Parser got invalid file type")]
     ParserFileType,
 

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use url::Url;
 
@@ -9,6 +10,8 @@ use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 use config::{date::DateConfig, page::Page, Config};
 
 use locale::{LocaleMap, Locales};
+
+use crate::{Error, Result};
 
 #[serde_as]
 #[skip_serializing_none]
@@ -50,23 +53,36 @@ pub struct CollatedAuthors<'config> {
 
 impl<'config, 'locale> CollatedPage<'config, 'locale> {
     pub fn new(
+        file: &PathBuf,
         config: &'config Config,
         locales: &'locale Locales,
         page: &'config Page,
         lang: &'config str,
-    ) -> Self {
+    ) -> Result<Self> {
 
         let languages = if locales.is_multi_lingual() {
             Some(locales.languages())
         } else { None };
 
-        let attributed = if let Some(ref author_refs) = page.authors() {
-            Some(config
+        let attributed = if let Some(author_refs) = page.authors() {
+            let authors = config
                 .authors()
                 .iter()
-                .filter(|(k, v)| author_refs.contains(k))
-                .map(|(k, v)| v)
-                .collect::<Vec<_>>())
+                .filter(|(k, _)| author_refs.contains(k))
+                .map(|(_, v)| v)
+                .collect::<Vec<_>>();
+
+            if authors.len() != author_refs.len() {
+                let missing =
+                    author_refs
+                    .iter()
+                    .filter(|r| !config.authors().contains_key(r.as_str()))
+                    .cloned()
+                    .collect::<Vec<String>>();
+                return Err(Error::NoAuthor(missing.join(", "), file.clone()))
+            }
+
+            Some(authors)
         } else { None };
 
         let authors = CollatedAuthors {
@@ -74,10 +90,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             attributed,
         };
 
-        //println!("Authors {:#?}", authors);
-        //println!("Authors {:#?}", page.authors());
-
-        Self {
+        Ok(Self {
             page,
             lang,
             charset: config.charset(),
@@ -90,6 +103,6 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             menus: Default::default(),
             generator: config::generator::id(),
             version: config.version(),
-        }
+        })
     }
 }

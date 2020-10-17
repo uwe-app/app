@@ -139,6 +139,7 @@ pub struct ProfileSettings {
     pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
     pub parallel: Option<bool>,
+    pub offline: Option<bool>,
 
     pub assets: Option<PathBuf>,
     pub locales: Option<PathBuf>,
@@ -188,6 +189,7 @@ impl Default for ProfileSettings {
             types: Some(Default::default()),
             strict: None,
             parallel: None,
+            offline: None,
 
             assets: Some(PathBuf::from(config::ASSETS)),
             locales: Some(PathBuf::from(config::LOCALES)),
@@ -241,6 +243,9 @@ impl ProfileSettings {
         }
         if other.parallel.is_some() {
             self.parallel = mem::take(&mut other.parallel)
+        }
+        if other.offline.is_some() {
+            self.offline = mem::take(&mut other.offline)
         }
 
         if other.assets.is_some() {
@@ -374,6 +379,10 @@ impl ProfileSettings {
         } else {
             config::PORT
         }
+    }
+
+    pub fn is_offline(&self) -> bool {
+        self.offline.is_some() && self.offline.unwrap()
     }
 
     pub fn is_parallel(&self) -> bool {

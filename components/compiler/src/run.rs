@@ -168,7 +168,7 @@ pub async fn parse(
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
     let mut page_data =
-        CollatedPage::new(&ctx.config, &ctx.locales, data, lang);
+        CollatedPage::new(file, &ctx.config, &ctx.locales, data, lang)?;
 
     let layout = if !standalone {
         collation.find_layout(&data.layout, true)

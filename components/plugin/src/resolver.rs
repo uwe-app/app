@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::info;
+use log::{info, warn};
 
 use futures::future;
 
@@ -41,9 +41,10 @@ type IntermediateMap = HashMap<LockFileEntry, (Dependency, SolvedReference)>;
 pub async fn resolve<P: AsRef<Path>>(
     project: P,
     dependencies: DependencyMap,
+    offline: bool,
 ) -> Result<ResolvedPlugins> {
     let mut resolver =
-        Resolver::new(project.as_ref().to_path_buf(), dependencies)?;
+        Resolver::new(project.as_ref().to_path_buf(), dependencies, offline)?;
     resolver.solve().await?;
     resolver.install().await?;
     resolver.prepare()?;
@@ -76,10 +77,11 @@ struct Resolver<'a> {
     lock: ResolverLock,
     intermediate: IntermediateMap,
     resolved: ResolvedPlugins,
+    offline: bool,
 }
 
 impl<'a> Resolver<'a> {
-    pub fn new(project: PathBuf, dependencies: DependencyMap) -> Result<Self> {
+    pub fn new(project: PathBuf, dependencies: DependencyMap, offline: bool) -> Result<Self> {
         let registry = registry::new_registry()?;
         let path = LockFile::get_lock_file(&project);
         let lock = ResolverLock::new(path)?;
@@ -90,6 +92,7 @@ impl<'a> Resolver<'a> {
             lock,
             intermediate: HashMap::new(),
             resolved: Vec::new(),
+            offline,
         })
     }
 
@@ -153,13 +156,20 @@ impl<'a> Resolver<'a> {
         self.resolved.append(&mut done);
 
         if !difference.is_empty() {
-            info!("Update registry cache");
-            runtime::fetch().await?;
+            if !self.offline {
+                info!("Update registry cache");
+                runtime::fetch().await?;
+            } else {
+                warn!("Skip registry update in offline mode");
+            }
 
             // Refresh the lock file entries in case we can resolve
             // newer versions from the updated registry information
             // FIXME: only run this if the cache registry changed
             let diff = self.refresh(&mut difference).await?;
+
+            // FIXME: support offline flag for installations from the registry
+            // FIXME: and from remote repositories
 
             info!("Installing dependencies");
             self.install_diff(diff).await?;
