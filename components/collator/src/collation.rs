@@ -76,9 +76,6 @@ pub struct CollateInfo {
     // and book menu.
     pub(crate) books: HashMap<String, Vec<Arc<PathBuf>>>,
 
-    // List of series
-    pub(crate) series: HashMap<String, Vec<Arc<PathBuf>>>,
-
     // Custom page specific layouts
     pub(crate) layouts: HashMap<String, Arc<PathBuf>>,
 
@@ -152,11 +149,6 @@ pub trait Collate {
     fn get_graph(&self) -> &Graph;
 
     fn find_menu(&self, name: &str) -> Option<&MenuResult>;
-}
-
-/// Access to the collated series.
-pub trait SeriesCollate {
-    fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>>;
 }
 
 /// Access to the layouts.
@@ -277,14 +269,6 @@ impl Collate for Collation {
     }
 }
 
-impl SeriesCollate for Collation {
-    fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
-        self.locale
-            .get_series(key)
-            .or(self.fallback.get_series(key))
-    }
-}
-
 impl LayoutCollate for Collation {
     fn get_layout(&self) -> Option<&Arc<PathBuf>> {
         self.locale.get_layout().or(self.fallback.get_layout())
@@ -366,12 +350,6 @@ impl Collate for CollateInfo {
             }
         }
         None
-    }
-}
-
-impl SeriesCollate for CollateInfo {
-    fn get_series(&self, key: &str) -> Option<&Vec<Arc<PathBuf>>> {
-        self.series.get(key)
     }
 }
 
