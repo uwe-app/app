@@ -13,12 +13,6 @@ use crate::{
 
 static MENU_TEMPLATE_PREFIX: &str = "@menu";
 
-fn get_layout(l: &PathBuf) -> (String, PathBuf) {
-    let layout = l.to_path_buf();
-    let name = layout.to_string_lossy().into_owned();
-    (name, layout)
-}
-
 #[derive(Debug, Default)]
 pub struct Collation {
     pub fallback: Arc<CollateInfo>,
@@ -158,16 +152,7 @@ pub trait LayoutCollate {
 
     /// Get all layouts keyed by layout name suitable
     /// for configuring as templates.
-    fn layouts(&self) -> HashMap<String, PathBuf>;
-
-    /// Attempt to find a layout for a file path searching
-    /// custom layouts and falling back to the default layout
-    /// if no custom layout was found for the key.
-    fn find_layout(
-        &self,
-        key: &Option<String>,
-        default: bool,
-    ) -> Option<&PathBuf>;
+    fn layouts(&self) -> &HashMap<String, Arc<PathBuf>>;
 }
 
 pub trait LinkCollate {
@@ -274,18 +259,9 @@ impl LayoutCollate for Collation {
         self.locale.get_layout().or(self.fallback.get_layout())
     }
 
-    fn layouts(&self) -> HashMap<String, PathBuf> {
+    fn layouts(&self) -> &HashMap<String, Arc<PathBuf>> {
         // TODO: prefer locale layouts?
         self.fallback.layouts()
-    }
-
-    fn find_layout(
-        &self,
-        key: &Option<String>,
-        default: bool,
-    ) -> Option<&PathBuf> {
-        // TODO: prefer locale layouts?
-        self.fallback.find_layout(key, default)
     }
 }
 
@@ -358,36 +334,8 @@ impl LayoutCollate for CollateInfo {
         self.layouts.get(config::DEFAULT_LAYOUT_NAME)
     }
 
-    fn layouts(&self) -> HashMap<String, PathBuf> {
-        let mut map = HashMap::new();
-        for (_, layout) in self.layouts.iter() {
-            let (name, path) = get_layout(layout);
-            map.insert(name, path);
-        }
-
-        map
-    }
-
-    fn find_layout(
-        &self,
-        key: &Option<String>,
-        default: bool,
-    ) -> Option<&PathBuf> {
-        // Try to lookup a named layout.
-        if let Some(ref key) = key {
-            if let Some(ref layout) = self.layouts.get(key) {
-                return Some(layout);
-            }
-        }
-
-        // Use the default layout.
-        if default {
-            if let Some(ref layout) = self.get_layout() {
-                return Some(layout);
-            }
-        }
-
-        None
+    fn layouts(&self) -> &HashMap<String, Arc<PathBuf>> {
+        &self.layouts
     }
 }
 

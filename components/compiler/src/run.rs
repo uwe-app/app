@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use log::info;
 
 use collator::{
-    Collate, LayoutCollate, Resource, ResourceOperation, ResourceTarget,
+    Collate, Resource, ResourceOperation, ResourceTarget,
 };
 use config::{
     profile::{ProfileName, Profiles},
@@ -171,9 +171,9 @@ pub async fn parse(
         CollatedPage::new(file, &ctx.config, &ctx.locales, data, lang)?;
 
     let layout = if !standalone {
-        collation.find_layout(&data.layout, true)
+        &data.layout
     } else {
-        None
+        &None
     };
 
     // Try to resolve a menu for the file

@@ -267,9 +267,10 @@ impl<'a> ParserBuilder<'a> {
     }
 
     pub fn layouts(mut self) -> Result<Self> {
-        let layouts = self.context.collation.read().unwrap().layouts();
+        let layouts = self.context.collation.read().unwrap().layouts().clone();
         for (name, path) in layouts.iter() {
-            self.handlebars.register_template_file(name, path)?;
+            //println!("Registering layout with name {:?}", name);
+            self.handlebars.register_template_file(name, path.as_ref())?;
         }
         Ok(self)
     }
@@ -299,11 +300,11 @@ impl<'a> HandlebarsParser<'a> {
         frontmatter::Config::new_markdown(false)
     }
 
-    fn layout(&self, data: impl Serialize, layout: &PathBuf) -> Result<String> {
-        let layout_name = layout.to_string_lossy().into_owned();
+    fn layout(&self, data: impl Serialize, layout: &String) -> Result<String> {
+        //let layout_name = layout.to_string_lossy().into_owned();
         return self
             .handlebars
-            .render(&layout_name, &data)
+            .render(&layout, &data)
             .map_err(Error::from);
     }
 
@@ -341,9 +342,9 @@ impl Parser for HandlebarsParser<'_> {
         &self,
         file: &PathBuf,
         data: CollatedPage,
-        layout: Option<&PathBuf>,
+        layout: &Option<String>,
     ) -> Result<String> {
-        if let Some(layout) = layout {
+        if let Some(ref layout) = layout {
             self.layout(data, layout)
         } else {
             self.standalone(file, data)
