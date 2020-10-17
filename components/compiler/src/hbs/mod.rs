@@ -302,7 +302,6 @@ impl<'a> HandlebarsParser<'a> {
     }
 
     fn layout(&self, data: impl Serialize, layout: &String) -> Result<String> {
-        //let layout_name = layout.to_string_lossy().into_owned();
         return self
             .handlebars
             .render(&layout, &data)
