@@ -200,7 +200,10 @@ pub struct Config {
     pub profile: Option<HashMap<String, ProfileSettings>>,
     pub publish: Option<PublishConfig>,
     pub index: Option<HashMap<String, IndexRequest>>,
-    pub authors: Option<HashMap<String, Author>>,
+
+
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    authors: HashMap<String, Author>,
 
     // Menus keyed by name
     pub menu: Option<MenuConfig>,
@@ -264,7 +267,7 @@ impl Default for Config {
             profile: Some(Default::default()),
             publish: Some(Default::default()),
             index: None,
-            authors: None,
+            authors: HashMap::new(),
             menu: None,
             sitemap: Some(Default::default()),
             robots: Some(Default::default()),
@@ -317,16 +320,9 @@ impl Config {
         self.charset.as_ref().unwrap()
     }
 
-    /*
-    pub fn get_global_menu(&self) -> Option<&MenuConfig> {
-        if let Some(ref page) = self.page {
-            if let Some(ref menu) = page.menu {
-                return Some(menu)
-            }
-        }
-        None
+    pub fn authors(&self) -> &HashMap<String, Author> {
+        &self.authors
     }
-    */
 
     pub fn get_local_host_name(&self, infer_from_host: bool) -> String {
         if let Some(ref hostname) = self.localhost {

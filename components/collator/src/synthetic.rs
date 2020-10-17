@@ -78,8 +78,12 @@ fn build_feed(
     feed.language = Some(info.lang.clone());
     feed.home_page_url = Some(base_url.to_string());
 
-    if let Some(ref authors) = config.authors {
-        let authors = authors.values().map(|v| v.clone()).collect::<Vec<_>>();
+    if !config.authors().is_empty() {
+        let authors = config.authors()
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+
         feed.authors = Some(authors);
     }
 
@@ -157,8 +161,15 @@ fn build_feed(
             };
 
             // Page-level authors
-            item.authors = p.authors.clone();
-
+            item.authors = if let Some(ref author_refs) = p.authors() {
+                Some(config
+                    .authors()
+                    .iter()
+                    .filter(|(k, v)| author_refs.contains(k))
+                    .map(|(k, v)| v)
+                    .cloned()
+                    .collect::<Vec<_>>())
+            } else { None };
             // Pass through tags from the `meta` taxonomies
             if let Some(ref taxonomies) = p.taxonomies {
                 if let Some(ref tags) = taxonomies.get(config::TAGS) {

@@ -56,8 +56,7 @@ pub struct Page {
     /// Instruction for helpers to make links absolute.
     absolute: Option<bool>,
 
-    pub authors: Option<Vec<Author>>,
-    pub byline: Option<Vec<String>>,
+    authors: Option<Vec<String>>,
 
     pub query: Option<QueryList>,
 
@@ -109,7 +108,6 @@ impl Default for Page {
             meta: None,
             open_graph: None,
             authors: None,
-            byline: None,
             rewrite_index: None,
             render: Some(true),
             draft: None,
@@ -154,6 +152,10 @@ impl Page {
         page.seal(config, options, &file, &destination, None)?;
 
         Ok(page)
+    }
+
+    pub fn authors(&self) -> &Option<Vec<String>> {
+        &self.authors
     }
 
     //pub fn is_standalone(&self) -> bool {
@@ -245,15 +247,17 @@ impl Page {
         config: &Config,
         _opts: &RuntimeOptions,
     ) -> Result<()> {
-        let mut authors_list = if let Some(ref author) = self.authors {
-            author.clone()
-        } else {
-            Vec::new()
-        };
+
+        //let mut authors_list = if let Some(ref author) = self.authors {
+            //author.clone()
+        //} else {
+            //Vec::new()
+        //};
 
         // TODO: finalize this page data after computation
         // TODO: build dynamic sort keys like date tuple (year, month, day) etc.
 
+        /*
         if let Some(ref list) = self.byline {
             for id in list {
                 if let Some(ref authors) = config.authors {
@@ -269,6 +273,7 @@ impl Page {
         }
 
         self.authors = Some(authors_list);
+        */
 
         Ok(())
     }
@@ -336,10 +341,6 @@ impl Page {
 
         if let Some(authors) = other.authors.as_mut() {
             self.authors = Some(mem::take(authors));
-        }
-
-        if let Some(byline) = other.byline.as_mut() {
-            self.byline = Some(mem::take(byline));
         }
 
         if let Some(query) = other.query.as_mut() {

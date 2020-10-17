@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use url::Url;
 
-use config::semver::Version;
+use config::{semver::Version, Author};
 use serde::Serialize;
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
@@ -28,6 +28,8 @@ pub struct CollatedPage<'config, 'locale> {
 
     date: &'config Option<DateConfig>,
 
+    authors: CollatedAuthors<'config>,
+
     // Paths referenced in a menu when MENU.md convention is used
     //  FIXME: use a better name for the main menu
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -37,6 +39,13 @@ pub struct CollatedPage<'config, 'locale> {
     generator: &'config str,
     #[serde_as(as = "DisplayFromStr")]
     version: &'config Version,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(default)]
+pub struct CollatedAuthors<'config> {
+    all: &'config HashMap<String, Author>,
+    attributed: Option<Vec<&'config Author>>,
 }
 
 impl<'config, 'locale> CollatedPage<'config, 'locale> {
@@ -51,12 +60,30 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             Some(locales.languages())
         } else { None };
 
+        let attributed = if let Some(ref author_refs) = page.authors() {
+            Some(config
+                .authors()
+                .iter()
+                .filter(|(k, v)| author_refs.contains(k))
+                .map(|(k, v)| v)
+                .collect::<Vec<_>>())
+        } else { None };
+
+        let authors = CollatedAuthors {
+            all: config.authors(),
+            attributed,
+        };
+
+        //println!("Authors {:#?}", authors);
+        //println!("Authors {:#?}", page.authors());
+
         Self {
             page,
             lang,
             charset: config.charset(),
             host: config.host(),
             website: config.website(),
+            authors,
             languages,
             date: &config.date,
             main: Default::default(),
