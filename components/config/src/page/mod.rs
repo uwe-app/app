@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use chrono::prelude::*;
 
-pub use jsonfeed::{Attachment, Author, Feed};
+use jsonfeed::{Attachment, Feed};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -18,11 +18,13 @@ use crate::{
 
 use self::{feed::FeedEntry, file_context::FileContext};
 
+pub(crate) mod author;
 pub(crate) mod feed;
 pub(crate) mod file_context;
 pub(crate) mod paginate;
 
 pub use paginate::{PageLink, PaginateInfo};
+pub use author::Author;
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]

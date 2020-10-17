@@ -82,6 +82,7 @@ fn build_feed(
         let authors = config.authors()
             .values()
             .cloned()
+            .map(|a| a.into_json_feed())
             .collect::<Vec<_>>();
 
         feed.authors = Some(authors);
@@ -168,8 +169,10 @@ fn build_feed(
                     .filter(|(k, _)| author_refs.contains(k))
                     .map(|(_, v)| v)
                     .cloned()
+                    .map(|a| a.into_json_feed())
                     .collect::<Vec<_>>())
             } else { None };
+
             // Pass through tags from the `meta` taxonomies
             if let Some(ref taxonomies) = p.taxonomies {
                 if let Some(ref tags) = taxonomies.get(config::TAGS) {

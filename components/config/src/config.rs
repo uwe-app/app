@@ -398,6 +398,10 @@ impl Config {
                     link.prepare(&build.source)?;
                 }
 
+                for (k, mut v) in cfg.authors.iter_mut() {
+                    v.alias.get_or_insert(k.to_string());
+                }
+
                 return Ok(cfg);
             }
         }
