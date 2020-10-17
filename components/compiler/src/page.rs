@@ -48,7 +48,7 @@ pub struct CollatedPage<'config, 'locale> {
 #[serde(default)]
 pub struct CollatedAuthors<'config> {
     all: &'config HashMap<String, Author>,
-    attributed: Option<Vec<&'config Author>>,
+    attributed: Option<HashMap<&'config String, &'config Author>>,
 }
 
 impl<'config, 'locale> CollatedPage<'config, 'locale> {
@@ -69,8 +69,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
                 .authors()
                 .iter()
                 .filter(|(k, _)| author_refs.contains(k))
-                .map(|(_, v)| v)
-                .collect::<Vec<_>>();
+                .collect::<HashMap<_, _>>();
 
             if authors.len() != author_refs.len() {
                 let missing =
