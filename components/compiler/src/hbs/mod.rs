@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use log::debug;
 use serde::Serialize;
 
 use fluent_templates::FluentLoader;
@@ -269,7 +270,7 @@ impl<'a> ParserBuilder<'a> {
     pub fn layouts(mut self) -> Result<Self> {
         let layouts = self.context.collation.read().unwrap().layouts().clone();
         for (name, path) in layouts.iter() {
-            //println!("Registering layout with name {:?}", name);
+            debug!("Layout: {}", name);
             self.handlebars.register_template_file(name, path.as_ref())?;
         }
         Ok(self)

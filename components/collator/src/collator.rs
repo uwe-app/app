@@ -174,7 +174,7 @@ async fn find(
                         // Configure the default layout to use a `layouts/main.hbs` file
                         if &*key == &primary_layout {
                             info.add_layout(
-                                config::DEFAULT_LAYOUT_NAME.to_string(),
+                                config::MAIN.to_string(),
                                 Arc::clone(&key),
                             );
                         } else if path.starts_with(&layouts_dir) {
