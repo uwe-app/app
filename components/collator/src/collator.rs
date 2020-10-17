@@ -131,6 +131,12 @@ async fn find(
 
     let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
 
+    let layout_name = if primary_layout.exists() {
+        config::MAIN
+    } else {
+        config::DEFAULT_LAYOUT_NAME
+    };
+
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();
 
@@ -219,6 +225,7 @@ async fn find(
                             req.plugins,
                             &key,
                             &path,
+                            &layout_name
                         ) {
                             let _ = tx.send(e);
                         }
@@ -267,9 +274,11 @@ fn add_page(
     plugins: Option<&PluginCache>,
     key: &Arc<PathBuf>,
     path: &Path,
+    layout_name: &str,
 ) -> Result<()> {
     let builder = PageBuilder::new(info, config, options, plugins, key, path)
         .compute()?
+        .layout(layout_name)?
         .queries()?
         .seal()?
         .scripts()?
@@ -281,8 +290,7 @@ fn add_page(
 
     let (info, key, destination, page) = builder.build();
 
-    // FIXME: assign pages to menu result entries
-
+    // Assign pages to menu result entries
     if let Some(ref menu) = config.menu {
         // Verify file references as early as possible
         for (k, v) in menu.entries.iter() {

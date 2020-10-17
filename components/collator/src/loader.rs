@@ -30,7 +30,6 @@ pub fn compute<P: AsRef<Path>>(
     f: P,
     config: &Config,
     opts: &RuntimeOptions,
-    frontmatter: bool,
 ) -> Result<Page> {
     let file = f.as_ref();
 
@@ -62,21 +61,19 @@ pub fn compute<P: AsRef<Path>>(
         }
     }
 
-    if frontmatter {
-        let file_type = opts.get_type(f.as_ref());
-        let mut conf: frontmatter::Config = Default::default();
-        match file_type {
-            FileType::Markdown => {
-                conf = frontmatter::Config::new_markdown(true)
-            }
-            FileType::Template => conf = frontmatter::Config::new_html(true),
-            _ => {}
+    let file_type = opts.get_type(f.as_ref());
+    let mut conf: frontmatter::Config = Default::default();
+    match file_type {
+        FileType::Markdown => {
+            conf = frontmatter::Config::new_markdown(true)
         }
+        FileType::Template => conf = frontmatter::Config::new_html(true),
+        _ => {}
+    }
 
-        let (_, has_fm, fm) = frontmatter::load(file, conf)?;
-        if has_fm {
-            parse_into(file, fm, &mut page)?;
-        }
+    let (_, has_fm, fm) = frontmatter::load(file, conf)?;
+    if has_fm {
+        parse_into(file, fm, &mut page)?;
     }
 
     page.compute(config, opts)?;

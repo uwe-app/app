@@ -53,8 +53,6 @@ pub static PACKAGE: &str = "package";
 pub static HTML: &str = "html";
 pub static INDEX_STEM: &str = "index";
 pub static INDEX_HTML: &str = "index.html";
-pub static LAYOUT_HBS: &str = "main.hbs";
-pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 pub static MD: &str = "md";
 pub static TOML: &str = "toml";
 pub static JSON: &str = "json";
@@ -109,6 +107,10 @@ pub static OG_TITLE: &str = "title";
 pub static OG_DESCRIPTION: &str = "description";
 
 static DEFAULT_ICON: &str = "/assets/favicon.png";
+
+pub static LAYOUT_HBS: &str = "main.hbs";
+pub static MAIN: &str = "main";
+pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 
 const fn get_default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars

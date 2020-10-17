@@ -76,7 +76,14 @@ impl<'a> PageBuilder<'a> {
 
     pub fn compute(mut self) -> Result<Self> {
         self.page =
-            loader::compute(&self.path, self.config, self.options, true)?;
+            loader::compute(&self.path, self.config, self.options)?;
+        Ok(self)
+    }
+
+    /// Assign a layout name to the page preferring any existing
+    /// assigned layout.
+    pub fn layout(mut self, layout_name: &str) -> Result<Self> {
+        self.page.layout.get_or_insert(layout_name.to_string());
         Ok(self)
     }
 
