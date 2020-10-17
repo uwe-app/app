@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use log::debug;
-use serde::Serialize;
+//use serde::Serialize;
 
 use fluent_templates::FluentLoader;
 use handlebars::Handlebars;
@@ -13,7 +13,7 @@ use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
 
-use config::{engine::TemplateEngine, markdown};
+use config::engine::TemplateEngine;
 
 use crate::{context::BuildContext, page::CollatedPage, parser::Parser};
 
@@ -97,7 +97,9 @@ impl<'a> ParserBuilder<'a> {
 
         self.handlebars.register_helper(
             "document",
-            Box::new(helpers::document::Document {}),
+            Box::new(helpers::document::Document {
+                context: Arc::clone(&self.context),
+            }),
         );
 
         self.handlebars.register_helper(
@@ -306,65 +308,15 @@ pub struct HandlebarsParser<'a> {
     handlebars: Handlebars<'a>,
 }
 
-impl<'a> HandlebarsParser<'a> {
-    fn get_front_matter_config(&self, file: &PathBuf) -> frontmatter::Config {
-        if let Some(ext) = file.extension() {
-            if ext == config::HTML {
-                return frontmatter::Config::new_html(false);
-            }
-        }
-        frontmatter::Config::new_markdown(false)
-    }
-
-    fn layout(&self, data: impl Serialize) -> Result<String> {
+impl Parser for HandlebarsParser<'_> {
+    fn parse(
+        &self,
+        _file: &PathBuf,
+        data: CollatedPage,
+    ) -> Result<String> {
         self
             .handlebars
             .render_template(DOCUMENT, &data)
             .map_err(Error::from)
-    }
-
-    fn standalone(
-        &self,
-        file: &PathBuf,
-        data: impl Serialize,
-    ) -> Result<String> {
-
-        let (content, _has_fm, _fm) =
-            frontmatter::load(file, self.get_front_matter_config(file))?;
-
-        let mut result = self
-            .handlebars
-            .render_template(&content, &data)
-            .map_err(Error::from)?;
-
-        // Normally the `partial` helper will convert to markdown
-        // when rendering a page but when standalone we don't expect
-        // `block` to be called and if the page is markdown it is not
-        // converted to HTML so this catches that case.
-        //
-        // This is particularly useful for plugins which ship their
-        // own documentation via a standard website but don't want to
-        // add any direct dependencies until we have a concept of `dev-dependencies`.
-        if self.context.options.is_markdown_file(file) {
-            result =
-                markdown::render(&mut Cow::from(result), &self.context.config);
-        }
-
-        Ok(result)
-    }
-}
-
-impl Parser for HandlebarsParser<'_> {
-    fn parse(
-        &self,
-        file: &PathBuf,
-        data: CollatedPage,
-        layout: &Option<String>,
-    ) -> Result<String> {
-        if let Some(ref layout) = layout {
-            self.layout(data)
-        } else {
-            self.standalone(file, data)
-        }
     }
 }

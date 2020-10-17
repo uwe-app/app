@@ -163,18 +163,10 @@ pub async fn parse(
         &ctx.config,
     );
 
-    let standalone = data.standalone.is_some();
-
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
     let mut page_data =
         CollatedPage::new(file, &ctx.config, &ctx.locales, data, lang)?;
-
-    let layout = if !standalone {
-        &data.layout
-    } else {
-        &None
-    };
 
     // Try to resolve a menu for the file
     if let Some(parent) = file.parent() {
@@ -201,9 +193,9 @@ pub async fn parse(
     }
 
     let mut s = if minify_html {
-        minify::html(parser.parse(file, page_data, layout)?)
+        minify::html(parser.parse(file, page_data)?)
     } else {
-        parser.parse(file, page_data, layout)?
+        parser.parse(file, page_data)?
     };
 
     let mut res = ParseData::new(data.file.as_ref().unwrap().source.clone());

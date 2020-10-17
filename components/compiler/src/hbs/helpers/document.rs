@@ -96,17 +96,30 @@ impl HelperDef for Block {
 
 /// Render a document layout.
 #[derive(Clone)]
-pub struct Document {}
+pub struct Document {
+    pub context: Arc<BuildContext>,
+}
 
 impl HelperDef for Document {
     fn call<'reg: 'rc, 'rc>(
         &self,
-        _h: &Helper<'reg, 'rc>,
+        h: &Helper<'reg, 'rc>,
         r: &'reg Handlebars<'_>,
         ctx: &'rc Context,
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
+        let standalone = rc
+            .evaluate(ctx, "@root/standalone")?
+            .as_json()
+            .as_bool()
+            .unwrap_or(false);
+
+        if standalone {
+            let block = Block {context: Arc::clone(&self.context)};
+            return block.call(h, r, ctx, rc, out);
+        }
 
         let layout = rc
             .evaluate(ctx, "@root/layout")?
