@@ -17,6 +17,8 @@ use config::{engine::TemplateEngine, markdown};
 
 use crate::{context::BuildContext, page::CollatedPage, parser::Parser};
 
+static DOCUMENT: &str = "{{document}}";
+
 mod helpers;
 
 /// Generate the standard parser.
@@ -92,9 +94,22 @@ impl<'a> ParserBuilder<'a> {
 
     pub fn helpers(mut self) -> Result<Self> {
         // Configure helpers
+
         self.handlebars.register_helper(
-            "partial",
-            Box::new(helpers::partial::Partial {
+            "document",
+            Box::new(helpers::document::Document {}),
+        );
+
+        self.handlebars.register_helper(
+            "block",
+            Box::new(helpers::document::Block {
+                context: Arc::clone(&self.context),
+            }),
+        );
+
+        self.handlebars.register_helper(
+            "render",
+            Box::new(helpers::document::Render {
                 context: Arc::clone(&self.context),
             }),
         );
@@ -301,11 +316,11 @@ impl<'a> HandlebarsParser<'a> {
         frontmatter::Config::new_markdown(false)
     }
 
-    fn layout(&self, data: impl Serialize, layout: &String) -> Result<String> {
-        return self
+    fn layout(&self, data: impl Serialize) -> Result<String> {
+        self
             .handlebars
-            .render(&layout, &data)
-            .map_err(Error::from);
+            .render_template(DOCUMENT, &data)
+            .map_err(Error::from)
     }
 
     fn standalone(
@@ -313,8 +328,10 @@ impl<'a> HandlebarsParser<'a> {
         file: &PathBuf,
         data: impl Serialize,
     ) -> Result<String> {
+
         let (content, _has_fm, _fm) =
             frontmatter::load(file, self.get_front_matter_config(file))?;
+
         let mut result = self
             .handlebars
             .render_template(&content, &data)
@@ -322,7 +339,7 @@ impl<'a> HandlebarsParser<'a> {
 
         // Normally the `partial` helper will convert to markdown
         // when rendering a page but when standalone we don't expect
-        // `partial` to be called and if the page is markdown it is not
+        // `block` to be called and if the page is markdown it is not
         // converted to HTML so this catches that case.
         //
         // This is particularly useful for plugins which ship their
@@ -345,7 +362,7 @@ impl Parser for HandlebarsParser<'_> {
         layout: &Option<String>,
     ) -> Result<String> {
         if let Some(ref layout) = layout {
-            self.layout(data, layout)
+            self.layout(data)
         } else {
             self.standalone(file, data)
         }

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use chrono::prelude::*;
 
-use jsonfeed::{Attachment, Feed};
+use jsonfeed::{Feed};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -244,9 +244,10 @@ impl Page {
         Ok(())
     }
 
+    #[deprecated(since = "0.40.2", note = "Just seal and rename seal -> compute!?")]
     pub fn compute(
         &mut self,
-        config: &Config,
+        _config: &Config,
         _opts: &RuntimeOptions,
     ) -> Result<()> {
 
