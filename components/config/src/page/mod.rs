@@ -198,7 +198,7 @@ impl Page {
         };
 
         let mut file_context =
-            FileContext::new(source.clone(), output.clone(), template);
+            FileContext::new(config.project(), source.clone(), output.clone(), template);
         file_context.resolve_metadata()?;
 
         let href =

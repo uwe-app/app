@@ -7,7 +7,7 @@ use config::{semver::Version, Author};
 use serde::Serialize;
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use config::{date::DateConfig, page::Page, Config};
+use config::{date::DateConfig, page::Page, Config, repository::RepositoryConfig};
 
 use locale::{LocaleMap, Locales};
 
@@ -30,6 +30,7 @@ pub struct CollatedPage<'config, 'locale> {
     languages: Option<&'locale LocaleMap>,
 
     date: &'config Option<DateConfig>,
+    repository: &'config Option<RepositoryConfig>,
 
     authors: CollatedAuthors<'config>,
 
@@ -96,6 +97,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             charset: config.charset(),
             host: config.host(),
             website: config.website(),
+            repository: config.repository(),
             authors,
             languages,
             date: &config.date,

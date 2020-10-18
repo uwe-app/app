@@ -26,7 +26,7 @@ use crate::{
     page::{Author, Page},
     profile::{ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
-    repository::Repository,
+    repository::RepositoryConfig,
     robots::RobotsConfig,
     script::JavaScriptConfig,
     search::SearchConfig,
@@ -181,7 +181,7 @@ pub struct Config {
     version: Version,
     favicon: UrlPath,
     charset: Option<String>,
-    repository: Option<Repository>,
+    repository: Option<RepositoryConfig>,
     engine: Option<TemplateEngine>,
 
     // Host name when running locally which overrides the inferred
@@ -292,10 +292,12 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn project(&self) -> &PathBuf {
+        &self.project
+    }
+
     pub fn engine(&self) -> &TemplateEngine {
         self.engine.as_ref().unwrap_or(&DEFAULT_ENGINE)
-
-        //.map_or_else(|| TemplateEngine::default(), |e| e.clone())
     }
 
     pub fn host(&self) -> &str {
@@ -320,6 +322,10 @@ impl Config {
 
     pub fn charset(&self) -> &str {
         self.charset.as_ref().unwrap()
+    }
+
+    pub fn repository(&self) -> &Option<RepositoryConfig> {
+        &self.repository
     }
 
     pub fn authors(&self) -> &HashMap<String, Author> {
@@ -455,9 +461,6 @@ impl Config {
         Err(Error::NoSiteConfig(target_pth))
     }
 
-    pub fn project(&self) -> &PathBuf {
-        &self.project
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
