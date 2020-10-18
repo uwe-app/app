@@ -7,6 +7,12 @@ pub async fn update(current: &str) -> Result<()> {
     // Must have latest runtime assets
     runtime::fetch().await?;
 
+    let exe = std::env::current_exe()?;
+    let name = exe.file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_owned();
+
     // This is the version of the current executing program
     let current: Version = current.parse()?;
 
@@ -26,8 +32,6 @@ pub async fn update(current: &str) -> Result<()> {
     binary::permissions(&binaries)?;
     binary::symlink(&binaries)?;
 
-    let exe = std::env::current_exe()?;
-    let name = exe.file_name().unwrap().to_string_lossy().to_owned();
     info!("Updated to {}@{} ✓", name, version.to_string());
 
     Ok(())
