@@ -123,7 +123,7 @@ impl fmt::Display for ScriptAsset {
                 write!(f, ">")?
             }
         }
-        write!(f, "</script>")
+        write!(f, "</script>\n")
     }
 }
 

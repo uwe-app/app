@@ -95,14 +95,14 @@ impl fmt::Display for StyleAsset {
             if let Some(ref media) = media {
                 write!(
                     f,
-                    "<link rel=\"stylesheet\" href=\"{}\" media=\"{}\">",
+                    "<link rel=\"stylesheet\" href=\"{}\" media=\"{}\">\n",
                     entity::escape(href),
                     entity::escape(media)
                 )?;
             } else {
                 write!(
                     f,
-                    "<link rel=\"stylesheet\" href=\"{}\">",
+                    "<link rel=\"stylesheet\" href=\"{}\">\n",
                     entity::escape(href)
                 )?;
             }
@@ -110,11 +110,11 @@ impl fmt::Display for StyleAsset {
             match *self {
                 Self::Tag(ref style) => {
                     if let Some(ref content) = style.content {
-                        write!(f, "<style>{}</style>", content)?;
+                        write!(f, "<style>{}</style>\n", content)?;
                     }
                 }
                 Self::Inline { ref content } => {
-                    write!(f, "<style>{}</style>", content)?;
+                    write!(f, "<style>{}</style>\n", content)?;
                 }
                 _ => {}
             }
