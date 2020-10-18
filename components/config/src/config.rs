@@ -26,6 +26,7 @@ use crate::{
     page::{Author, Page},
     profile::{ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
+    repository::Repository,
     robots::RobotsConfig,
     script::JavaScriptConfig,
     search::SearchConfig,
@@ -180,8 +181,8 @@ pub struct Config {
     version: Version,
     favicon: UrlPath,
     charset: Option<String>,
-
-    pub engine: Option<TemplateEngine>,
+    repository: Option<Repository>,
+    engine: Option<TemplateEngine>,
 
     // Host name when running locally which overrides the inferred
     // localhost subdomain
@@ -252,6 +253,7 @@ impl Default for Config {
                 .parse()
                 .unwrap(),
             charset: Some(String::from(CHARSET)),
+            repository: None,
             engine: Some(Default::default()),
             localhost: None,
             build: Some(Default::default()),

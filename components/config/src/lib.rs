@@ -132,6 +132,7 @@ pub mod plugin;
 pub mod plugin_cache;
 pub mod profile;
 pub mod redirect;
+pub mod repository;
 pub mod robots;
 pub mod script;
 pub mod search;
