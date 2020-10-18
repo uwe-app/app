@@ -80,15 +80,17 @@ impl HelperDef for Block {
         rc: &mut RenderContext<'reg, 'rc>,
         out: &mut dyn Output,
     ) -> HelperResult {
+
         let template_path = rc.evaluate(ctx, "@root/file.template")?
-                .as_json()
-                .as_str()
-                .ok_or_else(|| {
-                    RenderError::new(
-                        "Type error for `file.template`, string expected",
-                    )
-                })?
-                .to_string();
+            .as_json()
+            .as_str()
+            .ok_or_else(|| {
+                RenderError::new(
+                    "Type error for `file.template`, string expected",
+                )
+            })?
+            .to_string();
+
         super::render_document(
             &template_path, &self.context, h, r, ctx, rc, out)
     }

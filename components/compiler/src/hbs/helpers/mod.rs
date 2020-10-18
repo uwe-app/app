@@ -49,6 +49,7 @@ fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
     frontmatter::Config::new_markdown(false)
 }
 
+
 fn render_document<'reg: 'rc, 'rc>(
     template_path: &str,
     context: &BuildContext,

@@ -59,6 +59,9 @@ where
         let mut errs: Vec<Error> = Vec::new();
         rx.iter().for_each(|(p, r)| {
             if r.is_err() {
+                //if fail_fast {
+                    //panic!(r.err());
+                //}
                 errs.push(r.err().unwrap());
             } else {
                 let res = r.unwrap();
