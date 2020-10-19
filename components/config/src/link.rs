@@ -18,6 +18,7 @@ pub struct LinkConfig {
     pub relative: Option<bool>,
     /// Catalog for markdown documents
     pub catalog: Option<PathBuf>,
+
     #[serde(skip)]
     pub catalog_content: Option<String>,
 }

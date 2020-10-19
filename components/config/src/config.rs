@@ -202,7 +202,6 @@ pub struct Config {
     pub publish: Option<PublishConfig>,
     pub index: Option<HashMap<String, IndexRequest>>,
 
-
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     authors: HashMap<String, Author>,
 

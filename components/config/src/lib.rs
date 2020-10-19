@@ -140,6 +140,7 @@ pub mod server;
 pub mod sitemap;
 pub mod style;
 pub mod syntax;
+pub mod tags;
 pub mod transform;
 
 pub(crate) mod utils;

@@ -12,7 +12,7 @@ use serde_with::skip_serializing_none;
 
 use crate::{
     href::UrlPath, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
-    utils::toml_datetime::from_toml_datetime, Config, Result,
+    tags::link::LinkTag, utils::toml_datetime::from_toml_datetime, Config, Result,
     RuntimeOptions,
 };
 
@@ -48,6 +48,9 @@ pub struct Page {
 
     /// Do not render a layout for this page.
     pub standalone: Option<bool>,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    links: Vec<LinkTag>,
 
     /// Flag to indicate this page is intended for print media.
     print: Option<bool>,
@@ -114,6 +117,7 @@ impl Default for Page {
             render: Some(true),
             draft: None,
             standalone: None,
+            links: Vec::new(),
             listing: Some(true),
             noindex: None,
             print: None,
@@ -158,6 +162,10 @@ impl Page {
 
     pub fn authors(&self) -> &Option<Vec<String>> {
         &self.authors
+    }
+
+    pub fn links(&self) -> &Vec<LinkTag> {
+        &self.links
     }
 
     //pub fn is_standalone(&self) -> bool {

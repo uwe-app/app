@@ -201,5 +201,14 @@ pub(crate) async fn prepare(
     let website = opts.settings.get_canonical_url(cfg)?;
     cfg.set_website(website);
 
+    let page = cfg.page.as_ref().unwrap();
+    println!("{:#?}", page.links());
+    for l in page.links() {
+        println!("{:#?}", l.to_string());
+    }
+    //println!("{:#?}", serde_json::to_string(page.links()));
+
+    std::process::exit(1);
+
     Ok(opts)
 }
