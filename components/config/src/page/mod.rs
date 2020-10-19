@@ -11,9 +11,10 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
+    Config, Result, RuntimeOptions,
     href::UrlPath, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
-    tags::link::LinkTag, utils::toml_datetime::from_toml_datetime, Config, Result,
-    RuntimeOptions,
+    tags::link::LinkTag,
+    utils::toml_datetime::from_toml_datetime,
 };
 
 use self::{feed::FeedEntry, file_context::FileContext};
@@ -92,8 +93,8 @@ pub struct Page {
     pub href: Option<String>,
     #[serde(skip_deserializing)]
     pub file: Option<FileContext>,
-    #[serde(skip_deserializing)]
-    pub canonical: Option<String>,
+    //#[serde(skip_deserializing)]
+    //pub canonical: Option<String>,
     #[serde(skip_deserializing)]
     pub paginate: Option<PaginateInfo>,
     #[serde(skip_deserializing)]
@@ -138,7 +139,7 @@ impl Default for Page {
 
             href: None,
             file: None,
-            canonical: None,
+            //canonical: None,
             paginate: None,
             feed: None,
         }
@@ -247,7 +248,10 @@ impl Page {
 
         self.file = Some(file_context);
         self.href = Some(href);
-        self.canonical = Some(canonical);
+
+        self.links.push(LinkTag::new_canonical(canonical.to_string()));
+
+        //self.canonical = Some(canonical);
 
         Ok(())
     }

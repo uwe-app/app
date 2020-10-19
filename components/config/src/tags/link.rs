@@ -47,8 +47,17 @@ pub struct LinkTag {
 }
 
 impl LinkTag {
+
+    pub fn new_canonical(href: String) -> Self {
+        Self {
+            href,
+            rel: Some(vec![RelValue::Canonical]),
+            ..Default::default()
+        }
+    }
+
     pub fn source(&self) -> &str {
-        &self.href 
+        &self.href
     }
 
     pub fn set_source(&mut self, val: String) {
@@ -58,7 +67,18 @@ impl LinkTag {
 
 impl fmt::Display for LinkTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "<link href=\"{}\"", entity::escape(&self.href))?;
+        write!(f, "<link")?;
+
+        if let Some(ref rel) = self.rel {
+            let values = rel
+                .iter()
+                .map(|r| r.as_str())
+                .collect::<Vec<_>>();
+            let attr = values.join(" ");
+            write!(f, " rel=\"{}\"", entity::escape(&attr))?;
+        }
+
+        write!(f, " href=\"{}\"", entity::escape(&self.href))?;
 
         if let Some(ref attr) = self.as_attr {
             write!(f, " as=\"{}\"", entity::escape(attr.as_str()))?;
@@ -94,15 +114,6 @@ impl fmt::Display for LinkTag {
 
         if let Some(ref attr) = self.link_type {
             write!(f, " type=\"{}\"", entity::escape(attr))?;
-        }
-
-        if let Some(ref rel) = self.rel {
-            let values = rel
-                .iter()
-                .map(|r| r.as_str())
-                .collect::<Vec<_>>();
-            let attr = values.join(" ");
-            write!(f, " rel=\"{}\"", entity::escape(&attr))?;
         }
 
         if let Some(ref attr) = self.onload {
