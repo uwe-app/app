@@ -62,6 +62,9 @@ pub enum Error {
     #[error("Template engine {0} is not supported")]
     UnsupportedTemplateEngine(String),
 
+    #[error("The value {0} for 'rel' is not supported")]
+    InvalidRelValue(String),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 

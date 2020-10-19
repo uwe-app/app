@@ -235,7 +235,7 @@ fn load_scripts(
         // NOTE: error 'values must be emitted before tables'
         items = items
             .iter()
-            .map(|s| ScriptAsset::Tag(s.to_tag()))
+            .map(|s| ScriptAsset::Tag(s.clone().to_tag()))
             .collect::<Vec<_>>();
 
         // Ensure we don't have any duplicates

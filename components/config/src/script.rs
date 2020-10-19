@@ -1,11 +1,10 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
 
 use utils::entity;
 
-use crate::{href::UrlPath, tags::script::ScriptTag, tags::CrossOrigin};
+use crate::{href::UrlPath, tags::script::ScriptTag};
 
 // SEE: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
 
@@ -23,10 +22,10 @@ pub enum ScriptAsset {
 }
 
 impl ScriptAsset {
-    pub fn to_tag(&self) -> ScriptTag {
-        match *self {
+    pub fn to_tag(self) -> ScriptTag {
+        match self {
             Self::Source(ref s) => ScriptTag::new(s),
-            Self::Tag(ref f) => f.clone(),
+            Self::Tag(t) => t,
             Self::Inline { ref content } => ScriptTag::new_content(content),
         }
     }

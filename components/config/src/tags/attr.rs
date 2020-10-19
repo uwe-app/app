@@ -2,6 +2,8 @@ use std::str::FromStr;
 use std::fmt;
 use serde::{Deserialize, Serialize};
 
+use crate::Error;
+
 // SEE: https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types
 
 static ALTERNATE: &str = "alternate";
@@ -72,41 +74,91 @@ pub enum RelValue {
 }
 
 impl FromStr for RelValue {
-    type Err = crate::Error;
+    type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        //Ok(Point { x: x_fromstr, y: y_fromstr })
-        Ok(RelValue::StyleSheet)
+        let matched = if s == ALTERNATE {
+            Self::Alternate
+        } else if s == AUTHOR {
+            Self::Author
+        } else if s == BOOKMARK {
+            Self::Bookmark
+        } else if s == CANONICAL {
+            Self::Canonical
+        } else if s == EXTERNAL {
+            Self::External
+        } else if s == HELP {
+            Self::Help
+        } else if s == ICON {
+            Self::Icon
+        } else if s == LICENSE {
+            Self::License
+        } else if s == MANIFEST {
+            Self::Manifest
+        } else if s == MODULE_PRELOAD {
+            Self::ModulePreload
+        } else if s == NEXT {
+            Self::Next
+        } else if s == NO_FOLLOW {
+            Self::NoFollow
+        } else if s == NO_OPENER {
+            Self::NoOpener
+        } else if s == NO_REFERRER {
+            Self::NoReferrer
+        } else if s == PING_BACK {
+            Self::PingBack
+        } else if s == PRE_FETCH {
+            Self::PreFetch
+        } else if s == PRE_LOAD {
+            Self::PreLoad
+        } else if s == PREV {
+            Self::Prev
+        } else if s == SEARCH {
+            Self::Search
+        } else if s == SHORT_LINK {
+            Self::ShortLink
+        } else if s == STYLE_SHEET {
+            Self::StyleSheet
+        } else if s == TAG {
+            Self::Tag
+        } else {
+            return Err(Error::InvalidRelValue(s.to_string()))
+        };
+        Ok(matched)
+    }
+}
+
+impl RelValue {
+    pub fn as_str(&self) -> &str {
+        match *self {
+            Self::Alternate => ALTERNATE,
+            Self::Author => AUTHOR,
+            Self::Bookmark => BOOKMARK,
+            Self::Canonical => CANONICAL,
+            Self::External => EXTERNAL,
+            Self::Help => HELP,
+            Self::Icon => ICON,
+            Self::License => LICENSE,
+            Self::Manifest => MANIFEST,
+            Self::ModulePreload => MODULE_PRELOAD,
+            Self::Next => NEXT,
+            Self::NoFollow => NO_FOLLOW,
+            Self::NoOpener => NO_OPENER,
+            Self::NoReferrer => NO_REFERRER,
+            Self::PingBack => PING_BACK,
+            Self::PreFetch => PRE_FETCH,
+            Self::PreLoad => PRE_LOAD,
+            Self::Prev => PREV,
+            Self::Search => SEARCH,
+            Self::ShortLink => SHORT_LINK,
+            Self::StyleSheet => STYLE_SHEET,
+            Self::Tag => TAG,
+        }
     }
 }
 
 impl fmt::Display for RelValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", {
-            match *self {
-                Self::Alternate => ALTERNATE,
-                Self::Author => AUTHOR,
-                Self::Bookmark => BOOKMARK,
-                Self::Canonical => CANONICAL,
-                Self::External => EXTERNAL,
-                Self::Help => HELP,
-                Self::Icon => ICON,
-                Self::License => LICENSE,
-                Self::Manifest => MANIFEST,
-                Self::ModulePreload => MODULE_PRELOAD,
-                Self::Next => NEXT,
-                Self::NoFollow => NO_FOLLOW,
-                Self::NoOpener => NO_OPENER,
-                Self::NoReferrer => NO_REFERRER,
-                Self::PingBack => PING_BACK,
-                Self::PreFetch => PRE_FETCH,
-                Self::PreLoad => PRE_LOAD,
-                Self::Prev => PREV,
-                Self::Search => SEARCH,
-                Self::ShortLink => SHORT_LINK,
-                Self::StyleSheet => STYLE_SHEET,
-                Self::Tag => TAG,
-            }
-        })
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -117,18 +169,22 @@ pub enum CrossOrigin {
     UseCredentials,
 }
 
-impl fmt::Display for CrossOrigin {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", {
-            match *self {
-                Self::Anonymous => ANONYMOUS,
-                Self::UseCredentials => USE_CREDENTIALS,
-            }
-        })
+impl CrossOrigin {
+    pub fn as_str(&self) -> &str {
+        match *self {
+            Self::Anonymous => ANONYMOUS,
+            Self::UseCredentials => USE_CREDENTIALS,
+        }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+impl fmt::Display for CrossOrigin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum As {
     Audio,
@@ -145,24 +201,28 @@ pub enum As {
     Worker,
 }
 
+impl As {
+    pub fn as_str(&self) -> &str {
+        match *self {
+            Self::Audio => AUDIO,
+            Self::Document => DOCUMENT,
+            Self::Embed => EMBED,
+            Self::Fetch => FETCH,
+            Self::Font => FONT,
+            Self::Image => IMAGE,
+            Self::Object => OBJECT,
+            Self::Script => SCRIPT,
+            Self::Style => STYLE,
+            Self::Track => TRACK,
+            Self::Video => VIDEO,
+            Self::Worker => WORKER,
+        }
+    }
+}
+
 impl fmt::Display for As {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", {
-            match *self {
-                Self::Audio => AUDIO,
-                Self::Document => DOCUMENT,
-                Self::Embed => EMBED,
-                Self::Fetch => FETCH,
-                Self::Font => FONT,
-                Self::Image => IMAGE,
-                Self::Object => OBJECT,
-                Self::Script => SCRIPT,
-                Self::Style => STYLE,
-                Self::Track => TRACK,
-                Self::Video => VIDEO,
-                Self::Worker => WORKER,
-            }
-        })
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -192,19 +252,23 @@ pub mod referrer_policy {
         // NOTE: there is also unsafe-url but we prefer to avoid unsafe
     }
 
+    impl ReferrerPolicy {
+        pub fn as_str(&self) -> &str {
+            match *self {
+                Self::NoReferrer => NO_REFERRER,
+                Self::NoReferrerWhenDowngrade => NO_REFERRER_WHEN_DOWNGRADE,
+                Self::Origin => ORIGIN,
+                Self::OriginWhenCrossOrigin => ORIGIN_WHEN_CROSS_ORIGIN,
+                Self::SameOrigin => SAME_ORIGIN,
+                Self::StrictOrigin => STRICT_ORIGIN,
+                Self::StrictOriginWhenCrossOrigin => STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+            }
+        }
+    }
+
     impl fmt::Display for ReferrerPolicy {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", {
-                match *self {
-                    Self::NoReferrer => NO_REFERRER,
-                    Self::NoReferrerWhenDowngrade => NO_REFERRER_WHEN_DOWNGRADE,
-                    Self::Origin => ORIGIN,
-                    Self::OriginWhenCrossOrigin => ORIGIN_WHEN_CROSS_ORIGIN,
-                    Self::SameOrigin => SAME_ORIGIN,
-                    Self::StrictOrigin => STRICT_ORIGIN,
-                    Self::StrictOriginWhenCrossOrigin => STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
-                }
-            })
+            write!(f, "{}", self.as_str())
         }
     }
 

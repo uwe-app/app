@@ -3,17 +3,23 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none, StringWithSeparator, SpaceSeparator};
 
+use utils::entity;
+
 use super::attr::{RelValue, CrossOrigin, As};
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Serialize, Deserialize, Clone, Hash)]
+#[serde(default)]
 pub struct LinkTag {
+    // TODO: support enum for UrlPath | Url
+    #[serde(alias = "src")]
+    href: String,
+
     #[serde(rename = "as")]
     as_attr: Option<As>,
     crossorigin: Option<CrossOrigin>,
     disabled: Option<bool>,
-    href: String,
 
     #[serde(rename = "hreflang")]
     href_lang: Option<String>,
@@ -24,13 +30,8 @@ pub struct LinkTag {
     #[serde(rename = "imagesrcset")]
     image_src_set: Option<String>,
 
-    #[serde(rename = "imagesrcset")]
     media: Option<String>,
-
     prefetch: Option<bool>,
-
-    #[serde_as(as = "StringWithSeparator::<SpaceSeparator, RelValue>")]
-    rel: Vec<RelValue>,
 
     sizes: Option<String>,
     title: Option<String>,
@@ -38,14 +39,77 @@ pub struct LinkTag {
     #[serde(rename = "type")]
     link_type: Option<String>,
 
+    #[serde_as(as = "Option<StringWithSeparator::<SpaceSeparator, RelValue>>")]
+    rel: Option<Vec<RelValue>>,
+
     // Events
     onload: Option<String>,
 }
 
 impl fmt::Display for LinkTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        //write!(f, "{}", self.to_string())
-        Ok(())
+        write!(f, "<link href=\"{}\"", entity::escape(&self.href))?;
+
+        if let Some(ref attr) = self.as_attr {
+            write!(f, " as=\"{}\"", entity::escape(attr.as_str()))?;
+        }
+
+        if let Some(ref attr) = self.crossorigin {
+            write!(f, " crossorigin=\"{}\"", entity::escape(attr.as_str()))?;
+        }
+
+        if let Some(ref attr) = self.href_lang {
+            write!(f, " hreflang=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref attr) = self.image_sizes {
+            write!(f, " imagesizes=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref attr) = self.image_src_set {
+            write!(f, " imagesrcset=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref attr) = self.media {
+            write!(f, " media=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref attr) = self.sizes {
+            write!(f, " sizes=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref attr) = self.title {
+            write!(f, " title=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref attr) = self.link_type {
+            write!(f, " type=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(ref rel) = self.rel {
+            let values = rel
+                .iter()
+                .map(|r| r.as_str())
+                .collect::<Vec<_>>();
+            let attr = values.join(" ");
+            write!(f, " rel=\"{}\"", entity::escape(&attr))?;
+        }
+
+        if let Some(ref attr) = self.onload {
+            write!(f, " onload=\"{}\"", entity::escape(attr))?;
+        }
+
+        if let Some(_) = self.disabled { write!(f, " disabled")?; }
+        if let Some(_) = self.prefetch { write!(f, " prefetch")?; }
+
+        write!(f, ">")
     }
 }
 
+impl PartialEq for LinkTag {
+    fn eq(&self, other: &Self) -> bool {
+        self.href == other.href
+    }
+}
+
+impl Eq for LinkTag {}

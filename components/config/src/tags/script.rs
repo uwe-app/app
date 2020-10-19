@@ -60,33 +60,34 @@ impl ScriptTag {
 
 impl fmt::Display for ScriptTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(ref src) = self.src {
-            write!(f, "<script src=\"{}\"", entity::escape(src))?;
+        if let Some(ref attr) = self.src {
+            write!(f, "<script src=\"{}\"", entity::escape(attr))?;
         }
-        if let Some(ref script_type) = self.script_type {
-            write!(f, " type=\"{}\"", entity::escape(script_type))?;
+        if let Some(ref attr) = self.script_type {
+            write!(f, " type=\"{}\"", entity::escape(attr))?;
         }
-        if let Some(ref nonce) = self.nonce {
-            write!(f, " nonce=\"{}\"", entity::escape(nonce))?;
+        if let Some(ref attr) = self.nonce {
+            write!(f, " nonce=\"{}\"", entity::escape(attr))?;
         }
-        if let Some(ref integrity) = self.integrity {
-            write!(f, " integrity=\"{}\"", entity::escape(integrity))?;
+        if let Some(ref attr) = self.integrity {
+            write!(f, " integrity=\"{}\"", entity::escape(attr))?;
         }
-        if let Some(ref referrer_policy) = self.referrerpolicy {
+        if let Some(ref attr) = self.referrerpolicy {
             // NOTE: we know that we don't need to escape this attribute value
             write!(
                 f,
                 " referrerpolicy=\"{}\"",
-                referrer_policy.to_string()
+                attr.as_str()
             )?;
         }
+
+        if let Some(ref attr) = self.crossorigin {
+            // NOTE: we know that we don't need to escape this attribute value
+            write!(f, " {}", attr.as_str())?;
+        }
+
         if let Some(_) = self.script_async { write!(f, " async")?; }
         if let Some(_) = self.nomodule { write!(f, " nomodule")?; }
-
-        if let Some(ref cross_origin) = self.crossorigin {
-            // NOTE: we know that we don't need to escape this attribute value
-            write!(f, " {}", cross_origin.to_string())?;
-        }
 
         write!(f, ">")?;
 

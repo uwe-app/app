@@ -91,7 +91,7 @@ impl HelperDef for Scripts {
             scripts
                 .iter()
                 .map(|script| {
-                    let mut tag = script.to_tag();
+                    let mut tag = script.clone().to_tag();
                     if let Some(ref src) = script.get_source() {
                         tag.src = Some(
                             opts.relative(src, path, &opts.source).unwrap(),
