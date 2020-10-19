@@ -5,7 +5,6 @@ use serde_with::skip_serializing_none;
 
 use utils::entity;
 
-use crate::href::UrlPath;
 use super::{CrossOrigin, ReferrerPolicy};
 
 // SEE: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
