@@ -46,6 +46,16 @@ pub struct LinkTag {
     onload: Option<String>,
 }
 
+impl LinkTag {
+    pub fn source(&self) -> &str {
+        &self.href 
+    }
+
+    pub fn set_source(&mut self, val: String) {
+        self.href = val;
+    }
+}
+
 impl fmt::Display for LinkTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "<link href=\"{}\"", entity::escape(&self.href))?;
