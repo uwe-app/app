@@ -30,14 +30,18 @@ pub struct CollatedPage<'config, 'locale> {
     languages: Option<&'locale LocaleMap>,
 
     date: &'config Option<DateConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     repository: &'config Option<RepositoryConfig>,
 
+    #[serde(skip_serializing_if = "CollatedAuthors::is_empty")]
     authors: CollatedAuthors<'config>,
 
     // Paths referenced in a menu when MENU.md convention is used
     //  FIXME: use a better name for the main menu
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub main: Vec<&'config String>,
+
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub menus: HashMap<&'config String, Vec<&'config String>>,
 
     generator: &'config str,
@@ -45,11 +49,19 @@ pub struct CollatedPage<'config, 'locale> {
     version: &'config Version,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize)]
 #[serde(default)]
 pub struct CollatedAuthors<'config> {
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     all: &'config HashMap<String, Author>,
     attributed: Option<Vec<&'config Author>>,
+}
+
+impl CollatedAuthors<'_> {
+    pub fn is_empty(&self) -> bool {
+        self.all.is_empty()
+    }
 }
 
 impl<'config, 'locale> CollatedPage<'config, 'locale> {
