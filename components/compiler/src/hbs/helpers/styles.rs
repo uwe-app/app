@@ -64,12 +64,12 @@ impl HelperDef for Styles {
         };
 
         // Use global styles from the settings
-        if main {
-            if let Some(ref css) = self.context.config.styles {
-                let mut main = css.main.clone();
-                styles.append(&mut main);
-            }
-        }
+        //if main {
+            //if let Some(ref css) = self.context.config.styles {
+                //let mut main = css.main.clone();
+                //styles.append(&mut main);
+            //}
+        //}
 
         // Convert to relative paths if necessary
         let styles = if abs {

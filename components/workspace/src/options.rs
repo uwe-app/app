@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, ProfileName, ProfileSettings, RuntimeOptions};
+use config::{Config, ProfileName, ProfileSettings, RuntimeOptions, tags::link::LinkTag};
 
 use crate::{Error, Result};
 
@@ -201,16 +201,28 @@ pub(crate) async fn prepare(
     let website = opts.settings.get_canonical_url(cfg)?;
     cfg.set_website(website);
 
-    /*
-    let page = cfg.page.as_ref().unwrap();
-    println!("{:#?}", page.links());
-    for l in page.links() {
-        println!("{:#?}", l.to_string());
-    }
-    //println!("{:#?}", serde_json::to_string(page.links()));
+    let global_page = cfg.page.get_or_insert(Default::default());
 
-    std::process::exit(1);
-    */
+
+    if opts.settings.is_live() {
+        //let asset = StyleAsset::Source(livereload::stylesheet());
+        //out.write(&asset.to_string())?;
+        let style_tag = LinkTag::new_style_sheet(livereload::stylesheet());
+        global_page.links_mut().push(style_tag);
+    }
+
+    let main_style_file = opts.source
+        .join(config::ASSETS)
+        .join(config::STYLES)
+        .join(config::MAIN_CSS);
+
+    // Add a primary style sheet by convention if it exists
+    if main_style_file.exists() {
+        let href = utils::url::to_href_separator(
+            main_style_file.strip_prefix(&opts.source)?);
+        let style_tag = LinkTag::new_style_sheet(href);
+        global_page.links_mut().push(style_tag);
+    }
 
     Ok(opts)
 }

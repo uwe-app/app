@@ -169,6 +169,10 @@ impl Page {
         &self.links
     }
 
+    pub fn links_mut(&mut self) -> &mut Vec<LinkTag> {
+        &mut self.links
+    }
+
     //pub fn is_standalone(&self) -> bool {
         //return self.standalone.is_some() && self.standalone.unwrap()
     //}

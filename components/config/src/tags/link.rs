@@ -48,6 +48,14 @@ pub struct LinkTag {
 
 impl LinkTag {
 
+    pub fn new_style_sheet(href: String) -> Self {
+        Self {
+            href,
+            rel: Some(vec![RelValue::StyleSheet]),
+            ..Default::default()
+        }
+    }
+
     pub fn new_canonical(href: String) -> Self {
         Self {
             href,

@@ -111,6 +111,8 @@ static DEFAULT_ICON: &str = "/assets/favicon.png";
 
 pub static LAYOUT_HBS: &str = "main.hbs";
 pub static MAIN: &str = "main";
+pub static MAIN_CSS: &str = "main.css";
+pub static MAIN_JS: &str = "main.js";
 pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 
 const fn get_default_engine() -> TemplateEngine {

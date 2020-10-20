@@ -4096,6 +4096,7 @@ dependencies = [
  "fs2",
  "futures",
  "human_bytes",
+ "livereload",
  "locale",
  "log",
  "plugin",

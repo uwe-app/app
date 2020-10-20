@@ -10,6 +10,7 @@ compiler = {version = "0.1", path = "../compiler" }
 config = {version = "0.1", path = "../config" }
 datasource = {version = "0.1", path = "../datasource" }
 dirs = {version = "0.1", path = "../dirs" }
+livereload = {version = "0.1", path = "../livereload" }
 locale = {version = "0.1", path = "../locale" }
 plugin = {version = "0.1", path = "../plugin" }
 preference = {version = "0.1", path = "../preference" }
