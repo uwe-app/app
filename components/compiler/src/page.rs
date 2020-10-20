@@ -3,11 +3,16 @@ use std::path::PathBuf;
 
 use url::Url;
 
-use config::{semver::Version, Author};
 use serde::Serialize;
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
-use config::{date::DateConfig, page::Page, Config, repository::RepositoryConfig};
+use config::{
+    Config, Author, RuntimeOptions,
+    date::DateConfig,
+    page::Page,
+    repository::RepositoryConfig,
+    semver::Version,
+};
 
 use locale::{LocaleMap, Locales};
 
@@ -20,6 +25,9 @@ use crate::{Error, Result};
 pub struct CollatedPage<'config, 'locale> {
     #[serde(flatten)]
     page: &'config Page,
+
+    #[serde_as(as = "DisplayFromStr")]
+    permalink: Url,
 
     lang: &'config str,
     charset: &'config str,
@@ -68,6 +76,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
     pub fn new(
         file: &PathBuf,
         config: &'config Config,
+        options: &RuntimeOptions,
         locales: &'locale Locales,
         page: &'config Page,
         lang: &'config str,
@@ -107,6 +116,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             page,
             lang,
             charset: config.charset(),
+            permalink: page.permalink(config, options)?,
             host: config.host(),
             website: config.website(),
             repository: config.repository(),

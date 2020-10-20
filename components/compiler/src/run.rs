@@ -166,7 +166,7 @@ pub async fn parse(
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
     let mut page_data =
-        CollatedPage::new(file, &ctx.config, &ctx.locales, data, lang)?;
+        CollatedPage::new(file, &ctx.config, &ctx.options, &ctx.locales, data, lang)?;
 
     // Try to resolve a menu for the file
     if let Some(parent) = file.parent() {

@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use chrono::prelude::*;
 
+use url::Url;
 use jsonfeed::{Feed};
 
 use serde::{Deserialize, Serialize};
@@ -74,6 +75,7 @@ pub struct Page {
 
     pub styles: Option<Vec<StyleAsset>>,
 
+    #[serde(skip_serializing)]
     pub permalink: Option<UrlPath>,
 
     // Custom values for feed entry
@@ -207,6 +209,17 @@ impl Page {
         false
     }
 
+    /// Get an absolute permalink for the page; will panic if `href` is not set.
+    pub fn permalink(
+        &self, config: &Config, options: &RuntimeOptions) -> Result<Url> {
+        let website = options.settings.get_host_url(config)?;
+        if let Some(ref permalink) = self.permalink {
+            Ok(website.join(permalink.as_str())?)
+        } else {
+            Ok(website.join(self.href.as_ref().unwrap())?)
+        }
+    }
+
     pub fn seal(
         &mut self,
         config: &Config,
@@ -237,8 +250,7 @@ impl Page {
         // FIXME: set host/domain/website for the page data (#252)
 
         let website = options.settings.get_host_url(config)?;
-
-        let mut canonical = website.join(href.trim_start_matches("/"))?;
+        let mut canonical = website.join(&href)?;
 
         let og = self.open_graph.get_or_insert(Default::default());
         og.insert(crate::OG_URL.to_string(), canonical.clone().to_string());
