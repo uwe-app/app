@@ -3,7 +3,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::href::UrlPath;
+use crate::{href::UrlPath, tags::link::LinkTag};
 
 use utils::entity;
 
@@ -33,11 +33,7 @@ impl StyleAsset {
         match *self {
             Self::Source(ref s) => Some(s),
             Self::Tag(ref f) => {
-                if let Some(ref href) = f.href {
-                    Some(href)
-                } else {
-                    None
-                }
+                Some(&f.href)
             }
             Self::Inline { .. } => None,
         }
@@ -49,9 +45,7 @@ impl StyleAsset {
                 *s = format!("{}/{}", base, s);
             }
             Self::Tag(ref mut t) => {
-                if let Some(ref mut href) = t.href {
-                    t.href = Some(format!("{}/{}", base, href));
-                }
+                t.href = format!("{}/{}", base, t.href);
             }
             Self::Inline { .. } => return false,
         }
@@ -71,11 +65,7 @@ impl fmt::Display for StyleAsset {
             Self::Source(ref s) => Some(s),
 
             Self::Tag(ref t) => {
-                if let Some(ref href) = t.href {
-                    Some(href)
-                } else {
-                    None
-                }
+                Some(&t.href)
             }
             _ => None,
         };
@@ -128,7 +118,7 @@ impl fmt::Display for StyleAsset {
 #[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct StyleTag {
     #[serde(alias = "src")]
-    href: Option<String>,
+    href: String,
     media: Option<String>,
     content: Option<String>,
 }
@@ -136,22 +126,26 @@ pub struct StyleTag {
 impl StyleTag {
     pub fn new(s: &str) -> Self {
         Self {
-            href: Some(s.to_string()),
+            href: String::new(),
             media: None,
             content: None,
         }
     }
 
+    pub fn to_link_tag(self) -> LinkTag {
+        LinkTag::new_style_sheet(self.href, self.media)
+    }
+
     pub fn new_content(c: &str) -> Self {
         Self {
-            href: None,
+            href: String::new(),
             media: None,
             content: Some(c.to_string()),
         }
     }
 
     pub fn set_source<S: AsRef<str>>(&mut self, source: S) {
-        self.href = Some(source.as_ref().to_string());
+        self.href = source.as_ref().to_string();
     }
 }
 

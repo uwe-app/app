@@ -205,9 +205,7 @@ pub(crate) async fn prepare(
 
 
     if opts.settings.is_live() {
-        //let asset = StyleAsset::Source(livereload::stylesheet());
-        //out.write(&asset.to_string())?;
-        let style_tag = LinkTag::new_style_sheet(livereload::stylesheet());
+        let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
         global_page.links_mut().push(style_tag);
     }
 
@@ -220,7 +218,7 @@ pub(crate) async fn prepare(
     if main_style_file.exists() {
         let href = utils::url::to_href_separator(
             main_style_file.strip_prefix(&opts.source)?);
-        let style_tag = LinkTag::new_style_sheet(href);
+        let style_tag = LinkTag::new_style_sheet(href, None);
         global_page.links_mut().push(style_tag);
     }
 

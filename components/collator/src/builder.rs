@@ -156,19 +156,16 @@ impl<'a> PageBuilder<'a> {
     ///
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn styles(mut self) -> Result<Self> {
+        let href = self.page.href.clone().unwrap();
+        let links = self.page.links_mut();
+
         if let Some(cache) = self.plugins {
-            let href = self.page.href.as_ref().unwrap();
             for (dep, styles) in cache.styles().iter() {
                 let apply = dep.apply.as_ref().unwrap();
                 for matcher in apply.styles_match.iter() {
-                    if matcher.is_match(href) {
-                        if self.page.styles.is_none() {
-                            self.page.styles = Some(Vec::new());
-                        }
-                        if let Some(ref mut page_styles) = self.page.styles {
-                            for s in styles.iter().rev() {
-                                page_styles.insert(0, s.clone());
-                            }
+                    if matcher.is_match(&href) {
+                        for s in styles.iter().rev() {
+                            links.insert(0, s.clone().to_tag().to_link_tag());
                         }
                     }
                 }
