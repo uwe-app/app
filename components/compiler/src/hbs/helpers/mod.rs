@@ -6,7 +6,6 @@ use handlebars::*;
 use config::markdown as md;
 use crate::BuildContext;
 
-pub mod bookmark;
 pub mod crumbtrail;
 pub mod date;
 pub mod document;

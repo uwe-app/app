@@ -225,13 +225,12 @@ impl Page {
         // FIXME: add page page for canonical and
         // FIXME: set host/domain/website for the page data (#252)
 
-        let website = options.settings.get_host_url(config);
+        let website = options.settings.get_host_url(config)?;
 
-        let mut canonical = website.clone();
-        canonical.push_str(href.trim_start_matches("/"));
+        let mut canonical = website.join(href.trim_start_matches("/"))?;
 
         let og = self.open_graph.get_or_insert(Default::default());
-        og.insert(crate::OG_URL.to_string(), canonical.clone());
+        og.insert(crate::OG_URL.to_string(), canonical.clone().to_string());
 
         og.entry(crate::OG_TYPE.to_string())
             .or_insert(crate::OG_WEBSITE.to_string());
@@ -245,13 +244,17 @@ impl Page {
                 .or_insert(description.clone());
         }
         if let Some(ref image) = self.image {
-            let mut img = website.clone();
-            img.push_str(image.as_str().trim_start_matches("/"));
-            og.entry(crate::OG_IMAGE.to_string()).or_insert(img);
+            let img = website.join(image.as_str().trim_start_matches("/"))?;
+            og.entry(crate::OG_IMAGE.to_string()).or_insert(img.to_string());
         }
 
         self.file = Some(file_context);
         self.href = Some(href);
+
+        if let Some(ref permalink) = self.permalink {
+            let bookmark = website.join(permalink)?;
+            self.links.push(LinkTag::new_bookmark(bookmark.to_string()));
+        }
 
         self.links.push(LinkTag::new_canonical(canonical.to_string()));
 

@@ -65,6 +65,14 @@ impl LinkTag {
         }
     }
 
+    pub fn new_bookmark(href: String) -> Self {
+        Self {
+            href,
+            rel: Some(vec![RelValue::Bookmark]),
+            ..Default::default()
+        }
+    }
+
     pub fn source(&self) -> &str {
         &self.href
     }

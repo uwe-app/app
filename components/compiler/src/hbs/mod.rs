@@ -178,19 +178,12 @@ impl<'a> ParserBuilder<'a> {
             }),
         );
 
-        self.handlebars.register_helper(
-            "bookmark",
-            Box::new(helpers::bookmark::Link {
-                context: Arc::clone(&self.context),
-            }),
-        );
-
-        self.handlebars.register_helper(
-            "permalink",
-            Box::new(helpers::bookmark::PermaLink {
-                context: Arc::clone(&self.context),
-            }),
-        );
+        //self.handlebars.register_helper(
+            //"permalink",
+            //Box::new(helpers::bookmark::PermaLink {
+                //context: Arc::clone(&self.context),
+            //}),
+        //);
 
         self.handlebars.register_helper(
             "scripts",

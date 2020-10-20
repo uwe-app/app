@@ -84,6 +84,7 @@ pub static PORT_DOCS_SSL: u16 = 9943;
 
 pub static SCHEME_HTTPS: &str = "https:";
 pub static SCHEME_HTTP: &str = "http:";
+pub static SCHEME_DATA: &str = "data:";
 pub static SCHEME_DELIMITER: &str = "//";
 pub static SCHEME_WSS: &str = "wss:";
 pub static SCHEME_WS: &str = "ws:";

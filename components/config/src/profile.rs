@@ -345,9 +345,8 @@ impl ProfileSettings {
         }
     }
 
-    pub fn get_host_url(&self, conf: &config::Config) -> String {
-        // FIXME: do not unwrap here, return the Result?
-        self.get_canonical_url(conf).unwrap().to_string()
+    pub fn get_host_url(&self, conf: &config::Config) -> crate::Result<Url> {
+        Ok(self.get_canonical_url(conf)?)
     }
 
     pub fn set_defaults(&mut self) {

@@ -210,6 +210,14 @@ impl RuntimeOptions {
         path: P,
         base: B,
     ) -> Result<String> {
+
+        if href.starts_with(crate::SCHEME_HTTP)
+            || href.starts_with(crate::SCHEME_HTTPS)
+            || href.starts_with(crate::SCHEME_DATA)
+            || href.starts_with(crate::SCHEME_FILE) {
+            return Ok(href.to_string())
+        }
+
         let rel = path.as_ref().strip_prefix(base.as_ref())?;
 
         let types = self.settings.types.as_ref().unwrap();
