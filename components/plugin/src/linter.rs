@@ -56,7 +56,7 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
         .try_for_each(|u| lint_path(plugin, u))?;
 
     plugin.styles().iter().try_for_each(|s| {
-        if let Some(src) = s.get_source() {
+        if let Some(src) = s.source() {
             let u = UrlPath::from(src);
             lint_path(plugin, &u)?;
         }
@@ -64,7 +64,7 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
     })?;
 
     plugin.scripts().iter().try_for_each(|s| {
-        if let Some(src) = s.get_source() {
+        if let Some(src) = s.source() {
             let u = UrlPath::from(src);
             lint_path(plugin, &u)?;
         }

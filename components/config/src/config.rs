@@ -28,10 +28,12 @@ use crate::{
     redirect::RedirectConfig,
     repository::RepositoryConfig,
     robots::RobotsConfig,
-    script::JavaScriptConfig,
+    script::ScriptAsset,
     search::SearchConfig,
     sitemap::SiteMapConfig,
+    style::StyleAsset,
     syntax::SyntaxConfig,
+    tags::{script::ScriptTag, link::LinkTag},
     transform::TransformConfig,
     utils::href::UrlPath,
     Error,
@@ -111,9 +113,12 @@ static DEFAULT_ICON: &str = "/assets/favicon.png";
 
 pub static LAYOUT_HBS: &str = "main.hbs";
 pub static MAIN: &str = "main";
-pub static MAIN_CSS: &str = "main.css";
-pub static MAIN_JS: &str = "main.js";
+//pub static MAIN_CSS: &str = "main.css";
+//pub static MAIN_JS: &str = "main.js";
 pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
+
+static DEFAULT_STYLE: &str = "assets/styles/main.css";
+static DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
 
 const fn get_default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
@@ -225,7 +230,8 @@ pub struct Config {
     pub search: Option<SearchConfig>,
     pub feed: Option<FeedConfig>,
 
-    pub scripts: Option<JavaScriptConfig>,
+    style: Option<StyleAsset>,
+    script: Option<ScriptAsset>,
 
     pub db: Option<DataBase>,
 
@@ -280,7 +286,8 @@ impl Default for Config {
             transform: Some(Default::default()),
             search: None,
             feed: None,
-            scripts: None,
+            style: None,
+            script: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),
@@ -292,6 +299,14 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn default_script() -> ScriptAsset {
+        ScriptAsset::Tag(ScriptTag::new(DEFAULT_SCRIPT.to_string()))
+    }
+
+    pub fn default_style() -> LinkTag {
+        LinkTag::new_style_sheet(DEFAULT_STYLE.to_string(), None)
+    }
+
     pub fn project(&self) -> &PathBuf {
         &self.project
     }
@@ -302,6 +317,14 @@ impl Config {
 
     pub fn host(&self) -> &str {
         &self.host
+    }
+
+    pub fn style_mut(&mut self) -> &mut Option<StyleAsset> {
+        &mut self.style
+    }
+
+    pub fn script_mut(&mut self) -> &mut Option<ScriptAsset> {
+        &mut self.script
     }
 
     pub fn favicon(&self) -> &UrlPath {

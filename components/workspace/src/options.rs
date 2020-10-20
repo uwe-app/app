@@ -208,37 +208,70 @@ pub(crate) async fn prepare(
     let website = opts.settings.get_canonical_url(cfg)?;
     cfg.set_website(website);
 
+    let main_style = cfg.style_mut().take();
+    let main_script = cfg.script_mut().take();
     let global_page = cfg.page.get_or_insert(Default::default());
-
 
     if opts.settings.is_live() {
         let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
         global_page.links_mut().push(style_tag);
     }
 
-    let main_style_file = opts.source
-        .join(config::ASSETS)
-        .join(config::STYLES)
-        .join(config::MAIN_CSS);
+    // Custom style was defined
+    if let Some(style) = main_style {
+        // Check main style exists
+        if let Some(ref src) = style.source() {
+            let path = utils::url::to_path_separator(src);
+            let file = opts.source.join(&path);
+            if !file.exists() || !file.is_file() {
+                return Err(Error::NoMainStyle(src.to_string(), file))
+            }
+        }
 
-    // Add a primary style sheet by convention if it exists
-    if main_style_file.exists() && main_style_file.is_file() {
-        let href = utils::url::to_href_separator(
-            main_style_file.strip_prefix(&opts.source)?);
-        let style_tag = LinkTag::new_style_sheet(href, None);
-        global_page.links_mut().push(style_tag);
+        global_page.links_mut().push(style.to_tag().to_link_tag());
+
+    // Using the style convention
+    } else {
+        let asset = Config::default_style();
+        let main_style_path = utils::url::to_path_separator(
+            asset.source());
+        let main_style_file = opts.source.join(&main_style_path);
+        // Add a primary style sheet by convention if it exists
+        if main_style_file.exists() && main_style_file.is_file() {
+            let href = utils::url::to_href_separator(
+                main_style_file.strip_prefix(&opts.source)?);
+            let style_tag = LinkTag::new_style_sheet(href, None);
+            global_page.links_mut().push(style_tag);
+        }
     }
 
-    let main_script_file = opts.source
-        .join(config::ASSETS)
-        .join(config::SCRIPTS)
-        .join(config::MAIN_JS);
+    // Custom script was defined
+    if let Some(script) = main_script {
+        // Check main script exists
+        if let Some(ref src) = script.source() {
+            let path = utils::url::to_path_separator(src);
+            let file = opts.source.join(&path);
+            if !file.exists() || !file.is_file() {
+                return Err(Error::NoMainScript(src.to_string(), file))
+            }
+        }
 
-    if main_script_file.exists() && main_script_file.is_file() {
-        let href = utils::url::to_href_separator(
-            main_script_file.strip_prefix(&opts.source)?);
-        let script_tag = ScriptTag::new(href);
-        global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+        global_page.scripts_mut().push(script);
+    // Using the script convention
+    } else {
+        let asset = Config::default_script();
+        let main_script_path = utils::url::to_path_separator(asset
+            .to_tag()
+            .source()
+            .as_ref()
+            .unwrap());
+        let main_script_file = opts.source.join(&main_script_path);
+        if main_script_file.exists() && main_script_file.is_file() {
+            let href = utils::url::to_href_separator(
+                main_script_file.strip_prefix(&opts.source)?);
+            let script_tag = ScriptTag::new(href);
+            global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+        }
     }
 
     Ok(opts)

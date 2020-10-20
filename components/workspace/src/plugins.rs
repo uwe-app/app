@@ -69,7 +69,7 @@ fn scripts(
     plugin_target: &PathBuf,
 ) -> Result<()> {
     for script in plugin.scripts() {
-        if let Some(src) = script.get_source() {
+        if let Some(src) = script.source() {
             create_asset(options, info, name, plugin, plugin_target, src)?;
         }
     }
@@ -85,7 +85,7 @@ fn styles(
     plugin_target: &PathBuf,
 ) -> Result<()> {
     for style in plugin.styles() {
-        if let Some(src) = style.get_source() {
+        if let Some(src) = style.source() {
             create_asset(options, info, name, plugin, plugin_target, src)?;
         }
     }

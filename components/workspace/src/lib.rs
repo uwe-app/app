@@ -10,6 +10,12 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
+    #[error("Global script file {0} does not exist or is not a file ({1})")]
+    NoMainScript(String, PathBuf),
+
+    #[error("Global style file {0} does not exist or is not a file ({1})")]
+    NoMainStyle(String, PathBuf),
+
     #[error("The path filter {0} does not exist")]
     NoFilter(PathBuf),
 

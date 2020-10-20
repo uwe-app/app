@@ -24,7 +24,7 @@ impl StyleAsset {
         }
     }
 
-    pub fn get_source(&self) -> Option<&str> {
+    pub fn source(&self) -> Option<&str> {
         match *self {
             Self::Source(ref s) => Some(s),
             Self::Tag(ref f) => {

@@ -8,11 +8,6 @@ use crate::{href::UrlPath, tags::script::ScriptTag};
 
 // SEE: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct JavaScriptConfig {
-    pub main: Vec<ScriptAsset>,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
 pub enum ScriptAsset {
@@ -30,7 +25,7 @@ impl ScriptAsset {
         }
     }
 
-    pub fn get_source(&self) -> Option<&str> {
+    pub fn source(&self) -> Option<&str> {
         match *self {
             Self::Source(ref s) => Some(s),
             Self::Tag(ref f) => {

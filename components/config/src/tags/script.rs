@@ -55,6 +55,10 @@ impl ScriptTag {
             content: Some(c),
         }
     }
+
+    pub fn source(&self) -> &Option<String> {
+        &self.src
+    }
 }
 
 impl fmt::Display for ScriptTag {
