@@ -7,11 +7,6 @@ use crate::{href::UrlPath, tags::link::LinkTag};
 
 use utils::entity;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct StyleSheetConfig {
-    pub main: Vec<StyleAsset>,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
 pub enum StyleAsset {

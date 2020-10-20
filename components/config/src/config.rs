@@ -31,7 +31,6 @@ use crate::{
     script::JavaScriptConfig,
     search::SearchConfig,
     sitemap::SiteMapConfig,
-    style::StyleSheetConfig,
     syntax::SyntaxConfig,
     transform::TransformConfig,
     utils::href::UrlPath,
@@ -224,8 +223,8 @@ pub struct Config {
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
     pub feed: Option<FeedConfig>,
+
     pub scripts: Option<JavaScriptConfig>,
-    pub styles: Option<StyleSheetConfig>,
 
     pub db: Option<DataBase>,
 
@@ -281,7 +280,6 @@ impl Default for Config {
             search: None,
             feed: None,
             scripts: None,
-            styles: None,
             db: None,
             minify: None,
             livereload: Some(Default::default()),
