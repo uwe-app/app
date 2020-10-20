@@ -207,15 +207,15 @@ impl<'a> PageBuilder<'a> {
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn permalinks(self) -> Result<Self> {
         if let Some(ref permalink) = self.page.permalink {
-            let key = permalink.trim_end_matches("/").to_string();
+            let key = permalink.as_str().trim_end_matches("/");
 
-            if self.info.redirects.contains_key(&key) {
-                return Err(Error::DuplicatePermalink(key));
+            if self.info.redirects.contains_key(key) {
+                return Err(Error::DuplicatePermalink(key.to_string()));
             }
 
             self.info
                 .redirects
-                .insert(key, self.page.href.as_ref().unwrap().to_string());
+                .insert(key.to_string(), self.page.href.as_ref().unwrap().to_string());
         }
         Ok(self)
     }

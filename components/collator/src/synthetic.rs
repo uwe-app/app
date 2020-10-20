@@ -145,7 +145,7 @@ fn build_feed(
             item.id =
                 base_url.join(p.href.as_ref().unwrap()).unwrap().to_string();
             item.url = if let Some(ref permalink) = p.permalink {
-                Some(base_url.join(permalink).unwrap().to_string())
+                Some(base_url.join(permalink.as_str()).unwrap().to_string())
             } else {
                 Some(item.id.to_string())
             };

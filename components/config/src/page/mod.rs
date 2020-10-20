@@ -71,7 +71,8 @@ pub struct Page {
 
     pub scripts: Option<Vec<ScriptAsset>>,
     pub styles: Option<Vec<StyleAsset>>,
-    pub permalink: Option<String>,
+
+    pub permalink: Option<UrlPath>,
 
     // Custom values for feed entry
     pub entry: Option<FeedEntry>,
@@ -252,7 +253,7 @@ impl Page {
         self.href = Some(href);
 
         if let Some(ref permalink) = self.permalink {
-            let bookmark = website.join(permalink)?;
+            let bookmark = website.join(permalink.as_str())?;
             self.links.push(LinkTag::new_bookmark(bookmark.to_string()));
         }
 
