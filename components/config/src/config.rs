@@ -109,8 +109,6 @@ pub static OG_IMAGE: &str = "image";
 pub static OG_TITLE: &str = "title";
 pub static OG_DESCRIPTION: &str = "description";
 
-static DEFAULT_ICON: &str = "/assets/favicon.png";
-
 pub static LAYOUT_HBS: &str = "main.hbs";
 pub static MAIN: &str = "main";
 //pub static MAIN_CSS: &str = "main.css";
@@ -120,11 +118,16 @@ pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 static DEFAULT_STYLE: &str = "assets/styles/main.css";
 static DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
 
-const fn get_default_engine() -> TemplateEngine {
+
+static DEFAULT_ICON: &str = "assets/favicon.png";
+static DEFAULT_ICON_DATA: &str =
+    "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
+
+const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }
 
-pub static DEFAULT_ENGINE: TemplateEngine = get_default_engine();
+pub static DEFAULT_ENGINE: TemplateEngine = default_engine();
 
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {
@@ -186,10 +189,10 @@ pub struct Config {
     /// Plugin version.
     #[serde_as(as = "DisplayFromStr")]
     version: Version,
-    favicon: UrlPath,
     charset: Option<String>,
     repository: Option<RepositoryConfig>,
     engine: Option<TemplateEngine>,
+    icon: Option<UrlPath>,
 
     // Host name when running locally which overrides the inferred
     // localhost subdomain
@@ -255,10 +258,11 @@ impl Default for Config {
             lang: String::from(LANG),
             host: String::from(HOST),
             version: Version::from((1, 0, 0)),
-            favicon: UrlPath::from(DEFAULT_ICON),
             website: format!("{}{}:{}", SCHEME_HTTP, HOST, PORT)
                 .parse()
                 .unwrap(),
+
+            icon: None,
             charset: Some(String::from(CHARSET)),
             repository: None,
             engine: Some(Default::default()),
@@ -307,6 +311,14 @@ impl Config {
         LinkTag::new_style_sheet(DEFAULT_STYLE.to_string(), None)
     }
 
+    pub fn default_icon() -> LinkTag {
+        LinkTag::new_icon(DEFAULT_ICON_DATA.to_string())
+    }
+
+    pub fn default_icon_url() -> &'static str {
+        DEFAULT_ICON
+    }
+
     pub fn project(&self) -> &PathBuf {
         &self.project
     }
@@ -319,16 +331,16 @@ impl Config {
         &self.host
     }
 
+    pub fn icon_mut(&mut self) -> &mut Option<UrlPath> {
+        &mut self.icon
+    }
+
     pub fn style_mut(&mut self) -> &mut Option<StyleAsset> {
         &mut self.style
     }
 
     pub fn script_mut(&mut self) -> &mut Option<ScriptAsset> {
         &mut self.script
-    }
-
-    pub fn favicon(&self) -> &UrlPath {
-        &self.favicon
     }
 
     pub fn website(&self) -> &Url {

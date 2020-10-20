@@ -9,7 +9,6 @@ use crate::BuildContext;
 pub mod crumbtrail;
 pub mod date;
 pub mod document;
-pub mod favicon;
 pub mod feed;
 pub mod include;
 pub mod json;

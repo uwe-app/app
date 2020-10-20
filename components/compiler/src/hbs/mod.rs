@@ -171,12 +171,13 @@ impl<'a> ParserBuilder<'a> {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.handlebars.register_helper(
-            "favicon",
-            Box::new(helpers::favicon::Icon {
-                context: Arc::clone(&self.context),
-            }),
-        );
+
+        //self.handlebars.register_helper(
+            //"favicon",
+            //Box::new(helpers::favicon::Icon {
+                //context: Arc::clone(&self.context),
+            //}),
+        //);
 
         //self.handlebars.register_helper(
             //"permalink",

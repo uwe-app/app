@@ -57,6 +57,14 @@ impl LinkTag {
         }
     }
 
+    pub fn new_icon(href: String) -> Self {
+        Self {
+            href,
+            rel: Some(vec![RelValue::Icon]),
+            ..Default::default()
+        }
+    }
+
     pub fn new_canonical(href: String) -> Self {
         Self {
             href,

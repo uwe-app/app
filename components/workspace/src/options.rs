@@ -208,6 +208,7 @@ pub(crate) async fn prepare(
     let website = opts.settings.get_canonical_url(cfg)?;
     cfg.set_website(website);
 
+    let main_icon = cfg.icon_mut().take();
     let main_style = cfg.style_mut().take();
     let main_script = cfg.script_mut().take();
     let global_page = cfg.page.get_or_insert(Default::default());
@@ -215,6 +216,38 @@ pub(crate) async fn prepare(
     if opts.settings.is_live() {
         let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
         global_page.links_mut().push(style_tag);
+    }
+
+    let mut icon_random = if !opts.settings.is_release() {
+        Some(format!("?v={}", utils::generate_id(8)))
+    } else { None };
+
+    // Custom icon was defined
+    if let Some(icon) = main_icon {
+        let mut src = icon.to_string();
+        let path = utils::url::to_path_separator(&src);
+        let file = opts.source.join(&path);
+        if !file.exists() || !file.is_file() {
+            return Err(Error::NoMainIcon(src.to_string(), file))
+        }
+        if let Some(ref random) = icon_random {
+            src.push_str(random);
+        }
+        let icon_tag = LinkTag::new_icon(src);
+        global_page.links_mut().push(icon_tag);
+    } else {
+        let mut src = Config::default_icon_url().to_string();
+        let path = utils::url::to_path_separator(&src);
+        let file = opts.source.join(&path);
+        if file.exists() && file.is_file() {
+            if let Some(ref random) = icon_random {
+                src.push_str(random);
+            }
+            let icon_tag = LinkTag::new_icon(src);
+            global_page.links_mut().push(icon_tag);
+        } else {
+            global_page.links_mut().push(Config::default_icon());
+        }
     }
 
     // Custom style was defined

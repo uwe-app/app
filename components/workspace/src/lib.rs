@@ -10,6 +10,9 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
+    #[error("Global icon file {0} does not exist or is not a file ({1})")]
+    NoMainIcon(String, PathBuf),
+
     #[error("Global script file {0} does not exist or is not a file ({1})")]
     NoMainScript(String, PathBuf),
 
