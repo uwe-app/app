@@ -3,7 +3,14 @@ use std::path::PathBuf;
 
 use log::{debug, info};
 
-use config::{Config, ProfileName, ProfileSettings, RuntimeOptions, tags::link::LinkTag};
+use config::{
+    Config,
+    ProfileName,
+    ProfileSettings,
+    RuntimeOptions,
+    script::ScriptAsset,
+    tags::{link::LinkTag, script::ScriptTag},
+};
 
 use crate::{Error, Result};
 
@@ -215,11 +222,23 @@ pub(crate) async fn prepare(
         .join(config::MAIN_CSS);
 
     // Add a primary style sheet by convention if it exists
-    if main_style_file.exists() {
+    if main_style_file.exists() && main_style_file.is_file() {
         let href = utils::url::to_href_separator(
             main_style_file.strip_prefix(&opts.source)?);
         let style_tag = LinkTag::new_style_sheet(href, None);
         global_page.links_mut().push(style_tag);
+    }
+
+    let main_script_file = opts.source
+        .join(config::ASSETS)
+        .join(config::SCRIPTS)
+        .join(config::MAIN_JS);
+
+    if main_script_file.exists() && main_script_file.is_file() {
+        let href = utils::url::to_href_separator(
+            main_script_file.strip_prefix(&opts.source)?);
+        let script_tag = ScriptTag::new(href);
+        global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
     }
 
     Ok(opts)

@@ -130,19 +130,16 @@ impl<'a> PageBuilder<'a> {
     ///
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn scripts(mut self) -> Result<Self> {
+        let href = self.page.href.clone().unwrap();
+        let page_scripts = self.page.scripts_mut();
+
         if let Some(cache) = self.plugins {
-            let href = self.page.href.as_ref().unwrap();
             for (dep, scripts) in cache.scripts().iter() {
                 let apply = dep.apply.as_ref().unwrap();
                 for matcher in apply.scripts_match.iter() {
-                    if matcher.is_match(href) {
-                        if self.page.scripts.is_none() {
-                            self.page.scripts = Some(Vec::new());
-                        }
-                        if let Some(ref mut page_scripts) = self.page.scripts {
-                            for s in scripts.iter().rev() {
-                                page_scripts.insert(0, s.clone());
-                            }
+                    if matcher.is_match(&href) {
+                        for s in scripts.iter().rev() {
+                            page_scripts.insert(0, s.clone());
                         }
                     }
                 }

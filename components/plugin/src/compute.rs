@@ -192,7 +192,7 @@ fn load_styles(
         // NOTE: Normalize to tags so that we avoid the TOML
         // NOTE: error 'values must be emitted before tables'
         items = items
-            .iter()
+            .into_iter()
             .map(|s| StyleAsset::Tag(s.to_tag()))
             .collect::<Vec<_>>();
 

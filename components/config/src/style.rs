@@ -16,11 +16,11 @@ pub enum StyleAsset {
 }
 
 impl StyleAsset {
-    pub fn to_tag(&self) -> StyleTag {
-        match *self {
-            Self::Source(ref s) => StyleTag::new(s),
-            Self::Tag(ref f) => f.clone(),
-            Self::Inline { ref content } => StyleTag::new_content(content),
+    pub fn to_tag(self) -> StyleTag {
+        match self {
+            Self::Source(s) => StyleTag::new(s),
+            Self::Tag(f) => f,
+            Self::Inline { content } => StyleTag::new_content(content),
         }
     }
 
@@ -40,7 +40,7 @@ impl StyleAsset {
                 *s = format!("{}/{}", base, s);
             }
             Self::Tag(ref mut t) => {
-                t.href = format!("{}/{}", base, t.href);
+                t.href = format!("{}/{}", base, &t.href);
             }
             Self::Inline { .. } => return false,
         }
@@ -119,24 +119,24 @@ pub struct StyleTag {
 }
 
 impl StyleTag {
-    pub fn new(s: &str) -> Self {
+    pub fn new(href: String) -> Self {
         Self {
-            href: String::new(),
+            href,
             media: None,
             content: None,
         }
     }
 
-    pub fn to_link_tag(self) -> LinkTag {
-        LinkTag::new_style_sheet(self.href, self.media)
-    }
-
-    pub fn new_content(c: &str) -> Self {
+    pub fn new_content(c: String) -> Self {
         Self {
             href: String::new(),
             media: None,
-            content: Some(c.to_string()),
+            content: Some(c),
         }
+    }
+
+    pub fn to_link_tag(self) -> LinkTag {
+        LinkTag::new_style_sheet(self.href, self.media)
     }
 
     pub fn set_source<S: AsRef<str>>(&mut self, source: S) {

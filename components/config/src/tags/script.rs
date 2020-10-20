@@ -28,9 +28,9 @@ pub struct ScriptTag {
 }
 
 impl ScriptTag {
-    pub fn new(s: &str) -> Self {
+    pub fn new(s: String) -> Self {
         Self {
-            src: Some(s.to_string()),
+            src: Some(s),
             nomodule: None,
             nonce: None,
             integrity: None,
@@ -42,7 +42,7 @@ impl ScriptTag {
         }
     }
 
-    pub fn new_content(c: &str) -> Self {
+    pub fn new_content(c: String) -> Self {
         Self {
             src: None,
             nomodule: None,
@@ -52,7 +52,7 @@ impl ScriptTag {
             referrerpolicy: None,
             script_type: None,
             script_async: None,
-            content: Some(c.to_string()),
+            content: Some(c),
         }
     }
 }

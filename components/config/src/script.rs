@@ -24,9 +24,9 @@ pub enum ScriptAsset {
 impl ScriptAsset {
     pub fn to_tag(self) -> ScriptTag {
         match self {
-            Self::Source(ref s) => ScriptTag::new(s),
+            Self::Source(s) => ScriptTag::new(s),
             Self::Tag(t) => t,
-            Self::Inline { ref content } => ScriptTag::new_content(content),
+            Self::Inline { content } => ScriptTag::new_content(content),
         }
     }
 

@@ -69,7 +69,9 @@ pub struct Page {
     pub layout: Option<String>,
     pub taxonomies: Option<HashMap<String, Vec<String>>>,
 
-    pub scripts: Option<Vec<ScriptAsset>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    scripts: Vec<ScriptAsset>,
+
     pub styles: Option<Vec<StyleAsset>>,
 
     pub permalink: Option<UrlPath>,
@@ -119,7 +121,6 @@ impl Default for Page {
             render: Some(true),
             draft: None,
             standalone: None,
-            links: Vec::new(),
             listing: Some(true),
             noindex: None,
             print: None,
@@ -128,7 +129,8 @@ impl Default for Page {
             query: None,
             layout: None,
             taxonomies: None,
-            scripts: None,
+            links: Vec::new(),
+            scripts: Vec::new(),
             styles: None,
             permalink: None,
             entry: None,
@@ -172,6 +174,14 @@ impl Page {
 
     pub fn links_mut(&mut self) -> &mut Vec<LinkTag> {
         &mut self.links
+    }
+
+    pub fn scripts(&self) -> &Vec<ScriptAsset> {
+        &self.scripts
+    }
+
+    pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
+        &mut self.scripts
     }
 
     //pub fn is_standalone(&self) -> bool {
@@ -302,6 +312,15 @@ impl Page {
     }
 
     pub fn append(&mut self, other: &mut Self) {
+
+        // NOTE: handle lists like this so precedence is correct
+
+        other.links.append(&mut self.links);
+        self.links = mem::take(&mut other.links);
+
+        other.scripts.append(&mut self.scripts);
+        self.scripts = mem::take(&mut other.scripts);
+
         if let Some(title) = other.title.as_mut() {
             self.title = Some(mem::take(title));
         }
@@ -378,9 +397,9 @@ impl Page {
             self.taxonomies = Some(mem::take(taxonomies));
         }
 
-        if let Some(scripts) = other.scripts.as_mut() {
-            self.scripts = Some(mem::take(scripts));
-        }
+        //if let Some(scripts) = other.scripts.as_mut() {
+            //self.scripts = Some(mem::take(scripts));
+        //}
 
         if let Some(styles) = other.styles.as_mut() {
             self.styles = Some(mem::take(styles));
