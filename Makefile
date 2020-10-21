@@ -1,5 +1,5 @@
 # Windows_NT on XP, 2000, 7, Vista, 10 etc.
-ifeq ($(OS),Windows_NT) 
+ifeq ($(OS),Windows_NT)
     HOST_OS := windows
 else
     HOST_OS := $(strip $(shell uname | tr A-Z a-z))
@@ -20,6 +20,8 @@ VERSION_FILE = $(RELEASE_REPO)/version.toml
 
 SITE_ROOT = ../website
 SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
+
+MAC_STRIP = x86_64-apple-darwin15-strip
 
 all: init
 
@@ -43,15 +45,29 @@ current:
 	@printf "" > $(VERSION_FILE)
 	@echo "version = \"$(VERSION)\"" >> $(VERSION_FILE)
 
-build-release:
+strip-release:
+	strip target/release/uwe
+	strip target/release/upm
+	strip target/release/uvm
+
+compile-release:
 	@cargo build --release
 
-build-linux-macos-cross:
+build-release: compile-release strip-release
+
+strip-linux-macos-cross:
+	$(MAC_STRIP) target/x86_64-apple-darwin/release/uwe
+	$(MAC_STRIP) target/x86_64-apple-darwin/release/upm
+	$(MAC_STRIP) target/x86_64-apple-darwin/release/uvm
+
+compile-linux-macos-cross:
 	@PKG_CONFIG_ALLOW_CROSS=1 \
 		LIBZ_SYS_STATIC=1 \
 		CC=o64-clang \
 		CXX=o64-clang++ \
 		cargo build --target=x86_64-apple-darwin --release
+
+build-linux-macos-cross: compile-linux-macos-cross strip-linux-macos-cross
 
 release: build-release build-linux-macos-cross
 

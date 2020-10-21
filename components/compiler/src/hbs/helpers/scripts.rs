@@ -42,7 +42,7 @@ impl HelperDef for Scripts {
             .and_then(|v| v.as_array());
 
         // Get page-level scripts
-        let mut scripts = if let Some(scripts) = scripts {
+        let scripts = if let Some(scripts) = scripts {
             scripts
                 .iter()
                 .map(|v| {

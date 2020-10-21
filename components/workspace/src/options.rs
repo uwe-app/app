@@ -218,7 +218,7 @@ pub(crate) async fn prepare(
         global_page.links_mut().push(style_tag);
     }
 
-    let mut icon_random = if !opts.settings.is_release() {
+    let icon_random = if !opts.settings.is_release() {
         Some(format!("?v={}", utils::generate_id(8)))
     } else { None };
 

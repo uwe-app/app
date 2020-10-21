@@ -3829,7 +3829,7 @@ dependencies = [
 
 [[package]]
 name = "uwe"
-version = "0.40.4"
+version = "0.40.5"
 dependencies = [
  "compiler",
  "config",
