@@ -1,12 +1,15 @@
+use std::io::stderr;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 
 use futures::TryFutureExt;
 use http::StatusCode;
-use log::info;
+use log::debug;
 use slug::slugify;
 use tokio::prelude::*;
 use url::Url;
+use pbr::{ProgressBar, Units};
+use human_bytes::human_bytes;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
@@ -347,7 +350,7 @@ async fn install_registry<P: AsRef<Path>>(
         config::PACKAGE
     );
 
-    info!("Download {}", download_url);
+    debug!("Download {}", download_url);
 
     let archive_path = download_dir.path().join(&file_name);
     let dest = File::create(&archive_path)?;
@@ -360,18 +363,22 @@ async fn install_registry<P: AsRef<Path>>(
         ));
     }
 
-    //let len = response.content_length().unwrap_or(0u64);
-    //println!("Expected content length {}", len);
+    let len = response.content_length().unwrap_or(0);
 
-    // FIXME: show progress bar for download (#220)
+    let mut pb = ProgressBar::on(stderr(), len);
+    pb.set_units(Units::Bytes);
+    pb.show_speed = false;
+    let msg = format!(" Fetch {}@{}", name, version);
+    pb.message(&msg);
 
     let mut content_file = tokio::fs::File::from_std(dest);
-    let mut bytes_read = 0usize;
     while let Some(chunk) = response.chunk().await? {
         content_file.write_all(&chunk).await?;
-        bytes_read += chunk.len();
-        info!("Downloaded {} bytes", bytes_read);
+        pb.add(chunk.len() as u64);
     }
+
+    let msg = format!(" Fetched {}@{} ({}) ✓", name, version, human_bytes(len as f64));
+    pb.finish_print(&msg);
 
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());
     //println!("Downloaded {:?} bytes", File::open(&archive_path)?.metadata()?.len());
