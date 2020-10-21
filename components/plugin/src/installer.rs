@@ -271,7 +271,7 @@ pub(crate) async fn get_cached<P: AsRef<Path>>(
     let (version, package) =
         resolve_package(registry, name, &dep.version).await?;
 
-    let extract_target = get_extract_dir(name, &version)?;
+    let extract_target = installation_dir(name, &version)?;
     let extract_target_plugin = extract_target.join(PLUGIN);
 
     // Got an existing plugin file in the target cache directory
@@ -287,7 +287,7 @@ pub(crate) async fn get_cached<P: AsRef<Path>>(
     Ok(None)
 }
 
-fn get_extract_dir(name: &str, version: &Version) -> Result<PathBuf> {
+pub fn installation_dir(name: &str, version: &Version) -> Result<PathBuf> {
     let extract_dir =
         format!("{}{}{}", name, config::PLUGIN_NS, version.to_string());
     Ok(dirs::cache_src_dir()?.join(extract_dir))
@@ -329,7 +329,7 @@ async fn install_registry<P: AsRef<Path>>(
     let (version, package) =
         resolve_package(registry, name, &dep.version).await?;
 
-    let extract_target = get_extract_dir(name, &version)?;
+    let extract_target = installation_dir(name, &version)?;
     if let Some(plugin) = get_cached(project, registry, dep).await?.take() {
         return Ok(plugin);
     }
@@ -377,7 +377,7 @@ async fn install_registry<P: AsRef<Path>>(
         pb.add(chunk.len() as u64);
     }
 
-    let msg = format!(" Fetched {}@{} ({}) ✓", name, version, human_bytes(len as f64));
+    let msg = format!(" Fetched {}@{} ({})", name, version, human_bytes(len as f64));
     pb.finish_print(&msg);
 
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());

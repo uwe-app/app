@@ -125,6 +125,9 @@ pub enum Error {
     #[error("The dependency {0} uses the local scope {1} but no plugins are available")]
     PluginScopeRequiresParent(String, String),
 
+    #[error("Plugin directory {0} does not exist, remove the lock file and try again")]
+    NoPluginInstallDir(PathBuf),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{info, warn};
+use log::{info, warn, debug};
 
 use futures::future;
 
@@ -78,6 +78,7 @@ struct Resolver<'a> {
     intermediate: IntermediateMap,
     resolved: ResolvedPlugins,
     offline: bool,
+    updated: bool,
 }
 
 impl<'a> Resolver<'a> {
@@ -93,6 +94,7 @@ impl<'a> Resolver<'a> {
             intermediate: HashMap::new(),
             resolved: Vec::new(),
             offline,
+            updated: false,
         })
     }
 
@@ -113,6 +115,19 @@ impl<'a> Resolver<'a> {
         Ok(self)
     }
 
+    async fn update_registry(&mut self) -> Result<()> {
+        if !self.offline {
+            if !self.updated {
+                info!("Update registry cache");
+                runtime::fetch().await?;
+                self.updated = true;
+            }
+        } else {
+            warn!("Skip registry update in offline mode");
+        }
+        Ok(())
+    }
+
     /// Calculate the lock file difference and install plugins when
     /// the difference is not empty.
     async fn install(&mut self) -> Result<&mut Resolver<'a>> {
@@ -130,7 +145,7 @@ impl<'a> Resolver<'a> {
             .package
             .iter()
             .filter(|entry| {
-                let (_dep, solved) =
+                let (dep, solved) =
                     self.intermediate.get(entry).as_ref().unwrap();
                 match solved {
                     SolvedReference::Plugin(_) => return true,
@@ -156,12 +171,7 @@ impl<'a> Resolver<'a> {
         self.resolved.append(&mut done);
 
         if !difference.is_empty() {
-            if !self.offline {
-                info!("Update registry cache");
-                runtime::fetch().await?;
-            } else {
-                warn!("Skip registry update in offline mode");
-            }
+            self.update_registry().await?;
 
             // Refresh the lock file entries in case we can resolve
             // newer versions from the updated registry information
@@ -181,7 +191,24 @@ impl<'a> Resolver<'a> {
         // Update local scoped plugins with correct attributes
         self.scopes()?;
 
+        // Lock file can be valid and difference is zero
+        // but packages are missing because they were deleted
+        // from the cache
+        self.verify().await?;
+
         Ok(self)
+    }
+
+    async fn verify(&mut self) -> Result<()>{
+        for e in self.lock.current.package.iter() {
+            if let Some(_) = e.source {
+                let dir = installer::installation_dir(&e.name, &e.version)?;
+                if !dir.exists() || !dir.is_dir() {
+                    return Err(Error::NoPluginInstallDir(dir))
+                }
+            }
+        }
+        Ok(())
     }
 
     fn scopes(&mut self) -> Result<()> {
@@ -408,6 +435,8 @@ async fn solver(
         } else {
             return Err(Error::DependencyNotFound(dep.to_string()));
         };
+
+        //println!("Solved {:#?}", solved);
 
         check(&name, &dep, &solved)?;
 
