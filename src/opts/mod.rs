@@ -132,17 +132,17 @@ pub fn fatal(e: Error) -> Result<()> {
     std::process::exit(1);
 }
 
+pub mod alias;
 pub mod build;
 pub mod docs;
-pub mod init;
+pub mod new;
 pub mod publish;
 pub mod run;
-pub mod site;
 pub mod web_server;
 
+pub use self::alias::Alias;
 pub use self::build::Build;
 pub use self::docs::Docs;
-pub use self::init::Init;
+pub use self::new::New;
 pub use self::publish::Publish;
 pub use self::run::Run;
-pub use self::site::Site;

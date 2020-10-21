@@ -1,7 +1,7 @@
 pub mod build;
 pub mod docs;
 pub mod error;
-pub mod init;
+pub mod new;
 pub mod opts;
 pub mod plugin;
 pub mod publish;

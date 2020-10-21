@@ -1,8 +1,10 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use log::info;
+use std::path::PathBuf;
 use std::time::SystemTime;
+
+use log::info;
 use structopt::StructOpt;
 
 use config::{
@@ -14,7 +16,7 @@ use publisher::PublishProvider;
 
 use uwe::{
     self,
-    opts::{self, fatal, Build, Docs, Publish, Run},
+    opts::{self, fatal, Alias, Build, Docs, New, Publish, Run},
     Error, Result,
 };
 
@@ -41,6 +43,12 @@ enum Command {
         args: Build,
     },
 
+    /// Create a new project
+    New {
+        #[structopt(flatten)]
+        args: New,
+    },
+
     /// Serve static files
     Run {
         #[structopt(flatten)]
@@ -58,6 +66,68 @@ enum Command {
         #[structopt(flatten)]
         args: Publish,
     },
+
+    Site {
+        #[structopt(subcommand)]
+        cmd: Site,
+    }
+}
+
+/// Manage project source files
+#[derive(StructOpt, Debug)]
+pub enum Site {
+    /// Initialize, add files and commit.
+    Create {
+        #[structopt(short, long)]
+        message: String,
+
+        /// Destination path.
+        target: PathBuf,
+    },
+
+    /// Clone a repository.
+    Clone {
+        /// Repository URL.
+        source: String,
+
+        /// Destination path.
+        target: Option<PathBuf>,
+    },
+
+    /// Copy a repository (clone and squash)
+    Copy {
+        /// Initial commit message.
+        #[structopt(short, long)]
+        message: String,
+
+        /// Repository URL.
+        source: String,
+
+        /// Destination path.
+        target: Option<PathBuf>,
+    },
+
+    /// List project blueprints
+    #[structopt(alias = "ls")]
+    List {},
+
+    /// Pull a repository.
+    Pull {
+        #[structopt(short, long, default_value = "origin")]
+        remote: String,
+
+        #[structopt(short, long, default_value = "master")]
+        branch: String,
+
+        /// Repository path.
+        target: Option<PathBuf>,
+    },
+
+    /// Manage site aliases
+    Alias {
+        #[structopt(flatten)]
+        args: Alias,
+    },
 }
 
 impl Command {
@@ -70,6 +140,23 @@ impl Command {
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
+
+        Command::New { args } => {
+            let opts = uwe::new::ProjectOptions {
+                source: args.source,
+                message: args.message,
+                target: args.target,
+                language: args.language,
+                host: args.host,
+                locales: args.locales,
+            };
+            uwe::new::project(opts)?;
+        }
+
+        Command::Site { cmd } => {
+            self::site::run(cmd).await?;
+        }
+
         Command::Docs { args } => {
             let target = uwe::docs::get_target().await?;
             let opts = uwe::opts::server_config(
@@ -207,4 +294,139 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+mod site {
+    use std::path::PathBuf;
+    use log::info;
+    use url::Url;
+    use super::Site;
+    use uwe::{
+        opts::{Alias},
+        Error, Result,
+    };
+
+    fn create(target: PathBuf, message: String) -> Result<()> {
+        if !target.exists() || !target.is_dir() {
+            return Err(Error::NotDirectory(target.to_path_buf()));
+        }
+
+        scm::init(&target, &message)
+            .map(|_| ())
+            .map_err(Error::from)
+    }
+
+    fn clone_or_copy(
+        source: String,
+        target: Option<PathBuf>,
+        pristine: Option<String>,
+    ) -> Result<()> {
+        let target = if let Some(target) = target {
+            target.to_path_buf()
+        } else {
+            let base = std::env::current_dir()?;
+
+            let mut target_parts =
+                source.trim_end_matches("/").split("/").collect::<Vec<_>>();
+
+            let target_name =
+                target_parts.pop().ok_or_else(|| Error::NoTargetName)?;
+            base.join(target_name)
+        };
+
+        let _ = source
+            .parse::<Url>()
+            .map_err(|_| Error::InvalidRepositoryUrl(source.to_string()))?;
+
+        if target.exists() {
+            return Err(Error::TargetExists(target.to_path_buf()));
+        }
+
+        if let Some(ref message) = pristine {
+            scm::copy(&source, &target, message)
+                .map(|_| ())
+                .map_err(Error::from)
+        } else {
+            scm::clone(&source, &target)
+                .map(|_| ())
+                .map_err(Error::from)
+        }
+    }
+
+    fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
+        let target = if let Some(target) = target {
+            target.to_path_buf()
+        } else {
+            std::env::current_dir()?
+        };
+
+        if !target.exists() || !target.is_dir() {
+            return Err(Error::NotDirectory(target.to_path_buf()));
+        }
+
+        scm::open(&target)
+            .map_err(|_| Error::NotRepository(target.to_path_buf()))?;
+
+        scm::pull(&target, Some(remote), Some(branch))
+            .map(|_| ())
+            .map_err(Error::from)
+    }
+
+    fn list() -> Result<()> {
+        let blueprints = dirs::blueprint_dir()?;
+        for entry in std::fs::read_dir(blueprints)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                let name = path.file_name().unwrap().to_string_lossy();
+                info!("{} ({})", &*name, path.display());
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn run(cmd: Site) -> Result<()> {
+        match cmd {
+            Site::Clone { source, target } => {
+                clone_or_copy(source, target, None)?;
+            }
+
+            Site::Copy {
+                source,
+                target,
+                message,
+            } => {
+                clone_or_copy(source, target, Some(message))?;
+            }
+
+            Site::Create { target, message } => {
+                create(target, message)?;
+            }
+
+            Site::List {} => {
+                list()?;
+            }
+
+            Site::Pull {
+                target,
+                remote,
+                branch,
+            } => {
+                pull(target, remote, branch)?;
+            }
+
+            Site::Alias { args } => match args {
+                Alias::Add { name, project } => {
+                    uwe::site::add(project, name)?;
+                }
+                Alias::Remove { name } => {
+                    uwe::site::remove(name)?;
+                }
+                Alias::List { .. } => {
+                    uwe::site::list()?;
+                }
+            },
+        }
+
+        Ok(())
+    }
 }

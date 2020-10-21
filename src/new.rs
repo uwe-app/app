@@ -14,7 +14,7 @@ static DEFAULT_NAME: &str = "default";
 static DEFAULT_MESSAGE: &str = "Initial files.";
 
 #[derive(Debug)]
-pub struct InitOptions {
+pub struct ProjectOptions {
     pub target: PathBuf,
     pub message: Option<String>,
     pub source: Option<String>,
@@ -159,7 +159,7 @@ fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
     Ok(())
 }
 
-pub fn init(options: InitOptions) -> Result<()> {
+pub fn project(options: ProjectOptions) -> Result<()> {
     let mut language = None;
 
     if let Some(ref lang) = options.language {
