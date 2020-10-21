@@ -170,6 +170,131 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     }
 }
 
+/// Prepare the site favicon.
+fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
+    let main_icon = cfg.icon_mut().take();
+    let global_page = cfg.page.get_or_insert(Default::default());
+
+    let icon_random = if !opts.settings.is_release() {
+        Some(format!("?v={}", utils::generate_id(8)))
+    } else { None };
+
+    // Custom icon was defined
+    if let Some(icon) = main_icon {
+        let mut src = icon.to_string();
+        let path = utils::url::to_path_separator(&src);
+        let file = opts.source.join(&path);
+        if !file.exists() || !file.is_file() {
+            return Err(Error::NoMainIcon(src.to_string(), file))
+        }
+        if let Some(ref random) = icon_random {
+            src.push_str(random);
+        }
+        let icon_tag = LinkTag::new_icon(src);
+        global_page.links_mut().push(icon_tag);
+    } else {
+        let mut src = Config::default_icon_url().to_string();
+        let path = utils::url::to_path_separator(&src);
+        let file = opts.source.join(&path);
+        if file.exists() && file.is_file() {
+            if let Some(ref random) = icon_random {
+                src.push_str(random);
+            }
+            let icon_tag = LinkTag::new_icon(src);
+            global_page.links_mut().push(icon_tag);
+        } else {
+            global_page.links_mut().push(Config::default_icon());
+        }
+    }
+
+    Ok(())
+}
+
+/// Prepare the live reload style and script.
+fn prepare_live(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
+    let global_page = cfg.page.get_or_insert(Default::default());
+    let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
+    global_page.links_mut().push(style_tag);
+
+    let script_tag = ScriptTag::new(livereload::javascript());
+    global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+
+    Ok(())
+}
+
+/// Prepare the main style sheet.
+fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
+    let main_style = cfg.style_mut().take();
+    let global_page = cfg.page.get_or_insert(Default::default());
+
+    // Custom style was defined
+    if let Some(style) = main_style {
+        // Check main style exists
+        if let Some(ref src) = style.source() {
+            let path = utils::url::to_path_separator(src);
+            let file = opts.source.join(&path);
+            if !file.exists() || !file.is_file() {
+                return Err(Error::NoMainStyle(src.to_string(), file))
+            }
+        }
+
+        global_page.links_mut().push(style.to_tag().to_link_tag());
+
+    // Using the style convention
+    } else {
+        let asset = Config::default_style();
+        let main_style_path = utils::url::to_path_separator(
+            asset.source());
+        let main_style_file = opts.source.join(&main_style_path);
+        // Add a primary style sheet by convention if it exists
+        if main_style_file.exists() && main_style_file.is_file() {
+            let href = utils::url::to_href_separator(
+                main_style_file.strip_prefix(&opts.source)?);
+            let style_tag = LinkTag::new_style_sheet(href, None);
+            global_page.links_mut().push(style_tag);
+        }
+    }
+
+    Ok(())
+}
+
+/// Prepare the main script.
+fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
+    let main_script = cfg.script_mut().take();
+    let global_page = cfg.page.get_or_insert(Default::default());
+
+    // Custom script was defined
+    if let Some(script) = main_script {
+        // Check main script exists
+        if let Some(ref src) = script.source() {
+            let path = utils::url::to_path_separator(src);
+            let file = opts.source.join(&path);
+            if !file.exists() || !file.is_file() {
+                return Err(Error::NoMainScript(src.to_string(), file))
+            }
+        }
+
+        global_page.scripts_mut().push(script);
+    // Using the script convention
+    } else {
+        let asset = Config::default_script();
+        let main_script_path = utils::url::to_path_separator(asset
+            .to_tag()
+            .source()
+            .as_ref()
+            .unwrap());
+        let main_script_file = opts.source.join(&main_script_path);
+        if main_script_file.exists() && main_script_file.is_file() {
+            let href = utils::url::to_href_separator(
+                main_script_file.strip_prefix(&opts.source)?);
+            let script_tag = ScriptTag::new(href);
+            global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+        }
+    }
+
+    Ok(())
+}
+
 pub(crate) async fn prepare(
     cfg: &mut Config,
     args: &ProfileSettings,
@@ -208,104 +333,13 @@ pub(crate) async fn prepare(
     let website = opts.settings.get_canonical_url(cfg)?;
     cfg.set_website(website);
 
-    let main_icon = cfg.icon_mut().take();
-    let main_style = cfg.style_mut().take();
-    let main_script = cfg.script_mut().take();
-    let global_page = cfg.page.get_or_insert(Default::default());
-
     if opts.settings.is_live() {
-        let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
-        global_page.links_mut().push(style_tag);
+        prepare_live(cfg, &opts)?;
     }
 
-    let icon_random = if !opts.settings.is_release() {
-        Some(format!("?v={}", utils::generate_id(8)))
-    } else { None };
-
-    // Custom icon was defined
-    if let Some(icon) = main_icon {
-        let mut src = icon.to_string();
-        let path = utils::url::to_path_separator(&src);
-        let file = opts.source.join(&path);
-        if !file.exists() || !file.is_file() {
-            return Err(Error::NoMainIcon(src.to_string(), file))
-        }
-        if let Some(ref random) = icon_random {
-            src.push_str(random);
-        }
-        let icon_tag = LinkTag::new_icon(src);
-        global_page.links_mut().push(icon_tag);
-    } else {
-        let mut src = Config::default_icon_url().to_string();
-        let path = utils::url::to_path_separator(&src);
-        let file = opts.source.join(&path);
-        if file.exists() && file.is_file() {
-            if let Some(ref random) = icon_random {
-                src.push_str(random);
-            }
-            let icon_tag = LinkTag::new_icon(src);
-            global_page.links_mut().push(icon_tag);
-        } else {
-            global_page.links_mut().push(Config::default_icon());
-        }
-    }
-
-    // Custom style was defined
-    if let Some(style) = main_style {
-        // Check main style exists
-        if let Some(ref src) = style.source() {
-            let path = utils::url::to_path_separator(src);
-            let file = opts.source.join(&path);
-            if !file.exists() || !file.is_file() {
-                return Err(Error::NoMainStyle(src.to_string(), file))
-            }
-        }
-
-        global_page.links_mut().push(style.to_tag().to_link_tag());
-
-    // Using the style convention
-    } else {
-        let asset = Config::default_style();
-        let main_style_path = utils::url::to_path_separator(
-            asset.source());
-        let main_style_file = opts.source.join(&main_style_path);
-        // Add a primary style sheet by convention if it exists
-        if main_style_file.exists() && main_style_file.is_file() {
-            let href = utils::url::to_href_separator(
-                main_style_file.strip_prefix(&opts.source)?);
-            let style_tag = LinkTag::new_style_sheet(href, None);
-            global_page.links_mut().push(style_tag);
-        }
-    }
-
-    // Custom script was defined
-    if let Some(script) = main_script {
-        // Check main script exists
-        if let Some(ref src) = script.source() {
-            let path = utils::url::to_path_separator(src);
-            let file = opts.source.join(&path);
-            if !file.exists() || !file.is_file() {
-                return Err(Error::NoMainScript(src.to_string(), file))
-            }
-        }
-
-        global_page.scripts_mut().push(script);
-    // Using the script convention
-    } else {
-        let asset = Config::default_script();
-        let main_script_path = utils::url::to_path_separator(asset
-            .to_tag()
-            .source()
-            .as_ref()
-            .unwrap());
-        let main_script_file = opts.source.join(&main_script_path);
-        if main_script_file.exists() && main_script_file.is_file() {
-            let href = utils::url::to_href_separator(
-                main_script_file.strip_prefix(&opts.source)?);
-            let script_tag = ScriptTag::new(href);
-            global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
-        }
-    }
+    prepare_icon(cfg, &opts)?;
+    prepare_style(cfg, &opts)?;
+    prepare_script(cfg, &opts)?;
 
     Ok(opts)
 }
