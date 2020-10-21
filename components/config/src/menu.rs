@@ -67,7 +67,7 @@ impl MenuEntry {
         match self.definition {
             MenuReference::File { ref file, .. } => {
                 let buf = base.join(utils::url::to_path_separator(
-                    file.trim_start_matches("/"),
+                    file.as_str().trim_start_matches("/"),
                 ));
                 if !buf.exists() || !buf.is_file() {
                     return Err(Error::NoMenuFile(file.to_string(), buf));

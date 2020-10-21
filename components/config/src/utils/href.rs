@@ -16,17 +16,17 @@ pub struct UrlPath {
 }
 
 impl UrlPath {
-    pub fn trim_start_matches(&self, val: &str) -> &str {
-        self.value.trim_start_matches(val)
-    }
+    //pub fn trim_start_matches(&self, val: &str) -> &str {
+        //self.value.trim_start_matches(val)
+    //}
 
-    pub fn starts_with(&self, val: &str) -> bool {
-        self.value.starts_with(val)
-    }
+    //pub fn starts_with(&self, val: &str) -> bool {
+        //self.value.starts_with(val)
+    //}
 
     pub fn to_path_buf(&self) -> PathBuf {
         PathBuf::from(utils::url::to_path_separator(
-            self.trim_start_matches("/"),
+            self.as_str().trim_start_matches("/"),
         ))
     }
 

@@ -170,6 +170,18 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     }
 }
 
+/// Prepare the live reload style and script.
+fn prepare_live(cfg: &mut Config) -> Result<()> {
+    let global_page = cfg.page.get_or_insert(Default::default());
+    let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
+    global_page.links_mut().push(style_tag);
+
+    let script_tag = ScriptTag::new(livereload::javascript());
+    global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+
+    Ok(())
+}
+
 /// Prepare the site favicon.
 fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     let main_icon = cfg.icon_mut().take();
@@ -210,18 +222,6 @@ fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     Ok(())
 }
 
-/// Prepare the live reload style and script.
-fn prepare_live(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
-    let global_page = cfg.page.get_or_insert(Default::default());
-    let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
-    global_page.links_mut().push(style_tag);
-
-    let script_tag = ScriptTag::new(livereload::javascript());
-    global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
-
-    Ok(())
-}
-
 /// Prepare the main style sheet.
 fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     let main_style = cfg.style_mut().take();
@@ -230,7 +230,7 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     // Custom style was defined
     if let Some(style) = main_style {
         // Check main style exists
-        if let Some(ref src) = style.source() {
+        if let Some(src) = style.source() {
             let path = utils::url::to_path_separator(src);
             let file = opts.source.join(&path);
             if !file.exists() || !file.is_file() {
@@ -266,7 +266,7 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     // Custom script was defined
     if let Some(script) = main_script {
         // Check main script exists
-        if let Some(ref src) = script.source() {
+        if let Some(src) = script.source() {
             let path = utils::url::to_path_separator(src);
             let file = opts.source.join(&path);
             if !file.exists() || !file.is_file() {
@@ -334,7 +334,7 @@ pub(crate) async fn prepare(
     cfg.set_website(website);
 
     if opts.settings.is_live() {
-        prepare_live(cfg, &opts)?;
+        prepare_live(cfg)?;
     }
 
     prepare_icon(cfg, &opts)?;

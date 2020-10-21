@@ -136,7 +136,7 @@ fn compile_file_menu<'c>(
                                                     // NOTE: that we want to use the {{ link }} template
                                                     // NOTE: call but cannot as the markdown parser
                                                     // NOTE: converts the braces to HTML entities :(
-                                                    // NOTE: so instead we return a Text element so 
+                                                    // NOTE: so instead we return a Text element so
                                                     // NOTE: that we can embed template code.
 
                                                     let href_template = format!("{{{{ link \"{}\" }}}}", &href);
@@ -253,7 +253,7 @@ pub fn build<'c>(
             let all_pages = collation.get_pages();
 
             let dir = utils::url::to_path_separator(
-                directory.trim_start_matches("/"),
+                directory.as_str().trim_start_matches("/"),
             );
             let dir_buf = options.source.join(dir);
             let dir_count = dir_buf.components().count();

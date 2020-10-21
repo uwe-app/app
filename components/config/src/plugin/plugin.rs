@@ -364,7 +364,7 @@ impl Plugin {
     /// Resolve a URL path relative to this plugin.
     pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
         self.base
-            .join(utils::url::to_path_separator(path.trim_start_matches("/")))
+            .join(utils::url::to_path_separator(path.as_str().trim_start_matches("/")))
     }
 }
 
@@ -423,7 +423,7 @@ pub struct TemplateAsset {
 impl TemplateAsset {
     pub fn to_path_buf(&self, base: &PathBuf) -> PathBuf {
         base.join(utils::url::to_path_separator(
-            self.file.trim_start_matches("/"),
+            self.file.as_str().trim_start_matches("/"),
         ))
     }
 }

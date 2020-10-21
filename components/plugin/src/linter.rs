@@ -120,7 +120,7 @@ fn lint_license(license: &LicenseGroup) -> Result<(), LintError> {
 }
 
 fn lint_path(plugin: &Plugin, path: &UrlPath) -> Result<(), LintError> {
-    if path.starts_with("/") {
+    if path.as_str().starts_with("/") {
         return Err(LintError::LintNoAbsolutePath(path.to_string()));
     }
 
