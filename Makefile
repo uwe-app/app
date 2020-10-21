@@ -9,41 +9,22 @@ ifeq ($(HOST_OS),darwin)
 	HOST_OS = macos
 endif
 
-INSTALLER_BIN = uwe-installer
-#RELEASE_ROOT = ../release
-#RELEASE_REPO = $(RELEASE_ROOT)/$(HOST_OS)
-
 VERSION_INFO := $(shell cargo run -- --version)
 VERSION := $(subst uwe ,,$(VERSION_INFO))
 VERSION_TAG := "v$(VERSION)"
-VERSION_FILE = $(RELEASE_REPO)/version.toml
-
-SITE_ROOT = ../website
-SITE_RELEASE := $(SITE_ROOT)/site/resources/files/$(HOST_OS)
 
 MAC_STRIP = x86_64-apple-darwin15-strip
 
-all: init
+all: docs install
 
 docs:
 	@cargo doc --open --no-deps --lib --workspace
-
-installer:
-	@cargo build --release --bin=$(INSTALLER_BIN)
-	@mkdir -p $(SITE_RELEASE)
-	@cp -fv target/release/$(INSTALLER_BIN) $(SITE_RELEASE)/$(INSTALLER_BIN)
 
 info:
 	@echo $(HOST_OS)
 	@echo $(VERSION_INFO)
 	@echo $(VERSION)
 	@echo $(VERSION_TAG)
-	@echo $(VERSION_FILE)
-	@echo $(SITE_RELEASE)
-
-current:
-	@printf "" > $(VERSION_FILE)
-	@echo "version = \"$(VERSION)\"" >> $(VERSION_FILE)
 
 strip-release:
 	strip target/release/uwe
@@ -80,4 +61,4 @@ install: build-release
 		target/release/uws \
 		$(HOME)/.uwe/bin
 
-.PHONY: all install release
+.PHONY: all docs install release
