@@ -5,7 +5,7 @@ use structopt::StructOpt;
 use super::web_server::WebServerOpts;
 
 #[derive(StructOpt, Debug)]
-pub struct Run {
+pub struct Server {
     #[structopt(flatten)]
     pub server: WebServerOpts,
 

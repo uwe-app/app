@@ -16,7 +16,7 @@ use publisher::PublishProvider;
 
 use uwe::{
     self,
-    opts::{self, fatal, Alias, Build, Docs, New, Publish, Run},
+    opts::{self, fatal, Alias, Build, Docs, New, Publish, Server},
     Error, Result,
 };
 
@@ -50,9 +50,10 @@ enum Command {
     },
 
     /// Serve static files
-    Run {
+    #[structopt(alias = "run")]
+    Server {
         #[structopt(flatten)]
-        args: Run,
+        args: Server,
     },
 
     /// Browse the documentation
@@ -168,7 +169,7 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::docs::open(opts).await?;
         }
 
-        Command::Run { args } => {
+        Command::Server { args } => {
             if !args.target.exists() || !args.target.is_dir() {
                 return fatal(Error::NotDirectory(args.target.to_path_buf()));
             }
