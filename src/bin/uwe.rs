@@ -16,7 +16,7 @@ use publisher::PublishProvider;
 
 use uwe::{
     self,
-    opts::{self, fatal, Alias, Build, Docs, New, Publish, Server},
+    opts::{self, fatal, Alias, Build, Docs, List, New, Publish, Server},
     Error, Result,
 };
 
@@ -47,6 +47,13 @@ enum Command {
     New {
         #[structopt(flatten)]
         args: New,
+    },
+
+    /// List resources
+    #[structopt(alias = "ls")]
+    List {
+        #[structopt(flatten)]
+        args: List,
     },
 
     /// Serve static files
@@ -108,10 +115,6 @@ pub enum Site {
         target: Option<PathBuf>,
     },
 
-    /// List project blueprints
-    #[structopt(alias = "ls")]
-    List {},
-
     /// Pull a repository.
     Pull {
         #[structopt(short, long, default_value = "origin")]
@@ -156,6 +159,12 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Site { cmd } => {
             self::site::run(cmd).await?;
+        }
+
+        Command::List { args } => {
+            if args.blueprints {
+                uwe::list::list_blueprints().await?;
+            }
         }
 
         Command::Docs { args } => {
@@ -299,7 +308,6 @@ async fn main() -> Result<()> {
 
 mod site {
     use std::path::PathBuf;
-    use log::info;
     use url::Url;
     use super::Site;
     use uwe::{
@@ -373,18 +381,6 @@ mod site {
             .map_err(Error::from)
     }
 
-    fn list() -> Result<()> {
-        let blueprints = dirs::blueprint_dir()?;
-        for entry in std::fs::read_dir(blueprints)? {
-            let path = entry?.path();
-            if path.is_dir() {
-                let name = path.file_name().unwrap().to_string_lossy();
-                info!("{} ({})", &*name, path.display());
-            }
-        }
-        Ok(())
-    }
-
     pub async fn run(cmd: Site) -> Result<()> {
         match cmd {
             Site::Clone { source, target } => {
@@ -403,10 +399,6 @@ mod site {
                 create(target, message)?;
             }
 
-            Site::List {} => {
-                list()?;
-            }
-
             Site::Pull {
                 target,
                 remote,
@@ -417,13 +409,13 @@ mod site {
 
             Site::Alias { args } => match args {
                 Alias::Add { name, project } => {
-                    uwe::site::add(project, name)?;
+                    uwe::alias::add(project, name)?;
                 }
                 Alias::Remove { name } => {
-                    uwe::site::remove(name)?;
+                    uwe::alias::remove(name)?;
                 }
                 Alias::List { .. } => {
-                    uwe::site::list()?;
+                    uwe::alias::list()?;
                 }
             },
         }

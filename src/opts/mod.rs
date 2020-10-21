@@ -135,6 +135,7 @@ pub fn fatal(e: Error) -> Result<()> {
 pub mod alias;
 pub mod build;
 pub mod docs;
+pub mod list;
 pub mod new;
 pub mod publish;
 pub mod server;
@@ -143,6 +144,7 @@ pub mod web_server;
 pub use self::alias::Alias;
 pub use self::build::Build;
 pub use self::docs::Docs;
+pub use self::list::List;
 pub use self::new::New;
 pub use self::publish::Publish;
 pub use self::server::Server;
