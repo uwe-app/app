@@ -18,7 +18,7 @@ pub mod include;
 //pub mod menu;
 pub mod page;
 pub mod parent;
-//pub mod random;
+pub mod random;
 //pub mod scripts;
 //pub mod search;
 //pub mod sibling;
