@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 use std::path::PathBuf;
 
-//use handlebars::*;
-
 use config::markdown as md;
 use crate::BuildContext;
 
@@ -20,7 +18,7 @@ pub mod page;
 pub mod parent;
 pub mod random;
 //pub mod scripts;
-//pub mod search;
+pub mod search;
 pub mod sibling;
 pub mod slug;
 pub mod toc;

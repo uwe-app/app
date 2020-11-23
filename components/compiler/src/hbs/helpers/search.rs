@@ -1,63 +1,55 @@
 use std::sync::Arc;
 
-use handlebars::*;
-
+use bracket::helper::prelude::*;
 use serde_json::json;
-
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Embed {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Embed {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Embed {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        _ctx: &'rc Context,
-        _rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
         // The identifier for which search index to use
-        let id = h
-            .hash_get("id")
-            .map(|v| v.value())
+        let id = ctx
+            .param("id")
             .and_then(|v| v.as_str())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `search` helper, hash parameter `id` must be a string",
             ))?
             .to_string();
 
         // Are we writing the script? Otherwise we print the embed markup.
-        let script = h
-            .hash_get("script")
-            .map(|v| v.value())
+        let script = ctx
+            .param("script")
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `search` helper, hash parameter `script` must be a boolean",
             ))?;
 
         // Customize the class for the embed wrapper element (embed)
-        let class = h
-            .hash_get("class")
-            .map(|v| v.value())
+        let class = ctx
+            .param("class")
             .or(Some(&json!("search-wrapper")))
             .and_then(|v| v.as_str())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `search` helper, hash parameter `class` must be a string",
             ))?
             .to_string();
 
         // Set the search input placeholder (embed)
-        let placeholder = h
-            .hash_get("placeholder")
-            .map(|v| v.value())
+        let placeholder = ctx
+            .param("placeholder")
             .or(Some(&json!("Keywords")))
             .and_then(|v| v.as_str())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `search` helper, hash parameter `placeholder` must be a string",
             ))?
             .to_string();
@@ -68,7 +60,7 @@ impl HelperDef for Embed {
 
         let search_item = search.items.get(&id);
         if search_item.is_none() {
-            return Err(RenderError::new(format!(
+            return Err(HelperError::new(format!(
                 "Type error for `search` helper, settings for `{}` search index not found",
                 &id
             )));
@@ -121,7 +113,7 @@ impl HelperDef for Embed {
                 &class, &id, &placeholder, &id
             )
         };
-        out.write(&markup)?;
-        Ok(())
+        rc.write(&markup)?;
+        Ok(None)
     }
 }
