@@ -7,7 +7,7 @@ use config::markdown as md;
 use crate::BuildContext;
 
 pub mod crumbtrail;
-//pub mod date;
+pub mod date;
 //pub mod document;
 //pub mod feed;
 //pub mod include;

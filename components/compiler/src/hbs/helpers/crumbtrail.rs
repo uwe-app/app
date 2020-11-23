@@ -25,6 +25,10 @@ impl Helper for Components {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+
+        ctx.arity(0..0)?;
+
+        // TODO: use type assertions for this.
         let base_path = rc
             .evaluate("@root/file.source")?
             .ok_or_else(|| {
