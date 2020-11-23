@@ -1,36 +1,33 @@
-use handlebars::*;
-
+use bracket::helper::prelude::*;
 use serde_json::json;
 
-#[derive(Clone, Copy)]
 pub struct Count;
 
-impl HelperDef for Count {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Count {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        _ctx: &'rc Context,
-        _rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
+        ctx.arity(0..0)?;
+
         // Indicate the user wants to print the reading time derived
         // from the `avg`
-        let time = h
-            .hash_get("time")
-            .map(|v| v.value())
+        let time = ctx
+            .param("time")
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `words` helper, hash parameter `time` must be a boolean",
             ))?;
 
-        let avg = h
-            .hash_get("avg")
-            .map(|v| v.value())
+        let avg = ctx
+            .param("avg")
             .or(Some(&json!(250)))
             .and_then(|v| v.as_u64())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `words` helper, hash parameter `avg` must be a positive integer",
             ))?;
 
@@ -38,7 +35,7 @@ impl HelperDef for Count {
         // than this value is a bit crazy. Also this helps to avoid a divide
         // by zero panic.
         if avg < 100 {
-            return Err(RenderError::new(
+            return Err(HelperError::new(
                 "Type error for `words` helper, the `avg` value must be >= 100",
             ));
         }
@@ -51,7 +48,7 @@ impl HelperDef for Count {
             format!("<words />")
         };
 
-        out.write(&el)?;
-        Ok(())
+        rc.write(&el)?;
+        Ok(None)
     }
 }

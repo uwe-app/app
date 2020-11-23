@@ -24,7 +24,7 @@ pub mod random;
 //pub mod sibling;
 pub mod slug;
 //pub mod toc;
-//pub mod word;
+pub mod word;
 
 /*
 pub struct BufferedOutput {
