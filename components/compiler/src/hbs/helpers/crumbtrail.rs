@@ -1,40 +1,47 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use handlebars::*;
+use bracket::{
+    error::HelperError,
+    helper::{Helper, HelperValue},
+    render::{Render, Scope, Context},
+    parser::ast::Node
+};
+
 use serde_json::json;
 
 use collator::menu;
 
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Components {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Components {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Components {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
         let base_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
+            .evaluate("@root/file.source")?
+            .ok_or_else(|| {
+                HelperError::new(
+                    "Type error for `file.source`, expected variable",
+                )
+            })?
             .as_str()
             .ok_or_else(|| {
-                RenderError::new(
+                HelperError::new(
                     "Type error for `file.source`, string expected",
                 )
             })?
             .to_string();
 
-        let template = h.template().ok_or_else(|| {
-            RenderError::new(
+        let node = template.ok_or_else(|| {
+            HelperError::new(
                 "Type error in `components`, block template expected",
             )
         })?;
@@ -46,8 +53,8 @@ impl HelperDef for Components {
             menu::components(&self.context.options, &*collation, &source_path);
         let amount = components.len() - 1;
 
-        let block_context = BlockContext::new();
-        rc.push_block(block_context);
+        let block_context = Scope::new();
+        rc.push_scope(block_context);
 
         for (i, page) in components.iter().rev().enumerate() {
             let page = &*page.read().unwrap();
@@ -58,17 +65,18 @@ impl HelperDef for Components {
                 .collect::<Vec<_>>()
                 .join("/");
 
-            if let Some(ref mut block) = rc.block_mut() {
-                block.set_local_var("@first".to_string(), json!(first));
-                block.set_local_var("@last".to_string(), json!(last));
-                block.set_local_var("@href".to_string(), json!(href));
+            if let Some(ref mut block) = rc.scope_mut() {
+                block.set_local("first", json!(first));
+                block.set_local("last", json!(last));
+                block.set_local("href", json!(href));
                 block.set_base_value(json!(page));
             }
-            template.render(r, ctx, rc, out)?;
+            //template.render(r, ctx, rc, out)?;
+            rc.template(node)?;
         }
 
-        rc.pop_block();
+        rc.pop_scope();
 
-        Ok(())
+        Ok(None)
     }
 }

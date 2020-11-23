@@ -4,10 +4,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use log::debug;
-//use serde::Serialize;
-
-//use fluent_templates::FluentLoader;
-//use handlebars::Handlebars;
 
 use bracket::{Registry, template::{Templates, Loader}};
 use bracket_fluent::FluentHelper;
@@ -23,7 +19,7 @@ use crate::{context::BuildContext, page::CollatedPage, parser::Parser};
 
 static DOCUMENT: &str = "{{document}}";
 
-//mod helpers;
+mod helpers;
 
 /// Generate the standard parser.
 pub fn parser<'a>(
@@ -34,7 +30,7 @@ pub fn parser<'a>(
     let builder = ParserBuilder::new(engine, context)
         .plugins()?
         .partials()?
-        //.helpers()?
+        .helpers()?
         .menus()?
         .fluent(locales)?
         .layouts()?;
@@ -111,10 +107,11 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         Ok(self)
     }
 
-    /*
+
     pub fn helpers(mut self) -> Result<Self> {
         // Configure helpers
 
+        /*
         self.registry.register_helper(
             "document",
             Box::new(helpers::document::Document {
@@ -179,12 +176,14 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.registry.register_helper(
+        */
+        self.registry.helpers_mut().insert(
             "crumbtrail",
             Box::new(helpers::crumbtrail::Components {
                 context: Arc::clone(&self.context),
             }),
         );
+        /*
         self.registry.register_helper(
             "match",
             Box::new(helpers::matcher::Match {
@@ -264,10 +263,10 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
                 }
             }
         }
+        */
 
         Ok(self)
     }
-    */
 
     pub fn menus(mut self) -> Result<Self> {
         let collation = self.context.collation.read().unwrap();
