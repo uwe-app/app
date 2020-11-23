@@ -30,6 +30,7 @@ impl Helper for Crumbtrail {
 
         let base_path = rc
             .try_evaluate("@root/file.source", &[Type::String])?
+            .as_str()
             .unwrap()
             .to_string();
 

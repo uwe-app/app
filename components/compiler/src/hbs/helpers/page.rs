@@ -9,9 +9,7 @@ use bracket::{
 };
 
 use serde_json::json;
-
 use collator::{Collate, LinkCollate};
-
 use crate::BuildContext;
 
 pub struct Page {

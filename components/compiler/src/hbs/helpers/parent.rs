@@ -1,41 +1,36 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use handlebars::*;
+use bracket::{
+    error::HelperError,
+    helper::{Helper, HelperValue},
+    render::{Render, Scope, Context, Type},
+    parser::ast::Node
+};
 use serde_json::json;
 
 use collator::menu;
 
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Parent {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Parent {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Parent {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-        let template = h.template().ok_or_else(|| {
-            RenderError::new("Type error in `parent`, block template expected")
-        })?;
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+        ctx.arity(0..0)?;
 
-        let base_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
+        let node = ctx.assert_block(template)?;
+
+        let base_path = rc.try_evaluate("@root/file.source", &[Type::String])?
             .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.source`, string expected",
-                )
-            })?
-            .to_string();
+            .unwrap();
 
         let path = PathBuf::from(&base_path);
         let collation = self.context.collation.read().unwrap();
@@ -43,16 +38,16 @@ impl HelperDef for Parent {
         if let Some(page_lock) =
             menu::parent(&self.context.options, &*collation, &path)
         {
-            let block_context = BlockContext::new();
-            rc.push_block(block_context);
+            let scope = Scope::new();
+            rc.push_scope(scope);
             let page = page_lock.read().unwrap();
-            if let Some(ref mut block) = rc.block_mut() {
+            if let Some(ref mut block) = rc.scope_mut() {
                 block.set_base_value(json!(&*page));
             }
-            template.render(r, ctx, rc, out)?;
-            rc.pop_block();
+            rc.template(node)?;
+            rc.pop_scope();
         }
 
-        Ok(())
+        Ok(None)
     }
 }
