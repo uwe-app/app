@@ -1,81 +1,49 @@
 use std::sync::Arc;
 
-use handlebars::*;
+use bracket::helper::prelude::*;
 use serde_json::json;
 
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Match {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Match {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Match {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
+        ctx.arity(2..2)?;
+
         // TODO: support block inner template syntax
 
         // Determine the href for this page
         let href = rc
-            .evaluate(ctx, "@root/href")?
-            .as_json()
+            .try_evaluate("@root/href", &[Type::String])?
             .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `match` helper, unable to get page `href`",
-                )
-            })?
+            .unwrap()
             .trim_end_matches("/")
             .to_string();
 
         // Get the target match destination and strip any trailing slash
-        let target = h
-            .params()
-            .get(0)
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `match`, expected parameter at index 0",
-                )
-            })?
-            .value()
+        let target = ctx.try_get(0, &[Type::String])?
             .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `match`, expected string parameter at index 0",
-                )
-            })?
+            .unwrap()
             .trim_end_matches("/");
 
         // Get the output to write when a match is detected
-        let output = h
-            .params()
-            .get(1)
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `match`, expected parameter at index 1",
-                )
-            })?
-            .value()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `match`, expected string parameter at index 1",
-                )
-            })?;
+        let output= ctx.try_get(1, &[Type::String])?.as_str().unwrap();
 
         // Determine if an exact match is required
-        let exact = h
-            .hash_get("exact")
-            .map(|v| v.value())
+        let exact = ctx
+            .param("exact")
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `match` helper, hash parameter `exact` must be a boolean",
             ))?;
 
@@ -85,9 +53,9 @@ impl HelperDef for Match {
             || (!exact && target == "" && href == "");
 
         if matches {
-            out.write(&output)?;
+            rc.write(&output)?;
         }
 
-        Ok(())
+        Ok(None)
     }
 }
