@@ -34,8 +34,7 @@ impl Helper for Page {
             };
 
         if let Some(page_lock) = collation.resolve(&page_path) {
-            let scope = Scope::new();
-            rc.push_scope(scope);
+            rc.push_scope(Scope::new());
             let page = page_lock.read().unwrap();
             if let Some(ref mut block) = rc.scope_mut() {
                 block.set_base_value(json!(&*page));

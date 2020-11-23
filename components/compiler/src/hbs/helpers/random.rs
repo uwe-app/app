@@ -17,8 +17,7 @@ impl Helper for Random {
         let node = ctx.assert_block(template)?;
         let list = ctx.try_get(0, &[Type::Array])?.as_array().unwrap();
 
-        let scope = Scope::new();
-        rc.push_scope(scope);
+        rc.push_scope(Scope::new());
 
         if let Some(entry) = list.choose(&mut rand::thread_rng()) {
             if let Some(ref mut block) = rc.scope_mut() {

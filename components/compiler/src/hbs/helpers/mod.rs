@@ -21,7 +21,7 @@ pub mod parent;
 pub mod random;
 //pub mod scripts;
 //pub mod search;
-//pub mod sibling;
+pub mod sibling;
 pub mod slug;
 pub mod toc;
 pub mod word;
