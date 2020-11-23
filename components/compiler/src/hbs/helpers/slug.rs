@@ -1,33 +1,17 @@
-use handlebars::*;
-
-#[derive(Clone, Copy)]
+use bracket::helper::prelude::*;
 pub struct Slug;
 
-impl HelperDef for Slug {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Slug {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        _ctx: &'rc Context,
-        _rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-        let value = h
-            .params()
-            .get(0)
-            .ok_or_else(|| {
-                RenderError::new("Type error in `slug`, expected parameter")
-            })?
-            .value()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `slug`, expected string parameter",
-                )
-            })?;
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+        ctx.arity(1..1)?;
 
-        out.write(&slug::slugify(&value))?;
-
-        Ok(())
+        let value = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
+        rc.write(&slug::slugify(value))?;
+        Ok(None)
     }
 }
