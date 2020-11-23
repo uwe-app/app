@@ -13,7 +13,7 @@ pub mod include;
 //pub mod links;
 //pub mod markdown;
 pub mod matcher;
-//pub mod menu;
+pub mod menu;
 pub mod page;
 pub mod parent;
 pub mod random;
