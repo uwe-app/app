@@ -1,59 +1,36 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use handlebars::*;
+use bracket::{
+    error::HelperError,
+    helper::{Helper, HelperValue},
+    render::{Render, Scope, Context, Type},
+    parser::ast::Node
+};
+
 use serde_json::json;
 
 use collator::{Collate, LinkCollate};
 
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Page {
     pub context: Arc<BuildContext>,
 }
 
-// NOTE: the `required` option is not documented and we have
-// NOTE: yet to find a reason to use it, consider removing it
-
-impl HelperDef for Page {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Page {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-        let template = h.template().ok_or_else(|| {
-            RenderError::new("Type error in `page`, block template expected")
-        })?;
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+        ctx.arity(1..1)?;
 
-        // Indicates that a page *must* be located, default is `true`
-        let required = h
-            .hash_get("required")
-            .map(|v| v.value())
-            .or(Some(&json!(true)))
-            .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
-                "Type error for `page` helper, hash parameter `required` must be a boolean",
-            ))?;
+        let node = ctx.assert_block(template)?;
 
         // The href or file system path
-        let href_or_path = h.params()
-            .get(0)
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `page`, expected parameter at index 0",
-                )
-            })?
-            .value()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `page`, expected string parameter at index 0",
-                )
-            })?.to_string();
+        let href_or_path = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
 
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href_or_path);
@@ -65,23 +42,22 @@ impl HelperDef for Page {
             };
 
         if let Some(page_lock) = collation.resolve(&page_path) {
-            let block_context = BlockContext::new();
-            rc.push_block(block_context);
+            let scope = Scope::new();
+            rc.push_scope(scope);
             let page = page_lock.read().unwrap();
-            if let Some(ref mut block) = rc.block_mut() {
+            if let Some(ref mut block) = rc.scope_mut() {
                 block.set_base_value(json!(&*page));
             }
-            template.render(r, ctx, rc, out)?;
-            rc.pop_block();
+            rc.template(node)?;
+            rc.pop_scope();
         } else {
-            if required {
-                return Err(RenderError::new(&format!(
-                    "Type error in `page`, no page found for {}",
-                    &href_or_path
-                )));
-            }
+            return Err(HelperError::new(&format!(
+                "Type error in `{}`, no page found for {}",
+                ctx.name(),
+                &href_or_path
+            )));
         }
 
-        Ok(())
+        Ok(None)
     }
 }

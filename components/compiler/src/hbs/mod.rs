@@ -179,7 +179,7 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         */
         self.registry.helpers_mut().insert(
             "crumbtrail",
-            Box::new(helpers::crumbtrail::Components {
+            Box::new(helpers::crumbtrail::Crumbtrail {
                 context: Arc::clone(&self.context),
             }),
         );

@@ -14,11 +14,11 @@ use collator::menu;
 
 use crate::BuildContext;
 
-pub struct Components {
+pub struct Crumbtrail {
     pub context: Arc<BuildContext>,
 }
 
-impl Helper for Components {
+impl Helper for Crumbtrail {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
@@ -33,11 +33,7 @@ impl Helper for Components {
             .unwrap()
             .to_string();
 
-        let node = template.ok_or_else(|| {
-            HelperError::new(
-                "Type error in `crumbtrail`, block template expected",
-            )
-        })?;
+        let node = ctx.assert_block(template)?;
 
         let source_path = PathBuf::from(&base_path);
 

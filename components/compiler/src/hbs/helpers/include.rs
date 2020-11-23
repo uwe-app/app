@@ -22,17 +22,6 @@ impl Helper for Include {
             .unwrap()
             .to_string();
 
-        //let base_path = rc
-            //.evaluate(ctx, "@root/file.source")?
-            //.as_json()
-            //.as_str()
-            //.ok_or_else(|| {
-                //HelperError::new(
-                    //"Type error for `file.source`, string expected",
-                //)
-            //})?
-            //.to_string();
-
         // TODO: support embedding only certain lines only
 
         let mut buf = Path::new(&base_path).to_path_buf();
