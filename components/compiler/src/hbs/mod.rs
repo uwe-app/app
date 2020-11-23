@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -8,7 +9,8 @@ use log::debug;
 //use fluent_templates::FluentLoader;
 //use handlebars::Handlebars;
 
-use bracket::Registry;
+use bracket::{Registry, template::{Templates, Loader}};
+use bracket_fluent::FluentHelper;
 
 use collator::{Collate, LayoutCollate};
 use locale::{Locales, LOCALES};
@@ -44,6 +46,7 @@ struct ParserBuilder<'reg, 'source> {
     engine: TemplateEngine,
     context: Arc<BuildContext>,
     registry: Registry<'reg, 'source>,
+    loader: Loader,
 }
 
 impl<'reg, 'source> ParserBuilder<'reg, 'source> {
@@ -54,9 +57,12 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
             && context.options.settings.strict.unwrap();
         registry.set_strict(strict);
 
+        let loader = Loader::new();
+
         Self {
             engine,
             context,
+            loader,
             registry,
         }
     }
@@ -70,6 +76,8 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
                 {
                     if let Some(ref partials) = templates.partials {
                         for (nm, partial) in partials.iter() {
+                            self.loader.add(nm, partial.to_path_buf(plugin.base()))?;
+
                             /*
                             self.registry.register_template_file(
                                 nm,
@@ -88,6 +96,10 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         // Configure partial directories
         let templates = self.context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
+
+            self.loader.read_dir(
+                &templates,
+                self.engine.get_template_extension())?;
 
             /*
             self.registry.register_templates_directory(
@@ -266,6 +278,7 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         for (entry, result) in menus.results() {
             let name = menus.get_menu_template_name(&entry.name);
             let template = Cow::from(&result.value);
+            self.loader.insert(&name, template);
             //self.registry.register_template_string(&name, template)?;
         }
 
@@ -277,37 +290,46 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
     pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
         let loader = locales.loader();
 
-        /*
         if let Some(loader) = loader {
-            self.registry.register_helper(
-                "fluent",
-                Box::new(FluentLoader::new(loader.as_ref())),
-            );
+
+            self.registry
+                .helpers_mut()
+                .insert("fluent", Box::new(FluentHelper::new(Box::new(loader.as_ref()))));
+
+            //self.registry.register_helper(
+                //"fluent",
+                //Box::new(FluentLoader::new(loader.as_ref())),
+            //);
         } else {
-            self.registry.register_helper(
-                "fluent",
-                Box::new(FluentLoader::new(&*LOCALES)),
-            );
+            //self.registry.register_helper(
+                //"fluent",
+                //Box::new(FluentLoader::new(&*LOCALES)),
+            //);
+
+            self.registry
+                .helpers_mut()
+                .insert("fluent", Box::new(FluentHelper::new(Box::new(&*LOCALES))));
+
         }
-        */
 
         Ok(self)
     }
 
     pub fn layouts(mut self) -> Result<Self> {
         let layouts = self.context.collation.read().unwrap().layouts().clone();
-        /*
         for (name, path) in layouts.iter() {
             debug!("Layout: {}", name);
-            self.registry.register_template_file(name, path.as_ref())?;
+            self.loader.add(name, path.as_ref())?;
+            //self.registry.register_template_file(name, path.as_ref())?;
         }
-        */
         Ok(self)
     }
 
     pub fn build(self) -> Result<BracketParser<'reg, 'source>> {
+        let templates = Templates::try_from(&self.loader)?;
         Ok(BracketParser {
             context: self.context,
+            loader: self.loader,
             registry: self.registry,
         })
     }
@@ -317,6 +339,7 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
 //#[derive(Debug)]
 pub struct BracketParser<'reg, 'source> {
     context: Arc<BuildContext>,
+    loader: Loader,
     registry: Registry<'reg, 'source>,
 }
 

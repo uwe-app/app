@@ -26,13 +26,13 @@ pub enum TemplateEngine {
 }
 
 impl TemplateEngine {
-    pub fn get_template_extension(&self) -> &'static str {
+    pub fn get_template_extension(&self) -> &str {
         match *self {
             Self::Handlebars => HANDLEBARS_EXT,
         }
     }
 
-    pub fn get_raw_extension(&self) -> &'static str {
+    pub fn get_raw_extension(&self) -> &str {
         match *self {
             Self::Handlebars => HANDLEBARS_RAW,
         }
