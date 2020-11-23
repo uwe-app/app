@@ -1,39 +1,36 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use handlebars::*;
-
+use bracket::helper::prelude::*;
 use crate::BuildContext;
 use config::script::ScriptAsset;
+use serde_json::Value;
 
-#[derive(Clone)]
 pub struct Scripts {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Scripts {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Scripts {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
 
         // Make links absolute (passthrough)
         let abs = rc
-            .evaluate(ctx, "@root/absolute")?
-            .as_json()
+            .evaluate("@root/absolute")?
+            .unwrap_or(&Value::Bool(false))
             .as_bool()
-            .unwrap_or(false);
+            .unwrap();
 
         // List of page specific scripts
-        let scripts = ctx
+        let scripts = rc
             .data()
             .as_object()
             .ok_or_else(|| {
-                RenderError::new(
+                HelperError::new(
                     "Type error for `scripts` helper, invalid page data",
                 )
             })
@@ -59,15 +56,10 @@ impl HelperDef for Scripts {
         } else {
             let opts = &self.context.options;
             let base_path = rc
-                .evaluate(ctx, "@root/file.source")?
-                .as_json()
+                .try_evaluate("@root/file.source", &[Type::String])?
                 .as_str()
-                .ok_or_else(|| {
-                    RenderError::new(
-                        "Type error for `file.source`, string expected",
-                    )
-                })?
-                .to_string();
+                .unwrap();
+
             let path = Path::new(&base_path);
 
             scripts
@@ -85,23 +77,24 @@ impl HelperDef for Scripts {
         };
 
         for script in scripts {
-            out.write(&script.to_string())?;
+            rc.write(&script.to_string())?;
         }
 
         // Render block inline scripts
-        if let Some(tpl) = h.template() {
-            out.write("<script>")?;
-            tpl.render(r, ctx, rc, out)?;
-            out.write("</script>")?;
+        if let Some(node) = template {
+            rc.write("<script>")?;
+            rc.template(node)?;
+            rc.write("</script>")?;
+
+            // Render `noscript` on the inverse
+            if let Some(node) = rc.inverse(node)? {
+                rc.write("<noscript>")?;
+                rc.template(node)?;
+                rc.write("</noscript>")?;
+            }
+
         }
 
-        // Render `noscript` on the inverse
-        if let Some(tpl) = h.inverse() {
-            out.write("<noscript>")?;
-            tpl.render(r, ctx, rc, out)?;
-            out.write("</noscript>")?;
-        }
-
-        Ok(())
+        Ok(None)
     }
 }
