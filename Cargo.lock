@@ -119,6 +119,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 
 [[package]]
+name = "beef"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "474a626a67200bd107d44179bb3d4fc61891172d11696609264589be6a0e6a43"
+
+[[package]]
 name = "bincode"
 version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -196,6 +202,47 @@ name = "block-padding"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
+
+[[package]]
+name = "bracket"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c879dc4cfa83c1b12d8ab081b30427ecaefb0cd1e04970b6c43b92e8977efb20"
+dependencies = [
+ "dyn-clone",
+ "log",
+ "logos",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "unicode-width",
+]
+
+[[package]]
+name = "bracket"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f5e8afad61e695482b3673bcb8d5533e1232ef1f1fa6b9c1a4b144c699a6700"
+dependencies = [
+ "dyn-clone",
+ "log",
+ "logos",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "unicode-width",
+]
+
+[[package]]
+name = "bracket-fluent"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3f062c747c4a198661f90eeea04b3df73d52c6a5dc54fa2c123f6b5b17a5f0c"
+dependencies = [
+ "bracket 0.5.11",
+ "fluent-templates",
+ "serde_json",
+]
 
 [[package]]
 name = "bstr"
@@ -327,16 +374,16 @@ dependencies = [
 name = "compiler"
 version = "0.1.0"
 dependencies = [
+ "bracket 0.6.3",
+ "bracket-fluent",
  "chrono",
  "collator",
  "config",
  "crossbeam",
  "datasource",
- "fluent-templates",
  "frontmatter",
  "futures",
  "futures-util",
- "handlebars",
  "livereload",
  "locale",
  "log",
@@ -706,6 +753,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dyn-clone"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d55796afa1b20c2945ca8eabfc421839f2b766619209f1ede813cf2484f31804"
+
+[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -830,9 +883,9 @@ dependencies = [
 
 [[package]]
 name = "fluent-templates"
-version = "0.5.13"
+version = "0.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "947b404b72a987a47f14dc80f9235e979ef03f133846bbfe2c84d0b25d31d3b8"
+checksum = "954e39b54b86bb8d5cf2180454101e9fd36c6dda5aa012ea051a2545ae17b28c"
 dependencies = [
  "arc-swap",
  "fluent",
@@ -1135,7 +1188,6 @@ dependencies = [
  "quick-error 2.0.0",
  "serde",
  "serde_json",
- "walkdir",
 ]
 
 [[package]]
@@ -1576,6 +1628,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fabed175da42fed1fa0746b0ea71f412aa9d35e76e95e59b192c64b9dc2bf8b"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "logos"
+version = "0.11.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b91c49573597a5d6c094f9031617bb1fed15c0db68c81e6546d313414ce107e4"
+dependencies = [
+ "logos-derive",
+]
+
+[[package]]
+name = "logos-derive"
+version = "0.11.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "797b1f8a0571b331c1b47e7db245af3dc634838da7a92b3bef4e30376ae1c347"
+dependencies = [
+ "beef",
+ "fnv",
+ "proc-macro2",
+ "quote",
+ "regex-syntax",
+ "syn",
+ "utf8-ranges",
 ]
 
 [[package]]
@@ -3816,6 +3892,12 @@ name = "utf-8"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05e42f7c18b8f902290b009cde6d651262f956c98bc51bca4cd1d511c9cd85c7"
+
+[[package]]
+name = "utf8-ranges"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4ae116fef2b7fea257ed6440d3cfcff7f190865f170cdad00bb6465bf18ecba"
 
 [[package]]
 name = "utils"

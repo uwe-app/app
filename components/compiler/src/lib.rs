@@ -46,6 +46,10 @@ pub enum Error {
     Url(#[from] url::ParseError),
 
     #[error(transparent)]
+    Bracket(#[from] bracket::Error),
+
+    /*
+    #[error(transparent)]
     TemplateFile(#[from] handlebars::TemplateFileError),
     #[error(transparent)]
     Template(#[from] handlebars::TemplateError),
@@ -53,6 +57,7 @@ pub enum Error {
     TemplateRender(#[from] handlebars::TemplateRenderError),
     #[error(transparent)]
     Render(#[from] handlebars::RenderError),
+    */
 
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
