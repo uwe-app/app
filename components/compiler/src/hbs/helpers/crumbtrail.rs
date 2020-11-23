@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bracket::{
     error::HelperError,
     helper::{Helper, HelperValue},
-    render::{Render, Scope, Context},
+    render::{Render, Scope, Context, Type},
     parser::ast::Node
 };
 
@@ -28,25 +28,14 @@ impl Helper for Components {
 
         ctx.arity(0..0)?;
 
-        // TODO: use type assertions for this.
         let base_path = rc
-            .evaluate("@root/file.source")?
-            .ok_or_else(|| {
-                HelperError::new(
-                    "Type error for `file.source`, expected variable",
-                )
-            })?
-            .as_str()
-            .ok_or_else(|| {
-                HelperError::new(
-                    "Type error for `file.source`, string expected",
-                )
-            })?
+            .try_evaluate("@root/file.source", &[Type::String])?
+            .unwrap()
             .to_string();
 
         let node = template.ok_or_else(|| {
             HelperError::new(
-                "Type error in `components`, block template expected",
+                "Type error in `crumbtrail`, block template expected",
             )
         })?;
 
@@ -75,7 +64,6 @@ impl Helper for Components {
                 block.set_local("href", json!(href));
                 block.set_base_value(json!(page));
             }
-            //template.render(r, ctx, rc, out)?;
             rc.template(node)?;
         }
 

@@ -1,31 +1,37 @@
-use handlebars::*;
-use log::debug;
+use bracket::{
+    error::HelperError,
+    helper::{Helper, HelperValue},
+    render::{Render, Context, Type},
+    parser::ast::Node
+};
+
 use std::path::Path;
 
-use utils;
-
-#[derive(Clone)]
 pub struct Include;
 
-impl HelperDef for Include {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Include {
+
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-        let base_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.source`, string expected",
-                )
-            })?
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
+        let base_path = rc.try_evaluate("@root/file.source", &[Type::String])?
+            .unwrap()
             .to_string();
+
+        //let base_path = rc
+            //.evaluate(ctx, "@root/file.source")?
+            //.as_json()
+            //.as_str()
+            //.ok_or_else(|| {
+                //HelperError::new(
+                    //"Type error for `file.source`, string expected",
+                //)
+            //})?
+            //.to_string();
 
         // TODO: support embedding only certain lines only
 
@@ -33,27 +39,27 @@ impl HelperDef for Include {
 
         if let Some(parent) = buf.parent() {
             buf = parent.to_path_buf();
-            if let Some(req) = h.params().get(0) {
+            let val = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
+            //if let Some(req) = h.params().get(0) {
                 // TODO: support using "value()" too?
-                if let Some(val) = req.relative_path() {
+                //if let Some(val) = req.relative_path() {
                     buf.push(val);
-                    debug!("include {}", buf.display());
                     let result = utils::fs::read_string(&buf);
                     match result {
                         Ok(s) => {
-                            out.write(&s)?;
+                            rc.write(&s)?;
                         }
                         Err(_) => {
-                            return Err(RenderError::new(format!(
+                            return Err(HelperError::new(format!(
                                 "Failed to read from include file: {}",
                                 buf.display()
                             )))
                         }
                     }
-                }
-            }
+                //}
+            //}
         }
 
-        Ok(())
+        Ok(None)
     }
 }

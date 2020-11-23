@@ -1,7 +1,6 @@
 use bracket::{
-    error::HelperError,
     helper::{Helper, HelperValue},
-    render::{Render, Scope, Context, Type},
+    render::{Render, Context, Type},
     parser::ast::Node
 };
 
