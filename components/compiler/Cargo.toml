@@ -21,10 +21,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 serde_with = "1.5.1"
 toml = "0.5"
-bracket = "^0.6.9"
-bracket-fluent = "^0.3.1"
-#handlebars = {version = "3.5", default-features = true, features = [ "dir_source" ] }
-#fluent-templates = {version = "0.5.9", default-features = true, features = ["handlebars"]}
+bracket = "^0.7.1"
+bracket-fluent = "^0.3.2"
 slug = "0.1.4"
 rand = "0.7.3"
 url = "2"

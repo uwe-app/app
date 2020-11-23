@@ -157,12 +157,9 @@ impl Menu {
         let menus = collation.get_graph().get_menus();
         let name = menus.get_menu_template_name(key);
 
-        /*
-        if let Some(_tpl) = r.get_template(&name) {
-            let result = r.render_with_context(&name, ctx)?;
-            out.write(&result)?;
+        if let Some(tpl) = rc.get_template(&name) {
+            rc.template(tpl.node())?;
         }
-        */
 
         Ok(None)
     }
