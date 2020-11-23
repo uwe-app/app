@@ -11,7 +11,6 @@ pub mod date;
 pub mod document;
 pub mod feed;
 pub mod include;
-pub mod json;
 pub mod link;
 pub mod links;
 pub mod markdown;
