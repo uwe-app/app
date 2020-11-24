@@ -2,88 +2,84 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use handlebars::*;
-
+use bracket::helper::prelude::*;
 use serde_json::json;
 
 use config::markdown;
-
-use super::BufferedOutput;
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Markdown {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Markdown {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Markdown {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
         let source_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `md` for `file.source`, string expected",
-                )
-            })?
-            .to_string();
+            .try_evaluate("@root/file.source", &[Type::String])?.as_str().unwrap();
+            //.as_json()
+            //.as_str()
+            //.ok_or_else(|| {
+                //HelperError::new(
+                    //"Type error in `md` for `file.source`, string expected",
+                //)
+            //})?
+            //.to_string();
+        //
 
-        let mut buf = BufferedOutput {
-            buffer: String::new(),
-        };
+        //let mut buf = BufferedOutput {
+            //buffer: String::new(),
+        //};
 
-        let mut evaluate = h
-            .hash_get("render")
-            .map(|v| v.value())
+        let mut buffer = String::new();
+
+        let mut evaluate = ctx
+            .param("render")
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
-            .ok_or(RenderError::new(
+            .ok_or(HelperError::new(
                 "Type error for `md` helper, hash parameter `render` must be a boolean",
             ))?;
 
         // Parsing from block element
-        if let Some(block) = h.template() {
-            block.render(r, ctx, rc, &mut buf)?;
+        if let Some(node) = template {
+            buffer = rc.buffer(node)?;
         // Parse from parameters
         } else {
-            if let Some(path_json) = h.param(0) {
+            if let Some(path_json) = ctx.get(0) {
                 // Handle path style partial template lookup {md partial}
-                if path_json.is_value_missing() {
-                    if let Some(ref path) = path_json.relative_path() {
-                        let template = r.get_template(path).ok_or(RenderError::new(format!(
-                            "Type error for `md` helper, no template found for {}",
-                            path
-                        )))?;
-                        template.render(r, ctx, rc, &mut buf)?;
-                    } else {
-                        return Err(RenderError::new(
-                            "Type error for `md` helper, unable to determine relative path",
-                        ));
-                    }
-                } else {
-                    let param = h
-                        .param(0)
-                        .map(|v| v.value())
-                        .ok_or(RenderError::new(
+                //if path_json.is_value_missing() {
+                    //if let Some(ref path) = path_json.relative_path() {
+                        //let template = r.get_template(path).ok_or(HelperError::new(format!(
+                            //"Type error for `md` helper, no template found for {}",
+                            //path
+                        //)))?;
+                        //template.render(r, ctx, rc, &mut buf)?;
+                    //} else {
+                        //return Err(HelperError::new(
+                            //"Type error for `md` helper, unable to determine relative path",
+                        //));
+                    //}
+                //} else {
+                    let param = ctx
+                        .get(0)
+                        .ok_or(HelperError::new(
                             "Type error for `md` helper, failed to get parameter",
                         ))?
                         .as_str()
-                        .ok_or(RenderError::new(
+                        .ok_or(HelperError::new(
                             "Type error for `md` helper, parameter should be a string",
                         ))?;
 
-                    buf.buffer = param.to_string();
+                    buffer = param.to_string();
 
                     //println!("Got inline string buffer {:?}", &param);
-                }
+                //}
             }
         }
 
@@ -98,14 +94,14 @@ impl HelperDef for Markdown {
 
         if evaluate {
             let parsed = markdown::render(
-                &mut Cow::from(buf.buffer),
+                &mut Cow::from(buffer),
                 &self.context.config,
             );
-            out.write(&parsed)?;
+            rc.write(&parsed)?;
         } else {
-            out.write(&buf.buffer)?;
+            rc.write(&buffer)?;
         }
 
-        Ok(())
+        Ok(None)
     }
 }
