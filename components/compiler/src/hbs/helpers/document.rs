@@ -1,40 +1,88 @@
 use std::sync::Arc;
+use std::borrow::Cow;
+use std::path::PathBuf;
 
-use handlebars::*;
-
-use crate::BuildContext;
+use bracket::helper::prelude::*;
+use bracket::{template::Template, parser::ParserOptions};
+use config::markdown as md;
 use collator::{Collate, LinkCollate};
 
+use crate::BuildContext;
+
+fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
+    if let Some(ext) = file.extension() {
+        if ext == config::HTML {
+            return frontmatter::Config::new_html(false);
+        }
+    }
+    frontmatter::Config::new_markdown(false)
+}
+
+
+fn render_document<'render, 'call>(
+    template_path: &str,
+    context: &BuildContext,
+    rc: &mut Render<'render>,
+    ctx: &Context<'call>,
+) -> HelperValue {
+
+    let file = PathBuf::from(template_path);
+    let is_markdown = context.options.is_markdown_file(&file);
+
+    let (content, _has_fm, _fm) =
+        frontmatter::load(&file, get_front_matter_config(&file)).map_err(
+            |e| {
+                HelperError::new(format!(
+                    "Render front matter error {} ({})",
+                    template_path, e
+                ))
+            },
+        )?;
+
+    // TODO: use front matter line offset?
+    //let options = ParserOptions::new(template_path.to_string(), 0, 0);
+    //let template = Template::compile(&content, options)?;
+    //let result = rc.buffer(template.node())?;
+
+    /*
+    let result =
+        r.render_template_with_context(&content, ctx).map_err(|e| {
+            HelperError::new(format!(
+                "Render error {} ({})",
+                template_path, e
+            ))
+        })?;
+
+    if is_markdown {
+        let parsed =
+            md::render(&mut Cow::from(result), &context.config);
+        rc.write(&parsed)?;
+    } else {
+        rc.write(&result)?;
+    }
+    */
+
+    Ok(None)
+}
+
 /// Render a page block by URL path (href).
-#[derive(Clone)]
-pub struct Render {
+pub struct RenderPage {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Render {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for RenderPage {
+
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
+        ctx.arity(1..1)?;
+
         // The href of a page to render
-        let href = h
-            .params()
-            .get(0)
-            .ok_or_else(|| {
-                RenderError::new("Type error in `render`, expected parameter")
-            })?
-            .value()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `render`, expected string parameter",
-                )
-            })?
-            .to_string();
+        let href = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
 
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href);
@@ -48,114 +96,71 @@ impl HelperDef for Render {
                     .to_string_lossy()
                     .into_owned()
             } else {
-                return Err(RenderError::new(&format!(
+                return Err(HelperError::new(&format!(
                     "Type error in `render`, no page found for {}",
                     &href
                 )));
             }
         } else {
-            return Err(RenderError::new(&format!(
+            return Err(HelperError::new(&format!(
                 "Type error in `render`, no path found for {}",
                 &href
             )));
         };
 
-        super::render_document(
-            &template_path, &self.context, h, r, ctx, rc, out)
+        render_document(&template_path, &self.context, rc, ctx)
     }
 }
 
 /// Render the page content for a layout document.
-#[derive(Clone)]
 pub struct Block {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Block {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Block {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-
-        let template_path = rc.evaluate(ctx, "@root/file.template")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.template`, string expected",
-                )
-            })?
-            .to_string();
-
-        super::render_document(
-            &template_path, &self.context, h, r, ctx, rc, out)
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+        let template_path = rc.try_evaluate("@root/file.template", &[Type::String])?
+            .as_str().unwrap().to_string();
+        render_document(&template_path, &self.context, rc, ctx)
     }
 }
 
 /// Render a document layout.
-#[derive(Clone)]
 pub struct Document {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Document {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Document {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
 
         let standalone = rc
-            .evaluate(ctx, "@root/standalone")?
-            .as_json()
-            .as_bool()
+            .evaluate("@root/standalone")?
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         if standalone {
             let block = Block {context: Arc::clone(&self.context)};
-            return block.call(h, r, ctx, rc, out);
+            return block.call(rc, ctx, template);
         }
 
         let layout = rc
-            .evaluate(ctx, "@root/layout")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `layout`, string expected",
-                )
-            })?
-            .to_string();
+            .try_evaluate("@root/layout", &[Type::String])?.as_str().unwrap();
 
-        let writer = Writer { out: Box::new(out) };
-        r.render_to_write(&layout, ctx.data(), writer)?;
+        // TODO: get the template and render it!
+        if let Some(tpl) = rc.get_template(&layout) {
+            rc.template(tpl.node())?;
+        }
 
-        Ok(())
+        Ok(None)
     }
 }
-
-/// Helper to write to `dyn Output` via the `std::io::Write` trait.
-pub struct Writer<'a> {
-    out: Box<&'a mut dyn Output>,
-}
-
-impl<'a> std::io::Write for Writer<'a> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let s = match std::str::from_utf8(buf) {
-            Ok(v) => v,
-            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-        };
-        self.out.write(s)?;
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
-}
-

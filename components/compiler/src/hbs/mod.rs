@@ -110,134 +110,117 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
 
     pub fn helpers(mut self) -> Result<Self> {
         // Configure helpers
-
-        /*
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "document",
             Box::new(helpers::document::Document {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "block",
             Box::new(helpers::document::Block {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "render",
-            Box::new(helpers::document::Render {
+            Box::new(helpers::document::RenderPage {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "links",
             Box::new(helpers::links::Links {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "menu",
             Box::new(helpers::menu::Menu {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.registry.register_helper(
+
+        self.registry.helpers_mut().insert(
             "feed",
             Box::new(helpers::feed::Feed {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "page",
             Box::new(helpers::page::Page {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "parent",
             Box::new(helpers::parent::Parent {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "link",
             Box::new(helpers::link::Link {
                 context: Arc::clone(&self.context),
             }),
         );
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "md",
             Box::new(helpers::markdown::Markdown {
                 context: Arc::clone(&self.context),
             }),
         );
-        */
+
         self.registry.helpers_mut().insert(
             "crumbtrail",
             Box::new(helpers::crumbtrail::Crumbtrail {
                 context: Arc::clone(&self.context),
             }),
         );
-        /*
-        self.registry.register_helper(
+
+        self.registry.helpers_mut().insert(
             "match",
             Box::new(helpers::matcher::Match {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        //self.registry.register_helper(
-            //"favicon",
-            //Box::new(helpers::favicon::Icon {
-                //context: Arc::clone(&self.context),
-            //}),
-        //);
-
-        //self.registry.register_helper(
-            //"permalink",
-            //Box::new(helpers::bookmark::PermaLink {
-                //context: Arc::clone(&self.context),
-            //}),
-        //);
-
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "scripts",
             Box::new(helpers::scripts::Scripts {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "search",
             Box::new(helpers::search::Embed {
                 context: Arc::clone(&self.context),
             }),
         );
 
-        self.registry
-            .register_helper("json", Box::new(helpers::json::Debug));
-        self.registry
-            .register_helper("include", Box::new(helpers::include::Include));
-        self.registry
-            .register_helper("random", Box::new(helpers::random::Random));
-        self.registry
-            .register_helper("slug", Box::new(helpers::slug::Slug));
-        self.registry
-            .register_helper("date", Box::new(helpers::date::DateFormat));
+        self.registry.helpers_mut()
+            .insert("include", Box::new(helpers::include::Include));
+        self.registry.helpers_mut()
+            .insert("random", Box::new(helpers::random::Random));
+        self.registry.helpers_mut()
+            .insert("slug", Box::new(helpers::slug::Slug));
+        self.registry.helpers_mut()
+            .insert("date", Box::new(helpers::date::DateFormat));
 
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "next",
             Box::new(helpers::sibling::Sibling {
                 name: String::from("next"),
                 amount: 1,
             }),
         );
-        self.registry.register_helper(
+        self.registry.helpers_mut().insert(
             "previous",
             Box::new(helpers::sibling::Sibling {
                 name: String::from("previous"),
@@ -249,21 +232,20 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         if let Some(ref transform) = self.context.config.transform {
             if let Some(ref html) = transform.html {
                 if html.use_toc() {
-                    self.registry.register_helper(
+                    self.registry.helpers_mut().insert(
                         "toc",
                         Box::new(helpers::toc::TableOfContents),
                     );
                 }
 
                 if html.use_words() {
-                    self.registry.register_helper(
+                    self.registry.helpers_mut().insert(
                         "words",
                         Box::new(helpers::word::Count),
                     );
                 }
             }
         }
-        */
 
         Ok(self)
     }
