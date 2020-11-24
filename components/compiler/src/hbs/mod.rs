@@ -26,6 +26,7 @@ pub fn parser<'a>(
     context: Arc<BuildContext>,
     locales: Arc<Locales>,
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
+
     let builder = ParserBuilder::new(engine, context)
         .helpers()?
         .fluent(locales)?
@@ -275,7 +276,8 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
     }
 
     pub fn build(self) -> Result<BracketParser<'reg, 'source>> {
-        //self.registry.build()?;
+
+        //self.registry.build(self.registry.sources())?;
 
         Ok(BracketParser {
             context: self.context,
