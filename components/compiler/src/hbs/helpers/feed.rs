@@ -1,31 +1,24 @@
-use handlebars::*;
+use bracket::helper::prelude::*;
 use std::sync::Arc;
 
 use crate::BuildContext;
 use collator::Collate;
 
-#[derive(Clone)]
 pub struct Feed {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Feed {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Feed {
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        _ctx: &'rc Context,
-        _rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-        let name = h
-            .hash_get("name")
-            .map(|v| v.value())
-            .and_then(|v| v.as_str())
-            .ok_or(RenderError::new(
-                "Type error for `feed` helper, hash parameter `name` must be a string",
-            ))?
-            .to_string();
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
+        let name = ctx.try_param("name", &[Type::String])?
+            .as_str()
+            .unwrap();
 
         let collation = &*self.context.collation.read().unwrap();
         let base_url = self
@@ -33,18 +26,18 @@ impl HelperDef for Feed {
             .options
             .get_canonical_url(&self.context.config, Some(collation.get_lang()))
             .map_err(|_e| {
-                RenderError::new(
+                HelperError::new(
                     "Error in `feed` helper, failed to parse base URL",
                 )
             })?;
 
-        let missing_feed = RenderError::new(&format!(
+        let missing_feed = HelperError::new(&format!(
             "Type error for `feed`, missing named feed {}",
             &name
         ));
 
         if let Some(ref feed) = self.context.config.feed {
-            if let Some(ref channel) = feed.channels.get(&name) {
+            if let Some(ref channel) = feed.channels.get(name) {
                 let channel_href =
                     channel.target.as_ref().unwrap().trim_start_matches("/");
 
@@ -55,7 +48,7 @@ impl HelperDef for Feed {
                     let url = base_url
                         .join(&path)
                         .map_err(|_e| {
-                            RenderError::new(
+                            HelperError::new(
                                 "Error in `feed` helper, failed to join URL",
                             )
                         })?
@@ -72,7 +65,7 @@ impl HelperDef for Feed {
                             mime_type, url
                         )
                     };
-                    out.write(&markup)?;
+                    rc.write(&markup)?;
                 }
             } else {
                 return Err(missing_feed);
@@ -80,6 +73,6 @@ impl HelperDef for Feed {
         } else {
             return Err(missing_feed);
         }
-        Ok(())
+        Ok(None)
     }
 }
