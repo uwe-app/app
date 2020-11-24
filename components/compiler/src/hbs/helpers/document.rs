@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use bracket::helper::prelude::*;
-use bracket::{template::Template, parser::ParserOptions};
+use bracket::{Registry, parser::ParserOptions};
 use config::markdown as md;
 use collator::{Collate, LinkCollate};
 
@@ -40,9 +40,16 @@ fn render_document<'render, 'call>(
         )?;
 
     // TODO: use front matter line offset?
-    //let options = ParserOptions::new(template_path.to_string(), 0, 0);
-    //let template = Template::compile(&content, options)?;
-    //let result = rc.buffer(template.node())?;
+    let options = ParserOptions::new(template_path.to_string(), 0, 0);
+    let registry = Registry::new();
+    let result = registry.once(template_path, &content, rc.data()).map_err(|e| {
+        HelperError::new(format!(
+            "Render error {} ({})",
+            template_path, e
+        ))
+    })?;
+
+    println!("Document rendering... {}", &result);
 
     /*
     let result =
@@ -61,6 +68,14 @@ fn render_document<'render, 'call>(
         rc.write(&result)?;
     }
     */
+
+    if is_markdown {
+        let parsed =
+            md::render(&mut Cow::from(result), &context.config);
+        rc.write(&parsed)?;
+    } else {
+        rc.write(&result)?;
+    }
 
     Ok(None)
 }
@@ -156,8 +171,11 @@ impl Helper for Document {
         let layout = rc
             .try_evaluate("@root/layout", &[Type::String])?.as_str().unwrap();
 
+        //println!("DOCUMENT HELPER WAS CALLED {}", &layout);
+
         // TODO: get the template and render it!
         if let Some(tpl) = rc.get_template(&layout) {
+            println!("RENDERING THE TEMPLATE...");
             rc.template(tpl.node())?;
         }
 
