@@ -22,19 +22,6 @@ impl Helper for Markdown {
 
         let source_path = rc
             .try_evaluate("@root/file.source", &[Type::String])?.as_str().unwrap();
-            //.as_json()
-            //.as_str()
-            //.ok_or_else(|| {
-                //HelperError::new(
-                    //"Type error in `md` for `file.source`, string expected",
-                //)
-            //})?
-            //.to_string();
-        //
-
-        //let mut buf = BufferedOutput {
-            //buffer: String::new(),
-        //};
 
         let mut buffer = String::new();
 

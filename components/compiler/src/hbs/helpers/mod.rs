@@ -10,7 +10,7 @@ pub mod date;
 pub mod feed;
 pub mod include;
 //pub mod link;
-//pub mod links;
+pub mod links;
 pub mod markdown;
 pub mod matcher;
 pub mod menu;

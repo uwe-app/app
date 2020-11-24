@@ -1,36 +1,31 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use handlebars::*;
-
+use bracket::helper::prelude::*;
 use crate::BuildContext;
 use config::tags::link::LinkTag;
 
-#[derive(Clone)]
 pub struct Links {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Links {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Links {
+    fn call<'render, 'call>(
         &self,
-        _h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
         // Make links absolute (passthrough)
         let abs = rc
-            .evaluate(ctx, "@root/absolute")?
-            .as_json()
-            .as_bool()
+            .evaluate("@root/absolute")?
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         if let Some(links) = rc
-            .evaluate(ctx, "@root/links")?
-            .as_json()
-            .as_array() {
+            .evaluate("@root/links")?
+            .and_then(|v| v.as_array()) {
 
             let mut tags: Vec<LinkTag> = Vec::new();
 
@@ -41,7 +36,7 @@ impl HelperDef for Links {
                     match serde_json::from_value::<LinkTag>(link.clone()) {
                         Ok(tag) => tags.push(tag),
                         Err(_) => {
-                            return Err(RenderError::new("Invalid link tag encountered"))
+                            return Err(HelperError::new("Invalid link tag encountered"))
                         }
                     }
                     Ok(())
@@ -53,17 +48,11 @@ impl HelperDef for Links {
             } else {
                 let opts = &self.context.options;
                 let base_path = rc
-                    .evaluate(ctx, "@root/file.source")?
-                    .as_json()
+                    .try_evaluate("@root/file.source", &[Type::String])?
                     .as_str()
-                    .ok_or_else(|| {
-                        RenderError::new(
-                            "Type error for `file.source`, string expected",
-                        )
-                    })?
-                    .to_string();
+                    .unwrap();
 
-                let path = Path::new(&base_path);
+                let path = Path::new(base_path);
                 tags
                     .iter()
                     .cloned()
@@ -78,10 +67,10 @@ impl HelperDef for Links {
             };
 
             for link in tags {
-                out.write(&link.to_string())?;
+                rc.write(&link.to_string())?;
             }
         }
 
-        Ok(())
+        Ok(None)
     }
 }
