@@ -1,61 +1,38 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use handlebars::*;
+use bracket::helper::prelude::*;
 use log::debug;
-
 use collator::LinkCollate;
-
 use crate::BuildContext;
 
-#[derive(Clone)]
 pub struct Link {
     pub context: Arc<BuildContext>,
 }
 
-impl HelperDef for Link {
-    fn call<'reg: 'rc, 'rc>(
+impl Helper for Link {
+
+    fn call<'render, 'call>(
         &self,
-        h: &Helper<'reg, 'rc>,
-        _r: &'reg Handlebars<'_>,
-        ctx: &'rc Context,
-        rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
+    ) -> HelperValue {
+
+        ctx.arity(1..1)?;
 
         let abs = rc
-            .evaluate(ctx, "@root/absolute")?
-            .as_json()
-            .as_bool()
+            .evaluate("@root/absolute")?
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         let base_path = rc
-            .evaluate(ctx, "@root/file.source")?
-            .as_json()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error for `file.source`, string expected",
-                )
-            })?
-            .to_string();
+            .try_evaluate("@root/file.source", &[Type::String])?.as_str().unwrap();
 
         let opts = &self.context.options;
-        let path = Path::new(&base_path);
+        let path = Path::new(base_path);
 
-        let mut input = h
-            .params()
-            .get(0)
-            .ok_or_else(|| {
-                RenderError::new("Type error in `link`, expected parameter")
-            })?
-            .value()
-            .as_str()
-            .ok_or_else(|| {
-                RenderError::new(
-                    "Type error in `link`, expected string parameter",
-                )
-            })?;
+        let mut input = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
 
         let collation = self.context.collation.read().unwrap();
 
@@ -70,12 +47,12 @@ impl HelperDef for Link {
             || input.starts_with("https:");
 
         if passthrough {
-            out.write(&input)?;
+            rc.write(&input)?;
             if include_index && (input == "." || input == "..") {
-                out.write("/")?;
-                out.write(config::INDEX_HTML)?;
+                rc.write("/")?;
+                rc.write(config::INDEX_HTML)?;
             }
-            return Ok(());
+            return Ok(None);
         }
 
         // Strip the leading slash
@@ -90,7 +67,7 @@ impl HelperDef for Link {
                 //println!("Trying to verify link with input {}", input);
                 //println!("Verify with input {:?}", &input);
                 if !collation.find_link(&input).is_some() {
-                    return Err(RenderError::new(format!(
+                    return Err(HelperError::new(format!(
                         "Type error for `link`, missing url {}",
                         input
                     )));
@@ -110,7 +87,7 @@ impl HelperDef for Link {
             if let Ok(val) = opts.relative(&input, path, base) {
                 val
             } else {
-                return Err(RenderError::new(
+                return Err(HelperError::new(
                     "Type error for `link`, file is outside source!",
                 ));
             }
@@ -120,8 +97,8 @@ impl HelperDef for Link {
 
         debug!("Link {:?}", value);
 
-        out.write(&value)?;
+        rc.write(&value)?;
 
-        Ok(())
+        Ok(None)
     }
 }
