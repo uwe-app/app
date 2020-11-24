@@ -69,13 +69,6 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
                     if let Some(ref partials) = templates.partials {
                         for (nm, partial) in partials.iter() {
                             self.registry.add(nm.to_string(), partial.to_path_buf(plugin.base()))?;
-
-                            /*
-                            self.registry.register_template_file(
-                                nm,
-                                partial.to_path_buf(plugin.base()),
-                            )?;
-                            */
                         }
                     }
                 }
@@ -91,13 +84,6 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
             self.registry.read_dir(
                 &templates,
                 self.engine.get_template_extension())?;
-
-            /*
-            self.registry.register_templates_directory(
-                self.engine.get_template_extension(),
-                &templates,
-            )?;
-            */
         }
         Ok(self)
     }
@@ -283,12 +269,10 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         for (name, path) in layouts.iter() {
             debug!("Layout: {}", name);
             self.registry.add(name.clone(), path.as_ref())?;
-            //self.registry.register_template_file(name, path.as_ref())?;
         }
 
         Ok(self)
     }
-
 
     pub fn build(self) -> Result<BracketParser<'reg, 'source>> {
         //self.registry.build()?;
@@ -307,7 +291,6 @@ pub struct BracketParser<'reg, 'source> {
 }
 
 impl Parser for BracketParser<'_, '_> {
-
     fn parse(
         &self,
         file: &PathBuf,
