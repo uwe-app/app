@@ -35,8 +35,7 @@ impl Helper for Crumbtrail {
             menu::components(&self.context.options, &*collation, &source_path);
         let amount = components.len() - 1;
 
-        let block_context = Scope::new();
-        rc.push_scope(block_context);
+        rc.push_scope(Scope::new());
 
         for (i, page) in components.iter().rev().enumerate() {
             let page = &*page.read().unwrap();

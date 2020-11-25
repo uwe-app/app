@@ -6,8 +6,10 @@ use crate::Error;
 
 static LAYOUT: &str = "layout";
 static HANDLEBARS: &str = "handlebars";
+// FIXME: we can now remove `raw` as we no longer need it after
+// FIXME: migrating from handlebars which required a leading "."
 static HANDLEBARS_RAW: &str = "hbs";
-static HANDLEBARS_EXT: &str = ".hbs";
+static HANDLEBARS_EXT: &str = "hbs";
 
 /// All available template engines.
 pub static ENGINES: [TemplateEngine; 1] = [TemplateEngine::Handlebars];

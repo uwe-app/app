@@ -5,7 +5,7 @@ use std::sync::Arc;
 use log::debug;
 
 use bracket::Registry;
-use bracket_fluent::FluentHelper;
+//use bracket_fluent::FluentHelper;
 
 use collator::{Collate, LayoutCollate};
 use locale::{Locales, LOCALES};
@@ -29,7 +29,7 @@ pub fn parser<'a>(
 
     let builder = ParserBuilder::new(engine, context)
         .helpers()?
-        .fluent(locales)?
+        //.fluent(locales)?
         .plugins()?
         .partials()?
         .menus()?
@@ -39,19 +39,19 @@ pub fn parser<'a>(
 }
 
 //#[derive(Debug)]
-struct ParserBuilder<'reg, 'source> {
+struct ParserBuilder<'reg> {
     engine: TemplateEngine,
     context: Arc<BuildContext>,
-    registry: Registry<'reg, 'source>,
+    registry: Registry<'reg>,
 }
 
-impl<'reg, 'source> ParserBuilder<'reg, 'source> {
+impl<'reg> ParserBuilder<'reg> {
     pub fn new(engine: TemplateEngine, context: Arc<BuildContext>) -> Self {
         let strict = context.options.settings.strict.is_some()
             && context.options.settings.strict.unwrap();
 
         let mut registry = Registry::new();
-        registry.set_strict(strict);
+        //registry.set_strict(strict);
 
         Self {
             engine,
@@ -251,6 +251,7 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         Ok(self)
     }
 
+    /*
     pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
         let loader = locales.loader();
         if let Some(loader) = loader {
@@ -264,6 +265,7 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
 
         Ok(self)
     }
+    */
 
     pub fn layouts(mut self) -> Result<Self> {
         let layouts = self.context.collation.read().unwrap().layouts().clone();
@@ -275,9 +277,10 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
         Ok(self)
     }
 
-    pub fn build(self) -> Result<BracketParser<'reg, 'source>> {
+    pub fn build(mut self) -> Result<BracketParser<'reg>> {
 
-        //self.registry.build(self.registry.sources())?;
+        // Compile the templates
+        self.registry.build()?;
 
         Ok(BracketParser {
             context: self.context,
@@ -287,12 +290,12 @@ impl<'reg, 'source> ParserBuilder<'reg, 'source> {
 }
 
 // Render templates using handlebars.
-pub struct BracketParser<'reg, 'source> {
+pub struct BracketParser<'reg> {
     context: Arc<BuildContext>,
-    registry: Registry<'reg, 'source>,
+    registry: Registry<'reg>,
 }
 
-impl Parser for BracketParser<'_, '_> {
+impl Parser for BracketParser<'_> {
     fn parse(
         &self,
         file: &PathBuf,

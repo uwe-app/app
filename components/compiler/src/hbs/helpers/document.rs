@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use bracket::helper::prelude::*;
-use bracket::{Registry, parser::ParserOptions};
+use bracket::{Registry, Template, parser::ParserOptions};
 use config::markdown as md;
 use collator::{Collate, LinkCollate};
 
@@ -40,34 +40,17 @@ fn render_document<'render, 'call>(
         )?;
 
     // TODO: use front matter line offset?
-    let options = ParserOptions::new(template_path.to_string(), 0, 0);
-    let registry = Registry::new();
-    let result = registry.once(template_path, &content, rc.data()).map_err(|e| {
+    //let options = ParserOptions::new(template_path.to_string(), 0, 0);
+    //let template = Template::compile(content, Default::default())?;
+    //let node = template.node();
+    //let result = rc.buffer(node)?;
+
+    let result = rc.registry().once(template_path, &content, rc.data()).map_err(|e| {
         HelperError::new(format!(
             "Render error {} ({})",
             template_path, e
         ))
     })?;
-
-    println!("Document rendering... {}", &result);
-
-    /*
-    let result =
-        r.render_template_with_context(&content, ctx).map_err(|e| {
-            HelperError::new(format!(
-                "Render error {} ({})",
-                template_path, e
-            ))
-        })?;
-
-    if is_markdown {
-        let parsed =
-            md::render(&mut Cow::from(result), &context.config);
-        rc.write(&parsed)?;
-    } else {
-        rc.write(&result)?;
-    }
-    */
 
     if is_markdown {
         let parsed =
@@ -175,7 +158,6 @@ impl Helper for Document {
 
         // TODO: get the template and render it!
         if let Some(tpl) = rc.get_template(&layout) {
-            println!("RENDERING THE TEMPLATE...");
             rc.template(tpl.node())?;
         }
 
