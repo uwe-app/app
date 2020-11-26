@@ -4,7 +4,7 @@ use std::sync::Arc;
 use log::debug;
 
 use bracket::Registry;
-//use bracket_fluent::FluentHelper;
+use bracket_fluent::FluentHelper;
 
 use collator::{Collate, LayoutCollate};
 use locale::{Locales, LOCALES};
@@ -28,7 +28,7 @@ pub fn parser<'a>(
 
     let builder = ParserBuilder::new(engine, context)
         .helpers()?
-        //.fluent(locales)?
+        .fluent(locales)?
         .plugins()?
         .partials()?
         .menus()?
@@ -250,7 +250,6 @@ impl<'reg> ParserBuilder<'reg> {
         Ok(self)
     }
 
-    /*
     pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
         let loader = locales.loader();
         if let Some(loader) = loader {
@@ -264,7 +263,6 @@ impl<'reg> ParserBuilder<'reg> {
 
         Ok(self)
     }
-    */
 
     pub fn layouts(mut self) -> Result<Self> {
         let layouts = self.context.collation.read().unwrap().layouts().clone();

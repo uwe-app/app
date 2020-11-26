@@ -205,7 +205,9 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "bracket"
-version = "0.9.5"
+version = "0.9.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50b0f6683ec625c2bbd6ef8f272c3be38ac27a411c147dc2edbb47cfec88eb15"
 dependencies = [
  "dyn-clone",
  "log",
@@ -215,6 +217,17 @@ dependencies = [
  "serde_json",
  "thiserror",
  "unicode-width",
+]
+
+[[package]]
+name = "bracket-fluent"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84e8c9d5a5742c971e9d875ca12dffcc32b19da55375981e7137e75561d432c5"
+dependencies = [
+ "bracket",
+ "fluent-templates",
+ "serde_json",
 ]
 
 [[package]]
@@ -348,6 +361,7 @@ name = "compiler"
 version = "0.1.0"
 dependencies = [
  "bracket",
+ "bracket-fluent",
  "chrono",
  "collator",
  "config",
