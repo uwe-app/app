@@ -243,7 +243,7 @@ impl<'reg> ParserBuilder<'reg> {
         for (entry, result) in menus.results() {
             let name = menus.get_menu_template_name(&entry.name);
             //let template = Cow::from(&result.value);
-            self.registry.insert(&name, result.value.clone());
+            self.registry.insert(&name, result.value.clone())?;
         }
 
         drop(collation);
@@ -278,10 +278,6 @@ impl<'reg> ParserBuilder<'reg> {
     }
 
     pub fn build(mut self) -> Result<BracketParser<'reg>> {
-
-        // Compile the templates
-        self.registry.build()?;
-
         Ok(BracketParser {
             context: self.context,
             registry: self.registry,
