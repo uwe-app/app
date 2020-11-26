@@ -3,7 +3,6 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use bracket::helper::prelude::*;
-use bracket::{Registry, Template, parser::ParserOptions};
 use config::markdown as md;
 use collator::{Collate, LinkCollate};
 

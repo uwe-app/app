@@ -58,7 +58,6 @@ install: build-release
 		target/release/uwe \
 		target/release/upm \
 		target/release/uvm \
-		target/release/uws \
 		$(HOME)/.uwe/bin
 
 .PHONY: all docs install release

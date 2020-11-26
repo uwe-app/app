@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -243,7 +242,7 @@ impl<'reg> ParserBuilder<'reg> {
         for (entry, result) in menus.results() {
             let name = menus.get_menu_template_name(&entry.name);
             //let template = Cow::from(&result.value);
-            self.registry.insert(&name, result.value.clone())?;
+            self.registry.insert(&name, &result.value)?;
         }
 
         drop(collation);
