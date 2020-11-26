@@ -50,7 +50,7 @@ impl<'reg> ParserBuilder<'reg> {
             && context.options.settings.strict.unwrap();
 
         let mut registry = Registry::new();
-        //registry.set_strict(strict);
+        registry.set_strict(strict);
 
         Self {
             engine,
