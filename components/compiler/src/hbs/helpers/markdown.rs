@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
-use serde_json::json;
+use serde_json::{json, Value};
 
 use config::markdown;
 use crate::BuildContext;
@@ -20,8 +20,13 @@ impl Helper for Markdown {
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
 
+        ctx.arity(0..1)?;
+
         let source_path = rc
-            .try_evaluate("@root/file.source", &[Type::String])?.as_str().unwrap();
+            .try_evaluate("@root/file.source", &[Type::String])?
+            .as_str()
+            .unwrap()
+            .to_string();
 
         let mut buffer = String::new();
 
@@ -30,7 +35,7 @@ impl Helper for Markdown {
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())
             .ok_or(HelperError::new(
-                "Type error for `md` helper, hash parameter `render` must be a boolean",
+                format!("Type error for `{}` helper, hash parameter `render` must be a boolean", ctx.name()),
             ))?;
 
         // Parsing from block element
@@ -38,46 +43,36 @@ impl Helper for Markdown {
             buffer = rc.buffer(node)?;
         // Parse from parameters
         } else {
-            if let Some(path_json) = ctx.get(0) {
+            if let Some(arg) = ctx.get(0) {
                 // Handle path style partial template lookup {md partial}
-                //if path_json.is_value_missing() {
-                    //if let Some(ref path) = path_json.relative_path() {
-                        //let template = r.get_template(path).ok_or(HelperError::new(format!(
-                            //"Type error for `md` helper, no template found for {}",
-                            //path
-                        //)))?;
-                        //template.render(r, ctx, rc, &mut buf)?;
-                    //} else {
-                        //return Err(HelperError::new(
-                            //"Type error for `md` helper, unable to determine relative path",
-                        //));
-                    //}
-                //} else {
-                    let param = ctx
-                        .get(0)
-                        .ok_or(HelperError::new(
-                            "Type error for `md` helper, failed to get parameter",
-                        ))?
-                        .as_str()
-                        .ok_or(HelperError::new(
-                            "Type error for `md` helper, parameter should be a string",
-                        ))?;
-
+                if let Some(value) = ctx.missing(0) {
+                    if let Value::String(value) = value {
+                        let partial_name = value.to_string();
+                        if let Some(tpl) = rc.get_template(&partial_name) {
+                            buffer = rc.buffer(tpl.node())?; 
+                        } else {
+                            return Err(HelperError::new(
+                                format!(
+                                    "Type error for `{}` helper, unable to find partial '{}'",
+                                    ctx.name(), partial_name),
+                            ));
+                        }
+                    }
+                } else {
+                    let param = ctx.try_value(arg, &[Type::String])?.as_str().unwrap();
                     buffer = param.to_string();
-
-                    //println!("Got inline string buffer {:?}", &param);
-                //}
+                }
             }
         }
-
-        //println!("md: {:?}", template_name);
-        //println!("md: {:?}", evaluate);
-        //println!("md: {:?}", &buf.buffer);
 
         if !evaluate {
             let source_buf = PathBuf::from(&source_path);
             evaluate = !self.context.options.is_markdown_file(&source_buf);
         }
+
+        //println!("md: {:?}", &source_path);
+        //println!("md: {:?}", evaluate);
+        //println!("md: {:?}", &buffer);
 
         if evaluate {
             let parsed = markdown::render(
