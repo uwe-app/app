@@ -244,6 +244,19 @@ impl RuntimeOptions {
         if !rewrite_index && value == "" {
             value = up.to_string();
         }
+
+        //println!("value {}", &value);
+        //println!("value {:?}", rel.extension());
+
+        // Automatically append a trailing slash for links that 
+        // look like directories when we have clean links enabled
+        if rewrite_index && !value.ends_with("/") {
+            let value_path = Path::new(&value);
+            if value_path.extension().is_none() {
+                value.push('/');
+            }
+        }
+
         Ok(value)
     }
 

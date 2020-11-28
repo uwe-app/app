@@ -156,7 +156,7 @@ impl Helper for WikiLink {
         // TODO: check context and write out markdown in markdown files???
         let link = format!(
             r#"<a href="{}" title="{}">{}</a>"#,
-            rc.escape(href),
+            rc.escape(&value),
             rc.escape(&title),
             rc.escape(&label)
         );
