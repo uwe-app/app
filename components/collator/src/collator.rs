@@ -225,7 +225,7 @@ async fn find(
                             req.plugins,
                             &key,
                             &path,
-                            &layout_name
+                            &layout_name,
                         ) {
                             let _ = tx.send(e);
                         }

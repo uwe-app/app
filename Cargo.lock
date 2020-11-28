@@ -205,9 +205,9 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "bracket"
-version = "0.9.16"
+version = "0.9.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ba39f206198bb31cb94de2593b999a34362edf488182850321eeb6ead96dbaa"
+checksum = "d230b488bedde28a99379e81b2a3ec238d317a5bd79052edd33c8f0cab048bb6"
 dependencies = [
  "dyn-clone",
  "log",

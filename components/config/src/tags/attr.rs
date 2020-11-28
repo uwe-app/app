@@ -1,6 +1,6 @@
-use std::str::FromStr;
-use std::fmt;
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 use crate::Error;
 
@@ -121,7 +121,7 @@ impl FromStr for RelValue {
         } else if s == TAG {
             Self::Tag
         } else {
-            return Err(Error::InvalidRelValue(s.to_string()))
+            return Err(Error::InvalidRelValue(s.to_string()));
         };
         Ok(matched)
     }
@@ -228,8 +228,8 @@ impl fmt::Display for As {
 
 pub mod referrer_policy {
 
-    use std::fmt;
     use serde::{Deserialize, Serialize};
+    use std::fmt;
 
     static NO_REFERRER: &str = "no-referrer";
     static NO_REFERRER_WHEN_DOWNGRADE: &str = "no-referrer-when-downgrade";
@@ -237,7 +237,8 @@ pub mod referrer_policy {
     static ORIGIN_WHEN_CROSS_ORIGIN: &str = "origin-when-cross-origin";
     static SAME_ORIGIN: &str = "same-origin";
     static STRICT_ORIGIN: &str = "strict-origin";
-    static STRICT_ORIGIN_WHEN_CROSS_ORIGIN: &str = "strict-origin-when-cross-origin";
+    static STRICT_ORIGIN_WHEN_CROSS_ORIGIN: &str =
+        "strict-origin-when-cross-origin";
 
     #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
     #[serde(rename_all = "kebab-case")]
@@ -261,7 +262,9 @@ pub mod referrer_policy {
                 Self::OriginWhenCrossOrigin => ORIGIN_WHEN_CROSS_ORIGIN,
                 Self::SameOrigin => SAME_ORIGIN,
                 Self::StrictOrigin => STRICT_ORIGIN,
-                Self::StrictOriginWhenCrossOrigin => STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+                Self::StrictOriginWhenCrossOrigin => {
+                    STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                }
             }
         }
     }
@@ -277,5 +280,4 @@ pub mod referrer_policy {
             Self::NoReferrerWhenDowngrade
         }
     }
-
 }

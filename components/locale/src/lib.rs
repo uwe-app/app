@@ -40,7 +40,6 @@ pub struct LocaleMap {
     // NOTE: We don't include `multi` when serializing because
     // NOTE: serialization of `languages` is already conditional
     // NOTE: on whether multiple languages are available.
-
     /// Determine if multiple locales are active.
     #[serde(skip)]
     multi: bool,

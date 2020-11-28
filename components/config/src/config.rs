@@ -33,7 +33,7 @@ use crate::{
     sitemap::SiteMapConfig,
     style::StyleAsset,
     syntax::SyntaxConfig,
-    tags::{script::ScriptTag, link::LinkTag},
+    tags::{link::LinkTag, script::ScriptTag},
     transform::TransformConfig,
     utils::href::UrlPath,
     Error,
@@ -117,7 +117,6 @@ pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 
 static DEFAULT_STYLE: &str = "assets/styles/main.css";
 static DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
-
 
 static DEFAULT_ICON: &str = "assets/favicon.png";
 static DEFAULT_ICON_DATA: &str =
@@ -495,7 +494,6 @@ impl Config {
 
         Err(Error::NoSiteConfig(target_pth))
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

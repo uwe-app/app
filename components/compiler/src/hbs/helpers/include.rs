@@ -4,17 +4,16 @@ use std::path::Path;
 pub struct Include;
 
 impl Helper for Include {
-
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(1..1)?;
 
-        let base_path = rc.try_evaluate("@root/file.source", &[Type::String])?
+        let base_path = rc
+            .try_evaluate("@root/file.source", &[Type::String])?
             .as_str()
             .unwrap();
 
@@ -23,7 +22,8 @@ impl Helper for Include {
 
         // NOTE: this allows quoted strings and raw paths
         if let Some(include_file) = ctx.get_fallback(0) {
-            let include_file = ctx.try_value(include_file, &[Type::String])?
+            let include_file = ctx
+                .try_value(include_file, &[Type::String])?
                 .as_str()
                 .unwrap();
 
@@ -38,7 +38,6 @@ impl Helper for Include {
                 })?;
                 rc.write(&result)?;
             }
-
         }
 
         Ok(None)

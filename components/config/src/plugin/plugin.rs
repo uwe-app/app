@@ -363,8 +363,9 @@ impl Plugin {
 
     /// Resolve a URL path relative to this plugin.
     pub fn to_path_buf(&self, path: &UrlPath) -> PathBuf {
-        self.base
-            .join(utils::url::to_path_separator(path.as_str().trim_start_matches("/")))
+        self.base.join(utils::url::to_path_separator(
+            path.as_str().trim_start_matches("/"),
+        ))
     }
 }
 

@@ -75,8 +75,7 @@ impl<'a> PageBuilder<'a> {
     }
 
     pub fn compute(mut self) -> Result<Self> {
-        self.page =
-            loader::compute(&self.path, self.config, self.options)?;
+        self.page = loader::compute(&self.path, self.config, self.options)?;
         Ok(self)
     }
 
@@ -210,9 +209,10 @@ impl<'a> PageBuilder<'a> {
                 return Err(Error::DuplicatePermalink(key.to_string()));
             }
 
-            self.info
-                .redirects
-                .insert(key.to_string(), self.page.href.as_ref().unwrap().to_string());
+            self.info.redirects.insert(
+                key.to_string(),
+                self.page.href.as_ref().unwrap().to_string(),
+            );
         }
         Ok(self)
     }

@@ -25,7 +25,6 @@ impl Helper for Sibling {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(2..2)?;
 
         let node = ctx.assert_block(template)?;

@@ -1,10 +1,10 @@
-use std::sync::Arc;
 use std::borrow::Cow;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use bracket::helper::prelude::*;
-use config::markdown as md;
 use collator::{Collate, LinkCollate};
+use config::markdown as md;
 
 use crate::BuildContext;
 
@@ -17,14 +17,12 @@ fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
     frontmatter::Config::new_markdown(false)
 }
 
-
 fn render_document<'render, 'call>(
     template_path: &str,
     context: &BuildContext,
     rc: &mut Render<'render>,
     ctx: &Context<'call>,
 ) -> HelperValue {
-
     let file = PathBuf::from(template_path);
     let is_markdown = context.options.is_markdown_file(&file);
 
@@ -44,16 +42,15 @@ fn render_document<'render, 'call>(
     //let node = template.node();
     //let result = rc.buffer(node)?;
 
-    let result = rc.registry().once(template_path, &content, rc.data()).map_err(|e| {
-        HelperError::new(format!(
-            "Render error {} ({})",
-            template_path, e
-        ))
-    })?;
+    let result = rc
+        .registry()
+        .once(template_path, &content, rc.data())
+        .map_err(|e| {
+            HelperError::new(format!("Render error {} ({})", template_path, e))
+        })?;
 
     if is_markdown {
-        let parsed =
-            md::render(&mut Cow::from(result), &context.config);
+        let parsed = md::render(&mut Cow::from(result), &context.config);
         rc.write(&parsed)?;
     } else {
         rc.write(&result)?;
@@ -68,14 +65,12 @@ pub struct RenderPage {
 }
 
 impl Helper for RenderPage {
-
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(1..1)?;
 
         // The href of a page to render
@@ -83,27 +78,28 @@ impl Helper for RenderPage {
 
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href);
-        let template_path = if let Some(page_path) = collation.get_link(&normalized_href) {
-            if let Some(page_lock) = collation.resolve(&page_path) {
-                let page = page_lock.read().unwrap();
-                page.file
-                    .as_ref()
-                    .unwrap()
-                    .template
-                    .to_string_lossy()
-                    .into_owned()
+        let template_path =
+            if let Some(page_path) = collation.get_link(&normalized_href) {
+                if let Some(page_lock) = collation.resolve(&page_path) {
+                    let page = page_lock.read().unwrap();
+                    page.file
+                        .as_ref()
+                        .unwrap()
+                        .template
+                        .to_string_lossy()
+                        .into_owned()
+                } else {
+                    return Err(HelperError::new(&format!(
+                        "Type error in `render`, no page found for {}",
+                        &href
+                    )));
+                }
             } else {
                 return Err(HelperError::new(&format!(
-                    "Type error in `render`, no page found for {}",
+                    "Type error in `render`, no path found for {}",
                     &href
                 )));
-            }
-        } else {
-            return Err(HelperError::new(&format!(
-                "Type error in `render`, no path found for {}",
-                &href
-            )));
-        };
+            };
 
         render_document(&template_path, &self.context, rc, ctx)
     }
@@ -121,8 +117,11 @@ impl Helper for Block {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-        let template_path = rc.try_evaluate("@root/file.template", &[Type::String])?
-            .as_str().unwrap().to_string();
+        let template_path = rc
+            .try_evaluate("@root/file.template", &[Type::String])?
+            .as_str()
+            .unwrap()
+            .to_string();
         render_document(&template_path, &self.context, rc, ctx)
     }
 }
@@ -139,19 +138,22 @@ impl Helper for Document {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         let standalone = rc
             .evaluate("@root/standalone")?
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         if standalone {
-            let block = Block {context: Arc::clone(&self.context)};
+            let block = Block {
+                context: Arc::clone(&self.context),
+            };
             return block.call(rc, ctx, template);
         }
 
         let layout = rc
-            .try_evaluate("@root/layout", &[Type::String])?.as_str().unwrap();
+            .try_evaluate("@root/layout", &[Type::String])?
+            .as_str()
+            .unwrap();
 
         //println!("DOCUMENT HELPER WAS CALLED {}", &layout);
 

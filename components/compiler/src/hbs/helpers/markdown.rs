@@ -5,8 +5,8 @@ use std::sync::Arc;
 use bracket::helper::prelude::*;
 use serde_json::{json, Value};
 
-use config::markdown;
 use crate::BuildContext;
+use config::markdown;
 
 pub struct Markdown {
     pub context: Arc<BuildContext>,
@@ -19,7 +19,6 @@ impl Helper for Markdown {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(0..1)?;
 
         let source_path = rc
@@ -49,7 +48,7 @@ impl Helper for Markdown {
                     if let Value::String(value) = value {
                         let partial_name = value.to_string();
                         if let Some(tpl) = rc.get_template(&partial_name) {
-                            buffer = rc.buffer(tpl.node())?; 
+                            buffer = rc.buffer(tpl.node())?;
                         } else {
                             return Err(HelperError::new(
                                 format!(
@@ -59,7 +58,8 @@ impl Helper for Markdown {
                         }
                     }
                 } else {
-                    let param = ctx.try_value(arg, &[Type::String])?.as_str().unwrap();
+                    let param =
+                        ctx.try_value(arg, &[Type::String])?.as_str().unwrap();
                     buffer = param.to_string();
                 }
             }
@@ -75,10 +75,8 @@ impl Helper for Markdown {
         //println!("md: {:?}", &buffer);
 
         if evaluate {
-            let parsed = markdown::render(
-                &mut Cow::from(buffer),
-                &self.context.config,
-            );
+            let parsed =
+                markdown::render(&mut Cow::from(buffer), &self.context.config);
             rc.write(&parsed)?;
         } else {
             rc.write(&buffer)?;

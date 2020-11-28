@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use bracket::helper::prelude::*;
-use serde_json::json;
-use collator::{Collate, LinkCollate};
 use crate::BuildContext;
+use bracket::helper::prelude::*;
+use collator::{Collate, LinkCollate};
+use serde_json::json;
 
 pub struct Page {
     pub context: Arc<BuildContext>,

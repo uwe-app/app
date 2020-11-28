@@ -77,11 +77,7 @@ impl fmt::Display for ScriptTag {
         }
         if let Some(ref attr) = self.referrerpolicy {
             // NOTE: we know that we don't need to escape this attribute value
-            write!(
-                f,
-                " referrerpolicy=\"{}\"",
-                attr.as_str()
-            )?;
+            write!(f, " referrerpolicy=\"{}\"", attr.as_str())?;
         }
 
         if let Some(ref attr) = self.crossorigin {
@@ -89,8 +85,12 @@ impl fmt::Display for ScriptTag {
             write!(f, " {}", attr.as_str())?;
         }
 
-        if let Some(_) = self.script_async { write!(f, " async")?; }
-        if let Some(_) = self.nomodule { write!(f, " nomodule")?; }
+        if let Some(_) = self.script_async {
+            write!(f, " async")?;
+        }
+        if let Some(_) = self.nomodule {
+            write!(f, " nomodule")?;
+        }
 
         write!(f, ">")?;
 
@@ -102,7 +102,6 @@ impl fmt::Display for ScriptTag {
     }
 }
 
-
 impl PartialEq for ScriptTag {
     fn eq(&self, other: &Self) -> bool {
         self.src == other.src
@@ -110,4 +109,3 @@ impl PartialEq for ScriptTag {
 }
 
 impl Eq for ScriptTag {}
-

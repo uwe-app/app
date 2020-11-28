@@ -58,7 +58,6 @@ pub enum Error {
     #[error(transparent)]
     Render(#[from] handlebars::RenderError),
     */
-
     #[error(transparent)]
     DataSource(#[from] datasource::Error),
     #[error(transparent)]

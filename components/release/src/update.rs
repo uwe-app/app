@@ -8,10 +8,7 @@ pub async fn update(current: &str) -> Result<()> {
     runtime::fetch().await?;
 
     let exe = std::env::current_exe()?;
-    let name = exe.file_name()
-        .unwrap()
-        .to_string_lossy()
-        .to_owned();
+    let name = exe.file_name().unwrap().to_string_lossy().to_owned();
 
     // This is the version of the current executing program
     let current: Version = current.parse()?;

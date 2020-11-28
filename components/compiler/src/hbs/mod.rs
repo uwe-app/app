@@ -25,7 +25,6 @@ pub fn parser<'a>(
     context: Arc<BuildContext>,
     locales: Arc<Locales>,
 ) -> Result<Box<impl Parser + Send + Sync + 'a>> {
-
     let builder = ParserBuilder::new(engine, context)
         .helpers()?
         .fluent(locales)?
@@ -68,7 +67,10 @@ impl<'reg> ParserBuilder<'reg> {
                 {
                     if let Some(ref partials) = templates.partials {
                         for (nm, partial) in partials.iter() {
-                            self.registry.add(nm.to_string(), partial.to_path_buf(plugin.base()))?;
+                            self.registry.add(
+                                nm.to_string(),
+                                partial.to_path_buf(plugin.base()),
+                            )?;
                         }
                     }
                 }
@@ -81,15 +83,19 @@ impl<'reg> ParserBuilder<'reg> {
         // Configure partial directories
         let templates = self.context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
-            self.registry.read_dir(
-                &templates,
-                self.engine.get_template_extension())?;
+            self.registry
+                .read_dir(&templates, self.engine.get_template_extension())?;
         }
         Ok(self)
     }
 
-
     pub fn helpers(mut self) -> Result<Self> {
+        // Configure handlers
+        self.registry.handlers_mut().link =
+            Some(Box::new(helpers::link::WikiLink {
+                context: Arc::clone(&self.context),
+            }));
+
         // Configure helpers
         let helpers = self.registry.helpers_mut();
 
@@ -187,14 +193,10 @@ impl<'reg> ParserBuilder<'reg> {
             }),
         );
 
-        helpers
-            .insert("include", Box::new(helpers::include::Include));
-        helpers
-            .insert("random", Box::new(helpers::random::Random));
-        helpers
-            .insert("slug", Box::new(helpers::slug::Slug));
-        helpers
-            .insert("date", Box::new(helpers::date::DateFormat));
+        helpers.insert("include", Box::new(helpers::include::Include));
+        helpers.insert("random", Box::new(helpers::random::Random));
+        helpers.insert("slug", Box::new(helpers::slug::Slug));
+        helpers.insert("date", Box::new(helpers::date::DateFormat));
 
         helpers.insert(
             "next",
@@ -215,17 +217,12 @@ impl<'reg> ParserBuilder<'reg> {
         if let Some(ref transform) = self.context.config.transform {
             if let Some(ref html) = transform.html {
                 if html.use_toc() {
-                    helpers.insert(
-                        "toc",
-                        Box::new(helpers::toc::TableOfContents),
-                    );
+                    helpers
+                        .insert("toc", Box::new(helpers::toc::TableOfContents));
                 }
 
                 if html.use_words() {
-                    helpers.insert(
-                        "words",
-                        Box::new(helpers::word::Count),
-                    );
+                    helpers.insert("words", Box::new(helpers::word::Count));
                 }
             }
         }
@@ -253,12 +250,15 @@ impl<'reg> ParserBuilder<'reg> {
     pub fn fluent(mut self, locales: Arc<Locales>) -> Result<Self> {
         let loader = locales.loader();
         if let Some(loader) = loader {
-            self.registry.helpers_mut()
-                .insert("fluent", Box::new(FluentHelper::new(Box::new(loader.as_ref()))));
+            self.registry.helpers_mut().insert(
+                "fluent",
+                Box::new(FluentHelper::new(Box::new(loader.as_ref()))),
+            );
         } else {
-            self.registry.helpers_mut()
-                .insert("fluent", Box::new(FluentHelper::new(Box::new(&*LOCALES))));
-
+            self.registry.helpers_mut().insert(
+                "fluent",
+                Box::new(FluentHelper::new(Box::new(&*LOCALES))),
+            );
         }
 
         Ok(self)
@@ -289,14 +289,9 @@ pub struct BracketParser<'reg> {
 }
 
 impl Parser for BracketParser<'_> {
-    fn parse(
-        &self,
-        file: &PathBuf,
-        data: CollatedPage,
-    ) -> Result<String> {
+    fn parse(&self, file: &PathBuf, data: CollatedPage) -> Result<String> {
         let name = file.to_string_lossy();
-        self
-            .registry
+        self.registry
             .once(&name, DOCUMENT, &data)
             .map_err(Error::from)
     }

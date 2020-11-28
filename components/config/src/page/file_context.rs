@@ -21,11 +21,17 @@ pub struct FileContext {
 }
 
 impl FileContext {
-    pub fn new(base: &PathBuf, source: PathBuf, target: PathBuf, template: PathBuf) -> Self {
-
+    pub fn new(
+        base: &PathBuf,
+        source: PathBuf,
+        target: PathBuf,
+        template: PathBuf,
+    ) -> Self {
         let name = if let Some(stem) = &source.file_stem() {
             Some(stem.to_string_lossy().into_owned())
-        } else { None };
+        } else {
+            None
+        };
 
         let rel = match source.strip_prefix(base) {
             Ok(rel) => rel,

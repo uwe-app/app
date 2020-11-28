@@ -1,7 +1,7 @@
+use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use std::ffi::OsStr;
 
 use log::{debug, info};
 use url::Url;
@@ -219,13 +219,13 @@ impl Renderer {
 
                 let with_lang = if ctx.locales.is_multi_lingual() {
                     Some(collation.get_lang())
-                } else { None };
+                } else {
+                    None
+                };
 
                 // Base canonical URL
-                let base = ctx.options.get_canonical_url(
-                    &ctx.config,
-                    with_lang,
-                )?;
+                let base =
+                    ctx.options.get_canonical_url(&ctx.config, with_lang)?;
 
                 // Create the top-level index of all sitemaps
                 let folder = sitemap.name.as_ref().unwrap().to_string();
@@ -251,7 +251,7 @@ impl Renderer {
                         // NOTE: quick hack to ignore error file, needs stronger logic
                         .filter(|d| {
                             if Some(err_name) == d.file.file_stem() {
-                                return false
+                                return false;
                             }
                             true
                         })

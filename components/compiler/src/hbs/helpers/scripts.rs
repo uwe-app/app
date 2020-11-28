@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use bracket::helper::prelude::*;
 use crate::BuildContext;
+use bracket::helper::prelude::*;
 use config::script::ScriptAsset;
 use serde_json::Value;
 
@@ -17,7 +17,6 @@ impl Helper for Scripts {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         // Make links absolute (passthrough)
         let abs = rc
             .evaluate("@root/absolute")?
@@ -92,7 +91,6 @@ impl Helper for Scripts {
                 rc.template(node)?;
                 rc.write("</noscript>")?;
             }
-
         }
 
         Ok(None)

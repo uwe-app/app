@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 use url::Url;
-use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, DisplayFromStr, skip_serializing_none};
 
 static DEFAULT_REPO: &str = "https://github.com/uwe-app/example/";
 //static DEFAULT_EDIT: &str = "edit/master/";

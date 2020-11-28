@@ -159,11 +159,12 @@ impl ProjectBuilder {
         debug!("Resolving plugins...");
 
         if let Some(dependencies) = self.config.dependencies.take() {
-            let plugins =
-                plugin::resolve(
-                    &self.options.project,
-                    dependencies,
-                    self.options.settings.is_offline()).await?;
+            let plugins = plugin::resolve(
+                &self.options.project,
+                dependencies,
+                self.options.settings.is_offline(),
+            )
+            .await?;
 
             for (_, plugin) in plugins.iter() {
                 let src = plugin.source().as_ref().unwrap().to_url()?;

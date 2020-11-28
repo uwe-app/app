@@ -4,7 +4,6 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub enum Alias {
-
     /// Add a site
     Add {
         /// Project folder

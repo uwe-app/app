@@ -4,18 +4,17 @@ use std::path::PathBuf;
 
 use chrono::prelude::*;
 
+use jsonfeed::Feed;
 use url::Url;
-use jsonfeed::{Feed};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    Config, Result, RuntimeOptions,
     href::UrlPath, indexer::QueryList, script::ScriptAsset, style::StyleAsset,
-    tags::link::LinkTag,
-    utils::toml_datetime::from_toml_datetime,
+    tags::link::LinkTag, utils::toml_datetime::from_toml_datetime, Config,
+    Result, RuntimeOptions,
 };
 
 use self::{feed::FeedEntry, file_context::FileContext};
@@ -25,8 +24,8 @@ pub(crate) mod feed;
 pub(crate) mod file_context;
 pub(crate) mod paginate;
 
-pub use paginate::{PageLink, PaginateInfo};
 pub use author::Author;
+pub use paginate::{PageLink, PaginateInfo};
 
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -37,6 +36,7 @@ pub struct Page {
     //
     pub title: Option<String>,
     pub description: Option<String>,
+    pub label: Option<String>,
     pub summary: Option<String>,
     pub image: Option<UrlPath>,
     pub meta: Option<HashMap<String, String>>,
@@ -114,6 +114,7 @@ impl Default for Page {
         Self {
             title: None,
             description: None,
+            label: None,
             summary: None,
             image: None,
             meta: None,
@@ -187,7 +188,7 @@ impl Page {
     }
 
     //pub fn is_standalone(&self) -> bool {
-        //return self.standalone.is_some() && self.standalone.unwrap()
+    //return self.standalone.is_some() && self.standalone.unwrap()
     //}
 
     // This should be a W3C Datetime string suitable for a
@@ -211,7 +212,10 @@ impl Page {
 
     /// Get an absolute permalink for the page; will panic if `href` is not set.
     pub fn permalink(
-        &self, config: &Config, options: &RuntimeOptions) -> Result<Url> {
+        &self,
+        config: &Config,
+        options: &RuntimeOptions,
+    ) -> Result<Url> {
         let website = options.settings.get_host_url(config)?;
         if let Some(ref permalink) = self.permalink {
             Ok(website.join(permalink.as_str())?)
@@ -234,8 +238,12 @@ impl Page {
             source.clone()
         };
 
-        let mut file_context =
-            FileContext::new(config.project(), source.clone(), output.clone(), template);
+        let mut file_context = FileContext::new(
+            config.project(),
+            source.clone(),
+            output.clone(),
+            template,
+        );
         file_context.resolve_metadata()?;
 
         let href =
@@ -268,7 +276,8 @@ impl Page {
         }
         if let Some(ref image) = self.image {
             let img = website.join(image.as_str().trim_start_matches("/"))?;
-            og.entry(crate::OG_IMAGE.to_string()).or_insert(img.to_string());
+            og.entry(crate::OG_IMAGE.to_string())
+                .or_insert(img.to_string());
         }
 
         self.file = Some(file_context);
@@ -279,24 +288,27 @@ impl Page {
             self.links.push(LinkTag::new_bookmark(bookmark.to_string()));
         }
 
-        self.links.push(LinkTag::new_canonical(canonical.to_string()));
+        self.links
+            .push(LinkTag::new_canonical(canonical.to_string()));
 
         //self.canonical = Some(canonical);
 
         Ok(())
     }
 
-    #[deprecated(since = "0.40.2", note = "Just seal and rename seal -> compute!?")]
+    #[deprecated(
+        since = "0.40.2",
+        note = "Just seal and rename seal -> compute!?"
+    )]
     pub fn compute(
         &mut self,
         _config: &Config,
         _opts: &RuntimeOptions,
     ) -> Result<()> {
-
         //let mut authors_list = if let Some(ref author) = self.authors {
-            //author.clone()
+        //author.clone()
         //} else {
-            //Vec::new()
+        //Vec::new()
         //};
 
         // TODO: finalize this page data after computation
@@ -324,7 +336,6 @@ impl Page {
     }
 
     pub fn append(&mut self, other: &mut Self) {
-
         // NOTE: handle lists like this so precedence is correct
 
         other.links.append(&mut self.links);
@@ -339,6 +350,10 @@ impl Page {
 
         if let Some(description) = other.description.as_mut() {
             self.description = Some(mem::take(description));
+        }
+
+        if let Some(label) = other.label.as_mut() {
+            self.label = Some(mem::take(label));
         }
 
         if let Some(summary) = other.summary.as_mut() {
@@ -410,7 +425,7 @@ impl Page {
         }
 
         //if let Some(scripts) = other.scripts.as_mut() {
-            //self.scripts = Some(mem::take(scripts));
+        //self.scripts = Some(mem::take(scripts));
         //}
 
         if let Some(styles) = other.styles.as_mut() {

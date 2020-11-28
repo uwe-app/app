@@ -1,7 +1,7 @@
 use url::Url;
 
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr, skip_serializing_none};
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 #[serde_as]
 #[skip_serializing_none]
@@ -20,14 +20,18 @@ impl Author {
     pub fn into_json_feed(self) -> jsonfeed::Author {
         let url = if let Some(url) = self.url {
             Some(url.to_string())
-        } else { None };
+        } else {
+            None
+        };
         let avatar = if let Some(avatar) = self.avatar {
             Some(avatar.to_string())
-        } else { None };
+        } else {
+            None
+        };
         return jsonfeed::Author {
             name: Some(self.name),
             url: url,
             avatar: avatar,
-        }
+        };
     }
 }

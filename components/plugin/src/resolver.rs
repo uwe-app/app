@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 
 use futures::future;
 
@@ -82,7 +82,11 @@ struct Resolver<'a> {
 }
 
 impl<'a> Resolver<'a> {
-    pub fn new(project: PathBuf, dependencies: DependencyMap, offline: bool) -> Result<Self> {
+    pub fn new(
+        project: PathBuf,
+        dependencies: DependencyMap,
+        offline: bool,
+    ) -> Result<Self> {
         let registry = registry::new_registry()?;
         let path = LockFile::get_lock_file(&project);
         let lock = ResolverLock::new(path)?;
@@ -199,12 +203,12 @@ impl<'a> Resolver<'a> {
         Ok(self)
     }
 
-    async fn verify(&mut self) -> Result<()>{
+    async fn verify(&mut self) -> Result<()> {
         for e in self.lock.current.package.iter() {
             if let Some(_) = e.source {
                 let dir = installer::installation_dir(&e.name, &e.version)?;
                 if !dir.exists() || !dir.is_dir() {
-                    return Err(Error::NoPluginInstallDir(dir))
+                    return Err(Error::NoPluginInstallDir(dir));
                 }
             }
         }

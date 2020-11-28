@@ -55,7 +55,8 @@ impl Menu {
     ) -> HelperValue {
         let base_path = rc
             .try_evaluate("@root/file.source", &[Type::String])?
-            .as_str().unwrap();
+            .as_str()
+            .unwrap();
 
         let path = PathBuf::from(&base_path);
         let dir = path.parent().unwrap().to_path_buf();
@@ -119,10 +120,7 @@ impl Menu {
                             let li = &*page.read().unwrap();
                             let is_self = &**href == &page_href;
                             if let Some(ref mut block) = rc.scope_mut() {
-                                block.set_local(
-                                    "self",
-                                    json!(is_self),
-                                );
+                                block.set_local("self", json!(is_self));
                                 block.set_base_value(json!(li));
                             }
                             rc.template(node)?;
@@ -187,8 +185,7 @@ impl Menu {
 
         // Render a named argument
         } else {
-            ctx
-                .try_get(0, &[Type::String])?
+            ctx.try_get(0, &[Type::String])?
                 .as_str()
                 .unwrap()
                 .to_string()
@@ -205,7 +202,6 @@ impl Helper for Menu {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         let list = ctx
             .param("list")
             .or(Some(&json!(false)))

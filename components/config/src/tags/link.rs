@@ -1,11 +1,13 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none, StringWithSeparator, SpaceSeparator};
+use serde_with::{
+    serde_as, skip_serializing_none, SpaceSeparator, StringWithSeparator,
+};
 
 use utils::entity;
 
-use super::attr::{RelValue, CrossOrigin, As};
+use super::attr::{As, CrossOrigin, RelValue};
 
 #[serde_as]
 #[skip_serializing_none]
@@ -47,7 +49,6 @@ pub struct LinkTag {
 }
 
 impl LinkTag {
-
     pub fn new_style_sheet(href: String, media: Option<String>) -> Self {
         Self {
             href,
@@ -95,10 +96,7 @@ impl fmt::Display for LinkTag {
         write!(f, "<link")?;
 
         if let Some(ref rel) = self.rel {
-            let values = rel
-                .iter()
-                .map(|r| r.as_str())
-                .collect::<Vec<_>>();
+            let values = rel.iter().map(|r| r.as_str()).collect::<Vec<_>>();
             let attr = values.join(" ");
             write!(f, " rel=\"{}\"", entity::escape(&attr))?;
         }
@@ -145,8 +143,12 @@ impl fmt::Display for LinkTag {
             write!(f, " onload=\"{}\"", entity::escape(attr))?;
         }
 
-        if let Some(_) = self.disabled { write!(f, " disabled")?; }
-        if let Some(_) = self.prefetch { write!(f, " prefetch")?; }
+        if let Some(_) = self.disabled {
+            write!(f, " disabled")?;
+        }
+        if let Some(_) = self.prefetch {
+            write!(f, " prefetch")?;
+        }
 
         write!(f, ">")
     }

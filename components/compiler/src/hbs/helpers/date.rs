@@ -11,7 +11,6 @@ impl Helper for DateFormat {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(2..2)?;
 
         // Use local=true to convert to local timezone

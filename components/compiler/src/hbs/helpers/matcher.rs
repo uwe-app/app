@@ -16,7 +16,6 @@ impl Helper for Match {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(2..2)?;
 
         // TODO: support block inner template syntax
@@ -30,13 +29,14 @@ impl Helper for Match {
             .to_string();
 
         // Get the target match destination and strip any trailing slash
-        let target = ctx.try_get(0, &[Type::String])?
+        let target = ctx
+            .try_get(0, &[Type::String])?
             .as_str()
             .unwrap()
             .trim_end_matches("/");
 
         // Get the output to write when a match is detected
-        let output= ctx.try_get(1, &[Type::String])?.as_str().unwrap();
+        let output = ctx.try_get(1, &[Type::String])?.as_str().unwrap();
 
         // Determine if an exact match is required
         let exact = ctx

@@ -17,11 +17,11 @@ pub struct UrlPath {
 
 impl UrlPath {
     //pub fn trim_start_matches(&self, val: &str) -> &str {
-        //self.value.trim_start_matches(val)
+    //self.value.trim_start_matches(val)
     //}
 
     //pub fn starts_with(&self, val: &str) -> bool {
-        //self.value.starts_with(val)
+    //self.value.starts_with(val)
     //}
 
     pub fn to_path_buf(&self) -> PathBuf {

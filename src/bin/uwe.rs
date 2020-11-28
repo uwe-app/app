@@ -78,7 +78,7 @@ enum Command {
     Site {
         #[structopt(subcommand)]
         cmd: Site,
-    }
+    },
 }
 
 /// Manage project source files
@@ -144,7 +144,6 @@ impl Command {
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
-
         Command::New { args } => {
             let opts = uwe::new::ProjectOptions {
                 source: args.source,
@@ -307,13 +306,10 @@ async fn main() -> Result<()> {
 }
 
 mod site {
+    use super::Site;
     use std::path::PathBuf;
     use url::Url;
-    use super::Site;
-    use uwe::{
-        opts::{Alias},
-        Error, Result,
-    };
+    use uwe::{opts::Alias, Error, Result};
 
     fn create(target: PathBuf, message: String) -> Result<()> {
         if !target.exists() || !target.is_dir() {
@@ -362,7 +358,11 @@ mod site {
         }
     }
 
-    fn pull(target: Option<PathBuf>, remote: String, branch: String) -> Result<()> {
+    fn pull(
+        target: Option<PathBuf>,
+        remote: String,
+        branch: String,
+    ) -> Result<()> {
         let target = if let Some(target) = target {
             target.to_path_buf()
         } else {

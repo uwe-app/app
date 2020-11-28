@@ -1,15 +1,15 @@
-use std::io::stderr;
 use std::fs::{self, File};
+use std::io::stderr;
 use std::path::{Path, PathBuf};
 
 use futures::TryFutureExt;
 use http::StatusCode;
+use human_bytes::human_bytes;
 use log::debug;
+use pbr::{ProgressBar, Units};
 use slug::slugify;
 use tokio::prelude::*;
 use url::Url;
-use pbr::{ProgressBar, Units};
-use human_bytes::human_bytes;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
@@ -377,7 +377,12 @@ async fn install_registry<P: AsRef<Path>>(
         pb.add(chunk.len() as u64);
     }
 
-    let msg = format!(" Fetched {}@{} ({})", name, version, human_bytes(len as f64));
+    let msg = format!(
+        " Fetched {}@{} ({})",
+        name,
+        version,
+        human_bytes(len as f64)
+    );
     pb.finish_print(&msg);
 
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());

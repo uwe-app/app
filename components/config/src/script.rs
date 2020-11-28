@@ -70,10 +70,7 @@ impl fmt::Display for ScriptAsset {
             Self::Inline { ref content } => {
                 write!(f, "<script>{}</script>", content)
             }
-            Self::Tag(ref script) => {
-                script.fmt(f)
-            }
+            Self::Tag(ref script) => script.fmt(f),
         }
     }
 }
-

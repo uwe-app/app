@@ -4,12 +4,9 @@ use std::path::PathBuf;
 use log::{debug, info};
 
 use config::{
-    Config,
-    ProfileName,
-    ProfileSettings,
-    RuntimeOptions,
     script::ScriptAsset,
     tags::{link::LinkTag, script::ScriptTag},
+    Config, ProfileName, ProfileSettings, RuntimeOptions,
 };
 
 use crate::{Error, Result};
@@ -189,7 +186,9 @@ fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
 
     let icon_random = if !opts.settings.is_release() {
         Some(format!("?v={}", utils::generate_id(8)))
-    } else { None };
+    } else {
+        None
+    };
 
     // Custom icon was defined
     if let Some(icon) = main_icon {
@@ -197,7 +196,7 @@ fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
         let path = utils::url::to_path_separator(&src);
         let file = opts.source.join(&path);
         if !file.exists() || !file.is_file() {
-            return Err(Error::NoMainIcon(src.to_string(), file))
+            return Err(Error::NoMainIcon(src.to_string(), file));
         }
         if let Some(ref random) = icon_random {
             src.push_str(random);
@@ -234,7 +233,7 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             let path = utils::url::to_path_separator(src);
             let file = opts.source.join(&path);
             if !file.exists() || !file.is_file() {
-                return Err(Error::NoMainStyle(src.to_string(), file))
+                return Err(Error::NoMainStyle(src.to_string(), file));
             }
         }
 
@@ -243,13 +242,13 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     // Using the style convention
     } else {
         let asset = Config::default_style();
-        let main_style_path = utils::url::to_path_separator(
-            asset.source());
+        let main_style_path = utils::url::to_path_separator(asset.source());
         let main_style_file = opts.source.join(&main_style_path);
         // Add a primary style sheet by convention if it exists
         if main_style_file.exists() && main_style_file.is_file() {
             let href = utils::url::to_href_separator(
-                main_style_file.strip_prefix(&opts.source)?);
+                main_style_file.strip_prefix(&opts.source)?,
+            );
             let style_tag = LinkTag::new_style_sheet(href, None);
             global_page.links_mut().push(style_tag);
         }
@@ -270,7 +269,7 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             let path = utils::url::to_path_separator(src);
             let file = opts.source.join(&path);
             if !file.exists() || !file.is_file() {
-                return Err(Error::NoMainScript(src.to_string(), file))
+                return Err(Error::NoMainScript(src.to_string(), file));
             }
         }
 
@@ -278,15 +277,14 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     // Using the script convention
     } else {
         let asset = Config::default_script();
-        let main_script_path = utils::url::to_path_separator(asset
-            .to_tag()
-            .source()
-            .as_ref()
-            .unwrap());
+        let main_script_path = utils::url::to_path_separator(
+            asset.to_tag().source().as_ref().unwrap(),
+        );
         let main_script_file = opts.source.join(&main_script_path);
         if main_script_file.exists() && main_script_file.is_file() {
             let href = utils::url::to_href_separator(
-                main_script_file.strip_prefix(&opts.source)?);
+                main_script_file.strip_prefix(&opts.source)?,
+            );
             let script_tag = ScriptTag::new(href);
             global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
         }

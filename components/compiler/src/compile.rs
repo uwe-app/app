@@ -60,7 +60,7 @@ where
         rx.iter().for_each(|(p, r)| {
             if r.is_err() {
                 //if fail_fast {
-                    //panic!(r.err());
+                //panic!(r.err());
                 //}
                 errs.push(r.err().unwrap());
             } else {

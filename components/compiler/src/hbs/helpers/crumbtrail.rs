@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use bracket::helper::prelude::*;
-use serde_json::json;
-use collator::menu;
 use crate::BuildContext;
+use bracket::helper::prelude::*;
+use collator::menu;
+use serde_json::json;
 
 pub struct Crumbtrail {
     pub context: Arc<BuildContext>,
@@ -17,7 +17,6 @@ impl Helper for Crumbtrail {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(0..0)?;
 
         let base_path = rc

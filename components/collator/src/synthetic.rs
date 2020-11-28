@@ -79,7 +79,8 @@ fn build_feed(
     feed.home_page_url = Some(base_url.to_string());
 
     if !config.authors().is_empty() {
-        let authors = config.authors()
+        let authors = config
+            .authors()
             .values()
             .cloned()
             .map(|a| a.into_json_feed())
@@ -163,15 +164,19 @@ fn build_feed(
 
             // Page-level authors
             item.authors = if let Some(ref author_refs) = p.authors() {
-                Some(config
-                    .authors()
-                    .iter()
-                    .filter(|(k, _)| author_refs.contains(k))
-                    .map(|(_, v)| v)
-                    .cloned()
-                    .map(|a| a.into_json_feed())
-                    .collect::<Vec<_>>())
-            } else { None };
+                Some(
+                    config
+                        .authors()
+                        .iter()
+                        .filter(|(k, _)| author_refs.contains(k))
+                        .map(|(_, v)| v)
+                        .cloned()
+                        .map(|a| a.into_json_feed())
+                        .collect::<Vec<_>>(),
+                )
+            } else {
+                None
+            };
 
             // Pass through tags from the `meta` taxonomies
             if let Some(ref taxonomies) = p.taxonomies {

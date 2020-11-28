@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use bracket::helper::prelude::*;
 use crate::BuildContext;
+use bracket::helper::prelude::*;
 use config::tags::link::LinkTag;
 
 pub struct Links {
@@ -16,31 +16,29 @@ impl Helper for Links {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         // Make links absolute (passthrough)
         let abs = rc
             .evaluate("@root/absolute")?
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        if let Some(links) = rc
-            .evaluate("@root/links")?
-            .and_then(|v| v.as_array()) {
-
+        if let Some(links) =
+            rc.evaluate("@root/links")?.and_then(|v| v.as_array())
+        {
             let mut tags: Vec<LinkTag> = Vec::new();
 
             // Collect the links into link tags
-            links
-                .iter()
-                .try_for_each(|link| {
-                    match serde_json::from_value::<LinkTag>(link.clone()) {
-                        Ok(tag) => tags.push(tag),
-                        Err(_) => {
-                            return Err(HelperError::new("Invalid link tag encountered"))
-                        }
+            links.iter().try_for_each(|link| {
+                match serde_json::from_value::<LinkTag>(link.clone()) {
+                    Ok(tag) => tags.push(tag),
+                    Err(_) => {
+                        return Err(HelperError::new(
+                            "Invalid link tag encountered",
+                        ))
                     }
-                    Ok(())
-                })?;
+                }
+                Ok(())
+            })?;
 
             // Convert to relative paths if necessary
             let tags = if abs {
@@ -53,8 +51,7 @@ impl Helper for Links {
                     .unwrap();
 
                 let path = Path::new(base_path);
-                tags
-                    .iter()
+                tags.iter()
                     .cloned()
                     .map(|mut tag| {
                         let src = tag.source().to_string();

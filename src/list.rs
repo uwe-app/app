@@ -1,6 +1,6 @@
 use log::info;
 
-use crate::{Result};
+use crate::Result;
 
 pub async fn list_blueprints() -> Result<()> {
     let blueprints = dirs::blueprint_dir()?;

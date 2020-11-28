@@ -27,9 +27,7 @@ impl StyleAsset {
     pub fn source(&self) -> Option<&str> {
         match *self {
             Self::Source(ref s) => Some(s),
-            Self::Tag(ref f) => {
-                Some(&f.href)
-            }
+            Self::Tag(ref f) => Some(&f.href),
             Self::Inline { .. } => None,
         }
     }
@@ -59,9 +57,7 @@ impl fmt::Display for StyleAsset {
         let href: Option<&str> = match *self {
             Self::Source(ref s) => Some(s),
 
-            Self::Tag(ref t) => {
-                Some(&t.href)
-            }
+            Self::Tag(ref t) => Some(&t.href),
             _ => None,
         };
 

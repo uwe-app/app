@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use bracket::helper::prelude::*;
-use serde_json::json;
-use collator::menu;
 use crate::BuildContext;
+use bracket::helper::prelude::*;
+use collator::menu;
+use serde_json::json;
 
 pub struct Parent {
     pub context: Arc<BuildContext>,
@@ -21,7 +21,8 @@ impl Helper for Parent {
 
         let node = ctx.assert_block(template)?;
 
-        let base_path = rc.try_evaluate("@root/file.source", &[Type::String])?
+        let base_path = rc
+            .try_evaluate("@root/file.source", &[Type::String])?
             .as_str()
             .unwrap();
 

@@ -11,7 +11,6 @@ impl Helper for Random {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         ctx.arity(1..1)?;
 
         let node = ctx.assert_block(template)?;

@@ -64,9 +64,7 @@ pub fn compute<P: AsRef<Path>>(
     let file_type = opts.get_type(f.as_ref());
     let mut conf: frontmatter::Config = Default::default();
     match file_type {
-        FileType::Markdown => {
-            conf = frontmatter::Config::new_markdown(true)
-        }
+        FileType::Markdown => conf = frontmatter::Config::new_markdown(true),
         FileType::Template => conf = frontmatter::Config::new_html(true),
         _ => {}
     }

@@ -7,11 +7,8 @@ use serde::Serialize;
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use config::{
-    Config, Author, RuntimeOptions,
-    date::DateConfig,
-    page::Page,
-    repository::RepositoryConfig,
-    semver::Version,
+    date::DateConfig, page::Page, repository::RepositoryConfig,
+    semver::Version, Author, Config, RuntimeOptions,
 };
 
 use locale::{LocaleMap, Locales};
@@ -81,10 +78,11 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
         page: &'config Page,
         lang: &'config str,
     ) -> Result<Self> {
-
         let languages = if locales.is_multi_lingual() {
             Some(locales.languages())
-        } else { None };
+        } else {
+            None
+        };
 
         let attributed = if let Some(author_refs) = page.authors() {
             let authors = config
@@ -95,17 +93,18 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
                 .collect::<Vec<_>>();
 
             if authors.len() != author_refs.len() {
-                let missing =
-                    author_refs
+                let missing = author_refs
                     .iter()
                     .filter(|r| !config.authors().contains_key(r.as_str()))
                     .cloned()
                     .collect::<Vec<String>>();
-                return Err(Error::NoAuthor(missing.join(", "), file.clone()))
+                return Err(Error::NoAuthor(missing.join(", "), file.clone()));
             }
 
             Some(authors)
-        } else { None };
+        } else {
+            None
+        };
 
         let authors = CollatedAuthors {
             all: config.authors(),

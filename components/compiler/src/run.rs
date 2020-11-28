@@ -2,9 +2,7 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
-use collator::{
-    Collate, Resource, ResourceOperation, ResourceTarget,
-};
+use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
 use config::{
     profile::{ProfileName, Profiles},
     Config, Page,
@@ -165,8 +163,14 @@ pub async fn parse(
 
     let collation = &*ctx.collation.read().unwrap();
     let lang = collation.get_lang();
-    let mut page_data =
-        CollatedPage::new(file, &ctx.config, &ctx.options, &ctx.locales, data, lang)?;
+    let mut page_data = CollatedPage::new(
+        file,
+        &ctx.config,
+        &ctx.options,
+        &ctx.locales,
+        data,
+        lang,
+    )?;
 
     // Try to resolve a menu for the file
     if let Some(parent) = file.parent() {

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use crate::BuildContext;
 use bracket::helper::prelude::*;
 use serde_json::json;
-use crate::BuildContext;
 
 pub struct Embed {
     pub context: Arc<BuildContext>,
@@ -15,7 +15,6 @@ impl Helper for Embed {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-
         // The identifier for which search index to use
         let id = ctx
             .param("id")
