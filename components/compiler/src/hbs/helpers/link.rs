@@ -34,7 +34,10 @@ fn url<'render, 'call>(
     let make_relative =
         !abs && link_config.relative.is_some() && link_config.relative.unwrap();
 
-    let passthrough = !input.starts_with("/")
+    //let passthrough = !input.starts_with("/")
+
+    let passthrough = 
+        input.starts_with(".")
         || input.starts_with("http:")
         || input.starts_with("https:");
 
@@ -55,12 +58,13 @@ fn url<'render, 'call>(
 
     let mut base = opts.source.clone();
 
-    let mut page_key: Option<PathBuf> = collation.find_link(&input);
+    let collation = context.collation.read().unwrap();
+    let normalized_href = collation.normalize(&input);
+
+    let mut page_key: Option<PathBuf> = collation.find_link(&normalized_href);
 
     if let Some(verify) = link_config.verify {
         if verify {
-            //println!("Trying to verify link with input {}", input);
-            //println!("Verify with input {:?}", &input);
             if page_key.is_none() {
                 return Err(HelperError::new(format!(
                     "Type error for `link`, missing url {}",
@@ -89,8 +93,6 @@ fn url<'render, 'call>(
     } else {
         format!("/{}", input)
     };
-
-    //debug!("Link {:?}", value);
 
     Ok((value, page_key))
 }
@@ -158,6 +160,7 @@ impl Helper for WikiLink {
             rc.escape(&title),
             rc.escape(&label)
         );
+
         rc.write(&link)?;
         Ok(None)
     }
