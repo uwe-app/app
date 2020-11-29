@@ -43,7 +43,6 @@ fn url<'render, 'call>(
 
     if passthrough {
         let mut output = input.to_string();
-        rc.write(&input)?;
         if include_index && (input == "." || input == "..") {
             output.push('/');
             output.push_str(config::INDEX_HTML);
