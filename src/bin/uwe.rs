@@ -217,21 +217,11 @@ async fn run(cmd: Command) -> Result<()> {
                 None
             };
 
-            let mut tls: Option<TlsConfig> = None;
-
-            let ssl_port = if let Some(ssl_port) = args.server.ssl_port {
-                ssl_port
-            } else {
-                config::PORT_SSL
-            };
-
-            if args.server.ssl_cert.is_some() && args.server.ssl_key.is_some() {
-                tls = Some(TlsConfig {
-                    cert: args.server.ssl_cert.as_ref().unwrap().to_path_buf(),
-                    key: args.server.ssl_key.as_ref().unwrap().to_path_buf(),
-                    port: ssl_port,
-                });
-            }
+            let tls = uwe::opts::tls_config(
+                None,
+                &args.server,
+                config::PORT_SSL,
+            );
 
             let build_args = ProfileSettings {
                 paths,

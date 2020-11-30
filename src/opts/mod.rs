@@ -59,6 +59,36 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     Ok(input.clone())
 }
 
+pub fn tls_config(
+    initial: Option<TlsConfig>,
+    opts: &WebServerOpts,
+    default_port_ssl: u16) -> Option<TlsConfig> {
+
+    let mut tls = initial;
+
+    let ssl_port = if let Some(ssl_port) = opts.ssl_port {
+        ssl_port
+    } else {
+        default_port_ssl
+    };
+
+    if opts.ssl_cert.is_some() && opts.ssl_key.is_some() {
+        let cert = opts.ssl_cert.as_ref().unwrap().to_path_buf();
+        let key = opts.ssl_key.as_ref().unwrap().to_path_buf();
+        let empty_cert = cert == PathBuf::from("");
+        let empty_key = cert == PathBuf::from("");
+        if !empty_cert && !empty_key {
+            tls = Some(TlsConfig {
+                cert,
+                key,
+                port: ssl_port,
+            });
+        }
+    }
+
+    tls
+}
+
 pub fn server_config(
     target: &PathBuf,
     opts: &WebServerOpts,
@@ -68,27 +98,14 @@ pub fn server_config(
     let serve: ServerConfig = Default::default();
     let mut host = &serve.listen;
     let mut port = &default_port;
-    let mut tls = serve.tls.clone();
 
-    let ssl_port = if let Some(ssl_port) = opts.ssl_port {
-        ssl_port
-    } else {
-        default_port_ssl
-    };
+    let tls = tls_config(serve.tls.clone(), opts, default_port_ssl);
 
     if let Some(ref h) = opts.host {
         host = h;
     }
     if let Some(ref p) = opts.port {
         port = p;
-    }
-
-    if opts.ssl_cert.is_some() && opts.ssl_key.is_some() {
-        tls = Some(TlsConfig {
-            cert: opts.ssl_cert.as_ref().unwrap().to_path_buf(),
-            key: opts.ssl_key.as_ref().unwrap().to_path_buf(),
-            port: ssl_port,
-        });
     }
 
     let host = HostConfig::new(target.clone(), host.to_owned(), None, None);
