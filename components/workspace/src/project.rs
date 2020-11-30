@@ -37,7 +37,9 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
 
 #[derive(Debug)]
 pub enum ProjectEntry {
-    One(Entry),
+    // Guaranteed to be an array with a single entry
+    One(Vec<Entry>),
+    // May contain multiple projects
     Many(Vec<Entry>),
 }
 
@@ -646,24 +648,11 @@ impl Workspace {
         self.projects
             .iter()
             .map(|e| match e {
-                ProjectEntry::One(c) => vec![c],
-                ProjectEntry::Many(c) => c.iter().collect(),
+                ProjectEntry::One(c)
+                | ProjectEntry::Many(c) => c.iter(),
             })
             .flatten()
             .collect::<Vec<&Entry>>()
-            .into_iter()
-    }
-
-    #[deprecated(since = "0.20.8", note = "Use into_iter()")]
-    pub fn iter_mut(&mut self) -> impl IntoIterator<Item = &mut Entry> {
-        self.projects
-            .iter_mut()
-            .map(|e| match e {
-                ProjectEntry::One(c) => vec![c],
-                ProjectEntry::Many(c) => c.iter_mut().collect(),
-            })
-            .flatten()
-            .collect::<Vec<&mut Entry>>()
             .into_iter()
     }
 
@@ -671,8 +660,8 @@ impl Workspace {
         self.projects
             .into_iter()
             .map(|e| match e {
-                ProjectEntry::One(c) => vec![c],
-                ProjectEntry::Many(c) => c.into_iter().collect(),
+                ProjectEntry::One(c) => c.into_iter(),
+                ProjectEntry::Many(c) => c.into_iter(),
             })
             .flatten()
             .collect::<Vec<Entry>>()
@@ -706,7 +695,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
         workspace.projects.push(ProjectEntry::Many(members));
     } else {
-        workspace.projects.push(ProjectEntry::One(Entry { config }));
+        workspace.projects.push(ProjectEntry::One(vec![Entry { config }]));
     }
 
     Ok(workspace)

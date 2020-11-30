@@ -149,17 +149,19 @@ pub fn fatal(e: Error) -> Result<()> {
     std::process::exit(1);
 }
 
-pub mod alias;
-pub mod build;
-pub mod docs;
-pub mod list;
-pub mod new;
-pub mod publish;
-pub mod server;
-pub mod web_server;
+mod alias;
+mod build;
+mod clean;
+mod docs;
+mod list;
+mod new;
+mod publish;
+mod server;
+mod web_server;
 
 pub use self::alias::Alias;
 pub use self::build::Build;
+pub use self::clean::Clean;
 pub use self::docs::Docs;
 pub use self::list::List;
 pub use self::new::New;

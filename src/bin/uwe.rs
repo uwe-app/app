@@ -16,7 +16,7 @@ use publisher::PublishProvider;
 
 use uwe::{
     self,
-    opts::{self, fatal, Alias, Build, Docs, List, New, Publish, Server},
+    opts::{self, fatal, Alias, Build, Clean, Docs, List, New, Publish, Server},
     Error, Result,
 };
 
@@ -41,6 +41,12 @@ enum Command {
     Build {
         #[structopt(flatten)]
         args: Build,
+    },
+
+    /// Remove the build directory
+    Clean {
+        #[structopt(flatten)]
+        args: Clean,
     },
 
     /// Create a new project
@@ -158,6 +164,10 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Site { cmd } => {
             self::site::run(cmd).await?;
+        }
+
+        Command::Clean { args } => {
+            uwe::clean::clean(args.project).await?;
         }
 
         Command::List { args } => {
