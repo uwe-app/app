@@ -128,4 +128,8 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             version: config.version(),
         })
     }
+
+    pub fn page(&self) -> &'config Page {
+        self.page
+    }
 }

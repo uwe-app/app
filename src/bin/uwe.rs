@@ -8,7 +8,7 @@ use log::info;
 use structopt::StructOpt;
 
 use config::{
-    server::{LaunchConfig, TlsConfig},
+    server::LaunchConfig,
     ProfileSettings,
 };
 

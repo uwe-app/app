@@ -28,6 +28,9 @@ pub enum Error {
     #[error("Resources not a directory {0}")]
     ResourceNotDirectory(PathBuf),
 
+    #[error("Layout not found {0}")]
+    LayoutNotFound(String),
+
     #[error("Multiple build errors")]
     Multi { errs: Vec<Error> },
 

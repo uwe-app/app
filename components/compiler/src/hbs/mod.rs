@@ -15,8 +15,6 @@ use config::engine::TemplateEngine;
 
 use crate::{context::BuildContext, page::CollatedPage, parser::Parser};
 
-static DOCUMENT: &str = "{{document}}";
-
 mod helpers;
 
 /// Generate the standard parser.
@@ -98,13 +96,6 @@ impl<'reg> ParserBuilder<'reg> {
 
         // Configure helpers
         let helpers = self.registry.helpers_mut();
-
-        helpers.insert(
-            "document",
-            Box::new(helpers::document::Document {
-                context: Arc::clone(&self.context),
-            }),
-        );
 
         helpers.insert(
             "block",
@@ -291,8 +282,27 @@ pub struct BracketParser<'reg> {
 impl Parser for BracketParser<'_> {
     fn parse(&self, file: &PathBuf, data: CollatedPage) -> Result<String> {
         let name = file.to_string_lossy();
-        self.registry
-            .once(&name, DOCUMENT, &data)
+        let template = &data.page().file.as_ref().unwrap().template;
+
+        let standalone = data.page().standalone.is_some()
+            && data.page().standalone.unwrap();
+
+        // Try to render a named layout
+        if !standalone {
+            if let Some(ref layout) = data.page().layout {
+                if let Some(tpl) = self.registry.get_template(layout) {
+                    return self.registry.render(layout, &data).map_err(Error::from)
+                } else {
+                    return Err(Error::LayoutNotFound(layout.to_string()))
+                }
+            }
+        }
+
+        // Otherwise just render the page
+        let (content, _has_fm, _fm) =
+            frontmatter::load(&file, frontmatter::get_config(&file))?;
+        return self.registry
+            .once(&name, content, &data)
             .map_err(Error::from)
     }
 }

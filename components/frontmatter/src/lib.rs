@@ -6,6 +6,19 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
+static HTML: &str = "html";
+
+/// Get aconfiguration depending upon a path file extension.
+pub fn get_config(file: &PathBuf) -> Config {
+    if let Some(ext) = file.extension() {
+        if ext == HTML {
+            return Config::new_html(false);
+        }
+    }
+    Config::new_markdown(false)
+}
+
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]

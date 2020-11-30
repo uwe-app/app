@@ -8,15 +8,6 @@ use config::markdown as md;
 
 use crate::BuildContext;
 
-fn get_front_matter_config(file: &PathBuf) -> frontmatter::Config {
-    if let Some(ext) = file.extension() {
-        if ext == config::HTML {
-            return frontmatter::Config::new_html(false);
-        }
-    }
-    frontmatter::Config::new_markdown(false)
-}
-
 fn render_document<'render, 'call>(
     template_path: &str,
     context: &BuildContext,
@@ -27,7 +18,7 @@ fn render_document<'render, 'call>(
     let is_markdown = context.options.is_markdown_file(&file);
 
     let (content, _has_fm, _fm) =
-        frontmatter::load(&file, get_front_matter_config(&file)).map_err(
+        frontmatter::load(&file, frontmatter::get_config(&file)).map_err(
             |e| {
                 HelperError::new(format!(
                     "Render front matter error {} ({})",
@@ -122,46 +113,7 @@ impl Helper for Block {
             .as_str()
             .unwrap()
             .to_string();
+
         render_document(&template_path, &self.context, rc, ctx)
-    }
-}
-
-/// Render a document layout.
-pub struct Document {
-    pub context: Arc<BuildContext>,
-}
-
-impl Helper for Document {
-    fn call<'render, 'call>(
-        &self,
-        rc: &mut Render<'render>,
-        ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
-    ) -> HelperValue {
-        let standalone = rc
-            .evaluate("@root/standalone")?
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-
-        if standalone {
-            let block = Block {
-                context: Arc::clone(&self.context),
-            };
-            return block.call(rc, ctx, template);
-        }
-
-        let layout = rc
-            .try_evaluate("@root/layout", &[Type::String])?
-            .as_str()
-            .unwrap();
-
-        //println!("DOCUMENT HELPER WAS CALLED {}", &layout);
-
-        // TODO: get the template and render it!
-        if let Some(tpl) = rc.get_template(&layout) {
-            rc.template(tpl.node())?;
-        }
-
-        Ok(None)
     }
 }
