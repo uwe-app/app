@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 
 use human_bytes::human_bytes;
@@ -49,3 +50,14 @@ pub async fn publish(path: PathBuf) -> Result<()> {
 
     Ok(())
 }
+
+/// Remove all cached plugins.
+pub async fn clean() -> Result<()> {
+    let target = dirs::cache_src_dir()?;
+    if target.exists() && target.is_dir() {
+        info!("Remove {}", target.display());
+        fs::remove_dir_all(&target)?;
+    }
+    Ok(())
+}
+

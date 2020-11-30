@@ -60,7 +60,7 @@ fn url<'render, 'call>(
     let collation = context.collation.read().unwrap();
     let normalized_href = collation.normalize(&input);
 
-    let mut page_key: Option<PathBuf> = collation.find_link(&normalized_href);
+    let page_key: Option<PathBuf> = collation.find_link(&normalized_href);
 
     if let Some(verify) = link_config.verify {
         if verify {

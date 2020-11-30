@@ -43,6 +43,8 @@ enum Command {
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
+    /// Remove all cached plugins.
+    Clean {},
 }
 
 async fn run(cmd: Command) -> Result<()> {
@@ -59,6 +61,10 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Publish { path } => {
             uwe::plugin::publish(path).await.map_err(Error::from)?;
+        }
+
+        Command::Clean {} => {
+            uwe::plugin::clean().await.map_err(Error::from)?;
         }
     }
     Ok(())
