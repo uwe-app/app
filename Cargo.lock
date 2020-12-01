@@ -3853,6 +3853,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
+ "unic-langid",
  "url",
  "utils",
  "warp",

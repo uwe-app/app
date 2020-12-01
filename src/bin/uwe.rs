@@ -100,6 +100,15 @@ pub enum Lang {
         /// Read config from directory
         project: PathBuf,
     },
+
+    /// Create new translations
+    New {
+        /// Read config from directory
+        project: PathBuf,
+
+        /// Unicode language identifiers
+        languages: Vec<String>,
+    },
 }
 
 /// Manage project source files
@@ -323,12 +332,18 @@ async fn main() -> Result<()> {
 
 mod lang {
     use super::Lang;
-    use uwe::{lang, Result};
+    use uwe::{lang, opts, Result};
 
     pub async fn run(cmd: Lang) -> Result<()> {
         match cmd {
             Lang::List { project } => {
+                let project = opts::project_path(&project)?;
                 lang::list(project).await?;
+            }
+
+            Lang::New { project, languages } => {
+                let project = opts::project_path(&project)?;
+                lang::new(project, languages).await?;
             }
         }
 

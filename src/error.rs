@@ -68,6 +68,9 @@ pub enum Error {
     Semver(#[from] semver::SemVerError),
 
     #[error(transparent)]
+    LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]

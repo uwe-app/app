@@ -1,10 +1,12 @@
+use std::fs::{self, File};
 use std::path::PathBuf;
 
-use log::info;
+use log::{info, warn};
 
 use crate::{Error, Result};
 use config::{Config, ProfileSettings};
-use locale::{LocaleMap, Locales};
+use locale::Locales;
+use unic_langid::LanguageIdentifier;
 
 struct LanguageInfo {
     config: Config,
@@ -41,7 +43,7 @@ pub async fn list(project: PathBuf) -> Result<()> {
     }
 
     let workspace = workspace::open(&project, true)?;
-    for mut entry in workspace.into_iter() {
+    for entry in workspace.into_iter() {
         let info = LanguageInfo::new(entry.config)?;
         info!(
             "Project {} (language: {})",
@@ -60,12 +62,60 @@ pub async fn list(project: PathBuf) -> Result<()> {
     Ok(())
 }
 
-/// Create the locales directory and files for the fallback language.
-pub async fn init(project: PathBuf) -> Result<()> {
-    Ok(())
-}
+/// Add languages to a project.
+///
+/// If the locales directory and common messsages file do not exist 
+/// they are created as is the messages file for the fallback language.
+pub async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
 
-/// Add a language to a project.
-pub async fn add(project: PathBuf) -> Result<()> {
+    if !project.exists() || !project.is_dir() {
+        return Err(Error::NotDirectory(project));
+    }
+
+    // Ensure we have valid language identifiers
+    for lang in languages.iter() {
+        let _: LanguageIdentifier = lang.parse()?; 
+    }
+
+    let workspace = workspace::open(&project, true)?;
+    for entry in workspace.into_iter() {
+        let info = LanguageInfo::new(entry.config)?;
+        info!(
+            "Project {} (language: {})",
+            info.config.project().display(),
+            info.config.lang
+        );
+
+        fs::create_dir_all(&info.locales_dir)?;
+
+        let mut files = vec![
+            PathBuf::from(config::CORE_FTL),
+            PathBuf::from(&info.config.lang).join(config::MAIN_FTL),
+        ];
+
+        // Filter out the primary fallback language if it was specified
+        let langs: Vec<&String> = languages
+            .iter()
+            .filter(|&s| s != &info.config.lang)
+            .collect();
+
+        for lang in langs.iter() {
+            files.push(PathBuf::from(lang).join(config::MAIN_FTL));
+        }
+
+        for f in files.iter() {
+            let target = info.locales_dir.join(f);
+            if !target.exists() {
+                if let Some(parent) = target.parent() {
+                    fs::create_dir_all(&parent)?;
+                }
+                info!("Create {}", target.display());
+                let _ = File::create(target)?;
+            } else {
+                warn!("File {} exists, skip creation", target.display());
+            }
+        }
+    }
+
     Ok(())
 }
