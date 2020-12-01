@@ -10,7 +10,7 @@ use unic_langid::LanguageIdentifier;
 
 use once_cell::sync::OnceCell;
 
-use config::{Config, FluentConfig, RuntimeOptions};
+use config::{Config, FluentConfig};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -109,12 +109,15 @@ impl Locales {
         Ok(res)
     }
 
-    fn init(
+    fn init<P>(
         &mut self,
         config: &Config,
-        options: &RuntimeOptions,
-    ) -> (Option<Box<ArcLoader>>, Option<Box<dyn std::error::Error>>) {
-        let locales_dir = options.get_locales();
+        path: P,
+    ) -> (Option<Box<ArcLoader>>, Option<Box<dyn std::error::Error>>)
+    where
+        P: AsRef<Path>,
+    {
+        let locales_dir = path.as_ref();
         if locales_dir.exists() && locales_dir.is_dir() {
             if let Some(ref fluent) = config.fluent {
                 match arc(locales_dir, fluent) {
@@ -150,12 +153,11 @@ impl Locales {
         self.wrap(None)
     }
 
-    pub fn load(
-        &mut self,
-        config: &Config,
-        options: &RuntimeOptions,
-    ) -> Result<&LocaleMap> {
-        let arc = match self.init(config, options) {
+    pub fn load<P>(&mut self, config: &Config, path: P) -> Result<&LocaleMap>
+    where
+        P: AsRef<Path>,
+    {
+        let arc = match self.init(config, path) {
             (arc, err) => {
                 match err {
                     Some(e) => return Err(Error::Message(e.to_string())),

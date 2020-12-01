@@ -18,7 +18,6 @@ pub fn get_config(file: &PathBuf) -> Config {
     Config::new_markdown(false)
 }
 
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]

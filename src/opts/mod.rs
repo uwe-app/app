@@ -62,8 +62,8 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
 pub fn tls_config(
     initial: Option<TlsConfig>,
     opts: &WebServerOpts,
-    default_port_ssl: u16) -> Option<TlsConfig> {
-
+    default_port_ssl: u16,
+) -> Option<TlsConfig> {
     let mut tls = initial;
 
     let ssl_port = if let Some(ssl_port) = opts.ssl_port {

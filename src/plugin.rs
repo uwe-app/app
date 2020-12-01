@@ -60,4 +60,3 @@ pub async fn clean() -> Result<()> {
     }
     Ok(())
 }
-

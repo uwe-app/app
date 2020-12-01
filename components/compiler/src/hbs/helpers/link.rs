@@ -36,8 +36,7 @@ fn url<'render, 'call>(
 
     //let passthrough = !input.starts_with("/")
 
-    let passthrough = 
-        input.starts_with(".")
+    let passthrough = input.starts_with(".")
         || input.starts_with("http:")
         || input.starts_with("https:");
 
@@ -131,14 +130,14 @@ impl Helper for WikiLink {
                 let page = &*page_lock.read().unwrap();
                 if label.is_empty() {
                     if let Some(ref page_label) = page.label {
-                        label = page_label.clone(); 
-                    }else if let Some(ref page_title) = page.title {
-                        label = page_title.clone(); 
+                        label = page_label.clone();
+                    } else if let Some(ref page_title) = page.title {
+                        label = page_title.clone();
                     }
                 }
                 if title.is_empty() {
                     if let Some(ref page_title) = page.title {
-                        title = page_title.clone(); 
+                        title = page_title.clone();
                     }
                 }
             }

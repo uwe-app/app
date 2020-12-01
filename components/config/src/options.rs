@@ -248,7 +248,7 @@ impl RuntimeOptions {
         //println!("value {}", &value);
         //println!("value {:?}", rel.extension());
 
-        // Automatically append a trailing slash for links that 
+        // Automatically append a trailing slash for links that
         // look like directories when we have clean links enabled
         if rewrite_index && !value.ends_with("/") {
             let value_path = Path::new(&value);

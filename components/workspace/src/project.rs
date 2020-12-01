@@ -213,7 +213,8 @@ impl ProjectBuilder {
     pub async fn locales(mut self) -> Result<Self> {
         debug!("Loading locales...");
 
-        self.locales.load(&self.config, &self.options)?;
+        self.locales
+            .load(&self.config, self.options.get_locales())?;
         Ok(self)
     }
 
@@ -648,8 +649,7 @@ impl Workspace {
         self.projects
             .iter()
             .map(|e| match e {
-                ProjectEntry::One(c)
-                | ProjectEntry::Many(c) => c.iter(),
+                ProjectEntry::One(c) | ProjectEntry::Many(c) => c.iter(),
             })
             .flatten()
             .collect::<Vec<&Entry>>()
@@ -695,7 +695,9 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
         workspace.projects.push(ProjectEntry::Many(members));
     } else {
-        workspace.projects.push(ProjectEntry::One(vec![Entry { config }]));
+        workspace
+            .projects
+            .push(ProjectEntry::One(vec![Entry { config }]));
     }
 
     Ok(workspace)

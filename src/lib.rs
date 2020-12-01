@@ -3,6 +3,7 @@ pub mod build;
 pub mod clean;
 pub mod docs;
 pub mod error;
+pub mod lang;
 pub mod list;
 pub mod new;
 pub mod opts;

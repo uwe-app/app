@@ -284,16 +284,19 @@ impl Parser for BracketParser<'_> {
         let name = file.to_string_lossy();
         let template = &data.page().file.as_ref().unwrap().template;
 
-        let standalone = data.page().standalone.is_some()
-            && data.page().standalone.unwrap();
+        let standalone =
+            data.page().standalone.is_some() && data.page().standalone.unwrap();
 
         // Try to render a named layout
         if !standalone {
             if let Some(ref layout) = data.page().layout {
                 if let Some(tpl) = self.registry.get_template(layout) {
-                    return self.registry.render(layout, &data).map_err(Error::from)
+                    return self
+                        .registry
+                        .render(layout, &data)
+                        .map_err(Error::from);
                 } else {
-                    return Err(Error::LayoutNotFound(layout.to_string()))
+                    return Err(Error::LayoutNotFound(layout.to_string()));
                 }
             }
         }
@@ -301,8 +304,9 @@ impl Parser for BracketParser<'_> {
         // Otherwise just render the page
         let (content, _has_fm, _fm) =
             frontmatter::load(&file, frontmatter::get_config(&file))?;
-        return self.registry
+        return self
+            .registry
             .once(&name, content, &data)
-            .map_err(Error::from)
+            .map_err(Error::from);
     }
 }

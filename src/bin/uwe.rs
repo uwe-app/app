@@ -7,16 +7,15 @@ use std::time::SystemTime;
 use log::info;
 use structopt::StructOpt;
 
-use config::{
-    server::LaunchConfig,
-    ProfileSettings,
-};
+use config::{server::LaunchConfig, ProfileSettings};
 
 use publisher::PublishProvider;
 
 use uwe::{
     self,
-    opts::{self, fatal, Alias, Build, Clean, Docs, List, New, Publish, Server},
+    opts::{
+        self, fatal, Alias, Build, Clean, Docs, List, New, Publish, Server,
+    },
     Error, Result,
 };
 
@@ -84,6 +83,22 @@ enum Command {
     Site {
         #[structopt(subcommand)]
         cmd: Site,
+    },
+
+    Lang {
+        #[structopt(subcommand)]
+        cmd: Lang,
+    },
+}
+
+/// Manage languages
+#[derive(StructOpt, Debug)]
+pub enum Lang {
+    /// List languages for a project
+    #[structopt(alias = "ls")]
+    List {
+        /// Read config from directory
+        project: PathBuf,
     },
 }
 
@@ -162,6 +177,10 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::new::project(opts)?;
         }
 
+        Command::Lang { cmd } => {
+            self::lang::run(cmd).await?;
+        }
+
         Command::Site { cmd } => {
             self::site::run(cmd).await?;
         }
@@ -227,11 +246,8 @@ async fn run(cmd: Command) -> Result<()> {
                 None
             };
 
-            let tls = uwe::opts::tls_config(
-                None,
-                &args.server,
-                config::PORT_SSL,
-            );
+            let tls =
+                uwe::opts::tls_config(None, &args.server, config::PORT_SSL);
 
             let build_args = ProfileSettings {
                 paths,
@@ -303,6 +319,21 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+mod lang {
+    use super::Lang;
+    use uwe::{lang, Result};
+
+    pub async fn run(cmd: Lang) -> Result<()> {
+        match cmd {
+            Lang::List { project } => {
+                lang::list(project).await?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 mod site {
