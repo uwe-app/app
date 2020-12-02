@@ -250,7 +250,7 @@ impl Collate for Collation {
     }
 
     fn find_menu(&self, name: &str) -> Option<&MenuResult> {
-        self.locale.find_menu(name)
+        self.locale.find_menu(name).or(self.fallback.find_menu(name))
     }
 }
 
