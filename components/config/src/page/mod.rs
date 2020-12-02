@@ -45,7 +45,6 @@ pub struct Page {
     pub render: Option<bool>,
     pub rewrite_index: Option<bool>,
     pub draft: Option<bool>,
-    pub listing: Option<bool>,
     pub fallback: Option<bool>,
 
     /// Do not render a layout for this page.
@@ -64,6 +63,9 @@ pub struct Page {
     absolute: Option<bool>,
 
     authors: Option<Vec<String>>,
+
+    /// Ignore from directory listings.
+    listing: Option<bool>,
 
     pub query: Option<QueryList>,
 
@@ -124,7 +126,7 @@ impl Default for Page {
             render: Some(true),
             draft: None,
             standalone: None,
-            listing: Some(true),
+            listing: None,
             noindex: None,
             print: None,
             fallback: None,
@@ -185,6 +187,11 @@ impl Page {
 
     pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
         &mut self.scripts
+    }
+
+    /// Whether this page can be included in a directory listing.
+    pub fn is_listable(&self) -> bool {
+        self.listing.is_none() || self.listing.is_some() && self.listing.unwrap()
     }
 
     //pub fn is_standalone(&self) -> bool {

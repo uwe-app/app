@@ -267,7 +267,12 @@ pub fn build<'c>(
 
             all_pages
                 .iter()
-                .filter(|(k, _)| {
+                .filter(|(k, v)| {
+                    let reader = v.read().unwrap();
+                    if !reader.is_listable() {
+                        return false;
+                    }
+
                     if max_depth == 0 {
                         return k.starts_with(&dir_buf);
                     }
