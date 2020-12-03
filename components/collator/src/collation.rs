@@ -27,6 +27,11 @@ impl Collation {
     pub fn get_resource(&self, file: &PathBuf) -> Option<&Resource> {
         self.fallback.all.get(file)
     }
+
+    pub fn templates(&self) -> &HashSet<Arc<PathBuf>> {
+        // FIXME: support override locale-specific templates!
+        &self.fallback.templates
+    }
 }
 
 #[derive(Debug, Default, Clone)]

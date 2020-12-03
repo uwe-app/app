@@ -28,6 +28,7 @@ pub fn parser<'a>(
         .fluent(locales)?
         .plugins()?
         .partials()?
+        .templates()?
         .menus()?
         .layouts()?;
 
@@ -218,6 +219,16 @@ impl<'reg> ParserBuilder<'reg> {
             }
         }
 
+        Ok(self)
+    }
+
+    /// Register templates in the source tree.
+    pub fn templates(mut self) -> Result<Self> {
+        let collation = self.context.collation.read().unwrap();
+        for path in collation.templates() {
+            self.registry.load(path.as_ref())?;
+        }
+        drop(collation);
         Ok(self)
     }
 
