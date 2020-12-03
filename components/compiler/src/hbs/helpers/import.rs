@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
@@ -6,6 +7,7 @@ use bracket::template::Template;
 use serde_json::Value;
 
 use crate::BuildContext;
+use config::markdown;
 
 pub struct Import {
     pub context: Arc<BuildContext>,
@@ -28,6 +30,8 @@ impl Helper for Import {
         let mut file = Path::new(base_path)
             .canonicalize()?
             .to_path_buf();
+
+        let evaluate = self.context.options.is_markdown_file(&file);
 
         let mut buffer: Option<String> = None;
 
@@ -83,8 +87,17 @@ impl Helper for Import {
             }
         }
 
-        if let Some(ref buf) = buffer {
-            rc.write(buf)?;
+        if let Some(ref buffer) = buffer {
+
+            if evaluate {
+                let parsed =
+                    markdown::render(&mut Cow::from(buffer), &self.context.config);
+                rc.write(&parsed)?;
+            } else {
+                rc.write(buffer)?;
+            }
+
+            //rc.write(buf)?;
         } else {
             let value = ctx.get_fallback(0).unwrap().to_string();
             return Err(
