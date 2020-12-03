@@ -128,6 +128,7 @@ async fn find(
     let template_ext = engine.extension();
 
     let layouts_dir = req.options.source.join(config::LAYOUTS);
+    let partials_dir = req.options.source.join(config::PARTIALS);
 
     let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
 
@@ -171,12 +172,18 @@ async fn find(
                     let key = Arc::new(buf);
 
                     if path.extension() == Some(OsStr::new(template_ext)) {
+                        // Partials are a convention that the parser will handle
+                        if path.starts_with(&partials_dir) {
+                            return WalkState::Continue;
+                        }
+
                         // Configure the default layout to use a `layouts/main.hbs` file
                         if &*key == &primary_layout {
                             info.add_layout(
                                 config::MAIN.to_string(),
                                 Arc::clone(&key),
                             );
+                        // Support alternative custom layouts by convention
                         } else if path.starts_with(&layouts_dir) {
                             let name = path
                                 .file_stem()
@@ -184,9 +191,13 @@ async fn find(
                                 .to_string_lossy()
                                 .to_string();
                             info.add_layout(name, Arc::clone(&key));
+                        // Templates intermingled in the source tree
+                        } else {
+                            if let Err(e) = add_template(info, req.config, req.options, key) {
+                                let _ = tx.send(Error::from(e));
+                            }
                         }
 
-                        // Always ignore files with the template engine extension
                         return WalkState::Continue;
                     }
 
@@ -326,4 +337,15 @@ fn add_other(
 
     let href = to_href(&key, options, false, None)?;
     Ok(info.add_file(options, key, dest, href, None)?)
+}
+
+fn add_template(
+    info: &mut CollateInfo,
+    _config: &Config,
+    options: &RuntimeOptions,
+    key: Arc<PathBuf>,
+) -> Result<()> {
+    let path = key.canonicalize()?;
+    info.add_template(Arc::new(path));
+    Ok(())
 }

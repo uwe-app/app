@@ -73,6 +73,10 @@ pub struct CollateInfo {
     // Custom page specific layouts
     pub(crate) layouts: HashMap<String, Arc<PathBuf>>,
 
+    // Templates in the source tree but outside
+    // the `partials` and `layouts` conventions.
+    pub(crate) templates: HashSet<Arc<PathBuf>>,
+
     // The default layout
     //pub(crate) layout: Option<Arc<PathBuf>>,
     pub(crate) links: LinkMap,
@@ -372,6 +376,13 @@ impl CollateInfo {
         file: Arc<PathBuf>,
     ) -> &mut Arc<PathBuf> {
         self.layouts.entry(key).or_insert(file)
+    }
+
+    pub fn add_template(
+        &mut self,
+        file: Arc<PathBuf>,
+    ) -> bool {
+        self.templates.insert(file)
     }
 
     pub fn get_redirects(&self) -> &HashMap<String, String> {
