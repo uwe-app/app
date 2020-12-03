@@ -82,7 +82,7 @@ impl<'reg> ParserBuilder<'reg> {
         let templates = self.context.options.get_partials_path();
         if templates.exists() && templates.is_dir() {
             self.registry
-                .read_dir(&templates, self.engine.get_template_extension())?;
+                .read_dir(&templates, self.engine.extension())?;
         }
         Ok(self)
     }

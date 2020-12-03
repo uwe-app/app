@@ -125,7 +125,7 @@ async fn find(
     let languages = req.locales.alternate();
 
     let engine = req.config.engine();
-    let template_ext = engine.get_raw_extension();
+    let template_ext = engine.extension();
 
     let layouts_dir = req.options.source.join(config::LAYOUTS);
 

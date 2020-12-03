@@ -4,11 +4,8 @@ use std::str::FromStr;
 
 use crate::Error;
 
-static LAYOUT: &str = "layout";
+//static LAYOUT: &str = "layout";
 static HANDLEBARS: &str = "handlebars";
-// FIXME: we can now remove `raw` as we no longer need it after
-// FIXME: migrating from handlebars which required a leading "."
-static HANDLEBARS_RAW: &str = "hbs";
 static HANDLEBARS_EXT: &str = "hbs";
 
 /// All available template engines.
@@ -28,21 +25,17 @@ pub enum TemplateEngine {
 }
 
 impl TemplateEngine {
-    pub fn get_template_extension(&self) -> &str {
+    pub fn extension(&self) -> &str {
         match *self {
             Self::Handlebars => HANDLEBARS_EXT,
         }
     }
 
-    pub fn get_raw_extension(&self) -> &str {
-        match *self {
-            Self::Handlebars => HANDLEBARS_RAW,
-        }
-    }
-
+    /*
     pub fn get_layout_name(&self) -> String {
-        format!("{}{}", LAYOUT, self.get_template_extension())
+        format!("{}{}", LAYOUT, self.extension())
     }
+    */
 }
 
 impl Default for TemplateEngine {

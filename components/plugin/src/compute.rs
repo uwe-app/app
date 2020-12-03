@@ -269,7 +269,7 @@ fn load_partials(
     engine: &TemplateEngine,
     computed: &mut Plugin,
 ) {
-    let ext = OsStr::new(engine.get_raw_extension());
+    let ext = OsStr::new(engine.extension());
     let files = walk::find(dir, |e| {
         if let Some(extension) = e.extension() {
             return extension == ext;
@@ -313,7 +313,7 @@ fn load_layouts(
     engine: &TemplateEngine,
     computed: &mut Plugin,
 ) {
-    let ext = OsStr::new(engine.get_raw_extension());
+    let ext = OsStr::new(engine.extension());
     let files = walk::find(dir, |e| {
         if let Some(extension) = e.extension() {
             return extension == ext;
