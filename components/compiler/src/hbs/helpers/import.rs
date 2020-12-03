@@ -3,7 +3,6 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
-use bracket::template::Template;
 use serde_json::Value;
 
 use crate::BuildContext;

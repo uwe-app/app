@@ -1,6 +1,13 @@
+use std::fs;
+use std::path::Path;
+
 use regex::Regex;
 use spdx::license_id;
-use std::path::Path;
+
+use bracket::{
+    template::Template,
+    parser::ParserOptions,
+};
 
 use crate::{compute, error::LintError, reader::read};
 use config::{
@@ -76,11 +83,13 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
         if let Some(ref partials) = templates.partials {
             for (_, asset) in partials {
                 lint_path(plugin, &asset.file)?;
+                lint_template(plugin, &asset.file)?;
             }
         }
         if let Some(ref layouts) = templates.layouts {
             for (_, asset) in layouts {
                 lint_path(plugin, &asset.file)?;
+                lint_template(plugin, &asset.file)?;
             }
         }
     }
@@ -156,5 +165,14 @@ fn lint_features(plugin: &Plugin, map: &FeatureMap) -> Result<(), LintError> {
             nm.to_string(),
         ));
     }
+    Ok(())
+}
+
+fn lint_template(plugin: &Plugin, path: &UrlPath) -> Result<(), LintError> {
+    let buf = plugin.to_path_buf(path);
+    let content = fs::read_to_string(&buf)?;
+    let file_name = buf.to_string_lossy().into_owned().to_string();
+    let options = ParserOptions::new(file_name, 0, 0);
+    let template = Template::compile(content, options)?;
     Ok(())
 }

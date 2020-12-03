@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use thiserror::Error;
+use bracket::error::SyntaxError;
 
 #[derive(Error, Debug)]
 pub enum LintError {
@@ -31,8 +32,20 @@ pub enum LintError {
     #[error("Feature references dependency {0}@{1} which is not optional")]
     LintFeatureDependencyNotOptional(String, String),
 
+    #[error("{0}")]
+    Syntax(String),
+
     #[error(transparent)]
     Regex(#[from] regex::Error),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
+impl From<SyntaxError> for LintError {
+    fn from(e: SyntaxError) -> Self {
+        LintError::Syntax(format!("{:?}", e))
+    }
 }
 
 #[derive(Error, Debug)]
