@@ -64,17 +64,16 @@ pub async fn list(project: PathBuf) -> Result<()> {
 
 /// Add languages to a project.
 ///
-/// If the locales directory and common messsages file do not exist 
+/// If the locales directory and common messsages file do not exist
 /// they are created as is the messages file for the fallback language.
 pub async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
-
     if !project.exists() || !project.is_dir() {
         return Err(Error::NotDirectory(project));
     }
 
     // Ensure we have valid language identifiers
     for lang in languages.iter() {
-        let _: LanguageIdentifier = lang.parse()?; 
+        let _: LanguageIdentifier = lang.parse()?;
     }
 
     let workspace = workspace::open(&project, true)?;

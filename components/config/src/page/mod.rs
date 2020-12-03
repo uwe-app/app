@@ -191,7 +191,8 @@ impl Page {
 
     /// Whether this page can be included in a directory listing.
     pub fn is_listable(&self) -> bool {
-        self.listing.is_none() || self.listing.is_some() && self.listing.unwrap()
+        self.listing.is_none()
+            || self.listing.is_some() && self.listing.unwrap()
     }
 
     //pub fn is_standalone(&self) -> bool {

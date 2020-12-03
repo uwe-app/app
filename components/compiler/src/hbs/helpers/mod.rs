@@ -2,6 +2,7 @@ pub mod crumbtrail;
 pub mod date;
 pub mod document;
 pub mod feed;
+pub mod import;
 pub mod include;
 pub mod link;
 pub mod links;

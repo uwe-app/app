@@ -185,6 +185,13 @@ impl<'reg> ParserBuilder<'reg> {
             }),
         );
 
+        helpers.insert(
+            "import",
+            Box::new(helpers::import::Import {
+                context: Arc::clone(&self.context),
+            }),
+        );
+
         helpers.insert("include", Box::new(helpers::include::Include));
         helpers.insert("random", Box::new(helpers::random::Random));
         helpers.insert("slug", Box::new(helpers::slug::Slug));

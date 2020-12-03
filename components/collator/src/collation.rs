@@ -259,7 +259,9 @@ impl Collate for Collation {
     }
 
     fn find_menu(&self, name: &str) -> Option<&MenuResult> {
-        self.locale.find_menu(name).or(self.fallback.find_menu(name))
+        self.locale
+            .find_menu(name)
+            .or(self.fallback.find_menu(name))
     }
 }
 
@@ -383,10 +385,7 @@ impl CollateInfo {
         self.layouts.entry(key).or_insert(file)
     }
 
-    pub fn add_template(
-        &mut self,
-        file: Arc<PathBuf>,
-    ) -> bool {
+    pub fn add_template(&mut self, file: Arc<PathBuf>) -> bool {
         self.templates.insert(file)
     }
 

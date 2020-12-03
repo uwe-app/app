@@ -189,4 +189,3 @@ fn arc<'a, P: AsRef<Path>>(
 
     ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone()).build()
 }
-

@@ -193,7 +193,9 @@ async fn find(
                             info.add_layout(name, Arc::clone(&key));
                         // Templates intermingled in the source tree
                         } else {
-                            if let Err(e) = add_template(info, req.config, req.options, key) {
+                            if let Err(e) =
+                                add_template(info, req.config, req.options, key)
+                            {
                                 let _ = tx.send(Error::from(e));
                             }
                         }
