@@ -97,11 +97,11 @@ impl Helper for RenderPage {
 }
 
 /// Render the page content for a layout document.
-pub struct Block {
+pub struct Document {
     pub context: Arc<BuildContext>,
 }
 
-impl Helper for Block {
+impl Helper for Document {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,

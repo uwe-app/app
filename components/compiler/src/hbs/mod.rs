@@ -98,8 +98,8 @@ impl<'reg> ParserBuilder<'reg> {
         let helpers = self.registry.helpers_mut();
 
         helpers.insert(
-            "block",
-            Box::new(helpers::document::Block {
+            "document",
+            Box::new(helpers::document::Document {
                 context: Arc::clone(&self.context),
             }),
         );
