@@ -46,7 +46,7 @@ impl Helper for Sibling {
             let pos = list.iter().position(|i| i == current);
             if let Some(pos) = pos {
                 let next_pos = add(pos, self.amount);
-                if next_pos < list.len() {
+                if next_pos < list.len() && next_pos != pos {
                     rc.push_scope(Scope::new());
 
                     if let Some(ref mut block) = rc.scope_mut() {
