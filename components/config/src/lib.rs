@@ -133,6 +133,7 @@ mod options;
 pub mod page;
 pub mod plugin;
 pub mod plugin_cache;
+pub mod powered;
 pub mod profile;
 pub mod redirect;
 pub mod repository;

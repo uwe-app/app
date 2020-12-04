@@ -4,10 +4,7 @@ use std::path::Path;
 use regex::Regex;
 use spdx::license_id;
 
-use bracket::{
-    template::Template,
-    parser::ParserOptions,
-};
+use bracket::{parser::ParserOptions, template::Template};
 
 use crate::{compute, error::LintError, reader::read};
 use config::{

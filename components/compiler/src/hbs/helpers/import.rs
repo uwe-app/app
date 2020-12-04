@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
@@ -26,21 +26,15 @@ impl Helper for Import {
             .as_str()
             .unwrap();
 
-        let mut file = Path::new(base_path)
-            .canonicalize()?
-            .to_path_buf();
+        let mut file = Path::new(base_path).canonicalize()?.to_path_buf();
 
         let evaluate = self.context.options.is_markdown_file(&file);
 
         let mut buffer: Option<String> = None;
 
-        let extension = self.context.config
-            .engine()
-            .extension();
+        let extension = self.context.config.engine().extension();
 
-        let source = self.context.options.source
-            .canonicalize()?
-            .to_path_buf();
+        let source = self.context.options.source.canonicalize()?.to_path_buf();
 
         if let Some(arg) = ctx.get(0) {
             // Handle path style import, eg: ../../docs/footer.hbs
@@ -48,7 +42,9 @@ impl Helper for Import {
                 if let Value::String(value) = value {
                     let target = Path::new(value);
                     if target.is_absolute() {
-                        if let Some(tpl) = rc.get_template(&target.to_string_lossy()) {
+                        if let Some(tpl) =
+                            rc.get_template(&target.to_string_lossy())
+                        {
                             buffer = Some(rc.buffer(tpl.node())?);
                         }
                     } else {
@@ -57,7 +53,9 @@ impl Helper for Import {
                                 HelperError::new(
                                     format!("Helper {}, could not resolve template {}", ctx.name(), value))
                             })?;
-                            if let Some(tpl) = rc.get_template(&target.to_string_lossy()) {
+                            if let Some(tpl) =
+                                rc.get_template(&target.to_string_lossy())
+                            {
                                 buffer = Some(rc.buffer(tpl.node())?);
                             }
                         }
@@ -71,7 +69,9 @@ impl Helper for Import {
                 while let Some(p) = file.parent() {
                     let target = p.join(format!("{}.{}", name, extension));
 
-                    if let Some(tpl) = rc.get_template(&target.to_string_lossy()) {
+                    if let Some(tpl) =
+                        rc.get_template(&target.to_string_lossy())
+                    {
                         buffer = Some(rc.buffer(tpl.node())?);
                         break;
                     }
@@ -87,21 +87,24 @@ impl Helper for Import {
         }
 
         if let Some(ref buffer) = buffer {
-
             if evaluate {
-                let parsed =
-                    markdown::render(&mut Cow::from(buffer), &self.context.config);
+                let parsed = markdown::render(
+                    &mut Cow::from(buffer),
+                    &self.context.config,
+                );
                 rc.write(&parsed)?;
             } else {
                 rc.write(buffer)?;
             }
 
-            //rc.write(buf)?;
+        //rc.write(buf)?;
         } else {
             let value = ctx.get_fallback(0).unwrap().to_string();
-            return Err(
-                HelperError::new(
-                    format!("Helper {}, could not resolve template {}", ctx.name(), value)))
+            return Err(HelperError::new(format!(
+                "Helper {}, could not resolve template {}",
+                ctx.name(),
+                value
+            )));
         }
 
         Ok(None)

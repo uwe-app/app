@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use thiserror::Error;
 use bracket::error::SyntaxError;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LintError {

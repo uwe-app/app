@@ -248,6 +248,12 @@ pub async fn parse(
         }
     }
 
+    if let Some(powered) = ctx.config.powered() {
+        if !powered.hidden() {
+            s = s.replace("</main>", &format!("{}</main>", powered.to_string()))
+        }
+    }
+
     utils::fs::write_string(&dest, &s)?;
 
     Ok(Some(res))

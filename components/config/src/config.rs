@@ -24,6 +24,7 @@ use crate::{
     menu::MenuConfig,
     minify::MinifyConfig,
     page::{Author, Page},
+    powered::Powered,
     profile::{ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
     repository::RepositoryConfig,
@@ -192,6 +193,7 @@ pub struct Config {
     repository: Option<RepositoryConfig>,
     engine: Option<TemplateEngine>,
     icon: Option<UrlPath>,
+    powered: Option<Powered>,
 
     // Host name when running locally which overrides the inferred
     // localhost subdomain
@@ -262,6 +264,7 @@ impl Default for Config {
                 .unwrap(),
 
             icon: None,
+            powered: Some(Default::default()),
             charset: Some(String::from(CHARSET)),
             repository: None,
             engine: Some(Default::default()),
@@ -302,6 +305,11 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn powered(&self) -> Option<&Powered> {
+        self.powered.as_ref()
+    }
+
     pub fn default_script() -> ScriptAsset {
         ScriptAsset::Tag(ScriptTag::new(DEFAULT_SCRIPT.to_string()))
     }

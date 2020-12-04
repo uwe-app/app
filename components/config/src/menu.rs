@@ -13,7 +13,7 @@ pub static MENU: &str = "MENU.md";
 #[serde(untagged)]
 pub enum MenuVariant {
     /// Automatically create menus with descriptions.
-    Description {description: bool, suffix: String},
+    Description { description: bool, suffix: String },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -33,12 +33,13 @@ impl MenuConfig {
             let entries = self.entries.clone();
             for var in variants.into_iter() {
                 match var {
-                    MenuVariant::Description {ref suffix, ..} => {
+                    MenuVariant::Description { ref suffix, .. } => {
                         for (k, v) in entries.iter() {
                             let mut def = v.definition.clone();
                             def.set_description(true);
                             let key = format!("{}{}", k, suffix);
-                            self.entries.entry(key)
+                            self.entries
+                                .entry(key)
                                 .or_insert(MenuEntry::new_reference(def));
                         }
                     }
@@ -138,9 +139,15 @@ pub enum MenuReference {
 impl MenuReference {
     pub fn set_description(&mut self, value: bool) {
         match *self {
-            Self::File {..} => {},
-            Self::Pages {ref mut description, ..} => *description = Some(value),
-            Self::Directory {ref mut description, ..} => *description = Some(value),
+            Self::File { .. } => {}
+            Self::Pages {
+                ref mut description,
+                ..
+            } => *description = Some(value),
+            Self::Directory {
+                ref mut description,
+                ..
+            } => *description = Some(value),
         }
     }
 }
