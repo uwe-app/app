@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -9,10 +9,43 @@ use crate::{utils::href::UrlPath, Error, Result};
 
 pub static MENU: &str = "MENU.md";
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[serde(untagged)]
+pub enum MenuVariant {
+    /// Automatically create menus with descriptions.
+    Description {description: bool, suffix: String},
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct MenuConfig {
+    /// Variants are automatically created variations on a menu.
+    pub variants: Option<HashSet<MenuVariant>>,
+
     #[serde(flatten)]
     pub entries: HashMap<String, MenuEntry>,
+}
+
+impl MenuConfig {
+    /// Iterate the entries and create variants.
+    pub fn prepare(&mut self) {
+        if let Some(ref variants) = self.variants {
+            let variants = variants.clone();
+            let entries = self.entries.clone();
+            for var in variants.into_iter() {
+                match var {
+                    MenuVariant::Description {ref suffix, ..} => {
+                        for (k, v) in entries.iter() {
+                            let mut def = v.definition.clone();
+                            def.set_description(true);
+                            let key = format!("{}{}", k, suffix);
+                            self.entries.entry(key)
+                                .or_insert(MenuEntry::new_reference(def));
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Default, Debug)]
@@ -100,6 +133,16 @@ pub enum MenuReference {
         description: Option<bool>,
         depth: Option<usize>,
     },
+}
+
+impl MenuReference {
+    pub fn set_description(&mut self, value: bool) {
+        match *self {
+            Self::File {..} => {},
+            Self::Pages {ref mut description, ..} => *description = Some(value),
+            Self::Directory {ref mut description, ..} => *description = Some(value),
+        }
+    }
 }
 
 impl Default for MenuReference {

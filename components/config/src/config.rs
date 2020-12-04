@@ -439,9 +439,11 @@ impl Config {
                 if let Some(link) = cfg.link.as_mut() {
                     link.prepare(&build.source)?;
                 }
-
                 for (k, v) in cfg.authors.iter_mut() {
                     v.alias.get_or_insert(k.to_string());
+                }
+                if let Some(menu) = cfg.menu.as_mut() {
+                    menu.prepare();
                 }
 
                 return Ok(cfg);
