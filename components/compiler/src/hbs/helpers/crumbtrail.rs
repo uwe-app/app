@@ -40,10 +40,16 @@ impl Helper for Crumbtrail {
             let page = &*page.read().unwrap();
             let first = i == 0;
             let last = i == amount;
-            let href = std::iter::repeat("..")
+            let mut href = std::iter::repeat("..")
                 .take(amount - i)
                 .collect::<Vec<_>>()
                 .join("/");
+
+            href.push('/');
+
+            if self.context.options.settings.should_include_index() {
+                href.push_str(config::INDEX_HTML);
+            }
 
             if let Some(ref mut block) = rc.scope_mut() {
                 block.set_local("first", json!(first));

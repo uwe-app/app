@@ -254,6 +254,9 @@ impl RuntimeOptions {
             let value_path = Path::new(&value);
             if value_path.extension().is_none() {
                 value.push('/');
+                if include_index {
+                    value.push_str(super::INDEX_HTML);
+                }
             }
         }
 
