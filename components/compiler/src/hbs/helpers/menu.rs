@@ -72,6 +72,7 @@ impl Menu {
             directory: UrlPath::from(dir_path),
             depth: Some(1),
             description: None,
+            include_index: None,
         };
 
         let menu = MenuEntry::new_reference(definition);

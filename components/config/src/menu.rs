@@ -133,6 +133,7 @@ pub enum MenuReference {
         directory: UrlPath,
         description: Option<bool>,
         depth: Option<usize>,
+        include_index: Option<bool>,
     },
 }
 

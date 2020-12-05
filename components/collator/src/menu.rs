@@ -246,9 +246,11 @@ pub fn build<'c>(
         MenuReference::Directory {
             ref directory,
             ref depth,
+            ref include_index,
             ..
         } => {
             should_sort = true;
+            let include_index = include_index.is_some() && include_index.unwrap();
 
             let all_pages = collation.get_pages();
 
@@ -271,6 +273,12 @@ pub fn build<'c>(
                     let reader = v.read().unwrap();
                     if !reader.is_listable() {
                         return false;
+                    }
+
+                    if !include_index {
+                        if let Some(stem) = k.file_stem() {
+                            if stem == config::INDEX_STEM { return false; }
+                        }
                     }
 
                     if max_depth == 0 {
