@@ -249,6 +249,8 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             let href = utils::url::to_href_separator(
                 main_style_file.strip_prefix(&opts.source)?,
             );
+            // NOTE: must start with a slash for URLs on 404 error page
+            let href = format!("/{}", href);
             let style_tag = LinkTag::new_style_sheet(href, None);
             global_page.links_mut().push(style_tag);
         }
@@ -285,6 +287,8 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             let href = utils::url::to_href_separator(
                 main_script_file.strip_prefix(&opts.source)?,
             );
+            // NOTE: must start with a slash for URLs on 404 error page
+            let href = format!("/{}", href);
             let script_tag = ScriptTag::new(href);
             global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
         }
