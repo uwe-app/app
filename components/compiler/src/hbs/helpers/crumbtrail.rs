@@ -45,7 +45,9 @@ impl Helper for Crumbtrail {
                 .collect::<Vec<_>>()
                 .join("/");
 
-            href.push('/');
+            if !href.is_empty() {
+                href.push('/');
+            }
 
             if self.context.options.settings.should_include_index() {
                 href.push_str(config::INDEX_HTML);
