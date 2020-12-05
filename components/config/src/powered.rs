@@ -74,14 +74,14 @@ impl fmt::Display for Powered {
                         standard
                     );
                     format!(
-                        r#"<a href="{}" title="{}" class="{}" style="{}">{}</a>"#,
-                        HREF, TITLE, CLASS, style, TEXT
+                        r#"<a href="{}" title="{}" style="{}">{}</a>"#,
+                        HREF, TITLE, style, TEXT
                     )
                 }
                 Display::Relative => {
                     format!(
-                        r#"<div style="text-align: center; padding-bottom: 24px;"><a href="{}" title="{}" class="{}" style="{}">{}</a></div>"#,
-                        HREF, TITLE, CLASS, standard, TEXT_FULL
+                        r#"<div style="text-align: center; padding-bottom: 24px;"><a href="{}" title="{}" style="{}">{}</a></div>"#,
+                        HREF, TITLE, standard, TEXT_FULL
                     )
                 }
                 Display::None => {
