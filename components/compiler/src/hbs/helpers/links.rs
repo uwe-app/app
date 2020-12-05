@@ -65,6 +65,7 @@ impl Helper for Links {
 
             for link in tags {
                 rc.write(&link.to_string())?;
+                rc.write("\n")?;
             }
         }
 
