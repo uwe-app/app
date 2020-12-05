@@ -22,7 +22,7 @@ fn write<W: Write>(f: &mut W, s: &str) -> Result<()> {
 fn start_list<W: Write>(f: &mut W, name: &str) -> Result<()> {
     write(
         f,
-        &format!("<ul class=\"{}\">", utils::entity::escape(name)),
+        &format!("<ul class=\"{}\">\n", utils::entity::escape(name)),
     )
 }
 
@@ -63,14 +63,14 @@ fn pages_list<'c, W: Write>(
             }
         }
 
-        write(f, "</li>")?;
+        write(f, "</li>\n")?;
     }
 
     Ok(())
 }
 
 fn end_list<W: Write>(f: &mut W) -> Result<()> {
-    write(f, "</ul>")
+    write(f, "</ul>\n")
 }
 
 /// Compile a markdown menu from a file reference.
