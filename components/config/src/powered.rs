@@ -44,7 +44,9 @@ impl Powered {
     pub fn hidden(&self) -> bool {
         if let Some(Display::Hidden) = self.display {
             true
-        } else { false }
+        } else {
+            false
+        }
     }
 }
 
@@ -85,9 +87,14 @@ impl fmt::Display for Powered {
                     )
                 }
                 Display::None => {
-                    format!(r#"<a href="{}" title="{}" class="{}">{}</a>"#, HREF, TITLE, CLASS, TEXT)
+                    format!(
+                        r#"<a href="{}" title="{}" class="{}">{}</a>"#,
+                        HREF, TITLE, CLASS, TEXT
+                    )
                 }
-                Display::Hidden => { String::new() }
+                Display::Hidden => {
+                    String::new()
+                }
             }
         )
     }

@@ -9,7 +9,7 @@ pub mod new;
 pub mod opts;
 pub mod plugin;
 pub mod publish;
-pub mod run;
+pub mod server;
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);

@@ -250,7 +250,8 @@ pub fn build<'c>(
             ..
         } => {
             should_sort = true;
-            let include_index = include_index.is_some() && include_index.unwrap();
+            let include_index =
+                include_index.is_some() && include_index.unwrap();
 
             let all_pages = collation.get_pages();
 
@@ -277,7 +278,9 @@ pub fn build<'c>(
 
                     if !include_index {
                         if let Some(stem) = k.file_stem() {
-                            if stem == config::INDEX_STEM { return false; }
+                            if stem == config::INDEX_STEM {
+                                return false;
+                            }
                         }
                     }
 

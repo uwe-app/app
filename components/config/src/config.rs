@@ -305,7 +305,6 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn powered(&self) -> Option<&Powered> {
         self.powered.as_ref()
     }

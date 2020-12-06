@@ -62,7 +62,7 @@ enum Command {
     },
 
     /// Serve static files
-    #[structopt(alias = "run")]
+    #[structopt(alias = "run", verbatim_doc_comment)]
     Server {
         #[structopt(flatten)]
         args: Server,
@@ -228,12 +228,7 @@ async fn run(cmd: Command) -> Result<()> {
             );
 
             let launch = LaunchConfig { open: true };
-
-            // Convert to &'static reference
-            let opts = server::configure(opts);
-            let mut channels = Default::default();
-
-            server::launch(opts, launch, &mut channels).await?;
+            uwe::server::serve(&args.target, opts, launch).await?;
         }
 
         Command::Publish { args } => {

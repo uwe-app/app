@@ -48,6 +48,9 @@ pub enum Error {
     #[error("Not a repository {0}")]
     NotRepository(PathBuf),
 
+    #[error("Server could not find {0} or {1}")]
+    NoServerFile(String, String),
+
     //#[error("No socket address for {0}")]
     //NoSocketAddress(String),
     #[error(transparent)]
