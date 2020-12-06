@@ -27,18 +27,7 @@ fn render_document<'render, 'call>(
             },
         )?;
 
-    // TODO: use front matter line offset?
-    //let options = ParserOptions::new(template_path.to_string(), 0, 0);
-    //let template = Template::compile(content, Default::default())?;
-    //let node = template.node();
-    //let result = rc.buffer(node)?;
-
-    let result = rc
-        .registry()
-        .once(template_path, &content, rc.data())
-        .map_err(|e| {
-            HelperError::new(format!("Render error {} ({})", template_path, e))
-        })?;
+    let result = rc.once(template_path, &content, rc.data())?;
 
     if is_markdown {
         let parsed = md::render(&mut Cow::from(result), &context.config);
