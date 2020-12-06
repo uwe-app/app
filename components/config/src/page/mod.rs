@@ -304,41 +304,24 @@ impl Page {
         Ok(())
     }
 
-    #[deprecated(
-        since = "0.40.2",
-        note = "Just seal and rename seal -> compute!?"
-    )]
+    /// Compute is called after the loaded data inheritance has been handled
+    /// and can be used to finalize default values for a page.
     pub fn compute(
         &mut self,
         _config: &Config,
         _opts: &RuntimeOptions,
     ) -> Result<()> {
-        //let mut authors_list = if let Some(ref author) = self.authors {
-        //author.clone()
-        //} else {
-        //Vec::new()
-        //};
 
-        // TODO: finalize this page data after computation
-        // TODO: build dynamic sort keys like date tuple (year, month, day) etc.
-
-        /*
-        if let Some(ref list) = self.byline {
-            for id in list {
-                if let Some(ref authors) = config.authors {
-                    if let Some(author) = authors.get(id) {
-                        authors_list.push(author.clone());
-                    } else {
-                        return Err(Error::NoAuthor(id.to_string()));
-                    }
-                } else {
-                    return Err(Error::NoAuthor(id.to_string()));
-                }
+        // Convert link labels to lower case by default so that
+        // they fit better in long form natural language content.
+        //
+        // We found ourselves often assigning a label to the lower
+        // case version of the title so this saves a lot of repetition.
+        if let None = self.label {
+            if let Some(ref title) = self.title {
+                self.label = Some(title.to_lowercase());
             }
         }
-
-        self.authors = Some(authors_list);
-        */
 
         Ok(())
     }
