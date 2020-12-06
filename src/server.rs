@@ -69,6 +69,7 @@ pub async fn serve(
     } else {
         Err(Error::NoServerFile(
             config::SITE_TOML.to_string(),
-            config::INDEX_HTML.to_string()))
+            config::INDEX_HTML.to_string(),
+            target.to_path_buf()))
     }
 }

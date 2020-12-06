@@ -216,19 +216,21 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Server { args } => {
-            if !args.target.exists() || !args.target.is_dir() {
-                return fatal(Error::NotDirectory(args.target.to_path_buf()));
+            let target = opts::project_path(&args.target)?;
+
+            if !target.exists() || !target.is_dir() {
+                return fatal(Error::NotDirectory(target));
             }
 
             let opts = uwe::opts::server_config(
-                &args.target,
+                &target,
                 &args.server,
                 config::PORT,
                 config::PORT_SSL,
             );
 
             let launch = LaunchConfig { open: args.open };
-            uwe::server::serve(&args.target, args.skip_build, opts, launch).await?;
+            uwe::server::serve(&target, args.skip_build, opts, launch).await?;
         }
 
         Command::Publish { args } => {

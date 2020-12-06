@@ -18,6 +18,6 @@ pub struct Server {
     pub open: bool,
 
     /// Project or directory to serve files from
-    #[structopt(parse(from_os_str))]
+    #[structopt(parse(from_os_str), default_value = ".")]
     pub target: PathBuf,
 }
