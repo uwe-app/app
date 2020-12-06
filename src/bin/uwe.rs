@@ -227,8 +227,8 @@ async fn run(cmd: Command) -> Result<()> {
                 config::PORT_SSL,
             );
 
-            let launch = LaunchConfig { open: true };
-            uwe::server::serve(&args.target, opts, launch).await?;
+            let launch = LaunchConfig { open: args.open };
+            uwe::server::serve(&args.target, args.skip_build, opts, launch).await?;
         }
 
         Command::Publish { args } => {

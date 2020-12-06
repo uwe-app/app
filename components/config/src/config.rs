@@ -42,6 +42,7 @@ use crate::{
 
 pub static SITE: &str = "site";
 pub static BUILD: &str = "build";
+pub static RELEASE: &str = "release";
 pub static SITE_LOCK: &str = "site.lock";
 pub static SITE_TOML: &str = "site.toml";
 pub static LOCALES: &str = "locales";

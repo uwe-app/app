@@ -9,7 +9,15 @@ pub struct Server {
     #[structopt(flatten)]
     pub server: WebServerOpts,
 
-    /// Directory to serve files from
+    /// Do not create a release build for projects
+    #[structopt(short, long)]
+    pub skip_build: bool,
+
+    /// Launch a web browser
+    #[structopt(short, long)]
+    pub open: bool,
+
+    /// Project or directory to serve files from
     #[structopt(parse(from_os_str))]
     pub target: PathBuf,
 }
