@@ -10,9 +10,9 @@ default-run = "uwe"
 [workspace]
 members = [
   "components/collator",
+  "components/collections",
   "components/compiler",
   "components/config",
-  "components/datasource",
   "components/dirs",
   "components/frontmatter",
   "components/livereload",
@@ -33,9 +33,9 @@ members = [
 ]
 
 [dependencies]
+collections = {version = "0.1", path = "components/collections" }
 compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
-datasource = {version = "0.1", path = "components/datasource" }
 dirs = {version = "0.1", path = "components/dirs" }
 scm = {version = "0.1", path = "components/scm" }
 livereload = {version = "0.1", path = "components/livereload" }

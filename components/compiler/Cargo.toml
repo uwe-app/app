@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 collator = {version = "0.1", path = "../collator" }
+collections = {version = "0.1", path = "../collections" }
 config = {version = "0.1", path = "../config" }
-datasource = {version = "0.1", path = "../datasource" }
 frontmatter = {version = "0.1", path = "../frontmatter" }
 livereload = {version = "0.1", path = "../livereload" }
 locale = {version = "0.1", path = "../locale" }

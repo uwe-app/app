@@ -82,7 +82,7 @@ pub enum Error {
     Locale(#[from] locale::Error),
 
     #[error(transparent)]
-    DataSource(#[from] datasource::Error),
+    Collections(#[from] collections::Error),
 
     #[error(transparent)]
     Collator(#[from] collator::Error),

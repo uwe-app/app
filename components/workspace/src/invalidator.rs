@@ -2,7 +2,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use config::{hook::HookConfig, FileType};
-use datasource::{self, DataSourceMap};
+use collections::{self, DataSourceMap};
 
 use crate::{renderer::RenderOptions, Error, Project, Result};
 
@@ -186,7 +186,7 @@ impl<'a> Invalidator<'a> {
                             let cfg =
                                 DataSourceMap::get_datasource_config_path(p);
                             let documents =
-                                datasource::get_datasource_documents_path(p);
+                                collections::get_datasource_documents_path(p);
                             if path == cfg {
                                 rule.actions
                                     .push(Action::DataSourceConfig(path));

@@ -357,6 +357,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "collections"
+version = "0.1.0"
+dependencies = [
+ "collator",
+ "config",
+ "futures",
+ "log",
+ "serde",
+ "serde_json",
+ "slug",
+ "thiserror",
+ "tokio",
+ "toml",
+ "utils",
+]
+
+[[package]]
 name = "compiler"
 version = "0.1.0"
 dependencies = [
@@ -364,9 +381,9 @@ dependencies = [
  "bracket-fluent",
  "chrono",
  "collator",
+ "collections",
  "config",
  "crossbeam",
- "datasource",
  "frontmatter",
  "futures",
  "futures-util",
@@ -638,23 +655,6 @@ dependencies = [
  "darling_core",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "datasource"
-version = "0.1.0"
-dependencies = [
- "collator",
- "config",
- "futures",
- "log",
- "serde",
- "serde_json",
- "slug",
- "thiserror",
- "tokio",
- "toml",
- "utils",
 ]
 
 [[package]]
@@ -3825,9 +3825,9 @@ dependencies = [
 name = "uwe"
 version = "0.40.8"
 dependencies = [
+ "collections",
  "compiler",
  "config",
- "datasource",
  "dirs 0.1.0",
  "futures",
  "hex",
@@ -4084,9 +4084,9 @@ name = "workspace"
 version = "0.1.0"
 dependencies = [
  "collator",
+ "collections",
  "compiler",
  "config",
- "datasource",
  "dirs 0.1.0",
  "fs2",
  "futures",

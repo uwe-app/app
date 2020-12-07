@@ -62,7 +62,7 @@ pub enum Error {
     Render(#[from] handlebars::RenderError),
     */
     #[error(transparent)]
-    DataSource(#[from] datasource::Error),
+    Collections(#[from] collections::Error),
     #[error(transparent)]
     FrontMatter(#[from] frontmatter::Error),
     #[error(transparent)]

@@ -33,6 +33,9 @@ pub fn assign(
 
             let mut writer = page.write().unwrap();
 
+            //println!("Assigning result using key {}", query.get_parameter());
+            //println!("Got result {:?}", res);
+
             // TODO: error or warn on overwriting existing key
             writer.extra.insert(query.get_parameter(), json!(res));
         }

@@ -18,7 +18,7 @@ use config::{
     RedirectConfig, RuntimeOptions,
 };
 
-use datasource::{synthetic, DataSourceMap, QueryCache};
+use collections::{synthetic, DataSourceMap, QueryCache};
 
 use locale::Locales;
 
