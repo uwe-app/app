@@ -16,9 +16,7 @@ impl Helper for Match {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-        ctx.arity(2..2)?;
-
-        // TODO: support block inner template syntax
+        ctx.arity(1..2)?;
 
         // Determine the href for this page
         let href = rc
@@ -36,7 +34,17 @@ impl Helper for Match {
             .trim_end_matches("/");
 
         // Get the output to write when a match is detected
-        let output = ctx.try_get(1, &[Type::String])?.as_str().unwrap();
+        let output = if ctx.arguments().len() > 1 {
+            ctx.try_get(1, &[Type::String])?.as_str().unwrap().to_string()
+        } else {
+            if let Some(node) = template {
+                rc.buffer(node)?
+            } else {
+                return Err(HelperError::new(
+                    "Type error for `match` helper, second argument or inner template is required",
+                ));
+            }
+        };
 
         // Determine if an exact match is required
         let exact = ctx
