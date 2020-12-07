@@ -249,6 +249,7 @@ pub fn build<'c>(
             ref include_index,
             ..
         } => {
+
             should_sort = true;
             let include_index =
                 include_index.is_some() && include_index.unwrap();
@@ -271,14 +272,24 @@ pub fn build<'c>(
             all_pages
                 .iter()
                 .filter(|(k, v)| {
+
+                    // Not inside the target directory
+                    if !k.starts_with(&dir_buf) {
+                        return false;
+                    }
+
+                    // Explicitly excluded from being listed using page data flag
                     let reader = v.read().unwrap();
                     if !reader.is_listable() {
                         return false;
                     }
 
+                    let key_count = k.components().count();
+                    let current_depth = key_count - dir_count;
+
                     if !include_index {
                         if let Some(stem) = k.file_stem() {
-                            if stem == config::INDEX_STEM {
+                            if stem == config::INDEX_STEM && current_depth == 1 {
                                 return false;
                             }
                         }
@@ -287,8 +298,6 @@ pub fn build<'c>(
                     if max_depth == 0 {
                         return k.starts_with(&dir_buf);
                     }
-
-                    let key_count = k.components().count();
 
                     if key_count == target_depth + 1 {
                         if let Some(stem) = k.file_stem() {
