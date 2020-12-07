@@ -44,6 +44,13 @@ impl StyleAsset {
         }
         true
     }
+
+    pub fn dynamic(&self) -> bool {
+        match *self {
+            Self::Tag(ref tag) => tag.dynamic.is_some() && tag.dynamic.unwrap(),
+            _ => false,
+        }
+    }
 }
 
 impl From<UrlPath> for StyleAsset {
@@ -112,6 +119,13 @@ pub struct StyleTag {
     href: String,
     media: Option<String>,
     content: Option<String>,
+
+    // Flag this style as dynamic so that we do not verify it must
+    // exist in the source directory ar runtime.
+    //
+    // These styles are typically generated dynamically using an
+    // external program via a hook.
+    dynamic: Option<bool>,
 }
 
 impl StyleTag {
@@ -120,6 +134,7 @@ impl StyleTag {
             href,
             media: None,
             content: None,
+            dynamic: None,
         }
     }
 
@@ -128,6 +143,7 @@ impl StyleTag {
             href: String::new(),
             media: None,
             content: Some(c),
+            dynamic: None,
         }
     }
 

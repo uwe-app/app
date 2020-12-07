@@ -232,7 +232,7 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
         if let Some(src) = style.source() {
             let path = utils::url::to_path_separator(src);
             let file = opts.source.join(&path);
-            if !file.exists() || !file.is_file() {
+            if !style.dynamic() && (!file.exists() || !file.is_file()) {
                 return Err(Error::NoMainStyle(src.to_string(), file));
             }
         }
