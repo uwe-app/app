@@ -25,6 +25,13 @@ pub struct ScriptTag {
     pub script_async: Option<bool>,
 
     pub content: Option<String>,
+
+    // Flag this script as dynamic so that we do not verify it must
+    // exist in the source directory ar runtime.
+    //
+    // These scripts are typically generated dynamically using an
+    // external program via a hook.
+    pub dynamic: Option<bool>,
 }
 
 impl ScriptTag {
@@ -39,6 +46,7 @@ impl ScriptTag {
             script_type: None,
             script_async: None,
             content: None,
+            dynamic: None,
         }
     }
 
@@ -53,6 +61,7 @@ impl ScriptTag {
             script_type: None,
             script_async: None,
             content: Some(c),
+            dynamic: None,
         }
     }
 

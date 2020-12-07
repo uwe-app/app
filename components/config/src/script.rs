@@ -53,6 +53,13 @@ impl ScriptAsset {
         }
         true
     }
+
+    pub fn dynamic(&self) -> bool {
+        match *self {
+            Self::Tag(ref tag) => tag.dynamic.is_some() && tag.dynamic.unwrap(),
+            _ => false,
+        }
+    }
 }
 
 impl From<UrlPath> for ScriptAsset {

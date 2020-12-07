@@ -270,7 +270,7 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
         if let Some(src) = script.source() {
             let path = utils::url::to_path_separator(src);
             let file = opts.source.join(&path);
-            if !file.exists() || !file.is_file() {
+            if !script.dynamic() && (!file.exists() || !file.is_file()) {
                 return Err(Error::NoMainScript(src.to_string(), file));
             }
         }
