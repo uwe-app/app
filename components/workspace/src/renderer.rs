@@ -195,6 +195,15 @@ impl Renderer {
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
                 let index_file = search.get_output_path(collation.get_path());
+
+                // If there are path filters for compiling specific files
+                // we are not guaranteed that the parent directory will exist!
+                if let Some(parent) = index_file.parent() {
+                    if !parent.exists() {
+                        fs::create_dir_all(parent)?;
+                    }
+                }
+
                 info!("Write search index to {}", index_file.display());
                 let bytes_written = search::writer::write(&idx, index_file)?;
                 info!("Search index {}", human_bytes(bytes_written as f64));
