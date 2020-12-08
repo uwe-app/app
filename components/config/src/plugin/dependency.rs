@@ -1,5 +1,5 @@
 use std::collections::hash_map;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 
@@ -13,12 +13,6 @@ use crate::{Error, Result};
 use super::features::{FeatureFlags, FeatureMap};
 
 static FEATURE_STACK_SIZE: usize = 16;
-
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
-pub enum AccessGrant {
-    #[serde(rename = "hooks")]
-    Hooks,
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
@@ -199,9 +193,6 @@ pub struct Dependency {
     /// Patterns that determine how styles, scripts and layouts
     /// are applied to pages.
     pub apply: Option<Apply>,
-
-    /// Grant permissions to the plugin.
-    enable: Option<HashSet<AccessGrant>>,
 }
 
 impl Dependency {
@@ -213,7 +204,6 @@ impl Dependency {
             name: None,
             features: None,
             apply: None,
-            enable: None,
         }
     }
 }
@@ -229,14 +219,6 @@ impl fmt::Display for Dependency {
 }
 
 impl Dependency {
-    /// Determine if this dependency has the given access granted.
-    pub fn grants(&self, access: AccessGrant) -> bool {
-        if let Some(ref grants) = self.enable {
-            return grants.contains(&access);
-        }
-        false
-    }
-
     /// Cache glob patterns used to apply plugins to
     /// files.
     pub fn prepare(&mut self) -> Result<()> {

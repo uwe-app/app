@@ -13,7 +13,7 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    dependency::AccessGrant, hook::HookConfig, plugin_cache::PluginCache,
+    hook::HookConfig, plugin_cache::PluginCache,
     profile::Profiles, syntax::SyntaxConfig, Config, ProfileSettings,
     RedirectConfig, RuntimeOptions,
 };
@@ -178,35 +178,10 @@ impl ProjectBuilder {
             let mut plugin_cache = PluginCache::new(plugins);
             plugin_cache.prepare(self.config.engine())?;
 
-            self.plugin_hooks(&mut plugin_cache)?;
-
             self.plugins = Some(plugin_cache);
         }
 
         Ok(self)
-    }
-
-    fn plugin_hooks(&mut self, cache: &mut PluginCache) -> Result<()> {
-        debug!("Collating plugin hooks...");
-
-        for (dep, plugin) in cache.plugins_mut().iter_mut() {
-            let base = plugin.base().clone();
-            if !plugin.hooks().is_empty() {
-                let hooks = plugin.hooks_mut();
-                if dep.grants(AccessGrant::Hooks) {
-                    let master_hooks =
-                        self.config.hooks.get_or_insert(Default::default());
-                    hooks.prepare(&self.options.source, &base)?;
-                    master_hooks.append(hooks);
-                } else {
-                    return Err(Error::NoHooksGrant(
-                        plugin.to_string(),
-                        dep.to_string(),
-                    ));
-                }
-            }
-        }
-        Ok(())
     }
 
     /// Load locale message files (.ftl).

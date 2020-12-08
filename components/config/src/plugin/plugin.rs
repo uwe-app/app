@@ -10,7 +10,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    engine::TemplateEngine, hook::HookMap, href::UrlPath,
+    engine::TemplateEngine, href::UrlPath,
     license::LicenseGroup, script::ScriptAsset, style::StyleAsset, ASSETS,
     PLUGINS,
 };
@@ -60,9 +60,6 @@ impl PluginSource {
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PluginType {
-    /// Build tool hook.
-    #[serde(rename = "hook")]
-    Hook,
     /// Assets to be bundled with the website files.
     #[serde(rename = "asset")]
     Asset,
@@ -143,10 +140,6 @@ pub struct Plugin {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     scripts: Vec<ScriptAsset>,
 
-    /// List of hooks in this plugin.
-    #[serde(skip_serializing_if = "HookMap::is_empty")]
-    hooks: HookMap,
-
     /// Collections of partials and layouts
     #[serde(flatten, skip_serializing_if = "HashMap::is_empty")]
     templates: HashMap<TemplateEngine, PluginTemplates>,
@@ -205,7 +198,6 @@ impl Default for Plugin {
             assets: HashSet::new(),
             styles: Vec::new(),
             scripts: Vec::new(),
-            hooks: Default::default(),
             templates: HashMap::new(),
             plugins: HashMap::new(),
             dependencies: Default::default(),
@@ -299,14 +291,6 @@ impl Plugin {
 
     pub fn set_scripts(&mut self, scripts: Vec<ScriptAsset>) {
         self.scripts = scripts;
-    }
-
-    pub fn hooks(&self) -> &HookMap {
-        &self.hooks
-    }
-
-    pub fn hooks_mut(&mut self) -> &mut HookMap {
-        &mut self.hooks
     }
 
     pub fn templates(&self) -> &HashMap<TemplateEngine, PluginTemplates> {
