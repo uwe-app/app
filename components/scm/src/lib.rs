@@ -34,8 +34,8 @@ mod clone;
 mod pull;
 
 pub static ORIGIN: &str = "origin";
-pub static MASTER: &str = "master";
-pub static REFSPEC: &str = "refs/heads/master:refs/head/master";
+pub static MAIN: &str = "main";
+pub static REFSPEC: &str = "refs/heads/main:refs/head/main";
 
 pub fn pull<P: AsRef<Path>>(
     path: P,
@@ -257,7 +257,7 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
 fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     info!("Fetch {}", base.as_ref().display());
     repo.find_remote(ORIGIN)?
-        .fetch(&["master"], None, None)
+        .fetch(&[MAIN], None, None)
         .map_err(Error::from)
 }
 
@@ -294,19 +294,4 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
         pull(to, None, None)?;
         Ok(repo)
     }
-
-    //let repo = open_repo(to)?;
-
-    //let (repo, cloned) = open_or_clone(from, to.as_ref(), submodules)?;
-    //if !cloned {
-    //fetch(&repo, &base)?;
-    // FIXME: merge from origin/master
-
-    //pull(to, None, None)?;
-    //if submodules {
-    //fetch_submodules(&repo, to.as_ref())?
-    //}
-    //}
-
-    //Ok(repo)
 }

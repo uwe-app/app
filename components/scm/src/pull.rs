@@ -188,7 +188,7 @@ pub fn pull<P: AsRef<Path>>(
     branch: Option<String>,
 ) -> Result<(), git2::Error> {
     let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or("origin");
-    let remote_branch = branch.as_ref().map(|s| &s[..]).unwrap_or("master");
+    let remote_branch = branch.as_ref().map(|s| &s[..]).unwrap_or("main");
 
     info!(
         "Pull {}/{} in {}",

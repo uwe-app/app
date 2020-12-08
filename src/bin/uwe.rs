@@ -150,7 +150,7 @@ pub enum Site {
         #[structopt(short, long, default_value = "origin")]
         remote: String,
 
-        #[structopt(short, long, default_value = "master")]
+        #[structopt(short, long, default_value = "main")]
         branch: String,
 
         /// Repository path.

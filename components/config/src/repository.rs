@@ -3,7 +3,6 @@ use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 use url::Url;
 
 static DEFAULT_REPO: &str = "https://github.com/uwe-app/example/";
-//static DEFAULT_EDIT: &str = "edit/master/";
 
 #[serde_as]
 #[skip_serializing_none]
