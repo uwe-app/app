@@ -51,7 +51,7 @@ curl https://release.uwe.app/install.sh | sh
 
 ## Plugins
 
-Plugin publishing is restricted to those that have access to the s3 bucket and the registry repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
+Plugin publishing is restricted to those that have access to the s3 bucket and the `runtime` repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
 
 ```
 export AB_PUBLISH="$HOME/path/to/registry/folder"
@@ -68,7 +68,7 @@ It is **required** to set the `pushurl` and `push` refspec:
   url = git@github.com:uwe-app/runtime.git
   fetch = +refs/heads/*:refs/remotes/origin/*
   pushurl = git@github.com:uwe-app/runtime.git
-  push = refs/heads/master:refs/heads/master
+  push = refs/heads/main:refs/heads/main
 ```
 
 ## Cross Compiling
