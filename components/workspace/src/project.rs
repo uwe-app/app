@@ -645,7 +645,7 @@ impl Workspace {
 }
 
 fn scm_digest(project: &PathBuf) -> Option<String> {
-    if let Some(repo) = scm::open(project).ok() {
+    if let Some(repo) = scm::discover(project).ok() {
         if let Some(rev) = repo.revparse("HEAD").ok() {
             if let Some(obj) = rev.from() {
                 return Some(obj.id().to_string());
@@ -671,21 +671,12 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
                 return Err(Error::NotDirectory(root));
             }
 
-            let mut conf = Config::load(&root, false)?;
-
-            // For workspaces we use a commit digest from the
-            // project root at the moment - assuming monorepo style
-            // which is our preference.
-            //
-            // TODO: allow a flag that would treat each workspace
-            // TODO: member as a separate repository
-            conf.set_commit(scm_digest(config.project()));
-
-            if conf.workspace.is_some() {
+            let mut config = Config::load(&root, false)?;
+            config.set_commit(scm_digest(config.project()));
+            if config.workspace.is_some() {
                 return Err(Error::NoNestedWorkspace(root));
             }
-
-            members.push(Entry { config: conf });
+            members.push(Entry { config });
         }
 
         workspace.projects.push(ProjectEntry::Many(members));

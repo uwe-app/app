@@ -284,6 +284,10 @@ pub fn open<P: AsRef<Path>>(dir: P) -> Result<Repository> {
     Ok(Repository::open(dir).map_err(Error::from)?)
 }
 
+pub fn discover<P: AsRef<Path>>(dir: P) -> Result<Repository> {
+    Ok(Repository::discover(dir).map_err(Error::from)?)
+}
+
 pub fn is_clean(repo: &Repository) -> bool {
     repo.state() == RepositoryState::Clean
 }
