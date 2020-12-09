@@ -644,12 +644,23 @@ impl Workspace {
     }
 }
 
+fn scm_digest(project: &PathBuf) -> Option<String> {
+    if let Some(repo) = scm::open(project).ok() {
+        if let Some(rev) = repo.revparse("HEAD").ok() {
+            if let Some(obj) = rev.from() {
+                return Some(obj.id().to_string());
+            }
+        }
+    }
+    None
+}
+
 /// Open a project.
 ///
 /// Load the configuration for a project and resolve workspace members when necessary.
 pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();
-    let config = Config::load(dir.as_ref(), walk_ancestors)?;
+    let mut config = Config::load(dir.as_ref(), walk_ancestors)?;
 
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Entry> = Vec::new();
@@ -660,16 +671,27 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
                 return Err(Error::NotDirectory(root));
             }
 
-            let config = Config::load(&root, false)?;
-            if config.workspace.is_some() {
+            let mut conf = Config::load(&root, false)?;
+
+            // For workspaces we use a commit digest from the
+            // project root at the moment - assuming monorepo style
+            // which is our preference.
+            //
+            // TODO: allow a flag that would treat each workspace
+            // TODO: member as a separate repository
+            conf.set_commit(scm_digest(config.project()));
+
+            if conf.workspace.is_some() {
                 return Err(Error::NoNestedWorkspace(root));
             }
 
-            members.push(Entry { config });
+            members.push(Entry { config: conf });
         }
 
         workspace.projects.push(ProjectEntry::Many(members));
     } else {
+        config.set_commit(scm_digest(config.project()));
+
         workspace
             .projects
             .push(ProjectEntry::One(vec![Entry { config }]));

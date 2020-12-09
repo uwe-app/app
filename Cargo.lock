@@ -4096,6 +4096,7 @@ dependencies = [
  "log",
  "plugin",
  "preference",
+ "scm",
  "search",
  "serde",
  "serde_json",

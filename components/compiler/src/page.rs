@@ -52,6 +52,9 @@ pub struct CollatedPage<'config, 'locale> {
     generator: &'config str,
     #[serde_as(as = "DisplayFromStr")]
     version: &'config Version,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    commit: &'config Option<String>,
 }
 
 #[skip_serializing_none]
@@ -126,6 +129,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             menus: Default::default(),
             generator: config::generator::id(),
             version: config.version(),
+            commit: config.commit(),
         })
     }
 

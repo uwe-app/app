@@ -243,6 +243,9 @@ pub struct Config {
     pub minify: Option<MinifyConfig>,
     pub livereload: Option<LiveReload>,
 
+    // Commit digest when available
+    commit: Option<String>,
+
     #[serde(skip)]
     pub file: Option<PathBuf>,
 
@@ -252,6 +255,7 @@ pub struct Config {
     #[serde_as(as = "DisplayFromStr")]
     #[serde(skip_deserializing)]
     website: Url,
+
 }
 
 impl Default for Config {
@@ -301,11 +305,22 @@ impl Default for Config {
 
             file: None,
             project: PathBuf::from(""),
+
+            commit: None,
         }
     }
 }
 
 impl Config {
+
+    pub fn commit(&self) -> &Option<String> {
+        &self.commit
+    }
+
+    pub fn set_commit(&mut self, commit: Option<String>) {
+        self.commit = commit;
+    }
+
     pub fn powered(&self) -> Option<&Powered> {
         self.powered.as_ref()
     }
