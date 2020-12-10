@@ -47,16 +47,35 @@ impl Menu {
         Ok(None)
     }
 
-    fn render_listing<'render, 'call>(
+    fn listing_menu<'render, 'call>(
         &self,
-        node: &'render Node<'render>,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
-    ) -> HelperValue {
+        ) -> HelperResult<MenuEntry> {
         let base_path = rc
             .try_evaluate("@root/file.source", &[Type::String])?
             .as_str()
             .unwrap();
+
+        let mut depth = ctx
+            .param("depth")
+            .or(Some(&json!(1)))
+            .and_then(|v| v.as_u64())
+            .ok_or(HelperError::new(
+                "Type error for `menu` helper, hash parameter `depth` must be a positive integer",
+            ))?;
+
+        if depth == 0 {
+            depth = 64;
+        }
+
+        let mut include_index = ctx
+            .param("include-index")
+            .or(Some(&json!(false)))
+            .and_then(|v| v.as_bool())
+            .ok_or(HelperError::new(
+                "Type error for `menu` helper, hash parameter `include-index` must be a boolean",
+            ))?;
 
         let path = PathBuf::from(&base_path);
         let dir = path.parent().unwrap().to_path_buf();
@@ -70,20 +89,42 @@ impl Menu {
 
         let definition = MenuReference::Directory {
             directory: UrlPath::from(dir_path),
-            depth: Some(1),
+            depth: Some(depth as usize),
             description: None,
-            include_index: None,
+            include_index: Some(include_index),
         };
 
-        let menu = MenuEntry::new_reference(definition);
+        Ok(MenuEntry::new_reference(definition))
+    }
 
+    fn render_listing_node<'render, 'call>(
+        &self,
+        node: &'render Node<'render>,
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+    ) -> HelperValue {
+        let menu = self.listing_menu(rc, ctx)?;
         let collation = self.context.collation.read().unwrap();
-
         let (_result, pages) =
             menu::build(&self.context.options, &collation.locale, &menu)
                 .map_err(|e| HelperError::new(e.to_string()))?;
-
         self.render_pages(pages, node, rc, ctx)
+    }
+
+    fn render_listing<'render, 'call>(
+        &self,
+        rc: &mut Render<'render>,
+        ctx: &Context<'call>,
+    ) -> HelperValue {
+        let menu = self.listing_menu(rc, ctx)?;
+        let collation = self.context.collation.read().unwrap();
+        let (result, _pages) =
+            menu::build(&self.context.options, &collation.locale, &menu)
+                .map_err(|e| HelperError::new(e.to_string()))?;
+
+        rc.write(&result.value)?;
+
+        Ok(None)
     }
 
     /// Render an inner template block.
@@ -139,7 +180,7 @@ impl Menu {
 
             Ok(None)
         } else {
-            self.render_listing(node, rc, ctx)
+            self.render_listing_node(node, rc, ctx)
         }
     }
 
@@ -211,16 +252,20 @@ impl Helper for Menu {
                 "Type error for `menu` helper, hash parameter `list` must be a boolean",
             ))?;
 
+        // Handle inner template iteration
         if let Some(node) = template {
-            // Explicitly requested a directory listing
             if list {
-                self.render_listing(node, rc, ctx)
-            // Otherwise try to find a menu
+                self.render_listing_node(node, rc, ctx)
             } else {
                 self.render_template(node, rc, ctx)
             }
+        // Otherwise render directly
         } else {
-            self.render_menu(rc, ctx)
+            if list {
+                self.render_listing(rc, ctx)
+            } else {
+                self.render_menu(rc, ctx)
+            }
         }
     }
 }

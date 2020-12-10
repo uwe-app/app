@@ -267,6 +267,7 @@ pub fn build<'c>(
             } else {
                 1
             };
+
             let target_depth = dir_count + max_depth;
 
             all_pages
