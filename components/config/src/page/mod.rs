@@ -40,6 +40,7 @@ pub struct Page {
     pub summary: Option<String>,
     pub image: Option<UrlPath>,
     pub meta: Option<HashMap<String, String>>,
+    pub http_equiv: Option<HashMap<String, String>>,
     pub open_graph: Option<HashMap<String, String>>,
 
     pub render: Option<bool>,
@@ -120,6 +121,7 @@ impl Default for Page {
             summary: None,
             image: None,
             meta: None,
+            http_equiv: None,
             open_graph: None,
             authors: None,
             rewrite_index: None,
