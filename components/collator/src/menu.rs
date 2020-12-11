@@ -267,10 +267,14 @@ mod template {
     }
 
     pub(crate) fn start_list<W: Write>(f: &mut W, name: &str) -> Result<()> {
-        write(
-            f,
-            &format!("<ul class=\"{}\">\n", utils::entity::escape(name)),
-        )
+        if name.is_empty() {
+            write(f, "<ul>")
+        } else {
+            write(
+                f,
+                &format!("<ul class=\"{}\">\n", utils::entity::escape(name)),
+            )
+        }
     }
 
     pub(crate) fn pages_list<'c, W: Write>(
@@ -280,7 +284,10 @@ mod template {
     ) -> Result<()> {
         for (_path, href, page) in pages {
             let reader = page.read().unwrap();
-            write(f, "<li>")?;
+
+            //{{{{ match href "class=\"selected\"" }}}}
+
+            write(f, &format!(r#"<li{{{{ match "{}" " class='selected'" exact=true }}}}>"#, href))?;
             if let Some(ref title) = reader.title {
                 let link_title = utils::entity::escape(title);
 
