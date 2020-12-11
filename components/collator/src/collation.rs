@@ -105,11 +105,6 @@ pub struct MenuMap {
 
     /// Compiled results for each menu.
     pub(crate) results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
-    /*
-    /// Lookup table by file and menu name so the menu helper
-    /// can easily locale the menu results.
-    pub(crate) mapping: HashMap<Arc<PathBuf>, HashMap<String, Arc<MenuResult>>>,
-    */
 }
 
 impl MenuMap {

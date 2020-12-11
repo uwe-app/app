@@ -375,12 +375,8 @@ pub fn compile(
 
     let graph = collation.get_graph_mut();
     for (menu, result, _paths) in compiled {
-        let res = Arc::new(result);
-        //for path in paths {
-        //let map = graph.menus.mapping.entry(path).or_insert(HashMap::new());
-        //map.insert(menu.name.clone(), Arc::clone(&res));
-        //}
-        graph.menus.results.entry(Arc::clone(&menu)).or_insert(res);
+        graph.menus.results
+            .entry(Arc::clone(&menu)).or_insert(Arc::new(result));
     }
 
     Ok(())

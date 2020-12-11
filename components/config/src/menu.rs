@@ -53,6 +53,7 @@ impl MenuConfig {
 pub struct MenuResult {
     /// Compiled HTML string, may contain template statements.
     pub value: String,
+
     /// List of pages that were referenced by this menu so that
     /// callers can easily iterate the page data for a menu.
     pub pages: Vec<Arc<String>>,

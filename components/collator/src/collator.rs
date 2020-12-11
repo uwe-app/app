@@ -9,7 +9,7 @@ use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
 use config::{
-    href::UrlPath, plugin_cache::PluginCache, Config, MenuEntry, RuntimeOptions,
+    href::UrlPath, plugin_cache::PluginCache, Config, RuntimeOptions,
 };
 use locale::{LocaleMap, LocaleName};
 
@@ -82,30 +82,6 @@ impl TryInto<Vec<CollateInfo>> for CollateResult {
 
         Ok(locales)
     }
-}
-
-fn add_menu(
-    info: &mut CollateInfo,
-    _config: &Config,
-    options: &RuntimeOptions,
-    key: &Arc<PathBuf>,
-) -> Result<()> {
-    let url_path =
-        utils::url::to_href_separator(key.strip_prefix(&options.source)?);
-
-    // NOTE: use the parent directory as the menu key
-    // NOTE: if possible
-    let name = if let Some(parent) = key.parent() {
-        parent.to_string_lossy().into_owned()
-    } else {
-        key.to_string_lossy().into_owned()
-    };
-
-    // Inject the menu entry for processing later.
-    let entry = MenuEntry::new(name, UrlPath::from(url_path));
-    info.graph.menus.sources.insert(Arc::new(entry), Vec::new());
-
-    Ok(())
 }
 
 pub async fn walk(
@@ -221,16 +197,7 @@ async fn find(
                         && path.is_file()
                         && req.options.is_page(&path);
 
-                    // Detect special handling for MENU.md files.
-                    let is_menu = is_page && MenuEntry::is_menu(&key);
-
-                    if is_menu {
-                        if let Err(e) =
-                            add_menu(info, req.config, req.options, &key)
-                        {
-                            let _ = tx.send(e);
-                        }
-                    } else if is_page {
+                    if is_page {
                         if let Err(e) = add_page(
                             info,
                             req.config,
