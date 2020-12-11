@@ -117,8 +117,6 @@ impl Menu {
                 "Type error for `menu` helper, hash parameter `include-index` must be a boolean",
             ))?;
 
-
-
         let definition = MenuReference::Directory {
             directory: dir,
             depth: Some(depth as usize),
