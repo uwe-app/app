@@ -171,6 +171,13 @@ impl Page {
         Ok(page)
     }
 
+    /// Get the destination output file for this page.
+    ///
+    /// Will panic if the page has not been sealed.
+    pub fn destination(&self) -> &PathBuf {
+        &self.file.as_ref().unwrap().target
+    }
+
     pub fn authors(&self) -> &Option<Vec<String>> {
         &self.authors
     }

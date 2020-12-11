@@ -9,7 +9,7 @@ use collator::{
     Collate, LinkCollate,
 };
 
-use config::{href::UrlPath, MenuEntry, MenuReference};
+use config::{href::UrlPath, MenuEntry, MenuReference, RuntimeOptions};
 
 use crate::BuildContext;
 
@@ -52,10 +52,50 @@ impl Menu {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         ) -> HelperResult<MenuEntry> {
-        let base_path = rc
-            .try_evaluate("@root/file.source", &[Type::String])?
-            .as_str()
-            .unwrap();
+
+        let dir = if let Some(path) = ctx.param("path") {
+            let path = path.as_str().ok_or_else(|| {
+                HelperError::new(
+                    "Type error for `menu` helper, hash parameter `path` must be a string")
+            })?;
+
+            let collation = self.context.collation.read().unwrap();
+            let normalized_href = collation.normalize(path);
+            if let Some(base_path) = collation.get_link(&normalized_href) {
+                if let Some(page_lock) = collation.resolve(base_path) {
+                    let page = page_lock.read().unwrap();
+                    // NOTE: we want to operate on the destination so that
+                    // NOTE: url paths are more intuitive when `path="/docs/"` etc.
+                    let destination = page.destination();
+                    let path = destination.to_path_buf();
+                    let dir = path.parent().unwrap().to_path_buf();
+                    UrlPath::from(dir)
+                } else {
+                    panic!("Menu helper could not read page data");
+                }
+            } else {
+                return Err(
+                    HelperError::new(
+                        format!("Type error for `menu` helper, no page for path '{}'", path)))
+            }
+        } else {
+            let base_path = rc
+                .try_evaluate("@root/file.source", &[Type::String])?
+                .as_str()
+                .unwrap();
+
+            let path = PathBuf::from(&base_path);
+            let dir = path.parent().unwrap().to_path_buf();
+
+            let dir_path = dir
+                .strip_prefix(&self.context.options.source)
+                .unwrap()
+                .to_string_lossy()
+                .to_owned()
+                .to_string();
+
+            UrlPath::from(dir_path)
+        };
 
         let mut depth = ctx
             .param("depth")
@@ -77,18 +117,10 @@ impl Menu {
                 "Type error for `menu` helper, hash parameter `include-index` must be a boolean",
             ))?;
 
-        let path = PathBuf::from(&base_path);
-        let dir = path.parent().unwrap().to_path_buf();
 
-        let dir_path = dir
-            .strip_prefix(&self.context.options.source)
-            .unwrap()
-            .to_string_lossy()
-            .to_owned()
-            .to_string();
 
         let definition = MenuReference::Directory {
-            directory: UrlPath::from(dir_path),
+            directory: dir,
             depth: Some(depth as usize),
             description: None,
             include_index: Some(include_index),

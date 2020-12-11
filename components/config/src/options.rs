@@ -48,7 +48,7 @@ impl RuntimeOptions {
         &self.settings.name
     }
 
-    fn is_index<P: AsRef<Path>>(file: P) -> bool {
+    pub fn is_index<P: AsRef<Path>>(file: P) -> bool {
         if let Some(nm) = file.as_ref().file_stem() {
             if nm == INDEX_STEM {
                 return true;
