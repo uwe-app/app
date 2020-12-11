@@ -13,8 +13,10 @@ pub enum Error {
     #[error("No socket address for {0}")]
     NoSocketAddress(String),
 
+    /*
     #[error("No menu {0} resolving to file {1}")]
     NoMenuFile(String, PathBuf),
+    */
 
     #[error("No site configuration in {0}")]
     NoSiteConfig(PathBuf),
@@ -155,7 +157,7 @@ pub use config::*;
 pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
-pub use menu::{MenuEntry, MenuReference, MenuResult, MENU};
+pub use menu::{MenuEntry, MenuReference, MenuResult};
 pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::{Author, Page, PageLink, PaginateInfo};
 pub use plugin::*;

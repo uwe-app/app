@@ -84,6 +84,7 @@ fn end_list<W: Write>(f: &mut W) -> Result<()> {
 ///
 /// We would like to embed template blocks in the resulting
 /// HTML but currently the markdown compiler.
+/*
 fn compile_file_menu<'c>(
     options: &RuntimeOptions,
     collation: &'c CollateInfo,
@@ -203,6 +204,7 @@ fn compile_file_menu<'c>(
 
     Ok((result, page_data))
 }
+*/
 
 /// Build the HTML for a single menu and collate the list of page links
 /// into a MenuResult.
@@ -216,6 +218,7 @@ pub fn build<'c>(
     let mut should_sort = false;
 
     match menu.definition {
+        /*
         MenuReference::File { ref file } => {
             let file = options.resolve_source(file.as_ref());
             let (menu_result, menu_pages) =
@@ -223,6 +226,7 @@ pub fn build<'c>(
             result = menu_result;
             page_data = menu_pages;
         }
+        */
         MenuReference::Pages { ref pages, .. } => {
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
                 let page_path =

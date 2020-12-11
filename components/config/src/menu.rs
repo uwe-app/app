@@ -1,13 +1,10 @@
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use crate::{utils::href::UrlPath, Error, Result};
-
-pub static MENU: &str = "MENU.md";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
@@ -77,13 +74,13 @@ pub struct MenuEntry {
 }
 
 impl MenuEntry {
-    pub fn new(name: String, file: UrlPath) -> Self {
-        Self {
-            name,
-            definition: MenuReference::File { file },
-            result: Default::default(),
-        }
-    }
+    //pub fn new(name: String, file: UrlPath) -> Self {
+        //Self {
+            //name,
+            //definition: MenuReference::File { file },
+            //result: Default::default(),
+        //}
+    //}
 
     pub fn new_reference(definition: MenuReference) -> Self {
         Self {
@@ -93,11 +90,7 @@ impl MenuEntry {
         }
     }
 
-    /// Determine if a file appears to be a menu using the convention.
-    pub fn is_menu(file: &PathBuf) -> bool {
-        file.ends_with(MENU)
-    }
-
+    /*
     pub fn verify_files(&self, base: &PathBuf) -> Result<()> {
         match self.definition {
             MenuReference::File { ref file, .. } => {
@@ -114,15 +107,13 @@ impl MenuEntry {
         }
         Ok(())
     }
+    */
 }
 
 /// References the definition of a menu.
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum MenuReference {
-    /// Render the context of a template file as the menu.
-    File { file: UrlPath },
-
     /// Render a collection of specific pages.
     Pages {
         pages: Vec<UrlPath>,
@@ -141,7 +132,6 @@ pub enum MenuReference {
 impl MenuReference {
     pub fn set_description(&mut self, value: bool) {
         match *self {
-            Self::File { .. } => {}
             Self::Pages {
                 ref mut description,
                 ..

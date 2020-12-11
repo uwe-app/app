@@ -274,8 +274,6 @@ fn add_page(
     if let Some(ref menu) = config.menu {
         // Verify file references as early as possible
         for (k, v) in menu.entries.iter() {
-            v.verify_files(&options.source)?;
-
             let mut def = v.clone();
             //// Assign the key name so we can use it
             //// later when re-assigning the compiled value
