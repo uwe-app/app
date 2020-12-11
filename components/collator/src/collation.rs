@@ -32,6 +32,29 @@ impl Collation {
         // FIXME: support override locale-specific templates!
         &self.fallback.templates
     }
+
+    pub fn get_menu_template_name(&self, name: &str) -> String {
+        format!("{}/{}", MENU_TEMPLATE_PREFIX, name)
+    }
+
+    pub fn get_menus(&self) -> &HashMap<String, MenuResult> {
+        &self.locale.menus
+    }
+
+    /// Generate a map of menu identifiers to the URLs
+    /// for each page in the menu so templates can iterate
+    /// menus.
+    pub fn menu_page_href(&self) -> HashMap<&String, Vec<&String>> {
+        let mut result: HashMap<&String, Vec<&String>> = HashMap::new();
+        for (key, menu) in self.locale.menus.iter() {
+            let mut refs = Vec::new();
+            menu.pages.iter().for_each(|s| {
+                refs.push(s.as_ref());
+            });
+            result.insert(key, refs);
+        }
+        result
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -52,8 +75,8 @@ pub struct CollateInfo {
     /// Lookup table for page data resolved by locale identifier and source path.
     pub(crate) pages: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>>,
 
-    /// Graph of page relationships.
-    pub(crate) graph: Graph,
+    /// Menu definitions.
+    pub menus: HashMap<String, MenuResult>,
 
     // Additional redirects, typically  from pages
     // that have permalinks map the permalink to the
@@ -87,17 +110,7 @@ pub struct CollateInfo {
     pub(crate) links: LinkMap,
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct Graph {
-    pub(crate) menus: MenuMap,
-}
-
-impl Graph {
-    pub fn get_menus(&self) -> &MenuMap {
-        &self.menus
-    }
-}
-
+/*
 #[derive(Debug, Default, Clone)]
 pub struct MenuMap {
     /// List of pages with menus that need to be compiled.
@@ -127,6 +140,7 @@ impl MenuMap {
         self.results.iter()
     }
 }
+*/
 
 #[derive(Debug, Default, Clone)]
 pub struct LinkMap {
@@ -144,7 +158,6 @@ pub trait Collate {
     fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>;
-    fn get_graph(&self) -> &Graph;
 
     fn find_menu(&self, name: &str) -> Option<&MenuResult>;
 }
@@ -249,10 +262,6 @@ impl Collate for Collation {
         Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
     }
 
-    fn get_graph(&self) -> &Graph {
-        self.locale.get_graph()
-    }
-
     fn find_menu(&self, name: &str) -> Option<&MenuResult> {
         self.locale
             .find_menu(name)
@@ -321,17 +330,8 @@ impl Collate for CollateInfo {
         Box::new(self.pages.iter())
     }
 
-    fn get_graph(&self) -> &Graph {
-        &self.graph
-    }
-
     fn find_menu(&self, name: &str) -> Option<&MenuResult> {
-        for (entry, result) in self.graph.menus.results.iter() {
-            if entry.name == name {
-                return Some(result);
-            }
-        }
-        None
+        self.menus.get(name)
     }
 }
 
@@ -386,10 +386,6 @@ impl CollateInfo {
 
     pub fn get_redirects(&self) -> &HashMap<String, String> {
         &self.redirects
-    }
-
-    pub fn get_graph_mut(&mut self) -> &mut Graph {
-        &mut self.graph
     }
 
     /// Create a page in this collation.

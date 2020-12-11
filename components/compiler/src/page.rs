@@ -19,7 +19,7 @@ use crate::{Error, Result};
 #[skip_serializing_none]
 #[derive(Serialize)]
 #[serde(default, rename_all = "kebab-case")]
-pub struct CollatedPage<'config, 'locale> {
+pub struct CollatedPage<'config, 'locale, 'collation> {
     #[serde(flatten)]
     page: &'config Page,
 
@@ -35,19 +35,15 @@ pub struct CollatedPage<'config, 'locale> {
     languages: Option<&'locale LocaleMap>,
 
     date: &'config Option<DateConfig>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     repository: &'config Option<RepositoryConfig>,
 
     #[serde(skip_serializing_if = "CollatedAuthors::is_empty")]
     authors: CollatedAuthors<'config>,
 
-    // Paths referenced in a menu when MENU.md convention is used
-    //  FIXME: use a better name for the main menu
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub main: Vec<&'config String>,
-
     #[serde(skip_serializing_if = "HashMap::is_empty")]
-    pub menus: HashMap<&'config String, Vec<&'config String>>,
+    pub menus: HashMap<&'collation String, Vec<&'collation String>>,
 
     generator: &'config str,
     #[serde_as(as = "DisplayFromStr")]
@@ -72,7 +68,7 @@ impl CollatedAuthors<'_> {
     }
 }
 
-impl<'config, 'locale> CollatedPage<'config, 'locale> {
+impl<'config, 'locale, 'collation> CollatedPage<'config, 'locale, 'collation> {
     pub fn new(
         file: &PathBuf,
         config: &'config Config,
@@ -125,7 +121,6 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             authors,
             languages,
             date: &config.date,
-            main: Default::default(),
             menus: Default::default(),
             generator: config::generator::id(),
             version: config.version(),

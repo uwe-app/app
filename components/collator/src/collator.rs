@@ -270,6 +270,7 @@ fn add_page(
 
     let (info, key, destination, page) = builder.build();
 
+    /*
     // Assign pages to menu result entries
     if let Some(ref menu) = config.menu {
         // Verify file references as early as possible
@@ -288,6 +289,7 @@ fn add_page(
             entries.push(Arc::clone(key));
         }
     }
+    */
 
     info.add_page(key, destination, Arc::new(RwLock::new(page)));
 

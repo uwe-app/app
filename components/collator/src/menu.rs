@@ -1,10 +1,12 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use pulldown_cmark::{CowStr, Event, LinkType, Tag};
 
 use config::{
+    Config,
     MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
 };
 
@@ -151,7 +153,6 @@ pub fn build<'c>(
 
     // Assign list of pages referenced by the menu to the compiled
     // menu result so that helpers can easily find referenced pages
-    //result.pages = page_data.iter().map(|(p, _, _)| Arc::clone(p)).collect();
     result.pages = page_data
         .iter()
         .map(|(_, href, _)| Arc::new(href.clone()))
@@ -160,28 +161,23 @@ pub fn build<'c>(
     Ok((result, page_data))
 }
 
-/// Compile all the menus in a collation and assign references to
-/// the compiled HTML strings to each of the pages that referenced
-/// the menu.
-pub fn compile(
+/// Compile all the menu definitions into string templates which can
+/// be registered with a template parser.
+pub fn compile<'c>(
+    config: &'c Config,
     options: &RuntimeOptions,
     collation: &mut CollateInfo,
-) -> Result<()> {
-    let mut compiled: Vec<(Arc<MenuEntry>, MenuResult, Vec<Arc<PathBuf>>)> =
-        Vec::new();
+) -> Result<HashMap<String, MenuResult>> {
+    let mut results: HashMap<String, MenuResult> = HashMap::new();
 
-    for (menu, paths) in collation.get_graph().menus.sources.iter() {
-        let (result, _page_data) = build(options, collation, &menu)?;
-        compiled.push((Arc::clone(menu), result, paths.to_vec()));
+    // Compile the menu entries into template strings
+    if let Some(ref menu) = config.menu {
+        for (k, v) in menu.entries.iter() {
+            let (result, _page_data) = build(options, collation, v)?;
+            results.insert(k.to_string(), result);
+        }
     }
-
-    let graph = collation.get_graph_mut();
-    for (menu, result, _paths) in compiled {
-        graph.menus.results
-            .entry(Arc::clone(&menu)).or_insert(Arc::new(result));
-    }
-
-    Ok(())
+    Ok(results)
 }
 
 /// Try to get the parent page for a source file path.

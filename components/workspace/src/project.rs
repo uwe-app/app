@@ -382,9 +382,8 @@ impl ProjectBuilder {
     /// Process menu references.
     pub async fn menus(mut self) -> Result<Self> {
         debug!("Compile menu references...");
-
         for collation in self.collations.iter_mut() {
-            menu::compile(&self.options, collation)?;
+            collation.menus = menu::compile(&self.config, &self.options, collation)?;
         }
         Ok(self)
     }

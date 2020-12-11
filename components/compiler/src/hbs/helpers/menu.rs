@@ -122,7 +122,14 @@ impl Menu {
             menu::build(&self.context.options, &collation.locale, &menu)
                 .map_err(|e| HelperError::new(e.to_string()))?;
 
-        rc.write(&result.value)?;
+        let template_path = rc
+            .try_evaluate("@root/file.template", &[Type::String])?
+            .as_str()
+            .unwrap()
+            .to_string();
+
+        let result = rc.once(&template_path, &result.value, rc.data())?;
+        rc.write(&result)?;
 
         Ok(None)
     }
@@ -150,8 +157,8 @@ impl Menu {
                 .to_string();
 
             let collation = self.context.collation.read().unwrap();
-            let menus = collation.get_graph().get_menus();
-            let menu = menus.find_result(&name);
+            let menus = collation.get_menus();
+            let menu = menus.get(&name);
             if let Some(result) = menu {
                 rc.push_scope(Scope::new());
                 for href in result.pages.iter() {
@@ -194,8 +201,8 @@ impl Menu {
         // TODO: handle file-specific menu overrides
 
         let collation = self.context.collation.read().unwrap();
-        let menus = collation.get_graph().get_menus();
-        let name = menus.get_menu_template_name(key);
+        let menus = collation.get_menus();
+        let name = collation.get_menu_template_name(key);
 
         if let Some(tpl) = rc.get_template(&name) {
             rc.template(tpl.node())?;
@@ -210,6 +217,7 @@ impl Menu {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> HelperValue {
+        /*
         // Render the MENU.md folder convention
         let key: String = if ctx.arguments().is_empty() {
             let source_path = rc
@@ -227,13 +235,13 @@ impl Menu {
 
         // Render a named argument
         } else {
-            ctx.try_get(0, &[Type::String])?
-                .as_str()
-                .unwrap()
-                .to_string()
         };
+        */
 
-        self.render_menu_by_name(&key, rc, ctx)
+        let key = ctx.try_get(0, &[Type::String])?
+            .as_str()
+            .unwrap();
+        self.render_menu_by_name(key, rc, ctx)
     }
 }
 

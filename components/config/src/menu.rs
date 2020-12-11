@@ -46,7 +46,7 @@ impl MenuConfig {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct MenuResult {
     /// Compiled HTML string, may contain template statements.
     pub value: String,

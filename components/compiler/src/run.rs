@@ -172,29 +172,7 @@ pub async fn parse(
         lang,
     )?;
 
-    // Try to resolve a menu for the file
-    if let Some(parent) = file.parent() {
-        let parent_menu_name = parent.to_string_lossy();
-        if let Some(ref menu_result) = collation.find_menu(&parent_menu_name) {
-            page_data.main =
-                menu_result.pages.iter().map(|s| s.as_ref()).collect();
-        }
-    }
-
-    if let Some(ref menu) = ctx.config.menu {
-        for (key, _value) in menu.entries.iter() {
-            if let Some(ref menu_result) = collation.find_menu(key) {
-                let mut refs = Vec::new();
-                menu_result.pages.iter().for_each(|s| {
-                    refs.push(s.as_ref());
-                });
-
-                page_data.menus.insert(key, refs);
-            }
-        }
-
-        //println!("Page data menus {:#?}", page_data.menus);
-    }
+    page_data.menus = collation.menu_page_href();
 
     let mut s = if minify_html {
         minify::html(parser.parse(file, page_data)?)

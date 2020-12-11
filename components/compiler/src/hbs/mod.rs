@@ -241,13 +241,12 @@ impl<'reg> ParserBuilder<'reg> {
 
     pub fn menus(mut self) -> Result<Self> {
         let collation = self.context.collation.read().unwrap();
-        let menus = collation.get_graph().get_menus();
+        let menus = collation.get_menus();
 
         // TODO: register page-specific menu overrides
 
-        for (entry, result) in menus.results() {
-            let name = menus.get_menu_template_name(&entry.name);
-            //let template = Cow::from(&result.value);
+        for (key, result) in menus.iter() {
+            let name = collation.get_menu_template_name(key);
             self.registry.insert(&name, &result.value)?;
         }
 
