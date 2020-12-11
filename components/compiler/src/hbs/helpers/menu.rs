@@ -94,7 +94,7 @@ impl Menu {
             include_index: Some(include_index),
         };
 
-        Ok(MenuEntry::new_reference(definition))
+        Ok(MenuEntry::new(definition))
     }
 
     fn render_listing_node<'render, 'call>(

@@ -37,7 +37,7 @@ impl MenuConfig {
                             let key = format!("{}{}", k, suffix);
                             self.entries
                                 .entry(key)
-                                .or_insert(MenuEntry::new_reference(def));
+                                .or_insert(MenuEntry::new(def));
                         }
                     }
                 }
@@ -74,40 +74,13 @@ pub struct MenuEntry {
 }
 
 impl MenuEntry {
-    //pub fn new(name: String, file: UrlPath) -> Self {
-        //Self {
-            //name,
-            //definition: MenuReference::File { file },
-            //result: Default::default(),
-        //}
-    //}
-
-    pub fn new_reference(definition: MenuReference) -> Self {
+    pub fn new(definition: MenuReference) -> Self {
         Self {
             definition,
             name: Default::default(),
             result: Default::default(),
         }
     }
-
-    /*
-    pub fn verify_files(&self, base: &PathBuf) -> Result<()> {
-        match self.definition {
-            MenuReference::File { ref file, .. } => {
-                let buf = base.join(utils::url::to_path_separator(
-                    file.as_str().trim_start_matches("/"),
-                ));
-                if !buf.exists() || !buf.is_file() {
-                    return Err(Error::NoMenuFile(file.to_string(), buf));
-                }
-            }
-            // NOTE: other variants must be verified elsewhere once
-            // NOTE: we have the collation data
-            _ => {}
-        }
-        Ok(())
-    }
-    */
 }
 
 /// References the definition of a menu.
