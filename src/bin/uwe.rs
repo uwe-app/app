@@ -74,7 +74,7 @@ enum Command {
         args: Docs,
     },
 
-    /// Publish a site
+    /// Publish a website
     Publish {
         #[structopt(flatten)]
         args: Publish,
