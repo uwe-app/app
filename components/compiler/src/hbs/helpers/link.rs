@@ -80,8 +80,10 @@ fn url<'render, 'call>(
         }
     }
 
-    let value = if make_relative {
-        if let Ok(val) = opts.relative(&input, path, base) {
+    let (page_path, fragment) = opts.fragment(&input);
+
+    let mut value = if make_relative {
+        if let Ok(val) = opts.relative(page_path, path, base) {
             val
         } else {
             return Err(HelperError::new(
@@ -91,6 +93,11 @@ fn url<'render, 'call>(
     } else {
         format!("/{}", input)
     };
+
+    if let Some(fragment) = fragment {
+        value.push('#');
+        value.push_str(fragment);
+    }
 
     Ok((value, page_key))
 }

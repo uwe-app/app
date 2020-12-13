@@ -178,6 +178,8 @@ pub trait LinkCollate {
 
     /// Normalize a URL path so that it begins with a leading slash
     /// and is given an `index.html` suffix if it ends with a slash.
+    ///
+    /// Any fragment identifier should be stripped.
     fn normalize<S: AsRef<str>>(&self, s: S) -> String;
 
     /// Try to find a source file corresponging to a link URL path.
@@ -195,6 +197,12 @@ impl LinkCollate for LinkMap {
 
     fn normalize<S: AsRef<str>>(&self, s: S) -> String {
         let mut s = s.as_ref().to_string();
+
+        if s.contains('#') {
+            let parts: Vec<&str> = s.splitn(2, '#').collect();
+            s = parts.get(0).unwrap().to_string();
+        }
+
         if !s.starts_with("/") {
             s = format!("/{}", s);
         }

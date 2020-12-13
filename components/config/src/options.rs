@@ -204,6 +204,17 @@ impl RuntimeOptions {
             .join(utils::url::to_path_separator(href.trim_start_matches("/")))
     }
 
+    /// Split a URL path into a pair possibly containing a fragment identifier.
+    pub fn fragment<'a>(&self, href: &'a str) -> (&'a str, Option<&'a str>) {
+        let mut fragment: Option<&str> = None;
+        if href.contains('#') {
+            let parts: Vec<&'a str> = href.splitn(2, '#').collect();
+            (parts.get(0).unwrap(), Some(parts.get(1).unwrap()))
+        } else {
+            (href, None)
+        }
+    }
+
     pub fn relative<P: AsRef<Path>, B: AsRef<Path>>(
         &self,
         href: &str,
