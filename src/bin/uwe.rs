@@ -98,12 +98,14 @@ pub enum Lang {
     #[structopt(alias = "ls")]
     List {
         /// Read config from directory
+        #[structopt(parse(from_os_str), default_value = ".")]
         project: PathBuf,
     },
 
     /// Create new translations
     New {
         /// Read config from directory
+        #[structopt(parse(from_os_str), default_value = ".")]
         project: PathBuf,
 
         /// Unicode language identifiers
