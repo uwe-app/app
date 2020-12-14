@@ -104,24 +104,10 @@ impl<'a> Invalidator<'a> {
             hooks
                 .iter()
                 .filter(|h| {
-                    h.files.is_some() && h.watch.is_some() && h.watch.unwrap()
+                    h.has_matchers() && h.watch.is_some() && h.watch.unwrap()
                 })
                 .map(|h| {
-                    let files = h
-                        .files
-                        .as_ref()
-                        .unwrap()
-                        .iter()
-                        .map(|url_path| {
-                            self.canonical(
-                                self.project
-                                    .options
-                                    .source
-                                    .join(url_path.to_path_buf()),
-                            )
-                        })
-                        .collect::<Vec<_>>();
-                    (h, files)
+                    (h, h.filter(&paths))
                 })
                 .collect::<Vec<_>>()
         } else {
