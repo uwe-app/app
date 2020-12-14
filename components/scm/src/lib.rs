@@ -3,7 +3,7 @@ use std::path::Path;
 
 use git2::{
     Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
-    RepositoryState, RepositoryInitOptions,
+    RepositoryInitOptions, RepositoryState,
 };
 
 use log::info;
@@ -82,7 +82,6 @@ pub fn pristine<P: AsRef<Path>>(
 
 /// Initialize a repository and perform an initial commit.
 pub fn init<P: AsRef<Path>>(target: P, message: &str) -> Result<Oid> {
-
     let mut opts = RepositoryInitOptions::new();
     opts.initial_head(MAIN);
 

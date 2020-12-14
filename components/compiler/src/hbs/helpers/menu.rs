@@ -51,8 +51,7 @@ impl Menu {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
-        ) -> HelperResult<MenuEntry> {
-
+    ) -> HelperResult<MenuEntry> {
         let dir = if let Some(path) = ctx.param("path") {
             let path = path.as_str().ok_or_else(|| {
                 HelperError::new(
@@ -74,9 +73,10 @@ impl Menu {
                     panic!("Menu helper could not read page data");
                 }
             } else {
-                return Err(
-                    HelperError::new(
-                        format!("Type error for `menu` helper, no page for path '{}'", path)))
+                return Err(HelperError::new(format!(
+                    "Type error for `menu` helper, no page for path '{}'",
+                    path
+                )));
             }
         } else {
             let base_path = rc
@@ -268,9 +268,7 @@ impl Menu {
         };
         */
 
-        let key = ctx.try_get(0, &[Type::String])?
-            .as_str()
-            .unwrap();
+        let key = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
         self.render_menu_by_name(key, rc, ctx)
     }
 }

@@ -1,8 +1,9 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use config::{hook::HookConfig, FileType};
+use collator::LinkCollate;
 use collections::{self, DataSourceMap};
+use config::{hook::HookConfig, FileType};
 
 use crate::{renderer::RenderOptions, Error, Project, Result};
 
@@ -68,6 +69,22 @@ pub struct Rule {
     actions: Vec<Action>,
 }
 
+impl Rule {
+
+    /// Determine if this invalidation looks like a single page.
+    ///
+    /// Used to determine whether live reload should attempt to
+    /// locate a page href (follow-edits).
+    pub fn single_page(&self) -> Option<&PathBuf> {
+        if self.actions.len() == 1 {
+            if let Action::Page(path) = self.actions.get(0).unwrap() {
+                return Some(path);
+            }
+        }
+        None
+    }
+}
+
 pub struct Invalidator<'a> {
     project: &'a mut Project,
 }
@@ -75,6 +92,31 @@ pub struct Invalidator<'a> {
 impl<'a> Invalidator<'a> {
     pub fn new(project: &'a mut Project) -> Self {
         Self { project }
+    }
+
+    /// Try to find a page href from an invalidation path.
+    ///
+    /// Used by the live reload functionality to notify the browser
+    /// it should navigate to the last edited page (follow-edits).
+    pub fn find_page_href(&self, path: &PathBuf) -> Option<String> {
+
+        if self.project.config.livereload().follow_edits() {
+            if let Ok(file) = self.project.options.relative_to(
+                path,
+                &self.project.options.source,
+                &self.project.options.source,
+            ) {
+                for renderer in self.project.renderers.iter() {
+                    let collation = renderer.info.context.collation.read().unwrap();
+                    if let Some(href) = collation.get_link_source(&file) {
+                        let href = href.trim_end_matches(config::INDEX_HTML).to_string();
+                        return Some(href);
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     fn canonical<P: AsRef<Path>>(&self, src: P) -> PathBuf {
@@ -106,9 +148,7 @@ impl<'a> Invalidator<'a> {
                 .filter(|h| {
                     h.has_matchers() && h.watch.is_some() && h.watch.unwrap()
                 })
-                .map(|h| {
-                    (h, h.filter(&paths))
-                })
+                .map(|h| (h, h.filter(&paths)))
                 .collect::<Vec<_>>()
         } else {
             vec![]
@@ -257,7 +297,6 @@ impl<'a> Invalidator<'a> {
 
     /// Render a single file using the appropriate locale-specific renderer.
     async fn one(&mut self, file: &PathBuf) -> Result<()> {
-
         // Raw source files might be localized variants
         // we need to strip the locale identifier from the
         // file path before compiling
@@ -268,8 +307,13 @@ impl<'a> Invalidator<'a> {
             &self.project.config.lang
         };
 
-        let options =
-            RenderOptions::new_file_lang(file, lang.to_string(), true, false, false);
+        let options = RenderOptions::new_file_lang(
+            file,
+            lang.to_string(),
+            true,
+            false,
+            false,
+        );
 
         self.project.render(options).await?;
 

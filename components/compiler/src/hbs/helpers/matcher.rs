@@ -35,7 +35,10 @@ impl Helper for Match {
 
         // Get the output to write when a match is detected
         let output = if ctx.arguments().len() > 1 {
-            ctx.try_get(1, &[Type::String])?.as_str().unwrap().to_string()
+            ctx.try_get(1, &[Type::String])?
+                .as_str()
+                .unwrap()
+                .to_string()
         } else {
             if let Some(node) = template {
                 rc.buffer(node)?

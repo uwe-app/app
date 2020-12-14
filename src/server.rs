@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
+use std::path::PathBuf;
 
 use scopeguard::defer;
 
@@ -20,8 +20,8 @@ pub async fn serve(
     target: &PathBuf,
     skip_build: bool,
     mut opts: ServerConfig,
-    launch: LaunchConfig) -> Result<()> {
-
+    launch: LaunchConfig,
+) -> Result<()> {
     let site_file = target.join(config::SITE_TOML);
     let index_file = target.join(config::INDEX_HTML);
 
@@ -70,6 +70,7 @@ pub async fn serve(
         Err(Error::NoServerFile(
             config::SITE_TOML.to_string(),
             config::INDEX_HTML.to_string(),
-            target.to_path_buf()))
+            target.to_path_buf(),
+        ))
     }
 }

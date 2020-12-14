@@ -42,7 +42,7 @@ impl Helper for Include {
                     return Err(HelperError::new(format!(
                         "Missing include file {}",
                         buf.display()
-                    )))
+                    )));
                 }
 
                 buf = buf.canonicalize()?;
@@ -52,7 +52,7 @@ impl Helper for Include {
                         "Include {} is not allowed because it is outside of the project directory {}",
                         buf.display(),
                         project.display(),
-                    )))
+                    )));
                 }
 
                 let result = utils::fs::read_string(&buf).map_err(|e| {

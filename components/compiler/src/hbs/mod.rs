@@ -192,7 +192,12 @@ impl<'reg> ParserBuilder<'reg> {
             }),
         );
 
-        helpers.insert("include", Box::new(helpers::include::Include {context: Arc::clone(&self.context)}));
+        helpers.insert(
+            "include",
+            Box::new(helpers::include::Include {
+                context: Arc::clone(&self.context),
+            }),
+        );
         helpers.insert("random", Box::new(helpers::random::Random));
         helpers.insert("slug", Box::new(helpers::slug::Slug));
         helpers.insert("date", Box::new(helpers::date::DateFormat));

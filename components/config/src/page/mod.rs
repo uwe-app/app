@@ -320,7 +320,6 @@ impl Page {
         _config: &Config,
         _opts: &RuntimeOptions,
     ) -> Result<()> {
-
         // Convert link labels to lower case by default so that
         // they fit better in long form natural language content.
         //

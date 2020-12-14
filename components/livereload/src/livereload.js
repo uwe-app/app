@@ -16,7 +16,7 @@ socket.onmessage = (event) => {
         msg.innerText = 'Building...';
 	}else if (e.type === 'reload') {
 		socket.close();
-		location.reload();
+    if (e.href) { location.href = e.href; } else { location.reload(); }
 	}else if (e.type === 'notify') {
 		el.style.display = 'block';
         msg.innerText = e.message;

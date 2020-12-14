@@ -6,8 +6,7 @@ use std::sync::{Arc, RwLock};
 use pulldown_cmark::{CowStr, Event, LinkType, Tag};
 
 use config::{
-    Config,
-    MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
+    Config, MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
 };
 
 use crate::{Collate, CollateInfo, Collation, Error, LinkCollate, Result};
@@ -53,7 +52,6 @@ pub fn build<'c>(
             ref include_index,
             ..
         } => {
-
             should_sort = true;
             let include_index =
                 include_index.is_some() && include_index.unwrap();
@@ -77,7 +75,6 @@ pub fn build<'c>(
             all_pages
                 .iter()
                 .filter(|(k, v)| {
-
                     // Not inside the target directory
                     if !k.starts_with(&dir_buf) {
                         return false;
@@ -94,7 +91,8 @@ pub fn build<'c>(
 
                     if !include_index {
                         if let Some(stem) = k.file_stem() {
-                            if stem == config::INDEX_STEM && current_depth == 1 {
+                            if stem == config::INDEX_STEM && current_depth == 1
+                            {
                                 return false;
                             }
                         }
@@ -287,7 +285,13 @@ mod template {
 
             //{{{{ match href "class=\"selected\"" }}}}
 
-            write(f, &format!(r#"<li{{{{ match "{}" " class='selected'" exact=true }}}}>"#, href))?;
+            write(
+                f,
+                &format!(
+                    r#"<li{{{{ match "{}" " class='selected'" exact=true }}}}>"#,
+                    href
+                ),
+            )?;
             if let Some(ref title) = reader.title {
                 let link_title = utils::entity::escape(title);
 
@@ -298,9 +302,7 @@ mod template {
                     f,
                     &format!(
                         r#"<a href="{{{{ link "{}" }}}}" title="{}">{}</a>"#,
-                        href,
-                        link_title,
-                        link_title
+                        href, link_title, link_title
                     ),
                 )?;
 
@@ -326,6 +328,4 @@ mod template {
     pub(crate) fn end_list<W: Write>(f: &mut W) -> Result<()> {
         write(f, "</ul>\n")
     }
-
 }
-

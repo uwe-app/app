@@ -8,7 +8,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::{resource::Resource, loader, Collate, LinkCollate};
+use collator::{loader, resource::Resource, Collate, LinkCollate};
 use compiler::{
     compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
@@ -139,7 +139,8 @@ impl Renderer {
                         let mut computed_page = loader::compute(
                             path,
                             self.info.context.config.as_ref(),
-                            self.info.context.options.as_ref())?;
+                            self.info.context.options.as_ref(),
+                        )?;
 
                         let mut page_write = page_lock.write().unwrap();
                         // NOTE: It is tempting to re-assign using

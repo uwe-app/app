@@ -201,6 +201,17 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                         let result = invalidator.get_invalidation(paths);
                         match result {
                             Ok(invalidation) => {
+
+                                // Try to determine a page href to use when following edits.
+                                let href: Option<String> = if let Some(path) =
+                                    invalidation.single_page()
+                                {
+                                    invalidator.find_page_href(path)
+                                } else {
+                                    None
+                                };
+
+                                // Send errors to the client.
                                 if let Err(e) =
                                     invalidator.invalidate(&invalidation).await
                                 {
@@ -219,7 +230,7 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                                     //self.builder.manifest.save()?;
                                     if invalidation.notify {
                                         let msg =
-                                            livereload::messages::reload();
+                                            livereload::messages::reload(href);
                                         let txt = serde_json::to_string(&msg)
                                             .unwrap();
                                         let _ = ws_tx.send(Message::text(txt));

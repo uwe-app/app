@@ -241,7 +241,7 @@ pub struct Config {
     pub db: Option<DataBase>,
 
     pub minify: Option<MinifyConfig>,
-    pub livereload: Option<LiveReload>,
+    livereload: Option<LiveReload>,
 
     // Commit digest when available
     commit: Option<String>,
@@ -255,7 +255,6 @@ pub struct Config {
     #[serde_as(as = "DisplayFromStr")]
     #[serde(skip_deserializing)]
     website: Url,
-
 }
 
 impl Default for Config {
@@ -312,13 +311,16 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn commit(&self) -> &Option<String> {
         &self.commit
     }
 
     pub fn set_commit(&mut self, commit: Option<String>) {
         self.commit = commit;
+    }
+
+    pub fn livereload(&self) -> &LiveReload {
+        self.livereload.as_ref().unwrap()
     }
 
     pub fn powered(&self) -> Option<&Powered> {

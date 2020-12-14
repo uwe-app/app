@@ -17,10 +17,17 @@ struct SimpleEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+struct ReloadEvent {
+    #[serde(rename = "type")]
+    pub event_type: EventType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub href: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 struct MessageEvent {
     #[serde(rename = "type")]
     pub event_type: EventType,
-
     pub message: String,
     pub error: bool,
 }
@@ -31,9 +38,10 @@ pub fn start() -> impl Serialize + std::fmt::Debug {
     }
 }
 
-pub fn reload() -> impl Serialize + std::fmt::Debug {
-    SimpleEvent {
+pub fn reload(href: Option<String>) -> impl Serialize + std::fmt::Debug {
+    ReloadEvent {
         event_type: EventType::Reload,
+        href,
     }
 }
 

@@ -1,10 +1,10 @@
 use std::collections::{hash_set, HashSet};
-use std::path::PathBuf;
 use std::hash::{Hash, Hasher};
+use std::path::PathBuf;
 
+use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use globset::{Glob, GlobMatcher};
 
 use crate::{profile::ProfileName, utils::href::UrlPath, Error, Result};
 
@@ -35,7 +35,7 @@ impl HookMap {
             }
 
             v.base = base.canonicalize()?;
-            v.source  = source.canonicalize()?;
+            v.source = source.canonicalize()?;
 
             // Check that hook files exist
             if let Some(ref files) = v.files {

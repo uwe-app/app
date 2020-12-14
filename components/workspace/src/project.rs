@@ -13,9 +13,9 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    hook::HookConfig, plugin_cache::PluginCache,
-    profile::Profiles, syntax::SyntaxConfig, Config, ProfileSettings,
-    RedirectConfig, RuntimeOptions,
+    hook::HookConfig, page::Page, plugin_cache::PluginCache, profile::Profiles,
+    syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
+    RuntimeOptions,
 };
 
 use collections::{synthetic, DataSourceMap, QueryCache};
@@ -383,7 +383,8 @@ impl ProjectBuilder {
     pub async fn menus(mut self) -> Result<Self> {
         debug!("Compile menu references...");
         for collation in self.collations.iter_mut() {
-            collation.menus = menu::compile(&self.config, &self.options, collation)?;
+            collation.menus =
+                menu::compile(&self.config, &self.options, collation)?;
         }
         Ok(self)
     }
@@ -505,11 +506,23 @@ pub struct Project {
 
     //cache: QueryCache,
     parsers: Vec<Box<dyn Parser + Send + Sync>>,
-    renderers: Vec<Renderer>,
+    pub(crate) renderers: Vec<Renderer>,
     manifest: Option<Arc<RwLock<Manifest>>>,
 }
 
 impl Project {
+    /*
+    pub fn find_page(&self, path: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
+        for renderer in self.renderers.iter() {
+            let collation = renderer.info.context.collation.read().unwrap();
+            if let Some(page_lock) = collation.resolve(path) {
+                return Some(&*page_lock)
+            }
+        }
+        None
+    }
+    */
+
     /// Render the project.
     pub(crate) async fn render(
         &mut self,
