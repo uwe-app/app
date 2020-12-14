@@ -1,7 +1,12 @@
 use bracket::helper::prelude::*;
 use std::path::Path;
+use std::sync::Arc;
 
-pub struct Include;
+use crate::BuildContext;
+
+pub struct Include {
+    pub context: Arc<BuildContext>,
+}
 
 impl Helper for Include {
     fn call<'render, 'call>(
@@ -20,6 +25,8 @@ impl Helper for Include {
         // TODO: support embedding only certain lines only
         let mut buf = Path::new(base_path).to_path_buf();
 
+        let project = self.context.config.project().canonicalize()?;
+
         // NOTE: this allows quoted strings and raw paths
         if let Some(include_file) = ctx.get_fallback(0) {
             let include_file = ctx
@@ -30,6 +37,24 @@ impl Helper for Include {
             if let Some(parent) = buf.parent() {
                 buf = parent.to_path_buf();
                 buf.push(include_file);
+
+                if !buf.exists() {
+                    return Err(HelperError::new(format!(
+                        "Missing include file {}",
+                        buf.display()
+                    )))
+                }
+
+                buf = buf.canonicalize()?;
+
+                if !buf.starts_with(&project) {
+                    return Err(HelperError::new(format!(
+                        "Include {} is not allowed because it is outside of the project directory {}",
+                        buf.display(),
+                        project.display(),
+                    )))
+                }
+
                 let result = utils::fs::read_string(&buf).map_err(|e| {
                     HelperError::new(format!(
                         "Failed to read from include file: {}",
