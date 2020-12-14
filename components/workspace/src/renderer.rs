@@ -8,7 +8,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::{resource::Resource, Collate, LinkCollate};
+use collator::{resource::Resource, loader, Collate, LinkCollate};
 use compiler::{
     compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
@@ -28,6 +28,7 @@ use crate::{hook, manifest::Manifest, Result};
 pub struct RenderOptions {
     pub target: RenderTarget,
     pub filter: RenderFilter,
+    pub reload_data: bool,
     pub sitemap: bool,
     pub search_index: bool,
 }
@@ -37,6 +38,7 @@ impl Default for RenderOptions {
         Self {
             target: Default::default(),
             filter: Default::default(),
+            reload_data: false,
             sitemap: true,
             search_index: true,
         }
@@ -47,12 +49,14 @@ impl RenderOptions {
     pub fn new_file_lang(
         file: PathBuf,
         lang: String,
+        reload_data: bool,
         sitemap: bool,
         search_index: bool,
     ) -> Self {
         Self {
             target: RenderTarget::File(file),
             filter: RenderFilter::One(lang),
+            reload_data,
             sitemap,
             search_index,
         }
@@ -129,6 +133,23 @@ impl Renderer {
                 self.build(parser, render_options, &mut output).await?;
             }
             RenderTarget::File(ref path) => {
+                if render_options.reload_data {
+                    let collation = self.info.context.collation.read().unwrap();
+                    if let Some(page_lock) = collation.resolve(path) {
+                        let mut computed_page = loader::compute(
+                            path,
+                            self.info.context.config.as_ref(),
+                            self.info.context.options.as_ref())?;
+
+                        let mut page_write = page_lock.write().unwrap();
+                        // NOTE: It is tempting to re-assign using
+                        // NOTE: `*page_write = computed_page;` but this will
+                        // NOTE: remove auto-generated information about the
+                        // NOTE: underlying file, so we **must** call append()
+                        // NOTE: to preserve internal, private page information.
+                        page_write.append(&mut computed_page);
+                    }
+                }
                 self.one(parser, path).await?;
             }
         }

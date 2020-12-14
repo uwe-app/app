@@ -257,6 +257,7 @@ impl<'a> Invalidator<'a> {
 
     /// Render a single file using the appropriate locale-specific renderer.
     async fn one(&mut self, file: &PathBuf) -> Result<()> {
+
         // Raw source files might be localized variants
         // we need to strip the locale identifier from the
         // file path before compiling
@@ -267,10 +268,8 @@ impl<'a> Invalidator<'a> {
             &self.project.config.lang
         };
 
-        // TODO: reload the collated page data before compiing!
-        //
         let options =
-            RenderOptions::new_file_lang(file, lang.to_string(), false, false);
+            RenderOptions::new_file_lang(file, lang.to_string(), true, false, false);
 
         self.project.render(options).await?;
 
