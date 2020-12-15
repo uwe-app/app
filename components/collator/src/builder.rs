@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::{loader, CollateInfo, Error, Result};
 use config::{
     indexer::QueryList, plugin_cache::PluginCache, Config, LinkOptions, Page,
+    tags::link::LinkTag,
     RuntimeOptions,
 };
 
@@ -154,12 +155,29 @@ impl<'a> PageBuilder<'a> {
     pub fn styles(mut self) -> Result<Self> {
         let href = self.page.href.clone().unwrap();
 
+        let mut page_links:Vec<LinkTag> = Vec::new();
+
         // Collect page-specific links
-        let mut page_links = if let Some(ref styles) = self.page.styles {
-            styles.iter()
-                .map(|s| s.clone().to_tag().to_link_tag())
-                .collect()
-        } else { vec![] };
+        if let Some(ref styles) = self.page.styles {
+            for s in styles.iter()  {
+                let tag = s.clone().to_tag();
+                if !tag.source().is_empty() {
+
+                    // Check the style sheet exists on disc
+                    let relative = PathBuf::from(utils::url::to_path_separator(
+                        tag.source().trim_start_matches("/"),
+                    ));
+                    let style_file = self.options.source.join(&relative);
+                    if !style_file.exists() {
+                        return Err(
+                            Error::NoStyleSheet(
+                                style_file, tag.source().to_string()))
+                    }
+
+                    page_links.push(tag.to_link_tag());
+                }
+            }
+        }
 
         let links = self.page.links_mut();
 

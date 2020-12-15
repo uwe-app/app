@@ -151,6 +151,10 @@ impl StyleTag {
         LinkTag::new_style_sheet(self.href, self.media)
     }
 
+    pub fn source(&self) -> &str {
+        &self.href
+    }
+
     pub fn set_source<S: AsRef<str>>(&mut self, source: S) {
         self.href = source.as_ref().to_string();
     }
