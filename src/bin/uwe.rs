@@ -261,6 +261,7 @@ async fn run(cmd: Command) -> Result<()> {
                 paths,
                 profile: args.profile,
                 live: Some(args.live),
+                launch: args.launch,
                 release: Some(args.release),
                 host: args.server.host,
                 port: args.server.port,

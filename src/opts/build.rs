@@ -18,6 +18,10 @@ pub struct Build {
     #[structopt(short, long)]
     pub live: bool,
 
+    /// Launch path for a page URL (live reload)
+    #[structopt(long)]
+    pub launch: Option<String>,
+
     /// Generate a release build
     #[structopt(short, long)]
     pub release: bool,

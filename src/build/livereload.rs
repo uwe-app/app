@@ -6,6 +6,7 @@ use log::{debug, error, info};
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
 use warp::ws::Message;
+use url::Url;
 
 use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
@@ -126,7 +127,21 @@ pub async fn start<P: AsRef<Path>>(
             let info = bind_rx.await.unwrap();
             let mut url = info.to_url();
 
-            url.push_str(&format!("/?r={}", utils::generate_id(4)));
+            let path = if let Some(ref path) = args.launch {
+                // If we get an absolute URL just use the path
+                let url_path = if let Ok(url) = path.parse::<Url>() {
+                    url.path().to_string()
+                } else {
+                    path.to_string()
+                };
+
+                // Allow for path strings to omit the leading slash
+                let url_path = url_path.trim_start_matches("/");
+                format!("/{}", url_path)
+
+            } else { "/".to_string() };
+
+            url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
 
             info!("Serve {}", &url);
             // NOTE: only open the browser if initial build succeeds

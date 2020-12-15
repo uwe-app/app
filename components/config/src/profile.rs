@@ -151,6 +151,7 @@ pub struct ProfileSettings {
 
     pub profile: Option<String>,
     pub live: Option<bool>,
+    pub launch: Option<String>,
     pub release: Option<bool>,
 
     pub rewrite_index: Option<bool>,
@@ -209,6 +210,7 @@ impl Default for ProfileSettings {
             tls: None,
 
             live: None,
+            launch: None,
             release: None,
             include_index: None,
             incremental: None,
