@@ -60,6 +60,13 @@ impl ScriptAsset {
             _ => false,
         }
     }
+
+    pub fn set_dynamic(&mut self, value: bool) {
+        if let Self::Tag(ref mut tag) = *self {
+            let mut dynamic = tag.dynamic.get_or_insert(value);
+            *dynamic = value;
+        }
+    }
 }
 
 impl From<UrlPath> for ScriptAsset {

@@ -345,7 +345,6 @@ dependencies = [
  "futures",
  "ignore",
  "jsonfeed",
- "livereload",
  "locale",
  "log",
  "pulldown-cmark",

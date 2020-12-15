@@ -132,24 +132,19 @@ impl<'a> PageBuilder<'a> {
     pub fn scripts(mut self) -> Result<Self> {
         let href = self.page.href.clone().unwrap();
 
-        let livereload_script = livereload::javascript();
-
         // Check the scripts exists on disc
         for s in self.page.scripts() {
             if let Some(source) = s.source() {
-
-                if source == &livereload_script {
-                    continue;
-                }
-
-                let relative = PathBuf::from(utils::url::to_path_separator(
-                    source.trim_start_matches("/"),
-                ));
-                let script_file = self.options.source.join(&relative);
-                if !script_file.exists() {
-                    return Err(
-                        Error::NoScriptSource(
-                            script_file, source.to_string()))
+                if !s.dynamic() {
+                    let relative = PathBuf::from(utils::url::to_path_separator(
+                        source.trim_start_matches("/"),
+                    ));
+                    let script_file = self.options.source.join(&relative);
+                    if !script_file.exists() {
+                        return Err(
+                            Error::NoScriptSource(
+                                script_file, source.to_string()))
+                    }
                 }
             }
         }
@@ -186,15 +181,17 @@ impl<'a> PageBuilder<'a> {
                 let tag = s.clone().to_tag();
                 if !tag.source().is_empty() {
 
-                    // Check the style sheet exists on disc
-                    let relative = PathBuf::from(utils::url::to_path_separator(
-                        tag.source().trim_start_matches("/"),
-                    ));
-                    let style_file = self.options.source.join(&relative);
-                    if !style_file.exists() {
-                        return Err(
-                            Error::NoStyleSource(
-                                style_file, tag.source().to_string()))
+                    if !s.dynamic() {
+                        // Check the style sheet exists on disc
+                        let relative = PathBuf::from(utils::url::to_path_separator(
+                            tag.source().trim_start_matches("/"),
+                        ));
+                        let style_file = self.options.source.join(&relative);
+                        if !style_file.exists() {
+                            return Err(
+                                Error::NoStyleSource(
+                                    style_file, tag.source().to_string()))
+                        }
                     }
 
                     // Convert to a link tag and add to the page links

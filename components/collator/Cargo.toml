@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 config = {version = "0.1", path = "../config" }
 frontmatter = {version = "0.1", path = "../frontmatter" }
-livereload = {version = "0.1", path = "../livereload" }
 locale = {version = "0.1", path = "../locale" }
 utils = {version = "0.1", path = "../utils" }
 

@@ -174,7 +174,9 @@ fn prepare_live(cfg: &mut Config) -> Result<()> {
     global_page.links_mut().push(style_tag);
 
     let script_tag = ScriptTag::new(livereload::javascript());
-    global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+    let mut script_asset = ScriptAsset::Tag(script_tag);
+    script_asset.set_dynamic(true);
+    global_page.scripts_mut().push(script_asset);
 
     Ok(())
 }
