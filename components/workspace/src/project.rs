@@ -511,17 +511,34 @@ pub struct Project {
 }
 
 impl Project {
-    /*
-    pub fn find_page(&self, path: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
-        for renderer in self.renderers.iter() {
-            let collation = renderer.info.context.collation.read().unwrap();
-            if let Some(page_lock) = collation.resolve(path) {
-                return Some(&*page_lock)
-            }
+
+    pub fn remove_file(&mut self, path: &PathBuf, mut lang: Option<String>) -> Result<()> {
+        let lang = if let Some(lang) = lang.take() {
+            lang
+        } else {
+            self.config.lang.clone()
+        };
+
+        // Find the correct renderer so we access the collation
+        // for the language
+        if let Some(renderer) = self.renderers
+            .iter()
+            .find(|r| {
+                let collation = r.info.context.collation.read().unwrap();
+                collation.locale.lang == lang
+            }) {
+
+            let mut collation = renderer.info.context.collation.write().unwrap();
+            /*
+            println!("Remove deleted files from the collation");
+            println!("remove file {:?}", path);
+            println!("remove file {:?}", lang);
+            */
+            collation.remove_file(path);
         }
-        None
+
+        Ok(())
     }
-    */
 
     /// Render the project.
     pub(crate) async fn render(

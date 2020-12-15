@@ -250,6 +250,24 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
+    fn remove(&mut self, paths: &Vec<PathBuf>) -> Result<()> {
+        let project = self.project.config.project().to_path_buf();
+        let cwd = std::env::current_dir()?;
+
+        for path in paths {
+            // NOTE: cannot use relative_to() when files have been deleted!
+            let relative = if project.is_absolute() {
+                path.strip_prefix(&project).unwrap_or(path).to_path_buf()
+            } else {
+                path.strip_prefix(&cwd).unwrap_or(path).to_path_buf()
+            };
+
+            let (lang, path) = self.extract_locale(&relative);
+            self.project.remove_file(&path, lang)?;
+        }
+        Ok(())
+    }
+
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
         // Reload the config data!
         if rule.reload {
@@ -258,6 +276,11 @@ impl<'a> Invalidator<'a> {
             //if let Err(e) = loader::reload(config, options) {
             //error!("{}", e);
             //}
+        }
+
+        // Remove deleted files.
+        if !rule.deletions.is_empty() {
+            self.remove(&rule.deletions)?;
         }
 
         for hook in &rule.hooks {

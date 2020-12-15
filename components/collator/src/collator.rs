@@ -270,26 +270,7 @@ fn add_page(
 
     let (info, key, destination, page) = builder.build();
 
-    /*
-    // Assign pages to menu result entries
-    if let Some(ref menu) = config.menu {
-        // Verify file references as early as possible
-        for (k, v) in menu.entries.iter() {
-            let mut def = v.clone();
-            //// Assign the key name so we can use it
-            //// later when re-assigning the compiled value
-            def.name = k.clone();
-
-            let entries = info
-                .graph
-                .menus
-                .sources
-                .entry(Arc::new(def))
-                .or_insert(vec![]);
-            entries.push(Arc::clone(key));
-        }
-    }
-    */
+    //println!("Adding page with key {:?}", key);
 
     info.add_page(key, destination, Arc::new(RwLock::new(page)));
 

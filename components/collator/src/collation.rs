@@ -55,6 +55,15 @@ impl Collation {
         }
         result
     }
+
+    pub fn remove_file(&mut self, path: &PathBuf) {
+        println!("Collation removing the file {:?}", path);
+        /*
+        let locale = Arc::make_mut(&mut self.locale);
+        println!("Collation removing the file on the locale!!! {:?}", path);
+        locale.remove_file(path);
+        */
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -109,38 +118,6 @@ pub struct CollateInfo {
     //pub(crate) layout: Option<Arc<PathBuf>>,
     pub(crate) links: LinkMap,
 }
-
-/*
-#[derive(Debug, Default, Clone)]
-pub struct MenuMap {
-    /// List of pages with menus that need to be compiled.
-    pub(crate) sources: HashMap<Arc<MenuEntry>, Vec<Arc<PathBuf>>>,
-
-    /// Compiled results for each menu.
-    pub(crate) results: HashMap<Arc<MenuEntry>, Arc<MenuResult>>,
-}
-
-impl MenuMap {
-    pub fn find_result(&self, name: &str) -> Option<&Arc<MenuResult>> {
-        for (entry, result) in self.results() {
-            if entry.name == name {
-                return Some(result);
-            }
-        }
-        None
-    }
-
-    pub fn get_menu_template_name(&self, name: &str) -> String {
-        format!("{}/{}", MENU_TEMPLATE_PREFIX, name)
-    }
-
-    pub fn results(
-        &self,
-    ) -> hash_map::Iter<'_, Arc<MenuEntry>, Arc<MenuResult>> {
-        self.results.iter()
-    }
-}
-*/
 
 #[derive(Debug, Default, Clone)]
 pub struct LinkMap {
@@ -518,6 +495,13 @@ impl CollateInfo {
         self.all.insert(key, Resource::new(dest, kind, op));
 
         Ok(())
+    }
+
+    pub fn remove_file(&mut self, path: &PathBuf) {
+        println!("CollateInfo removing the file {:?}", path);
+        // FIXME: update the link map
+        // FIXME: remove from resources
+        self.all.remove(path);
     }
 
     fn get_file_kind(
