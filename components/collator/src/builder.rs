@@ -153,7 +153,21 @@ impl<'a> PageBuilder<'a> {
     /// Depends on the page `href` so must come after a call to `seal()`.
     pub fn styles(mut self) -> Result<Self> {
         let href = self.page.href.clone().unwrap();
+
+        // Collect page-specific links
+        let mut page_links = if let Some(ref styles) = self.page.styles {
+            styles.iter()
+                .map(|s| s.clone().to_tag().to_link_tag())
+                .collect()
+        } else { vec![] };
+
         let links = self.page.links_mut();
+
+        // Do not append as order is important; these are now embedded
+        // after any plugin styles but before the main stylesheet
+        for l in page_links.into_iter() {
+            links.insert(0, l);
+        }
 
         if let Some(cache) = self.plugins {
             for (dep, styles) in cache.styles().iter() {
@@ -167,6 +181,7 @@ impl<'a> PageBuilder<'a> {
                 }
             }
         }
+
         Ok(self)
     }
 
