@@ -25,8 +25,11 @@ pub enum Error {
     #[error("No feed template file {0}")]
     NoFeedTemplate(PathBuf),
 
+    #[error("Script {0} not found using src {1}")]
+    NoScriptSource(PathBuf, String),
+
     #[error("Style {0} not found using src {1}")]
-    NoStyleSheet(PathBuf, String),
+    NoStyleSource(PathBuf, String),
 
     #[error("Collision detected on {0} ({1} <-> {2})")]
     LinkCollision(String, PathBuf, PathBuf),
