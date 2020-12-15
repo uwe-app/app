@@ -67,6 +67,8 @@ pub struct Rule {
     hooks: Vec<Action>,
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
+    // List of paths that do not exist anymore
+    deletions: Vec<PathBuf>,
 }
 
 impl Rule {
@@ -137,6 +139,7 @@ impl<'a> Invalidator<'a> {
             ignores: Vec::new(),
             hooks: Vec::new(),
             actions: Vec::new(),
+            deletions: Vec::new(),
         };
 
         let config_file = self.project.config.file.as_ref().unwrap();
@@ -177,6 +180,11 @@ impl<'a> Invalidator<'a> {
         // TODO: recognise custom layouts (layout = )
 
         'paths: for path in paths {
+            if !path.exists() {
+                rule.deletions.push(path);
+                continue;
+            }
+
             match path.canonicalize() {
                 Ok(path) => {
                     // NOTE: must test for hooks first as they can
@@ -269,6 +277,7 @@ impl<'a> Invalidator<'a> {
                 for action in &rule.actions {
                     match action {
                         Action::Page(path) | Action::File(path) => {
+
                             // Make the path relative to the project source
                             // as the notify crate gives us an absolute path
                             let file = self.project.options.relative_to(
