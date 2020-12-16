@@ -17,10 +17,7 @@ impl Helper for Include {
     ) -> HelperValue {
         ctx.arity(1..1)?;
 
-        let base_path = rc
-            .try_evaluate("@root/file.source", &[Type::String])?
-            .as_str()
-            .unwrap();
+        let base_path = rc.current_name();
 
         // TODO: support embedding only certain lines only
         let mut buf = Path::new(base_path).to_path_buf();
