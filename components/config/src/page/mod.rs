@@ -1,8 +1,11 @@
 use std::collections::HashMap;
+use std::collections::BTreeSet;
 use std::mem;
 use std::path::PathBuf;
 
 use chrono::prelude::*;
+
+use indexmap::IndexSet;
 
 use jsonfeed::Feed;
 use url::Url;
@@ -73,8 +76,8 @@ pub struct Page {
     pub layout: Option<String>,
     pub taxonomies: Option<HashMap<String, Vec<String>>>,
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    scripts: Vec<ScriptAsset>,
+    #[serde(skip_serializing_if = "IndexSet::is_empty")]
+    scripts: IndexSet<ScriptAsset>,
 
     pub styles: Option<Vec<StyleAsset>>,
 
@@ -137,7 +140,7 @@ impl Default for Page {
             layout: None,
             taxonomies: None,
             links: Vec::new(),
-            scripts: Vec::new(),
+            scripts: IndexSet::new(),
             styles: None,
             permalink: None,
             entry: None,
@@ -190,12 +193,16 @@ impl Page {
         &mut self.links
     }
 
-    pub fn scripts(&self) -> &Vec<ScriptAsset> {
+    pub fn scripts(&self) -> &IndexSet<ScriptAsset> {
         &self.scripts
     }
 
-    pub fn scripts_mut(&mut self) -> &mut Vec<ScriptAsset> {
+    pub fn scripts_mut(&mut self) -> &mut IndexSet<ScriptAsset> {
         &mut self.scripts
+    }
+
+    pub fn set_scripts(&mut self, scripts: IndexSet<ScriptAsset>) {
+        self.scripts = scripts;
     }
 
     /// Whether this page can be included in a directory listing.
@@ -340,8 +347,15 @@ impl Page {
         other.links.append(&mut self.links);
         self.links = mem::take(&mut other.links);
 
-        other.scripts.append(&mut self.scripts);
-        self.scripts = mem::take(&mut other.scripts);
+        //other.scripts.append(&mut self.scripts);
+        //self.scripts = mem::take(&mut other.scripts);
+
+        let mut temp = other.scripts.clone();
+        for script in self.scripts.drain(..) {
+            temp.insert(script);
+        }
+        self.scripts = temp;
+
 
         if let Some(title) = other.title.as_mut() {
             self.title = Some(mem::take(title));

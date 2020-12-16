@@ -25,3 +25,4 @@ pulldown-cmark = { version = "0.8", default-features = false, features = ["simd"
 jsonfeed = {version = "0.3", path = "../../../library/jsonfeed"}
 slug = "0.1.4"
 spdx = "0.3.4"
+indexmap = {version = "^1.6.1", features = ["serde-1"]}

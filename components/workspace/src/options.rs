@@ -176,7 +176,7 @@ fn prepare_live(cfg: &mut Config) -> Result<()> {
     let script_tag = ScriptTag::new(livereload::javascript());
     let mut script_asset = ScriptAsset::Tag(script_tag);
     script_asset.set_dynamic(true);
-    global_page.scripts_mut().push(script_asset);
+    global_page.scripts_mut().insert(script_asset);
 
     Ok(())
 }
@@ -277,7 +277,7 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             }
         }
 
-        global_page.scripts_mut().push(script);
+        global_page.scripts_mut().insert(script);
     // Using the script convention
     } else {
         let asset = Config::default_script();
@@ -292,7 +292,7 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             // NOTE: must start with a slash for URLs on 404 error page
             let href = format!("/{}", href);
             let script_tag = ScriptTag::new(href);
-            global_page.scripts_mut().push(ScriptAsset::Tag(script_tag));
+            global_page.scripts_mut().insert(ScriptAsset::Tag(script_tag));
         }
     }
 

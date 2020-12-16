@@ -1,10 +1,13 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use indexmap::IndexSet;
+
 use crate::{loader, CollateInfo, Error, Result};
 use config::{
     indexer::QueryList, plugin_cache::PluginCache, Config, LinkOptions, Page,
     tags::link::LinkTag,
+    script::ScriptAsset,
     RuntimeOptions,
 };
 
@@ -149,20 +152,27 @@ impl<'a> PageBuilder<'a> {
             }
         }
 
-        let page_scripts = self.page.scripts_mut();
+        // NOTE: use a temp because we want plugin scripts to come before project scripts.
 
+        let mut temp: IndexSet<ScriptAsset> = IndexSet::new();
         if let Some(cache) = self.plugins {
             for (dep, scripts) in cache.scripts().iter() {
                 let apply = dep.apply.as_ref().unwrap();
                 for matcher in apply.scripts_match.iter() {
                     if matcher.is_match(&href) {
                         for s in scripts.iter().rev() {
-                            page_scripts.insert(0, s.clone());
+                            temp.insert(s.clone());
                         }
                     }
                 }
             }
         }
+
+        for script in self.page.scripts_mut().drain(..) {
+            temp.insert(script);
+        }
+
+        self.page.set_scripts(temp);
 
         Ok(self)
     }
