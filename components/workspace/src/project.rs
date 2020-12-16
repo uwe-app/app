@@ -13,7 +13,7 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    hook::HookConfig, page::Page, plugin_cache::PluginCache, profile::Profiles,
+    hook::HookConfig, plugin_cache::PluginCache, profile::Profiles,
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
     RuntimeOptions,
 };
