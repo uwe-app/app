@@ -171,7 +171,7 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
 fn prepare_live(cfg: &mut Config) -> Result<()> {
     let global_page = cfg.page.get_or_insert(Default::default());
     let style_tag = LinkTag::new_style_sheet(livereload::stylesheet(), None);
-    global_page.links_mut().push(style_tag);
+    global_page.links_mut().insert(style_tag);
 
     let script_tag = ScriptTag::new(livereload::javascript());
     let mut script_asset = ScriptAsset::Tag(script_tag);
@@ -204,7 +204,7 @@ fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             src.push_str(random);
         }
         let icon_tag = LinkTag::new_icon(src);
-        global_page.links_mut().push(icon_tag);
+        global_page.links_mut().insert(icon_tag);
     } else {
         let mut src = Config::default_icon_url().to_string();
         let path = utils::url::to_path_separator(&src);
@@ -214,9 +214,9 @@ fn prepare_icon(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
                 src.push_str(random);
             }
             let icon_tag = LinkTag::new_icon(src);
-            global_page.links_mut().push(icon_tag);
+            global_page.links_mut().insert(icon_tag);
         } else {
-            global_page.links_mut().push(Config::default_icon());
+            global_page.links_mut().insert(Config::default_icon());
         }
     }
 
@@ -239,7 +239,7 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             }
         }
 
-        global_page.links_mut().push(style.to_tag().to_link_tag());
+        global_page.links_mut().insert(style.to_tag().to_link_tag());
 
     // Using the style convention
     } else {
@@ -254,7 +254,7 @@ fn prepare_style(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             // NOTE: must start with a slash for URLs on 404 error page
             let href = format!("/{}", href);
             let style_tag = LinkTag::new_style_sheet(href, None);
-            global_page.links_mut().push(style_tag);
+            global_page.links_mut().insert(style_tag);
         }
     }
 

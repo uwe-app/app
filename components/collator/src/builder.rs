@@ -183,53 +183,50 @@ impl<'a> PageBuilder<'a> {
     pub fn styles(mut self) -> Result<Self> {
         let href = self.page.href.clone().unwrap();
 
-        let mut page_links:Vec<LinkTag> = Vec::new();
+        let mut page_links:IndexSet<LinkTag> = IndexSet::new();
 
-        // Collect page-specific links
-        if let Some(ref styles) = self.page.styles {
-            for s in styles.iter()  {
-                let tag = s.clone().to_tag();
-                if !tag.source().is_empty() {
-
-                    if !s.dynamic() {
-                        // Check the style sheet exists on disc
-                        let relative = PathBuf::from(utils::url::to_path_separator(
-                            tag.source().trim_start_matches("/"),
-                        ));
-                        let style_file = self.options.source.join(&relative);
-                        if !style_file.exists() {
-                            return Err(
-                                Error::NoStyleSource(
-                                    style_file, tag.source().to_string()))
-                        }
-                    }
-
-                    // Convert to a link tag and add to the page links
-                    page_links.push(tag.to_link_tag());
-                }
-            }
-        }
-
-        let links = self.page.links_mut();
-
-        // Do not append as order is important; these are now embedded
-        // after any plugin styles but before the main stylesheet
-        for l in page_links.into_iter() {
-            links.insert(0, l);
-        }
-
+        // Plugins come before page-level styles
         if let Some(cache) = self.plugins {
             for (dep, styles) in cache.styles().iter() {
                 let apply = dep.apply.as_ref().unwrap();
                 for matcher in apply.styles_match.iter() {
                     if matcher.is_match(&href) {
                         for s in styles.iter().rev() {
-                            links.insert(0, s.clone().to_tag().to_link_tag());
+                            page_links.insert(s.clone().to_tag().to_link_tag());
                         }
                     }
                 }
             }
         }
+
+        // Collect page-specific links
+        for s in self.page.styles().iter()  {
+            let tag = s.clone().to_tag();
+            if !tag.source().is_empty() {
+
+                if !s.dynamic() {
+                    // Check the style sheet exists on disc
+                    let relative = PathBuf::from(utils::url::to_path_separator(
+                        tag.source().trim_start_matches("/"),
+                    ));
+                    let style_file = self.options.source.join(&relative);
+                    if !style_file.exists() {
+                        return Err(
+                            Error::NoStyleSource(
+                                style_file, tag.source().to_string()))
+                    }
+                }
+
+                // Convert to a link tag and add to the page links
+                page_links.insert(tag.to_link_tag());
+            }
+        }
+
+        for link in self.page.links_mut().drain(..) {
+            page_links.insert(link);
+        }
+
+        self.page.set_links(page_links);
 
         Ok(self)
     }

@@ -54,9 +54,6 @@ pub struct Page {
     /// Do not render a layout for this page.
     pub standalone: Option<bool>,
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    links: Vec<LinkTag>,
-
     /// Flag to indicate this page is intended for print media.
     print: Option<bool>,
 
@@ -77,9 +74,13 @@ pub struct Page {
     pub taxonomies: Option<HashMap<String, Vec<String>>>,
 
     #[serde(skip_serializing_if = "IndexSet::is_empty")]
+    links: IndexSet<LinkTag>,
+
+    #[serde(skip_serializing_if = "IndexSet::is_empty")]
     scripts: IndexSet<ScriptAsset>,
 
-    pub styles: Option<Vec<StyleAsset>>,
+    #[serde(skip_serializing_if = "IndexSet::is_empty")]
+    styles: IndexSet<StyleAsset>,
 
     #[serde(skip_serializing)]
     pub permalink: Option<UrlPath>,
@@ -139,9 +140,9 @@ impl Default for Page {
             query: None,
             layout: None,
             taxonomies: None,
-            links: Vec::new(),
+            links: IndexSet::new(),
             scripts: IndexSet::new(),
-            styles: None,
+            styles: IndexSet::new(),
             permalink: None,
             entry: None,
 
@@ -185,12 +186,20 @@ impl Page {
         &self.authors
     }
 
-    pub fn links(&self) -> &Vec<LinkTag> {
+    pub fn links(&self) -> &IndexSet<LinkTag> {
         &self.links
     }
 
-    pub fn links_mut(&mut self) -> &mut Vec<LinkTag> {
+    pub fn links_mut(&mut self) -> &mut IndexSet<LinkTag> {
         &mut self.links
+    }
+
+    pub fn set_links(&mut self, links: IndexSet<LinkTag>) {
+        self.links = links;
+    }
+
+    pub fn styles(&self) -> &IndexSet<StyleAsset> {
+        &self.styles
     }
 
     pub fn scripts(&self) -> &IndexSet<ScriptAsset> {
@@ -309,11 +318,11 @@ impl Page {
 
         if let Some(ref permalink) = self.permalink {
             let bookmark = website.join(permalink.as_str())?;
-            self.links.push(LinkTag::new_bookmark(bookmark.to_string()));
+            self.links.insert(LinkTag::new_bookmark(bookmark.to_string()));
         }
 
         self.links
-            .push(LinkTag::new_canonical(canonical.to_string()));
+            .insert(LinkTag::new_canonical(canonical.to_string()));
 
         //self.canonical = Some(canonical);
 
@@ -344,18 +353,28 @@ impl Page {
     pub fn append(&mut self, other: &mut Self) {
         // NOTE: handle lists like this so precedence is correct
 
-        other.links.append(&mut self.links);
-        self.links = mem::take(&mut other.links);
+        //other.links.append(&mut self.links);
+        //self.links = mem::take(&mut other.links);
 
-        //other.scripts.append(&mut self.scripts);
-        //self.scripts = mem::take(&mut other.scripts);
-
-        let mut temp = other.scripts.clone();
-        for script in self.scripts.drain(..) {
-            temp.insert(script);
+        {
+            let mut temp = other.links.clone();
+            for link in self.links.drain(..) {
+                temp.insert(link);
+            }
+            self.links = temp;
         }
-        self.scripts = temp;
 
+        {
+            let mut temp = other.scripts.clone();
+            for script in self.scripts.drain(..) {
+                temp.insert(script);
+            }
+            self.scripts = temp;
+        }
+
+        // NOTE: styles should have been converted to links
+        // NOTE: so this may be unnecessary?
+        self.styles = mem::take(&mut other.styles);
 
         if let Some(title) = other.title.as_mut() {
             self.title = Some(mem::take(title));
@@ -435,14 +454,6 @@ impl Page {
 
         if let Some(taxonomies) = other.taxonomies.as_mut() {
             self.taxonomies = Some(mem::take(taxonomies));
-        }
-
-        //if let Some(scripts) = other.scripts.as_mut() {
-        //self.scripts = Some(mem::take(scripts));
-        //}
-
-        if let Some(styles) = other.styles.as_mut() {
-            self.styles = Some(mem::take(styles));
         }
 
         if let Some(permalink) = other.permalink.as_mut() {
