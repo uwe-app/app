@@ -1,6 +1,8 @@
-use bracket::helper::prelude::*;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+use serde_json::json;
+use bracket::helper::prelude::*;
 
 use crate::BuildContext;
 
@@ -18,6 +20,24 @@ impl Helper for Include {
         ctx.arity(1..1)?;
 
         let base_path = rc.current_name();
+
+        // Read file as binary content not UTF-8 string
+        let binary = ctx
+            .param("binary")
+            .or(Some(&json!(false)))
+            .and_then(|v| v.as_bool())
+            .ok_or(HelperError::new(
+                "Type error for `include` helper, hash parameter `binary` must be a boolean",
+            ))?;
+
+        // Encode content as URL safe base64 suitable for data: URIs
+        let base64 = ctx
+            .param("base64")
+            .or(Some(&json!(false)))
+            .and_then(|v| v.as_bool())
+            .ok_or(HelperError::new(
+                "Type error for `include` helper, hash parameter `base64` must be a boolean",
+            ))?;
 
         // TODO: support embedding only certain lines only
         let mut buf = Path::new(base_path).to_path_buf();
@@ -61,13 +81,28 @@ impl Helper for Include {
                 )));
             }
 
-            let result = utils::fs::read_string(&buf).map_err(|e| {
-                HelperError::new(format!(
-                    "Failed to read from include file: {}",
-                    buf.display()
-                ))
-            })?;
-            rc.write(&result)?;
+            if binary {
+                let result = std::fs::read(&buf)?;
+                if base64 {
+                    let encoded = base64::encode(result);
+                    rc.write(&encoded)?;
+                } else {
+                    rc.out().write(&result)?;
+                }
+            } else {
+                let mut result = utils::fs::read_string(&buf).map_err(|e| {
+                    HelperError::new(format!(
+                        "Failed to read from include file: {}",
+                        buf.display()
+                    ))
+                })?;
+
+                if base64 {
+                    result = base64::encode(result);
+                }
+
+                rc.write(&result)?;
+            }
         }
 
         Ok(None)
