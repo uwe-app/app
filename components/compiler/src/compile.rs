@@ -4,8 +4,6 @@ use std::sync::Arc;
 use crossbeam::channel;
 use log::error;
 
-use collator::Collate;
-
 use crate::{
     context::{BuildContext, CompilerOutput},
     parser::Parser,
@@ -27,7 +25,15 @@ where
     let fail_fast = true;
 
     let collation = &*context.collation.read().unwrap();
-    let it = collation.resources().filter(filter);
+    let fallback = collation.fallback.read().unwrap();
+    let locale = collation.locale.read().unwrap();
+    //let it = collation.resources().filter(filter);
+    //
+    let it: Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> = if collation.is_fallback() {
+        fallback.resources()
+    } else {
+        Box::new(locale.resources.union(&fallback.resources))
+    };
 
     if parallel {
         let (tx, rx) = channel::unbounded();

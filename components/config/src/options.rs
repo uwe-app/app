@@ -160,14 +160,14 @@ impl RuntimeOptions {
         Ok(t.join(f.strip_prefix(b)?))
     }
 
-    pub fn get_canonical_url(
+    pub fn get_canonical_url<S>(
         &self,
         config: &Config,
-        path: Option<&str>,
-    ) -> crate::Result<Url> {
+        path: Option<S>,
+    ) -> crate::Result<Url> where S: AsRef<str> {
         let mut base = self.settings.get_canonical_url(config)?;
         if let Some(path) = path {
-            base = base.join(path)?;
+            base = base.join(path.as_ref())?;
         }
         Ok(base)
     }

@@ -2,7 +2,6 @@ use bracket::helper::prelude::*;
 use std::sync::Arc;
 
 use crate::BuildContext;
-use collator::Collate;
 
 pub struct Feed {
     pub context: Arc<BuildContext>,
@@ -21,7 +20,7 @@ impl Helper for Feed {
         let base_url = self
             .context
             .options
-            .get_canonical_url(&self.context.config, Some(collation.get_lang()))
+            .get_canonical_url(&self.context.config, Some(collation.get_lang().as_ref()))
             .map_err(|_e| {
                 HelperError::new(
                     "Error in `feed` helper, failed to parse base URL",

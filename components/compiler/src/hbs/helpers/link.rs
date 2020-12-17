@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use crate::BuildContext;
 use bracket::helper::prelude::*;
-use collator::{Collate, LinkCollate};
 
 //use log::debug;
 
@@ -131,9 +130,11 @@ impl Helper for WikiLink {
 
         let (value, page_key) = url(rc, ctx, &*self.context, href)?;
 
+        let collation = self.context.collation.read().unwrap();
+
         if let Some(ref page_key) = page_key {
-            let collation = self.context.collation.read().unwrap();
             if let Some(page_lock) = collation.resolve(page_key) {
+                //let page_lock = page_lock.as_ref();
                 let page = &*page_lock.read().unwrap();
                 if label.is_empty() {
                     if let Some(ref page_label) = page.label {

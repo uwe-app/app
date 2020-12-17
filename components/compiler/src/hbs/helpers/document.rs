@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
-use collator::{Collate, LinkCollate};
 use config::markdown as md;
 
 use crate::BuildContext;

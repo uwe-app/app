@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use collator::LinkCollate;
 use collections::{self, DataSourceMap};
 use config::{hook::HookConfig, FileType};
 
@@ -110,10 +109,15 @@ impl<'a> Invalidator<'a> {
             ) {
                 for renderer in self.project.renderers.iter() {
                     let collation = renderer.info.context.collation.read().unwrap();
+
+                    // FIXME/WIP
+
+                    /*
                     if let Some(href) = collation.get_link_source(&file) {
                         let href = href.trim_end_matches(config::INDEX_HTML).to_string();
                         return Some(href);
                     }
+                    */
                 }
             }
         }

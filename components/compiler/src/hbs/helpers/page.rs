@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use crate::BuildContext;
 use bracket::helper::prelude::*;
-use collator::{Collate, LinkCollate};
 use serde_json::json;
 
 pub struct Page {

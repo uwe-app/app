@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
-use collator::{Collate, Resource, ResourceOperation, ResourceTarget};
+use collator::{Resource, ResourceOperation, ResourceTarget};
 use config::{
     profile::{ProfileName, Profiles},
     Config, Page,
@@ -37,6 +37,42 @@ pub async fn one(
     file: &PathBuf,
 ) -> Result<Option<ParseData>> {
     let collation = &*context.collation.read().unwrap();
+
+    if let Some(target) = collation.get_resource(file) {
+        match target.as_ref() {
+            Resource::Page { ref target } => {
+                if let Some(page) = collation.resolve(file) {
+                    let page = &*page.read().unwrap();
+
+                    match target.operation {
+                        ResourceOperation::Render => {
+                            //let rel = page.file.as_ref().unwrap().target.clone();
+                            //let dest = context.collation.get_path().join(&rel);
+
+                            let dest = target.get_output(collation.get_path().as_ref());
+
+                            return parse(
+                                context,
+                                parser,
+                                page.get_template(),
+                                page,
+                                &dest,
+                            )
+                            .await;
+                        }
+                        _ => resource(context, file, target).await?,
+                    }
+                } else {
+                    return Err(Error::PageResolve(file.to_path_buf()));
+                }
+            }
+            Resource::File { ref target } => {
+                resource(context, file, target).await?
+            }
+        }
+    }
+
+    /*
     match collation.get_resource(file).unwrap() {
         Resource::Page { ref target } => {
             if let Some(page) = collation.resolve(file) {
@@ -68,6 +104,7 @@ pub async fn one(
             resource(context, file, target).await?
         }
     }
+    */
 
     Ok(None)
 }
@@ -82,10 +119,10 @@ pub async fn resource(
     match target.operation {
         ResourceOperation::Noop => Ok(()),
         ResourceOperation::Copy => {
-            copy(file, &target.get_output(collation.get_path())).await
+            copy(file, &target.get_output(collation.get_path().as_ref())).await
         }
         ResourceOperation::Link => {
-            link(file, &target.get_output(collation.get_path())).await
+            link(file, &target.get_output(collation.get_path().as_ref())).await
         }
         _ => Err(Error::InvalidResourceOperation(file.to_path_buf())),
     }
@@ -169,7 +206,7 @@ pub async fn parse(
         &ctx.options,
         &ctx.locales,
         data,
-        lang,
+        lang.as_ref(),
     )?;
 
     page_data.menus = collation.menu_page_href();

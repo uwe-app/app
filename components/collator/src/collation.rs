@@ -133,6 +133,7 @@ impl Collation {
             //.or(self.fallback.read().unwrap().find_menu(name))
     }
 
+    /*
     pub fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
     //pub fn resources(&self) -> RwLockReadGuardRef<'_, CollateInfo, Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>> {
         if self.is_fallback() {
@@ -143,6 +144,7 @@ impl Collation {
 
         Box::new(self.locale.read().unwrap().resources.union(&self.fallback.read().unwrap().resources))
     }
+    */
 
     /*
     fn pages(
@@ -150,6 +152,7 @@ impl Collation {
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
     */
 
+    /*
     pub fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
@@ -160,6 +163,7 @@ impl Collation {
 
         Box::new(self.fallback.read().unwrap().pages.iter().chain(self.locale.read().unwrap().pages.iter()))
     }
+    */
 
     pub fn is_fallback(&self) -> bool {
         self.fallback.read().unwrap().lang == self.locale.read().unwrap().lang
@@ -234,6 +238,11 @@ impl Collation {
             .or(self.fallback.read().unwrap().find_link(href))
     }
 
+    pub fn normalize<S: AsRef<str>>(&self, s: S) -> String {
+        let fallback = self.fallback.read().unwrap();
+        fallback.normalize(s)
+    }
+
     pub fn get_menu_template_name(&self, name: &str) -> String {
         format!("{}/{}", MENU_TEMPLATE_PREFIX, name)
     }
@@ -250,6 +259,7 @@ impl Collation {
     /// Generate a map of menu identifiers to the URLs
     /// for each page in the menu so templates can iterate
     /// menus.
+    /*
     pub fn menu_page_href(&self) -> HashMap<&String, Vec<&String>> {
         let mut result: HashMap<&String, Vec<&String>> = HashMap::new();
         for (key, menu) in self.locale.read().unwrap().menus.iter() {
@@ -258,6 +268,20 @@ impl Collation {
                 refs.push(s.as_ref());
             });
             result.insert(key, refs);
+        }
+        result
+    }
+    */
+
+    pub fn menu_page_href(&self) -> HashMap<String, Vec<String>> {
+        let mut result: HashMap<String, Vec<String>> = HashMap::new();
+        for (key, menu) in self.locale.read().unwrap().menus.iter() {
+            //let mut refs = Vec::new();
+            //menu.pages.iter().for_each(|s| {
+                //refs.push(s.as_ref());
+            //});
+            let refs = menu.pages.iter().map(|s| s.as_ref().to_string()).collect();
+            result.insert(key.to_owned(), refs);
         }
         result
     }
@@ -285,7 +309,7 @@ pub struct CollateInfo {
 
     /// Lookup table for all the resources that should
     /// be processed by the compiler.
-    pub(crate) resources: HashSet<Arc<PathBuf>>,
+    pub resources: HashSet<Arc<PathBuf>>,
 
     /// Lookup table for page data resolved by locale identifier and source path.
     pub(crate) pages: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>>,

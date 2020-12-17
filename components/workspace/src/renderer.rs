@@ -8,7 +8,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::{builder::PageBuilder, resource::Resource, Collate, LinkCollate};
+use collator::{builder::PageBuilder, resource::Resource};
 use compiler::{
     compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
@@ -128,14 +128,18 @@ impl Renderer {
     ) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
 
+        let collation = self.info.context.collation.read().unwrap();
+
         match render_options.target {
             RenderTarget::All => {
                 self.build(parser, render_options, &mut output).await?;
             }
             RenderTarget::File(ref path) => {
                 if render_options.reload_data {
-                    let collation = self.info.context.collation.read().unwrap();
                     if let Some(page_lock) = collation.resolve(path) {
+
+
+                        // FIXME/WIP: restore page builder!!!
 
                         /*
                         let mut computed_page = loader::compute(
@@ -256,7 +260,7 @@ impl Renderer {
 
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
-                let index_file = search.get_output_path(collation.get_path());
+                let index_file = search.get_output_path(collation.get_path().as_ref());
 
                 // If there are path filters for compiling specific files
                 // we are not guaranteed that the parent directory will exist!
@@ -289,14 +293,14 @@ impl Renderer {
                 let entries = sitemap.entries.as_ref().unwrap();
 
                 let with_lang = if ctx.locales.is_multi_lingual() {
-                    Some(collation.get_lang())
+                    Some(collation.get_lang().to_string())
                 } else {
                     None
                 };
 
                 // Base canonical URL
                 let base =
-                    ctx.options.get_canonical_url(&ctx.config, with_lang)?;
+                    ctx.options.get_canonical_url(&ctx.config, with_lang.as_ref())?;
 
                 // Create the top-level index of all sitemaps
                 let folder = sitemap.name.as_ref().unwrap().to_string();
@@ -334,7 +338,7 @@ impl Renderer {
                             let page = collation.resolve(&d.file).unwrap();
                             let page = &*page.read().unwrap();
                             // Generate the absolute location
-                            let location = base.join(href).unwrap();
+                            let location = base.join(href.as_ref()).unwrap();
                             let lastmod = page.lastmod();
                             SiteMapEntry { location, lastmod }
                         })
@@ -408,7 +412,7 @@ impl Renderer {
         let collation = self.info.context.collation.read().unwrap();
         let path = collation.get_path();
         if !path.exists() {
-            fs::create_dir_all(path)?;
+            fs::create_dir_all(path.as_ref())?;
         }
 
         let is_incremental = self.info.manifest.is_some();
@@ -419,11 +423,11 @@ impl Renderer {
         let manifest_filter = |p: &&Arc<PathBuf>| -> bool {
             if let Some(ref manifest) = self.info.manifest {
                 let manifest = manifest.read().unwrap();
-                if let Some(ref resource) = collation.get_resource(*p) {
-                    match resource {
+                if let Some(target) = collation.get_resource(*p) {
+                    match target.as_ref() {
                         Resource::Page { ref target }
                         | Resource::File { ref target } => {
-                            let dest = target.get_output(collation.get_path());
+                            let dest = target.get_output(collation.get_path().as_ref());
                             if manifest.exists(p)
                                 && !manifest.is_dirty(p, &dest, false)
                             {

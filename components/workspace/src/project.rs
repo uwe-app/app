@@ -8,7 +8,7 @@ use futures::TryFutureExt;
 use url::Url;
 
 use collator::{
-    self, menu, Collate, CollateInfo, CollateRequest, CollateResult, Collation,
+    self, menu, CollateInfo, CollateRequest, CollateResult, Collation,
 };
 use compiler::{parser, parser::Parser, BuildContext};
 
@@ -102,7 +102,7 @@ impl CollationBuilder {
     fn build(mut self) -> Result<Vec<Collation>> {
         // Extract the primary fallback collation
         let fallback = self.locales.swap_remove(0);
-        let fallback = Arc::new(fallback);
+        let fallback = Arc::new(RwLock::new(fallback));
 
         // Create wrappers for the other locales including
         // a pointer to the fallback collation
@@ -111,7 +111,7 @@ impl CollationBuilder {
             .into_iter()
             .map(|info| Collation {
                 fallback: Arc::clone(&fallback),
-                locale: Arc::new(info),
+                locale: Arc::new(RwLock::new(info)),
             })
             .collect();
 
@@ -525,7 +525,8 @@ impl Project {
             .iter()
             .find(|r| {
                 let collation = r.info.context.collation.read().unwrap();
-                collation.locale.lang == lang
+                let locale = collation.locale.read().unwrap();
+                locale.lang == lang
             }) {
 
             let mut collation = renderer.info.context.collation.write().unwrap();
@@ -556,7 +557,7 @@ impl Project {
                 let collation = r.info.context.collation.read().unwrap();
                 let language = collation.get_lang();
                 match render_options.filter {
-                    RenderFilter::One(ref lang) => language == lang.as_str(),
+                    RenderFilter::One(ref lang) => language.as_ref() == lang.as_str(),
                     RenderFilter::All => true,
                 }
             })
@@ -564,7 +565,7 @@ impl Project {
             let collation = renderer.info.context.collation.read().unwrap();
             info!(
                 "Render {} -> {}",
-                collation.get_lang(),
+                collation.get_lang().as_ref(),
                 collation.get_path().display()
             );
 

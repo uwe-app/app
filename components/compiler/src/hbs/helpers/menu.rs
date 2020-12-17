@@ -6,7 +6,6 @@ use serde_json::json;
 
 use collator::{
     menu::{self, PageData},
-    Collate, LinkCollate,
 };
 
 use config::{href::UrlPath, MenuEntry, MenuReference, RuntimeOptions};
@@ -52,17 +51,20 @@ impl Menu {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> HelperResult<MenuEntry> {
+
+        let collation = self.context.collation.read().unwrap();
+
         let dir = if let Some(path) = ctx.param("path") {
             let path = path.as_str().ok_or_else(|| {
                 HelperError::new(
                     "Type error for `menu` helper, hash parameter `path` must be a string")
             })?;
 
-            let collation = self.context.collation.read().unwrap();
             let normalized_href = collation.normalize(path);
             if let Some(base_path) = collation.get_link(&normalized_href) {
-                if let Some(page_lock) = collation.resolve(base_path) {
-                    let page = page_lock.read().unwrap();
+                //base_path.foo();
+                if let Some(page_lock) = collation.resolve(base_path.as_ref()) {
+                    let page = page_lock.as_ref().read().unwrap();
                     // NOTE: we want to operate on the destination so that
                     // NOTE: url paths are more intuitive when `path="/docs/"` etc.
                     let destination = page.destination();
@@ -135,8 +137,9 @@ impl Menu {
     ) -> HelperValue {
         let menu = self.listing_menu(rc, ctx)?;
         let collation = self.context.collation.read().unwrap();
+        let locale = collation.locale.read().unwrap();
         let (_result, pages) =
-            menu::build(&self.context.options, &collation.locale, &menu)
+            menu::build(&self.context.options, &*locale, &menu)
                 .map_err(|e| HelperError::new(e.to_string()))?;
         self.render_pages(pages, node, rc, ctx)
     }
@@ -148,8 +151,9 @@ impl Menu {
     ) -> HelperValue {
         let menu = self.listing_menu(rc, ctx)?;
         let collation = self.context.collation.read().unwrap();
+        let locale = collation.locale.read().unwrap();
         let (result, _pages) =
-            menu::build(&self.context.options, &collation.locale, &menu)
+            menu::build(&self.context.options, &*locale, &menu)
                 .map_err(|e| HelperError::new(e.to_string()))?;
 
         let template_path = rc
@@ -195,7 +199,7 @@ impl Menu {
                     if let Some(page_path) =
                         collation.get_link(&collation.normalize(&**href))
                     {
-                        if let Some(page) = collation.resolve(page_path) {
+                        if let Some(page) = collation.resolve(page_path.as_ref()) {
                             let li = &*page.read().unwrap();
                             let is_self = &**href == &page_href;
                             if let Some(ref mut block) = rc.scope_mut() {

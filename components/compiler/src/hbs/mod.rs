@@ -6,7 +6,6 @@ use log::debug;
 use bracket::Registry;
 use bracket_fluent::FluentHelper;
 
-use collator::{Collate};
 use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};
@@ -237,7 +236,7 @@ impl<'reg> ParserBuilder<'reg> {
     /// Register templates in the source tree.
     pub fn templates(mut self) -> Result<Self> {
         let collation = self.context.collation.read().unwrap();
-        for path in collation.templates() {
+        for path in collation.templates().as_ref() {
             self.registry.load(path.as_ref())?;
         }
         drop(collation);
@@ -246,14 +245,23 @@ impl<'reg> ParserBuilder<'reg> {
 
     pub fn menus(mut self) -> Result<Self> {
         let collation = self.context.collation.read().unwrap();
+
+        // FIXME/WIP: restore menus!!!
+
+        /*
         let menus = collation.get_menus();
+        let menus_map = menus.as_ref();
+
+        //menus.foo();
 
         // TODO: register page-specific menu overrides
 
-        for (key, result) in menus.iter() {
+        for (key, result) in menus_map {
             let name = collation.get_menu_template_name(key);
             self.registry.insert(&name, &result.value)?;
         }
+
+        */
 
         drop(collation);
 
