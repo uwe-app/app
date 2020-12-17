@@ -94,6 +94,21 @@ pub async fn walk(
     Ok(errors)
 }
 
+/// Determine the default layout name.
+///
+/// When a `main.hbs` file exists in the project layouts
+/// directory the name will be `main` otherwise try to
+/// use the `std::core::main` layout as the default.
+pub fn layout_name(options: &RuntimeOptions) -> &str {
+    let layouts_dir = options.source.join(config::LAYOUTS);
+    let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
+    if primary_layout.exists() {
+        config::MAIN
+    } else {
+        config::DEFAULT_LAYOUT_NAME
+    }
+}
+
 async fn find(
     req: &CollateRequest<'_>,
     res: &mut CollateResult,
@@ -107,12 +122,7 @@ async fn find(
     let partials_dir = req.options.source.join(config::PARTIALS);
 
     let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
-
-    let layout_name = if primary_layout.exists() {
-        config::MAIN
-    } else {
-        config::DEFAULT_LAYOUT_NAME
-    };
+    let layout_name = layout_name(&req.options);
 
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();

@@ -164,7 +164,10 @@ impl RuntimeOptions {
         &self,
         config: &Config,
         path: Option<S>,
-    ) -> crate::Result<Url> where S: AsRef<str> {
+    ) -> crate::Result<Url>
+    where
+        S: AsRef<str>,
+    {
         let mut base = self.settings.get_canonical_url(config)?;
         if let Some(path) = path {
             base = base.join(path.as_ref())?;

@@ -5,10 +5,8 @@ use indexmap::IndexSet;
 
 use crate::{loader, CollateInfo, Error, Result};
 use config::{
-    indexer::QueryList, plugin_cache::PluginCache, Config, LinkOptions, Page,
-    tags::link::LinkTag,
-    script::ScriptAsset,
-    RuntimeOptions,
+    indexer::QueryList, plugin_cache::PluginCache, script::ScriptAsset,
+    tags::link::LinkTag, Config, LinkOptions, Page, RuntimeOptions,
 };
 
 /// Runtime validation of queries.
@@ -139,14 +137,16 @@ impl<'a> PageBuilder<'a> {
         for s in self.page.scripts() {
             if let Some(source) = s.source() {
                 if !s.dynamic() {
-                    let relative = PathBuf::from(utils::url::to_path_separator(
-                        source.trim_start_matches("/"),
-                    ));
+                    let relative =
+                        PathBuf::from(utils::url::to_path_separator(
+                            source.trim_start_matches("/"),
+                        ));
                     let script_file = self.options.source.join(&relative);
                     if !script_file.exists() {
-                        return Err(
-                            Error::NoScriptSource(
-                                script_file, source.to_string()))
+                        return Err(Error::NoScriptSource(
+                            script_file,
+                            source.to_string(),
+                        ));
                     }
                 }
             }
@@ -183,7 +183,7 @@ impl<'a> PageBuilder<'a> {
     pub fn styles(mut self) -> Result<Self> {
         let href = self.page.href.clone().unwrap();
 
-        let mut page_links:IndexSet<LinkTag> = IndexSet::new();
+        let mut page_links: IndexSet<LinkTag> = IndexSet::new();
 
         // Plugins come before page-level styles
         if let Some(cache) = self.plugins {
@@ -200,20 +200,21 @@ impl<'a> PageBuilder<'a> {
         }
 
         // Collect page-specific links
-        for s in self.page.styles().iter()  {
+        for s in self.page.styles().iter() {
             let tag = s.clone().to_tag();
             if !tag.source().is_empty() {
-
                 if !s.dynamic() {
                     // Check the style sheet exists on disc
-                    let relative = PathBuf::from(utils::url::to_path_separator(
-                        tag.source().trim_start_matches("/"),
-                    ));
+                    let relative =
+                        PathBuf::from(utils::url::to_path_separator(
+                            tag.source().trim_start_matches("/"),
+                        ));
                     let style_file = self.options.source.join(&relative);
                     if !style_file.exists() {
-                        return Err(
-                            Error::NoStyleSource(
-                                style_file, tag.source().to_string()))
+                        return Err(Error::NoStyleSource(
+                            style_file,
+                            tag.source().to_string(),
+                        ));
                     }
                 }
 

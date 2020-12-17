@@ -49,7 +49,8 @@ pub async fn one(
                             //let rel = page.file.as_ref().unwrap().target.clone();
                             //let dest = context.collation.get_path().join(&rel);
 
-                            let dest = target.get_output(collation.get_path().as_ref());
+                            let dest = target
+                                .get_output(collation.get_path().as_ref());
 
                             return parse(
                                 context,

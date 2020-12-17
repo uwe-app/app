@@ -292,7 +292,9 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             // NOTE: must start with a slash for URLs on 404 error page
             let href = format!("/{}", href);
             let script_tag = ScriptTag::new(href);
-            global_page.scripts_mut().insert(ScriptAsset::Tag(script_tag));
+            global_page
+                .scripts_mut()
+                .insert(ScriptAsset::Tag(script_tag));
         }
     }
 

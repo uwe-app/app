@@ -71,7 +71,6 @@ pub struct Rule {
 }
 
 impl Rule {
-
     /// Determine if this invalidation looks like a single page.
     ///
     /// Used to determine whether live reload should attempt to
@@ -100,7 +99,6 @@ impl<'a> Invalidator<'a> {
     /// Used by the live reload functionality to notify the browser
     /// it should navigate to the last edited page (follow-edits).
     pub fn find_page_href(&self, path: &PathBuf) -> Option<String> {
-
         if self.project.config.livereload().follow_edits() {
             if let Ok(file) = self.project.options.relative_to(
                 path,
@@ -108,16 +106,16 @@ impl<'a> Invalidator<'a> {
                 &self.project.options.source,
             ) {
                 for renderer in self.project.renderers.iter() {
-                    let collation = renderer.info.context.collation.read().unwrap();
-
-                    // FIXME/WIP
-
-                    /*
+                    let collation =
+                        renderer.info.context.collation.read().unwrap();
                     if let Some(href) = collation.get_link_source(&file) {
-                        let href = href.trim_end_matches(config::INDEX_HTML).to_string();
+                        let href = href
+                            .trim_end_matches(config::INDEX_HTML)
+                            .to_string();
                         return Some(href);
                     }
-                    */
+
+                    drop(collation);
                 }
             }
         }
@@ -304,7 +302,6 @@ impl<'a> Invalidator<'a> {
                 for action in &rule.actions {
                     match action {
                         Action::Page(path) | Action::File(path) => {
-
                             // Make the path relative to the project source
                             // as the notify crate gives us an absolute path
                             let file = self.project.options.relative_to(

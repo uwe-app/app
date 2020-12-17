@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use serde_json::json;
 use bracket::helper::prelude::*;
+use serde_json::json;
 
 use crate::BuildContext;
 
@@ -53,16 +53,20 @@ impl Helper for Include {
 
             // Absolute paths are resolved relative to the site directory
             buf = if include_file.starts_with("/") {
-                self.context.options.source
-                    .join(include_file.trim_start_matches("/")).to_path_buf()
+                self.context
+                    .options
+                    .source
+                    .join(include_file.trim_start_matches("/"))
+                    .to_path_buf()
             } else {
                 if let Some(parent) = buf.parent() {
                     buf = parent.to_path_buf();
                     buf.push(include_file);
                     buf
-                } else { PathBuf::from(include_file) }
+                } else {
+                    PathBuf::from(include_file)
+                }
             };
-
 
             if !buf.exists() {
                 return Err(HelperError::new(format!(

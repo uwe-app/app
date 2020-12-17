@@ -45,7 +45,6 @@ pub struct CollatedPage<'config, 'locale> {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub menus: HashMap<String, Vec<String>>,
     //pub menus: HashMap<&'collation String, Vec<&'collation String>>,
-
     generator: &'config str,
     #[serde_as(as = "DisplayFromStr")]
     version: &'config Version,

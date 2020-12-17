@@ -5,8 +5,8 @@ use log::{debug, error, info};
 
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
-use warp::ws::Message;
 use url::Url;
+use warp::ws::Message;
 
 use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::RecursiveMode::Recursive;
@@ -138,8 +138,9 @@ pub async fn start<P: AsRef<Path>>(
                 // Allow for path strings to omit the leading slash
                 let url_path = url_path.trim_start_matches("/");
                 format!("/{}", url_path)
-
-            } else { "/".to_string() };
+            } else {
+                "/".to_string()
+            };
 
             url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
 
@@ -216,7 +217,6 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                         let result = invalidator.get_invalidation(paths);
                         match result {
                             Ok(invalidation) => {
-
                                 // Try to determine a page href to use when following edits.
                                 let href: Option<String> = if let Some(path) =
                                     invalidation.single_page()

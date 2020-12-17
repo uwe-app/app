@@ -4114,6 +4114,7 @@ dependencies = [
  "livereload",
  "locale",
  "log",
+ "owning_ref",
  "plugin",
  "preference",
  "scm",

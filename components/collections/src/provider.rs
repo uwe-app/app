@@ -10,7 +10,7 @@ use serde_json::Value;
 use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 use tokio::fs::{self, DirEntry};
 
-use collator::{CollateInfo};
+use collator::CollateInfo;
 use config::indexer::{SourceProvider, SourceType};
 use config::{Config, RuntimeOptions};
 

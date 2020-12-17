@@ -4,9 +4,7 @@ use std::sync::Arc;
 use bracket::helper::prelude::*;
 use serde_json::json;
 
-use collator::{
-    menu::{self, PageData},
-};
+use collator::menu::{self, PageData};
 
 use config::{href::UrlPath, MenuEntry, MenuReference, RuntimeOptions};
 
@@ -51,7 +49,6 @@ impl Menu {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> HelperResult<MenuEntry> {
-
         let collation = self.context.collation.read().unwrap();
 
         let dir = if let Some(path) = ctx.param("path") {
@@ -199,7 +196,9 @@ impl Menu {
                     if let Some(page_path) =
                         collation.get_link(&collation.normalize(&**href))
                     {
-                        if let Some(page) = collation.resolve(page_path.as_ref()) {
+                        if let Some(page) =
+                            collation.resolve(page_path.as_ref())
+                        {
                             let li = &*page.read().unwrap();
                             let is_self = &**href == &page_href;
                             if let Some(ref mut block) = rc.scope_mut() {

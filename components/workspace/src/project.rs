@@ -511,8 +511,11 @@ pub struct Project {
 }
 
 impl Project {
-
-    pub fn remove_file(&mut self, path: &PathBuf, mut lang: Option<String>) -> Result<()> {
+    pub fn remove_file(
+        &mut self,
+        path: &PathBuf,
+        mut lang: Option<String>,
+    ) -> Result<()> {
         let lang = if let Some(lang) = lang.take() {
             lang
         } else {
@@ -521,15 +524,13 @@ impl Project {
 
         // Find the correct renderer so we access the collation
         // for the language
-        if let Some(renderer) = self.renderers
-            .iter()
-            .find(|r| {
-                let collation = r.info.context.collation.read().unwrap();
-                let locale = collation.locale.read().unwrap();
-                locale.lang == lang
-            }) {
-
-            let mut collation = renderer.info.context.collation.write().unwrap();
+        if let Some(renderer) = self.renderers.iter().find(|r| {
+            let collation = r.info.context.collation.read().unwrap();
+            let locale = collation.locale.read().unwrap();
+            locale.lang == lang
+        }) {
+            let mut collation =
+                renderer.info.context.collation.write().unwrap();
             /*
             println!("Remove deleted files from the collation");
             println!("remove file {:?}", path);
@@ -557,7 +558,9 @@ impl Project {
                 let collation = r.info.context.collation.read().unwrap();
                 let language = collation.get_lang();
                 match render_options.filter {
-                    RenderFilter::One(ref lang) => language.as_ref() == lang.as_str(),
+                    RenderFilter::One(ref lang) => {
+                        language.as_ref() == lang.as_str()
+                    }
                     RenderFilter::All => true,
                 }
             })

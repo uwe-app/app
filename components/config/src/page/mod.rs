@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::collections::BTreeSet;
+use std::collections::HashMap;
 use std::mem;
 use std::path::PathBuf;
 
@@ -318,7 +318,8 @@ impl Page {
 
         if let Some(ref permalink) = self.permalink {
             let bookmark = website.join(permalink.as_str())?;
-            self.links.insert(LinkTag::new_bookmark(bookmark.to_string()));
+            self.links
+                .insert(LinkTag::new_bookmark(bookmark.to_string()));
         }
 
         self.links

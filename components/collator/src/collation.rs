@@ -22,9 +22,8 @@ pub struct Collation {
 }
 
 impl Collation {
-
     //fn get_lang(&self) -> &str {
-    pub fn get_lang(&self) ->  RwLockReadGuardRef<'_, CollateInfo, str> {
+    pub fn get_lang(&self) -> RwLockReadGuardRef<'_, CollateInfo, str> {
         RwLockReadGuardRef::new(self.locale.read().unwrap())
             .map(|rg| rg.get_lang())
 
@@ -40,68 +39,82 @@ impl Collation {
     }
 
     //fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
-    pub fn get_resource(&self, key: &PathBuf) -> Option<RwLockReadGuardRef<'_, CollateInfo, Resource>> {
-
-        self.locale.read().unwrap().get_resource(key)
+    pub fn get_resource(
+        &self,
+        key: &PathBuf,
+    ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Resource>> {
+        self.locale
+            .read()
+            .unwrap()
+            .get_resource(key)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
                     .map(|rg| rg.get_resource(key).unwrap())
             })
             .or({
-                self.locale.read().unwrap().get_resource(key)
-                    .map(|_| {
-                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                            .map(|rg| rg.get_resource(key).unwrap())
-                    })
+                self.locale.read().unwrap().get_resource(key).map(|_| {
+                    RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                        .map(|rg| rg.get_resource(key).unwrap())
+                })
             })
 
         //self.locale
-            //.read()
-            //.unwrap()
-            //.get_resource(key)
-            //.or(self.fallback.read().unwrap().get_resource(key))
+        //.read()
+        //.unwrap()
+        //.get_resource(key)
+        //.or(self.fallback.read().unwrap().get_resource(key))
     }
 
     //fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
-    pub fn resolve(&self, key: &PathBuf) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<RwLock<Page>>>> {
-
-        self.locale.read().unwrap().resolve(key)
+    pub fn resolve(
+        &self,
+        key: &PathBuf,
+    ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<RwLock<Page>>>> {
+        self.locale
+            .read()
+            .unwrap()
+            .resolve(key)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
                     .map(|rg| rg.resolve(key).unwrap())
             })
             .or({
-                self.locale.read().unwrap().resolve(key)
-                    .map(|_| {
-                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                            .map(|rg| rg.resolve(key).unwrap())
-                    })
+                self.locale.read().unwrap().resolve(key).map(|_| {
+                    RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                        .map(|rg| rg.resolve(key).unwrap())
+                })
             })
 
         //self.locale.read().unwrap().resolve(key).or(self.fallback.read().unwrap().resolve(key))
     }
 
-    pub fn get_layout(&self) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
+    pub fn get_layout(
+        &self,
+    ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
         //self.locale.read().unwrap()
-            //.get_layout().or(self.fallback.read().unwrap().get_layout())
+        //.get_layout().or(self.fallback.read().unwrap().get_layout())
 
-        self.locale.read().unwrap().get_layout()
+        self.locale
+            .read()
+            .unwrap()
+            .get_layout()
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
                     .map(|rg| rg.get_layout().unwrap())
             })
             .or({
-                self.locale.read().unwrap().get_layout()
-                    .map(|_| {
-                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                            .map(|rg| rg.get_layout().unwrap())
-                    })
+                self.locale.read().unwrap().get_layout().map(|_| {
+                    RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                        .map(|rg| rg.get_layout().unwrap())
+                })
             })
-
     }
 
     //fn layouts(&self) -> &HashMap<String, Arc<PathBuf>> {
-    pub fn layouts(&self) -> RwLockReadGuardRef<'_, CollateInfo, HashMap<String, Arc<PathBuf>>> {
+    pub fn layouts(
+        &self,
+    ) -> RwLockReadGuardRef<'_, CollateInfo, HashMap<String, Arc<PathBuf>>>
+    {
         // TODO: prefer locale layouts?
         //self.fallback.read().unwrap().layouts()
 
@@ -110,27 +123,30 @@ impl Collation {
     }
 
     //fn find_menu(&self, name: &str) -> Option<&MenuResult> {
-    pub fn find_menu(&self, name: &str) -> Option<RwLockReadGuardRef<'_, CollateInfo, MenuResult>> {
-
-        self.locale.read().unwrap().find_menu(name)
+    pub fn find_menu(
+        &self,
+        name: &str,
+    ) -> Option<RwLockReadGuardRef<'_, CollateInfo, MenuResult>> {
+        self.locale
+            .read()
+            .unwrap()
+            .find_menu(name)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
                     .map(|rg| rg.find_menu(name).unwrap())
             })
             .or({
-                self.locale.read().unwrap().find_menu(name)
-                    .map(|_| {
-                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                            .map(|rg| rg.find_menu(name).unwrap())
-                    })
+                self.locale.read().unwrap().find_menu(name).map(|_| {
+                    RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                        .map(|rg| rg.find_menu(name).unwrap())
+                })
             })
 
-
         //self.locale
-            //.read()
-            //.unwrap()
-            //.find_menu(name)
-            //.or(self.fallback.read().unwrap().find_menu(name))
+        //.read()
+        //.unwrap()
+        //.find_menu(name)
+        //.or(self.fallback.read().unwrap().find_menu(name))
     }
 
     /*
@@ -180,8 +196,9 @@ impl Collation {
     */
 
     //pub fn templates(&self) -> &HashSet<Arc<PathBuf>> {
-    pub fn templates(&self) -> RwLockReadGuardRef<'_, CollateInfo, HashSet<Arc<PathBuf>>> {
-
+    pub fn templates(
+        &self,
+    ) -> RwLockReadGuardRef<'_, CollateInfo, HashSet<Arc<PathBuf>>> {
         // FIXME: support override locale-specific templates!
         RwLockReadGuardRef::new(self.fallback.read().unwrap())
             .map(|rg| &rg.templates)
@@ -190,52 +207,61 @@ impl Collation {
     }
 
     //fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
-    pub fn get_link(&self, key: &String) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
+    pub fn get_link(
+        &self,
+        key: &String,
+    ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
         //self.locale.read().unwrap().get_link(key).or(self.fallback.read().unwrap().get_link(key))
 
-        self.locale.read().unwrap().get_link(key)
+        self.locale
+            .read()
+            .unwrap()
+            .get_link(key)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
                     .map(|rg| rg.get_link(key).unwrap())
             })
             .or({
-                self.locale.read().unwrap().get_link(key)
-                    .map(|_| {
-                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                            .map(|rg| rg.get_link(key).unwrap())
-                    })
+                self.locale.read().unwrap().get_link(key).map(|_| {
+                    RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                        .map(|rg| rg.get_link(key).unwrap())
+                })
             })
-
     }
 
     //fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
-    pub fn get_link_source(&self, key: &PathBuf) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<String>>> {
+    pub fn get_link_source(
+        &self,
+        key: &PathBuf,
+    ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<String>>> {
         //self.locale
-            //.read()
-            //.unwrap()
-            //.get_link_source(key)
-            //.or(self.fallback.read().unwrap().get_link_source(key))
+        //.read()
+        //.unwrap()
+        //.get_link_source(key)
+        //.or(self.fallback.read().unwrap().get_link_source(key))
 
-        self.locale.read().unwrap().get_link_source(key)
+        self.locale
+            .read()
+            .unwrap()
+            .get_link_source(key)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
                     .map(|rg| rg.get_link_source(key).unwrap())
             })
             .or({
-                self.locale.read().unwrap().get_link_source(key)
-                    .map(|_| {
-                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                            .map(|rg| rg.get_link_source(key).unwrap())
-                    })
+                self.locale.read().unwrap().get_link_source(key).map(|_| {
+                    RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                        .map(|rg| rg.get_link_source(key).unwrap())
+                })
             })
     }
 
     pub fn find_link(&self, href: &str) -> Option<PathBuf> {
-        self.locale
+        self.locale.read().unwrap().find_link(href).or(self
+            .fallback
             .read()
             .unwrap()
-            .find_link(href)
-            .or(self.fallback.read().unwrap().find_link(href))
+            .find_link(href))
     }
 
     pub fn normalize<S: AsRef<str>>(&self, s: S) -> String {
@@ -248,10 +274,10 @@ impl Collation {
     }
 
     //pub fn get_menus(&self) -> &HashMap<String, MenuResult> {
-    pub fn get_menus(&self) -> RwLockReadGuardRef<'_, CollateInfo, HashMap<String, MenuResult>> {
-
-        RwLockReadGuardRef::new(self.locale.read().unwrap())
-            .map(|rg| &rg.menus)
+    pub fn get_menus(
+        &self,
+    ) -> RwLockReadGuardRef<'_, CollateInfo, HashMap<String, MenuResult>> {
+        RwLockReadGuardRef::new(self.locale.read().unwrap()).map(|rg| &rg.menus)
 
         //&self.locale.read().unwrap().menus
     }
@@ -278,9 +304,10 @@ impl Collation {
         for (key, menu) in self.locale.read().unwrap().menus.iter() {
             //let mut refs = Vec::new();
             //menu.pages.iter().for_each(|s| {
-                //refs.push(s.as_ref());
+            //refs.push(s.as_ref());
             //});
-            let refs = menu.pages.iter().map(|s| s.as_ref().to_string()).collect();
+            let refs =
+                menu.pages.iter().map(|s| s.as_ref().to_string()).collect();
             result.insert(key.to_owned(), refs);
         }
         result
@@ -593,7 +620,9 @@ impl CollateInfo {
         self.menus.get(name)
     }
 
-    pub fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
+    pub fn resources(
+        &self,
+    ) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
         Box::new(self.resources.iter())
     }
 

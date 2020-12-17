@@ -29,11 +29,12 @@ where
     let locale = collation.locale.read().unwrap();
     //let it = collation.resources().filter(filter);
     //
-    let it: Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> = if collation.is_fallback() {
-        fallback.resources()
-    } else {
-        Box::new(locale.resources.union(&fallback.resources))
-    };
+    let it: Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> =
+        if collation.is_fallback() {
+            fallback.resources()
+        } else {
+            Box::new(locale.resources.union(&fallback.resources))
+        };
 
     if parallel {
         let (tx, rx) = channel::unbounded();

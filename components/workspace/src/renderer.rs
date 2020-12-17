@@ -7,6 +7,7 @@ use log::{debug, info};
 use url::Url;
 
 use human_bytes::human_bytes;
+use owning_ref::ArcRef;
 
 use collator::{builder::PageBuilder, resource::Resource};
 use compiler::{
@@ -14,6 +15,7 @@ use compiler::{
 };
 use config::{
     hook::HookConfig,
+    plugin_cache::PluginCache,
     profile::Profiles,
     sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex},
 };
@@ -136,63 +138,40 @@ impl Renderer {
             }
             RenderTarget::File(ref path) => {
                 if render_options.reload_data {
+                    let key = Arc::new(path.to_path_buf());
+                    let mut info = collation.fallback.write().unwrap();
+                    let layout_name =
+                        collator::layout_name(&self.info.context.options);
+
+                    let plugins = self.info.context.plugins.as_deref();
+
+                    let builder = PageBuilder::new(
+                        &mut info,
+                        &self.info.context.config,
+                        &self.info.context.options,
+                        plugins,
+                        &key,
+                        path,
+                    )
+                    .compute()?
+                    .layout(layout_name)?
+                    .queries()?
+                    .seal()?
+                    .scripts()?
+                    .styles()?
+                    .layouts()?
+                    // WARN: calling link() will create a collision!
+                    //.link()?
+                    .permalinks()?
+                    .feeds()?;
+
+                    let (_, _, _, computed_page) = builder.build();
+
+                    drop(info);
+
                     if let Some(page_lock) = collation.resolve(path) {
-
-
-                        // FIXME/WIP: restore page builder!!!
-
-                        /*
-                        let mut computed_page = loader::compute(
-                            path,
-                            self.info.context.config.as_ref(),
-                            self.info.context.options.as_ref(),
-                        )?;
-                        */
-
-                        //collation.foo();
-                        //
-                        //let mut info = Arc::get_mut(&mut collation.fallback);
-
-                        //let info = &mut collation.fallback;
-
-                        /*
-                        let key = Arc::new(path.to_path_buf());
-
-                        let builder = PageBuilder::new(
-                            info,
-                            &self.info.context.config,
-                            &self.info.context.options,
-                            //plugins,
-                            None,
-                            &key, path)
-
-                            .compute()?
-                            //.layout(layout_name)?
-                            .queries()?
-                            .seal()?
-                            .scripts()?
-                            .styles()?
-                            .layouts()?
-                            .link()?
-                            .permalinks()?
-                            .feeds()?;
-
-                        let (_, _, _, computed_page) = builder.build();
-
                         let mut page_write = page_lock.write().unwrap();
-
-                        // FIXME: use the collation PageBuilder to create a completely
-                        // FIXME: new page data?
-
-                        // NOTE: It is tempting to re-assign using
-                        // NOTE: `*page_write = computed_page;` but this will
-                        // NOTE: remove auto-generated information about the
-                        // NOTE: underlying file, so we **must** call append()
-                        // NOTE: to preserve internal, private page information.
-                        //page_write.append(&mut computed_page);
-
                         *page_write = computed_page;
-                        */
                     }
                 }
                 self.one(parser, path).await?;
@@ -260,7 +239,8 @@ impl Renderer {
 
                 info!("Compile search index ({})", intermediates.len());
                 let idx: Index = compile_index(intermediates);
-                let index_file = search.get_output_path(collation.get_path().as_ref());
+                let index_file =
+                    search.get_output_path(collation.get_path().as_ref());
 
                 // If there are path filters for compiling specific files
                 // we are not guaranteed that the parent directory will exist!
@@ -299,8 +279,9 @@ impl Renderer {
                 };
 
                 // Base canonical URL
-                let base =
-                    ctx.options.get_canonical_url(&ctx.config, with_lang.as_ref())?;
+                let base = ctx
+                    .options
+                    .get_canonical_url(&ctx.config, with_lang.as_ref())?;
 
                 // Create the top-level index of all sitemaps
                 let folder = sitemap.name.as_ref().unwrap().to_string();
@@ -427,7 +408,8 @@ impl Renderer {
                     match target.as_ref() {
                         Resource::Page { ref target }
                         | Resource::File { ref target } => {
-                            let dest = target.get_output(collation.get_path().as_ref());
+                            let dest = target
+                                .get_output(collation.get_path().as_ref());
                             if manifest.exists(p)
                                 && !manifest.is_dirty(p, &dest, false)
                             {
