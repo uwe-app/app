@@ -246,23 +246,17 @@ impl<'reg> ParserBuilder<'reg> {
     pub fn menus(mut self) -> Result<Self> {
         let collation = self.context.collation.read().unwrap();
 
-        // FIXME/WIP: restore menus!!!
-
-        /*
         let menus = collation.get_menus();
         let menus_map = menus.as_ref();
 
-        //menus.foo();
-
         // TODO: register page-specific menu overrides
-
         for (key, result) in menus_map {
             let name = collation.get_menu_template_name(key);
             self.registry.insert(&name, &result.value)?;
         }
 
-        */
-
+        drop(menus_map);
+        drop(menus);
         drop(collation);
 
         Ok(self)
