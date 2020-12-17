@@ -12,7 +12,7 @@ use config::{
 
 use locale::Locales;
 
-use crate::{to_href, Collate, CollateInfo, Error, Result};
+use crate::{to_href, CollateInfo, Error, Result};
 
 // Helper to inject synthetic pages.
 pub fn create_page(

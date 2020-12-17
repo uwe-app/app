@@ -104,7 +104,7 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-mod builder;
+pub mod builder;
 pub mod collation;
 pub mod collator;
 pub mod loader;

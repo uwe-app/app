@@ -6,7 +6,7 @@ use log::debug;
 use bracket::Registry;
 use bracket_fluent::FluentHelper;
 
-use collator::{Collate, LayoutCollate};
+use collator::{Collate};
 use locale::{Locales, LOCALES};
 
 use crate::{Error, Result};

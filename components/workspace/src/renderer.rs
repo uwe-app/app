@@ -8,7 +8,7 @@ use url::Url;
 
 use human_bytes::human_bytes;
 
-use collator::{loader, resource::Resource, Collate, LinkCollate};
+use collator::{builder::PageBuilder, resource::Resource, Collate, LinkCollate};
 use compiler::{
     compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
@@ -136,19 +136,59 @@ impl Renderer {
                 if render_options.reload_data {
                     let collation = self.info.context.collation.read().unwrap();
                     if let Some(page_lock) = collation.resolve(path) {
+
+                        /*
                         let mut computed_page = loader::compute(
                             path,
                             self.info.context.config.as_ref(),
                             self.info.context.options.as_ref(),
                         )?;
+                        */
+
+                        //collation.foo();
+                        //
+                        //let mut info = Arc::get_mut(&mut collation.fallback);
+
+                        //let info = &mut collation.fallback;
+
+                        /*
+                        let key = Arc::new(path.to_path_buf());
+
+                        let builder = PageBuilder::new(
+                            info,
+                            &self.info.context.config,
+                            &self.info.context.options,
+                            //plugins,
+                            None,
+                            &key, path)
+
+                            .compute()?
+                            //.layout(layout_name)?
+                            .queries()?
+                            .seal()?
+                            .scripts()?
+                            .styles()?
+                            .layouts()?
+                            .link()?
+                            .permalinks()?
+                            .feeds()?;
+
+                        let (_, _, _, computed_page) = builder.build();
 
                         let mut page_write = page_lock.write().unwrap();
+
+                        // FIXME: use the collation PageBuilder to create a completely
+                        // FIXME: new page data?
+
                         // NOTE: It is tempting to re-assign using
                         // NOTE: `*page_write = computed_page;` but this will
                         // NOTE: remove auto-generated information about the
                         // NOTE: underlying file, so we **must** call append()
                         // NOTE: to preserve internal, private page information.
-                        page_write.append(&mut computed_page);
+                        //page_write.append(&mut computed_page);
+
+                        *page_write = computed_page;
+                        */
                     }
                 }
                 self.one(parser, path).await?;

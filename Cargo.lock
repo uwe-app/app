@@ -354,6 +354,7 @@ dependencies = [
  "jsonfeed",
  "locale",
  "log",
+ "owning_ref",
  "pulldown-cmark",
  "serde",
  "serde_json",
@@ -2013,6 +2014,15 @@ dependencies = [
  "openssl-src",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "owning_ref"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
+dependencies = [
+ "stable_deref_trait",
 ]
 
 [[package]]

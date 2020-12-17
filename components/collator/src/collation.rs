@@ -2,6 +2,8 @@ use std::collections::{hash_map, HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
+use owning_ref::RwLockReadGuardRef;
+
 use config::indexer::QueryList;
 use config::{Config, MenuEntry, MenuResult, Page, RuntimeOptions};
 use locale::LocaleName;
@@ -15,30 +17,234 @@ static MENU_TEMPLATE_PREFIX: &str = "@menu";
 
 #[derive(Debug, Default)]
 pub struct Collation {
-    pub fallback: Arc<CollateInfo>,
-    pub locale: Arc<CollateInfo>,
+    pub fallback: Arc<RwLock<CollateInfo>>,
+    pub locale: Arc<RwLock<CollateInfo>>,
 }
 
 impl Collation {
+
+    //fn get_lang(&self) -> &str {
+    pub fn get_lang(&self) ->  RwLockReadGuardRef<'_, CollateInfo, str> {
+        RwLockReadGuardRef::new(self.locale.read().unwrap())
+            .map(|rg| rg.get_lang())
+
+        //self.locale.read().unwrap().get_lang()
+    }
+
+    // fn get_path(&self) -> &PathBuf {
+    pub fn get_path(&self) -> RwLockReadGuardRef<'_, CollateInfo, PathBuf> {
+        RwLockReadGuardRef::new(self.locale.read().unwrap())
+            .map(|rg| rg.get_path())
+
+        //self.locale.read().unwrap().get_path()
+    }
+
+    //fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
+    pub fn get_resource(&self, key: &PathBuf) -> Option<RwLockReadGuardRef<'_, CollateInfo, Resource>> {
+
+        self.locale.read().unwrap().get_resource(key)
+            .map(|_| {
+                RwLockReadGuardRef::new(self.locale.read().unwrap())
+                    .map(|rg| rg.get_resource(key).unwrap())
+            })
+            .or({
+                self.locale.read().unwrap().get_resource(key)
+                    .map(|_| {
+                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                            .map(|rg| rg.get_resource(key).unwrap())
+                    })
+            })
+
+        //self.locale
+            //.read()
+            //.unwrap()
+            //.get_resource(key)
+            //.or(self.fallback.read().unwrap().get_resource(key))
+    }
+
+    //fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
+    pub fn resolve(&self, key: &PathBuf) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<RwLock<Page>>>> {
+
+        self.locale.read().unwrap().resolve(key)
+            .map(|_| {
+                RwLockReadGuardRef::new(self.locale.read().unwrap())
+                    .map(|rg| rg.resolve(key).unwrap())
+            })
+            .or({
+                self.locale.read().unwrap().resolve(key)
+                    .map(|_| {
+                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                            .map(|rg| rg.resolve(key).unwrap())
+                    })
+            })
+
+        //self.locale.read().unwrap().resolve(key).or(self.fallback.read().unwrap().resolve(key))
+    }
+
+    pub fn get_layout(&self) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
+        //self.locale.read().unwrap()
+            //.get_layout().or(self.fallback.read().unwrap().get_layout())
+
+        self.locale.read().unwrap().get_layout()
+            .map(|_| {
+                RwLockReadGuardRef::new(self.locale.read().unwrap())
+                    .map(|rg| rg.get_layout().unwrap())
+            })
+            .or({
+                self.locale.read().unwrap().get_layout()
+                    .map(|_| {
+                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                            .map(|rg| rg.get_layout().unwrap())
+                    })
+            })
+
+    }
+
+    //fn layouts(&self) -> &HashMap<String, Arc<PathBuf>> {
+    pub fn layouts(&self) -> RwLockReadGuardRef<'_, CollateInfo, HashMap<String, Arc<PathBuf>>> {
+        // TODO: prefer locale layouts?
+        //self.fallback.read().unwrap().layouts()
+
+        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+            .map(|rg| rg.layouts())
+    }
+
+    //fn find_menu(&self, name: &str) -> Option<&MenuResult> {
+    pub fn find_menu(&self, name: &str) -> Option<RwLockReadGuardRef<'_, CollateInfo, MenuResult>> {
+
+        self.locale.read().unwrap().find_menu(name)
+            .map(|_| {
+                RwLockReadGuardRef::new(self.locale.read().unwrap())
+                    .map(|rg| rg.find_menu(name).unwrap())
+            })
+            .or({
+                self.locale.read().unwrap().find_menu(name)
+                    .map(|_| {
+                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                            .map(|rg| rg.find_menu(name).unwrap())
+                    })
+            })
+
+
+        //self.locale
+            //.read()
+            //.unwrap()
+            //.find_menu(name)
+            //.or(self.fallback.read().unwrap().find_menu(name))
+    }
+
+    pub fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
+    //pub fn resources(&self) -> RwLockReadGuardRef<'_, CollateInfo, Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>> {
+        if self.is_fallback() {
+            return self.fallback.read().unwrap().resources();
+            //return RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                //.map(|rg| rg.resources())
+        }
+
+        Box::new(self.locale.read().unwrap().resources.union(&self.fallback.read().unwrap().resources))
+    }
+
+    /*
+    fn pages(
+        &self,
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
+    */
+
+    pub fn pages(
+        &self,
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
+    {
+        if self.is_fallback() {
+            return self.fallback.read().unwrap().pages();
+        }
+
+        Box::new(self.fallback.read().unwrap().pages.iter().chain(self.locale.read().unwrap().pages.iter()))
+    }
+
     pub fn is_fallback(&self) -> bool {
-        self.fallback.lang == self.locale.lang
+        self.fallback.read().unwrap().lang == self.locale.read().unwrap().lang
     }
 
-    pub fn get_resource(&self, file: &PathBuf) -> Option<&Resource> {
-        self.fallback.all.get(file)
-    }
+    /*
+    //pub fn get_resource(&self, file: &PathBuf) -> Option<&Resource> {
+    pub fn get_resource(&self, file: &PathBuf) -> RwLockReadGuardRef<'_, CollateInfo, Resource> {
+        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+            .map(|rg| rg.all.get(file).unwrap())
 
-    pub fn templates(&self) -> &HashSet<Arc<PathBuf>> {
+        //self.fallback.read().unwrap().all.get(file)
+    }
+    */
+
+    //pub fn templates(&self) -> &HashSet<Arc<PathBuf>> {
+    pub fn templates(&self) -> RwLockReadGuardRef<'_, CollateInfo, HashSet<Arc<PathBuf>>> {
+
         // FIXME: support override locale-specific templates!
-        &self.fallback.templates
+        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+            .map(|rg| &rg.templates)
+
+        //&self.fallback.read().unwrap().templates
+    }
+
+    //fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+    pub fn get_link(&self, key: &String) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
+        //self.locale.read().unwrap().get_link(key).or(self.fallback.read().unwrap().get_link(key))
+
+        self.locale.read().unwrap().get_link(key)
+            .map(|_| {
+                RwLockReadGuardRef::new(self.locale.read().unwrap())
+                    .map(|rg| rg.get_link(key).unwrap())
+            })
+            .or({
+                self.locale.read().unwrap().get_link(key)
+                    .map(|_| {
+                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                            .map(|rg| rg.get_link(key).unwrap())
+                    })
+            })
+
+    }
+
+    //fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+    pub fn get_link_source(&self, key: &PathBuf) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<String>>> {
+        //self.locale
+            //.read()
+            //.unwrap()
+            //.get_link_source(key)
+            //.or(self.fallback.read().unwrap().get_link_source(key))
+
+        self.locale.read().unwrap().get_link_source(key)
+            .map(|_| {
+                RwLockReadGuardRef::new(self.locale.read().unwrap())
+                    .map(|rg| rg.get_link_source(key).unwrap())
+            })
+            .or({
+                self.locale.read().unwrap().get_link_source(key)
+                    .map(|_| {
+                        RwLockReadGuardRef::new(self.fallback.read().unwrap())
+                            .map(|rg| rg.get_link_source(key).unwrap())
+                    })
+            })
+    }
+
+    pub fn find_link(&self, href: &str) -> Option<PathBuf> {
+        self.locale
+            .read()
+            .unwrap()
+            .find_link(href)
+            .or(self.fallback.read().unwrap().find_link(href))
     }
 
     pub fn get_menu_template_name(&self, name: &str) -> String {
         format!("{}/{}", MENU_TEMPLATE_PREFIX, name)
     }
 
-    pub fn get_menus(&self) -> &HashMap<String, MenuResult> {
-        &self.locale.menus
+    //pub fn get_menus(&self) -> &HashMap<String, MenuResult> {
+    pub fn get_menus(&self) -> RwLockReadGuardRef<'_, CollateInfo, HashMap<String, MenuResult>> {
+
+        RwLockReadGuardRef::new(self.locale.read().unwrap())
+            .map(|rg| &rg.menus)
+
+        //&self.locale.read().unwrap().menus
     }
 
     /// Generate a map of menu identifiers to the URLs
@@ -46,7 +252,7 @@ impl Collation {
     /// menus.
     pub fn menu_page_href(&self) -> HashMap<&String, Vec<&String>> {
         let mut result: HashMap<&String, Vec<&String>> = HashMap::new();
-        for (key, menu) in self.locale.menus.iter() {
+        for (key, menu) in self.locale.read().unwrap().menus.iter() {
             let mut refs = Vec::new();
             menu.pages.iter().for_each(|s| {
                 refs.push(s.as_ref());
@@ -126,6 +332,7 @@ pub struct LinkMap {
 }
 
 /// General access to collated data.
+/*
 pub trait Collate {
     fn get_lang(&self) -> &str;
     fn get_path(&self) -> &PathBuf;
@@ -138,7 +345,9 @@ pub trait Collate {
 
     fn find_menu(&self, name: &str) -> Option<&MenuResult>;
 }
+*/
 
+/*
 /// Access to the layouts.
 pub trait LayoutCollate {
     /// Get the primary layout.
@@ -148,7 +357,9 @@ pub trait LayoutCollate {
     /// for configuring as templates.
     fn layouts(&self) -> &HashMap<String, Arc<PathBuf>>;
 }
+*/
 
+/*
 pub trait LinkCollate {
     fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>>;
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>>;
@@ -157,21 +368,6 @@ pub trait LinkCollate {
     /// and is given an `index.html` suffix if it ends with a slash.
     ///
     /// Any fragment identifier should be stripped.
-    fn normalize<S: AsRef<str>>(&self, s: S) -> String;
-
-    /// Try to find a source file corresponging to a link URL path.
-    fn find_link(&self, href: &str) -> Option<PathBuf>;
-}
-
-impl LinkCollate for LinkMap {
-    fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
-        self.reverse.get(key)
-    }
-
-    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
-        self.sources.get(key)
-    }
-
     fn normalize<S: AsRef<str>>(&self, s: S) -> String {
         let mut s = s.as_ref().to_string();
 
@@ -190,7 +386,43 @@ impl LinkCollate for LinkMap {
         s
     }
 
-    fn find_link(&self, href: &str) -> Option<PathBuf> {
+    /// Try to find a source file corresponging to a link URL path.
+    fn find_link(&self, href: &str) -> Option<PathBuf>;
+}
+*/
+
+impl LinkMap {
+    /// Normalize a URL path so that it begins with a leading slash
+    /// and is given an `index.html` suffix if it ends with a slash.
+    ///
+    /// Any fragment identifier should be stripped.
+    pub fn normalize<S: AsRef<str>>(&self, s: S) -> String {
+        let mut s = s.as_ref().to_string();
+
+        if s.contains('#') {
+            let parts: Vec<&str> = s.splitn(2, '#').collect();
+            s = parts.get(0).unwrap().to_string();
+        }
+
+        if !s.starts_with("/") {
+            s = format!("/{}", s);
+        }
+        // We got a hint with the trailing slash that we should look for an index page
+        if s != "/" && s.ends_with("/") {
+            s.push_str(config::INDEX_HTML);
+        }
+        s
+    }
+
+    pub fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+        self.reverse.get(key)
+    }
+
+    pub fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.sources.get(key)
+    }
+
+    pub fn find_link(&self, href: &str) -> Option<PathBuf> {
         let mut key = self.normalize(href);
         //println!("Looking for link with key {}", key);
 
@@ -209,104 +441,62 @@ impl LinkCollate for LinkMap {
     }
 }
 
+/*
 impl Collate for Collation {
-    fn get_lang(&self) -> &str {
-        self.locale.get_lang()
-    }
-
-    fn get_path(&self) -> &PathBuf {
-        self.locale.get_path()
-    }
-
-    fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
-        self.locale
-            .get_resource(key)
-            .or(self.fallback.get_resource(key))
-    }
-
-    fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
-        self.locale.resolve(key).or(self.fallback.resolve(key))
-    }
-
-    fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        if self.is_fallback() {
-            return self.fallback.resources();
-        }
-
-        Box::new(self.locale.resources.union(&self.fallback.resources))
-    }
 
     fn pages(
         &self,
     ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
     {
         if self.is_fallback() {
-            return self.fallback.pages();
+            return self.fallback.read().unwrap().pages();
         }
 
-        Box::new(self.fallback.pages.iter().chain(self.locale.pages.iter()))
+        Box::new(self.fallback.read().unwrap().pages.iter().chain(self.locale.read().unwrap().pages.iter()))
     }
 
-    fn find_menu(&self, name: &str) -> Option<&MenuResult> {
-        self.locale
-            .find_menu(name)
-            .or(self.fallback.find_menu(name))
-    }
 }
+*/
 
+/*
 impl LayoutCollate for Collation {
     fn get_layout(&self) -> Option<&Arc<PathBuf>> {
-        self.locale.get_layout().or(self.fallback.get_layout())
+        self.locale.read().unwrap().get_layout().or(self.fallback.read().unwrap().get_layout())
     }
 
     fn layouts(&self) -> &HashMap<String, Arc<PathBuf>> {
         // TODO: prefer locale layouts?
-        self.fallback.layouts()
+        self.fallback.read().unwrap().layouts()
     }
 }
+*/
 
+/*
 impl LinkCollate for Collation {
     fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
-        self.locale.get_link(key).or(self.fallback.get_link(key))
+        self.locale.read().unwrap().get_link(key).or(self.fallback.read().unwrap().get_link(key))
     }
 
     fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
         self.locale
+            .read()
+            .unwrap()
             .get_link_source(key)
-            .or(self.fallback.get_link_source(key))
-    }
-
-    fn normalize<S: AsRef<str>>(&self, s: S) -> String {
-        self.locale.normalize(s)
+            .or(self.fallback.read().unwrap().get_link_source(key))
     }
 
     fn find_link(&self, href: &str) -> Option<PathBuf> {
         self.locale
+            .read()
+            .unwrap()
             .find_link(href)
-            .or(self.fallback.find_link(href))
+            .or(self.fallback.read().unwrap().find_link(href))
     }
 }
+*/
 
+/*
 impl Collate for CollateInfo {
-    fn get_lang(&self) -> &str {
-        &self.lang
-    }
-
-    fn get_path(&self) -> &PathBuf {
-        &self.path
-    }
-
-    fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
-        self.all.get(key)
-    }
-
-    fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
-        self.pages.get(key)
-    }
-
-    fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
-        Box::new(self.resources.iter())
-    }
 
     fn pages(
         &self,
@@ -315,11 +505,10 @@ impl Collate for CollateInfo {
         Box::new(self.pages.iter())
     }
 
-    fn find_menu(&self, name: &str) -> Option<&MenuResult> {
-        self.menus.get(name)
-    }
 }
+*/
 
+/*
 impl LayoutCollate for CollateInfo {
     fn get_layout(&self) -> Option<&Arc<PathBuf>> {
         self.layouts.get(config::DEFAULT_LAYOUT_NAME)
@@ -329,7 +518,9 @@ impl LayoutCollate for CollateInfo {
         &self.layouts
     }
 }
+*/
 
+/*
 impl LinkCollate for CollateInfo {
     fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
         self.links.get_link(key)
@@ -347,6 +538,7 @@ impl LinkCollate for CollateInfo {
         self.links.find_link(href)
     }
 }
+*/
 
 impl CollateInfo {
     pub fn new(lang: String, path: PathBuf) -> Self {
@@ -357,12 +549,67 @@ impl CollateInfo {
         }
     }
 
+    pub fn get_lang(&self) -> &str {
+        &self.lang
+    }
+
+    pub fn get_path(&self) -> &PathBuf {
+        &self.path
+    }
+
+    pub fn get_resource(&self, key: &PathBuf) -> Option<&Resource> {
+        self.all.get(key)
+    }
+
+    pub fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
+        self.pages.get(key)
+    }
+
+    pub fn find_menu(&self, name: &str) -> Option<&MenuResult> {
+        self.menus.get(name)
+    }
+
+    pub fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_> {
+        Box::new(self.resources.iter())
+    }
+
+    pub fn pages(
+        &self,
+    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>
+    {
+        Box::new(self.pages.iter())
+    }
+
+    pub fn get_layout(&self) -> Option<&Arc<PathBuf>> {
+        self.layouts.get(config::DEFAULT_LAYOUT_NAME)
+    }
+
+    pub fn layouts(&self) -> &HashMap<String, Arc<PathBuf>> {
+        &self.layouts
+    }
+
     pub fn add_layout(
         &mut self,
         key: String,
         file: Arc<PathBuf>,
     ) -> &mut Arc<PathBuf> {
         self.layouts.entry(key).or_insert(file)
+    }
+
+    pub fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+        self.links.get_link(key)
+    }
+
+    pub fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.links.get_link_source(key)
+    }
+
+    pub fn normalize<S: AsRef<str>>(&self, s: S) -> String {
+        self.links.normalize(s)
+    }
+
+    pub fn find_link(&self, href: &str) -> Option<PathBuf> {
+        self.links.find_link(href)
     }
 
     pub fn add_template(&mut self, file: Arc<PathBuf>) -> bool {

@@ -9,7 +9,7 @@ use config::{
     Config, MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
 };
 
-use crate::{Collate, CollateInfo, Collation, Error, LinkCollate, Result};
+use crate::{CollateInfo, Collation, Error, Result};
 
 /// Page data stores the page path, href and corresponding data.
 pub type PageData<'c> = Vec<(&'c Arc<PathBuf>, String, &'c Arc<RwLock<Page>>)>;

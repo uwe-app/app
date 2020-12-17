@@ -40,7 +40,7 @@ pub fn to_href(
 
 /// Builds a single page and mutates the collation with necessary
 /// information from the page data.
-pub(crate) struct PageBuilder<'a> {
+pub struct PageBuilder<'a> {
     info: &'a mut CollateInfo,
     config: &'a Config,
     options: &'a RuntimeOptions,

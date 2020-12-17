@@ -24,3 +24,4 @@ url = "2.1.1"
 pulldown-cmark = { version = "0.8", default-features = false, features = ["simd"] }
 jsonfeed = {version = "0.3", path = "../../../library/jsonfeed"}
 indexmap = {version = "^1.6.1", features = ["serde-1"]}
+owning_ref = "^0.4.1"
