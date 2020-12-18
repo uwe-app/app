@@ -108,7 +108,7 @@ impl Menu {
             depth = 64;
         }
 
-        let mut include_index = ctx
+        let include_index = ctx
             .param("include-index")
             .or(Some(&json!(false)))
             .and_then(|v| v.as_bool())

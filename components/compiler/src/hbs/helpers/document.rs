@@ -96,6 +96,7 @@ impl Helper for Document {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         let template_path = rc
             .try_evaluate("@root/file.template", &[Type::String])?
             .as_str()

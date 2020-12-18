@@ -10,6 +10,7 @@ impl Helper for TableOfContents {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         ctx.arity(0..0)?;
 
         let tag = ctx

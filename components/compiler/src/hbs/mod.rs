@@ -289,7 +289,7 @@ impl<'reg> ParserBuilder<'reg> {
         Ok(self)
     }
 
-    pub fn build(mut self) -> Result<BracketParser<'reg>> {
+    pub fn build(self) -> Result<BracketParser<'reg>> {
         Ok(BracketParser {
             context: self.context,
             registry: self.registry,

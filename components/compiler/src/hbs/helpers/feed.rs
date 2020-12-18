@@ -14,6 +14,7 @@ impl Helper for Feed {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         let name = ctx.try_param("name", &[Type::String])?.as_str().unwrap();
 
         let collation = &*self.context.collation.read().unwrap();

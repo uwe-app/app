@@ -16,6 +16,8 @@ impl Helper for Links {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
+
         // Make links absolute (passthrough)
         let abs = rc
             .evaluate("@root/absolute")?

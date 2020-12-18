@@ -8,6 +8,7 @@ impl Helper for Slug {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         ctx.arity(1..1)?;
 
         let value = ctx.try_get(0, &[Type::String])?.as_str().unwrap();

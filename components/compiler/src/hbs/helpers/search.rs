@@ -15,6 +15,8 @@ impl Helper for Embed {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
+
         // The identifier for which search index to use
         let id = ctx
             .param("id")

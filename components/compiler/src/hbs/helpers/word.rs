@@ -10,6 +10,7 @@ impl Helper for Count {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         ctx.arity(0..0)?;
 
         // Indicate the user wants to print the reading time derived

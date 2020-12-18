@@ -184,6 +184,7 @@ impl Helper for Link {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         ctx.arity(1..1)?;
         let input = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
         let (value, _) = url(rc, ctx, &*self.context, input)?;

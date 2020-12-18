@@ -19,6 +19,7 @@ impl Helper for Import {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         ctx.arity(1..1)?;
 
         let base_path = rc
