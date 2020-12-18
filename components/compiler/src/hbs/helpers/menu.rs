@@ -22,7 +22,7 @@ impl Menu {
         pages: PageData<'_>,
         node: &'render Node<'render>,
         rc: &mut Render<'render>,
-        ctx: &Context<'call>,
+        _ctx: &Context<'call>,
     ) -> HelperValue {
         let page_href = rc
             .try_evaluate("@root/href", &[Type::String])?
@@ -229,12 +229,11 @@ impl Menu {
         &self,
         key: &str,
         rc: &mut Render<'render>,
-        ctx: &Context<'call>,
+        _ctx: &Context<'call>,
     ) -> HelperValue {
         // TODO: handle file-specific menu overrides
 
         let collation = self.context.collation.read().unwrap();
-        let menus = collation.get_menus();
         let name = collation.get_menu_template_name(key);
 
         if let Some(tpl) = rc.get_template(&name) {

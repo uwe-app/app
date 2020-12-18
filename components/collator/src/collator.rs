@@ -8,9 +8,7 @@ use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
-use config::{
-    plugin_cache::PluginCache, Config, RuntimeOptions,
-};
+use config::{plugin_cache::PluginCache, Config, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
 
 use crate::{

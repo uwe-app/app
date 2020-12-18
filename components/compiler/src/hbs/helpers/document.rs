@@ -11,7 +11,7 @@ fn render_document<'render, 'call>(
     template_path: &str,
     context: &BuildContext,
     rc: &mut Render<'render>,
-    ctx: &Context<'call>,
+    _ctx: &Context<'call>,
 ) -> HelperValue {
     let file = PathBuf::from(template_path);
     let is_markdown = context.options.is_markdown_file(&file);
@@ -50,6 +50,7 @@ impl Helper for RenderPage {
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+        ctx.assert_statement(template)?;
         ctx.arity(1..1)?;
 
         // The href of a page to render

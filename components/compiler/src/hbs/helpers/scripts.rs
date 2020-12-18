@@ -14,7 +14,7 @@ impl Helper for Scripts {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
-        ctx: &Context<'call>,
+        _ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
         // Make links absolute (passthrough)

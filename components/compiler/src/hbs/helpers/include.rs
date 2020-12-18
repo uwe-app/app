@@ -95,12 +95,13 @@ impl Helper for Include {
                     rc.out().write(&result)?;
                 }
             } else {
-                let mut result = utils::fs::read_string(&buf).map_err(|e| {
-                    HelperError::new(format!(
-                        "Failed to read from include file: {}",
-                        buf.display()
-                    ))
-                })?;
+                let mut result =
+                    utils::fs::read_string(&buf).map_err(|_| {
+                        HelperError::new(format!(
+                            "Failed to read from include file: {}",
+                            buf.display()
+                        ))
+                    })?;
 
                 if base64 {
                     result = base64::encode(result);

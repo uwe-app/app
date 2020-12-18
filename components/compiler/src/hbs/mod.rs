@@ -291,7 +291,7 @@ impl<'reg> ParserBuilder<'reg> {
 
     pub fn build(self) -> Result<BracketParser<'reg>> {
         Ok(BracketParser {
-            context: self.context,
+            //context: self.context,
             registry: self.registry,
         })
     }
@@ -299,14 +299,13 @@ impl<'reg> ParserBuilder<'reg> {
 
 // Render templates using handlebars.
 pub struct BracketParser<'reg> {
-    context: Arc<BuildContext>,
+    //context: Arc<BuildContext>,
     registry: Registry<'reg>,
 }
 
 impl Parser for BracketParser<'_> {
     fn parse(&self, file: &PathBuf, data: CollatedPage) -> Result<String> {
         let name = file.to_string_lossy();
-        let template = &data.page().file.as_ref().unwrap().template;
 
         let standalone =
             data.page().standalone.is_some() && data.page().standalone.unwrap();
@@ -314,7 +313,7 @@ impl Parser for BracketParser<'_> {
         // Try to render a named layout
         if !standalone {
             if let Some(ref layout) = data.page().layout {
-                if let Some(tpl) = self.registry.get_template(layout) {
+                if let Some(_) = self.registry.get_template(layout) {
                     return self
                         .registry
                         .render(layout, &data)

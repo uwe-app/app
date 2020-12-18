@@ -50,7 +50,7 @@ impl Helper for Import {
                         }
                     } else {
                         if let Some(p) = file.parent() {
-                            let target = p.join(target).canonicalize().map_err(|e| {
+                            let target = p.join(target).canonicalize().map_err(|_| {
                                 HelperError::new(
                                     format!("Helper {}, could not resolve template {}", ctx.name(), value))
                             })?;

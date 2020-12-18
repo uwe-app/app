@@ -9,7 +9,7 @@ use bracket::helper::prelude::*;
 /// Helper function to get the URL for a page href.
 fn url<'render, 'call>(
     rc: &mut Render<'render>,
-    ctx: &Context<'call>,
+    _ctx: &Context<'call>,
     context: &BuildContext,
     mut input: &str,
 ) -> HelperResult<(String, Option<PathBuf>)> {
@@ -25,8 +25,6 @@ fn url<'render, 'call>(
 
     let opts = &context.options;
     let path = Path::new(base_path);
-
-    let collation = context.collation.read().unwrap();
 
     let link_config = context.config.link.as_ref().unwrap();
     let include_index = opts.settings.should_include_index();

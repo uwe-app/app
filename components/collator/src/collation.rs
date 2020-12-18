@@ -745,7 +745,11 @@ impl CollateInfo {
         Ok(())
     }
 
-    pub fn remove_file(&mut self, path: &PathBuf, options: &RuntimeOptions) -> bool {
+    pub fn remove_file(
+        &mut self,
+        path: &PathBuf,
+        options: &RuntimeOptions,
+    ) -> bool {
         let mut removed = self.all.remove(path).is_some();
         let kind = self.get_file_kind(path, options);
         match kind {
