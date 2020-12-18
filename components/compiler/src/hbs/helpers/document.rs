@@ -58,28 +58,29 @@ impl Helper for RenderPage {
 
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href);
-        let template_path =
-            if let Some(page_path) = collation.get_link_path(&normalized_href) {
-                if let Some(page_lock) = collation.resolve(&page_path) {
-                    let page = page_lock.read().unwrap();
-                    page.file
-                        .as_ref()
-                        .unwrap()
-                        .template
-                        .to_string_lossy()
-                        .into_owned()
-                } else {
-                    return Err(HelperError::new(&format!(
-                        "Type error in `render`, no page found for {}",
-                        &href
-                    )));
-                }
+        let template_path = if let Some(page_path) =
+            collation.get_link_path(&normalized_href)
+        {
+            if let Some(page_lock) = collation.resolve(&page_path) {
+                let page = page_lock.read().unwrap();
+                page.file
+                    .as_ref()
+                    .unwrap()
+                    .template
+                    .to_string_lossy()
+                    .into_owned()
             } else {
                 return Err(HelperError::new(&format!(
-                    "Type error in `render`, no path found for {}",
+                    "Type error in `render`, no page found for {}",
                     &href
                 )));
-            };
+            }
+        } else {
+            return Err(HelperError::new(&format!(
+                "Type error in `render`, no path found for {}",
+                &href
+            )));
+        };
 
         render_document(&template_path, &self.context, rc, ctx)
     }

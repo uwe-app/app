@@ -119,9 +119,6 @@ async fn find(
     let layouts_dir = req.options.source.join(config::LAYOUTS);
     let partials_dir = req.options.source.join(config::PARTIALS);
 
-    let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
-    let layout_name = layout_name(&req.options);
-
     // Channel for collecting errors
     let (tx, rx) = channel::unbounded();
 
@@ -161,12 +158,25 @@ async fn find(
                             return WalkState::Continue;
                         }
 
+                        if path.starts_with(&layouts_dir) {
+                            let name = path
+                                .file_stem()
+                                .unwrap()
+                                .to_string_lossy()
+                                .to_string();
+
+                            info.add_layout(name, Arc::clone(&key));
+                            return WalkState::Continue;
+                        }
+
+                        /*
                         // Configure the default layout to use a `layouts/main.hbs` file
                         if &*key == &primary_layout {
                             info.add_layout(
                                 config::MAIN.to_string(),
                                 Arc::clone(&key),
                             );
+                            return WalkState::Continue;
                         // Support alternative custom layouts by convention
                         } else if path.starts_with(&layouts_dir) {
                             let name = path
@@ -174,17 +184,11 @@ async fn find(
                                 .unwrap()
                                 .to_string_lossy()
                                 .to_string();
-                            info.add_layout(name, Arc::clone(&key));
-                        // Templates intermingled in the source tree
-                        } else {
-                            if let Err(e) =
-                                add_template(info, req.config, req.options, key)
-                            {
-                                let _ = tx.send(Error::from(e));
-                            }
-                        }
 
-                        return WalkState::Continue;
+                            info.add_layout(name, Arc::clone(&key));
+                            return WalkState::Continue;
+                        }
+                        */
                     }
 
                     // Directories are stored in memory but do not represent pages
@@ -198,31 +202,15 @@ async fn find(
                         return WalkState::Continue;
                     }
 
-                    let is_data_source =
-                        key.starts_with(req.options.get_data_sources_path());
-
-                    let is_page = !is_data_source
-                        && path.is_file()
-                        && req.options.is_page(&path);
-
-                    if is_page {
-                        if let Err(e) = add_page(
-                            info,
-                            req.config,
-                            req.options,
-                            req.plugins,
-                            &key,
-                            &path,
-                            &layout_name,
-                        ) {
-                            let _ = tx.send(e);
-                        }
-                    } else {
-                        if let Err(e) =
-                            add_other(info, req.config, req.options, key)
-                        {
-                            let _ = tx.send(Error::from(e));
-                        }
+                    if let Err(e) = add(
+                        info,
+                        req.config,
+                        req.options,
+                        req.plugins,
+                        &key,
+                        &path,
+                    ) {
+                        let _ = tx.send(e);
                     }
                 }
                 WalkState::Continue
@@ -289,21 +277,61 @@ fn add_other(
     info: &mut CollateInfo,
     _config: &Config,
     options: &RuntimeOptions,
-    key: Arc<PathBuf>,
+    key: &Arc<PathBuf>,
 ) -> Result<()> {
-    let dest = options.destination().exact(true).build(&key)?;
+    let dest = options.destination().exact(true).build(key)?;
 
-    let href = to_href(&key, options, false, None)?;
-    Ok(info.add_file(options, key, dest, href, None)?)
+    let href = to_href(key, options, false, None)?;
+    Ok(info.add_file(options, Arc::clone(key), dest, href, None)?)
 }
 
 fn add_template(
     info: &mut CollateInfo,
     _config: &Config,
     _options: &RuntimeOptions,
-    key: Arc<PathBuf>,
+    key: &Arc<PathBuf>,
 ) -> Result<()> {
     let path = key.canonicalize()?;
     info.add_template(Arc::new(path));
     Ok(())
+}
+
+// Add a resource to a collation.
+pub fn add(
+    info: &mut CollateInfo,
+    config: &Config,
+    options: &RuntimeOptions,
+    plugins: Option<&PluginCache>,
+    key: &Arc<PathBuf>,
+    path: &Path,
+) -> Result<()> {
+    let engine = config.engine();
+    let template_ext = engine.extension();
+
+    if path.extension() == Some(OsStr::new(template_ext)) {
+        add_template(info, config, options, key)
+    } else {
+        let is_data_source =
+            key.starts_with(options.get_data_sources_path());
+
+        let is_page = !is_data_source
+            && path.is_file()
+            && options.is_page(&path);
+
+        if is_page {
+            let layout_name = layout_name(options);
+            add_page(
+                info,
+                config,
+                options,
+                plugins,
+                key,
+                path,
+                layout_name,
+            )
+        } else {
+            add_other(info, config, options, key)
+        }
+    }
+
 }

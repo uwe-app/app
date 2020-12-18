@@ -531,11 +531,7 @@ impl Project {
         }) {
             let mut collation =
                 renderer.info.context.collation.write().unwrap();
-            /*
-            println!("Remove deleted files from the collation");
-            println!("remove file {:?}", path);
-            println!("remove file {:?}", lang);
-            */
+            info!("Delete {} -> {}", &lang, path.display());
             collation.remove_file(path, &*self.options);
         }
 
@@ -566,11 +562,46 @@ impl Project {
             })
         {
             let collation = renderer.info.context.collation.read().unwrap();
-            info!(
-                "Render {} -> {}",
-                collation.get_lang().as_ref(),
-                collation.get_path().display()
-            );
+            let lang = collation.get_lang().to_string();
+            let collation_path = collation.get_path().to_path_buf();
+
+            // Got a file target so we need to ensure it exists
+            // in the collation otherwise it needs to be added
+            if let Some(path) = render_options.file() {
+                // Test file existence so we don't collide with deletion logic
+                if path.exists() {
+                    if collation.get_resource(path).is_none() {
+                        info!("Create {} -> {}", &lang, path.display());
+                        drop(collation);
+                        let collation =
+                            renderer.info.context.collation.write().unwrap();
+                        let mut locale = collation.locale.write().unwrap();
+
+                        println!(
+                            "Project::render GOT FILE TARGET TO ADD {:?}",
+                            path
+                        );
+
+                        let key = Arc::new(path.to_path_buf());
+                        let plugins = renderer.info.context.plugins.as_deref();
+
+                        collator::add(
+                            &mut locale,
+                            &*self.config,
+                            &*self.options,
+                            plugins,
+                            &key,
+                            path,
+                        )?;
+
+                        //continue;
+                    } else {
+                        info!("Render {} -> {}", &lang, path.display());
+                    }
+                }
+            } else {
+                info!("Render {} -> {}", &lang, collation_path.display());
+            }
 
             let mut res = renderer.render(parser, &render_options).await?;
             if let Some(url) = res.sitemap.take() {

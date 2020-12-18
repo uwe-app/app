@@ -61,6 +61,13 @@ impl RenderOptions {
             search_index,
         }
     }
+
+    pub fn file(&self) -> Option<&PathBuf> {
+        if let RenderTarget::File(ref path) = self.target {
+            return Some(path);
+        }
+        None
+    }
 }
 
 #[derive(Clone)]
