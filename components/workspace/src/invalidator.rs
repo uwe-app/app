@@ -108,7 +108,7 @@ impl<'a> Invalidator<'a> {
                 for renderer in self.project.renderers.iter() {
                     let collation =
                         renderer.info.context.collation.read().unwrap();
-                    if let Some(href) = collation.get_link_source(&file) {
+                    if let Some(href) = collation.get_link_href(&file) {
                         let href = href
                             .trim_end_matches(config::INDEX_HTML)
                             .to_string();

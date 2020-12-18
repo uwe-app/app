@@ -58,7 +58,7 @@ impl Menu {
             })?;
 
             let normalized_href = collation.normalize(path);
-            if let Some(base_path) = collation.get_link(&normalized_href) {
+            if let Some(base_path) = collation.get_link_path(&normalized_href) {
                 //base_path.foo();
                 if let Some(page_lock) = collation.resolve(base_path.as_ref()) {
                     let page = page_lock.as_ref().read().unwrap();
@@ -194,7 +194,7 @@ impl Menu {
                 rc.push_scope(Scope::new());
                 for href in result.pages.iter() {
                     if let Some(page_path) =
-                        collation.get_link(&collation.normalize(&**href))
+                        collation.get_link_path(&collation.normalize(&**href))
                     {
                         if let Some(page) =
                             collation.resolve(page_path.as_ref())

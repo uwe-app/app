@@ -26,7 +26,7 @@ pub fn build<'c>(
         MenuReference::Pages { ref pages, .. } => {
             pages.iter().try_fold(&mut page_data, |acc, page_href| {
                 let page_path =
-                    collation.get_link(&collation.normalize(page_href));
+                    collation.get_link_path(&collation.normalize(page_href));
 
                 if let Some(ref page_path) = page_path {
                     if let Some(page) = collation.resolve(&page_path) {

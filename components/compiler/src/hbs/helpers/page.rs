@@ -26,7 +26,7 @@ impl Helper for Page {
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href_or_path);
         let page_path =
-            if let Some(page_path) = collation.get_link(&normalized_href) {
+            if let Some(page_path) = collation.get_link_path(&normalized_href) {
                 page_path.to_path_buf()
             } else {
                 PathBuf::from(&href_or_path)

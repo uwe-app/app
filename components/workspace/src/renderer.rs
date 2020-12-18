@@ -207,7 +207,7 @@ impl Renderer {
                 info!("Prepare search index ({})", parse_list.len());
                 for parse_data in parse_list {
                     if let Some(ref extraction) = parse_data.extract {
-                        let href = collation.get_link_source(&parse_data.file);
+                        let href = collation.get_link_href(&parse_data.file);
 
                         let buffer = extraction.to_chunk_string();
                         let title = if let Some(ref title) = extraction.title {
@@ -312,7 +312,7 @@ impl Renderer {
                         .map(|d| {
                             // Get the href to use to build the location
                             let href =
-                                collation.get_link_source(&d.file).unwrap();
+                                collation.get_link_href(&d.file).unwrap();
                             // Get the last modification data from the page
                             let page = collation.resolve(&d.file).unwrap();
                             let page = &*page.read().unwrap();

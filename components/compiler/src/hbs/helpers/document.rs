@@ -59,7 +59,7 @@ impl Helper for RenderPage {
         let collation = self.context.collation.read().unwrap();
         let normalized_href = collation.normalize(&href);
         let template_path =
-            if let Some(page_path) = collation.get_link(&normalized_href) {
+            if let Some(page_path) = collation.get_link_path(&normalized_href) {
                 if let Some(page_lock) = collation.resolve(&page_path) {
                     let page = page_lock.read().unwrap();
                     page.file

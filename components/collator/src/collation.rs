@@ -207,7 +207,7 @@ impl Collation {
     }
 
     //fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
-    pub fn get_link(
+    pub fn get_link_path(
         &self,
         key: &String,
     ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<PathBuf>>> {
@@ -216,42 +216,42 @@ impl Collation {
         self.locale
             .read()
             .unwrap()
-            .get_link(key)
+            .get_link_path(key)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
-                    .map(|rg| rg.get_link(key).unwrap())
+                    .map(|rg| rg.get_link_path(key).unwrap())
             })
             .or({
-                self.locale.read().unwrap().get_link(key).map(|_| {
+                self.locale.read().unwrap().get_link_path(key).map(|_| {
                     RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                        .map(|rg| rg.get_link(key).unwrap())
+                        .map(|rg| rg.get_link_path(key).unwrap())
                 })
             })
     }
 
-    //fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
-    pub fn get_link_source(
+    //fn get_link_href(&self, key: &PathBuf) -> Option<&Arc<String>> {
+    pub fn get_link_href(
         &self,
         key: &PathBuf,
     ) -> Option<RwLockReadGuardRef<'_, CollateInfo, Arc<String>>> {
         //self.locale
         //.read()
         //.unwrap()
-        //.get_link_source(key)
-        //.or(self.fallback.read().unwrap().get_link_source(key))
+        //.get_link_href(key)
+        //.or(self.fallback.read().unwrap().get_link_href(key))
 
         self.locale
             .read()
             .unwrap()
-            .get_link_source(key)
+            .get_link_href(key)
             .map(|_| {
                 RwLockReadGuardRef::new(self.locale.read().unwrap())
-                    .map(|rg| rg.get_link_source(key).unwrap())
+                    .map(|rg| rg.get_link_href(key).unwrap())
             })
             .or({
-                self.locale.read().unwrap().get_link_source(key).map(|_| {
+                self.locale.read().unwrap().get_link_href(key).map(|_| {
                     RwLockReadGuardRef::new(self.fallback.read().unwrap())
-                        .map(|rg| rg.get_link_source(key).unwrap())
+                        .map(|rg| rg.get_link_href(key).unwrap())
                 })
             })
     }
@@ -404,11 +404,11 @@ impl LinkMap {
         s
     }
 
-    pub fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
+    pub fn get_link_path(&self, key: &String) -> Option<&Arc<PathBuf>> {
         self.reverse.get(key)
     }
 
-    pub fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+    pub fn get_link_href(&self, key: &PathBuf) -> Option<&Arc<String>> {
         self.sources.get(key)
     }
 
@@ -416,14 +416,14 @@ impl LinkMap {
         let mut key = self.normalize(href);
         //println!("Looking for link with key {}", key);
 
-        if let Some(path) = self.get_link(&key) {
+        if let Some(path) = self.get_link_path(&key) {
             return Some(path.to_path_buf());
         } else {
             // Sometimes we have directory references without a trailing slash
             // so try again with an index page
             key.push('/');
             key.push_str(config::INDEX_HTML);
-            if let Some(path) = self.get_link(&key) {
+            if let Some(path) = self.get_link_path(&key) {
                 return Some(path.to_path_buf());
             }
         }
@@ -476,12 +476,12 @@ impl LinkCollate for Collation {
         self.locale.read().unwrap().get_link(key).or(self.fallback.read().unwrap().get_link(key))
     }
 
-    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
+    fn get_link_href(&self, key: &PathBuf) -> Option<&Arc<String>> {
         self.locale
             .read()
             .unwrap()
-            .get_link_source(key)
-            .or(self.fallback.read().unwrap().get_link_source(key))
+            .get_link_href(key)
+            .or(self.fallback.read().unwrap().get_link_href(key))
     }
 
     fn find_link(&self, href: &str) -> Option<PathBuf> {
@@ -525,8 +525,8 @@ impl LinkCollate for CollateInfo {
         self.links.get_link(key)
     }
 
-    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
-        self.links.get_link_source(key)
+    fn get_link_href(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.links.get_link_href(key)
     }
 
     fn normalize<S: AsRef<str>>(&self, s: S) -> String {
@@ -597,12 +597,12 @@ impl CollateInfo {
         self.layouts.entry(key).or_insert(file)
     }
 
-    pub fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>> {
-        self.links.get_link(key)
+    pub fn get_link_path(&self, key: &String) -> Option<&Arc<PathBuf>> {
+        self.links.get_link_path(key)
     }
 
-    pub fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>> {
-        self.links.get_link_source(key)
+    pub fn get_link_href(&self, key: &PathBuf) -> Option<&Arc<String>> {
+        self.links.get_link_href(key)
     }
 
     pub fn normalize<S: AsRef<str>>(&self, s: S) -> String {
