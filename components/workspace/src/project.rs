@@ -536,7 +536,7 @@ impl Project {
             println!("remove file {:?}", path);
             println!("remove file {:?}", lang);
             */
-            collation.remove_file(path);
+            collation.remove_file(path, &*self.options);
         }
 
         Ok(())

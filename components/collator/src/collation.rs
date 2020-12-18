@@ -299,6 +299,8 @@ impl Collation {
     }
     */
 
+    // FIXME/WIP: how to use pointers to the strings like we did
+    // FIXME/WIP: before the migration to RwLock<CollateInfo>? ^^^^
     pub fn menu_page_href(&self) -> HashMap<String, Vec<String>> {
         let mut result: HashMap<String, Vec<String>> = HashMap::new();
         for (key, menu) in self.locale.read().unwrap().menus.iter() {
@@ -313,13 +315,10 @@ impl Collation {
         result
     }
 
-    pub fn remove_file(&mut self, path: &PathBuf) {
-        println!("Collation removing the file {:?}", path);
-        /*
-        let locale = Arc::make_mut(&mut self.locale);
-        println!("Collation removing the file on the locale!!! {:?}", path);
-        locale.remove_file(path);
-        */
+    /// Remove a file from the locale associated with this collation.
+    pub fn remove_file(&mut self, path: &PathBuf, options: &RuntimeOptions) {
+        let mut locale = self.locale.write().unwrap();
+        locale.remove_file(path, options);
     }
 }
 
@@ -382,66 +381,6 @@ pub struct LinkMap {
     pub(crate) reverse: HashMap<Arc<String>, Arc<PathBuf>>,
 }
 
-/// General access to collated data.
-/*
-pub trait Collate {
-    fn get_lang(&self) -> &str;
-    fn get_path(&self) -> &PathBuf;
-    fn get_resource(&self, key: &PathBuf) -> Option<&Resource>;
-    fn resolve(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>>;
-    fn resources(&self) -> Box<dyn Iterator<Item = &Arc<PathBuf>> + Send + '_>;
-    fn pages(
-        &self,
-    ) -> Box<dyn Iterator<Item = (&Arc<PathBuf>, &Arc<RwLock<Page>>)> + Send + '_>;
-
-    fn find_menu(&self, name: &str) -> Option<&MenuResult>;
-}
-*/
-
-/*
-/// Access to the layouts.
-pub trait LayoutCollate {
-    /// Get the primary layout.
-    fn get_layout(&self) -> Option<&Arc<PathBuf>>;
-
-    /// Get all layouts keyed by layout name suitable
-    /// for configuring as templates.
-    fn layouts(&self) -> &HashMap<String, Arc<PathBuf>>;
-}
-*/
-
-/*
-pub trait LinkCollate {
-    fn get_link(&self, key: &String) -> Option<&Arc<PathBuf>>;
-    fn get_link_source(&self, key: &PathBuf) -> Option<&Arc<String>>;
-
-    /// Normalize a URL path so that it begins with a leading slash
-    /// and is given an `index.html` suffix if it ends with a slash.
-    ///
-    /// Any fragment identifier should be stripped.
-    fn normalize<S: AsRef<str>>(&self, s: S) -> String {
-        let mut s = s.as_ref().to_string();
-
-        if s.contains('#') {
-            let parts: Vec<&str> = s.splitn(2, '#').collect();
-            s = parts.get(0).unwrap().to_string();
-        }
-
-        if !s.starts_with("/") {
-            s = format!("/{}", s);
-        }
-        // We got a hint with the trailing slash that we should look for an index page
-        if s != "/" && s.ends_with("/") {
-            s.push_str(config::INDEX_HTML);
-        }
-        s
-    }
-
-    /// Try to find a source file corresponging to a link URL path.
-    fn find_link(&self, href: &str) -> Option<PathBuf>;
-}
-*/
-
 impl LinkMap {
     /// Normalize a URL path so that it begins with a leading slash
     /// and is given an `index.html` suffix if it ends with a slash.
@@ -489,6 +428,15 @@ impl LinkMap {
             }
         }
         None
+    }
+
+    pub fn remove(&mut self, path: &PathBuf) -> bool {
+        let href = self.sources.remove(path);
+        let mut removed = href.is_some();
+        if let Some(href) = href {
+            removed = removed && self.reverse.remove(&*href).is_some();
+        }
+        removed
     }
 }
 
@@ -768,7 +716,7 @@ impl CollateInfo {
             }
         }
 
-        let kind = self.get_file_kind(&key, options);
+        let kind = self.get_file_kind(&*key, options);
         match kind {
             ResourceKind::File | ResourceKind::Asset => {
                 //println!("Adding file link for key {}", key.display());
@@ -797,16 +745,22 @@ impl CollateInfo {
         Ok(())
     }
 
-    pub fn remove_file(&mut self, path: &PathBuf) {
-        println!("CollateInfo removing the file {:?}", path);
-        // FIXME: update the link map
-        // FIXME: remove from resources
-        self.all.remove(path);
+    pub fn remove_file(&mut self, path: &PathBuf, options: &RuntimeOptions) -> bool {
+        let mut removed = self.all.remove(path).is_some();
+        let kind = self.get_file_kind(path, options);
+        match kind {
+            ResourceKind::File | ResourceKind::Asset => {
+                removed = removed && self.resources.remove(path);
+                removed = removed && self.links.remove(path);
+            }
+            _ => {}
+        }
+        removed
     }
 
     fn get_file_kind(
         &self,
-        key: &Arc<PathBuf>,
+        key: &PathBuf,
         options: &RuntimeOptions,
     ) -> ResourceKind {
         let mut kind = ResourceKind::File;
