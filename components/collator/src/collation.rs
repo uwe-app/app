@@ -1,11 +1,11 @@
-use std::collections::{hash_map, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 use owning_ref::RwLockReadGuardRef;
 
 use config::indexer::QueryList;
-use config::{Config, MenuEntry, MenuResult, Page, RuntimeOptions};
+use config::{Config, MenuResult, Page, RuntimeOptions};
 use locale::LocaleName;
 
 use crate::{

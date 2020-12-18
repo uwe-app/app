@@ -209,7 +209,6 @@ impl RuntimeOptions {
 
     /// Split a URL path into a pair possibly containing a fragment identifier.
     pub fn fragment<'a>(&self, href: &'a str) -> (&'a str, Option<&'a str>) {
-        let mut fragment: Option<&str> = None;
         if href.contains('#') {
             let parts: Vec<&'a str> = href.splitn(2, '#').collect();
             (parts.get(0).unwrap(), Some(parts.get(1).unwrap()))

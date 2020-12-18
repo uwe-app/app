@@ -1,9 +1,6 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-
-use pulldown_cmark::{CowStr, Event, LinkType, Tag};
 
 use config::{
     Config, MenuEntry, MenuReference, MenuResult, Page, RuntimeOptions,
@@ -146,7 +143,6 @@ pub fn build<'c>(
             )?;
             template::end_list(&mut buf)?;
         }
-        _ => {}
     }
 
     // Assign list of pages referenced by the menu to the compiled

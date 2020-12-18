@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::mem;
 use std::path::PathBuf;
@@ -291,7 +290,7 @@ impl Page {
         // FIXME: set host/domain/website for the page data (#252)
 
         let website = options.settings.get_host_url(config)?;
-        let mut canonical = website.join(&href)?;
+        let canonical = website.join(&href)?;
 
         let og = self.open_graph.get_or_insert(Default::default());
         og.insert(crate::OG_URL.to_string(), canonical.clone().to_string());

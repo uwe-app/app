@@ -257,12 +257,14 @@ fn fetch_submodules<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
 }
 */
 
+/*
 fn fetch<P: AsRef<Path>>(repo: &Repository, base: P) -> Result<()> {
     info!("Fetch {}", base.as_ref().display());
     repo.find_remote(ORIGIN)?
         .fetch(&[MAIN], None, None)
         .map_err(Error::from)
 }
+*/
 
 pub fn print_clone<P: AsRef<Path>>(from: &str, to: P) {
     info!("Clone {}", from);

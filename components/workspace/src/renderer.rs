@@ -7,7 +7,6 @@ use log::{debug, info};
 use url::Url;
 
 use human_bytes::human_bytes;
-use owning_ref::ArcRef;
 
 use collator::{builder::PageBuilder, resource::Resource};
 use compiler::{
@@ -15,7 +14,6 @@ use compiler::{
 };
 use config::{
     hook::HookConfig,
-    plugin_cache::PluginCache,
     profile::Profiles,
     sitemap::{SiteMapEntry, SiteMapFile, SiteMapIndex},
 };

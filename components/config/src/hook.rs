@@ -6,7 +6,7 @@ use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::{profile::ProfileName, utils::href::UrlPath, Error, Result};
+use crate::{profile::ProfileName, Error, Result};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HookMap {

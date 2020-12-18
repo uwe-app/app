@@ -41,7 +41,7 @@ where
         //let context = &self.context;
 
         rayon::scope(|s| {
-            for p in it {
+            for p in it.filter(filter) {
                 let tx = tx.clone();
                 s.spawn(move |_t| {
                     // NOTE: we pay a price for creating another runtime
@@ -83,7 +83,7 @@ where
             return Err(Error::Multi { errs });
         }
     } else {
-        for p in it {
+        for p in it.filter(filter) {
             if let Some(parse_data) = run::one(context, parser, p).await? {
                 output.data.push(parse_data);
                 output.files.push(Arc::clone(p));

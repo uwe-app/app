@@ -170,6 +170,6 @@ fn lint_template(plugin: &Plugin, path: &UrlPath) -> Result<(), LintError> {
     let content = fs::read_to_string(&buf)?;
     let file_name = buf.to_string_lossy().into_owned().to_string();
     let options = ParserOptions::new(file_name, 0, 0);
-    let template = Template::compile(content, options)?;
+    let _ = Template::compile(content, options)?;
     Ok(())
 }

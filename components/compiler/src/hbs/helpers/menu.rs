@@ -6,7 +6,7 @@ use serde_json::json;
 
 use collator::menu::{self, PageData};
 
-use config::{href::UrlPath, MenuEntry, MenuReference, RuntimeOptions};
+use config::{href::UrlPath, MenuEntry, MenuReference};
 
 use crate::BuildContext;
 

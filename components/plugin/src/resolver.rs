@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{debug, info, warn};
+use log::{info, warn};
 
 use futures::future;
 
@@ -149,7 +149,7 @@ impl<'a> Resolver<'a> {
             .package
             .iter()
             .filter(|entry| {
-                let (dep, solved) =
+                let (_dep, solved) =
                     self.intermediate.get(entry).as_ref().unwrap();
                 match solved {
                     SolvedReference::Plugin(_) => return true,

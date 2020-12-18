@@ -9,7 +9,7 @@ use ignore::{WalkBuilder, WalkState};
 use log::debug;
 
 use config::{
-    href::UrlPath, plugin_cache::PluginCache, Config, RuntimeOptions,
+    plugin_cache::PluginCache, Config, RuntimeOptions,
 };
 use locale::{LocaleMap, LocaleName};
 
@@ -302,7 +302,7 @@ fn add_other(
 fn add_template(
     info: &mut CollateInfo,
     _config: &Config,
-    options: &RuntimeOptions,
+    _options: &RuntimeOptions,
     key: Arc<PathBuf>,
 ) -> Result<()> {
     let path = key.canonicalize()?;
