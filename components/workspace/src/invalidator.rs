@@ -35,7 +35,6 @@ pub enum Action {
     SiteConfig(PathBuf),
 
     Partial(PathBuf),
-    Layout(PathBuf),
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
@@ -66,6 +65,8 @@ pub struct Rule {
     ignores: Vec<Action>,
     // Hooks are a special case so we store them separately
     hooks: Vec<Action>,
+    // Hooks are a special case so we store them separately
+    layouts: Vec<PathBuf>,
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
     // List of paths that do not exist anymore
@@ -180,6 +181,7 @@ impl<'a> Invalidator<'a> {
             ignores: Vec::new(),
             hooks: Vec::new(),
             actions: Vec::new(),
+            layouts: Vec::new(),
             deletions: Vec::new(),
         };
 
@@ -205,6 +207,7 @@ impl<'a> Invalidator<'a> {
 
         let assets = self.canonical(self.project.options.get_assets_path());
         let partials = self.canonical(self.project.options.get_partials_path());
+        let layouts = self.canonical(self.project.options.get_layouts_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators =
@@ -245,9 +248,8 @@ impl<'a> Invalidator<'a> {
 
                     if path == cfg_file {
                         rule.ignores.push(Action::SiteConfig(path));
-                    //} else if path == layout_file {
-                    //rule.strategy = Strategy::Page;
-                    //rule.ignores.push(Action::Layout(path));
+                    } else if path.starts_with(&layouts) {
+                        rule.layouts.push(path);
                     } else if path.starts_with(&build_output) {
                         rule.ignores.push(Action::BuildOutput(path));
                     } else if path.starts_with(&assets) {

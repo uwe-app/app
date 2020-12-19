@@ -30,12 +30,6 @@ impl TemplateEngine {
             Self::Handlebars => HANDLEBARS_EXT,
         }
     }
-
-    /*
-    pub fn get_layout_name(&self) -> String {
-        format!("{}{}", LAYOUT, self.extension())
-    }
-    */
 }
 
 impl Default for TemplateEngine {

@@ -145,6 +145,7 @@ pub struct ProfileSettings {
     pub locales: Option<PathBuf>,
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
+    pub layouts: Option<PathBuf>,
     pub data_sources: Option<PathBuf>,
 
     pub extend: Option<Vec<String>>,
@@ -153,6 +154,12 @@ pub struct ProfileSettings {
     pub live: Option<bool>,
     pub launch: Option<String>,
     pub release: Option<bool>,
+
+    // Name for the default layout, when not specified
+    // and `layouts/main.hbs` exists it will be used
+    // otherwise the default layout name `std::core::main`
+    // will be used instead.
+    pub layout: Option<String>,
 
     pub rewrite_index: Option<bool>,
     pub include_index: Option<bool>,
@@ -196,6 +203,7 @@ impl Default for ProfileSettings {
             locales: Some(PathBuf::from(config::LOCALES)),
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
+            layouts: Some(PathBuf::from(config::LAYOUTS)),
             data_sources: Some(PathBuf::from(config::DATASOURCES)),
 
             rewrite_index: Some(true),
@@ -212,6 +220,7 @@ impl Default for ProfileSettings {
             live: None,
             launch: None,
             release: None,
+            layout: None,
             include_index: None,
             incremental: None,
             pristine: None,
@@ -262,6 +271,9 @@ impl ProfileSettings {
         if other.partials.is_some() {
             self.partials = mem::take(&mut other.partials)
         }
+        if other.layouts.is_some() {
+            self.layouts = mem::take(&mut other.layouts)
+        }
         if other.data_sources.is_some() {
             self.data_sources = mem::take(&mut other.data_sources)
         }
@@ -291,6 +303,9 @@ impl ProfileSettings {
         }
         if other.release.is_some() {
             self.release = mem::take(&mut other.release)
+        }
+        if other.layout.is_some() {
+            self.layout = mem::take(&mut other.layout)
         }
         if other.include_index.is_some() {
             self.include_index = mem::take(&mut other.include_index)

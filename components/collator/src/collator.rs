@@ -100,10 +100,15 @@ pub async fn walk(
 pub fn layout_name(options: &RuntimeOptions) -> &str {
     let layouts_dir = options.source.join(config::LAYOUTS);
     let primary_layout = layouts_dir.join(config::LAYOUT_HBS);
-    if primary_layout.exists() {
-        config::MAIN
+
+    if let Some(ref layout_name) = options.settings.layout {
+        layout_name
     } else {
-        config::DEFAULT_LAYOUT_NAME
+        if primary_layout.exists() {
+            config::MAIN
+        } else {
+            config::DEFAULT_LAYOUT_NAME
+        }
     }
 }
 

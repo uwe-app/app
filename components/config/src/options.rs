@@ -187,6 +187,10 @@ impl RuntimeOptions {
         self.source.join(self.settings.partials.as_ref().unwrap())
     }
 
+    pub fn get_layouts_path(&self) -> PathBuf {
+        self.source.join(self.settings.layouts.as_ref().unwrap())
+    }
+
     pub fn get_data_sources_path(&self) -> PathBuf {
         self.source
             .join(self.settings.data_sources.as_ref().unwrap())
