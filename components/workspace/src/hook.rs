@@ -30,9 +30,10 @@ pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig, changed: Option<&PathBuf
 
     // Looks like a relative command, resolve to the project root
     if cmd.starts_with(".") {
-        let mut buf = project_root.clone();
-        buf.push(cmd.clone());
-        cmd = buf.to_string_lossy().into_owned();
+        cmd = project_root
+            .join(&cmd)
+            .to_string_lossy()
+            .into_owned();
     }
 
     let build_source = ctx.options.source.canonicalize()?;
