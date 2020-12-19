@@ -327,8 +327,8 @@ impl<'a> Invalidator<'a> {
         }
 
         for hook in &rule.hooks {
-            if let Action::Hook(hook, _file) = hook {
-                self.project.run_hook(hook).await?;
+            if let Action::Hook(hook, file) = hook {
+                self.project.run_hook(hook, Some(file)).await?;
             }
         }
 

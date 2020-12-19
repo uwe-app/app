@@ -356,8 +356,8 @@ impl Renderer {
         Ok(res)
     }
 
-    pub(crate) async fn run_hook(&self, hook: &HookConfig) -> Result<()> {
-        Ok(hook::run(&self.info.context, vec![hook])?)
+    pub(crate) async fn run_hook(&self, hook: &HookConfig, changed: Option<&PathBuf>) -> Result<()> {
+        Ok(hook::run(&self.info.context, vec![hook], changed)?)
     }
 
     async fn run_before_hooks(&self) -> Result<()> {
@@ -369,6 +369,7 @@ impl Renderer {
                     hook::Phase::Before,
                     &self.info.context.options.settings.name,
                 ),
+                None,
             )?;
         }
         Ok(())
@@ -383,6 +384,7 @@ impl Renderer {
                     hook::Phase::After,
                     &self.info.context.options.settings.name,
                 ),
+                None,
             )?;
         }
         Ok(())

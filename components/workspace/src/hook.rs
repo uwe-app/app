@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
@@ -14,7 +15,7 @@ pub enum Phase {
     After,
 }
 
-pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
+pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig, changed: Option<&PathBuf>) -> Result<()> {
     let collation = ctx.collation.read().unwrap();
 
     let project_root = ctx.config.project().canonicalize().map_err(|_| {
@@ -71,6 +72,10 @@ pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig) -> Result<()> {
         .env("BUILD_HOOK", hook_root.to_string_lossy().into_owned())
         .args(args);
 
+    if let Some(file) = changed {
+        command.env("BUILD_FILE", file.to_string_lossy().into_owned());
+    }
+
     if hook.stdout.is_some() && hook.stdout.unwrap() {
         command.stdout(Stdio::inherit());
     }
@@ -109,9 +114,9 @@ pub fn collect<'a>(
         .collect::<Vec<_>>()
 }
 
-pub fn run(ctx: &Arc<BuildContext>, hooks: Vec<&HookConfig>) -> Result<()> {
+pub fn run(ctx: &Arc<BuildContext>, hooks: Vec<&HookConfig>, changed: Option<&PathBuf>) -> Result<()> {
     for hook in hooks {
-        exec(ctx, hook)?;
+        exec(ctx, hook, changed)?;
     }
     Ok(())
 }

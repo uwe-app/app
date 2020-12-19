@@ -654,9 +654,9 @@ impl Project {
         Ok(result)
     }
 
-    pub(crate) async fn run_hook(&self, hook: &HookConfig) -> Result<()> {
+    pub(crate) async fn run_hook(&self, hook: &HookConfig, changed: Option<&PathBuf>) -> Result<()> {
         for renderer in self.renderers.iter() {
-            renderer.run_hook(hook).await?;
+            renderer.run_hook(hook, changed).await?;
         }
         Ok(())
     }
