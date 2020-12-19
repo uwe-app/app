@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::path::PathBuf;
 
+use ignore::WalkBuilder;
+
 use collections::{self, DataSourceMap};
 use config::{hook::HookConfig, FileType};
 
@@ -133,7 +135,44 @@ impl<'a> Invalidator<'a> {
         file
     }
 
+    /// Walk the parent directory so we can determine if a path
+    /// should be ignored using the standard .gitignore and .ignore
+    /// file comparisons.
+    ///
+    /// This is inefficient because we have to walk all the entries
+    /// in the parent directory to determine if a file should be
+    /// ignored.
+    ///
+    /// Ideally we could do this at a lower-level but the `ignore`
+    /// crate does not expose the `dir` module so we would need to
+    /// reproduce all of that functionality.
+    fn filter_ignores(&self, paths: Vec<PathBuf>) -> Vec<PathBuf> {
+        let mut results: Vec<PathBuf> = Vec::new();
+        for path in paths {
+            if let Some(parent) = path.parent()  {
+                for entry in WalkBuilder::new(parent)
+                    .max_depth(Some(1))
+                    .filter_entry(move |entry| {
+                        entry.path() == path
+                    }).build() {
+                    match entry {
+                        Ok(entry) => {
+                            if entry.path().is_file() {
+                                results.push(entry.path().to_path_buf())
+                            }
+                        },
+                        _ => {},
+                    }
+                }
+            }
+        }
+        results
+    }
+
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
+
+        let paths = self.filter_ignores(paths);
+
         let mut rule = Rule {
             notify: true,
             reload: false,
