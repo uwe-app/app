@@ -283,7 +283,7 @@ impl<'reg> ParserBuilder<'reg> {
         let layouts = self.context.collation.read().unwrap().layouts().clone();
         for (name, path) in layouts.iter() {
             debug!("Layout: {}", name);
-            self.registry.add(name.clone(), path.as_ref())?;
+            self.registry.add(name.to_string(), path.as_ref())?;
         }
 
         Ok(self)
@@ -331,5 +331,9 @@ impl Parser for BracketParser<'_> {
             .registry
             .once(&name, content, &data)
             .map_err(Error::from);
+    }
+
+    fn add(&mut self, name: String, file: &PathBuf) -> Result<()> {
+        self.registry.add(name, file).map_err(Error::from)
     }
 }

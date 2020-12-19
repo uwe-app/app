@@ -15,6 +15,8 @@ pub trait Parser {
         // NOTE: but cannot due to E0038
         data: CollatedPage,
     ) -> Result<String>;
+
+    fn add(&mut self, name: String, file: &PathBuf) -> Result<()>;
 }
 
 /// Generate a parser for the given template engine.

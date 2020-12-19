@@ -581,6 +581,31 @@ impl Project {
         Ok(())
     }
 
+    pub(crate) fn update_layouts(&mut self, layouts: &Vec<PathBuf>) -> Result<()> {
+
+        //let layouts = self.context.collation.read().unwrap().layouts();
+        //
+
+        // TODO: handle new layouts
+        // TODO: handle deleted layouts
+        // TODO: rebuild all pages that point to a changed layout
+
+        for layout in layouts {
+            if layout.exists() {
+                for parser in self.parsers.iter_mut() {
+                    let name = layout.file_stem()
+                        .unwrap()
+                        .to_string_lossy()
+                        .into_owned();
+                    parser.add(name, layout)?;
+                }
+            } else {
+                //TODO: remove the layout from the parser!
+            }
+        }
+        Ok(())
+    }
+
     /// Render the project.
     pub(crate) async fn render(
         &mut self,

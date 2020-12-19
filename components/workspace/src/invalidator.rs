@@ -221,8 +221,6 @@ impl<'a> Invalidator<'a> {
             .map(|g| self.canonical(g.source.clone()))
             .collect::<Vec<_>>();
 
-        // TODO: recognise custom layouts (layout = )
-
         'paths: for path in paths {
             if !path.exists() {
                 rule.deletions.push(path);
@@ -340,6 +338,11 @@ impl<'a> Invalidator<'a> {
                 self.render().await?;
             }
             _ => {
+
+                if !rule.layouts.is_empty() {
+                    self.project.update_layouts(&rule.layouts)?;
+                }
+
                 for action in &rule.actions {
                     match action {
                         Action::Page(path) | Action::File(path) => {
