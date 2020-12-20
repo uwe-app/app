@@ -586,11 +586,43 @@ impl Project {
         Ok(())
     }
 
-    /// Compile layouts and return a set of pages that
-    /// are using the layouts.
+    /// Update partials.
+    pub(crate) async fn update_partials(
+        &mut self,
+        layouts: &HashSet<PathBuf>,
+    ) -> Result<()> {
+        let layouts: Vec<(String, &PathBuf)> = layouts
+            .iter()
+            .map(|layout| {
+                let name =
+                    layout.file_stem().unwrap().to_string_lossy().into_owned();
+                (name, layout)
+            })
+            .collect();
+
+        for (name, layout) in layouts {
+            if layout.exists() {
+                info!("Render partial {}", &name);
+                for parser in self.parsers.iter_mut() {
+                    // Re-compile the template
+                    parser.add(name.to_string(), layout)?;
+                }
+            } else {
+                info!("Delete partial {}", &name);
+                for parser in self.parsers.iter_mut() {
+                    // Remove the layout from the parser
+                    parser.remove(&name);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Update layouts and render any pages referenced by the layouts.
     pub(crate) async fn update_layouts(
         &mut self,
-        layouts: &Vec<PathBuf>,
+        layouts: &HashSet<PathBuf>,
     ) -> Result<()> {
         // List of pages to render
         let mut render_pages: HashSet<(String, PathBuf)> = HashSet::new();

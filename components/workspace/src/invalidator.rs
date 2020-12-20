@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
+use std::collections::HashSet;
 
 use ignore::WalkBuilder;
 
@@ -13,8 +14,6 @@ use crate::{renderer::RenderOptions, Error, Project, Result};
  *
  *  - BuildOutput: directory is ignored.
  *  - SiteConfig: (site.toml) is ignored.
- *  - Partial: trigger a build of all pages.
- *  - Layout: trigger a build of all pages.
  *  - Asset: trigger a full build.
  *  - Page: rebuild the page.
  *  - File: copy the file to build.
@@ -34,7 +33,6 @@ pub enum Action {
     // it corresponds to the site.toml file.
     SiteConfig(PathBuf),
 
-    Partial(PathBuf),
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
@@ -65,8 +63,12 @@ pub struct Rule {
     ignores: Vec<Action>,
     // Hooks are a special case so we store them separately
     hooks: Vec<Action>,
-    // Hooks are a special case so we store them separately
-    layouts: Vec<PathBuf>,
+    // Layouts need special handling so that referenced pages
+    // are also rendered
+    layouts: HashSet<PathBuf>,
+    // Partials should be re-compiled but currently we don't
+    // know which files are dependent upon partials
+    partials: HashSet<PathBuf>,
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
     // List of paths that do not exist anymore
@@ -180,7 +182,8 @@ impl<'a> Invalidator<'a> {
             ignores: Vec::new(),
             hooks: Vec::new(),
             actions: Vec::new(),
-            layouts: Vec::new(),
+            layouts: HashSet::new(),
+            partials: HashSet::new(),
             deletions: Vec::new(),
         };
 
@@ -246,15 +249,14 @@ impl<'a> Invalidator<'a> {
                     if path == cfg_file {
                         rule.ignores.push(Action::SiteConfig(path));
                     } else if path.starts_with(&layouts) {
-                        rule.layouts.push(path);
+                        rule.layouts.insert(path);
                     } else if path.starts_with(&build_output) {
                         rule.ignores.push(Action::BuildOutput(path));
                     } else if path.starts_with(&assets) {
                         rule.strategy = Strategy::Full;
                         rule.actions.push(Action::Asset(path));
                     } else if path.starts_with(&partials) {
-                        rule.strategy = Strategy::Page;
-                        rule.ignores.push(Action::Partial(path));
+                        rule.partials.insert(path);
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
                             let cfg =
@@ -337,6 +339,11 @@ impl<'a> Invalidator<'a> {
                 self.render().await?;
             }
             _ => {
+
+                if !rule.partials.is_empty() {
+                    self.project.update_partials(&rule.partials).await?;
+                }
+
                 if !rule.layouts.is_empty() {
                     self.project.update_layouts(&rule.layouts).await?;
                 }
