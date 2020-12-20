@@ -21,7 +21,6 @@ pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 pub type IndexValue = (IndexKey, Arc<Value>);
 pub type Index = Vec<IndexValue>;
 
-static DATASOURCE_TOML: &str = "datasource.toml";
 static DOCUMENTS: &str = "documents";
 
 static IDENTITY: &str = "id";
@@ -244,11 +243,6 @@ pub struct DataSourceMap {
 }
 
 impl DataSourceMap {
-    pub fn get_datasource_config_path<P: AsRef<Path>>(source: P) -> PathBuf {
-        let mut pth = source.as_ref().to_path_buf();
-        pth.push(DATASOURCE_TOML);
-        pth
-    }
 
     fn to_data_source(path: &PathBuf, config: &DataSourceConfig) -> DataSource {
         let all: BTreeMap<String, Arc<Value>> = BTreeMap::new();

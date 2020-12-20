@@ -5,7 +5,7 @@ use std::ffi::OsStr;
 
 use ignore::WalkBuilder;
 
-use collections::{self, DataSourceMap};
+//use collections;
 use config::{hook::HookConfig, FileType};
 
 use crate::{renderer::RenderOptions, Error, Project, Result};
@@ -16,19 +16,14 @@ use crate::{renderer::RenderOptions, Error, Project, Result};
  *  - Asset: trigger a full build.
  *  - Page: rebuild the page.
  *  - File: copy the file to build.
- *  - Resource: ignored as they are symbolically linked.
- *  - Hook: execute the hook.
- *  - DataSourceConfig: TODO.
- *  - DataSourceDocument: TODO.
+ *  - CollectionsDocument: TODO.
  */
 #[derive(Debug)]
 pub enum Action {
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
-    Hook(HookConfig, PathBuf),
-    DataSourceConfig(PathBuf),
-    DataSourceDocument(PathBuf),
+    CollectionsDocument(PathBuf),
 }
 
 #[derive(Debug)]
@@ -52,7 +47,7 @@ pub struct Rule {
     // Paths that are ignored but we track for debugging
     ignores: HashSet<PathBuf>,
     // Hooks are a special case so we store them separately
-    hooks: Vec<Action>,
+    hooks: HashSet<(HookConfig, PathBuf)>,
     // Layouts need special handling so that referenced pages
     // are also rendered
     layouts: HashSet<PathBuf>,
@@ -67,7 +62,7 @@ pub struct Rule {
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
     // List of paths that do not exist anymore
-    deletions: Vec<PathBuf>,
+    deletions: HashSet<PathBuf>,
 }
 
 impl Rule {
@@ -175,12 +170,12 @@ impl<'a> Invalidator<'a> {
             reload: false,
             strategy: Strategy::Mixed,
             ignores: HashSet::new(),
-            hooks: Vec::new(),
+            hooks: HashSet::new(),
             actions: Vec::new(),
             layouts: HashSet::new(),
             partials: HashSet::new(),
             templates: HashSet::new(),
-            deletions: Vec::new(),
+            deletions: HashSet::new(),
         };
 
         let ext = self.project.config.engine().extension().to_string();
@@ -195,9 +190,9 @@ impl<'a> Invalidator<'a> {
                     h.has_matchers() && h.watch.is_some() && h.watch.unwrap()
                 })
                 .map(|h| (h, h.filter(&paths)))
-                .collect::<Vec<_>>()
+                .collect::<HashSet<_>>()
         } else {
-            vec![]
+            HashSet::new()
         };
 
         let build_output = self.canonical(self.project.options.output.clone());
@@ -223,7 +218,7 @@ impl<'a> Invalidator<'a> {
 
         'paths: for path in paths {
             if !path.exists() {
-                rule.deletions.push(path);
+                rule.deletions.insert(path);
                 continue;
             }
 
@@ -235,7 +230,7 @@ impl<'a> Invalidator<'a> {
                     for (hook, files) in hooks.iter() {
                         for f in files.iter() {
                             if &path == f {
-                                rule.hooks.push(Action::Hook(
+                                rule.hooks.insert((
                                     (*hook).clone(),
                                     f.to_path_buf(),
                                 ));
@@ -269,17 +264,11 @@ impl<'a> Invalidator<'a> {
                         rule.actions.push(Action::Asset(path));
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
-                            let cfg =
-                                DataSourceMap::get_datasource_config_path(p);
                             let documents =
                                 collections::get_datasource_documents_path(p);
-                            if path == cfg {
+                            if path.starts_with(documents) {
                                 rule.actions
-                                    .push(Action::DataSourceConfig(path));
-                                break;
-                            } else if path.starts_with(documents) {
-                                rule.actions
-                                    .push(Action::DataSourceDocument(path));
+                                    .push(Action::CollectionsDocument(path));
                                 break;
                             }
                         }
@@ -302,7 +291,7 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    fn remove(&mut self, paths: &Vec<PathBuf>) -> Result<()> {
+    fn remove(&mut self, paths: &HashSet<PathBuf>) -> Result<()> {
         let project = self.project.config.project().to_path_buf();
         let cwd = std::env::current_dir()?;
 
@@ -335,10 +324,8 @@ impl<'a> Invalidator<'a> {
             self.remove(&rule.deletions)?;
         }
 
-        for hook in &rule.hooks {
-            if let Action::Hook(hook, file) = hook {
-                self.project.run_hook(hook, Some(file)).await?;
-            }
+        for (hook, file) in &rule.hooks {
+            self.project.run_hook(hook, Some(file)).await?;
         }
 
         match rule.strategy {
