@@ -316,27 +316,16 @@ pub fn add(
     if path.extension() == Some(OsStr::new(template_ext)) {
         add_template(info, config, options, key)
     } else {
-        let is_data_source =
-            key.starts_with(options.get_data_sources_path());
+        let is_data_source = key.starts_with(options.get_data_sources_path());
 
-        let is_page = !is_data_source
-            && path.is_file()
-            && options.is_page(&path);
+        let is_page =
+            !is_data_source && path.is_file() && options.is_page(&path);
 
         if is_page {
             let layout_name = layout_name(options);
-            add_page(
-                info,
-                config,
-                options,
-                plugins,
-                key,
-                path,
-                layout_name,
-            )
+            add_page(info, config, options, plugins, key, path, layout_name)
         } else {
             add_other(info, config, options, key)
         }
     }
-
 }

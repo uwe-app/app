@@ -15,7 +15,11 @@ pub enum Phase {
     After,
 }
 
-pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig, changed: Option<&PathBuf>) -> Result<()> {
+pub fn exec(
+    ctx: &Arc<BuildContext>,
+    hook: &HookConfig,
+    changed: Option<&PathBuf>,
+) -> Result<()> {
     let collation = ctx.collation.read().unwrap();
 
     let project_root = ctx.config.project().canonicalize().map_err(|_| {
@@ -30,10 +34,7 @@ pub fn exec(ctx: &Arc<BuildContext>, hook: &HookConfig, changed: Option<&PathBuf
 
     // Looks like a relative command, resolve to the project root
     if cmd.starts_with(".") {
-        cmd = project_root
-            .join(&cmd)
-            .to_string_lossy()
-            .into_owned();
+        cmd = project_root.join(&cmd).to_string_lossy().into_owned();
     }
 
     let build_source = ctx.options.source.canonicalize()?;
@@ -104,7 +105,11 @@ pub fn collect<'a>(
         .collect::<Vec<_>>()
 }
 
-pub fn run(ctx: &Arc<BuildContext>, hooks: Vec<&HookConfig>, changed: Option<&PathBuf>) -> Result<()> {
+pub fn run(
+    ctx: &Arc<BuildContext>,
+    hooks: Vec<&HookConfig>,
+    changed: Option<&PathBuf>,
+) -> Result<()> {
     for hook in hooks {
         exec(ctx, hook, changed)?;
     }

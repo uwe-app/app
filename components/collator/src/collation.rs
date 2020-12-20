@@ -122,6 +122,11 @@ impl Collation {
             .map(|rg| rg.layouts())
     }
 
+    pub fn remove_layout(&mut self, name: &str) {
+        let mut fallback = self.fallback.write().unwrap();
+        fallback.layouts.remove(name);
+    }
+
     //fn find_menu(&self, name: &str) -> Option<&MenuResult> {
     pub fn find_menu(
         &self,
@@ -338,7 +343,7 @@ pub struct CollateInfo {
     pub resources: HashSet<Arc<PathBuf>>,
 
     /// Lookup table for page data resolved by locale identifier and source path.
-    pub(crate) pages: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>>,
+    pub pages: HashMap<Arc<PathBuf>, Arc<RwLock<Page>>>,
 
     /// Menu definitions.
     pub menus: HashMap<String, MenuResult>,

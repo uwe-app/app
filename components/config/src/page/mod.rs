@@ -219,9 +219,10 @@ impl Page {
             || self.listing.is_some() && self.listing.unwrap()
     }
 
-    //pub fn is_standalone(&self) -> bool {
-    //return self.standalone.is_some() && self.standalone.unwrap()
-    //}
+    /// Whether this page should be rendered without a layout.
+    pub fn is_standalone(&self) -> bool {
+        return self.standalone.is_some() && self.standalone.unwrap();
+    }
 
     // This should be a W3C Datetime string suitable for a
     // sitemap lastmod field.

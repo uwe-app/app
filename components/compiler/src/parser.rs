@@ -8,6 +8,7 @@ use crate::{context::BuildContext, hbs, page::CollatedPage, Result};
 
 /// The trait all template engines must implement.
 pub trait Parser {
+    /// Parse a template.
     fn parse(
         &self,
         file: &PathBuf,
@@ -16,7 +17,11 @@ pub trait Parser {
         data: CollatedPage,
     ) -> Result<String>;
 
+    /// Add or overwrite a named template.
     fn add(&mut self, name: String, file: &PathBuf) -> Result<()>;
+
+    /// Remove a named template.
+    fn remove(&mut self, name: &str);
 }
 
 /// Generate a parser for the given template engine.

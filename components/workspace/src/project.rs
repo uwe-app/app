@@ -1,6 +1,7 @@
-use std::fs;
-use std::ffi::OsStr;
+use std::collections::HashSet;
 use std::convert::TryInto;
+use std::ffi::OsStr;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
@@ -542,7 +543,9 @@ impl Project {
             // from the collation
             let href = if let Some(href) = collation.get_link_href(path) {
                 Some(href.as_ref().to_string())
-            } else { None };
+            } else {
+                None
+            };
 
             // Remove from the internal data structure
             collation.remove_file(path, &*self.options);
@@ -550,8 +553,8 @@ impl Project {
             // Now try to remove the build product
             if let Some(ref href) = href {
                 let build_file = self.options.base.join(
-                    utils::url::to_path_separator(
-                        href.trim_start_matches("/")));
+                    utils::url::to_path_separator(href.trim_start_matches("/")),
+                );
 
                 if build_file.exists() {
                     info!("Remove {}", build_file.display());
@@ -559,7 +562,9 @@ impl Project {
                     if let Err(e) = fs::remove_file(&build_file) {
                         warn!(
                             "Failed to remove build file {}: {}",
-                            build_file.display(), e);
+                            build_file.display(),
+                            e
+                        );
                     }
 
                     // If we have an `index.html` file then we might
@@ -581,28 +586,79 @@ impl Project {
         Ok(())
     }
 
-    pub(crate) fn update_layouts(&mut self, layouts: &Vec<PathBuf>) -> Result<()> {
+    /// Compile layouts and return a set of pages that
+    /// are using the layouts.
+    pub(crate) async fn update_layouts(
+        &mut self,
+        layouts: &Vec<PathBuf>,
+    ) -> Result<()> {
+        // List of pages to render
+        let mut render_pages: HashSet<(String, PathBuf)> = HashSet::new();
 
-        //let layouts = self.context.collation.read().unwrap().layouts();
-        //
+        let layouts: Vec<(String, &PathBuf)> = layouts
+            .iter()
+            .map(|layout| {
+                let name =
+                    layout.file_stem().unwrap().to_string_lossy().into_owned();
+                (name, layout)
+            })
+            .collect();
 
         // TODO: handle new layouts
         // TODO: handle deleted layouts
-        // TODO: rebuild all pages that point to a changed layout
 
-        for layout in layouts {
+        for (name, layout) in layouts {
             if layout.exists() {
-                for parser in self.parsers.iter_mut() {
-                    let name = layout.file_stem()
-                        .unwrap()
-                        .to_string_lossy()
-                        .into_owned();
-                    parser.add(name, layout)?;
+                info!("Render layout {}", &name);
+                for (parser, renderer) in
+                    self.parsers.iter_mut().zip(self.renderers.iter_mut())
+                {
+                    // Re-compile the template
+                    parser.add(name.to_string(), layout)?;
+
+                    // Collect pages that match the layout name
+                    // so they can be rendered
+                    let collation =
+                        &*renderer.info.context.collation.read().unwrap();
+                    let fallback = collation.fallback.read().unwrap();
+                    let lang = collation.get_lang().as_ref().to_string();
+                    for (file_path, page_lock) in fallback.pages.iter() {
+                        let page = page_lock.read().unwrap();
+                        if !page.is_standalone() {
+                            if let Some(ref layout_name) = page.layout {
+                                if &name == layout_name {
+                                    render_pages.insert((
+                                        lang.to_string(),
+                                        file_path.to_path_buf(),
+                                    ));
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
-                //TODO: remove the layout from the parser!
+                info!("Delete layout {}", &name);
+                for (parser, renderer) in
+                    self.parsers.iter_mut().zip(self.renderers.iter_mut())
+                {
+                    // Remove the layout from the parser
+                    parser.remove(&name);
+                    // Remove from the collated data
+                    let mut collation =
+                        renderer.info.context.collation.write().unwrap();
+                    collation.remove_layout(&name);
+                }
             }
         }
+
+        // Render pages that require an update as they
+        // reference a changed layout
+        for (lang, file) in render_pages {
+            let options =
+                RenderOptions::new_file_lang(file, lang, true, false, false);
+            self.render(options).await?;
+        }
+
         Ok(())
     }
 
@@ -657,7 +713,6 @@ impl Project {
                             path,
                         )?;
 
-                        //continue;
                     } else {
                         info!("Render {} -> {}", &lang, path.display());
                     }
@@ -679,7 +734,11 @@ impl Project {
         Ok(result)
     }
 
-    pub(crate) async fn run_hook(&self, hook: &HookConfig, changed: Option<&PathBuf>) -> Result<()> {
+    pub(crate) async fn run_hook(
+        &self,
+        hook: &HookConfig,
+        changed: Option<&PathBuf>,
+    ) -> Result<()> {
         for renderer in self.renderers.iter() {
             renderer.run_hook(hook, changed).await?;
         }

@@ -150,19 +150,19 @@ impl<'a> Invalidator<'a> {
     fn filter_ignores(&self, paths: Vec<PathBuf>) -> Vec<PathBuf> {
         let mut results: Vec<PathBuf> = Vec::new();
         for path in paths {
-            if let Some(parent) = path.parent()  {
+            if let Some(parent) = path.parent() {
                 for entry in WalkBuilder::new(parent)
                     .max_depth(Some(1))
-                    .filter_entry(move |entry| {
-                        entry.path() == path
-                    }).build() {
+                    .filter_entry(move |entry| entry.path() == path)
+                    .build()
+                {
                     match entry {
                         Ok(entry) => {
                             if entry.path().is_file() {
                                 results.push(entry.path().to_path_buf())
                             }
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -171,7 +171,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
-
         let paths = self.filter_ignores(paths);
 
         let mut rule = Rule {
@@ -338,9 +337,8 @@ impl<'a> Invalidator<'a> {
                 self.render().await?;
             }
             _ => {
-
                 if !rule.layouts.is_empty() {
-                    self.project.update_layouts(&rule.layouts)?;
+                    self.project.update_layouts(&rule.layouts).await?;
                 }
 
                 for action in &rule.actions {

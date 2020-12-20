@@ -356,7 +356,11 @@ impl Renderer {
         Ok(res)
     }
 
-    pub(crate) async fn run_hook(&self, hook: &HookConfig, changed: Option<&PathBuf>) -> Result<()> {
+    pub(crate) async fn run_hook(
+        &self,
+        hook: &HookConfig,
+        changed: Option<&PathBuf>,
+    ) -> Result<()> {
         Ok(hook::run(&self.info.context, vec![hook], changed)?)
     }
 

@@ -307,13 +307,12 @@ impl Parser for BracketParser<'_> {
     fn parse(&self, file: &PathBuf, data: CollatedPage) -> Result<String> {
         let name = file.to_string_lossy();
 
-        let standalone =
-            data.page().standalone.is_some() && data.page().standalone.unwrap();
+        let standalone = data.page().is_standalone();
 
         // Try to render a named layout
         if !standalone {
             if let Some(ref layout) = data.page().layout {
-                if let Some(_) = self.registry.get_template(layout) {
+                if let Some(_) = self.registry.get(layout) {
                     return self
                         .registry
                         .render(layout, &data)
@@ -335,5 +334,9 @@ impl Parser for BracketParser<'_> {
 
     fn add(&mut self, name: String, file: &PathBuf) -> Result<()> {
         self.registry.add(name, file).map_err(Error::from)
+    }
+
+    fn remove(&mut self, name: &str) {
+        self.registry.remove(name);
     }
 }
