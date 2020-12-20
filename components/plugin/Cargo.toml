@@ -16,7 +16,7 @@ futures = "0.3"
 sha3 = "0.9.1"
 toml = "0.5"
 log = "0.4.8"
-bracket = "^0.9.28"
+bracket = "^0.9.30"
 async-recursion = "0.3.1"
 tar = { version = "0.4", default-features = false }
 xz2 = "0.1.6"

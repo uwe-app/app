@@ -211,14 +211,14 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "bracket"
-version = "0.9.29"
+version = "0.9.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6dda57b2e2eef0e922ab4fa3c44f35e6be2f054b3f046d9d2d3931ba96779774"
+checksum = "70dca8addf746f0793ff57910124cbb2b69df17c46bb62f5e876fad37771cab3"
 dependencies = [
  "dyn-clone",
  "log",
  "logos",
- "rental",
+ "ouroboros",
  "serde",
  "serde_json",
  "thiserror",
@@ -2014,6 +2014,28 @@ dependencies = [
  "openssl-src",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "ouroboros"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc04551635026d3ac7bc646698ea1836a85ed2a26b7094fe1d15d8b14854c4a2"
+dependencies = [
+ "ouroboros_macro",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "ouroboros_macro"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cec33dfceabec83cd0e95a5ce9d20e76ab3a5cbfef59659b8c927f69b93ed8ae"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
