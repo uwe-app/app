@@ -339,4 +339,8 @@ impl Parser for BracketParser<'_> {
     fn remove(&mut self, name: &str) {
         self.registry.remove(name);
     }
+
+    fn load(&mut self, file: &PathBuf) -> Result<()> {
+        self.registry.load(file).map_err(Error::from)
+    }
 }

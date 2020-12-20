@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::collections::HashSet;
+use std::ffi::OsStr;
 
 use ignore::WalkBuilder;
 
@@ -12,8 +13,6 @@ use crate::{renderer::RenderOptions, Error, Project, Result};
 /*
  *  Invalidation rules.
  *
- *  - BuildOutput: directory is ignored.
- *  - SiteConfig: (site.toml) is ignored.
  *  - Asset: trigger a full build.
  *  - Page: rebuild the page.
  *  - File: copy the file to build.
@@ -24,15 +23,6 @@ use crate::{renderer::RenderOptions, Error, Project, Result};
  */
 #[derive(Debug)]
 pub enum Action {
-    // Because it is valid to configure source = "."
-    // in site.toml we need to detect build output and
-    // ensure we ignore those files
-    BuildOutput(PathBuf),
-
-    // This is not used at the moment but we detect it;
-    // it corresponds to the site.toml file.
-    SiteConfig(PathBuf),
-
     Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
@@ -59,8 +49,8 @@ pub struct Rule {
     reload: bool,
     // Build strategy
     strategy: Strategy,
-    // Actions that are ignored but we track for debugging
-    ignores: Vec<Action>,
+    // Paths that are ignored but we track for debugging
+    ignores: HashSet<PathBuf>,
     // Hooks are a special case so we store them separately
     hooks: Vec<Action>,
     // Layouts need special handling so that referenced pages
@@ -69,6 +59,11 @@ pub struct Rule {
     // Partials should be re-compiled but currently we don't
     // know which files are dependent upon partials
     partials: HashSet<PathBuf>,
+    // Templates can be interspersed in the site folder but
+    // must come after the tests for layout and partials and
+    // behave like partials in that they are re-compiled but
+    // we don't know which files reference each template
+    templates: HashSet<PathBuf>,
     // List of actions corresponding to the files that changed
     actions: Vec<Action>,
     // List of paths that do not exist anymore
@@ -179,13 +174,16 @@ impl<'a> Invalidator<'a> {
             notify: true,
             reload: false,
             strategy: Strategy::Mixed,
-            ignores: Vec::new(),
+            ignores: HashSet::new(),
             hooks: Vec::new(),
             actions: Vec::new(),
             layouts: HashSet::new(),
             partials: HashSet::new(),
+            templates: HashSet::new(),
             deletions: Vec::new(),
         };
+
+        let ext = self.project.config.engine().extension().to_string();
 
         let config_file = self.project.config.file.as_ref().unwrap();
         let cfg_file = config_file.canonicalize()?;
@@ -246,17 +244,29 @@ impl<'a> Invalidator<'a> {
                         }
                     }
 
+                    let is_template = if let Some(extension) = path.extension() {
+                        extension == OsStr::new(&ext)
+                    } else { false };
+
+                    // This is not used at the moment but we detect it;
+                    // it corresponds to the site.toml file.
                     if path == cfg_file {
-                        rule.ignores.push(Action::SiteConfig(path));
+                        rule.ignores.insert(path);
                     } else if path.starts_with(&layouts) {
                         rule.layouts.insert(path);
+                    } else if path.starts_with(&partials) {
+                        rule.partials.insert(path);
+                    } else if is_template {
+                        rule.templates.insert(path);
+
+                    // Because it is valid to configure source = "."
+                    // in site.toml we need to detect build output and
+                    // ensure we ignore those files
                     } else if path.starts_with(&build_output) {
-                        rule.ignores.push(Action::BuildOutput(path));
+                        rule.ignores.insert(path);
                     } else if path.starts_with(&assets) {
                         rule.strategy = Strategy::Full;
                         rule.actions.push(Action::Asset(path));
-                    } else if path.starts_with(&partials) {
-                        rule.partials.insert(path);
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
                             let cfg =
@@ -339,6 +349,10 @@ impl<'a> Invalidator<'a> {
                 self.render().await?;
             }
             _ => {
+
+                if !rule.templates.is_empty() {
+                    self.project.update_templates(&rule.templates).await?;
+                }
 
                 if !rule.partials.is_empty() {
                     self.project.update_partials(&rule.partials).await?;

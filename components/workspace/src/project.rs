@@ -586,12 +586,37 @@ impl Project {
         Ok(())
     }
 
+    /// Update templates.
+    pub(crate) async fn update_templates(
+        &mut self,
+        templates: &HashSet<PathBuf>,
+    ) -> Result<()> {
+        for template in templates {
+            let name = template.to_string_lossy();
+            if template.exists() {
+                info!("Render template {}", &name);
+                for parser in self.parsers.iter_mut() {
+                    // Re-compile the template
+                    parser.load(template)?;
+                }
+            } else {
+                info!("Delete template {}", &name);
+                for parser in self.parsers.iter_mut() {
+                    // Remove the template from the parser
+                    parser.remove(&name);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Update partials.
     pub(crate) async fn update_partials(
         &mut self,
-        layouts: &HashSet<PathBuf>,
+        partials: &HashSet<PathBuf>,
     ) -> Result<()> {
-        let layouts: Vec<(String, &PathBuf)> = layouts
+        let partials: Vec<(String, &PathBuf)> = partials
             .iter()
             .map(|layout| {
                 let name =
@@ -600,17 +625,17 @@ impl Project {
             })
             .collect();
 
-        for (name, layout) in layouts {
-            if layout.exists() {
+        for (name, partial) in partials {
+            if partial.exists() {
                 info!("Render partial {}", &name);
                 for parser in self.parsers.iter_mut() {
                     // Re-compile the template
-                    parser.add(name.to_string(), layout)?;
+                    parser.add(name.to_string(), partial)?;
                 }
             } else {
                 info!("Delete partial {}", &name);
                 for parser in self.parsers.iter_mut() {
-                    // Remove the layout from the parser
+                    // Remove the partial from the parser
                     parser.remove(&name);
                 }
             }

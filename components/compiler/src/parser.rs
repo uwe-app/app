@@ -22,6 +22,9 @@ pub trait Parser {
 
     /// Remove a named template.
     fn remove(&mut self, name: &str);
+
+    /// Load a template from a file.
+    fn load(&mut self, file: &PathBuf) -> Result<()>;
 }
 
 /// Generate a parser for the given template engine.
