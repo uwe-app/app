@@ -165,14 +165,8 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::server::serve(&target, args.skip_build, opts, launch, args.exec).await?;
         }
 
-        Command::Task { cmd } => match cmd {
-            Task::ListBlueprints {} => {
-                uwe::task::list_blueprints().await?;
-            }
-            Task::CheckDeps { project } => {
-                let project = opts::project_path(&project)?;
-                uwe::task::check_deps(project).await?;
-            }
+        Command::Task { cmd } => {
+            uwe::task::run(cmd).await?;
         },
 
         Command::Publish { args } => {
