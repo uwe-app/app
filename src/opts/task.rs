@@ -7,7 +7,7 @@ pub enum Task {
     /// List blueprints.
     ListBlueprints {},
 
-    /// Error if dependencies have local path or archive.
+    /// Check project for local dependencies.
     CheckDeps {
         /// Project path
         #[structopt(parse(from_os_str), default_value = ".")]

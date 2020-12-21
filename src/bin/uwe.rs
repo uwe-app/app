@@ -13,7 +13,7 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal, Build, Clean, Docs, Lang, New, Publish, Server, Site, Task,
+        self, fatal, Alias, Build, Clean, Docs, Lang, New, Publish, Server, Sync, Task,
     },
     Error, Result,
 };
@@ -35,6 +35,13 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+
+    /// Manage site aliases
+    Alias {
+        #[structopt(subcommand)]
+        cmd: Alias,
+    },
+
     /// Compile a site
     Build {
         #[structopt(flatten)]
@@ -59,6 +66,12 @@ enum Command {
         cmd: Task,
     },
 
+    /// Sync project source files
+    Sync {
+        #[structopt(flatten)]
+        args: Sync,
+    },
+
     /// Serve static files
     #[structopt(verbatim_doc_comment)]
     Server {
@@ -78,11 +91,7 @@ enum Command {
         args: Publish,
     },
 
-    Site {
-        #[structopt(subcommand)]
-        cmd: Site,
-    },
-
+    /// Manage translations
     Lang {
         #[structopt(subcommand)]
         cmd: Lang,
@@ -99,6 +108,10 @@ impl Command {
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
+        Command::Alias { cmd } => {
+            uwe::alias::run(cmd).await?;
+        }
+
         Command::New { args } => {
             let opts = uwe::new::ProjectOptions {
                 source: args.source,
@@ -112,11 +125,11 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Lang { cmd } => {
-            self::lang::run(cmd).await?;
+            uwe::lang::run(cmd).await?;
         }
 
-        Command::Site { cmd } => {
-            self::site::run(cmd).await?;
+        Command::Sync { args } => {
+            uwe::sync::run(args).await?;
         }
 
         Command::Clean { args } => {
@@ -257,144 +270,4 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-mod lang {
-    use super::Lang;
-    use uwe::{lang, opts, Result};
-
-    pub async fn run(cmd: Lang) -> Result<()> {
-        match cmd {
-            Lang::List { project } => {
-                let project = opts::project_path(&project)?;
-                lang::list(project).await?;
-            }
-
-            Lang::New { project, languages } => {
-                let project = opts::project_path(&project)?;
-                lang::new(project, languages).await?;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-mod site {
-    use super::Site;
-    use std::path::PathBuf;
-    use url::Url;
-    use uwe::{opts::Alias, Error, Result};
-
-    fn create(target: PathBuf, message: String) -> Result<()> {
-        if !target.exists() || !target.is_dir() {
-            return Err(Error::NotDirectory(target.to_path_buf()));
-        }
-
-        scm::init(&target, &message)
-            .map(|_| ())
-            .map_err(Error::from)
-    }
-
-    fn clone_or_copy(
-        source: String,
-        target: Option<PathBuf>,
-        pristine: Option<String>,
-    ) -> Result<()> {
-        let target = if let Some(target) = target {
-            target.to_path_buf()
-        } else {
-            let base = std::env::current_dir()?;
-
-            let mut target_parts =
-                source.trim_end_matches("/").split("/").collect::<Vec<_>>();
-
-            let target_name =
-                target_parts.pop().ok_or_else(|| Error::NoTargetName)?;
-            base.join(target_name)
-        };
-
-        let _ = source
-            .parse::<Url>()
-            .map_err(|_| Error::InvalidRepositoryUrl(source.to_string()))?;
-
-        if target.exists() {
-            return Err(Error::TargetExists(target.to_path_buf()));
-        }
-
-        if let Some(ref message) = pristine {
-            scm::copy(&source, &target, message)
-                .map(|_| ())
-                .map_err(Error::from)
-        } else {
-            scm::clone(&source, &target)
-                .map(|_| ())
-                .map_err(Error::from)
-        }
-    }
-
-    fn pull(
-        target: Option<PathBuf>,
-        remote: String,
-        branch: String,
-    ) -> Result<()> {
-        let target = if let Some(target) = target {
-            target.to_path_buf()
-        } else {
-            std::env::current_dir()?
-        };
-
-        if !target.exists() || !target.is_dir() {
-            return Err(Error::NotDirectory(target.to_path_buf()));
-        }
-
-        scm::open(&target)
-            .map_err(|_| Error::NotRepository(target.to_path_buf()))?;
-
-        scm::pull(&target, Some(remote), Some(branch))
-            .map(|_| ())
-            .map_err(Error::from)
-    }
-
-    pub async fn run(cmd: Site) -> Result<()> {
-        match cmd {
-            Site::Clone { source, target } => {
-                clone_or_copy(source, target, None)?;
-            }
-
-            Site::Copy {
-                source,
-                target,
-                message,
-            } => {
-                clone_or_copy(source, target, Some(message))?;
-            }
-
-            Site::Create { target, message } => {
-                create(target, message)?;
-            }
-
-            Site::Pull {
-                target,
-                remote,
-                branch,
-            } => {
-                pull(target, remote, branch)?;
-            }
-
-            Site::Alias { args } => match args {
-                Alias::Add { name, project } => {
-                    uwe::alias::add(project, name)?;
-                }
-                Alias::Remove { name } => {
-                    uwe::alias::remove(name)?;
-                }
-                Alias::List { .. } => {
-                    uwe::alias::list()?;
-                }
-            },
-        }
-
-        Ok(())
-    }
 }

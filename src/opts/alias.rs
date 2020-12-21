@@ -4,24 +4,24 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub enum Alias {
-    /// Add a site
+    /// Add an alias
     Add {
-        /// Project folder
-        #[structopt(parse(from_os_str))]
+        /// Project path
+        #[structopt(parse(from_os_str), default_value = ".")]
         project: PathBuf,
 
         /// Project name
         name: Option<String>,
     },
 
-    /// Remove a site
+    /// Remove an alias
     #[structopt(alias = "rm")]
     Remove {
         /// The project name
         name: String,
     },
 
-    /// List sites
+    /// List aliases
     #[structopt(alias = "ls")]
     List {},
 }

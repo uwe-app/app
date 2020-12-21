@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/// Manage languages
 #[derive(StructOpt, Debug)]
 pub enum Lang {
     /// List languages for a project

@@ -157,7 +157,7 @@ mod lang;
 mod new;
 mod publish;
 mod server;
-mod site;
+mod sync;
 mod task;
 mod web_server;
 
@@ -169,5 +169,5 @@ pub use self::lang::Lang;
 pub use self::new::New;
 pub use self::publish::Publish;
 pub use self::server::Server;
-pub use self::site::Site;
+pub use self::sync::Sync;
 pub use self::task::Task;

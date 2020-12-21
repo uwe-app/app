@@ -9,6 +9,7 @@ pub mod opts;
 pub mod plugin;
 pub mod publish;
 pub mod server;
+pub mod sync;
 pub mod task;
 
 pub type Result<T> = std::result::Result<T, Error>;

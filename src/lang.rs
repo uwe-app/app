@@ -3,10 +3,15 @@ use std::path::PathBuf;
 
 use log::{info, warn};
 
-use crate::{Error, Result};
+use crate::{Error, Result, opts::{self, Lang}};
 use config::{Config, ProfileSettings};
 use locale::Locales;
 use unic_langid::LanguageIdentifier;
+
+
+//use super::Lang;
+//use uwe::{lang, opts, Result};
+
 
 struct LanguageInfo {
     config: Config,
@@ -37,7 +42,7 @@ impl LanguageInfo {
 }
 
 /// List languages for a project.
-pub async fn list(project: PathBuf) -> Result<()> {
+async fn list(project: PathBuf) -> Result<()> {
     if !project.exists() || !project.is_dir() {
         return Err(Error::NotDirectory(project));
     }
@@ -66,7 +71,7 @@ pub async fn list(project: PathBuf) -> Result<()> {
 ///
 /// If the locales directory and common messsages file do not exist
 /// they are created as is the messages file for the fallback language.
-pub async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
+async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
     if !project.exists() || !project.is_dir() {
         return Err(Error::NotDirectory(project));
     }
@@ -113,6 +118,22 @@ pub async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
             } else {
                 warn!("File {} exists, skip creation", target.display());
             }
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn run(cmd: Lang) -> Result<()> {
+    match cmd {
+        Lang::List { project } => {
+            let project = opts::project_path(&project)?;
+            list(project).await?;
+        }
+
+        Lang::New { project, languages } => {
+            let project = opts::project_path(&project)?;
+            new(project, languages).await?;
         }
     }
 

@@ -1,6 +1,8 @@
-use crate::Result;
-use log::{error, info};
 use std::path::PathBuf;
+
+use log::{error, info};
+
+use crate::{opts::Alias, Result};
 
 pub fn add(project: PathBuf, name: Option<String>) -> Result<()> {
     let name = site::add(project, name)?;
@@ -17,7 +19,7 @@ pub fn remove(name: String) -> Result<()> {
 pub fn list() -> Result<()> {
     let sites = site::list()?;
     if sites.is_empty() {
-        info!("No sites yet");
+        info!("No site aliases yet");
     } else {
         for (name, status) in sites {
             if status.ok {
@@ -29,6 +31,21 @@ pub fn list() -> Result<()> {
                     status.entry.project.display()
                 );
             }
+        }
+    }
+    Ok(())
+}
+
+pub async fn run(cmd: Alias) -> Result<()> {
+    match cmd {
+        Alias::Add { name, project } => {
+            add(project, name)?;
+        }
+        Alias::Remove { name } => {
+            remove(name)?;
+        }
+        Alias::List { .. } => {
+            list()?;
         }
     }
     Ok(())

@@ -4,7 +4,7 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub struct WebServerOpts {
-    /// The name of the host
+    /// Bind address for the web server
     #[structopt(short, long)]
     pub host: Option<String>,
 

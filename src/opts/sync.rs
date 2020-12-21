@@ -1,11 +1,9 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use super::alias::Alias;
-
-/// Manage project source files
 #[derive(StructOpt, Debug)]
-pub enum Site {
+pub struct Sync {
+    /*
     /// Initialize, add files and commit.
     Create {
         #[structopt(short, long)]
@@ -36,7 +34,9 @@ pub enum Site {
         /// Destination path.
         target: Option<PathBuf>,
     },
+    */
 
+    /*
     /// Pull a repository.
     Pull {
         #[structopt(short, long, default_value = "origin")]
@@ -45,13 +45,13 @@ pub enum Site {
         #[structopt(short, long, default_value = "main")]
         branch: String,
 
-        /// Repository path.
-        target: Option<PathBuf>,
+        /// Project path
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
     },
+    */
 
-    /// Manage site aliases
-    Alias {
-        #[structopt(flatten)]
-        args: Alias,
-    },
+    /// Project path
+    #[structopt(parse(from_os_str), default_value = ".")]
+    pub project: PathBuf,
 }
