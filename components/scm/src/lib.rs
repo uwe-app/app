@@ -3,10 +3,10 @@ use std::path::Path;
 
 use git2::{
     Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
-    RepositoryInitOptions, RepositoryState,
+    RepositoryInitOptions, RepositoryState, StatusOptions, Status,
 };
 
-use log::info;
+use log::{info, warn};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -303,4 +303,67 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
         pull(to, None, None)?;
         Ok(repo)
     }
+}
+
+/// Sync a project with a remote repository.
+pub fn sync<P: AsRef<Path>>(
+    dir: P,
+    remote: String,
+    branch: String,
+    add_untracked: bool,
+    message: Option<String>,
+    ) -> Result<()> {
+
+    let repo = open(dir.as_ref())?;
+
+    let mut status_options = StatusOptions::new();
+    status_options.include_untracked(true);
+    let statuses = repo.statuses(Some(&mut status_options))?;
+
+    let mut commit_required = false;
+
+    if !statuses.is_empty() {
+        for entry in statuses.iter() {
+            let status = entry.status();
+
+            if status.is_conflicted() {
+                // FIXME: return an Error here!
+                panic!("Conflict detected in {}", dir.as_ref().display());
+            }
+
+            if status.is_wt_new()
+                || status.is_wt_modified()
+                || status.is_wt_deleted()
+                || status.is_wt_typechange()
+                || status.is_wt_renamed() {
+                if let Some(path) = entry.path() {
+                    if add_untracked {
+                        info!("Add untracked file {}", path);
+                        commit_required = true;
+                    } else {
+                        warn!("Skip untracked file {}", path);
+                    }
+                }
+            } else if status.is_index_new()
+                || status.is_index_modified()
+                || status.is_index_deleted()
+                || status.is_index_typechange()
+                || status.is_index_renamed() {
+                commit_required = true;
+            }
+        }
+    }
+
+    if commit_required {
+        if let Some(ref message) = message {
+            println!("Do the commit.");
+        } else {
+            // FIXME: return an Error here!
+            panic!("Commit is required but not message was supplied.");
+        }
+    }
+
+    println!("Push the repository to the remote.");
+
+    Ok(())
 }

@@ -25,5 +25,24 @@ pub async fn run(opts: Sync) -> Result<()> {
     info!("Remote {}", remote);
     info!("Branch {}", branch);
 
+    // TODO: see if files need adding?
+    // TODO: check if a commit is required?
+
+    scm::sync(
+        &project,
+        remote.to_string(),
+        branch.to_string(),
+        opts.add,
+        opts.message,
+    ).map_err(Error::from)?;
+
+    // TODO: error if cannot be cleanly merged?
+
+    //scm::pull(&project, Some(remote.to_string()), Some(branch.to_string()))
+        //.map(|_| ())
+        //.map_err(Error::from)?;
+
+    // TODO: push the repository to the remote
+
     Ok(())
 }
