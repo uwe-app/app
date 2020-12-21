@@ -1,7 +1,7 @@
-use std::path::Path;
-use std::path::PathBuf;
 use std::collections::HashSet;
 use std::ffi::OsStr;
+use std::path::Path;
+use std::path::PathBuf;
 
 use ignore::WalkBuilder;
 
@@ -230,18 +230,19 @@ impl<'a> Invalidator<'a> {
                     for (hook, files) in hooks.iter() {
                         for f in files.iter() {
                             if &path == f {
-                                rule.hooks.insert((
-                                    (*hook).clone(),
-                                    f.to_path_buf(),
-                                ));
+                                rule.hooks
+                                    .insert(((*hook).clone(), f.to_path_buf()));
                                 continue 'paths;
                             }
                         }
                     }
 
-                    let is_template = if let Some(extension) = path.extension() {
+                    let is_template = if let Some(extension) = path.extension()
+                    {
                         extension == OsStr::new(&ext)
-                    } else { false };
+                    } else {
+                        false
+                    };
 
                     // This is not used at the moment but we detect it;
                     // it corresponds to the site.toml file.
@@ -336,7 +337,6 @@ impl<'a> Invalidator<'a> {
                 self.render().await?;
             }
             _ => {
-
                 if !rule.templates.is_empty() {
                     self.project.update_templates(&rule.templates).await?;
                 }

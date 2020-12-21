@@ -51,6 +51,9 @@ pub enum Error {
     #[error("Server could not find {0} or {1} in {2}")]
     NoServerFile(String, String, PathBuf),
 
+    #[error("Local dependency {0} is not allowed")]
+    LocalDependencyNotAllowed(PathBuf),
+
     //#[error("No socket address for {0}")]
     //NoSocketAddress(String),
     #[error(transparent)]

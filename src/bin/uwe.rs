@@ -1,7 +1,6 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::path::PathBuf;
 use std::time::SystemTime;
 
 use log::info;
@@ -14,7 +13,7 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal, Alias, Build, Clean, Docs, List, New, Publish, Server,
+        self, fatal, Build, Clean, Docs, Lang, New, Publish, Server, Site, Task,
     },
     Error, Result,
 };
@@ -56,9 +55,9 @@ enum Command {
 
     /// List resources
     #[structopt(alias = "ls")]
-    List {
+    Task {
         #[structopt(flatten)]
-        args: List,
+        cmd: Task,
     },
 
     /// Serve static files
@@ -88,81 +87,6 @@ enum Command {
     Lang {
         #[structopt(subcommand)]
         cmd: Lang,
-    },
-}
-
-/// Manage languages
-#[derive(StructOpt, Debug)]
-pub enum Lang {
-    /// List languages for a project
-    #[structopt(alias = "ls")]
-    List {
-        /// Project path
-        #[structopt(parse(from_os_str), default_value = ".")]
-        project: PathBuf,
-    },
-
-    /// Create new translations
-    New {
-        /// Project path
-        #[structopt(parse(from_os_str), default_value = ".")]
-        project: PathBuf,
-
-        /// Unicode language identifiers
-        languages: Vec<String>,
-    },
-}
-
-/// Manage project source files
-#[derive(StructOpt, Debug)]
-pub enum Site {
-    /// Initialize, add files and commit.
-    Create {
-        #[structopt(short, long)]
-        message: String,
-
-        /// Destination path.
-        target: PathBuf,
-    },
-
-    /// Clone a repository.
-    Clone {
-        /// Repository URL.
-        source: String,
-
-        /// Destination path.
-        target: Option<PathBuf>,
-    },
-
-    /// Copy a repository (clone and squash)
-    Copy {
-        /// Initial commit message.
-        #[structopt(short, long)]
-        message: String,
-
-        /// Repository URL.
-        source: String,
-
-        /// Destination path.
-        target: Option<PathBuf>,
-    },
-
-    /// Pull a repository.
-    Pull {
-        #[structopt(short, long, default_value = "origin")]
-        remote: String,
-
-        #[structopt(short, long, default_value = "main")]
-        branch: String,
-
-        /// Repository path.
-        target: Option<PathBuf>,
-    },
-
-    /// Manage site aliases
-    Alias {
-        #[structopt(flatten)]
-        args: Alias,
     },
 }
 
@@ -200,12 +124,13 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::clean::clean(args.project).await?;
         }
 
+        /*
         Command::List { args } => {
             if args.blueprints {
                 uwe::list::list_blueprints().await?;
             }
         }
-
+        */
         Command::Docs { args } => {
             let target = uwe::docs::get_target().await?;
             let opts = uwe::opts::server_config(
@@ -234,6 +159,15 @@ async fn run(cmd: Command) -> Result<()> {
             let launch = LaunchConfig { open: args.open };
             uwe::server::serve(&target, args.skip_build, opts, launch).await?;
         }
+
+        Command::Task { cmd } => match cmd {
+            Task::ListBlueprints {} => {
+                uwe::task::list_blueprints().await?;
+            }
+            Task::CheckDeps { project } => {
+                uwe::task::check_deps(project).await?;
+            }
+        },
 
         Command::Publish { args } => {
             let project = opts::project_path(&args.project)?;

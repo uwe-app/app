@@ -243,7 +243,6 @@ pub struct DataSourceMap {
 }
 
 impl DataSourceMap {
-
     fn to_data_source(path: &PathBuf, config: &DataSourceConfig) -> DataSource {
         let all: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();

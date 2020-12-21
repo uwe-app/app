@@ -769,7 +769,6 @@ impl Project {
                             &key,
                             path,
                         )?;
-
                     } else {
                         info!("Render {} -> {}", &lang, path.display());
                     }
