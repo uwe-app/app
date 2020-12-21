@@ -33,6 +33,7 @@ use crate::{
     search::SearchConfig,
     sitemap::SiteMapConfig,
     style::StyleAsset,
+    sync::SyncConfig,
     syntax::SyntaxConfig,
     tags::{link::LinkTag, script::ScriptTag},
     transform::TransformConfig,
@@ -123,6 +124,7 @@ static DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
 static DEFAULT_ICON: &str = "assets/favicon.png";
 static DEFAULT_ICON_DATA: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
+
 
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
@@ -240,6 +242,8 @@ pub struct Config {
 
     pub db: Option<DataBase>,
 
+    sync: Option<SyncConfig>,
+
     pub minify: Option<MinifyConfig>,
     livereload: Option<LiveReload>,
 
@@ -299,6 +303,7 @@ impl Default for Config {
             style: None,
             script: None,
             db: None,
+            sync: Some(Default::default()),
             minify: None,
             livereload: Some(Default::default()),
 
@@ -321,6 +326,10 @@ impl Config {
 
     pub fn livereload(&self) -> &LiveReload {
         self.livereload.as_ref().unwrap()
+    }
+
+    pub fn sync(&self) -> &SyncConfig {
+        self.sync.as_ref().unwrap()
     }
 
     pub fn powered(&self) -> Option<&Powered> {

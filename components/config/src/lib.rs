@@ -144,6 +144,7 @@ pub mod search;
 pub mod server;
 pub mod sitemap;
 pub mod style;
+pub mod sync;
 pub mod syntax;
 pub mod tags;
 pub mod transform;

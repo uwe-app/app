@@ -73,7 +73,6 @@ async fn pull(
         .map_err(Error::from)
 }
 
-
 /*
 fn create(target: PathBuf, message: String) -> Result<()> {
     let target = opts::project_path(&target)?;

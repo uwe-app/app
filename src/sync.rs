@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::{opts::{self, Sync}, Error, Result};
 
 pub async fn run(opts: Sync) -> Result<()> {
@@ -6,11 +8,22 @@ pub async fn run(opts: Sync) -> Result<()> {
         return Err(Error::NotDirectory(project));
     }
 
-    let workspace = workspace::open(&project, true)?;
-    for entry in workspace.into_iter() {
-        // TODO: use sync branch from config
-        println!("Sync command is running ");
-    }
+    let remote_opt = opts.remote;
+    let branch_opt = opts.branch;
+
+    let (config, _) = workspace::settings(&project, true)?;
+
+    let remote = if let Some(ref remote) = remote_opt {
+        remote
+    } else { config.sync().remote.as_ref().unwrap() };
+
+    let branch = if let Some(ref branch) = branch_opt {
+        branch
+    } else { config.sync().branch.as_ref().unwrap() };
+
+    info!("Sync {}", config.project().display());
+    info!("Remote {}", remote);
+    info!("Branch {}", branch);
 
     Ok(())
 }

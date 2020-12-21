@@ -43,12 +43,18 @@ pub enum ProjectEntry {
     // Guaranteed to be an array with a single entry
     One(Vec<Entry>),
     // May contain multiple projects
-    Many(Vec<Entry>),
+    Many(Vec<Entry>, Config),
 }
 
 #[derive(Debug)]
 pub struct Entry {
     pub config: Config,
+}
+
+impl Into<Config> for Entry {
+    fn into(self) -> Config {
+        self.config
+    }
 }
 
 impl Entry {
@@ -855,7 +861,7 @@ impl Workspace {
         };
         if self.projects.len() == 1 {
             return match self.projects.first().unwrap() {
-                ProjectEntry::Many(_) => true,
+                ProjectEntry::Many(_, _) => true,
                 ProjectEntry::One(_) => false,
             };
         };
@@ -866,7 +872,7 @@ impl Workspace {
         self.projects
             .iter()
             .map(|e| match e {
-                ProjectEntry::One(c) | ProjectEntry::Many(c) => c.iter(),
+                ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.iter(),
             })
             .flatten()
             .collect::<Vec<&Entry>>()
@@ -878,7 +884,7 @@ impl Workspace {
             .into_iter()
             .map(|e| match e {
                 ProjectEntry::One(c) => c.into_iter(),
-                ProjectEntry::Many(c) => c.into_iter(),
+                ProjectEntry::Many(c, _) => c.into_iter(),
             })
             .flatten()
             .collect::<Vec<Entry>>()
@@ -921,7 +927,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
             members.push(Entry { config });
         }
 
-        workspace.projects.push(ProjectEntry::Many(members));
+        workspace.projects.push(ProjectEntry::Many(members, config));
     } else {
         config.set_commit(scm_digest(config.project()));
 
@@ -931,6 +937,23 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
     }
 
     Ok(workspace)
+}
+
+/// Get the settings for a project.
+///
+/// For workspaces a list of member settings is also returned.
+pub fn settings<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<(Config, Option<Vec<Config>>)> {
+    let mut workspace = open(dir, walk_ancestors)?;
+    let project = workspace.projects.swap_remove(0);
+    match project {
+        ProjectEntry::One(mut entries) => {
+            Ok((entries.swap_remove(0).into(), None))
+        },
+        ProjectEntry::Many(entries, config) => {
+            let entries: Vec<Config> = entries.into_iter().map(|e| e.into()).collect();
+            Ok((config, Some(entries)))
+        },
+    }
 }
 
 #[derive(Default)]
