@@ -53,15 +53,14 @@ enum Command {
         args: New,
     },
 
-    /// List resources
-    #[structopt(alias = "ls")]
+    /// Utility tasks
     Task {
-        #[structopt(flatten)]
+        #[structopt(subcommand)]
         cmd: Task,
     },
 
     /// Serve static files
-    #[structopt(alias = "run", verbatim_doc_comment)]
+    #[structopt(verbatim_doc_comment)]
     Server {
         #[structopt(flatten)]
         args: Server,
@@ -124,13 +123,6 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::clean::clean(args.project).await?;
         }
 
-        /*
-        Command::List { args } => {
-            if args.blueprints {
-                uwe::list::list_blueprints().await?;
-            }
-        }
-        */
         Command::Docs { args } => {
             let target = uwe::docs::get_target().await?;
             let opts = uwe::opts::server_config(
@@ -157,7 +149,7 @@ async fn run(cmd: Command) -> Result<()> {
             );
 
             let launch = LaunchConfig { open: args.open };
-            uwe::server::serve(&target, args.skip_build, opts, launch).await?;
+            uwe::server::serve(&target, args.skip_build, opts, launch, args.exec).await?;
         }
 
         Command::Task { cmd } => match cmd {
@@ -165,6 +157,7 @@ async fn run(cmd: Command) -> Result<()> {
                 uwe::task::list_blueprints().await?;
             }
             Task::CheckDeps { project } => {
+                let project = opts::project_path(&project)?;
                 uwe::task::check_deps(project).await?;
             }
         },
@@ -175,6 +168,7 @@ async fn run(cmd: Command) -> Result<()> {
                 provider: PublishProvider::Aws,
                 env: args.env,
                 project,
+                exec: args.exec,
             };
             uwe::publish::publish(opts).await?;
         }
@@ -200,6 +194,7 @@ async fn run(cmd: Command) -> Result<()> {
                 host: args.server.host,
                 port: args.server.port,
                 offline: Some(args.offline),
+                exec: Some(args.exec),
                 tls,
                 ..Default::default()
             };

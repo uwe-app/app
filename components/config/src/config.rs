@@ -247,10 +247,10 @@ pub struct Config {
     commit: Option<String>,
 
     #[serde(skip)]
-    pub file: Option<PathBuf>,
+    file: PathBuf,
 
     #[serde(skip)]
-    pub project: PathBuf,
+    project: PathBuf,
 
     #[serde_as(as = "DisplayFromStr")]
     #[serde(skip_deserializing)]
@@ -302,8 +302,8 @@ impl Default for Config {
             minify: None,
             livereload: Some(Default::default()),
 
-            file: None,
             project: PathBuf::from(""),
+            file: PathBuf::from(""),
 
             commit: None,
         }
@@ -345,6 +345,10 @@ impl Config {
 
     pub fn project(&self) -> &PathBuf {
         &self.project
+    }
+
+    pub fn file(&self) -> &PathBuf {
+        &self.file
     }
 
     pub fn engine(&self) -> &TemplateEngine {
@@ -428,7 +432,7 @@ impl Config {
 
                 // Must be a canonical path
                 let path = file.canonicalize()?;
-                cfg.file = Some(path.to_path_buf());
+                cfg.file = path.to_path_buf();
 
                 // Ensure that lang is a valid identifier
                 let lang_id = parse_language(&cfg.lang)?;

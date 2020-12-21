@@ -17,6 +17,10 @@ pub struct Server {
     #[structopt(short, long)]
     pub open: bool,
 
+    /// Allow hook command execution.
+    #[structopt(short, long)]
+    pub exec: bool,
+
     /// Project or directory to serve files from
     #[structopt(parse(from_os_str), default_value = ".")]
     pub target: PathBuf,

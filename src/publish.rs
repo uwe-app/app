@@ -17,6 +17,7 @@ pub struct PublishOptions {
     pub project: PathBuf,
     pub env: String,
     pub provider: PublishProvider,
+    pub exec: bool,
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
@@ -29,7 +30,8 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let lock_file = lock::acquire(&lock_path)?;
     defer! { let _ = lock::release(lock_file); }
 
-    let args = ProfileSettings::new_release();
+    let mut args = ProfileSettings::new_release();
+    args.exec = Some(options.exec);
     let result = compile(&options.project, &args).await?;
 
     // FIXME: support multiple projects (workspaces)

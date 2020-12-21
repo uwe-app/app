@@ -165,6 +165,9 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     if args.offline.is_some() {
         settings.offline = args.offline.clone();
     }
+    if args.exec.is_some() {
+        settings.exec = args.exec.clone();
+    }
 }
 
 /// Prepare the live reload style and script.

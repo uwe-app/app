@@ -955,6 +955,18 @@ pub async fn compile<P: AsRef<Path>>(
         // WARN: bounds. The workaround is to break the chain
         // WARN: with multiple await statements.
 
+        if entry.config.hooks.is_some() && !args.can_exec() {
+            warn!("The project has some hooks defined but does ");
+            warn!("not have the capability to execute commands.");
+            warn!("");
+            warn!("{}", entry.config.file().display());
+            warn!("");
+            warn!("If you trust the commands in the site settings ");
+            warn!("enable command execution with the --exec option.");
+            warn!("");
+            return Err(Error::NoExecCapability(entry.config.host.to_string()))
+        }
+
         let builder = entry.builder(args).await?;
 
         // Resolve sources, locales and collate the page data

@@ -21,6 +21,7 @@ pub async fn serve(
     skip_build: bool,
     mut opts: ServerConfig,
     launch: LaunchConfig,
+    exec: bool,
 ) -> Result<()> {
     let site_file = target.join(config::SITE_TOML);
     let index_file = target.join(config::INDEX_HTML);
@@ -43,7 +44,9 @@ pub async fn serve(
             let lock_file = lock::acquire(&lock_path)?;
             defer! { let _ = lock::release(lock_file); }
 
-            let args = ProfileSettings::new_release();
+            let mut args = ProfileSettings::new_release();
+            args.exec = Some(exec);
+
             let result = compile(&target, &args).await?;
 
             let mut it = result.projects.into_iter();

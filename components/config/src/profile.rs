@@ -136,6 +136,9 @@ pub struct ProfileSettings {
     pub source: PathBuf,
     pub target: PathBuf,
 
+    // Allow hook command execution
+    pub exec: Option<bool>,
+
     pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
     pub parallel: Option<bool>,
@@ -194,6 +197,7 @@ impl Default for ProfileSettings {
 
             source: PathBuf::from(config::SITE),
             target: PathBuf::from(config::BUILD),
+            exec: None,
             types: Some(Default::default()),
             strict: None,
             parallel: None,
@@ -242,9 +246,24 @@ impl ProfileSettings {
         settings
     }
 
+    /// Determine if this build profile can execute hooks.
+    pub fn can_exec(&self) -> bool {
+        self.exec.is_some() && self.exec.unwrap()
+    }
+
     pub fn append(&mut self, other: &mut Self) {
         self.source = mem::take(&mut other.source);
         self.target = mem::take(&mut other.target);
+
+        // NOTE: Do not inherit `exec` otherwise it
+        // NOTE: defeats the point of `--exec` as authors
+        // NOTE: could just add:
+        //
+        // NOTE: [build]
+        // NOTE: exec = true
+        //
+        // NOTE: Which would bypass the test for explicit
+        // NOTE: execution capability granted on the command line.
 
         if other.types.is_some() {
             self.types = mem::take(&mut other.types)

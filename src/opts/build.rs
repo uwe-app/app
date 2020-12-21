@@ -10,6 +10,10 @@ pub struct Build {
     #[structopt(long)]
     pub profile: Option<String>,
 
+    /// Allow hook command execution.
+    #[structopt(short, long)]
+    pub exec: bool,
+
     /// Offline mode, do not attempt plugin installation
     #[structopt(short, long)]
     pub offline: bool,

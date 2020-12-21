@@ -180,7 +180,7 @@ impl<'a> Invalidator<'a> {
 
         let ext = self.project.config.engine().extension().to_string();
 
-        let config_file = self.project.config.file.as_ref().unwrap();
+        let config_file = self.project.config.file();
         let cfg_file = config_file.canonicalize()?;
 
         let hooks = if let Some(ref hooks) = self.project.config.hooks {
