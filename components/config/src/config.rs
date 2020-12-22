@@ -280,7 +280,7 @@ impl Default for Config {
             build: Some(Default::default()),
             workspace: None,
             fluent: Some(Default::default()),
-            hooks: Some(Default::default()),
+            hooks: None,
             node: Some(Default::default()),
             page: Some(Default::default()),
             pages: None,
