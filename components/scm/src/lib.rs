@@ -3,16 +3,16 @@ use std::path::{Path, PathBuf};
 
 use git2::{
     BranchType, Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks,
-    Repository, RepositoryInitOptions, RepositoryState, StatusOptions,
+    Repository, RepositoryInitOptions, RepositoryState, StatusOptions, Remote, 
 };
 
-use log::{info, warn};
+use log::{info, warn, debug};
 use thiserror::Error;
 
 pub static HEAD: &str = "HEAD";
 pub static ORIGIN: &str = "ORIGIN";
 pub static MAIN: &str = "MAIN";
-pub static REFSPEC: &str = "refs/heads/main:refs/head/main";
+pub static REFSPEC: &str = "+refs/heads/main:refs/heads/main";
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -134,14 +134,23 @@ pub fn find_last_commit<'a>(
     Ok(None)
 }
 
-pub fn push(
+pub fn push_remote_name(
     repo: &Repository,
     remote: &str,
     cbs: Option<RemoteCallbacks<'_>>,
     refspecs: Option<Vec<String>>,
 ) -> Result<()> {
+    let mut remote_spec = repo.find_remote(remote)?;
+    push(repo, &mut remote_spec, cbs, refspecs)
+}
+
+pub fn push(
+    _repo: &Repository,
+    remote: &mut Remote<'_>,
+    cbs: Option<RemoteCallbacks<'_>>,
+    refspecs: Option<Vec<String>>,
+) -> Result<()> {
     let mut cbs = cbs.unwrap_or(callbacks::ssh_agent());
-    let mut remote = repo.find_remote(remote)?;
 
     let refspecs = refspecs.unwrap_or({
         remote
@@ -157,6 +166,7 @@ pub fn push(
         refspecs
     } else {
         vec![REFSPEC.to_string()]
+        //vec![]
     };
 
     //cbs.push_transfer_progress(|obj_sent, obj_total, bytes| {});
@@ -168,9 +178,7 @@ pub fn push(
         Ok(())
     });
 
-    //println!("Remote {:?}", remote.pushurl());
-    //println!("Remote {:?}", remote.name());
-    println!("Refspecs {:#?}", refspecs);
+    debug!("push refspecs {:#?}", refspecs);
 
     let mut push_options = PushOptions::new();
     push_options.remote_callbacks(cbs);
@@ -355,9 +363,16 @@ pub fn sync<P: AsRef<Path>>(
 ) -> Result<()> {
     let repo = open(dir.as_ref())?;
 
-    let _ = repo.find_remote(&remote).map_err(|_| {
+    let mut remote_spec = repo.find_remote(&remote).map_err(|_| {
         Error::NoRemote(remote.to_string(), dir.as_ref().to_path_buf())
     })?;
+
+    if remote_spec.push_refspecs()?.is_empty() {
+        if let Some(url) = remote_spec.url() {
+            remote_spec = repo.remote_anonymous(
+                remote_spec.pushurl().unwrap_or(url))?;
+        }
+    }
 
     /*
     // NOTE: this requires the branch to be a remote tracking branch:
@@ -455,7 +470,7 @@ pub fn sync<P: AsRef<Path>>(
         info!("No changes detected, skipping push");
     } else {
         // 4) Push to the remote repository
-        push(&repo, &remote, None, None)?;
+        push(&repo, &mut remote_spec, None, None)?;
     }
 
     info!("Sync complete ✓");

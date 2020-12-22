@@ -101,7 +101,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     scm::commit_file(&repo, &rel, &msg)?;
 
     info!("Push {}", repo_path.display());
-    scm::push(&repo, scm::ORIGIN, None, None)?;
+    scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
     info!("Published {} ✓", &id);
 
