@@ -22,6 +22,9 @@ pub enum Error {
     #[error("Conflict detected in {0}, please resolve manually")]
     Conflict(PathBuf),
 
+    #[error("Remote {0} does not exist in the repository {1}")]
+    NoRemote(String, PathBuf),
+
     //#[error("Unable to handle source {0}")]
     //BadSource(String),
 
@@ -363,6 +366,9 @@ pub fn sync<P: AsRef<Path>>(
 
     let repo = open(dir.as_ref())?;
 
+    let _ = repo.find_remote(&remote)
+        .map_err(|_| Error::NoRemote(remote.to_string(), dir.as_ref().to_path_buf()))?;
+
     // Make sure the repository has a commit
     let last_commit: Oid = last_commit(&repo, HEAD)
         .ok_or(Error::NoCommit)?;
@@ -440,7 +446,7 @@ pub fn sync<P: AsRef<Path>>(
     pull(dir.as_ref(), Some(&remote), Some(&branch))?;
 
     // 4) Push to the remote repository
-    println!("Push the repository to the remote.");
+    push(&repo, &remote, None, None)?;
 
     Ok(())
 }
