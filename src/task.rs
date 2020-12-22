@@ -4,7 +4,10 @@ use log::info;
 
 //use url::Url;
 
-use crate::{Error, Result, opts::{self, Task}};
+use crate::{
+    opts::{self, Task},
+    Error, Result,
+};
 use config::plugin::dependency::DependencyTarget;
 
 /// List standard blueprints.
@@ -134,16 +137,15 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::CheckDeps { project } => {
             let project = opts::project_path(&project)?;
             check_deps(project).await?;
-        }
-        /*
-        Task::Pull {
-            project,
-            remote,
-            branch,
-        } => {
-            pull(project, remote, branch).await?;
-        }
-        */
+        } /*
+          Task::Pull {
+              project,
+              remote,
+              branch,
+          } => {
+              pull(project, remote, branch).await?;
+          }
+          */
     }
     Ok(())
 }

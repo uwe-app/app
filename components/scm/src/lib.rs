@@ -2,8 +2,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use git2::{
-    Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
-    RepositoryInitOptions, RepositoryState, StatusOptions,
+    BranchType, Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks,
+    Repository, RepositoryInitOptions, RepositoryState, StatusOptions,
 };
 
 use log::{info, warn};
@@ -25,11 +25,9 @@ pub enum Error {
     #[error("Remote {0} does not exist in the repository {1}")]
     NoRemote(String, PathBuf),
 
-    //#[error("Unable to handle source {0}")]
-    //BadSource(String),
+    #[error("Branch {0} does not exist in the repository {1}")]
+    NoBranch(String, PathBuf),
 
-    //#[error("To use SSH specify the --private-key option")]
-    //PrivateKeyRequired,
     #[error(transparent)]
     Git(#[from] git2::Error),
 
@@ -172,7 +170,7 @@ pub fn push(
 
     //println!("Remote {:?}", remote.pushurl());
     //println!("Remote {:?}", remote.name());
-    //println!("Refspecs {:#?}", refspecs);
+    println!("Refspecs {:#?}", refspecs);
 
     let mut push_options = PushOptions::new();
     push_options.remote_callbacks(cbs);
@@ -198,8 +196,7 @@ pub fn commit(
     update_ref: Option<&str>,
     oid: Oid,
     message: &str,
-    ) -> Result<Oid> {
-
+) -> Result<Oid> {
     let sig = repo.signature()?;
     let tree = repo.find_tree(oid)?;
     let tip = find_last_commit(repo)?;
@@ -210,11 +207,7 @@ pub fn commit(
 }
 
 /// Add files to the index and write the tree.
-pub fn add_files(
-    repo: &Repository,
-    paths: &[&Path],
-    ) -> Result<Oid> {
-
+pub fn add_files(repo: &Repository, paths: &[&Path]) -> Result<Oid> {
     let mut index = repo.index()?;
     for p in paths {
         index.add_path(p)?;
@@ -341,10 +334,7 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
     }
 }
 
-pub fn last_commit(
-    repo: &Repository,
-    spec: &str,
-    ) -> Option<Oid> {
+pub fn last_commit(repo: &Repository, spec: &str) -> Option<Oid> {
     if let Some(rev) = repo.revparse(spec).ok() {
         if let Some(obj) = rev.from() {
             if let Some(commit) = obj.as_commit() {
@@ -362,16 +352,30 @@ pub fn sync<P: AsRef<Path>>(
     branch: String,
     add_untracked: bool,
     message: Option<String>,
-    ) -> Result<()> {
-
+) -> Result<()> {
     let repo = open(dir.as_ref())?;
 
-    let _ = repo.find_remote(&remote)
-        .map_err(|_| Error::NoRemote(remote.to_string(), dir.as_ref().to_path_buf()))?;
+    let _ = repo.find_remote(&remote).map_err(|_| {
+        Error::NoRemote(remote.to_string(), dir.as_ref().to_path_buf())
+    })?;
+
+    /*
+    // NOTE: this requires the branch to be a remote tracking branch:
+    //
+    // 1) git checkout --track origin/dev (checkout a remote branch)
+    // 2) git push -u origin dev (push a local branch the first time)
+    // 3) git branch -u origin/dev (convert a local branch to track a remote branch)
+    */
+
+    let _ = repo.find_branch(&branch, BranchType::Local).map_err(|_| {
+        Error::NoBranch(
+            branch.to_string(),
+            dir.as_ref().to_path_buf(),
+        )
+    })?;
 
     // Make sure the repository has a commit
-    let last_commit: Oid = last_commit(&repo, HEAD)
-        .ok_or(Error::NoCommit)?;
+    let last_commit: Oid = last_commit(&repo, HEAD).ok_or(Error::NoCommit)?;
 
     let tip = repo.find_commit(last_commit)?;
     let mut tree_id = tip.tree_id();
@@ -388,7 +392,7 @@ pub fn sync<P: AsRef<Path>>(
             let status = entry.status();
 
             if status.is_conflicted() {
-                return Err(Error::Conflict(dir.as_ref().to_path_buf()))
+                return Err(Error::Conflict(dir.as_ref().to_path_buf()));
             }
 
             if status.is_wt_new() {
@@ -404,7 +408,8 @@ pub fn sync<P: AsRef<Path>>(
             } else if status.is_wt_modified()
                 || status.is_wt_deleted()
                 || status.is_wt_typechange()
-                || status.is_wt_renamed() {
+                || status.is_wt_renamed()
+            {
                 if let Some(path) = entry.path() {
                     changed_files.push(path.to_string());
                     commit_required = true;
@@ -413,17 +418,16 @@ pub fn sync<P: AsRef<Path>>(
                 || status.is_index_modified()
                 || status.is_index_deleted()
                 || status.is_index_typechange()
-                || status.is_index_renamed() {
+                || status.is_index_renamed()
+            {
                 commit_required = true;
             }
         }
     }
 
     if !changed_files.is_empty() {
-        let files: Vec<&Path> = changed_files
-            .iter()
-            .map(|p| Path::new(p))
-            .collect();
+        let files: Vec<&Path> =
+            changed_files.iter().map(|p| Path::new(p)).collect();
         tree_id = add_files(&repo, files.as_slice())?;
     }
 
@@ -445,8 +449,16 @@ pub fn sync<P: AsRef<Path>>(
     // TODO: Handle merge conflicts on the pull???
     pull(dir.as_ref(), Some(&remote), Some(&branch))?;
 
-    // 4) Push to the remote repository
-    push(&repo, &remote, None, None)?;
+    //refs/heads/*:refs/remotes/origin/
+
+    if changed_files.is_empty() {
+        info!("No changes detected, skipping push");
+    } else {
+        // 4) Push to the remote repository
+        push(&repo, &remote, None, None)?;
+    }
+
+    info!("Sync complete ✓");
 
     Ok(())
 }

@@ -187,7 +187,6 @@ pub(crate) fn pull<P: AsRef<Path>>(
     remote_name: &str,
     branch_name: &str,
 ) -> Result<(), git2::Error> {
-
     /*
     let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or("origin");
     let remote_branch = branch.as_ref().map(|s| &s[..]).unwrap_or("main");

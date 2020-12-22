@@ -125,7 +125,6 @@ static DEFAULT_ICON: &str = "assets/favicon.png";
 static DEFAULT_ICON_DATA: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
 
-
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }

@@ -3,7 +3,6 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub struct Sync {
-
     /// Remote for the sync operation
     #[structopt(short, long)]
     pub remote: Option<String>,

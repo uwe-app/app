@@ -3,15 +3,16 @@ use std::path::PathBuf;
 
 use log::{info, warn};
 
-use crate::{Error, Result, opts::{self, Lang}};
+use crate::{
+    opts::{self, Lang},
+    Error, Result,
+};
 use config::{Config, ProfileSettings};
 use locale::Locales;
 use unic_langid::LanguageIdentifier;
 
-
 //use super::Lang;
 //use uwe::{lang, opts, Result};
-
 
 struct LanguageInfo {
     config: Config,

@@ -13,7 +13,6 @@ pub enum Task {
         #[structopt(parse(from_os_str), default_value = ".")]
         project: PathBuf,
     },
-
     /*
     /// Initialize, add files and commit.
     Create {

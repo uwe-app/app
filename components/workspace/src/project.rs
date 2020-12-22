@@ -894,7 +894,7 @@ impl Workspace {
 
 fn scm_digest(project: &PathBuf) -> Option<String> {
     if let Some(repo) = scm::discover(project).ok() {
-        return scm::last_commit(&repo, scm::HEAD).map(|oid| oid.to_string())
+        return scm::last_commit(&repo, scm::HEAD).map(|oid| oid.to_string());
     }
     None
 }
@@ -938,17 +938,21 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 /// Get the settings for a project.
 ///
 /// For workspaces a list of member settings is also returned.
-pub fn settings<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<(Config, Option<Vec<Config>>)> {
+pub fn settings<P: AsRef<Path>>(
+    dir: P,
+    walk_ancestors: bool,
+) -> Result<(Config, Option<Vec<Config>>)> {
     let mut workspace = open(dir, walk_ancestors)?;
     let project = workspace.projects.swap_remove(0);
     match project {
         ProjectEntry::One(mut entries) => {
             Ok((entries.swap_remove(0).into(), None))
-        },
+        }
         ProjectEntry::Many(entries, config) => {
-            let entries: Vec<Config> = entries.into_iter().map(|e| e.into()).collect();
+            let entries: Vec<Config> =
+                entries.into_iter().map(|e| e.into()).collect();
             Ok((config, Some(entries)))
-        },
+        }
     }
 }
 
@@ -983,7 +987,7 @@ pub async fn compile<P: AsRef<Path>>(
             warn!("If you trust the commands in the site settings ");
             warn!("enable command execution with the --exec option.");
             warn!("");
-            return Err(Error::NoExecCapability(entry.config.host.to_string()))
+            return Err(Error::NoExecCapability(entry.config.host.to_string()));
         }
 
         let builder = entry.builder(args).await?;

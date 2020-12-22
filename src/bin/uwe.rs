@@ -13,7 +13,8 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal, Alias, Build, Clean, Docs, Lang, New, Publish, Server, Sync, Task,
+        self, fatal, Alias, Build, Clean, Docs, Lang, New, Publish, Server,
+        Sync, Task,
     },
     Error, Result,
 };
@@ -35,7 +36,6 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-
     /// Manage site aliases
     Alias {
         #[structopt(subcommand)]
@@ -162,12 +162,19 @@ async fn run(cmd: Command) -> Result<()> {
             );
 
             let launch = LaunchConfig { open: args.open };
-            uwe::server::serve(&target, args.skip_build, opts, launch, args.exec).await?;
+            uwe::server::serve(
+                &target,
+                args.skip_build,
+                opts,
+                launch,
+                args.exec,
+            )
+            .await?;
         }
 
         Command::Task { cmd } => {
             uwe::task::run(cmd).await?;
-        },
+        }
 
         Command::Publish { args } => {
             let project = opts::project_path(&args.project)?;
