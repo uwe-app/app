@@ -374,14 +374,6 @@ pub fn sync<P: AsRef<Path>>(
         }
     }
 
-    /*
-    // NOTE: this requires the branch to be a remote tracking branch:
-    //
-    // 1) git checkout --track origin/dev (checkout a remote branch)
-    // 2) git push -u origin dev (push a local branch the first time)
-    // 3) git branch -u origin/dev (convert a local branch to track a remote branch)
-    */
-
     let _ = repo.find_branch(&branch, BranchType::Local).map_err(|_| {
         Error::NoBranch(
             branch.to_string(),
