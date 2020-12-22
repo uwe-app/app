@@ -894,11 +894,7 @@ impl Workspace {
 
 fn scm_digest(project: &PathBuf) -> Option<String> {
     if let Some(repo) = scm::discover(project).ok() {
-        if let Some(rev) = repo.revparse("HEAD").ok() {
-            if let Some(obj) = rev.from() {
-                return Some(obj.id().to_string());
-            }
-        }
+        return scm::last_commit(&repo, scm::HEAD).map(|oid| oid.to_string())
     }
     None
 }

@@ -54,6 +54,7 @@ async fn check_deps(project: PathBuf) -> Result<()> {
     Ok(())
 }
 
+/*
 /// Pull from a remote repository.
 async fn pull(
     target: PathBuf,
@@ -72,6 +73,7 @@ async fn pull(
         .map(|_| ())
         .map_err(Error::from)
 }
+*/
 
 /*
 fn create(target: PathBuf, message: String) -> Result<()> {
@@ -133,6 +135,7 @@ pub async fn run(cmd: Task) -> Result<()> {
             let project = opts::project_path(&project)?;
             check_deps(project).await?;
         }
+        /*
         Task::Pull {
             project,
             remote,
@@ -140,6 +143,7 @@ pub async fn run(cmd: Task) -> Result<()> {
         } => {
             pull(project, remote, branch).await?;
         }
+        */
     }
     Ok(())
 }

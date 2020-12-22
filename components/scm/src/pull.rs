@@ -182,11 +182,13 @@ fn do_merge<'a>(
     Ok(())
 }
 
-pub fn pull<P: AsRef<Path>>(
+pub(crate) fn pull<P: AsRef<Path>>(
     path: P,
-    remote: Option<String>,
-    branch: Option<String>,
+    remote_name: &str,
+    branch_name: &str,
 ) -> Result<(), git2::Error> {
+
+    /*
     let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or("origin");
     let remote_branch = branch.as_ref().map(|s| &s[..]).unwrap_or("main");
 
@@ -196,10 +198,11 @@ pub fn pull<P: AsRef<Path>>(
         remote_branch,
         path.as_ref().display()
     );
+    */
 
     let repo = Repository::open(path)?;
     let mut remote = repo.find_remote(remote_name)?;
     let fetch_commit =
-        do_fetch(&repo, &[remote_branch], &mut remote, &remote_name)?;
-    do_merge(&repo, &remote_branch, fetch_commit)
+        do_fetch(&repo, &[branch_name], &mut remote, &remote_name)?;
+    do_merge(&repo, &branch_name, fetch_commit)
 }

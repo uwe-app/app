@@ -1,18 +1,26 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use git2::{
     Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository,
-    RepositoryInitOptions, RepositoryState, StatusOptions, Status,
+    RepositoryInitOptions, RepositoryState, StatusOptions,
 };
 
 use log::{info, warn};
 use thiserror::Error;
 
+pub static HEAD: &str = "HEAD";
+pub static ORIGIN: &str = "ORIGIN";
+pub static MAIN: &str = "MAIN";
+pub static REFSPEC: &str = "refs/heads/main:refs/head/main";
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("No commit available")]
     NoCommit,
+
+    #[error("Conflict detected in {0}, please resolve manually")]
+    Conflict(PathBuf),
 
     //#[error("Unable to handle source {0}")]
     //BadSource(String),
@@ -33,16 +41,22 @@ mod clone;
 //mod progress;
 mod pull;
 
-pub static ORIGIN: &str = "origin";
-pub static MAIN: &str = "main";
-pub static REFSPEC: &str = "refs/heads/main:refs/head/main";
-
 pub fn pull<P: AsRef<Path>>(
     path: P,
-    remote: Option<String>,
-    branch: Option<String>,
+    remote: Option<&str>,
+    branch: Option<&str>,
 ) -> Result<()> {
-    pull::pull(path, remote, branch).map_err(Error::from)
+    let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or(ORIGIN);
+    let branch_name = branch.as_ref().map(|s| &s[..]).unwrap_or(MAIN);
+
+    info!(
+        "Pull {}/{} in {}",
+        remote_name,
+        branch_name,
+        path.as_ref().display()
+    );
+
+    pull::pull(path, remote_name, branch_name).map_err(Error::from)
 }
 
 pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
@@ -104,7 +118,7 @@ pub fn init<P: AsRef<Path>>(target: P, message: &str) -> Result<Oid> {
     let sig = new_repo.signature()?;
     let tree = new_repo.find_tree(oid)?;
     let parents: &[&Commit] = &[];
-    Ok(new_repo.commit(Some("HEAD"), &sig, &sig, message, &tree, parents)?)
+    Ok(new_repo.commit(Some(HEAD), &sig, &sig, message, &tree, parents)?)
 }
 
 pub fn find_last_commit<'a>(
@@ -171,21 +185,40 @@ pub fn commit_file(
     path: &Path,
     message: &str,
 ) -> Result<Oid> {
+    let oid = add_files(repo, &[path])?;
+    Ok(commit(repo, Some(HEAD), oid, message)?)
+}
+
+/// Make a commit using `oid` as the current tip.
+pub fn commit(
+    repo: &Repository,
+    update_ref: Option<&str>,
+    oid: Oid,
+    message: &str,
+    ) -> Result<Oid> {
+
     let sig = repo.signature()?;
-    let mut index = repo.index()?;
-    index.add_path(path)?;
-
-    // TODO: check for conflicts index.has_conflicts()?;
-
-    index.write()?;
-    let oid = index.write_tree()?;
     let tree = repo.find_tree(oid)?;
-
     let tip = find_last_commit(repo)?;
     let commit = tip.ok_or_else(|| Error::NoCommit)?;
 
     let parents: [&Commit; 1] = [&commit];
-    Ok(repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?)
+    Ok(repo.commit(update_ref, &sig, &sig, message, &tree, &parents)?)
+}
+
+/// Add files to the index and write the tree.
+pub fn add_files(
+    repo: &Repository,
+    paths: &[&Path],
+    ) -> Result<Oid> {
+
+    let mut index = repo.index()?;
+    for p in paths {
+        index.add_path(p)?;
+    }
+    // TODO: check for conflicts index.has_conflicts()?;
+    index.write()?;
+    Ok(index.write_tree()?)
 }
 
 //pub fn clone<S: AsRef<str>, P: AsRef<Path>>(
@@ -305,6 +338,20 @@ pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
     }
 }
 
+pub fn last_commit(
+    repo: &Repository,
+    spec: &str,
+    ) -> Option<Oid> {
+    if let Some(rev) = repo.revparse(spec).ok() {
+        if let Some(obj) = rev.from() {
+            if let Some(commit) = obj.as_commit() {
+                return Some(commit.id());
+            }
+        }
+    }
+    None
+}
+
 /// Sync a project with a remote repository.
 pub fn sync<P: AsRef<Path>>(
     dir: P,
@@ -316,33 +363,45 @@ pub fn sync<P: AsRef<Path>>(
 
     let repo = open(dir.as_ref())?;
 
+    // Make sure the repository has a commit
+    let last_commit: Oid = last_commit(&repo, HEAD)
+        .ok_or(Error::NoCommit)?;
+
+    let tip = repo.find_commit(last_commit)?;
+    let mut tree_id = tip.tree_id();
+    let mut commit_required = false;
+    let mut changed_files: Vec<String> = Vec::new();
+
+    // 1) Check status to add untracked files and
+    //    determine if a commit is needed.
     let mut status_options = StatusOptions::new();
     status_options.include_untracked(true);
     let statuses = repo.statuses(Some(&mut status_options))?;
-
-    let mut commit_required = false;
-
     if !statuses.is_empty() {
         for entry in statuses.iter() {
             let status = entry.status();
 
             if status.is_conflicted() {
-                // FIXME: return an Error here!
-                panic!("Conflict detected in {}", dir.as_ref().display());
+                return Err(Error::Conflict(dir.as_ref().to_path_buf()))
             }
 
-            if status.is_wt_new()
-                || status.is_wt_modified()
+            if status.is_wt_new() {
+                if let Some(path) = entry.path() {
+                    if add_untracked {
+                        info!("Add file {}", path);
+                        changed_files.push(path.to_string());
+                        commit_required = true;
+                    } else {
+                        warn!("Skip file {}", path);
+                    }
+                }
+            } else if status.is_wt_modified()
                 || status.is_wt_deleted()
                 || status.is_wt_typechange()
                 || status.is_wt_renamed() {
                 if let Some(path) = entry.path() {
-                    if add_untracked {
-                        info!("Add untracked file {}", path);
-                        commit_required = true;
-                    } else {
-                        warn!("Skip untracked file {}", path);
-                    }
+                    changed_files.push(path.to_string());
+                    commit_required = true;
                 }
             } else if status.is_index_new()
                 || status.is_index_modified()
@@ -354,15 +413,33 @@ pub fn sync<P: AsRef<Path>>(
         }
     }
 
+    if !changed_files.is_empty() {
+        let files: Vec<&Path> = changed_files
+            .iter()
+            .map(|p| Path::new(p))
+            .collect();
+        tree_id = add_files(&repo, files.as_slice())?;
+    }
+
+    // 2) Perform the commit if we have a commit required
+    //    and a commit message is available.
     if commit_required {
         if let Some(ref message) = message {
-            println!("Do the commit.");
+            info!("Commit {:?}", message);
+            commit(&repo, Some(HEAD), tree_id, message)?;
         } else {
-            // FIXME: return an Error here!
-            panic!("Commit is required but not message was supplied.");
+            if !changed_files.is_empty() {
+                warn!("Changed files detected but no commit performed ");
+                warn!("because a commit message is not available.");
+            }
         }
     }
 
+    // 3) Pull the remote repository
+    // TODO: Handle merge conflicts on the pull???
+    pull(dir.as_ref(), Some(&remote), Some(&branch))?;
+
+    // 4) Push to the remote repository
     println!("Push the repository to the remote.");
 
     Ok(())
