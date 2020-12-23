@@ -382,9 +382,9 @@ pub fn sync<P: AsRef<Path>>(
     })?;
 
     // Make sure the repository has a commit
-    let last_commit: Oid = last_commit(&repo, HEAD).ok_or(Error::NoCommit)?;
+    let last_commit_oid: Oid = last_commit(&repo, HEAD).ok_or(Error::NoCommit)?;
 
-    let tip = repo.find_commit(last_commit)?;
+    let tip = repo.find_commit(last_commit_oid)?;
     let mut tree_id = tip.tree_id();
     let mut commit_required = false;
     let mut changed_files: Vec<String> = Vec::new();
@@ -459,10 +459,18 @@ pub fn sync<P: AsRef<Path>>(
     //refs/heads/*:refs/remotes/origin/
 
     if changed_files.is_empty() {
-        info!("No changes detected, skipping push");
-    } else {
-        // 4) Push to the remote repository
-        push(&repo, &mut remote_spec, None, None)?;
+        info!("No changes detected");
+    }
+
+    // 4) Push to the remote repository
+    push(&repo, &mut remote_spec, None, None)?;
+
+    // 5) Update a remote tracking branch if it exists
+    let refspec = format!("refs/remotes/{}/{}", remote, branch);
+    if let Some(mut reference) = repo.find_reference(&refspec).ok() {
+        let commit_oid = last_commit(&repo, HEAD).ok_or(Error::NoCommit)?;
+        info!("Update {}", &refspec);
+        reference.set_target(commit_oid, "Update remote tracking branch")?;
     }
 
     info!("Sync complete ✓");
