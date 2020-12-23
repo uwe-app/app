@@ -21,6 +21,8 @@ pub struct ProjectOptions {
     pub language: Option<String>,
     pub host: Option<String>,
     pub locales: Option<String>,
+    pub remote_name: String,
+    pub remote_url: Option<String>,
 }
 
 struct InitSettings {
@@ -241,7 +243,7 @@ pub fn project(options: ProjectOptions) -> Result<()> {
                 }
 
                 check_site_settings(&source_dir)?;
-                init_folder(source_dir, target, settings, message)?;
+                init_folder(source_dir, &target, settings, message)?;
             }
         }
 
@@ -249,8 +251,12 @@ pub fn project(options: ProjectOptions) -> Result<()> {
     } else {
         let source = dirs::blueprint_dir()?.join(DEFAULT_NAME);
         check_site_settings(&source)?;
-        init_folder(source, target, settings, message)?;
+        init_folder(source, &target, settings, message)?;
     };
+
+    if let Some(ref url) = options.remote_url {
+        scm::set_remote(&target, &options.remote_name, url)?;
+    }
 
     Ok(())
 }

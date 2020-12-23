@@ -10,8 +10,8 @@ use log::{info, warn, debug};
 use thiserror::Error;
 
 pub static HEAD: &str = "HEAD";
-pub static ORIGIN: &str = "ORIGIN";
-pub static MAIN: &str = "MAIN";
+pub static ORIGIN: &str = "origin";
+pub static MAIN: &str = "main";
 pub static REFSPEC: &str = "+refs/heads/main:refs/heads/main";
 
 #[derive(Error, Debug)]
@@ -351,6 +351,19 @@ pub fn last_commit(repo: &Repository, spec: &str) -> Option<Oid> {
         }
     }
     None
+}
+
+/// Set a remote url with the given name.
+///
+/// If a rempte exists for the name then the URL is updated.
+pub fn set_remote<P>(dir: P, name: &str, url: &str) -> Result<()> where P: AsRef<Path> {
+    let repo = open(dir.as_ref())?;
+    if let Some(_) = repo.find_remote(name).ok() {
+        repo.remote_set_url(name, url)?;
+    } else {
+        repo.remote(name, url)?; 
+    }
+    Ok(())
 }
 
 /// Sync a project with a remote repository.
