@@ -10,6 +10,8 @@ use crate::{
 };
 use config::plugin::dependency::DependencyTarget;
 
+use super::alias;
+
 /// List standard blueprints.
 async fn list_blueprints() -> Result<()> {
     let blueprints = dirs::blueprint_dir()?;
@@ -137,7 +139,12 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::CheckDeps { project } => {
             let project = opts::project_path(&project)?;
             check_deps(project).await?;
-        } /*
+        }
+        Task::Alias {cmd} => {
+            alias::run(cmd).await?;
+        }
+
+        /*
           Task::Pull {
               project,
               remote,
