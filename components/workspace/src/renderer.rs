@@ -167,7 +167,8 @@ impl Renderer {
                     .layouts()?
                     // WARN: calling link() will create a collision!
                     //.link()?
-                    .permalinks()?
+                    // WARN: calling permalinks() will create a collision!
+                    //.permalinks()?
                     .feeds()?;
 
                     let (_, _, _, computed_page) = builder.build();
