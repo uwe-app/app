@@ -11,6 +11,7 @@ pub mod matcher;
 pub mod menu;
 pub mod page;
 pub mod parent;
+pub mod powered;
 pub mod random;
 pub mod scripts;
 pub mod search;

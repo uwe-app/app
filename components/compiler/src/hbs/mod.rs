@@ -144,6 +144,12 @@ impl<'reg> ParserBuilder<'reg> {
             }),
         );
         helpers.insert(
+            "powered",
+            Box::new(helpers::powered::Powered {
+                context: Arc::clone(&self.context),
+            }),
+        );
+        helpers.insert(
             "link",
             Box::new(helpers::link::Link {
                 context: Arc::clone(&self.context),
