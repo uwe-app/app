@@ -312,6 +312,7 @@ impl DataSourceMap {
                 kind: g.config.kind.as_ref().unwrap().clone(),
                 provider: g.config.provider.as_ref().unwrap().clone(),
                 source: &g.source,
+                definition: &g.config,
                 config,
                 options,
                 collation,
@@ -342,19 +343,7 @@ impl DataSourceMap {
                     documents: Vec::new(),
                 };
 
-                for (id, document) in
-                    generator.all.iter().filter(|(_id, document)| {
-                        if let Some(ref filters) = def.filters {
-                            for (path, flag) in filters {
-                                let truthy = json_path::truthy(path, document);
-                                if (*flag && truthy) || (!*flag && !truthy) {
-                                    return false;
-                                }
-                            }
-                        }
-                        true
-                    })
-                {
+                for (id, document) in generator.all.iter() {
                     let key_val = if identity {
                         Value::String(id.to_string())
                     } else {
@@ -388,9 +377,13 @@ impl DataSourceMap {
                 generator.indices.insert(name.clone(), values);
             }
 
-            //for (k, idx) in &generator.indices {
-            //println!("Index {:#?} for {:?}", idx, k);
-            //}
+            /*
+            for (k, idx) in &generator.indices {
+                if k == "all" {
+                    println!("Index {:#?} for {:?}", idx, k);
+                }
+            }
+            */
         }
 
         Ok(())
@@ -408,6 +401,10 @@ impl DataSourceMap {
         }
 
         let res = idx.from_query(query);
+
+        //println!("Get result set from query {:#?}", query);
+        //println!("Got result set {:#?}", res);
+
         cache.entry(query.clone()).or_insert(res.clone());
 
         Ok(res)

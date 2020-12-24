@@ -32,6 +32,7 @@ pub fn find_path<S: AsRef<str>>(needle: S, doc: &Value) -> Value {
     Value::Null
 }
 
+/*
 pub fn is_truthy(val: &Value) -> bool {
     match val {
         Value::Object(ref _map) => return true,
@@ -57,6 +58,7 @@ pub fn truthy<S: AsRef<str>>(needle: S, doc: &Value) -> bool {
     let val = find_path(needle, doc);
     is_truthy(&val)
 }
+*/
 
 // Look up a field in an array or object.
 pub fn find_field<S: AsRef<str>>(field: S, parent: &Value) -> Value {

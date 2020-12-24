@@ -371,6 +371,7 @@ dependencies = [
  "collator",
  "config",
  "futures",
+ "globset",
  "log",
  "serde",
  "serde_json",

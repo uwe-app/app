@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
 
+use globset::Glob;
+
 use crate::Result;
 
 static DEFAULT_PARAMETER: &str = "result";
@@ -54,6 +56,8 @@ impl DataBase {
                 if let Some(ref from) = v.from {
                     if from.is_relative() {
                         v.from = Some(source.as_ref().to_path_buf().join(from));
+                    } else {
+                        // FIXME: throw an error if from is absolute!!!
                     }
                 }
             }
@@ -68,6 +72,10 @@ pub struct DataSource {
     pub kind: Option<SourceType>,
     pub provider: Option<SourceProvider>,
     pub from: Option<PathBuf>,
+    // Omit files that match this pattern when building 
+    // the index; patterns are matched relative to the containing
+    // directory.
+    pub exclude: Vec<Glob>,
     #[serde(alias = "on")]
     pub index: Option<HashMap<String, IndexRequest>>,
 }
@@ -79,6 +87,7 @@ impl Default for DataSource {
             provider: Some(Default::default()),
             from: None,
             index: Some(HashMap::new()),
+            exclude: Vec::new(),
         }
     }
 }
@@ -89,9 +98,8 @@ pub struct IndexRequest {
     // to specify a path to the value. If the special `identity` value
     // is specified then the index is sorted by the generated document id.
     pub key: String,
-
     // List of filters to use when building the index.
-    pub filters: Option<HashMap<String, bool>>,
+    //pub filters: Option<HashMap<String, bool>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]

@@ -12,6 +12,7 @@ utils = {version = "0.1", path = "../utils" }
 thiserror = "1"
 futures = "0.3"
 tokio = { version = "0.2.22", features = ["rt-core", "rt-threaded", "fs"] }
+globset = {version = "0.4.5", features = ["serde1"]}
 log = "0.4.8"
 slug = "0.1.4"
 serde = "1"
