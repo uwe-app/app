@@ -1,6 +1,6 @@
 [package]
 name = "uwe"
-version = "0.40.25"
+version = "0.40.26"
 authors = ["muji <muji@tmpfs.org>"]
 description = "Universal web editor"
 repository = "https://github.com/uwe-app/app"
