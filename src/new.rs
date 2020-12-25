@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use toml::map::Map;
 use toml::value::Value;
 use url::Url;
+use log::info;
 
 use utils::walk;
 
@@ -257,6 +258,8 @@ pub fn project(options: ProjectOptions) -> Result<()> {
     if let Some(ref url) = options.remote_url {
         scm::set_remote(&target, &options.remote_name, url)?;
     }
+
+    info!("Created {} ✓", target.to_string_lossy());
 
     Ok(())
 }
