@@ -72,10 +72,10 @@ pub struct DataSource {
     pub kind: Option<SourceType>,
     pub provider: Option<SourceProvider>,
     pub from: Option<PathBuf>,
-    // Omit files that match this pattern when building 
+    // Omit files that match this pattern when building
     // the index; patterns are matched relative to the containing
     // directory.
-    pub exclude: Vec<Glob>,
+    pub excludes: Vec<Glob>,
     #[serde(alias = "on")]
     pub index: Option<HashMap<String, IndexRequest>>,
 }
@@ -87,7 +87,7 @@ impl Default for DataSource {
             provider: Some(Default::default()),
             from: None,
             index: Some(HashMap::new()),
-            exclude: Vec::new(),
+            excludes: Vec::new(),
         }
     }
 }

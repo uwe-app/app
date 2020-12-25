@@ -101,7 +101,7 @@ impl Provider {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
-        let exclude = req.definition.exclude.iter()
+        let exclude = req.definition.excludes.iter()
             .map(|g| g.compile_matcher())
             .collect::<Vec<globset::GlobMatcher>>();
 
@@ -110,7 +110,7 @@ impl Provider {
 
                 if !p.starts_with(req.source) {
                     return future::ready(false);
-                } 
+                }
 
                 if !exclude.is_empty() {
                     // NOTE: `from` is already relative to source
