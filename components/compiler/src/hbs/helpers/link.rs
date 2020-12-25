@@ -62,8 +62,9 @@ fn url<'render, 'call>(
         if verify {
             if page_key.is_none() {
                 return Err(HelperError::new(format!(
-                    "Type error for `link`, missing url {}",
-                    input
+                    "Type error for `link`, missing url {} in {}",
+                    input,
+                    rc.template_name(),
                 )));
             }
         }
