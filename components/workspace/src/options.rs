@@ -304,6 +304,35 @@ fn prepare_script(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
     Ok(())
 }
 
+/// Prepare a PWA manifest.
+fn prepare_manifest(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
+    let href = if let Some(manifest) = cfg.manifest() {
+        Some(manifest.to_string())
+    } else {
+        let manifest_default = opts.source.join(config::DEFAULT_PWA_MANIFEST);
+        if manifest_default.exists() {
+            Some(format!("/{}", config::DEFAULT_PWA_MANIFEST))
+        } else { None }
+    };
+
+    if let Some(href) = href {
+        let path = utils::url::to_path_separator(href.trim_start_matches("/"));
+        let file = opts.source.join(&path);
+        if !file.exists() || !file.is_file() {
+            return Err(Error::NoAppManifest(href.to_string(), file));
+        }
+
+        // NOTE: This URL to the manifest file will be made 
+        // NOTE: relative later, should this be an absolute URL?
+
+        let global_page = cfg.page.get_or_insert(Default::default());
+        let manifest_tag = LinkTag::new_manifest(href);
+        global_page.links_mut().insert(manifest_tag);
+    }
+
+    Ok(())
+}
+
 pub(crate) async fn prepare(
     cfg: &mut Config,
     args: &ProfileSettings,
@@ -349,6 +378,7 @@ pub(crate) async fn prepare(
     prepare_icon(cfg, &opts)?;
     prepare_style(cfg, &opts)?;
     prepare_script(cfg, &opts)?;
+    prepare_manifest(cfg, &opts)?;
 
     Ok(opts)
 }

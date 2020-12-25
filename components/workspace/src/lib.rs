@@ -19,6 +19,9 @@ pub enum Error {
     #[error("Global style file {0} does not exist or is not a file ({1})")]
     NoMainStyle(String, PathBuf),
 
+    #[error("App manifest {0} does not exist or is not a file ({1})")]
+    NoAppManifest(String, PathBuf),
+
     #[error("The path filter {0} does not exist")]
     NoFilter(PathBuf),
 

@@ -82,6 +82,14 @@ impl LinkTag {
         }
     }
 
+    pub fn new_manifest(href: String) -> Self {
+        Self {
+            href,
+            rel: Some(vec![RelValue::Manifest]),
+            ..Default::default()
+        }
+    }
+
     pub fn source(&self) -> &str {
         &self.href
     }

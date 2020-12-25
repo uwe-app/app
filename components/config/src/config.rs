@@ -124,6 +124,8 @@ static DEFAULT_ICON: &str = "assets/favicon.png";
 static DEFAULT_ICON_DATA: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
 
+pub static DEFAULT_PWA_MANIFEST: &str = "app.webmanifest";
+
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }
@@ -194,6 +196,7 @@ pub struct Config {
     repository: Option<RepositoryConfig>,
     engine: Option<TemplateEngine>,
     icon: Option<UrlPath>,
+    manifest: Option<UrlPath>,
 
     // Host name when running locally which overrides the inferred
     // localhost subdomain
@@ -269,6 +272,7 @@ impl Default for Config {
                 .unwrap(),
 
             icon: None,
+            manifest: None,
             charset: Some(String::from(CHARSET)),
             repository: None,
             engine: Some(Default::default()),
@@ -314,6 +318,10 @@ impl Default for Config {
 impl Config {
     pub fn commit(&self) -> &Option<String> {
         &self.commit
+    }
+
+    pub fn manifest(&self) -> &Option<UrlPath> {
+        &self.manifest 
     }
 
     pub fn set_commit(&mut self, commit: Option<String>) {
