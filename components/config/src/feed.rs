@@ -128,8 +128,11 @@ impl FeedConfig {
     // Prepare the configuration by compiling the glob matchers.
     pub(crate) fn prepare(&mut self) {
         for (k, v) in self.channels.iter_mut() {
-            v.target = Some(k.to_string());
+            if v.target.is_none() {
+                v.target = Some(k.to_string());
+            }
             v.matcher.compile();
+            v.alternate.compile();
         }
     }
 }
@@ -156,6 +159,9 @@ pub struct ChannelConfig {
     // List of file types to generate for this feed
     pub types: Vec<FeedType>,
 
+    // Glob patterns for pages that need alternate links injected
+    pub alternate: GlobPatternMatcher,
+
     #[serde(flatten)]
     pub matcher: GlobPatternMatcher,
 }
@@ -170,6 +176,7 @@ impl Default for ChannelConfig {
             icon: None,
             types: vec![FeedType::Json, FeedType::Rss, FeedType::Atom],
             matcher: Default::default(),
+            alternate: Default::default(),
         }
     }
 }

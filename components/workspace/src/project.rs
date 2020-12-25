@@ -1006,7 +1006,6 @@ pub async fn compile<P: AsRef<Path>>(
         // Load collections, resolve synthetic assets
         let builder = builder
             .load_data()
-            .and_then(|s| s.feed())
             .and_then(|s| s.menus())
             .await?;
 
@@ -1020,6 +1019,10 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.each())
             .and_then(|s| s.assign())
             .and_then(|s| s.syntax())
+            // NOTE: feed comes after synthetic collections 
+            // NOTE: so that <link rel="alternate"> patterns
+            // NOTE: can be injected correctly
+            .and_then(|s| s.feed())
             .await?;
 
         let mut state = builder.build()?;

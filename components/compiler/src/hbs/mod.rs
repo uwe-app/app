@@ -126,12 +126,6 @@ impl<'reg> ParserBuilder<'reg> {
         );
 
         helpers.insert(
-            "feed",
-            Box::new(helpers::feed::Feed {
-                context: Arc::clone(&self.context),
-            }),
-        );
-        helpers.insert(
             "page",
             Box::new(helpers::page::Page {
                 context: Arc::clone(&self.context),

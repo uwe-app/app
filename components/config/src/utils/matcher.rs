@@ -37,6 +37,10 @@ impl GlobPatternMatcher {
             self.excludes.iter().map(|g| g.compile_matcher()).collect();
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.include_match.is_empty() && self.exclude_match.is_empty()
+    }
+
     /// Determine if a pattern matches.
     ///
     /// No assumptions are made about matching when the

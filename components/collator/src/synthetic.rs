@@ -7,6 +7,7 @@ use jsonfeed::{Feed, Item, VERSION};
 use config::{
     feed::{ChannelConfig, FeedConfig},
     plugin_cache::PluginCache,
+    tags::link::LinkTag,
     Config, Page, Plugin, RuntimeOptions,
 };
 
@@ -258,9 +259,13 @@ pub fn feed(
             name, locales, config, options, info, feed, channel,
         )?);
 
+        // Store feed URLs for <link rel="alternate">
+        let mut alternates: Vec<(String, &str)> = Vec::new();
+
         for feed_type in channel.types.iter() {
             let file_name = feed_type.get_name();
             let file_extension = feed_type.get_extension();
+            let mime_type = feed_type.get_mime();
             let source = source_dir.join(&file_name);
 
             let template: Option<PathBuf> = if let Some(ref partial_key) =
@@ -300,7 +305,9 @@ pub fn feed(
             let base_url = options.get_canonical_url(config, url_path)?;
             if let Some(ref mut feed) = item_data.feed.as_mut() {
                 let path = format!("{}/{}", channel_href, file_name);
-                feed.feed_url = Some(base_url.join(&path)?.to_string());
+                let url = base_url.join(&path)?.to_string();
+                alternates.push((url.clone(), mime_type));
+                feed.feed_url = Some(url);
             }
 
             create_page(
@@ -314,6 +321,23 @@ pub fn feed(
                 // NOTE: on feed.xml and feed.json
                 false,
             )?;
+        }
+
+        // Inject <link rel="alternate"> into matching pages
+        if !channel.alternate.is_empty() {
+            for (page_path, page_lock) in info.pages.iter() {
+                let mut page_write = page_lock.write().unwrap();
+                if let Some(ref href) = info.get_link_href(page_path) {
+                    if channel.alternate.filter(href) {
+                        for (url, mime_type) in alternates.iter() {
+                            let alternate = LinkTag::new_alternate(
+                                url.to_string(), Some(mime_type.to_string()));
+                            page_write.links_mut().insert(alternate);
+                        }
+                    }
+                }
+
+            }
         }
     }
     Ok(())

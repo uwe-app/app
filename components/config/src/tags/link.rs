@@ -90,6 +90,15 @@ impl LinkTag {
         }
     }
 
+    pub fn new_alternate(href: String, link_type: Option<String>) -> Self {
+        Self {
+            href,
+            link_type,
+            rel: Some(vec![RelValue::Alternate]),
+            ..Default::default()
+        }
+    }
+
     pub fn source(&self) -> &str {
         &self.href
     }
