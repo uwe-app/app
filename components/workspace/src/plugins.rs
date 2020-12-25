@@ -38,8 +38,8 @@ fn create_asset<S: AsRef<str>>(
 
     let asset_rel = asset_source.strip_prefix(plugin.base())?.to_path_buf();
     let asset_target = plugin_target.join(&asset_rel);
-    let asset_href = utils::url::to_href_separator(&asset_target);
-    let asset_href = format!("/{}", asset_href.trim_start_matches("/"));
+    let mut asset_href = utils::url::to_href_separator(&asset_target);
+    asset_href = format!("/{}", asset_href.trim_start_matches("/"));
 
     create_file(options, info, asset_source, asset_target, asset_href, None)?;
 
@@ -119,6 +119,7 @@ pub fn collate(
     info: &mut CollateInfo,
     plugins: &ResolvedPlugins,
 ) -> Result<()> {
+
     for (_dep, plugin) in plugins.iter() {
         let name = &plugin.name;
         let plugin_base = plugin.to_assets_path();
