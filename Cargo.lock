@@ -3866,7 +3866,7 @@ dependencies = [
 
 [[package]]
 name = "uwe"
-version = "0.40.23"
+version = "0.40.24"
 dependencies = [
  "collections",
  "compiler",
