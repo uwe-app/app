@@ -163,6 +163,14 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
+
+        // Collect deletions before filtering ignores
+        // otherwise deleted files would be ignored and
+        // removed from the paths to process.
+        let (deletions, paths): (Vec<PathBuf>, Vec<PathBuf>) = paths
+            .into_iter()
+            .partition(|p| !p.exists());
+
         let paths = self.filter_ignores(paths);
 
         let mut rule = Rule {
@@ -175,7 +183,7 @@ impl<'a> Invalidator<'a> {
             layouts: HashSet::new(),
             partials: HashSet::new(),
             templates: HashSet::new(),
-            deletions: HashSet::new(),
+            deletions: deletions.into_iter().collect::<HashSet<_>>(),
         };
 
         let ext = self.project.config.engine().extension().to_string();
@@ -217,11 +225,6 @@ impl<'a> Invalidator<'a> {
             .collect::<Vec<_>>();
 
         'paths: for path in paths {
-            if !path.exists() {
-                rule.deletions.insert(path);
-                continue;
-            }
-
             match path.canonicalize() {
                 Ok(path) => {
                     // NOTE: must test for hooks first as they can
