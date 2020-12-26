@@ -1,3 +1,4 @@
+use std::fmt;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -12,7 +13,6 @@ use warp::http::StatusCode;
 use warp::http::Uri;
 use warp::path::FullPath;
 use warp::ws::Message;
-use warp::filters::host::Authority;
 use warp::{Filter, Rejection, Reply};
 
 use serde::Serialize;
@@ -22,49 +22,19 @@ use log::{error, info, trace};
 use crate::{drop_privileges::*, Channels, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
+struct OptFmt<T>(Option<T>);
+
+impl<T: fmt::Display> fmt::Display for OptFmt<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(ref t) = self.0 {
+            fmt::Display::fmt(t, f)
+        } else {
+            f.write_str("-")
+        }
+    }
+}
+
 /*
-macro_rules! server {
-    (
-        $address:expr,
-        $opts:expr,
-        $channels:expr
-    ) => {
-        //let fallback = get_fallback(&$address);
-        let default_host: &'static HostConfig = &$opts.default_host;
-        let default_host_route =
-            get_host_filter($address, $opts, default_host, $channels);
-
-        if !$opts.hosts.is_empty() {
-            let mut routes = vec![default_host_route];
-            let mut host_routes = $opts
-                .hosts
-                .iter()
-                .map(|h| get_host_filter($address, $opts, h, $channels))
-                .collect::<Vec<_>>();
-            routes.append(&mut host_routes);
-            let hosts_routes = warp::combine(routes);
-            //println!("Using combined routes {:?}", hosts_routes);
-            router!($address, $opts, hosts_routes, $channels);
-        } else {
-            router!($address, $opts, default_host_route, $channels);
-        }
-    };
-}
-*/
-
-macro_rules! host {
-    (
-        $filter:expr,
-        $host:expr
-    ) => {
-        if let Some(ref log) = $host.log {
-            $filter.with(warp::log(&log.prefix))
-        } else {
-            $filter
-        }
-    };
-}
-
 macro_rules! router {
     (
         $address:expr,
@@ -90,6 +60,7 @@ macro_rules! router {
         }
     };
 }
+*/
 
 macro_rules! bind {
     (
@@ -98,11 +69,12 @@ macro_rules! bind {
         $addr:expr,
         $channels:expr
     ) => {
+        let with_server = get_with_server($opts);
         let host = $opts.default_host.name.clone();
         let tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
         if tls {
-            let (addr, future) = warp::serve($routes)
+            let (addr, future) = warp::serve($routes.with(with_server))
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
@@ -128,7 +100,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve($routes).try_bind_ephemeral(*$addr);
+            let bind_result = warp::serve($routes.with(with_server)).try_bind_ephemeral(*$addr);
             match bind_result {
                 Ok((addr, future)) => {
                     info!("Bind {}", addr.port());
@@ -325,15 +297,27 @@ fn get_static_server(
         .and(with_target)
         .and_then(redirect_trailing_slash);
 
-    let static_server = redirect_handler.or(slash_redirect).or(file_server);
 
-    /*
-    if let Some(ref log) = host.log {
-        static_server.with(warp::log(&log.prefix)).boxed()
-    } else {
-        static_server.boxed()
-    }
-    */
+    let host_state = host.clone();
+    let log = warp::log::custom(move |info| {
+        if host_state.log {
+            log::info!(
+                target: &host_state.name,
+                "{} \"{} {} {:?}\" {} \"{}\" \"{}\" {:?}",
+                OptFmt(info.remote_addr()),
+                info.method(),
+                info.path(),
+                info.version(),
+                info.status().as_u16(),
+                OptFmt(info.referer()),
+                OptFmt(info.user_agent()),
+                info.elapsed(),
+            );
+        }
+    });
+
+    let static_server = redirect_handler.or(slash_redirect).or(file_server)
+        .with(log);
 
     static_server.boxed()
 
@@ -345,7 +329,6 @@ pub async fn serve(
 ) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     let default_host: &'static HostConfig = &opts.default_host;
-    let with_server = get_with_server(opts);
 
     let mut configs = vec![default_host];
     for host in opts.hosts.iter() {

@@ -108,7 +108,7 @@ pub fn server_config(
         port = p;
     }
 
-    let host = HostConfig::new(target.clone(), host.to_owned(), None, None);
+    let host = HostConfig::new(target.clone(), host.to_owned(), None, None, false);
 
     ServerConfig::new_host(host, port.to_owned(), tls)
 }

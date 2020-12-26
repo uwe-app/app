@@ -208,7 +208,7 @@ pub struct HostConfig {
     #[serde(skip)]
     pub disable_cache: bool,
     #[serde(skip)]
-    pub log: Option<LogConfig>,
+    pub log: bool,
 }
 
 impl Default for HostConfig {
@@ -219,7 +219,7 @@ impl Default for HostConfig {
             redirects: None,
             endpoint: None,
             disable_cache: false,
-            log: None,
+            log: false,
         }
     }
 }
@@ -230,6 +230,7 @@ impl HostConfig {
         name: String,
         redirects: Option<Redirects>,
         endpoint: Option<String>,
+        log: bool,
     ) -> Self {
         Self {
             directory,
@@ -237,7 +238,7 @@ impl HostConfig {
             redirects,
             endpoint,
             disable_cache: true,
-            log: None,
+            log,
         }
     }
 }

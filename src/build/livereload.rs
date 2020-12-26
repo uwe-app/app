@@ -67,6 +67,7 @@ pub async fn start<P: AsRef<Path>>(
             hostname,
             Some(redirect_uris),
             Some(utils::generate_id(16)),
+            false,
         );
 
         // NOTE: These host names may not resolve so cannot attempt
