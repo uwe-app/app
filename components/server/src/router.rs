@@ -12,6 +12,7 @@ use warp::http::StatusCode;
 use warp::http::Uri;
 use warp::path::FullPath;
 use warp::ws::Message;
+use warp::filters::host::Authority;
 use warp::{Filter, Rejection, Reply};
 
 use serde::Serialize;
@@ -21,6 +22,7 @@ use log::{error, info, trace};
 use crate::{drop_privileges::*, Channels, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
+/*
 macro_rules! server {
     (
         $address:expr,
@@ -40,10 +42,25 @@ macro_rules! server {
                 .map(|h| get_host_filter($address, $opts, h, $channels))
                 .collect::<Vec<_>>();
             routes.append(&mut host_routes);
-            let hosts_routes = warp::fold(routes).unwrap();
+            let hosts_routes = warp::combine(routes);
+            //println!("Using combined routes {:?}", hosts_routes);
             router!($address, $opts, hosts_routes, $channels);
         } else {
             router!($address, $opts, default_host_route, $channels);
+        }
+    };
+}
+*/
+
+macro_rules! host {
+    (
+        $filter:expr,
+        $host:expr
+    ) => {
+        if let Some(ref log) = $host.log {
+            $filter.with(warp::log(&log.prefix))
+        } else {
+            $filter
         }
     };
 }
@@ -309,7 +326,17 @@ fn get_static_server(
         .and_then(redirect_trailing_slash);
 
     let static_server = redirect_handler.or(slash_redirect).or(file_server);
+
+    /*
+    if let Some(ref log) = host.log {
+        static_server.with(warp::log(&log.prefix)).boxed()
+    } else {
+        static_server.boxed()
+    }
+    */
+
     static_server.boxed()
+
 }
 
 pub async fn serve(
@@ -317,7 +344,94 @@ pub async fn serve(
     channels: &mut Channels,
 ) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
-    server!(&addr, opts, channels);
+    let default_host: &'static HostConfig = &opts.default_host;
+    let with_server = get_with_server(opts);
+
+    let mut configs = vec![default_host];
+    for host in opts.hosts.iter() {
+        configs.push(host);
+    }
+    let mut filters: Vec<BoxedFilter<_>> = 
+        configs.iter().map(|c| get_host_filter(&addr, opts, c, channels)).collect();
+
+    // NOTE: This mess is because `warp` cannot dynamically chain filters using 
+    // NOTE: `or()`; we can't use macro_rules!() as it is runtime data and 
+    // NOTE: because `or()` wraps with the `Or` struct it is impossible to type 
+    // NOTE: this in a loop :(
+
+    // FIXME: restore logging handling so it works per virtual host
+    /*
+    if let Some(ref log) = default_host.log {
+        bind!(opts, all.with(warp::log(&log.prefix)), &addr, channels);
+    } else {
+        bind!(opts, all, &addr, channels);
+    }
+    */
+
+    if filters.is_empty() {
+        panic!("No virtual hosts!");
+    } else if filters.len() == 1 {
+        let all = filters.swap_remove(0); 
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 2 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 3 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 4 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 5 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 6 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 7 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 8 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else {
+        panic!("Too many virtual hosts!");
+    }
 
     Ok(())
 }
