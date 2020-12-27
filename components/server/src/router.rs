@@ -341,16 +341,6 @@ pub async fn serve(
     // NOTE: `or()`; we can't use macro_rules!() as it is runtime data and 
     // NOTE: because `or()` wraps with the `Or` struct it is impossible to type 
     // NOTE: this in a loop :(
-
-    // FIXME: restore logging handling so it works per virtual host
-    /*
-    if let Some(ref log) = default_host.log {
-        bind!(opts, all.with(warp::log(&log.prefix)), &addr, channels);
-    } else {
-        bind!(opts, all, &addr, channels);
-    }
-    */
-
     if filters.is_empty() {
         panic!("No virtual hosts!");
     } else if filters.len() == 1 {
@@ -404,6 +394,130 @@ pub async fn serve(
     } else if filters.len() == 8 {
         let all =
             filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 9 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 10 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 11 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 12 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 13 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 14 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 15 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0));
+        bind!(opts, all, &addr, channels);
+    } else if filters.len() == 16 {
+        let all =
+            filters.swap_remove(0)
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
+            .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
