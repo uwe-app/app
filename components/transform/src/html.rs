@@ -6,6 +6,7 @@ use lol_html::{
 };
 
 use regex::{Captures, Regex};
+use htmlentity::entity;
 
 use config::transform::HtmlTransformFlags;
 use toc::TableOfContents;
@@ -48,7 +49,7 @@ fn scan(
     let auto_id_buffer = text!(HEADINGS, |t| {
         text_buf += t.as_str();
         if t.last_in_text_node() {
-            headings.push(text_buf.clone());
+            headings.push(entity::decode(&text_buf));
             text_buf.clear();
         }
         Ok(())
