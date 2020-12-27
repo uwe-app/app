@@ -46,6 +46,39 @@ pub enum ProjectEntry {
     Many(Vec<Entry>, Config),
 }
 
+impl ProjectEntry {
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.is_empty(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.len(),
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Entry> {
+        match self {
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.iter(),
+        }
+    }
+
+    pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
+        match self {
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.into_iter(),
+        }
+    }
+}
+
+impl Default for ProjectEntry {
+    fn default() -> Self {
+        ProjectEntry::One(Default::default()) 
+    }
+}
+
 #[derive(Debug)]
 pub struct Entry {
     pub config: Config,
@@ -847,48 +880,27 @@ impl Project {
 
 #[derive(Debug, Default)]
 pub struct Workspace {
-    pub projects: Vec<ProjectEntry>,
+    pub project: ProjectEntry,
 }
 
 impl Workspace {
     pub fn is_empty(&self) -> bool {
-        self.projects.is_empty()
+        self.project.is_empty()
     }
 
     pub fn has_multiple_projects(&self) -> bool {
-        if self.projects.len() > 1 {
-            return true;
-        };
-        if self.projects.len() == 1 {
-            return match self.projects.first().unwrap() {
-                ProjectEntry::Many(_, _) => true,
-                ProjectEntry::One(_) => false,
-            };
-        };
-        false
+        match self.project {
+            ProjectEntry::Many(_, _) => true,
+            ProjectEntry::One(_) => false,
+        }
     }
 
-    pub fn iter(&mut self) -> impl Iterator<Item = &Entry> {
-        self.projects
-            .iter()
-            .map(|e| match e {
-                ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.iter(),
-            })
-            .flatten()
-            .collect::<Vec<&Entry>>()
-            .into_iter()
+    pub fn iter(&self) -> impl Iterator<Item = &Entry> {
+        self.project.iter()
     }
 
     pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
-        self.projects
-            .into_iter()
-            .map(|e| match e {
-                ProjectEntry::One(c) => c.into_iter(),
-                ProjectEntry::Many(c, _) => c.into_iter(),
-            })
-            .flatten()
-            .collect::<Vec<Entry>>()
-            .into_iter()
+        self.project.into_iter()
     }
 }
 
@@ -923,13 +935,10 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
             members.push(Entry { config });
         }
 
-        workspace.projects.push(ProjectEntry::Many(members, config));
+        workspace.project = ProjectEntry::Many(members, config);
     } else {
         config.set_commit(scm_digest(config.project()));
-
-        workspace
-            .projects
-            .push(ProjectEntry::One(vec![Entry { config }]));
+        workspace.project = ProjectEntry::One(vec![Entry { config }]);
     }
 
     Ok(workspace)
@@ -942,8 +951,8 @@ pub fn settings<P: AsRef<Path>>(
     dir: P,
     walk_ancestors: bool,
 ) -> Result<(Config, Option<Vec<Config>>)> {
-    let mut workspace = open(dir, walk_ancestors)?;
-    let project = workspace.projects.swap_remove(0);
+    let workspace = open(dir, walk_ancestors)?;
+    let project = workspace.project;
     match project {
         ProjectEntry::One(mut entries) => {
             Ok((entries.swap_remove(0).into(), None))
