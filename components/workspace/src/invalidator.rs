@@ -20,20 +20,9 @@ use crate::{renderer::RenderOptions, Error, Project, Result};
  */
 #[derive(Debug)]
 pub enum Action {
-    Asset(PathBuf),
     Page(PathBuf),
     File(PathBuf),
     CollectionsDocument(PathBuf),
-}
-
-#[derive(Debug)]
-pub enum Strategy {
-    // Trigger a full rebuild
-    Full,
-    // Trigger a build of all pages
-    Page,
-    // Iterate and process each action
-    Mixed,
 }
 
 #[derive(Debug)]
@@ -42,10 +31,10 @@ pub struct Rule {
     pub notify: bool,
     // Reload the site data source
     reload: bool,
-    // Build strategy
-    strategy: Strategy,
     // Paths that are ignored but we track for debugging
     ignores: HashSet<PathBuf>,
+    // Paths that are in the assets folders, currently we ignore these.
+    assets: HashSet<PathBuf>,
     // Hooks are a special case so we store them separately
     hooks: HashSet<(HookConfig, PathBuf)>,
     // Layouts need special handling so that referenced pages
@@ -176,8 +165,8 @@ impl<'a> Invalidator<'a> {
         let mut rule = Rule {
             notify: true,
             reload: false,
-            strategy: Strategy::Mixed,
             ignores: HashSet::new(),
+            assets: HashSet::new(),
             hooks: HashSet::new(),
             actions: Vec::new(),
             layouts: HashSet::new(),
@@ -264,8 +253,7 @@ impl<'a> Invalidator<'a> {
                     } else if path.starts_with(&build_output) {
                         rule.ignores.insert(path);
                     } else if path.starts_with(&assets) {
-                        rule.strategy = Strategy::Full;
-                        rule.actions.push(Action::Asset(path));
+                        rule.assets.insert(path);
                     } else if path.starts_with(&generators) {
                         for p in &generator_paths {
                             let documents =
@@ -316,11 +304,7 @@ impl<'a> Invalidator<'a> {
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
         // Reload the config data!
         if rule.reload {
-            // FIXME: to restore this we need to reload and parse the configuration!
-            //
-            //if let Err(e) = loader::reload(config, options) {
-            //error!("{}", e);
-            //}
+            // TODO: maybe implement this later?
         }
 
         // Remove deleted files.
@@ -332,54 +316,48 @@ impl<'a> Invalidator<'a> {
             self.project.run_hook(hook, Some(file)).await?;
         }
 
-        match rule.strategy {
-            Strategy::Full | Strategy::Page => {
-                // TODO: handle updating search index
-                //let _parse_data =
-                //self.builder.build(&self.parser, target).await?;
-                self.render().await?;
-            }
-            _ => {
-                if !rule.templates.is_empty() {
-                    self.project.update_templates(&rule.templates).await?;
+
+        if !rule.templates.is_empty() {
+            self.project.update_templates(&rule.templates).await?;
+        }
+
+        if !rule.partials.is_empty() {
+            self.project.update_partials(&rule.partials).await?;
+        }
+
+        if !rule.layouts.is_empty() {
+            self.project.update_layouts(&rule.layouts).await?;
+        }
+
+        for action in &rule.actions {
+            match action {
+                Action::Page(path) | Action::File(path) => {
+                    // Make the path relative to the project source
+                    // as the notify crate gives us an absolute path
+                    let file = self.project.options.relative_to(
+                        path,
+                        &self.project.options.source,
+                        &self.project.options.source,
+                    )?;
+
+                    self.one(&file).await?;
                 }
-
-                if !rule.partials.is_empty() {
-                    self.project.update_partials(&rule.partials).await?;
-                }
-
-                if !rule.layouts.is_empty() {
-                    self.project.update_layouts(&rule.layouts).await?;
-                }
-
-                for action in &rule.actions {
-                    match action {
-                        Action::Page(path) | Action::File(path) => {
-                            // Make the path relative to the project source
-                            // as the notify crate gives us an absolute path
-                            let file = self.project.options.relative_to(
-                                path,
-                                &self.project.options.source,
-                                &self.project.options.source,
-                            )?;
-
-                            self.one(&file).await?;
-                        }
-                        _ => {
-                            return Err(Error::InvalidationActionNotHandled);
-                        }
-                    }
+                _ => {
+                    return Err(Error::InvalidationActionNotHandled);
                 }
             }
         }
+
         Ok(())
     }
 
+    /*
     /// Render the entire project.
     async fn render(&mut self) -> Result<()> {
         self.project.render(Default::default()).await?;
         Ok(())
     }
+    */
 
     /// Render a single file using the appropriate locale-specific renderer.
     async fn one(&mut self, file: &PathBuf) -> Result<()> {
