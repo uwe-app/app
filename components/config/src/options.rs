@@ -168,7 +168,7 @@ impl RuntimeOptions {
     where
         S: AsRef<str>,
     {
-        let mut base = self.settings.get_canonical_url(config)?;
+        let mut base = self.settings.get_canonical_url(config, None)?;
         if let Some(path) = path {
             base = base.join(path.as_ref())?;
         }

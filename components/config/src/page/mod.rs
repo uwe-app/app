@@ -249,7 +249,7 @@ impl Page {
         config: &Config,
         options: &RuntimeOptions,
     ) -> Result<Url> {
-        let website = options.settings.get_host_url(config)?;
+        let website = options.settings.get_host_url(config, None)?;
         if let Some(ref permalink) = self.permalink {
             Ok(website.join(permalink.as_str())?)
         } else {
@@ -290,7 +290,7 @@ impl Page {
         // FIXME: add page page for canonical and
         // FIXME: set host/domain/website for the page data (#252)
 
-        let website = options.settings.get_host_url(config)?;
+        let website = options.settings.get_host_url(config, None)?;
         let canonical = website.join(&href)?;
 
         let og = self.open_graph.get_or_insert(Default::default());

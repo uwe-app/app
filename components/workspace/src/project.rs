@@ -38,6 +38,19 @@ fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     manifest_file
 }
 
+/// Workspace member cache with key and host name.
+#[derive(Debug)]
+pub struct Member {
+    pub key: String,
+    pub hostname: String,
+}
+
+impl Member {
+    pub fn new(key: String, hostname: String) -> Self {
+        Self {key, hostname} 
+    }
+}
+
 #[derive(Debug)]
 pub enum ProjectEntry {
     // Guaranteed to be an array with a single entry
@@ -101,8 +114,10 @@ impl Entry {
     pub async fn builder(
         mut self,
         args: &ProfileSettings,
+        members: &Vec<Member>,
     ) -> Result<ProjectBuilder> {
-        let options = crate::options::prepare(&mut self.config, args).await?;
+
+        let options = crate::options::prepare(&mut self.config, args, members).await?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
             redirects.clone()
         } else {
@@ -929,6 +944,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 
             let mut config = Config::load(&root, false)?;
             config.set_commit(scm_digest(config.project()));
+            config.set_member_name(space);
             if config.workspace.is_some() {
                 return Err(Error::NoNestedWorkspace(root));
             }
@@ -978,10 +994,24 @@ pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
 ) -> Result<CompileResult> {
-    let project = open(project, true)?;
+    let workspace = open(project, true)?;
     let mut compiled: CompileResult = Default::default();
 
-    for entry in project.into_iter() {
+    // Cache of workspace member information used to 
+    // build URLs for linking to members in templates
+    let members: Vec<Member> = match &workspace.project {
+        ProjectEntry::Many(configs, _) => {
+            println!("Get members...");
+            configs.iter().map(|e| {
+                Member::new(
+                    e.config.member_name().as_ref().unwrap().to_owned(),
+                    e.config.host().to_owned()) 
+            }).collect()
+        }
+        _ => vec![]
+    };
+
+    for entry in workspace.into_iter() {
         // WARN: If we add too many futures to the chain
         // WARN: then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to break the chain
@@ -999,7 +1029,8 @@ pub async fn compile<P: AsRef<Path>>(
             return Err(Error::NoExecCapability(entry.config.host.to_string()));
         }
 
-        let builder = entry.builder(args).await?;
+        // Prepare the options and project builder
+        let builder = entry.builder(args, &members).await?;
 
         // Resolve sources, locales and collate the page data
         let builder = builder

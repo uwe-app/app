@@ -51,6 +51,9 @@ pub struct CollatedPage<'config, 'locale> {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     commit: &'config Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    workspace: &'config Option<HashMap<String, String>>,
 }
 
 #[skip_serializing_none]
@@ -125,6 +128,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             generator: config::generator::id(),
             version: config.version(),
             commit: config.commit(),
+            workspace: config.member_urls(),
         })
     }
 

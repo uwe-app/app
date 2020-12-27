@@ -356,7 +356,7 @@ impl ProfileSettings {
         }
     }
 
-    pub fn get_canonical_url(&self, conf: &Config) -> crate::Result<Url> {
+    pub fn get_canonical_url(&self, conf: &Config, host: Option<&str>) -> crate::Result<Url> {
         if self.is_release() {
             let scheme = self.scheme.as_ref().unwrap();
             Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
@@ -367,22 +367,18 @@ impl ProfileSettings {
                 config::SCHEME_HTTP
             };
 
-            let port = if self.tls.is_some() {
-                self.tls.as_ref().unwrap().port
-            } else {
-                self.port.unwrap_or(config::PORT)
-            };
+            let port = self.get_canonical_port();
 
             Ok(Url::parse(&crate::to_url_string(
                 scheme,
-                self.host.as_ref().unwrap(),
+                host.unwrap_or(self.host.as_ref().unwrap()),
                 port,
             ))?)
         }
     }
 
-    pub fn get_host_url(&self, conf: &config::Config) -> crate::Result<Url> {
-        Ok(self.get_canonical_url(conf)?)
+    pub fn get_host_url(&self, conf: &config::Config, host: Option<&str>) -> crate::Result<Url> {
+        Ok(self.get_canonical_url(conf, host)?)
     }
 
     pub fn set_defaults(&mut self) {
@@ -413,6 +409,14 @@ impl ProfileSettings {
             port.clone()
         } else {
             config::PORT
+        }
+    }
+
+    pub fn get_canonical_port(&self) -> u16 {
+        if self.tls.is_some() {
+            self.tls.as_ref().unwrap().port
+        } else {
+            self.get_port()
         }
     }
 

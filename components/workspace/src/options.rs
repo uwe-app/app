@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::collections::HashMap;
 
 use log::{debug, info};
 
@@ -9,7 +10,7 @@ use config::{
     Config, ProfileName, ProfileSettings, RuntimeOptions,
 };
 
-use crate::{Error, Result};
+use crate::{Error, Result, project::Member};
 
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {
@@ -336,6 +337,7 @@ fn prepare_manifest(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
 pub(crate) async fn prepare(
     cfg: &mut Config,
     args: &ProfileSettings,
+    members: &Vec<Member>,
 ) -> Result<RuntimeOptions> {
     let name = to_profile(args);
 
@@ -368,7 +370,7 @@ pub(crate) async fn prepare(
         hooks.prepare(&opts.source, &project)?;
     }
 
-    let website = opts.settings.get_canonical_url(cfg)?;
+    let website = opts.settings.get_canonical_url(cfg, None)?;
     cfg.set_website(website);
 
     if opts.settings.is_live() {
@@ -379,6 +381,26 @@ pub(crate) async fn prepare(
     prepare_style(cfg, &opts)?;
     prepare_script(cfg, &opts)?;
     prepare_manifest(cfg, &opts)?;
+
+    if !members.is_empty() {
+        let member_urls: HashMap<String, String> = members
+            .iter()
+            .map(|m| {
+                let hostname = if !opts.settings.is_release() {
+                    // NOTE: the empty scheme gives us schemeless URLs
+                    // NOTE: like //example.com/
+                    format!("{}/", config::to_url_string(
+                        "",
+                        &cfg.dev_local_host_name(&m.hostname),
+                        opts.settings.get_canonical_port()))
+                } else {
+                    format!("//{}/", m.hostname.trim_end_matches("/"))
+                };
+                (m.key.clone(), hostname)
+            }).collect();
+
+        cfg.set_member_urls(member_urls);
+    }
 
     Ok(opts)
 }

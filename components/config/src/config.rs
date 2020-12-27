@@ -256,6 +256,14 @@ pub struct Config {
     #[serde(skip)]
     project: PathBuf,
 
+    // Name injected when this config is a workspace member
+    #[serde(skip)]
+    member_name: Option<String>,
+
+    // Map of URLs for workspace members
+    #[serde(skip)]
+    member_urls: Option<HashMap<String, String>>,
+
     #[serde_as(as = "DisplayFromStr")]
     #[serde(skip_deserializing)]
     website: Url,
@@ -311,11 +319,30 @@ impl Default for Config {
             file: PathBuf::from(""),
 
             commit: None,
+            member_name: None,
+            member_urls: None,
         }
     }
 }
 
 impl Config {
+
+    pub fn member_name(&self) -> &Option<String> {
+        &self.member_name
+    }
+
+    pub fn set_member_name(&mut self, name: &str) {
+        self.member_name = Some(name.to_owned());
+    }
+
+    pub fn member_urls(&self) -> &Option<HashMap<String, String>> {
+        &self.member_urls
+    }
+
+    pub fn set_member_urls(&mut self, urls: HashMap<String, String>) {
+        self.member_urls = Some(urls);
+    }
+
     pub fn commit(&self) -> &Option<String> {
         &self.commit
     }
@@ -409,12 +436,16 @@ impl Config {
             hostname.clone()
         } else {
             if infer_from_host {
-                let subdomain = slug::slugify(&self.host);
-                format!("{}.{}", subdomain, HOST_DEV)
+                self.dev_local_host_name(&self.host)
             } else {
                 HOST.to_string()
             }
         }
+    }
+
+    pub fn dev_local_host_name(&self, host: &str) -> String {
+        let subdomain = slug::slugify(host);
+        format!("{}.{}", subdomain, HOST_DEV)
     }
 
     pub fn is_syntax_enabled(&self, name: &ProfileName) -> bool {
@@ -538,7 +569,7 @@ impl Config {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceConfig {
-    pub members: Vec<PathBuf>,
+    pub members: Vec<String>,
 }
 
 #[skip_serializing_none]
