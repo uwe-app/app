@@ -54,12 +54,15 @@ impl Member {
 #[derive(Debug)]
 pub enum ProjectEntry {
     /// Represents a single project.
-    One(Vec<Entry>),
+    ///
+    /// Even though this is only a single item we wrap it in a 
+    /// vector to make iteration logic simpler.
+    One(Vec<Config>),
     /// Represents a workspace with multiple projects.
     ///
     /// The second entry in the tuple is the settings for the workspace 
     /// and the last entry if a list of members names to be filtered.
-    Many(Vec<Entry>, Config, Vec<String>),
+    Many(Vec<Config>, Config, Vec<String>),
 }
 
 impl ProjectEntry {
@@ -75,15 +78,22 @@ impl ProjectEntry {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Entry> {
+    pub fn iter(&self) -> impl Iterator<Item = &Config> {
         match self {
             ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.iter(),
         }
     }
 
-    pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
+    pub fn into_iter(self) -> impl IntoIterator<Item = Config> {
         match self {
             ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.into_iter(),
+        }
+    }
+
+    pub fn member_filters(&self) -> Vec<String> {
+        match self {
+            ProjectEntry::One(_) => vec![],
+            ProjectEntry::Many(_, _, ref member_filters) => member_filters.clone(),
         }
     }
 }
@@ -94,48 +104,35 @@ impl Default for ProjectEntry {
     }
 }
 
-// FIXME: remove this type!
-#[derive(Debug)]
-pub struct Entry {
-    pub config: Config,
-}
 
-impl Into<Config> for Entry {
-    fn into(self) -> Config {
-        self.config
-    }
-}
+/// Get a render builder for this configuration.
+///
+/// Creates the initial runtime options from a build profile which typically
+/// would come from command line arguments.
+///
+/// This should only be called when you intend to render a project
+/// as it consumes the configuration entry.
+pub async fn new_project_builder(
+    mut config: Config,
+    args: &ProfileSettings,
+    members: &Vec<Member>,
+) -> Result<ProjectBuilder> {
+    let options =
+        crate::options::prepare(&mut config, args, members).await?;
+    let redirects = if let Some(ref redirects) = config.redirect {
+        redirects.clone()
+    } else {
+        Default::default()
+    };
 
-impl Entry {
-    /// Get a render builder for this configuration.
-    ///
-    /// Creates the initial runtime options from a build profile which typically
-    /// would come from command line arguments.
-    ///
-    /// This should only be called when you intend to render a project
-    /// as it consumes the configuration entry.
-    pub async fn builder(
-        mut self,
-        args: &ProfileSettings,
-        members: &Vec<Member>,
-    ) -> Result<ProjectBuilder> {
-        let options =
-            crate::options::prepare(&mut self.config, args, members).await?;
-        let redirects = if let Some(ref redirects) = self.config.redirect {
-            redirects.clone()
-        } else {
-            Default::default()
-        };
+    let builder = ProjectBuilder {
+        config: config,
+        options,
+        redirects,
+        ..Default::default()
+    };
 
-        let builder = ProjectBuilder {
-            config: self.config,
-            options,
-            redirects,
-            ..Default::default()
-        };
-
-        Ok(builder)
-    }
+    Ok(builder)
 }
 
 /// Wrap all the collations in a vector with the guarantee that
@@ -896,6 +893,7 @@ impl Project {
     }
 }
 
+// FIXME: remove this and rename ProjectEntry -> Workspace
 #[derive(Debug, Default)]
 pub struct Workspace {
     pub project: ProjectEntry,
@@ -913,12 +911,16 @@ impl Workspace {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Entry> {
+    pub fn iter(&self) -> impl Iterator<Item = &Config> {
         self.project.iter()
     }
 
-    pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
+    pub fn into_iter(self) -> impl IntoIterator<Item = Config> {
         self.project.into_iter()
+    }
+
+    pub fn member_filters(&self) -> Vec<String> {
+        self.project.member_filters()
     }
 }
 
@@ -941,7 +943,7 @@ pub fn open<P: AsRef<Path>>(
     let mut config = Config::load(dir.as_ref(), walk_ancestors)?;
 
     if let Some(ref projects) = &config.workspace {
-        let mut members: Vec<Entry> = Vec::new();
+        let mut members: Vec<Config> = Vec::new();
         for space in projects.members.iter() {
 
             /*
@@ -962,13 +964,13 @@ pub fn open<P: AsRef<Path>>(
             if config.workspace.is_some() {
                 return Err(Error::NoNestedWorkspace(root));
             }
-            members.push(Entry { config });
+            members.push(config);
         }
 
         workspace.project = ProjectEntry::Many(members, config, member_filters.clone());
     } else {
         config.set_commit(scm_digest(config.project()));
-        workspace.project = ProjectEntry::One(vec![Entry { config }]);
+        workspace.project = ProjectEntry::One(vec![config]);
     }
 
     Ok(workspace)
@@ -989,8 +991,8 @@ pub fn settings<P: AsRef<Path>>(
             Ok((entries.swap_remove(0).into(), None))
         }
         ProjectEntry::Many(entries, config, _) => {
-            let entries: Vec<Config> =
-                entries.into_iter().map(|e| e.into()).collect();
+            //let entries: Vec<Config> =
+                //entries.into_iter().map(|e| e.into()).collect();
             Ok((config, Some(entries)))
         }
     }
@@ -1017,36 +1019,45 @@ pub async fn compile<P: AsRef<Path>>(
     let members: Vec<Member> = match &workspace.project {
         ProjectEntry::Many(configs, _, _) => configs
             .iter()
-            .map(|e| {
+            .map(|c| {
                 Member::new(
-                    e.config.member_name().as_ref().unwrap().to_owned(),
-                    e.config.host().to_owned(),
+                    c.member_name().as_ref().unwrap().to_owned(),
+                    c.host().to_owned(),
                 )
             })
             .collect(),
         _ => vec![],
     };
 
-    for entry in workspace.into_iter() {
+    let member_filters = workspace.member_filters();
+
+    for config in workspace.into_iter() {
+
+        if let Some(member_name) = config.member_name() {
+            if !member_filters.is_empty() && !member_filters.contains(member_name) {
+                continue;
+            }
+        }
+
         // WARN: If we add too many futures to the chain
         // WARN: then the compiler overflows resolving trait
         // WARN: bounds. The workaround is to break the chain
         // WARN: with multiple await statements.
 
-        if entry.config.hooks.is_some() && !args.can_exec() {
+        if config.hooks.is_some() && !args.can_exec() {
             warn!("The project has some hooks defined but does ");
             warn!("not have the capability to execute commands.");
             warn!("");
-            warn!("{}", entry.config.file().display());
+            warn!("{}", config.file().display());
             warn!("");
             warn!("If you trust the commands in the site settings ");
             warn!("enable command execution with the --exec option.");
             warn!("");
-            return Err(Error::NoExecCapability(entry.config.host.to_string()));
+            return Err(Error::NoExecCapability(config.host.to_string()));
         }
 
         // Prepare the options and project builder
-        let builder = entry.builder(args, &members).await?;
+        let builder = new_project_builder(config, args, &members).await?;
 
         // Resolve sources, locales and collate the page data
         let builder = builder

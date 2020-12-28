@@ -30,9 +30,9 @@ pub async fn serve(
         if skip_build {
             let workspace = workspace::open(&target, false, &vec![])?;
             let mut it = workspace.iter();
-            if let Some(entry) = it.next() {
+            if let Some(config) = it.next() {
                 // Respect target build directory
-                let build = entry.config.build.as_ref().unwrap();
+                let build = config.build.as_ref().unwrap();
                 let build_target = build.target.join(config::RELEASE);
                 if !build_target.exists() || !build_target.is_dir() {
                     return Err(Error::NotDirectory(build_target));

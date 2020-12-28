@@ -11,8 +11,8 @@ pub async fn clean(project: PathBuf) -> Result<()> {
     }
 
     let workspace = workspace::open(&project, true, &vec![])?;
-    for entry in workspace.into_iter() {
-        let profile = entry.config.build.as_ref().unwrap();
+    for config in workspace.into_iter() {
+        let profile = config.build.as_ref().unwrap();
         let target = &profile.target;
         if target.exists() && target.is_dir() {
             info!("Remove {}", target.display());
