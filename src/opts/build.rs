@@ -30,6 +30,10 @@ pub struct Build {
     #[structopt(short, long)]
     pub release: bool,
 
+    /// Include drafts
+    #[structopt(short, long)]
+    pub include_drafts: bool,
+
     /// Filter on workspace members
     #[structopt(short, long)]
     pub member: Vec<String>,

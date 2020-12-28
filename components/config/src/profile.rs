@@ -136,8 +136,11 @@ pub struct ProfileSettings {
     pub source: PathBuf,
     pub target: PathBuf,
 
-    // Allow hook command execution
+    /// Allow command execution
     pub exec: Option<bool>,
+
+    /// Include drafts
+    pub include_drafts: Option<bool>,
 
     pub types: Option<RenderTypes>,
     pub strict: Option<bool>,
@@ -201,6 +204,7 @@ impl Default for ProfileSettings {
             source: PathBuf::from(config::SITE),
             target: PathBuf::from(config::BUILD),
             exec: None,
+            include_drafts: None,
             types: Some(Default::default()),
             strict: None,
             parallel: None,
@@ -269,6 +273,9 @@ impl ProfileSettings {
         // NOTE: Which would bypass the test for explicit
         // NOTE: execution capability granted on the command line.
 
+        if other.include_drafts.is_some() {
+            self.include_drafts = mem::take(&mut other.include_drafts)
+        }
         if other.types.is_some() {
             self.types = mem::take(&mut other.types)
         }

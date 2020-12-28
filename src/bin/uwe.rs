@@ -201,6 +201,7 @@ async fn run(cmd: Command) -> Result<()> {
                 offline: Some(args.offline),
                 exec: Some(args.exec),
                 member: args.member,
+                include_drafts: Some(args.include_drafts),
                 tls,
                 ..Default::default()
             };
