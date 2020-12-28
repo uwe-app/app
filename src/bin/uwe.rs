@@ -192,13 +192,13 @@ async fn run(cmd: Command) -> Result<()> {
 
             let build_args = ProfileSettings {
                 paths,
-                profile: args.compile.profile,
-                live: Some(args.compile.live),
-                launch: args.compile.launch,
-                release: Some(args.compile.release),
+                profile: args.profile,
+                live: Some(args.live),
+                launch: args.launch,
+                release: Some(args.release),
                 host: args.server.host,
                 port: args.server.port,
-                offline: Some(args.compile.offline),
+                offline: Some(args.offline),
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
                 include_drafts: Some(args.compile.include_drafts),
