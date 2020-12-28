@@ -438,10 +438,9 @@ impl Renderer {
         let filters = &self.info.sources.filters;
         let plugin_cache = dirs::cache_src_dir()?;
         let path_filter = |p: &&Arc<PathBuf>| -> bool {
-
             // Always allow plugin assets
             if p.starts_with(&plugin_cache) {
-                return true
+                return true;
             }
 
             if let Some(ref filters) = filters {

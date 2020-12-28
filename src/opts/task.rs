@@ -21,7 +21,6 @@ pub enum Task {
         #[structopt(subcommand)]
         cmd: Alias,
     },
-
     /*
     /// Initialize, add files and commit.
     Create {

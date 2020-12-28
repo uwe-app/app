@@ -13,8 +13,7 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal, Build, Clean, Docs, Lang, New, Publish, Server,
-        Sync, Task,
+        self, fatal, Build, Clean, Docs, Lang, New, Publish, Server, Sync, Task,
     },
     Error, Result,
 };
@@ -201,6 +200,7 @@ async fn run(cmd: Command) -> Result<()> {
                 port: args.server.port,
                 offline: Some(args.offline),
                 exec: Some(args.exec),
+                member: args.member,
                 tls,
                 ..Default::default()
             };

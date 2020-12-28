@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 use log::{debug, info};
 
@@ -10,7 +10,7 @@ use config::{
     Config, ProfileName, ProfileSettings, RuntimeOptions,
 };
 
-use crate::{Error, Result, project::Member};
+use crate::{project::Member, Error, Result};
 
 fn require_output_dir(output: &PathBuf) -> Result<()> {
     if !output.exists() {
@@ -313,7 +313,9 @@ fn prepare_manifest(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
         let manifest_default = opts.source.join(config::DEFAULT_PWA_MANIFEST);
         if manifest_default.exists() {
             Some(format!("/{}", config::DEFAULT_PWA_MANIFEST))
-        } else { None }
+        } else {
+            None
+        }
     };
 
     if let Some(href) = href {
@@ -323,7 +325,7 @@ fn prepare_manifest(cfg: &mut Config, opts: &RuntimeOptions) -> Result<()> {
             return Err(Error::NoAppManifest(href.to_string(), file));
         }
 
-        // NOTE: This URL to the manifest file will be made 
+        // NOTE: This URL to the manifest file will be made
         // NOTE: relative later, should this be an absolute URL?
 
         let global_page = cfg.page.get_or_insert(Default::default());
@@ -389,15 +391,20 @@ pub(crate) async fn prepare(
                 let hostname = if !opts.settings.is_release() {
                     // NOTE: the empty scheme gives us schemeless URLs
                     // NOTE: like //example.com/
-                    format!("{}/", config::to_url_string(
-                        "",
-                        &cfg.dev_local_host_name(&m.hostname),
-                        opts.settings.get_canonical_port()))
+                    format!(
+                        "{}/",
+                        config::to_url_string(
+                            "",
+                            &cfg.dev_local_host_name(&m.hostname),
+                            opts.settings.get_canonical_port()
+                        )
+                    )
                 } else {
                     format!("//{}/", m.hostname.trim_end_matches("/"))
                 };
                 (m.key.clone(), hostname)
-            }).collect();
+            })
+            .collect();
 
         cfg.set_member_urls(member_urls);
     }

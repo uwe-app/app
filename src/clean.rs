@@ -10,7 +10,7 @@ pub async fn clean(project: PathBuf) -> Result<()> {
         return Err(Error::NotDirectory(project));
     }
 
-    let workspace = workspace::open(&project, true)?;
+    let workspace = workspace::open(&project, true, &vec![])?;
     for entry in workspace.into_iter() {
         let profile = entry.config.build.as_ref().unwrap();
         let target = &profile.target;

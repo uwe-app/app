@@ -331,12 +331,13 @@ pub fn feed(
                     if channel.alternate.filter(href) {
                         for (url, mime_type) in alternates.iter() {
                             let alternate = LinkTag::new_alternate(
-                                url.to_string(), Some(mime_type.to_string()));
+                                url.to_string(),
+                                Some(mime_type.to_string()),
+                            );
                             page_write.links_mut().insert(alternate);
                         }
                     }
                 }
-
             }
         }
     }

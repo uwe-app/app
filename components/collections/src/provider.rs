@@ -11,7 +11,7 @@ use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 use tokio::fs::{self, DirEntry};
 
 use collator::CollateInfo;
-use config::indexer::{SourceProvider, SourceType, DataSource};
+use config::indexer::{DataSource, SourceProvider, SourceType};
 use config::{Config, RuntimeOptions};
 
 use super::identifier::{ComputeIdentifier, Strategy};
@@ -101,13 +101,15 @@ impl Provider {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
-        let exclude = req.definition.excludes.iter()
+        let exclude = req
+            .definition
+            .excludes
+            .iter()
             .map(|g| g.compile_matcher())
             .collect::<Vec<globset::GlobMatcher>>();
 
         stream::iter(req.collation.pages())
             .filter(|(p, _)| {
-
                 if !p.starts_with(req.source) {
                     return future::ready(false);
                 }
@@ -116,19 +118,22 @@ impl Provider {
                     // NOTE: `from` is already relative to source
                     let folder = if let Some(ref from) = req.definition.from {
                         from.as_path()
-                    } else { req.source.as_path() };
+                    } else {
+                        req.source.as_path()
+                    };
 
                     if let Some(relative) = p.strip_prefix(folder).ok() {
                         let skip = exclude.iter().find(|m| {
                             if m.is_match(relative) {
                                 true
-                            } else { false }
+                            } else {
+                                false
+                            }
                         });
 
                         if let Some(_) = skip {
                             return future::ready(false);
                         }
-
                     }
                 }
 
@@ -137,7 +142,6 @@ impl Provider {
             .enumerate()
             .map(Ok)
             .try_for_each_concurrent(limit, |(count, (path, _))| {
-
                 // Convert the page data to a Value for indexing
                 let data = req.collation.resolve(path).unwrap();
                 let page = data.read().unwrap();

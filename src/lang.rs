@@ -48,7 +48,7 @@ async fn list(project: PathBuf) -> Result<()> {
         return Err(Error::NotDirectory(project));
     }
 
-    let workspace = workspace::open(&project, true)?;
+    let workspace = workspace::open(&project, true, &vec![])?;
     for entry in workspace.into_iter() {
         let info = LanguageInfo::new(entry.config)?;
         info!(
@@ -82,7 +82,7 @@ async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
         let _: LanguageIdentifier = lang.parse()?;
     }
 
-    let workspace = workspace::open(&project, true)?;
+    let workspace = workspace::open(&project, true, &vec![])?;
     for entry in workspace.into_iter() {
         let info = LanguageInfo::new(entry.config)?;
         info!(

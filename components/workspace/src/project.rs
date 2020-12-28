@@ -47,51 +47,54 @@ pub struct Member {
 
 impl Member {
     pub fn new(key: String, hostname: String) -> Self {
-        Self {key, hostname} 
+        Self { key, hostname }
     }
 }
 
 #[derive(Debug)]
 pub enum ProjectEntry {
-    // Guaranteed to be an array with a single entry
+    /// Represents a single project.
     One(Vec<Entry>),
-    // May contain multiple projects
-    Many(Vec<Entry>, Config),
+    /// Represents a workspace with multiple projects.
+    ///
+    /// The second entry in the tuple is the settings for the workspace 
+    /// and the last entry if a list of members names to be filtered.
+    Many(Vec<Entry>, Config, Vec<String>),
 }
 
 impl ProjectEntry {
-
     pub fn is_empty(&self) -> bool {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.is_empty(),
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.is_empty(),
         }
     }
 
     pub fn len(&self) -> usize {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.len(),
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.len(),
         }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Entry> {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.iter(),
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.iter(),
         }
     }
 
     pub fn into_iter(self) -> impl IntoIterator<Item = Entry> {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _) => c.into_iter(),
+            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.into_iter(),
         }
     }
 }
 
 impl Default for ProjectEntry {
     fn default() -> Self {
-        ProjectEntry::One(Default::default()) 
+        ProjectEntry::One(Default::default())
     }
 }
 
+// FIXME: remove this type!
 #[derive(Debug)]
 pub struct Entry {
     pub config: Config,
@@ -116,8 +119,8 @@ impl Entry {
         args: &ProfileSettings,
         members: &Vec<Member>,
     ) -> Result<ProjectBuilder> {
-
-        let options = crate::options::prepare(&mut self.config, args, members).await?;
+        let options =
+            crate::options::prepare(&mut self.config, args, members).await?;
         let redirects = if let Some(ref redirects) = self.config.redirect {
             redirects.clone()
         } else {
@@ -905,7 +908,7 @@ impl Workspace {
 
     pub fn has_multiple_projects(&self) -> bool {
         match self.project {
-            ProjectEntry::Many(_, _) => true,
+            ProjectEntry::Many(_, _, _) => true,
             ProjectEntry::One(_) => false,
         }
     }
@@ -929,13 +932,24 @@ fn scm_digest(project: &PathBuf) -> Option<String> {
 /// Open a project.
 ///
 /// Load the configuration for a project and resolve workspace members when necessary.
-pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
+pub fn open<P: AsRef<Path>>(
+    dir: P,
+    walk_ancestors: bool,
+    member_filters: &Vec<String>,
+) -> Result<Workspace> {
     let mut workspace: Workspace = Default::default();
     let mut config = Config::load(dir.as_ref(), walk_ancestors)?;
 
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Entry> = Vec::new();
-        for space in &projects.members {
+        for space in projects.members.iter() {
+
+            /*
+            .filter(|s| {
+                member_filters.is_empty() || member_filters.contains(s)                
+            }) {
+            */
+
             let mut root = config.project().to_path_buf();
             root.push(space);
             if !root.exists() || !root.is_dir() {
@@ -951,7 +965,7 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
             members.push(Entry { config });
         }
 
-        workspace.project = ProjectEntry::Many(members, config);
+        workspace.project = ProjectEntry::Many(members, config, member_filters.clone());
     } else {
         config.set_commit(scm_digest(config.project()));
         workspace.project = ProjectEntry::One(vec![Entry { config }]);
@@ -966,14 +980,15 @@ pub fn open<P: AsRef<Path>>(dir: P, walk_ancestors: bool) -> Result<Workspace> {
 pub fn settings<P: AsRef<Path>>(
     dir: P,
     walk_ancestors: bool,
+    member_filters: &Vec<String>,
 ) -> Result<(Config, Option<Vec<Config>>)> {
-    let workspace = open(dir, walk_ancestors)?;
+    let workspace = open(dir, walk_ancestors, member_filters)?;
     let project = workspace.project;
     match project {
         ProjectEntry::One(mut entries) => {
             Ok((entries.swap_remove(0).into(), None))
         }
-        ProjectEntry::Many(entries, config) => {
+        ProjectEntry::Many(entries, config, _) => {
             let entries: Vec<Config> =
                 entries.into_iter().map(|e| e.into()).collect();
             Ok((config, Some(entries)))
@@ -994,21 +1009,22 @@ pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
 ) -> Result<CompileResult> {
-    let workspace = open(project, true)?;
+    let workspace = open(project, true, &args.member)?;
     let mut compiled: CompileResult = Default::default();
 
-    // Cache of workspace member information used to 
+    // Cache of workspace member information used to
     // build URLs for linking to members in templates
     let members: Vec<Member> = match &workspace.project {
-        ProjectEntry::Many(configs, _) => {
-            println!("Get members...");
-            configs.iter().map(|e| {
+        ProjectEntry::Many(configs, _, _) => configs
+            .iter()
+            .map(|e| {
                 Member::new(
                     e.config.member_name().as_ref().unwrap().to_owned(),
-                    e.config.host().to_owned()) 
-            }).collect()
-        }
-        _ => vec![]
+                    e.config.host().to_owned(),
+                )
+            })
+            .collect(),
+        _ => vec![],
     };
 
     for entry in workspace.into_iter() {
@@ -1044,10 +1060,7 @@ pub async fn compile<P: AsRef<Path>>(
             .await?;
 
         // Load collections, resolve synthetic assets
-        let builder = builder
-            .load_data()
-            .and_then(|s| s.menus())
-            .await?;
+        let builder = builder.load_data().and_then(|s| s.menus()).await?;
 
         // Redirects come after synthetic assets in case
         // they need to create any redirects.
@@ -1059,7 +1072,7 @@ pub async fn compile<P: AsRef<Path>>(
             .and_then(|s| s.each())
             .and_then(|s| s.assign())
             .and_then(|s| s.syntax())
-            // NOTE: feed comes after synthetic collections 
+            // NOTE: feed comes after synthetic collections
             // NOTE: so that <link rel="alternate"> patterns
             // NOTE: can be injected correctly
             .and_then(|s| s.feed())

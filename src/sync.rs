@@ -14,7 +14,7 @@ pub async fn run(opts: Sync) -> Result<()> {
     let remote_opt = opts.remote;
     let branch_opt = opts.branch;
 
-    let (config, _) = workspace::settings(&project, true)?;
+    let (config, _) = workspace::settings(&project, true, &vec![])?;
 
     let remote = if let Some(ref remote) = remote_opt {
         remote
@@ -28,7 +28,12 @@ pub async fn run(opts: Sync) -> Result<()> {
         config.sync().branch.as_ref().unwrap()
     };
 
-    info!("Sync {} (remote: {}, branch: {})", config.project().display(), remote, branch);
+    info!(
+        "Sync {} (remote: {}, branch: {})",
+        config.project().display(),
+        remote,
+        branch
+    );
 
     scm::sync(
         &project,

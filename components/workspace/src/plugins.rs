@@ -119,7 +119,6 @@ pub fn collate(
     info: &mut CollateInfo,
     plugins: &ResolvedPlugins,
 ) -> Result<()> {
-
     for (_dep, plugin) in plugins.iter() {
         let name = &plugin.name;
         let plugin_base = plugin.to_assets_path();

@@ -30,6 +30,10 @@ pub struct Build {
     #[structopt(short, long)]
     pub release: bool,
 
+    /// Filter on workspace members
+    #[structopt(short, long)]
+    pub member: Vec<String>,
+
     #[structopt(flatten)]
     pub server: WebServerOpts,
 

@@ -2,11 +2,12 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use git2::{
-    BranchType, Commit, IndexAddOption, Oid, PushOptions, RemoteCallbacks,
-    Repository, RepositoryInitOptions, RepositoryState, StatusOptions, Remote, 
+    BranchType, Commit, IndexAddOption, Oid, PushOptions, Remote,
+    RemoteCallbacks, Repository, RepositoryInitOptions, RepositoryState,
+    StatusOptions,
 };
 
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 use thiserror::Error;
 
 pub static HEAD: &str = "HEAD";
@@ -356,12 +357,15 @@ pub fn last_commit(repo: &Repository, spec: &str) -> Option<Oid> {
 /// Set a remote url with the given name.
 ///
 /// If a rempte exists for the name then the URL is updated.
-pub fn set_remote<P>(dir: P, name: &str, url: &str) -> Result<()> where P: AsRef<Path> {
+pub fn set_remote<P>(dir: P, name: &str, url: &str) -> Result<()>
+where
+    P: AsRef<Path>,
+{
     let repo = open(dir.as_ref())?;
     if let Some(_) = repo.find_remote(name).ok() {
         repo.remote_set_url(name, url)?;
     } else {
-        repo.remote(name, url)?; 
+        repo.remote(name, url)?;
     }
     Ok(())
 }
@@ -382,20 +386,18 @@ pub fn sync<P: AsRef<Path>>(
 
     if remote_spec.push_refspecs()?.is_empty() {
         if let Some(url) = remote_spec.url() {
-            remote_spec = repo.remote_anonymous(
-                remote_spec.pushurl().unwrap_or(url))?;
+            remote_spec =
+                repo.remote_anonymous(remote_spec.pushurl().unwrap_or(url))?;
         }
     }
 
     let _ = repo.find_branch(&branch, BranchType::Local).map_err(|_| {
-        Error::NoBranch(
-            branch.to_string(),
-            dir.as_ref().to_path_buf(),
-        )
+        Error::NoBranch(branch.to_string(), dir.as_ref().to_path_buf())
     })?;
 
     // Make sure the repository has a commit
-    let last_commit_oid: Oid = last_commit(&repo, HEAD).ok_or(Error::NoCommit)?;
+    let last_commit_oid: Oid =
+        last_commit(&repo, HEAD).ok_or(Error::NoCommit)?;
 
     let tip = repo.find_commit(last_commit_oid)?;
     let mut tree_id = tip.tree_id();

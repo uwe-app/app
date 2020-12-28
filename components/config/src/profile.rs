@@ -188,6 +188,9 @@ pub struct ProfileSettings {
     pub tls: Option<TlsConfig>,
 
     pub resources: Option<Resources>,
+
+    /// List of workspace members to filter.
+    pub member: Vec<String>,
 }
 
 impl Default for ProfileSettings {
@@ -235,6 +238,7 @@ impl Default for ProfileSettings {
             base_href: None,
 
             resources: None,
+            member: Vec::new(),
         }
     }
 }
@@ -354,9 +358,15 @@ impl ProfileSettings {
         if other.resources.is_some() {
             self.resources = mem::take(&mut other.resources)
         }
+
+        self.member = mem::take(&mut other.member);
     }
 
-    pub fn get_canonical_url(&self, conf: &Config, host: Option<&str>) -> crate::Result<Url> {
+    pub fn get_canonical_url(
+        &self,
+        conf: &Config,
+        host: Option<&str>,
+    ) -> crate::Result<Url> {
         if self.is_release() {
             let scheme = self.scheme.as_ref().unwrap();
             Ok(Url::parse(&crate::to_url_string(scheme, &conf.host, None))?)
@@ -377,7 +387,11 @@ impl ProfileSettings {
         }
     }
 
-    pub fn get_host_url(&self, conf: &config::Config, host: Option<&str>) -> crate::Result<Url> {
+    pub fn get_host_url(
+        &self,
+        conf: &config::Config,
+        host: Option<&str>,
+    ) -> crate::Result<Url> {
         Ok(self.get_canonical_url(conf, host)?)
     }
 

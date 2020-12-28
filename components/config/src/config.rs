@@ -326,7 +326,6 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn member_name(&self) -> &Option<String> {
         &self.member_name
     }
@@ -348,7 +347,7 @@ impl Config {
     }
 
     pub fn manifest(&self) -> &Option<UrlPath> {
-        &self.manifest 
+        &self.manifest
     }
 
     pub fn set_commit(&mut self, commit: Option<String>) {

@@ -152,13 +152,11 @@ impl<'a> Invalidator<'a> {
     }
 
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
-
         // Collect deletions before filtering ignores
         // otherwise deleted files would be ignored and
         // removed from the paths to process.
-        let (deletions, paths): (Vec<PathBuf>, Vec<PathBuf>) = paths
-            .into_iter()
-            .partition(|p| !p.exists());
+        let (deletions, paths): (Vec<PathBuf>, Vec<PathBuf>) =
+            paths.into_iter().partition(|p| !p.exists());
 
         let paths = self.filter_ignores(paths);
 
@@ -315,7 +313,6 @@ impl<'a> Invalidator<'a> {
         for (hook, file) in &rule.hooks {
             self.project.run_hook(hook, Some(file)).await?;
         }
-
 
         if !rule.templates.is_empty() {
             self.project.update_templates(&rule.templates).await?;

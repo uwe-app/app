@@ -32,7 +32,7 @@ async fn check_deps(project: PathBuf) -> Result<()> {
         return Err(Error::NotDirectory(project));
     }
 
-    let workspace = workspace::open(&project, true)?;
+    let workspace = workspace::open(&project, true, &vec![])?;
     for entry in workspace.into_iter() {
         if let Some(deps) = entry.config.dependencies {
             for (name, dep) in deps.iter() {
@@ -140,11 +140,9 @@ pub async fn run(cmd: Task) -> Result<()> {
             let project = opts::project_path(&project)?;
             check_deps(project).await?;
         }
-        Task::Alias {cmd} => {
+        Task::Alias { cmd } => {
             alias::run(cmd).await?;
-        }
-
-        /*
+        } /*
           Task::Pull {
               project,
               remote,

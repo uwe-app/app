@@ -28,7 +28,7 @@ pub async fn serve(
 
     if site_file.exists() && site_file.is_file() {
         if skip_build {
-            let workspace = workspace::open(&target, false)?;
+            let workspace = workspace::open(&target, false, &vec![])?;
             let mut it = workspace.iter();
             if let Some(entry) = it.next() {
                 // Respect target build directory

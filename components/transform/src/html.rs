@@ -5,8 +5,8 @@ use lol_html::{
     rewrite_str, text, RewriteStrSettings,
 };
 
-use regex::{Captures, Regex};
 use htmlentity::entity;
+use regex::{Captures, Regex};
 
 use config::transform::HtmlTransformFlags;
 use toc::TableOfContents;

@@ -2,10 +2,10 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+use log::info;
 use toml::map::Map;
 use toml::value::Value;
 use url::Url;
-use log::info;
 
 use utils::walk;
 
