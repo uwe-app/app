@@ -120,7 +120,7 @@ pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 static DEFAULT_STYLE: &str = "assets/styles/main.css";
 static DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
 
-static DEFAULT_ICON: &str = "assets/favicon.ico";
+static DEFAULT_ICON: &str = "favicon.ico";
 static DEFAULT_ICON_DATA: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
 
