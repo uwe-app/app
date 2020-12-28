@@ -52,7 +52,7 @@ impl Member {
 }
 
 #[derive(Debug)]
-pub enum ProjectEntry {
+pub enum Workspace {
     /// Represents a single project.
     ///
     /// Even though this is only a single item we wrap it in a 
@@ -65,47 +65,40 @@ pub enum ProjectEntry {
     Many(Vec<Config>, Config, Vec<String>),
 }
 
-impl ProjectEntry {
+impl Workspace {
     pub fn is_empty(&self) -> bool {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.is_empty(),
+            Workspace::One(c) | Workspace::Many(c, _, _) => c.is_empty(),
         }
     }
 
     pub fn len(&self) -> usize {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.len(),
+            Workspace::One(c) | Workspace::Many(c, _, _) => c.len(),
         }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Config> {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.iter(),
+            Workspace::One(c) | Workspace::Many(c, _, _) => c.iter(),
         }
     }
 
     pub fn into_iter(self) -> impl IntoIterator<Item = Config> {
         match self {
-            ProjectEntry::One(c) | ProjectEntry::Many(c, _, _) => c.into_iter(),
+            Workspace::One(c) | Workspace::Many(c, _, _) => c.into_iter(),
         }
     }
 
     pub fn member_filters(&self) -> Vec<String> {
         match self {
-            ProjectEntry::One(_) => vec![],
-            ProjectEntry::Many(_, _, ref member_filters) => member_filters.clone(),
+            Workspace::One(_) => vec![],
+            Workspace::Many(_, _, ref member_filters) => member_filters.clone(),
         }
     }
 }
 
-impl Default for ProjectEntry {
-    fn default() -> Self {
-        ProjectEntry::One(Default::default())
-    }
-}
-
-
-/// Get a render builder for this configuration.
+/// Get a project builder for a configuration.
 ///
 /// Creates the initial runtime options from a build profile which typically
 /// would come from command line arguments.
@@ -893,37 +886,6 @@ impl Project {
     }
 }
 
-// FIXME: remove this and rename ProjectEntry -> Workspace
-#[derive(Debug, Default)]
-pub struct Workspace {
-    pub project: ProjectEntry,
-}
-
-impl Workspace {
-    pub fn is_empty(&self) -> bool {
-        self.project.is_empty()
-    }
-
-    pub fn has_multiple_projects(&self) -> bool {
-        match self.project {
-            ProjectEntry::Many(_, _, _) => true,
-            ProjectEntry::One(_) => false,
-        }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Config> {
-        self.project.iter()
-    }
-
-    pub fn into_iter(self) -> impl IntoIterator<Item = Config> {
-        self.project.into_iter()
-    }
-
-    pub fn member_filters(&self) -> Vec<String> {
-        self.project.member_filters()
-    }
-}
-
 fn scm_digest(project: &PathBuf) -> Option<String> {
     if let Some(repo) = scm::discover(project).ok() {
         return scm::last_commit(&repo, scm::HEAD).map(|oid| oid.to_string());
@@ -939,19 +901,11 @@ pub fn open<P: AsRef<Path>>(
     walk_ancestors: bool,
     member_filters: &Vec<String>,
 ) -> Result<Workspace> {
-    let mut workspace: Workspace = Default::default();
     let mut config = Config::load(dir.as_ref(), walk_ancestors)?;
 
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Config> = Vec::new();
         for space in projects.members.iter() {
-
-            /*
-            .filter(|s| {
-                member_filters.is_empty() || member_filters.contains(s)                
-            }) {
-            */
-
             let mut root = config.project().to_path_buf();
             root.push(space);
             if !root.exists() || !root.is_dir() {
@@ -967,13 +921,11 @@ pub fn open<P: AsRef<Path>>(
             members.push(config);
         }
 
-        workspace.project = ProjectEntry::Many(members, config, member_filters.clone());
+        Ok(Workspace::Many(members, config, member_filters.clone()))
     } else {
         config.set_commit(scm_digest(config.project()));
-        workspace.project = ProjectEntry::One(vec![config]);
+        Ok(Workspace::One(vec![config]))
     }
-
-    Ok(workspace)
 }
 
 /// Get the settings for a project.
@@ -985,14 +937,11 @@ pub fn settings<P: AsRef<Path>>(
     member_filters: &Vec<String>,
 ) -> Result<(Config, Option<Vec<Config>>)> {
     let workspace = open(dir, walk_ancestors, member_filters)?;
-    let project = workspace.project;
-    match project {
-        ProjectEntry::One(mut entries) => {
+    match workspace {
+        Workspace::One(mut entries) => {
             Ok((entries.swap_remove(0).into(), None))
         }
-        ProjectEntry::Many(entries, config, _) => {
-            //let entries: Vec<Config> =
-                //entries.into_iter().map(|e| e.into()).collect();
+        Workspace::Many(entries, config, _) => {
             Ok((config, Some(entries)))
         }
     }
@@ -1016,8 +965,8 @@ pub async fn compile<P: AsRef<Path>>(
 
     // Cache of workspace member information used to
     // build URLs for linking to members in templates
-    let members: Vec<Member> = match &workspace.project {
-        ProjectEntry::Many(configs, _, _) => configs
+    let members: Vec<Member> = match &workspace {
+        Workspace::Many(configs, _, _) => configs
             .iter()
             .map(|c| {
                 Member::new(
