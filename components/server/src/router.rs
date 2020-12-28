@@ -73,8 +73,12 @@ macro_rules! bind {
         let host = $opts.default_host.name.clone();
         let tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
+        let routes = $routes
+            .recover(move |e| { handle_rejection(e, None)})
+            .with(with_server);
+
         if tls {
-            let (addr, future) = warp::serve($routes.with(with_server))
+            let (addr, future) = warp::serve(routes)
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
@@ -100,7 +104,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve($routes.with(with_server))
+            let bind_result = warp::serve(routes)
                 .try_bind_ephemeral(*$addr);
             match bind_result {
                 Ok((addr, future)) => {
@@ -273,7 +277,7 @@ fn get_static_server(
     let with_expires = warp::reply::with::header("expires", "0");
 
     let dir_server = warp::fs::dir(host.directory.clone())
-        .recover(move |e| handle_rejection(e, host.directory.clone()));
+        .recover(move |e| handle_rejection(e, Some(host.directory.clone())));
 
     let file_server = if disable_cache {
         dir_server
@@ -545,7 +549,7 @@ struct ErrorMessage {
 // value, otherwise simply passes the rejection along.
 async fn handle_rejection(
     err: Rejection,
-    root: PathBuf,
+    directory: Option<PathBuf>,
 ) -> Result<impl Reply, Infallible> {
     let mut code;
     let mut message;
@@ -565,18 +569,21 @@ async fn handle_rejection(
         message = "UNHANDLED_REJECTION";
     }
 
-    let mut error_file = root.clone();
-    error_file.push(format!("{}.html", code.as_u16()));
     let response;
-    if error_file.exists() {
-        if let Ok(content) = utils::fs::read_string(&error_file) {
-            return Ok(warp::reply::with_status(
-                warp::reply::html(content),
-                code,
-            ));
-        } else {
-            code = StatusCode::INTERNAL_SERVER_ERROR;
-            message = "ERROR_FILE_READ";
+
+    if let Some(root) = directory {
+        let mut error_file = root.clone();
+        error_file.push(format!("{}.html", code.as_u16()));
+        if error_file.exists() {
+            if let Ok(content) = utils::fs::read_string(&error_file) {
+                return Ok(warp::reply::with_status(
+                    warp::reply::html(content),
+                    code,
+                ));
+            } else {
+                code = StatusCode::INTERNAL_SERVER_ERROR;
+                message = "ERROR_FILE_READ";
+            }
         }
     }
 
