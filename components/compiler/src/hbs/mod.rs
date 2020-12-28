@@ -150,7 +150,7 @@ impl<'reg> ParserBuilder<'reg> {
             }),
         );
         helpers.insert(
-            "md",
+            "markdown",
             Box::new(helpers::markdown::Markdown {
                 context: Arc::clone(&self.context),
             }),
