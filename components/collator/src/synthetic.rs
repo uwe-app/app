@@ -106,7 +106,12 @@ fn build_feed(
     let page_paths = info.feeds.get(name).unwrap();
     let mut pages: Vec<&Arc<RwLock<Page>>> = page_paths
         .iter()
-        .map(|pth| info.resolve(pth).unwrap())
+        .map(|pth| {
+            //println!("Feed resolve path {:?}", pth);
+            info.resolve(pth)
+        })
+        .filter(|p| p.is_some())
+        .map(|p| p.unwrap())
         .collect();
 
     pages.sort_by(|a, b| {
@@ -136,10 +141,6 @@ fn build_feed(
 
     feed.items = pages
         .iter()
-        .filter(|p| {
-            let p = &*p.read().unwrap();
-            !p.is_draft(options)
-        })
         .map(|p| {
             let p = &*p.read().unwrap();
 

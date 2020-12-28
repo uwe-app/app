@@ -74,7 +74,7 @@ macro_rules! bind {
         let tls = $opts.tls.is_some();
         let redirect_insecure = $opts.redirect_insecure;
         let routes = $routes
-            .recover(move |e| { handle_rejection(e, None)})
+            .recover(move |e| handle_rejection(e, None))
             .with(with_server);
 
         if tls {
@@ -104,8 +104,7 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve(routes)
-                .try_bind_ephemeral(*$addr);
+            let bind_result = warp::serve(routes).try_bind_ephemeral(*$addr);
             match bind_result {
                 Ok((addr, future)) => {
                     info!("Bind {}", addr.port());

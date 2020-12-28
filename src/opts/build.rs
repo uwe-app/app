@@ -5,7 +5,7 @@ use structopt::StructOpt;
 use super::web_server::WebServerOpts;
 
 #[derive(StructOpt, Debug)]
-pub struct Build {
+pub struct Compile {
     /// Build profile name
     #[structopt(long)]
     pub profile: Option<String>,
@@ -37,6 +37,12 @@ pub struct Build {
     /// Filter on workspace members
     #[structopt(short, long)]
     pub member: Vec<String>,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Build {
+    #[structopt(flatten)]
+    pub compile: Compile,
 
     #[structopt(flatten)]
     pub server: WebServerOpts,

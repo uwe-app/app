@@ -236,11 +236,8 @@ impl Page {
         &file_ctx.template
     }
 
-    pub fn is_draft(&self, options: &RuntimeOptions) -> bool {
-        if options.settings.is_release() {
-            return self.draft.is_some() && self.draft.unwrap();
-        }
-        false
+    pub fn draft(&self) -> bool {
+        self.draft.is_some() && self.draft.unwrap()
     }
 
     /// Get an absolute permalink for the page; will panic if `href` is not set.

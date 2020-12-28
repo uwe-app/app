@@ -186,10 +186,6 @@ pub async fn parse(
     data: &Page,
     dest: &PathBuf,
 ) -> Result<Option<ParseData>> {
-    if data.is_draft(&ctx.options) {
-        return Ok(None);
-    }
-
     info!("{} -> {}", file.display(), dest.display());
 
     let minify_html = should_minify_html(

@@ -158,7 +158,7 @@ async fn run(cmd: Command) -> Result<()> {
                 args.skip_build,
                 opts,
                 launch,
-                args.exec,
+                args.build_opts,
             )
             .await?;
         }
@@ -192,16 +192,16 @@ async fn run(cmd: Command) -> Result<()> {
 
             let build_args = ProfileSettings {
                 paths,
-                profile: args.profile,
-                live: Some(args.live),
-                launch: args.launch,
-                release: Some(args.release),
+                profile: args.compile.profile,
+                live: Some(args.compile.live),
+                launch: args.compile.launch,
+                release: Some(args.compile.release),
                 host: args.server.host,
                 port: args.server.port,
-                offline: Some(args.offline),
-                exec: Some(args.exec),
-                member: args.member,
-                include_drafts: Some(args.include_drafts),
+                offline: Some(args.compile.offline),
+                exec: Some(args.compile.exec),
+                member: args.compile.member,
+                include_drafts: Some(args.compile.include_drafts),
                 tls,
                 ..Default::default()
             };

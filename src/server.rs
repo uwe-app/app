@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use scopeguard::defer;
 
+use crate::opts::Compile;
 use config::{lock_file::LockFile, ProfileSettings};
 use workspace::{compile, lock};
 
@@ -21,14 +22,14 @@ pub async fn serve(
     skip_build: bool,
     mut opts: ServerConfig,
     launch: LaunchConfig,
-    exec: bool,
+    args: Compile,
 ) -> Result<()> {
     let site_file = target.join(config::SITE_TOML);
     let index_file = target.join(config::INDEX_HTML);
 
     if site_file.exists() && site_file.is_file() {
         if skip_build {
-            let workspace = workspace::open(&target, false, &vec![])?;
+            let workspace = workspace::open(&target, false, &args.member)?;
             let mut it = workspace.iter();
             if let Some(config) = it.next() {
                 // Respect target build directory
@@ -44,10 +45,12 @@ pub async fn serve(
             let lock_file = lock::acquire(&lock_path)?;
             defer! { let _ = lock::release(lock_file); }
 
-            let mut args = ProfileSettings::new_release();
-            args.exec = Some(exec);
+            let mut settings = ProfileSettings::new_release();
+            settings.exec = Some(args.exec);
+            settings.member = args.member;
+            settings.include_drafts = Some(args.include_drafts);
 
-            let result = compile(&target, &args).await?;
+            let result = compile(&target, &settings).await?;
 
             let mut it = result.projects.into_iter();
 
@@ -56,14 +59,6 @@ pub async fn serve(
                 let build_target = project.options.base.to_path_buf();
                 opts.default_host.directory = build_target;
             }
-
-            /*
-            // FIXME: support multiple projects (workspaces)
-            // TODO: add other host configs
-            for project in it {
-                //println!("Project options {:?}", project.options);
-            }
-            */
         }
 
         Ok(serve_index(opts, launch).await?)

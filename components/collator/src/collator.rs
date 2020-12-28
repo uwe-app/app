@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use crossbeam::channel;
 use ignore::{WalkBuilder, WalkState};
-use log::debug;
+use log::{debug, warn};
 
 use config::{plugin_cache::PluginCache, Config, RuntimeOptions};
 use locale::{LocaleMap, LocaleName};
@@ -271,9 +271,12 @@ fn add_page(
 
     let (info, key, destination, page) = builder.build();
 
-    //println!("Adding page with key {:?}", key);
-
-    info.add_page(key, destination, Arc::new(RwLock::new(page)));
+    if page.draft() && !options.settings.include_drafts() {
+        warn!("Draft {}", key.display());
+    } else {
+        //println!("Adding page with key {:?}", key);
+        info.add_page(key, destination, Arc::new(RwLock::new(page)));
+    }
 
     Ok(())
 }

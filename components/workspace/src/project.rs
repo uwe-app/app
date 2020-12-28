@@ -55,12 +55,12 @@ impl Member {
 pub enum Workspace {
     /// Represents a single project.
     ///
-    /// Even though this is only a single item we wrap it in a 
+    /// Even though this is only a single item we wrap it in a
     /// vector to make iteration logic simpler.
     One(Vec<Config>),
     /// Represents a workspace with multiple projects.
     ///
-    /// The second entry in the tuple is the settings for the workspace 
+    /// The second entry in the tuple is the settings for the workspace
     /// and the last entry if a list of members names to be filtered.
     Many(Vec<Config>, Config, Vec<String>),
 }
@@ -110,8 +110,7 @@ pub async fn new_project_builder(
     args: &ProfileSettings,
     members: &Vec<Member>,
 ) -> Result<ProjectBuilder> {
-    let options =
-        crate::options::prepare(&mut config, args, members).await?;
+    let options = crate::options::prepare(&mut config, args, members).await?;
     let redirects = if let Some(ref redirects) = config.redirect {
         redirects.clone()
     } else {
@@ -941,9 +940,7 @@ pub fn settings<P: AsRef<Path>>(
         Workspace::One(mut entries) => {
             Ok((entries.swap_remove(0).into(), None))
         }
-        Workspace::Many(entries, config, _) => {
-            Ok((config, Some(entries)))
-        }
+        Workspace::Many(entries, config, _) => Ok((config, Some(entries))),
     }
 }
 
@@ -981,9 +978,10 @@ pub async fn compile<P: AsRef<Path>>(
     let member_filters = workspace.member_filters();
 
     for config in workspace.into_iter() {
-
         if let Some(member_name) = config.member_name() {
-            if !member_filters.is_empty() && !member_filters.contains(member_name) {
+            if !member_filters.is_empty()
+                && !member_filters.contains(member_name)
+            {
                 continue;
             }
         }

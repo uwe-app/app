@@ -259,6 +259,11 @@ impl ProfileSettings {
         self.exec.is_some() && self.exec.unwrap()
     }
 
+    /// Determine if drafts should be included.
+    pub fn include_drafts(&self) -> bool {
+        self.include_drafts.is_some() && self.include_drafts.unwrap()
+    }
+
     pub fn append(&mut self, other: &mut Self) {
         self.source = mem::take(&mut other.source);
         self.target = mem::take(&mut other.target);
