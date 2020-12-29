@@ -9,9 +9,13 @@ use config::{hook::HookConfig};
 
 use crate::{
     project::Project,
-    invalidator::{Action, Rule},
-    utils::{extract_locale, relative_to}, 
     renderer::RenderOptions, Error, Result};
+
+use super::{
+    Action,
+    Rule,
+    utils::{extract_locale, relative_to}, 
+};
 
 pub struct Updater<'a> {
     project: &'a mut Project,

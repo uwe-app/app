@@ -4,10 +4,14 @@ use std::path::PathBuf;
 
 use config::{hook::HookConfig, FileType};
 
-use crate::{
+mod updater;
+mod utils;
+
+use crate::{Error, Project, Result};
+
+use self::{
     updater::Updater,
     utils::{canonical, filter_ignores, relative_to},
-    Error, Project, Result,
 };
 
 /*
