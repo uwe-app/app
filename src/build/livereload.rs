@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
-use std::sync::mpsc;
 
 use log::{debug, error, info};
 
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
+use tokio::sync::mpsc;
 use url::Url;
 use warp::ws::Message;
 
@@ -54,7 +54,7 @@ pub async fn start<P: AsRef<Path>>(
     // otherwise we can just run using the standard `localhost`.
     let multiple = result.projects.len() > 1;
 
-    let mut watchers: Vec<LiveHost> = Vec::new();
+    let mut watchers: Vec<(LiveHost, mpsc::Receiver<String>)> = Vec::new();
 
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
@@ -87,9 +87,14 @@ pub async fn start<P: AsRef<Path>>(
         let (ws_tx, _rx) = broadcast::channel::<Message>(100);
         let reload_tx = ws_tx.clone();
 
+        // Create a channel to receive lazy render requests
+        let (render_tx, render_rx) = mpsc::channel::<String>(64);
+
         let host_channel = HostChannel {
             reload: Some(reload_tx),
+            render: Some(render_tx),
         };
+
         channels
             .hosts
             .entry(host.name.clone())
@@ -102,11 +107,11 @@ pub async fn start<P: AsRef<Path>>(
         // Get the source directory to configure the watcher
         let source = project.options.source.clone();
 
-        watchers.push(LiveHost {
+        watchers.push((LiveHost {
             source,
             project,
             websocket: ws_tx,
-        });
+        }, render_rx));
 
         Ok::<(), Error>(())
     })?;
@@ -162,13 +167,15 @@ pub async fn start<P: AsRef<Path>>(
     Ok(())
 }
 
-fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
-    for mut w in watchers {
+fn watch(watchers: Vec<(LiveHost, mpsc::Receiver<String>)>, error_cb: ErrorCallback) {
+    for (mut w, mut render) in watchers {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
                 // Create a channel to receive the events.
-                let (tx, rx) = mpsc::channel();
+                let (tx, rx) = std::sync::mpsc::channel();
+
+                let source = w.source.clone();
 
                 // Configure the watcher
                 let mut watcher = notify::watcher(tx, Duration::from_secs(1))
@@ -179,10 +186,16 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                 watcher
                     .watch(&w.source, Recursive)
                     .expect("Failed to start watcher");
-                info!("Watch {}", w.source.display());
+                info!("Watch {}", source.display());
 
                 let mut invalidator = Invalidator::new(&mut w.project);
                 let ws_tx = &w.websocket;
+
+                tokio::task::spawn(async move {
+                    while let Some(res) = render.recv().await {
+                        println!("got = {}", res);
+                    }
+                });
 
                 loop {
                     let first_event = rx.recv().unwrap();
@@ -207,7 +220,7 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                         info!(
                             "Changed({}) in {}",
                             paths.len(),
-                            w.source.display()
+                            source.display()
                         );
 
                         let msg = livereload::messages::start();
@@ -215,8 +228,7 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
 
                         let _ = ws_tx.send(Message::text(txt));
 
-                        let result = invalidator.get_invalidation(paths);
-                        match result {
+                        match invalidator.get_invalidation(paths) {
                             Ok(invalidation) => {
                                 // Try to determine a page href to use when following edits.
                                 let href: Option<String> = if let Some(path) =
@@ -227,28 +239,28 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                                     None
                                 };
 
-                                // Send errors to the client.
-                                if let Err(e) =
-                                    invalidator.invalidate(&invalidation).await
-                                {
-                                    error!("{}", e);
+                                match invalidator.invalidate(&invalidation).await {
+                                    // Notify of build completed
+                                    Ok(_) => {
+                                        let msg =
+                                            livereload::messages::reload(href);
+                                        let txt =
+                                            serde_json::to_string(&msg).unwrap();
+                                        let _ = ws_tx.send(Message::text(txt));
+                                        //println!("Got result {:?}", res);
+                                    }
+                                    // Send errors to the websocket
+                                    Err(e) => {
+                                        error!("{}", e);
 
-                                    let msg = livereload::messages::notify(
-                                        e.to_string(),
-                                        true,
-                                    );
-                                    let txt =
-                                        serde_json::to_string(&msg).unwrap();
-                                    let _ = ws_tx.send(Message::text(txt));
-
-                                //return error_cb(Error::from(e));
-                                } else {
-                                    let msg =
-                                        livereload::messages::reload(href);
-                                    let txt =
-                                        serde_json::to_string(&msg).unwrap();
-                                    let _ = ws_tx.send(Message::text(txt));
-                                    //println!("Got result {:?}", res);
+                                        let msg = livereload::messages::notify(
+                                            e.to_string(),
+                                            true,
+                                        );
+                                        let txt =
+                                            serde_json::to_string(&msg).unwrap();
+                                        let _ = ws_tx.send(Message::text(txt));
+                                    }
                                 }
                             }
                             Err(e) => return error_cb(Error::from(e)),

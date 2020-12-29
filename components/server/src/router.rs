@@ -7,6 +7,7 @@ use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
 use tokio::sync::broadcast;
+use tokio::sync::mpsc;
 
 use warp::filters::BoxedFilter;
 use warp::http::StatusCode;
@@ -14,6 +15,7 @@ use warp::http::Uri;
 use warp::path::FullPath;
 use warp::ws::Message;
 use warp::{Filter, Rejection, Reply};
+use warp::reject::Reject;
 
 use serde::Serialize;
 
@@ -21,6 +23,11 @@ use log::{error, info, trace};
 
 use crate::{drop_privileges::*, Channels, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
+
+#[derive(Debug)]
+struct RenderSendError;
+
+impl Reject for RenderSendError {}
 
 struct OptFmt<T>(Option<T>);
 
@@ -33,34 +40,6 @@ impl<T: fmt::Display> fmt::Display for OptFmt<T> {
         }
     }
 }
-
-/*
-macro_rules! router {
-    (
-        $address:expr,
-        $opts:expr,
-        $routes:expr,
-        $channels:expr
-    ) => {
-        let default_host: &'static HostConfig = &$opts.default_host;
-        let with_server = get_with_server($opts);
-        let all = $routes
-            .with(with_server)
-            // TODO: use a different rejection handler that returns
-            // TODO: internal system error pages
-            .recover(move |e| {
-                handle_rejection(e, default_host.directory.clone())
-            });
-
-        // TODO: get log enabled from server config
-        if let Some(ref log) = default_host.log {
-            bind!($opts, all.with(warp::log(&log.prefix)), $address, $channels);
-        } else {
-            bind!($opts, all, $address, $channels);
-        }
-    };
-}
-*/
 
 macro_rules! bind {
     (
@@ -145,12 +124,20 @@ fn get_host_filter(
 
     let livereload = get_live_reload(opts, host, channels).unwrap();
 
+    let render_tx = channels.get_host_render(&host.name);
+    let sender = warp::any().map(move || render_tx.clone());
+
+    let live_renderer = warp::any()
+        .and(warp::path::full())
+        .and(sender)
+        .and_then(live_render);
+
     // NOTE: We would like to conditionally add the livereload route
     // NOTE: but spent so much time trying to fight the warp type
     // NOTE: system to achieve it and failing it is much easier
     // NOTE: to just make it a noop. :(
     warp::host::exact(hostname)
-        .and(livereload.or(static_server))
+        .and(livereload.or(live_renderer).or(static_server))
         .boxed()
 }
 
@@ -209,6 +196,23 @@ fn get_live_reload(
         .with(&cors);
 
     Ok(livereload.boxed())
+}
+
+async fn live_render(
+    path: FullPath,
+    mut tx: mpsc::Sender<String>,
+) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+    if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {
+        let href = if path.as_str().ends_with("/") {
+            format!("{}{}", path.as_str(), config::INDEX_HTML)
+        } else {
+            path.as_str().to_string()
+        };
+        tx.send(href).await.map_err(|_| {
+            warp::reject::custom(RenderSendError) 
+        })?;
+    }
+    Err(warp::reject())
 }
 
 async fn redirect_map(

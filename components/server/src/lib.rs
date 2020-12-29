@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
+use tokio::sync::mpsc;
 use warp::ws::Message;
 
 use config::server::{ConnectionInfo, ServerConfig};
@@ -36,10 +37,14 @@ pub enum Error {
 
     #[error(transparent)]
     TrySend(#[from] tokio::sync::mpsc::error::TrySendError<ConnectionInfo>),
+
+    #[error(transparent)]
+    SendError(#[from] tokio::sync::mpsc::error::SendError<String>),
 }
 
 type WebsocketSender = broadcast::Sender<Message>;
 type BindSender = oneshot::Sender<ConnectionInfo>;
+type RenderChannel = mpsc::Sender<String>;
 type Result<T> = std::result::Result<T, Error>;
 
 mod drop_privileges;
@@ -54,6 +59,9 @@ pub use launch::*;
 pub struct HostChannel {
     /// The channel used to send reload messages to connected websockets.
     pub reload: Option<WebsocketSender>,
+
+    /// The channel used to request a render for a page URL.
+    pub render: Option<RenderChannel>,
 }
 
 /// Maps the virtual host communication channels by host name.
@@ -80,6 +88,17 @@ impl Channels {
 
         let (ws_tx, _) = broadcast::channel::<Message>(10);
         ws_tx
+    }
+
+    pub fn get_host_render(&self, name: &str) -> RenderChannel {
+        if let Some(channel) = self.hosts.get(name) {
+            if let Some(ref render) = channel.render {
+                return render.clone();
+            }
+        }
+
+        let (render_tx, _) = mpsc::channel::<String>(64);
+        render_tx
     }
 }
 
