@@ -5,11 +5,12 @@ use std::fs;
 
 use log::{info, warn};
 
-use config::{hook::HookConfig};
+use config::{Config, RuntimeOptions, hook::HookConfig};
+use collections::{DataSourceMap};
 
 use crate::{
     project::Project,
-    renderer::RenderOptions,
+    renderer::{Renderer, RenderOptions},
     Result,
 };
 
@@ -28,8 +29,20 @@ impl<'a> Updater<'a> {
         Self {project}
     }
 
-    pub fn project(&mut self) -> &mut Project {
-        self.project
+    pub fn config(&self) -> &Config {
+        self.project.config()
+    }
+
+    pub fn options(&self) -> &RuntimeOptions {
+        self.project.options()
+    }
+
+    pub fn collections(&self) -> &DataSourceMap {
+        self.project.collections()
+    }
+
+    pub fn renderers(&self) -> &Vec<Renderer> {
+        self.project.renderers()
     }
 
     pub(crate) fn update_deletions(&mut self, paths: &HashSet<PathBuf>) -> Result<()> {
@@ -195,18 +208,22 @@ impl<'a> Updater<'a> {
             self.update_deletions(&rule.deletions)?;
         }
 
+        // Execute hooks
         if !rule.hooks.is_empty() {
             self.update_hooks(&rule.hooks).await?;
         }
 
+        // Compile templates in the site source tree
         if !rule.templates.is_empty() {
             self.update_templates(&rule.templates).await?;
         }
 
+        // Compile partials
         if !rule.partials.is_empty() {
             self.update_partials(&rule.partials).await?;
         }
 
+        // Compile layouts
         if !rule.layouts.is_empty() {
             self.update_layouts(&rule.layouts).await?;
         }
@@ -218,7 +235,6 @@ impl<'a> Updater<'a> {
                     // as the notify crate gives us an absolute path
                     let source = self.project.options.source.clone();
                     let file = relative_to(path, &source, &source)?;
-
                     self.one(&file).await?;
                 }
             }
@@ -236,7 +252,7 @@ impl<'a> Updater<'a> {
         let lang: &str = if let Some(ref lang) = lang {
             lang.as_str()
         } else {
-            &self.project.config.lang
+            &self.config().lang
         };
 
         let options = RenderOptions::new_file_lang(
@@ -321,8 +337,6 @@ impl<'a> Updater<'a> {
                 }
             }
         }
-
         Ok(())
     }
-
 }

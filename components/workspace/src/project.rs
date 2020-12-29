@@ -565,6 +565,10 @@ impl Project {
         &*self.options
     }
 
+    pub fn collections(&self) -> &DataSourceMap {
+        &self.datasource
+    }
+
     pub fn parsers_mut(&mut self) -> &mut Vec<Box<dyn Parser + Send + Sync>> {
         &mut self.parsers
     }

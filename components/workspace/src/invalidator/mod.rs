@@ -83,12 +83,12 @@ impl<'a> Invalidator<'a> {
     ///
     /// Used by the live reload functionality to notify the browser
     /// it should navigate to the last edited page (follow-edits).
-    pub fn find_page_href(&mut self, path: &PathBuf) -> Option<String> {
-        let project = self.updater.project();
-        let source = project.options.source.clone();
-        if project.config.livereload().follow_edits() {
-            if let Ok(file) = relative_to(path, &source, &source) {
-                for renderer in project.renderers.iter() {
+    pub fn find_page_href(&self, path: &PathBuf) -> Option<String> {
+        let config = self.updater.config();
+        let options = self.updater.options();
+        if config.livereload().follow_edits() {
+            if let Ok(file) = relative_to(path, &options.source, &options.source) {
+                for renderer in self.updater.renderers().iter() {
                     let collation =
                         renderer.info.context.collation.read().unwrap();
                     if let Some(href) = collation.get_link_href(&file) {
@@ -106,8 +106,9 @@ impl<'a> Invalidator<'a> {
         None
     }
 
-    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation> {
-        let project = self.updater.project();
+    pub fn get_invalidation(&self, paths: Vec<PathBuf>) -> Result<Invalidation> {
+        let config = self.updater.config();
+        let options = self.updater.options();
 
         // Collect deletions before filtering ignores
         // otherwise deleted files would be ignored and
@@ -129,12 +130,12 @@ impl<'a> Invalidator<'a> {
             collections: HashSet::new(),
         };
 
-        let ext = project.config.engine().extension().to_string();
+        let ext = config.engine().extension().to_string();
 
-        let config_file = project.config.file();
+        let config_file = config.file();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = if let Some(ref hooks) = project.config.hooks {
+        let hooks = if let Some(ref hooks) = config.hooks {
             hooks
                 .iter()
                 .filter(|h| {
@@ -146,20 +147,20 @@ impl<'a> Invalidator<'a> {
             HashSet::new()
         };
 
-        let build_output = canonical(project.options.output.clone());
+        let build_output = canonical(options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
 
-        let assets = canonical(project.options.get_assets_path());
-        let partials = canonical(project.options.get_partials_path());
-        let layouts = canonical(project.options.get_layouts_path());
+        let assets = canonical(options.get_assets_path());
+        let partials = canonical(options.get_partials_path());
+        let layouts = canonical(options.get_layouts_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators = canonical(project.options.get_data_sources_path());
+        let generators = canonical(options.get_data_sources_path());
 
-        let generator_paths: Vec<PathBuf> = project
-            .datasource
+        let generator_paths: Vec<PathBuf> = self.updater
+            .collections()
             .map
             .values()
             .map(|g| canonical(g.source.clone()))
@@ -216,7 +217,7 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     } else {
-                        let file_type = project.options.get_type(&path);
+                        let file_type = options.get_type(&path);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Kind::File(path));
