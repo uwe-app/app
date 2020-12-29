@@ -243,15 +243,12 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
 
                                 //return error_cb(Error::from(e));
                                 } else {
-                                    //self.builder.manifest.save()?;
-                                    if invalidation.notify {
-                                        let msg =
-                                            livereload::messages::reload(href);
-                                        let txt = serde_json::to_string(&msg)
-                                            .unwrap();
-                                        let _ = ws_tx.send(Message::text(txt));
-                                        //println!("Got result {:?}", res);
-                                    }
+                                    let msg =
+                                        livereload::messages::reload(href);
+                                    let txt = serde_json::to_string(&msg)
+                                        .unwrap();
+                                    let _ = ws_tx.send(Message::text(txt));
+                                    //println!("Got result {:?}", res);
                                 }
                             }
                             Err(e) => return error_cb(Error::from(e)),

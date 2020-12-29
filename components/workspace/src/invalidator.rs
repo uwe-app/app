@@ -1,19 +1,26 @@
 use std::collections::HashSet;
 use std::ffi::OsStr;
-use std::path::Path;
 use std::path::PathBuf;
 
-use ignore::WalkBuilder;
-
-//use collections;
 use config::{hook::HookConfig, FileType};
 
-use crate::{renderer::RenderOptions, Error, Project, Result};
+use crate::{
+    renderer::RenderOptions,
+    updater::Updater,
+    utils::{
+        canonical,
+        extract_locale,
+        filter_ignores,
+        relative_to,
+    },
+    Error,
+    Project,
+    Result
+};
 
 /*
  *  Invalidation rules.
  *
- *  - Asset: trigger a full build.
  *  - Page: rebuild the page.
  *  - File: copy the file to build.
  *  - CollectionsDocument: TODO.
@@ -27,10 +34,6 @@ pub enum Action {
 
 #[derive(Debug)]
 pub struct Rule {
-    // Notify connected websocket clients, always true for now
-    pub notify: bool,
-    // Reload the site data source
-    reload: bool,
     // Paths that are ignored but we track for debugging
     ignores: HashSet<PathBuf>,
     // Paths that are in the assets folders, currently we ignore these.
@@ -70,26 +73,28 @@ impl Rule {
 }
 
 pub struct Invalidator<'a> {
-    project: &'a mut Project,
+    updater: Updater<'a>,
 }
 
 impl<'a> Invalidator<'a> {
     pub fn new(project: &'a mut Project) -> Self {
-        Self { project }
+        Self { updater: Updater::new(project) }
     }
 
     /// Try to find a page href from an invalidation path.
     ///
     /// Used by the live reload functionality to notify the browser
     /// it should navigate to the last edited page (follow-edits).
-    pub fn find_page_href(&self, path: &PathBuf) -> Option<String> {
-        if self.project.config.livereload().follow_edits() {
-            if let Ok(file) = self.project.options.relative_to(
+    pub fn find_page_href(&mut self, path: &PathBuf) -> Option<String> {
+        let project = self.updater.project();
+        let source = project.options.source.clone();
+        if project.config.livereload().follow_edits() {
+            if let Ok(file) = relative_to(
                 path,
-                &self.project.options.source,
-                &self.project.options.source,
+                &source,
+                &source,
             ) {
-                for renderer in self.project.renderers.iter() {
+                for renderer in project.renderers.iter() {
                     let collation =
                         renderer.info.context.collation.read().unwrap();
                     if let Some(href) = collation.get_link_href(&file) {
@@ -107,62 +112,18 @@ impl<'a> Invalidator<'a> {
         None
     }
 
-    fn canonical<P: AsRef<Path>>(&self, src: P) -> PathBuf {
-        let file = src.as_ref().to_path_buf();
-        if file.exists() {
-            if let Ok(canonical) = file.canonicalize() {
-                return canonical;
-            }
-        }
-        file
-    }
-
-    /// Walk the parent directory so we can determine if a path
-    /// should be ignored using the standard .gitignore and .ignore
-    /// file comparisons.
-    ///
-    /// This is inefficient because we have to walk all the entries
-    /// in the parent directory to determine if a file should be
-    /// ignored.
-    ///
-    /// Ideally we could do this at a lower-level but the `ignore`
-    /// crate does not expose the `dir` module so we would need to
-    /// reproduce all of that functionality.
-    fn filter_ignores(&self, paths: Vec<PathBuf>) -> Vec<PathBuf> {
-        let mut results: Vec<PathBuf> = Vec::new();
-        for path in paths {
-            if let Some(parent) = path.parent() {
-                for entry in WalkBuilder::new(parent)
-                    .max_depth(Some(1))
-                    .filter_entry(move |entry| entry.path() == path)
-                    .build()
-                {
-                    match entry {
-                        Ok(entry) => {
-                            if entry.path().is_file() {
-                                results.push(entry.path().to_path_buf())
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-        results
-    }
-
     pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
+        let project = self.updater.project();
+
         // Collect deletions before filtering ignores
         // otherwise deleted files would be ignored and
         // removed from the paths to process.
         let (deletions, paths): (Vec<PathBuf>, Vec<PathBuf>) =
             paths.into_iter().partition(|p| !p.exists());
 
-        let paths = self.filter_ignores(paths);
+        let paths = filter_ignores(paths);
 
         let mut rule = Rule {
-            notify: true,
-            reload: false,
             ignores: HashSet::new(),
             assets: HashSet::new(),
             hooks: HashSet::new(),
@@ -173,12 +134,12 @@ impl<'a> Invalidator<'a> {
             deletions: deletions.into_iter().collect::<HashSet<_>>(),
         };
 
-        let ext = self.project.config.engine().extension().to_string();
+        let ext = project.config.engine().extension().to_string();
 
-        let config_file = self.project.config.file();
+        let config_file = project.config.file();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = if let Some(ref hooks) = self.project.config.hooks {
+        let hooks = if let Some(ref hooks) = project.config.hooks {
             hooks
                 .iter()
                 .filter(|h| {
@@ -190,25 +151,24 @@ impl<'a> Invalidator<'a> {
             HashSet::new()
         };
 
-        let build_output = self.canonical(self.project.options.output.clone());
+        let build_output = canonical(project.options.output.clone());
 
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
 
-        let assets = self.canonical(self.project.options.get_assets_path());
-        let partials = self.canonical(self.project.options.get_partials_path());
-        let layouts = self.canonical(self.project.options.get_layouts_path());
+        let assets = canonical(project.options.get_assets_path());
+        let partials = canonical(project.options.get_partials_path());
+        let layouts = canonical(project.options.get_layouts_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators =
-            self.canonical(self.project.options.get_data_sources_path());
+            canonical(project.options.get_data_sources_path());
 
-        let generator_paths: Vec<PathBuf> = self
-            .project
+        let generator_paths: Vec<PathBuf> = project
             .datasource
             .map
             .values()
-            .map(|g| self.canonical(g.source.clone()))
+            .map(|g| canonical(g.source.clone()))
             .collect::<Vec<_>>();
 
         'paths: for path in paths {
@@ -263,7 +223,7 @@ impl<'a> Invalidator<'a> {
                             }
                         }
                     } else {
-                        let file_type = self.project.options.get_type(&path);
+                        let file_type = project.options.get_type(&path);
                         match file_type {
                             FileType::Unknown => {
                                 rule.actions.push(Action::File(path));
@@ -281,49 +241,31 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    fn remove(&mut self, paths: &HashSet<PathBuf>) -> Result<()> {
-        let project = self.project.config.project().to_path_buf();
-        let cwd = std::env::current_dir()?;
-
-        for path in paths {
-            // NOTE: cannot use relative_to() when files have been deleted!
-            let relative = if project.is_absolute() {
-                path.strip_prefix(&project).unwrap_or(path).to_path_buf()
-            } else {
-                path.strip_prefix(&cwd).unwrap_or(path).to_path_buf()
-            };
-
-            let (lang, path) = self.extract_locale(&relative);
-            self.project.remove_file(&path, lang)?;
-        }
-        Ok(())
-    }
-
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
-        // Reload the config data!
-        if rule.reload {
-            // TODO: maybe implement this later?
-        }
+
+        let source = self.updater.project().options.source.clone();
 
         // Remove deleted files.
         if !rule.deletions.is_empty() {
-            self.remove(&rule.deletions)?;
+            self.updater.remove(&rule.deletions)?;
         }
 
+        let project = self.updater.project();
+
         for (hook, file) in &rule.hooks {
-            self.project.run_hook(hook, Some(file)).await?;
+            project.run_hook(hook, Some(file)).await?;
         }
 
         if !rule.templates.is_empty() {
-            self.project.update_templates(&rule.templates).await?;
+            project.update_templates(&rule.templates).await?;
         }
 
         if !rule.partials.is_empty() {
-            self.project.update_partials(&rule.partials).await?;
+            project.update_partials(&rule.partials).await?;
         }
 
         if !rule.layouts.is_empty() {
-            self.project.update_layouts(&rule.layouts).await?;
+            project.update_layouts(&rule.layouts).await?;
         }
 
         for action in &rule.actions {
@@ -331,10 +273,10 @@ impl<'a> Invalidator<'a> {
                 Action::Page(path) | Action::File(path) => {
                     // Make the path relative to the project source
                     // as the notify crate gives us an absolute path
-                    let file = self.project.options.relative_to(
+                    let file = relative_to(
                         path,
-                        &self.project.options.source,
-                        &self.project.options.source,
+                        &source,
+                        &source,
                     )?;
 
                     self.one(&file).await?;
@@ -348,24 +290,17 @@ impl<'a> Invalidator<'a> {
         Ok(())
     }
 
-    /*
-    /// Render the entire project.
-    async fn render(&mut self) -> Result<()> {
-        self.project.render(Default::default()).await?;
-        Ok(())
-    }
-    */
-
     /// Render a single file using the appropriate locale-specific renderer.
     async fn one(&mut self, file: &PathBuf) -> Result<()> {
+        let project = self.updater.project();
         // Raw source files might be localized variants
         // we need to strip the locale identifier from the
         // file path before compiling
-        let (lang, file) = self.extract_locale(&file);
+        let (lang, file) = extract_locale(&file, project.locales.languages().alternate());
         let lang: &str = if let Some(ref lang) = lang {
             lang.as_str()
         } else {
-            &self.project.config.lang
+            &project.config.lang
         };
 
         let options = RenderOptions::new_file_lang(
@@ -376,19 +311,10 @@ impl<'a> Invalidator<'a> {
             false,
         );
 
-        self.project.render(options).await?;
+        project.render(options).await?;
 
         Ok(())
     }
 
-    /// Extract locale identifier from a file name when possible.
-    fn extract_locale(&self, file: &PathBuf) -> (Option<String>, PathBuf) {
-        let languages = self.project.locales.languages().alternate();
-        if let Some((lang, path)) =
-            collator::get_locale_file_info(&file.as_path(), &languages)
-        {
-            return (Some(lang), path);
-        }
-        (None, file.to_path_buf())
-    }
 }
+

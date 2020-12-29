@@ -148,18 +148,6 @@ impl RuntimeOptions {
         }
     }
 
-    pub fn relative_to<P: AsRef<Path>>(
-        &self,
-        file: P,
-        base: P,
-        target: P,
-    ) -> Result<PathBuf> {
-        let f = file.as_ref().canonicalize()?;
-        let b = base.as_ref().canonicalize()?;
-        let t = target.as_ref().to_path_buf();
-        Ok(t.join(f.strip_prefix(b)?))
-    }
-
     pub fn get_canonical_url<S>(
         &self,
         config: &Config,
