@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -566,141 +565,28 @@ impl Project {
         &*self.options
     }
 
+    pub fn parsers_mut(&mut self) -> &mut Vec<Box<dyn Parser + Send + Sync>> {
+        &mut self.parsers
+    }
+
     pub fn renderers(&self) -> &Vec<Renderer> {
-        &self.renderers 
+        &self.renderers
     }
 
-    /// Update templates.
-    pub(crate) async fn update_templates(
-        &mut self,
-        templates: &HashSet<PathBuf>,
-    ) -> Result<()> {
-        for template in templates {
-            let name = template.to_string_lossy();
-            if template.exists() {
-                info!("Render template {}", &name);
-                for parser in self.parsers.iter_mut() {
-                    // Re-compile the template
-                    parser.load(template)?;
-                }
-            } else {
-                info!("Delete template {}", &name);
-                for parser in self.parsers.iter_mut() {
-                    // Remove the template from the parser
-                    parser.remove(&name);
-                }
-            }
-        }
-
-        Ok(())
+    pub fn renderers_mut(&mut self) -> &mut Vec<Renderer> {
+        &mut self.renderers
     }
 
-    /// Update partials.
-    pub(crate) async fn update_partials(
+    pub fn iter_mut(
         &mut self,
-        partials: &HashSet<PathBuf>,
-    ) -> Result<()> {
-        let partials: Vec<(String, &PathBuf)> = partials
-            .iter()
-            .map(|layout| {
-                let name =
-                    layout.file_stem().unwrap().to_string_lossy().into_owned();
-                (name, layout)
-            })
-            .collect();
-
-        for (name, partial) in partials {
-            if partial.exists() {
-                info!("Render partial {}", &name);
-                for parser in self.parsers.iter_mut() {
-                    // Re-compile the template
-                    parser.add(name.to_string(), partial)?;
-                }
-            } else {
-                info!("Delete partial {}", &name);
-                for parser in self.parsers.iter_mut() {
-                    // Remove the partial from the parser
-                    parser.remove(&name);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Update layouts and render any pages referenced by the layouts.
-    pub(crate) async fn update_layouts(
-        &mut self,
-        layouts: &HashSet<PathBuf>,
-    ) -> Result<()> {
-        // List of pages to render
-        let mut render_pages: HashSet<(String, PathBuf)> = HashSet::new();
-
-        let layouts: Vec<(String, &PathBuf)> = layouts
-            .iter()
-            .map(|layout| {
-                let name =
-                    layout.file_stem().unwrap().to_string_lossy().into_owned();
-                (name, layout)
-            })
-            .collect();
-
-        // TODO: handle new layouts
-        // TODO: handle deleted layouts
-
-        for (name, layout) in layouts {
-            if layout.exists() {
-                info!("Render layout {}", &name);
-                for (parser, renderer) in
-                    self.parsers.iter_mut().zip(self.renderers.iter_mut())
-                {
-                    // Re-compile the template
-                    parser.add(name.to_string(), layout)?;
-
-                    // Collect pages that match the layout name
-                    // so they can be rendered
-                    let collation =
-                        &*renderer.info.context.collation.read().unwrap();
-                    let fallback = collation.fallback.read().unwrap();
-                    let lang = collation.get_lang().as_ref().to_string();
-                    for (file_path, page_lock) in fallback.pages.iter() {
-                        let page = page_lock.read().unwrap();
-                        if !page.is_standalone() {
-                            if let Some(ref layout_name) = page.layout {
-                                if &name == layout_name {
-                                    render_pages.insert((
-                                        lang.to_string(),
-                                        file_path.to_path_buf(),
-                                    ));
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                info!("Delete layout {}", &name);
-                for (parser, renderer) in
-                    self.parsers.iter_mut().zip(self.renderers.iter_mut())
-                {
-                    // Remove the layout from the parser
-                    parser.remove(&name);
-                    // Remove from the collated data
-                    let mut collation =
-                        renderer.info.context.collation.write().unwrap();
-                    collation.remove_layout(&name);
-                }
-            }
-        }
-
-        // Render pages that require an update as they
-        // reference a changed layout
-        for (lang, file) in render_pages {
-            let options =
-                RenderOptions::new_file_lang(file, lang, true, false, false);
-            self.render(options).await?;
-        }
-
-        Ok(())
+    ) -> std::iter::Zip<
+        std::slice::IterMut<
+            '_,
+            Box<(dyn Parser + Sync + std::marker::Send + 'static)>,
+        >,
+        std::slice::IterMut<'_, Renderer>,
+    > {
+        self.parsers.iter_mut().zip(self.renderers.iter_mut())
     }
 
     /// Render the project.

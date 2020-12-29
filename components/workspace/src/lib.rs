@@ -116,5 +116,5 @@ mod renderer;
 mod updater;
 mod utils;
 
-pub use invalidator::{Invalidator};
+pub use invalidator::Invalidator;
 pub use project::*;

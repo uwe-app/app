@@ -245,8 +245,8 @@ fn watch(watchers: Vec<LiveHost>, error_cb: ErrorCallback) {
                                 } else {
                                     let msg =
                                         livereload::messages::reload(href);
-                                    let txt = serde_json::to_string(&msg)
-                                        .unwrap();
+                                    let txt =
+                                        serde_json::to_string(&msg).unwrap();
                                     let _ = ws_tx.send(Message::text(txt));
                                     //println!("Got result {:?}", res);
                                 }

@@ -1,9 +1,12 @@
-use std::path::{Path, PathBuf};
-use ignore::WalkBuilder;
 use crate::Result;
+use ignore::WalkBuilder;
+use std::path::{Path, PathBuf};
 
 /// Extract locale identifier from a file name when possible.
-pub fn extract_locale(file: &PathBuf, languages: &Vec<String>) -> (Option<String>, PathBuf) {
+pub fn extract_locale(
+    file: &PathBuf,
+    languages: &Vec<String>,
+) -> (Option<String>, PathBuf) {
     //let project = self.updater.project();
     //let languages = project.locales.languages().alternate();
     //languages.foo();

@@ -5,17 +5,9 @@ use std::path::PathBuf;
 use config::{hook::HookConfig, FileType};
 
 use crate::{
-    renderer::RenderOptions,
     updater::Updater,
-    utils::{
-        canonical,
-        extract_locale,
-        filter_ignores,
-        relative_to,
-    },
-    Error,
-    Project,
-    Result
+    utils::{canonical, filter_ignores, relative_to},
+    Error, Project, Result,
 };
 
 /*
@@ -35,26 +27,26 @@ pub enum Action {
 #[derive(Debug)]
 pub struct Rule {
     // Paths that are ignored but we track for debugging
-    ignores: HashSet<PathBuf>,
+    pub(crate) ignores: HashSet<PathBuf>,
     // Paths that are in the assets folders, currently we ignore these.
-    assets: HashSet<PathBuf>,
+    pub(crate) assets: HashSet<PathBuf>,
     // Hooks are a special case so we store them separately
-    hooks: HashSet<(HookConfig, PathBuf)>,
+    pub(crate) hooks: HashSet<(HookConfig, PathBuf)>,
     // Layouts need special handling so that referenced pages
     // are also rendered
-    layouts: HashSet<PathBuf>,
+    pub(crate) layouts: HashSet<PathBuf>,
     // Partials should be re-compiled but currently we don't
     // know which files are dependent upon partials
-    partials: HashSet<PathBuf>,
+    pub(crate) partials: HashSet<PathBuf>,
     // Templates can be interspersed in the site folder but
     // must come after the tests for layout and partials and
     // behave like partials in that they are re-compiled but
     // we don't know which files reference each template
-    templates: HashSet<PathBuf>,
+    pub(crate) templates: HashSet<PathBuf>,
     // List of actions corresponding to the files that changed
-    actions: Vec<Action>,
+    pub(crate) actions: Vec<Action>,
     // List of paths that do not exist anymore
-    deletions: HashSet<PathBuf>,
+    pub(crate) deletions: HashSet<PathBuf>,
 }
 
 impl Rule {
@@ -78,7 +70,9 @@ pub struct Invalidator<'a> {
 
 impl<'a> Invalidator<'a> {
     pub fn new(project: &'a mut Project) -> Self {
-        Self { updater: Updater::new(project) }
+        Self {
+            updater: Updater::new(project),
+        }
     }
 
     /// Try to find a page href from an invalidation path.
@@ -89,11 +83,7 @@ impl<'a> Invalidator<'a> {
         let project = self.updater.project();
         let source = project.options.source.clone();
         if project.config.livereload().follow_edits() {
-            if let Ok(file) = relative_to(
-                path,
-                &source,
-                &source,
-            ) {
+            if let Ok(file) = relative_to(path, &source, &source) {
                 for renderer in project.renderers.iter() {
                     let collation =
                         renderer.info.context.collation.read().unwrap();
@@ -161,8 +151,7 @@ impl<'a> Invalidator<'a> {
         let layouts = canonical(project.options.get_layouts_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators =
-            canonical(project.options.get_data_sources_path());
+        let generators = canonical(project.options.get_data_sources_path());
 
         let generator_paths: Vec<PathBuf> = project
             .datasource
@@ -242,79 +231,6 @@ impl<'a> Invalidator<'a> {
     }
 
     pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
-
-        let source = self.updater.project().options.source.clone();
-
-        // Remove deleted files.
-        if !rule.deletions.is_empty() {
-            self.updater.remove(&rule.deletions)?;
-        }
-
-        let project = self.updater.project();
-
-        for (hook, file) in &rule.hooks {
-            project.run_hook(hook, Some(file)).await?;
-        }
-
-        if !rule.templates.is_empty() {
-            project.update_templates(&rule.templates).await?;
-        }
-
-        if !rule.partials.is_empty() {
-            project.update_partials(&rule.partials).await?;
-        }
-
-        if !rule.layouts.is_empty() {
-            project.update_layouts(&rule.layouts).await?;
-        }
-
-        for action in &rule.actions {
-            match action {
-                Action::Page(path) | Action::File(path) => {
-                    // Make the path relative to the project source
-                    // as the notify crate gives us an absolute path
-                    let file = relative_to(
-                        path,
-                        &source,
-                        &source,
-                    )?;
-
-                    self.one(&file).await?;
-                }
-                _ => {
-                    return Err(Error::InvalidationActionNotHandled);
-                }
-            }
-        }
-
-        Ok(())
+        Ok(self.updater.invalidate(rule).await?)
     }
-
-    /// Render a single file using the appropriate locale-specific renderer.
-    async fn one(&mut self, file: &PathBuf) -> Result<()> {
-        let project = self.updater.project();
-        // Raw source files might be localized variants
-        // we need to strip the locale identifier from the
-        // file path before compiling
-        let (lang, file) = extract_locale(&file, project.locales.languages().alternate());
-        let lang: &str = if let Some(ref lang) = lang {
-            lang.as_str()
-        } else {
-            &project.config.lang
-        };
-
-        let options = RenderOptions::new_file_lang(
-            file,
-            lang.to_string(),
-            true,
-            false,
-            false,
-        );
-
-        project.render(options).await?;
-
-        Ok(())
-    }
-
 }
-
