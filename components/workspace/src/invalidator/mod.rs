@@ -14,18 +14,16 @@ use self::{
     utils::{canonical, filter_ignores, relative_to},
 };
 
-/*
- *  Invalidation rules.
- *
- *  - Page: rebuild the page.
- *  - File: copy the file to build.
- *  - CollectionsDocument: TODO.
- */
+/// Determine the kind of a change file to distinguish 
+/// between pages and other sorts or resources.
+///
+/// This is useful to determine if we should instruct 
+/// clients to navigate to a page when `follow-edits` is 
+/// enabled.
 #[derive(Debug)]
-pub enum Action {
+pub enum Kind {
     Page(PathBuf),
     File(PathBuf),
-    CollectionsDocument(PathBuf),
 }
 
 #[derive(Debug)]
@@ -48,9 +46,11 @@ pub struct Rule {
     // we don't know which files reference each template
     pub(crate) templates: HashSet<PathBuf>,
     // List of actions corresponding to the files that changed
-    pub(crate) actions: Vec<Action>,
+    pub(crate) actions: Vec<Kind>,
     // List of paths that do not exist anymore
     pub(crate) deletions: HashSet<PathBuf>,
+    // List of paths in a collection data source
+    pub(crate) collections: HashSet<PathBuf>,
 }
 
 impl Rule {
@@ -60,7 +60,7 @@ impl Rule {
     /// locate a page href (follow-edits).
     pub fn single_page(&self) -> Option<&PathBuf> {
         if self.actions.len() == 1 {
-            if let Action::Page(path) = self.actions.get(0).unwrap() {
+            if let Kind::Page(path) = self.actions.get(0).unwrap() {
                 return Some(path);
             }
         }
@@ -126,6 +126,7 @@ impl<'a> Invalidator<'a> {
             partials: HashSet::new(),
             templates: HashSet::new(),
             deletions: deletions.into_iter().collect::<HashSet<_>>(),
+            collections: HashSet::new(),
         };
 
         let ext = project.config.engine().extension().to_string();
@@ -210,8 +211,7 @@ impl<'a> Invalidator<'a> {
                             let documents =
                                 collections::get_datasource_documents_path(p);
                             if path.starts_with(documents) {
-                                rule.actions
-                                    .push(Action::CollectionsDocument(path));
+                                rule.collections.insert(path);
                                 break;
                             }
                         }
@@ -219,10 +219,10 @@ impl<'a> Invalidator<'a> {
                         let file_type = project.options.get_type(&path);
                         match file_type {
                             FileType::Unknown => {
-                                rule.actions.push(Action::File(path));
+                                rule.actions.push(Kind::File(path));
                             }
                             _ => {
-                                rule.actions.push(Action::Page(path));
+                                rule.actions.push(Kind::Page(path));
                             }
                         }
                     }

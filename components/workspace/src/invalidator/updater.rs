@@ -9,10 +9,12 @@ use config::{hook::HookConfig};
 
 use crate::{
     project::Project,
-    renderer::RenderOptions, Error, Result};
+    renderer::RenderOptions,
+    Result,
+};
 
 use super::{
-    Action,
+    Kind,
     Rule,
     utils::{extract_locale, relative_to}, 
 };
@@ -35,7 +37,8 @@ impl<'a> Updater<'a> {
         let cwd = std::env::current_dir()?;
 
         for path in paths {
-            // NOTE: cannot use relative_to() when files have been deleted!
+            // NOTE: cannot use relative_to() when files have been deleted
+            // NOTE: because is call canonicalize() which can fail
             let relative = if project_path.is_absolute() {
                 path.strip_prefix(&project_path).unwrap_or(path).to_path_buf()
             } else {
@@ -210,16 +213,13 @@ impl<'a> Updater<'a> {
 
         for action in &rule.actions {
             match action {
-                Action::Page(path) | Action::File(path) => {
+                Kind::Page(path) | Kind::File(path) => {
                     // Make the path relative to the project source
                     // as the notify crate gives us an absolute path
                     let source = self.project.options.source.clone();
                     let file = relative_to(path, &source, &source)?;
 
                     self.one(&file).await?;
-                }
-                _ => {
-                    return Err(Error::InvalidationActionNotHandled);
                 }
             }
         }
