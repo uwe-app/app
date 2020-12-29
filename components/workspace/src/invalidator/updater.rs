@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     Kind,
-    Rule,
+    Invalidation,
     utils::{extract_locale, relative_to}, 
 };
 
@@ -189,7 +189,7 @@ impl<'a> Updater<'a> {
         Ok(())
     }
 
-    pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
+    pub async fn invalidate(&mut self, rule: &Invalidation) -> Result<()> {
         // Remove deleted files.
         if !rule.deletions.is_empty() {
             self.update_deletions(&rule.deletions)?;

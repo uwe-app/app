@@ -27,7 +27,7 @@ pub enum Kind {
 }
 
 #[derive(Debug)]
-pub struct Rule {
+pub struct Invalidation {
     // Paths that are ignored but we track for debugging
     pub(crate) ignores: HashSet<PathBuf>,
     // Paths that are in the assets folders, currently we ignore these.
@@ -53,7 +53,7 @@ pub struct Rule {
     pub(crate) collections: HashSet<PathBuf>,
 }
 
-impl Rule {
+impl Invalidation {
     /// Determine if this invalidation looks like a single page.
     ///
     /// Used to determine whether live reload should attempt to
@@ -106,7 +106,7 @@ impl<'a> Invalidator<'a> {
         None
     }
 
-    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Rule> {
+    pub fn get_invalidation(&mut self, paths: Vec<PathBuf>) -> Result<Invalidation> {
         let project = self.updater.project();
 
         // Collect deletions before filtering ignores
@@ -117,7 +117,7 @@ impl<'a> Invalidator<'a> {
 
         let paths = filter_ignores(paths);
 
-        let mut rule = Rule {
+        let mut rule = Invalidation {
             ignores: HashSet::new(),
             assets: HashSet::new(),
             hooks: HashSet::new(),
@@ -234,7 +234,7 @@ impl<'a> Invalidator<'a> {
         Ok(rule)
     }
 
-    pub async fn invalidate(&mut self, rule: &Rule) -> Result<()> {
+    pub async fn invalidate(&mut self, rule: &Invalidation) -> Result<()> {
         Ok(self.updater.invalidate(rule).await?)
     }
 }
