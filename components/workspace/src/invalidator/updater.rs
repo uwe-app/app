@@ -156,9 +156,17 @@ impl Updater {
         for (name, partial) in partials {
             if partial.exists() {
                 info!("Render partial {}", &name);
-                for parser in self.project.parsers_mut().iter_mut() {
+                for (parser, renderer) in self.project.iter_mut() {
                     // Re-compile the template
                     parser.add(name.to_string(), partial)?;
+
+                    let collation =
+                        &*renderer.info.context.collation.read().unwrap();
+                    let fallback = collation.fallback.read().unwrap();
+
+                    // Update the JIT buffer with all pages!
+                    let all_pages = fallback.link_map();
+                    self.buffer.extend(all_pages);
                 }
             } else {
                 info!("Delete partial {}", &name);

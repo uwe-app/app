@@ -92,6 +92,7 @@ impl Invalidator {
                 let mut rt = tokio::runtime::Runtime::new().unwrap();
                 rt.block_on(async move {
                     while let Some(path) = render.recv().await {
+                        println!("Got web server render request: {}", &path);
                         let updater = self.updater_mut();
                         let has_page_path = updater.has_page_path(&path);
                         if has_page_path {

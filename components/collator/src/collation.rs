@@ -511,6 +511,16 @@ impl CollateInfo {
         self.links.get_link_href(key)
     }
 
+    /// Get a clone of the link map reverse lookup.
+    pub fn link_map(&self) -> HashMap<String, PathBuf> {
+        self.links.reverse
+            .iter()
+            .map(|(k, v)| {
+                (k.to_string(), v.to_path_buf()) 
+            })
+            .collect()
+    }
+
     pub fn normalize<S: AsRef<str>>(&self, s: S) -> String {
         self.links.normalize(s)
     }
