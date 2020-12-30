@@ -1,10 +1,11 @@
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use log::{debug, error, info};
 
 use tokio::sync::broadcast;
-use tokio::sync::oneshot;
 use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 use url::Url;
 use warp::ws::Message;
 
@@ -107,11 +108,14 @@ pub async fn start<P: AsRef<Path>>(
         // Get the source directory to configure the watcher
         let source = project.options.source.clone();
 
-        watchers.push((LiveHost {
-            source,
-            project,
-            websocket: ws_tx,
-        }, render_rx));
+        watchers.push((
+            LiveHost {
+                source,
+                project,
+                websocket: ws_tx,
+            },
+            render_rx,
+        ));
 
         Ok::<(), Error>(())
     })?;
@@ -167,8 +171,11 @@ pub async fn start<P: AsRef<Path>>(
     Ok(())
 }
 
-fn watch(watchers: Vec<(LiveHost, mpsc::Receiver<String>)>, error_cb: ErrorCallback) {
-    for (mut w, mut render) in watchers {
+fn watch(
+    watchers: Vec<(LiveHost, mpsc::Receiver<String>)>,
+    error_cb: ErrorCallback,
+) {
+    for (w, mut render) in watchers {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
@@ -188,12 +195,21 @@ fn watch(watchers: Vec<(LiveHost, mpsc::Receiver<String>)>, error_cb: ErrorCallb
                     .expect("Failed to start watcher");
                 info!("Watch {}", source.display());
 
-                let mut invalidator = Invalidator::new(&mut w.project);
+                let invalidator =
+                    Arc::new(Mutex::new(Invalidator::new(w.project)));
+                let render_invalidator = Arc::clone(&invalidator);
                 let ws_tx = &w.websocket;
 
+                // Handle JIT dynamic page renders.
                 tokio::task::spawn(async move {
-                    while let Some(res) = render.recv().await {
-                        println!("got = {}", res);
+                    while let Some(path) = render.recv().await {
+                        let mut live_invalidator =
+                            render_invalidator.lock().unwrap();
+                        let updater = live_invalidator.updater_mut();
+                        let has_page_path = updater.has_page_path(&path);
+                        if has_page_path {
+                            info!("jit {}", path);
+                        }
                     }
                 });
 
@@ -228,24 +244,31 @@ fn watch(watchers: Vec<(LiveHost, mpsc::Receiver<String>)>, error_cb: ErrorCallb
 
                         let _ = ws_tx.send(Message::text(txt));
 
-                        match invalidator.get_invalidation(paths) {
+                        let mut live_invalidator = invalidator.lock().unwrap();
+
+                        match live_invalidator.get_invalidation(paths) {
                             Ok(invalidation) => {
-                                // Try to determine a page href to use when following edits.
+                                // Try to determine a page href to use 
+                                // when following edits.
                                 let href: Option<String> = if let Some(path) =
                                     invalidation.single_page()
                                 {
-                                    invalidator.find_page_href(path)
+                                    live_invalidator.find_page_href(path)
                                 } else {
                                     None
                                 };
 
-                                match invalidator.invalidate(&invalidation).await {
+                                match live_invalidator
+                                    .updater_mut()
+                                    .invalidate(&invalidation)
+                                    .await
+                                {
                                     // Notify of build completed
                                     Ok(_) => {
                                         let msg =
                                             livereload::messages::reload(href);
-                                        let txt =
-                                            serde_json::to_string(&msg).unwrap();
+                                        let txt = serde_json::to_string(&msg)
+                                            .unwrap();
                                         let _ = ws_tx.send(Message::text(txt));
                                         //println!("Got result {:?}", res);
                                     }
@@ -257,8 +280,8 @@ fn watch(watchers: Vec<(LiveHost, mpsc::Receiver<String>)>, error_cb: ErrorCallb
                                             e.to_string(),
                                             true,
                                         );
-                                        let txt =
-                                            serde_json::to_string(&msg).unwrap();
+                                        let txt = serde_json::to_string(&msg)
+                                            .unwrap();
                                         let _ = ws_tx.send(Message::text(txt));
                                     }
                                 }

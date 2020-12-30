@@ -1,32 +1,44 @@
-use std::path::PathBuf;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
+use std::path::PathBuf;
 
 use log::{info, warn};
 
-use config::{Config, RuntimeOptions, hook::HookConfig};
-use collections::{DataSourceMap};
+use collections::DataSourceMap;
+use config::{hook::HookConfig, Config, RuntimeOptions};
 
 use crate::{
     project::Project,
-    renderer::{Renderer, RenderOptions},
+    renderer::{RenderOptions, Renderer},
     Result,
 };
 
 use super::{
-    Kind,
-    Invalidation,
-    utils::{extract_locale, relative_to}, 
+    utils::{extract_locale, relative_to},
+    Invalidation, Kind,
 };
 
-pub struct Updater<'a> {
-    project: &'a mut Project,
+pub struct Updater {
+    project: Project,
+
+    /// A buffer of page paths, such as `/docs/navigation/index.html` 
+    /// which map to the file system path that can be used to 
+    /// resolve the page data.
+    ///
+    /// This is used so that pages can be dynamically rendered when they 
+    /// are requested via the web server; rather than ahead-of-time 
+    /// compiled when changes happen.
+    ///
+    /// When we JIT compile a page in the buffer it is removed so it is 
+    /// only compiled once after it has been marked as changed by being 
+    /// added to this buffer.
+    buffer: HashMap<String, PathBuf>,
 }
 
-impl<'a> Updater<'a> {
-    pub fn new(project: &'a mut Project) -> Self {
-        Self {project}
+impl Updater {
+    pub fn new(project: Project) -> Self {
+        Self { project, buffer: HashMap::new() }
     }
 
     pub fn config(&self) -> &Config {
@@ -45,7 +57,15 @@ impl<'a> Updater<'a> {
         self.project.renderers()
     }
 
-    pub(crate) fn update_deletions(&mut self, paths: &HashSet<PathBuf>) -> Result<()> {
+    /// Determine if a page path is in the buffer.
+    pub fn has_page_path(&self, href: &str) -> bool {
+        self.buffer.contains_key(href) 
+    }
+
+    pub(crate) fn update_deletions(
+        &mut self,
+        paths: &HashSet<PathBuf>,
+    ) -> Result<()> {
         let project_path = self.project.config.project().to_path_buf();
         let cwd = std::env::current_dir()?;
 
@@ -53,19 +73,27 @@ impl<'a> Updater<'a> {
             // NOTE: cannot use relative_to() when files have been deleted
             // NOTE: because is call canonicalize() which can fail
             let relative = if project_path.is_absolute() {
-                path.strip_prefix(&project_path).unwrap_or(path).to_path_buf()
+                path.strip_prefix(&project_path)
+                    .unwrap_or(path)
+                    .to_path_buf()
             } else {
                 path.strip_prefix(&cwd).unwrap_or(path).to_path_buf()
             };
 
-            let (lang, path) = extract_locale(&relative, self.project.locales.languages().alternate());
+            let (lang, path) = extract_locale(
+                &relative,
+                self.project.locales.languages().alternate(),
+            );
             self.remove_file(&path, lang)?;
         }
         Ok(())
     }
 
     /// Execute hooks that have changed.
-    pub(crate) async fn update_hooks(&mut self, hooks: &HashSet<(HookConfig, PathBuf)>) -> Result<()> {
+    pub(crate) async fn update_hooks(
+        &mut self,
+        hooks: &HashSet<(HookConfig, PathBuf)>,
+    ) -> Result<()> {
         for (hook, file) in hooks {
             self.project.run_hook(hook, Some(file)).await?;
         }
@@ -153,8 +181,7 @@ impl<'a> Updater<'a> {
         for (name, layout) in layouts {
             if layout.exists() {
                 info!("Render layout {}", &name);
-                for (parser, renderer) in self.project.iter_mut()
-                {
+                for (parser, renderer) in self.project.iter_mut() {
                     // Re-compile the template
                     parser.add(name.to_string(), layout)?;
 

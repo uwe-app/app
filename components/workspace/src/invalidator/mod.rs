@@ -14,11 +14,11 @@ use self::{
     utils::{canonical, filter_ignores, relative_to},
 };
 
-/// Determine the kind of a change file to distinguish 
+/// Determine the kind of a change file to distinguish
 /// between pages and other sorts or resources.
 ///
-/// This is useful to determine if we should instruct 
-/// clients to navigate to a page when `follow-edits` is 
+/// This is useful to determine if we should instruct
+/// clients to navigate to a page when `follow-edits` is
 /// enabled.
 #[derive(Debug)]
 pub enum Kind {
@@ -68,15 +68,20 @@ impl Invalidation {
     }
 }
 
-pub struct Invalidator<'a> {
-    updater: Updater<'a>,
+pub struct Invalidator {
+    updater: Updater,
 }
 
-impl<'a> Invalidator<'a> {
-    pub fn new(project: &'a mut Project) -> Self {
+impl Invalidator {
+    pub fn new(project: Project) -> Self {
         Self {
             updater: Updater::new(project),
         }
+    }
+
+    /// Get a mutable reference to the updater.
+    pub fn updater_mut(&mut self) -> &mut Updater {
+        &mut self.updater 
     }
 
     /// Try to find a page href from an invalidation path.
@@ -87,7 +92,9 @@ impl<'a> Invalidator<'a> {
         let config = self.updater.config();
         let options = self.updater.options();
         if config.livereload().follow_edits() {
-            if let Ok(file) = relative_to(path, &options.source, &options.source) {
+            if let Ok(file) =
+                relative_to(path, &options.source, &options.source)
+            {
                 for renderer in self.updater.renderers().iter() {
                     let collation =
                         renderer.info.context.collation.read().unwrap();
@@ -106,7 +113,10 @@ impl<'a> Invalidator<'a> {
         None
     }
 
-    pub fn get_invalidation(&self, paths: Vec<PathBuf>) -> Result<Invalidation> {
+    pub fn get_invalidation(
+        &self,
+        paths: Vec<PathBuf>,
+    ) -> Result<Invalidation> {
         let config = self.updater.config();
         let options = self.updater.options();
 
@@ -159,7 +169,8 @@ impl<'a> Invalidator<'a> {
         // FIXME: this does not respect when data sources have a `from` directory configured
         let generators = canonical(options.get_data_sources_path());
 
-        let generator_paths: Vec<PathBuf> = self.updater
+        let generator_paths: Vec<PathBuf> = self
+            .updater
             .collections()
             .map
             .values()
@@ -233,9 +244,5 @@ impl<'a> Invalidator<'a> {
         }
 
         Ok(rule)
-    }
-
-    pub async fn invalidate(&mut self, rule: &Invalidation) -> Result<()> {
-        Ok(self.updater.invalidate(rule).await?)
     }
 }

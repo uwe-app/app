@@ -13,9 +13,9 @@ use warp::filters::BoxedFilter;
 use warp::http::StatusCode;
 use warp::http::Uri;
 use warp::path::FullPath;
+use warp::reject::Reject;
 use warp::ws::Message;
 use warp::{Filter, Rejection, Reply};
-use warp::reject::Reject;
 
 use serde::Serialize;
 
@@ -208,9 +208,9 @@ async fn live_render(
         } else {
             path.as_str().to_string()
         };
-        tx.send(href).await.map_err(|_| {
-            warp::reject::custom(RenderSendError) 
-        })?;
+        tx.send(href)
+            .await
+            .map_err(|_| warp::reject::custom(RenderSendError))?;
     }
     Err(warp::reject())
 }
