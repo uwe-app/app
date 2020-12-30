@@ -4,10 +4,6 @@ use std::path::PathBuf;
 
 use config::{hook::HookConfig, FileType};
 
-use tokio::sync::mpsc;
-
-use log::{info, error};
-
 mod updater;
 mod utils;
 
@@ -83,6 +79,7 @@ impl Invalidator {
         }
     }
 
+    /*
     pub fn render_channel(&mut self, mut render: mpsc::Receiver<String>) {
         // NOTE: Must use rayon::scope() here as we need access to the 
         // NOTE: updater via `&mut self` and we cannot pass by reference
@@ -110,6 +107,7 @@ impl Invalidator {
             });
         });
     }
+    */
 
     /// Get a mutable reference to the updater.
     pub fn updater_mut(&mut self) -> &mut Updater {
@@ -147,7 +145,7 @@ impl Invalidator {
 
     pub fn get_invalidation(
         &self,
-        paths: Vec<PathBuf>,
+        paths: HashSet<PathBuf>,
     ) -> Result<Invalidation> {
         let config = self.updater.config();
         let options = self.updater.options();

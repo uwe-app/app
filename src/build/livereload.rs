@@ -1,18 +1,15 @@
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::collections::HashSet;
+use std::time::SystemTime;
 
-use log::{debug, error, info};
+use log::{error, info};
 
-use tokio::sync::broadcast;
-use tokio::sync::mpsc;
-use tokio::sync::oneshot;
+use tokio::sync::{broadcast, mpsc, oneshot};
 use url::Url;
 use warp::ws::Message;
 
-use notify::DebouncedEvent::{Create, Remove, Rename, Write};
-use notify::RecursiveMode::Recursive;
-use notify::Watcher;
-use std::thread::sleep;
+use notify::{Watcher, RecommendedWatcher, RecursiveMode};
+
 use std::time::Duration;
 
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
@@ -175,47 +172,149 @@ fn watch(
     watchers: Vec<(LiveHost, mpsc::Receiver<String>)>,
     error_cb: ErrorCallback,
 ) {
-    for (w, render) in watchers {
+    for (w, mut render) in watchers {
         std::thread::spawn(move || {
             // NOTE: We want to schedule all async task on the same thread!
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                // Create a channel to receive the events.
-                let (tx, rx) = std::sync::mpsc::channel();
+                // Wrap the fs channel so we can select on the future
+                let (fs_tx, mut fs_rx) = mpsc::unbounded_channel();
 
                 let source = w.source.clone();
 
-                // Configure the watcher
-                let mut watcher = notify::watcher(tx, Duration::from_secs(1))
-                    .expect("Failed to create watcher");
+                let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| {
+                    let tx = fs_tx.clone();
+                    match res {
+                        Ok(event) => {
+                            tx.send(event).expect("Failed to send file system event");
+                        },
+                        Err(e) => error!("Watch error: {:?}", e),
+                    }
+                }).expect("Failed to create watcher");
 
-                // NOTE: must start watching in this thread otherwise
-                // NOTE: the `rx` channel will be closed prematurely
-                watcher
-                    .watch(&w.source, Recursive)
-                    .expect("Failed to start watcher");
+                // Add a path to be watched. All files and directories at that path and
+                // below will be monitored for changes.
+                watcher.watch(&w.source, RecursiveMode::Recursive)
+                    .expect("Failed to start watching");
+
                 info!("Watch {}", source.display());
 
-                let invalidator = Arc::new(Mutex::new(Invalidator::new(w.project)));
-                let render_invalidator = Arc::clone(&invalidator);
-
-                // Set up a render channel to receive events from 
-                // the web server for JIT compiling
-                /*
-                std::thread::spawn(move || {
-                    let mut live_invalidator = render_invalidator.lock().unwrap();
-                    live_invalidator.render_channel(render);
-                });
-                */
+                let mut invalidator = Invalidator::new(w.project);
 
                 let ws_tx = &w.websocket;
 
                 loop {
-                    let first_event = rx.recv().unwrap();
-                    sleep(Duration::from_millis(50));
-                    let other_events = rx.try_iter();
-                    let all_events =
-                        std::iter::once(first_event).chain(other_events);
+                    tokio::select! {
+                        val = render.recv() => {
+                            if let Some(path) = val {
+                                println!("Got web server render request: {}", &path);
+                                let updater = invalidator.updater_mut();
+                                let has_page_path = updater.has_page_path(&path);
+                                if has_page_path {
+                                    info!("jit {}", &path);
+                                    match updater.render(&path).await {
+                                        Ok(_) => {},
+                                        Err(e) => {
+                                            // TODO: send error back to the server for a 500 response?
+                                            error!("{}", e);
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                        val = fs_rx.recv() => {
+                            if let Some(event) = val {
+                                // Buffer because multiple events for the same
+                                // file can fire in rapid succesion
+                                let mut event_buffer = vec![event];
+                                let start = SystemTime::now();
+                                while SystemTime::now().duration_since(start).unwrap() < Duration::from_millis(50) {
+                                    if let Ok(event) = fs_rx.try_recv() {
+                                        event_buffer.push(event); 
+                                    }
+                                }
+
+                                let paths = event_buffer
+                                    .iter()
+                                    .map(|event| {
+                                        event.paths.clone()
+                                    })
+                                    .flatten()
+                                    .collect::<HashSet<_>>();
+
+                                if !paths.is_empty() {
+                                    info!(
+                                        "Changed({}) in {}",
+                                        paths.len(),
+                                        source.display()
+                                    );
+
+                                    let msg = livereload::messages::start();
+                                    let txt = serde_json::to_string(&msg).unwrap();
+
+                                    let _ = ws_tx.send(Message::text(txt));
+
+                                    match invalidator.get_invalidation(paths) {
+                                        Ok(invalidation) => {
+
+                                            // Try to determine a page href to use 
+                                            // when following edits.
+                                            let href: Option<String> = if let Some(path) =
+                                                invalidation.single_page()
+                                            {
+                                                invalidator.find_page_href(path)
+                                            } else {
+                                                None
+                                            };
+
+                                            match invalidator
+                                                .updater_mut()
+                                                .invalidate(&invalidation)
+                                                .await
+                                            {
+                                                // Notify of build completed
+                                                Ok(_) => {
+                                                    let msg =
+                                                        livereload::messages::reload(href);
+                                                    let txt = serde_json::to_string(&msg)
+                                                        .unwrap();
+                                                    let _ = ws_tx.send(Message::text(txt));
+                                                    //println!("Got result {:?}", res);
+                                                }
+                                                // Send errors to the websocket
+                                                Err(e) => {
+                                                    error!("{}", e);
+
+                                                    let msg = livereload::messages::notify(
+                                                        e.to_string(),
+                                                        true,
+                                                    );
+                                                    let txt = serde_json::to_string(&msg)
+                                                        .unwrap();
+                                                    let _ = ws_tx.send(Message::text(txt));
+                                                }
+                                            }
+                                        }
+                                        Err(e) => return error_cb(Error::from(e)),
+                                    }
+
+
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+                //loop {
+                    //let first_event = rx.recv().unwrap();
+                    //sleep(Duration::from_millis(50));
+                    //let other_events = rx.try_iter();
+                    //let all_events =
+                        //std::iter::once(first_event).chain(other_events);
+
+                    /*
                     let paths = all_events
                         .filter_map(|event| {
                             debug!("Received filesystem event: {:?}", event);
@@ -285,8 +384,10 @@ fn watch(
                             }
                             Err(e) => return error_cb(Error::from(e)),
                         }
+                
                     }
-                }
+                */
+                //}
             });
         });
     }
