@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use log::{error, info};
 
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::sync::{broadcast, mpsc::{self, UnboundedSender, UnboundedReceiver}, oneshot};
 use url::Url;
 use warp::ws::Message;
 
@@ -21,7 +21,10 @@ use workspace::{Invalidator, Project};
 
 use crate::{Error, ErrorCallback};
 
+type RenderResponse = Option<Box<dyn std::error::Error + Send>>;
+
 struct LiveHost {
+    name: String,
     source: PathBuf,
     project: Project,
     websocket: broadcast::Sender<Message>,
@@ -52,7 +55,7 @@ pub async fn start<P: AsRef<Path>>(
     // otherwise we can just run using the standard `localhost`.
     let multiple = result.projects.len() > 1;
 
-    let mut watchers: Vec<(LiveHost, mpsc::Receiver<String>)> = Vec::new();
+    let mut watchers: Vec<(LiveHost, UnboundedReceiver<String>)> = Vec::new();
 
     // Collect virual host configurations
     let mut hosts: Vec<HostConfig> = Vec::new();
@@ -86,12 +89,10 @@ pub async fn start<P: AsRef<Path>>(
         let reload_tx = ws_tx.clone();
 
         // Create a channel to receive lazy render requests
-        let (render_tx, render_rx) = mpsc::channel::<String>(64);
+        let (request_tx, request_rx) = mpsc::unbounded_channel::<String>();
 
-        let host_channel = HostChannel {
-            reload: Some(reload_tx),
-            render: Some(render_tx),
-        };
+        let host_channel = HostChannel::new(reload_tx, request_tx);
+        let name = host.name.clone();
 
         channels
             .hosts
@@ -107,11 +108,12 @@ pub async fn start<P: AsRef<Path>>(
 
         watchers.push((
             LiveHost {
+                name,
                 source,
                 project,
                 websocket: ws_tx,
             },
-            render_rx,
+            request_rx,
         ));
 
         Ok::<(), Error>(())
@@ -169,10 +171,12 @@ pub async fn start<P: AsRef<Path>>(
 }
 
 fn watch(
-    watchers: Vec<(LiveHost, mpsc::Receiver<String>)>,
+    watchers: Vec<(LiveHost, mpsc::UnboundedReceiver<String>)>,
     error_cb: ErrorCallback,
+    //channels: &Channels,
 ) {
-    for (w, mut render) in watchers {
+    for (w, mut request) in watchers {
+
         std::thread::spawn(move || {
             // NOTE: We want to schedule all async task on the same thread!
             let mut rt = tokio::runtime::Runtime::new().unwrap();
@@ -180,6 +184,7 @@ fn watch(
                 // Wrap the fs channel so we can select on the future
                 let (fs_tx, mut fs_rx) = mpsc::unbounded_channel();
 
+                let name = w.name.clone();
                 let source = w.source.clone();
 
                 let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| {
@@ -205,18 +210,21 @@ fn watch(
 
                 loop {
                     tokio::select! {
-                        val = render.recv() => {
+                        val = request.recv() => {
+                            //let reponse_tx = channels.render_responses.get(&w.name).clone().unwrap();
+
                             if let Some(path) = val {
                                 println!("Got web server render request: {}", &path);
                                 let updater = invalidator.updater_mut();
                                 let has_page_path = updater.has_page_path(&path);
                                 if has_page_path {
-                                    info!("jit {}", &path);
+                                    info!("JIT {}", &path);
                                     match updater.render(&path).await {
                                         Ok(_) => {},
                                         Err(e) => {
                                             // TODO: send error back to the server for a 500 response?
                                             error!("{}", e);
+                                            //response.
                                         }
                                     }
                                 }

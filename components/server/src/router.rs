@@ -2,6 +2,7 @@ use std::convert::Infallible;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
@@ -122,14 +123,21 @@ fn get_host_filter(
         &host_port
     };
 
-    let livereload = get_live_reload(opts, host, channels).unwrap();
+    let (response_tx, response_rx) = mpsc::unbounded_channel::<super::ResponseValue>();
 
-    let render_tx = channels.get_host_render(&host.name);
-    let sender = warp::any().map(move || render_tx.clone());
+    let response_arc = Arc::new(response_rx);
+
+    let livereload = get_live_reload(opts, host, channels).unwrap();
+    let request_tx = channels.get_host_render_request(&host.name);
+    let request = warp::any().map(move || request_tx.clone());
+    let response = warp::any().map(move || Arc::clone(&response_arc));
+
+    channels.render_responses.insert(host.name.clone(), response_tx);
 
     let live_renderer = warp::any()
         .and(warp::path::full())
-        .and(sender)
+        .and(request)
+        .and(response)
         .and_then(live_render);
 
     // NOTE: We would like to conditionally add the livereload route
@@ -200,7 +208,9 @@ fn get_live_reload(
 
 async fn live_render(
     path: FullPath,
-    mut tx: mpsc::Sender<String>,
+    tx: mpsc::UnboundedSender<String>,
+    rx: Arc<mpsc::UnboundedReceiver<super::ResponseValue>>,
+    //rx: Option<&mpsc::UnboundedReceiver<Option<Box<dyn std::error::Error + Send>>>>
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {
         let href = if path.as_str().ends_with("/") {
@@ -208,9 +218,11 @@ async fn live_render(
         } else {
             path.as_str().to_string()
         };
-        tx.send(href)
-            .await
+        println!("Before sending live render path!");
+        let _ = tx.send(href)
             .map_err(|_| warp::reject::custom(RenderSendError))?;
+
+        println!("After sending live render path!");
     }
     Err(warp::reject())
 }
