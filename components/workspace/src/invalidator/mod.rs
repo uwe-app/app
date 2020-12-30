@@ -81,7 +81,7 @@ impl Invalidator {
 
     /// Get a mutable reference to the updater.
     pub fn updater_mut(&mut self) -> &mut Updater {
-        &mut self.updater 
+        &mut self.updater
     }
 
     /// Try to find a page href from an invalidation path.

@@ -207,19 +207,7 @@ async fn run(cmd: Command) -> Result<()> {
             };
 
             let now = SystemTime::now();
-
-            // WARN: Hack for live reload lifetimes!
-            // FIXME: use once_cell for the static lifetime!
-            let build_args: &'static mut ProfileSettings =
-                Box::leak(Box::new(build_args));
-
-            //println!("Compiling with {:?}", &project);
-
-            let error_cb = |e| {
-                let _ = fatal(e);
-            };
-
-            match uwe::build::compile(&project, build_args, error_cb).await {
+            match uwe::build::compile(&project, build_args).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);

@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use tokio::sync::{broadcast, mpsc::{self, UnboundedSender, UnboundedReceiver}, oneshot};
+use tokio::sync::{
+    broadcast,
+    mpsc::{self, UnboundedSender},
+    oneshot,
+};
 use warp::ws::Message;
 
 use config::server::{ConnectionInfo, ServerConfig};
@@ -27,18 +31,32 @@ pub enum Error {
     #[error("Failed to get user id when dropping privileges (getuid)")]
     DropPrivilegeGetUserId,
 
+    #[error("No virtual hosts for live reload")]
+    NoLiveHosts,
+
     #[error(transparent)]
-    Config(#[from] config::Error),
+    Io(#[from] std::io::Error),
 
     #[error(transparent)]
     Warp(#[from] warp::Error),
+
+    #[error(transparent)]
+    Notify(#[from] notify::Error),
 
     #[error(transparent)]
     TrySend(#[from] tokio::sync::mpsc::error::TrySendError<ConnectionInfo>),
 
     #[error(transparent)]
     SendError(#[from] tokio::sync::mpsc::error::SendError<String>),
+
+    #[error(transparent)]
+    Config(#[from] config::Error),
+
+    #[error(transparent)]
+    Workspace(#[from] workspace::Error),
 }
+
+pub type ErrorCallback = fn(Error);
 
 type WebsocketSender = broadcast::Sender<Message>;
 type BindSender = oneshot::Sender<ConnectionInfo>;
@@ -50,8 +68,10 @@ mod drop_privileges;
 mod launch;
 pub mod redirect;
 mod router;
+mod watch;
 
 pub use launch::*;
+pub use watch::watch;
 
 /// Encapsulates the communication channels for a virtual host.
 #[derive(Debug)]
@@ -71,12 +91,12 @@ impl HostChannel {
             reload,
             render_request,
             //render_response: mpsc::unbounded_channel::<ResponseValue>(),
-        } 
+        }
     }
 
     /*
     pub fn get_render_response_tx(&self) -> &UnboundedSender<ResponseValue> {
-        &self.render_response.0 
+        &self.render_response.0
     }
 
     pub fn get_render_response_rx(&mut self) -> &mut UnboundedReceiver<ResponseValue> {
@@ -100,10 +120,6 @@ impl Channels {
             hosts: HashMap::new(),
             render_responses: HashMap::new(),
         }
-    }
-
-    pub fn find(&mut self, name: &str) -> Option<&mut HostChannel> {
-        self.hosts.get_mut(name)
     }
 
     pub fn get_host_reload(&self, name: &str) -> WebsocketSender {

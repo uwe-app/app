@@ -22,21 +22,21 @@ use super::{
 pub struct Updater {
     project: Project,
 
-    /// A buffer of page paths, such as `/docs/navigation/index.html` 
-    /// which map to the file system path that can be used to 
+    /// A buffer of page paths, such as `/docs/navigation/index.html`
+    /// which map to the file system path that can be used to
     /// resolve the page data.
     ///
-    /// This is used so that pages can be dynamically rendered when they 
-    /// are requested via the web server; rather than ahead-of-time 
+    /// This is used so that pages can be dynamically rendered when they
+    /// are requested via the web server; rather than ahead-of-time
     /// compiled when changes happen.
     ///
-    /// When we JIT compile a page in the buffer it is removed so it is 
-    /// only compiled once after it has been marked as changed by being 
+    /// When we JIT compile a page in the buffer it is removed so it is
+    /// only compiled once after it has been marked as changed by being
     /// added to this buffer.
     ///
-    /// Paths are stored as they are received; when paths come from 
-    /// file system notifications they are canonical. Before finding 
-    /// a page in the collation use `relative_to()` to go back to a 
+    /// Paths are stored as they are received; when paths come from
+    /// file system notifications they are canonical. Before finding
+    /// a page in the collation use `relative_to()` to go back to a
     /// path that can resolve a page in the collation.
     ///
     buffer: HashMap<String, PathBuf>,
@@ -44,7 +44,10 @@ pub struct Updater {
 
 impl Updater {
     pub fn new(project: Project) -> Self {
-        Self { project, buffer: HashMap::new() }
+        Self {
+            project,
+            buffer: HashMap::new(),
+        }
     }
 
     pub fn config(&self) -> &Config {
@@ -74,7 +77,7 @@ impl Updater {
             self.one(&file).await?;
         }
         Ok(())
-    } 
+    }
 
     pub(crate) fn update_deletions(
         &mut self,

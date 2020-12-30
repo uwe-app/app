@@ -123,7 +123,8 @@ fn get_host_filter(
         &host_port
     };
 
-    let (response_tx, response_rx) = mpsc::unbounded_channel::<super::ResponseValue>();
+    let (response_tx, response_rx) =
+        mpsc::unbounded_channel::<super::ResponseValue>();
 
     let response_arc = Arc::new(response_rx);
 
@@ -132,7 +133,9 @@ fn get_host_filter(
     let request = warp::any().map(move || request_tx.clone());
     let response = warp::any().map(move || Arc::clone(&response_arc));
 
-    channels.render_responses.insert(host.name.clone(), response_tx);
+    channels
+        .render_responses
+        .insert(host.name.clone(), response_tx);
 
     let live_renderer = warp::any()
         .and(warp::path::full())
@@ -209,7 +212,7 @@ fn get_live_reload(
 async fn live_render(
     path: FullPath,
     tx: mpsc::UnboundedSender<String>,
-    rx: Arc<mpsc::UnboundedReceiver<super::ResponseValue>>,
+    _rx: Arc<mpsc::UnboundedReceiver<super::ResponseValue>>,
     //rx: Option<&mpsc::UnboundedReceiver<Option<Box<dyn std::error::Error + Send>>>>
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {
@@ -219,7 +222,8 @@ async fn live_render(
             path.as_str().to_string()
         };
         println!("Before sending live render path!");
-        let _ = tx.send(href)
+        let _ = tx
+            .send(href)
             .map_err(|_| warp::reject::custom(RenderSendError))?;
 
         println!("After sending live render path!");

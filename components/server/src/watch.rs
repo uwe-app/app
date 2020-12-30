@@ -1,27 +1,33 @@
-use std::path::{Path, PathBuf};
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::time::SystemTime;
 
 use log::{error, info};
 
-use tokio::sync::{broadcast, mpsc::{self, UnboundedSender, UnboundedReceiver}, oneshot};
+use tokio::sync::{
+    broadcast,
+    mpsc::{self, UnboundedReceiver},
+    oneshot,
+};
 use url::Url;
 use warp::ws::Message;
 
-use notify::{Watcher, RecommendedWatcher, RecursiveMode};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
 use std::time::Duration;
 
-use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
-use config::ProfileSettings;
+use config::server::{
+    ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
+};
+//use config::ProfileSettings;
 
-use server::{Channels, HostChannel};
+use super::{Channels, HostChannel};
 
-use workspace::{Invalidator, Project};
+use workspace::{CompileResult, Invalidator, Project};
 
 use crate::{Error, ErrorCallback};
 
-type RenderResponse = Option<Box<dyn std::error::Error + Send>>;
+//type RenderResponse = Option<Box<dyn std::error::Error + Send>>;
 
 struct LiveHost {
     name: String,
@@ -30,21 +36,13 @@ struct LiveHost {
     websocket: broadcast::Sender<Message>,
 }
 
-pub async fn start<P: AsRef<Path>>(
-    project: P,
-    args: &'static mut ProfileSettings,
+pub async fn watch(
+    port: u16,
+    tls: Option<TlsConfig>,
+    launch: Option<String>,
+    result: CompileResult,
     error_cb: ErrorCallback,
 ) -> Result<(), Error> {
-    // Prepare the server settings
-    let port = args.get_port().clone();
-    if port == 0 {
-        return Err(Error::NoLiveEphemeralPort);
-    }
-    let tls = args.tls.clone();
-
-    // Compile the project
-    let result = workspace::compile(project, args).await?;
-
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
@@ -136,7 +134,7 @@ pub async fn start<P: AsRef<Path>>(
             let info = bind_rx.await.unwrap();
             let mut url = info.to_url();
 
-            let path = if let Some(ref path) = args.launch {
+            let path = if let Some(ref path) = launch {
                 // If we get an absolute URL just use the path
                 let url_path = if let Ok(url) = path.parse::<Url>() {
                     url.path().to_string()
@@ -159,24 +157,26 @@ pub async fn start<P: AsRef<Path>>(
         });
     });
 
-    watch(watchers, error_cb);
+    // Spawn the file system watchers
+    spawn_monitor(watchers, error_cb);
 
     // Convert to &'static reference
-    let opts = server::configure(opts);
+    let opts = super::configure(opts);
 
     // Start the webserver
-    server::start(opts, &mut channels).await?;
+    //super::start(opts, &mut channels).await?;
+
+    super::router::serve(opts, &mut channels).await?;
 
     Ok(())
 }
 
-fn watch(
+fn spawn_monitor(
     watchers: Vec<(LiveHost, mpsc::UnboundedReceiver<String>)>,
     error_cb: ErrorCallback,
     //channels: &Channels,
 ) {
     for (w, mut request) in watchers {
-
         std::thread::spawn(move || {
             // NOTE: We want to schedule all async task on the same thread!
             let mut rt = tokio::runtime::Runtime::new().unwrap();
@@ -202,7 +202,7 @@ fn watch(
                 watcher.watch(&w.source, RecursiveMode::Recursive)
                     .expect("Failed to start watching");
 
-                info!("Watch {}", source.display());
+                info!("Watch {} in {}", name, source.display());
 
                 let mut invalidator = Invalidator::new(w.project);
 
@@ -239,7 +239,7 @@ fn watch(
                                 let start = SystemTime::now();
                                 while SystemTime::now().duration_since(start).unwrap() < Duration::from_millis(50) {
                                     if let Ok(event) = fs_rx.try_recv() {
-                                        event_buffer.push(event); 
+                                        event_buffer.push(event);
                                     }
                                 }
 

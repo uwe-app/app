@@ -43,5 +43,7 @@ pub async fn start(
     options: &'static ServerConfig,
     channels: &mut Channels,
 ) -> Result<(), Error> {
+    println!("START CALLED IN LAUNCH MODULE");
+
     Ok(router::serve(options, channels).await?)
 }

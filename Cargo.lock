@@ -3071,14 +3071,19 @@ dependencies = [
  "config",
  "futures-util",
  "libc",
+ "livereload",
  "log",
+ "notify",
  "once_cell",
  "open",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
+ "url",
  "utils",
  "warp",
+ "workspace",
 ]
 
 [[package]]
@@ -3910,7 +3915,6 @@ dependencies = [
  "livereload",
  "locale",
  "log",
- "notify",
  "once_cell",
  "open",
  "plugin",
@@ -3932,7 +3936,6 @@ dependencies = [
  "unic-langid",
  "url",
  "utils",
- "warp",
  "workspace",
 ]
 
