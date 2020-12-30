@@ -4,6 +4,10 @@ use std::path::PathBuf;
 
 use config::{hook::HookConfig, FileType};
 
+use tokio::sync::mpsc;
+
+use log::{info, error};
+
 mod updater;
 mod utils;
 
@@ -77,6 +81,33 @@ impl Invalidator {
         Self {
             updater: Updater::new(project),
         }
+    }
+
+    pub fn render_channel(&mut self, mut render: mpsc::Receiver<String>) {
+        // NOTE: Must use rayon::scope() here as we need access to the 
+        // NOTE: updater via `&mut self` and we cannot pass by reference
+        // NOTE: as our references would not have the `&'static` lifetime.
+        rayon::scope(|s| {
+            s.spawn(move |_t| {
+                let mut rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(async move {
+                    while let Some(path) = render.recv().await {
+                        let updater = self.updater_mut();
+                        let has_page_path = updater.has_page_path(&path);
+                        if has_page_path {
+                            info!("jit {}", &path);
+                            match updater.render(&path).await {
+                                Ok(_) => {},
+                                Err(e) => {
+                                    // TODO: send error back to the server for a 500 response?
+                                    error!("{}", e);
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        });
     }
 
     /// Get a mutable reference to the updater.

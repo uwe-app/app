@@ -33,6 +33,12 @@ pub struct Updater {
     /// When we JIT compile a page in the buffer it is removed so it is 
     /// only compiled once after it has been marked as changed by being 
     /// added to this buffer.
+    ///
+    /// Paths are stored as they are received; when paths come from 
+    /// file system notifications they are canonical. Before finding 
+    /// a page in the collation use `relative_to()` to go back to a 
+    /// path that can resolve a page in the collation.
+    ///
     buffer: HashMap<String, PathBuf>,
 }
 
@@ -57,10 +63,18 @@ impl Updater {
         self.project.renderers()
     }
 
-    /// Determine if a page path is in the buffer.
     pub fn has_page_path(&self, href: &str) -> bool {
-        self.buffer.contains_key(href) 
+        self.buffer.contains_key(href)
     }
+
+    pub async fn render(&mut self, href: &str) -> Result<()> {
+        if let Some(path) = self.buffer.remove(href) {
+            let source = &self.project.options.source;
+            let file = relative_to(path, source, source)?;
+            self.one(&file).await?;
+        }
+        Ok(())
+    } 
 
     pub(crate) fn update_deletions(
         &mut self,

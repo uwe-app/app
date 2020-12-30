@@ -18,10 +18,10 @@ pub fn extract_locale(
     (None, file.to_path_buf())
 }
 
-pub(crate) fn relative_to<P: AsRef<Path>>(
-    file: P,
-    base: P,
-    target: P,
+pub(crate) fn relative_to<F: AsRef<Path>, B: AsRef<Path>, T: AsRef<Path>>(
+    file: F,
+    base: B,
+    target: T,
 ) -> Result<PathBuf> {
     let f = file.as_ref().canonicalize()?;
     let b = base.as_ref().canonicalize()?;

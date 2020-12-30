@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
 
 use log::{debug, error, info};
 
@@ -175,7 +174,7 @@ fn watch(
     watchers: Vec<(LiveHost, mpsc::Receiver<String>)>,
     error_cb: ErrorCallback,
 ) {
-    for (w, mut render) in watchers {
+    for (w, render) in watchers {
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
@@ -195,23 +194,13 @@ fn watch(
                     .expect("Failed to start watcher");
                 info!("Watch {}", source.display());
 
-                let invalidator =
-                    Arc::new(Mutex::new(Invalidator::new(w.project)));
-                let render_invalidator = Arc::clone(&invalidator);
-                let ws_tx = &w.websocket;
+                let mut invalidator = Invalidator::new(w.project);
 
-                // Handle JIT dynamic page renders.
-                tokio::task::spawn(async move {
-                    while let Some(path) = render.recv().await {
-                        let mut live_invalidator =
-                            render_invalidator.lock().unwrap();
-                        let updater = live_invalidator.updater_mut();
-                        let has_page_path = updater.has_page_path(&path);
-                        if has_page_path {
-                            info!("jit {}", path);
-                        }
-                    }
-                });
+                // Set up a render channel to receive events from 
+                // the web server for JIT compiling
+                invalidator.render_channel(render);
+
+                let ws_tx = &w.websocket;
 
                 loop {
                     let first_event = rx.recv().unwrap();
@@ -244,21 +233,19 @@ fn watch(
 
                         let _ = ws_tx.send(Message::text(txt));
 
-                        let mut live_invalidator = invalidator.lock().unwrap();
-
-                        match live_invalidator.get_invalidation(paths) {
+                        match invalidator.get_invalidation(paths) {
                             Ok(invalidation) => {
                                 // Try to determine a page href to use 
                                 // when following edits.
                                 let href: Option<String> = if let Some(path) =
                                     invalidation.single_page()
                                 {
-                                    live_invalidator.find_page_href(path)
+                                    invalidator.find_page_href(path)
                                 } else {
                                     None
                                 };
 
-                                match live_invalidator
+                                match invalidator
                                     .updater_mut()
                                     .invalidate(&invalidation)
                                     .await
