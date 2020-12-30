@@ -160,6 +160,12 @@ impl ServerConfig {
         get_port(self.port, &self.tls, port_type)
     }
 
+    pub fn tls_port(&self) -> u16 {
+        if let Some(ref tls) = self.tls {
+            tls.port
+        }  else { crate::PORT_SSL }
+    }
+
     pub fn get_address(
         &self,
         port_type: PortType,
