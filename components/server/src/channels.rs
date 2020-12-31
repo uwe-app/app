@@ -12,23 +12,20 @@ use warp::ws::Message;
 use config::server::ConnectionInfo;
 
 type WebsocketSender = broadcast::Sender<Message>;
-type BindSender = oneshot::Sender<ConnectionInfo>;
+//type BindSender = oneshot::Sender<ConnectionInfo>;
 type RenderRequest = mpsc::UnboundedSender<String>;
 pub type ResponseValue = Option<Box<dyn std::error::Error + Send>>;
 
 /// Maps the virtual host communication channels by host name.
 #[derive(Debug)]
 pub struct Channels {
-    pub bind: Option<BindSender>,
-
     pub render: HashMap<String, (UnboundedSender<String>, UnboundedReceiver<String>)>,
     pub websockets: HashMap<String, (broadcast::Sender<Message>, broadcast::Receiver<Message>)>,
 }
 
 impl Channels {
-    pub fn new(bind: BindSender) -> Self {
+    pub fn new() -> Self {
         Self {
-            bind: Some(bind),
             websockets: HashMap::new(),
             render: HashMap::new(),
         }

@@ -16,7 +16,7 @@ pub async fn launch(
     // Create a channel to receive the bind address.
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 
-    let channels = Channels::new(ctx);
+    let channels = Channels::new();
 
     //channels.bind = Some(ctx);
 
@@ -41,13 +41,14 @@ pub async fn launch(
         }
     });
 
-    Ok(start(options, Arc::new(RwLock::new(channels))).await?)
+    Ok(start(options, ctx, Arc::new(RwLock::new(channels))).await?)
 }
 
 /// Start a server.
 pub async fn start(
     options: &'static ServerConfig,
+    bind: oneshot::Sender<ConnectionInfo>,
     channels: Arc<RwLock<Channels>>,
 ) -> Result<(), Error> {
-    Ok(router::serve(options, channels).await?)
+    Ok(router::serve(options, bind, channels).await?)
 }

@@ -52,7 +52,7 @@ pub async fn watch(
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
     // Create the collection of channels
-    let mut channels = Channels::new(bind_tx);
+    let mut channels = Channels::new();
 
     let results = create_resources(port, &tls, result)?;
     let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<LiveHost>) = 
@@ -81,7 +81,7 @@ pub async fn watch(
     let opts = super::configure(opts);
 
     // Start the webserver
-    super::router::serve(opts, Arc::clone(&channels)).await?;
+    super::router::serve(opts, bind_tx, Arc::clone(&channels)).await?;
 
     Ok(())
 }

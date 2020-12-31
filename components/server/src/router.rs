@@ -7,8 +7,7 @@ use std::sync::{Arc, RwLock};
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
-use tokio::sync::broadcast;
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc, oneshot};
 
 use warp::filters::BoxedFilter;
 use warp::http::StatusCode;
@@ -47,7 +46,7 @@ macro_rules! bind {
         $opts:expr,
         $routes:expr,
         $addr:expr,
-        $channels:expr
+        $bind_channel:expr
     ) => {
         let with_server = get_with_server($opts);
         let host = $opts.default_host.name.clone();
@@ -76,14 +75,9 @@ macro_rules! bind {
                 drop_privileges()?;
             }
 
-            let mut channels_writer = $channels.write().unwrap();
-            if let Some(bind) = channels_writer.bind.take() {
-                let info = ConnectionInfo { addr, host, tls };
-                bind.send(info)
-                    .expect("Failed to send web server socket address");
-            }
-
-            drop(channels_writer);
+            let info = ConnectionInfo { addr, host, tls };
+            $bind_channel.send(info)
+                .expect("Failed to send web server socket address");
 
             future.await;
         } else {
@@ -96,15 +90,10 @@ macro_rules! bind {
                         drop_privileges()?;
                     }
 
-                    let mut channels_writer = $channels.write().unwrap();
-                    if let Some(bind) = channels_writer.bind.take() {
-                        let info = ConnectionInfo { addr, host, tls };
-                        bind.send(info)
-                            .expect("Failed to send web server socket address");
-                    }
+                    let info = ConnectionInfo { addr, host, tls };
+                    $bind_channel.send(info)
+                        .expect("Failed to send web server socket address");
             
-                    drop(channels_writer);
-
                     future.await;
                 }
                 Err(e) => return Err(Error::from(e)),
@@ -361,6 +350,7 @@ fn get_static_server(
 
 pub async fn serve(
     opts: &'static ServerConfig,
+    bind: oneshot::Sender<ConnectionInfo>,
     channels: Arc<RwLock<Channels>>,
 ) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
@@ -383,23 +373,23 @@ pub async fn serve(
         panic!("No virtual hosts!");
     } else if filters.len() == 1 {
         let all = filters.swap_remove(0);
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 2 {
         let all = filters.swap_remove(0).or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 3 {
         let all = filters
             .swap_remove(0)
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 4 {
         let all = filters
             .swap_remove(0)
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 5 {
         let all = filters
             .swap_remove(0)
@@ -407,7 +397,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 6 {
         let all = filters
             .swap_remove(0)
@@ -416,7 +406,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 7 {
         let all = filters
             .swap_remove(0)
@@ -426,7 +416,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 8 {
         let all = filters
             .swap_remove(0)
@@ -437,7 +427,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 9 {
         let all = filters
             .swap_remove(0)
@@ -449,7 +439,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 10 {
         let all = filters
             .swap_remove(0)
@@ -462,7 +452,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 11 {
         let all = filters
             .swap_remove(0)
@@ -476,7 +466,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 12 {
         let all = filters
             .swap_remove(0)
@@ -491,7 +481,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 13 {
         let all = filters
             .swap_remove(0)
@@ -507,7 +497,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 14 {
         let all = filters
             .swap_remove(0)
@@ -524,7 +514,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 15 {
         let all = filters
             .swap_remove(0)
@@ -542,7 +532,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else if filters.len() == 16 {
         let all = filters
             .swap_remove(0)
@@ -561,7 +551,7 @@ pub async fn serve(
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0))
             .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, channels);
+        bind!(opts, all, &addr, bind);
     } else {
         panic!("Too many virtual hosts!");
     }
