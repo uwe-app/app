@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::time::{SystemTime, Duration};
+use std::sync::{Arc, RwLock};
 
 use log::{error, info};
 
@@ -19,7 +20,7 @@ use config::server::{
 
 use workspace::{CompileResult, Invalidator, Project};
 
-use crate::{Result, Error, ErrorCallback, channels::{Channels, HostChannel}};
+use crate::{Result, Error, ErrorCallback, channels::Channels};
 
 /// Encpsulates the information needed to watch the 
 /// file system and re-render when file changes are detected.
@@ -27,7 +28,6 @@ struct LiveHost {
     name: String,
     source: PathBuf,
     project: Project,
-    websocket: broadcast::Sender<Message>,
 }
 
 /// Intermediary value for live projects.
@@ -39,6 +39,8 @@ struct LiveResult {
     hostname: String,
 }
 
+/// Start watching for file system notifications in the source 
+/// directories for the given compiler results.
 pub async fn watch(
     port: u16,
     tls: Option<TlsConfig>,
@@ -70,14 +72,16 @@ pub async fn watch(
     // Spawn the bind listener to launch a browser
     spawn_bind_open(bind_rx, launch);
 
+    let channels = Arc::new(RwLock::new(channels));
+
     // Spawn the file system watchers
-    spawn_monitor(watchers, error_cb);
+    spawn_monitor(watchers, Arc::clone(&channels), error_cb);
 
     // Convert to &'static reference
     let opts = super::configure(opts);
 
     // Start the webserver
-    super::router::serve(opts, &mut channels).await?;
+    super::router::serve(opts, Arc::clone(&channels)).await?;
 
     Ok(())
 }
@@ -149,14 +153,10 @@ fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>>
             false,
         );
 
-        // Configure the live reload relay channels
-        let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-
         let live_host = LiveHost {
             name: host.name.clone(),
             source,
             project,
-            websocket: ws_tx,
         };
 
         out.push((host, live_host));
@@ -168,25 +168,29 @@ fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>>
 
 fn create_channels(
     results: Vec<LiveHost>,
-    channels: &mut Channels) -> Result<Vec<(LiveHost, UnboundedReceiver<String>)>> {
-    let mut configs: Vec<(LiveHost, UnboundedReceiver<String>)> = Vec::new();
+    channels: &mut Channels) -> Result<Vec<LiveHost>> {
+    let mut configs: Vec<LiveHost> = Vec::new();
 
     results.into_iter().try_for_each(|live_host| {
         // Create a channel to receive lazy render requests
         let (request_tx, request_rx) = mpsc::unbounded_channel::<String>();
 
-        let reload_tx = live_host.websocket.clone();
+        // Configure the live reload relay channels
+        let (ws_tx, ws_rx) = broadcast::channel::<Message>(128);
+        //let reload_tx = ws_tx.clone();
 
-        let host_channel = HostChannel::new(reload_tx, request_tx);
-        channels
-            .hosts
-            .entry(live_host.name.clone())
-            .or_insert(host_channel);
+        //let host_channel = HostChannel::new(reload_tx, request_tx);
+        //channels
+            //.hosts
+            //.entry(live_host.name.clone())
+            //.or_insert(host_channel);
 
-        configs.push((
-            live_host,
-            request_rx,
-        ));
+        channels.websockets.insert(live_host.name.clone(), (ws_tx, ws_rx));
+        channels.render.insert(live_host.name.clone(), (request_tx, request_rx));
+            //.entry(live_host.name.clone())
+            //.or_insert(host_channel);
+
+        configs.push(live_host);
 
         Ok::<(), Error>(())
     })?;
@@ -240,11 +244,13 @@ fn spawn_bind_open(
 /// Spawn a thread for each virtual host that requires a 
 /// file system watcher.
 fn spawn_monitor(
-    watchers: Vec<(LiveHost, mpsc::UnboundedReceiver<String>)>,
+    watchers: Vec<LiveHost>,
+    channels: Arc<RwLock<Channels>>,
     error_cb: ErrorCallback,
-    //channels: &Channels,
 ) {
-    for (w, mut request) in watchers {
+    for w in watchers {
+        let watch_channels = Arc::clone(&channels);
+
         std::thread::spawn(move || {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
@@ -272,7 +278,10 @@ fn spawn_monitor(
                 info!("Watch {} in {}", name, source.display());
 
                 let mut invalidator = Invalidator::new(w.project);
-                let ws_tx = &w.websocket;
+
+                let mut channels_access = watch_channels.write().unwrap();
+                let ws_tx = channels_access.get_host_reload(&name);
+                let mut request = channels_access.render.get_mut(&name).map(|(_, rx)| rx).unwrap();
 
                 loop {
                     tokio::select! {
@@ -326,6 +335,9 @@ fn spawn_monitor(
 
                                     let msg = livereload::messages::start();
                                     let txt = serde_json::to_string(&msg).unwrap();
+
+                                    //let channels_reader = watch_channels.read().unwrap();
+                                    //let ws_tx = channels_access.get_host_reload(&name);
 
                                     let _ = ws_tx.send(Message::text(txt));
 

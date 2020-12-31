@@ -18,6 +18,5 @@ pub async fn open(opts: ServerConfig) -> Result<()> {
 
     // Convert to &'static reference
     let opts = server::configure(opts);
-    let mut channels = Default::default();
-    Ok(server::launch(opts, launch, &mut channels).await?)
+    Ok(server::launch(opts, launch).await?)
 }

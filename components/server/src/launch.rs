@@ -1,3 +1,4 @@
+use std::sync::{Arc, RwLock};
 use tokio::sync::oneshot;
 
 use log::info;
@@ -9,11 +10,17 @@ use config::server::{ConnectionInfo, LaunchConfig, ServerConfig};
 pub async fn launch(
     options: &'static ServerConfig,
     launch: LaunchConfig,
-    channels: &mut Channels,
+    //channels: Arc<RwLock<Channels>>,
 ) -> Result<(), Error> {
+
     // Create a channel to receive the bind address.
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
-    channels.bind = Some(ctx);
+
+    let channels = Channels::new(ctx);
+
+    //channels.bind = Some(ctx);
+
+    //let mut channels_writer = 
 
     let _ = tokio::task::spawn(async move {
         let info = crx.await.unwrap();
@@ -34,15 +41,13 @@ pub async fn launch(
         }
     });
 
-    Ok(start(options, channels).await?)
+    Ok(start(options, Arc::new(RwLock::new(channels))).await?)
 }
 
 /// Start a server.
 pub async fn start(
     options: &'static ServerConfig,
-    channels: &mut Channels,
+    channels: Arc<RwLock<Channels>>,
 ) -> Result<(), Error> {
-    println!("START CALLED IN LAUNCH MODULE");
-
     Ok(router::serve(options, channels).await?)
 }

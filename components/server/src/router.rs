@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
@@ -76,11 +76,14 @@ macro_rules! bind {
                 drop_privileges()?;
             }
 
-            if let Some(bind) = $channels.bind.take() {
+            let mut channels_writer = $channels.write().unwrap();
+            if let Some(bind) = channels_writer.bind.take() {
                 let info = ConnectionInfo { addr, host, tls };
                 bind.send(info)
                     .expect("Failed to send web server socket address");
             }
+
+            drop(channels_writer);
 
             future.await;
         } else {
@@ -93,11 +96,14 @@ macro_rules! bind {
                         drop_privileges()?;
                     }
 
-                    if let Some(bind) = $channels.bind.take() {
+                    let mut channels_writer = $channels.write().unwrap();
+                    if let Some(bind) = channels_writer.bind.take() {
                         let info = ConnectionInfo { addr, host, tls };
                         bind.send(info)
                             .expect("Failed to send web server socket address");
                     }
+            
+                    drop(channels_writer);
 
                     future.await;
                 }
@@ -111,7 +117,7 @@ fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
-    channels: &mut Channels,
+    channels: Arc<RwLock<Channels>>,
 ) -> BoxedFilter<(impl Reply,)> {
     let port = address.port();
     let host_port = format!("{}:{}", host.name, port);
@@ -123,19 +129,22 @@ fn get_host_filter(
         &host_port
     };
 
+    let channels_reader = channels.read().unwrap();
+
+    let livereload = get_live_reload(opts, host, Arc::clone(&channels)).unwrap();
+    let request_tx = channels_reader.get_host_render_request(&host.name);
+    let request = warp::any().map(move || request_tx.clone());
+
     let (response_tx, response_rx) =
         mpsc::unbounded_channel::<ResponseValue>();
-
     let response_arc = Arc::new(response_rx);
-
-    let livereload = get_live_reload(opts, host, channels).unwrap();
-    let request_tx = channels.get_host_render_request(&host.name);
-    let request = warp::any().map(move || request_tx.clone());
     let response = warp::any().map(move || Arc::clone(&response_arc));
 
-    channels
-        .render_responses
-        .insert(host.name.clone(), response_tx);
+    drop(channels_reader);
+
+    //channels
+        //.render_responses
+        //.insert(host.name.clone(), response_tx);
 
     let live_renderer = warp::any()
         .and(warp::path::full())
@@ -155,9 +164,12 @@ fn get_host_filter(
 fn get_live_reload(
     opts: &ServerConfig,
     host: &'static HostConfig,
-    channels: &mut Channels,
+    channels: Arc<RwLock<Channels>>,
 ) -> crate::Result<BoxedFilter<(impl Reply,)>> {
-    let reload_tx = channels.get_host_reload(&host.name);
+
+    let channels_reader = channels.read().unwrap();
+    let reload_tx = channels_reader.get_host_reload(&host.name);
+    drop(channels_reader);
 
     let use_tls = opts.tls.is_some();
 
@@ -349,7 +361,7 @@ fn get_static_server(
 
 pub async fn serve(
     opts: &'static ServerConfig,
-    channels: &mut Channels,
+    channels: Arc<RwLock<Channels>>,
 ) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     let default_host: &'static HostConfig = &opts.default_host;
@@ -360,7 +372,7 @@ pub async fn serve(
     }
     let mut filters: Vec<BoxedFilter<_>> = configs
         .iter()
-        .map(|c| get_host_filter(&addr, opts, c, channels))
+        .map(|c| get_host_filter(&addr, opts, c, Arc::clone(&channels)))
         .collect();
 
     // NOTE: This mess is because `warp` cannot dynamically chain filters using

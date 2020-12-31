@@ -12,8 +12,7 @@ use workspace::{compile, lock};
 async fn serve_index(opts: ServerConfig, launch: LaunchConfig) -> Result<()> {
     // Convert to &'static reference
     let opts = server::configure(opts);
-    let mut channels = Default::default();
-    Ok(server::launch(opts, launch, &mut channels).await?)
+    Ok(server::launch(opts, launch).await?)
 }
 
 /// Serve either a project or a target directory.
