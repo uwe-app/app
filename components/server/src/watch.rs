@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration};
 
 use log::{error, info};
 
@@ -11,29 +11,33 @@ use tokio::sync::{
 };
 use url::Url;
 use warp::ws::Message;
-
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-
-use std::time::Duration;
 
 use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
 };
-//use config::ProfileSettings;
-
-use super::{Channels, HostChannel};
 
 use workspace::{CompileResult, Invalidator, Project};
 
-use crate::{Error, ErrorCallback};
+use crate::{Result, Error, ErrorCallback};
+use super::{Channels, HostChannel};
 
-//type RenderResponse = Option<Box<dyn std::error::Error + Send>>;
-
+/// Encpsulates the information needed to watch the 
+/// file system and re-render when file changes are detected.
 struct LiveHost {
     name: String,
     source: PathBuf,
     project: Project,
     websocket: broadcast::Sender<Message>,
+}
+
+/// Intermediary value for live projects.
+struct LiveResult {
+    project: Project,
+    source: PathBuf,
+    target: PathBuf,
+    endpoint: String,
+    hostname: String,
 }
 
 pub async fn watch(
@@ -42,80 +46,18 @@ pub async fn watch(
     launch: Option<String>,
     result: CompileResult,
     error_cb: ErrorCallback,
-) -> Result<(), Error> {
+) -> Result<()> {
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
     // Create the collection of channels
     let mut channels = Channels::new(bind_tx);
 
-    // Multiple projects will use *.localhost names
-    // otherwise we can just run using the standard `localhost`.
-    let multiple = result.projects.len() > 1;
+    let results = create_resources(port, &tls, result)?;
+    let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<LiveHost>) = 
+        create_hosts(results)?.into_iter().unzip();
 
-    let mut watchers: Vec<(LiveHost, UnboundedReceiver<String>)> = Vec::new();
-
-    // Collect virual host configurations
-    let mut hosts: Vec<HostConfig> = Vec::new();
-    result.projects.into_iter().try_for_each(|project| {
-        let target = project.options.base.clone();
-        let redirect_uris = project.redirects.collect()?;
-        let hostname = project.config.get_local_host_name(multiple);
-        let host = HostConfig::new(
-            target,
-            hostname,
-            Some(redirect_uris),
-            Some(utils::generate_id(16)),
-            false,
-        );
-
-        // NOTE: These host names may not resolve so cannot attempt
-        // NOTE: to lookup a socket address here.
-        let ws_url = config::server::to_websocket_url(
-            tls.is_some(),
-            &host.name,
-            host.endpoint.as_ref().unwrap(),
-            config::server::get_port(port.to_owned(), &tls, PortType::Infer),
-        );
-
-        // Write out the livereload javascript using the correct
-        // websocket endpoint which the server will create later
-        livereload::write(&project.config, &host.directory, &ws_url)?;
-
-        // Configure the live reload relay channels
-        let (ws_tx, _rx) = broadcast::channel::<Message>(100);
-        let reload_tx = ws_tx.clone();
-
-        // Create a channel to receive lazy render requests
-        let (request_tx, request_rx) = mpsc::unbounded_channel::<String>();
-
-        let host_channel = HostChannel::new(reload_tx, request_tx);
-        let name = host.name.clone();
-
-        channels
-            .hosts
-            .entry(host.name.clone())
-            .or_insert(host_channel);
-
-        info!("Virtual host: {}", &host.name);
-
-        hosts.push(host);
-
-        // Get the source directory to configure the watcher
-        let source = project.options.source.clone();
-
-        watchers.push((
-            LiveHost {
-                name,
-                source,
-                project,
-                websocket: ws_tx,
-            },
-            request_rx,
-        ));
-
-        Ok::<(), Error>(())
-    })?;
+    let watchers = create_channels(live_hosts, &mut channels)?;
 
     if hosts.is_empty() {
         return Err(Error::NoLiveHosts);
@@ -126,10 +68,146 @@ pub async fn watch(
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
     opts.hosts = hosts;
 
-    // Listen for the bind message and open the browser
+    spawn_bind_open(bind_rx, launch);
+
+    // Spawn the file system watchers
+    spawn_monitor(watchers, error_cb);
+
+    // Convert to &'static reference
+    let opts = super::configure(opts);
+
+    // Start the webserver
+    super::router::serve(opts, &mut channels).await?;
+
+    Ok(())
+}
+
+/// Write out the live reload Javascript and CSS for each 
+/// project and create intermediary results.
+fn create_resources(
+    port: u16,
+    tls: &Option<TlsConfig>,
+    result: CompileResult) -> Result<Vec<LiveResult>> {
+
+    let mut out: Vec<LiveResult> = Vec::new();
+
+    // Multiple projects will use *.localhost names
+    // otherwise we can just run using the standard `localhost`.
+    let multiple = result.projects.len() > 1;
+
+    result.projects.into_iter().try_for_each(|project| {
+        let source = project.options.source.clone();
+        let target = project.options.base.clone();
+
+        let hostname = project.config.get_local_host_name(multiple);
+        let endpoint = utils::generate_id(16);
+
+        // NOTE: These host names may not resolve so cannot attempt
+        // NOTE: to lookup a socket address here.
+        let ws_url = config::server::to_websocket_url(
+            tls.is_some(),
+            &hostname,
+            &endpoint,
+            config::server::get_port(port.to_owned(), tls, PortType::Infer),
+        );
+
+        // Write out the livereload javascript using the correct
+        // websocket endpoint which the server will create later
+        livereload::write(&project.config, &target, &ws_url)?;
+
+        out.push(LiveResult {project, source, target, endpoint, hostname});
+
+        Ok::<(), Error>(())
+    })?;
+
+    Ok(out)
+}
+
+/// Create host configurations paired with live host configurations which 
+/// contain data for file system watching and the channels used for message 
+/// passing.
+fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>> {
+    let mut out: Vec<(HostConfig, LiveHost)> = Vec::new();
+
+    results.into_iter().try_for_each(|result| {
+        let project = result.project;
+        let source = result.source;
+        let target = result.target;
+        let hostname = result.hostname;
+        let endpoint = result.endpoint;
+
+        // TODO: fix redirect URIs
+        let redirect_uris = project.redirects.collect()?;
+
+        info!("Virtual host: {}", &hostname);
+
+        let host = HostConfig::new(
+            target,
+            hostname,
+            Some(redirect_uris),
+            Some(endpoint),
+            false,
+        );
+
+        // Configure the live reload relay channels
+        let (ws_tx, _rx) = broadcast::channel::<Message>(100);
+
+        let live_host = LiveHost {
+            name: host.name.clone(),
+            source,
+            project,
+            websocket: ws_tx,
+        };
+
+        out.push((host, live_host));
+
+        Ok::<(), Error>(())
+    })?;
+    Ok(out)
+}
+
+fn create_channels(
+    results: Vec<LiveHost>,
+    channels: &mut Channels) -> Result<Vec<(LiveHost, UnboundedReceiver<String>)>> {
+    let mut configs: Vec<(LiveHost, UnboundedReceiver<String>)> = Vec::new();
+
+    results.into_iter().try_for_each(|live_host| {
+        // Create a channel to receive lazy render requests
+        let (request_tx, request_rx) = mpsc::unbounded_channel::<String>();
+
+        let reload_tx = live_host.websocket.clone();
+
+        let host_channel = HostChannel::new(reload_tx, request_tx);
+        channels
+            .hosts
+            .entry(live_host.name.clone())
+            .or_insert(host_channel);
+
+        configs.push((
+            live_host,
+            request_rx,
+        ));
+
+        Ok::<(), Error>(())
+    })?;
+
+    Ok(configs)
+}
+
+/// Spawn a thread that listens for the bind message from the 
+/// server and opens the browser once the message is received.
+///
+/// By listening for the bind message the browser is not launched 
+/// the browser is not opened when a server error such as EADDR is 
+/// encountered.
+fn spawn_bind_open(
+    bind_rx: oneshot::Receiver<ConnectionInfo>,
+    launch: Option<String>) {
+
     std::thread::spawn(move || {
         let mut rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
+
             // Get the server connection info
             let info = bind_rx.await.unwrap();
             let mut url = info.to_url();
@@ -149,28 +227,18 @@ pub async fn watch(
                 "/".to_string()
             };
 
+            // Ensure the cache is bypassed so that switching between
+            // projects does not show an older project 
             url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
 
             info!("Serve {}", &url);
-            // NOTE: only open the browser if initial build succeeds
             open::that(&url).map(|_| ()).unwrap_or(());
         });
     });
-
-    // Spawn the file system watchers
-    spawn_monitor(watchers, error_cb);
-
-    // Convert to &'static reference
-    let opts = super::configure(opts);
-
-    // Start the webserver
-    //super::start(opts, &mut channels).await?;
-
-    super::router::serve(opts, &mut channels).await?;
-
-    Ok(())
 }
 
+/// Spawn a thread for each virtual host that requires a 
+/// file system watcher.
 fn spawn_monitor(
     watchers: Vec<(LiveHost, mpsc::UnboundedReceiver<String>)>,
     error_cb: ErrorCallback,
@@ -178,7 +246,6 @@ fn spawn_monitor(
 ) {
     for (w, mut request) in watchers {
         std::thread::spawn(move || {
-            // NOTE: We want to schedule all async task on the same thread!
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
                 // Wrap the fs channel so we can select on the future
@@ -205,7 +272,6 @@ fn spawn_monitor(
                 info!("Watch {} in {}", name, source.display());
 
                 let mut invalidator = Invalidator::new(w.project);
-
                 let ws_tx = &w.websocket;
 
                 loop {
@@ -283,6 +349,7 @@ fn spawn_monitor(
                                             {
                                                 // Notify of build completed
                                                 Ok(_) => {
+                                                    println!("Sending message over websocket...");
                                                     let msg =
                                                         livereload::messages::reload(href);
                                                     let txt = serde_json::to_string(&msg)
@@ -314,88 +381,6 @@ fn spawn_monitor(
                         }
                     }
                 }
-
-                //loop {
-                    //let first_event = rx.recv().unwrap();
-                    //sleep(Duration::from_millis(50));
-                    //let other_events = rx.try_iter();
-                    //let all_events =
-                        //std::iter::once(first_event).chain(other_events);
-
-                    /*
-                    let paths = all_events
-                        .filter_map(|event| {
-                            debug!("Received filesystem event: {:?}", event);
-                            match event {
-                                Create(path)
-                                | Write(path)
-                                | Remove(path)
-                                | Rename(_, path) => Some(path),
-                                _ => None,
-                            }
-                        })
-                        .collect::<Vec<_>>();
-
-                    if !paths.is_empty() {
-                        info!(
-                            "Changed({}) in {}",
-                            paths.len(),
-                            source.display()
-                        );
-
-                        let msg = livereload::messages::start();
-                        let txt = serde_json::to_string(&msg).unwrap();
-
-                        let _ = ws_tx.send(Message::text(txt));
-
-                        let mut live_invalidator = invalidator.lock().unwrap();
-
-                        match live_invalidator.get_invalidation(paths) {
-                            Ok(invalidation) => {
-                                // Try to determine a page href to use 
-                                // when following edits.
-                                let href: Option<String> = if let Some(path) =
-                                    invalidation.single_page()
-                                {
-                                    live_invalidator.find_page_href(path)
-                                } else {
-                                    None
-                                };
-
-                                match live_invalidator
-                                    .updater_mut()
-                                    .invalidate(&invalidation)
-                                    .await
-                                {
-                                    // Notify of build completed
-                                    Ok(_) => {
-                                        let msg =
-                                            livereload::messages::reload(href);
-                                        let txt = serde_json::to_string(&msg)
-                                            .unwrap();
-                                        let _ = ws_tx.send(Message::text(txt));
-                                        //println!("Got result {:?}", res);
-                                    }
-                                    // Send errors to the websocket
-                                    Err(e) => {
-                                        error!("{}", e);
-
-                                        let msg = livereload::messages::notify(
-                                            e.to_string(),
-                                            true,
-                                        );
-                                        let txt = serde_json::to_string(&msg)
-                                            .unwrap();
-                                        let _ = ws_tx.send(Message::text(txt));
-                                    }
-                                }
-                            }
-                            Err(e) => return error_cb(Error::from(e)),
-                        }
-                
-                    }
-                */
-                //}
             });
         });
     }
