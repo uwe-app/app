@@ -20,7 +20,7 @@ use config::server::{
 
 use workspace::{CompileResult, Invalidator, Project};
 
-use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels}};
+use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels, ResponseValue}};
 
 /// Encpsulates the information needed to watch the 
 /// file system and re-render when file changes are detected.
@@ -78,7 +78,7 @@ pub async fn watch(
     let opts = super::configure(opts);
 
     // Start the webserver
-    super::router::serve(opts, bind_tx, Arc::new(RwLock::new(server_channels))).await?;
+    super::router::serve(opts, bind_tx, server_channels).await?;
 
     Ok(())
 }
@@ -177,13 +177,11 @@ fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>>
 }
 
 fn create_channels(results: &Vec<LiveHost>) -> Result<(ServerChannels, WatchChannels)> {
-
     // Create the collection of channels
     let mut server: ServerChannels = Default::default();
     let mut watch: WatchChannels = Default::default();
 
     results.iter().try_for_each(|live_host| {
-
         // Configure the live reload relay channels
         let (ws_tx, _ws_rx) = broadcast::channel::<Message>(128);
         server.websockets.insert(live_host.name.clone(), ws_tx.clone());
@@ -193,6 +191,12 @@ fn create_channels(results: &Vec<LiveHost>) -> Result<(ServerChannels, WatchChan
         let (request_tx, request_rx) = mpsc::channel::<String>(channels::RENDER_CHANNEL_BUFFER);
         server.render.insert(live_host.name.clone(), request_tx);
         watch.render.insert(live_host.name.clone(), request_rx);
+
+        // Create a channel for replies when rendering
+        let (response_tx, response_rx) =
+            mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
+        server.render_responses.insert(live_host.name.clone(), response_rx);
+        watch.render_responses.insert(live_host.name.clone(), response_tx);
 
         Ok::<(), Error>(())
     })?;
@@ -283,27 +287,32 @@ fn spawn_monitor(
 
                 let mut channels_access = watch_channels.write().unwrap();
                 let ws_tx = channels_access.websockets.get(&name).unwrap().clone();
+                let mut response = channels_access.render_responses.get(&name).unwrap().clone();
                 let request = channels_access.render.get_mut(&name).unwrap();
 
                 loop {
                     tokio::select! {
                         val = request.recv() => {
-                            //let reponse_tx = channels.render_responses.get(&w.name).clone().unwrap();
-
                             if let Some(path) = val {
-                                //println!("Got web server render request: {}", &path);
                                 let updater = invalidator.updater_mut();
                                 let has_page_path = updater.has_page_path(&path);
                                 if has_page_path {
                                     info!("JIT {}", &path);
                                     match updater.render(&path).await {
-                                        Ok(_) => {},
+                                        Ok(_) => {
+                                            let _ = response.send(None).await;
+                                        },
                                         Err(e) => {
-                                            // TODO: send error back to the server for a 500 response?
+                                            // Send error back to the server so it can 
+                                            // show a 500 error if the compile fails
                                             error!("{}", e);
-                                            //response.
+                                            let _ = response.send(Some(Box::new(e))).await;
                                         }
                                     }
+                                } else {
+                                    // Must always send a reply as the web server
+                                    // blocks waiting for one
+                                    let _ = response.send(None).await;
                                 }
                             }
 

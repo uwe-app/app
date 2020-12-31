@@ -8,7 +8,7 @@ use tokio::sync::{
 };
 use warp::ws::Message;
 
-pub type ResponseValue = Option<Box<dyn std::error::Error + Send>>;
+pub type ResponseValue = Option<Box<dyn std::error::Error + Send + Sync>>;
 
 pub(crate) const RENDER_CHANNEL_BUFFER: usize = 128;
 
@@ -16,10 +16,12 @@ pub(crate) const RENDER_CHANNEL_BUFFER: usize = 128;
 pub struct ServerChannels {
     pub(crate) render: HashMap<String, mpsc::Sender<String>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
+    pub(crate) render_responses: HashMap<String, mpsc::Receiver<ResponseValue>>,
 }
 
 #[derive(Debug, Default)]
 pub struct WatchChannels {
     pub(crate) render: HashMap<String, mpsc::Receiver<String>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
+    pub(crate) render_responses: HashMap<String, mpsc::Sender<ResponseValue>>,
 }

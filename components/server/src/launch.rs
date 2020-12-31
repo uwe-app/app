@@ -1,4 +1,3 @@
-use std::sync::{Arc, RwLock};
 use tokio::sync::oneshot;
 
 use log::info;
@@ -10,7 +9,6 @@ use config::server::{ConnectionInfo, LaunchConfig, ServerConfig};
 pub async fn launch(
     options: &'static ServerConfig,
     launch: LaunchConfig,
-    //channels: Arc<RwLock<Channels>>,
 ) -> Result<(), Error> {
 
     // Create a channel to receive the bind address.
@@ -37,14 +35,14 @@ pub async fn launch(
         }
     });
 
-    Ok(start(options, ctx, Arc::new(RwLock::new(channels))).await?)
+    Ok(start(options, ctx, channels).await?)
 }
 
 /// Start a server.
 pub async fn start(
     options: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
-    channels: Arc<RwLock<ServerChannels>>,
+    channels: ServerChannels,
 ) -> Result<(), Error> {
     Ok(router::serve(options, bind, channels).await?)
 }
