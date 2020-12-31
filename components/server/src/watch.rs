@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::{SystemTime, Duration};
 use std::sync::{Arc, RwLock};
@@ -91,17 +91,30 @@ fn create_resources(
     result: CompileResult) -> Result<Vec<LiveResult>> {
 
     let mut out: Vec<LiveResult> = Vec::new();
+    let mut names: HashMap<String, PathBuf> = HashMap::new();
 
     // Multiple projects will use *.localhost names
     // otherwise we can just run using the standard `localhost`.
     let multiple = result.projects.len() > 1;
 
     result.projects.into_iter().try_for_each(|project| {
+
+        let current_project = project.config.project().clone();
+
         let source = project.options.source.clone();
         let target = project.options.base.clone();
 
         let hostname = project.config.get_local_host_name(multiple);
         let endpoint = utils::generate_id(16);
+
+        if let Some(ref existing_project) = names.get(&hostname) {
+            return Err(Error::DuplicateHostName(
+                hostname.clone(),
+                existing_project.to_path_buf(),
+                current_project));
+        }
+
+        names.insert(hostname.clone(), current_project); 
 
         // NOTE: These host names may not resolve so cannot attempt
         // NOTE: to lookup a socket address here.

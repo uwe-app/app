@@ -1,5 +1,6 @@
-use thiserror::Error;
+use std::path::PathBuf;
 
+use thiserror::Error;
 use config::server::ConnectionInfo;
 
 #[derive(Error, Debug)]
@@ -24,6 +25,9 @@ pub enum Error {
 
     #[error("No virtual hosts for live reload")]
     NoLiveHosts,
+
+    #[error("Duplicate host name {0} detected, {1} <-> {2}")]
+    DuplicateHostName(String, PathBuf, PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
