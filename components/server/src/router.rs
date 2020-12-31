@@ -21,7 +21,7 @@ use serde::Serialize;
 
 use log::{error, info, trace};
 
-use crate::{drop_privileges::*, channels::{Channels, ResponseValue}, Error};
+use crate::{drop_privileges::*, channels::{self, ServerChannels, ResponseValue}, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
 #[derive(Debug)]
@@ -106,7 +106,7 @@ fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
-    channels: Arc<RwLock<Channels>>,
+    channels: Arc<RwLock<ServerChannels>>,
 ) -> BoxedFilter<(impl Reply,)> {
     let port = address.port();
     let host_port = format!("{}:{}", host.name, port);
@@ -121,11 +121,11 @@ fn get_host_filter(
     let channels_reader = channels.read().unwrap();
 
     let livereload = get_live_reload(opts, host, Arc::clone(&channels)).unwrap();
-    let request_tx = channels_reader.get_host_render_request(&host.name);
+    let request_tx = channels_reader.render.get(&host.name).unwrap().clone();
     let request = warp::any().map(move || request_tx.clone());
 
     let (response_tx, response_rx) =
-        mpsc::unbounded_channel::<ResponseValue>();
+        mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
     let response_arc = Arc::new(response_rx);
     let response = warp::any().map(move || Arc::clone(&response_arc));
 
@@ -153,11 +153,11 @@ fn get_host_filter(
 fn get_live_reload(
     opts: &ServerConfig,
     host: &'static HostConfig,
-    channels: Arc<RwLock<Channels>>,
+    channels: Arc<RwLock<ServerChannels>>,
 ) -> crate::Result<BoxedFilter<(impl Reply,)>> {
 
     let channels_reader = channels.read().unwrap();
-    let reload_tx = channels_reader.get_host_reload(&host.name);
+    let reload_tx = channels_reader.websockets.get(&host.name).unwrap().clone();
     drop(channels_reader);
 
     let use_tls = opts.tls.is_some();
@@ -212,8 +212,8 @@ fn get_live_reload(
 
 async fn live_render(
     path: FullPath,
-    tx: mpsc::UnboundedSender<String>,
-    _rx: Arc<mpsc::UnboundedReceiver<ResponseValue>>,
+    mut tx: mpsc::Sender<String>,
+    _rx: Arc<mpsc::Receiver<ResponseValue>>,
     //rx: Option<&mpsc::UnboundedReceiver<Option<Box<dyn std::error::Error + Send>>>>
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {
@@ -225,8 +225,8 @@ async fn live_render(
         println!("Before sending live render path!");
         let _ = tx
             .send(href)
+            .await
             .map_err(|_| warp::reject::custom(RenderSendError))?;
-
         println!("After sending live render path!");
     }
     Err(warp::reject())
@@ -351,7 +351,7 @@ fn get_static_server(
 pub async fn serve(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
-    channels: Arc<RwLock<Channels>>,
+    channels: Arc<RwLock<ServerChannels>>,
 ) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     let default_host: &'static HostConfig = &opts.default_host;

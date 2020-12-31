@@ -7,7 +7,7 @@ use log::{error, info};
 
 use tokio::sync::{
     broadcast,
-    mpsc::{self, UnboundedReceiver},
+    mpsc,
     oneshot,
 };
 use url::Url;
@@ -20,7 +20,7 @@ use config::server::{
 
 use workspace::{CompileResult, Invalidator, Project};
 
-use crate::{Result, Error, ErrorCallback, channels::Channels};
+use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels}};
 
 /// Encpsulates the information needed to watch the 
 /// file system and re-render when file changes are detected.
@@ -51,14 +51,13 @@ pub async fn watch(
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
-    // Create the collection of channels
-    let mut channels = Channels::new();
-
     let results = create_resources(port, &tls, result)?;
     let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<LiveHost>) = 
-        create_hosts(results)?.into_iter().unzip();
+        create_hosts(results)?
+        .into_iter()
+        .unzip();
 
-    let watchers = create_channels(live_hosts, &mut channels)?;
+    let (server_channels, watch_channels) = create_channels(&live_hosts)?;
 
     if hosts.is_empty() {
         return Err(Error::NoLiveHosts);
@@ -72,16 +71,14 @@ pub async fn watch(
     // Spawn the bind listener to launch a browser
     spawn_bind_open(bind_rx, launch);
 
-    let channels = Arc::new(RwLock::new(channels));
-
     // Spawn the file system watchers
-    spawn_monitor(watchers, Arc::clone(&channels), error_cb);
+    spawn_monitor(live_hosts, Arc::new(RwLock::new(watch_channels)), error_cb);
 
     // Convert to &'static reference
     let opts = super::configure(opts);
 
     // Start the webserver
-    super::router::serve(opts, bind_tx, Arc::clone(&channels)).await?;
+    super::router::serve(opts, bind_tx, Arc::new(RwLock::new(server_channels))).await?;
 
     Ok(())
 }
@@ -166,36 +163,28 @@ fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>>
     Ok(out)
 }
 
-fn create_channels(
-    results: Vec<LiveHost>,
-    channels: &mut Channels) -> Result<Vec<LiveHost>> {
-    let mut configs: Vec<LiveHost> = Vec::new();
+fn create_channels(results: &Vec<LiveHost>) -> Result<(ServerChannels, WatchChannels)> {
 
-    results.into_iter().try_for_each(|live_host| {
-        // Create a channel to receive lazy render requests
-        let (request_tx, request_rx) = mpsc::unbounded_channel::<String>();
+    // Create the collection of channels
+    let mut server: ServerChannels = Default::default();
+    let mut watch: WatchChannels = Default::default();
+
+    results.iter().try_for_each(|live_host| {
 
         // Configure the live reload relay channels
-        let (ws_tx, ws_rx) = broadcast::channel::<Message>(128);
-        //let reload_tx = ws_tx.clone();
+        let (ws_tx, _ws_rx) = broadcast::channel::<Message>(128);
+        server.websockets.insert(live_host.name.clone(), ws_tx.clone());
+        watch.websockets.insert(live_host.name.clone(), ws_tx);
 
-        //let host_channel = HostChannel::new(reload_tx, request_tx);
-        //channels
-            //.hosts
-            //.entry(live_host.name.clone())
-            //.or_insert(host_channel);
-
-        channels.websockets.insert(live_host.name.clone(), (ws_tx, ws_rx));
-        channels.render.insert(live_host.name.clone(), (request_tx, request_rx));
-            //.entry(live_host.name.clone())
-            //.or_insert(host_channel);
-
-        configs.push(live_host);
+        // Create a channel to receive lazy render requests
+        let (request_tx, request_rx) = mpsc::channel::<String>(channels::RENDER_CHANNEL_BUFFER);
+        server.render.insert(live_host.name.clone(), request_tx);
+        watch.render.insert(live_host.name.clone(), request_rx);
 
         Ok::<(), Error>(())
     })?;
 
-    Ok(configs)
+    Ok((server, watch))
 }
 
 /// Spawn a thread that listens for the bind message from the 
@@ -245,7 +234,7 @@ fn spawn_bind_open(
 /// file system watcher.
 fn spawn_monitor(
     watchers: Vec<LiveHost>,
-    channels: Arc<RwLock<Channels>>,
+    channels: Arc<RwLock<WatchChannels>>,
     error_cb: ErrorCallback,
 ) {
     for w in watchers {
@@ -280,8 +269,8 @@ fn spawn_monitor(
                 let mut invalidator = Invalidator::new(w.project);
 
                 let mut channels_access = watch_channels.write().unwrap();
-                let ws_tx = channels_access.get_host_reload(&name);
-                let mut request = channels_access.render.get_mut(&name).map(|(_, rx)| rx).unwrap();
+                let ws_tx = channels_access.websockets.get(&name).unwrap().clone();
+                let request = channels_access.render.get_mut(&name).unwrap();
 
                 loop {
                     tokio::select! {
@@ -289,7 +278,7 @@ fn spawn_monitor(
                             //let reponse_tx = channels.render_responses.get(&w.name).clone().unwrap();
 
                             if let Some(path) = val {
-                                println!("Got web server render request: {}", &path);
+                                //println!("Got web server render request: {}", &path);
                                 let updater = invalidator.updater_mut();
                                 let has_page_path = updater.has_page_path(&path);
                                 if has_page_path {
@@ -336,9 +325,6 @@ fn spawn_monitor(
                                     let msg = livereload::messages::start();
                                     let txt = serde_json::to_string(&msg).unwrap();
 
-                                    //let channels_reader = watch_channels.read().unwrap();
-                                    //let ws_tx = channels_access.get_host_reload(&name);
-
                                     let _ = ws_tx.send(Message::text(txt));
 
                                     match invalidator.get_invalidation(paths) {
@@ -361,7 +347,6 @@ fn spawn_monitor(
                                             {
                                                 // Notify of build completed
                                                 Ok(_) => {
-                                                    println!("Sending message over websocket...");
                                                     let msg =
                                                         livereload::messages::reload(href);
                                                     let txt = serde_json::to_string(&msg)
