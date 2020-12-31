@@ -22,7 +22,7 @@ use serde::Serialize;
 
 use log::{error, info, trace};
 
-use crate::{drop_privileges::*, Channels, Error};
+use crate::{drop_privileges::*, channels::{Channels, ResponseValue}, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
 #[derive(Debug)]
@@ -124,7 +124,7 @@ fn get_host_filter(
     };
 
     let (response_tx, response_rx) =
-        mpsc::unbounded_channel::<super::ResponseValue>();
+        mpsc::unbounded_channel::<ResponseValue>();
 
     let response_arc = Arc::new(response_rx);
 
@@ -212,7 +212,7 @@ fn get_live_reload(
 async fn live_render(
     path: FullPath,
     tx: mpsc::UnboundedSender<String>,
-    _rx: Arc<mpsc::UnboundedReceiver<super::ResponseValue>>,
+    _rx: Arc<mpsc::UnboundedReceiver<ResponseValue>>,
     //rx: Option<&mpsc::UnboundedReceiver<Option<Box<dyn std::error::Error + Send>>>>
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
     if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {

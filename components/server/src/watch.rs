@@ -19,8 +19,7 @@ use config::server::{
 
 use workspace::{CompileResult, Invalidator, Project};
 
-use crate::{Result, Error, ErrorCallback};
-use super::{Channels, HostChannel};
+use crate::{Result, Error, ErrorCallback, channels::{Channels, HostChannel}};
 
 /// Encpsulates the information needed to watch the 
 /// file system and re-render when file changes are detected.
@@ -68,6 +67,7 @@ pub async fn watch(
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
     opts.hosts = hosts;
 
+    // Spawn the bind listener to launch a browser
     spawn_bind_open(bind_rx, launch);
 
     // Spawn the file system watchers

@@ -2,8 +2,7 @@ use tokio::sync::oneshot;
 
 use log::info;
 
-use super::{router, Channels};
-use crate::Error;
+use crate::{router, Error, channels::Channels};
 use config::server::{ConnectionInfo, LaunchConfig, ServerConfig};
 
 /// Start a server and launch a browser window.
