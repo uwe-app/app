@@ -2,7 +2,10 @@ use std::convert::Infallible;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::{Arc};
+use std::sync::Arc;
+
+use once_cell::sync::OnceCell;
+use serde_json::json;
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
@@ -19,9 +22,19 @@ use warp::{Filter, Rejection, Reply};
 use serde::Serialize;
 
 use log::{error, info, trace};
+use bracket::{Registry};
 
 use crate::{drop_privileges::*, channels::{ServerChannels, ResponseValue}, Error};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
+
+pub fn parser() -> &'static Registry<'static> {
+    static INSTANCE: OnceCell<Registry> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        let mut registry = Registry::new();
+        let _ = registry.insert("error", include_str!("error.html"));
+        registry
+    })
+}
 
 #[derive(Debug)]
 struct RenderSendError;
@@ -214,7 +227,8 @@ async fn live_render(
     rx: Arc<RwLock<mpsc::Receiver<ResponseValue>>>,
 ) -> Result<impl Reply, warp::Rejection> {
     if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {
-        let href = if path.as_str().ends_with("/") {
+        // NOTE: the link for the root page is stored as `/` not `/index.html` at the moment.
+        let href = if path.as_str().ends_with("/") && path.as_str() != "/" {
             format!("{}{}", path.as_str(), config::INDEX_HTML)
         } else {
             path.as_str().to_string()
@@ -231,12 +245,11 @@ async fn live_render(
         let mut reply_channel = rx.write().await;
         if let Some(response) = reply_channel.recv().await {
             if let Some(error) = response {
-
-                // TODO: use a basic template and proper error handling
-                // TODO: ensure we connect with /__livereload.js agai
-            
+                let registry = parser();
+                let data = json!({"title": "Render Error", "message": error.to_string()});
+                let doc = registry.render("error", &data).unwrap();
                 return Ok(warp::reply::with_status(
-                    format!("Render Error {}", error.to_string()),
+                    warp::reply::html(doc),
                     StatusCode::INTERNAL_SERVER_ERROR))
             }
         }

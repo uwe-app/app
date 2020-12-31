@@ -297,7 +297,7 @@ fn spawn_monitor(
                                 let updater = invalidator.updater_mut();
                                 let has_page_path = updater.has_page_path(&path);
                                 if has_page_path {
-                                    info!("JIT {}", &path);
+                                    info!("SSR {}", &path);
                                     match updater.render(&path).await {
                                         Ok(_) => {
                                             let _ = response.send(None).await;
