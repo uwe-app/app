@@ -792,11 +792,11 @@ pub fn settings<P: AsRef<Path>>(
 /// Wrapper for project that can be used to create 
 /// a host configuration.
 pub struct HostInfo {
+    pub name: String,
     pub project: Project,
     pub source: PathBuf,
     pub target: PathBuf,
     pub endpoint: String,
-    pub hostname: String,
 }
 
 #[derive(Default)]
@@ -812,11 +812,11 @@ impl CompileResult {
         // otherwise we can just run using the standard `localhost`.
         let multiple = self.projects.len() > 1;
         self.projects.into_iter().map(|project| {
+            let name = project.config.get_local_host_name(multiple);
             let source = project.options.source.clone();
             let target = project.options.base.clone();
-            let hostname = project.config.get_local_host_name(multiple);
             let endpoint = utils::generate_id(16);
-            HostInfo {project, source, target, endpoint, hostname}
+            HostInfo {name, project, source, target, endpoint}
         })
         .collect::<Vec<HostInfo>>()
     }

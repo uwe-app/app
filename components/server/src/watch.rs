@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::path::PathBuf;
 use std::time::{SystemTime, Duration};
 use std::sync::{Arc, RwLock};
 
@@ -18,17 +17,9 @@ use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
 };
 
-use workspace::{CompileResult, Invalidator, Project, HostInfo};
+use workspace::{CompileResult, Invalidator, HostInfo};
 
 use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels, ResponseValue}};
-
-/// Encpsulates the information needed to watch the 
-/// file system and re-render when file changes are detected.
-struct LiveHost {
-    name: String,
-    source: PathBuf,
-    project: Project,
-}
 
 /// Start watching for file system notifications in the source 
 /// directories for the given compiler results.
@@ -45,7 +36,7 @@ pub async fn watch(
     let host_info = result.into_host_info();
     create_resources(port, &tls, &host_info)?;
 
-    let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<LiveHost>) = 
+    let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<HostInfo>) = 
         into_hosts(host_info)?.into_iter().unzip();
 
     let (server_channels, watch_channels) = create_channels(&live_hosts)?;
@@ -78,21 +69,21 @@ pub async fn watch(
 fn create_resources(
     port: u16,
     tls: &Option<TlsConfig>,
-    host_info: &Vec<HostInfo>) -> Result<()> {
+    hosts: &Vec<HostInfo>) -> Result<()> {
 
-    host_info.iter().try_for_each(|info| {
+    hosts.iter().try_for_each(|host| {
         // NOTE: These host names may not resolve so cannot attempt
         // NOTE: to lookup a socket address here.
         let ws_url = config::server::to_websocket_url(
             tls.is_some(),
-            &info.hostname,
-            &info.endpoint,
+            &host.name,
+            &host.endpoint,
             config::server::get_port(port.to_owned(), tls, PortType::Infer),
         );
 
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
-        livereload::write(&info.project.config, &info.target, &ws_url)?;
+        livereload::write(&host.project.config, &host.target, &ws_url)?;
 
         Ok::<(), Error>(())
     })?;
@@ -103,18 +94,15 @@ fn create_resources(
 /// Create host configurations paired with live host configurations which 
 /// contain data for file system watching and the channels used for message 
 /// passing.
-fn into_hosts(results: Vec<HostInfo>) -> Result<Vec<(HostConfig, LiveHost)>> {
-    let mut out: Vec<(HostConfig, LiveHost)> = Vec::new();
+fn into_hosts(results: Vec<HostInfo>) -> Result<Vec<(HostConfig, HostInfo)>> {
+    let mut out: Vec<(HostConfig, HostInfo)> = Vec::new();
 
     results.into_iter().try_for_each(|result| {
-        let project = result.project;
-        let source = result.source;
-        let target = result.target;
-        let hostname = result.hostname;
-        let endpoint = result.endpoint;
+        let target = result.target.clone();
+        let hostname = result.name.clone();
+        let endpoint = result.endpoint.clone();
 
-        // TODO: fix redirect URIs
-        let redirect_uris = project.redirects.collect()?;
+        let redirect_uris = result.project.redirects.collect()?;
 
         info!("Virtual host: {}", &hostname);
 
@@ -127,40 +115,34 @@ fn into_hosts(results: Vec<HostInfo>) -> Result<Vec<(HostConfig, LiveHost)>> {
             true,
         );
 
-        let live_host = LiveHost {
-            name: host.name.clone(),
-            source,
-            project,
-        };
-
-        out.push((host, live_host));
+        out.push((host, result));
 
         Ok::<(), Error>(())
     })?;
     Ok(out)
 }
 
-fn create_channels(results: &Vec<LiveHost>) -> Result<(ServerChannels, WatchChannels)> {
+fn create_channels(results: &Vec<HostInfo>) -> Result<(ServerChannels, WatchChannels)> {
     // Create the collection of channels
     let mut server: ServerChannels = Default::default();
     let mut watch: WatchChannels = Default::default();
 
-    results.iter().try_for_each(|live_host| {
+    results.iter().try_for_each(|host| {
         // Configure the live reload relay channels
         let (ws_tx, _ws_rx) = broadcast::channel::<Message>(128);
-        server.websockets.insert(live_host.name.clone(), ws_tx.clone());
-        watch.websockets.insert(live_host.name.clone(), ws_tx);
+        server.websockets.insert(host.name.clone(), ws_tx.clone());
+        watch.websockets.insert(host.name.clone(), ws_tx);
 
         // Create a channel to receive lazy render requests
         let (request_tx, request_rx) = mpsc::channel::<String>(channels::RENDER_CHANNEL_BUFFER);
-        server.render.insert(live_host.name.clone(), request_tx);
-        watch.render.insert(live_host.name.clone(), request_rx);
+        server.render.insert(host.name.clone(), request_tx);
+        watch.render.insert(host.name.clone(), request_rx);
 
         // Create a channel for replies when rendering
         let (response_tx, response_rx) =
             mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
-        server.render_responses.insert(live_host.name.clone(), response_rx);
-        watch.render_responses.insert(live_host.name.clone(), response_tx);
+        server.render_responses.insert(host.name.clone(), response_rx);
+        watch.render_responses.insert(host.name.clone(), response_tx);
 
         Ok::<(), Error>(())
     })?;
@@ -214,7 +196,7 @@ fn spawn_bind_open(
 /// Spawn a thread for each virtual host that requires a 
 /// file system watcher.
 fn spawn_monitor(
-    watchers: Vec<LiveHost>,
+    watchers: Vec<HostInfo>,
     channels: Arc<RwLock<WatchChannels>>,
     error_cb: ErrorCallback,
 ) {
