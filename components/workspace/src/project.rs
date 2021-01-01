@@ -6,6 +6,7 @@ use log::{debug, info, warn};
 
 use futures::TryFutureExt;
 use url::Url;
+use scopeguard::defer;
 
 use collator::{
     self, menu, CollateInfo, CollateRequest, CollateResult, Collation,
@@ -25,6 +26,7 @@ use locale::Locales;
 use crate::{
     manifest::Manifest,
     plugins,
+    lock,
     renderer::{CompilerInput, RenderFilter, RenderOptions, Renderer, Sources},
     Error, Result,
 };
@@ -785,7 +787,8 @@ pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
 ) -> Result<CompileResult> {
-    let workspace = open(project, true, &args.member)?;
+    let workspace = open(project.as_ref(), true, &args.member)?;
+
     let mut compiled: CompileResult = Default::default();
 
     // Cache of workspace member information used to
@@ -813,6 +816,10 @@ pub async fn compile<P: AsRef<Path>>(
                 continue;
             }
         }
+
+        let lock_path = config.file().to_path_buf();
+        let lock_file = lock::acquire(&lock_path)?;
+        defer! { let _ = lock::release(lock_file); }
 
         // WARN: If we add too many futures to the chain
         // WARN: then the compiler overflows resolving trait

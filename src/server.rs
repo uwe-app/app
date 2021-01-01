@@ -2,11 +2,10 @@ use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
 use std::path::PathBuf;
 
-use scopeguard::defer;
+use config::ProfileSettings;
+use workspace::compile;
 
 use crate::opts::Compile;
-use config::{lock_file::LockFile, ProfileSettings};
-use workspace::{compile, lock};
 
 /// Serve using an `index.html` file.
 async fn serve_index(opts: ServerConfig, launch: LaunchConfig) -> Result<()> {
@@ -40,10 +39,6 @@ pub async fn serve(
                 opts.default_host.directory = build_target;
             }
         } else {
-            let lock_path = LockFile::get_lock_file(&target);
-            let lock_file = lock::acquire(&lock_path)?;
-            defer! { let _ = lock::release(lock_file); }
-
             let mut settings = ProfileSettings::new_release();
             settings.exec = Some(args.exec);
             settings.member = args.member;

@@ -3,12 +3,10 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::AwsPublishEnvironment;
-use config::{lock_file::LockFile, ProfileSettings};
+use config::{AwsPublishEnvironment, ProfileSettings};
 use publisher::{self, report::FileBuilder, PublishProvider, PublishRequest};
 
-use scopeguard::defer;
-use workspace::{compile, lock, Project};
+use workspace::{compile, Project};
 
 use crate::{Error, Result};
 
@@ -25,10 +23,6 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     if !project.exists() || !project.is_dir() {
         return Err(Error::NotDirectory(project.to_path_buf()));
     }
-
-    let lock_path = LockFile::get_lock_file(&options.project);
-    let lock_file = lock::acquire(&lock_path)?;
-    defer! { let _ = lock::release(lock_file); }
 
     let mut args = ProfileSettings::new_release();
     args.exec = Some(options.exec);

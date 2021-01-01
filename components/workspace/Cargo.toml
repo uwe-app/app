@@ -30,3 +30,4 @@ url = "2.1.1"
 owning_ref = "^0.4.1"
 ignore = "^0.4"
 tokio = { version = "0.2.22", features = ["rt-core", "rt-threaded", "fs"] }
+scopeguard = "1.1.0"

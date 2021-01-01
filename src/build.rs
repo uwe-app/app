@@ -1,10 +1,6 @@
 use std::path::Path;
 
-use config::{lock_file::LockFile, ProfileSettings};
-
-use scopeguard::defer;
-use workspace::lock;
-
+use config::ProfileSettings;
 use crate::{Error, opts::fatal};
 
 pub async fn compile<P: AsRef<Path>>(
@@ -15,10 +11,6 @@ pub async fn compile<P: AsRef<Path>>(
     if !project.exists() || !project.is_dir() {
         return Err(Error::NotDirectory(project.to_path_buf()));
     }
-
-    let lock_path = LockFile::get_lock_file(project);
-    let lock_file = lock::acquire(&lock_path)?;
-    defer! { let _ = lock::release(lock_file); }
 
     let is_live = args.live.is_some() && args.live.unwrap();
     if is_live {
