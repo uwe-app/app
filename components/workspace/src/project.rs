@@ -17,6 +17,7 @@ use compiler::{parser, parser::Parser, BuildContext};
 use config::{
     hook::HookConfig, plugin_cache::PluginCache, profile::Profiles,
     syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
+    server::HostConfig,
     RuntimeOptions,
 };
 
@@ -804,21 +805,56 @@ pub struct CompileResult {
     pub projects: Vec<Project>,
 }
 
-impl CompileResult {
-    /// Wrap projects into an intermediary that can be used 
-    /// to generate a host configuration.
-    pub fn into_host_info(self) -> Vec<HostInfo> {
+impl Into<HostResult> for CompileResult {
+    fn into(self) -> HostResult {
         // Multiple projects will use *.localhost names
         // otherwise we can just run using the standard `localhost`.
         let multiple = self.projects.len() > 1;
-        self.projects.into_iter().map(|project| {
+        let hosts: Vec<HostInfo> = self.projects.into_iter().map(|project| {
             let name = project.config.get_local_host_name(multiple);
             let source = project.options.source.clone();
             let target = project.options.base.clone();
             let endpoint = utils::generate_id(16);
             HostInfo {name, project, source, target, endpoint}
         })
-        .collect::<Vec<HostInfo>>()
+        .collect();
+
+        HostResult { hosts }
+    }
+}
+
+#[derive(Default)]
+pub struct HostResult {
+    pub hosts: Vec<HostInfo>,
+}
+
+impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
+    type Error = crate::Error;
+    fn try_into(self) -> std::result::Result<Vec<(HostInfo, HostConfig)>, Self::Error> {
+        let mut out: Vec<(HostInfo, HostConfig)> = Vec::new();
+
+        self.hosts.into_iter().try_for_each(|info| {
+            let target = info.target.clone();
+            let hostname = info.name.clone();
+            let endpoint = info.endpoint.clone();
+            let redirect_uris = info.project.redirects.collect()?;
+
+            info!("Virtual host: {}", &hostname);
+
+            let host = HostConfig::new(
+                target,
+                hostname,
+                Some(redirect_uris),
+                Some(endpoint),
+                false,
+                false,
+            );
+
+            out.push((info, host));
+
+            Ok::<(), Error>(())
+        })?;
+        Ok(out)
     }
 }
 

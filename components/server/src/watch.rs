@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::time::{SystemTime, Duration};
 use std::sync::{Arc, RwLock};
+use std::convert::TryInto;
 
 use log::{error, info};
 
@@ -17,7 +18,7 @@ use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
 };
 
-use workspace::{CompileResult, Invalidator, HostInfo};
+use workspace::{CompileResult, Invalidator, HostInfo, HostResult};
 
 use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels, ResponseValue}};
 
@@ -33,13 +34,19 @@ pub async fn watch(
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
-    let host_info = result.into_host_info();
+    let host_result: HostResult = result.into();
+    let host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
+
+    let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) = 
+        host_configs.into_iter().unzip();
+
+    for host in hosts.iter_mut() {
+        host.watch = true;
+    }
+
     create_resources(port, &tls, &host_info)?;
 
-    let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<HostInfo>) = 
-        into_hosts(host_info)?.into_iter().unzip();
-
-    let (server_channels, watch_channels) = create_channels(&live_hosts)?;
+    let (server_channels, watch_channels) = create_channels(&host_info)?;
 
     if hosts.is_empty() {
         return Err(Error::NoLiveHosts);
@@ -54,7 +61,7 @@ pub async fn watch(
     spawn_bind_open(bind_rx, launch);
 
     // Spawn the file system watchers
-    spawn_monitor(live_hosts, Arc::new(RwLock::new(watch_channels)), error_cb);
+    spawn_monitor(host_info, Arc::new(RwLock::new(watch_channels)), error_cb);
 
     // Convert to &'static reference
     let opts = super::configure(opts);
@@ -89,37 +96,6 @@ fn create_resources(
     })?;
 
     Ok(())
-}
-
-/// Create host configurations paired with live host configurations which 
-/// contain data for file system watching and the channels used for message 
-/// passing.
-fn into_hosts(results: Vec<HostInfo>) -> Result<Vec<(HostConfig, HostInfo)>> {
-    let mut out: Vec<(HostConfig, HostInfo)> = Vec::new();
-
-    results.into_iter().try_for_each(|result| {
-        let target = result.target.clone();
-        let hostname = result.name.clone();
-        let endpoint = result.endpoint.clone();
-
-        let redirect_uris = result.project.redirects.collect()?;
-
-        info!("Virtual host: {}", &hostname);
-
-        let host = HostConfig::new(
-            target,
-            hostname,
-            Some(redirect_uris),
-            Some(endpoint),
-            false,
-            true,
-        );
-
-        out.push((host, result));
-
-        Ok::<(), Error>(())
-    })?;
-    Ok(out)
 }
 
 fn create_channels(results: &Vec<HostInfo>) -> Result<(ServerChannels, WatchChannels)> {
