@@ -37,6 +37,8 @@ pub async fn serve(
                     return Err(Error::NotDirectory(build_target));
                 }
                 opts.default_host.directory = build_target;
+
+                // TODO: try to load redirects from `redirects.json`
             }
         } else {
             let mut settings = ProfileSettings::new_release();
@@ -52,6 +54,9 @@ pub async fn serve(
             if let Some(project) = it.next() {
                 let build_target = project.options.base.to_path_buf();
                 opts.default_host.directory = build_target;
+
+                let redirect_uris = project.redirects.collect()?;
+                opts.default_host.redirects = Some(redirect_uris);
             }
         }
 
