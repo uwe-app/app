@@ -18,7 +18,7 @@ use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
 };
 
-use workspace::{CompileResult, Invalidator, Project};
+use workspace::{CompileResult, Invalidator, Project, HostInfo};
 
 use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels, ResponseValue}};
 
@@ -28,15 +28,6 @@ struct LiveHost {
     name: String,
     source: PathBuf,
     project: Project,
-}
-
-/// Intermediary value for live projects.
-struct LiveResult {
-    project: Project,
-    source: PathBuf,
-    target: PathBuf,
-    endpoint: String,
-    hostname: String,
 }
 
 /// Start watching for file system notifications in the source 
@@ -51,11 +42,11 @@ pub async fn watch(
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
-    let results = create_resources(port, &tls, result)?;
+    let host_info = result.into_host_info();
+    create_resources(port, &tls, &host_info)?;
+
     let (mut hosts, live_hosts): (Vec<HostConfig>, Vec<LiveHost>) = 
-        create_hosts(results)?
-        .into_iter()
-        .unzip();
+        into_hosts(host_info)?.into_iter().unzip();
 
     let (server_channels, watch_channels) = create_channels(&live_hosts)?;
 
@@ -83,51 +74,36 @@ pub async fn watch(
     Ok(())
 }
 
-/// Write out the live reload Javascript and CSS for each 
-/// project and create intermediary results.
+/// Write out the live reload Javascript and CSS.
 fn create_resources(
     port: u16,
     tls: &Option<TlsConfig>,
-    result: CompileResult) -> Result<Vec<LiveResult>> {
+    host_info: &Vec<HostInfo>) -> Result<()> {
 
-    let mut out: Vec<LiveResult> = Vec::new();
-
-    // Multiple projects will use *.localhost names
-    // otherwise we can just run using the standard `localhost`.
-    let multiple = result.projects.len() > 1;
-
-    result.projects.into_iter().try_for_each(|project| {
-        let source = project.options.source.clone();
-        let target = project.options.base.clone();
-
-        let hostname = project.config.get_local_host_name(multiple);
-        let endpoint = utils::generate_id(16);
-
+    host_info.iter().try_for_each(|info| {
         // NOTE: These host names may not resolve so cannot attempt
         // NOTE: to lookup a socket address here.
         let ws_url = config::server::to_websocket_url(
             tls.is_some(),
-            &hostname,
-            &endpoint,
+            &info.hostname,
+            &info.endpoint,
             config::server::get_port(port.to_owned(), tls, PortType::Infer),
         );
 
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
-        livereload::write(&project.config, &target, &ws_url)?;
-
-        out.push(LiveResult {project, source, target, endpoint, hostname});
+        livereload::write(&info.project.config, &info.target, &ws_url)?;
 
         Ok::<(), Error>(())
     })?;
 
-    Ok(out)
+    Ok(())
 }
 
 /// Create host configurations paired with live host configurations which 
 /// contain data for file system watching and the channels used for message 
 /// passing.
-fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>> {
+fn into_hosts(results: Vec<HostInfo>) -> Result<Vec<(HostConfig, LiveHost)>> {
     let mut out: Vec<(HostConfig, LiveHost)> = Vec::new();
 
     results.into_iter().try_for_each(|result| {
