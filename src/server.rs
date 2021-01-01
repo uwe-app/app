@@ -1,9 +1,11 @@
+use std::path::PathBuf;
+use std::convert::TryInto;
+
 use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
-use std::path::PathBuf;
 
-use config::ProfileSettings;
-use workspace::compile;
+use config::{ProfileSettings, server::HostConfig};
+use workspace::{compile, HostInfo, HostResult};
 
 use crate::opts::Compile;
 
@@ -48,16 +50,23 @@ pub async fn serve(
 
             let result = compile(&target, &settings).await?;
 
-            let mut it = result.projects.into_iter();
+            let host_result: HostResult = result.into();
+            let mut host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
 
-            // First project is the default host
-            if let Some(project) = it.next() {
-                let build_target = project.options.base.to_path_buf();
-                opts.default_host.directory = build_target;
-
-                let redirect_uris = project.redirects.collect()?;
-                opts.default_host.redirects = Some(redirect_uris);
+            for (info, host) in host_configs.iter_mut() {
+                host.directory = info.project.options.base.to_path_buf();
             }
+
+            let mut it = host_configs.into_iter();
+            let (_, default_host) = it.next().unwrap();
+            opts.default_host = default_host;
+
+            let hosts: Vec<HostConfig> = 
+                it
+                .map(|(_, host)| host)
+                .collect();
+
+            opts.hosts = hosts;
         }
 
         Ok(serve_index(opts, launch).await?)

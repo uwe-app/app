@@ -449,8 +449,9 @@ async fn live_render(
 async fn redirect_map(
     path: FullPath,
     opts: &'static ServerConfig,
+    host: &'static HostConfig,
 ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-    if let Some(ref redirects) = opts.default_host.redirects {
+    if let Some(ref redirects) = host.redirects {
         if let Some(uri) = redirects.get(path.as_str()) {
             let location = uri.to_string().parse::<Uri>().unwrap();
             return if opts.temporary_redirect {
@@ -526,9 +527,11 @@ fn get_static_server(
     };
 
     let with_options = warp::any().map(move || opts);
+    let with_host = warp::any().map(move || host);
     let redirect_handler = warp::get()
         .and(warp::path::full())
         .and(with_options)
+        .and(with_host)
         .and_then(redirect_map);
 
     let with_target = warp::any().map(move || host.directory.clone());

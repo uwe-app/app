@@ -839,7 +839,7 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
             let endpoint = info.endpoint.clone();
             let redirect_uris = info.project.redirects.collect()?;
 
-            info!("Virtual host: {}", &hostname);
+            info!("Virtual host: {} ({} redirects)", &hostname, redirect_uris.len());
 
             let host = HostConfig::new(
                 target,
