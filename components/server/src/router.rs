@@ -53,6 +53,207 @@ impl<T: fmt::Display> fmt::Display for OptFmt<T> {
     }
 }
 
+macro_rules! virtual_hosts {
+    (
+        $opts:expr,
+        $filters:expr,
+        $addr:expr,
+        $bind:expr
+    ) => {
+        // NOTE: This mess is because `warp` cannot dynamically chain filters using
+        // NOTE: `or()`; we can't use macro_rules!() as it is runtime data and
+        // NOTE: because `or()` wraps with the `Or` struct it is impossible to type
+        // NOTE: this in a loop :(
+        if $filters.is_empty() {
+            panic!("No virtual hosts!");
+        } else if $filters.len() == 1 {
+            let all = $filters.swap_remove(0);
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 2 {
+            let all = $filters.swap_remove(0).or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 3 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 4 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 5 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 6 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 7 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 8 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 9 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 10 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 11 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 12 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 13 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 14 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 15 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else if $filters.len() == 16 {
+            let all = $filters
+                .swap_remove(0)
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0))
+                .or($filters.swap_remove(0));
+            bind!($opts, all, $addr, $bind);
+        } else {
+            panic!("Too many virtual hosts!");
+        }
+
+    };
+}
+
 macro_rules! bind {
     (
         $opts:expr,
@@ -118,24 +319,25 @@ fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
+) -> BoxedFilter<(impl Reply,)> {
+    let (hostname, static_server) = get_static_server(address, opts, host);
+    warp::host::exact(&hostname)
+        .and(static_server)
+        .boxed()
+}
+
+fn get_host_filter_watch(
+    address: &SocketAddr,
+    opts: &'static ServerConfig,
+    host: &'static HostConfig,
     channels: &mut ServerChannels,
 ) -> BoxedFilter<(impl Reply,)> {
-    let port = address.port();
-    let host_port = format!("{}:{}", host.name, port);
-
-    let static_server = get_static_server(opts, host);
-    let hostname: &str = if port == 80 || port == 443 {
-        &host.name
-    } else {
-        &host_port
-    };
+    let (hostname, static_server) = get_static_server(address, opts, host);
 
     let livereload = get_live_reload(opts, host, channels).unwrap();
     let request_tx = channels.render.get(&host.name).unwrap().clone();
     let request = warp::any().map(move || request_tx.clone());
 
-    //let (response_tx, response_rx) =
-        //mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
     let response_arc = Arc::new(RwLock::new(channels.render_responses.remove(&host.name).unwrap()));
     let response = warp::any().map(move || Arc::clone(&response_arc));
 
@@ -145,7 +347,7 @@ fn get_host_filter(
         .and(response)
         .and_then(live_render);
 
-    warp::host::exact(hostname)
+    warp::host::exact(&hostname)
         .and(livereload.or(live_renderer).or(static_server))
         .boxed()
 }
@@ -289,9 +491,10 @@ fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
 }
 
 fn get_static_server(
+    address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
-) -> BoxedFilter<(impl Reply,)> {
+) -> (String, BoxedFilter<(impl Reply,)>) {
     // NOTE: Later we add this to all requests in the macro
     // NOTE: but we also need to add it here so the `else` branch
     // NOTE: below for `disable_cache` has a type that matches the
@@ -357,7 +560,14 @@ fn get_static_server(
         .or(file_server)
         .with(log);
 
-    static_server.boxed()
+    let port = address.port();
+    let host_port = format!("{}:{}", host.name, port);
+    let hostname: &str = if port == 80 || port == 443 {
+        &host.name
+    } else {
+        &host_port
+    };
+    (hostname.to_string(), static_server.boxed())
 }
 
 pub async fn serve(
@@ -367,205 +577,29 @@ pub async fn serve(
 ) -> crate::Result<()> {
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     let default_host: &'static HostConfig = &opts.default_host;
+    let should_watch = default_host.watch;
 
     let mut configs = vec![default_host];
     for host in opts.hosts.iter() {
         configs.push(host);
     }
-    let mut filters: Vec<BoxedFilter<_>> = configs
-        .iter()
-        .map(|c| get_host_filter(&addr, opts, c, &mut channels))
-        .collect();
 
-    // NOTE: This mess is because `warp` cannot dynamically chain filters using
-    // NOTE: `or()`; we can't use macro_rules!() as it is runtime data and
-    // NOTE: because `or()` wraps with the `Or` struct it is impossible to type
-    // NOTE: this in a loop :(
-    if filters.is_empty() {
-        panic!("No virtual hosts!");
-    } else if filters.len() == 1 {
-        let all = filters.swap_remove(0);
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 2 {
-        let all = filters.swap_remove(0).or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 3 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 4 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 5 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 6 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 7 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 8 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 9 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 10 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 11 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 12 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 13 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 14 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 15 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
-    } else if filters.len() == 16 {
-        let all = filters
-            .swap_remove(0)
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0))
-            .or(filters.swap_remove(0));
-        bind!(opts, all, &addr, bind);
+    if should_watch {
+        let mut filters: Vec<BoxedFilter<_>> = configs
+            .iter()
+            .map(|c| {
+                get_host_filter_watch(&addr, opts, c, &mut channels)
+            })
+            .collect();
+        virtual_hosts!(opts, filters, &addr, bind);
     } else {
-        panic!("Too many virtual hosts!");
+        let mut filters: Vec<BoxedFilter<_>> = configs
+            .iter()
+            .map(|c| {
+                get_host_filter(&addr, opts, c)
+            })
+            .collect();
+        virtual_hosts!(opts, filters, &addr, bind);
     }
 
     Ok(())
@@ -577,14 +611,6 @@ struct ErrorMessage {
     code: u16,
     message: String,
 }
-
-/*
-async fn render_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
-    Ok(warp::reply::with_status("Render Error", StatusCode::INTERNAL_SERVER_ERROR))
-
-    //Err(warp::reject())
-}
-*/
 
 // This function receives a `Rejection` and tries to return a custom
 // value, otherwise simply passes the rejection along.

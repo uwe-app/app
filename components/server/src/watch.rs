@@ -161,6 +161,7 @@ fn create_hosts(results: Vec<LiveResult>) -> Result<Vec<(HostConfig, LiveHost)>>
             Some(redirect_uris),
             Some(endpoint),
             false,
+            true,
         );
 
         let live_host = LiveHost {

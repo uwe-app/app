@@ -204,17 +204,27 @@ impl ServerConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HostConfig {
-    pub directory: PathBuf,
+    /// Host name.
     pub name: String,
+    /// Directory for static files.
+    pub directory: PathBuf,
+
     #[serde(skip)]
     pub redirects: Option<Redirects>,
+
+    /// Websocket endpoint when watching for file system changes.
     #[serde(skip)]
     pub endpoint: Option<String>,
     /// Send headers that instruct browsers to disable caching.
     #[serde(skip)]
     pub disable_cache: bool,
+    /// Log server requests.
     #[serde(skip)]
     pub log: bool,
+    /// Flag that indicates this host should be configured 
+    /// for file system watching.
+    #[serde(skip)]
+    pub watch: bool,
 }
 
 impl Default for HostConfig {
@@ -226,6 +236,7 @@ impl Default for HostConfig {
             endpoint: None,
             disable_cache: false,
             log: false,
+            watch: false,
         }
     }
 }
@@ -237,6 +248,7 @@ impl HostConfig {
         redirects: Option<Redirects>,
         endpoint: Option<String>,
         log: bool,
+        watch: bool,
     ) -> Self {
         Self {
             directory,
@@ -245,6 +257,7 @@ impl HostConfig {
             endpoint,
             disable_cache: true,
             log,
+            watch,
         }
     }
 }
