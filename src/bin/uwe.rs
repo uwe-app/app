@@ -20,7 +20,7 @@ use uwe::{
 
 #[derive(Debug, StructOpt)]
 /// Universal web editor
-#[structopt(name = "uwe")]
+#[structopt(name = "uwe", after_help = "To upgrade or uninstall use the version manager (uvm).")]
 struct Cli {
     /// Log level
     #[structopt(long, default_value = "info")]

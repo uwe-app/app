@@ -4,7 +4,6 @@ use structopt::StructOpt;
 
 use super::web_server::WebServerOpts;
 
-/// Common compiler options for the `build` and `server` commands.
 #[derive(StructOpt, Debug)]
 pub struct Compile {
     /// Allow hook command execution.
@@ -20,7 +19,6 @@ pub struct Compile {
     pub member: Vec<String>,
 }
 
-/// Options for the `build` command.
 #[derive(StructOpt, Debug)]
 pub struct Build {
     #[structopt(flatten)]

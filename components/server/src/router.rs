@@ -144,20 +144,7 @@ fn get_host_filter(
         .and(request)
         .and(response)
         .and_then(live_render);
-        /*
-        .recover(|e: Rejection| {
-            println!("Got rejection {:?}", e);
-            if !e.is_not_found() {
-                render_rejection(e)
-            } else {
-            }
-        });
-        */
 
-    // NOTE: We would like to conditionally add the livereload route
-    // NOTE: but spent so much time trying to fight the warp type
-    // NOTE: system to achieve it and failing it is much easier
-    // NOTE: to just make it a noop. :(
     warp::host::exact(hostname)
         .and(livereload.or(live_renderer).or(static_server))
         .boxed()
