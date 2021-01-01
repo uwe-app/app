@@ -63,6 +63,9 @@ pub enum Error {
     #[error(r#"Project "{0}" requires execution capability"#)]
     NoExecCapability(String),
 
+    #[error("Duplicate host name {0}: {1} <-> {2}")]
+    DuplicateHostName(String, PathBuf, PathBuf),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

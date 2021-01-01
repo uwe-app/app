@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
 
 use log::{debug, info, warn};
 
@@ -734,6 +735,10 @@ pub fn open<P: AsRef<Path>>(
 
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Config> = Vec::new();
+        let mut names: HashMap<String, PathBuf> = HashMap::new();
+
+        let multiple = projects.members.len() > 1;
+
         for space in projects.members.iter() {
             let mut root = config.project().to_path_buf();
             root.push(space);
@@ -742,6 +747,16 @@ pub fn open<P: AsRef<Path>>(
             }
 
             let mut config = Config::load(&root, false)?;
+
+            let hostname = config.get_local_host_name(multiple);
+            if let Some(ref existing_project) = names.get(&hostname) {
+                return Err(Error::DuplicateHostName(
+                    hostname.clone(),
+                    existing_project.to_path_buf(),
+                    config.project().clone()));
+            }
+            names.insert(hostname.clone(), config.project().clone()); 
+
             config.set_commit(scm_digest(config.project()));
             config.set_member_name(space);
             if config.workspace.is_some() {
