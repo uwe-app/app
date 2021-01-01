@@ -100,7 +100,7 @@ async fn fetch(
     if releases::exists(version)? {
         let version_dir = releases::dir(version)?;
         info!("Verify {}", version_dir.display());
-        let verified = verify::test(version, names)?;
+        let (verified, exe_name, _) = verify::test(version, names)?;
         if verified {
             if select {
                 binary::symlink_names(&version_dir, names)?;
@@ -110,7 +110,7 @@ async fn fetch(
             info!("Installation {}@{} is ok ✓", name, version.to_string());
             return Ok(());
         } else {
-            warn!("Existing installation for {} may be corrupt", version);
+            warn!("Existing installation for {}@{} may be corrupt", exe_name, version);
         }
     }
 

@@ -5,7 +5,7 @@ use semver::Version;
 use crate::{checksum, releases, Error, Result};
 
 /// Verify the checksums for a version.
-pub(crate) fn test(version: &Version, names: &[&str]) -> Result<bool> {
+pub(crate) fn test(version: &Version, names: &[&str]) -> Result<(bool, String, String)> {
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;
     let releases = releases::load(&releases_file)?;
@@ -33,16 +33,16 @@ pub(crate) fn test(version: &Version, names: &[&str]) -> Result<bool> {
 
         let file_path = version_dir.join(name);
         if !file_path.exists() || !file_path.is_file() {
-            return Ok(false);
+            return Ok((false, name.to_string(), expected.to_string()));
         }
 
         debug!("Verify {} ({})", name, expected);
 
         let received = hex::encode(checksum::digest(&file_path)?);
         if &received != expected {
-            return Ok(false);
+            return Ok((false, name.to_string(), expected.to_string()));
         }
     }
 
-    Ok(true)
+    Ok((true, String::new(), String::new()))
 }
