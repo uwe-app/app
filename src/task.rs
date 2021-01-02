@@ -2,8 +2,6 @@ use std::path::PathBuf;
 
 use log::info;
 
-//use url::Url;
-
 use crate::{
     opts::{self, Task},
     Error, Result,
@@ -11,6 +9,35 @@ use crate::{
 use config::plugin::dependency::DependencyTarget;
 
 use super::alias;
+
+pub async fn run(cmd: Task) -> Result<()> {
+    match cmd {
+        Task::ListBlueprints {} => {
+            list_blueprints().await?;
+        }
+        Task::CheckDeps { project } => {
+            let project = opts::project_path(&project)?;
+            check_deps(project).await?;
+        }
+        Task::Alias { cmd } => {
+            alias::run(cmd).await?;
+        }
+        Task::UpdateRuntime {} => {
+            update_runtime().await?;
+        }
+        
+        /*
+          Task::Pull {
+              project,
+              remote,
+              branch,
+          } => {
+              pull(project, remote, branch).await?;
+          }
+          */
+    }
+    Ok(())
+}
 
 /// List standard blueprints.
 async fn list_blueprints() -> Result<()> {
@@ -56,6 +83,14 @@ async fn check_deps(project: PathBuf) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+/// Update the runtime assets.
+pub async fn update_runtime() -> Result<()> {
+    let url = dirs::runtime_url();
+    let dir = dirs::runtime_dir()?;
+    scm::clone_or_fetch(&url, &dir)?;
     Ok(())
 }
 
@@ -131,26 +166,3 @@ fn clone_or_copy(
 }
 */
 
-pub async fn run(cmd: Task) -> Result<()> {
-    match cmd {
-        Task::ListBlueprints {} => {
-            list_blueprints().await?;
-        }
-        Task::CheckDeps { project } => {
-            let project = opts::project_path(&project)?;
-            check_deps(project).await?;
-        }
-        Task::Alias { cmd } => {
-            alias::run(cmd).await?;
-        } /*
-          Task::Pull {
-              project,
-              remote,
-              branch,
-          } => {
-              pull(project, remote, branch).await?;
-          }
-          */
-    }
-    Ok(())
-}

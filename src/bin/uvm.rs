@@ -19,9 +19,6 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    /// Update the runtime assets
-    Runtime {},
-
     /// List release versions
     #[structopt(alias = "ls")]
     List {},
@@ -52,9 +49,6 @@ enum Command {
 
 async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
     match cmd {
-        Command::Runtime {} => {
-            release::fetch().await?;
-        }
         Command::List {} => {
             release::list().await?;
         }

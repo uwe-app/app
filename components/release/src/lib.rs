@@ -87,6 +87,5 @@ pub use install::{install, select};
 pub use list::list;
 pub use publish::publish;
 pub use remove::{prune, remove};
-pub use runtime::fetch;
 pub use uninstall::uninstall;
 pub use update::{update, update_self};

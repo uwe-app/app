@@ -6,6 +6,10 @@ use crate::opts::Alias;
 /// Utility tasks.
 #[derive(StructOpt, Debug)]
 pub enum Task {
+
+    /// Update runtime assets.
+    UpdateRuntime {},
+
     /// List blueprints.
     ListBlueprints {},
 
