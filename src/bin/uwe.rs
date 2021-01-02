@@ -45,12 +45,22 @@ struct Cli {
 #[derive(StructOpt, Debug)]
 enum Command {
     /// Compile a site
+    ///
+    /// Creates a release build of the website into the `build/release` folder; use the `--profile`
+    /// option to build to a different location with alternative build settings.
+    ///
+    /// If the project is a workspace all of the workspace members are compiled; filter the
+    /// workspace members to build using the `--member` option.
     Build {
         #[structopt(flatten)]
         args: Build,
     },
 
     /// Live reload server
+    ///
+    /// Compiles a debug build of the website into the `build/debug` folder and starts a web 
+    /// server with live reload enabled watching for changes to the source files in the `site`
+    /// folder.
     Dev {
         #[structopt(flatten)]
         args: Dev,
