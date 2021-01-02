@@ -40,7 +40,7 @@ fn to_options(
     let project = cfg.project();
     let source = project.join(&args.source);
 
-    let release = args.is_release();
+    //let release = args.is_release();
 
     let mut base = args.target.clone();
     let target_dir = args.name.to_string();
@@ -55,9 +55,9 @@ fn to_options(
 
     let live = args.is_live();
 
-    if live && release {
-        return Err(Error::LiveReloadRelease);
-    }
+    //if live && release {
+        //return Err(Error::LiveReloadRelease);
+    //}
 
     let incremental = args.is_incremental();
     let pristine = args.is_pristine();
