@@ -5,9 +5,11 @@ Repositories must be siblings, for example:
 ```
 .
 ├── app
-├── archive
+├── community
+├── integrations
 ├── library
 ├── plugins
+├── releases
 ├── runtime
 ├── sites
 └── syntax
@@ -29,7 +31,7 @@ A private executable `release-manager` performs all the steps for a release.
 2) Publish a new release: `cargo run --bin=release-manager`.
 3) Commit and push the new release version and checksums in the [runtime][] repository (`releases.json`).
 
-If you need them `release-manager` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
+If you need them `release-manager` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. If uploads succeed but the release fails afterwards `--skip-upload` can also be used. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
 
 ```
 cargo run --bin=release-manager-- --force --skip-build
