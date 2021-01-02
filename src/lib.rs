@@ -1,6 +1,7 @@
 pub mod alias;
 pub mod build;
 pub mod clean;
+pub mod dev;
 pub mod docs;
 pub mod error;
 pub mod lang;

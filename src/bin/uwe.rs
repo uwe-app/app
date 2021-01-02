@@ -13,14 +13,24 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal, Build, Clean, Docs, Lang, New, Publish, Server, Sync, Task,
+        self, fatal, Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync, Task,
     },
     Error, Result,
 };
 
 #[derive(Debug, StructOpt)]
 /// Universal web editor
-#[structopt(name = "uwe", after_help = "To upgrade or uninstall use the version manager (uvm).")]
+#[structopt(name = "uwe", after_help = "EXAMPLES:
+    Start a live reload server: 
+        uwe dev .
+    Create a release build:
+        uwe build .
+    Browse offline help:
+        uwe docs
+
+Visit https://uwe.app for more guides and information.
+    
+To upgrade or uninstall use the version manager (uvm).")]
 struct Cli {
     /// Log level
     #[structopt(long, default_value = "info")]
@@ -39,6 +49,12 @@ enum Command {
     Build {
         #[structopt(flatten)]
         args: Build,
+    },
+
+    /// Live reload server
+    Dev {
+        #[structopt(flatten)]
+        args: Dev,
     },
 
     /// Remove the build directory
@@ -187,18 +203,56 @@ async fn run(cmd: Command) -> Result<()> {
                 None
             };
 
+            //let tls =
+                //uwe::opts::tls_config(None, &args.server, config::PORT_SSL);
+
+            let build_args = ProfileSettings {
+                paths,
+                profile: args.profile,
+                //live: Some(args.live),
+                //launch: args.launch,
+                release: Some(args.release),
+                //host: args.server.host,
+                //port: args.server.port,
+                offline: Some(args.compile.offline),
+                exec: Some(args.compile.exec),
+                member: args.compile.member,
+                include_drafts: Some(args.compile.include_drafts),
+                //tls,
+                ..Default::default()
+            };
+
+            let now = SystemTime::now();
+            match uwe::build::compile(&project, build_args).await {
+                Ok(_) => {
+                    if let Ok(t) = now.elapsed() {
+                        info!("{:?}", t);
+                    }
+                }
+                Err(e) => opts::print_error(e),
+            }
+        }
+
+
+        Command::Dev { args } => {
+            let project = opts::project_path(&args.project)?;
+
+            let paths = if args.paths.len() > 0 {
+                Some(args.paths)
+            } else {
+                None
+            };
+
             let tls =
                 uwe::opts::tls_config(None, &args.server, config::PORT_SSL);
 
             let build_args = ProfileSettings {
                 paths,
                 profile: args.profile,
-                live: Some(args.live),
                 launch: args.launch,
-                release: Some(args.release),
                 host: args.server.host,
                 port: args.server.port,
-                offline: Some(args.offline),
+                offline: Some(args.compile.offline),
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
                 include_drafts: Some(args.compile.include_drafts),
@@ -207,7 +261,7 @@ async fn run(cmd: Command) -> Result<()> {
             };
 
             let now = SystemTime::now();
-            match uwe::build::compile(&project, build_args).await {
+            match uwe::dev::run(&project, build_args).await {
                 Ok(_) => {
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);

@@ -17,6 +17,11 @@ pub struct Compile {
     /// Filter on workspace members
     #[structopt(short, long)]
     pub member: Vec<String>,
+
+    /// Offline mode, do not attempt plugin installation
+    #[structopt(short, long)]
+    pub offline: bool,
+
 }
 
 #[derive(StructOpt, Debug)]
@@ -28,26 +33,36 @@ pub struct Build {
     #[structopt(long)]
     pub profile: Option<String>,
 
-    /// Offline mode, do not attempt plugin installation
-    #[structopt(short, long)]
-    pub offline: bool,
-
-    /// Launch path for a page URL (live reload)
-    #[structopt(long)]
-    pub launch: Option<String>,
-
-    /// Enable live reload
-    #[structopt(short, long)]
-    pub live: bool,
-
     /// Generate a release build
     #[structopt(short, long)]
     pub release: bool,
 
+    /// Project path
+    #[structopt(parse(from_os_str), default_value = ".")]
+    pub project: PathBuf,
+
+    /// Compile only these paths
+    #[structopt(parse(from_os_str))]
+    pub paths: Vec<PathBuf>,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Dev {
+    #[structopt(flatten)]
+    pub compile: Compile,
+
+    /// Build profile name
+    #[structopt(long)]
+    pub profile: Option<String>,
+
+    /// Launch page URL
+    #[structopt(long)]
+    pub launch: Option<String>,
+
     #[structopt(flatten)]
     pub server: WebServerOpts,
 
-    /// Read config from directory
+    /// Project path
     #[structopt(parse(from_os_str), default_value = ".")]
     pub project: PathBuf,
 

@@ -163,7 +163,7 @@ mod task;
 mod web_server;
 
 pub use self::alias::Alias;
-pub use self::build::{Build, Compile};
+pub use self::build::{Build, Compile, Dev};
 pub use self::clean::Clean;
 pub use self::docs::Docs;
 pub use self::lang::Lang;
