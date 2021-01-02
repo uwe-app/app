@@ -140,7 +140,7 @@ async fn script(
     project: &PathBuf,
 ) -> Result<()> {
     let aws_region = publisher::parse_region(region)?;
-    let file = project.join(INSTALL_SH);
+    let file = releases::local_releases(project)?.join(INSTALL_SH);
     let key = INSTALL_SH.to_string();
     info!("Upload install script {}", INSTALL_SH);
     publisher::put_file(&file, &key, aws_region, bucket, profile).await?;
@@ -167,7 +167,7 @@ pub async fn publish(
 
     let semver: Version = version.parse()?;
     let manifest = PathBuf::from(manifest).canonicalize()?;
-    let releases_file = releases::repo_manifest_file(&manifest)?;
+    let releases_file = releases::local_manifest_file(&manifest)?;
 
     let mut releases = releases::load(&releases_file)?;
     if releases.versions.contains_key(&semver) {
@@ -217,6 +217,11 @@ pub async fn publish(
 
     info!("Save {}", releases_file.display());
     releases::save(&releases_file, &releases)?;
+
+    // Commit and push the release manifest
+    let repo = scm::open(releases::local_releases(&manifest)?)?;
+    scm::commit_file(&repo, releases_file.as_path(), "Update release manifest.")?;
+    scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
     Ok(())
 }

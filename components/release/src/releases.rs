@@ -72,17 +72,23 @@ pub(crate) fn save<P: AsRef<Path>>(
     Ok(())
 }
 
-/// Get the release manifest file for a local relative repository
-/// used during the publish process.
-pub(crate) fn repo_manifest_file<P: AsRef<Path>>(
-    manifest: P,
+
+/// Get the path to the local releases repository.
+pub(crate) fn local_releases<P: AsRef<Path>>(
+    base: P,
 ) -> Result<PathBuf> {
-    Ok(manifest
+    Ok(base
         .as_ref()
         .join("..")
         .join(RELEASES)
-        .join(MANIFEST_JSON)
         .canonicalize()?)
+}
+
+/// Get the release manifest file in the local releases repository.
+pub(crate) fn local_manifest_file<P: AsRef<Path>>(
+    base: P,
+) -> Result<PathBuf> {
+    Ok(local_releases(base)?.join(MANIFEST_JSON))
 }
 
 /// Get the release manifest file for the installed runtime used
