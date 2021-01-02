@@ -13,14 +13,17 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal, Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync, Task,
+        self, fatal, Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync,
+        Task,
     },
     Error, Result,
 };
 
 #[derive(Debug, StructOpt)]
 /// Universal web editor
-#[structopt(name = "uwe", after_help = "EXAMPLES:
+#[structopt(
+    name = "uwe",
+    after_help = "EXAMPLES:
     Start a live reload server: 
         uwe dev .
     Preview a release build:
@@ -32,7 +35,8 @@ use uwe::{
 
 Visit https://uwe.app for more guides and information.
     
-To upgrade or uninstall use the version manager (uvm).")]
+To upgrade or uninstall use the version manager (uvm)."
+)]
 struct Cli {
     /// Log level
     #[structopt(long, default_value = "info")]
@@ -58,7 +62,7 @@ enum Command {
 
     /// Live reload server
     ///
-    /// Compiles a debug build of the website into the `build/debug` folder and starts a web 
+    /// Compiles a debug build of the website into the `build/debug` folder and starts a web
     /// server with live reload enabled watching for changes to the source files in the `site`
     /// folder.
     Dev {
@@ -225,7 +229,6 @@ async fn run(cmd: Command) -> Result<()> {
                 Err(e) => opts::print_error(e),
             }
         }
-
 
         Command::Dev { args } => {
             let project = opts::project_path(&args.project)?;

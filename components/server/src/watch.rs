@@ -1,28 +1,27 @@
 use std::collections::HashSet;
-use std::time::{SystemTime, Duration};
-use std::sync::{Arc, RwLock};
 use std::convert::TryInto;
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, SystemTime};
 
 use log::{error, info};
 
-use tokio::sync::{
-    broadcast,
-    mpsc,
-    oneshot,
-};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use tokio::sync::{broadcast, mpsc, oneshot};
 use url::Url;
 use warp::ws::Message;
-use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
 use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
 };
 
-use workspace::{CompileResult, Invalidator, HostInfo, HostResult};
+use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
 
-use crate::{Result, Error, ErrorCallback, channels::{self, ServerChannels, WatchChannels, ResponseValue}};
+use crate::{
+    channels::{self, ResponseValue, ServerChannels, WatchChannels},
+    Error, ErrorCallback, Result,
+};
 
-/// Start watching for file system notifications in the source 
+/// Start watching for file system notifications in the source
 /// directories for the given compiler results.
 pub async fn watch(
     port: u16,
@@ -37,7 +36,7 @@ pub async fn watch(
     let host_result: HostResult = result.into();
     let host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
 
-    let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) = 
+    let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =
         host_configs.into_iter().unzip();
 
     for host in hosts.iter_mut() {
@@ -76,8 +75,8 @@ pub async fn watch(
 fn create_resources(
     port: u16,
     tls: &Option<TlsConfig>,
-    hosts: &Vec<HostInfo>) -> Result<()> {
-
+    hosts: &Vec<HostInfo>,
+) -> Result<()> {
     hosts.iter().try_for_each(|host| {
         // NOTE: These host names may not resolve so cannot attempt
         // NOTE: to lookup a socket address here.
@@ -98,7 +97,9 @@ fn create_resources(
     Ok(())
 }
 
-fn create_channels(results: &Vec<HostInfo>) -> Result<(ServerChannels, WatchChannels)> {
+fn create_channels(
+    results: &Vec<HostInfo>,
+) -> Result<(ServerChannels, WatchChannels)> {
     // Create the collection of channels
     let mut server: ServerChannels = Default::default();
     let mut watch: WatchChannels = Default::default();
@@ -110,15 +111,20 @@ fn create_channels(results: &Vec<HostInfo>) -> Result<(ServerChannels, WatchChan
         watch.websockets.insert(host.name.clone(), ws_tx);
 
         // Create a channel to receive lazy render requests
-        let (request_tx, request_rx) = mpsc::channel::<String>(channels::RENDER_CHANNEL_BUFFER);
+        let (request_tx, request_rx) =
+            mpsc::channel::<String>(channels::RENDER_CHANNEL_BUFFER);
         server.render.insert(host.name.clone(), request_tx);
         watch.render.insert(host.name.clone(), request_rx);
 
         // Create a channel for replies when rendering
         let (response_tx, response_rx) =
             mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
-        server.render_responses.insert(host.name.clone(), response_rx);
-        watch.render_responses.insert(host.name.clone(), response_tx);
+        server
+            .render_responses
+            .insert(host.name.clone(), response_rx);
+        watch
+            .render_responses
+            .insert(host.name.clone(), response_tx);
 
         Ok::<(), Error>(())
     })?;
@@ -126,20 +132,19 @@ fn create_channels(results: &Vec<HostInfo>) -> Result<(ServerChannels, WatchChan
     Ok((server, watch))
 }
 
-/// Spawn a thread that listens for the bind message from the 
+/// Spawn a thread that listens for the bind message from the
 /// server and opens the browser once the message is received.
 ///
-/// By listening for the bind message the browser is not launched 
-/// the browser is not opened when a server error such as EADDR is 
+/// By listening for the bind message the browser is not launched
+/// the browser is not opened when a server error such as EADDR is
 /// encountered.
 fn spawn_bind_open(
     bind_rx: oneshot::Receiver<ConnectionInfo>,
-    launch: Option<String>) {
-
+    launch: Option<String>,
+) {
     std::thread::spawn(move || {
         let mut rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
-
             // Get the server connection info
             let info = bind_rx.await.unwrap();
             let mut url = info.to_url();
@@ -160,7 +165,7 @@ fn spawn_bind_open(
             };
 
             // Ensure the cache is bypassed so that switching between
-            // projects does not show an older project 
+            // projects does not show an older project
             url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
 
             info!("Serve {}", &url);
@@ -169,7 +174,7 @@ fn spawn_bind_open(
     });
 }
 
-/// Spawn a thread for each virtual host that requires a 
+/// Spawn a thread for each virtual host that requires a
 /// file system watcher.
 fn spawn_monitor(
     watchers: Vec<HostInfo>,

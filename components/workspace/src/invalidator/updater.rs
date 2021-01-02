@@ -189,8 +189,7 @@ impl Updater {
         _includes: &HashSet<PathBuf>,
     ) -> Result<()> {
         for (_parser, renderer) in self.project.iter_mut() {
-            let collation =
-                &*renderer.info.context.collation.read().unwrap();
+            let collation = &*renderer.info.context.collation.read().unwrap();
             let fallback = collation.fallback.read().unwrap();
 
             // Update the JIT buffer with all pages!
@@ -205,8 +204,8 @@ impl Updater {
         &mut self,
         layouts: &HashSet<PathBuf>,
     ) -> Result<()> {
-        // List of pages to render
-        let mut render_pages: HashSet<(String, PathBuf)> = HashSet::new();
+        // List of pages to invalidate
+        let mut invalidated: HashMap<String, PathBuf> = HashMap::new();
 
         let layouts: Vec<(String, &PathBuf)> = layouts
             .iter()
@@ -232,16 +231,19 @@ impl Updater {
                     let collation =
                         &*renderer.info.context.collation.read().unwrap();
                     let fallback = collation.fallback.read().unwrap();
-                    let lang = collation.get_lang().as_ref().to_string();
                     for (file_path, page_lock) in fallback.pages.iter() {
                         let page = page_lock.read().unwrap();
                         if !page.is_standalone() {
                             if let Some(ref layout_name) = page.layout {
                                 if &name == layout_name {
-                                    render_pages.insert((
-                                        lang.to_string(),
-                                        file_path.to_path_buf(),
-                                    ));
+                                    if let Some(href) =
+                                        collation.get_link_href(file_path)
+                                    {
+                                        invalidated.insert(
+                                            href.to_string(),
+                                            file_path.to_path_buf(),
+                                        );
+                                    }
                                 }
                             }
                         }
@@ -260,13 +262,16 @@ impl Updater {
             }
         }
 
+        self.buffer.extend(invalidated);
+
         // Render pages that require an update as they
         // reference a changed layout
-        for (lang, file) in render_pages {
-            let options =
-                RenderOptions::new_file_lang(file, lang, true, false, false);
-            self.project.render(options).await?;
-        }
+        //for (lang, file) in render_pages {
+        //println!("Layout changed got file {:?}", file)
+        //let options =
+        //RenderOptions::new_file_lang(file, lang, true, false, false);
+        //self.project.render(options).await?;
+        //}
 
         Ok(())
     }

@@ -56,7 +56,7 @@ fn to_options(
     let live = args.is_live();
 
     //if live && release {
-        //return Err(Error::LiveReloadRelease);
+    //return Err(Error::LiveReloadRelease);
     //}
 
     let incremental = args.is_incremental();

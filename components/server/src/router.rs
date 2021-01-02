@@ -21,10 +21,14 @@ use warp::{Filter, Rejection, Reply};
 
 use serde::Serialize;
 
+use bracket::Registry;
 use log::{error, info, trace};
-use bracket::{Registry};
 
-use crate::{drop_privileges::*, channels::{ServerChannels, ResponseValue}, Error};
+use crate::{
+    channels::{ResponseValue, ServerChannels},
+    drop_privileges::*,
+    Error,
+};
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
 
 pub fn parser() -> &'static Registry<'static> {
@@ -289,7 +293,8 @@ macro_rules! bind {
             }
 
             let info = ConnectionInfo { addr, host, tls };
-            $bind_channel.send(info)
+            $bind_channel
+                .send(info)
                 .expect("Failed to send web server socket address");
 
             future.await;
@@ -304,9 +309,10 @@ macro_rules! bind {
                     }
 
                     let info = ConnectionInfo { addr, host, tls };
-                    $bind_channel.send(info)
+                    $bind_channel
+                        .send(info)
                         .expect("Failed to send web server socket address");
-            
+
                     future.await;
                 }
                 Err(e) => return Err(Error::from(e)),
@@ -321,9 +327,7 @@ fn get_host_filter(
     host: &'static HostConfig,
 ) -> BoxedFilter<(impl Reply,)> {
     let (hostname, static_server) = get_static_server(address, opts, host);
-    warp::host::exact(&hostname)
-        .and(static_server)
-        .boxed()
+    warp::host::exact(&hostname).and(static_server).boxed()
 }
 
 fn get_host_filter_watch(
@@ -338,7 +342,9 @@ fn get_host_filter_watch(
     let request_tx = channels.render.get(&host.name).unwrap().clone();
     let request = warp::any().map(move || request_tx.clone());
 
-    let response_arc = Arc::new(RwLock::new(channels.render_responses.remove(&host.name).unwrap()));
+    let response_arc = Arc::new(RwLock::new(
+        channels.render_responses.remove(&host.name).unwrap(),
+    ));
     let response = warp::any().map(move || Arc::clone(&response_arc));
 
     let live_renderer = warp::any()
@@ -357,7 +363,6 @@ fn get_live_reload(
     host: &'static HostConfig,
     channels: &mut ServerChannels,
 ) -> crate::Result<BoxedFilter<(impl Reply,)>> {
-
     let reload_tx = channels.websockets.get(&host.name).unwrap().clone();
 
     let use_tls = opts.tls.is_some();
@@ -428,8 +433,8 @@ async fn live_render(
             .await
             .map_err(|_| warp::reject::custom(RenderSendError))?;
 
-        // Wait for a reply to that we block before serving 
-        // the compiled static asset otherwise changes will 
+        // Wait for a reply to that we block before serving
+        // the compiled static asset otherwise changes will
         // not be reflected!
         let mut reply_channel = rx.write().await;
         if let Some(response) = reply_channel.recv().await {
@@ -439,7 +444,8 @@ async fn live_render(
                 let doc = registry.render("error", &data).unwrap();
                 return Ok(warp::reply::with_status(
                     warp::reply::html(doc),
-                    StatusCode::INTERNAL_SERVER_ERROR))
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ));
             }
         }
     }
@@ -590,17 +596,13 @@ pub async fn serve(
     if should_watch {
         let mut filters: Vec<BoxedFilter<_>> = configs
             .iter()
-            .map(|c| {
-                get_host_filter_watch(&addr, opts, c, &mut channels)
-            })
+            .map(|c| get_host_filter_watch(&addr, opts, c, &mut channels))
             .collect();
         virtual_hosts!(opts, filters, &addr, bind);
     } else {
         let mut filters: Vec<BoxedFilter<_>> = configs
             .iter()
-            .map(|c| {
-                get_host_filter(&addr, opts, c)
-            })
+            .map(|c| get_host_filter(&addr, opts, c))
             .collect();
         virtual_hosts!(opts, filters, &addr, bind);
     }

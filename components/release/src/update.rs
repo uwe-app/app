@@ -1,7 +1,9 @@
 use log::info;
 use semver::Version;
 
-use crate::{binary, download, info, releases, runtime, Result, install::fetch};
+use crate::{
+    binary, download, info, install::fetch, releases, runtime, Result,
+};
 
 /// Attempt to upgrade to the latest version.
 pub async fn update(name: &str) -> Result<()> {

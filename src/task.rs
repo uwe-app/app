@@ -24,9 +24,7 @@ pub async fn run(cmd: Task) -> Result<()> {
         }
         Task::UpdateRuntime {} => {
             update_runtime().await?;
-        }
-        
-        /*
+        } /*
           Task::Pull {
               project,
               remote,
@@ -165,4 +163,3 @@ fn clone_or_copy(
     }
 }
 */
-

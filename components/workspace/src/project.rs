@@ -1,13 +1,13 @@
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
 
 use log::{debug, info, warn};
 
 use futures::TryFutureExt;
-use url::Url;
 use scopeguard::defer;
+use url::Url;
 
 use collator::{
     self, menu, CollateInfo, CollateRequest, CollateResult, Collation,
@@ -16,9 +16,8 @@ use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
     hook::HookConfig, plugin_cache::PluginCache, profile::Profiles,
-    syntax::SyntaxConfig, Config, ProfileSettings, RedirectConfig,
-    server::HostConfig,
-    RuntimeOptions,
+    server::HostConfig, syntax::SyntaxConfig, Config, ProfileSettings,
+    RedirectConfig, RuntimeOptions,
 };
 
 use collections::{synthetic, DataSourceMap, QueryCache};
@@ -26,9 +25,9 @@ use collections::{synthetic, DataSourceMap, QueryCache};
 use locale::Locales;
 
 use crate::{
+    lock,
     manifest::Manifest,
     plugins,
-    lock,
     renderer::{CompilerInput, RenderFilter, RenderOptions, Renderer, Sources},
     Error, Result,
 };
@@ -754,9 +753,10 @@ pub fn open<P: AsRef<Path>>(
                 return Err(Error::DuplicateHostName(
                     hostname.clone(),
                     existing_project.to_path_buf(),
-                    config.project().clone()));
+                    config.project().clone(),
+                ));
             }
-            names.insert(hostname.clone(), config.project().clone()); 
+            names.insert(hostname.clone(), config.project().clone());
 
             config.set_commit(scm_digest(config.project()));
             config.set_member_name(space);
@@ -790,7 +790,7 @@ pub fn settings<P: AsRef<Path>>(
     }
 }
 
-/// Wrapper for project that can be used to create 
+/// Wrapper for project that can be used to create
 /// a host configuration.
 pub struct HostInfo {
     pub name: String,
@@ -810,14 +810,23 @@ impl Into<HostResult> for CompileResult {
         // Multiple projects will use *.localhost names
         // otherwise we can just run using the standard `localhost`.
         let multiple = self.projects.len() > 1;
-        let hosts: Vec<HostInfo> = self.projects.into_iter().map(|project| {
-            let name = project.config.get_local_host_name(multiple);
-            let source = project.options.source.clone();
-            let target = project.options.base.clone();
-            let endpoint = utils::generate_id(16);
-            HostInfo {name, project, source, target, endpoint}
-        })
-        .collect();
+        let hosts: Vec<HostInfo> = self
+            .projects
+            .into_iter()
+            .map(|project| {
+                let name = project.config.get_local_host_name(multiple);
+                let source = project.options.source.clone();
+                let target = project.options.base.clone();
+                let endpoint = utils::generate_id(16);
+                HostInfo {
+                    name,
+                    project,
+                    source,
+                    target,
+                    endpoint,
+                }
+            })
+            .collect();
 
         HostResult { hosts }
     }
@@ -830,7 +839,9 @@ pub struct HostResult {
 
 impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
     type Error = crate::Error;
-    fn try_into(self) -> std::result::Result<Vec<(HostInfo, HostConfig)>, Self::Error> {
+    fn try_into(
+        self,
+    ) -> std::result::Result<Vec<(HostInfo, HostConfig)>, Self::Error> {
         let mut out: Vec<(HostInfo, HostConfig)> = Vec::new();
 
         self.hosts.into_iter().try_for_each(|info| {
@@ -839,7 +850,11 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
             let endpoint = info.endpoint.clone();
             let redirect_uris = info.project.redirects.collect()?;
 
-            info!("Virtual host: {} ({} redirects)", &hostname, redirect_uris.len());
+            info!(
+                "Virtual host: {} ({} redirects)",
+                &hostname,
+                redirect_uris.len()
+            );
 
             let host = HostConfig::new(
                 target,

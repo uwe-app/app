@@ -2,7 +2,7 @@ use tokio::sync::oneshot;
 
 use log::info;
 
-use crate::{router, Error, channels::ServerChannels};
+use crate::{channels::ServerChannels, router, Error};
 use config::server::{ConnectionInfo, LaunchConfig, ServerConfig};
 
 /// Start a server and launch a browser window.
@@ -10,7 +10,6 @@ pub async fn launch(
     options: &'static ServerConfig,
     launch: LaunchConfig,
 ) -> Result<(), Error> {
-
     // Create a channel to receive the bind address.
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 

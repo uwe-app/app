@@ -21,7 +21,6 @@ pub struct Compile {
     /// Offline mode, do not attempt plugin installation
     #[structopt(short, long)]
     pub offline: bool,
-
 }
 
 #[derive(StructOpt, Debug)]

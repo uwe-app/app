@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use config::ProfileSettings;
 use crate::Error;
+use config::ProfileSettings;
 
 pub async fn compile<P: AsRef<Path>>(
     project: P,

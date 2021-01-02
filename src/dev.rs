@@ -1,7 +1,7 @@
 use std::path::Path;
 
+use crate::{opts::fatal, Error};
 use config::ProfileSettings;
-use crate::{Error, opts::fatal};
 
 fn server_error_cb(e: server::Error) {
     let _ = fatal(Error::from(e));

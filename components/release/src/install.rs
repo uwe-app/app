@@ -105,7 +105,10 @@ pub(crate) async fn fetch(
             info!("Installation {}@{} is ok ✓", name, version.to_string());
             return Ok(());
         } else {
-            warn!("Existing installation for {}@{} may be corrupt", exe_name, version);
+            warn!(
+                "Existing installation for {}@{} may be corrupt",
+                exe_name, version
+            );
         }
     }
 

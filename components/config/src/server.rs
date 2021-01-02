@@ -163,7 +163,9 @@ impl ServerConfig {
     pub fn tls_port(&self) -> u16 {
         if let Some(ref tls) = self.tls {
             tls.port
-        }  else { crate::PORT_SSL }
+        } else {
+            crate::PORT_SSL
+        }
     }
 
     pub fn get_address(
@@ -221,7 +223,7 @@ pub struct HostConfig {
     /// Log server requests.
     #[serde(skip)]
     pub log: bool,
-    /// Flag that indicates this host should be configured 
+    /// Flag that indicates this host should be configured
     /// for file system watching.
     #[serde(skip)]
     pub watch: bool,

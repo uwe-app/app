@@ -36,7 +36,6 @@ pub enum Error {
 
     //#[error("Live reload is not available for release builds")]
     //LiveReloadRelease,
-
     #[error("Syntax highlighting path {0} is not a directory")]
     NoSyntaxDirectory(PathBuf),
 

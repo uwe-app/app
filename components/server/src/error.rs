@@ -1,5 +1,5 @@
-use thiserror::Error;
 use config::server::ConnectionInfo;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -45,4 +45,3 @@ pub enum Error {
     #[error(transparent)]
     Workspace(#[from] workspace::Error),
 }
-

@@ -5,7 +5,10 @@ use semver::Version;
 use crate::{checksum, releases, Error, Result};
 
 /// Verify the checksums for a version.
-pub(crate) fn test(version: &Version, names: &[&str]) -> Result<(bool, String, String)> {
+pub(crate) fn test(
+    version: &Version,
+    names: &[&str],
+) -> Result<(bool, String, String)> {
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;
     let releases = releases::load(&releases_file)?;

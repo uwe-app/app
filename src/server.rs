@@ -1,10 +1,10 @@
-use std::path::PathBuf;
 use std::convert::TryInto;
+use std::path::PathBuf;
 
 use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
 
-use config::{ProfileSettings, server::HostConfig};
+use config::{server::HostConfig, ProfileSettings};
 use workspace::{compile, HostInfo, HostResult};
 
 use crate::opts::Compile;
@@ -51,7 +51,8 @@ pub async fn serve(
             let result = compile(&target, &settings).await?;
 
             let host_result: HostResult = result.into();
-            let mut host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
+            let mut host_configs: Vec<(HostInfo, HostConfig)> =
+                host_result.try_into()?;
 
             for (info, host) in host_configs.iter_mut() {
                 host.directory = info.project.options.base.to_path_buf();
@@ -61,10 +62,7 @@ pub async fn serve(
             let (_, default_host) = it.next().unwrap();
             opts.default_host = default_host;
 
-            let hosts: Vec<HostConfig> = 
-                it
-                .map(|(_, host)| host)
-                .collect();
+            let hosts: Vec<HostConfig> = it.map(|(_, host)| host).collect();
 
             opts.hosts = hosts;
         }

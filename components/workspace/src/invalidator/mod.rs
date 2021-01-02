@@ -40,7 +40,7 @@ pub struct Invalidation {
     // Partials should be re-compiled but currently we don't
     // know which files are dependent upon partials
     pub(crate) partials: HashSet<PathBuf>,
-    // Includes should be collected too but we have no 
+    // Includes should be collected too but we have no
     // information on which files reference the includes.
     pub(crate) includes: HashSet<PathBuf>,
     // Templates can be interspersed in the site folder but

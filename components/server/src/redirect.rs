@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use warp::filters::path::FullPath;
-use warp::http::Uri;
 use warp::host::Authority;
+use warp::http::Uri;
 use warp::Filter;
 
 use log::info;
@@ -31,23 +31,27 @@ async fn run(addr: SocketAddr, base: String, tls_port: u16) {
         config::SCHEME_HTTP,
         config::SCHEME_HTTPS
     );
-    let redirect =
-        warp::any()
-            .and(warp::path::full())
-            .and(warp::host::optional())
-            .map(move |path: FullPath, authority: Option<Authority>| {
-                let host_url = if let Some(authority) = authority {
-                    if tls_port == 443 {
-                        format!("{}//{}", config::SCHEME_HTTPS, authority.host())
-                    } else {
-                        format!("{}//{}:{}", config::SCHEME_HTTPS, authority.host(), tls_port)
-                    }
+    let redirect = warp::any()
+        .and(warp::path::full())
+        .and(warp::host::optional())
+        .map(move |path: FullPath, authority: Option<Authority>| {
+            let host_url = if let Some(authority) = authority {
+                if tls_port == 443 {
+                    format!("{}//{}", config::SCHEME_HTTPS, authority.host())
                 } else {
-                    base.clone()
-                };
-                let url = format!("{}{}", host_url, path.as_str());
-                let uri: Uri = url.parse().unwrap();
-                warp::redirect(uri)
-            });
+                    format!(
+                        "{}//{}:{}",
+                        config::SCHEME_HTTPS,
+                        authority.host(),
+                        tls_port
+                    )
+                }
+            } else {
+                base.clone()
+            };
+            let url = format!("{}{}", host_url, path.as_str());
+            let uri: Uri = url.parse().unwrap();
+            warp::redirect(uri)
+        });
     warp::serve(redirect).bind(addr).await;
 }
