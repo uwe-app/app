@@ -23,6 +23,8 @@ use uwe::{
 #[structopt(name = "uwe", after_help = "EXAMPLES:
     Start a live reload server: 
         uwe dev .
+    Preview a release build:
+        uwe server . --open
     Create a release build:
         uwe build .
     Browse offline help:
@@ -37,10 +39,7 @@ struct Cli {
     log_level: String,
 
     #[structopt(subcommand)]
-    cmd: Option<Command>,
-
-    #[structopt(flatten)]
-    build_opts: Build,
+    cmd: Command,
 }
 
 #[derive(StructOpt, Debug)]
@@ -105,14 +104,6 @@ enum Command {
         #[structopt(subcommand)]
         cmd: Lang,
     },
-}
-
-impl Command {
-    fn default(cli: Cli) -> Self {
-        Command::Build {
-            args: cli.build_opts,
-        }
-    }
 }
 
 async fn run(cmd: Command) -> Result<()> {
@@ -203,22 +194,14 @@ async fn run(cmd: Command) -> Result<()> {
                 None
             };
 
-            //let tls =
-                //uwe::opts::tls_config(None, &args.server, config::PORT_SSL);
-
             let build_args = ProfileSettings {
                 paths,
+                release: Some(args.profile.is_none()),
                 profile: args.profile,
-                //live: Some(args.live),
-                //launch: args.launch,
-                release: Some(args.release),
-                //host: args.server.host,
-                //port: args.server.port,
                 offline: Some(args.compile.offline),
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
                 include_drafts: Some(args.compile.include_drafts),
-                //tls,
                 ..Default::default()
             };
 
@@ -260,12 +243,14 @@ async fn run(cmd: Command) -> Result<()> {
                 ..Default::default()
             };
 
-            let now = SystemTime::now();
+            //let now = SystemTime::now();
             match uwe::dev::run(&project, build_args).await {
                 Ok(_) => {
+                    /*
                     if let Ok(t) = now.elapsed() {
                         info!("{:?}", t);
                     }
+                    */
                 }
                 Err(e) => opts::print_error(e),
             }
@@ -296,14 +281,7 @@ async fn main() -> Result<()> {
     };
     config::generator::get(Some(app_data));
 
-    match args.cmd {
-        Some(cmd) => {
-            run(cmd).await.or_else(fatal)?;
-        }
-        None => {
-            run(Command::default(args)).await.or_else(fatal)?;
-        }
-    }
+    run(args.cmd).await.or_else(fatal)?;
 
     Ok(())
 }

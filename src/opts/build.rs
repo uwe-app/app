@@ -33,10 +33,6 @@ pub struct Build {
     #[structopt(long)]
     pub profile: Option<String>,
 
-    /// Generate a release build
-    #[structopt(short, long)]
-    pub release: bool,
-
     /// Project path
     #[structopt(parse(from_os_str), default_value = ".")]
     pub project: PathBuf,
