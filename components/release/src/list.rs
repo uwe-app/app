@@ -4,8 +4,7 @@ use crate::{releases, runtime, version, Error, Result};
 
 /// List versions.
 pub async fn list() -> Result<()> {
-    // Must have latest runtime assets
-    runtime::fetch().await?;
+    runtime::fetch_releases().await?;
 
     // Load the releases manifest
     let releases_file = releases::runtime_manifest_file()?;

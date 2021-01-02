@@ -15,8 +15,7 @@ pub async fn remove(version: String) -> Result<()> {
 
 /// Remove versions older than the current version.
 pub async fn prune() -> Result<()> {
-    // Must have latest runtime assets
-    runtime::fetch().await?;
+    runtime::fetch_releases().await?;
 
     // Load the releases manifest
     let releases_file = releases::runtime_manifest_file()?;

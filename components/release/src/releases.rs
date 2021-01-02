@@ -11,8 +11,8 @@ use crate::Result;
 
 static MANIFEST_JSON: &str = "manifest.json";
 
-pub static RUNTIME: &str = "runtime";
-pub static RELEASE: &str = "release";
+//pub static RUNTIME: &str = "runtime";
+pub static RELEASES: &str = "releases";
 pub static LATEST: &str = "latest";
 
 pub static LINUX: &str = "linux";
@@ -47,7 +47,7 @@ pub struct ReleaseVersion {
 }
 
 pub(crate) fn dir(version: &Version) -> Result<PathBuf> {
-    Ok(dirs::runtime_dir()?.join(RELEASE).join(version.to_string()))
+    Ok(dirs::releases_dir()?.join(version.to_string()))
 }
 
 pub(crate) fn exists(version: &Version) -> Result<bool> {
@@ -80,8 +80,7 @@ pub(crate) fn repo_manifest_file<P: AsRef<Path>>(
     Ok(manifest
         .as_ref()
         .join("..")
-        .join(RUNTIME)
-        .join(RELEASE)
+        .join(RELEASES)
         .join(MANIFEST_JSON)
         .canonicalize()?)
 }
@@ -89,8 +88,7 @@ pub(crate) fn repo_manifest_file<P: AsRef<Path>>(
 /// Get the release manifest file for the installed runtime used
 /// for the install and upgrade processes.
 pub(crate) fn runtime_manifest_file() -> Result<PathBuf> {
-    Ok(dirs::runtime_dir()?
-        .join(RELEASE)
+    Ok(dirs::releases_dir()?
         .join(MANIFEST_JSON)
         .canonicalize()?)
 }

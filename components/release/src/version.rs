@@ -7,7 +7,7 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use semver::Version;
 
-use crate::{releases, Result};
+use crate::{Result};
 
 static VERSION_FILE: &str = "version.toml";
 
@@ -19,8 +19,7 @@ pub struct VersionInfo {
 }
 
 pub(crate) fn file() -> Result<PathBuf> {
-    Ok(dirs::runtime_dir()?
-        .join(releases::RELEASE)
+    Ok(dirs::releases_dir()?
         .join(VERSION_FILE))
 }
 

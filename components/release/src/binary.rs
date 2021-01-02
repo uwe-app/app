@@ -24,7 +24,7 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
 }
 
 pub(crate) fn symlink(binaries: &HashMap<String, PathBuf>) -> Result<()> {
-    let runtime_dir = dirs::runtime_dir()?;
+    let releases_dir = dirs::releases_dir()?;
     let bin_dir = dirs::bin_dir()?;
     for (name, src) in binaries {
         let dest = bin_dir.join(name);
@@ -32,7 +32,7 @@ pub(crate) fn symlink(binaries: &HashMap<String, PathBuf>) -> Result<()> {
             fs::remove_file(&dest)?;
         }
 
-        let short_src = src.strip_prefix(&runtime_dir)?;
+        let short_src = src.strip_prefix(&releases_dir)?;
         info!("Link {} -> {}", short_src.display(), dest.display());
 
         utils::symlink::soft(src, &dest)?;

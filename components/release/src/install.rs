@@ -63,6 +63,8 @@ pub(crate) async fn fetch(
 ) -> Result<()> {
     // Must have latest runtime assets
     runtime::fetch().await?;
+    // Must update the cache of releases
+    runtime::fetch_releases().await?;
 
     // Load the releases manifest.
     let releases_file = releases::runtime_manifest_file()?;

@@ -6,3 +6,10 @@ pub async fn fetch() -> Result<()> {
     scm::clone_or_fetch(&url, &dir)?;
     Ok(())
 }
+
+pub async fn fetch_releases() -> Result<()> {
+    let url = dirs::releases_url();
+    let dir = dirs::releases_dir()?;
+    scm::clone_or_fetch(&url, &dir)?;
+    Ok(())
+}

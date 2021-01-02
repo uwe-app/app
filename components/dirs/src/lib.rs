@@ -14,13 +14,14 @@ static SITES_NAME: &str = "sites";
 static SITES_FILE: &str = "sites.toml";
 
 static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
+static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 
 static RUNTIME_NAME: &str = "runtime";
 static REGISTRY_NAME: &str = "registry";
 
 static DOCUMENTATION_NAME: &str = "documentation/docs";
 static SYNTAX_NAME: &str = "syntax";
-static RELEASE_NAME: &str = "release";
+static RELEASES_NAME: &str = "releases";
 
 pub fn root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();
@@ -70,6 +71,10 @@ pub fn runtime_url() -> String {
     RUNTIME_REPO.to_string()
 }
 
+pub fn releases_url() -> String {
+    RELEASES_REPO.to_string()
+}
+
 pub fn runtime_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(RUNTIME_NAME))
 }
@@ -106,16 +111,18 @@ pub fn blueprint_dir() -> io::Result<PathBuf> {
     Ok(runtime_dir()?.join(BLUEPRINT_NAME))
 }
 
-pub fn release_dir() -> io::Result<PathBuf> {
+pub fn releases_dir() -> io::Result<PathBuf> {
     let mut buf = root_dir()?;
-    buf.push(RELEASE_NAME);
+    buf.push(RELEASES_NAME);
     Ok(buf)
 }
 
+/*
 pub fn release_bin_dir() -> io::Result<PathBuf> {
     let mut buf = release_dir()?;
     buf.push(BIN);
     Ok(buf)
 }
+*/
 
 pub use home::home_dir;
