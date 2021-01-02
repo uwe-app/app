@@ -38,11 +38,6 @@ fn welcome() -> Result<PathBuf> {
     Ok(bin_dir)
 }
 
-/// Attempt to upgrade to the latest version.
-pub async fn latest(name: &str) -> Result<()> {
-    fetch(name, true, true, None).await
-}
-
 /// Install a version and select it so it is the current version.
 pub async fn select(name: &str, version: String) -> Result<()> {
     let semver: Version = version
@@ -60,7 +55,7 @@ pub async fn install(name: &str, version: String) -> Result<()> {
 }
 
 /// Install the application components.
-async fn fetch(
+pub(crate) async fn fetch(
     name: &str,
     select: bool,
     latest: bool,

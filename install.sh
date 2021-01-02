@@ -36,4 +36,4 @@ URL="https://release.uwe.app/latest/${OS}/uvm";
 echo "Download ${URL}";
 
 (cd "${BIN}" && curl -OL --fail --progress-bar "${URL}" || fatal "Download failed")
-(cd "${BIN}" && chmod +x ./uvm && ./uvm)
+(cd "${BIN}" && chmod +x ./uvm update && ./uvm update)

@@ -1,9 +1,14 @@
 use log::info;
 use semver::Version;
 
-use crate::{binary, download, info, releases, runtime, Result};
+use crate::{binary, download, info, releases, runtime, Result, install::fetch};
 
-pub async fn update(current: &str) -> Result<()> {
+/// Attempt to upgrade to the latest version.
+pub async fn update(name: &str) -> Result<()> {
+    fetch(name, true, true, None).await
+}
+
+pub async fn update_self(current: &str) -> Result<()> {
     // Must have latest runtime assets
     runtime::fetch().await?;
 

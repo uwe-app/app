@@ -14,7 +14,7 @@ struct Cli {
     log_level: String,
 
     #[structopt(subcommand)]
-    cmd: Option<Command>,
+    cmd: Command,
 }
 
 #[derive(StructOpt, Debug)]
@@ -32,11 +32,12 @@ enum Command {
     /// Install a release version
     Install { version: String },
 
-    /// Upgrade to latest release
-    Latest {},
-
-    /// Update the version manager (uvm)
-    Update {},
+    /// Update the platform tools
+    Update {
+        /// Update the version manager (uvm)
+        #[structopt(short = "s", long = "self")]
+        update_self: bool,
+    },
 
     /// Delete a release version
     #[structopt(alias = "rm")]
@@ -63,11 +64,12 @@ async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
         Command::Install { version } => {
             release::install(name, version).await?;
         }
-        Command::Latest {} => {
-            release::latest(name).await?;
-        }
-        Command::Update {} => {
-            release::update(version).await?;
+        Command::Update { update_self } => {
+            if update_self {
+                release::update_self(version).await?;
+            } else {
+                release::update(name).await?;
+            }
         }
         Command::Remove { version } => {
             release::remove(version).await?;
@@ -85,25 +87,17 @@ async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut args = Cli::from_args();
+    let args = Cli::from_args();
     uwe::opts::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     let name = env!("CARGO_PKG_NAME");
     let version = env!("CARGO_PKG_VERSION");
 
-    if let Some(cmd) = args.cmd.take() {
-        run(cmd, name, version)
-            .await
-            .map_err(Error::from)
-            .or_else(fatal)?;
-    } else {
-        // Perform a standard installation.
-        release::latest(name)
-            .await
-            .map_err(Error::from)
-            .or_else(fatal)?;
-    }
+    run(args.cmd, name, version)
+        .await
+        .map_err(Error::from)
+        .or_else(fatal)?;
 
     Ok(())
 }
