@@ -40,6 +40,9 @@ pub struct Invalidation {
     // Partials should be re-compiled but currently we don't
     // know which files are dependent upon partials
     pub(crate) partials: HashSet<PathBuf>,
+    // Includes should be collected too but we have no 
+    // information on which files reference the includes.
+    pub(crate) includes: HashSet<PathBuf>,
     // Templates can be interspersed in the site folder but
     // must come after the tests for layout and partials and
     // behave like partials in that they are re-compiled but
@@ -135,6 +138,7 @@ impl Invalidator {
             actions: Vec::new(),
             layouts: HashSet::new(),
             partials: HashSet::new(),
+            includes: HashSet::new(),
             templates: HashSet::new(),
             deletions: deletions.into_iter().collect::<HashSet<_>>(),
             collections: HashSet::new(),
@@ -164,6 +168,7 @@ impl Invalidator {
 
         let assets = canonical(options.get_assets_path());
         let partials = canonical(options.get_partials_path());
+        let includes = canonical(options.get_includes_path());
         let layouts = canonical(options.get_layouts_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
@@ -208,6 +213,8 @@ impl Invalidator {
                         rule.layouts.insert(path);
                     } else if path.starts_with(&partials) {
                         rule.partials.insert(path);
+                    } else if path.starts_with(&includes) {
+                        rule.includes.insert(path);
                     } else if is_template {
                         rule.templates.insert(path);
 

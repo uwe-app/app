@@ -183,6 +183,23 @@ impl Updater {
         Ok(())
     }
 
+    /// Update includes.
+    pub(crate) async fn update_includes(
+        &mut self,
+        _includes: &HashSet<PathBuf>,
+    ) -> Result<()> {
+        for (_parser, renderer) in self.project.iter_mut() {
+            let collation =
+                &*renderer.info.context.collation.read().unwrap();
+            let fallback = collation.fallback.read().unwrap();
+
+            // Update the JIT buffer with all pages!
+            let all_pages = fallback.link_map();
+            self.buffer.extend(all_pages);
+        }
+        Ok(())
+    }
+
     /// Update layouts and render any pages referenced by the layouts.
     pub(crate) async fn update_layouts(
         &mut self,
@@ -273,6 +290,11 @@ impl Updater {
         // Compile partials
         if !rule.partials.is_empty() {
             self.update_partials(&rule.partials).await?;
+        }
+
+        // Invalidate includes
+        if !rule.includes.is_empty() {
+            self.update_includes(&rule.includes).await?;
         }
 
         // Compile layouts
