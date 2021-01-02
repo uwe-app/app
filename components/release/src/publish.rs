@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use human_bytes::human_bytes;
@@ -161,12 +161,14 @@ pub async fn publish(
     region: String,
     profile: String,
     skip_build: bool,
+    skip_upload: bool,
     force_overwrite: bool,
 ) -> Result<()> {
     info!("Release {}@{}", &name, &version);
 
     let semver: Version = version.parse()?;
     let manifest = PathBuf::from(manifest).canonicalize()?;
+    let releases_repo = releases::local_releases(&manifest)?;
     let releases_file = releases::local_manifest_file(&manifest)?;
 
     let mut releases = releases::load(&releases_file)?;
@@ -197,11 +199,14 @@ pub async fn publish(
             .or_insert(Default::default());
 
         for (name, info) in artifacts.into_iter() {
-            upload(
-                &info.path, &bucket, &region, &profile, &semver, &platform,
-                &name,
-            )
-            .await?;
+
+            if !skip_upload {
+                upload(
+                    &info.path, &bucket, &region, &profile, &semver, &platform,
+                    &name,
+                )
+                .await?;
+            }
 
             release_artifacts.insert(name, hex::encode(info.digest));
         }
@@ -219,8 +224,10 @@ pub async fn publish(
     releases::save(&releases_file, &releases)?;
 
     // Commit and push the release manifest
-    let repo = scm::open(releases::local_releases(&manifest)?)?;
-    scm::commit_file(&repo, releases_file.as_path(), "Update release manifest.")?;
+    let repo = scm::open(&releases_repo)?;
+    info!("Commit releases manifest {}", releases_file.display());
+    scm::commit_file(&repo, Path::new(releases::MANIFEST_JSON), "Update release manifest.")?;
+    info!("Push {}", releases_repo.display());
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
     Ok(())

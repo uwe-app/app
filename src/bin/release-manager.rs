@@ -22,8 +22,12 @@ struct Cli {
     profile: String,
 
     /// Skip the build step.
-    #[structopt(short, long)]
+    #[structopt(long)]
     skip_build: bool,
+
+    /// Skip the upload step.
+    #[structopt(long)]
+    skip_upload: bool,
 
     /// Force overwrite an existing version.
     #[structopt(short, long)]
@@ -53,6 +57,7 @@ async fn main() -> Result<()> {
         root_args.region,
         root_args.profile,
         root_args.skip_build,
+        root_args.skip_upload,
         root_args.force,
     )
     .await

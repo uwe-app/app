@@ -9,7 +9,7 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
 
-static MANIFEST_JSON: &str = "manifest.json";
+pub static MANIFEST_JSON: &str = "manifest.json";
 
 //pub static RUNTIME: &str = "runtime";
 pub static RELEASES: &str = "releases";
