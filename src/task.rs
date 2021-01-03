@@ -22,8 +22,8 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::Alias { cmd } => {
             alias::run(cmd).await?;
         }
-        Task::UpdateRuntime {} => {
-            update_runtime().await?;
+        Task::UpdateRuntimeAssets {} => {
+            update_runtime_assets().await?;
         } /*
           Task::Pull {
               project,
@@ -85,7 +85,7 @@ async fn check_deps(project: PathBuf) -> Result<()> {
 }
 
 /// Update the runtime assets.
-pub async fn update_runtime() -> Result<()> {
+pub async fn update_runtime_assets() -> Result<()> {
     let url = dirs::runtime_url();
     let dir = dirs::runtime_dir()?;
     scm::clone_or_fetch(&url, &dir)?;

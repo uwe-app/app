@@ -6,13 +6,13 @@ use crate::opts::Alias;
 /// Utility tasks.
 #[derive(StructOpt, Debug)]
 pub enum Task {
-    /// Update runtime assets.
-    UpdateRuntime {},
+    /// Update runtime assets
+    UpdateRuntimeAssets {},
 
-    /// List blueprints.
+    /// List project blueprints
     ListBlueprints {},
 
-    /// Check project for local dependencies.
+    /// Check project for local dependencies
     CheckDeps {
         /// Project path
         #[structopt(parse(from_os_str), default_value = ".")]
