@@ -30,8 +30,8 @@ pub async fn pack(path: PathBuf) -> Result<()> {
 
 /// Publish a plugin.
 pub async fn publish(path: PathBuf) -> Result<()> {
-    let registry_path = option_env!("AB_PUBLISH");
-    let registry_repo = option_env!("AB_PUBLISH_REPO");
+    let registry_path = option_env!("UPM_PUBLISH");
+    let registry_repo = option_env!("UPM_PUBLISH_REPO");
 
     if registry_path.is_none() || registry_repo.is_none() {
         log::warn!("Plugin publishing is not available yet.");
@@ -53,7 +53,7 @@ pub async fn publish(path: PathBuf) -> Result<()> {
 
 /// Remove all cached plugins.
 pub async fn clean() -> Result<()> {
-    let target = dirs::cache_src_dir()?;
+    let target = dirs::plugins_dir()?;
     if target.exists() && target.is_dir() {
         info!("Remove {}", target.display());
         fs::remove_dir_all(&target)?;

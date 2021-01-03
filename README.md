@@ -56,11 +56,11 @@ curl https://release.uwe.app/install.sh | sh
 Plugin publishing is restricted to those that have access to the s3 bucket and the `runtime` repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
 
 ```
-export AB_PUBLISH="$HOME/path/to/registry/folder"
-export AB_PUBLISH_REPO="$HOME/path/to/repo"
-export AB_PUBLISH_PROFILE="..."
-export AB_PUBLISH_REGION="ap-southeast-1"
-export AB_PUBLISH_BUCKET="..."
+export UPM_PUBLISH="$HOME/path/to/registry/folder"
+export UPM_PUBLISH_REPO="$HOME/path/to/repo"
+export UPM_PUBLISH_PROFILE="..."
+export UPM_PUBLISH_REGION="ap-southeast-1"
+export UPM_PUBLISH_BUCKET="..."
 ```
 
 It is **required** to set the `pushurl` and `push` refspec:

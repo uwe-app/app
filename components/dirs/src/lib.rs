@@ -6,8 +6,6 @@ static ROOT_DIR: &str = ".uwe";
 static BIN: &str = "bin";
 static ENV: &str = "env";
 
-static CACHE_NAME: &str = "cache";
-static SRC_NAME: &str = "src";
 static BLUEPRINT_NAME: &str = "blueprint";
 
 static SITES_NAME: &str = "sites";
@@ -15,9 +13,11 @@ static SITES_FILE: &str = "sites.toml";
 
 static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
+static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 
 static RUNTIME_NAME: &str = "runtime";
 static REGISTRY_NAME: &str = "registry";
+static PLUGINS_NAME: &str = "plugins";
 
 static DOCUMENTATION_NAME: &str = "documentation/docs";
 static SYNTAX_NAME: &str = "syntax";
@@ -75,28 +75,20 @@ pub fn releases_url() -> String {
     RELEASES_REPO.to_string()
 }
 
+pub fn registry_url() -> String {
+    REGISTRY_REPO.to_string()
+}
+
 pub fn runtime_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(RUNTIME_NAME))
 }
 
-pub fn cache_dir() -> io::Result<PathBuf> {
-    let cache = root_dir()?.join(CACHE_NAME);
-    if !cache.exists() {
-        fs::create_dir(&cache)?;
+pub fn plugins_dir() -> io::Result<PathBuf> {
+    let dir = root_dir()?.join(PLUGINS_NAME);
+    if !dir.exists() {
+        fs::create_dir(&dir)?;
     }
-    Ok(cache)
-}
-
-pub fn cache_src_dir() -> io::Result<PathBuf> {
-    let src = cache_dir()?.join(SRC_NAME);
-    if !src.exists() {
-        fs::create_dir(&src)?;
-    }
-    Ok(src)
-}
-
-pub fn registry_dir() -> io::Result<PathBuf> {
-    Ok(runtime_dir()?.join(REGISTRY_NAME))
+    Ok(dir)
 }
 
 pub fn docs_dir() -> io::Result<PathBuf> {
@@ -112,9 +104,11 @@ pub fn blueprint_dir() -> io::Result<PathBuf> {
 }
 
 pub fn releases_dir() -> io::Result<PathBuf> {
-    let mut buf = root_dir()?;
-    buf.push(RELEASES_NAME);
-    Ok(buf)
+    Ok(root_dir()?.join(RELEASES_NAME))
+}
+
+pub fn registry_dir() -> io::Result<PathBuf> {
+    Ok(root_dir()?.join(REGISTRY_NAME))
 }
 
 /*

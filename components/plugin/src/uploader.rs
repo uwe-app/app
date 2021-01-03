@@ -13,11 +13,11 @@ use crate::{
 
 /// Upload the plugin package to the s3 bucket.
 async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
-    let registry_profile = option_env!("AB_PUBLISH_PROFILE")
+    let registry_profile = option_env!("UPM_PUBLISH_PROFILE")
         .expect("Publish profile environment variable not set");
-    let registry_region = option_env!("AB_PUBLISH_REGION")
+    let registry_region = option_env!("UPM_PUBLISH_REGION")
         .expect("Publish region environment variable not set");
-    let registry_bucket = option_env!("AB_PUBLISH_BUCKET")
+    let registry_bucket = option_env!("UPM_PUBLISH_BUCKET")
         .expect("Publish bucket environment variable not set");
 
     let region = publisher::parse_region(registry_region)?;
@@ -41,9 +41,9 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let plugin = lint(source).await?;
     //lint_plugin(&plugin)?;
 
-    let registry_path = option_env!("AB_PUBLISH")
+    let registry_path = option_env!("UPM_PUBLISH")
         .expect("Publish registry path environment variable not set");
-    let registry_repo = option_env!("AB_PUBLISH_REPO")
+    let registry_repo = option_env!("UPM_PUBLISH_REPO")
         .expect("Publish repository environment variable not set");
 
     // This is a mis-configuration of the environment variable
