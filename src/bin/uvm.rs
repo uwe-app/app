@@ -37,7 +37,7 @@ enum Command {
         update_self: bool,
 
         /// Semver range filter
-        #[structopt(env = "UWE_INSTALL_VERSION_RANGE", hide_env_values = true)]
+        #[structopt(env = "UVM_INSTALL_VERSION_RANGE", hide_env_values = true)]
         version_range: Option<String>,
     },
 
