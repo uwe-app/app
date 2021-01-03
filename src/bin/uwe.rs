@@ -291,7 +291,7 @@ async fn main() -> Result<()> {
     let id = format!("{}/{}", &name, &version);
     let semver: Version = version.parse().unwrap();
 
-    info!("{}@{}", &name, &version);
+    info!("{}", &version);
 
     let app_data = config::generator::AppData {
         name,
