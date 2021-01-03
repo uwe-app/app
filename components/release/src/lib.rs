@@ -31,6 +31,9 @@ pub enum Error {
     #[error("Digests do not match for {0} ({1} != {2})")]
     DigestMismatch(String, String, String),
 
+    #[error("No releases found, check an `update` semver range matches released versions")]
+    NoReleasesFound,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -39,6 +42,9 @@ pub enum Error {
 
     #[error(transparent)]
     Semver(#[from] semver::SemVerError),
+
+    #[error(transparent)]
+    SemverParse(#[from] semver::ReqParseError),
 
     #[error(transparent)]
     Json(#[from] serde_json::Error),

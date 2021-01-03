@@ -3,7 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use semver::Version;
+use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
@@ -34,12 +34,29 @@ pub struct Releases {
 }
 
 impl Releases {
+
+    pub fn is_empty(&self) -> bool {
+        self.versions.is_empty() 
+    }
+
     pub fn latest(&self) -> (&Version, &ReleaseVersion) {
         self.versions.iter().rev().take(1).next().unwrap()
     }
 
     pub fn contains(&self, version: &Version) -> bool {
         self.versions.contains_key(version)
+    }
+
+    pub fn filter(self, version: Option<VersionReq>) -> Self {
+        if let Some(ref version) = version {
+            let versions = self.versions
+                .into_iter()
+                .filter(|(v, _)| version.matches(&v))
+                .collect::<BTreeMap<_, _>>();
+
+            return Releases{ versions }
+        }
+        self
     }
 }
 

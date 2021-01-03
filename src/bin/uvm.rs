@@ -2,6 +2,7 @@ extern crate log;
 extern crate pretty_env_logger;
 
 use structopt::StructOpt;
+use semver::VersionReq;
 
 use uwe::{opts::fatal, Error, Result};
 
@@ -34,6 +35,10 @@ enum Command {
         /// Update the version manager (uvm)
         #[structopt(short = "s", long = "self")]
         update_self: bool,
+
+        /// Semver range filter
+        #[structopt(env = "UWE_INSTALL_VERSION_RANGE", hide_env_values = true)]
+        version_range: Option<String>,
     },
 
     /// Delete a release version
@@ -58,11 +63,14 @@ async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
         Command::Install { version } => {
             release::install(name, version).await?;
         }
-        Command::Update { update_self } => {
+        Command::Update { update_self, version_range } => {
             if update_self {
                 release::update_self(version).await?;
             } else {
-                release::update(name).await?;
+                let range = if let Some(range) = version_range {
+                    Some(range.parse::<VersionReq>()?)
+                } else { None };
+                release::update(name, range).await?;
             }
         }
         Command::Remove { version } => {

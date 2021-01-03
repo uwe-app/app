@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use log::{info, warn};
-use semver::Version;
+use semver::{Version, VersionReq};
 
 use crate::{
     binary, download, env, info, releases, runtime, verify, version, Error,
@@ -43,7 +43,7 @@ pub async fn select(name: &str, version: String) -> Result<()> {
     let semver: Version = version
         .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
-    fetch(name, true, false, Some(semver)).await
+    fetch(name, true, false, Some(semver), None).await
 }
 
 /// Install a version but do not select it.
@@ -51,7 +51,7 @@ pub async fn install(name: &str, version: String) -> Result<()> {
     let semver: Version = version
         .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
-    fetch(name, false, false, Some(semver)).await
+    fetch(name, false, false, Some(semver), None).await
 }
 
 /// Install the application components.
@@ -60,6 +60,7 @@ pub(crate) async fn fetch(
     select: bool,
     latest: bool,
     version: Option<Version>,
+    range: Option<VersionReq>,
 ) -> Result<()> {
     // Must update the cache of releases
     runtime::fetch_releases().await?;
@@ -71,7 +72,11 @@ pub(crate) async fn fetch(
     }
 
     // Load the releases manifest.
-    let releases = releases::mount()?;
+    let releases = releases::mount()?.filter(range);
+
+    if releases.is_empty() {
+        return Err(Error::NoReleasesFound) 
+    }
 
     let (version, info) = if let Some(ref request) = version {
         let info = releases
