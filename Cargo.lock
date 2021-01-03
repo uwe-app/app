@@ -3948,6 +3948,7 @@ dependencies = [
  "unic-langid",
  "url",
  "utils",
+ "winapi 0.3.9",
  "workspace",
 ]
 
