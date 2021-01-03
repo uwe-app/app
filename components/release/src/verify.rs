@@ -10,8 +10,7 @@ pub(crate) fn test(
     names: &[&str],
 ) -> Result<(bool, String, String)> {
     // Load the releases manifest.
-    let releases_file = releases::runtime_manifest_file()?;
-    let releases = releases::load(&releases_file)?;
+    let releases = releases::mount()?;
 
     // Check the version information exists
     let version_dir = releases::dir(version)?;

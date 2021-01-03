@@ -17,8 +17,7 @@ pub async fn update_self(_current: &str) -> Result<()> {
     let name = exe.file_name().unwrap().to_string_lossy().to_owned();
 
     // Load the releases manifest.
-    let releases_file = releases::runtime_manifest_file()?;
-    let releases = releases::load(&releases_file)?;
+    let releases = releases::mount()?;
 
     // Get the latest available version.
     let (version, info) = releases.latest();

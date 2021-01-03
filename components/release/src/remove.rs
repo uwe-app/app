@@ -18,8 +18,7 @@ pub async fn prune() -> Result<()> {
     runtime::fetch_releases().await?;
 
     // Load the releases manifest
-    let releases_file = releases::runtime_manifest_file()?;
-    let releases = releases::load(&releases_file)?;
+    let releases = releases::mount()?;
 
     // Get the current version
     let version_file = version::file()?;

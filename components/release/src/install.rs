@@ -71,8 +71,7 @@ pub(crate) async fn fetch(
     }
 
     // Load the releases manifest.
-    let releases_file = releases::runtime_manifest_file()?;
-    let releases = releases::load(&releases_file)?;
+    let releases = releases::mount()?;
 
     let (version, info) = if let Some(ref request) = version {
         let info = releases
