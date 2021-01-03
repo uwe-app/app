@@ -1,11 +1,9 @@
 use thiserror::Error;
 
 use std::{
-    env,
     process::Command,
     collections::BTreeMap,
     ffi::{OsStr, OsString},
-    path::Path,
 };
 
 #[derive(Error, Debug)]
@@ -34,9 +32,7 @@ pub fn process<T: AsRef<OsStr>>(cmd: T) -> ProcessBuilder {
     ProcessBuilder {
         program: cmd.as_ref().to_os_string(),
         args: Vec::new(),
-        cwd: None,
         env: BTreeMap::new(),
-        display_env_vars: false,
     }
 }
 
@@ -49,25 +45,9 @@ pub struct ProcessBuilder {
     args: Vec<OsString>,
     /// Any environment variables that should be set for the program.
     env: BTreeMap<String, Option<OsString>>,
-    /// The directory to run the program from.
-    cwd: Option<OsString>,
-    /// `true` to include environment variable in display.
-    display_env_vars: bool,
 }
 
 impl ProcessBuilder {
-    /// (chainable) Sets the executable for the process.
-    pub fn program<T: AsRef<OsStr>>(&mut self, program: T) -> &mut ProcessBuilder {
-        self.program = program.as_ref().to_os_string();
-        self
-    }
-
-    /// (chainable) Adds `arg` to the args list.
-    pub fn arg<T: AsRef<OsStr>>(&mut self, arg: T) -> &mut ProcessBuilder {
-        self.args.push(arg.as_ref().to_os_string());
-        self
-    }
-
     /// (chainable) Adds multiple `args` to the args list.
     pub fn args<T: AsRef<OsStr>>(&mut self, args: &[T]) -> &mut ProcessBuilder {
         self.args
@@ -75,66 +55,24 @@ impl ProcessBuilder {
         self
     }
 
-    /// (chainable) Replaces the args list with the given `args`.
-    pub fn args_replace<T: AsRef<OsStr>>(&mut self, args: &[T]) -> &mut ProcessBuilder {
-        self.args = args.iter().map(|t| t.as_ref().to_os_string()).collect();
-        self
-    }
+    /// Runs the process, waiting for completion, and mapping non-success exit codes to an error.
+    #[cfg(windows)]
+    pub fn exec(&self) -> Result<()> {
+        let mut command = self.build_command();
 
-    /// (chainable) Sets the current working directory of the process.
-    pub fn cwd<T: AsRef<OsStr>>(&mut self, path: T) -> &mut ProcessBuilder {
-        self.cwd = Some(path.as_ref().to_os_string());
-        self
-    }
+        let name = self.program.to_string_lossy().to_string();
+        let args = self.args.iter().map(|a| a.to_string_lossy().to_string())
+            .collect::<Vec<String>>().join(" ");
 
-    /// (chainable) Sets an environment variable for the process.
-    pub fn env<T: AsRef<OsStr>>(&mut self, key: &str, val: T) -> &mut ProcessBuilder {
-        self.env
-            .insert(key.to_string(), Some(val.as_ref().to_os_string()));
-        self
-    }
+        let exit = command.status().map_err(|_| {
+            Error::Exec(name.clone(), args.clone())
+        })?;
 
-    /// (chainable) Unsets an environment variable for the process.
-    pub fn env_remove(&mut self, key: &str) -> &mut ProcessBuilder {
-        self.env.insert(key.to_string(), None);
-        self
-    }
-
-    /// Gets the executable name.
-    pub fn get_program(&self) -> &OsString {
-        &self.program
-    }
-
-    /// Gets the program arguments.
-    pub fn get_args(&self) -> &[OsString] {
-        &self.args
-    }
-
-    /// Gets the current working directory for the process.
-    pub fn get_cwd(&self) -> Option<&Path> {
-        self.cwd.as_ref().map(Path::new)
-    }
-
-    /// Gets an environment variable as the process will see it (will inherit from environment
-    /// unless explicitally unset).
-    pub fn get_env(&self, var: &str) -> Option<OsString> {
-        self.env
-            .get(var)
-            .cloned()
-            .or_else(|| Some(env::var_os(var)))
-            .and_then(|s| s)
-    }
-
-    /// Gets all environment variables explicitly set or unset for the process (not inherited
-    /// vars).
-    pub fn get_envs(&self) -> &BTreeMap<String, Option<OsString>> {
-        &self.env
-    }
-
-    /// Enables environment variable display.
-    pub fn display_env_vars(&mut self) -> &mut Self {
-        self.display_env_vars = true;
-        self
+        if exit.success() {
+            Ok(())
+        } else {
+            Err(Error::Exec(name, args))
+        }
     }
 
     /// Replaces the current process with the target process.
@@ -160,9 +98,6 @@ impl ProcessBuilder {
     /// present.
     pub fn build_command(&self) -> Command {
         let mut command = Command::new(&self.program);
-        if let Some(cwd) = self.get_cwd() {
-            command.current_dir(cwd);
-        }
         for arg in &self.args {
             command.arg(arg);
         }
@@ -187,7 +122,7 @@ mod imp {
 
     pub fn exec_replace(builder: &ProcessBuilder) -> Result<()> {
         let mut command = builder.build_command();
-        let error = command.exec();
+        let _error = command.exec();
         let name = builder.program.to_string_lossy().to_string();
         let args = builder.args.iter().map(|a| a.to_string_lossy().to_string())
             .collect::<Vec<String>>().join(" ");

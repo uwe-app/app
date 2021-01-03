@@ -4191,6 +4191,7 @@ dependencies = [
  "owning_ref",
  "plugin",
  "preference",
+ "release",
  "scm",
  "scopeguard",
  "search",

@@ -65,6 +65,14 @@ pub enum Error {
     #[error("Duplicate host name {0}: {1} <-> {2}")]
     DuplicateHostName(String, PathBuf, PathBuf),
 
+    /// Error for when a pinned compiler is not available in the releases manifest.
+    #[error("Version {0}@{1} is not available; try to install it with `uvm install {1}`")]
+    VersionNotAvailable(String, String),
+
+    /// Error for when a pinned compiler is not available on the file system.
+    #[error("Version {0}@{1} is not installed; try to install it with `uvm install {1}`")]
+    VersionNotInstalled(String, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -100,6 +108,12 @@ pub enum Error {
 
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
+
+    #[error(transparent)]
+    Release(#[from] release::Error),
+
+    #[error(transparent)]
+    Shim(#[from] crate::shim::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -112,6 +126,7 @@ mod options;
 mod plugins;
 mod project;
 mod renderer;
+mod shim;
 
 pub use invalidator::Invalidator;
 pub use project::*;

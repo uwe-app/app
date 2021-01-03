@@ -14,6 +14,7 @@ livereload = {version = "0.1", path = "../livereload" }
 locale = {version = "0.1", path = "../locale" }
 plugin = {version = "0.1", path = "../plugin" }
 preference = {version = "0.1", path = "../preference" }
+release = {version = "0.1", path = "../release" }
 scm = {version = "0.1", path = "../scm" }
 search = {version = "0.1", path = "../../../library/search/backend" }
 syntax = {version = "0.1", path = "../syntax" }

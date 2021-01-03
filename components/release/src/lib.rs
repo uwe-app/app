@@ -86,6 +86,7 @@ mod version;
 pub use install::{install, select};
 pub use list::list;
 pub use publish::publish;
+pub use releases::mount;
 pub use remove::{prune, remove};
 pub use uninstall::uninstall;
 pub use update::{update, update_self};

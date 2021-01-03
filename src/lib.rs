@@ -10,7 +10,6 @@ pub mod opts;
 pub mod plugin;
 pub mod publish;
 pub mod server;
-pub mod shim;
 pub mod sync;
 pub mod task;
 

@@ -8,6 +8,7 @@ use log::{debug, info, warn};
 use futures::TryFutureExt;
 use scopeguard::defer;
 use url::Url;
+use config::semver::Version;
 
 use collator::{
     self, menu, CollateInfo, CollateRequest, CollateResult, Collation,
@@ -723,6 +724,59 @@ fn scm_digest(project: &PathBuf) -> Option<String> {
     None
 }
 
+/// Try to fork a pinned version.
+fn fork_pin<P: AsRef<Path>>(
+    file: P,
+    pin_version: &Version,
+    app_version: &Version) -> Result<()> {
+
+    use std::env;
+    use crate::shim::process;
+
+    let app_name = config::generator::name();
+
+    info!("Pin version {} in {} does not match current version {}",
+        pin_version,
+        file.as_ref().display(),
+        app_version);
+    info!("Attempting to switch to {}@{}",
+        app_name,
+        pin_version);
+
+    let releases = release::mount()?;
+    if !releases.contains(pin_version) {
+        return Err(Error::VersionNotAvailable(
+            app_name.to_string(),
+            pin_version.to_string()))  
+    }
+
+    let binary_dir = dirs::releases_dir()?.join(pin_version.to_string());
+    if !binary_dir.exists() || !binary_dir.is_dir() {
+        return Err(Error::VersionNotInstalled(
+            app_name.to_string(),
+            pin_version.to_string()))  
+    }
+
+    let binary_file = binary_dir.join(app_name);
+    if !binary_file.exists() || !binary_file.is_file() {
+        return Err(Error::VersionNotInstalled(
+            app_name.to_string(),
+            pin_version.to_string()))  
+    }
+
+    info!("Use {}@{} at {}",
+        app_name,
+        pin_version,
+        binary_file.display());
+
+    let args: Vec<String> = env::args().skip(1).collect();
+    let _ = process(binary_file)
+        .args(args.as_slice())
+        .exec_replace()?;
+
+    Ok(())
+}
+
 /// Open a project.
 ///
 /// Load the configuration for a project and resolve workspace members when necessary.
@@ -732,6 +786,13 @@ pub fn open<P: AsRef<Path>>(
     member_filters: &Vec<String>,
 ) -> Result<Workspace> {
     let mut config = Config::load(dir.as_ref(), walk_ancestors)?;
+
+    if let Some(ref pin_version) = config.pin() {
+        let app_version = config::generator::semver();
+        if pin_version != app_version {
+            fork_pin(config.file(), pin_version, app_version)?;
+        }
+    }
 
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Config> = Vec::new();

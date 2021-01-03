@@ -37,6 +37,10 @@ impl Releases {
     pub fn latest(&self) -> (&Version, &ReleaseVersion) {
         self.versions.iter().rev().take(1).next().unwrap()
     }
+
+    pub fn contains(&self, version: &Version) -> bool {
+        self.versions.contains_key(version)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -59,6 +63,12 @@ pub(crate) fn load<P: AsRef<Path>>(target: P) -> Result<Releases> {
     let contents = fs::read_to_string(target.as_ref())?;
     let releases: Releases = serde_json::from_str(&contents)?;
     Ok(releases)
+}
+
+/// Load the releases list from the default runtime location.
+pub fn mount() -> Result<Releases> {
+    let releases_file = runtime_manifest_file()?;
+    load(&releases_file)
 }
 
 /// Save the release definition JSON.
@@ -93,7 +103,7 @@ pub(crate) fn local_manifest_file<P: AsRef<Path>>(
 
 /// Get the release manifest file for the installed runtime used
 /// for the install and upgrade processes.
-pub(crate) fn runtime_manifest_file() -> Result<PathBuf> {
+pub fn runtime_manifest_file() -> Result<PathBuf> {
     Ok(dirs::releases_dir()?
         .join(MANIFEST_JSON)
         .canonicalize()?)

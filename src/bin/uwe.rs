@@ -5,6 +5,7 @@ use std::time::SystemTime;
 
 use log::info;
 use structopt::StructOpt;
+use semver::Version;
 
 use config::{server::LaunchConfig, ProfileSettings};
 
@@ -287,10 +288,16 @@ async fn main() -> Result<()> {
     // care about, the top-level version is the one that interests us.
     let name = env!("CARGO_PKG_NAME").to_string();
     let version = env!("CARGO_PKG_VERSION").to_string();
+    let id = format!("{}/{}", &name, &version);
+    let semver: Version = version.parse().unwrap();
+
+    info!("{}@{}", &name, &version);
+
     let app_data = config::generator::AppData {
         name,
         version,
-        ..Default::default()
+        id,
+        semver,
     };
     config::generator::get(Some(app_data));
 
