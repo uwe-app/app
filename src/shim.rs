@@ -1,6 +1,9 @@
+//! Shim for detecting a version from `.uwe-version` and 
+//! running a matching executable for the version.
 use thiserror::Error;
 
 use std::{
+    env,
     process::Command,
     collections::BTreeMap,
     ffi::{OsStr, OsString},
@@ -14,11 +17,57 @@ pub enum Error {
     #[error("Could not set Ctrl-C handler")]
     WindowsCtrlC,
 
+    /// Error for when a pinned compiler is not available in the releases manifest.
+    #[error("Version {0}@{1} is not available; try to install it with `uvm install {1}`")]
+    VersionNotAvailable(String, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Semver(#[from] semver::SemVerError),
+
+    #[error(transparent)]
+    Release(#[from] release::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+pub fn fork(app_name: &str) -> Result<()> {
+    let (mut local_version, version_file) = release::find_local_version(env::current_dir()?)?;
+
+    let pin_version = if let Some(version) = local_version.take() {
+        version 
+    } else { release::default_version()? };
+
+    let releases = release::mount()?;
+    if !releases.contains(&pin_version) {
+        return Err(Error::VersionNotAvailable(
+            app_name.to_string(),
+            pin_version.to_string()))  
+    }
+
+    let binary_dir = dirs::releases_dir()?.join(pin_version.to_string());
+    if !binary_dir.exists() || !binary_dir.is_dir() {
+        return Err(Error::VersionNotAvailable(
+            app_name.to_string(),
+            pin_version.to_string()))  
+    }
+
+    let binary_file = binary_dir.join(app_name);
+    if !binary_file.exists() || !binary_file.is_file() {
+        return Err(Error::VersionNotAvailable(
+            app_name.to_string(),
+            pin_version.to_string()))  
+    }
+
+    let args: Vec<String> = env::args().skip(1).collect();
+    let _ = process(binary_file)
+        .args(args.as_slice())
+        .exec_replace()?;
+
+    Ok(())
+}
 
 // Modified from the process builder in cargo so that replacing the current 
 // process should work ok on windows with regards to Ctrl+C handling.
@@ -52,6 +101,13 @@ impl ProcessBuilder {
     pub fn args<T: AsRef<OsStr>>(&mut self, args: &[T]) -> &mut ProcessBuilder {
         self.args
             .extend(args.iter().map(|t| t.as_ref().to_os_string()));
+        self
+    }
+
+    /// (chainable) Sets an environment variable for the process.
+    pub fn env<T: AsRef<OsStr>>(&mut self, key: &str, val: T) -> &mut ProcessBuilder {
+        self.env
+            .insert(key.to_string(), Some(val.as_ref().to_os_string()));
         self
     }
 

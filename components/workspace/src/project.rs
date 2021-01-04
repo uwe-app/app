@@ -8,7 +8,6 @@ use log::{debug, info, warn};
 use futures::TryFutureExt;
 use scopeguard::defer;
 use url::Url;
-use config::semver::Version;
 
 use collator::{
     self, menu, CollateInfo, CollateRequest, CollateResult, Collation,
@@ -724,6 +723,7 @@ fn scm_digest(project: &PathBuf) -> Option<String> {
     None
 }
 
+/*
 /// Try to fork a pinned version.
 fn fork_pin<P: AsRef<Path>>(
     file: P,
@@ -776,6 +776,7 @@ fn fork_pin<P: AsRef<Path>>(
 
     Ok(())
 }
+*/
 
 /// Open a project.
 ///
@@ -787,12 +788,14 @@ pub fn open<P: AsRef<Path>>(
 ) -> Result<Workspace> {
     let mut config = Config::load(dir.as_ref(), walk_ancestors)?;
 
+    /*
     if let Some(ref pin_version) = config.pin() {
         let app_version = config::generator::semver();
         if pin_version != app_version {
             fork_pin(config.file(), pin_version, app_version)?;
         }
     }
+    */
 
     if let Some(ref projects) = &config.workspace {
         let mut members: Vec<Config> = Vec::new();

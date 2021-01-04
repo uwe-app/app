@@ -18,7 +18,7 @@ pub static LATEST: &str = "latest";
 pub static LINUX: &str = "linux";
 pub static MACOS: &str = "macos";
 
-pub static PUBLISH_EXE_NAMES: [&str; 3] = ["uwe", "upm", "uvm"];
+pub static PUBLISH_EXE_NAMES: [&str; 5] = ["uwe", "upm", "uvm", "uwe-shim", "upm-shim"];
 pub static INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
 pub static VERSION_EXE_NAMES: [&str; 1] = ["uvm"];
 

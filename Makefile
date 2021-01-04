@@ -28,7 +28,9 @@ info:
 
 strip-release:
 	strip target/release/uwe
+	strip target/release/uwe-shim
 	strip target/release/upm
+	strip target/release/upm-shim
 	strip target/release/uvm
 
 compile-release:
@@ -38,7 +40,9 @@ build-release: compile-release strip-release
 
 strip-linux-macos-cross:
 	$(MAC_STRIP) target/x86_64-apple-darwin/release/uwe
+	$(MAC_STRIP) target/x86_64-apple-darwin/release/uwe-shim
 	$(MAC_STRIP) target/x86_64-apple-darwin/release/upm
+	$(MAC_STRIP) target/x86_64-apple-darwin/release/upm-shim
 	$(MAC_STRIP) target/x86_64-apple-darwin/release/uvm
 
 compile-linux-macos-cross:

@@ -96,3 +96,4 @@ pub use releases::mount;
 pub use remove::{prune, remove};
 pub use uninstall::uninstall;
 pub use update::{update, update_self};
+pub use version::{default_version, find_local_version};
