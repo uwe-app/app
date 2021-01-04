@@ -1,42 +1,10 @@
-use std::path::PathBuf;
-
 use log::{info, warn};
 use semver::{Version, VersionReq};
 
 use crate::{
-    binary, download, env, info, releases, runtime, verify, version, Error,
+    binary, download, info, releases, runtime, verify, version, Error,
     Result,
 };
-
-fn welcome() -> Result<PathBuf> {
-    let bin_dir = dirs::bin_dir()?;
-
-    // Write out the env file
-    env::write(&bin_dir)?;
-
-    // Try to configure the shell paths
-    let (shell_ok, shell_write, shell_name, shell_file) =
-        env::update_shell_profile()?;
-    if shell_ok {
-        if shell_write {
-            info!("");
-            info!("Updated {} at {}", shell_name, shell_file.display());
-        }
-    } else {
-        warn!("");
-        warn!("Update your PATH to include {}", bin_dir.display());
-    }
-
-    let source_path = env::get_source_env().trim().to_string();
-
-    info!("");
-    info!("To update your current shell session run:");
-    info!("");
-    info!("   {}", source_path);
-    info!("");
-
-    Ok(bin_dir)
-}
 
 /// Install a version and select it so it is the current version.
 pub async fn select(name: &str, version: String) -> Result<()> {
@@ -154,15 +122,6 @@ pub(crate) async fn fetch(
     // Download all the artifacts for the version.
     let binaries = download::all(version, info, names).await?;
     binary::permissions(&binaries)?;
-
-    if select {
-        version::write(&version_file, version)?;
-    }
-
-    let first_run = !version_file.exists();
-    if first_run {
-        welcome()?;
-    }
 
     if select {
         version::write(&version_file, version)?;

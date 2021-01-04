@@ -1,11 +1,42 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
-use log::info;
+use log::{info, warn};
 use semver::VersionReq;
 
 use crate::{
-    binary, download, install::fetch, releases, runtime, version, Error, Result,
+    binary, download, env, install::fetch, releases, runtime, version, Error, Result,
 };
+
+fn welcome() -> Result<PathBuf> {
+    let bin_dir = dirs::bin_dir()?;
+
+    // Write out the env file
+    env::write(&bin_dir)?;
+
+    // Try to configure the shell paths
+    let (shell_ok, shell_write, shell_name, shell_file) =
+        env::update_shell_profile()?;
+    if shell_ok {
+        if shell_write {
+            info!("");
+            info!("Updated {} at {}", shell_name, shell_file.display());
+        }
+    } else {
+        warn!("");
+        warn!("Update your PATH to include {}", bin_dir.display());
+    }
+
+    let source_path = env::get_source_env().trim().to_string();
+
+    info!("");
+    info!("To update your current shell session run:");
+    info!("");
+    info!("   {}", source_path);
+    info!("");
+
+    Ok(bin_dir)
+}
 
 /// Attempt to upgrade to the latest version.
 pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
@@ -45,6 +76,8 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
             })
             .collect::<HashMap<_, _>>();
         binary::rename(&binaries)?;
+
+        welcome()?;
     }
 
     let message_kind = if first_run { "Installed" } else { "Updated" };
