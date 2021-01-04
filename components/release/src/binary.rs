@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use log::info;
 
-use crate::Result;
+use crate::{releases, Result};
 
 #[cfg(target_os = "windows")]
 pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
@@ -23,14 +23,11 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn copy(binaries: &HashMap<String, PathBuf>) -> Result<()> {
+pub(crate) fn rename(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     let releases_dir = dirs::releases_dir()?;
     let bin_dir = dirs::bin_dir()?;
 
-    let mut shims = HashMap::new();
-    shims.insert(String::from("uwe-shim"), String::from("uwe"));
-    shims.insert(String::from("upm-shim"), String::from("upm"));
-
+    let shims = releases::shim_map();
     for (name, src) in binaries {
         let bin_name = if let Some(shim_dest) = shims.get(name) {
             shim_dest.to_string() 
@@ -42,8 +39,8 @@ pub(crate) fn copy(binaries: &HashMap<String, PathBuf>) -> Result<()> {
         }
 
         let short_src = src.strip_prefix(&releases_dir)?;
-        info!("Copy {} -> {}", short_src.display(), dest.display());
-        std::fs::copy(src, dest)?;
+        info!("Move {} -> {}", short_src.display(), dest.display());
+        std::fs::rename(src, dest)?;
     }
     Ok(())
 }

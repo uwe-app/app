@@ -161,14 +161,14 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Server { args } => {
-            let target = opts::project_path(&args.target)?;
+            let project = opts::project_path(&args.target)?;
 
-            if !target.exists() || !target.is_dir() {
-                return fatal(Error::NotDirectory(target));
+            if !project.exists() || !project.is_dir() {
+                return fatal(Error::NotDirectory(project));
             }
 
             let opts = uwe::opts::server_config(
-                &target,
+                &project,
                 &args.server,
                 config::PORT,
                 config::PORT_SSL,
@@ -176,7 +176,7 @@ async fn run(cmd: Command) -> Result<()> {
 
             let launch = LaunchConfig { open: args.open };
             uwe::server::serve(
-                &target,
+                &project,
                 args.skip_build,
                 opts,
                 launch,

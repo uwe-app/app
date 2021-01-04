@@ -40,28 +40,50 @@ fn welcome() -> Result<PathBuf> {
 
 /// Install a version and select it so it is the current version.
 pub async fn select(name: &str, version: String) -> Result<()> {
-    let semver: Version = version
+    let version: Version = version
         .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
-    fetch(name, true, false, Some(semver), None).await
+
+    fetch(
+        name,
+        &releases::INSTALL_EXE_NAMES,
+        true,
+        false,
+        Some(version.clone()),
+        None).await?;
+
+    info!("Installed {}@{} ✓", name, version.to_string());
+    Ok(())
 }
 
 /// Install a version but do not select it.
 pub async fn install(name: &str, version: String) -> Result<()> {
-    let semver: Version = version
+    let version: Version = version
         .parse()
         .map_err(|_| Error::InvalidVersion(version))?;
-    fetch(name, false, false, Some(semver), None).await
+
+    fetch(
+        name,
+        &releases::INSTALL_EXE_NAMES,
+        false,
+        false,
+        Some(version.clone()),
+        None).await?;
+
+    info!("Installed {}@{} ✓", name, version.to_string());
+
+    Ok(())
 }
 
 /// Install the application components.
 pub(crate) async fn fetch(
     name: &str,
+    names: &[&str],
     select: bool,
     latest: bool,
     version: Option<Version>,
     range: Option<VersionReq>,
-) -> Result<()> {
+) -> Result<Version> {
     // Must update the cache of releases
     runtime::fetch_releases().await?;
 
@@ -101,11 +123,13 @@ pub(crate) async fn fetch(
     if latest && version_file.exists() {
         let info = version::read(&version_file)?;
         if &info.version == version {
-            return info::upto_date(&version);
+            info::upto_date(&version)?;
+            return Ok(version.clone())
         }
     }
 
-    let names = &releases::INSTALL_EXE_NAMES;
+    //let names = &releases::INSTALL_EXE_NAMES;
+    //names.foo();
 
     if releases::exists(version)? {
         let version_dir = releases::dir(version)?;
@@ -118,7 +142,7 @@ pub(crate) async fn fetch(
             }
 
             info!("Installation {}@{} is ok ✓", name, version.to_string());
-            return Ok(());
+            return Ok(version.clone());
         } else {
             warn!(
                 "Existing installation for {}@{} may be corrupt",
@@ -131,11 +155,9 @@ pub(crate) async fn fetch(
     let binaries = download::all(version, info, names).await?;
     binary::permissions(&binaries)?;
 
-    /*
     if select {
-        binary::symlink(&binaries)?;
+        version::write(&version_file, version)?;
     }
-    */
 
     let first_run = !version_file.exists();
     if first_run {
@@ -146,7 +168,5 @@ pub(crate) async fn fetch(
         version::write(&version_file, version)?;
     }
 
-    info!("Installed {}@{} ✓", name, version.to_string());
-
-    Ok(())
+    Ok(version.clone())
 }

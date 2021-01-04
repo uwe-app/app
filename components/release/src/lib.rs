@@ -34,6 +34,9 @@ pub enum Error {
     #[error("No releases found, check an `update` semver range matches released versions")]
     NoReleasesFound,
 
+    #[error("Range filters cannot be used on the first installation")]
+    RangeFilterNotAllowedOnFirstRun,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

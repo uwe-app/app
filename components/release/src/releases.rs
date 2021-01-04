@@ -21,9 +21,21 @@ pub static MACOS: &str = "macos";
 pub static PUBLISH_EXE_NAMES: [&str; 5] = ["uwe", "upm", "uvm", "uwe-shim", "upm-shim"];
 pub static INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
 pub static VERSION_EXE_NAMES: [&str; 3] = ["uvm", "uwe-shim", "upm-shim"];
+pub static INSTALL_SHIM_NAMES: [&str; 2] = ["uwe-shim", "upm-shim"];
+
+pub static SHIM: [(&str, &str); 2] = [("uwe-shim", "uwe"), ("upm-shim", "upm")];
 
 #[cfg(target_os = "windows")]
 pub static WINDOWS: &str = "windows";
+
+pub fn shim_map() -> HashMap<String, String> {
+    SHIM
+        .iter()
+        .map(|(s, e)| {
+            (s.to_string(), e.to_string()) 
+        })
+        .collect::<HashMap<_, _>>()
+}
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
