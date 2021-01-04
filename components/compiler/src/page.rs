@@ -125,7 +125,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             languages,
             date: &config.date,
             menus: Default::default(),
-            generator: config::generator::id(),
+            generator: config::generator::user_agent(),
             version: config.version(),
             commit: config.commit(),
             members: config.member_urls(),

@@ -2,7 +2,10 @@ extern crate log;
 extern crate pretty_env_logger;
 
 use std::path::PathBuf;
+
 use structopt::StructOpt;
+use semver::Version;
+use log::info;
 
 use uwe::{self, opts::fatal, Error, Result};
 
@@ -75,5 +78,28 @@ async fn main() -> Result<()> {
     let args = Cli::from_args();
     uwe::opts::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
+
+    // Configure the generator meta data ahead of time
+
+    // Must configure the version here otherwise option_env!() will
+    // use the version from the workspace package which we don't really
+    // care about, the top-level version is the one that interests us.
+    let name = env!("CARGO_PKG_NAME").to_string();
+    let version = env!("CARGO_PKG_VERSION").to_string();
+    let bin_name = env!("CARGO_BIN_NAME").to_string();
+    let user_agent = format!("{}/{}", &name, &version);
+    let semver: Version = version.parse().unwrap();
+
+    info!("{}", &version);
+
+    let app_data = config::generator::AppData {
+        name,
+        bin_name,
+        version,
+        user_agent,
+        semver,
+    };
+    config::generator::get(Some(app_data));
+
     Ok(run(args.cmd).await.or_else(fatal)?)
 }

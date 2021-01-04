@@ -107,4 +107,7 @@ pub enum Error {
 
     #[error(transparent)]
     Release(#[from] release::Error),
+
+    #[error(transparent)]
+    Shim(#[from] crate::shim::Error),
 }

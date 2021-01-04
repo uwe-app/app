@@ -17,7 +17,7 @@ use uwe::{
         self, fatal, Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync,
         Task,
     },
-    Error, Result,
+    Result,
 };
 
 #[derive(Debug, StructOpt)]
@@ -146,7 +146,8 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Clean { args } => {
-            uwe::clean::clean(args.project).await?;
+            let project = opts::project_path(&args.project)?;
+            uwe::clean::clean(project).await?;
         }
 
         Command::Docs { args } => {
@@ -162,10 +163,6 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Server { args } => {
             let project = opts::project_path(&args.target)?;
-
-            if !project.exists() || !project.is_dir() {
-                return fatal(Error::NotDirectory(project));
-            }
 
             let opts = uwe::opts::server_config(
                 &project,
@@ -288,20 +285,20 @@ async fn main() -> Result<()> {
     // care about, the top-level version is the one that interests us.
     let name = env!("CARGO_PKG_NAME").to_string();
     let version = env!("CARGO_PKG_VERSION").to_string();
-    let id = format!("{}/{}", &name, &version);
+    let bin_name = env!("CARGO_BIN_NAME").to_string();
+    let user_agent = format!("{}/{}", &name, &version);
     let semver: Version = version.parse().unwrap();
 
     info!("{}", &version);
 
     let app_data = config::generator::AppData {
         name,
+        bin_name,
         version,
-        id,
+        user_agent,
         semver,
     };
     config::generator::get(Some(app_data));
 
-    run(args.cmd).await.or_else(fatal)?;
-
-    Ok(())
+    Ok(run(args.cmd).await.or_else(fatal)?)
 }

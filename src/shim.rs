@@ -2,6 +2,8 @@
 //! running a matching executable for the version.
 use thiserror::Error;
 
+use semver::Version;
+
 use std::{
     env,
     process::Command,
@@ -33,12 +35,18 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub fn fork(app_name: &str) -> Result<()> {
-    let (mut local_version, _) = release::find_local_version(env::current_dir()?)?;
+pub fn fork(app_name: &str, mut target_version: Option<Version>) -> Result<()> {
 
-    let pin_version = if let Some(version) = local_version.take() {
-        version 
-    } else { release::default_version()? };
+    let pin_version = if let Some(target) = target_version.take() {
+        target
+    } else {
+        let (mut local_version, _) = release::find_local_version(env::current_dir()?)?;
+        if let Some(version) = local_version.take() {
+            version 
+        } else {
+            release::default_version()?
+        }
+    };
 
     let releases = release::mount()?;
     if !releases.contains(&pin_version) {

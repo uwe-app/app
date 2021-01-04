@@ -11,11 +11,6 @@ pub async fn run<P: AsRef<Path>>(
     project: P,
     mut args: ProfileSettings,
 ) -> Result<(), Error> {
-    let project = project.as_ref();
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project.to_path_buf()));
-    }
-
     // Prepare the server settings
     let port = args.get_port().clone();
     if port == 0 {

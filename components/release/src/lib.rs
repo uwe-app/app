@@ -37,6 +37,9 @@ pub enum Error {
     #[error("Range filters cannot be used on the first installation")]
     RangeFilterNotAllowedOnFirstRun,
 
+    #[error("Unable to parse version in {0} ({1})")]
+    VersionFileRead(PathBuf, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

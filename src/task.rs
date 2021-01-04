@@ -53,10 +53,6 @@ async fn list_blueprints() -> Result<()> {
 /// Check plugin dependencies do not use `path` or `archive`
 /// local references.
 async fn check_deps(project: PathBuf) -> Result<()> {
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project));
-    }
-
     let workspace = workspace::open(&project, true, &vec![])?;
     for config in workspace.into_iter() {
         if let Some(deps) = config.dependencies {
@@ -100,9 +96,6 @@ async fn pull(
     branch: String,
 ) -> Result<()> {
     let target = opts::project_path(&target)?;
-    if !target.exists() || !target.is_dir() {
-        return Err(Error::NotDirectory(target));
-    }
 
     scm::open(&target)
         .map_err(|_| Error::NotRepository(target.to_path_buf()))?;
@@ -116,9 +109,6 @@ async fn pull(
 /*
 fn create(target: PathBuf, message: String) -> Result<()> {
     let target = opts::project_path(&target)?;
-    if !target.exists() || !target.is_dir() {
-        return Err(Error::NotDirectory(target));
-    }
 
     scm::init(&target, &message)
         .map(|_| ())

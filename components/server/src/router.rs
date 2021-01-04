@@ -494,7 +494,7 @@ async fn redirect_trailing_slash(
 }
 
 fn get_with_server(_opts: &ServerConfig) -> warp::filters::reply::WithHeader {
-    warp::reply::with::header("server", config::generator::id())
+    warp::reply::with::header("server", config::generator::user_agent())
 }
 
 fn get_static_server(

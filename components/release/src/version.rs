@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use semver::Version;
 
-use crate::{Result};
+use crate::{Error, Result};
 
 static VERSION_FILE: &str = ".uwe-version";
 
@@ -44,7 +44,8 @@ pub fn find_local_version<P: AsRef<Path>>(path: P) -> Result<(Option<Version>, O
 
     if version_file.exists() && version_file.is_file() {
         let content = fs::read_to_string(&version_file)?; 
-        let version: Version = content.parse()?;
+        let version: Version = content.parse::<Version>().map_err(
+            |e| Error::VersionFileRead(version_file.clone(), e.to_string()))?;
         return Ok((Some(version), Some(version_file)))
     }
 

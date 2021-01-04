@@ -2,13 +2,13 @@ use std::env;
 use std::panic;
 use std::path::PathBuf;
 
-use log::error;
+use log::{info, error};
 
 use config::server::{HostConfig, ServerConfig, TlsConfig};
 
 use web_server::WebServerOpts;
 
-use crate::{Error, Result};
+use crate::{shim, Error, Result};
 
 const LOG_ENV_NAME: &'static str = "UWE_LOG";
 
@@ -46,6 +46,8 @@ pub fn log_level(level: &str) -> Result<()> {
 }
 
 pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
+    let cwd = std::env::current_dir()?;
+
     // NOTE: We want the help output to show "."
     // NOTE: to indicate that the current working
     // NOTE: directory is used but the period creates
@@ -53,10 +55,30 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     // NOTE: live reload so this converts it to the
     // NOTE: empty string.
     let period = PathBuf::from(".");
-    if input == &period {
-        return Ok(input.canonicalize()?);
+    let result = if input == &period {
+        cwd.clone()
+    } else { input.clone() };
+
+    if !result.exists() || !result.is_dir() {
+        return Err(Error::NotDirectory(result));
     }
-    Ok(input.clone())
+
+    let canonical = input.canonicalize()?;
+
+    if canonical != cwd {
+        let (mut local_version, mut version_file) = release::find_local_version(&canonical)?;
+        let self_version = config::generator::semver();
+        if let (Some(version), Some(version_file)) = (local_version.take(), version_file.take()) {
+            if &version != self_version {
+                let bin_name = config::generator::bin_name();
+                info!("Use version in {}", version_file.display());
+                info!("Switch {} from {} to {}", bin_name, self_version.to_string(), version.to_string());
+                shim::fork(bin_name, Some(version))?;
+            }
+        }
+    }
+
+    Ok(result)
 }
 
 pub fn tls_config(

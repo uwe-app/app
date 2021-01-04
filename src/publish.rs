@@ -19,11 +19,6 @@ pub struct PublishOptions {
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
-    let project = &options.project;
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project.to_path_buf()));
-    }
-
     let mut args = ProfileSettings::new_release();
     args.exec = Some(options.exec);
     let result = compile(&options.project, &args).await?;

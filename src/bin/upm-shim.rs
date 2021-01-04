@@ -5,7 +5,7 @@ fn main() -> Result<()> {
     uwe::opts::log_level("error").expect("Unable to set log level");
 
     let name: &str = "upm";
-    if let Err(e) = fork(name) {
+    if let Err(e) = fork(name, None) {
         log::error!("{}", e.to_string());
         std::process::exit(1);
     }

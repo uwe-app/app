@@ -3,13 +3,9 @@ use std::path::PathBuf;
 
 use log::info;
 
-use crate::{Error, Result};
+use crate::Result;
 
 pub async fn clean(project: PathBuf) -> Result<()> {
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project));
-    }
-
     let workspace = workspace::open(&project, true, &vec![])?;
     for config in workspace.into_iter() {
         let profile = config.build.as_ref().unwrap();

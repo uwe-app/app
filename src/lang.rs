@@ -5,7 +5,7 @@ use log::{info, warn};
 
 use crate::{
     opts::{self, Lang},
-    Error, Result,
+    Result,
 };
 use config::{Config, ProfileSettings};
 use locale::Locales;
@@ -44,10 +44,6 @@ impl LanguageInfo {
 
 /// List languages for a project.
 async fn list(project: PathBuf) -> Result<()> {
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project));
-    }
-
     let workspace = workspace::open(&project, true, &vec![])?;
     for config in workspace.into_iter() {
         let info = LanguageInfo::new(config)?;
@@ -73,10 +69,6 @@ async fn list(project: PathBuf) -> Result<()> {
 /// If the locales directory and common messsages file do not exist
 /// they are created as is the messages file for the fallback language.
 async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project));
-    }
-
     // Ensure we have valid language identifiers
     for lang in languages.iter() {
         let _: LanguageIdentifier = lang.parse()?;

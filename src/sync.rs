@@ -7,9 +7,6 @@ use crate::{
 
 pub async fn run(opts: Sync) -> Result<()> {
     let project = opts::project_path(&opts.project)?;
-    if !project.exists() || !project.is_dir() {
-        return Err(Error::NotDirectory(project));
-    }
 
     let remote_opt = opts.remote;
     let branch_opt = opts.branch;
