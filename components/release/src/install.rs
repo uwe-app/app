@@ -113,7 +113,7 @@ pub(crate) async fn fetch(
         let (verified, exe_name, _) = verify::test(version, names)?;
         if verified {
             if select {
-                binary::symlink_names(&version_dir, names)?;
+                //binary::symlink_names(&version_dir, names)?;
                 version::write(&version_file, version)?;
             }
 
@@ -131,9 +131,11 @@ pub(crate) async fn fetch(
     let binaries = download::all(version, info, names).await?;
     binary::permissions(&binaries)?;
 
+    /*
     if select {
         binary::symlink(&binaries)?;
     }
+    */
 
     let first_run = !version_file.exists();
     if first_run {

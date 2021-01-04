@@ -35,7 +35,7 @@ pub async fn update_self(_current: &str) -> Result<()> {
     let binaries =
         download::all(version, info, &releases::VERSION_EXE_NAMES).await?;
     binary::permissions(&binaries)?;
-    binary::symlink(&binaries)?;
+    binary::copy(&binaries)?;
 
     info!("Updated to {}@{} ✓", name, version.to_string());
 

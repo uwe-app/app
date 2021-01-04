@@ -23,6 +23,23 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn copy(binaries: &HashMap<String, PathBuf>) -> Result<()> {
+    let releases_dir = dirs::releases_dir()?;
+    let bin_dir = dirs::bin_dir()?;
+    for (name, src) in binaries {
+        let dest = bin_dir.join(name);
+        if dest.exists() {
+            fs::remove_file(&dest)?;
+        }
+
+        let short_src = src.strip_prefix(&releases_dir)?;
+        info!("Copy {} -> {}", short_src.display(), dest.display());
+        std::fs::copy(src, dest)?;
+    }
+    Ok(())
+}
+
+/*
 pub(crate) fn symlink(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     let releases_dir = dirs::releases_dir()?;
     let bin_dir = dirs::bin_dir()?;
@@ -50,3 +67,4 @@ pub(crate) fn symlink_names(dir: &PathBuf, names: &[&str]) -> Result<()> {
     }
     symlink(&out)
 }
+*/
