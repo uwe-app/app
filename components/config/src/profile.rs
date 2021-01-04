@@ -17,6 +17,7 @@ use crate::{
 
 static DEBUG: &str = "debug";
 static RELEASE: &str = "release";
+static DIST: &str = "dist";
 
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
@@ -58,6 +59,7 @@ impl ProfileFilter {
 pub enum ProfileName {
     Debug,
     Release,
+    Dist,
     Custom(String),
 }
 
@@ -69,6 +71,7 @@ impl Serialize for ProfileName {
         match *self {
             ProfileName::Debug => serializer.serialize_str(DEBUG),
             ProfileName::Release => serializer.serialize_str(RELEASE),
+            ProfileName::Dist => serializer.serialize_str(DIST),
             ProfileName::Custom(ref val) => serializer.serialize_str(val),
         }
     }
@@ -86,6 +89,8 @@ impl From<String> for ProfileName {
             ProfileName::Debug
         } else if s == RELEASE {
             ProfileName::Release
+        } else if s == DIST {
+            ProfileName::Dist
         } else {
             ProfileName::Custom(s)
         }
@@ -98,6 +103,7 @@ impl fmt::Display for ProfileName {
             ProfileName::Custom(ref val) => write!(f, "{}", val),
             ProfileName::Debug => write!(f, "{}", DEBUG),
             ProfileName::Release => write!(f, "{}", RELEASE),
+            ProfileName::Dist => write!(f, "{}", DIST),
         }
     }
 }
@@ -116,6 +122,12 @@ impl ProfileName {
                 return DEVELOPMENT.to_string();
             }
             ProfileName::Release => {
+                if let Some(env) = release {
+                    return env;
+                }
+                return PRODUCTION.to_string();
+            }
+            ProfileName::Dist => {
                 if let Some(env) = release {
                     return env;
                 }
