@@ -26,8 +26,17 @@ pub(crate) fn permissions(binaries: &HashMap<String, PathBuf>) -> Result<()> {
 pub(crate) fn copy(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     let releases_dir = dirs::releases_dir()?;
     let bin_dir = dirs::bin_dir()?;
+
+    let mut shims = HashMap::new();
+    shims.insert(String::from("uwe-shim"), String::from("uwe"));
+    shims.insert(String::from("upm-shim"), String::from("upm"));
+
     for (name, src) in binaries {
-        let dest = bin_dir.join(name);
+        let bin_name = if let Some(shim_dest) = shims.get(name) {
+            shim_dest.to_string() 
+        } else { name.to_string() };
+
+        let dest = bin_dir.join(&bin_name);
         if dest.exists() {
             fs::remove_file(&dest)?;
         }

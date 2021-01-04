@@ -20,7 +20,7 @@ pub static MACOS: &str = "macos";
 
 pub static PUBLISH_EXE_NAMES: [&str; 5] = ["uwe", "upm", "uvm", "uwe-shim", "upm-shim"];
 pub static INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
-pub static VERSION_EXE_NAMES: [&str; 1] = ["uvm"];
+pub static VERSION_EXE_NAMES: [&str; 3] = ["uvm", "uwe-shim", "upm-shim"];
 
 #[cfg(target_os = "windows")]
 pub static WINDOWS: &str = "windows";
