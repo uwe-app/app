@@ -34,7 +34,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub fn fork(app_name: &str) -> Result<()> {
-    let (mut local_version, version_file) = release::find_local_version(env::current_dir()?)?;
+    let (mut local_version, _) = release::find_local_version(env::current_dir()?)?;
 
     let pin_version = if let Some(version) = local_version.take() {
         version 
@@ -104,12 +104,14 @@ impl ProcessBuilder {
         self
     }
 
+    /*
     /// (chainable) Sets an environment variable for the process.
     pub fn env<T: AsRef<OsStr>>(&mut self, key: &str, val: T) -> &mut ProcessBuilder {
         self.env
             .insert(key.to_string(), Some(val.as_ref().to_os_string()));
         self
     }
+    */
 
     /// Runs the process, waiting for completion, and mapping non-success exit codes to an error.
     #[cfg(windows)]

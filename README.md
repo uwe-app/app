@@ -47,6 +47,8 @@ They search the current directory and parents for a `.uwe-version` files contain
 
 Because `uwe` can also accept paths to projects other than the current working directory and the shim executables have no knowledge of these project path arguments; it must also check whether a switch is needed once it has received a project path. This incurs additional overhead so the search for local versions in this situation should only happen when the project path is not equal to the current working directory as we know that if the project path is the current working directory the shim should already have resolved any local version file.
 
+Running `uvm ls` should also mark an installation as comming from a version file; it can call `release::find_local_version()` to try to find a local file.
+
 ## Uninstall
 
 To remove an installation run `cargo run --bin=uvm -- uninstall`.

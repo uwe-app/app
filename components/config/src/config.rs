@@ -193,10 +193,6 @@ pub struct Config {
     #[serde_as(as = "DisplayFromStr")]
     version: Version,
 
-    /// Pin to a compiler version
-    #[serde_as(as = "Option<DisplayFromStr>")]
-    pin: Option<Version>,
-
     charset: Option<String>,
     repository: Option<RepositoryConfig>,
     engine: Option<TemplateEngine>,
@@ -280,7 +276,6 @@ impl Default for Config {
             lang: String::from(LANG),
             host: String::from(HOST),
             version: Version::from((1, 0, 0)),
-            pin: None,
             website: format!("{}{}:{}", SCHEME_HTTP, HOST, PORT)
                 .parse()
                 .unwrap(),
@@ -332,10 +327,6 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn pin(&self) -> &Option<Version> {
-        &self.pin
-    }
-
     pub fn member_name(&self) -> &Option<String> {
         &self.member_name
     }
