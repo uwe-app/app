@@ -26,11 +26,10 @@ pub async fn prune() -> Result<()> {
         return Err(Error::NotInstalled);
     }
 
-    let info = version::read(&version_file)?;
-    let current = &info.version;
+    let current = version::default_version()?;
 
     for (version, _) in releases.versions.iter().rev() {
-        if version < current {
+        if version < &current {
             if releases::exists(version)? {
                 delete(version).await?;
             }
@@ -44,8 +43,8 @@ pub async fn prune() -> Result<()> {
 async fn delete(version: &Version) -> Result<()> {
     let version_file = version::file()?;
     if version_file.exists() {
-        let version_info = version::read(&version_file)?;
-        if version == &version_info.version {
+        let current = version::read(&version_file)?;
+        if version == &current {
             return Err(Error::NoRemoveCurrent(version.to_string()));
         }
     }

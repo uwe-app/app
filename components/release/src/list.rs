@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, warn};
 
 use crate::{releases, runtime, version, Error, Result};
 
@@ -15,8 +15,12 @@ pub async fn list() -> Result<()> {
         return Err(Error::NotInstalled);
     }
 
-    let info = version::read(&version_file)?;
-    let current = &info.version;
+    let cwd = std::env::current_dir()?;
+    let (mut local_version, local_version_file) = version::find_local_version(cwd)?;
+
+    let current = if let Some(version) = local_version.take() {
+        version 
+    } else { version::default_version()? };
 
     let total = releases.versions.iter().count();
 
@@ -29,15 +33,25 @@ pub async fn list() -> Result<()> {
         let version_dir = releases::dir(version)?;
         let is_installed = version_dir.exists() && version_dir.is_dir();
         let mark = if is_installed { "◯" } else { "-" };
-        if current == version {
-            info!("{} {} ✓", mark, version.to_string());
+        if &current == version {
+            let message = if let Some(ref file) = local_version_file {
+                format!("{} {} ✓ (set by {})", mark, version.to_string(), file.display())
+            } else {
+                format!("{} {} ✓", mark, version.to_string())
+            };
+
+            if is_installed {
+                info!("{}", message);
+            } else {
+                warn!("{}", message);
+            }
         } else {
             info!("{} {}", mark, version.to_string());
         }
     }
 
     let (latest, _) = releases.latest();
-    let using_latest = latest == current;
+    let using_latest = latest == &current;
     let mark = if using_latest {
         ", up to date <3"
     } else {

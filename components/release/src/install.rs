@@ -121,8 +121,8 @@ pub(crate) async fn fetch(
     // If we want the latest version and currently are the latest
     // version then no need to proceed
     if latest && version_file.exists() {
-        let info = version::read(&version_file)?;
-        if &info.version == version {
+        let current = version::default_version()?;
+        if &current == version {
             info::upto_date(&version)?;
             return Ok(version.clone())
         }
