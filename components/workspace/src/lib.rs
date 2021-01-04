@@ -28,7 +28,13 @@ pub enum Error {
     #[error("Project workspaces may not be nested")]
     NoNestedWorkspace(PathBuf),
 
-    #[error("Build tag may not be an absolute path {0}")]
+    #[error("Profile {0} does not exist")]
+    NoProfile(String),
+
+    #[error("Build target not be an absolute path {0}")]
+    TargetAbsolute(PathBuf),
+
+    #[error("Build profile may not be an absolute path {0}")]
     ProfileNameAbsolute(String),
 
     #[error("Redirect {0} collides with an existing redirect")]

@@ -24,40 +24,26 @@ fn require_output_dir(output: &PathBuf) -> Result<()> {
 }
 
 fn to_options(
-    name: ProfileName,
     cfg: &Config,
     args: &mut ProfileSettings,
 ) -> Result<RuntimeOptions> {
-    args.name = name.clone();
     args.set_defaults();
-
-    // Always update base to use the path separator. The declaration is
-    // a URL path but internally we treat as a filesystem path.
-    if let Some(ref base) = args.base {
-        args.base = Some(utils::url::to_path_separator(base));
-    }
 
     let project = cfg.project();
     let source = project.join(&args.source);
 
-    //let release = args.is_release();
-
-    let mut base = args.target.clone();
-    let target_dir = args.name.to_string();
-    if !target_dir.is_empty() {
-        let target_dir_buf = PathBuf::from(&target_dir);
-        if target_dir_buf.is_absolute() {
-            return Err(Error::ProfileNameAbsolute(target_dir));
-        }
-        base.push(target_dir);
-        base = project.join(base);
+    if args.target.is_absolute() {
+        return Err(Error::TargetAbsolute(args.target.clone()));
     }
 
-    let live = args.is_live();
+    let profile_name_path = PathBuf::from(args.name.to_string());
+    if profile_name_path.is_absolute() {
+        return Err(Error::ProfileNameAbsolute(args.name.to_string()));
+    }
 
-    //if live && release {
-    //return Err(Error::LiveReloadRelease);
-    //}
+    let base = project.join(&args.target).join(args.name.to_string());
+
+    let live = args.is_live();
 
     let incremental = args.is_incremental();
     let pristine = args.is_pristine();
@@ -113,23 +99,21 @@ fn to_options(
     Ok(opts)
 }
 
-fn to_profile(args: &ProfileSettings) -> ProfileName {
+/*
+fn to_profile_name(args: &ProfileSettings) -> ProfileName {
     let release = args.is_release();
-
     let mut target_profile = ProfileName::Debug;
     if release {
         target_profile = ProfileName::Release;
     }
-
     if let Some(t) = &args.profile {
         if !t.is_empty() {
             target_profile = ProfileName::from(t.to_string());
         }
     }
-
-    //let target_dir = target_profile.to_string();
     target_profile
 }
+*/
 
 // Map a set of paths making them relative to the source, used when
 // paths are defined in the `paths` definition of a profile in the configuration.
@@ -341,22 +325,52 @@ pub(crate) async fn prepare(
     args: &ProfileSettings,
     members: &Vec<Member>,
 ) -> Result<RuntimeOptions> {
-    let name = to_profile(args);
 
-    // Inherit the profile settings from the root
+    // Start with the base `build` profile
     let mut root = cfg.build.as_ref().unwrap().clone();
-    let mut input = args.clone();
 
+    let profiles = cfg.profile.as_ref().unwrap();
+
+    let mut overlay: Option<ProfileSettings> = if let Some(ref profile_name) = args.profile {
+        let profile_id = ProfileName::from(profile_name.to_string());
+        match profile_id {
+            ProfileName::Debug => Some(ProfileSettings::new_debug()),
+            ProfileName::Release => Some(ProfileSettings::new_release()),
+            ProfileName::Dist => Some(ProfileSettings::new_dist()),
+            ProfileName::Custom(s) => {
+                let mut profile = profiles.get(profile_name)
+                    .cloned()
+                    .ok_or_else(|| {
+                        Error::NoProfile(s.to_string())
+                    })?;
+
+                if profile.profile.is_some() {
+                    return Err(Error::NoProfileInProfile);
+                }
+
+                profile.name = ProfileName::Custom(s.to_string());
+                Some(profile)
+            },
+        }
+    } else { None };
+
+    if let Some(mut overlay) = overlay.take() {
+        root.append(&mut overlay);
+    }
+
+    let mut input = args.clone();
+    from_cli(&mut root, &mut input);
+
+    let opts = to_options(cfg, &mut root)?;
+
+    /*
     // Handle profiles, eg: [profile.dist] that mutate the
     // arguments from config declarations
-    let profiles = cfg.profile.as_ref().unwrap();
+    let name = to_profile_name(args);
+    //let profiles = cfg.profile.as_ref().unwrap();
     let opts = if let Some(profile) = profiles.get(&name.to_string()) {
         let mut copy = profile.clone();
         root.append(&mut copy);
-
-        if profile.profile.is_some() {
-            return Err(Error::NoProfileInProfile);
-        }
 
         from_cli(&mut root, &mut input);
         to_options(name, cfg, &mut root)?
@@ -365,6 +379,7 @@ pub(crate) async fn prepare(
         from_cli(&mut root, &mut input);
         to_options(name, cfg, &mut root)?
     };
+    */
 
     // Configure project level hooks
     let project = cfg.project().clone();

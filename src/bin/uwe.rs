@@ -7,7 +7,7 @@ use log::info;
 use structopt::StructOpt;
 use semver::Version;
 
-use config::{server::LaunchConfig, ProfileSettings};
+use config::{server::LaunchConfig, ProfileSettings, ProfileName};
 
 use publisher::PublishProvider;
 
@@ -209,7 +209,7 @@ async fn run(cmd: Command) -> Result<()> {
             let build_args = ProfileSettings {
                 paths,
                 release: Some(args.profile.is_none()),
-                profile: args.profile,
+                profile: args.profile.or(Some(ProfileName::Release.to_string())),
                 offline: Some(args.compile.offline),
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
@@ -242,7 +242,7 @@ async fn run(cmd: Command) -> Result<()> {
 
             let build_args = ProfileSettings {
                 paths,
-                profile: args.profile,
+                profile: args.profile.or(Some(ProfileName::Debug.to_string())),
                 launch: args.launch,
                 host: args.server.host,
                 port: args.server.port,
@@ -254,16 +254,8 @@ async fn run(cmd: Command) -> Result<()> {
                 ..Default::default()
             };
 
-            //let now = SystemTime::now();
-            match uwe::dev::run(&project, build_args).await {
-                Ok(_) => {
-                    /*
-                    if let Ok(t) = now.elapsed() {
-                        info!("{:?}", t);
-                    }
-                    */
-                }
-                Err(e) => opts::print_error(e),
+            if let Err(e) = uwe::dev::run(&project, build_args).await  {
+                opts::print_error(e);
             }
         }
     }

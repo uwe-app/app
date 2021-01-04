@@ -260,9 +260,22 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
+    pub fn new_debug() -> Self {
+        let settings: ProfileSettings = Default::default();
+        settings
+    }
+
     pub fn new_release() -> Self {
         let mut settings: ProfileSettings = Default::default();
+        settings.name = ProfileName::Release;
         settings.release = Some(true);
+        settings
+    }
+
+    pub fn new_dist() -> Self {
+        let mut settings = ProfileSettings::new_release();
+        settings.name = ProfileName::Dist;
+        settings.include_index = Some(true);
         settings
     }
 
@@ -277,6 +290,8 @@ impl ProfileSettings {
     }
 
     pub fn append(&mut self, other: &mut Self) {
+        self.name = mem::take(&mut other.name);
+
         self.source = mem::take(&mut other.source);
         self.target = mem::take(&mut other.target);
 
