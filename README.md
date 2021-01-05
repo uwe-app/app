@@ -18,18 +18,18 @@ Repositories must be siblings, for example:
 └── syntax-compiler
 ```
 
-* `app`: Main source code (this repository).
-* `blueprints`: Project blueprints.
-* `community`: Community discussions.
-* `integrations`: Javascript and CSS bundler integrations.
-* `library`: Additional libraries; search runtime and third-party forks.
-* `plugins`: Source code for the plugins.
-* `registry`: Index of available plugins.
-* `releases`: Manifest of platform releases.
-* `sites/blog`: UWE blog.
-* `site/website`: UWE website.
-* `syntax`: Syntax highlighting language definitions binary files.
-* `syntax-compiler`: Compiles the syntax highlighting definitions.
+* [app][]: Main source code (this repository).
+* [blueprints][]: Project blueprints.
+* [community][]: Community discussions.
+* [integrations][]: Javascript and CSS bundler integrations.
+* [library][]: Additional libraries; search runtime and third-party forks.
+* [plugins][]: Source code for the plugins.
+* [registry][]: Index of available plugins.
+* [releases][]: Manifest of platform releases.
+* [sites/blog][blog]: UWE blog.
+* [site/website][website]: UWE website.
+* [syntax][]: Syntax highlighting language definitions binary files.
+* [syntax-compiler][]: Compiles the syntax highlighting definitions.
 
 ## Releases
 
@@ -37,7 +37,6 @@ A private executable `release-manager` performs all the steps for a release.
 
 1) Bump the version in `Cargo.toml`.
 2) Publish a new release: `cargo run --bin=release-manager`.
-3) Commit and push the new release version and checksums in the [runtime][] repository (`releases.json`).
 
 If you need them `release-manager` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. If uploads succeed but the release fails afterwards `--skip-upload` can also be used. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
 
@@ -71,7 +70,7 @@ curl https://release.uwe.app/install.sh | sh
 
 ## Plugins
 
-Plugin publishing is restricted to those that have access to the s3 bucket and the `runtime` repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
+Plugin publishing is restricted to those that have access to the s3 bucket and the [registry][] repository; to publish plugins during the alpha and beta phases certain environment variables need to be set:
 
 ```
 export UPM_PUBLISH="$HOME/path/to/registry/folder"
@@ -85,9 +84,9 @@ It is **required** to set the `pushurl` and `push` refspec:
 
 ```
 [remote "origin"]
-  url = git@github.com:uwe-app/runtime.git
+  url = git@github.com:uwe-app/registry.git
   fetch = +refs/heads/*:refs/remotes/origin/*
-  pushurl = git@github.com:uwe-app/runtime.git
+  pushurl = git@github.com:uwe-app/registry.git
   push = refs/heads/main:refs/heads/main
 ```
 
@@ -103,5 +102,17 @@ This component is currently in limbo but may be restored in the future.
 
 Additional information some of which may be obsolete in [NOTES](/NOTES.md).
 
-[runtime]: https://github.com/uwe-app/runtime
+[app]: https://github.com/uwe-app/app
+[blueprints]: https://github.com/uwe-app/blueprints
+[community]: https://github.com/uwe-app/community
+[integrations]: https://github.com/uwe-app/integrations
+[library]: https://github.com/uwe-app/library
+[plugins]: https://github.com/uwe-app/plugins
+[registry]: https://github.com/uwe-app/registry
+[releases]: https://github.com/uwe-app/releases
+[blog]: https://github.com/uwe-app/blog
+[website]: https://github.com/uwe-app/website
+[syntax]: https://github.com/uwe-app/syntax
+[syntax-compiler]: https://github.com/uwe-app/syntax-compiler
+
 [osxcross]: https://github.com/tpoechtrager/osxcross
