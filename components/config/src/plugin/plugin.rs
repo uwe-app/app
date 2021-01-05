@@ -57,7 +57,7 @@ impl PluginSource {
 }
 
 /// Hint as to the type of plugin.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub enum PluginType {
     /// Library plugins may contain assets, icons, fonts,
     /// partials, layouts, scripts, styles or any other files.
@@ -66,6 +66,15 @@ pub enum PluginType {
     /// Site plugins can be used as project blueprints.
     #[serde(rename = "site")]
     Site,
+}
+
+impl fmt::Display for PluginType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Self::Library => "library",
+            Self::Site => "site",
+        })
+    }
 }
 
 /// Represents a plugin definition.
@@ -94,7 +103,7 @@ pub struct Plugin {
 
     /// Type of the plugin.
     #[serde(rename = "type")]
-    kind: Option<PluginType>,
+    kind: PluginType,
 
     /// Prefix for scoped plugins.
     prefix: Option<UrlPath>,
@@ -171,7 +180,7 @@ impl Default for Plugin {
             license: None,
             authors: None,
             keywords: None,
-            kind: None,
+            kind: PluginType::Library,
             origins: None,
             assets: HashSet::new(),
             styles: Vec::new(),
@@ -198,6 +207,10 @@ impl Plugin {
             prefix: Some(prefix),
             ..Default::default()
         }
+    }
+
+    pub fn kind(&self) -> &PluginType {
+        &self.kind 
     }
 
     pub fn parent(&self) -> String {

@@ -9,7 +9,7 @@ use url::Url;
 
 use utils::walk;
 
-use config::{plugin::{PluginSpec, dependency::Dependency}};
+use config::{plugin::{PluginSpec, PluginType, dependency::Dependency}};
 use plugin::{new_registry, install_registry};
 use crate::{Error, Result};
 
@@ -161,7 +161,6 @@ fn check_site_settings<T: AsRef<Path>>(target: T) -> Result<()> {
             config::SITE_TOML.to_string(),
         ));
     }
-
     Ok(())
 }
 
@@ -236,10 +235,16 @@ pub async fn project(options: ProjectOptions) -> Result<()> {
     if let Some(ref source) = options.source {
         match source.parse::<Url>() {
             Ok(url) => {
-                create_target_parents(&target)?;
-                scm::copy(url.to_string(), &target, message)?;
-                check_site_settings(&target)?;
-                write_settings(&target, settings)?;
+                // Treat as a git url
+                if url.has_authority() {
+                    create_target_parents(&target)?;
+                    scm::copy(url.to_string(), &target, message)?;
+                    check_site_settings(&target)?;
+                    write_settings(&target, settings)?;
+                // May be a plugin spec like std::blueprint::default@^1
+                } else {
+                    install_from_blueprint(source, &target, settings, message).await?;
+                }
             }
             Err(_) => {
                 let source_dir = PathBuf::from(source);
@@ -296,8 +301,12 @@ async fn install_from_blueprint(
             return Err(Error::NoInitSource);
         }
 
-        // TODO: check plugin is of type `site`
-        // TODO: verify the site config is valid?
+        if plugin.kind() != &PluginType::Site {
+            return Err(Error::BlueprintPluginNotSiteType(
+                plugin.name.to_string(),
+                plugin.version.to_string(),
+                plugin.kind().to_string()));
+        }
 
         check_site_settings(&source_dir)?;
         init_folder(&source_dir, target, settings, message)?;
