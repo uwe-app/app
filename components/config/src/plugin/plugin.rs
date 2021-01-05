@@ -59,34 +59,13 @@ impl PluginSource {
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PluginType {
-    /// Assets to be bundled with the website files.
-    #[serde(rename = "asset")]
-    Asset,
-    /// Icon assets to be bundled with the website files.
-    #[serde(rename = "icon")]
-    Icon,
-    /// Script(s) to be included with pages.
-    #[serde(rename = "script")]
-    Script,
-    /// Style(s) to be included with pages.
-    #[serde(rename = "style")]
-    Style,
-    /// Register one or more partial files.
-    #[serde(rename = "partial")]
-    Partial,
-    /// Font pack; assets and style files.
-    #[serde(rename = "font")]
-    Font,
-    /// Format for a content type, eg: book or slideshow.
-    #[serde(rename = "format")]
-    Format,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum PluginKind {
-    One(PluginType),
-    Many(Vec<PluginType>),
+    /// Library plugins may contain assets, icons, fonts,
+    /// partials, layouts, scripts, styles or any other files.
+    #[serde(rename = "library")]
+    Library,
+    /// Site plugins can be used as project blueprints.
+    #[serde(rename = "site")]
+    Site,
 }
 
 /// Represents a plugin definition.
@@ -115,7 +94,7 @@ pub struct Plugin {
 
     /// Type of the plugin.
     #[serde(rename = "type")]
-    kind: Option<PluginKind>,
+    kind: Option<PluginType>,
 
     /// Prefix for scoped plugins.
     prefix: Option<UrlPath>,
