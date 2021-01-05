@@ -66,6 +66,9 @@ pub enum Error {
     #[error("The value {0} for 'rel' is not supported")]
     InvalidRelValue(String),
 
+    #[error("Plugin ref spec {0} is not valid (namespace required)")]
+    InvalidPluginSpecName(String),
+
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
 
@@ -89,6 +92,9 @@ pub enum Error {
 
     #[error(transparent)]
     Lang(#[from] unic_langid::LanguageIdentifierError),
+
+    #[error(transparent)]
+    ReqParse(#[from] semver::ReqParseError),
 }
 
 type Result<T> = std::result::Result<T, Error>;

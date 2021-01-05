@@ -69,7 +69,7 @@ pub async fn update_syntax() -> Result<()> {
 
 /// List standard blueprints.
 async fn list_blueprints() -> Result<()> {
-    let namespace = "std::blueprint";
+    let namespace = PLUGIN_BLUEPRINT_NAMESPACE;
     let reader = dirs::registry_dir()?;
     let writer = reader.clone();
     let registry = RegistryFileAccess::new(reader, writer)?;
