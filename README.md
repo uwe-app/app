@@ -5,23 +5,31 @@ Repositories must be siblings, for example:
 ```
 .
 ├── app
+├── blueprints
 ├── community
+├── documentation
 ├── integrations
 ├── library
 ├── plugins
+├── registry
 ├── releases
-├── runtime
 ├── sites
-└── syntax
+├── syntax
+└── syntax-compiler
 ```
 
 * `app`: Main source code (this repository).
-* `blog`: Canonical blog website.
+* `blueprints`: Project blueprints.
+* `community`: Community discussions.
+* `integrations`: Javascript and CSS bundler integrations.
 * `library`: Additional libraries; search runtime and third-party forks.
 * `plugins`: Source code for the plugins.
-* `runtime`: Runtime library; syntax highlighting and registry cache etc.
-* `syntax`: Builds the syntax highlighting runtime files to the `runtime`.
-* `website`: Source code for the project website.
+* `registry`: Index of available plugins.
+* `releases`: Manifest of platform releases.
+* `sites/blog`: UWE blog.
+* `site/website`: UWE website.
+* `syntax`: Syntax highlighting language definitions binary files.
+* `syntax-compiler`: Compiles the syntax highlighting definitions.
 
 ## Releases
 
