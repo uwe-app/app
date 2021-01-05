@@ -3,7 +3,7 @@ use std::fs;
 use log::info;
 use semver::Version;
 
-use crate::{releases, runtime, version, Error, Result};
+use crate::{releases, repository, version, Error, Result};
 
 /// Remove an installed version.
 pub async fn remove(version: String) -> Result<()> {
@@ -15,7 +15,7 @@ pub async fn remove(version: String) -> Result<()> {
 
 /// Remove versions older than the current version.
 pub async fn prune() -> Result<()> {
-    runtime::fetch_releases().await?;
+    repository::fetch_releases().await?;
 
     // Load the releases manifest
     let releases = releases::mount()?;

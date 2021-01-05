@@ -5,7 +5,7 @@ use log::{info, warn};
 use semver::VersionReq;
 
 use crate::{
-    binary, download, env, install::fetch, releases, runtime, version, Error, Result,
+    binary, download, env, install::fetch, releases, repository, version, Error, Result,
 };
 
 fn welcome() -> Result<PathBuf> {
@@ -56,13 +56,16 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         names.extend_from_slice(&releases::INSTALL_SHIM_NAMES);
 
         // Fetch plugin registry meta data
-        runtime::fetch_registry().await?;
+        repository::fetch_registry().await?;
 
         // Fetch syntax highlighting
-        runtime::fetch_syntax().await?;
+        repository::fetch_syntax().await?;
 
-        // Fetch runtime assets
-        runtime::fetch().await?;
+        // Fetch documentation
+        repository::fetch_documentation().await?;
+
+        // Fetch repository assets
+        repository::fetch().await?;
     }
 
     let version = fetch(
@@ -96,7 +99,7 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 }
 
 pub async fn update_self(_current: &str) -> Result<()> {
-    runtime::fetch_releases().await?;
+    repository::fetch_releases().await?;
 
     let exe = std::env::current_exe()?;
     let name = exe.file_name().unwrap().to_string_lossy().to_owned();

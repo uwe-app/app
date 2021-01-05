@@ -11,16 +11,23 @@ static BLUEPRINT_NAME: &str = "blueprint";
 static SITES_NAME: &str = "sites";
 static SITES_FILE: &str = "sites.toml";
 
+#[deprecated]
 static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
+
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 static SYNTAX_REPO: &str = "https://github.com/uwe-app/syntax";
+static DOCUMENTATION_REPO: &str = "https://github.com/uwe-app/documentation";
 
+#[deprecated]
 static RUNTIME_NAME: &str = "runtime";
+
 static REGISTRY_NAME: &str = "registry";
 static PLUGINS_NAME: &str = "plugins";
 
-static DOCUMENTATION_NAME: &str = "documentation/docs";
+static DOCUMENTATION_NAME: &str = "documentation";
+static DOCS_NAME: &str = "docs";
+
 static SYNTAX_NAME: &str = "syntax";
 static RELEASES_NAME: &str = "releases";
 
@@ -84,6 +91,11 @@ pub fn syntax_url() -> String {
     SYNTAX_REPO.to_string()
 }
 
+pub fn documentation_url() -> String {
+    DOCUMENTATION_REPO.to_string()
+}
+
+#[deprecated]
 pub fn runtime_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(RUNTIME_NAME))
 }
@@ -96,8 +108,12 @@ pub fn plugins_dir() -> io::Result<PathBuf> {
     Ok(dir)
 }
 
+pub fn documentation_dir() -> io::Result<PathBuf> {
+    Ok(root_dir()?.join(DOCUMENTATION_NAME))
+}
+
 pub fn docs_dir() -> io::Result<PathBuf> {
-    Ok(runtime_dir()?.join(DOCUMENTATION_NAME))
+    Ok(documentation_dir()?.join(DOCS_NAME))
 }
 
 pub fn syntax_dir() -> io::Result<PathBuf> {
@@ -115,13 +131,5 @@ pub fn releases_dir() -> io::Result<PathBuf> {
 pub fn registry_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(REGISTRY_NAME))
 }
-
-/*
-pub fn release_bin_dir() -> io::Result<PathBuf> {
-    let mut buf = release_dir()?;
-    buf.push(BIN);
-    Ok(buf)
-}
-*/
 
 pub use home::home_dir;

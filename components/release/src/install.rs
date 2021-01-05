@@ -2,7 +2,7 @@ use log::{info, warn};
 use semver::{Version, VersionReq};
 
 use crate::{
-    binary, download, info, releases, runtime, verify, version, Error,
+    binary, download, info, releases, repository, verify, version, Error,
     Result,
 };
 
@@ -53,7 +53,7 @@ pub(crate) async fn fetch(
     range: Option<VersionReq>,
 ) -> Result<Version> {
     // Must update the cache of releases
-    runtime::fetch_releases().await?;
+    repository::fetch_releases().await?;
 
     // Load the releases manifest.
     let releases = releases::mount()?.filter(range);
