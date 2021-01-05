@@ -89,7 +89,6 @@ mod list;
 mod publish;
 mod releases;
 mod remove;
-mod repository;
 mod uninstall;
 mod update;
 mod verify;

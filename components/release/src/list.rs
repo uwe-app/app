@@ -1,10 +1,10 @@
 use log::{info, warn};
 
-use crate::{releases, repository, version, Error, Result};
+use crate::{releases, version, Error, Result};
 
 /// List versions.
 pub async fn list() -> Result<()> {
-    repository::fetch_releases().await?;
+    scm::system_repo::fetch_releases().await?;
 
     // Load the releases manifest
     let releases = releases::mount()?;

@@ -42,6 +42,7 @@ mod callbacks;
 mod clone;
 //mod progress;
 mod pull;
+pub mod system_repo;
 
 pub fn pull<P: AsRef<Path>>(
     path: P,

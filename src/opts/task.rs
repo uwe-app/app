@@ -6,6 +6,9 @@ use crate::opts::Alias;
 /// Utility tasks.
 #[derive(StructOpt, Debug)]
 pub enum Task {
+    /// Update plugin registry local cache
+    UpdateRegistry {},
+
     /// Update project blueprints
     UpdateBlueprints {},
 

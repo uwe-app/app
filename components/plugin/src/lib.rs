@@ -6,7 +6,6 @@ mod linter;
 mod packager;
 mod reader;
 mod registry;
-mod repository;
 mod resolver;
 mod uploader;
 

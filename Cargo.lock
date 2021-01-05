@@ -2888,6 +2888,7 @@ dependencies = [
 name = "scm"
 version = "0.1.0"
 dependencies = [
+ "dirs 0.1.0",
  "git2",
  "log",
  "pbr",
