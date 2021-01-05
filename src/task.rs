@@ -22,8 +22,8 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::Alias { cmd } => {
             alias::run(cmd).await?;
         }
-        Task::UpdateRuntimeAssets {} => {
-            update_runtime_assets().await?;
+        Task::UpdateBlueprints {} => {
+            update_blueprints().await?;
         } 
         Task::UpdateDocs {} => {
             update_docs().await?;
@@ -35,11 +35,10 @@ pub async fn run(cmd: Task) -> Result<()> {
     Ok(())
 }
 
-/// Update the runtime assets.
-#[deprecated]
-pub async fn update_runtime_assets() -> Result<()> {
-    let url = dirs::runtime_url();
-    let dir = dirs::runtime_dir()?;
+/// Update the project blueprints.
+pub async fn update_blueprints() -> Result<()> {
+    let url = dirs::blueprints_url();
+    let dir = dirs::blueprints_dir()?;
     scm::clone_or_fetch(&url, &dir)?;
     info!("Update complete ✓");
     Ok(())
@@ -65,7 +64,7 @@ pub async fn update_syntax() -> Result<()> {
 
 /// List standard blueprints.
 async fn list_blueprints() -> Result<()> {
-    let blueprints = dirs::blueprint_dir()?;
+    let blueprints = dirs::blueprints_dir()?;
     for entry in std::fs::read_dir(blueprints)? {
         let path = entry?.path();
         if path.is_dir() {

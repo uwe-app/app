@@ -64,8 +64,8 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         // Fetch documentation
         repository::fetch_documentation().await?;
 
-        // Fetch repository assets
-        repository::fetch().await?;
+        // Fetch project blueprints
+        repository::fetch_blueprints().await?;
     }
 
     let version = fetch(

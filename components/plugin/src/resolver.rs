@@ -19,7 +19,7 @@ use config::{
 use crate::{
     installer,
     registry::{self, RegistryAccess},
-    runtime, Error, Registry, Result,
+    repository, Error, Registry, Result,
 };
 
 static DEPENDENCY_STACK_SIZE: usize = 32;
@@ -123,7 +123,7 @@ impl<'a> Resolver<'a> {
         if !self.offline {
             if !self.updated {
                 info!("Update registry cache");
-                runtime::fetch().await?;
+                repository::fetch_registry().await?;
                 self.updated = true;
             }
         } else {

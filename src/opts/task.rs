@@ -6,8 +6,8 @@ use crate::opts::Alias;
 /// Utility tasks.
 #[derive(StructOpt, Debug)]
 pub enum Task {
-    /// Update runtime assets
-    UpdateRuntimeAssets {},
+    /// Update project blueprints
+    UpdateBlueprints {},
 
     /// Update local documentation website
     UpdateDocs {},
@@ -30,6 +30,7 @@ pub enum Task {
         #[structopt(subcommand)]
         cmd: Alias,
     },
+
     /*
     /// Initialize, add files and commit.
     Create {

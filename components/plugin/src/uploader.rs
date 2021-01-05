@@ -7,7 +7,7 @@ use scopeguard::defer;
 use config::plugin::Plugin;
 
 use crate::{
-    linter::lint, packager, registry, registry::RegistryAccess, runtime, Error,
+    linter::lint, packager, registry, registry::RegistryAccess, repository, Error,
     Result,
 };
 
@@ -58,7 +58,7 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     }
 
     // Pull latest version of the reader registry
-    runtime::fetch().await?;
+    repository::fetch_registry().await?;
 
     let writer = PathBuf::from(registry_path);
     //let reader = cache::get_registry_dir()?;

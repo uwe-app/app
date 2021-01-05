@@ -1,9 +1,8 @@
 use crate::Result;
 
-#[deprecated(note = "Runtime asset blueprints are being moved to plugins")]
-pub async fn fetch() -> Result<()> {
-    let url = dirs::runtime_url();
-    let dir = dirs::runtime_dir()?;
+pub async fn fetch_blueprints() -> Result<()> {
+    let url = dirs::blueprints_url();
+    let dir = dirs::blueprints_dir()?;
     scm::clone_or_fetch(&url, &dir)?;
     Ok(())
 }

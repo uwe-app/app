@@ -235,7 +235,7 @@ pub fn project(options: ProjectOptions) -> Result<()> {
                 let source_dir = if is_local_folder {
                     source_dir
                 } else {
-                    let blueprints = dirs::blueprint_dir()?;
+                    let blueprints = dirs::blueprints_dir()?;
                     blueprints.join(source)
                 };
 
@@ -250,7 +250,7 @@ pub fn project(options: ProjectOptions) -> Result<()> {
 
     // 4) No source specified so we just use the default blueprint.
     } else {
-        let source = dirs::blueprint_dir()?.join(DEFAULT_NAME);
+        let source = dirs::blueprints_dir()?.join(DEFAULT_NAME);
         check_site_settings(&source)?;
         init_folder(source, &target, settings, message)?;
     };

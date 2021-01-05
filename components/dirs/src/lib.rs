@@ -6,24 +6,18 @@ static ROOT_DIR: &str = ".uwe";
 static BIN: &str = "bin";
 static ENV: &str = "env";
 
-static BLUEPRINT_NAME: &str = "blueprint";
-
 static SITES_NAME: &str = "sites";
 static SITES_FILE: &str = "sites.toml";
-
-#[deprecated]
-static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
 
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 static SYNTAX_REPO: &str = "https://github.com/uwe-app/syntax";
 static DOCUMENTATION_REPO: &str = "https://github.com/uwe-app/documentation";
-
-#[deprecated]
-static RUNTIME_NAME: &str = "runtime";
+static BLUEPRINTS_REPO: &str = "https://github.com/uwe-app/blueprints";
 
 static REGISTRY_NAME: &str = "registry";
 static PLUGINS_NAME: &str = "plugins";
+static BLUEPRINTS_NAME: &str = "blueprints";
 
 static DOCUMENTATION_NAME: &str = "documentation";
 static DOCS_NAME: &str = "docs";
@@ -75,8 +69,8 @@ pub fn bin_dir() -> io::Result<PathBuf> {
     Ok(bin)
 }
 
-pub fn runtime_url() -> String {
-    RUNTIME_REPO.to_string()
+pub fn blueprints_url() -> String {
+    BLUEPRINTS_REPO.to_string()
 }
 
 pub fn releases_url() -> String {
@@ -95,9 +89,8 @@ pub fn documentation_url() -> String {
     DOCUMENTATION_REPO.to_string()
 }
 
-#[deprecated]
-pub fn runtime_dir() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(RUNTIME_NAME))
+pub fn blueprints_dir() -> io::Result<PathBuf> {
+    Ok(root_dir()?.join(BLUEPRINTS_NAME))
 }
 
 pub fn plugins_dir() -> io::Result<PathBuf> {
@@ -120,9 +113,9 @@ pub fn syntax_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(SYNTAX_NAME))
 }
 
-pub fn blueprint_dir() -> io::Result<PathBuf> {
-    Ok(runtime_dir()?.join(BLUEPRINT_NAME))
-}
+//pub fn blueprint_dir() -> io::Result<PathBuf> {
+    //Ok(runtime_dir()?.join(BLUEPRINT_NAME))
+//}
 
 pub fn releases_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(RELEASES_NAME))
