@@ -13,11 +13,9 @@ static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 static SYNTAX_REPO: &str = "https://github.com/uwe-app/syntax";
 static DOCUMENTATION_REPO: &str = "https://github.com/uwe-app/documentation";
-static BLUEPRINTS_REPO: &str = "https://github.com/uwe-app/blueprints";
 
 static REGISTRY_NAME: &str = "registry";
 static PLUGINS_NAME: &str = "plugins";
-static BLUEPRINTS_NAME: &str = "blueprints";
 
 static DOCUMENTATION_NAME: &str = "documentation";
 static DOCS_NAME: &str = "docs";
@@ -69,10 +67,6 @@ pub fn bin_dir() -> io::Result<PathBuf> {
     Ok(bin)
 }
 
-pub fn blueprints_url() -> String {
-    BLUEPRINTS_REPO.to_string()
-}
-
 pub fn releases_url() -> String {
     RELEASES_REPO.to_string()
 }
@@ -87,10 +81,6 @@ pub fn syntax_url() -> String {
 
 pub fn documentation_url() -> String {
     DOCUMENTATION_REPO.to_string()
-}
-
-pub fn blueprints_dir() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(BLUEPRINTS_NAME))
 }
 
 pub fn plugins_dir() -> io::Result<PathBuf> {
@@ -112,10 +102,6 @@ pub fn docs_dir() -> io::Result<PathBuf> {
 pub fn syntax_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(SYNTAX_NAME))
 }
-
-//pub fn blueprint_dir() -> io::Result<PathBuf> {
-    //Ok(runtime_dir()?.join(BLUEPRINT_NAME))
-//}
 
 pub fn releases_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(RELEASES_NAME))

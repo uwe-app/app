@@ -9,9 +9,6 @@ pub enum Task {
     /// Update plugin registry local cache
     UpdateRegistry {},
 
-    /// Update project blueprints
-    UpdateBlueprints {},
-
     /// Update local documentation website
     UpdateDocs {},
 

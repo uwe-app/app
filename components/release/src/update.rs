@@ -63,9 +63,6 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
         // Fetch documentation
         scm::system_repo::fetch_documentation().await?;
-
-        // Fetch project blueprints
-        scm::system_repo::fetch_blueprints().await?;
     }
 
     let version = fetch(

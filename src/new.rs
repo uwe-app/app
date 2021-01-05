@@ -295,6 +295,10 @@ async fn install_from_blueprint(
         if !source_dir.exists() {
             return Err(Error::NoInitSource);
         }
+
+        // TODO: check plugin is of type `site`
+        // TODO: verify the site config is valid?
+
         check_site_settings(&source_dir)?;
         init_folder(&source_dir, target, settings, message)?;
         Ok(())

@@ -26,9 +26,6 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::UpdateRegistry {} => {
             update_registry().await?;
         } 
-        Task::UpdateBlueprints {} => {
-            update_blueprints().await?;
-        } 
         Task::UpdateDocs {} => {
             update_docs().await?;
         } 
@@ -42,13 +39,6 @@ pub async fn run(cmd: Task) -> Result<()> {
 /// Update the plugin registry cache
 pub async fn update_registry() -> Result<()> {
     scm::system_repo::fetch_registry().await?;
-    info!("Update complete ✓");
-    Ok(())
-}
-
-/// Update the project blueprints.
-pub async fn update_blueprints() -> Result<()> {
-    scm::system_repo::fetch_blueprints().await?;
     info!("Update complete ✓");
     Ok(())
 }

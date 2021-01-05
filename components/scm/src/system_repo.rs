@@ -1,12 +1,5 @@
 use crate::Result;
 
-pub async fn fetch_blueprints() -> Result<()> {
-    let url = dirs::blueprints_url();
-    let dir = dirs::blueprints_dir()?;
-    crate::clone_or_fetch(&url, &dir)?;
-    Ok(())
-}
-
 pub async fn fetch_releases() -> Result<()> {
     let url = dirs::releases_url();
     let dir = dirs::releases_dir()?;
