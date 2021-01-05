@@ -15,5 +15,6 @@ pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 pub use error::Error;
 pub use linter::lint;
 pub use packager::pack;
+pub use registry::{RegistryFileAccess, RegistryAccess};
 pub use resolver::resolve;
 pub use uploader::publish;

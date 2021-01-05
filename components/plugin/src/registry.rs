@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+use std::collections::BTreeMap;
+use std::fs;
 
 use async_trait::async_trait;
 
@@ -13,12 +15,18 @@ use crate::{Error, Registry, Result};
 #[async_trait]
 pub trait RegistryAccess {
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
+
+    /// Find all the plugins whose fully qualified name starts with the needle.
+    async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>>;
+
     async fn register(
         &self,
         entry: &mut RegistryEntry,
         plugin: &Plugin,
         digest: &Vec<u8>,
     ) -> Result<PathBuf>;
+
+    async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry>;
 }
 
 /// Access a registry using a file system backing store.
@@ -47,15 +55,36 @@ impl RegistryFileAccess {
 
 #[async_trait]
 impl RegistryAccess for RegistryFileAccess {
+    async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry> {
+        let contents = utils::fs::read_string(file)?;
+        Ok(serde_json::from_str(&contents)?)
+    }
+
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>> {
         let mut file_path = self.reader.join(name);
         file_path.set_extension(config::JSON);
         if file_path.exists() {
-            let contents = utils::fs::read_string(file_path)?;
-            let registry_entry = serde_json::from_str(&contents)?;
-            return Ok(Some(registry_entry));
+            return Ok(Some(self.read_file(&file_path).await?));
         }
         Ok(None)
+    }
+
+    async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>> {
+        let mut map = BTreeMap::new();
+        for entry in fs::read_dir(&self.reader)? {
+            let path = entry?.path();
+            if path.is_file() {
+                if let Some(file_name) = path.file_name() {
+                    if file_name.to_string_lossy().starts_with(needle) {
+                        let file_path = path.to_path_buf();
+                        let registry_entry = self.read_file(&file_path).await?;
+                        let plugin_name = file_path.file_stem().unwrap().to_string_lossy().to_string();
+                        map.insert(plugin_name, registry_entry);
+                    }
+                }
+            }
+        }
+        Ok(map)
     }
 
     async fn register(

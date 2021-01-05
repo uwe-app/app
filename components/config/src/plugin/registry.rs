@@ -32,6 +32,11 @@ impl RegistryEntry {
         }
         None
     }
+
+    pub fn latest(&self) -> Option<(&Version, &RegistryItem)> {
+        let mut it = self.versions.iter().rev();
+        it.next()
+    }
 }
 
 #[serde_as]
@@ -85,6 +90,10 @@ impl RegistryItem {
 
     pub fn features(&self) -> &FeatureMap {
         &self.features
+    }
+
+    pub fn short_name(&self) -> Option<&str> {
+        self.name.split(crate::PLUGIN_NS).last()
     }
 }
 
