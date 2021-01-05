@@ -7,7 +7,7 @@ use crate::{
     Error, Result,
 };
 use config::plugin::dependency::DependencyTarget;
-use plugin::{RegistryFileAccess, RegistryAccess};
+use plugin::new_registry;
 
 use super::alias;
 
@@ -69,10 +69,8 @@ pub async fn update_syntax() -> Result<()> {
 
 /// List standard blueprints.
 async fn list_blueprints() -> Result<()> {
-    let namespace = PLUGIN_BLUEPRINT_NAMESPACE;
-    let reader = dirs::registry_dir()?;
-    let writer = reader.clone();
-    let registry = RegistryFileAccess::new(reader, writer)?;
+    let namespace = config::PLUGIN_BLUEPRINT_NAMESPACE;
+    let registry = new_registry()?;
     let entries = registry.starts_with(namespace).await?;
     for (name, entry) in entries.iter() {
         let (version, item) = entry.latest().unwrap();

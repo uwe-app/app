@@ -53,8 +53,9 @@ pub enum Error {
     #[error("Local dependency {0} is not allowed")]
     LocalDependencyNotAllowed(PathBuf),
 
-    //#[error("No socket address for {0}")]
-    //NoSocketAddress(String),
+    #[error("Plugin for project blueprint was not found in the registry using {0} ({1})")]
+    BlueprintPluginNotFound(String, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

@@ -11,6 +11,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use crate::{Error, Result};
 
 use super::features::{FeatureFlags, FeatureMap};
+use super::plugin_spec::PluginSpec;
 
 static FEATURE_STACK_SIZE: usize = 16;
 
@@ -230,6 +231,19 @@ impl Dependency {
 
     pub fn is_optional(&self) -> bool {
         self.optional.is_some() && self.optional.unwrap()
+    }
+}
+
+impl From<PluginSpec> for Dependency {
+    fn from(spec: PluginSpec) -> Self {
+        Self {
+            name: Some(spec.name),
+            version: spec.range,
+            apply: None,
+            features: None,
+            optional: None,
+            target: None,
+        } 
     }
 }
 

@@ -9,10 +9,15 @@ use url::Url;
 
 use utils::walk;
 
+use config::{plugin::{PluginSpec, dependency::Dependency}};
+use plugin::{new_registry, install_registry};
 use crate::{Error, Result};
 
 static DEFAULT_NAME: &str = "default";
 static DEFAULT_MESSAGE: &str = "Initial files.";
+
+// Files to remove for projects created from blueprint plugins
+static REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
 
 #[derive(Debug)]
 pub struct ProjectOptions {
@@ -132,7 +137,15 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
     message: &str,
 ) -> Result<()> {
     create_target_parents(target.as_ref())?;
-    walk::copy(source.as_ref(), target.as_ref(), |_| true)?;
+    walk::copy(source.as_ref(), target.as_ref(), |f| {
+        if let Some(file_name) = f.file_name() {
+            let name = file_name.to_string_lossy();
+            if REMOVE.contains(&name.as_ref()) {
+                return false
+            }
+        }
+        true
+    })?;
     write_settings(target.as_ref(), settings)?;
     scm::init(target.as_ref(), message)?;
 
@@ -162,7 +175,7 @@ fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
     Ok(())
 }
 
-pub fn project(options: ProjectOptions) -> Result<()> {
+pub async fn project(options: ProjectOptions) -> Result<()> {
     let mut language = None;
 
     if let Some(ref lang) = options.language {
@@ -230,29 +243,24 @@ pub fn project(options: ProjectOptions) -> Result<()> {
             }
             Err(_) => {
                 let source_dir = PathBuf::from(source);
-                let is_local_folder =
-                    source_dir.exists() && source_dir.is_dir();
-                let source_dir = if is_local_folder {
-                    source_dir
+
+                // Try to install from a local folder
+                if source_dir.exists() && source_dir.is_dir() {
+                    if !source_dir.exists() {
+                        return Err(Error::NoInitSource);
+                    }
+                    check_site_settings(&source_dir)?;
+                    init_folder(source_dir, &target, settings, message)?;
+                // Otherwise treat as a blueprint name
                 } else {
-                    let blueprints = dirs::blueprints_dir()?;
-                    blueprints.join(source)
-                };
-
-                if !source_dir.exists() {
-                    return Err(Error::NoInitSource);
+                    install_from_blueprint(source, &target, settings, message).await?;
                 }
-
-                check_site_settings(&source_dir)?;
-                init_folder(source_dir, &target, settings, message)?;
             }
         }
 
     // 4) No source specified so we just use the default blueprint.
     } else {
-        let source = dirs::blueprints_dir()?.join(DEFAULT_NAME);
-        check_site_settings(&source)?;
-        init_folder(source, &target, settings, message)?;
+        install_from_blueprint(DEFAULT_NAME, &target, settings, message).await?;
     };
 
     if let Some(ref url) = options.remote_url {
@@ -262,4 +270,37 @@ pub fn project(options: ProjectOptions) -> Result<()> {
     info!("Created {} ✓", target.to_string_lossy());
 
     Ok(())
+}
+
+async fn install_from_blueprint(
+    source: &str,
+    target: &PathBuf,
+    settings: InitSettings,
+    message: &str) -> Result<()> {
+
+    let spec: PluginSpec = if let Ok(spec) = source.parse::<PluginSpec>() {
+        spec
+    } else {
+        let fqn = format!("{}{}{}", config::PLUGIN_BLUEPRINT_NAMESPACE, config::PLUGIN_NS, source);
+        PluginSpec::from(fqn)
+    };
+
+    let registry = new_registry()?;
+
+    if let Some(_) = registry.spec(&spec).await? {
+        let project = target.to_path_buf();
+        let dep: Dependency = spec.into();
+        let plugin = install_registry(&project, &registry, &dep).await?;
+        let source_dir = plugin.base();
+        if !source_dir.exists() {
+            return Err(Error::NoInitSource);
+        }
+        check_site_settings(&source_dir)?;
+        init_folder(&source_dir, target, settings, message)?;
+        Ok(())
+    } else {
+        Err(Error::BlueprintPluginNotFound(
+            source.to_string(),
+            spec.to_string()))
+    }
 }

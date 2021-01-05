@@ -134,7 +134,7 @@ async fn run(cmd: Command) -> Result<()> {
                 remote_name: args.remote_name,
                 remote_url: args.remote_url,
             };
-            uwe::new::project(opts)?;
+            uwe::new::project(opts).await?;
         }
 
         Command::Lang { cmd } => {

@@ -320,7 +320,7 @@ fn attributes(
 /// Finally we extract the downloaded archive and verify the digest from the registry
 /// entry to a local file system cache directory `cache/src/std::core::1.0.0` within
 /// the main program home directory, currently `~/.uwe`.
-async fn install_registry<P: AsRef<Path>>(
+pub async fn install_registry<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     dep: &Dependency,

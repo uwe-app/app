@@ -6,7 +6,7 @@ use async_trait::async_trait;
 
 use config::{
     registry::{RegistryEntry, RegistryItem},
-    Plugin,
+    Plugin, PluginSpec,
 };
 
 use crate::{Error, Registry, Result};
@@ -15,6 +15,7 @@ use crate::{Error, Registry, Result};
 #[async_trait]
 pub trait RegistryAccess {
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
+    async fn spec(&self, spec: &PluginSpec) -> Result<Option<RegistryItem>>;
 
     /// Find all the plugins whose fully qualified name starts with the needle.
     async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>>;
@@ -69,6 +70,18 @@ impl RegistryAccess for RegistryFileAccess {
         Ok(None)
     }
 
+
+    async fn spec(&self, spec: &PluginSpec) -> Result<Option<RegistryItem>> {
+        let name = spec.name();
+        let range = spec.range();
+        if let Some(entry) = self.entry(name).await? {
+            if let Some((_, item)) = entry.find(range) {
+                return Ok(Some(item.clone())) 
+            }
+        }
+        Ok(None)
+    }
+
     async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>> {
         let mut map = BTreeMap::new();
         for entry in fs::read_dir(&self.reader)? {
@@ -109,7 +122,7 @@ impl RegistryAccess for RegistryFileAccess {
     }
 }
 
-pub(crate) fn new_registry<'r>() -> Result<Registry<'r>> {
+pub fn new_registry<'r>() -> Result<Registry<'r>> {
     let reg = dirs::registry_dir()?;
     Ok(Box::new(RegistryFileAccess::new(reg.clone(), reg.clone())?))
 }
