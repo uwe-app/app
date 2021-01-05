@@ -20,3 +20,10 @@ pub async fn fetch_registry() -> Result<()> {
     scm::clone_or_fetch(&url, &dir)?;
     Ok(())
 }
+
+pub async fn fetch_syntax() -> Result<()> {
+    let url = dirs::syntax_url();
+    let dir = dirs::syntax_dir()?;
+    scm::clone_or_fetch(&url, &dir)?;
+    Ok(())
+}

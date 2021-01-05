@@ -55,18 +55,6 @@ pub(crate) async fn fetch(
     // Must update the cache of releases
     runtime::fetch_releases().await?;
 
-    let registry_dir = dirs::registry_dir()?;
-    if !registry_dir.exists() {
-        // Fetch plugin registry meta data
-        runtime::fetch_registry().await?;
-    }
-
-    let runtime_dir = dirs::runtime_dir()?;
-    if !runtime_dir.exists() {
-        // Fetch runtime assets if they don't exist
-        runtime::fetch().await?;
-    }
-
     // Load the releases manifest.
     let releases = releases::mount()?.filter(range);
     if releases.is_empty() {

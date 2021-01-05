@@ -14,6 +14,7 @@ static SITES_FILE: &str = "sites.toml";
 static RUNTIME_REPO: &str = "https://github.com/uwe-app/runtime";
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
+static SYNTAX_REPO: &str = "https://github.com/uwe-app/syntax";
 
 static RUNTIME_NAME: &str = "runtime";
 static REGISTRY_NAME: &str = "registry";
@@ -79,6 +80,10 @@ pub fn registry_url() -> String {
     REGISTRY_REPO.to_string()
 }
 
+pub fn syntax_url() -> String {
+    SYNTAX_REPO.to_string()
+}
+
 pub fn runtime_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(RUNTIME_NAME))
 }
@@ -96,7 +101,7 @@ pub fn docs_dir() -> io::Result<PathBuf> {
 }
 
 pub fn syntax_dir() -> io::Result<PathBuf> {
-    Ok(runtime_dir()?.join(SYNTAX_NAME))
+    Ok(root_dir()?.join(SYNTAX_NAME))
 }
 
 pub fn blueprint_dir() -> io::Result<PathBuf> {

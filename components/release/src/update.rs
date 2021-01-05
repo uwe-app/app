@@ -51,9 +51,18 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
     let mut names = vec![];
     names.extend_from_slice(&releases::INSTALL_EXE_NAMES);
 
-    // Include shims on first run
     if first_run {
+        // Include shims on first run
         names.extend_from_slice(&releases::INSTALL_SHIM_NAMES);
+
+        // Fetch plugin registry meta data
+        runtime::fetch_registry().await?;
+
+        // Fetch syntax highlighting
+        runtime::fetch_syntax().await?;
+
+        // Fetch runtime assets
+        runtime::fetch().await?;
     }
 
     let version = fetch(
