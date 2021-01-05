@@ -24,16 +24,42 @@ pub async fn run(cmd: Task) -> Result<()> {
         }
         Task::UpdateRuntimeAssets {} => {
             update_runtime_assets().await?;
-        } /*
-          Task::Pull {
-              project,
-              remote,
-              branch,
-          } => {
-              pull(project, remote, branch).await?;
-          }
-          */
+        } 
+        Task::UpdateDocs {} => {
+            update_docs().await?;
+        } 
+        Task::UpdateSyntax {} => {
+            update_syntax().await?;
+        } 
     }
+    Ok(())
+}
+
+/// Update the runtime assets.
+#[deprecated]
+pub async fn update_runtime_assets() -> Result<()> {
+    let url = dirs::runtime_url();
+    let dir = dirs::runtime_dir()?;
+    scm::clone_or_fetch(&url, &dir)?;
+    info!("Update complete ✓");
+    Ok(())
+}
+
+/// Update the documentation
+pub async fn update_docs() -> Result<()> {
+    let url = dirs::documentation_url();
+    let dir = dirs::documentation_dir()?;
+    scm::clone_or_fetch(&url, &dir)?;
+    info!("Update complete ✓");
+    Ok(())
+}
+
+/// Update the syntax highlight language definitions
+pub async fn update_syntax() -> Result<()> {
+    let url = dirs::syntax_url();
+    let dir = dirs::syntax_dir()?;
+    scm::clone_or_fetch(&url, &dir)?;
+    info!("Update complete ✓");
     Ok(())
 }
 
@@ -77,14 +103,6 @@ async fn check_deps(project: PathBuf) -> Result<()> {
         }
     }
 
-    Ok(())
-}
-
-/// Update the runtime assets.
-pub async fn update_runtime_assets() -> Result<()> {
-    let url = dirs::runtime_url();
-    let dir = dirs::runtime_dir()?;
-    scm::clone_or_fetch(&url, &dir)?;
     Ok(())
 }
 

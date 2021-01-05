@@ -9,6 +9,12 @@ pub enum Task {
     /// Update runtime assets
     UpdateRuntimeAssets {},
 
+    /// Update local documentation website
+    UpdateDocs {},
+
+    /// Update syntax highlight language definitions
+    UpdateSyntax {},
+
     /// List project blueprints
     ListBlueprints {},
 
