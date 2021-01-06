@@ -6,7 +6,6 @@ use spdx::license_id;
 
 use bracket::{parser::ParserOptions, template::Template};
 
-use crate::{compute, error::LintError, reader::read};
 use config::{
     Config,
     features::FeatureMap,
@@ -14,6 +13,10 @@ use config::{
     license::{License, LicenseGroup},
     Plugin, PluginType, PLUGIN_NS,
 };
+
+use utils::walk;
+
+use crate::{compute, error::LintError, reader::read};
 
 pub async fn lint<P: AsRef<Path>>(path: P) -> crate::Result<Plugin> {
     let plugin = read(path).await?;
@@ -56,6 +59,30 @@ fn lint_common(plugin: &Plugin) -> Result<(), LintError> {
 
     lint_licenses(plugin)?;
 
+    lint_symlinks(plugin)?;
+
+    Ok(())
+}
+
+/// Walk all files and check for symbolic links.
+fn lint_symlinks(plugin: &Plugin) -> Result<(), LintError> {
+    let base = plugin.base().canonicalize()?;
+    let git = base.join(".git");
+    let files = walk::find(plugin.base(), |f| {
+        if let Ok(file) = f.canonicalize() {
+            if file.starts_with(&git) {
+                return false 
+            }
+        }
+        true
+    });
+    for f in files {
+        if let Ok(abs) = f.canonicalize() {
+            if !abs.starts_with(&base) {
+                return Err(LintError::LintSymbolicLink(abs, base.to_path_buf()))
+            }
+        }
+    }
     Ok(())
 }
 

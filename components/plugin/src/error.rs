@@ -35,6 +35,9 @@ pub enum LintError {
     #[error("Features are not supported for the `site` plugin type")]
     LintFeaturesSiteType,
 
+    #[error("Plugin file {0} is outside {1}, possible symbolic link error")]
+    LintSymbolicLink(PathBuf, PathBuf),
+
     #[error("{0}")]
     Syntax(String),
 
