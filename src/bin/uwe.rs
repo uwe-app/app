@@ -208,7 +208,7 @@ async fn run(cmd: Command) -> Result<()> {
 
             let build_args = ProfileSettings {
                 paths,
-                release: Some(args.profile.is_none()),
+                release: Some(true),
                 profile: args.profile.or(Some(ProfileName::Release.to_string())),
                 offline: Some(args.compile.offline),
                 exec: Some(args.compile.exec),

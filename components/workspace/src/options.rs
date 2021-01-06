@@ -363,24 +363,6 @@ pub(crate) async fn prepare(
 
     let opts = to_options(cfg, &mut root)?;
 
-    /*
-    // Handle profiles, eg: [profile.dist] that mutate the
-    // arguments from config declarations
-    let name = to_profile_name(args);
-    //let profiles = cfg.profile.as_ref().unwrap();
-    let opts = if let Some(profile) = profiles.get(&name.to_string()) {
-        let mut copy = profile.clone();
-        root.append(&mut copy);
-
-        from_cli(&mut root, &mut input);
-        to_options(name, cfg, &mut root)?
-    } else {
-        root.append(&mut input);
-        from_cli(&mut root, &mut input);
-        to_options(name, cfg, &mut root)?
-    };
-    */
-
     // Configure project level hooks
     let project = cfg.project().clone();
     if let Some(hooks) = cfg.hooks.as_mut() {
