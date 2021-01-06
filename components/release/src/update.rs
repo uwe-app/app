@@ -57,9 +57,6 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
         // Fetch plugin registry meta data
         scm::system_repo::fetch_registry().await?;
-
-        // Fetch syntax highlighting
-        scm::system_repo::fetch_syntax().await?;
     }
 
     let version = fetch(

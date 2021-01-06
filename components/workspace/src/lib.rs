@@ -40,13 +40,12 @@ pub enum Error {
     #[error("Redirect {0} collides with an existing redirect")]
     RedirectCollision(String),
 
-    //#[error("Live reload is not available for release builds")]
-    //LiveReloadRelease,
     #[error("Syntax highlighting path {0} is not a directory")]
     NoSyntaxDirectory(PathBuf),
 
-    //#[error("Missing layout file {0}")]
-    //NoLayout(PathBuf),
+    #[error("Syntax highlighting requires the `{0}` plugin, add it to the project dependencies")]
+    NoSyntaxPlugin(String),
+
     #[error("Plugin {0} is missing asset file {1}")]
     NoPluginAsset(String, PathBuf),
 

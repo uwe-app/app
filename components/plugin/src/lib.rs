@@ -19,5 +19,5 @@ pub use linter::lint;
 pub use packager::pack;
 pub use registry::{RegistryFileAccess, RegistryAccess, new_registry};
 pub use resolver::resolve;
-pub use system_plugins::{install_blueprint, install_docs, install_syntax};
+pub use system_plugins::{install_blueprint, install_docs};
 pub use uploader::publish;

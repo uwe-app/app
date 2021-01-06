@@ -32,6 +32,8 @@ use crate::{
     Error, Result,
 };
 
+static PLUGIN_SYNTAX: &str = "std::syntax";
+
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.base.clone();
     manifest_file.set_extension(config::JSON);
@@ -248,9 +250,17 @@ impl ProjectBuilder {
 
         if self.config.syntax.is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
-                let syntax_dir = dirs::syntax_dir()?;
-                if !syntax_dir.exists() {
-                    return Err(Error::NoSyntaxDirectory(syntax_dir));
+                if let Some(ref plugin_cache) = self.plugins {
+                    if let Some(plugin) = plugin_cache.find(PLUGIN_SYNTAX) {
+                        let syntax_dir = plugin.base();
+                        if !syntax_dir.exists() || !syntax_dir.is_dir() {
+                            return Err(Error::NoSyntaxDirectory(syntax_dir.to_path_buf()));
+                        }
+                    } else {
+                        return Err(Error::NoSyntaxPlugin(PLUGIN_SYNTAX.to_string()));
+                    }
+                } else {
+                    return Err(Error::NoSyntaxPlugin(PLUGIN_SYNTAX.to_string()));
                 }
             }
         }
@@ -449,9 +459,10 @@ impl ProjectBuilder {
     /// Setup syntax highlighting when enabled.
     pub async fn syntax(self) -> Result<Self> {
         if let Some(ref syntax_config) = self.get_syntax() {
-            let syntax_dir = dirs::syntax_dir()?;
+            let plugin_cache = self.plugins.as_ref().unwrap();
+            let syntax_plugin = plugin_cache.find(PLUGIN_SYNTAX).unwrap();
             info!("Syntax highlighting on");
-            syntax::setup(&syntax_dir, syntax_config)?;
+            syntax::setup(syntax_plugin.base(), syntax_config)?;
         }
         Ok(self)
     }

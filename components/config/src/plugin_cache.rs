@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use globset::GlobMatcher;
 
 use crate::{
-    dependency::Dependency, engine::TemplateEngine, plugin::ResolvedPlugins,
+    dependency::Dependency, engine::TemplateEngine, plugin::{Plugin, ResolvedPlugins},
     script::ScriptAsset, style::StyleAsset, Error, Result,
 };
 
@@ -46,6 +46,20 @@ impl PluginCache {
 
     pub fn layouts(&self) -> &HashMap<String, Vec<GlobMatcher>> {
         &self.layouts_cache
+    }
+
+
+    pub fn find(
+        &self,
+        name: &str,
+    ) -> Option<&Plugin> {
+        // NOTE: we only look for a direct dependency at the moment
+        for (_, plugin) in self.plugins().iter() {
+            if &plugin.name == name {
+                return Some(plugin);
+            }
+        }
+        None
     }
 
     // FIXME: stricter error handling on mismatch

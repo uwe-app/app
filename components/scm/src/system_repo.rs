@@ -13,10 +13,3 @@ pub async fn fetch_registry() -> Result<()> {
     crate::clone_or_fetch(&url, &dir)?;
     Ok(())
 }
-
-pub async fn fetch_syntax() -> Result<()> {
-    let url = dirs::syntax_url();
-    let dir = dirs::syntax_dir()?;
-    crate::clone_or_fetch(&url, &dir)?;
-    Ok(())
-}

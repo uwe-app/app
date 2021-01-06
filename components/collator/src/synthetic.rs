@@ -210,12 +210,7 @@ fn find_feed_plugin<'a>(
 ) -> Option<&'a Plugin> {
     let plugin_name = feed.plugin.as_ref().unwrap();
     if let Some(cache) = plugins {
-        // NOTE: we only look for a direct dependency at the moment
-        for (_, plugin) in cache.plugins().iter() {
-            if &plugin.name == plugin_name {
-                return Some(plugin);
-            }
-        }
+        return cache.find(plugin_name);
     }
     None
 }

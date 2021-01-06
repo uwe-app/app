@@ -26,9 +26,6 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::UpdateRegistry {} => {
             update_registry().await?;
         } 
-        Task::UpdateSyntax {} => {
-            update_syntax().await?;
-        } 
     }
     Ok(())
 }
@@ -36,13 +33,6 @@ pub async fn run(cmd: Task) -> Result<()> {
 /// Update the plugin registry cache
 pub async fn update_registry() -> Result<()> {
     scm::system_repo::fetch_registry().await?;
-    info!("Update complete ✓");
-    Ok(())
-}
-
-/// Update the syntax highlight language definitions
-pub async fn update_syntax() -> Result<()> {
-    scm::system_repo::fetch_syntax().await?;
     info!("Update complete ✓");
     Ok(())
 }

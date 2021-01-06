@@ -8,7 +8,6 @@ use config::{
 use crate::{new_registry, install_registry, Error, Result};
 
 static PLUGIN_DOCS: &str = "std::documentation";
-static PLUGIN_SYNTAX: &str = "std::syntax";
 
 async fn install_plugin(spec: PluginSpec) -> Result<Plugin> {
     let registry = new_registry()?;
@@ -36,13 +35,5 @@ pub async fn install_docs(range: Option<String>) -> Result<Plugin> {
         range.parse::<VersionReq>()?
     } else { VersionReq::any() };
     let spec = PluginSpec::from((PLUGIN_DOCS.to_string(), range));
-    Ok(install_plugin(spec).await?)
-}
-
-pub async fn install_syntax(range: Option<String>) -> Result<Plugin> {
-    let range = if let Some(range) = range {
-        range.parse::<VersionReq>()?
-    } else { VersionReq::any() };
-    let spec = PluginSpec::from((PLUGIN_SYNTAX.to_string(), range));
     Ok(install_plugin(spec).await?)
 }

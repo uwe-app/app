@@ -9,9 +9,6 @@ pub enum Task {
     /// Update plugin registry local cache
     UpdateRegistry {},
 
-    /// Update syntax highlight language definitions
-    UpdateSyntax {},
-
     /// List project blueprints
     ListBlueprints {},
 
