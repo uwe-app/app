@@ -32,6 +32,9 @@ pub enum LintError {
     #[error("Feature references dependency {0}@{1} which is not optional")]
     LintFeatureDependencyNotOptional(String, String),
 
+    #[error("Features are not supported for the `site` plugin type")]
+    LintFeaturesSiteType,
+
     #[error("{0}")]
     Syntax(String),
 
@@ -40,6 +43,9 @@ pub enum LintError {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Config(#[from] config::Error),
 }
 
 impl From<SyntaxError> for LintError {

@@ -8,10 +8,11 @@ use bracket::{parser::ParserOptions, template::Template};
 
 use crate::{compute, error::LintError, reader::read};
 use config::{
+    Config,
     features::FeatureMap,
     href::UrlPath,
     license::{License, LicenseGroup},
-    Plugin, PLUGIN_NS,
+    Plugin, PluginType, PLUGIN_NS,
 };
 
 pub async fn lint<P: AsRef<Path>>(path: P) -> crate::Result<Plugin> {
@@ -22,10 +23,15 @@ pub async fn lint<P: AsRef<Path>>(path: P) -> crate::Result<Plugin> {
 }
 
 pub(crate) fn lint_plugin(plugin: &Plugin) -> crate::Result<()> {
-    Ok(run(&plugin).map_err(crate::Error::from)?)
+    let result = match plugin.kind() {
+        PluginType::Library => lint_library(plugin),
+        PluginType::Site => lint_site(plugin),
+    };
+    Ok(result.map_err(crate::Error::from)?)
 }
 
-fn run(plugin: &Plugin) -> Result<(), LintError> {
+/// Lint common to all plugin types.
+fn lint_common(plugin: &Plugin) -> Result<(), LintError> {
     let ns_re = Regex::new("^[a-zA-Z0-9-]+$")?;
 
     if plugin.name.trim().is_empty() {
@@ -49,6 +55,23 @@ fn run(plugin: &Plugin) -> Result<(), LintError> {
     }
 
     lint_licenses(plugin)?;
+
+    Ok(())
+}
+
+/// Lint for the site plugin type.
+fn lint_site(plugin: &Plugin) -> Result<(), LintError> {
+    lint_common(plugin)?;
+    if !plugin.features().is_empty() {
+        return Err(LintError::LintFeaturesSiteType)
+    }
+    let _ = Config::load_config(plugin.base())?;
+    Ok(())
+}
+
+/// Lint for the library plugin type.
+fn lint_library(plugin: &Plugin) -> Result<(), LintError> {
+    lint_common(plugin)?;
 
     if !plugin.features().is_empty() {
         lint_features(plugin, plugin.features())?;
