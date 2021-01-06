@@ -59,6 +59,9 @@ pub enum Error {
     #[error("Plugin {0}@{1} for project blueprint should be of type 'site' but got '{2}'")]
     BlueprintPluginNotSiteType(String, String, String),
 
+    #[error("Documentation plugin {0} could not be found in the plugin registry")]
+    DocumentationPluginNotFound(String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -72,6 +75,9 @@ pub enum Error {
 
     #[error(transparent)]
     Semver(#[from] semver::SemVerError),
+
+    #[error(transparent)]
+    ReqParse(#[from] semver::ReqParseError),
 
     #[error(transparent)]
     LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),

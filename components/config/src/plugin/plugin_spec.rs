@@ -32,13 +32,11 @@ impl From<String> for PluginSpec {
     }
 }
 
-/*
 impl From<(String, VersionReq)> for PluginSpec {
     fn from(value: (String, VersionReq)) -> Self {
         Self {name: value.0, range: value.1} 
     }
 }
-*/
 
 impl FromStr for PluginSpec {
     type Err = Error;

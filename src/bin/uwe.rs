@@ -151,7 +151,7 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Docs { args } => {
-            let target = uwe::docs::get_target().await?;
+            let target = uwe::docs::target(args.version_range).await?;
             let opts = uwe::opts::server_config(
                 &target,
                 &args.server,

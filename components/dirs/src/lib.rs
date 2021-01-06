@@ -16,8 +16,6 @@ static SYNTAX_REPO: &str = "https://github.com/uwe-app/syntax";
 static REGISTRY_NAME: &str = "registry";
 static PLUGINS_NAME: &str = "plugins";
 
-static PUBLIC_HTML_NAME: &str = "public_html";
-
 static SYNTAX_NAME: &str = "syntax";
 static RELEASES_NAME: &str = "releases";
 
@@ -83,10 +81,6 @@ pub fn plugins_dir() -> io::Result<PathBuf> {
         fs::create_dir(&dir)?;
     }
     Ok(dir)
-}
-
-pub fn docs_dir() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(PUBLIC_HTML_NAME))
 }
 
 pub fn syntax_dir() -> io::Result<PathBuf> {
