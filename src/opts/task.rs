@@ -9,9 +9,6 @@ pub enum Task {
     /// Update plugin registry local cache
     UpdateRegistry {},
 
-    /// Update local documentation website
-    UpdateDocs {},
-
     /// Update syntax highlight language definitions
     UpdateSyntax {},
 

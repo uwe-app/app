@@ -60,9 +60,6 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
         // Fetch syntax highlighting
         scm::system_repo::fetch_syntax().await?;
-
-        // Fetch documentation
-        scm::system_repo::fetch_documentation().await?;
     }
 
     let version = fetch(

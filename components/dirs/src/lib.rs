@@ -12,13 +12,11 @@ static SITES_FILE: &str = "sites.toml";
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 static SYNTAX_REPO: &str = "https://github.com/uwe-app/syntax";
-static DOCUMENTATION_REPO: &str = "https://github.com/uwe-app/documentation";
 
 static REGISTRY_NAME: &str = "registry";
 static PLUGINS_NAME: &str = "plugins";
 
-static DOCUMENTATION_NAME: &str = "documentation";
-static DOCS_NAME: &str = "docs";
+static PUBLIC_HTML_NAME: &str = "public_html";
 
 static SYNTAX_NAME: &str = "syntax";
 static RELEASES_NAME: &str = "releases";
@@ -79,10 +77,6 @@ pub fn syntax_url() -> String {
     SYNTAX_REPO.to_string()
 }
 
-pub fn documentation_url() -> String {
-    DOCUMENTATION_REPO.to_string()
-}
-
 pub fn plugins_dir() -> io::Result<PathBuf> {
     let dir = root_dir()?.join(PLUGINS_NAME);
     if !dir.exists() {
@@ -91,12 +85,8 @@ pub fn plugins_dir() -> io::Result<PathBuf> {
     Ok(dir)
 }
 
-pub fn documentation_dir() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(DOCUMENTATION_NAME))
-}
-
 pub fn docs_dir() -> io::Result<PathBuf> {
-    Ok(documentation_dir()?.join(DOCS_NAME))
+    Ok(root_dir()?.join(PUBLIC_HTML_NAME))
 }
 
 pub fn syntax_dir() -> io::Result<PathBuf> {

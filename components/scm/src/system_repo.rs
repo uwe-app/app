@@ -20,10 +20,3 @@ pub async fn fetch_syntax() -> Result<()> {
     crate::clone_or_fetch(&url, &dir)?;
     Ok(())
 }
-
-pub async fn fetch_documentation() -> Result<()> {
-    let url = dirs::documentation_url();
-    let dir = dirs::documentation_dir()?;
-    crate::clone_or_fetch(&url, &dir)?;
-    Ok(())
-}
