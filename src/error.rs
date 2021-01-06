@@ -53,14 +53,8 @@ pub enum Error {
     #[error("Local dependency {0} is not allowed")]
     LocalDependencyNotAllowed(PathBuf),
 
-    #[error("Plugin for project blueprint was not found in the registry using {0} ({1})")]
-    BlueprintPluginNotFound(String, String),
-
     #[error("Plugin {0}@{1} for project blueprint should be of type 'site' but got '{2}'")]
     BlueprintPluginNotSiteType(String, String, String),
-
-    #[error("Documentation plugin {0} could not be found in the plugin registry")]
-    DocumentationPluginNotFound(String),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

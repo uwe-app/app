@@ -141,8 +141,14 @@ pub enum Error {
     #[error("Plugin directory {0} does not exist, remove the lock file and try again")]
     NoPluginInstallDir(PathBuf),
 
+    #[error("Plugin {0} could not be found in the plugin registry")]
+    PluginNotFound(String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    ReqParse(#[from] semver::ReqParseError),
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),

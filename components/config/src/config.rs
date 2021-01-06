@@ -128,6 +128,8 @@ static DEFAULT_ICON_DATA: &str =
 
 pub static DEFAULT_PWA_MANIFEST: &str = "app.webmanifest";
 
+pub static PUBLIC_HTML: &str = "public_html";
+
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }

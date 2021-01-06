@@ -7,6 +7,7 @@ mod packager;
 mod reader;
 mod registry;
 mod resolver;
+mod system_plugins;
 mod uploader;
 
 type Result<T> = std::result::Result<T, error::Error>;
@@ -18,4 +19,5 @@ pub use linter::lint;
 pub use packager::pack;
 pub use registry::{RegistryFileAccess, RegistryAccess, new_registry};
 pub use resolver::resolve;
+pub use system_plugins::{install_blueprint, install_docs, install_syntax};
 pub use uploader::publish;

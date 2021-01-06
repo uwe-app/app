@@ -2234,6 +2234,7 @@ dependencies = [
  "reqwest",
  "scm",
  "scopeguard",
+ "semver 0.10.0",
  "serde_json",
  "sha3",
  "slug",

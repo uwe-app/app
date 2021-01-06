@@ -9,8 +9,7 @@ use url::Url;
 
 use utils::walk;
 
-use config::{plugin::{PluginSpec, PluginType, dependency::Dependency}};
-use plugin::{new_registry, install_registry};
+use config::plugin::PluginType;
 use crate::{Error, Result};
 
 static DEFAULT_NAME: &str = "default";
@@ -283,37 +282,20 @@ async fn install_from_blueprint(
     settings: InitSettings,
     message: &str) -> Result<()> {
 
-    let spec: PluginSpec = if let Ok(spec) = source.parse::<PluginSpec>() {
-        spec
-    } else {
-        let fqn = format!("{}{}{}", config::PLUGIN_BLUEPRINT_NAMESPACE, config::PLUGIN_NS, source);
-        PluginSpec::from(fqn)
-    };
-
-    let registry = new_registry()?;
-
-    if let Some(_) = registry.spec(&spec).await? {
-        let project = target.to_path_buf();
-        let dep: Dependency = spec.into();
-        let plugin = install_registry(&project, &registry, &dep).await?;
-        let source_dir = plugin.base();
-        if !source_dir.exists() {
-            return Err(Error::NoInitSource);
-        }
-
-        if plugin.kind() != &PluginType::Site {
-            return Err(Error::BlueprintPluginNotSiteType(
-                plugin.name.to_string(),
-                plugin.version.to_string(),
-                plugin.kind().to_string()));
-        }
-
-        check_site_settings(&source_dir)?;
-        init_folder(&source_dir, target, settings, message)?;
-        Ok(())
-    } else {
-        Err(Error::BlueprintPluginNotFound(
-            source.to_string(),
-            spec.to_string()))
+    let plugin = plugin::install_blueprint(source).await?;
+    let source_dir = plugin.base();
+    if !source_dir.exists() {
+        return Err(Error::NoInitSource);
     }
+
+    if plugin.kind() != &PluginType::Site {
+        return Err(Error::BlueprintPluginNotSiteType(
+            plugin.name.to_string(),
+            plugin.version.to_string(),
+            plugin.kind().to_string()));
+    }
+
+    check_site_settings(&source_dir)?;
+    init_folder(&source_dir, target, settings, message)?;
+    Ok(())
 }
