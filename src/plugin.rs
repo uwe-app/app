@@ -53,7 +53,7 @@ pub async fn publish(path: PathBuf) -> Result<()> {
 
 /// Remove all cached plugins.
 pub async fn clean() -> Result<()> {
-    let target = dirs::plugins_dir()?;
+    let target = config::plugins_dir()?;
     if target.exists() && target.is_dir() {
         info!("Remove {}", target.display());
         fs::remove_dir_all(&target)?;

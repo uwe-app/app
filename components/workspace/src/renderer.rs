@@ -436,7 +436,7 @@ impl Renderer {
         };
 
         let filters = &self.info.sources.filters;
-        let plugin_cache = dirs::plugins_dir()?;
+        let plugin_cache = config::plugins_dir()?;
         let path_filter = |p: &&Arc<PathBuf>| -> bool {
             // Always allow plugin assets
             if p.starts_with(&plugin_cache) {

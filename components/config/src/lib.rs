@@ -158,7 +158,6 @@ pub(crate) mod utils;
 
 pub use self::utils::{href, markdown};
 pub use config::*;
-//pub use engine::TemplateEngine;
 pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
 pub use indexer::{IndexQuery, KeyType, QueryResult};
@@ -171,3 +170,26 @@ pub use redirect::*;
 pub use search::SearchConfig;
 
 pub use semver;
+
+/// Get the release directory for the current executable version.
+///
+/// Only safe to be called after `opts::project_path()` so that 
+/// the executable version is correct.
+pub fn current_release_dir() -> std::io::Result<PathBuf> {
+    let version = generator::version();
+    Ok(dirs::releases_dir()?.join(version))
+}
+
+/// Get the plugins directory relative to the release directory 
+/// for the current executable version.
+pub fn plugins_dir() -> std::io::Result<PathBuf> {
+    let dir = current_release_dir()?.join(crate::PLUGINS);
+    if !dir.exists() {
+        // Must use create_dir_all() for the case when we are 
+        // testing locally and have bumped the version number 
+        // and therefore do not yet have an installation directory
+        // for the release.
+        std::fs::create_dir_all(&dir)?;
+    }
+    Ok(dir)
+}
