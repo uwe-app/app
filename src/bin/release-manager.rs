@@ -10,7 +10,7 @@ use uwe::{opts::fatal, Error, Result};
 #[structopt(name = "uwe-release")]
 struct Cli {
     /// The bucket name.
-    #[structopt(short, long, default_value = "release.uwe.app")]
+    #[structopt(short, long, default_value = "releases.uwe.app")]
     bucket: String,
 
     /// The bucket region.

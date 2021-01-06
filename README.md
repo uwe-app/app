@@ -65,7 +65,7 @@ To remove an installation run `cargo run --bin=uvm -- uninstall`.
 To test an installation using the quick install script:
 
 ```
-curl https://release.uwe.app/install.sh | sh
+curl https://releases.uwe.app/install.sh | sh
 ```
 
 ## Plugins
