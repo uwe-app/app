@@ -150,7 +150,7 @@ pub enum Error {
     #[error("Plugin directory {0} does not exist, remove the lock file and try again")]
     NoPluginInstallDir(PathBuf),
 
-    #[error("Plugin {0} could not be found in the plugin registry")]
+    #[error("Plugin {0} could not be found; update the plugin registry with `uwe task update-registry` and try again")]
     PluginNotFound(String),
 
     #[error(transparent)]
