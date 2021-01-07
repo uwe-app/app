@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::convert::TryInto;
 
 use url::Url;
 
@@ -12,7 +13,7 @@ use unic_langid::LanguageIdentifier;
 
 use crate::{
     date::DateConfig,
-    dependency::DependencyMap,
+    dependency::{DependencyDefinitionMap, DependencyMap},
     engine::TemplateEngine,
     feed::FeedConfig,
     fluent::FluentConfig,
@@ -233,7 +234,8 @@ pub struct Config {
     // Optional robots config
     pub robots: Option<RobotsConfig>,
 
-    pub dependencies: Option<DependencyMap>,
+    dependencies: Option<DependencyDefinitionMap>,
+    dependencies_map: Option<DependencyMap>,
 
     pub layout: Option<LayoutConfig>,
 
@@ -308,6 +310,7 @@ impl Default for Config {
             sitemap: Some(Default::default()),
             robots: Some(Default::default()),
             dependencies: None,
+            dependencies_map: None,
             layout: None,
             syntax: None,
             transform: Some(Default::default()),
@@ -331,6 +334,11 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn dependencies(&self) -> &Option<DependencyMap> {
+        &self.dependencies_map
+    }
+
     pub fn member_name(&self) -> &Option<String> {
         &self.member_name
     }
@@ -492,6 +500,10 @@ impl Config {
                 }
                 if build.target.is_relative() {
                     build.target = base.to_path_buf().join(&build.target);
+                }
+
+                if let Some(deps) = cfg.dependencies.take() {
+                    cfg.dependencies_map = Some(deps.try_into()?);
                 }
 
                 if let Some(fluent) = cfg.fluent.as_mut() {

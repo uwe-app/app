@@ -55,7 +55,7 @@ async fn list_blueprints() -> Result<()> {
 async fn check_deps(project: PathBuf) -> Result<()> {
     let workspace = workspace::open(&project, true, &vec![])?;
     for config in workspace.into_iter() {
-        if let Some(deps) = config.dependencies {
+        if let Some(ref deps) = config.dependencies() {
             for (name, dep) in deps.iter() {
                 if let Some(ref target) = dep.target {
                     match target {

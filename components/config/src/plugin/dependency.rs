@@ -2,6 +2,7 @@ use std::collections::hash_map;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
+use std::convert::TryInto;
 
 use globset::{Glob, GlobMatcher};
 use semver::VersionReq;
@@ -14,6 +15,46 @@ use super::features::{FeatureFlags, FeatureMap};
 use super::plugin_spec::PluginSpec;
 
 static FEATURE_STACK_SIZE: usize = 16;
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct DependencyDefinitionMap {
+    #[serde(flatten, serialize_with = "toml::ser::tables_last")]
+    items: HashMap<String, DependencyDefinition>,
+}
+
+impl TryInto<DependencyMap> for DependencyDefinitionMap {
+    type Error = Error;
+
+    fn try_into(self) -> std::result::Result<DependencyMap, Self::Error> {
+        let mut map: DependencyMap = Default::default(); 
+        for (name, def) in self.items.into_iter() {
+            let dep = match def {
+                DependencyDefinition::VersionRange(range) => {
+                    let version: VersionReq = range.parse()?;
+                    let dep = Dependency::new(name.clone(), version);
+                    dep
+                },
+                DependencyDefinition::Dependency(dep) => dep,
+            };
+            map.items.insert(name, dep); 
+        }
+        Ok(map)
+    }
+}
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum DependencyDefinition {
+    VersionRange(String),
+    Dependency(Dependency),
+}
+
+impl Default for DependencyDefinition {
+    fn default() -> Self {
+        Self::VersionRange(String::new())
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyMap {
@@ -72,6 +113,7 @@ impl DependencyMap {
         out: &mut DependencyMap,
         stack: &mut Vec<String>,
     ) -> Result<()> {
+
         features.iter().try_for_each(|n| {
             if stack.len() > FEATURE_STACK_SIZE {
                 return Err(Error::FeatureStackTooLarge(FEATURE_STACK_SIZE));
@@ -197,6 +239,17 @@ pub struct Dependency {
 }
 
 impl Dependency {
+    pub fn new(name: String, version: VersionReq) -> Self {
+        Self {
+            name: Some(name),
+            version,
+            target: None,
+            optional: None,
+            features: None,
+            apply: None,
+        }
+    }
+
     pub fn new_scope(scope: String, version: VersionReq) -> Self {
         Self {
             version,

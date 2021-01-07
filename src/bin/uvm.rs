@@ -48,7 +48,7 @@ enum Command {
     /// Remove old release versions
     Prune {},
 
-    /// Uninstall the toolchain
+    /// Uninstall the platform tools
     Uninstall {},
 }
 

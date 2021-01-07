@@ -211,10 +211,10 @@ impl ProjectBuilder {
     pub async fn plugins(mut self) -> Result<Self> {
         debug!("Resolving plugins...");
 
-        if let Some(dependencies) = self.config.dependencies.take() {
+        if let Some(ref dependencies) = self.config.dependencies() {
             let plugins = plugin::resolve(
                 &self.options.project,
-                dependencies,
+                dependencies.clone(),
                 self.options.settings.is_offline(),
             )
             .await?;

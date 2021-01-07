@@ -368,7 +368,7 @@ pub async fn install_registry<P: AsRef<Path>>(
     let mut pb = ProgressBar::on(stderr(), len);
     pb.set_units(Units::Bytes);
     pb.show_speed = false;
-    let msg = format!(" Fetch {}@{}", name, version);
+    let msg = format!(" Fetch {}@{} ", name, version);
     pb.message(&msg);
 
     let mut content_file = tokio::fs::File::from_std(dest);
