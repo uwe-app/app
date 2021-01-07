@@ -126,9 +126,17 @@ impl Updater {
             let name = template.to_string_lossy();
             if template.exists() {
                 info!("Render template {}", &name);
-                for parser in self.project.parsers_mut().iter_mut() {
+                for (parser, renderer) in self.project.iter_mut() {
                     // Re-compile the template
                     parser.load(template)?;
+
+                    let collation =
+                        &*renderer.info.context.collation.read().unwrap();
+                    let fallback = collation.fallback.read().unwrap();
+
+                    // Update the JIT buffer with all pages!
+                    let all_pages = fallback.link_map();
+                    self.buffer.extend(all_pages);
                 }
             } else {
                 info!("Delete template {}", &name);
