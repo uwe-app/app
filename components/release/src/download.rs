@@ -35,7 +35,6 @@ pub(crate) fn url(version: &Version, name: &str) -> Result<Url> {
         releases::current_platform(),
         name
     );
-
     Ok(full_url.parse()?)
 }
 

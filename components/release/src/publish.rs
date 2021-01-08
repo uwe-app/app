@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -8,7 +8,7 @@ use semver::Version;
 
 use crate::{
     checksum,
-    releases::{self, ReleaseVersion},
+    releases::{self, ReleaseVersion, ExecutableTargets, ExecutableArtifact},
     Error, Result,
 };
 
@@ -17,17 +17,6 @@ use crate::{
 static INSTALL_SH: &str = "install.sh";
 static LINUX_PREFIX: &str = "target/release";
 static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
-
-type Platform = String;
-type ExecutableName = String;
-type ExecutableTargets =
-    HashMap<Platform, HashMap<ExecutableName, ExecutableArtifact>>;
-
-#[derive(Debug)]
-pub struct ExecutableArtifact {
-    path: PathBuf,
-    digest: Vec<u8>,
-}
 
 /// Create a release build.
 fn build(cwd: &PathBuf) -> Result<()> {
@@ -42,7 +31,7 @@ fn build(cwd: &PathBuf) -> Result<()> {
 
 /// Gather the build artifacts.
 fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
-    let mut executables = HashMap::new();
+    let mut executables = BTreeMap::new();
 
     let platform_targets = vec![
         (releases::LINUX.to_string(), cwd.join(LINUX_PREFIX)),
@@ -51,7 +40,7 @@ fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
 
     for (platform_name, target_dir) in platform_targets.into_iter() {
         let artifacts =
-            executables.entry(platform_name).or_insert(HashMap::new());
+            executables.entry(platform_name).or_insert(BTreeMap::new());
         for name in releases::PUBLISH_EXE_NAMES.iter() {
             let path = target_dir.join(name);
 

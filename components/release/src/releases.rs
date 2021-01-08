@@ -28,6 +28,18 @@ pub static SHIM: [(&str, &str); 2] = [("uwe-shim", "uwe"), ("upm-shim", "upm")];
 #[cfg(target_os = "windows")]
 pub static WINDOWS: &str = "windows";
 
+pub(crate) type Platform = String;
+pub(crate) type ExecutableName = String;
+pub(crate) type Checksum = String;
+pub(crate) type ExecutableTargets =
+    BTreeMap<Platform, BTreeMap<ExecutableName, ExecutableArtifact>>;
+
+#[derive(Debug)]
+pub struct ExecutableArtifact {
+    pub(crate) path: PathBuf,
+    pub(crate) digest: Vec<u8>,
+}
+
 pub fn shim_map() -> HashMap<String, String> {
     SHIM
         .iter()
@@ -46,6 +58,15 @@ pub struct Releases {
 }
 
 impl Releases {
+
+    pub fn sort_reverse(&self) -> Self {
+        let versions: BTreeMap<Version, ReleaseVersion> = self.versions
+            .iter()
+            .rev()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        Releases { versions }
+    }
 
     pub fn is_empty(&self) -> bool {
         self.versions.is_empty() 
@@ -76,7 +97,7 @@ impl Releases {
 #[serde(default)]
 pub struct ReleaseVersion {
     #[serde(flatten)]
-    pub(crate) platforms: HashMap<String, HashMap<String, String>>,
+    pub(crate) platforms: HashMap<Platform, HashMap<ExecutableName, Checksum>>,
 }
 
 pub(crate) fn dir(version: &Version) -> Result<PathBuf> {
@@ -105,7 +126,8 @@ pub(crate) fn save<P: AsRef<Path>>(
     target: P,
     releases: &Releases,
 ) -> Result<()> {
-    let contents = serde_json::to_vec_pretty(releases)?;
+    let releases = releases.sort_reverse();
+    let contents = serde_json::to_vec_pretty(&releases)?;
     let mut file = File::create(target.as_ref())?;
     file.write_all(contents.as_slice())?;
     Ok(())
