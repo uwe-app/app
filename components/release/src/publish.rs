@@ -142,6 +142,8 @@ async fn script(
 /// 1) Compile the release artifacts.
 /// 2) Upload all the release executables.
 /// 3) Update the release registry index.
+/// 4) Copy the release manifest to the releases.uwe.app website source.
+/// 5) Commit and push the releases repository with the updated manifest.
 ///
 pub async fn publish(
     manifest: String,

@@ -18,6 +18,13 @@ where
 
     WalkBuilder::new(dir)
         .follow_links(true)
+
+        // WARN: Better not to read from parents otherwise 
+        // WARN: copying from blueprint plugins will 
+        // WARN: read the .gitignore in the releases
+        // WARN: directory and we don't want that.
+        .parents(false)
+
         // NOTE: we need hidden files for .gitignore when
         // NOTE: creating new projects with `init`
         .hidden(false)

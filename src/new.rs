@@ -65,6 +65,7 @@ fn write_settings<P: AsRef<Path>>(
     let target = output.as_ref().to_path_buf();
     let mut config_file = target.clone();
     config_file.push(config::SITE_TOML);
+
     let mut site_config: toml::value::Table =
         toml::from_str(&utils::fs::read_string(&config_file)?)?;
     if let Some(ref lang) = language {
@@ -136,6 +137,7 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
     message: &str,
 ) -> Result<()> {
     create_target_parents(target.as_ref())?;
+
     walk::copy(source.as_ref(), target.as_ref(), |f| {
         if let Some(file_name) = f.file_name() {
             let name = file_name.to_string_lossy();
@@ -145,6 +147,7 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
         }
         true
     })?;
+
     write_settings(target.as_ref(), settings)?;
     scm::init(target.as_ref(), message)?;
 
