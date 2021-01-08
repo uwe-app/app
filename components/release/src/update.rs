@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use log::{info, warn};
-use semver::VersionReq;
+use semver::{Version, VersionReq};
 
 use crate::{
     binary, download, env, install::fetch, releases, version, Error, Result,
@@ -59,6 +59,8 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         scm::system_repo::fetch_registry().await?;
     }
 
+    let mut current = version::default_version().ok();
+
     let version = fetch(
         name,
         names.as_slice(),
@@ -83,15 +85,22 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         welcome()?;
     }
 
-    let current = version::default_version()?;
-    if current == version {
-        info!("Version {} is up to date ✓", version.to_string());
+    if let Some(current) = current.take() {
+        if current == version {
+            info!("Version {} is up to date ✓", version);
+        } else {
+            show_message(first_run, name, version);
+        }
     } else {
-        let message_kind = if first_run { "Installed" } else { "Updated" };
-        info!("{} {}@{} ✓", message_kind, name, version.to_string());
+        show_message(first_run, name, version);
     }
 
     Ok(())
+}
+
+fn show_message(first_run: bool, name: &str, version: Version) {
+    let message_kind = if first_run { "Installed" } else { "Updated" };
+    info!("{} {}@{} ✓", message_kind, name, version);
 }
 
 pub async fn update_self(_current: &str) -> Result<()> {
