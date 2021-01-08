@@ -1,3 +1,4 @@
+use std::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -146,6 +147,7 @@ pub async fn publish(
     manifest: String,
     name: String,
     version: String,
+    releases_website_manifest: PathBuf,
     bucket: String,
     region: String,
     profile: String,
@@ -211,6 +213,15 @@ pub async fn publish(
 
     info!("Save {}", releases_file.display());
     releases::save(&releases_file, &releases)?;
+
+    // Copy the release manifest to the website source for 
+    // the releases.uwe.app website
+    if let Some(parent) = releases_website_manifest.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    std::fs::copy(&releases_file, &releases_website_manifest)?;
 
     // Commit and push the release manifest
     let repo = scm::open(&releases_repo)?;
