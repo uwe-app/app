@@ -43,8 +43,8 @@ pub(crate) fn test(
         debug!("Verify {} ({})", name, expected);
 
         let received = hex::encode(checksum::digest(&file_path)?);
-        if &received != expected {
-            return Ok((false, name.to_string(), expected.to_string()));
+        if received != expected.hex() {
+            return Ok((false, name.to_string(), expected.hex()));
         }
     }
 

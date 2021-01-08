@@ -52,7 +52,10 @@ fn artifacts(cwd: &PathBuf) -> Result<ExecutableTargets> {
             info!("Calculate digest {}", path.display());
 
             let digest = checksum::digest(&path)?;
-            let artifact = ExecutableArtifact { path, digest };
+            let meta = std::fs::metadata(&path)?;
+            let size = meta.len();
+            let artifact = ExecutableArtifact { path, digest, size };
+
             artifacts.insert(name.to_string(), artifact);
         }
     }
@@ -203,7 +206,7 @@ pub async fn publish(
                 .await?;
             }
 
-            release_artifacts.insert(name, hex::encode(info.digest));
+            release_artifacts.insert(name, info);
         }
     }
 

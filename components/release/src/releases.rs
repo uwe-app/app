@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::fmt;
 
 use semver::{Version, VersionReq};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer, Deserializer};
 use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
@@ -32,14 +32,46 @@ pub static WINDOWS: &str = "windows";
 
 pub(crate) type Platform = String;
 pub(crate) type ExecutableName = String;
-pub(crate) type Checksum = String;
 pub(crate) type ExecutableTargets =
     BTreeMap<Platform, BTreeMap<ExecutableName, ExecutableArtifact>>;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ExecutableArtifact {
+    #[serde(skip)]
     pub(crate) path: PathBuf,
+    #[serde(serialize_with = "to_hex", deserialize_with = "from_hex")]
     pub(crate) digest: Vec<u8>,
+    pub(crate) size: u64,
+}
+
+
+fn to_hex<S>(digest: &Vec<u8>, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where S: Serializer
+{
+    serializer.serialize_str(&hex::encode(digest))
+}
+
+fn from_hex<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
+    where D: Deserializer<'de>
+{
+    use serde::de::Error;
+    String::deserialize(deserializer)
+        .and_then(|string| {
+            hex::decode(&string)
+                .map_err(|err| Error::custom(err.to_string()))
+        })
+}
+
+impl ExecutableArtifact {
+    pub fn hex(&self) -> String {
+        hex::encode(&self.digest)
+    }
+}
+
+impl fmt::Display for ExecutableArtifact {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.hex())
+    }
 }
 
 pub fn shim_map() -> HashMap<String, String> {
@@ -169,7 +201,7 @@ impl Releases {
 #[serde(default)]
 pub struct ReleaseInfo {
     #[serde(flatten)]
-    pub(crate) platforms: HashMap<Platform, HashMap<ExecutableName, Checksum>>,
+    pub(crate) platforms: ExecutableTargets,
 }
 
 pub(crate) fn dir(version: &Version) -> Result<PathBuf> {

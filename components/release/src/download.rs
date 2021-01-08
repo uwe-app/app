@@ -75,10 +75,10 @@ pub(crate) async fn all(
         let checksum = download(&url, &mut temp_download, name).await?;
         let received = hex::encode(&checksum);
 
-        if &received != expected {
+        if received != expected.hex() {
             return Err(Error::DigestMismatch(
                 name.to_string(),
-                expected.clone(),
+                expected.hex(),
                 received,
             ));
         }
