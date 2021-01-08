@@ -28,10 +28,10 @@ pub async fn prune() -> Result<()> {
 
     let current = version::default_version()?;
 
-    for (version, _) in releases.versions.iter().rev() {
-        if version < &current {
-            if releases::exists(version)? {
-                delete(version).await?;
+    for (version, _) in releases.versions.iter() {
+        if version.semver() < &current {
+            if releases::exists(version.semver())? {
+                delete(version.semver()).await?;
             }
         }
     }

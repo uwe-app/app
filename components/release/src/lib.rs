@@ -83,7 +83,6 @@ mod binary;
 mod checksum;
 mod download;
 mod env;
-mod info;
 mod install;
 mod list;
 mod publish;

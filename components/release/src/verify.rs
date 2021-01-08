@@ -2,7 +2,7 @@ use log::debug;
 
 use semver::Version;
 
-use crate::{checksum, releases, Error, Result};
+use crate::{checksum, releases::{self, ReleaseVersion}, Error, Result};
 
 /// Verify the checksums for a version.
 pub(crate) fn test(
@@ -21,9 +21,11 @@ pub(crate) fn test(
         ));
     }
 
+    let release_version = ReleaseVersion::from(version);
+
     let info = releases
         .versions
-        .get(version)
+        .get(&release_version)
         .ok_or_else(|| Error::VersionNotFound(version.to_string()))?;
 
     let checksums = info.platforms.get(&releases::current_platform()).unwrap();

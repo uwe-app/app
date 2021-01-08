@@ -59,6 +59,8 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         scm::system_repo::fetch_registry().await?;
     }
 
+    let current = version::default_version()?;
+
     let version = fetch(
         name,
         names.as_slice(),
@@ -83,8 +85,12 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         welcome()?;
     }
 
-    let message_kind = if first_run { "Installed" } else { "Updated" };
-    info!("{} {}@{} ✓", message_kind, name, version.to_string());
+    if current == version {
+        info!("Version {} is up to date ✓", version.to_string());
+    } else {
+        let message_kind = if first_run { "Installed" } else { "Updated" };
+        info!("{} {}@{} ✓", message_kind, name, version.to_string());
+    }
 
     Ok(())
 }

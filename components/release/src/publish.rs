@@ -9,7 +9,7 @@ use semver::Version;
 
 use crate::{
     checksum,
-    releases::{self, ReleaseVersion, ExecutableTargets, ExecutableArtifact},
+    releases::{self, ReleaseVersion, ReleaseInfo, ExecutableTargets, ExecutableArtifact},
     Error, Result,
 };
 
@@ -99,7 +99,7 @@ async fn redirects(
     region: &str,
     profile: &str,
     version: &Version,
-    release: &ReleaseVersion,
+    release: &ReleaseInfo,
 ) -> Result<()> {
     let aws_region = publisher::parse_region(region)?;
     for (platform, targets) in release.platforms.iter() {
@@ -166,7 +166,8 @@ pub async fn publish(
     let releases_website_manifest = PathBuf::from("../sites/releases/site/collections/releases/manifest.json");
 
     let mut releases = releases::load(&releases_file)?;
-    if releases.versions.contains_key(&semver) {
+    let release_version = ReleaseVersion::from(&semver);
+    if releases.versions.contains_key(&release_version) {
         if !force_overwrite {
             return Err(Error::ReleaseVersionExists(semver.to_string()));
         } else {
@@ -183,7 +184,7 @@ pub async fn publish(
     let artifacts = artifacts(&manifest)?;
     let release_versions = releases
         .versions
-        .entry(semver.clone())
+        .entry(release_version)
         .or_insert(Default::default());
 
     for (platform, artifacts) in artifacts.into_iter() {

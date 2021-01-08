@@ -20,7 +20,7 @@ use url::Url;
 use http::StatusCode;
 
 use crate::{
-    releases::{self, ReleaseVersion},
+    releases::{self, ReleaseInfo},
     Error, Result,
 };
 
@@ -42,7 +42,7 @@ pub(crate) fn url(version: &Version, name: &str) -> Result<Url> {
 /// verify that the checksums match.
 pub(crate) async fn all(
     version: &Version,
-    info: &ReleaseVersion,
+    info: &ReleaseInfo,
     names: &[&str],
 ) -> Result<HashMap<String, PathBuf>> {
     let version_dir = releases::dir(version)?;

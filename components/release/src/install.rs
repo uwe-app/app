@@ -2,7 +2,7 @@ use log::{info, warn};
 use semver::{Version, VersionReq};
 
 use crate::{
-    binary, download, info, releases, verify, version, Error,
+    binary, download, releases::{self, ReleaseVersion}, verify, version, Error,
     Result,
 };
 
@@ -64,7 +64,7 @@ pub(crate) async fn fetch(
     let (version, info) = if let Some(ref request) = version {
         let info = releases
             .versions
-            .get(request)
+            .get(&ReleaseVersion::from(request))
             .ok_or_else(|| Error::VersionNotFound(request.to_string()))?;
         (request, info)
     } else {
@@ -79,7 +79,6 @@ pub(crate) async fn fetch(
     if latest && version_file.exists() {
         let current = version::default_version()?;
         if &current == version {
-            info::upto_date(&version)?;
             return Ok(version.clone())
         }
     }

@@ -29,11 +29,11 @@ pub async fn list() -> Result<()> {
     info!("-------------------------------");
     info!("");
 
-    for (version, _) in releases.versions.iter().rev() {
-        let version_dir = releases::dir(version)?;
+    for (version, _) in releases.versions.iter() {
+        let version_dir = releases::dir(version.semver())?;
         let is_installed = version_dir.exists() && version_dir.is_dir();
         let mark = if is_installed { "◯" } else { "-" };
-        if &current == version {
+        if &current == version.semver() {
             let message = if let Some(ref file) = local_version_file {
                 format!("{} {} ✓ (set by {})", mark, version.to_string(), file.display())
             } else {
