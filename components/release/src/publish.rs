@@ -149,7 +149,6 @@ pub async fn publish(
     manifest: String,
     name: String,
     version: String,
-    releases_website_manifest: PathBuf,
     bucket: String,
     region: String,
     profile: String,
@@ -163,6 +162,8 @@ pub async fn publish(
     let manifest = PathBuf::from(manifest).canonicalize()?;
     let releases_repo = releases::local_releases(&manifest)?;
     let releases_file = releases::local_manifest_file(&manifest)?;
+
+    let releases_website_manifest = PathBuf::from("../sites/releases/site/collections/releases/manifest.json");
 
     let mut releases = releases::load(&releases_file)?;
     if releases.versions.contains_key(&semver) {

@@ -49,13 +49,10 @@ async fn main() -> Result<()> {
     let name = option_env!("CARGO_PKG_NAME").unwrap().to_string();
     let version = option_env!("CARGO_PKG_VERSION").unwrap().to_string();
 
-    let releases_website_manifest = PathBuf::from("../sites/releases/site/collections/releases/manifest.json");
-
     release::publish(
         manifest,
         name,
         version,
-        releases_website_manifest,
         root_args.bucket,
         root_args.region,
         root_args.profile,

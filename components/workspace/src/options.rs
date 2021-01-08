@@ -32,9 +32,9 @@ fn to_options(
     let project = cfg.project();
     let source = project.join(&args.source);
 
-    if args.target.is_absolute() {
-        return Err(Error::TargetAbsolute(args.target.clone()));
-    }
+    //if args.target.is_absolute() {
+        //return Err(Error::TargetAbsolute(args.target.clone()));
+    //}
 
     let profile_name_path = PathBuf::from(args.name.to_string());
     if profile_name_path.is_absolute() {

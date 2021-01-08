@@ -31,8 +31,8 @@ pub enum Error {
     #[error("Profile {0} does not exist")]
     NoProfile(String),
 
-    #[error("Build target not be an absolute path {0}")]
-    TargetAbsolute(PathBuf),
+    //#[error("Build target not be an absolute path {0}")]
+    //TargetAbsolute(PathBuf),
 
     #[error("Build profile may not be an absolute path {0}")]
     ProfileNameAbsolute(String),
