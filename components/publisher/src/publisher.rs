@@ -66,6 +66,7 @@ pub struct PublishRequest {
     pub region: Region,
     pub bucket: String,
     pub prefix: Option<String>,
+    pub keep_remote: bool,
 }
 
 #[derive(Debug)]
@@ -304,19 +305,21 @@ pub async fn publish(
         }
     }
 
-    for k in &diff.deleted {
-        let req = DeleteObjectRequest {
-            bucket: request.bucket.clone(),
-            key: k.clone(),
-            ..Default::default()
-        };
+    if !request.keep_remote {
+        for k in &diff.deleted {
+            let req = DeleteObjectRequest {
+                bucket: request.bucket.clone(),
+                key: k.clone(),
+                ..Default::default()
+            };
 
-        info!("Delete {}", &k);
+            info!("Delete {}", &k);
 
-        if let Err(e) = delete_object(&client, req).await {
-            errors.push(e);
-        } else {
-            deleted += 1;
+            if let Err(e) = delete_object(&client, req).await {
+                errors.push(e);
+            } else {
+                deleted += 1;
+            }
         }
     }
 

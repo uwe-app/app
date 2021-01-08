@@ -57,6 +57,7 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                         profile_name: publish_config.credentials.clone(),
                         bucket: bucket.clone(),
                         prefix: env.prefix.clone(),
+                        keep_remote: env.keep_remote(),
                     };
 
                     publish_aws(project, request, &publish_env).await?

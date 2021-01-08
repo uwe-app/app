@@ -609,7 +609,15 @@ pub struct AwsPublishConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "kebab-case")]
 pub struct AwsPublishEnvironment {
     pub prefix: Option<String>,
     pub bucket: Option<String>,
+    keep_remote: Option<bool>,
+}
+
+impl AwsPublishEnvironment {
+    pub fn keep_remote(&self) -> bool {
+        self.keep_remote.is_some() && self.keep_remote.unwrap()
+    }
 }
