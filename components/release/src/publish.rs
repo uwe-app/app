@@ -253,6 +253,8 @@ fn update_website(releases_file: &PathBuf) -> Result<()> {
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
     // Compile and publish the website
+    let lock_file = releases_website_repo.join(config::SITE_LOCK);
+    fs::remove_file(&lock_file)?;
     publish_website(&releases_website_repo)?;
 
     Ok(())
