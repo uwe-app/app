@@ -1,3 +1,4 @@
+pub mod bytes;
 pub mod crumbtrail;
 pub mod date;
 pub mod document;

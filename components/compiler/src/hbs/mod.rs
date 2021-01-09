@@ -200,6 +200,7 @@ impl<'reg> ParserBuilder<'reg> {
         helpers.insert("random", Box::new(helpers::random::Random));
         helpers.insert("slug", Box::new(helpers::slug::Slug));
         helpers.insert("date", Box::new(helpers::date::DateFormat));
+        helpers.insert("bytes", Box::new(helpers::bytes::Bytes));
 
         helpers.insert(
             "next",

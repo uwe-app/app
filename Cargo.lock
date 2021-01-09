@@ -404,6 +404,7 @@ dependencies = [
  "frontmatter",
  "futures",
  "futures-util",
+ "human_bytes",
  "livereload",
  "locale",
  "log",
