@@ -30,11 +30,16 @@ fn to_options(
     args.set_defaults();
 
     let project = cfg.project();
-    let source = project.join(&args.source);
 
-    //if args.target.is_absolute() {
-        //return Err(Error::TargetAbsolute(args.target.clone()));
-    //}
+    if args.source.is_absolute() {
+        return Err(Error::SourceAbsolute(args.source.clone()));
+    }
+
+    if args.target.is_absolute() {
+        return Err(Error::TargetAbsolute(args.target.clone()));
+    }
+
+    let source = project.join(&args.source);
 
     let profile_name_path = PathBuf::from(args.name.to_string());
     if profile_name_path.is_absolute() {
@@ -98,22 +103,6 @@ fn to_options(
 
     Ok(opts)
 }
-
-/*
-fn to_profile_name(args: &ProfileSettings) -> ProfileName {
-    let release = args.is_release();
-    let mut target_profile = ProfileName::Debug;
-    if release {
-        target_profile = ProfileName::Release;
-    }
-    if let Some(t) = &args.profile {
-        if !t.is_empty() {
-            target_profile = ProfileName::from(t.to_string());
-        }
-    }
-    target_profile
-}
-*/
 
 // Map a set of paths making them relative to the source, used when
 // paths are defined in the `paths` definition of a profile in the configuration.
@@ -328,7 +317,6 @@ pub(crate) async fn prepare(
 
     // Start with the base `build` profile
     let mut root = cfg.build.as_ref().unwrap().clone();
-
     let profiles = cfg.profile.as_ref().unwrap();
 
     let mut overlay: Option<ProfileSettings> = if let Some(ref profile_name) = args.profile {

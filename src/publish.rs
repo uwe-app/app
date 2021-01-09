@@ -21,6 +21,7 @@ pub struct PublishOptions {
 pub async fn publish(options: PublishOptions) -> Result<()> {
     let mut args = ProfileSettings::new_release();
     args.exec = Some(options.exec);
+
     let result = compile(&options.project, &args).await?;
 
     // FIXME: support multiple projects (workspaces)

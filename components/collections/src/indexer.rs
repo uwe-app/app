@@ -270,7 +270,7 @@ impl DataSourceMap {
             if let Some(ref sources) = db.load {
                 for (k, v) in sources {
                     let from = if v.from.is_some() {
-                        v.from.as_ref().unwrap().clone()
+                        options.source.join(v.from.as_ref().unwrap())
                     } else {
                         options.source.clone()
                     };

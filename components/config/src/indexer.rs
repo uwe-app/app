@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
 
 use globset::Glob;
 
-use crate::Result;
+use crate::{Error, Result};
 
 static DEFAULT_PARAMETER: &str = "result";
 
@@ -50,18 +50,17 @@ pub struct DataBase {
 }
 
 impl DataBase {
-    pub(crate) fn prepare<P: AsRef<Path>>(&mut self, source: P) {
-        if let Some(collators) = self.load.as_mut() {
+    pub(crate) fn prepare(&self) -> Result<()> {
+        if let Some(ref collators) = self.load {
             for (_, v) in collators {
                 if let Some(ref from) = v.from {
-                    if from.is_relative() {
-                        v.from = Some(source.as_ref().to_path_buf().join(from));
-                    } else {
-                        // FIXME: throw an error if from is absolute!!!
+                    if from.is_absolute() {
+                        return Err(Error::FromAbsolute(from.to_path_buf()))
                     }
                 }
             }
         }
+        Ok(())
     }
 }
 

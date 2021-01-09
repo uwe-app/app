@@ -26,6 +26,9 @@ pub enum Error {
     #[error("Hook requires the file {0}")]
     NoHookFile(PathBuf),
 
+    #[error("Collections `from` path {0} may not be absolute")]
+    FromAbsolute(PathBuf),
+
     #[error(
         "Dependency {0} wants the feature {1} but the feature is not available"
     )]

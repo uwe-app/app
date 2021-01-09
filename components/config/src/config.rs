@@ -470,7 +470,7 @@ impl Config {
     pub fn load_config<P: AsRef<Path>>(p: P) -> Result<Self, Error> {
         let file = p.as_ref();
         debug!("load {:?}", p.as_ref().display());
-        if let Some(base) = file.parent() {
+        //if let Some(base) = file.parent() {
             if file.exists() && file.is_file() {
                 let content = utils::fs::read_string(file)?;
                 let mut cfg: Config = toml::from_str(&content)?;
@@ -494,13 +494,7 @@ impl Config {
 
                 // Ensure source and target paths are relative
                 // to the base
-                let mut build = cfg.build.as_mut().unwrap();
-                if build.source.is_relative() {
-                    build.source = base.to_path_buf().join(&build.source);
-                }
-                if build.target.is_relative() {
-                    build.target = base.to_path_buf().join(&build.target);
-                }
+                let build = cfg.build.as_mut().unwrap();
 
                 if let Some(deps) = cfg.dependencies.take() {
                     cfg.dependencies_map = Some(deps.try_into()?);
@@ -512,8 +506,8 @@ impl Config {
                 if let Some(date) = cfg.date.as_mut() {
                     date.prepare();
                 }
-                if let Some(db) = cfg.db.as_mut() {
-                    db.prepare(&build.source);
+                if let Some(ref db) = cfg.db {
+                    db.prepare()?;
                 }
                 if let Some(search) = cfg.search.as_mut() {
                     search.prepare();
@@ -533,7 +527,7 @@ impl Config {
 
                 return Ok(cfg);
             }
-        }
+        //}
         return Ok(Default::default());
     }
 
