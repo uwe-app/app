@@ -2,6 +2,7 @@ pub mod bytes;
 pub mod crumbtrail;
 pub mod date;
 pub mod document;
+pub mod file_meta;
 pub mod import;
 pub mod include;
 pub mod link;

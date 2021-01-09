@@ -197,6 +197,12 @@ impl<'reg> ParserBuilder<'reg> {
                 context: Arc::clone(&self.context),
             }),
         );
+        helpers.insert(
+            "file-size",
+            Box::new(helpers::file_meta::Size {
+                context: Arc::clone(&self.context),
+            }),
+        );
         helpers.insert("random", Box::new(helpers::random::Random));
         helpers.insert("slug", Box::new(helpers::slug::Slug));
         helpers.insert("date", Box::new(helpers::date::DateFormat));

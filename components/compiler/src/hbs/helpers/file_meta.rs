@@ -2,15 +2,15 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
-use serde_json::json;
+use serde_json::{Value, Number};
 
 use crate::BuildContext;
 
-pub struct Include {
+pub struct Size {
     pub context: Arc<BuildContext>,
 }
 
-impl Helper for Include {
+impl Helper for Size {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
@@ -21,28 +21,7 @@ impl Helper for Include {
         ctx.arity(1..1)?;
 
         let base_path = rc.current_name();
-
-        // Read file as binary content not UTF-8 string
-        let binary = ctx
-            .param("binary")
-            .or(Some(&json!(false)))
-            .and_then(|v| v.as_bool())
-            .ok_or(HelperError::new(
-                "Type error for `include` helper, hash parameter `binary` must be a boolean",
-            ))?;
-
-        // Encode content as URL safe base64 suitable for data: URIs
-        let base64 = ctx
-            .param("base64")
-            .or(Some(&json!(false)))
-            .and_then(|v| v.as_bool())
-            .ok_or(HelperError::new(
-                "Type error for `include` helper, hash parameter `base64` must be a boolean",
-            ))?;
-
-        // TODO: support embedding only certain lines only
         let mut buf = Path::new(base_path).to_path_buf();
-
         let source = self.context.options.source.canonicalize()?.to_path_buf();
 
         // NOTE: this allows quoted strings and raw paths
@@ -71,7 +50,7 @@ impl Helper for Include {
 
             if !buf.exists() || !buf.is_file() {
                 return Err(HelperError::new(format!(
-                    "Error in `include`, {} does not exist or is not a file",
+                    "Error in `file-size`, {} does not exist or is not a file",
                     buf.display()
                 )));
             }
@@ -80,35 +59,14 @@ impl Helper for Include {
 
             if !buf.starts_with(&source) {
                 return Err(HelperError::new(format!(
-                    "Error in `include`, file {} is not allowed because it is outside of the source directory {}",
+                    "Error in `file-size`, file {} is not allowed because it is outside of the source directory {}",
                     buf.display(),
                     source.display(),
                 )));
             }
 
-            if binary {
-                let result = std::fs::read(&buf)?;
-                if base64 {
-                    let encoded = base64::encode(result);
-                    rc.write(&encoded)?;
-                } else {
-                    rc.out().write(&result)?;
-                }
-            } else {
-                let mut result =
-                    utils::fs::read_string(&buf).map_err(|_| {
-                        HelperError::new(format!(
-                            "Failed to read from include file: {}",
-                            buf.display()
-                        ))
-                    })?;
-
-                if base64 {
-                    result = base64::encode(result);
-                }
-
-                rc.write(&result)?;
-            }
+            let meta = std::fs::metadata(&buf)?;
+            return Ok(Some(Value::Number(Number::from(meta.len()))));
         }
 
         Ok(None)
