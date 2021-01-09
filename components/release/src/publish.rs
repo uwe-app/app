@@ -166,8 +166,6 @@ pub async fn publish(
     let releases_repo = releases::local_releases(&manifest)?;
     let releases_file = releases::local_manifest_file(&manifest)?;
 
-    let releases_website_manifest = PathBuf::from("../sites/releases/site/collections/releases/manifest.json");
-
     let mut releases = releases::load(&releases_file)?;
     let release_version = ReleaseVersion::from(&semver);
     if releases.versions.contains_key(&release_version) {
@@ -221,6 +219,23 @@ pub async fn publish(
     info!("Save {}", releases_file.display());
     releases::save(&releases_file, &releases)?;
 
+    // Commit and push the release manifest
+    let repo = scm::open(&releases_repo)?;
+    info!("Commit releases manifest {}", releases_file.display());
+    scm::commit_file(&repo, Path::new(releases::MANIFEST_JSON), "Update release manifest.")?;
+    info!("Push {}", releases_repo.display());
+    scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
+
+    update_website(&releases_file)?;
+
+    Ok(())
+}
+
+fn update_website(releases_file: &PathBuf) -> Result<()> {
+    let manifest_file = Path::new("site/collections/releases/manifest.json");
+    let releases_website_repo = PathBuf::from("../sites/releases");
+    let releases_website_manifest = releases_website_repo.join(&manifest_file);
+
     // Copy the release manifest to the website source for 
     // the releases.uwe.app website
     if let Some(parent) = releases_website_manifest.parent() {
@@ -231,11 +246,26 @@ pub async fn publish(
     std::fs::copy(&releases_file, &releases_website_manifest)?;
 
     // Commit and push the release manifest
-    let repo = scm::open(&releases_repo)?;
-    info!("Commit releases manifest {}", releases_file.display());
-    scm::commit_file(&repo, Path::new(releases::MANIFEST_JSON), "Update release manifest.")?;
-    info!("Push {}", releases_repo.display());
+    let repo = scm::open(&releases_website_repo)?;
+    info!("Commit manifest for releases website {}", releases_website_manifest.display());
+    scm::commit_file(&repo, manifest_file, "Update release manifest.")?;
+    info!("Push {}", releases_website_repo.display());
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
+    // Compile and publish the website
+    publish_website(&releases_website_repo)?;
+
+    Ok(())
+}
+
+fn publish_website(repo: &PathBuf) -> Result<()> {
+    let repo_path = repo.to_string_lossy().into_owned().to_string();
+    let cwd = std::env::current_dir()?;
+    let mut command = Command::new("cargo");
+    let args = vec!["run", "--bin=uwe", "--", "publish", "production", &repo_path];
+    command.current_dir(cwd).args(args);
+    command.stdout(Stdio::inherit());
+    command.stderr(Stdio::inherit());
+    command.output()?;
     Ok(())
 }
