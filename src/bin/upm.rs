@@ -23,6 +23,9 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+    /// Update the local plugin registry cache.
+    Update {},
+
     /// Lint a plugin.
     Lint {
         /// Print the computed plugin information.
@@ -48,6 +51,7 @@ enum Command {
     },
     /// Remove all cached plugins.
     Clean {},
+
 }
 
 async fn run(cmd: Command) -> Result<()> {
@@ -68,6 +72,10 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Clean {} => {
             uwe::plugin::clean().await.map_err(Error::from)?;
+        }
+
+        Command::Update {} => {
+            uwe::plugin::update().await.map_err(Error::from)?;
         }
     }
     Ok(())

@@ -6,6 +6,13 @@ use log::{debug, info};
 
 use crate::{Error, Result};
 
+/// Update the plugin registry cache
+pub async fn update() -> Result<()> {
+    scm::system_repo::fetch_registry().await?;
+    info!("Update complete ✓");
+    Ok(())
+}
+
 /// Lint a plugin.
 pub async fn lint(path: PathBuf, inspect: bool) -> Result<()> {
     let plugin = plugin::lint(path).await?;

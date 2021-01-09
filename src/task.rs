@@ -23,17 +23,7 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::Alias { cmd } => {
             alias::run(cmd).await?;
         }
-        Task::UpdateRegistry {} => {
-            update_registry().await?;
-        } 
     }
-    Ok(())
-}
-
-/// Update the plugin registry cache
-pub async fn update_registry() -> Result<()> {
-    scm::system_repo::fetch_registry().await?;
-    info!("Update complete ✓");
     Ok(())
 }
 
