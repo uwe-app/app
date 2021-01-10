@@ -2,10 +2,12 @@ extern crate log;
 extern crate pretty_env_logger;
 
 use std::path::PathBuf;
+use std::ffi::OsStr;
 
 use structopt::StructOpt;
 use semver::Version;
 use log::info;
+use url::Url;
 
 use uwe::{self, opts::fatal, Error, Result, plugin::InstallSpec};
 
@@ -17,9 +19,37 @@ fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, Error> {
 
 fn parse_install_spec(src: &str) -> std::result::Result<InstallSpec, Error> {
 
-    // TODO: support all InstallSpec variants!!!!
-    let plugin_spec = src.parse::<ExactPluginSpec>()?;
-    Ok(InstallSpec::Plugin(plugin_spec))
+    // Treat as a git url
+    let repo_url: Option<Url> = if let Ok(url) = src.parse::<Url>() {
+        if url.has_authority() {
+            Some(url)
+        } else { None }
+    } else { None };
+
+    if let Some(url) = repo_url {
+        Ok(InstallSpec::Repo(url))
+    } else {
+        let path = PathBuf::from(src);
+        let spec: Option<InstallSpec> = if path.exists() && path.is_dir() {
+            Some(InstallSpec::Folder(path))
+        } else {
+            if path.exists() && path.is_file() {
+                if let Some(name) = path.file_name() {
+                    let archive_name = OsStr::new(config::PACKAGE_NAME);
+                    if name == archive_name {
+                        Some(InstallSpec::Archive(path))
+                    } else { None }
+                } else { None }
+            } else { None }
+        };
+
+        if let Some(spec) = spec {
+            Ok(spec)
+        } else {
+            let plugin_spec = src.parse::<ExactPluginSpec>()?;
+            Ok(InstallSpec::Plugin(plugin_spec))
+        }
+    }
 }
 
 #[derive(Debug, StructOpt)]

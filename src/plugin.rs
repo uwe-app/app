@@ -3,9 +3,18 @@ use std::path::PathBuf;
 
 use human_bytes::human_bytes;
 use log::{debug, info, warn};
+use url::Url;
 
 use config::plugin::{ExactPluginSpec, PluginSpec, dependency::Dependency};
-use plugin::{new_registry, installed, install_registry, installation_dir};
+use plugin::{
+    new_registry,
+    installed,
+    install_registry,
+    install_path,
+    install_repo,
+    install_archive,
+    installation_dir,
+};
 
 use crate::{Error, Result};
 
@@ -13,7 +22,7 @@ use crate::{Error, Result};
 pub enum InstallSpec {
     Folder(PathBuf),
     Archive(PathBuf),
-    //Repo(Url),
+    Repo(Url),
     Plugin(ExactPluginSpec),
 }
 
@@ -23,9 +32,10 @@ pub async fn install(spec: InstallSpec) -> Result<()> {
     let project = std::env::current_dir()?;
     info!("Plugins {}", config::plugins_dir()?.display());
 
+    // TODO: support --force overwriting?
+
     match spec {
         InstallSpec::Plugin(plugin_spec) => {
-
             let dep: Dependency = plugin_spec.into();
             let (plugin, cached) = if let Some(plugin) = installed(&project, &registry, &dep).await? {
                 (plugin, true) 
@@ -36,10 +46,30 @@ pub async fn install(spec: InstallSpec) -> Result<()> {
             if cached {
                 info!("Plugin {}@{} is already installed ✓", plugin.name(), plugin.version());
             } else {
+                debug!("{}", plugin.base().display());
                 info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
             }
         },
-        _ => todo!()
+        InstallSpec::Folder(path) => {
+            let plugin = install_path(&project, &path, None).await?;
+            // TODO: copy files to the install location!
+
+            info!("{}", plugin.base().display());
+            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+        },
+        InstallSpec::Archive(path) => {
+            // TODO: install to a standard location!
+
+            let plugin = install_archive(&project, &path).await?;
+            debug!("{}", plugin.base().display());
+            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+        },
+        InstallSpec::Repo(url) => {
+            println!("Install from repository {:?}", &url);
+            let plugin = install_repo(&project, &url).await?;
+            debug!("{}", plugin.base().display());
+            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+        },
     }
     Ok(())
 }

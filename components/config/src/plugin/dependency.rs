@@ -8,6 +8,7 @@ use globset::{Glob, GlobMatcher};
 use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
+use url::Url;
 
 use crate::{Error, Result};
 
@@ -196,6 +197,7 @@ impl DependencyMap {
     }
 }
 
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum DependencyTarget {
@@ -204,7 +206,10 @@ pub enum DependencyTarget {
     /// Load plugin from a compressed archive.
     Archive { archive: PathBuf },
     /// Load plugin from a git repository.
-    Repo { git: String },
+    Repo {
+        #[serde_as(as = "DisplayFromStr")]
+        git: Url
+    },
     /// Load plugin from a local scope.
     Local { scope: String },
 }

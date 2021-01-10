@@ -94,7 +94,7 @@ async fn install_file<P: AsRef<Path>, F: AsRef<Path>>(
 
 /// Install a plugin from a file system path and compute the
 /// plugin data.
-pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
+pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
     path: F,
     source: Option<PluginSource>,
@@ -120,7 +120,7 @@ pub(crate) async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
 ///
 /// No expected digest is available so this method should be treated with caution
 /// and only used with packages created using the `plugin pack` command.
-pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
+pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
     path: F,
 ) -> Result<Plugin> {
@@ -163,12 +163,10 @@ pub(crate) async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
     Ok(plugin)
 }
 
-pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
+pub async fn install_repo<P: AsRef<Path>>(
     project: P,
-    scm: S,
+    scm_url: &Url,
 ) -> Result<Plugin> {
-    let scm_url: Url = scm.as_ref().parse().map_err(|e| Error::GitUrl(e))?;
-
     // TODO: ensure the plugin source is "scm+file" scheme
 
     let scheme = scm_url.scheme();
@@ -205,7 +203,7 @@ pub(crate) async fn install_repo<P: AsRef<Path>, S: AsRef<str>>(
         scm::clone(&scm_url, &scm_target)?
     };
 
-    let source = Some(PluginSource::Repo(scm_url));
+    let source = Some(PluginSource::Repo(scm_url.clone()));
     return install_path(project, &scm_target, source).await;
 }
 
