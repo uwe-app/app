@@ -16,6 +16,7 @@ use crate::{Error, Registry, Result};
 pub trait RegistryAccess {
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
     async fn spec(&self, spec: &PluginSpec) -> Result<Option<RegistryItem>>;
+    async fn find(&self, spec: &PluginSpec) -> Result<Vec<RegistryItem>>;
 
     /// Find all the plugins whose fully qualified name starts with the needle.
     async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>>;
@@ -80,6 +81,15 @@ impl RegistryAccess for RegistryFileAccess {
             }
         }
         Ok(None)
+    }
+
+    async fn find(&self, spec: &PluginSpec) -> Result<Vec<RegistryItem>> {
+        let name = spec.name();
+        let range = spec.range();
+        if let Some(entry) = self.entry(name).await? {
+            return Ok(entry.all(range))
+        }
+        Ok(vec![])
     }
 
     async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>> {

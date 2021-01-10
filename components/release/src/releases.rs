@@ -1,13 +1,12 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use std::cmp::Ordering;
-use std::str::FromStr;
 use std::fmt;
 
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize, Serializer, Deserializer};
 use serde_with::{serde_as, DisplayFromStr};
+use config::plugin::VersionKey;
 
 use crate::Result;
 
@@ -81,7 +80,7 @@ pub fn shim_map() -> HashMap<String, String> {
 
 #[derive(Debug, Clone)]
 pub struct Releases {
-    pub(crate) versions: BTreeMap<ReleaseVersion, ReleaseInfo>,
+    pub(crate) versions: BTreeMap<VersionKey, ReleaseInfo>,
 }
 
 impl From<ReleaseManifest> for Releases {
@@ -89,13 +88,13 @@ impl From<ReleaseManifest> for Releases {
         let mut versions = BTreeMap::new();
         if let Some(mut info) = manifest.latest {
             let semver = info.version.take().unwrap();
-            versions.insert(ReleaseVersion::from(semver), info);
+            versions.insert(VersionKey::from(semver), info);
         }
         manifest.versions
             .into_iter()
             .for_each(|mut info| {
                 let semver = info.version.take().unwrap();
-                versions.insert(ReleaseVersion::from(semver), info);
+                versions.insert(VersionKey::from(semver), info);
             });
         Releases {versions}
     }
@@ -113,7 +112,7 @@ impl Releases {
     }
 
     pub fn contains(&self, version: &Version) -> bool {
-        let release_version = ReleaseVersion::from(version);
+        let release_version = VersionKey::from(version);
         self.versions.contains_key(&release_version)
     }
 
@@ -130,80 +129,6 @@ impl Releases {
     }
 }
 
-
-/// Wrapper for the version so we order releases in the 
-/// reverse direction with the latest as the first element.
-///
-/// This is required because the generated manifest is used 
-/// as a collections data source for the releases.uwe.app 
-/// website and we want to show the most recent release first.
-#[derive(Debug, Clone, Eq)]
-pub struct ReleaseVersion {
-    version: Version,
-}
-
-impl FromStr for ReleaseVersion {
-    type Err = crate::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let version: Version = s.parse()?;
-        Ok(ReleaseVersion{ version })
-    }
-}
-
-impl ReleaseVersion {
-    pub fn semver(&self) -> &Version {
-        &self.version 
-    }
-}
-
-impl fmt::Display for ReleaseVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.version)
-    }
-}
-
-impl From<&Version> for ReleaseVersion {
-    fn from(version: &Version) -> Self {
-        Self {version: version.clone()}
-    }
-}
-
-impl From<Version> for ReleaseVersion {
-    fn from(version: Version) -> Self {
-        Self {version}
-    }
-}
-
-impl Into<Version> for ReleaseVersion {
-    fn into(self) -> Version {
-        self.version
-    }
-}
-
-/// Invert the ordering for versions.
-impl Ord for ReleaseVersion {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if self.version == other.version {
-            Ordering::Equal
-        } else if self.version < other.version {
-            Ordering::Greater
-        } else {
-            Ordering::Less
-        }
-    }
-}
-
-impl PartialOrd for ReleaseVersion {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for ReleaseVersion {
-    fn eq(&self, other: &Self) -> bool {
-        self.version == other.version
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]

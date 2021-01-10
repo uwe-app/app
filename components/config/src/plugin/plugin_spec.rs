@@ -26,6 +26,15 @@ impl fmt::Display for PluginSpec {
     }
 }
 
+impl fmt::Debug for PluginSpec {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PluginSpec")
+         .field("name", &self.name)
+         .field("range", &self.range)
+         .finish()
+    }
+}
+
 impl From<String> for PluginSpec {
     fn from(name: String) -> Self {
         Self {name, range: VersionReq::any()} 

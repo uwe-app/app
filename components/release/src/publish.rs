@@ -9,9 +9,11 @@ use semver::Version;
 
 use crate::{
     checksum,
-    releases::{self, ReleaseVersion, ReleaseInfo, ExecutableTargets, ExecutableArtifact},
+    releases::{self, ReleaseInfo, ExecutableTargets, ExecutableArtifact},
     Error, Result,
 };
+
+use config::plugin::VersionKey;
 
 /// WARN: Assumes we are building on linux!
 
@@ -167,7 +169,7 @@ pub async fn publish(
     let releases_file = releases::local_manifest_file(&manifest)?;
 
     let mut releases = releases::load(&releases_file)?;
-    let release_version = ReleaseVersion::from(&semver);
+    let release_version = VersionKey::from(&semver);
     if releases.versions.contains_key(&release_version) {
         if !force_overwrite {
             return Err(Error::ReleaseVersionExists(semver.to_string()));

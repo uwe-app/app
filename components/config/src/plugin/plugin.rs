@@ -209,6 +209,14 @@ impl Plugin {
         }
     }
 
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn version(&self) -> &Version {
+        &self.version
+    }
+
     pub fn kind(&self) -> &PluginType {
         &self.kind 
     }

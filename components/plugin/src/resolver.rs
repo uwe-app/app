@@ -579,22 +579,22 @@ async fn resolve_version<P: AsRef<Path>>(
 
 fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
     let (s_name, s_version) = match solved {
-        SolvedReference::Plugin(ref plugin) => (&plugin.name, &plugin.version),
+        SolvedReference::Plugin(ref plugin) => (plugin.name(), plugin.version()),
         SolvedReference::Package(ref package) => {
-            (&package.name, &package.version)
+            (package.name(), package.version())
         }
     };
 
     if name != s_name {
         return Err(Error::PluginNameMismatch(
             name.to_string(),
-            s_name.clone(),
+            s_name.to_string(),
         ));
     }
 
     if !dep.version.matches(s_version) {
         return Err(Error::PluginVersionMismatch(
-            s_name.clone(),
+            s_name.to_string(),
             s_version.to_string(),
             dep.version.to_string(),
         ));

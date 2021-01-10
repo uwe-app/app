@@ -76,6 +76,9 @@ pub enum Error {
     StripPrefix(#[from] std::path::StripPrefixError),
 
     #[error(transparent)]
+    Semver(#[from] semver::SemVerError),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]

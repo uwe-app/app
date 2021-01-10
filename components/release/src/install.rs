@@ -2,9 +2,11 @@ use log::{info, warn};
 use semver::{Version, VersionReq};
 
 use crate::{
-    binary, download, releases::{self, ReleaseVersion}, verify, version, Error,
+    binary, download, releases, verify, version, Error,
     Result,
 };
+
+use config::plugin::VersionKey;
 
 /// Install a version and select it so it is the current version.
 pub async fn select(name: &str, version: String) -> Result<()> {
@@ -64,7 +66,7 @@ pub(crate) async fn fetch(
     let (version, info) = if let Some(ref request) = version {
         let info = releases
             .versions
-            .get(&ReleaseVersion::from(request))
+            .get(&VersionKey::from(request))
             .ok_or_else(|| Error::VersionNotFound(request.to_string()))?;
         (request, info)
     } else {

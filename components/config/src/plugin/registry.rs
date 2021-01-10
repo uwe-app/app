@@ -11,6 +11,8 @@ use crate::{
     plugin::{Plugin, PluginMap},
 };
 
+// FIXME: use a technique like ReleaseVersion to order correctly!
+
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RegistryEntry {
@@ -33,6 +35,16 @@ impl RegistryEntry {
         None
     }
 
+    pub fn all(&self, req: &VersionReq) -> Vec<RegistryItem> {
+        let mut out = Vec::new();
+        for (v, item) in self.versions.iter() {
+            if req.matches(v) {
+                out.push(item.clone())
+            }
+        }
+        out
+    }
+
     pub fn latest(&self) -> Option<(&Version, &RegistryItem)> {
         let mut it = self.versions.iter().rev();
         it.next()
@@ -44,10 +56,10 @@ impl RegistryEntry {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct RegistryItem {
-    pub name: String,
+    name: String,
 
     #[serde_as(as = "DisplayFromStr")]
-    pub version: Version,
+    version: Version,
 
     /// Checksum for the compressed archive.
     pub digest: String,
@@ -80,6 +92,15 @@ impl Default for RegistryItem {
 }
 
 impl RegistryItem {
+
+    pub fn name(&self) -> &str {
+        &self.name 
+    }
+
+    pub fn version(&self) -> &Version {
+        &self.version
+    }
+
     pub fn dependencies(&self) -> &DependencyMap {
         &self.dependencies
     }

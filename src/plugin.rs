@@ -4,7 +4,32 @@ use std::path::PathBuf;
 use human_bytes::human_bytes;
 use log::{debug, info};
 
+use config::plugin::PluginSpec;
+use plugin::{new_registry, installation_dir};
+
 use crate::{Error, Result};
+
+/// Remove an installed plugin.
+pub async fn remove(spec: PluginSpec) -> Result<()> {
+    let registry = new_registry()?;
+    let results = registry.find(&spec).await?;
+    info!("Plugins {}", config::plugins_dir()?.display());
+
+    if results.is_empty() {
+        info!("No installed plugins found matching {}", &spec);
+    } else {
+        for item in results {
+            let dir = installation_dir(item.name(), item.version())?;
+            if dir.exists() && dir.is_dir() {
+                info!("Remove {}@{}", item.name(), item.version());
+                fs::remove_dir_all(&dir)?;
+                info!("Deleted {} ✓", dir.display());
+            }
+        }
+    }
+
+    Ok(())
+}
 
 /// Update the plugin registry cache
 pub async fn update() -> Result<()> {

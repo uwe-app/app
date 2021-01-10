@@ -9,6 +9,12 @@ use log::info;
 
 use uwe::{self, opts::fatal, Error, Result};
 
+use config::plugin::PluginSpec;
+
+fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, config::Error> {
+    src.parse::<PluginSpec>()
+}
+
 #[derive(Debug, StructOpt)]
 /// Universal (web editor) plugin manager
 #[structopt(name = "upm")]
@@ -23,34 +29,43 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    /// Update the local plugin registry cache.
+    /// Update the local plugin registry
     Update {},
 
-    /// Lint a plugin.
+    /// Lint a plugin
     Lint {
-        /// Print the computed plugin information.
+        /// Print the computed plugin information
         #[structopt(short, long)]
         inspect: bool,
 
-        /// Plugin folder.
+        /// Plugin folder
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
-    /// Package a plugin.
+    /// Package a plugin
     Pack {
-        /// Plugin folder.
+        /// Plugin folder
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
-    /// Publish a plugin.
+
+    /// Publish a plugin
     #[structopt(alias = "pub")]
     Publish {
         /// Plugin folder.
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
-    /// Remove all cached plugins.
+
+    /// Delete all installed plugins
     Clean {},
+
+    /// Remove an installed plugin
+    #[structopt(alias = "rm")]
+    Remove {
+        #[structopt(parse(try_from_str = parse_plugin_spec))]
+        spec: PluginSpec,
+    },
 
 }
 
@@ -76,6 +91,10 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Update {} => {
             uwe::plugin::update().await.map_err(Error::from)?;
+        }
+
+        Command::Remove { spec } => {
+            uwe::plugin::remove(spec).await.map_err(Error::from)?;
         }
     }
     Ok(())

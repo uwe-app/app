@@ -2,7 +2,9 @@ use log::debug;
 
 use semver::Version;
 
-use crate::{checksum, releases::{self, ReleaseVersion}, Error, Result};
+use crate::{checksum, releases, Error, Result};
+
+use config::plugin::VersionKey;
 
 /// Verify the checksums for a version.
 pub(crate) fn test(
@@ -21,7 +23,7 @@ pub(crate) fn test(
         ));
     }
 
-    let release_version = ReleaseVersion::from(version);
+    let release_version = VersionKey::from(version);
 
     let info = releases
         .versions
