@@ -7,12 +7,19 @@ use structopt::StructOpt;
 use semver::Version;
 use log::info;
 
-use uwe::{self, opts::fatal, Error, Result};
+use uwe::{self, opts::fatal, Error, Result, plugin::InstallSpec};
 
-use config::plugin::PluginSpec;
+use config::plugin::{ExactPluginSpec, PluginSpec};
 
-fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, config::Error> {
-    src.parse::<PluginSpec>()
+fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, Error> {
+    src.parse::<PluginSpec>().map_err(Error::from)
+}
+
+fn parse_install_spec(src: &str) -> std::result::Result<InstallSpec, Error> {
+
+    // TODO: support all InstallSpec variants!!!!
+    let plugin_spec = src.parse::<ExactPluginSpec>()?;
+    Ok(InstallSpec::Plugin(plugin_spec))
 }
 
 #[derive(Debug, StructOpt)]
@@ -64,9 +71,15 @@ enum Command {
     #[structopt(alias = "rm")]
     Remove {
         #[structopt(parse(try_from_str = parse_plugin_spec))]
-        spec: PluginSpec,
+        target: PluginSpec,
     },
 
+    /// Install a plugin
+    #[structopt(alias = "i")]
+    Install {
+        #[structopt(parse(try_from_str = parse_install_spec))]
+        target: InstallSpec,
+    },
 }
 
 async fn run(cmd: Command) -> Result<()> {
@@ -93,8 +106,12 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::update().await.map_err(Error::from)?;
         }
 
-        Command::Remove { spec } => {
-            uwe::plugin::remove(spec).await.map_err(Error::from)?;
+        Command::Remove { target } => {
+            uwe::plugin::remove(target).await.map_err(Error::from)?;
+        }
+
+        Command::Install { target } => {
+            uwe::plugin::install(target).await.map_err(Error::from)?;
         }
     }
     Ok(())

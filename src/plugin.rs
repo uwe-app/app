@@ -2,12 +2,47 @@ use std::fs;
 use std::path::PathBuf;
 
 use human_bytes::human_bytes;
-use log::{debug, info};
+use log::{debug, info, warn};
 
-use config::plugin::PluginSpec;
-use plugin::{new_registry, installation_dir};
+use config::plugin::{ExactPluginSpec, PluginSpec, dependency::Dependency};
+use plugin::{new_registry, installed, install_registry, installation_dir};
 
 use crate::{Error, Result};
+
+#[derive(Debug)]
+pub enum InstallSpec {
+    Folder(PathBuf),
+    Archive(PathBuf),
+    //Repo(Url),
+    Plugin(ExactPluginSpec),
+}
+
+/// Install a plugin.
+pub async fn install(spec: InstallSpec) -> Result<()> {
+    let registry = new_registry()?;
+    let project = std::env::current_dir()?;
+    info!("Plugins {}", config::plugins_dir()?.display());
+
+    match spec {
+        InstallSpec::Plugin(plugin_spec) => {
+
+            let dep: Dependency = plugin_spec.into();
+            let (plugin, cached) = if let Some(plugin) = installed(&project, &registry, &dep).await? {
+                (plugin, true) 
+            } else {
+                (install_registry(&project, &registry, &dep).await?, false)
+            };
+
+            if cached {
+                info!("Plugin {}@{} is already installed ✓", plugin.name(), plugin.version());
+            } else {
+                info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+            }
+        },
+        _ => todo!()
+    }
+    Ok(())
+}
 
 /// Remove an installed plugin.
 pub async fn remove(spec: PluginSpec) -> Result<()> {
@@ -24,6 +59,8 @@ pub async fn remove(spec: PluginSpec) -> Result<()> {
                 info!("Remove {}@{}", item.name(), item.version());
                 fs::remove_dir_all(&dir)?;
                 info!("Deleted {} ✓", dir.display());
+            } else {
+                warn!("Plugin {}@{} is not installed!", item.name(), item.version());
             }
         }
     }

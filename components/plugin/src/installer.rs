@@ -262,7 +262,7 @@ pub(crate) async fn resolve_package(
     Ok((version.clone(), package.clone()))
 }
 
-pub(crate) async fn get_cached<P: AsRef<Path>>(
+pub async fn installed<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
@@ -330,7 +330,7 @@ pub async fn install_registry<P: AsRef<Path>>(
         resolve_package(registry, name, &dep.version).await?;
 
     let extract_target = installation_dir(name, &version)?;
-    if let Some(plugin) = get_cached(project, registry, dep).await?.take() {
+    if let Some(plugin) = installed(project, registry, dep).await?.take() {
         return Ok(plugin);
     }
 

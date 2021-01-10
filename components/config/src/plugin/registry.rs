@@ -82,7 +82,7 @@ impl Default for RegistryItem {
     fn default() -> Self {
         Self {
             name: String::new(),
-            version: "0.0.0".parse().unwrap(),
+            version: Version::new(0,0,0),
             digest: String::new(),
             dependencies: Default::default(),
             plugins: Default::default(),

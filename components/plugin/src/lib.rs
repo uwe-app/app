@@ -14,7 +14,7 @@ type Result<T> = std::result::Result<T, error::Error>;
 pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
 pub use error::Error;
-pub use installer::{install_registry, installation_dir};
+pub use installer::{install_registry, installation_dir, installed};
 pub use linter::lint;
 pub use packager::pack;
 pub use registry::{RegistryFileAccess, RegistryAccess, new_registry};

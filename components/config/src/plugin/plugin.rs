@@ -172,11 +172,10 @@ impl fmt::Display for Plugin {
 
 impl Default for Plugin {
     fn default() -> Self {
-        let version: Version = "0.0.0".parse().unwrap();
         Self {
             name: String::new(),
             description: String::new(),
-            version,
+            version: Version::new(0,0,0),
             license: None,
             authors: None,
             keywords: None,

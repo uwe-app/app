@@ -568,7 +568,7 @@ async fn resolve_version<P: AsRef<Path>>(
 
         // Resolve a cached plugin if possible
         if let Some(plugin) =
-            installer::get_cached(project, registry, dep).await?.take()
+            installer::installed(project, registry, dep).await?.take()
         {
             return Ok((version, Some(package), Some(plugin)));
         }

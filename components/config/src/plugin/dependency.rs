@@ -12,7 +12,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use crate::{Error, Result};
 
 use super::features::{FeatureFlags, FeatureMap};
-use super::plugin_spec::PluginSpec;
+use super::plugin_spec::{ExactPluginSpec, PluginSpec};
 
 static FEATURE_STACK_SIZE: usize = 16;
 
@@ -292,6 +292,23 @@ impl From<PluginSpec> for Dependency {
         Self {
             name: Some(spec.name),
             version: spec.range,
+            apply: None,
+            features: None,
+            optional: None,
+            target: None,
+        } 
+    }
+}
+
+impl From<ExactPluginSpec> for Dependency {
+    fn from(spec: ExactPluginSpec) -> Self {
+        let version = if let Some(ref version) = spec.version {
+            VersionReq::exact(version)
+        } else { VersionReq::any() };
+
+        Self {
+            name: Some(spec.name),
+            version,
             apply: None,
             features: None,
             optional: None,

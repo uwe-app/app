@@ -102,6 +102,7 @@ pub static PLUGIN: &str = "plugin.toml";
 pub static PLUGIN_NS: &str = "::";
 pub static PLUGIN_SPEC: &str = "@";
 pub static PLUGIN_BLUEPRINT_NAMESPACE: &str = "std::blueprint";
+pub static LATEST: &str = "latest";
 
 /// Prefix applied when extracting packages from archives.
 pub static PLUGIN_ARCHIVE_PREFIX: &str = "pkg";
