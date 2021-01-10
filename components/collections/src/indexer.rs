@@ -30,7 +30,7 @@ static DOC: &str = "doc";
 
 static IDENTITY_KEY: &str = "*";
 
-pub fn get_datasource_documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
+pub fn documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
     let mut pth = source.as_ref().to_path_buf();
     pth.push(DOCUMENTS);
     pth

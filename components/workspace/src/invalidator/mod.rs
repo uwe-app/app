@@ -166,15 +166,15 @@ impl Invalidator {
         // NOTE: these files are all optional so we cannot error on
         // NOTE: a call to canonicalize() hence the canonical() helper
 
-        let assets = canonical(options.get_assets_path());
-        let partials = canonical(options.get_partials_path());
-        let includes = canonical(options.get_includes_path());
-        let layouts = canonical(options.get_layouts_path());
+        let assets = canonical(options.assets_path());
+        let partials = canonical(options.partials_path());
+        let includes = canonical(options.includes_path());
+        let layouts = canonical(options.layouts_path());
 
         // FIXME: this does not respect when data sources have a `from` directory configured
-        let generators = canonical(options.get_data_sources_path());
+        let collections = canonical(options.collections_path());
 
-        let generator_paths: Vec<PathBuf> = self
+        let collections_paths: Vec<PathBuf> = self
             .updater
             .collections()
             .map
@@ -225,10 +225,10 @@ impl Invalidator {
                         rule.ignores.insert(path);
                     } else if path.starts_with(&assets) {
                         rule.assets.insert(path);
-                    } else if path.starts_with(&generators) {
-                        for p in &generator_paths {
+                    } else if path.starts_with(&collections) {
+                        for p in &collections_paths {
                             let documents =
-                                collections::get_datasource_documents_path(p);
+                                collections::documents_path(p);
                             if path.starts_with(documents) {
                                 rule.collections.insert(path);
                                 break;

@@ -79,7 +79,7 @@ impl<'reg> ParserBuilder<'reg> {
 
     pub fn partials(mut self) -> Result<Self> {
         // Configure partial directories
-        let templates = self.context.options.get_partials_path();
+        let templates = self.context.options.partials_path();
         if templates.exists() && templates.is_dir() {
             self.registry
                 .read_dir(&templates, self.engine.extension())?;

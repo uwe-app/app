@@ -319,7 +319,7 @@ pub fn add(
     if path.extension() == Some(OsStr::new(template_ext)) {
         add_template(info, config, options, key)
     } else {
-        let is_data_source = key.starts_with(options.get_data_sources_path());
+        let is_data_source = key.starts_with(options.collections_path());
 
         let is_page =
             !is_data_source && path.is_file() && options.is_page(&path);

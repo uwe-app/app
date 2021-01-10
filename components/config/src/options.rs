@@ -163,28 +163,28 @@ impl RuntimeOptions {
         Ok(base)
     }
 
-    pub fn get_assets_path(&self) -> PathBuf {
+    pub fn assets_path(&self) -> PathBuf {
         self.source.join(self.settings.assets.as_ref().unwrap())
     }
 
-    pub fn get_includes_path(&self) -> PathBuf {
+    pub fn includes_path(&self) -> PathBuf {
         self.source.join(self.settings.includes.as_ref().unwrap())
     }
 
-    pub fn get_partials_path(&self) -> PathBuf {
+    pub fn partials_path(&self) -> PathBuf {
         self.source.join(self.settings.partials.as_ref().unwrap())
     }
 
-    pub fn get_layouts_path(&self) -> PathBuf {
+    pub fn layouts_path(&self) -> PathBuf {
         self.source.join(self.settings.layouts.as_ref().unwrap())
     }
 
-    pub fn get_data_sources_path(&self) -> PathBuf {
+    pub fn collections_path(&self) -> PathBuf {
         self.source
-            .join(self.settings.data_sources.as_ref().unwrap())
+            .join(self.settings.collections.as_ref().unwrap())
     }
 
-    pub fn get_locales(&self) -> PathBuf {
+    pub fn locales_path(&self) -> PathBuf {
         self.source.join(self.settings.locales.as_ref().unwrap())
     }
 

@@ -683,16 +683,16 @@ impl CollateInfo {
         options: &RuntimeOptions,
     ) -> ResourceKind {
         let mut kind = ResourceKind::File;
-        if key.starts_with(options.get_assets_path()) {
+        if key.starts_with(options.assets_path()) {
             kind = ResourceKind::Asset;
-        } else if key.starts_with(options.get_partials_path()) {
+        } else if key.starts_with(options.partials_path()) {
             kind = ResourceKind::Partial;
-        } else if key.starts_with(options.get_includes_path()) {
+        } else if key.starts_with(options.includes_path()) {
             kind = ResourceKind::Include;
-        } else if key.starts_with(options.get_locales()) {
+        } else if key.starts_with(options.locales_path()) {
             kind = ResourceKind::Locale;
-        } else if key.starts_with(options.get_data_sources_path()) {
-            kind = ResourceKind::DataSource;
+        } else if key.starts_with(options.collections_path()) {
+            kind = ResourceKind::Collection;
         }
         kind
     }

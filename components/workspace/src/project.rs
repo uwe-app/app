@@ -240,7 +240,7 @@ impl ProjectBuilder {
         debug!("Loading locales...");
 
         self.locales
-            .load(&self.config, self.options.get_locales())?;
+            .load(&self.config, self.options.locales_path())?;
         Ok(self)
     }
 

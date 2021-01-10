@@ -21,8 +21,9 @@ pub enum ResourceKind {
     /// reside in the `includes` directory and are typically used for
     /// code samples etc.
     Include,
-    /// This file is part of a data source directory.
-    DataSource,
+
+    /// This file is part of a collections directory.
+    Collection,
 }
 
 impl Default for ResourceKind {

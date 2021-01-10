@@ -164,7 +164,7 @@ pub struct ProfileSettings {
     pub includes: Option<PathBuf>,
     pub partials: Option<PathBuf>,
     pub layouts: Option<PathBuf>,
-    pub data_sources: Option<PathBuf>,
+    pub collections: Option<PathBuf>,
 
     pub extend: Option<Vec<String>>,
 
@@ -227,7 +227,7 @@ impl Default for ProfileSettings {
             includes: Some(PathBuf::from(config::INCLUDES)),
             partials: Some(PathBuf::from(config::PARTIALS)),
             layouts: Some(PathBuf::from(config::LAYOUTS)),
-            data_sources: Some(PathBuf::from(config::DATASOURCES)),
+            collections: Some(PathBuf::from(config::COLLECTIONS)),
 
             rewrite_index: Some(true),
             extend: None,
@@ -336,8 +336,8 @@ impl ProfileSettings {
         if other.layouts.is_some() {
             self.layouts = mem::take(&mut other.layouts)
         }
-        if other.data_sources.is_some() {
-            self.data_sources = mem::take(&mut other.data_sources)
+        if other.collections.is_some() {
+            self.collections = mem::take(&mut other.collections)
         }
 
         if other.rewrite_index.is_some() {
