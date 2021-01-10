@@ -53,7 +53,7 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     // NOTE: directory is used but the period creates
     // NOTE: problems with the strip prefix logic for
     // NOTE: live reload so this converts it to the
-    // NOTE: empty string.
+    // NOTE: actual current working directory.
     let period = PathBuf::from(".");
     let result = if input == &period {
         cwd.clone()
