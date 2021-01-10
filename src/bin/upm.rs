@@ -67,8 +67,17 @@ enum Command {
     /// Delete all installed plugins
     Clean {},
 
-    /// Remove an installed plugin
-    #[structopt(alias = "rm")]
+    /// Remove installed plugin(s)
+    #[structopt(alias = "rm",
+    after_help = "EXAMPLES:
+    Remove all versions of a plugin: 
+        upm rm std::core
+    Remove a specific version: 
+        upm rm std::core@=4.1.12
+    Remove all versions with major version 4: 
+        upm rm std::core@^4
+"
+        )]
     Remove {
         #[structopt(parse(try_from_str = parse_plugin_spec))]
         target: PluginSpec,
