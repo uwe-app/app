@@ -1,5 +1,6 @@
 mod archive;
 mod compute;
+mod download;
 mod error;
 mod installer;
 mod linter;

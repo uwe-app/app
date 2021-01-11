@@ -12,8 +12,9 @@ static SITES_FILE: &str = "sites.toml";
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 
-static REGISTRY_NAME: &str = "registry";
-static RELEASES_NAME: &str = "releases";
+static REGISTRY: &str = "registry";
+static RELEASES: &str = "releases";
+static DOWNLOADS: &str = "downloads";
 
 pub fn root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();
@@ -68,11 +69,15 @@ pub fn registry_url() -> String {
 }
 
 pub fn releases_dir() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(RELEASES_NAME))
+    Ok(root_dir()?.join(RELEASES))
 }
 
 pub fn registry_dir() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(REGISTRY_NAME))
+    Ok(root_dir()?.join(REGISTRY))
+}
+
+pub fn downloads_dir() -> io::Result<PathBuf> {
+    Ok(registry_dir()?.join(DOWNLOADS))
 }
 
 pub use home::home_dir;

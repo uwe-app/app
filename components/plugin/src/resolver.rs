@@ -584,7 +584,7 @@ async fn resolve_version<P: AsRef<Path>>(
     }
 }
 
-/// Perform some basic checks that a solved refernce 
+/// Perform some basic checks that a solved refernce
 /// matches a source dependency.
 fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
     let (s_name, s_version) = match solved {

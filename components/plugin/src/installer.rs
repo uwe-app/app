@@ -1,14 +1,8 @@
-use std::fs::{self, File};
-use std::io::stderr;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use futures::TryFutureExt;
-use http::StatusCode;
-use human_bytes::human_bytes;
-use log::debug;
-use pbr::{ProgressBar, Units};
 use slug::slugify;
-use tokio::prelude::*;
 use url::Url;
 
 use config::{
@@ -20,13 +14,9 @@ use config::{
 };
 
 use crate::{
-    archive::reader::PackageReader, compute, reader::read, Error, Registry,
-    Result,
+    archive::reader::PackageReader, compute, download, reader::read, Error,
+    Registry, Result,
 };
-
-//static REGISTRY: &str = "https://registry.uwe.app";
-static REGISTRY: &str =
-    "https://s3-ap-southeast-1.amazonaws.com/registry.uwe.app";
 
 static GIT_SCHEME: &str = "scm";
 static FILE_SCHEME: &str = "file";
@@ -288,7 +278,7 @@ pub async fn version_installed<P: AsRef<Path>>(
     if extract_target_plugin.exists() {
         let (target, mut plugin) =
             install_file(project, &extract_target).await?;
-        let source = PluginSource::Registry(REGISTRY.parse()?);
+        let source = PluginSource::Registry(download::REGISTRY.parse()?);
 
         let package = if let Some(package) = package.take() {
             package.clone()
@@ -362,56 +352,13 @@ pub async fn install_registry<P: AsRef<Path>>(
         fs::create_dir(&extract_target)?;
     }
 
-    let download_dir = tempfile::tempdir()?;
-    let file_name = format!("{}.tar.xz", config::PACKAGE);
-    let download_url = format!(
-        "{}/{}/{}/{}.tar.xz",
-        REGISTRY,
-        name,
-        version.to_string(),
-        config::PACKAGE
-    );
-
-    debug!("Download {}", download_url);
-
-    let archive_path = download_dir.path().join(&file_name);
-    let dest = File::create(&archive_path)?;
-
-    let mut response = reqwest::get(&download_url).await?;
-    if response.status() != StatusCode::OK {
-        return Err(Error::RegistryDownloadFail(
-            response.status().to_string(),
-            download_url,
-        ));
-    }
-
-    let len = response.content_length().unwrap_or(0);
-
-    let mut pb = ProgressBar::on(stderr(), len);
-    pb.set_units(Units::Bytes);
-    pb.show_speed = false;
-    let msg = format!(" Fetch {}@{} ", name, version);
-    pb.message(&msg);
-
-    let mut content_file = tokio::fs::File::from_std(dest);
-    while let Some(chunk) = response.chunk().await? {
-        content_file.write_all(&chunk).await?;
-        pb.add(chunk.len() as u64);
-    }
-
-    let msg = format!(
-        " Fetched {}@{} ({})",
-        name,
-        version,
-        human_bytes(len as f64)
-    );
-    pb.finish_print(&msg);
+    let fetch_info = download::get(name, &version).await?;
 
     //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());
     //println!("Downloaded {:?} bytes", File::open(&archive_path)?.metadata()?.len());
 
     let reader = PackageReader::new(
-        archive_path,
+        fetch_info.archive.to_path_buf(),
         Some(hex::decode(&package.digest)?),
         None,
     )
@@ -422,7 +369,7 @@ pub async fn install_registry<P: AsRef<Path>>(
     .await?;
 
     let (_target, _digest, mut plugin) = reader.into_inner();
-    let source = PluginSource::Registry(REGISTRY.parse()?);
+    let source = PluginSource::Registry(download::REGISTRY.parse()?);
     attributes(&mut plugin, &extract_target, source, Some(&package.digest))?;
     Ok(plugin)
 }
