@@ -1,6 +1,4 @@
-use config::{
-    server::{LaunchConfig, ServerConfig}
-};
+use config::server::{LaunchConfig, ServerConfig};
 
 use crate::Result;
 

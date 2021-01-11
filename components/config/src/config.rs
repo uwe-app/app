@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::convert::TryInto;
+use std::path::{Path, PathBuf};
 
 use url::Url;
 
@@ -336,7 +336,6 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn dependencies(&self) -> &Option<DependencyMap> {
         &self.dependencies_map
     }
@@ -473,62 +472,62 @@ impl Config {
         let file = p.as_ref();
         debug!("load {:?}", p.as_ref().display());
         //if let Some(base) = file.parent() {
-            if file.exists() && file.is_file() {
-                let content = utils::fs::read_string(file)?;
-                let mut cfg: Config = toml::from_str(&content)?;
+        if file.exists() && file.is_file() {
+            let content = utils::fs::read_string(file)?;
+            let mut cfg: Config = toml::from_str(&content)?;
 
-                let project = resolve_project(&file);
-                if project.is_none() {
-                    return Err(Error::ProjectResolve(file.to_path_buf()));
-                }
-
-                cfg.project = project.unwrap();
-
-                // Must be a canonical path
-                let path = file.canonicalize()?;
-                cfg.file = path.to_path_buf();
-
-                // Ensure that lang is a valid identifier
-                let lang_id = parse_language(&cfg.lang)?;
-
-                // Ensure the host is a valid Url
-                parse_host(&cfg.host)?;
-
-                // Ensure source and target paths are relative
-                // to the base
-                let build = cfg.build.as_mut().unwrap();
-
-                if let Some(deps) = cfg.dependencies.take() {
-                    cfg.dependencies_map = Some(deps.try_into()?);
-                }
-
-                if let Some(fluent) = cfg.fluent.as_mut() {
-                    fluent.prepare(&cfg.lang, lang_id);
-                }
-                if let Some(date) = cfg.date.as_mut() {
-                    date.prepare();
-                }
-                if let Some(ref db) = cfg.db {
-                    db.prepare()?;
-                }
-                if let Some(search) = cfg.search.as_mut() {
-                    search.prepare();
-                }
-                if let Some(feed) = cfg.feed.as_mut() {
-                    feed.prepare();
-                }
-                if let Some(link) = cfg.link.as_mut() {
-                    link.prepare(&build.source)?;
-                }
-                for (k, v) in cfg.authors.iter_mut() {
-                    v.alias.get_or_insert(k.to_string());
-                }
-                if let Some(menu) = cfg.menu.as_mut() {
-                    menu.prepare();
-                }
-
-                return Ok(cfg);
+            let project = resolve_project(&file);
+            if project.is_none() {
+                return Err(Error::ProjectResolve(file.to_path_buf()));
             }
+
+            cfg.project = project.unwrap();
+
+            // Must be a canonical path
+            let path = file.canonicalize()?;
+            cfg.file = path.to_path_buf();
+
+            // Ensure that lang is a valid identifier
+            let lang_id = parse_language(&cfg.lang)?;
+
+            // Ensure the host is a valid Url
+            parse_host(&cfg.host)?;
+
+            // Ensure source and target paths are relative
+            // to the base
+            let build = cfg.build.as_mut().unwrap();
+
+            if let Some(deps) = cfg.dependencies.take() {
+                cfg.dependencies_map = Some(deps.try_into()?);
+            }
+
+            if let Some(fluent) = cfg.fluent.as_mut() {
+                fluent.prepare(&cfg.lang, lang_id);
+            }
+            if let Some(date) = cfg.date.as_mut() {
+                date.prepare();
+            }
+            if let Some(ref db) = cfg.db {
+                db.prepare()?;
+            }
+            if let Some(search) = cfg.search.as_mut() {
+                search.prepare();
+            }
+            if let Some(feed) = cfg.feed.as_mut() {
+                feed.prepare();
+            }
+            if let Some(link) = cfg.link.as_mut() {
+                link.prepare(&build.source)?;
+            }
+            for (k, v) in cfg.authors.iter_mut() {
+                v.alias.get_or_insert(k.to_string());
+            }
+            if let Some(menu) = cfg.menu.as_mut() {
+                menu.prepare();
+            }
+
+            return Ok(cfg);
+        }
         //}
         return Ok(Default::default());
     }

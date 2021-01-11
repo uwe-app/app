@@ -7,11 +7,10 @@ use spdx::license_id;
 use bracket::{parser::ParserOptions, template::Template};
 
 use config::{
-    Config,
     features::FeatureMap,
     href::UrlPath,
     license::{License, LicenseGroup},
-    Plugin, PluginType, PLUGIN_NS,
+    Config, Plugin, PluginType, PLUGIN_NS,
 };
 
 use utils::walk;
@@ -71,7 +70,7 @@ fn lint_symlinks(plugin: &Plugin) -> Result<(), LintError> {
     let files = walk::find(plugin.base(), |f| {
         if let Ok(file) = f.canonicalize() {
             if file.starts_with(&git) {
-                return false 
+                return false;
             }
         }
         true
@@ -79,7 +78,10 @@ fn lint_symlinks(plugin: &Plugin) -> Result<(), LintError> {
     for f in files {
         if let Ok(abs) = f.canonicalize() {
             if !abs.starts_with(&base) {
-                return Err(LintError::LintSymbolicLink(abs, base.to_path_buf()))
+                return Err(LintError::LintSymbolicLink(
+                    abs,
+                    base.to_path_buf(),
+                ));
             }
         }
     }
@@ -90,7 +92,7 @@ fn lint_symlinks(plugin: &Plugin) -> Result<(), LintError> {
 fn lint_site(plugin: &Plugin) -> Result<(), LintError> {
     lint_common(plugin)?;
     if !plugin.features().is_empty() {
-        return Err(LintError::LintFeaturesSiteType)
+        return Err(LintError::LintFeaturesSiteType);
     }
     let _ = Config::load_config(plugin.base())?;
     Ok(())

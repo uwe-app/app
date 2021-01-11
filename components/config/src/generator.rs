@@ -1,5 +1,5 @@
-use semver::Version;
 use once_cell::sync::OnceCell;
+use semver::Version;
 
 #[derive(Debug)]
 pub struct AppData {

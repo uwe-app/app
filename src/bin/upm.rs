@@ -1,15 +1,15 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::path::PathBuf;
 use std::ffi::OsStr;
+use std::path::PathBuf;
 
-use structopt::StructOpt;
-use semver::Version;
 use log::info;
+use semver::Version;
+use structopt::StructOpt;
 use url::Url;
 
-use uwe::{self, opts::fatal, Error, Result, plugin::InstallSpec};
+use uwe::{self, opts::fatal, plugin::InstallSpec, Error, Result};
 
 use config::plugin::{ExactPluginSpec, PluginSpec};
 
@@ -18,13 +18,16 @@ fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, Error> {
 }
 
 fn parse_install_spec(src: &str) -> std::result::Result<InstallSpec, Error> {
-
     // Treat as a git url
     let repo_url: Option<Url> = if let Ok(url) = src.parse::<Url>() {
         if url.has_authority() {
             Some(url)
-        } else { None }
-    } else { None };
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     if let Some(url) = repo_url {
         Ok(InstallSpec::Repo(url))
@@ -38,9 +41,15 @@ fn parse_install_spec(src: &str) -> std::result::Result<InstallSpec, Error> {
                     let archive_name = OsStr::new(config::PACKAGE_NAME);
                     if name == archive_name {
                         Some(InstallSpec::Archive(path))
-                    } else { None }
-                } else { None }
-            } else { None }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         };
 
         if let Some(spec) = spec {
@@ -98,8 +107,9 @@ enum Command {
     Clean {},
 
     /// Remove installed plugin(s)
-    #[structopt(alias = "rm",
-    after_help = "EXAMPLES:
+    #[structopt(
+        alias = "rm",
+        after_help = "EXAMPLES:
     Remove all versions of a plugin: 
         upm rm std::core
     Remove a specific version: 
@@ -107,7 +117,7 @@ enum Command {
     Remove all versions with major version 4: 
         upm rm std::core@^4
 "
-        )]
+    )]
     Remove {
         #[structopt(parse(try_from_str = parse_plugin_spec))]
         target: PluginSpec,

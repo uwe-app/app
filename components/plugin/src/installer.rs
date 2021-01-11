@@ -260,14 +260,25 @@ pub(crate) async fn resolve_package(
     Ok((version.clone(), package.clone()))
 }
 
-pub async fn installed<P: AsRef<Path>>(
+pub async fn dependency_installed<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Option<Plugin>> {
-    let name = dep.name.as_ref().unwrap();
+    let name = dep.name();
     let (version, package) =
         resolve_package(registry, name, &dep.version).await?;
+    version_installed(project, registry, name, &version, Some(&package)).await
+}
+
+pub async fn version_installed<P: AsRef<Path>>(
+    project: P,
+    registry: &Registry<'_>,
+    name: &str,
+    version: &Version,
+    mut package: Option<&RegistryItem>,
+) -> Result<Option<Plugin>> {
+    //let name = dep.name.as_ref().unwrap();
 
     let extract_target = installation_dir(name, &version)?;
     let extract_target_plugin = extract_target.join(PLUGIN);
@@ -278,6 +289,16 @@ pub async fn installed<P: AsRef<Path>>(
         let (target, mut plugin) =
             install_file(project, &extract_target).await?;
         let source = PluginSource::Registry(REGISTRY.parse()?);
+
+        let package = if let Some(package) = package.take() {
+            package.clone()
+        } else {
+            let (_, package) =
+                resolve_package(registry, name, &VersionReq::exact(version))
+                    .await?;
+            package
+        };
+
         attributes(&mut plugin, &target, source, Some(&package.digest))?;
         return Ok(Some(plugin));
     }
@@ -328,7 +349,10 @@ pub async fn install_registry<P: AsRef<Path>>(
         resolve_package(registry, name, &dep.version).await?;
 
     let extract_target = installation_dir(name, &version)?;
-    if let Some(plugin) = installed(project, registry, dep).await?.take() {
+
+    if let Some(plugin) =
+        dependency_installed(project, registry, dep).await?.take()
+    {
         return Ok(plugin);
     }
 

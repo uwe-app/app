@@ -254,13 +254,19 @@ impl ProjectBuilder {
                     if let Some(plugin) = plugin_cache.find(PLUGIN_SYNTAX) {
                         let syntax_dir = plugin.base();
                         if !syntax_dir.exists() || !syntax_dir.is_dir() {
-                            return Err(Error::NoSyntaxDirectory(syntax_dir.to_path_buf()));
+                            return Err(Error::NoSyntaxDirectory(
+                                syntax_dir.to_path_buf(),
+                            ));
                         }
                     } else {
-                        return Err(Error::NoSyntaxPlugin(PLUGIN_SYNTAX.to_string()));
+                        return Err(Error::NoSyntaxPlugin(
+                            PLUGIN_SYNTAX.to_string(),
+                        ));
                     }
                 } else {
-                    return Err(Error::NoSyntaxPlugin(PLUGIN_SYNTAX.to_string()));
+                    return Err(Error::NoSyntaxPlugin(
+                        PLUGIN_SYNTAX.to_string(),
+                    ));
                 }
             }
         }

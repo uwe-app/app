@@ -1,12 +1,12 @@
 use std::collections::{BTreeMap, HashMap};
+use std::fmt;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use std::fmt;
 
-use semver::{Version, VersionReq};
-use serde::{Deserialize, Serialize, Serializer, Deserializer};
-use serde_with::{serde_as, DisplayFromStr};
 use config::plugin::VersionKey;
+use semver::{Version, VersionReq};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
 
@@ -20,7 +20,8 @@ pub static MACOS: &str = "macos";
 #[cfg(target_os = "windows")]
 pub static WINDOWS: &str = "windows";
 
-pub static PUBLISH_EXE_NAMES: [&str; 5] = ["uwe", "upm", "uvm", "uwe-shim", "upm-shim"];
+pub static PUBLISH_EXE_NAMES: [&str; 5] =
+    ["uwe", "upm", "uvm", "uwe-shim", "upm-shim"];
 pub static INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
 pub static VERSION_EXE_NAMES: [&str; 3] = ["uvm", "uwe-shim", "upm-shim"];
 pub static INSTALL_SHIM_NAMES: [&str; 2] = ["uwe-shim", "upm-shim"];
@@ -40,21 +41,24 @@ pub struct ExecutableArtifact {
     pub(crate) size: u64,
 }
 
-fn to_hex<S>(digest: &Vec<u8>, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where S: Serializer
+fn to_hex<S>(
+    digest: &Vec<u8>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
 {
     serializer.serialize_str(&hex::encode(digest))
 }
 
 fn from_hex<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     use serde::de::Error;
-    String::deserialize(deserializer)
-        .and_then(|string| {
-            hex::decode(&string)
-                .map_err(|err| Error::custom(err.to_string()))
-        })
+    String::deserialize(deserializer).and_then(|string| {
+        hex::decode(&string).map_err(|err| Error::custom(err.to_string()))
+    })
 }
 
 impl ExecutableArtifact {
@@ -70,11 +74,8 @@ impl fmt::Display for ExecutableArtifact {
 }
 
 pub fn shim_map() -> HashMap<String, String> {
-    SHIM
-        .iter()
-        .map(|(s, e)| {
-            (s.to_string(), e.to_string()) 
-        })
+    SHIM.iter()
+        .map(|(s, e)| (s.to_string(), e.to_string()))
         .collect::<HashMap<_, _>>()
 }
 
@@ -90,20 +91,17 @@ impl From<ReleaseManifest> for Releases {
             let semver = info.version.take().unwrap();
             versions.insert(VersionKey::from(semver), info);
         }
-        manifest.versions
-            .into_iter()
-            .for_each(|mut info| {
-                let semver = info.version.take().unwrap();
-                versions.insert(VersionKey::from(semver), info);
-            });
-        Releases {versions}
+        manifest.versions.into_iter().for_each(|mut info| {
+            let semver = info.version.take().unwrap();
+            versions.insert(VersionKey::from(semver), info);
+        });
+        Releases { versions }
     }
 }
 
 impl Releases {
-
     pub fn is_empty(&self) -> bool {
-        self.versions.is_empty() 
+        self.versions.is_empty()
     }
 
     pub fn latest(&self) -> (&Version, &ReleaseInfo) {
@@ -118,17 +116,17 @@ impl Releases {
 
     pub fn filter(self, version: Option<VersionReq>) -> Self {
         if let Some(ref version) = version {
-            let versions = self.versions
+            let versions = self
+                .versions
                 .into_iter()
                 .filter(|(v, _)| version.matches(v.semver()))
                 .collect::<BTreeMap<_, _>>();
 
-            return Releases{ versions }
+            return Releases { versions };
         }
         self
     }
 }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
@@ -145,12 +143,12 @@ impl From<&Releases> for ReleaseManifest {
 
         if let Some((release_version, mut release_info)) = it.next() {
             release_info.version = Some(release_version.into());
-            manifest.latest = Some(release_info); 
+            manifest.latest = Some(release_info);
         }
 
         while let Some((release_version, mut release_info)) = it.next() {
             release_info.version = Some(release_version.into());
-            manifest.versions.push(release_info); 
+            manifest.versions.push(release_info);
         }
 
         manifest
@@ -201,29 +199,19 @@ pub(crate) fn save<P: AsRef<Path>>(
 }
 
 /// Get the path to the local releases repository.
-pub(crate) fn local_releases<P: AsRef<Path>>(
-    base: P,
-) -> Result<PathBuf> {
-    Ok(base
-        .as_ref()
-        .join("..")
-        .join(RELEASES)
-        .canonicalize()?)
+pub(crate) fn local_releases<P: AsRef<Path>>(base: P) -> Result<PathBuf> {
+    Ok(base.as_ref().join("..").join(RELEASES).canonicalize()?)
 }
 
 /// Get the release manifest file in the local releases repository.
-pub(crate) fn local_manifest_file<P: AsRef<Path>>(
-    base: P,
-) -> Result<PathBuf> {
+pub(crate) fn local_manifest_file<P: AsRef<Path>>(base: P) -> Result<PathBuf> {
     Ok(local_releases(base)?.join(MANIFEST_JSON))
 }
 
 /// Get the release manifest file for the installed runtime used
 /// for the install and upgrade processes.
 pub fn runtime_manifest_file() -> Result<PathBuf> {
-    Ok(dirs::releases_dir()?
-        .join(MANIFEST_JSON)
-        .canonicalize()?)
+    Ok(dirs::releases_dir()?.join(MANIFEST_JSON).canonicalize()?)
 }
 
 #[cfg(target_os = "windows")]

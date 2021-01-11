@@ -5,15 +5,10 @@ use human_bytes::human_bytes;
 use log::{debug, info, warn};
 use url::Url;
 
-use config::plugin::{ExactPluginSpec, PluginSpec, dependency::Dependency};
+use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
-    new_registry,
-    installed,
-    install_registry,
-    install_path,
-    install_repo,
-    install_archive,
-    installation_dir,
+    dependency_installed, install_archive, install_path, install_registry,
+    install_repo, installation_dir, new_registry,
 };
 
 use crate::{Error, Result};
@@ -37,39 +32,49 @@ pub async fn install(spec: InstallSpec) -> Result<()> {
     match spec {
         InstallSpec::Plugin(plugin_spec) => {
             let dep: Dependency = plugin_spec.into();
-            let (plugin, cached) = if let Some(plugin) = installed(&project, &registry, &dep).await? {
-                (plugin, true) 
+            let (plugin, cached) = if let Some(plugin) =
+                dependency_installed(&project, &registry, &dep).await?
+            {
+                (plugin, true)
             } else {
                 (install_registry(&project, &registry, &dep).await?, false)
             };
 
             if cached {
-                info!("Plugin {}@{} is already installed ✓", plugin.name(), plugin.version());
+                info!(
+                    "Plugin {}@{} is already installed ✓",
+                    plugin.name(),
+                    plugin.version()
+                );
             } else {
                 debug!("{}", plugin.base().display());
-                info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+                info!(
+                    "Installed plugin {}@{} ✓",
+                    plugin.name(),
+                    plugin.version()
+                );
             }
-        },
+        }
         InstallSpec::Folder(path) => {
             let plugin = install_path(&project, &path, None).await?;
             // TODO: copy files to the install location!
 
             info!("{}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
-        },
+        }
         InstallSpec::Archive(path) => {
             // TODO: install to a standard location!
 
             let plugin = install_archive(&project, &path).await?;
             debug!("{}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
-        },
+        }
         InstallSpec::Repo(url) => {
             println!("Install from repository {:?}", &url);
             let plugin = install_repo(&project, &url).await?;
             debug!("{}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
-        },
+        }
     }
     Ok(())
 }
@@ -90,7 +95,11 @@ pub async fn remove(spec: PluginSpec) -> Result<()> {
                 fs::remove_dir_all(&dir)?;
                 info!("Deleted {} ✓", dir.display());
             } else {
-                warn!("Plugin {}@{} is not installed!", item.name(), item.version());
+                warn!(
+                    "Plugin {}@{} is not installed!",
+                    item.name(),
+                    item.version()
+                );
             }
         }
     }

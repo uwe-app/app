@@ -1,5 +1,5 @@
-use std::fs;
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -9,7 +9,7 @@ use semver::Version;
 
 use crate::{
     checksum,
-    releases::{self, ReleaseInfo, ExecutableTargets, ExecutableArtifact},
+    releases::{self, ExecutableArtifact, ExecutableTargets, ReleaseInfo},
     Error, Result,
 };
 
@@ -197,7 +197,6 @@ pub async fn publish(
             .or_insert(Default::default());
 
         for (name, info) in artifacts.into_iter() {
-
             if !skip_upload {
                 upload(
                     &info.path, &bucket, &region, &profile, &semver, &platform,
@@ -224,7 +223,11 @@ pub async fn publish(
     // Commit and push the release manifest
     let repo = scm::open(&releases_repo)?;
     info!("Commit releases manifest {}", releases_file.display());
-    scm::commit_file(&repo, Path::new(releases::MANIFEST_JSON), "Update release manifest.")?;
+    scm::commit_file(
+        &repo,
+        Path::new(releases::MANIFEST_JSON),
+        "Update release manifest.",
+    )?;
     info!("Push {}", releases_repo.display());
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
@@ -238,7 +241,7 @@ fn update_website(releases_file: &PathBuf) -> Result<()> {
     let releases_website_repo = PathBuf::from("../sites/releases");
     let releases_website_manifest = releases_website_repo.join(&manifest_file);
 
-    // Copy the release manifest to the website source for 
+    // Copy the release manifest to the website source for
     // the releases.uwe.app website
     if let Some(parent) = releases_website_manifest.parent() {
         if !parent.exists() {
@@ -249,7 +252,10 @@ fn update_website(releases_file: &PathBuf) -> Result<()> {
 
     // Commit and push the release manifest
     let repo = scm::open(&releases_website_repo)?;
-    info!("Commit manifest for releases website {}", releases_website_manifest.display());
+    info!(
+        "Commit manifest for releases website {}",
+        releases_website_manifest.display()
+    );
     scm::commit_file(&repo, manifest_file, "Update release manifest.")?;
     info!("Push {}", releases_website_repo.display());
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
@@ -266,7 +272,14 @@ fn publish_website(repo: &PathBuf) -> Result<()> {
     let repo_path = repo.to_string_lossy().into_owned().to_string();
     let cwd = std::env::current_dir()?;
     let mut command = Command::new("cargo");
-    let args = vec!["run", "--bin=uwe", "--", "publish", "production", &repo_path];
+    let args = vec![
+        "run",
+        "--bin=uwe",
+        "--",
+        "publish",
+        "production",
+        &repo_path,
+    ];
     command.current_dir(cwd).args(args);
     command.stdout(Stdio::inherit());
     command.stderr(Stdio::inherit());

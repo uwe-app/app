@@ -30,8 +30,10 @@ pub(crate) fn rename(binaries: &HashMap<String, PathBuf>) -> Result<()> {
     let shims = releases::shim_map();
     for (name, src) in binaries {
         let bin_name = if let Some(shim_dest) = shims.get(name) {
-            shim_dest.to_string() 
-        } else { name.to_string() };
+            shim_dest.to_string()
+        } else {
+            name.to_string()
+        };
 
         let dest = bin_dir.join(&bin_name);
         if dest.exists() {

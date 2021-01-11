@@ -1,14 +1,14 @@
 use std::cmp::Ordering;
-use std::str::FromStr;
 use std::fmt;
+use std::str::FromStr;
 
 use semver::Version;
 
-/// Wrapper for the version so we order releases in the 
+/// Wrapper for the version so we order releases in the
 /// reverse direction with the latest as the first element.
 ///
-/// This is required because the generated manifest is used 
-/// as a collections data source for the releases.uwe.app 
+/// This is required because the generated manifest is used
+/// as a collections data source for the releases.uwe.app
 /// website and we want to show the most recent release first.
 #[derive(Debug, Clone, Eq)]
 pub struct VersionKey {
@@ -19,13 +19,13 @@ impl FromStr for VersionKey {
     type Err = crate::Error;
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let version: Version = s.parse()?;
-        Ok(VersionKey{ version })
+        Ok(VersionKey { version })
     }
 }
 
 impl VersionKey {
     pub fn semver(&self) -> &Version {
-        &self.version 
+        &self.version
     }
 }
 
@@ -37,13 +37,15 @@ impl fmt::Display for VersionKey {
 
 impl From<&Version> for VersionKey {
     fn from(version: &Version) -> Self {
-        Self {version: version.clone()}
+        Self {
+            version: version.clone(),
+        }
     }
 }
 
 impl From<Version> for VersionKey {
     fn from(version: Version) -> Self {
-        Self {version}
+        Self { version }
     }
 }
 
@@ -77,4 +79,3 @@ impl PartialEq for VersionKey {
         self.version == other.version
     }
 }
-

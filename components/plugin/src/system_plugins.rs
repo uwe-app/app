@@ -1,11 +1,11 @@
-//! Helper functions to install plugins that are 
+//! Helper functions to install plugins that are
 //! deeply integrated with the command line tools.
 use config::{
+    plugin::{dependency::Dependency, Plugin, PluginSpec},
     semver::VersionReq,
-    plugin::{Plugin, PluginSpec, dependency::Dependency},
 };
 
-use crate::{new_registry, install_registry, Error, Result};
+use crate::{install_registry, new_registry, Error, Result};
 
 static PLUGIN_DOCS: &str = "std::documentation";
 
@@ -24,7 +24,12 @@ pub async fn install_blueprint(source: &str) -> Result<Plugin> {
     let spec: PluginSpec = if let Ok(spec) = source.parse::<PluginSpec>() {
         spec
     } else {
-        let fqn = format!("{}{}{}", config::PLUGIN_BLUEPRINT_NAMESPACE, config::PLUGIN_NS, source);
+        let fqn = format!(
+            "{}{}{}",
+            config::PLUGIN_BLUEPRINT_NAMESPACE,
+            config::PLUGIN_NS,
+            source
+        );
         PluginSpec::from(fqn)
     };
     Ok(install_plugin(spec).await?)
@@ -33,7 +38,9 @@ pub async fn install_blueprint(source: &str) -> Result<Plugin> {
 pub async fn install_docs(range: Option<String>) -> Result<Plugin> {
     let range = if let Some(range) = range {
         range.parse::<VersionReq>()?
-    } else { VersionReq::any() };
+    } else {
+        VersionReq::any()
+    };
     let spec = PluginSpec::from((PLUGIN_DOCS.to_string(), range));
     Ok(install_plugin(spec).await?)
 }

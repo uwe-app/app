@@ -9,8 +9,8 @@ use url::Url;
 
 use utils::walk;
 
-use config::plugin::PluginType;
 use crate::{Error, Result};
+use config::plugin::PluginType;
 
 static DEFAULT_NAME: &str = "default";
 static DEFAULT_MESSAGE: &str = "Initial files.";
@@ -142,7 +142,7 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
         if let Some(file_name) = f.file_name() {
             let name = file_name.to_string_lossy();
             if REMOVE.contains(&name.as_ref()) {
-                return false
+                return false;
             }
         }
         true
@@ -245,7 +245,8 @@ pub async fn project(options: ProjectOptions) -> Result<()> {
                     write_settings(&target, settings)?;
                 // May be a plugin spec like std::blueprint::default@^1
                 } else {
-                    install_from_blueprint(source, &target, settings, message).await?;
+                    install_from_blueprint(source, &target, settings, message)
+                        .await?;
                 }
             }
             Err(_) => {
@@ -260,14 +261,16 @@ pub async fn project(options: ProjectOptions) -> Result<()> {
                     init_folder(source_dir, &target, settings, message)?;
                 // Otherwise treat as a blueprint name
                 } else {
-                    install_from_blueprint(source, &target, settings, message).await?;
+                    install_from_blueprint(source, &target, settings, message)
+                        .await?;
                 }
             }
         }
 
     // 4) No source specified so we just use the default blueprint.
     } else {
-        install_from_blueprint(DEFAULT_NAME, &target, settings, message).await?;
+        install_from_blueprint(DEFAULT_NAME, &target, settings, message)
+            .await?;
     };
 
     if let Some(ref url) = options.remote_url {
@@ -283,8 +286,8 @@ async fn install_from_blueprint(
     source: &str,
     target: &PathBuf,
     settings: InitSettings,
-    message: &str) -> Result<()> {
-
+    message: &str,
+) -> Result<()> {
     let plugin = plugin::install_blueprint(source).await?;
     let source_dir = plugin.base();
     if !source_dir.exists() {
@@ -295,7 +298,8 @@ async fn install_from_blueprint(
         return Err(Error::BlueprintPluginNotSiteType(
             plugin.name.to_string(),
             plugin.version.to_string(),
-            plugin.kind().to_string()));
+            plugin.kind().to_string(),
+        ));
     }
 
     check_site_settings(&source_dir)?;

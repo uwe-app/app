@@ -55,7 +55,7 @@ impl DataBase {
             for (_, v) in collators {
                 if let Some(ref from) = v.from {
                     if from.is_absolute() {
-                        return Err(Error::FromAbsolute(from.to_path_buf()))
+                        return Err(Error::FromAbsolute(from.to_path_buf()));
                     }
                 }
             }

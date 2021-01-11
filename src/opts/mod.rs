@@ -2,7 +2,7 @@ use std::env;
 use std::panic;
 use std::path::PathBuf;
 
-use log::{info, error};
+use log::{error, info};
 
 use config::server::{HostConfig, ServerConfig, TlsConfig};
 
@@ -57,7 +57,9 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     let period = PathBuf::from(".");
     let result = if input == &period {
         cwd.clone()
-    } else { input.clone() };
+    } else {
+        input.clone()
+    };
 
     if !result.exists() || !result.is_dir() {
         return Err(Error::NotDirectory(result));
@@ -66,13 +68,21 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     let canonical = input.canonicalize()?;
 
     if canonical != cwd {
-        let (mut local_version, mut version_file) = release::find_local_version(&canonical)?;
+        let (mut local_version, mut version_file) =
+            release::find_local_version(&canonical)?;
         let self_version = config::generator::semver();
-        if let (Some(version), Some(version_file)) = (local_version.take(), version_file.take()) {
+        if let (Some(version), Some(version_file)) =
+            (local_version.take(), version_file.take())
+        {
             if &version != self_version {
                 let bin_name = config::generator::bin_name();
                 info!("Use version in {}", version_file.display());
-                info!("Switch {} from {} to {}", bin_name, self_version.to_string(), version.to_string());
+                info!(
+                    "Switch {} from {} to {}",
+                    bin_name,
+                    self_version.to_string(),
+                    version.to_string()
+                );
                 shim::fork(bin_name, Some(version))?;
             }
         }

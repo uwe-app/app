@@ -562,13 +562,20 @@ async fn resolve_version<P: AsRef<Path>>(
         }
     } else {
         // Get version from registry
-        let name = dep.name.as_ref().unwrap();
+        let name = dep.name();
         let (version, package) =
             installer::resolve_package(registry, name, &dep.version).await?;
 
         // Resolve a cached plugin if possible
-        if let Some(plugin) =
-            installer::installed(project, registry, dep).await?.take()
+        if let Some(plugin) = installer::version_installed(
+            project,
+            registry,
+            name,
+            &version,
+            Some(&package),
+        )
+        .await?
+        .take()
         {
             return Ok((version, Some(package), Some(plugin)));
         }
@@ -577,9 +584,13 @@ async fn resolve_version<P: AsRef<Path>>(
     }
 }
 
+/// Perform some basic checks that a solved refernce 
+/// matches a source dependency.
 fn check(name: &str, dep: &Dependency, solved: &SolvedReference) -> Result<()> {
     let (s_name, s_version) = match solved {
-        SolvedReference::Plugin(ref plugin) => (plugin.name(), plugin.version()),
+        SolvedReference::Plugin(ref plugin) => {
+            (plugin.name(), plugin.version())
+        }
         SolvedReference::Package(ref package) => {
             (package.name(), package.version())
         }

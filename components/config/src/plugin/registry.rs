@@ -82,7 +82,7 @@ impl Default for RegistryItem {
     fn default() -> Self {
         Self {
             name: String::new(),
-            version: Version::new(0,0,0),
+            version: Version::new(0, 0, 0),
             digest: String::new(),
             dependencies: Default::default(),
             plugins: Default::default(),
@@ -92,9 +92,8 @@ impl Default for RegistryItem {
 }
 
 impl RegistryItem {
-
     pub fn name(&self) -> &str {
-        &self.name 
+        &self.name
     }
 
     pub fn version(&self) -> &Version {

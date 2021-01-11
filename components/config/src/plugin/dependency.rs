@@ -1,8 +1,8 @@
 use std::collections::hash_map;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::fmt;
 use std::path::PathBuf;
-use std::convert::TryInto;
 
 use globset::{Glob, GlobMatcher};
 use semver::VersionReq;
@@ -27,17 +27,17 @@ impl TryInto<DependencyMap> for DependencyDefinitionMap {
     type Error = Error;
 
     fn try_into(self) -> std::result::Result<DependencyMap, Self::Error> {
-        let mut map: DependencyMap = Default::default(); 
+        let mut map: DependencyMap = Default::default();
         for (name, def) in self.items.into_iter() {
             let dep = match def {
                 DependencyDefinition::VersionRange(range) => {
                     let version: VersionReq = range.parse()?;
                     let dep = Dependency::new(name.clone(), version);
                     dep
-                },
+                }
                 DependencyDefinition::Dependency(dep) => dep,
             };
-            map.items.insert(name, dep); 
+            map.items.insert(name, dep);
         }
         Ok(map)
     }
@@ -114,7 +114,6 @@ impl DependencyMap {
         out: &mut DependencyMap,
         stack: &mut Vec<String>,
     ) -> Result<()> {
-
         features.iter().try_for_each(|n| {
             if stack.len() > FEATURE_STACK_SIZE {
                 return Err(Error::FeatureStackTooLarge(FEATURE_STACK_SIZE));
@@ -208,7 +207,7 @@ pub enum DependencyTarget {
     /// Load plugin from a git repository.
     Repo {
         #[serde_as(as = "DisplayFromStr")]
-        git: Url
+        git: Url,
     },
     /// Load plugin from a local scope.
     Local { scope: String },
@@ -265,6 +264,10 @@ impl Dependency {
             apply: None,
         }
     }
+
+    pub fn name(&self) -> &str {
+        self.name.as_ref().unwrap()
+    }
 }
 
 impl fmt::Display for Dependency {
@@ -301,7 +304,7 @@ impl From<PluginSpec> for Dependency {
             features: None,
             optional: None,
             target: None,
-        } 
+        }
     }
 }
 
@@ -309,7 +312,9 @@ impl From<ExactPluginSpec> for Dependency {
     fn from(spec: ExactPluginSpec) -> Self {
         let version = if let Some(ref version) = spec.version {
             VersionReq::exact(version)
-        } else { VersionReq::any() };
+        } else {
+            VersionReq::any()
+        };
 
         Self {
             name: Some(spec.name),
@@ -318,7 +323,7 @@ impl From<ExactPluginSpec> for Dependency {
             features: None,
             optional: None,
             target: None,
-        } 
+        }
     }
 }
 

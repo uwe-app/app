@@ -4,10 +4,10 @@ extern crate pretty_env_logger;
 use std::time::SystemTime;
 
 use log::info;
-use structopt::StructOpt;
 use semver::Version;
+use structopt::StructOpt;
 
-use config::{server::LaunchConfig, ProfileSettings, ProfileName};
+use config::{server::LaunchConfig, ProfileName, ProfileSettings};
 
 use publisher::PublishProvider;
 
@@ -210,7 +210,9 @@ async fn run(cmd: Command) -> Result<()> {
             let build_args = ProfileSettings {
                 paths,
                 release: Some(true),
-                profile: args.profile.or(Some(ProfileName::Release.to_string())),
+                profile: args
+                    .profile
+                    .or(Some(ProfileName::Release.to_string())),
                 offline: Some(args.compile.offline),
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
@@ -255,7 +257,7 @@ async fn run(cmd: Command) -> Result<()> {
                 ..Default::default()
             };
 
-            if let Err(e) = uwe::dev::run(&project, build_args).await  {
+            if let Err(e) = uwe::dev::run(&project, build_args).await {
                 opts::print_error(e);
             }
         }

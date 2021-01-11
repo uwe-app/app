@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use std::collections::BTreeMap;
 use std::fs;
+use std::path::PathBuf;
 
 use async_trait::async_trait;
 
@@ -19,7 +19,10 @@ pub trait RegistryAccess {
     async fn find(&self, spec: &PluginSpec) -> Result<Vec<RegistryItem>>;
 
     /// Find all the plugins whose fully qualified name starts with the needle.
-    async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>>;
+    async fn starts_with(
+        &self,
+        needle: &str,
+    ) -> Result<BTreeMap<String, RegistryEntry>>;
 
     async fn register(
         &self,
@@ -71,13 +74,12 @@ impl RegistryAccess for RegistryFileAccess {
         Ok(None)
     }
 
-
     async fn spec(&self, spec: &PluginSpec) -> Result<Option<RegistryItem>> {
         let name = spec.name();
         let range = spec.range();
         if let Some(entry) = self.entry(name).await? {
             if let Some((_, item)) = entry.find(range) {
-                return Ok(Some(item.clone())) 
+                return Ok(Some(item.clone()));
             }
         }
         Ok(None)
@@ -87,12 +89,15 @@ impl RegistryAccess for RegistryFileAccess {
         let name = spec.name();
         let range = spec.range();
         if let Some(entry) = self.entry(name).await? {
-            return Ok(entry.all(range))
+            return Ok(entry.all(range));
         }
         Ok(vec![])
     }
 
-    async fn starts_with(&self, needle: &str) -> Result<BTreeMap<String, RegistryEntry>> {
+    async fn starts_with(
+        &self,
+        needle: &str,
+    ) -> Result<BTreeMap<String, RegistryEntry>> {
         let mut map = BTreeMap::new();
         for entry in fs::read_dir(&self.reader)? {
             let path = entry?.path();
@@ -101,7 +106,11 @@ impl RegistryAccess for RegistryFileAccess {
                     if file_name.to_string_lossy().starts_with(needle) {
                         let file_path = path.to_path_buf();
                         let registry_entry = self.read_file(&file_path).await?;
-                        let plugin_name = file_path.file_stem().unwrap().to_string_lossy().to_string();
+                        let plugin_name = file_path
+                            .file_stem()
+                            .unwrap()
+                            .to_string_lossy()
+                            .to_string();
                         map.insert(plugin_name, registry_entry);
                     }
                 }

@@ -3,8 +3,12 @@ use std::collections::HashMap;
 use globset::GlobMatcher;
 
 use crate::{
-    dependency::Dependency, engine::TemplateEngine, plugin::{Plugin, ResolvedPlugins},
-    script::ScriptAsset, style::StyleAsset, Error, Result,
+    dependency::Dependency,
+    engine::TemplateEngine,
+    plugin::{Plugin, ResolvedPlugins},
+    script::ScriptAsset,
+    style::StyleAsset,
+    Error, Result,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -48,11 +52,7 @@ impl PluginCache {
         &self.layouts_cache
     }
 
-
-    pub fn find(
-        &self,
-        name: &str,
-    ) -> Option<&Plugin> {
+    pub fn find(&self, name: &str) -> Option<&Plugin> {
         // NOTE: we only look for a direct dependency at the moment
         for (_, plugin) in self.plugins().iter() {
             if &plugin.name == name {

@@ -18,11 +18,11 @@ impl Helper for Bytes {
         let size = ctx.try_get(0, &[Type::Number])?;
         if let Value::Number(num) = size {
             if let Some(size) = num.as_u64() {
-                return Ok(Some(Value::String(human_bytes(size as f64))))
+                return Ok(Some(Value::String(human_bytes(size as f64))));
             } else {
                 return Err(
                     HelperError::new(
-                        "Type error for `bytes`, parameter must be an unsigned integer"))
+                        "Type error for `bytes`, parameter must be an unsigned integer"));
             }
         }
 

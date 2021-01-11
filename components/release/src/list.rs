@@ -16,11 +16,14 @@ pub async fn list() -> Result<()> {
     }
 
     let cwd = std::env::current_dir()?;
-    let (mut local_version, local_version_file) = version::find_local_version(cwd)?;
+    let (mut local_version, local_version_file) =
+        version::find_local_version(cwd)?;
 
     let current = if let Some(version) = local_version.take() {
-        version 
-    } else { version::default_version()? };
+        version
+    } else {
+        version::default_version()?
+    };
 
     let total = releases.versions.iter().count();
 
@@ -35,7 +38,12 @@ pub async fn list() -> Result<()> {
         let mark = if is_installed { "◯" } else { "-" };
         if &current == version.semver() {
             let message = if let Some(ref file) = local_version_file {
-                format!("{} {} ✓ (set by {})", mark, version.to_string(), file.display())
+                format!(
+                    "{} {} ✓ (set by {})",
+                    mark,
+                    version.to_string(),
+                    file.display()
+                )
             } else {
                 format!("{} {} ✓", mark, version.to_string())
             };

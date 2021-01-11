@@ -1,8 +1,8 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use structopt::StructOpt;
 use semver::VersionReq;
+use structopt::StructOpt;
 
 use uwe::{opts::fatal, Error, Result};
 
@@ -63,13 +63,18 @@ async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
         Command::Install { version } => {
             release::install(name, version).await?;
         }
-        Command::Update { update_self, version_range } => {
+        Command::Update {
+            update_self,
+            version_range,
+        } => {
             if update_self {
                 release::update_self(version).await?;
             } else {
                 let range = if let Some(range) = version_range {
                     Some(range.parse::<VersionReq>()?)
-                } else { None };
+                } else {
+                    None
+                };
                 release::update(name, range).await?;
             }
         }

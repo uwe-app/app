@@ -1,10 +1,7 @@
 use log::{info, warn};
 use semver::{Version, VersionReq};
 
-use crate::{
-    binary, download, releases, verify, version, Error,
-    Result,
-};
+use crate::{binary, download, releases, verify, version, Error, Result};
 
 use config::plugin::VersionKey;
 
@@ -20,7 +17,9 @@ pub async fn select(name: &str, version: String) -> Result<()> {
         true,
         false,
         Some(version.clone()),
-        None).await?;
+        None,
+    )
+    .await?;
 
     info!("Installed {}@{} ✓", name, version.to_string());
     Ok(())
@@ -38,7 +37,9 @@ pub async fn install(name: &str, version: String) -> Result<()> {
         false,
         false,
         Some(version.clone()),
-        None).await?;
+        None,
+    )
+    .await?;
 
     info!("Installed {}@{} ✓", name, version.to_string());
 
@@ -60,7 +61,7 @@ pub(crate) async fn fetch(
     // Load the releases manifest.
     let releases = releases::mount()?.filter(range);
     if releases.is_empty() {
-        return Err(Error::NoReleasesFound) 
+        return Err(Error::NoReleasesFound);
     }
 
     let (version, info) = if let Some(ref request) = version {
@@ -81,7 +82,7 @@ pub(crate) async fn fetch(
     if latest && version_file.exists() {
         let current = version::default_version()?;
         if &current == version {
-            return Ok(version.clone())
+            return Ok(version.clone());
         }
     }
 

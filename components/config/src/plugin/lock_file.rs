@@ -67,7 +67,7 @@ impl Default for LockFileEntry {
     fn default() -> Self {
         Self {
             name: String::new(),
-            version: Version::new(0,0,0),
+            version: Version::new(0, 0, 0),
             source: None,
             checksum: None,
             dependencies: None,

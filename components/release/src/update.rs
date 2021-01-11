@@ -61,13 +61,8 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
     let mut current = version::default_version().ok();
 
-    let version = fetch(
-        name,
-        names.as_slice(),
-        true,
-        true,
-        None,
-        range).await?;
+    let version =
+        fetch(name, names.as_slice(), true, true, None, range).await?;
 
     // Move over the shim executables
     if first_run {
@@ -77,7 +72,7 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
             .into_iter()
             .map(|(s, _d)| {
                 let path = version_dir.join(&s);
-                (s, path) 
+                (s, path)
             })
             .collect::<HashMap<_, _>>();
         binary::rename(&binaries)?;

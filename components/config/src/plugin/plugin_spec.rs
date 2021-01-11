@@ -35,7 +35,7 @@ impl FromStr for ExactPluginSpec {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.contains(crate::PLUGIN_NS) {
-            return Err(Error::InvalidPluginSpecName(s.to_string()))
+            return Err(Error::InvalidPluginSpecName(s.to_string()));
         }
 
         let mut name = s.to_string();
@@ -46,10 +46,14 @@ impl FromStr for ExactPluginSpec {
             let version = parts.next().unwrap();
             if version != crate::LATEST {
                 Some(version.parse::<Version>()?)
-            } else { None }
-        } else { None };
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
-        Ok(ExactPluginSpec {name, version})
+        Ok(ExactPluginSpec { name, version })
     }
 }
 
@@ -77,13 +81,19 @@ impl fmt::Display for PluginSpec {
 
 impl From<String> for PluginSpec {
     fn from(name: String) -> Self {
-        Self {name, range: VersionReq::any()} 
+        Self {
+            name,
+            range: VersionReq::any(),
+        }
     }
 }
 
 impl From<(String, VersionReq)> for PluginSpec {
     fn from(value: (String, VersionReq)) -> Self {
-        Self {name: value.0, range: value.1} 
+        Self {
+            name: value.0,
+            range: value.1,
+        }
     }
 }
 
@@ -91,7 +101,7 @@ impl FromStr for PluginSpec {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.contains(crate::PLUGIN_NS) {
-            return Err(Error::InvalidPluginSpecName(s.to_string()))
+            return Err(Error::InvalidPluginSpecName(s.to_string()));
         }
 
         let mut name = s.to_string();
@@ -102,10 +112,13 @@ impl FromStr for PluginSpec {
             let version_req = parts.next().unwrap();
             if version_req != crate::LATEST {
                 version_req.parse::<VersionReq>()?
-            } else { VersionReq::any() }
+            } else {
+                VersionReq::any()
+            }
+        } else {
+            VersionReq::any()
+        };
 
-        } else { VersionReq::any() };
-
-        Ok(PluginSpec {name, range})
+        Ok(PluginSpec { name, range })
     }
 }

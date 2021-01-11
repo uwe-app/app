@@ -1,14 +1,14 @@
-//! Shim for detecting a version from `.uwe-version` and 
+//! Shim for detecting a version from `.uwe-version` and
 //! running a matching executable for the version.
 use thiserror::Error;
 
 use semver::Version;
 
 use std::{
-    env,
-    process::Command,
     collections::BTreeMap,
+    env,
     ffi::{OsStr, OsString},
+    process::Command,
 };
 
 #[derive(Error, Debug)]
@@ -36,13 +36,13 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub fn fork(app_name: &str, mut target_version: Option<Version>) -> Result<()> {
-
     let pin_version = if let Some(target) = target_version.take() {
         target
     } else {
-        let (mut local_version, _) = release::find_local_version(env::current_dir()?)?;
+        let (mut local_version, _) =
+            release::find_local_version(env::current_dir()?)?;
         if let Some(version) = local_version.take() {
-            version 
+            version
         } else {
             release::default_version()?
         }
@@ -52,32 +52,33 @@ pub fn fork(app_name: &str, mut target_version: Option<Version>) -> Result<()> {
     if !releases.contains(&pin_version) {
         return Err(Error::VersionNotAvailable(
             app_name.to_string(),
-            pin_version.to_string()))  
+            pin_version.to_string(),
+        ));
     }
 
     let binary_dir = dirs::releases_dir()?.join(pin_version.to_string());
     if !binary_dir.exists() || !binary_dir.is_dir() {
         return Err(Error::VersionNotAvailable(
             app_name.to_string(),
-            pin_version.to_string()))  
+            pin_version.to_string(),
+        ));
     }
 
     let binary_file = binary_dir.join(app_name);
     if !binary_file.exists() || !binary_file.is_file() {
         return Err(Error::VersionNotAvailable(
             app_name.to_string(),
-            pin_version.to_string()))  
+            pin_version.to_string(),
+        ));
     }
 
     let args: Vec<String> = env::args().skip(1).collect();
-    let _ = process(binary_file)
-        .args(args.as_slice())
-        .exec_replace()?;
+    let _ = process(binary_file).args(args.as_slice()).exec_replace()?;
 
     Ok(())
 }
 
-// Modified from the process builder in cargo so that replacing the current 
+// Modified from the process builder in cargo so that replacing the current
 // process should work ok on windows with regards to Ctrl+C handling.
 //
 // Currently, not tested on windows.
@@ -127,12 +128,16 @@ impl ProcessBuilder {
         let mut command = self.build_command();
 
         let name = self.program.to_string_lossy().to_string();
-        let args = self.args.iter().map(|a| a.to_string_lossy().to_string())
-            .collect::<Vec<String>>().join(" ");
+        let args = self
+            .args
+            .iter()
+            .map(|a| a.to_string_lossy().to_string())
+            .collect::<Vec<String>>()
+            .join(" ");
 
-        let exit = command.status().map_err(|_| {
-            Error::Exec(name.clone(), args.clone())
-        })?;
+        let exit = command
+            .status()
+            .map_err(|_| Error::Exec(name.clone(), args.clone()))?;
 
         if exit.success() {
             Ok(())
@@ -183,22 +188,26 @@ impl ProcessBuilder {
 
 #[cfg(unix)]
 mod imp {
-    use super::{Error, Result, ProcessBuilder};
+    use super::{Error, ProcessBuilder, Result};
     use std::os::unix::process::CommandExt;
 
     pub fn exec_replace(builder: &ProcessBuilder) -> Result<()> {
         let mut command = builder.build_command();
         let _error = command.exec();
         let name = builder.program.to_string_lossy().to_string();
-        let args = builder.args.iter().map(|a| a.to_string_lossy().to_string())
-            .collect::<Vec<String>>().join(" ");
+        let args = builder
+            .args
+            .iter()
+            .map(|a| a.to_string_lossy().to_string())
+            .collect::<Vec<String>>()
+            .join(" ");
         Err(Error::Exec(name, args))
     }
 }
 
 #[cfg(windows)]
 mod imp {
-    use super::{Error, Result, ProcessBuilder};
+    use super::{Error, ProcessBuilder, Result};
     use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
     use winapi::um::consoleapi::SetConsoleCtrlHandler;
 

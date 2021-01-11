@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use bracket::helper::prelude::*;
-use serde_json::{Value, Number};
+use serde_json::{Number, Value};
 
 use crate::BuildContext;
 

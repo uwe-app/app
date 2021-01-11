@@ -70,10 +70,14 @@ pub enum PluginType {
 
 impl fmt::Display for PluginType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", match *self {
-            Self::Library => "library",
-            Self::Site => "site",
-        })
+        write!(
+            f,
+            "{}",
+            match *self {
+                Self::Library => "library",
+                Self::Site => "site",
+            }
+        )
     }
 }
 
@@ -175,7 +179,7 @@ impl Default for Plugin {
         Self {
             name: String::new(),
             description: String::new(),
-            version: Version::new(0,0,0),
+            version: Version::new(0, 0, 0),
             license: None,
             authors: None,
             keywords: None,
@@ -217,7 +221,7 @@ impl Plugin {
     }
 
     pub fn kind(&self) -> &PluginType {
-        &self.kind 
+        &self.kind
     }
 
     pub fn parent(&self) -> String {
