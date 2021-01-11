@@ -164,7 +164,9 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Install { target, force } => {
-            uwe::plugin::install(target, force).await.map_err(Error::from)?;
+            uwe::plugin::install(target, force)
+                .await
+                .map_err(Error::from)?;
         }
     }
     Ok(())

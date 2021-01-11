@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use log::debug;
 use futures::TryFutureExt;
+use log::debug;
 use slug::slugify;
 use url::Url;
 
@@ -36,7 +36,7 @@ pub async fn install<P: AsRef<Path>>(
                 install_path(project, path, None).await
             }
             DependencyTarget::Archive { ref archive } => {
-                install_archive(project, archive).await
+                install_archive(project, archive, true).await
             }
             DependencyTarget::Repo { ref git } => {
                 install_repo(project, git).await
@@ -110,7 +110,7 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
 }
 
 /// Install a plugin from a file system path and compute the
-/// plugin data then copy the files over to the installation 
+/// plugin data then copy the files over to the installation
 /// directory.
 pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
@@ -121,25 +121,25 @@ pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
     let destination = installation_dir(plugin.name(), plugin.version())?;
 
     if destination.exists() && !force {
-        return Ok(plugin)
+        return Ok(plugin);
     } else if destination.exists() && destination.is_dir() && force {
         debug!("Remove plugin {}", destination.display());
-        fs::remove_dir_all(&destination)?; 
+        fs::remove_dir_all(&destination)?;
     }
 
     let source = path.as_ref().canonicalize()?;
     let target = destination.canonicalize().unwrap_or(destination);
     if source != target {
-        walk::copy(&source, &target, |f|  {
+        walk::copy(&source, &target, |f| {
             debug!("Install {:?}", f.display());
             true
         })?;
     }
 
-    // The source plugin definition must be replaced 
+    // The source plugin definition must be replaced
     // with our computed plugin data!
     //
-    // Keep the original file as `plugin.orig.toml` like 
+    // Keep the original file as `plugin.orig.toml` like
     // we do with archives.
     let source_plugin = target.join(config::PLUGIN);
     let original_plugin = target.join("plugin.orig.toml");
@@ -158,19 +158,16 @@ pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
 pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
     path: F,
+    force: bool,
 ) -> Result<Plugin> {
     // Determine the location to extract the archive to.
     let builder =
-        |_: &PathBuf, plugin: &Plugin, digest: &Vec<u8>| -> Result<PathBuf> {
+        |_: &PathBuf, plugin: &Plugin, _digest: &Vec<u8>| -> Result<PathBuf> {
             let name = format!(
-                "{}{}{}{}{}{}{}",
-                config::PLUGIN_ARCHIVE_PREFIX,
-                config::PLUGIN_NS,
+                "{}{}{}",
                 &plugin.name,
                 config::PLUGIN_NS,
                 plugin.version.to_string(),
-                config::PLUGIN_NS,
-                hex::encode(digest),
             );
 
             Ok(config::plugins_dir()?.join(name))
@@ -182,7 +179,7 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
     let reader =
         PackageReader::new(file.clone(), None, Some(Box::new(builder)))
             .destination(PathBuf::from("."))?
-            .set_overwrite(true)
+            .set_overwrite(force)
             .digest()
             .and_then(|b| b.xz())
             .and_then(|b| b.tar())
@@ -192,8 +189,6 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
 
     let source = PluginSource::Archive(file.to_path_buf());
 
-    //let url_target = format!("tar:{}", utils::url::to_href_separator(&file));
-    //let source: Url = url_target.parse()?;
     attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
     Ok(plugin)
 }

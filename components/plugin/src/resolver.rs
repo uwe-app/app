@@ -530,7 +530,7 @@ async fn resolve_version<P: AsRef<Path>>(
             }
             DependencyTarget::Archive { ref archive } => {
                 let plugin =
-                    installer::install_archive(project, archive).await?;
+                    installer::install_archive(project, archive, true).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {

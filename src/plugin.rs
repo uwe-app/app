@@ -7,8 +7,8 @@ use url::Url;
 
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
-    dependency_installed, version_installed, install_archive, install_registry,
-    install_repo, installation_dir, new_registry, install_folder,
+    dependency_installed, install_archive, install_folder, install_registry,
+    install_repo, installation_dir, new_registry, version_installed,
 };
 
 use crate::{Error, Result};
@@ -36,27 +36,31 @@ pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
                 {
                     return Err(Error::PluginAlreadyInstalled(
                         plugin.name().to_string(),
-                        plugin.version().to_string()));
+                        plugin.version().to_string(),
+                    ));
                 }
             };
 
             let plugin = install_registry(&project, &registry, &dep).await?;
             debug!("Location {}", plugin.base().display());
-            info!(
-                "Installed plugin {}@{} ✓",
-                plugin.name(),
-                plugin.version()
-            );
+            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
         }
         InstallSpec::Folder(path) => {
             let plugin = install_folder(&project, &path, force).await?;
             if !force {
-                if let Some(plugin) =
-                    version_installed(&project, &registry, plugin.name(), plugin.version(), None).await?
+                if let Some(plugin) = version_installed(
+                    &project,
+                    &registry,
+                    plugin.name(),
+                    plugin.version(),
+                    None,
+                )
+                .await?
                 {
                     return Err(Error::PluginAlreadyInstalled(
                         plugin.name().to_string(),
-                        plugin.version().to_string()));
+                        plugin.version().to_string(),
+                    ));
                 }
             };
 
@@ -64,13 +68,36 @@ pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
         }
         InstallSpec::Archive(path) => {
-            // TODO: install to a standard location!
-
-            let plugin = install_archive(&project, &path).await?;
-            debug!("Location {}", plugin.base().display());
-            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+            match install_archive(&project, &path, force).await {
+                Ok(plugin) => {
+                    debug!("Location {}", plugin.base().display());
+                    info!(
+                        "Installed plugin {}@{} ✓",
+                        plugin.name(),
+                        plugin.version()
+                    );
+                }
+                Err(e) => {
+                    if !force {
+                        if let plugin::Error::PackageOverwrite(
+                            name,
+                            version,
+                            _path,
+                        ) = e
+                        {
+                            return Err(Error::PluginAlreadyInstalled(
+                                name, version,
+                            ));
+                        }
+                    }
+                    return Err(Error::from(e));
+                }
+            }
         }
         InstallSpec::Repo(url) => {
+
+            // TODO: fetch repositories into ~/.uwe/registry/repositories
+
             println!("Install from repository {:?}", &url);
             let plugin = install_repo(&project, &url).await?;
             debug!("Location {}", plugin.base().display());

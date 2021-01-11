@@ -49,7 +49,6 @@ pub enum LintError {
 
     #[error(transparent)]
     Config(#[from] config::Error),
-
 }
 
 impl From<SyntaxError> for LintError {
@@ -153,6 +152,11 @@ pub enum Error {
 
     #[error("Plugin {0} could not be found; update the plugin registry with `uwe task update-registry` and try again")]
     PluginNotFound(String),
+
+    #[error(
+        "Plugin {0}@{1} exists and the overwrite flag has not been set ({2})"
+    )]
+    PackageOverwrite(String, String, PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

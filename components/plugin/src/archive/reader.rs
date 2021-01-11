@@ -167,6 +167,14 @@ impl PackageReader {
             self.target.clone()
         };
 
+        if target.exists() && !self.overwrite {
+            return Err(Error::PackageOverwrite(
+                plugin.name().to_string(),
+                plugin.version().to_string(),
+                target,
+            ));
+        }
+
         let mut tarball = File::open(&tarball_path)?;
         let mut archive = Archive::new(&mut tarball);
         archive.set_overwrite(self.overwrite);

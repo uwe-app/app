@@ -6,8 +6,8 @@ use http::StatusCode;
 use human_bytes::human_bytes;
 use log::debug;
 use pbr::{ProgressBar, Units};
-use tokio::prelude::*;
 use semver::Version;
+use tokio::prelude::*;
 
 use crate::{Error, Result};
 
@@ -23,7 +23,8 @@ pub struct FetchInfo {
 
 fn local_archive(name: &str, version: &Version) -> Result<PathBuf> {
     let downloads_cache_dir = dirs::downloads_dir()?;
-    let downloads_cache_name = format!("{}{}{}.tar.xz", name, config::PLUGIN_NS, version);
+    let downloads_cache_name =
+        format!("{}{}{}.tar.xz", name, config::PLUGIN_NS, version);
     Ok(downloads_cache_dir.join(&downloads_cache_name))
 }
 
@@ -37,26 +38,24 @@ fn remote_url(name: &str, version: &Version) -> String {
     )
 }
 
-/// Get a plugin archive either from the download cache if it exists otherwise 
+/// Get a plugin archive either from the download cache if it exists otherwise
 /// try to download and cache the archive.
-pub async fn get(
-    name: &str,
-    version: &Version,
-) -> Result<FetchInfo> {
+pub async fn get(name: &str, version: &Version) -> Result<FetchInfo> {
     let archive = local_archive(name, version)?;
     if archive.exists() && archive.is_file() {
         let url = remote_url(name, version);
-        return Ok(FetchInfo {archive, url, cached: true})
+        return Ok(FetchInfo {
+            archive,
+            url,
+            cached: true,
+        });
     }
     fetch(name, version).await
 }
 
-/// Download a plugin archive from an online source such as an s3 bucket 
+/// Download a plugin archive from an online source such as an s3 bucket
 /// into the downloads cache directory.
-async fn fetch(
-    name: &str,
-    version: &Version,
-) -> Result<FetchInfo> {
+async fn fetch(name: &str, version: &Version) -> Result<FetchInfo> {
     let archive = local_archive(name, version)?;
     let url = remote_url(name, version);
 
@@ -94,5 +93,9 @@ async fn fetch(
     );
     pb.finish_print(&msg);
 
-    Ok(FetchInfo {archive, url, cached: false})
+    Ok(FetchInfo {
+        archive,
+        url,
+        cached: false,
+    })
 }
