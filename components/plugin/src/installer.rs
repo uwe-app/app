@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use log::debug;
 use futures::TryFutureExt;
 use slug::slugify;
 use url::Url;
@@ -354,9 +355,7 @@ pub async fn install_registry<P: AsRef<Path>>(
 
     let fetch_info = download::get(name, &version).await?;
 
-    //println!("Downloaded {:?} bytes", content_file.metadata().await?.len());
-    //println!("Downloaded {:?} bytes", File::open(&archive_path)?.metadata()?.len());
-
+    debug!("Extracting archive {}", fetch_info.archive.display());
     let reader = PackageReader::new(
         fetch_info.archive.to_path_buf(),
         Some(hex::decode(&package.digest)?),
