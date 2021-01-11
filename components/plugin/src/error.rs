@@ -49,6 +49,7 @@ pub enum LintError {
 
     #[error(transparent)]
     Config(#[from] config::Error),
+
 }
 
 impl From<SyntaxError> for LintError {
@@ -205,4 +206,7 @@ pub enum Error {
 
     #[error(transparent)]
     Scm(#[from] scm::Error),
+
+    #[error(transparent)]
+    Utils(#[from] utils::Error),
 }

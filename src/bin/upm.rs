@@ -126,6 +126,10 @@ enum Command {
     /// Install a plugin
     #[structopt(alias = "i")]
     Install {
+        /// Force overwrite existing installed plugin
+        #[structopt(short, long)]
+        force: bool,
+
         #[structopt(parse(try_from_str = parse_install_spec))]
         target: InstallSpec,
     },
@@ -159,8 +163,8 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::remove(target).await.map_err(Error::from)?;
         }
 
-        Command::Install { target } => {
-            uwe::plugin::install(target).await.map_err(Error::from)?;
+        Command::Install { target, force } => {
+            uwe::plugin::install(target, force).await.map_err(Error::from)?;
         }
     }
     Ok(())

@@ -56,6 +56,9 @@ pub enum Error {
     #[error("Plugin {0}@{1} for project blueprint should be of type 'site' but got '{2}'")]
     BlueprintPluginNotSiteType(String, String, String),
 
+    #[error("Plugin {0}@{1} is already installed, use --force to overwrite")]
+    PluginAlreadyInstalled(String, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

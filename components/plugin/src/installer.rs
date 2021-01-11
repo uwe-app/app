@@ -14,6 +14,8 @@ use config::{
     PLUGIN,
 };
 
+use utils::walk;
+
 use crate::{
     archive::reader::PackageReader, compute, download, reader::read, Error,
     Registry, Result,
@@ -105,6 +107,48 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     attributes(&mut plugin, &target, source, None)?;
 
     compute::transform(&plugin).await
+}
+
+/// Install a plugin from a file system path and compute the
+/// plugin data then copy the files over to the installation 
+/// directory.
+pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
+    project: P,
+    path: F,
+    force: bool,
+) -> Result<Plugin> {
+    let plugin = install_path(project, path.as_ref(), None).await?;
+    let destination = installation_dir(plugin.name(), plugin.version())?;
+
+    if destination.exists() && !force {
+        return Ok(plugin)
+    } else if destination.exists() && destination.is_dir() && force {
+        debug!("Remove plugin {}", destination.display());
+        fs::remove_dir_all(&destination)?; 
+    }
+
+    let source = path.as_ref().canonicalize()?;
+    let target = destination.canonicalize().unwrap_or(destination);
+    if source != target {
+        walk::copy(&source, &target, |f|  {
+            debug!("Install {:?}", f.display());
+            true
+        })?;
+    }
+
+    // The source plugin definition must be replaced 
+    // with our computed plugin data!
+    //
+    // Keep the original file as `plugin.orig.toml` like 
+    // we do with archives.
+    let source_plugin = target.join(config::PLUGIN);
+    let original_plugin = target.join("plugin.orig.toml");
+    fs::rename(&source_plugin, &original_plugin)?;
+
+    let content = toml::to_string(&plugin)?;
+    fs::write(&source_plugin, content.as_bytes())?;
+
+    Ok(plugin)
 }
 
 /// Install from a local archive file.

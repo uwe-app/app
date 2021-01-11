@@ -17,7 +17,7 @@ pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 pub use error::Error;
 pub use installer::{
     dependency_installed, install_archive, install_path, install_registry,
-    install_repo, installation_dir, version_installed,
+    install_repo, installation_dir, version_installed, install_folder,
 };
 pub use linter::lint;
 pub use packager::pack;

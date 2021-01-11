@@ -7,8 +7,8 @@ use url::Url;
 
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
-    dependency_installed, install_archive, install_path, install_registry,
-    install_repo, installation_dir, new_registry,
+    dependency_installed, version_installed, install_archive, install_registry,
+    install_repo, installation_dir, new_registry, install_folder,
 };
 
 use crate::{Error, Result};
@@ -22,57 +22,58 @@ pub enum InstallSpec {
 }
 
 /// Install a plugin.
-pub async fn install(spec: InstallSpec) -> Result<()> {
+pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
     let registry = new_registry()?;
     let project = std::env::current_dir()?;
     info!("Plugins {}", config::plugins_dir()?.display());
 
-    // TODO: support --force overwriting?
-
     match spec {
         InstallSpec::Plugin(plugin_spec) => {
             let dep: Dependency = plugin_spec.into();
-            let (plugin, cached) = if let Some(plugin) =
-                dependency_installed(&project, &registry, &dep).await?
-            {
-                (plugin, true)
-            } else {
-                (install_registry(&project, &registry, &dep).await?, false)
+            if !force {
+                if let Some(plugin) =
+                    dependency_installed(&project, &registry, &dep).await?
+                {
+                    return Err(Error::PluginAlreadyInstalled(
+                        plugin.name().to_string(),
+                        plugin.version().to_string()));
+                }
             };
 
-            if cached {
-                info!(
-                    "Plugin {}@{} is already installed ✓",
-                    plugin.name(),
-                    plugin.version()
-                );
-            } else {
-                debug!("{}", plugin.base().display());
-                info!(
-                    "Installed plugin {}@{} ✓",
-                    plugin.name(),
-                    plugin.version()
-                );
-            }
+            let plugin = install_registry(&project, &registry, &dep).await?;
+            debug!("Location {}", plugin.base().display());
+            info!(
+                "Installed plugin {}@{} ✓",
+                plugin.name(),
+                plugin.version()
+            );
         }
         InstallSpec::Folder(path) => {
-            let plugin = install_path(&project, &path, None).await?;
-            // TODO: copy files to the install location!
+            let plugin = install_folder(&project, &path, force).await?;
+            if !force {
+                if let Some(plugin) =
+                    version_installed(&project, &registry, plugin.name(), plugin.version(), None).await?
+                {
+                    return Err(Error::PluginAlreadyInstalled(
+                        plugin.name().to_string(),
+                        plugin.version().to_string()));
+                }
+            };
 
-            info!("{}", plugin.base().display());
+            debug!("Location {}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
         }
         InstallSpec::Archive(path) => {
             // TODO: install to a standard location!
 
             let plugin = install_archive(&project, &path).await?;
-            debug!("{}", plugin.base().display());
+            debug!("Location {}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
         }
         InstallSpec::Repo(url) => {
             println!("Install from repository {:?}", &url);
             let plugin = install_repo(&project, &url).await?;
-            debug!("{}", plugin.base().display());
+            debug!("Location {}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
         }
     }
