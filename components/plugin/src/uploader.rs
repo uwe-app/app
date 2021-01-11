@@ -60,7 +60,6 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     scm::system_repo::fetch_registry().await?;
 
     let writer = PathBuf::from(registry_path);
-    //let reader = cache::get_registry_dir()?;
     let reader = writer.clone();
 
     let registry = registry::RegistryFileAccess::new(reader, writer)?;

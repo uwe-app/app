@@ -15,6 +15,7 @@ static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 static REGISTRY: &str = "registry";
 static RELEASES: &str = "releases";
 static DOWNLOADS: &str = "downloads";
+static PACKAGES: &str = "packages";
 
 pub fn root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();
@@ -74,6 +75,10 @@ pub fn releases_dir() -> io::Result<PathBuf> {
 
 pub fn registry_dir() -> io::Result<PathBuf> {
     Ok(root_dir()?.join(REGISTRY))
+}
+
+pub fn packages_dir() -> io::Result<PathBuf> {
+    Ok(registry_dir()?.join(PACKAGES))
 }
 
 pub fn downloads_dir() -> io::Result<PathBuf> {

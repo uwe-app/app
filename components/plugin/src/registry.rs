@@ -142,6 +142,6 @@ impl RegistryAccess for RegistryFileAccess {
 }
 
 pub fn new_registry<'r>() -> Result<Registry<'r>> {
-    let reg = dirs::registry_dir()?;
+    let reg = dirs::packages_dir()?;
     Ok(Box::new(RegistryFileAccess::new(reg.clone(), reg.clone())?))
 }
