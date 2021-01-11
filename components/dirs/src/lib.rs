@@ -12,10 +12,17 @@ static SITES_FILE: &str = "sites.toml";
 static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 
-static REGISTRY: &str = "registry";
+/// Name of the releases reppsitory.
 static RELEASES: &str = "releases";
+
+/// Name of the plugin registry repository.
+static REGISTRY: &str = "registry";
+/// Name for the location of cached plugin downloads.
 static DOWNLOADS: &str = "downloads";
+/// Name for the location of registry packages (JSON files).
 static PACKAGES: &str = "packages";
+/// Name for the location of cached plugin repositories.
+static REPOSITORIES: &str = "repositories";
 
 pub fn root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();
@@ -83,6 +90,10 @@ pub fn packages_dir() -> io::Result<PathBuf> {
 
 pub fn downloads_dir() -> io::Result<PathBuf> {
     Ok(registry_dir()?.join(DOWNLOADS))
+}
+
+pub fn repositories_dir() -> io::Result<PathBuf> {
+    Ok(registry_dir()?.join(REPOSITORIES))
 }
 
 pub use home::home_dir;

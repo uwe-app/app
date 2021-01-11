@@ -534,7 +534,7 @@ async fn resolve_version<P: AsRef<Path>>(
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {
-                let plugin = installer::install_repo(project, git).await?;
+                let plugin = installer::install_repo(project, git, true).await?;
                 Ok((plugin.version.clone(), None, Some(plugin)))
             }
             DependencyTarget::Local { ref scope } => {

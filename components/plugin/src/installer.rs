@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use sha3::{Digest, Sha3_256};
 use futures::TryFutureExt;
 use log::debug;
-use slug::slugify;
 use url::Url;
 
 use config::{
@@ -21,9 +21,6 @@ use crate::{
     Registry, Result,
 };
 
-static GIT_SCHEME: &str = "scm";
-static FILE_SCHEME: &str = "file";
-
 pub async fn install<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
@@ -39,7 +36,7 @@ pub async fn install<P: AsRef<Path>>(
                 install_archive(project, archive, true).await
             }
             DependencyTarget::Repo { ref git } => {
-                install_repo(project, git).await
+                install_repo(project, git, true).await
             }
             DependencyTarget::Local { ref scope } => {
                 install_local(project, scope, locals).await
@@ -118,17 +115,40 @@ pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
     force: bool,
 ) -> Result<Plugin> {
     let plugin = install_path(project, path.as_ref(), None).await?;
-    let destination = installation_dir(plugin.name(), plugin.version())?;
+    let plugin = copy_plugin_folder(path.as_ref(), plugin, force).await?;
+    Ok(plugin)
+}
 
-    if destination.exists() && !force {
+/// Copy a source plugin folder into the standard plugin installation 
+/// directory location.
+///
+/// If the force flag is set and the installation location exists it 
+/// is removed before copying files.
+///
+/// If the force flag is not set and the the installation location exists 
+/// the existing plugin is returned.
+///
+/// The `plugin.toml` file in the source location is moved to `plugin.orig.toml` 
+/// and the computed `plugin` information is written to `plugin.toml` instead.
+async fn copy_plugin_folder<S: AsRef<Path>>(
+    source: S,
+    plugin: Plugin,
+    force: bool,
+    ) -> Result<Plugin> {
+
+    let destination = installation_dir(plugin.name(), plugin.version())?;
+    let source = source.as_ref();
+    let target = &destination;
+
+    if target.exists() && !force {
         return Ok(plugin);
-    } else if destination.exists() && destination.is_dir() && force {
-        debug!("Remove plugin {}", destination.display());
-        fs::remove_dir_all(&destination)?;
+    } else if target.exists() && target.is_dir() && force {
+        debug!("Remove plugin {}", target.display());
+        fs::remove_dir_all(target)?;
     }
 
-    let source = path.as_ref().canonicalize()?;
-    let target = destination.canonicalize().unwrap_or(destination);
+    let source = source.canonicalize()?;
+    let target = target.canonicalize().unwrap_or(target.to_path_buf());
     if source != target {
         walk::copy(&source, &target, |f| {
             debug!("Install {:?}", f.display());
@@ -196,45 +216,33 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
 pub async fn install_repo<P: AsRef<Path>>(
     project: P,
     scm_url: &Url,
+    force: bool,
 ) -> Result<Plugin> {
-    // TODO: ensure the plugin source is "scm+file" scheme
+    let scm_url_str = scm_url.to_string();
+    let repos_dir = dirs::repositories_dir()?;
+    let mut hasher = Sha3_256::new();
+    hasher.update(scm_url_str.as_bytes());
+    let scm_id = hex::encode(hasher.finalize().as_slice().to_owned());
 
-    let scheme = scm_url.scheme();
-    if scheme == FILE_SCHEME {
-        let path = urlencoding::decode(scm_url.path())?;
-        let repo_path = Path::new(&path);
-        let _ = scm::open(&repo_path)?;
-        let source = Some(PluginSource::File(repo_path.to_path_buf()));
-        return install_path(project, &repo_path, source).await;
-    }
-
-    let host = if let Some(host) = scm_url.host_str() {
-        host
-    } else {
-        config::HOST
-    };
-
-    let base = config::plugins_dir()?;
-    let scm_url_str = format!(
-        "{}{}{}-{}",
-        GIT_SCHEME,
-        config::PLUGIN_NS,
-        slugify(host),
-        slugify(urlencoding::decode(scm_url.path())?)
-    );
-
-    let scm_target = base.join(scm_url_str);
-
-    let _ = if scm_target.exists() && scm_target.is_dir() {
-        let repo = scm::open(&scm_target)?;
-        scm::pull(&scm_target, None, None)?;
-        repo
-    } else {
-        scm::clone(&scm_url, &scm_target)?
-    };
+    let repo_path = repos_dir.join(scm_id);
+    debug!("Install repository {}", repo_path.display());
+    scm::clone_or_fetch(&scm_url_str, &repo_path)?;
 
     let source = Some(PluginSource::Repo(scm_url.clone()));
-    return install_path(project, &scm_target, source).await;
+    let plugin = install_path(project, &repo_path, source).await?;
+
+    let target = installation_dir(plugin.name(), plugin.version())?;
+    if target.exists() && !force {
+        return Err(Error::PackageOverwrite(
+            plugin.name().to_string(),
+            plugin.version().to_string(),
+            target,
+        ));
+    }
+
+    let plugin = copy_plugin_folder(&repo_path, plugin, force).await?;
+
+    Ok(plugin)
 }
 
 pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(

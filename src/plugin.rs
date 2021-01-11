@@ -8,7 +8,7 @@ use url::Url;
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
     dependency_installed, install_archive, install_folder, install_registry,
-    install_repo, installation_dir, new_registry, version_installed,
+    install_repo, installation_dir, new_registry,
 };
 
 use crate::{Error, Result};
@@ -27,7 +27,7 @@ pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
     let project = std::env::current_dir()?;
     info!("Plugins {}", config::plugins_dir()?.display());
 
-    match spec {
+    let result = match spec {
         InstallSpec::Plugin(plugin_spec) => {
             let dep: Dependency = plugin_spec.into();
             if !force {
@@ -41,67 +41,42 @@ pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
                 }
             };
 
-            let plugin = install_registry(&project, &registry, &dep).await?;
-            debug!("Location {}", plugin.base().display());
-            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+            install_registry(&project, &registry, &dep).await
         }
         InstallSpec::Folder(path) => {
-            let plugin = install_folder(&project, &path, force).await?;
-            if !force {
-                if let Some(plugin) = version_installed(
-                    &project,
-                    &registry,
-                    plugin.name(),
-                    plugin.version(),
-                    None,
-                )
-                .await?
-                {
-                    return Err(Error::PluginAlreadyInstalled(
-                        plugin.name().to_string(),
-                        plugin.version().to_string(),
-                    ));
-                }
-            };
-
-            debug!("Location {}", plugin.base().display());
-            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+            install_folder(&project, &path, force).await
         }
         InstallSpec::Archive(path) => {
-            match install_archive(&project, &path, force).await {
-                Ok(plugin) => {
-                    debug!("Location {}", plugin.base().display());
-                    info!(
-                        "Installed plugin {}@{} ✓",
-                        plugin.name(),
-                        plugin.version()
-                    );
-                }
-                Err(e) => {
-                    if !force {
-                        if let plugin::Error::PackageOverwrite(
-                            name,
-                            version,
-                            _path,
-                        ) = e
-                        {
-                            return Err(Error::PluginAlreadyInstalled(
-                                name, version,
-                            ));
-                        }
-                    }
-                    return Err(Error::from(e));
-                }
-            }
+            install_archive(&project, &path, force).await
         }
         InstallSpec::Repo(url) => {
+            install_repo(&project, &url, force).await
+        }
+    };
 
-            // TODO: fetch repositories into ~/.uwe/registry/repositories
-
-            println!("Install from repository {:?}", &url);
-            let plugin = install_repo(&project, &url).await?;
+    match result {
+        Ok(plugin) => {
             debug!("Location {}", plugin.base().display());
-            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+            info!(
+                "Installed plugin {}@{} ✓",
+                plugin.name(),
+                plugin.version()
+            );
+        }
+        Err(e) => {
+            if !force {
+                if let plugin::Error::PackageOverwrite(
+                    name,
+                    version,
+                    _path,
+                ) = e
+                {
+                    return Err(Error::PluginAlreadyInstalled(
+                        name, version,
+                    ));
+                }
+            }
+            return Err(Error::from(e));
         }
     }
     Ok(())
