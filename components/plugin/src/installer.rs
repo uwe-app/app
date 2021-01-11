@@ -400,6 +400,7 @@ pub async fn install_registry<P: AsRef<Path>>(
         Some(hex::decode(&package.digest)?),
         None,
     )
+    .set_overwrite(true)
     .destination(&extract_target)?
     .digest()
     .and_then(|b| b.xz())
