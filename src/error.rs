@@ -80,6 +80,9 @@ pub enum Error {
     LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
 
     #[error(transparent)]
+    Crossterm(#[from] crossterm::ErrorKind),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]
