@@ -40,6 +40,19 @@ pub async fn list(
             //info!(r#""{}" = "{}""#, name, version);
         }
     }
+
+    let registry_repo = dirs::registry_dir()?;
+    let repo = scm::open(&registry_repo)?;
+    let (is_current, _) = scm::is_current_with_remote(&repo, None, None)?;
+
+    if is_current {
+        info!("");
+        info!("Plugin registry is up to date!");
+    } else {
+        info!("");
+        info!("Plugin registry needs updating, run `upm update`");
+    }
+
     Ok(())
 }
 

@@ -44,6 +44,44 @@ mod clone;
 mod pull;
 pub mod system_repo;
 
+fn find_remote_head(
+    repo: &Repository,
+    remote: Option<&str>,
+    ref_spec: Option<&str>,
+    ) -> Result<Option<Oid>> {
+    let ref_spec = ref_spec.as_ref().map(|s| &s[..]).unwrap_or(HEAD);
+    let remote_name = remote.as_ref().map(|s| &s[..]).unwrap_or(ORIGIN);
+    let mut remote_spec = repo.find_remote(remote_name)?;
+    let _ = remote_spec.connect(git2::Direction::Fetch)?;
+    let heads = remote_spec.list()?.iter().collect::<Vec<_>>();
+    for remote_head in heads {
+        if remote_head.name() == ref_spec {
+            return Ok(Some(remote_head.oid()))
+        }
+    }
+    Ok(None)
+}
+
+/// Determine if a repository is up to date with a remote.
+pub fn is_current_with_remote(
+    repo: &Repository,
+    remote: Option<&str>,
+    ref_spec: Option<&str>,
+    ) -> Result<(bool, Option<(Oid, Oid)>)> {
+
+    if let Some(commit) = find_last_commit(repo)? {
+        let local_id = commit.id();
+        if let Some(remote_id) = find_remote_head(repo, remote, ref_spec)? {
+            //println!("commit {:?}", commit.id());
+            //println!("remote {:?}", remote_id);
+            let current = local_id == remote_id;
+            return Ok((current, Some((local_id, remote_id))))
+        }
+    }
+
+    Ok((false, None))
+}
+
 pub fn pull<P: AsRef<Path>>(
     path: P,
     remote: Option<&str>,
