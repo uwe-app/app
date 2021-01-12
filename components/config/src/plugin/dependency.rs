@@ -57,7 +57,7 @@ impl Default for DependencyDefinition {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, Eq, PartialEq)]
 pub struct DependencyMap {
     #[serde(flatten, serialize_with = "toml::ser::tables_last")]
     items: HashMap<String, Dependency>,
@@ -197,7 +197,7 @@ impl DependencyMap {
 }
 
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum DependencyTarget {
     /// Load plugin from a local folder.
@@ -214,7 +214,7 @@ pub enum DependencyTarget {
 }
 
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Dependency {
     /// Injected when resolving dependencies from the hash map key or
@@ -341,6 +341,16 @@ pub struct Apply {
     #[serde(skip)]
     pub layouts_match: HashMap<String, Vec<GlobMatcher>>,
 }
+
+impl PartialEq for Apply {
+    fn eq(&self, other: &Self) -> bool {
+        self.styles == other.styles
+            && self.scripts == other.scripts
+            && self.layouts == other.layouts
+    }
+}
+
+impl Eq for Apply {}
 
 impl Apply {
     /// Prepare the global patterns by compiling them.

@@ -16,14 +16,24 @@ use crate::{Error, Registry, Result};
 /// Defines the contract for plugin registry implementations.
 #[async_trait]
 pub trait RegistryAccess {
+
+    /// Load all registry packages into memory.
+    async fn all(&self) -> Result<BTreeMap<String, RegistryEntry>>;
+
+    /// Try to resolve a registry item.
     async fn resolve(
         &self,
         name: &str,
         version: &VersionReq,
     ) -> Result<(Version, RegistryItem)>;
 
+    /// Load a single registry entry.
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
+
+    /// Try to find a single registry item matching the given plugin spec.
     async fn spec(&self, spec: &PluginSpec) -> Result<Option<RegistryItem>>;
+
+    /// Try to find all registry items matching the given plugin spec.
     async fn find(&self, spec: &PluginSpec) -> Result<Vec<RegistryItem>>;
 
     /// Find all the plugins whose fully qualified name starts with the needle.
@@ -32,6 +42,11 @@ pub trait RegistryAccess {
         needle: &str,
     ) -> Result<BTreeMap<String, RegistryEntry>>;
 
+    /// Register a plugin by writing the package registry file to disc 
+    /// for the writer side of this registry.
+    ///
+    /// The digest should be the checksum for the archive that bundles 
+    /// the plugin files.
     async fn register(
         &self,
         entry: &mut RegistryEntry,
@@ -39,7 +54,11 @@ pub trait RegistryAccess {
         digest: &Vec<u8>,
     ) -> Result<PathBuf>;
 
+    /// Read a registry package definition.
     async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry>;
+
+    /// Find all the versions that are installed for a registry entry.
+    async fn installed_versions(&self, entry: &RegistryEntry) -> Result<Vec<RegistryItem>>;
 }
 
 /// Access a registry using a file system backing store.
@@ -68,6 +87,35 @@ impl RegistryFileAccess {
 
 #[async_trait]
 impl RegistryAccess for RegistryFileAccess {
+
+    async fn all(&self) -> Result<BTreeMap<String, RegistryEntry>> {
+        let mut out = BTreeMap::new();
+        for entry in fs::read_dir(&self.reader)? {
+            let path = entry?.path().to_path_buf();
+            if path.is_file() {
+                let registry_entry = self.read_file(&path).await?;
+                if let Some(stem) = path.file_stem() {
+                    let name = stem
+                        .to_string_lossy()
+                        .into_owned()
+                        .to_string(); 
+                    out.insert(name, registry_entry);
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    async fn installed_versions(&self, entry: &RegistryEntry) -> Result<Vec<RegistryItem>> {
+        let mut out = Vec::new();
+        for (version, item) in entry.versions() {
+            let installation = crate::installation_dir(item.name(), &version)?;
+            if installation.exists() && installation.is_dir() {
+                out.push(item.clone());
+            }
+        }
+        Ok(out)
+    }
 
     async fn resolve(
         &self,

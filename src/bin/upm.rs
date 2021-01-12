@@ -79,6 +79,19 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+
+    /// List plugins
+    #[structopt(alias = "ls")]
+    List {
+        /// Filter for downloaded archives
+        #[structopt(short, long)]
+        downloads: bool,
+
+        /// Filter for installed plugins
+        #[structopt(short, long)]
+        installed: bool,
+    },
+
     /// Update the local plugin registry
     Update {},
 
@@ -197,6 +210,13 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Remove { target } => {
             uwe::plugin::remove(target).await.map_err(Error::from)?;
+        }
+
+        Command::List { downloads, installed } => {
+            uwe::plugin::list(
+                downloads,
+                installed,
+            ).await.map_err(Error::from)?;
         }
 
         Command::Install { target, force } => {

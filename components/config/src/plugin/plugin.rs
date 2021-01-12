@@ -18,7 +18,7 @@ use crate::{dependency::DependencyMap, features::FeatureMap, Result};
 
 pub type PluginMap = HashMap<String, Plugin>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum PluginSource {
     File(PathBuf),
     Archive(PathBuf),
@@ -83,7 +83,7 @@ impl fmt::Display for PluginType {
 
 /// Represents a plugin definition.
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(default)]
 pub struct Plugin {
     /// Name of the plugin.
@@ -382,7 +382,7 @@ impl Plugin {
 }
 
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct ExternalLibrary {
     /// Library version.
     #[serde_as(as = "DisplayFromStr")]
@@ -418,7 +418,7 @@ impl ExternalLibrary {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, Eq, PartialEq)]
 pub struct PluginTemplates {
     /// Partial definitions.
     pub partials: Option<HashMap<String, TemplateAsset>>,
@@ -427,7 +427,7 @@ pub struct PluginTemplates {
     pub layouts: Option<HashMap<String, TemplateAsset>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct TemplateAsset {
     pub file: UrlPath,
     pub schema: Option<UrlPath>,

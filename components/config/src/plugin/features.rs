@@ -10,7 +10,7 @@ type DependencyName = String;
 static DEFAULT: &str = "default";
 
 /// Flags used by a dependency to select optional dependencies.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct FeatureFlags {
     /// Enable or disable the default features for a dependency.
@@ -39,7 +39,7 @@ impl FeatureFlags {
 /// Map of features to dependencies used by plugin definitions
 /// to indicate which dependencies should be resolved for a given
 /// set of feature flags.
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, Eq, PartialEq)]
 pub struct FeatureMap {
     #[serde(flatten)]
     map: HashMap<FeatureName, Vec<DependencyName>>,

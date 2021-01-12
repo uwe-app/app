@@ -1,3 +1,4 @@
+//! Command functions for upm(1).
 use std::fs;
 use std::path::PathBuf;
 
@@ -21,6 +22,25 @@ pub enum InstallSpec {
     Archive(PathBuf),
     Repo(Url),
     Plugin(ExactPluginSpec),
+}
+
+/// List plugins.
+pub async fn list(
+    _downloads: bool,
+    _installed: bool,
+) -> Result<()> {
+    let registry = new_registry()?;
+    let all = registry.all().await?;
+    for (name, entry) in all.iter() {
+        if let Some((version, item)) = entry.latest() {
+            let installed_versions = registry.installed_versions(entry).await?;
+            let is_installed = installed_versions.contains(item);
+            let mark = if is_installed { "◯" } else { "-" };
+            info!("{} {}@{}", mark, name, version);
+            //info!(r#""{}" = "{}""#, name, version);
+        }
+    }
+    Ok(())
 }
 
 /// Show plugin information.

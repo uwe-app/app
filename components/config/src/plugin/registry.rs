@@ -22,6 +22,11 @@ pub struct RegistryEntry {
 }
 
 impl RegistryEntry {
+
+    pub fn versions(&self) -> &BTreeMap<Version, RegistryItem> {
+        &self.versions
+    }
+
     pub fn get(&self, version: &Version) -> Option<&RegistryItem> {
         self.versions.get(version)
     }
@@ -53,7 +58,7 @@ impl RegistryEntry {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(default)]
 pub struct RegistryItem {
     name: String,
