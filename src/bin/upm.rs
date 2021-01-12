@@ -111,6 +111,14 @@ enum Command {
     Clean {},
 
     /// Show plugin information
+    #[structopt(
+        after_help = "EXAMPLES:
+    Print plugin information: 
+        upm info std::core
+    Print plugin information for a specific version: 
+        upm info std::core@4.1.12
+"
+    )]
     Info {
         #[structopt(parse(try_from_str = parse_exact_plugin_spec))]
         target: ExactPluginSpec,
@@ -134,7 +142,21 @@ enum Command {
     },
 
     /// Install a plugin
-    #[structopt(alias = "i")]
+    #[structopt(
+        alias = "i",
+        after_help = "EXAMPLES:
+    Install from the registry: 
+        upm i std::core
+    Install a specific version from the registry: 
+        upm i std::core@4.1.12
+    Install from a folder: 
+        upm i /path/to/plugin
+    Install from an archive: 
+        upm i /path/to/plugin/package.tar.xz
+    Install from a git repository: 
+        upm i https://github.com/username/plugin-repo
+"
+    )]
     Install {
         /// Force overwrite existing installed plugin
         #[structopt(short, long)]
