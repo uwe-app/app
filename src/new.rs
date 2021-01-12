@@ -296,8 +296,8 @@ async fn install_from_blueprint(
 
     if plugin.kind() != &PluginType::Site {
         return Err(Error::BlueprintPluginNotSiteType(
-            plugin.name.to_string(),
-            plugin.version.to_string(),
+            plugin.name().to_string(),
+            plugin.version().to_string(),
             plugin.kind().to_string(),
         ));
     }

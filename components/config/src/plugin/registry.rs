@@ -120,8 +120,8 @@ impl RegistryItem {
 impl From<&Plugin> for RegistryItem {
     fn from(plugin: &Plugin) -> RegistryItem {
         let mut item: RegistryItem = Default::default();
-        item.name = plugin.name.clone();
-        item.version = plugin.version.clone();
+        item.name = plugin.name().to_string();
+        item.version = plugin.version().clone();
 
         if !plugin.dependencies().is_empty() {
             item.dependencies = plugin.dependencies().clone();

@@ -14,10 +14,12 @@ mod uploader;
 type Result<T> = std::result::Result<T, error::Error>;
 pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
+pub use download::get;
 pub use error::Error;
 pub use installer::{
     dependency_installed, install_archive, install_folder, install_path,
     install_registry, install_repo, installation_dir, version_installed,
+    show,
 };
 pub use linter::lint;
 pub use packager::pack;

@@ -17,6 +17,10 @@ fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, Error> {
     src.parse::<PluginSpec>().map_err(Error::from)
 }
 
+fn parse_exact_plugin_spec(src: &str) -> std::result::Result<ExactPluginSpec, Error> {
+    src.parse::<ExactPluginSpec>().map_err(Error::from)
+}
+
 fn parse_install_spec(src: &str) -> std::result::Result<InstallSpec, Error> {
     // Treat as a git url
     let repo_url: Option<Url> = if let Ok(url) = src.parse::<Url>() {
@@ -106,6 +110,12 @@ enum Command {
     /// Delete all installed plugins
     Clean {},
 
+    /// Show plugin information
+    Info {
+        #[structopt(parse(try_from_str = parse_exact_plugin_spec))]
+        target: ExactPluginSpec,
+    },
+
     /// Remove installed plugin(s)
     #[structopt(
         alias = "rm",
@@ -157,6 +167,10 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Update {} => {
             uwe::plugin::update().await.map_err(Error::from)?;
+        }
+
+        Command::Info{ target } => {
+            uwe::plugin::info(target).await.map_err(Error::from)?;
         }
 
         Command::Remove { target } => {

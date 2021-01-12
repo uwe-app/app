@@ -36,19 +36,19 @@ pub(crate) fn lint_plugin(plugin: &Plugin) -> crate::Result<()> {
 fn lint_common(plugin: &Plugin) -> Result<(), LintError> {
     let ns_re = Regex::new("^[a-zA-Z0-9-]+$")?;
 
-    if plugin.name.trim().is_empty() {
+    if plugin.name().trim().is_empty() {
         return Err(LintError::LintPluginNameEmpty);
     }
 
-    if plugin.description.trim().is_empty() {
+    if plugin.description().trim().is_empty() {
         return Err(LintError::LintPluginDescriptionEmpty);
     }
 
-    if !plugin.name.contains(PLUGIN_NS) {
+    if !plugin.name().contains(PLUGIN_NS) {
         return Err(LintError::LintPluginNameSpace);
     }
 
-    for ns in plugin.name.split(PLUGIN_NS) {
+    for ns in plugin.name().split(PLUGIN_NS) {
         if !ns_re.is_match(ns) {
             return Err(LintError::LintPluginNameInvalidNameSpace(
                 ns.to_string(),

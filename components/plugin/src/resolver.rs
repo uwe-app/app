@@ -318,8 +318,7 @@ impl<'a> Resolver<'a> {
         // otherwise this can error for `path` references
         if dep.target.is_none() {
             // Try to resolve the package again
-            let (version, _package) = installer::resolve_package(
-                &self.registry,
+            let (version, _package) = self.registry.resolve(
                 &e.name,
                 &dep.version,
             )
@@ -526,16 +525,16 @@ async fn resolve_version<P: AsRef<Path>>(
             DependencyTarget::File { ref path } => {
                 let plugin =
                     installer::install_path(project, path, None).await?;
-                Ok((plugin.version.clone(), None, Some(plugin)))
+                Ok((plugin.version().clone(), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {
                 let plugin =
                     installer::install_archive(project, archive, true).await?;
-                Ok((plugin.version.clone(), None, Some(plugin)))
+                Ok((plugin.version().clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {
                 let plugin = installer::install_repo(project, git, true).await?;
-                Ok((plugin.version.clone(), None, Some(plugin)))
+                Ok((plugin.version().clone(), None, Some(plugin)))
             }
             DependencyTarget::Local { ref scope } => {
                 let locals = if let Some(ref parent) = parent {
@@ -557,14 +556,14 @@ async fn resolve_version<P: AsRef<Path>>(
                 let plugin =
                     installer::install_local(project, scope, Some(locals))
                         .await?;
-                Ok((plugin.version.clone(), None, Some(plugin)))
+                Ok((plugin.version().clone(), None, Some(plugin)))
             }
         }
     } else {
         // Get version from registry
         let name = dep.name();
         let (version, package) =
-            installer::resolve_package(registry, name, &dep.version).await?;
+            registry.resolve(name, &dep.version).await?;
 
         // Resolve a cached plugin if possible
         if let Some(plugin) = installer::version_installed(

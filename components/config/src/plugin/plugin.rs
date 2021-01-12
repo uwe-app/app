@@ -89,21 +89,23 @@ pub struct Plugin {
     /// Name of the plugin.
     pub name: String,
 
-    /// Description of the plugin function.
-    pub description: String,
-
     /// Plugin version.
     #[serde_as(as = "DisplayFromStr")]
-    pub version: Version,
+    version: Version,
+
+    /// Description of the plugin function.
+    description: String,
 
     /// Plugin license.
     license: Option<LicenseGroup>,
 
     /// Plugin author(s).
-    authors: Option<Vec<Author>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    authors: Vec<Author>,
 
     /// List of keywords.
-    keywords: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    keywords: Vec<String>,
 
     /// Type of the plugin.
     #[serde(rename = "type")]
@@ -113,8 +115,9 @@ pub struct Plugin {
     prefix: Option<UrlPath>,
 
     /// List of remote orgins used by this plugin.
-    #[serde_as(as = "Option<Vec<DisplayFromStr>>")]
-    origins: Option<Vec<Url>>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    origins: Vec<Url>,
 
     /// List of synthetic assets to include in the project.
     #[serde(skip_serializing_if = "HashSet::is_empty")]
@@ -181,10 +184,10 @@ impl Default for Plugin {
             description: String::new(),
             version: Version::new(0, 0, 0),
             license: None,
-            authors: None,
-            keywords: None,
+            authors: Vec::new(),
+            keywords: Vec::new(),
             kind: PluginType::Library,
-            origins: None,
+            origins: Vec::new(),
             assets: HashSet::new(),
             styles: Vec::new(),
             scripts: Vec::new(),
@@ -220,6 +223,22 @@ impl Plugin {
         &self.version
     }
 
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    pub fn keywords(&self) -> &Vec<String> {
+        &self.keywords
+    }
+
+    pub fn origins(&self) -> &Vec<Url> {
+        &self.origins
+    }
+
+    pub fn license(&self) -> &Option<LicenseGroup> {
+        &self.license
+    }
+
     pub fn kind(&self) -> &PluginType {
         &self.kind
     }
@@ -253,10 +272,6 @@ impl Plugin {
 
     pub fn checksum(&self) -> &Option<String> {
         &self.checksum
-    }
-
-    pub fn license(&self) -> &Option<LicenseGroup> {
-        &self.license
     }
 
     pub fn set_checksum<S: AsRef<str>>(&mut self, s: S) {

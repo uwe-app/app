@@ -22,8 +22,8 @@ async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
     let region = publisher::parse_region(registry_region)?;
     let key = format!(
         "{}/{}/{}.tar.xz",
-        &plugin.name,
-        plugin.version.to_string(),
+        plugin.name(),
+        plugin.version().to_string(),
         config::PACKAGE
     );
 
@@ -64,10 +64,10 @@ pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
 
     let registry = registry::RegistryFileAccess::new(reader, writer)?;
 
-    let entry = registry.entry(&plugin.name).await?;
+    let entry = registry.entry(plugin.name()).await?;
 
     if let Some(ref entry) = entry {
-        if let Some(_) = entry.get(&plugin.version) {
+        if let Some(_) = entry.get(plugin.version()) {
             return Err(Error::RegistryPluginVersionExists(plugin.to_string()));
         }
     }

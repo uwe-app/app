@@ -4,9 +4,11 @@ use std::path::PathBuf;
 use human_bytes::human_bytes;
 use log::{debug, info, warn};
 use url::Url;
+use semver::VersionReq;
 
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
+    get, show,
     dependency_installed, install_archive, install_folder, install_registry,
     install_repo, installation_dir, new_registry,
 };
@@ -19,6 +21,49 @@ pub enum InstallSpec {
     Archive(PathBuf),
     Repo(Url),
     Plugin(ExactPluginSpec),
+}
+
+/// Show plugin information.
+pub async fn info(spec: ExactPluginSpec) -> Result<()> {
+    let registry = new_registry()?;
+
+    let version_req = if let Some(version) = spec.version() {
+        VersionReq::exact(version)
+    } else { VersionReq::any() };
+
+    let (version, _package) = registry.resolve(spec.name(), &version_req).await?;
+    let fetch_info = get(spec.name(), &version).await?;
+    let plugin = show(&fetch_info.archive).await?;
+
+    info!("{}@{}", plugin.name(), plugin.version());
+    info!("");
+    info!("{}", plugin.description());
+    info!("");
+    if !plugin.keywords().is_empty() {
+        info!("Keywords: {}", plugin.keywords().join(", "));
+    }
+    if !plugin.origins().is_empty() {
+
+        let origins = plugin.origins()
+            .iter()
+            .map(|l| l.to_string())
+            .collect::<Vec<_>>();
+
+        info!("Origins: {}", origins.join(", "));
+    }
+    if let Some(license) = plugin.license() {
+        let licenses = license
+            .to_vec()
+            .iter()
+            .map(|l| l.to_string())
+            .collect::<Vec<_>>();
+        info!("Licenses: {}", licenses.join(", "));
+    }
+
+    info!("");
+    info!(r#""{}" = "^{}""#, plugin.name(), plugin.version());
+
+    Ok(())
 }
 
 /// Install a plugin.

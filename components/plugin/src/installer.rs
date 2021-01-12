@@ -21,6 +21,21 @@ use crate::{
     Registry, Result,
 };
 
+/// Read the plugin info from an archive
+pub async fn show<F: AsRef<Path>>(archive: F) -> Result<Plugin> {
+    // Extract the archive
+    let reader =
+        PackageReader::new(archive.as_ref().to_path_buf(), None, None)
+            .set_peek(true)
+            .digest()
+            .and_then(|b| b.xz())
+            .and_then(|b| b.tar())
+            .await?;
+
+    let (_, _, plugin) = reader.into_inner();
+    Ok(plugin)
+}
+
 pub async fn install<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
@@ -187,7 +202,7 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
                 "{}{}{}",
                 &plugin.name,
                 config::PLUGIN_NS,
-                plugin.version.to_string(),
+                plugin.version(),
             );
 
             Ok(config::plugins_dir()?.join(name))
@@ -278,34 +293,13 @@ pub(crate) fn inherit(
     Ok(())
 }
 
-pub(crate) async fn resolve_package(
-    registry: &Registry<'_>,
-    name: &str,
-    version: &VersionReq,
-) -> Result<(Version, RegistryItem)> {
-    let entry = registry
-        .entry(name)
-        .await?
-        .ok_or_else(|| Error::RegistryPackageNotFound(name.to_string()))?;
-
-    let (version, package) = entry.find(version).ok_or_else(|| {
-        Error::RegistryPackageVersionNotFound(
-            name.to_string(),
-            version.to_string(),
-        )
-    })?;
-
-    Ok((version.clone(), package.clone()))
-}
-
 pub async fn dependency_installed<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     dep: &Dependency,
 ) -> Result<Option<Plugin>> {
     let name = dep.name();
-    let (version, package) =
-        resolve_package(registry, name, &dep.version).await?;
+    let (version, package) = registry.resolve(name, &dep.version).await?;
     version_installed(project, registry, name, &version, Some(&package)).await
 }
 
@@ -332,7 +326,7 @@ pub async fn version_installed<P: AsRef<Path>>(
             package.clone()
         } else {
             let (_, package) =
-                resolve_package(registry, name, &VersionReq::exact(version))
+                registry.resolve(name, &VersionReq::exact(version))
                     .await?;
             package
         };
@@ -383,9 +377,7 @@ pub async fn install_registry<P: AsRef<Path>>(
     dep: &Dependency,
 ) -> Result<Plugin> {
     let name = dep.name.as_ref().unwrap();
-    let (version, package) =
-        resolve_package(registry, name, &dep.version).await?;
-
+    let (version, package) = registry.resolve(name, &dep.version).await?;
     let extract_target = installation_dir(name, &version)?;
 
     if let Some(plugin) =

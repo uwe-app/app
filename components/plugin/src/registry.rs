@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 
+use semver::{Version, VersionReq};
+
 use config::{
     registry::{RegistryEntry, RegistryItem},
     Plugin, PluginSpec,
@@ -14,6 +16,12 @@ use crate::{Error, Registry, Result};
 /// Defines the contract for plugin registry implementations.
 #[async_trait]
 pub trait RegistryAccess {
+    async fn resolve(
+        &self,
+        name: &str,
+        version: &VersionReq,
+    ) -> Result<(Version, RegistryItem)>;
+
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>>;
     async fn spec(&self, spec: &PluginSpec) -> Result<Option<RegistryItem>>;
     async fn find(&self, spec: &PluginSpec) -> Result<Vec<RegistryItem>>;
@@ -60,6 +68,27 @@ impl RegistryFileAccess {
 
 #[async_trait]
 impl RegistryAccess for RegistryFileAccess {
+
+    async fn resolve(
+        &self,
+        name: &str,
+        version: &VersionReq,
+    ) -> Result<(Version, RegistryItem)> {
+        let entry = self
+            .entry(name)
+            .await?
+            .ok_or_else(|| Error::RegistryPackageNotFound(name.to_string()))?;
+
+        let (version, package) = entry.find(version).ok_or_else(|| {
+            Error::RegistryPackageVersionNotFound(
+                name.to_string(),
+                version.to_string(),
+            )
+        })?;
+
+        Ok((version.clone(), package.clone()))
+    }
+
     async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry> {
         let contents = utils::fs::read_string(file)?;
         Ok(serde_json::from_str(&contents)?)
@@ -128,7 +157,7 @@ impl RegistryAccess for RegistryFileAccess {
         let mut item = RegistryItem::from(plugin);
         item.digest = hex::encode(digest);
 
-        let version = plugin.version.clone();
+        let version = plugin.version().clone();
         entry.versions.entry(version).or_insert(item);
 
         let content = serde_json::to_string(entry)?;

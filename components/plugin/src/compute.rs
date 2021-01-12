@@ -122,7 +122,7 @@ fn load_scope(
 
                     // Create an optional local scoped dependency for the
                     // plugin so it can be resolved at build time
-                    let version_req = VersionReq::exact(&scope.version);
+                    let version_req = VersionReq::exact(scope.version());
                     let dependency =
                         Dependency::new_scope(scope_name.clone(), version_req);
                     scope

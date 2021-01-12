@@ -35,7 +35,12 @@ pub struct PackageReader {
     /// Path builder callback function.
     path_builder: Option<PackagePathBuilder>,
 
+    /// Whether to overwrite files when unpacking.
     overwrite: bool,
+
+    /// Whether to peek into the bundled pugin.toml 
+    /// file and skip unpacking.
+    peek: bool,
 }
 
 impl PackageReader {
@@ -53,6 +58,7 @@ impl PackageReader {
             plugin: None,
             path_builder,
             overwrite: false,
+            peek: false,
         }
     }
 
@@ -75,6 +81,11 @@ impl PackageReader {
 
     pub fn set_overwrite(mut self, overwrite: bool) -> Self {
         self.overwrite = overwrite;
+        self
+    }
+
+    pub fn set_peek(mut self, peek: bool) -> Self {
+        self.peek = peek;
         self
     }
 
@@ -156,9 +167,14 @@ impl PackageReader {
         // Read in the plugin data before unpacking the entire archive
         let plugin = read_path(plugin_temp_file).await?;
 
-        // Now unpack the entire archive
         drop(archive);
         drop(tarball);
+
+        if self.peek {
+            self.plugin = Some(plugin);
+            self.target = tarball_path.to_path_buf();
+            return Ok(self)
+        }
 
         // Determine the target extraction path
         let target = if let Some(ref builder) = self.path_builder {
@@ -175,6 +191,7 @@ impl PackageReader {
             ));
         }
 
+        // Now unpack Vthe entire archive
         let mut tarball = File::open(&tarball_path)?;
         let mut archive = Archive::new(&mut tarball);
         archive.set_overwrite(self.overwrite);
