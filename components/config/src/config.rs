@@ -493,10 +493,6 @@ impl Config {
             // Ensure the host is a valid Url
             parse_host(&cfg.host)?;
 
-            // Ensure source and target paths are relative
-            // to the base
-            let build = cfg.build.as_mut().unwrap();
-
             if let Some(deps) = cfg.dependencies.take() {
                 cfg.dependencies_map = Some(deps.try_into()?);
             }
@@ -515,9 +511,6 @@ impl Config {
             }
             if let Some(feed) = cfg.feed.as_mut() {
                 feed.prepare();
-            }
-            if let Some(link) = cfg.link.as_mut() {
-                link.prepare(&build.source)?;
             }
             for (k, v) in cfg.authors.iter_mut() {
                 v.alias.get_or_insert(k.to_string());

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{info, warn};
+use log::{info, warn, debug};
 
 use futures::future;
 
@@ -388,6 +388,9 @@ async fn solver(
     }
 
     for (name, mut dep) in input.into_iter() {
+
+        debug!("Solving {}", name);
+
         if stack.contains(&name) {
             return Err(Error::CyclicDependency(name));
         }
@@ -520,7 +523,12 @@ async fn resolve_version<P: AsRef<Path>>(
     dep: &Dependency,
     parent: &Option<SolvedReference>,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
+
+    debug!("Resolving version {}", dep.name());
+    debug!("Resolving version {:?}", dep.target);
+
     if let Some(ref target) = dep.target {
+
         match target {
             DependencyTarget::File { ref path } => {
                 let plugin =
@@ -564,6 +572,8 @@ async fn resolve_version<P: AsRef<Path>>(
         let name = dep.name();
         let (version, package) =
             registry.resolve(name, &dep.version).await?;
+
+        debug!("Resolved registry package for {:?}", &version);
 
         // Resolve a cached plugin if possible
         if let Some(plugin) = installer::version_installed(

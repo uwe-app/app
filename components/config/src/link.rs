@@ -24,7 +24,7 @@ pub struct LinkConfig {
 }
 
 impl LinkConfig {
-    pub(crate) fn prepare(&mut self, source: &PathBuf) -> Result<()> {
+    pub fn prepare(&mut self, source: &PathBuf) -> Result<()> {
         if let Some(ref catalog) = self.catalog {
             let catalog_path = source.join(catalog);
             let content = utils::fs::read_string(&catalog_path)

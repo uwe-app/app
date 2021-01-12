@@ -98,9 +98,11 @@ pub struct Plugin {
 
     /// Source code repository.
     #[serde_as(as = "Option<DisplayFromStr>")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     repository: Option<Url>,
 
     /// Plugin license.
+    #[serde(skip_serializing_if = "Option::is_none")]
     license: Option<LicenseGroup>,
 
     /// Plugin author(s).

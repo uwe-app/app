@@ -91,7 +91,8 @@ impl RegistryAccess for RegistryFileAccess {
 
     async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry> {
         let contents = utils::fs::read_string(file)?;
-        Ok(serde_json::from_str(&contents)?)
+        Ok(serde_json::from_str(&contents)
+            .map_err(|e| Error::RegistryParse(file.to_path_buf(), e.to_string()))?)
     }
 
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>> {

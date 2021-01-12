@@ -42,6 +42,7 @@ pub async fn install<P: AsRef<Path>>(
     dep: &Dependency,
     locals: Option<PluginMap>,
 ) -> Result<Plugin> {
+
     let plugin = if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
@@ -104,6 +105,9 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     path: F,
     source: Option<PluginSource>,
 ) -> Result<Plugin> {
+
+    debug!("Install plugin path {}", path.as_ref().display());
+
     let (target, mut plugin) = install_file(project.as_ref(), path).await?;
 
     //let url_target =
