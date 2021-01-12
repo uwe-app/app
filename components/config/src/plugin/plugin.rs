@@ -96,6 +96,10 @@ pub struct Plugin {
     /// Description of the plugin function.
     description: String,
 
+    /// Source code repository.
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    repository: Option<Url>,
+
     /// Plugin license.
     license: Option<LicenseGroup>,
 
@@ -182,6 +186,7 @@ impl Default for Plugin {
         Self {
             name: String::new(),
             description: String::new(),
+            repository: None,
             version: Version::new(0, 0, 0),
             license: None,
             authors: Vec::new(),
@@ -225,6 +230,10 @@ impl Plugin {
 
     pub fn description(&self) -> &str {
         &self.description
+    }
+
+    pub fn repository(&self) -> &Option<Url> {
+        &self.repository
     }
 
     pub fn keywords(&self) -> &Vec<String> {

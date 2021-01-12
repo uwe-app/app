@@ -39,6 +39,13 @@ pub async fn info(spec: ExactPluginSpec) -> Result<()> {
     info!("");
     info!("{}", plugin.description());
     info!("");
+
+    if let Some(repo) = plugin.repository() {
+        info!("Repository: {}", repo);
+    }
+
+    // TODO: print author info!
+
     if !plugin.keywords().is_empty() {
         info!("Keywords: {}", plugin.keywords().join(", "));
     }
