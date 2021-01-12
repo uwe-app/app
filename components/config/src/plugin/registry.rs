@@ -8,33 +8,31 @@ use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 use crate::{
     dependency::DependencyMap,
     features::FeatureMap,
-    plugin::{Plugin, PluginMap},
+    plugin::{Plugin, PluginMap, VersionKey},
 };
-
-// FIXME: use a technique like ReleaseVersion to order correctly!
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RegistryEntry {
     #[serde_as(as = "BTreeMap<DisplayFromStr, _>")]
     #[serde(flatten)]
-    pub versions: BTreeMap<Version, RegistryItem>,
+    pub versions: BTreeMap<VersionKey, RegistryItem>,
 }
 
 impl RegistryEntry {
 
-    pub fn versions(&self) -> &BTreeMap<Version, RegistryItem> {
+    pub fn versions(&self) -> &BTreeMap<VersionKey, RegistryItem> {
         &self.versions
     }
 
     pub fn get(&self, version: &Version) -> Option<&RegistryItem> {
-        self.versions.get(version)
+        self.versions.get(&VersionKey::from(version))
     }
 
     pub fn find(&self, req: &VersionReq) -> Option<(&Version, &RegistryItem)> {
-        for (v, item) in self.versions.iter().rev() {
-            if req.matches(v) {
-                return Some((v, item));
+        for (v, item) in self.versions.iter() {
+            if req.matches(v.semver()) {
+                return Some((v.semver(), item));
             }
         }
         None
@@ -43,15 +41,15 @@ impl RegistryEntry {
     pub fn all(&self, req: &VersionReq) -> Vec<RegistryItem> {
         let mut out = Vec::new();
         for (v, item) in self.versions.iter() {
-            if req.matches(v) {
+            if req.matches(v.semver()) {
                 out.push(item.clone())
             }
         }
         out
     }
 
-    pub fn latest(&self) -> Option<(&Version, &RegistryItem)> {
-        let mut it = self.versions.iter().rev();
+    pub fn latest(&self) -> Option<(&VersionKey, &RegistryItem)> {
+        let mut it = self.versions.iter();
         it.next()
     }
 }

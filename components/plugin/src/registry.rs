@@ -8,7 +8,7 @@ use semver::{Version, VersionReq};
 
 use config::{
     registry::{RegistryEntry, RegistryItem},
-    Plugin, PluginSpec,
+    Plugin, PluginSpec, VersionKey,
 };
 
 use crate::{Error, Registry, Result};
@@ -109,7 +109,7 @@ impl RegistryAccess for RegistryFileAccess {
     async fn installed_versions(&self, entry: &RegistryEntry) -> Result<Vec<RegistryItem>> {
         let mut out = Vec::new();
         for (version, item) in entry.versions() {
-            let installation = crate::installation_dir(item.name(), &version)?;
+            let installation = crate::installation_dir(item.name(), version.semver())?;
             if installation.exists() && installation.is_dir() {
                 out.push(item.clone());
             }
@@ -206,8 +206,8 @@ impl RegistryAccess for RegistryFileAccess {
         let mut item = RegistryItem::from(plugin);
         item.digest = hex::encode(digest);
 
-        let version = plugin.version().clone();
-        entry.versions.entry(version).or_insert(item);
+        //let version = plugin.version().clone();
+        entry.versions.entry(VersionKey::from(plugin.version())).or_insert(item);
 
         let content = serde_json::to_string(entry)?;
 
