@@ -1,21 +1,21 @@
 use std::collections::hash_map::RandomState;
-use std::collections::hash_set::Difference;
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::convert::{TryFrom, TryInto};
 
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 use url::Url;
+use indexmap::IndexSet;
 
 use crate::Result;
 
-pub type PackageSet = HashSet<LockFileEntry>;
+use super::plugin::Plugin;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, Eq, PartialEq)]
 #[serde(default)]
 pub struct LockFile {
-    pub package: PackageSet,
+    pub package: IndexSet<LockFileEntry>,
 }
 
 impl LockFile {
@@ -41,26 +41,57 @@ impl LockFile {
         Ok(())
     }
 
+    pub fn union(old: LockFile, new: LockFile) -> LockFile {
+        let package: IndexSet<LockFileEntry> = old.package
+            .union(&new.package)
+            .cloned()
+            .collect();
+        LockFile { package }
+    }
+
+    #[deprecated]
     pub fn diff<'a>(
         &'a self,
         other: &'a LockFile,
-    ) -> Difference<'a, LockFileEntry, RandomState> {
+    ) -> indexmap::set::Difference<'a, LockFileEntry, RandomState> {
         self.package.difference(&other.package)
     }
 }
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, Hash)]
 #[serde(default)]
 pub struct LockFileEntry {
     pub name: String,
     #[serde_as(as = "DisplayFromStr")]
     pub version: Version,
+    pub checksum: Option<String>,
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub source: Option<Url>,
-    pub checksum: Option<String>,
-    pub dependencies: Option<Vec<String>>,
+}
+
+impl PartialEq for LockFileEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl TryFrom<&Plugin> for LockFileEntry {
+    type Error = crate::Error;
+
+    fn try_from(plugin: &Plugin) -> std::result::Result<LockFileEntry, Self::Error> {
+        let mut entry: LockFileEntry = Default::default();
+        entry.name = plugin.name().to_string();
+        entry.version = plugin.version().clone();
+        entry.checksum = plugin.checksum().clone();
+
+        if let Some(source) = plugin.source() {
+            entry.source = Some(source.clone().try_into()?)
+        }
+
+        Ok(entry)
+    }
 }
 
 impl Default for LockFileEntry {
@@ -70,7 +101,13 @@ impl Default for LockFileEntry {
             version: Version::new(0, 0, 0),
             source: None,
             checksum: None,
-            dependencies: None,
+            //dependencies: None,
         }
+    }
+}
+
+impl LockFileEntry {
+    pub fn version(&self) -> &Version {
+        &self.version
     }
 }

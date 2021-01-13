@@ -30,7 +30,7 @@ enum Command {
     /// Install a release version
     Install { version: String },
 
-    /// Update the platform tools
+    /// Update to a new release
     Update {
         /// Update the version manager (uvm)
         #[structopt(short = "s", long = "self")]

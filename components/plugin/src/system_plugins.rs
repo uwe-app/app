@@ -13,8 +13,9 @@ async fn install_plugin(spec: PluginSpec) -> Result<Plugin> {
     let registry = new_registry()?;
     if let Some(_) = registry.spec(&spec).await? {
         let project = std::env::current_dir()?;
+        let name = spec.name().to_string();
         let dep: Dependency = spec.into();
-        Ok(install_registry(&project, &registry, &dep).await?)
+        Ok(install_registry(&project, &registry, &name, &dep).await?)
     } else {
         Err(Error::PluginNotFound(spec.to_string()))
     }

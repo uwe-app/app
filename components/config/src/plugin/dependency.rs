@@ -219,6 +219,7 @@ pub enum DependencyTarget {
 pub struct Dependency {
     /// Injected when resolving dependencies from the hash map key or
     /// converting from lock file entries or references.
+    #[deprecated(note = "Do not store dependency name")]
     #[serde(skip)]
     pub name: Option<String>,
 
@@ -265,18 +266,19 @@ impl Dependency {
         }
     }
 
+    #[deprecated(note = "Do not store dependency name")]
     pub fn name(&self) -> &str {
         self.name.as_ref().unwrap()
+    }
+
+    pub fn range(&self) -> &VersionReq {
+        &self.version
     }
 }
 
 impl fmt::Display for Dependency {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(ref name) = self.name {
-            write!(f, "{}@{}", name, self.version.to_string())
-        } else {
-            write!(f, "{}", self.version.to_string())
-        }
+        write!(f, "{}", self.version.to_string())
     }
 }
 

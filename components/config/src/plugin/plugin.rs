@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::convert::TryInto;
 
 use jsonfeed::Author;
 use semver::Version;
@@ -25,6 +26,22 @@ pub enum PluginSource {
     Repo(Url),
     Local(String),
     Registry(Url),
+}
+
+impl TryInto<Url> for PluginSource {
+    type Error = crate::Error;
+
+    fn try_into(self) -> std::result::Result<Url, Self::Error> {
+        match self {
+            Self::File(path) => {
+                let href = format!("file:{}", path.display());
+                Ok(href.parse::<Url>()?)
+            },
+            Self::Repo(url) => Ok(url),
+            Self::Registry(url) => Ok(url),
+            _ => todo!()
+        }
+    }
 }
 
 impl PluginSource {

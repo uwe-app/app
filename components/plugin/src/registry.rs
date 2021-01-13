@@ -3,7 +3,12 @@ use std::fs;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-
+use crossterm::{
+    cursor::{MoveToColumn, MoveUp},
+    execute,
+    terminal::{Clear, ClearType},
+};
+use log::info;
 use semver::{Version, VersionReq};
 
 use config::{
@@ -12,6 +17,32 @@ use config::{
 };
 
 use crate::{Error, Registry, Result};
+
+pub async fn check_for_updates() -> Result<bool> {
+    info!("Checking for registry updates...");
+    let registry_repo = dirs::registry_dir()?;
+    let repo = scm::open(&registry_repo)?;
+    let (is_current, _) = scm::is_current_with_remote(&repo, None, None)?;
+    //execute!(
+        //std::io::stdout(),
+        //MoveUp(1),
+        //MoveToColumn(0),
+        //Clear(ClearType::CurrentLine)
+    //)?;
+    Ok(is_current)
+}
+
+pub async fn update_registry() -> Result<()> {
+    //info!("Updating plugin registry...");
+    scm::system_repo::fetch_registry().await?;
+    //execute!(
+    //std::io::stdout(),
+    //MoveUp(1),
+    //MoveToColumn(0),
+    //Clear(ClearType::CurrentLine)
+    //)?;
+    Ok(())
+}
 
 /// Defines the contract for plugin registry implementations.
 #[async_trait]

@@ -69,7 +69,7 @@ impl ResolverLock {
     }
 }
 
-/// Manges the information required to solve all dependencies.
+/// Manages the information required to solve all dependencies.
 struct Resolver<'a> {
     project: PathBuf,
     dependencies: DependencyMap,
@@ -344,6 +344,7 @@ impl<'a> Resolver<'a> {
                     let plugin = installer::install(
                         &self.project,
                         &self.registry,
+                        dep.name(),
                         &dep,
                         None,
                     )
@@ -418,7 +419,7 @@ async fn solver(
                 version: version.clone(),
                 checksum,
                 source: None,
-                dependencies: None,
+                //dependencies: None,
             });
 
         let mut solved = if let Some(plugin) = plugin.take() {

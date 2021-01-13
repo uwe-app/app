@@ -7,16 +7,11 @@ use log::{debug, info, warn};
 use semver::VersionReq;
 use url::Url;
 
-use crossterm::{
-    cursor::{MoveToColumn, MoveUp},
-    execute,
-    terminal::{Clear, ClearType},
-};
-
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
-    dependency_installed, get, install_archive, install_folder,
-    install_registry, install_repo, installation_dir, new_registry, peek,
+    check_for_updates, dependency_installed, get, install_archive,
+    install_folder, install_registry, install_repo, installation_dir,
+    new_registry, peek,
 };
 
 use crate::{Error, Result};
@@ -29,8 +24,28 @@ pub enum InstallSpec {
     Plugin(ExactPluginSpec),
 }
 
-/// List plugins.
-pub async fn list(_downloads: bool, _installed: bool) -> Result<()> {
+/// Install project dependencies.
+pub async fn install(project: PathBuf) -> Result<()> {
+    let workspace = workspace::open(&project, true, &vec![])?;
+    for config in workspace.into_iter() {
+        info!("{} ({})", config.host(), config.project().display());
+        let resolved = plugin::install(&config).await?;
+        info!("Plugins ok ✓ ({})", resolved.len());
+    }
+    Ok(())
+}
+
+/// List project plugin dependencies.
+pub async fn list_project(project: PathBuf) -> Result<()> {
+    let workspace = workspace::open(&project, true, &vec![])?;
+    for config in workspace.into_iter() {
+        plugin::list_dependencies(&config).await?;
+    }
+    Ok(())
+}
+
+/// List registry plugins.
+pub async fn list_registry(_downloads: bool, _installed: bool) -> Result<()> {
     let registry = new_registry()?;
     let all = registry.all().await?;
     for (name, entry) in all.iter() {
@@ -60,16 +75,7 @@ pub async fn list(_downloads: bool, _installed: bool) -> Result<()> {
         }
     }
 
-    info!("Checking for registry updates...");
-    let registry_repo = dirs::registry_dir()?;
-    let repo = scm::open(&registry_repo)?;
-    let (is_current, _) = scm::is_current_with_remote(&repo, None, None)?;
-    execute!(
-        std::io::stdout(),
-        MoveUp(1),
-        MoveToColumn(0),
-        Clear(ClearType::CurrentLine)
-    )?;
+    let is_current = check_for_updates().await?;
 
     if is_current {
         info!("");
@@ -78,7 +84,7 @@ pub async fn list(_downloads: bool, _installed: bool) -> Result<()> {
         info!("");
         info!("Plugin registry needs updating, run:");
         info!("");
-        info!("upm update");
+        info!("upm registry update");
         info!("");
         info!("To refresh the list of available plugnins.");
     }
@@ -147,10 +153,11 @@ pub async fn add(spec: InstallSpec, force: bool) -> Result<()> {
 
     let result = match spec {
         InstallSpec::Plugin(plugin_spec) => {
+            let name = plugin_spec.name().to_string();
             let dep: Dependency = plugin_spec.into();
             if !force {
                 if let Some(plugin) =
-                    dependency_installed(&project, &registry, &dep).await?
+                    dependency_installed(&project, &registry, &name, &dep).await?
                 {
                     return Err(Error::PluginAlreadyInstalled(
                         plugin.name().to_string(),
@@ -159,7 +166,7 @@ pub async fn add(spec: InstallSpec, force: bool) -> Result<()> {
                 }
             };
 
-            install_registry(&project, &registry, &dep).await
+            install_registry(&project, &registry, &name, &dep).await
         }
         InstallSpec::Folder(path) => {
             install_folder(&project, &path, force).await
@@ -217,8 +224,8 @@ pub async fn remove(spec: PluginSpec) -> Result<()> {
 }
 
 /// Update the plugin registry cache
-pub async fn update() -> Result<()> {
-    scm::system_repo::fetch_registry().await?;
+pub async fn update_registry() -> Result<()> {
+    plugin::update_registry().await?;
     info!("Update complete ✓");
     Ok(())
 }

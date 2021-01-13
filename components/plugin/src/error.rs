@@ -161,6 +161,9 @@ pub enum Error {
     #[error("Failed to parse registry file {0} ({1})")]
     RegistryParse(PathBuf, String),
 
+    #[error("Failed to get plugin for a dependency that should be satisfied")]
+    PluginNotSatisfied,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -199,6 +202,9 @@ pub enum Error {
 
     #[error(transparent)]
     Request(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    Crossterm(#[from] crossterm::ErrorKind),
 
     //#[error(transparent)]
     //Regex(#[from] regex::Error),

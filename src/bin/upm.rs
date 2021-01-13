@@ -9,7 +9,12 @@ use semver::Version;
 use structopt::StructOpt;
 use url::Url;
 
-use uwe::{self, opts::fatal, plugin::InstallSpec, Error, Result};
+use uwe::{
+    self,
+    opts::{self, fatal},
+    plugin::InstallSpec,
+    Error, Result,
+};
 
 use config::plugin::{ExactPluginSpec, PluginSpec};
 
@@ -80,8 +85,11 @@ struct Cli {
 }
 
 #[derive(StructOpt, Debug)]
-enum Command {
-    /// List plugins
+enum Registry {
+    /// Update the local plugin registry
+    Update {},
+
+    /// List registry plugins
     #[structopt(alias = "ls")]
     List {
         /// Filter for downloaded archives
@@ -92,9 +100,32 @@ enum Command {
         #[structopt(short, long)]
         installed: bool,
     },
+}
 
-    /// Update the local plugin registry
-    Update {},
+#[derive(StructOpt, Debug)]
+enum Command {
+    /// Install project dependencies
+    #[structopt(alias = "i")]
+    Install {
+        /// Project path
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
+    },
+
+    /// List project plugin dependencies
+    #[structopt(alias = "ls")]
+    List {
+        /// Project path
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
+    },
+
+    /// Update and list registry packages
+    #[structopt(alias = "reg")]
+    Registry {
+        #[structopt(subcommand)]
+        cmd: Registry,
+    },
 
     /// Lint a plugin
     Lint {
@@ -154,8 +185,7 @@ enum Command {
     },
 
     /// Add a plugin to the installation folder
-    #[structopt(
-        after_help = "EXAMPLES:
+    #[structopt(after_help = "EXAMPLES:
     Add from the registry: 
         upm add std::core
     Add a specific version from the registry: 
@@ -166,8 +196,7 @@ enum Command {
         upm add /path/to/plugin/package.tar.xz
     Add from a git repository: 
         upm add https://github.com/username/plugin-repo
-"
-    )]
+")]
     Add {
         /// Force overwrite existing installed plugin
         #[structopt(short, long)]
@@ -181,48 +210,54 @@ enum Command {
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
         Command::Lint { path, inspect } => {
-            uwe::plugin::lint(path, inspect)
-                .await
-                .map_err(Error::from)?;
+            uwe::plugin::lint(path, inspect).await?;
         }
 
         Command::Pack { path } => {
-            uwe::plugin::pack(path).await.map_err(Error::from)?;
+            uwe::plugin::pack(path).await?;
         }
 
         Command::Publish { path } => {
-            uwe::plugin::publish(path).await.map_err(Error::from)?;
+            uwe::plugin::publish(path).await?;
         }
 
         Command::Clean {} => {
-            uwe::plugin::clean().await.map_err(Error::from)?;
+            uwe::plugin::clean().await?;
         }
 
-        Command::Update {} => {
-            uwe::plugin::update().await.map_err(Error::from)?;
-        }
+        Command::Registry { cmd } => match cmd {
+            Registry::List {
+                downloads,
+                installed,
+            } => {
+                uwe::plugin::list_registry(downloads, installed).await?;
+            }
+
+            Registry::Update {} => {
+                uwe::plugin::update_registry().await?;
+            }
+        },
 
         Command::Show { target } => {
-            uwe::plugin::show(target).await.map_err(Error::from)?;
+            uwe::plugin::show(target).await?;
         }
 
         Command::Remove { target } => {
-            uwe::plugin::remove(target).await.map_err(Error::from)?;
+            uwe::plugin::remove(target).await?;
         }
 
-        Command::List {
-            downloads,
-            installed,
-        } => {
-            uwe::plugin::list(downloads, installed)
-                .await
-                .map_err(Error::from)?;
+        Command::List { project } => {
+            let project = opts::project_path(&project)?;
+            uwe::plugin::list_project(project).await?;
         }
 
-        Command::Add{ target, force } => {
-            uwe::plugin::add(target, force)
-                .await
-                .map_err(Error::from)?;
+        Command::Install { project } => {
+            let project = opts::project_path(&project)?;
+            uwe::plugin::install(project).await?;
+        }
+
+        Command::Add { target, force } => {
+            uwe::plugin::add(target, force).await?;
         }
     }
     Ok(())
@@ -256,5 +291,5 @@ async fn main() -> Result<()> {
     };
     config::generator::get(Some(app_data));
 
-    Ok(run(args.cmd).await.or_else(fatal)?)
+    Ok(run(args.cmd).await.map_err(Error::from).or_else(fatal)?)
 }

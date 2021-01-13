@@ -38,6 +38,7 @@ pub async fn peek<F: AsRef<Path>>(archive: F) -> Result<Plugin> {
 pub async fn install<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
+    name: &str,
     dep: &Dependency,
     locals: Option<PluginMap>,
 ) -> Result<Plugin> {
@@ -57,7 +58,7 @@ pub async fn install<P: AsRef<Path>>(
             }
         }
     } else {
-        install_registry(project, registry, dep).await
+        install_registry(project, registry, name, dep).await
     }?;
 
     Ok(plugin)
@@ -296,11 +297,20 @@ pub(crate) fn inherit(
 pub async fn dependency_installed<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
+    name: &str,
     dep: &Dependency,
 ) -> Result<Option<Plugin>> {
-    let name = dep.name();
     let (version, package) = registry.resolve(name, &dep.version).await?;
     version_installed(project, registry, name, &version, Some(&package)).await
+}
+
+pub fn is_installed(
+    name: &str,
+    version: &Version,
+) -> Result<bool> {
+    let extract_target = installation_dir(name, &version)?;
+    let extract_target_plugin = extract_target.join(PLUGIN);
+    Ok(extract_target_plugin.exists())
 }
 
 pub async fn version_installed<P: AsRef<Path>>(
@@ -373,14 +383,15 @@ fn attributes(
 pub async fn install_registry<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
+    name: &str,
     dep: &Dependency,
 ) -> Result<Plugin> {
-    let name = dep.name.as_ref().unwrap();
+    //let name = dep.name.as_ref().unwrap();
     let (version, package) = registry.resolve(name, &dep.version).await?;
     let extract_target = installation_dir(name, &version)?;
 
     if let Some(plugin) =
-        dependency_installed(project, registry, dep).await?.take()
+        dependency_installed(project, registry, name, dep).await?.take()
     {
         return Ok(plugin);
     }
