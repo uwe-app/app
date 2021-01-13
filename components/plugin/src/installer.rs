@@ -278,22 +278,6 @@ pub(crate) async fn install_local<P: AsRef<Path>, S: AsRef<str>>(
     }
 }
 
-pub(crate) fn inherit(
-    local_dep: &mut Dependency,
-    local_plugin: &mut Plugin,
-    parent_plugin: &Plugin,
-    parent_dep: &Dependency,
-) -> Result<()> {
-    // FIXME: ensure we are using the local name only...
-    //
-
-    local_dep.apply = parent_dep.apply.clone();
-
-    local_plugin.set_source(PluginSource::Local(local_plugin.name.clone()));
-    local_plugin.set_base(parent_plugin.base().clone());
-    Ok(())
-}
-
 pub async fn dependency_installed<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,

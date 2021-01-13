@@ -32,7 +32,7 @@ impl TryInto<DependencyMap> for DependencyDefinitionMap {
             let dep = match def {
                 DependencyDefinition::VersionRange(range) => {
                     let version: VersionReq = range.parse()?;
-                    let dep = Dependency::new(name.clone(), version);
+                    let dep = Dependency::new(version);
                     dep
                 }
                 DependencyDefinition::Dependency(dep) => dep,
@@ -217,12 +217,6 @@ pub enum DependencyTarget {
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Dependency {
-    /// Injected when resolving dependencies from the hash map key or
-    /// converting from lock file entries or references.
-    #[deprecated(note = "Do not store dependency name")]
-    #[serde(skip)]
-    pub name: Option<String>,
-
     /// Required version for the dependency.
     #[serde_as(as = "DisplayFromStr")]
     pub version: VersionReq,
@@ -244,9 +238,8 @@ pub struct Dependency {
 }
 
 impl Dependency {
-    pub fn new(name: String, version: VersionReq) -> Self {
+    pub fn new(version: VersionReq) -> Self {
         Self {
-            name: Some(name),
             version,
             target: None,
             optional: None,
@@ -260,15 +253,9 @@ impl Dependency {
             version,
             target: Some(DependencyTarget::Local { scope }),
             optional: Some(true),
-            name: None,
             features: None,
             apply: None,
         }
-    }
-
-    #[deprecated(note = "Do not store dependency name")]
-    pub fn name(&self) -> &str {
-        self.name.as_ref().unwrap()
     }
 
     pub fn range(&self) -> &VersionReq {
@@ -300,7 +287,6 @@ impl Dependency {
 impl From<PluginSpec> for Dependency {
     fn from(spec: PluginSpec) -> Self {
         Self {
-            name: Some(spec.name),
             version: spec.range,
             apply: None,
             features: None,
@@ -319,7 +305,6 @@ impl From<ExactPluginSpec> for Dependency {
         };
 
         Self {
-            name: Some(spec.name),
             version,
             apply: None,
             features: None,
@@ -355,6 +340,7 @@ impl PartialEq for Apply {
 impl Eq for Apply {}
 
 impl Apply {
+
     /// Prepare the global patterns by compiling them.
     ///
     /// Original GlobSet declarations are moved out of the Option(s).

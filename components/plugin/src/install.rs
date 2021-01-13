@@ -7,7 +7,7 @@ use config::{
     Config,
     ResolvedPlugins,
     lock_file::{LockFile, LockFileEntry},
-    plugin::{Plugin, dependency::Dependency},
+    plugin::{Plugin, PluginSource, dependency::{Dependency, DependencyTarget}},
 };
 
 use crate::{
@@ -79,6 +79,8 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
         }
     }
 
+    scope_inheritance(&mut resolved)?;
+
     Ok(resolved)
 }
 
@@ -104,6 +106,71 @@ fn into_resolved(tree: &DependencyTree, resolved: &mut ResolvedPlugins) -> Resul
         }
     }
 
+    Ok(())
+}
+
+fn scope_inheritance(resolved: &mut ResolvedPlugins) -> Result<()> {
+    let scoped = resolved
+        .iter()
+        .enumerate()
+        .filter(|(_, (d, _))| d.target.is_some())
+        .filter(|(_, (d, _))| {
+            if let DependencyTarget::Local { .. } =
+                d.target.as_ref().unwrap()
+            {
+                true
+            } else {
+                false
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let scoped = scoped
+        .into_iter()
+        .map(|(i, (_dep, plugin))| {
+            let parent_name = plugin.parent();
+            let parent = resolved
+                .iter()
+                .cloned()
+                .find(|(_, e)| e.name == parent_name);
+
+            (i, parent)
+        })
+        .collect::<Vec<_>>();
+
+    for (index, parent) in scoped {
+        let (dep, plugin) = resolved.get_mut(index).unwrap();
+
+        let (parent_dep, parent_plugin) =
+            parent.as_ref().ok_or_else(|| {
+                Error::PluginParentNotFound(
+                    plugin.parent(),
+                    plugin.name.clone(),
+                )
+            })?;
+
+        //println!("Got scoped at {}", index);
+        //println!("Got scoped name {}", &plugin.name);
+        //println!("Got scoped parent name {:?}", &parent);
+        inherit(dep, plugin, parent_plugin, parent_dep)?;
+    }
+
+    Ok(())
+}
+
+fn inherit(
+    local_dep: &mut Dependency,
+    local_plugin: &mut Plugin,
+    parent_plugin: &Plugin,
+    parent_dep: &Dependency,
+) -> Result<()> {
+    // FIXME: ensure we are using the local name only...
+    //
+
+    local_dep.apply = parent_dep.apply.clone();
+
+    local_plugin.set_source(PluginSource::Local(local_plugin.name.clone()));
+    local_plugin.set_base(parent_plugin.base().clone());
     Ok(())
 }
 

@@ -104,10 +104,6 @@ impl PluginDependencyState {
         }
     }
 
-    pub fn name(&self) -> &str {
-        &self.name 
-    }
-
     pub fn target_version(&self) -> &Option<Version> {
         &self.version
     }

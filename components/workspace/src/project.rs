@@ -212,26 +212,29 @@ impl ProjectBuilder {
         debug!("Resolving plugins...");
 
         if let Some(ref dependencies) = self.config.dependencies() {
-            let plugins = plugin::resolve(
-                &self.options.project,
-                dependencies.clone(),
-                self.options.settings.is_offline(),
-            )
-            .await?;
+            if !dependencies.is_empty() {
+                let mut plugins = plugin::install(&self.config).await?;
 
-            for (_, plugin) in plugins.iter() {
-                let src = plugin.source().as_ref().unwrap().to_url()?;
-                info!("Use {}", plugin.to_string());
-                debug!(" -> {}", src.to_string());
+                // Prepare the dependencies 
+                for (dep, plugin) in plugins.iter_mut() {
+                    info!("Use {}", plugin);
+                    debug!(" -> {}", plugin.base().display());
+                    let src = plugin.source().as_ref().unwrap().to_url()?;
+                    debug!(" -> {}", src.to_string());
+
+                    // Prepare the dependency so that we have cached 
+                    // glob matchers and so that we can expand apply 
+                    // shorthand notation (TODO)
+                    dep.prepare()?;
+                }
+
+                // Create plugin cache lookups for scripts, styles etc
+                let mut plugin_cache = PluginCache::new(plugins);
+                plugin_cache.prepare(self.config.engine())?;
+
+                self.plugins = Some(plugin_cache);
             }
-
-            // Create plugin cache lookups for scripts, styles etc
-            let mut plugin_cache = PluginCache::new(plugins);
-            plugin_cache.prepare(self.config.engine())?;
-
-            self.plugins = Some(plugin_cache);
         }
-
         Ok(self)
     }
 

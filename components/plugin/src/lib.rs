@@ -10,7 +10,6 @@ mod list;
 mod packager;
 mod reader;
 mod registry;
-mod resolver;
 mod system_plugins;
 mod uploader;
 
@@ -31,6 +30,5 @@ pub use registry::{
     check_for_updates, new_registry, update_registry, RegistryAccess,
     RegistryFileAccess,
 };
-pub use resolver::resolve;
 pub use system_plugins::{install_blueprint, install_docs};
 pub use uploader::publish;
