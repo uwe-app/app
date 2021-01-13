@@ -18,8 +18,7 @@ pub use download::get;
 pub use error::Error;
 pub use installer::{
     dependency_installed, install_archive, install_folder, install_path,
-    install_registry, install_repo, installation_dir, version_installed,
-    show,
+    install_registry, install_repo, installation_dir, peek, version_installed,
 };
 pub use linter::lint;
 pub use packager::pack;

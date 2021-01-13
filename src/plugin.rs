@@ -4,20 +4,19 @@ use std::path::PathBuf;
 
 use human_bytes::human_bytes;
 use log::{debug, info, warn};
-use url::Url;
 use semver::VersionReq;
+use url::Url;
 
 use crossterm::{
+    cursor::{MoveToColumn, MoveUp},
     execute,
-    cursor::{MoveUp, MoveToColumn},
     terminal::{Clear, ClearType},
 };
 
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
-    get, show,
-    dependency_installed, install_archive, install_folder, install_registry,
-    install_repo, installation_dir, new_registry,
+    dependency_installed, get, install_archive, install_folder,
+    install_registry, install_repo, installation_dir, new_registry, peek,
 };
 
 use crate::{Error, Result};
@@ -31,17 +30,31 @@ pub enum InstallSpec {
 }
 
 /// List plugins.
-pub async fn list(
-    _downloads: bool,
-    _installed: bool,
-) -> Result<()> {
+pub async fn list(_downloads: bool, _installed: bool) -> Result<()> {
     let registry = new_registry()?;
     let all = registry.all().await?;
     for (name, entry) in all.iter() {
-        if let Some((version, item)) = entry.latest() {
+        if let Some((version, _item)) = entry.latest() {
             let installed_versions = registry.installed_versions(entry).await?;
-            let is_installed = installed_versions.contains(item);
+            let is_installed = installed_versions.contains_key(version);
             let mark = if is_installed { "◯" } else { "-" };
+
+            /*
+            if is_installed {
+                let (latest_installed_version, _) =
+                    installed_versions.iter().next().unwrap();
+                info!(
+                    "{} {}@{} (installed {})",
+                    mark,
+                    name,
+                    version,
+                    latest_installed_version.semver()
+                );
+            } else {
+                info!("{} {}@{}", mark, name, version);
+            }
+            */
+
             info!("{} {}@{}", mark, name, version);
             //info!(r#""{}" = "{}""#, name, version);
         }
@@ -51,7 +64,12 @@ pub async fn list(
     let registry_repo = dirs::registry_dir()?;
     let repo = scm::open(&registry_repo)?;
     let (is_current, _) = scm::is_current_with_remote(&repo, None, None)?;
-    execute!(std::io::stdout(), MoveUp(1), MoveToColumn(0), Clear(ClearType::CurrentLine))?;
+    execute!(
+        std::io::stdout(),
+        MoveUp(1),
+        MoveToColumn(0),
+        Clear(ClearType::CurrentLine)
+    )?;
 
     if is_current {
         info!("");
@@ -69,16 +87,19 @@ pub async fn list(
 }
 
 /// Show plugin information.
-pub async fn info(spec: ExactPluginSpec) -> Result<()> {
+pub async fn show(spec: ExactPluginSpec) -> Result<()> {
     let registry = new_registry()?;
 
     let version_req = if let Some(version) = spec.version() {
         VersionReq::exact(version)
-    } else { VersionReq::any() };
+    } else {
+        VersionReq::any()
+    };
 
-    let (version, _package) = registry.resolve(spec.name(), &version_req).await?;
+    let (version, _package) =
+        registry.resolve(spec.name(), &version_req).await?;
     let fetch_info = get(spec.name(), &version).await?;
-    let plugin = show(&fetch_info.archive).await?;
+    let plugin = peek(&fetch_info.archive).await?;
 
     info!("{}@{}", plugin.name(), plugin.version());
     info!("");
@@ -95,8 +116,8 @@ pub async fn info(spec: ExactPluginSpec) -> Result<()> {
         info!("Keywords: {}", plugin.keywords().join(", "));
     }
     if !plugin.origins().is_empty() {
-
-        let origins = plugin.origins()
+        let origins = plugin
+            .origins()
             .iter()
             .map(|l| l.to_string())
             .collect::<Vec<_>>();
@@ -118,8 +139,8 @@ pub async fn info(spec: ExactPluginSpec) -> Result<()> {
     Ok(())
 }
 
-/// Install a plugin.
-pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
+/// Add a plugin to the installation folder.
+pub async fn add(spec: InstallSpec, force: bool) -> Result<()> {
     let registry = new_registry()?;
     let project = std::env::current_dir()?;
     info!("Plugins {}", config::plugins_dir()?.display());
@@ -146,31 +167,19 @@ pub async fn install(spec: InstallSpec, force: bool) -> Result<()> {
         InstallSpec::Archive(path) => {
             install_archive(&project, &path, force).await
         }
-        InstallSpec::Repo(url) => {
-            install_repo(&project, &url, force).await
-        }
+        InstallSpec::Repo(url) => install_repo(&project, &url, force).await,
     };
 
     match result {
         Ok(plugin) => {
             debug!("Location {}", plugin.base().display());
-            info!(
-                "Installed plugin {}@{} ✓",
-                plugin.name(),
-                plugin.version()
-            );
+            info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
         }
         Err(e) => {
             if !force {
-                if let plugin::Error::PackageOverwrite(
-                    name,
-                    version,
-                    _path,
-                ) = e
+                if let plugin::Error::PackageOverwrite(name, version, _path) = e
                 {
-                    return Err(Error::PluginAlreadyInstalled(
-                        name, version,
-                    ));
+                    return Err(Error::PluginAlreadyInstalled(name, version));
                 }
             }
             return Err(Error::from(e));

@@ -17,7 +17,9 @@ fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, Error> {
     src.parse::<PluginSpec>().map_err(Error::from)
 }
 
-fn parse_exact_plugin_spec(src: &str) -> std::result::Result<ExactPluginSpec, Error> {
+fn parse_exact_plugin_spec(
+    src: &str,
+) -> std::result::Result<ExactPluginSpec, Error> {
     src.parse::<ExactPluginSpec>().map_err(Error::from)
 }
 
@@ -79,7 +81,6 @@ struct Cli {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-
     /// List plugins
     #[structopt(alias = "ls")]
     List {
@@ -124,15 +125,13 @@ enum Command {
     Clean {},
 
     /// Show plugin information
-    #[structopt(
-        after_help = "EXAMPLES:
+    #[structopt(after_help = "EXAMPLES:
     Print plugin information: 
         upm info std::core
     Print plugin information for a specific version: 
         upm info std::core@4.1.12
-"
-    )]
-    Info {
+")]
+    Show {
         #[structopt(parse(try_from_str = parse_exact_plugin_spec))]
         target: ExactPluginSpec,
     },
@@ -154,23 +153,22 @@ enum Command {
         target: PluginSpec,
     },
 
-    /// Install a plugin
+    /// Add a plugin to the installation folder
     #[structopt(
-        alias = "i",
         after_help = "EXAMPLES:
-    Install from the registry: 
-        upm i std::core
-    Install a specific version from the registry: 
-        upm i std::core@4.1.12
-    Install from a folder: 
-        upm i /path/to/plugin
-    Install from an archive: 
-        upm i /path/to/plugin/package.tar.xz
-    Install from a git repository: 
-        upm i https://github.com/username/plugin-repo
+    Add from the registry: 
+        upm add std::core
+    Add a specific version from the registry: 
+        upm add std::core@4.1.12
+    Add from a folder: 
+        upm add /path/to/plugin
+    Add from an archive: 
+        upm add /path/to/plugin/package.tar.xz
+    Add from a git repository: 
+        upm add https://github.com/username/plugin-repo
 "
     )]
-    Install {
+    Add {
         /// Force overwrite existing installed plugin
         #[structopt(short, long)]
         force: bool,
@@ -204,23 +202,25 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::update().await.map_err(Error::from)?;
         }
 
-        Command::Info{ target } => {
-            uwe::plugin::info(target).await.map_err(Error::from)?;
+        Command::Show { target } => {
+            uwe::plugin::show(target).await.map_err(Error::from)?;
         }
 
         Command::Remove { target } => {
             uwe::plugin::remove(target).await.map_err(Error::from)?;
         }
 
-        Command::List { downloads, installed } => {
-            uwe::plugin::list(
-                downloads,
-                installed,
-            ).await.map_err(Error::from)?;
+        Command::List {
+            downloads,
+            installed,
+        } => {
+            uwe::plugin::list(downloads, installed)
+                .await
+                .map_err(Error::from)?;
         }
 
-        Command::Install { target, force } => {
-            uwe::plugin::install(target, force)
+        Command::Add{ target, force } => {
+            uwe::plugin::add(target, force)
                 .await
                 .map_err(Error::from)?;
         }

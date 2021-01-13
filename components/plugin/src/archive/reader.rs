@@ -38,7 +38,7 @@ pub struct PackageReader {
     /// Whether to overwrite files when unpacking.
     overwrite: bool,
 
-    /// Whether to peek into the bundled pugin.toml 
+    /// Whether to peek into the bundled pugin.toml
     /// file and skip unpacking.
     peek: bool,
 }
@@ -173,7 +173,7 @@ impl PackageReader {
         if self.peek {
             self.plugin = Some(plugin);
             self.target = tarball_path.to_path_buf();
-            return Ok(self)
+            return Ok(self);
         }
 
         // Determine the target extraction path

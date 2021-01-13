@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 
 use futures::future;
 
@@ -318,11 +318,8 @@ impl<'a> Resolver<'a> {
         // otherwise this can error for `path` references
         if dep.target.is_none() {
             // Try to resolve the package again
-            let (version, _package) = self.registry.resolve(
-                &e.name,
-                &dep.version,
-            )
-            .await?;
+            let (version, _package) =
+                self.registry.resolve(&e.name, &dep.version).await?;
             if version > e.version {
                 let mut copy = e.clone();
                 copy.version = version;
@@ -388,7 +385,6 @@ async fn solver(
     }
 
     for (name, mut dep) in input.into_iter() {
-
         debug!("Solving {}", name);
 
         if stack.contains(&name) {
@@ -523,12 +519,10 @@ async fn resolve_version<P: AsRef<Path>>(
     dep: &Dependency,
     parent: &Option<SolvedReference>,
 ) -> Result<(Version, Option<RegistryItem>, Option<Plugin>)> {
-
     debug!("Resolving version {}", dep.name());
     debug!("Resolving version {:?}", dep.target);
 
     if let Some(ref target) = dep.target {
-
         match target {
             DependencyTarget::File { ref path } => {
                 let plugin =
@@ -541,7 +535,8 @@ async fn resolve_version<P: AsRef<Path>>(
                 Ok((plugin.version().clone(), None, Some(plugin)))
             }
             DependencyTarget::Repo { ref git } => {
-                let plugin = installer::install_repo(project, git, true).await?;
+                let plugin =
+                    installer::install_repo(project, git, true).await?;
                 Ok((plugin.version().clone(), None, Some(plugin)))
             }
             DependencyTarget::Local { ref scope } => {
@@ -570,8 +565,7 @@ async fn resolve_version<P: AsRef<Path>>(
     } else {
         // Get version from registry
         let name = dep.name();
-        let (version, package) =
-            registry.resolve(name, &dep.version).await?;
+        let (version, package) = registry.resolve(name, &dep.version).await?;
 
         debug!("Resolved registry package for {:?}", &version);
 

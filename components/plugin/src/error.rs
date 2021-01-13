@@ -158,9 +158,7 @@ pub enum Error {
     )]
     PackageOverwrite(String, String, PathBuf),
 
-    #[error(
-        "Failed to parse registry file {0} ({1})"
-    )]
+    #[error("Failed to parse registry file {0} ({1})")]
     RegistryParse(PathBuf, String),
 
     #[error(transparent)]

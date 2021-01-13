@@ -361,7 +361,7 @@ pub(crate) async fn prepare(
     let website = opts.settings.get_canonical_url(cfg, None)?;
     cfg.set_website(website);
 
-    // Must prepare the link catalog after 
+    // Must prepare the link catalog after
     // we have a correct source path
     if let Some(link) = cfg.link.as_mut() {
         link.prepare(&opts.source)?;

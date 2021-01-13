@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use sha3::{Digest, Sha3_256};
 use futures::TryFutureExt;
 use log::debug;
+use sha3::{Digest, Sha3_256};
 use url::Url;
 
 use config::{
@@ -22,15 +22,14 @@ use crate::{
 };
 
 /// Read the plugin info from an archive
-pub async fn show<F: AsRef<Path>>(archive: F) -> Result<Plugin> {
+pub async fn peek<F: AsRef<Path>>(archive: F) -> Result<Plugin> {
     // Extract the archive
-    let reader =
-        PackageReader::new(archive.as_ref().to_path_buf(), None, None)
-            .set_peek(true)
-            .digest()
-            .and_then(|b| b.xz())
-            .and_then(|b| b.tar())
-            .await?;
+    let reader = PackageReader::new(archive.as_ref().to_path_buf(), None, None)
+        .set_peek(true)
+        .digest()
+        .and_then(|b| b.xz())
+        .and_then(|b| b.tar())
+        .await?;
 
     let (_, _, plugin) = reader.into_inner();
     Ok(plugin)
@@ -42,7 +41,6 @@ pub async fn install<P: AsRef<Path>>(
     dep: &Dependency,
     locals: Option<PluginMap>,
 ) -> Result<Plugin> {
-
     let plugin = if let Some(ref target) = dep.target {
         match target {
             DependencyTarget::File { ref path } => {
@@ -105,7 +103,6 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     path: F,
     source: Option<PluginSource>,
 ) -> Result<Plugin> {
-
     debug!("Install plugin path {}", path.as_ref().display());
 
     let (target, mut plugin) = install_file(project.as_ref(), path).await?;
@@ -138,23 +135,22 @@ pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
     Ok(plugin)
 }
 
-/// Copy a source plugin folder into the standard plugin installation 
+/// Copy a source plugin folder into the standard plugin installation
 /// directory location.
 ///
-/// If the force flag is set and the installation location exists it 
+/// If the force flag is set and the installation location exists it
 /// is removed before copying files.
 ///
-/// If the force flag is not set and the the installation location exists 
+/// If the force flag is not set and the the installation location exists
 /// the existing plugin is returned.
 ///
-/// The `plugin.toml` file in the source location is moved to `plugin.orig.toml` 
+/// The `plugin.toml` file in the source location is moved to `plugin.orig.toml`
 /// and the computed `plugin` information is written to `plugin.toml` instead.
 async fn copy_plugin_folder<S: AsRef<Path>>(
     source: S,
     plugin: Plugin,
     force: bool,
-    ) -> Result<Plugin> {
-
+) -> Result<Plugin> {
     let destination = installation_dir(plugin.name(), plugin.version())?;
     let source = source.as_ref();
     let target = &destination;
@@ -330,8 +326,7 @@ pub async fn version_installed<P: AsRef<Path>>(
             package.clone()
         } else {
             let (_, package) =
-                registry.resolve(name, &VersionReq::exact(version))
-                    .await?;
+                registry.resolve(name, &VersionReq::exact(version)).await?;
             package
         };
 

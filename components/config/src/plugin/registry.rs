@@ -20,7 +20,6 @@ pub struct RegistryEntry {
 }
 
 impl RegistryEntry {
-
     pub fn versions(&self) -> &BTreeMap<VersionKey, RegistryItem> {
         &self.versions
     }

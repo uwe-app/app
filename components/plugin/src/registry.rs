@@ -16,7 +16,6 @@ use crate::{Error, Registry, Result};
 /// Defines the contract for plugin registry implementations.
 #[async_trait]
 pub trait RegistryAccess {
-
     /// Load all registry packages into memory.
     async fn all(&self) -> Result<BTreeMap<String, RegistryEntry>>;
 
@@ -42,10 +41,10 @@ pub trait RegistryAccess {
         needle: &str,
     ) -> Result<BTreeMap<String, RegistryEntry>>;
 
-    /// Register a plugin by writing the package registry file to disc 
+    /// Register a plugin by writing the package registry file to disc
     /// for the writer side of this registry.
     ///
-    /// The digest should be the checksum for the archive that bundles 
+    /// The digest should be the checksum for the archive that bundles
     /// the plugin files.
     async fn register(
         &self,
@@ -58,7 +57,10 @@ pub trait RegistryAccess {
     async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry>;
 
     /// Find all the versions that are installed for a registry entry.
-    async fn installed_versions(&self, entry: &RegistryEntry) -> Result<Vec<RegistryItem>>;
+    async fn installed_versions(
+        &self,
+        entry: &RegistryEntry,
+    ) -> Result<BTreeMap<VersionKey, RegistryItem>>;
 }
 
 /// Access a registry using a file system backing store.
@@ -87,7 +89,6 @@ impl RegistryFileAccess {
 
 #[async_trait]
 impl RegistryAccess for RegistryFileAccess {
-
     async fn all(&self) -> Result<BTreeMap<String, RegistryEntry>> {
         let mut out = BTreeMap::new();
         for entry in fs::read_dir(&self.reader)? {
@@ -95,10 +96,7 @@ impl RegistryAccess for RegistryFileAccess {
             if path.is_file() {
                 let registry_entry = self.read_file(&path).await?;
                 if let Some(stem) = path.file_stem() {
-                    let name = stem
-                        .to_string_lossy()
-                        .into_owned()
-                        .to_string(); 
+                    let name = stem.to_string_lossy().into_owned().to_string();
                     out.insert(name, registry_entry);
                 }
             }
@@ -106,12 +104,16 @@ impl RegistryAccess for RegistryFileAccess {
         Ok(out)
     }
 
-    async fn installed_versions(&self, entry: &RegistryEntry) -> Result<Vec<RegistryItem>> {
-        let mut out = Vec::new();
+    async fn installed_versions(
+        &self,
+        entry: &RegistryEntry,
+    ) -> Result<BTreeMap<VersionKey, RegistryItem>> {
+        let mut out = BTreeMap::new();
         for (version, item) in entry.versions() {
-            let installation = crate::installation_dir(item.name(), version.semver())?;
+            let installation =
+                crate::installation_dir(item.name(), version.semver())?;
             if installation.exists() && installation.is_dir() {
-                out.push(item.clone());
+                out.insert(version.clone(), item.clone());
             }
         }
         Ok(out)
@@ -139,8 +141,9 @@ impl RegistryAccess for RegistryFileAccess {
 
     async fn read_file(&self, file: &PathBuf) -> Result<RegistryEntry> {
         let contents = utils::fs::read_string(file)?;
-        Ok(serde_json::from_str(&contents)
-            .map_err(|e| Error::RegistryParse(file.to_path_buf(), e.to_string()))?)
+        Ok(serde_json::from_str(&contents).map_err(|e| {
+            Error::RegistryParse(file.to_path_buf(), e.to_string())
+        })?)
     }
 
     async fn entry(&self, name: &str) -> Result<Option<RegistryEntry>> {
@@ -207,7 +210,10 @@ impl RegistryAccess for RegistryFileAccess {
         item.digest = hex::encode(digest);
 
         //let version = plugin.version().clone();
-        entry.versions.entry(VersionKey::from(plugin.version())).or_insert(item);
+        entry
+            .versions
+            .entry(VersionKey::from(plugin.version()))
+            .or_insert(item);
 
         let content = serde_json::to_string(entry)?;
 
