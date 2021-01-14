@@ -151,7 +151,7 @@ fn print_plugin_dependency(plugin: &Plugin, target: &Option<DependencyTarget>) {
         println!("{}", dependency_message);
         println!("");
         println!("{}", delimiter);
-        println!(r#" To add this plugin copy the snippet above into the "site.toml" file for the project."#);
+        println!(r#"To add this plugin copy the snippet above into the "site.toml" file for the project."#);
         println!("{}", delimiter);
     }
 }
@@ -164,7 +164,17 @@ pub async fn add(
     mut git: Option<Url>,
     force: bool) -> Result<()> {
 
-    // TODO: check multiple install targets are not given???
+    // Check only a single plugin option is given
+    let mut specified = 0usize;
+    if plugin_name.is_some() { specified += 1 }
+    if path.is_some() { specified += 1 }
+    if archive.is_some() { specified += 1 }
+    if git.is_some() { specified += 1 }
+    if specified == 0 {
+        return Err(Error::PluginAddNoTarget)
+    } else if specified > 1 {
+        return Err(Error::PluginAddMultipleTargets)
+    }
 
     let registry = new_registry()?;
     let project = std::env::current_dir()?;

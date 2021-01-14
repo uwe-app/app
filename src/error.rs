@@ -65,6 +65,9 @@ pub enum Error {
     #[error("To add a plugin requires a name, path, archive or URL.")]
     PluginAddNoTarget,
 
+    #[error("Plugin targets cannot be mixed; use a plugin name or an option (--path, --archive, --git)")]
+    PluginAddMultipleTargets,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

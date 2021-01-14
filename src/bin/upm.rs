@@ -144,18 +144,24 @@ enum Command {
         target: PluginSpec,
     },
 
-    /// Add a plugin to the installation
+    /// Add a plugin
+    ///
+    /// The target plugin will be installed if it does not exist; if the 
+    /// plugin already exists use the --force option to overwrite it.
+    ///
+    /// Options --path, --archive, --git and <plugin-name> 
+    /// are mutually exclusive; it is an error to combine them.
     #[structopt(after_help = "EXAMPLES:
     Add from the registry: 
         upm add std::core
     Add a specific version from the registry: 
         upm add std::core@4.1.12
     Add from a folder: 
-        upm add --path=/path/to/plugin
+        upm add --path /path/to/plugin
     Add from an archive: 
-        upm add --archive=/path/to/plugin/package.tar.xz
+        upm add --archive /path/to/plugin/package.tar.xz
     Add from a git repository: 
-        upm add --git=https://github.com/username/plugin-repo
+        upm add --git https://github.com/username/plugin-repo
 ")]
     Add {
         /// Force overwrite existing plugin
