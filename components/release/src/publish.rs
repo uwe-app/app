@@ -13,13 +13,16 @@ use crate::{
     Error, Result,
 };
 
-use config::plugin::VersionKey;
+use config::plugin::{Plugin, VersionKey};
 
 /// WARN: Assumes we are building on linux!
 
 static INSTALL_SH: &str = "install.sh";
 static LINUX_PREFIX: &str = "target/release";
 static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
+
+static UWE_BINARY: &str = "target/release/uwe";
+static UPM_BINARY: &str = "target/release/upm";
 
 /// Publish a new release.
 ///
@@ -29,6 +32,8 @@ static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
 /// - Upload the quick install script.
 /// - Update the release registry index.
 /// - Push the releases repository with the updated manifest file.
+/// - Publish the stage.uwe.app website
+/// - Build the offline documentation
 /// - Copy the release manifest to the releases.uwe.app website source.
 /// - Commit and push the website releases repository with the updated manifest.
 /// - Publish the website for releases.uwe.app using the new manifest.
@@ -114,20 +119,92 @@ pub async fn publish(
     info!("Push {}", releases_repo.display());
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
+    let website_repo = PathBuf::from("../sites/website");
+    update_website(&website_repo)?;
     update_releases_website(&releases_file)?;
+
+    update_documentation(&website_repo, &semver)?;
 
     Ok(())
 }
 
+fn update_website(website_repo: &PathBuf) -> Result<()> {
+    // FIXME: do not remove the lock file!
+    let lock_file = website_repo.join(config::SITE_LOCK);
+    fs::remove_file(&lock_file)?;
+    publish_website(&website_repo, "stage")?;
+    Ok(())
+}
+
+/// Update the offline documentation.
+///
+/// Note we do not use the `make` tasks to compile as we need to be certain we 
+/// are using the version of `uwe(1)` that we just compiled.
+fn update_documentation(website_repo: &PathBuf, version: &Version) -> Result<()> {
+
+    Command::new(UWE_BINARY)
+        .args(vec!["build", "--profile", "docs", &website_repo.to_string_lossy()])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    let build_files = website_repo.join("build").join("docs");
+    let documentation_repo = PathBuf::from("../documentation");
+    let public_html = documentation_repo.join("public_html");
+
+    fs::remove_dir_all(&public_html)?;
+
+    // Copy over the build/docs directory from the website
+    Command::new("cp")
+        .args(vec!["-rf", &build_files.to_string_lossy(), &documentation_repo.to_string_lossy()])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    // Move files into place as `public_html`
+    let documentation_target = documentation_repo.join("docs");
+    Command::new("mv")
+        .args(vec!["-f", &documentation_target.to_string_lossy(), &public_html.to_string_lossy()])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    // Update the plugin version and write the new version to disc
+    let plugin_file = documentation_repo.join(config::PLUGIN);
+    info!("Write plugin version {} to {}", &version, plugin_file.display());
+    let plugin_content = fs::read_to_string(&plugin_file)?;
+    let mut plugin: Plugin = toml::from_str(&plugin_content)?;
+    plugin.set_version(version.clone());
+    fs::write(&plugin_file, toml::to_vec(&plugin)?)?;
+
+    // Commit and push the documentation repo
+    Command::new("make")
+        .args(vec!["push"])
+        .current_dir(&documentation_repo)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    // Publish the plugin with the new version
+    Command::new(UPM_BINARY)
+        .args(vec!["publish", &documentation_repo.to_string_lossy()])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    // TODO: launch a server with the documentation for verification?
+
+    Ok(())
+}
 
 /// Create a release build.
 fn build(cwd: &PathBuf) -> Result<()> {
-    let mut command = Command::new("make");
-    let tasks = vec!["build-release", "build-linux-macos-cross"];
-    command.current_dir(cwd).args(tasks);
-    command.stdout(Stdio::inherit());
-    command.stderr(Stdio::inherit());
-    command.output()?;
+    Command::new("make")
+        .current_dir(cwd)
+        .args(vec!["build-release", "build-linux-macos-cross"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
     Ok(())
 }
 
@@ -271,42 +348,28 @@ fn update_releases_website(releases_file: &PathBuf) -> Result<()> {
     scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
 
     // Compile and publish the website
+    // FIXME: do not remove the lock file!
     let lock_file = releases_website_repo.join(config::SITE_LOCK);
     fs::remove_file(&lock_file)?;
-    publish_releases_website(&releases_website_repo)?;
+    publish_website(&releases_website_repo, "production")?;
 
     Ok(())
 }
 
-fn publish_releases_website(repo: &PathBuf) -> Result<()> {
+fn publish_website(repo: &PathBuf, environment: &str) -> Result<()> {
     let repo_path = repo.to_string_lossy().into_owned().to_string();
     let cwd = std::env::current_dir()?;
-    let uwe = uwe_binary();
-    let mut command = Command::new(&uwe);
-    let args = vec![
-        "publish",
-        "production",
-        &repo_path,
-    ];
-    command.current_dir(cwd).args(args);
-    command.stdout(Stdio::inherit());
-    command.stderr(Stdio::inherit());
-    command.output()?;
+    Command::new(UWE_BINARY)
+        .current_dir(cwd)
+        .args(
+            vec![
+                "publish",
+                environment,
+                &repo_path,
+            ])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
     Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn uwe_binary() -> String {
-    todo!("Get binary path for windows");
-}
-
-#[cfg(target_os = "macos")]
-pub fn uwe_binary() -> String {
-    format!("{}/{}", MACOS_PREFIX, "uwe")
-}
-
-#[cfg(target_os = "linux")]
-pub fn uwe_binary() -> String {
-    format!("{}/{}", LINUX_PREFIX, "uwe")
 }
 

@@ -246,6 +246,10 @@ impl Plugin {
         &self.version
     }
 
+    pub fn set_version(&mut self, version: Version) {
+        self.version = version
+    }
+
     pub fn description(&self) -> &str {
         &self.description
     }
