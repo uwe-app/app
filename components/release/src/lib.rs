@@ -78,11 +78,13 @@ pub enum Error {
 
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
+
+    #[error(transparent)]
+    Utils(#[from] utils::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-mod binary;
 mod checksum;
 mod download;
 mod env;
@@ -92,15 +94,13 @@ mod publish;
 mod releases;
 mod remove;
 mod uninstall;
-mod update;
 mod verify;
 mod version;
 
-pub use install::{install, select};
+pub use install::{install, select, update, update_self};
 pub use list::list;
 pub use publish::publish;
 pub use releases::mount;
 pub use remove::{prune, remove};
 pub use uninstall::uninstall;
-pub use update::{update, update_self};
 pub use version::{default_version, find_local_version};

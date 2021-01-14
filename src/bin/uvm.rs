@@ -1,7 +1,8 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use semver::VersionReq;
+use log::info;
+use semver::{Version, VersionReq};
 use structopt::StructOpt;
 
 use uwe::{opts::fatal, Error, Result};
@@ -52,7 +53,10 @@ enum Command {
     Uninstall {},
 }
 
-async fn run(cmd: Command, name: &str, version: &str) -> release::Result<()> {
+async fn run(cmd: Command) -> release::Result<()> {
+    let name = config::generator::name();
+    let version = config::generator::version();
+
     match cmd {
         Command::List {} => {
             release::list().await?;
@@ -98,10 +102,29 @@ async fn main() -> Result<()> {
     uwe::opts::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
-    let name = env!("CARGO_PKG_NAME");
-    let version = env!("CARGO_PKG_VERSION");
+    // Configure the generator meta data ahead of time
 
-    run(args.cmd, name, version)
+    // Must configure the version here otherwise option_env!() will
+    // use the version from the workspace package which we don't really
+    // care about, the top-level version is the one that interests us.
+    let name = env!("CARGO_PKG_NAME").to_string();
+    let version = env!("CARGO_PKG_VERSION").to_string();
+    let bin_name = env!("CARGO_BIN_NAME").to_string();
+    let user_agent = format!("{}/{}", &name, &version);
+    let semver: Version = version.parse().unwrap();
+
+    info!("{}", &version);
+
+    let app_data = config::generator::AppData {
+        name,
+        bin_name,
+        version,
+        user_agent,
+        semver,
+    };
+    config::generator::get(Some(app_data));
+
+    run(args.cmd)
         .await
         .map_err(Error::from)
         .or_else(fatal)?;

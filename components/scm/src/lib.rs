@@ -34,6 +34,9 @@ pub enum Error {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Utils(#[from] utils::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;

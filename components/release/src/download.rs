@@ -1,19 +1,14 @@
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{self, stderr, stdout, Write};
+use std::io::{self, stderr, Write};
 use std::path::PathBuf;
 
-use crossterm::{
-    cursor::MoveUp,
-    execute,
-    terminal::{Clear, ClearType},
-};
 use human_bytes::human_bytes;
 use pbr::{ProgressBar, Units};
 use sha3::{Digest, Sha3_256};
 use tempfile::NamedTempFile;
 
-use log::{debug, info};
+use log::debug;
 use semver::Version;
 use url::Url;
 
@@ -56,8 +51,6 @@ pub(crate) async fn all(
 
     let mut output: HashMap<String, PathBuf> = HashMap::new();
 
-    info!("Download {} components: {}", names.len(), names.join(", "));
-
     //for name in releases::INSTALL_EXE_NAMES.iter() {
     for name in names.iter() {
         let expected = platform_info.get(*name).unwrap();
@@ -97,15 +90,7 @@ pub(crate) async fn all(
         output.insert(name.to_string(), download_file);
     }
 
-    let mut stderr = stderr();
-    execute!(stderr, Clear(ClearType::CurrentLine))?;
-
-    let mut stdout = stdout();
-    execute!(stdout, MoveUp(1), Clear(ClearType::CurrentLine), MoveUp(1))?;
-
-    // HACK: so future log messages are aligned correctly
-    stdout.write(" ".as_bytes())?;
-    stdout.flush()?;
+    utils::terminal::clear_current_line()?;
 
     Ok(output)
 }
