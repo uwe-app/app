@@ -10,7 +10,7 @@ use url::Url;
 use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
 use plugin::{
     check_for_updates, dependency_installed, get, install_archive,
-    install_folder, install_registry, install_repo, installation_dir,
+    install_registry, install_repo, installation_dir, install_folder,
     new_registry, peek,
 };
 
@@ -75,7 +75,9 @@ pub async fn list_registry(_downloads: bool, _installed: bool) -> Result<()> {
         }
     }
 
+    info!("Checking for registry updates...");
     let is_current = check_for_updates().await?;
+    utils::terminal::clear_previous_line()?;
 
     if is_current {
         info!("");
@@ -144,6 +146,8 @@ pub async fn show(spec: ExactPluginSpec) -> Result<()> {
 
     Ok(())
 }
+
+// TODO: disambiguate with `--path`, `--archive` and `--git`
 
 /// Add a plugin to the installation folder.
 pub async fn add(spec: InstallSpec, force: bool) -> Result<()> {

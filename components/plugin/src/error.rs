@@ -104,9 +104,6 @@ pub enum Error {
     #[error("The archive source path {0} is not a file")]
     PackageSourceNotFile(PathBuf),
 
-    #[error("The archive target path {0} is not a directory")]
-    PackageTargetNotDirectory(PathBuf),
-
     #[error("Package digests do not match {0}")]
     DigestMismatch(PathBuf),
 
@@ -158,6 +155,11 @@ pub enum Error {
     )]
     PackageOverwrite(String, String, PathBuf),
 
+    #[error(
+        "Archive plugin {0} is already installed, use `--force` to overwrite"
+    )]
+    ArchiveOverwrite(PathBuf),
+
     #[error("Failed to parse registry file {0} ({1})")]
     RegistryParse(PathBuf, String),
 
@@ -202,9 +204,6 @@ pub enum Error {
 
     #[error(transparent)]
     Request(#[from] reqwest::Error),
-
-    #[error(transparent)]
-    Crossterm(#[from] crossterm::ErrorKind),
 
     //#[error(transparent)]
     //Regex(#[from] regex::Error),

@@ -40,7 +40,10 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
         } else {
             let mut lock_installed: LockFile = Default::default();
 
+            info!("Checking for registry updates...");
             let is_current = check_for_updates().await?;
+            utils::terminal::clear_previous_line()?;
+
             if !is_current {
                 update_registry().await?;
             }

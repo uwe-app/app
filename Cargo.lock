@@ -2223,7 +2223,6 @@ dependencies = [
  "async-trait",
  "bracket",
  "config",
- "crossterm",
  "dirs 0.1.0",
  "futures",
  "hex",
@@ -3911,6 +3910,7 @@ name = "utils"
 version = "0.1.0"
 dependencies = [
  "crossbeam",
+ "crossterm",
  "ignore",
  "rand 0.7.3",
  "serde",

@@ -7,6 +7,10 @@ pub enum Error {
 
     #[error(transparent)]
     StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
+    Crossterm(#[from] crossterm::ErrorKind),
+
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -17,6 +21,7 @@ pub mod fs;
 pub mod json_path;
 //pub mod progress;
 pub mod symlink;
+pub mod terminal;
 pub mod url;
 pub mod walk;
 

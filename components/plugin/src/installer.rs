@@ -14,7 +14,7 @@ use config::{
     PLUGIN,
 };
 
-use utils::walk;
+//use utils::walk;
 
 use crate::{
     archive::reader::PackageReader, compute, download, reader::read, Error,
@@ -24,7 +24,7 @@ use crate::{
 /// Read the plugin info from an archive
 pub async fn peek<F: AsRef<Path>>(archive: F) -> Result<Plugin> {
     // Extract the archive
-    let reader = PackageReader::new(archive.as_ref().to_path_buf(), None, None)
+    let reader = PackageReader::new(archive.as_ref().to_path_buf())
         .set_peek(true)
         .digest()
         .and_then(|b| b.xz())
@@ -129,13 +129,14 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
 pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
     project: P,
     path: F,
-    force: bool,
+    _force: bool,
 ) -> Result<Plugin> {
     let plugin = install_path(project, path.as_ref(), None).await?;
-    let plugin = copy_plugin_folder(path.as_ref(), plugin, force).await?;
+    //let plugin = copy_plugin_folder(path.as_ref(), plugin, force).await?;
     Ok(plugin)
 }
 
+/*
 /// Copy a source plugin folder into the standard plugin installation
 /// directory location.
 ///
@@ -186,6 +187,7 @@ async fn copy_plugin_folder<S: AsRef<Path>>(
 
     Ok(plugin)
 }
+*/
 
 /// Install from a local archive file.
 ///
@@ -196,25 +198,32 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
     path: F,
     force: bool,
 ) -> Result<Plugin> {
-    // Determine the location to extract the archive to.
-    let builder =
-        |_: &PathBuf, plugin: &Plugin, _digest: &Vec<u8>| -> Result<PathBuf> {
-            let name = format!(
-                "{}{}{}",
-                &plugin.name,
-                config::PLUGIN_NS,
-                plugin.version(),
-            );
-
-            Ok(config::plugins_dir()?.join(name))
-        };
 
     let file = canonical(project, path)?;
 
+    let archive_path = file.to_string_lossy();
+    let mut hasher = Sha3_256::new();
+    hasher.update(archive_path.as_bytes());
+    let archive_id = hex::encode(hasher.finalize().as_slice().to_owned());
+    let destination = dirs::archives_dir()?.join(&archive_id);
+
+    let source = PluginSource::Archive(file.to_path_buf());
+
+    if destination.exists() {
+        if !force {
+            return Err(Error::ArchiveOverwrite(file));
+        } else {
+            // If we are overwriting the installation needs 
+            // to be clean so there is no trace of any files 
+            // from the previous installation
+            fs::remove_dir_all(&destination)?; 
+        }
+    }
+
     // Extract the archive
     let reader =
-        PackageReader::new(file.clone(), None, Some(Box::new(builder)))
-            .destination(PathBuf::from("."))?
+        PackageReader::new(file)
+            .destination(destination)?
             .set_overwrite(force)
             .digest()
             .and_then(|b| b.xz())
@@ -222,8 +231,6 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
             .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
-
-    let source = PluginSource::Archive(file.to_path_buf());
 
     attributes(&mut plugin, &target, source, Some(&hex::encode(digest)))?;
     Ok(plugin)
@@ -256,7 +263,7 @@ pub async fn install_repo<P: AsRef<Path>>(
         ));
     }
 
-    let plugin = copy_plugin_folder(&repo_path, plugin, force).await?;
+    //let plugin = copy_plugin_folder(&repo_path, plugin, force).await?;
 
     Ok(plugin)
 }
@@ -389,17 +396,14 @@ pub async fn install_registry<P: AsRef<Path>>(
     let fetch_info = download::get(name, &version).await?;
 
     debug!("Extracting archive {}", fetch_info.archive.display());
-    let reader = PackageReader::new(
-        fetch_info.archive.to_path_buf(),
-        Some(hex::decode(&package.digest)?),
-        None,
-    )
-    .set_overwrite(true)
-    .destination(&extract_target)?
-    .digest()
-    .and_then(|b| b.xz())
-    .and_then(|b| b.tar())
-    .await?;
+    let reader = PackageReader::new(fetch_info.archive.to_path_buf())
+        .set_expects_checksum(Some(hex::decode(&package.digest)?))
+        .set_overwrite(true)
+        .destination(&extract_target)?
+        .digest()
+        .and_then(|b| b.xz())
+        .and_then(|b| b.tar())
+        .await?;
 
     let (_target, _digest, mut plugin) = reader.into_inner();
     let source = PluginSource::Registry(download::REGISTRY.parse()?);

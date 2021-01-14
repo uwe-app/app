@@ -1,4 +1,3 @@
-use std::collections::hash_map::RandomState;
 use std::path::{Path, PathBuf};
 use std::convert::{TryFrom, TryInto};
 
@@ -47,14 +46,6 @@ impl LockFile {
             .cloned()
             .collect();
         LockFile { package }
-    }
-
-    #[deprecated]
-    pub fn diff<'a>(
-        &'a self,
-        other: &'a LockFile,
-    ) -> indexmap::set::Difference<'a, LockFileEntry, RandomState> {
-        self.package.difference(&other.package)
     }
 }
 

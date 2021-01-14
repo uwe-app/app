@@ -23,6 +23,8 @@ static DOWNLOADS: &str = "downloads";
 static PACKAGES: &str = "packages";
 /// Name for the location of cached plugin repositories.
 static REPOSITORIES: &str = "repositories";
+/// Name for the location of where plugins installed from archives are placed.
+static ARCHIVES: &str = "archives";
 
 pub fn root_dir() -> io::Result<PathBuf> {
     let cache = home::home_dir();
@@ -90,6 +92,10 @@ pub fn packages_dir() -> io::Result<PathBuf> {
 
 pub fn downloads_dir() -> io::Result<PathBuf> {
     Ok(registry_dir()?.join(DOWNLOADS))
+}
+
+pub fn archives_dir() -> io::Result<PathBuf> {
+    Ok(registry_dir()?.join(ARCHIVES))
 }
 
 pub fn repositories_dir() -> io::Result<PathBuf> {

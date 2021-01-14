@@ -12,9 +12,6 @@ use crate::{reader::read_path, Error, Result};
 
 use config::{Plugin, PLUGIN};
 
-type PackagePathBuilder =
-    Box<dyn Fn(&PathBuf, &Plugin, &Vec<u8>) -> Result<PathBuf> + Send>;
-
 #[derive(Default)]
 pub struct PackageReader {
     source: PathBuf,
@@ -32,9 +29,6 @@ pub struct PackageReader {
     /// The plugin information.
     plugin: Option<Plugin>,
 
-    /// Path builder callback function.
-    path_builder: Option<PackagePathBuilder>,
-
     /// Whether to overwrite files when unpacking.
     overwrite: bool,
 
@@ -44,19 +38,14 @@ pub struct PackageReader {
 }
 
 impl PackageReader {
-    pub fn new(
-        source: PathBuf,
-        expects: Option<Vec<u8>>,
-        path_builder: Option<PackagePathBuilder>,
-    ) -> Self {
+    pub fn new(source: PathBuf) -> Self {
         Self {
             source,
             target: PathBuf::new(),
-            expects,
+            expects: None,
             digest: Vec::new(),
             tarball: None,
             plugin: None,
-            path_builder,
             overwrite: false,
             peek: false,
         }
@@ -68,15 +57,14 @@ impl PackageReader {
             return Err(Error::PackageSourceNotFile(self.source));
         }
 
-        if !dest.as_ref().is_dir() {
-            return Err(Error::PackageTargetNotDirectory(
-                dest.as_ref().to_path_buf(),
-            ));
-        }
-
         self.target = dest.as_ref().to_path_buf();
 
         Ok(self)
+    }
+
+    pub fn set_expects_checksum(mut self, expects: Option<Vec<u8>>) -> Self {
+        self.expects = expects;
+        self
     }
 
     pub fn set_overwrite(mut self, overwrite: bool) -> Self {
@@ -177,11 +165,15 @@ impl PackageReader {
         }
 
         // Determine the target extraction path
+        /*
         let target = if let Some(ref builder) = self.path_builder {
             builder(&self.target, &plugin, &self.digest)?
         } else {
             self.target.clone()
         };
+        */
+
+        let target = self.target.clone();
 
         if target.exists() && !self.overwrite {
             return Err(Error::PackageOverwrite(
