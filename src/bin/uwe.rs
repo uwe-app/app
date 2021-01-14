@@ -151,7 +151,9 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Docs { args } => {
-            let plugin = plugin::install_docs(args.version_range).await?;
+            let version = config::generator::semver();
+            let plugin = plugin::install_docs(Some(version)).await?;
+
             let target = plugin.base().join(config::PUBLIC_HTML);
             let opts = uwe::opts::server_config(
                 &target,

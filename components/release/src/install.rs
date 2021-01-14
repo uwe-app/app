@@ -117,5 +117,7 @@ pub(crate) async fn fetch(
         version::write(&version_file, version)?;
     }
 
+    plugin::install_docs(Some(version)).await?;
+
     Ok(version.clone())
 }

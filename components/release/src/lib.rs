@@ -75,6 +75,9 @@ pub enum Error {
 
     #[error(transparent)]
     Scm(#[from] scm::Error),
+
+    #[error(transparent)]
+    Plugin(#[from] plugin::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

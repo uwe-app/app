@@ -1,8 +1,10 @@
 //! Helper functions to install plugins that are
 //! deeply integrated with the command line tools.
+//!
+use semver::{Version, VersionReq};
+
 use config::{
     plugin::{dependency::Dependency, Plugin, PluginSpec},
-    semver::VersionReq,
 };
 
 use crate::{installer::install_registry, new_registry, Error, Result};
@@ -36,12 +38,23 @@ pub async fn install_blueprint(source: &str) -> Result<Plugin> {
     Ok(install_plugin(spec).await?)
 }
 
-pub async fn install_docs(range: Option<String>) -> Result<Plugin> {
-    let range = if let Some(range) = range {
-        range.parse::<VersionReq>()?
-    } else {
-        VersionReq::any()
-    };
-    let spec = PluginSpec::from((PLUGIN_DOCS.to_string(), range));
+/// Install the offline documentation plugin attempting to use
+/// the preferred version if it is available in the registry 
+/// otherwise fallback to the latest available version.
+pub async fn install_docs(prefers_version: Option<&Version>) -> Result<Plugin> {
+    let registry = new_registry()?;
+    let entry = registry.entry(PLUGIN_DOCS).await?;
+
+    let latest = PluginSpec::from((PLUGIN_DOCS.to_string(), VersionReq::any()));
+    let spec = if let Some(entry) = entry {
+        if let Some(version) = prefers_version {
+            if let Some(_) = entry.get(version) {
+                PluginSpec::from((PLUGIN_DOCS.to_string(), VersionReq::exact(version)))    
+            } else { latest }
+        } else {
+            latest 
+        }
+    } else { latest };
+
     Ok(install_plugin(spec).await?)
 }
