@@ -45,6 +45,25 @@ struct Cli {
 }
 
 #[derive(StructOpt, Debug)]
+enum Clean {
+    /// Remove all downloads and plugins
+    All,
+
+    /// Remove installed plugins (archive)
+    Archives,
+
+    /// Remove download cache
+    Downloads,
+
+    /// Remove installed plugins
+    Plugins,
+
+    /// Remove installed plugins (git)
+    Repositories,
+
+}
+
+#[derive(StructOpt, Debug)]
 enum Registry {
     /// Update the local plugin registry
     Update {},
@@ -60,6 +79,7 @@ enum Registry {
         #[structopt(short, long)]
         installed: bool,
     },
+
 }
 
 #[derive(StructOpt, Debug)]
@@ -70,6 +90,16 @@ enum Command {
         /// Project path
         #[structopt(parse(from_os_str), default_value = ".")]
         project: PathBuf,
+    },
+
+    /// Remove cached files
+    Clean {
+        /// Show matched files but do not delete them
+        #[structopt(short, long)]
+        dry_run: bool,
+
+        #[structopt(subcommand)]
+        cmd: Clean,
     },
 
     /// List project dependencies
@@ -111,9 +141,6 @@ enum Command {
         #[structopt(parse(from_os_str))]
         path: PathBuf,
     },
-
-    /// Delete all installed plugins
-    Clean {},
 
     /// Show plugin information
     #[structopt(after_help = "EXAMPLES:
@@ -200,8 +227,14 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::publish(path).await?;
         }
 
-        Command::Clean {} => {
-            uwe::plugin::clean().await?;
+        Command::Clean { dry_run, cmd } => {
+            match cmd {
+                Clean::All => uwe::plugin::clean::all(dry_run).await?,
+                Clean::Downloads => uwe::plugin::clean::downloads(dry_run).await?,
+                Clean::Archives => uwe::plugin::clean::archives(dry_run).await?,
+                Clean::Repositories => uwe::plugin::clean::repositories(dry_run).await?,
+                Clean::Plugins => uwe::plugin::clean::plugins(dry_run).await?,
+            }
         }
 
         Command::Registry { cmd } => match cmd {

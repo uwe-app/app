@@ -21,6 +21,105 @@ static INSTALL_SH: &str = "install.sh";
 static LINUX_PREFIX: &str = "target/release";
 static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
 
+/// Publish a new release.
+///
+/// - Compile the release artifacts.
+/// - Upload all the release executables.
+/// - Update the `latest` redirects to point to the new version.
+/// - Upload the quick install script.
+/// - Update the release registry index.
+/// - Push the releases repository with the updated manifest file.
+/// - Copy the release manifest to the releases.uwe.app website source.
+/// - Commit and push the website releases repository with the updated manifest.
+/// - Publish the website for releases.uwe.app using the new manifest.
+///
+pub async fn publish(
+    manifest: String,
+    name: String,
+    version: String,
+    bucket: String,
+    region: String,
+    profile: String,
+    skip_build: bool,
+    skip_upload: bool,
+    force_overwrite: bool,
+) -> Result<()> {
+    info!("Release {}@{}", &name, &version);
+
+    let semver: Version = version.parse()?;
+    let manifest = PathBuf::from(manifest).canonicalize()?;
+    let releases_repo = releases::local_releases(&manifest)?;
+    let releases_file = releases::local_manifest_file(&manifest)?;
+
+    let mut releases = releases::load(&releases_file)?;
+    let release_version = VersionKey::from(&semver);
+    if releases.versions.contains_key(&release_version) {
+        if !force_overwrite {
+            return Err(Error::ReleaseVersionExists(semver.to_string()));
+        } else {
+            warn!("Force overwrite {}", &version);
+        }
+    }
+
+    if !skip_build {
+        build(&manifest)?;
+    } else {
+        warn!("Skipping build step!");
+    }
+
+    let artifacts = artifacts(&manifest)?;
+    let release_versions = releases
+        .versions
+        .entry(release_version)
+        .or_insert(Default::default());
+
+    for (platform, artifacts) in artifacts.into_iter() {
+        let release_artifacts = release_versions
+            .platforms
+            .entry(platform.clone())
+            .or_insert(Default::default());
+
+        for (name, info) in artifacts.into_iter() {
+            if !skip_upload {
+                upload(
+                    &info.path, &bucket, &region, &profile, &semver, &platform,
+                    &name,
+                )
+                .await?;
+            }
+
+            release_artifacts.insert(name, info);
+        }
+    }
+
+    // Set up the website redirects for latest.
+    latest_redirects(&bucket, &region, &profile, &semver, &release_versions).await?;
+
+    // TODO: invalidate the redirect paths in cloudfront!!!
+
+    // Upload the quick curl install script.
+    upload_quick_install_script(&bucket, &region, &profile, &manifest).await?;
+
+    info!("Save {}", releases_file.display());
+    releases::save(&releases_file, &releases)?;
+
+    // Commit and push the release manifest
+    let repo = scm::open(&releases_repo)?;
+    info!("Commit releases manifest {}", releases_file.display());
+    scm::commit_file(
+        &repo,
+        Path::new(releases::MANIFEST_JSON),
+        "Update release manifest.",
+    )?;
+    info!("Push {}", releases_repo.display());
+    scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
+
+    update_releases_website(&releases_file)?;
+
+    Ok(())
+}
+
+
 /// Create a release build.
 fn build(cwd: &PathBuf) -> Result<()> {
     let mut command = Command::new("make");
@@ -99,7 +198,7 @@ async fn upload(
 }
 
 /// Configure redirects from `latest` to the new version.
-async fn redirects(
+async fn latest_redirects(
     bucket: &str,
     region: &str,
     profile: &str,
@@ -128,7 +227,7 @@ async fn redirects(
 }
 
 /// Upload the quick install script.
-async fn script(
+async fn upload_quick_install_script(
     bucket: &str,
     region: &str,
     profile: &str,
@@ -142,101 +241,12 @@ async fn script(
     Ok(())
 }
 
-/// Publish all the release artifacts.
+/// Copy the manifest file to the releases website which should be 
+/// in the `../sites/releases` relative location.
 ///
-/// 1) Compile the release artifacts.
-/// 2) Upload all the release executables.
-/// 3) Update the release registry index.
-/// 4) Copy the release manifest to the releases.uwe.app website source.
-/// 5) Commit and push the releases repository with the updated manifest.
-///
-pub async fn publish(
-    manifest: String,
-    name: String,
-    version: String,
-    bucket: String,
-    region: String,
-    profile: String,
-    skip_build: bool,
-    skip_upload: bool,
-    force_overwrite: bool,
-) -> Result<()> {
-    info!("Release {}@{}", &name, &version);
-
-    let semver: Version = version.parse()?;
-    let manifest = PathBuf::from(manifest).canonicalize()?;
-    let releases_repo = releases::local_releases(&manifest)?;
-    let releases_file = releases::local_manifest_file(&manifest)?;
-
-    let mut releases = releases::load(&releases_file)?;
-    let release_version = VersionKey::from(&semver);
-    if releases.versions.contains_key(&release_version) {
-        if !force_overwrite {
-            return Err(Error::ReleaseVersionExists(semver.to_string()));
-        } else {
-            warn!("Force overwrite {}", &version);
-        }
-    }
-
-    if !skip_build {
-        build(&manifest)?;
-    } else {
-        warn!("Skipping build step!");
-    }
-
-    let artifacts = artifacts(&manifest)?;
-    let release_versions = releases
-        .versions
-        .entry(release_version)
-        .or_insert(Default::default());
-
-    for (platform, artifacts) in artifacts.into_iter() {
-        let release_artifacts = release_versions
-            .platforms
-            .entry(platform.clone())
-            .or_insert(Default::default());
-
-        for (name, info) in artifacts.into_iter() {
-            if !skip_upload {
-                upload(
-                    &info.path, &bucket, &region, &profile, &semver, &platform,
-                    &name,
-                )
-                .await?;
-            }
-
-            release_artifacts.insert(name, info);
-        }
-    }
-
-    // Set up the website redirects for latest.
-    redirects(&bucket, &region, &profile, &semver, &release_versions).await?;
-
-    // TODO: invalidate the redirect paths in cloudfront!!!
-
-    // Upload the quick curl install script.
-    script(&bucket, &region, &profile, &manifest).await?;
-
-    info!("Save {}", releases_file.display());
-    releases::save(&releases_file, &releases)?;
-
-    // Commit and push the release manifest
-    let repo = scm::open(&releases_repo)?;
-    info!("Commit releases manifest {}", releases_file.display());
-    scm::commit_file(
-        &repo,
-        Path::new(releases::MANIFEST_JSON),
-        "Update release manifest.",
-    )?;
-    info!("Push {}", releases_repo.display());
-    scm::push_remote_name(&repo, scm::ORIGIN, None, None)?;
-
-    update_website(&releases_file)?;
-
-    Ok(())
-}
-
-fn update_website(releases_file: &PathBuf) -> Result<()> {
+/// Then publish the website using the `production` environment so that 
+/// the content for https://releases.uwe.app is also updated.
+fn update_releases_website(releases_file: &PathBuf) -> Result<()> {
     let manifest_file = Path::new("site/collections/releases/manifest.json");
     let releases_website_repo = PathBuf::from("../sites/releases");
     let releases_website_manifest = releases_website_repo.join(&manifest_file);
@@ -263,19 +273,17 @@ fn update_website(releases_file: &PathBuf) -> Result<()> {
     // Compile and publish the website
     let lock_file = releases_website_repo.join(config::SITE_LOCK);
     fs::remove_file(&lock_file)?;
-    publish_website(&releases_website_repo)?;
+    publish_releases_website(&releases_website_repo)?;
 
     Ok(())
 }
 
-fn publish_website(repo: &PathBuf) -> Result<()> {
+fn publish_releases_website(repo: &PathBuf) -> Result<()> {
     let repo_path = repo.to_string_lossy().into_owned().to_string();
     let cwd = std::env::current_dir()?;
-    let mut command = Command::new("cargo");
+    let uwe = uwe_binary();
+    let mut command = Command::new(&uwe);
     let args = vec![
-        "run",
-        "--bin=uwe",
-        "--",
         "publish",
         "production",
         &repo_path,
@@ -286,3 +294,19 @@ fn publish_website(repo: &PathBuf) -> Result<()> {
     command.output()?;
     Ok(())
 }
+
+#[cfg(target_os = "windows")]
+pub fn uwe_binary() -> String {
+    todo!("Get binary path for windows");
+}
+
+#[cfg(target_os = "macos")]
+pub fn uwe_binary() -> String {
+    format!("{}/{}", MACOS_PREFIX, "uwe")
+}
+
+#[cfg(target_os = "linux")]
+pub fn uwe_binary() -> String {
+    format!("{}/{}", LINUX_PREFIX, "uwe")
+}
+

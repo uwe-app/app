@@ -72,6 +72,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
+    #[error(transparent)]
     Url(#[from] url::ParseError),
 
     #[error(transparent)]

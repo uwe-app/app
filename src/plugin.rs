@@ -316,12 +316,167 @@ pub async fn publish(path: PathBuf) -> Result<()> {
     Ok(())
 }
 
-/// Remove all cached plugins.
-pub async fn clean() -> Result<()> {
-    let target = config::plugins_dir()?;
-    if target.exists() && target.is_dir() {
-        info!("Remove {}", target.display());
-        fs::remove_dir_all(&target)?;
+pub mod clean {
+    use std::fs;
+    use std::path::PathBuf;
+    use std::{thread, time};
+
+    use log::info;
+    use utils::walk;
+    use pbr::ProgressBar;
+
+    use crate::Result;
+
+    #[derive(Debug)]
+    enum CleanTarget {
+        File(PathBuf),
+        Directory(PathBuf),
     }
-    Ok(())
+
+    pub async fn all(dry_run: bool) -> Result<()> {
+        let mut files = find_archives().await?;
+        files.append(&mut find_downloads().await?);
+        files.append(&mut find_plugins().await?);
+        files.append(&mut find_repositories().await?);
+        remove(files, dry_run).await
+    }
+
+    pub async fn archives(dry_run: bool) -> Result<()> {
+        let files = find_archives().await?;
+        remove(files, dry_run).await
+    }
+
+    pub async fn downloads(dry_run: bool) -> Result<()> {
+        let files = find_downloads().await?;
+        remove(files, dry_run).await
+    }
+
+    pub async fn plugins(dry_run: bool) -> Result<()> {
+        let files = find_plugins().await?;
+        remove(files, dry_run).await
+    }
+
+    pub async fn repositories(dry_run: bool) -> Result<()> {
+        let files = find_repositories().await?;
+        remove(files, dry_run).await
+    }
+
+    fn format_message(base: &PathBuf, file: &PathBuf, progress: bool) -> Result<String> {
+        let standard = file.strip_prefix(&base)?.to_path_buf();
+
+        let display_path = if progress {
+            if let Some(name) = file.file_name() {
+                if let Some(parent) = file.parent() {
+                    if let Some(parent_name) = parent.file_name() {
+                        PathBuf::from(parent_name).join(name)
+                    } else { standard }
+                } else { standard }
+            } else { standard }
+        } else { standard };
+
+        let message = if progress {
+            format!("{} ", display_path.to_string_lossy())
+        } else {
+            display_path.to_string_lossy().into_owned().to_string()
+        };
+        Ok(message)
+    }
+
+    async fn remove(targets: Vec<CleanTarget>, dry_run: bool) -> Result<()> {
+        let base = dirs::root_dir()?;
+
+        let mut pb = if !dry_run {
+            let mut pb = ProgressBar::new(targets.len() as u64);
+            pb.show_speed = false;
+            Some(pb)
+        } else { None };
+
+        for target in targets {
+            match target {
+                CleanTarget::File(path) => {
+                    if !dry_run {
+                        fs::remove_file(&path)?;
+                        if let Some(pb) = pb.as_mut() {
+                            let display_path = format_message(&base, &path, true)?;
+                            pb.message(&display_path);
+                            pb.inc();
+                            thread::sleep(time::Duration::from_millis(20));
+                        }
+                    } else {
+                        let display_path = format_message(&base, &path, false)?;
+                        info!("{}", &display_path);
+                    }
+
+                }
+                CleanTarget::Directory(path) => {
+                    if !dry_run {
+                        fs::remove_dir_all(&path)?;
+                        if let Some(pb) = pb.as_mut() {
+                            let display_path = format_message(&base, &path, true)?;
+                            pb.message(&display_path);
+                            pb.inc();
+                            thread::sleep(time::Duration::from_millis(20));
+                        }
+                    } else {
+                        let display_path = format_message(&base, &path, false)?;
+                        info!("{}", &display_path);
+                    }
+
+                }
+            }
+        }
+
+        if let Some(pb) = pb.as_mut() {
+            pb.finish();
+            utils::terminal::clear_previous_line()?;
+        }
+
+        if !dry_run {
+            info!("Clean complete ✓");
+        }
+
+        Ok(())
+    }
+
+    async fn find_archives() -> Result<Vec<CleanTarget>> {
+        find_folders(&dirs::archives_dir()?).await
+    }
+
+    async fn find_downloads() -> Result<Vec<CleanTarget>> {
+        find_files(&dirs::downloads_dir()?).await
+    }
+
+    async fn find_plugins() -> Result<Vec<CleanTarget>> {
+        find_folders(&config::plugins_dir()?).await
+    }
+
+    async fn find_repositories() -> Result<Vec<CleanTarget>> {
+        find_folders(&dirs::repositories_dir()?).await
+    }
+
+    async fn find_folders(path: &PathBuf) -> Result<Vec<CleanTarget>> {
+        let files = walk::read_dir(path, |f| f.is_dir())?
+            .into_iter()
+            .map(|f| CleanTarget::Directory(f))
+            .collect::<Vec<CleanTarget>>();
+        Ok(files)
+    }
+
+    async fn find_files(path: &PathBuf) -> Result<Vec<CleanTarget>> {
+        let files = walk::read_dir(path, |f| {
+                if f.is_file() {
+                    if let Some(name) = f.file_name() {
+                        if name.to_string_lossy().ends_with(".tar.xz") {
+                            return true            
+                        }
+                    }
+                }
+                false
+            })?
+            .into_iter()
+            .map(|f| CleanTarget::File(f))
+            .collect::<Vec<CleanTarget>>();
+        Ok(files)
+    }
 }
+

@@ -3944,6 +3944,7 @@ dependencies = [
  "log",
  "once_cell",
  "open",
+ "pbr",
  "plugin",
  "preference",
  "pretty_env_logger",

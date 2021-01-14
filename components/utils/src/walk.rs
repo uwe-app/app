@@ -44,6 +44,25 @@ where
     rx.iter().collect()
 }
 
+/// Find files that are direct descendeants of a folder.
+///
+/// This version does not use a walk builder therefore is not subject 
+/// to .gitignore or other ignore rules.
+pub fn read_dir<P: AsRef<Path>, F>(parent: P, filter: F) -> Result<Vec<PathBuf>>
+where
+    F: Fn(&PathBuf) -> bool + Sync,
+{
+    let mut files = Vec::new();
+    for entry in fs::read_dir(parent.as_ref())? {
+        let entry = entry?;
+        let buf = entry.path().to_path_buf();
+        if filter(&buf) {
+            files.push(buf);
+        }
+    }
+    Ok(files)
+}
+
 /// Copy all the files returned by a walk and write to the destination
 /// directory. Any existing files will be overwritten so it is the caller's
 /// responsibility to detect if a target already exists.

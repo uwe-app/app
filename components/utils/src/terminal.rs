@@ -12,7 +12,7 @@ pub fn clear_previous_line() -> Result<()> {
         std::io::stdout(),
         MoveUp(1),
         MoveToColumn(0),
-        Clear(ClearType::CurrentLine)
+        Clear(ClearType::UntilNewLine)
     )?;
     Ok(())
 }
