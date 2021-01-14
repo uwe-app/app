@@ -13,9 +13,8 @@ use url::Url;
 use crate::{
     engine::TemplateEngine, href::UrlPath, license::LicenseGroup,
     script::ScriptAsset, style::StyleAsset, ASSETS, PLUGINS,
+    dependency::{DependencyMap, DependencyTarget}, features::FeatureMap, Result
 };
-
-use crate::{dependency::DependencyMap, features::FeatureMap, Result};
 
 pub type PluginMap = HashMap<String, Plugin>;
 
@@ -395,6 +394,32 @@ impl Plugin {
         self.base.join(utils::url::to_path_separator(
             path.as_str().trim_start_matches("/"),
         ))
+    }
+
+    pub fn to_dependency_toml_string(&self, target: &Option<DependencyTarget>) -> String {
+        let mut out = String::new();
+        out.push_str(&format!(r#"[dependencies."{}"]
+version = "^{}""#, &self.name, &self.version));
+        if let Some(ref target) = target {
+            match target {
+                DependencyTarget::File { path } => {
+                    out.push('\n');
+                    out.push_str(&format!(r#"path = "{}""#, path.display()));
+                } 
+                DependencyTarget::Archive { archive } => {
+                    out.push('\n');
+                    out.push_str(&format!(r#"archive = "{}""#, archive.display()));
+                } 
+                DependencyTarget::Repo { git } => {
+                    out.push('\n');
+                    out.push_str(&format!(r#"git = "{}""#, git.to_string()));
+                } 
+                _ => {
+                    // Ignore local scoped dependencies for now.
+                }
+            }
+        }
+        out
     }
 }
 

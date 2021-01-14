@@ -1,7 +1,6 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use log::info;
@@ -12,7 +11,6 @@ use url::Url;
 use uwe::{
     self,
     opts::{self, fatal},
-    plugin::InstallSpec,
     Error, Result,
 };
 
@@ -28,52 +26,14 @@ fn parse_exact_plugin_spec(
     src.parse::<ExactPluginSpec>().map_err(Error::from)
 }
 
-fn parse_install_spec(src: &str) -> std::result::Result<InstallSpec, Error> {
-    // Treat as a git url
-    let repo_url: Option<Url> = if let Ok(url) = src.parse::<Url>() {
-        if url.has_authority() {
-            Some(url)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
-    if let Some(url) = repo_url {
-        Ok(InstallSpec::Repo(url))
-    } else {
-        let path = PathBuf::from(src);
-        let spec: Option<InstallSpec> = if path.exists() && path.is_dir() {
-            Some(InstallSpec::Folder(path))
-        } else {
-            if path.exists() && path.is_file() {
-                if let Some(name) = path.file_name() {
-                    let archive_name = OsStr::new(config::PACKAGE_NAME);
-                    if name == archive_name {
-                        Some(InstallSpec::Archive(path))
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        };
-
-        if let Some(spec) = spec {
-            Ok(spec)
-        } else {
-            let plugin_spec = src.parse::<ExactPluginSpec>()?;
-            Ok(InstallSpec::Plugin(plugin_spec))
-        }
-    }
+fn parse_url(
+    src: &str,
+) -> std::result::Result<Url, Error> {
+    src.parse::<Url>().map_err(Error::from)
 }
 
-#[derive(Debug, StructOpt)]
 /// Universal (web editor) plugin manager
+#[derive(Debug, StructOpt)]
 #[structopt(name = "upm")]
 struct Cli {
     /// Log level
@@ -112,7 +72,7 @@ enum Command {
         project: PathBuf,
     },
 
-    /// List project plugin dependencies
+    /// List project dependencies
     #[structopt(alias = "ls")]
     List {
         /// Project path
@@ -184,26 +144,39 @@ enum Command {
         target: PluginSpec,
     },
 
-    /// Add a plugin to the installation folder
+    /// Add a plugin to the installation
     #[structopt(after_help = "EXAMPLES:
     Add from the registry: 
         upm add std::core
     Add a specific version from the registry: 
         upm add std::core@4.1.12
     Add from a folder: 
-        upm add /path/to/plugin
+        upm add --path=/path/to/plugin
     Add from an archive: 
-        upm add /path/to/plugin/package.tar.xz
+        upm add --archive=/path/to/plugin/package.tar.xz
     Add from a git repository: 
-        upm add https://github.com/username/plugin-repo
+        upm add --git=https://github.com/username/plugin-repo
 ")]
     Add {
-        /// Force overwrite existing installed plugin
+        /// Force overwrite existing plugin
         #[structopt(short, long)]
         force: bool,
 
-        #[structopt(parse(try_from_str = parse_install_spec))]
-        target: InstallSpec,
+        /// Path to a plugin folder.
+        #[structopt(short, long, parse(from_os_str))]
+        path: Option<PathBuf>,
+
+        /// Path to a plugin archive.
+        #[structopt(short, long, parse(from_os_str))]
+        archive: Option<PathBuf>,
+
+        /// URL for a git repository.
+        #[structopt(short, long, parse(try_from_str = parse_url))]
+        git: Option<Url>,
+
+        /// Plugin name.
+        #[structopt(parse(try_from_str = parse_exact_plugin_spec))]
+        plugin_name: Option<ExactPluginSpec>,
     },
 }
 
@@ -256,8 +229,8 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::install(project).await?;
         }
 
-        Command::Add { target, force } => {
-            uwe::plugin::add(target, force).await?;
+        Command::Add { plugin_name, path, archive, git, force } => {
+            uwe::plugin::add(plugin_name, path, archive, git, force).await?;
         }
     }
     Ok(())

@@ -7,22 +7,17 @@ use log::{debug, info, warn};
 use semver::VersionReq;
 use url::Url;
 
-use config::plugin::{dependency::Dependency, ExactPluginSpec, PluginSpec};
+use config::plugin::{
+    Plugin,
+    dependency::{Dependency, DependencyTarget}, ExactPluginSpec, PluginSpec
+};
 use plugin::{
-    check_for_updates, dependency_installed, get, install_archive,
-    install_registry, install_repo, installation_dir, install_folder,
+    check_for_updates, dependency_installed, get, install_dependency,
+    installation_dir,
     new_registry, peek,
 };
 
 use crate::{Error, Result};
-
-#[derive(Debug)]
-pub enum InstallSpec {
-    Folder(PathBuf),
-    Archive(PathBuf),
-    Repo(Url),
-    Plugin(ExactPluginSpec),
-}
 
 /// Install project dependencies.
 pub async fn install(project: PathBuf) -> Result<()> {
@@ -141,50 +136,82 @@ pub async fn show(spec: ExactPluginSpec) -> Result<()> {
         info!("Licenses: {}", licenses.join(", "));
     }
 
-    info!("");
-    info!(r#""{}" = "^{}""#, plugin.name(), plugin.version());
+    print_plugin_dependency(&plugin, &None);
 
     Ok(())
 }
 
-// TODO: disambiguate with `--path`, `--archive` and `--git`
+fn print_plugin_dependency(plugin: &Plugin, target: &Option<DependencyTarget>) {
+    let dependency_message = plugin.to_dependency_toml_string(target);
+    use terminal_size::{Width, terminal_size};
+    if let Some((Width(w), _)) = terminal_size() {
+        let delimiter = "─".repeat(w as usize);
+        println!("{}", delimiter);
+        println!("");
+        println!("{}", dependency_message);
+        println!("");
+        println!("{}", delimiter);
+        println!(r#" To add this plugin copy the snippet above into the "site.toml" file for the project."#);
+        println!("{}", delimiter);
+    }
+}
 
 /// Add a plugin to the installation folder.
-pub async fn add(spec: InstallSpec, force: bool) -> Result<()> {
+pub async fn add(
+    plugin_name: Option<ExactPluginSpec>,
+    mut path: Option<PathBuf>,
+    mut archive: Option<PathBuf>,
+    mut git: Option<Url>,
+    force: bool) -> Result<()> {
+
+    // TODO: check multiple install targets are not given???
+
     let registry = new_registry()?;
     let project = std::env::current_dir()?;
     info!("Plugins {}", config::plugins_dir()?.display());
 
-    let result = match spec {
-        InstallSpec::Plugin(plugin_spec) => {
-            let name = plugin_spec.name().to_string();
-            let dep: Dependency = plugin_spec.into();
-            if !force {
-                if let Some(plugin) =
-                    dependency_installed(&project, &registry, &name, &dep).await?
-                {
-                    return Err(Error::PluginAlreadyInstalled(
-                        plugin.name().to_string(),
-                        plugin.version().to_string(),
-                    ));
+    let (name, dep) = if let Some(plugin_spec) = plugin_name {
+        let name = plugin_spec.name().to_string();
+        let dep: Dependency = plugin_spec.into();
+        if !force {
+            if let Some(plugin) =
+                dependency_installed(&project, &registry, &name, &dep).await?
+            {
+                return Err(Error::PluginAlreadyInstalled(
+                    plugin.name().to_string(),
+                    plugin.version().to_string(),
+                ));
+            }
+        };
+        (name, dep)
+    } else {
+        if let Some(path) = path.take() {
+            if !path.exists() || !path.is_dir() {
+                return Err(Error::NotDirectory(path));
+            }
+            (String::new(), DependencyTarget::File{ path: path.canonicalize()? }.into())
+        } else {
+            if let Some(archive) = archive.take() {
+                if !archive.exists() || !archive.is_file() {
+                    return Err(Error::NotFile(archive));
                 }
-            };
-
-            install_registry(&project, &registry, &name, &dep).await
+                (String::new(), DependencyTarget::Archive { archive: archive.canonicalize()? }.into())
+            } else {
+                if let Some(git) = git.take() {
+                    (String::new(), DependencyTarget::Repo { git }.into())
+                } else {
+                    return Err(Error::PluginAddNoTarget) 
+                }
+            }
         }
-        InstallSpec::Folder(path) => {
-            install_folder(&project, &path, force).await
-        }
-        InstallSpec::Archive(path) => {
-            install_archive(&project, &path, force).await
-        }
-        InstallSpec::Repo(url) => install_repo(&project, &url, force).await,
     };
 
-    match result {
+    match install_dependency(&project, &registry, &name, &dep, force, None).await {
         Ok(plugin) => {
             debug!("Location {}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
+
+            print_plugin_dependency(&plugin, dep.target());
         }
         Err(e) => {
             if !force {

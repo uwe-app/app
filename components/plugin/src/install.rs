@@ -56,11 +56,13 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
                         plugin.clone() 
                     } 
                     _ => {
-                        installer::install(
+                        installer::install_dependency(
                             config.project(),
                             &registry,
                             name,
-                            state.dependency(), None).await?
+                            state.dependency(),
+                            true,
+                            None).await?
                     }
                 };
 

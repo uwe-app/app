@@ -35,11 +35,12 @@ pub async fn peek<F: AsRef<Path>>(archive: F) -> Result<Plugin> {
     Ok(plugin)
 }
 
-pub async fn install<P: AsRef<Path>>(
+pub async fn install_dependency<P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     name: &str,
     dep: &Dependency,
+    force: bool,
     locals: Option<PluginMap>,
 ) -> Result<Plugin> {
     let plugin = if let Some(ref target) = dep.target {
@@ -48,10 +49,10 @@ pub async fn install<P: AsRef<Path>>(
                 install_path(project, path, None).await
             }
             DependencyTarget::Archive { ref archive } => {
-                install_archive(project, archive, true).await
+                install_archive(project, archive, force).await
             }
             DependencyTarget::Repo { ref git } => {
-                install_repo(project, git, true).await
+                install_repo(project, git, force).await
             }
             DependencyTarget::Local { ref scope } => {
                 install_local(project, scope, locals).await
@@ -123,6 +124,7 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
     compute::transform(&plugin).await
 }
 
+/*
 /// Install a plugin from a file system path and compute the
 /// plugin data then copy the files over to the installation
 /// directory.
@@ -135,6 +137,7 @@ pub async fn install_folder<P: AsRef<Path>, F: AsRef<Path>>(
     //let plugin = copy_plugin_folder(path.as_ref(), plugin, force).await?;
     Ok(plugin)
 }
+*/
 
 /*
 /// Copy a source plugin folder into the standard plugin installation

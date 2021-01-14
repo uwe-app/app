@@ -5,7 +5,7 @@ use config::{
     semver::VersionReq,
 };
 
-use crate::{install_registry, new_registry, Error, Result};
+use crate::{installer::install_registry, new_registry, Error, Result};
 
 static PLUGIN_DOCS: &str = "std::documentation";
 

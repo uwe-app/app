@@ -237,6 +237,18 @@ pub struct Dependency {
     pub apply: Option<Apply>,
 }
 
+impl From<DependencyTarget> for Dependency {
+    fn from(target: DependencyTarget) -> Self {
+        Self {
+            version: VersionReq::any(),
+            target: Some(target),
+            optional: None,
+            features: None,
+            apply: None,
+        } 
+    }
+}
+
 impl Dependency {
     pub fn new(version: VersionReq) -> Self {
         Self {
@@ -256,6 +268,10 @@ impl Dependency {
             features: None,
             apply: None,
         }
+    }
+
+    pub fn target(&self) -> &Option<DependencyTarget> {
+        &self.target 
     }
 
     pub fn range(&self) -> &VersionReq {

@@ -12,6 +12,9 @@ pub enum Error {
     #[error("Not a directory {0}")]
     NotDirectory(PathBuf),
 
+    #[error("Not a file {0}")]
+    NotFile(PathBuf),
+
     #[error("Target {0} exists, please move it away")]
     TargetExists(PathBuf),
 
@@ -58,6 +61,9 @@ pub enum Error {
 
     #[error("Plugin {0}@{1} is already installed, use --force to overwrite")]
     PluginAlreadyInstalled(String, String),
+
+    #[error("To add a plugin requires a name, path, archive or URL.")]
+    PluginAddNoTarget,
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
