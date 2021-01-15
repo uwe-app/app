@@ -3,6 +3,8 @@ use std::fmt;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 
+use chrono::prelude::*;
+
 use config::plugin::VersionKey;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -148,6 +150,7 @@ impl From<&Releases> for ReleaseManifest {
 
         while let Some((release_version, mut release_info)) = it.next() {
             release_info.version = Some(release_version.into());
+            release_info.published = Some(Utc::now());
             manifest.versions.push(release_info);
         }
 
@@ -161,6 +164,7 @@ impl From<&Releases> for ReleaseManifest {
 pub struct ReleaseInfo {
     #[serde_as(as = "Option<DisplayFromStr>")]
     version: Option<Version>,
+    published: Option<DateTime<Utc>>,
     #[serde(flatten)]
     pub(crate) platforms: ExecutableTargets,
 }
