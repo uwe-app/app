@@ -123,7 +123,7 @@ pub(crate) async fn fetch(
         version::write(&version_file, version)?;
     }
 
-    info!("Download offline documentation...");
+    info!("Download documentation...");
     plugin::install_docs(Some(version)).await?;
     utils::terminal::clear_current_line()?;
     utils::terminal::clear_previous_line()?;
@@ -206,6 +206,7 @@ fn welcome() -> Result<PathBuf> {
 /// Attempt to upgrade to the latest version.
 pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
     let version_file = version::file()?;
+    let root_dir = dirs::root_dir()?;
     let first_run = !version_file.exists();
 
     // Range filters not allowed on first run execution
@@ -217,6 +218,11 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
     names.extend_from_slice(&releases::INSTALL_EXE_NAMES);
 
     if first_run {
+        // Create the root installation directory
+        if !root_dir.exists() {
+            std::fs::create_dir(&root_dir)?;
+        }
+
         // Include shims on first run
         names.extend_from_slice(&releases::INSTALL_SHIM_NAMES);
 

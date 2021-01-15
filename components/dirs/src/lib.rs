@@ -26,20 +26,16 @@ static REPOSITORIES: &str = "repositories";
 /// Name for the location of where plugins installed from archives are placed.
 static ARCHIVES: &str = "archives";
 
+/// Get the root directory (~/.uwe) but do not 
+/// create it if it does not exist.
 pub fn root_dir() -> io::Result<PathBuf> {
-    let cache = home::home_dir();
-    if let Some(ref cache) = cache {
-        let mut buf = cache.clone();
-        buf.push(ROOT_DIR);
-        if !buf.exists() {
-            std::fs::create_dir(&buf)?;
-        }
-        return Ok(buf);
-    }
-    Err(io::Error::new(
-        io::ErrorKind::NotFound,
-        "Could not determine home directory".to_string(),
-    ))
+    home::home_dir().map(|p| p.join(ROOT_DIR))
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                String::from("Could not determine home directory"),
+            )
+        })
 }
 
 pub fn sites_dir() -> io::Result<PathBuf> {
