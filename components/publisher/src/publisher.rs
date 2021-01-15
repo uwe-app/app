@@ -7,9 +7,6 @@ use std::str::FromStr;
 
 use md5::{Digest, Md5};
 
-use futures_util::TryStreamExt;
-use tokio_util::codec;
-
 use rusoto_core::credential;
 use rusoto_core::request::HttpClient;
 use rusoto_core::ByteStream;
@@ -17,6 +14,8 @@ use rusoto_core::Region;
 use rusoto_s3::*;
 
 use log::{debug, error, info};
+use read_progress_stream::ReadProgressStream;
+use pbr::{ProgressBar, Units};
 
 use crate::{report::FileBuilder, Error, Result};
 
@@ -197,10 +196,21 @@ pub async fn put_object<P: AsRef<Path>>(
 ) -> Result<PutObjectOutput> {
     let file = std::fs::File::open(&path)?;
     let size = file.metadata()?.len();
+    let file = tokio::fs::File::from_std(file);
 
-    let tokio_file = tokio::fs::File::from_std(file);
-    let stream = codec::FramedRead::new(tokio_file, codec::BytesCodec::new())
-        .map_ok(|r| r.freeze());
+    let mut pb = ProgressBar::new(size);
+    pb.set_units(Units::Bytes);
+    pb.show_speed = false;
+
+    if let Some(name) = path.as_ref().file_name() {
+        let msg = format!(" Upload {} ", name.to_string_lossy());
+        pb.message(&msg);
+    }
+
+    let progress = Box::new(move |read: u64, _total: u64| {
+        pb.set(read);
+    });
+    let stream = ReadProgressStream::new(file, size, progress);
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);
@@ -295,8 +305,10 @@ pub async fn publish(
             ..Default::default()
         };
 
+        /*
         info!("Upload {}", local_path.display());
         info!("    -> {}", &k);
+        */
 
         if let Err(e) = put_object(&client, req, &local_path).await {
             errors.push(e);
