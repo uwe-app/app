@@ -2587,9 +2587,9 @@ dependencies = [
 
 [[package]]
 name = "read-progress-stream"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bd66d30e3acf2cd7ab17f5a5d330c6741358a2cf5b08d7f952b4e180be79280"
+checksum = "4c0b21a47c97f6a55bc953260c3f42adc0099006cdf574c93e55fe5a04be8ade"
 dependencies = [
  "bytes",
  "futures",

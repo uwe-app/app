@@ -207,10 +207,10 @@ pub async fn put_object<P: AsRef<Path>>(
         pb.message(&msg);
     }
 
-    let progress = Box::new(move |read: u64, _total: u64| {
-        pb.set(read);
+    let progress = Box::new(move |amount: u64, _| {
+        pb.add(amount);
     });
-    let stream = ReadProgressStream::new(file, size, progress);
+    let stream = ReadProgressStream::new(file, progress);
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);
