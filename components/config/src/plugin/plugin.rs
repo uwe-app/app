@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
+use std::convert::TryInto;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::convert::TryInto;
 
 use jsonfeed::Author;
 use semver::Version;
@@ -11,9 +11,14 @@ use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use crate::{
-    engine::TemplateEngine, href::UrlPath, license::LicenseGroup,
-    script::ScriptAsset, style::StyleAsset, ASSETS, PLUGINS,
-    dependency::{DependencyMap, DependencyTarget}, features::FeatureMap, Result
+    dependency::{DependencyMap, DependencyTarget},
+    engine::TemplateEngine,
+    features::FeatureMap,
+    href::UrlPath,
+    license::LicenseGroup,
+    script::ScriptAsset,
+    style::StyleAsset,
+    Result, ASSETS, PLUGINS,
 };
 
 pub type PluginMap = HashMap<String, Plugin>;
@@ -35,10 +40,10 @@ impl TryInto<Url> for PluginSource {
             Self::File(path) => {
                 let href = format!("file:{}", path.display());
                 Ok(href.parse::<Url>()?)
-            },
+            }
             Self::Repo(url) => Ok(url),
             Self::Registry(url) => Ok(url),
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }
@@ -400,24 +405,33 @@ impl Plugin {
         ))
     }
 
-    pub fn to_dependency_toml_string(&self, target: &Option<DependencyTarget>) -> String {
+    pub fn to_dependency_toml_string(
+        &self,
+        target: &Option<DependencyTarget>,
+    ) -> String {
         let mut out = String::new();
-        out.push_str(&format!(r#"[dependencies."{}"]
-version = "^{}""#, &self.name, &self.version));
+        out.push_str(&format!(
+            r#"[dependencies."{}"]
+version = "^{}""#,
+            &self.name, &self.version
+        ));
         if let Some(ref target) = target {
             match target {
                 DependencyTarget::File { path } => {
                     out.push('\n');
                     out.push_str(&format!(r#"path = "{}""#, path.display()));
-                } 
+                }
                 DependencyTarget::Archive { archive } => {
                     out.push('\n');
-                    out.push_str(&format!(r#"archive = "{}""#, archive.display()));
-                } 
+                    out.push_str(&format!(
+                        r#"archive = "{}""#,
+                        archive.display()
+                    ));
+                }
                 DependencyTarget::Repo { git } => {
                     out.push('\n');
                     out.push_str(&format!(r#"git = "{}""#, git.to_string()));
-                } 
+                }
                 _ => {
                     // Ignore local scoped dependencies for now.
                 }

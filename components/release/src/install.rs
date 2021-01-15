@@ -1,8 +1,8 @@
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
 
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 use semver::{Version, VersionReq};
 
 use crate::{download, env, releases, verify, version, Error, Result};

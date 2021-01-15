@@ -124,10 +124,7 @@ async fn main() -> Result<()> {
     };
     config::generator::get(Some(app_data));
 
-    run(args.cmd)
-        .await
-        .map_err(Error::from)
-        .or_else(fatal)?;
+    run(args.cmd).await.map_err(Error::from).or_else(fatal)?;
 
     Ok(())
 }

@@ -245,7 +245,7 @@ impl From<DependencyTarget> for Dependency {
             optional: None,
             features: None,
             apply: None,
-        } 
+        }
     }
 }
 
@@ -271,7 +271,7 @@ impl Dependency {
     }
 
     pub fn target(&self) -> &Option<DependencyTarget> {
-        &self.target 
+        &self.target
     }
 
     pub fn range(&self) -> &VersionReq {
@@ -356,7 +356,6 @@ impl PartialEq for Apply {
 impl Eq for Apply {}
 
 impl Apply {
-
     /// Prepare the global patterns by compiling them.
     ///
     /// Original GlobSet declarations are moved out of the Option(s).

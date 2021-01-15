@@ -98,7 +98,8 @@ pub async fn publish(
     }
 
     // Set up the website redirects for latest.
-    latest_redirects(&bucket, &region, &profile, &semver, &release_versions).await?;
+    latest_redirects(&bucket, &region, &profile, &semver, &release_versions)
+        .await?;
 
     // TODO: invalidate the redirect paths in cloudfront!!!
 
@@ -138,12 +139,19 @@ fn update_website(website_repo: &PathBuf) -> Result<()> {
 
 /// Update the offline documentation.
 ///
-/// Note we do not use the `make` tasks to compile as we need to be certain we 
+/// Note we do not use the `make` tasks to compile as we need to be certain we
 /// are using the version of `uwe(1)` that we just compiled.
-fn update_documentation(website_repo: &PathBuf, version: &Version) -> Result<()> {
-
+fn update_documentation(
+    website_repo: &PathBuf,
+    version: &Version,
+) -> Result<()> {
     Command::new(UWE_BINARY)
-        .args(vec!["build", "--profile", "docs", &website_repo.to_string_lossy()])
+        .args(vec![
+            "build",
+            "--profile",
+            "docs",
+            &website_repo.to_string_lossy(),
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
@@ -156,7 +164,11 @@ fn update_documentation(website_repo: &PathBuf, version: &Version) -> Result<()>
 
     // Copy over the build/docs directory from the website
     Command::new("cp")
-        .args(vec!["-rf", &build_files.to_string_lossy(), &documentation_repo.to_string_lossy()])
+        .args(vec![
+            "-rf",
+            &build_files.to_string_lossy(),
+            &documentation_repo.to_string_lossy(),
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
@@ -164,14 +176,22 @@ fn update_documentation(website_repo: &PathBuf, version: &Version) -> Result<()>
     // Move files into place as `public_html`
     let documentation_target = documentation_repo.join("docs");
     Command::new("mv")
-        .args(vec!["-f", &documentation_target.to_string_lossy(), &public_html.to_string_lossy()])
+        .args(vec![
+            "-f",
+            &documentation_target.to_string_lossy(),
+            &public_html.to_string_lossy(),
+        ])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
 
     // Update the plugin version and write the new version to disc
     let plugin_file = documentation_repo.join(config::PLUGIN);
-    info!("Write plugin version {} to {}", &version, plugin_file.display());
+    info!(
+        "Write plugin version {} to {}",
+        &version,
+        plugin_file.display()
+    );
     let plugin_content = fs::read_to_string(&plugin_file)?;
     let mut plugin: Plugin = toml::from_str(&plugin_content)?;
     plugin.set_version(version.clone());
@@ -318,10 +338,10 @@ async fn upload_quick_install_script(
     Ok(())
 }
 
-/// Copy the manifest file to the releases website which should be 
+/// Copy the manifest file to the releases website which should be
 /// in the `../sites/releases` relative location.
 ///
-/// Then publish the website using the `production` environment so that 
+/// Then publish the website using the `production` environment so that
 /// the content for https://releases.uwe.app is also updated.
 fn update_releases_website(releases_file: &PathBuf) -> Result<()> {
     let manifest_file = Path::new("site/collections/releases/manifest.json");
@@ -361,15 +381,9 @@ fn publish_website(repo: &PathBuf, environment: &str) -> Result<()> {
     let cwd = std::env::current_dir()?;
     Command::new(UWE_BINARY)
         .current_dir(cwd)
-        .args(
-            vec![
-                "publish",
-                environment,
-                &repo_path,
-            ])
+        .args(vec!["publish", environment, &repo_path])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
     Ok(())
 }
-

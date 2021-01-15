@@ -1,11 +1,11 @@
-use std::path::{Path, PathBuf};
 use std::convert::{TryFrom, TryInto};
+use std::path::{Path, PathBuf};
 
+use indexmap::IndexSet;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 use url::Url;
-use indexmap::IndexSet;
 
 use crate::Result;
 
@@ -41,10 +41,8 @@ impl LockFile {
     }
 
     pub fn union(old: LockFile, new: LockFile) -> LockFile {
-        let package: IndexSet<LockFileEntry> = old.package
-            .union(&new.package)
-            .cloned()
-            .collect();
+        let package: IndexSet<LockFileEntry> =
+            old.package.union(&new.package).cloned().collect();
         LockFile { package }
     }
 }
@@ -71,7 +69,9 @@ impl PartialEq for LockFileEntry {
 impl TryFrom<&Plugin> for LockFileEntry {
     type Error = crate::Error;
 
-    fn try_from(plugin: &Plugin) -> std::result::Result<LockFileEntry, Self::Error> {
+    fn try_from(
+        plugin: &Plugin,
+    ) -> std::result::Result<LockFileEntry, Self::Error> {
         let mut entry: LockFileEntry = Default::default();
         entry.name = plugin.name().to_string();
         entry.version = plugin.version().clone();

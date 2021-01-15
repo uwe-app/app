@@ -32,7 +32,8 @@ pub async fn resolve<P: AsRef<Path>>(
     lock: &LockFile,
 ) -> Result<DependencyTree> {
     let mut out = BTreeMap::new();
-    let mut solver = Solver::new(project.as_ref().to_path_buf(), dependencies, lock)?;
+    let mut solver =
+        Solver::new(project.as_ref().to_path_buf(), dependencies, lock)?;
     solver.solve(&mut out).await?;
     Ok(out)
 }
@@ -42,17 +43,17 @@ pub enum MaybePlugin {
     /// Plugin could not be found
     NotFound,
 
-    /// Local file system and archive targets and lock file matches 
-    /// that have a corresponding plugin installed can 
+    /// Local file system and archive targets and lock file matches
+    /// that have a corresponding plugin installed can
     /// be resolved to a plugin during this pass.
     Plugin(Plugin),
 
-    /// If a plugin cannot be resolved immediately because it is not 
-    /// yet installed we can use the registry item to find available 
-    /// features so that we can filter the dependency tree on features 
+    /// If a plugin cannot be resolved immediately because it is not
+    /// yet installed we can use the registry item to find available
+    /// features so that we can filter the dependency tree on features
     /// assigned to the dependency.
     ///
-    /// By keeping a reference to the registry item and it's features 
+    /// By keeping a reference to the registry item and it's features
     /// we know which features are valid for the target dependency.
     Package(RegistryItem),
 }
@@ -68,9 +69,9 @@ pub struct PluginDependencyState {
     /// Maybe a resolved plugin.
     plugin: MaybePlugin,
 
-    /// A resolved version when available, if a lock 
-    /// file entry is available this will be the 
-    /// version from the lock file otherwise it is a 
+    /// A resolved version when available, if a lock
+    /// file entry is available this will be the
+    /// version from the lock file otherwise it is a
     /// candidate version resolved from the registry.
     version: Option<Version>,
 
@@ -111,7 +112,7 @@ impl PluginDependencyState {
     pub fn is_local_scope(&self) -> bool {
         if let Some(ref target) = self.dependency.target {
             if let DependencyTarget::Local { .. } = target {
-                return true 
+                return true;
             }
         }
         false
@@ -140,8 +141,10 @@ impl PluginDependencyState {
     pub fn satisfied(&self) -> Result<bool> {
         let has_lock_file_entry = self.entry.is_some();
         let has_plugin = if let MaybePlugin::Plugin(_) = self.plugin {
-            true 
-        } else { false };
+            true
+        } else {
+            false
+        };
 
         let mut is_installed = false;
         let mut satisfies_range = false;
@@ -150,7 +153,7 @@ impl PluginDependencyState {
             let range = self.dependency().range();
             satisfies_range = range.matches(version);
             if self.is_local_scope() {
-                is_installed = true; 
+                is_installed = true;
             } else {
                 if installer::is_installed(&self.name, version)? {
                     is_installed = true;
@@ -158,7 +161,12 @@ impl PluginDependencyState {
             }
         }
 
-        Ok(has_lock_file_entry && has_plugin && is_installed && satisfies_range)
+        Ok(
+            has_lock_file_entry
+                && has_plugin
+                && is_installed
+                && satisfies_range,
+        )
     }
 }
 
@@ -325,7 +333,8 @@ async fn resolve_version<P: AsRef<Path>>(
         match target {
             DependencyTarget::File { ref path } => {
                 debug!("Resolve local folder path {:?}", path);
-                let plugin = installer::install_path(project, path, None).await?;
+                let plugin =
+                    installer::install_path(project, path, None).await?;
                 Ok((Some(plugin.version().clone()), None, Some(plugin)))
             }
             DependencyTarget::Archive { ref archive } => {

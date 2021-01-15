@@ -79,12 +79,12 @@ impl RedirectConfig {
         let write_redirects = options.settings.write_redirects.is_some()
             && options.settings.write_redirects.unwrap();
         if write_redirects {
-            self.write_all(&options.base)?;
+            self.create_files(&options.base)?;
         }
         Ok(())
     }
 
-    fn write_all<P: AsRef<Path>>(&self, target: P) -> Result<()> {
+    fn create_files<P: AsRef<Path>>(&self, target: P) -> Result<()> {
         for (k, v) in self.map.iter() {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX

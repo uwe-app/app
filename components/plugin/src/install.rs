@@ -1,24 +1,21 @@
-use std::path::Path;
 use std::convert::TryInto;
+use std::path::Path;
 
-use log::{info, debug};
+use log::{debug, info};
 
 use config::{
-    Config,
-    ResolvedPlugins,
     lock_file::{LockFile, LockFileEntry},
-    plugin::{Plugin, PluginSource, dependency::{Dependency, DependencyTarget}},
+    plugin::{
+        dependency::{Dependency, DependencyTarget},
+        Plugin, PluginSource,
+    },
+    Config, ResolvedPlugins,
 };
 
 use crate::{
-    dependencies::{self, DependencyTree, PluginDependencyState, MaybePlugin},
-    Registry,
-    installer,
     check_for_updates,
-    new_registry,
-    update_registry,
-    Result,
-    Error,
+    dependencies::{self, DependencyTree, MaybePlugin, PluginDependencyState},
+    installer, new_registry, update_registry, Error, Registry, Result,
 };
 
 /// Install dependencies for a project
@@ -26,18 +23,30 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
     let mut resolved: ResolvedPlugins = Default::default();
 
     if let Some(ref dependencies) = config.dependencies() {
-
         let registry = new_registry()?;
         let lock_path = LockFile::get_lock_file(config.project());
         let lock = LockFile::load(&lock_path)?;
-        let tree =
-            dependencies::resolve(config.project(), dependencies, &lock).await?;
+        let tree = dependencies::resolve(config.project(), dependencies, &lock)
+            .await?;
 
+        // Partition into plugins that have already been resolved 
+        // and candidates for installation
         let mut candidates: Vec<(&str, &PluginDependencyState)> = Vec::new();
-        find_candidates(config.project(), &registry, &tree, &mut candidates)?;
-        if candidates.is_empty() {
-            into_resolved(&tree, &mut resolved)?;
-        } else {
+        partition(
+            config.project(),
+            &registry,
+            &tree,
+            &mut candidates,
+            &mut resolved,
+        )?;
+
+        // Got some installation candidates
+        //
+        // - Update the registry
+        // - Install unresolved plugins
+        // - Update the lock file
+        //
+        if !candidates.is_empty() {
             let mut lock_installed: LockFile = Default::default();
 
             info!("Checking for registry updates...");
@@ -52,9 +61,7 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
                 debug!("Install {}", name);
 
                 let plugin = match state.maybe_plugin() {
-                    MaybePlugin::Plugin(ref plugin) => {
-                        plugin.clone() 
-                    } 
+                    MaybePlugin::Plugin(ref plugin) => plugin.clone(),
                     _ => {
                         installer::install_dependency(
                             config.project(),
@@ -62,7 +69,9 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
                             name,
                             state.dependency(),
                             true,
-                            None).await?
+                            None,
+                        )
+                        .await?
                     }
                 };
 
@@ -89,16 +98,20 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
     Ok(resolved)
 }
 
-fn into_resolved(tree: &DependencyTree, resolved: &mut ResolvedPlugins) -> Result<()> {
+/*
+fn into_resolved(
+    tree: &DependencyTree,
+    resolved: &mut ResolvedPlugins,
+) -> Result<()> {
     for (name, state) in tree.iter() {
         let dep = state.dependency().clone();
 
-        // This should be safe because we called `state.satisfied()` when finding 
+        // This should be safe because we called `state.satisfied()` when finding
         // installation candidates.
         let plugin = if let MaybePlugin::Plugin(plugin) = state.maybe_plugin() {
             plugin.clone()
         } else {
-            return Err(Error::PluginNotSatisfied)
+            return Err(Error::PluginNotSatisfied);
         };
 
         // Basic verification that the plugin is sane
@@ -113,6 +126,7 @@ fn into_resolved(tree: &DependencyTree, resolved: &mut ResolvedPlugins) -> Resul
 
     Ok(())
 }
+*/
 
 fn scope_inheritance(resolved: &mut ResolvedPlugins) -> Result<()> {
     let scoped = resolved
@@ -120,9 +134,7 @@ fn scope_inheritance(resolved: &mut ResolvedPlugins) -> Result<()> {
         .enumerate()
         .filter(|(_, (d, _))| d.target.is_some())
         .filter(|(_, (d, _))| {
-            if let DependencyTarget::Local { .. } =
-                d.target.as_ref().unwrap()
-            {
+            if let DependencyTarget::Local { .. } = d.target.as_ref().unwrap() {
                 true
             } else {
                 false
@@ -146,13 +158,9 @@ fn scope_inheritance(resolved: &mut ResolvedPlugins) -> Result<()> {
     for (index, parent) in scoped {
         let (dep, plugin) = resolved.get_mut(index).unwrap();
 
-        let (parent_dep, parent_plugin) =
-            parent.as_ref().ok_or_else(|| {
-                Error::PluginParentNotFound(
-                    plugin.parent(),
-                    plugin.name.clone(),
-                )
-            })?;
+        let (parent_dep, parent_plugin) = parent.as_ref().ok_or_else(|| {
+            Error::PluginParentNotFound(plugin.parent(), plugin.name.clone())
+        })?;
 
         //println!("Got scoped at {}", index);
         //println!("Got scoped name {}", &plugin.name);
@@ -171,32 +179,50 @@ fn inherit(
 ) -> Result<()> {
     // FIXME: ensure we are using the local name only...
     //
-
     local_dep.apply = parent_dep.apply.clone();
-
     local_plugin.set_source(PluginSource::Local(local_plugin.name.clone()));
     local_plugin.set_base(parent_plugin.base().clone());
     Ok(())
 }
 
-fn find_candidates<'a, P: AsRef<Path>>(
+fn partition<'a, P: AsRef<Path>>(
     project: P,
     registry: &Registry<'_>,
     tree: &'a DependencyTree,
     candidates: &mut Vec<(&'a str, &'a PluginDependencyState)>,
+    resolved: &mut ResolvedPlugins,
 ) -> Result<()> {
     for (name, state) in tree.iter() {
         if !state.satisfied()? {
             candidates.push((name, state));
+        } else {
+            // Gather plugins that have already been resolved
+            let plugin =
+                if let MaybePlugin::Plugin(plugin) = state.maybe_plugin() {
+                    plugin.clone()
+                } else {
+                    return Err(Error::PluginNotSatisfied);
+                };
+
+            // Basic verification that the plugin is sane
+            check(name, state.dependency(), &plugin)?;
+
+            resolved.push((state.dependency().clone(), plugin));
         }
         if !state.transitive().is_empty() {
-            find_candidates(project.as_ref(), registry, state.transitive(), candidates)?;
+            partition(
+                project.as_ref(),
+                registry,
+                state.transitive(),
+                candidates,
+                resolved,
+            )?;
         }
     }
     Ok(())
 }
 
-/// Perform some basic checks that a resolved plugin 
+/// Perform some basic checks that a resolved plugin
 /// matches a source dependency.
 fn check(name: &str, dep: &Dependency, plugin: &Plugin) -> Result<()> {
     if name != plugin.name() {

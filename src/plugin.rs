@@ -8,13 +8,12 @@ use semver::VersionReq;
 use url::Url;
 
 use config::plugin::{
-    Plugin,
-    dependency::{Dependency, DependencyTarget}, ExactPluginSpec, PluginSpec
+    dependency::{Dependency, DependencyTarget},
+    ExactPluginSpec, Plugin, PluginSpec,
 };
 use plugin::{
     check_for_updates, dependency_installed, get, install_dependency,
-    installation_dir,
-    new_registry, peek,
+    installation_dir, new_registry, peek,
 };
 
 use crate::{Error, Result};
@@ -143,7 +142,7 @@ pub async fn show(spec: ExactPluginSpec) -> Result<()> {
 
 fn print_plugin_dependency(plugin: &Plugin, target: &Option<DependencyTarget>) {
     let dependency_message = plugin.to_dependency_toml_string(target);
-    use terminal_size::{Width, terminal_size};
+    use terminal_size::{terminal_size, Width};
     if let Some((Width(w), _)) = terminal_size() {
         let delimiter = "─".repeat(w as usize);
         println!("{}", delimiter);
@@ -151,7 +150,9 @@ fn print_plugin_dependency(plugin: &Plugin, target: &Option<DependencyTarget>) {
         println!("{}", dependency_message);
         println!("");
         println!("{}", delimiter);
-        println!(r#"To add this plugin copy the snippet above into the "site.toml" file for the project."#);
+        println!(
+            r#"To add this plugin copy the snippet above into the "site.toml" file for the project."#
+        );
         println!("{}", delimiter);
     }
 }
@@ -162,18 +163,26 @@ pub async fn add(
     mut path: Option<PathBuf>,
     mut archive: Option<PathBuf>,
     mut git: Option<Url>,
-    force: bool) -> Result<()> {
-
+    force: bool,
+) -> Result<()> {
     // Check only a single plugin option is given
     let mut specified = 0usize;
-    if plugin_name.is_some() { specified += 1 }
-    if path.is_some() { specified += 1 }
-    if archive.is_some() { specified += 1 }
-    if git.is_some() { specified += 1 }
+    if plugin_name.is_some() {
+        specified += 1
+    }
+    if path.is_some() {
+        specified += 1
+    }
+    if archive.is_some() {
+        specified += 1
+    }
+    if git.is_some() {
+        specified += 1
+    }
     if specified == 0 {
-        return Err(Error::PluginAddNoTarget)
+        return Err(Error::PluginAddNoTarget);
     } else if specified > 1 {
-        return Err(Error::PluginAddMultipleTargets)
+        return Err(Error::PluginAddMultipleTargets);
     }
 
     let registry = new_registry()?;
@@ -199,24 +208,38 @@ pub async fn add(
             if !path.exists() || !path.is_dir() {
                 return Err(Error::NotDirectory(path));
             }
-            (String::new(), DependencyTarget::File{ path: path.canonicalize()? }.into())
+            (
+                String::new(),
+                DependencyTarget::File {
+                    path: path.canonicalize()?,
+                }
+                .into(),
+            )
         } else {
             if let Some(archive) = archive.take() {
                 if !archive.exists() || !archive.is_file() {
                     return Err(Error::NotFile(archive));
                 }
-                (String::new(), DependencyTarget::Archive { archive: archive.canonicalize()? }.into())
+                (
+                    String::new(),
+                    DependencyTarget::Archive {
+                        archive: archive.canonicalize()?,
+                    }
+                    .into(),
+                )
             } else {
                 if let Some(git) = git.take() {
                     (String::new(), DependencyTarget::Repo { git }.into())
                 } else {
-                    return Err(Error::PluginAddNoTarget) 
+                    return Err(Error::PluginAddNoTarget);
                 }
             }
         }
     };
 
-    match install_dependency(&project, &registry, &name, &dep, force, None).await {
+    match install_dependency(&project, &registry, &name, &dep, force, None)
+        .await
+    {
         Ok(plugin) => {
             debug!("Location {}", plugin.base().display());
             info!("Installed plugin {}@{} ✓", plugin.name(), plugin.version());
@@ -322,8 +345,8 @@ pub mod clean {
     use std::{thread, time};
 
     use log::info;
-    use utils::walk;
     use pbr::ProgressBar;
+    use utils::walk;
 
     use crate::Result;
 
@@ -361,7 +384,11 @@ pub mod clean {
         remove(files, dry_run).await
     }
 
-    fn format_message(base: &PathBuf, file: &PathBuf, progress: bool) -> Result<String> {
+    fn format_message(
+        base: &PathBuf,
+        file: &PathBuf,
+        progress: bool,
+    ) -> Result<String> {
         let standard = file.strip_prefix(&base)?.to_path_buf();
 
         let display_path = if progress {
@@ -369,10 +396,18 @@ pub mod clean {
                 if let Some(parent) = file.parent() {
                     if let Some(parent_name) = parent.file_name() {
                         PathBuf::from(parent_name).join(name)
-                    } else { standard }
-                } else { standard }
-            } else { standard }
-        } else { standard };
+                    } else {
+                        standard
+                    }
+                } else {
+                    standard
+                }
+            } else {
+                standard
+            }
+        } else {
+            standard
+        };
 
         let message = if progress {
             format!("{} ", display_path.to_string_lossy())
@@ -389,7 +424,9 @@ pub mod clean {
             let mut pb = ProgressBar::new(targets.len() as u64);
             pb.show_speed = false;
             Some(pb)
-        } else { None };
+        } else {
+            None
+        };
 
         for target in targets {
             match target {
@@ -397,7 +434,8 @@ pub mod clean {
                     if !dry_run {
                         fs::remove_file(&path)?;
                         if let Some(pb) = pb.as_mut() {
-                            let display_path = format_message(&base, &path, true)?;
+                            let display_path =
+                                format_message(&base, &path, true)?;
                             pb.message(&display_path);
                             pb.inc();
                             thread::sleep(time::Duration::from_millis(20));
@@ -406,13 +444,13 @@ pub mod clean {
                         let display_path = format_message(&base, &path, false)?;
                         info!("{}", &display_path);
                     }
-
                 }
                 CleanTarget::Directory(path) => {
                     if !dry_run {
                         fs::remove_dir_all(&path)?;
                         if let Some(pb) = pb.as_mut() {
-                            let display_path = format_message(&base, &path, true)?;
+                            let display_path =
+                                format_message(&base, &path, true)?;
                             pb.message(&display_path);
                             pb.inc();
                             thread::sleep(time::Duration::from_millis(20));
@@ -421,7 +459,6 @@ pub mod clean {
                         let display_path = format_message(&base, &path, false)?;
                         info!("{}", &display_path);
                     }
-
                 }
             }
         }
@@ -464,19 +501,18 @@ pub mod clean {
 
     async fn find_files(path: &PathBuf) -> Result<Vec<CleanTarget>> {
         let files = walk::read_dir(path, |f| {
-                if f.is_file() {
-                    if let Some(name) = f.file_name() {
-                        if name.to_string_lossy().ends_with(".tar.xz") {
-                            return true            
-                        }
+            if f.is_file() {
+                if let Some(name) = f.file_name() {
+                    if name.to_string_lossy().ends_with(".tar.xz") {
+                        return true;
                     }
                 }
-                false
-            })?
-            .into_iter()
-            .map(|f| CleanTarget::File(f))
-            .collect::<Vec<CleanTarget>>();
+            }
+            false
+        })?
+        .into_iter()
+        .map(|f| CleanTarget::File(f))
+        .collect::<Vec<CleanTarget>>();
         Ok(files)
     }
 }
-

@@ -206,6 +206,9 @@ pub struct ProfileSettings {
 
     /// List of workspace members to filter.
     pub member: Vec<String>,
+
+    /// Should we pass the commit hash to page templates.
+    pub include_commit: Option<bool>,
 }
 
 impl Default for ProfileSettings {
@@ -255,6 +258,8 @@ impl Default for ProfileSettings {
 
             resources: None,
             member: Vec::new(),
+
+            include_commit: None,
         }
     }
 }
@@ -282,6 +287,10 @@ impl ProfileSettings {
     /// Determine if this build profile can execute hooks.
     pub fn can_exec(&self) -> bool {
         self.exec.is_some() && self.exec.unwrap()
+    }
+
+    pub fn include_commit(&self) -> bool {
+        self.include_commit.is_some() && self.include_commit.unwrap()
     }
 
     /// Determine if drafts should be included.
@@ -399,6 +408,10 @@ impl ProfileSettings {
         }
 
         self.member = mem::take(&mut other.member);
+
+        if other.include_commit.is_some() {
+            self.include_commit = mem::take(&mut other.include_commit);
+        }
     }
 
     pub fn get_canonical_url(

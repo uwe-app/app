@@ -201,7 +201,6 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
     path: F,
     force: bool,
 ) -> Result<Plugin> {
-
     let file = canonical(project, path)?;
 
     let archive_path = file.to_string_lossy();
@@ -216,22 +215,21 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
         if !force {
             return Err(Error::ArchiveOverwrite(file));
         } else {
-            // If we are overwriting the installation needs 
-            // to be clean so there is no trace of any files 
+            // If we are overwriting the installation needs
+            // to be clean so there is no trace of any files
             // from the previous installation
-            fs::remove_dir_all(&destination)?; 
+            fs::remove_dir_all(&destination)?;
         }
     }
 
     // Extract the archive
-    let reader =
-        PackageReader::new(file)
-            .destination(destination)?
-            .set_overwrite(force)
-            .digest()
-            .and_then(|b| b.xz())
-            .and_then(|b| b.tar())
-            .await?;
+    let reader = PackageReader::new(file)
+        .destination(destination)?
+        .set_overwrite(force)
+        .digest()
+        .and_then(|b| b.xz())
+        .and_then(|b| b.tar())
+        .await?;
 
     let (target, digest, mut plugin) = reader.into_inner();
 
@@ -298,10 +296,7 @@ pub async fn dependency_installed<P: AsRef<Path>>(
     version_installed(project, registry, name, &version, Some(&package)).await
 }
 
-pub fn is_installed(
-    name: &str,
-    version: &Version,
-) -> Result<bool> {
+pub fn is_installed(name: &str, version: &Version) -> Result<bool> {
     let extract_target = installation_dir(name, &version)?;
     let extract_target_plugin = extract_target.join(PLUGIN);
     Ok(extract_target_plugin.exists())
@@ -384,8 +379,9 @@ pub async fn install_registry<P: AsRef<Path>>(
     let (version, package) = registry.resolve(name, &dep.version).await?;
     let extract_target = installation_dir(name, &version)?;
 
-    if let Some(plugin) =
-        dependency_installed(project, registry, name, dep).await?.take()
+    if let Some(plugin) = dependency_installed(project, registry, name, dep)
+        .await?
+        .take()
     {
         return Ok(plugin);
     }

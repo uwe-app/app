@@ -113,6 +113,12 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             attributed,
         };
 
+        let commit = if options.settings.include_commit() {
+            config.commit()
+        } else {
+            &None
+        };
+
         Ok(Self {
             page,
             lang,
@@ -127,7 +133,7 @@ impl<'config, 'locale> CollatedPage<'config, 'locale> {
             menus: Default::default(),
             generator: config::generator::user_agent(),
             version: config.version(),
-            commit: config.commit(),
+            commit,
             members: config.member_urls(),
         })
     }

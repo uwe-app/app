@@ -26,9 +26,7 @@ fn parse_exact_plugin_spec(
     src.parse::<ExactPluginSpec>().map_err(Error::from)
 }
 
-fn parse_url(
-    src: &str,
-) -> std::result::Result<Url, Error> {
+fn parse_url(src: &str) -> std::result::Result<Url, Error> {
     src.parse::<Url>().map_err(Error::from)
 }
 
@@ -60,7 +58,6 @@ enum Clean {
 
     /// Remove installed plugins (git)
     Repositories,
-
 }
 
 #[derive(StructOpt, Debug)]
@@ -79,7 +76,6 @@ enum Registry {
         #[structopt(short, long)]
         installed: bool,
     },
-
 }
 
 #[derive(StructOpt, Debug)]
@@ -173,10 +169,10 @@ enum Command {
 
     /// Add a plugin
     ///
-    /// The target plugin will be installed if it does not exist; if the 
+    /// The target plugin will be installed if it does not exist; if the
     /// plugin already exists use the --force option to overwrite it.
     ///
-    /// Options --path, --archive, --git and <plugin-name> 
+    /// Options --path, --archive, --git and <plugin-name>
     /// are mutually exclusive; it is an error to combine them.
     #[structopt(after_help = "EXAMPLES:
     Add from the registry: 
@@ -227,15 +223,15 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::publish(path).await?;
         }
 
-        Command::Clean { dry_run, cmd } => {
-            match cmd {
-                Clean::All => uwe::plugin::clean::all(dry_run).await?,
-                Clean::Downloads => uwe::plugin::clean::downloads(dry_run).await?,
-                Clean::Archives => uwe::plugin::clean::archives(dry_run).await?,
-                Clean::Repositories => uwe::plugin::clean::repositories(dry_run).await?,
-                Clean::Plugins => uwe::plugin::clean::plugins(dry_run).await?,
+        Command::Clean { dry_run, cmd } => match cmd {
+            Clean::All => uwe::plugin::clean::all(dry_run).await?,
+            Clean::Downloads => uwe::plugin::clean::downloads(dry_run).await?,
+            Clean::Archives => uwe::plugin::clean::archives(dry_run).await?,
+            Clean::Repositories => {
+                uwe::plugin::clean::repositories(dry_run).await?
             }
-        }
+            Clean::Plugins => uwe::plugin::clean::plugins(dry_run).await?,
+        },
 
         Command::Registry { cmd } => match cmd {
             Registry::List {
@@ -268,7 +264,13 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::install(project).await?;
         }
 
-        Command::Add { plugin_name, path, archive, git, force } => {
+        Command::Add {
+            plugin_name,
+            path,
+            archive,
+            git,
+            force,
+        } => {
             uwe::plugin::add(plugin_name, path, archive, git, force).await?;
         }
     }

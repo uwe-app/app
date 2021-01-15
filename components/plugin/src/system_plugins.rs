@@ -3,9 +3,7 @@
 //!
 use semver::{Version, VersionReq};
 
-use config::{
-    plugin::{dependency::Dependency, Plugin, PluginSpec},
-};
+use config::plugin::{dependency::Dependency, Plugin, PluginSpec};
 
 use crate::{installer::install_registry, new_registry, Error, Result};
 
@@ -39,7 +37,7 @@ pub async fn install_blueprint(source: &str) -> Result<Plugin> {
 }
 
 /// Install the offline documentation plugin attempting to use
-/// the preferred version if it is available in the registry 
+/// the preferred version if it is available in the registry
 /// otherwise fallback to the latest available version.
 pub async fn install_docs(prefers_version: Option<&Version>) -> Result<Plugin> {
     let registry = new_registry()?;
@@ -49,12 +47,19 @@ pub async fn install_docs(prefers_version: Option<&Version>) -> Result<Plugin> {
     let spec = if let Some(entry) = entry {
         if let Some(version) = prefers_version {
             if let Some(_) = entry.get(version) {
-                PluginSpec::from((PLUGIN_DOCS.to_string(), VersionReq::exact(version)))    
-            } else { latest }
+                PluginSpec::from((
+                    PLUGIN_DOCS.to_string(),
+                    VersionReq::exact(version),
+                ))
+            } else {
+                latest
+            }
         } else {
-            latest 
+            latest
         }
-    } else { latest };
+    } else {
+        latest
+    };
 
     Ok(install_plugin(spec).await?)
 }

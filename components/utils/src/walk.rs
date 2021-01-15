@@ -46,7 +46,7 @@ where
 
 /// Find files that are direct descendeants of a folder.
 ///
-/// This version does not use a walk builder therefore is not subject 
+/// This version does not use a walk builder therefore is not subject
 /// to .gitignore or other ignore rules.
 pub fn read_dir<P: AsRef<Path>, F>(parent: P, filter: F) -> Result<Vec<PathBuf>>
 where

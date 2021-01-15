@@ -10,7 +10,6 @@ pub enum Error {
 
     #[error(transparent)]
     Crossterm(#[from] crossterm::ErrorKind),
-
 }
 
 type Result<T> = std::result::Result<T, Error>;

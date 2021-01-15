@@ -215,15 +215,15 @@ impl ProjectBuilder {
             if !dependencies.is_empty() {
                 let mut plugins = plugin::install(&self.config).await?;
 
-                // Prepare the dependencies 
+                // Prepare the dependencies
                 for (dep, plugin) in plugins.iter_mut() {
                     info!("Use {}", plugin);
                     debug!(" -> {}", plugin.base().display());
                     let src = plugin.source().as_ref().unwrap().to_url()?;
                     debug!(" -> {}", src.to_string());
 
-                    // Prepare the dependency so that we have cached 
-                    // glob matchers and so that we can expand apply 
+                    // Prepare the dependency so that we have cached
+                    // glob matchers and so that we can expand apply
                     // shorthand notation (TODO)
                     dep.prepare()?;
                 }
