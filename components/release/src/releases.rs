@@ -145,12 +145,17 @@ impl From<&Releases> for ReleaseManifest {
 
         if let Some((release_version, mut release_info)) = it.next() {
             release_info.version = Some(release_version.into());
+            if release_info.published.is_none() {
+                release_info.published = Some(Utc::now());
+            }
             manifest.latest = Some(release_info);
         }
 
         while let Some((release_version, mut release_info)) = it.next() {
             release_info.version = Some(release_version.into());
-            release_info.published = Some(Utc::now());
+            if release_info.published.is_none() {
+                release_info.published = Some(Utc::now());
+            }
             manifest.versions.push(release_info);
         }
 
