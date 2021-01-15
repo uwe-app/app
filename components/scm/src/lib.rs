@@ -372,15 +372,15 @@ pub fn is_clean(repo: &Repository) -> bool {
     repo.state() == RepositoryState::Clean
 }
 
-pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<Repository> {
+pub fn clone_or_fetch<P: AsRef<Path>>(from: &str, to: P) -> Result<(Repository, bool)> {
     let to = to.as_ref();
     if !to.exists() {
         print_clone(from, to);
-        Ok(clone(from, to)?)
+        Ok((clone(from, to)?, true))
     } else {
         let repo = open(to)?;
         pull(to, None, None)?;
-        Ok(repo)
+        Ok((repo, false))
     }
 }
 
