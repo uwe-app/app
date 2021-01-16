@@ -38,7 +38,6 @@ async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
 /// Publish a plugin.
 pub async fn publish(
     source: &PathBuf,
-    force: bool,
 ) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let plugin = lint(source).await?;
     //lint_plugin(&plugin)?;
@@ -69,13 +68,11 @@ pub async fn publish(
 
     let entry = registry.entry(plugin.name()).await?;
 
-    if !force {
-        if let Some(ref entry) = entry {
-            if let Some(_) = entry.get(plugin.version()) {
-                return Err(Error::RegistryPluginVersionExists(
-                    plugin.to_string(),
-                ));
-            }
+    if let Some(ref entry) = entry {
+        if let Some(_) = entry.get(plugin.version()) {
+            return Err(Error::RegistryPluginVersionExists(
+                plugin.to_string(),
+            ));
         }
     }
 

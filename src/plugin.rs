@@ -314,7 +314,7 @@ pub async fn pack(path: PathBuf) -> Result<()> {
 }
 
 /// Publish a plugin.
-pub async fn publish(path: PathBuf, force: bool) -> Result<()> {
+pub async fn publish(path: PathBuf) -> Result<()> {
     let registry_path = option_env!("UPM_PUBLISH");
     let registry_repo = option_env!("UPM_PUBLISH_REPO");
 
@@ -331,7 +331,7 @@ pub async fn publish(path: PathBuf, force: bool) -> Result<()> {
         return Err(Error::NoPluginPublishPermission);
     }
 
-    plugin::publish(&path, force).await?;
+    plugin::publish(&path).await?;
 
     Ok(())
 }

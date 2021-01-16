@@ -133,10 +133,6 @@ enum Command {
     /// Publish a plugin
     #[structopt(alias = "pub")]
     Publish {
-        /// Force overwrite existing plugin
-        #[structopt(short, long)]
-        force: bool,
-
         /// Plugin folder.
         #[structopt(parse(from_os_str))]
         path: PathBuf,
@@ -223,8 +219,8 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::plugin::pack(path).await?;
         }
 
-        Command::Publish { path, force } => {
-            uwe::plugin::publish(path, force).await?;
+        Command::Publish { path } => {
+            uwe::plugin::publish(path).await?;
         }
 
         Command::Clean { dry_run, cmd } => match cmd {
