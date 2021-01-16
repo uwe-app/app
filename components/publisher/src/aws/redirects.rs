@@ -14,15 +14,15 @@ pub(crate) async fn diff_redirects<P: AsRef<Path>>(
     target: P,
     bucket: &str,
     prefix: Option<String>,
-    prune_remote: bool) -> Result<(RedirectManifest, PathBuf)> {
+    sync_redirects: bool) -> Result<(RedirectManifest, PathBuf)> {
 
     let (local, manifest_file) = load_local_redirects(target).await?;
 
-    // If we are pruning remote redirects then we 
-    // just use an empty remote redirects manifest
-    let mut remote = if prune_remote {
+    // If we are syncing redirects just use an 
+    // empty remote redirects manifest
+    let mut remote = if sync_redirects {
         Default::default() 
-    // Otherwise fetch from the remote bucket
+    // Otherwise fetch a manifest from the remote bucket
     } else {
         load_bucket_redirects(client, bucket, prefix).await? 
     };

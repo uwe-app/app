@@ -196,6 +196,7 @@ async fn run(cmd: Command) -> Result<()> {
                 env: args.env,
                 project,
                 exec: args.exec,
+                sync_redirects: args.sync_redirects,
             };
             uwe::publish::publish(opts).await?;
         }

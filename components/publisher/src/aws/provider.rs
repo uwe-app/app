@@ -20,7 +20,7 @@ pub struct PublishRequest {
     pub prefix: Option<String>,
     pub keep_remote: bool,
     pub build_target: PathBuf,
-    pub prune_remote_redirects: bool,
+    pub sync_redirects: bool,
     pub redirects_manifest: Option<RedirectManifest>
 }
 
@@ -75,7 +75,7 @@ async fn prepare_diff(request: &mut PublishRequest) -> Result<(FileBuilder, Diff
         &request.build_target,
         &request.bucket,
         request.prefix.clone(),
-        request.prune_remote_redirects,
+        request.sync_redirects,
     ).await?;
 
     // Must overwrite the redirects file with new content 

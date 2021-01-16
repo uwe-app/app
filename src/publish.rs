@@ -13,6 +13,7 @@ pub struct PublishOptions {
     pub env: String,
     pub provider: PublishProvider,
     pub exec: bool,
+    pub sync_redirects: bool,
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
@@ -55,7 +56,7 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                         prefix: env.prefix.clone(),
                         keep_remote: env.keep_remote(),
                         build_target: project.options.build_target().clone(),
-                        prune_remote_redirects: false,
+                        sync_redirects: options.sync_redirects,
                         redirects_manifest: None,
                     };
 
