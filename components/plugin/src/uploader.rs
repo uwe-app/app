@@ -28,8 +28,8 @@ async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
     );
 
     info!("Upload {} ({})", registry_bucket, registry_region);
-    publisher::put_file(pkg, &key, region, registry_bucket, registry_profile)
-        .await?;
+    publisher::put_object_file_once(
+        registry_profile, &region, registry_bucket, &key, pkg).await?;
     info!("{} ✓", &key);
 
     Ok(())

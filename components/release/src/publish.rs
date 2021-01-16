@@ -276,19 +276,18 @@ async fn upload(
     name: &str,
 ) -> Result<()> {
     let aws_region = publisher::parse_region(region)?;
-
     let key = get_key(&version.to_string(), platform, name);
-
-    let bytes = file.metadata()?.len();
+    let size = file.metadata()?.len();
 
     info!(
         "Upload {} to {}/{} ({})",
-        human_bytes(bytes as f64),
+        human_bytes(size as f64),
         bucket,
-        key,
+        &key,
         region
     );
-    publisher::put_file(file, &key, aws_region, bucket, profile).await?;
+    publisher::put_object_file_once(
+        profile, &aws_region, bucket, &key, file).await?;
     info!("{} ✓", &key);
 
     Ok(())
@@ -311,7 +310,7 @@ async fn latest_redirects(
             info!("Redirect {} -> {}", key, location);
             publisher::put_redirect_once(
                 profile,
-                aws_region.clone(),
+                &aws_region,
                 bucket,
                 &key,
                 &location,
@@ -332,9 +331,10 @@ async fn upload_quick_install_script(
 ) -> Result<()> {
     let aws_region = publisher::parse_region(region)?;
     let file = releases::local_releases(project)?.join(INSTALL_SH);
-    let key = INSTALL_SH.to_string();
+    let key = INSTALL_SH;
     info!("Upload install script {}", INSTALL_SH);
-    publisher::put_file(&file, &key, aws_region, bucket, profile).await?;
+    publisher::put_object_file_once(
+        profile, &aws_region, bucket, key, &file).await?;
     Ok(())
 }
 

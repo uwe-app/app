@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use config::ProfileSettings;
-use publisher::{self, PublishProvider, PublishRequest};
+use publisher::{self, PublishProvider, AwsPublishRequest, aws_publish};
 
 use workspace::{compile, Project};
 
@@ -37,7 +37,7 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
             {
                 if let Some(env) = publish_config.environments.get(&options.env)
                 {
-                    let publish_env = env.clone();
+                    //let publish_env = env.clone();
 
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
@@ -48,22 +48,18 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                     let region =
                         publisher::parse_region(&publish_config.region)?;
 
-                    let request = PublishRequest {
+                    let request = AwsPublishRequest {
                         region,
                         profile_name: publish_config.credentials.clone(),
                         bucket: bucket.clone(),
                         prefix: env.prefix.clone(),
                         keep_remote: env.keep_remote(),
                         build_target: project.options.build_target().clone(),
+                        prune_remote_redirects: false,
+                        redirects_manifest: None,
                     };
 
-                    let (file_builder, diff) = publisher::prepare(
-                        project.options.build_target(),
-                        &request,
-                        publish_env.prefix.clone(),
-                        ).await?;
-
-                    publisher::publish(&request, file_builder, diff).await?
+                    aws_publish(request).await?
                 } else {
                     return Err(Error::UnknownPublishEnvironment(
                         options.env.to_string(),

@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use config::redirect::{RedirectManifest, REDIRECTS_FILE};
 
@@ -8,13 +8,13 @@ use rusoto_s3::S3Client;
 use crate::Result;
 
 pub(crate) async fn diff_redirects<P: AsRef<Path>>(
-    target: P,
     client: &S3Client,
+    target: P,
     bucket: &str,
     prefix: Option<String>,
-    prune_remote: bool) -> Result<RedirectManifest> {
+    prune_remote: bool) -> Result<(RedirectManifest, PathBuf)> {
 
-    let local = load_local_redirects(target).await?;
+    let (local, manifest_file) = load_local_redirects(target).await?;
 
     // If we are pruning remote redirects then we 
     // just use an empty remote redirects manifest
@@ -26,11 +26,12 @@ pub(crate) async fn diff_redirects<P: AsRef<Path>>(
     };
 
     // Local redirects take precedence
-    for (k, v) in local.map() {
-        remote.map_mut().insert(k.clone(), v.clone());
-    } 
+    remote.map_mut().extend(
+        local.map()
+        .into_iter()
+        .map(|(k, v)| (k.clone(), v.clone())));
 
-    Ok(remote)
+    Ok((remote, manifest_file))
 }
 
 async fn load_bucket_redirects(
@@ -54,13 +55,13 @@ async fn load_bucket_redirects(
 
 async fn load_local_redirects<P: AsRef<Path>>(
     target: P,
-) -> Result<RedirectManifest> {
+) -> Result<(RedirectManifest, PathBuf)> {
     let redirects_manifest_file = target.as_ref().join(REDIRECTS_FILE);
     if redirects_manifest_file.exists() {
         let contents = fs::read_to_string(&redirects_manifest_file)?;
         let manifest: RedirectManifest = serde_json::from_str(&contents)?;
-        Ok(manifest)
+        Ok((manifest, redirects_manifest_file))
     } else {
-        Ok(Default::default())
+        Ok((Default::default(), redirects_manifest_file))
     }
 }

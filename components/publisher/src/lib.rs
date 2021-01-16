@@ -34,8 +34,17 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-mod publisher;
-mod redirects;
-pub mod report;
+#[derive(Debug)]
+pub enum PublishProvider {
+    Aws,
+}
 
-pub use publisher::*;
+mod aws;
+mod s3_util;
+
+pub use aws::provider::{
+    publish as aws_publish,
+    PublishRequest as AwsPublishRequest
+};
+
+pub use s3_util::*;
