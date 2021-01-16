@@ -3965,6 +3965,7 @@ dependencies = [
  "rand 0.7.3",
  "serde",
  "serde_json",
+ "terminal_size",
  "thiserror",
 ]
 
@@ -3997,7 +3998,6 @@ dependencies = [
  "server",
  "site",
  "structopt",
- "terminal_size",
  "thiserror",
  "tokio",
  "toml",

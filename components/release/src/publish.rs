@@ -309,12 +309,12 @@ async fn latest_redirects(
             let location =
                 format!("/{}", get_key(&version.to_string(), platform, name));
             info!("Redirect {} -> {}", key, location);
-            publisher::put_redirect(
-                &location,
-                &key,
+            publisher::put_redirect_once(
+                profile,
                 aws_region.clone(),
                 bucket,
-                profile,
+                &key,
+                &location,
             )
             .await?;
         }

@@ -245,13 +245,25 @@ pub async fn put_file<F: AsRef<Path>>(
     put_object(&client, req, file.as_ref()).await
 }
 
-/// Put a website redirect location.
-pub async fn put_redirect<S: AsRef<str>>(
-    location: S,
-    key: &str,
+/// Put a website redirect location and create a transient 
+/// client to process the request.
+pub async fn put_redirect_once<S: AsRef<str>>(
+    profile: &str,
     region: Region,
     bucket: &str,
-    profile: &str,
+    key: &str,
+    location: S,
+) -> Result<PutObjectOutput> {
+    let client = get_client(profile, &region)?;
+    Ok(put_redirect(&client, bucket, key, location).await?)
+}
+
+/// Put a website redirect location.
+pub async fn put_redirect<S: AsRef<str>>(
+    client: &S3Client,
+    bucket: &str,
+    key: &str,
+    location: S,
 ) -> Result<PutObjectOutput> {
     let req = PutObjectRequest {
         bucket: bucket.to_string(),
@@ -260,7 +272,6 @@ pub async fn put_redirect<S: AsRef<str>>(
         ..Default::default()
     };
 
-    let client = get_client(profile, &region)?;
     Ok(client.put_object(req).await?)
 }
 
@@ -271,26 +282,56 @@ async fn delete_object(
     Ok(client.delete_object(req).await?)
 }
 
+pub async fn prepare(
+    build_target: &PathBuf,
+    request: &PublishRequest,
+    prefix: Option<String>,
+    ) -> Result<(FileBuilder, DiffReport)> {
+
+    let delimiter = utils::terminal::delimiter();
+
+    println!("{}", &delimiter);
+    println!(" PUBLISH");
+    println!("{}", &delimiter);
+
+    info!("Bucket {}", &request.bucket);
+    info!("Building local file list");
+
+    // Create the list of local build files
+    let mut file_builder = FileBuilder::new(
+        build_target.clone(),
+        prefix,
+    );
+    file_builder.walk()?;
+
+    info!("Local objects {}", file_builder.keys.len());
+    info!("Building remote file list");
+
+    let mut remote: HashSet<String> = HashSet::new();
+    let mut etags: HashMap<String, String> = HashMap::new();
+    list_remote(&request, &mut remote, &mut etags).await?;
+
+    info!("Remote objects {}", remote.len());
+
+    let diff = diff(&file_builder, &remote, &etags)?;
+
+    Ok((file_builder, diff))
+}
+
 pub async fn publish(
     request: &PublishRequest,
     builder: FileBuilder,
     diff: DiffReport,
 ) -> Result<()> {
-    if diff.upload.is_empty()
-        && diff.changed.is_empty()
-        && diff.deleted.is_empty()
-    {
-        info!("Site is up to date!");
-        return Ok(());
-    }
 
-    let delimiter = "-".repeat(20);
+    let delimiter = utils::terminal::delimiter();
 
-    info!("{}", delimiter);
+    println!("{}", &delimiter);
+    println!(" DELTA");
+    println!("{}", &delimiter);
     info!("New {}", diff.upload.len());
     info!("Update {}", diff.changed.len());
     info!("Delete {}", diff.deleted.len());
-    info!("{}", delimiter);
 
     let mut errors: Vec<Error> = Vec::new();
     let mut uploaded: u64 = 0;
@@ -318,7 +359,11 @@ pub async fn publish(
         }
     }
 
-    if !request.keep_remote {
+    if !diff.deleted.is_empty() && !request.keep_remote {
+        println!("{}", &delimiter);
+        println!(" DELETIONS");
+        println!("{}", &delimiter);
+
         for k in &diff.deleted {
             let req = DeleteObjectRequest {
                 bucket: request.bucket.clone(),
@@ -336,14 +381,49 @@ pub async fn publish(
         }
     }
 
-    //info!("Ok (up to date) {}", diff.same.len());
+    println!("{}", &delimiter);
+    println!(" REDIRECTS");
+    println!("{}", &delimiter);
 
-    info!("{}", delimiter);
+    let mut redirects = 0usize;
+    let redirects_manifest = crate::redirects::diff_redirects(
+        &request.build_target,
+        &client,
+        &request.bucket,
+        request.prefix.clone(),
+        false,
+    ).await?;
+
+    for (k, v) in redirects_manifest.map() {
+        // NOTE: must not start with a slash!
+        let redirect_key = k.trim_start_matches("/");
+
+        info!("Redirect {} -> {}", redirect_key, &v);
+
+        if let Err(e) = put_redirect(
+            &client,
+            &request.bucket,
+            redirect_key,
+            v).await {
+            errors.push(e);
+        } else {
+            redirects += 1;
+        }
+    }
+
+    println!("{}", &delimiter);
+    println!(" SUMMARY");
+    println!("{}", &delimiter);
+
     info!("Uploads {}", uploaded);
     info!("Deleted {}", deleted);
-    info!("{}", delimiter);
+    info!("Redirects {}", redirects);
 
     if !errors.is_empty() {
+        println!("{}", &delimiter);
+        println!(" ERRORS");
+        println!("{}", &delimiter);
+
         for e in &errors {
             error!("{}", e);
         }

@@ -1,10 +1,7 @@
-use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
-use log::info;
-
-use config::{AwsPublishEnvironment, ProfileSettings};
-use publisher::{self, report::FileBuilder, PublishProvider, PublishRequest};
+use config::ProfileSettings;
+use publisher::{self, PublishProvider, PublishRequest};
 
 use workspace::{compile, Project};
 
@@ -48,8 +45,6 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                         project.config.host.clone()
                     };
 
-                    info!("Bucket {}", &bucket);
-
                     let region =
                         publisher::parse_region(&publish_config.region)?;
 
@@ -62,7 +57,13 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                         build_target: project.options.build_target().clone(),
                     };
 
-                    publish_aws(project, request, &publish_env).await?
+                    let (file_builder, diff) = publisher::prepare(
+                        project.options.build_target(),
+                        &request,
+                        publish_env.prefix.clone(),
+                        ).await?;
+
+                    publisher::publish(&request, file_builder, diff).await?
                 } else {
                     return Err(Error::UnknownPublishEnvironment(
                         options.env.to_string(),
@@ -73,36 +74,6 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
             }
         }
     }
-
-    Ok(())
-}
-
-async fn publish_aws(
-    project: &Project,
-    request: PublishRequest,
-    env: &AwsPublishEnvironment,
-) -> Result<()> {
-    info!("Building local file list");
-
-    // Create the list of local build files
-    let mut file_builder = FileBuilder::new(
-        project.options.build_target().clone(),
-        env.prefix.clone(),
-    );
-    file_builder.walk()?;
-
-    info!("Local objects {}", file_builder.keys.len());
-
-    info!("Building remote file list");
-
-    let mut remote: HashSet<String> = HashSet::new();
-    let mut etags: HashMap<String, String> = HashMap::new();
-    publisher::list_remote(&request, &mut remote, &mut etags).await?;
-
-    info!("Remote objects {}", remote.len());
-
-    let diff = publisher::diff(&file_builder, &remote, &etags)?;
-    publisher::publish(&request, file_builder, diff).await?;
 
     Ok(())
 }

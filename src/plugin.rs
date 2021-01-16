@@ -142,19 +142,16 @@ pub async fn show(spec: ExactPluginSpec) -> Result<()> {
 
 fn print_plugin_dependency(plugin: &Plugin, target: &Option<DependencyTarget>) {
     let dependency_message = plugin.to_dependency_toml_string(target);
-    use terminal_size::{terminal_size, Width};
-    if let Some((Width(w), _)) = terminal_size() {
-        let delimiter = "─".repeat(w as usize);
-        println!("{}", delimiter);
-        println!("");
-        println!("{}", dependency_message);
-        println!("");
-        println!("{}", delimiter);
-        println!(
-            r#"To add this plugin copy the snippet above into the "site.toml" file for the project."#
-        );
-        println!("{}", delimiter);
-    }
+    let delimiter = utils::terminal::delimiter();
+    println!("{}", &delimiter);
+    println!("");
+    println!("{}", dependency_message);
+    println!("");
+    println!("{}", &delimiter);
+    println!(
+        r#"To add this plugin copy the snippet above into the "site.toml" file for the project."#
+    );
+    println!("{}", &delimiter);
 }
 
 /// Add a plugin to the installation folder.

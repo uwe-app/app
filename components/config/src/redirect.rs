@@ -21,31 +21,19 @@ pub struct RedirectConfig {
     manifest: RedirectManifest,
 }
 
-impl<'a> IntoIterator for &'a RedirectConfig {
-    type Item = (&'a String, &'a String);
-    type IntoIter = std::collections::hash_map::Iter<'a, String, String>;
-    fn into_iter(self) -> std::collections::hash_map::Iter<'a, String, String> {
-        self.manifest.into_iter()
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RedirectManifest {
     #[serde(flatten)]
     map: HashMap<String, String>,
 }
 
-impl<'a> IntoIterator for &'a RedirectManifest {
-    type Item = (&'a String, &'a String);
-    type IntoIter = std::collections::hash_map::Iter<'a, String, String>;
-    fn into_iter(self) -> std::collections::hash_map::Iter<'a, String, String> {
-        self.map.iter()
-    }
-}
-
 impl RedirectManifest {
-    pub fn len(&self) -> usize {
-        self.map.len()
+    pub fn map(&self) -> &HashMap<String, String> {
+        &self.map 
+    }
+
+    pub fn map_mut(&mut self) -> &mut HashMap<String, String> {
+        &mut self.map 
     }
 }
 
@@ -62,20 +50,16 @@ impl TryInto<Redirects> for RedirectConfig {
 }
 
 impl RedirectConfig {
-    pub fn len(&self) -> usize {
-        self.manifest.len()
+    pub fn map(&self) -> &HashMap<String, String> {
+        self.manifest.map()
     }
 
-    pub fn insert(&mut self, k: String, v: String) -> Option<String> {
-        self.manifest.map.insert(k, v)
-    }
-
-    pub fn contains_key(&self, k: &str) -> bool {
-        self.manifest.map.contains_key(k)
+    pub fn map_mut(&mut self) -> &mut HashMap<String, String> {
+        self.manifest.map_mut()
     }
 
     pub fn validate(&self) -> Result<()> {
-        for (k, v) in self {
+        for (k, v) in self.map() {
             let mut stack: Vec<String> = Vec::new();
             self.validate_redirect(k, v, &mut stack)?;
         }
@@ -133,7 +117,7 @@ impl RedirectConfig {
     fn create_json<P: AsRef<Path>>(&self, target: P) -> Result<()> {
         info!(
             "Write {} redirect(s) to {}",
-            self.len(),
+            self.map().len(),
             target.as_ref().display()
         );
         let target = target.as_ref().join(REDIRECTS_FILE);
@@ -143,7 +127,7 @@ impl RedirectConfig {
 
     fn create_files<P: AsRef<Path>>(&self, target: P) -> Result<()> {
         let target = target.as_ref();
-        for (k, v) in self {
+        for (k, v) in self.map() {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX
             let key = k.trim_start_matches("/");

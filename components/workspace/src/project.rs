@@ -320,12 +320,13 @@ impl ProjectBuilder {
             let redirects = collation.get_redirects();
             if !redirects.is_empty() {
                 for (source, target) in redirects {
-                    if self.redirects.contains_key(source) {
+                    if self.redirects.map().contains_key(source) {
                         return Err(Error::RedirectCollision(
                             source.to_string(),
                         ));
                     }
                     self.redirects
+                        .map_mut()
                         .insert(source.to_string(), target.to_string());
                 }
             }
