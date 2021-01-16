@@ -2374,6 +2374,7 @@ name = "publisher"
 version = "0.1.0"
 dependencies = [
  "config",
+ "futures-util",
  "ignore",
  "log",
  "md-5",

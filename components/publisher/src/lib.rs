@@ -16,6 +16,8 @@ pub enum Error {
     #[error(transparent)]
     Credentials(#[from] rusoto_core::credential::CredentialsError),
     #[error(transparent)]
+    GetObject(#[from] rusoto_core::RusotoError<rusoto_s3::GetObjectError>),
+    #[error(transparent)]
     HeadBucket(#[from] rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
     #[error(transparent)]
     PutObject(#[from] rusoto_core::RusotoError<rusoto_s3::PutObjectError>),

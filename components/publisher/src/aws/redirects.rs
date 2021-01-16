@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 
 use config::redirect::{RedirectManifest, REDIRECTS_FILE};
 
-use rusoto_s3::S3Client;
+use rusoto_s3::{S3Client, S3, GetObjectRequest};
+use futures_util::StreamExt;
+use tokio_util::codec;
 
 use crate::Result;
 
@@ -39,18 +41,40 @@ async fn load_bucket_redirects(
     bucket: &str,
     prefix: Option<String>,
 ) -> Result<RedirectManifest> {
-    let mut out = Default::default();
     let key = if let Some(prefix) = prefix {
         format!("{}/{}", prefix, REDIRECTS_FILE)
     } else {
         REDIRECTS_FILE.to_string()
     };
 
-    println!("Load remote redirects... {}", &key);
+    // Load remote `redirects.json` file.
+    let req = GetObjectRequest {
+        bucket: bucket.to_string(), 
+        key,
+        ..Default::default()
+    };
 
-    // TODO: load remote `redirects.json` file.
+    if let Ok(mut res) = client.get_object(req).await {
+        if let Some(body) = res.body.take() {
+            //let reader = body.into_async_read(); 
 
-    Ok(out)
+            let content = codec::FramedRead::new(
+                body.into_async_read(), codec::BytesCodec::new())
+                .into_future();
+
+            let (res, _) = content.await;
+
+            if let Some(bytes_result) = res {
+                let bytes = bytes_result?;
+                let buf: Vec<u8> = bytes.to_vec();
+                let manifest: RedirectManifest = serde_json::from_slice(&buf)?;
+                return Ok(manifest)
+            }
+
+        }
+    }
+
+    Ok(Default::default())
 }
 
 async fn load_local_redirects<P: AsRef<Path>>(
