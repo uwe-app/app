@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use human_bytes::human_bytes;
-use log::{debug, info, warn};
+use log::{debug, info};
 use semver::VersionReq;
 use url::Url;
 
@@ -47,25 +47,7 @@ pub async fn list_registry(_downloads: bool, _installed: bool) -> Result<()> {
             let installed_versions = registry.installed_versions(entry).await?;
             let is_installed = installed_versions.contains_key(version);
             let mark = if is_installed { "◯" } else { "-" };
-
-            /*
-            if is_installed {
-                let (latest_installed_version, _) =
-                    installed_versions.iter().next().unwrap();
-                info!(
-                    "{} {}@{} (installed {})",
-                    mark,
-                    name,
-                    version,
-                    latest_installed_version.semver()
-                );
-            } else {
-                info!("{} {}@{}", mark, name, version);
-            }
-            */
-
             info!("{} {}@{}", mark, name, version);
-            //info!(r#""{}" = "{}""#, name, version);
         }
     }
 
@@ -262,6 +244,8 @@ pub async fn remove(spec: PluginSpec) -> Result<()> {
     let results = registry.find(&spec).await?;
     info!("Plugins {}", config::plugins_dir()?.display());
 
+    let mut removed = 0usize;
+
     if results.is_empty() {
         info!("No installed plugins found matching {}", &spec);
     } else {
@@ -270,16 +254,12 @@ pub async fn remove(spec: PluginSpec) -> Result<()> {
             if dir.exists() && dir.is_dir() {
                 info!("Remove {}@{}", item.name(), item.version());
                 fs::remove_dir_all(&dir)?;
-                info!("Deleted {} ✓", dir.display());
-            } else {
-                warn!(
-                    "Plugin {}@{} is not installed!",
-                    item.name(),
-                    item.version()
-                );
+                removed += 1;
             }
         }
     }
+
+    info!("Removed {} version(s) of {} ✓", removed, spec.name());
 
     Ok(())
 }

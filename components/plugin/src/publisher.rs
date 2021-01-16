@@ -10,31 +10,6 @@ use crate::{
     linter::lint, packager, registry, registry::RegistryAccess, Error, Result,
 };
 
-/// Upload the plugin package to the s3 bucket.
-async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
-    let registry_profile = option_env!("UPM_PUBLISH_PROFILE")
-        .expect("Publish profile environment variable not set");
-    let registry_region = option_env!("UPM_PUBLISH_REGION")
-        .expect("Publish region environment variable not set");
-    let registry_bucket = option_env!("UPM_PUBLISH_BUCKET")
-        .expect("Publish bucket environment variable not set");
-
-    let region = publisher::parse_region(registry_region)?;
-    let key = format!(
-        "{}/{}/{}.tar.xz",
-        plugin.name(),
-        plugin.version().to_string(),
-        config::PACKAGE
-    );
-
-    info!("Upload {} ({})", registry_bucket, registry_region);
-    publisher::put_object_file_once(
-        registry_profile, &region, registry_bucket, &key, pkg).await?;
-    info!("{} ✓", &key);
-
-    Ok(())
-}
-
 /// Publish a plugin.
 pub async fn publish(
     source: &PathBuf,
@@ -109,3 +84,29 @@ pub async fn publish(
 
     Ok((pkg, digest, plugin))
 }
+
+/// Upload the plugin package to the s3 bucket.
+async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
+    let registry_profile = option_env!("UPM_PUBLISH_PROFILE")
+        .expect("Publish profile environment variable not set");
+    let registry_region = option_env!("UPM_PUBLISH_REGION")
+        .expect("Publish region environment variable not set");
+    let registry_bucket = option_env!("UPM_PUBLISH_BUCKET")
+        .expect("Publish bucket environment variable not set");
+
+    let region = publisher::parse_region(registry_region)?;
+    let key = format!(
+        "{}/{}/{}.tar.xz",
+        plugin.name(),
+        plugin.version().to_string(),
+        config::PACKAGE
+    );
+
+    info!("Upload {} ({})", registry_bucket, registry_region);
+    publisher::put_object_file_once(
+        registry_profile, &region, registry_bucket, &key, pkg).await?;
+    info!("{} ✓", &key);
+
+    Ok(())
+}
+
