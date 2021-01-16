@@ -217,6 +217,7 @@ pub struct Config {
     pub node: Option<NodeConfig>,
     pub page: Option<Page>,
     pub pages: Option<HashMap<String, Page>>,
+    #[serde(alias = "redirects")]
     pub redirect: Option<RedirectConfig>,
     pub date: Option<DateConfig>,
     pub link: Option<LinkConfig>,

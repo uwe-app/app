@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::convert::TryInto;
 
 use log::info;
 
@@ -10,6 +11,7 @@ use http::Uri;
 use crate::{Error, Result, RuntimeOptions};
 
 static MAX_REDIRECTS: usize = 4;
+static REDIRECTS_FILE: &str = "redirects.json";
 
 pub type Redirects = HashMap<String, Uri>;
 
@@ -19,15 +21,19 @@ pub struct RedirectConfig {
     pub map: HashMap<String, String>,
 }
 
-impl RedirectConfig {
-    pub fn collect(&self) -> crate::Result<Redirects> {
+impl TryInto<Redirects> for RedirectConfig {
+    type Error = crate::Error;
+
+    fn try_into(self) -> std::result::Result<Redirects, Self::Error> {
         let mut map: HashMap<String, Uri> = HashMap::new();
-        for (k, v) in self.map.iter() {
-            map.insert(k.clone(), v.as_str().parse::<Uri>()?);
+        for (k, v) in self.map {
+            map.insert(k, v.as_str().parse::<Uri>()?);
         }
         Ok(map)
     }
+}
 
+impl RedirectConfig {
     pub fn validate(&self) -> Result<()> {
         for (k, v) in self.map.iter() {
             let mut stack: Vec<String> = Vec::new();
@@ -76,29 +82,37 @@ impl RedirectConfig {
     }
 
     pub fn write(&self, options: &RuntimeOptions) -> Result<()> {
-        let write_redirects = options.settings.write_redirects.is_some()
-            && options.settings.write_redirects.unwrap();
-        if write_redirects {
-            self.create_files(&options.base)?;
+        let build_target = &options.base;
+        if options.settings.write_redirect_files() {
+            self.create_files(build_target)?;
         }
+        self.create_json(build_target)?;
         Ok(())
     }
 
+    fn create_json<P: AsRef<Path>>(&self, target: P) -> Result<()> {
+        info!("Write {} redirect(s) to {}", self.map.len(), target.as_ref().display());
+        let target = target.as_ref().join(REDIRECTS_FILE);
+        fs::write(target, serde_json::to_vec(self)?)?;
+        Ok(()) 
+    }
+
     fn create_files<P: AsRef<Path>>(&self, target: P) -> Result<()> {
+        let target = target.as_ref();
         for (k, v) in self.map.iter() {
             // Strip the trailing slash so it is not treated
             // as an absolute path on UNIX
             let key = k.trim_start_matches("/");
-            let mut buf = target.as_ref().to_path_buf();
-            buf.push(utils::url::to_path_separator(key));
+            let mut buf = target.join(utils::url::to_path_separator(key));
             if k.ends_with("/") {
                 buf.push(crate::INDEX_HTML);
             }
+
             if buf.exists() {
                 return Err(Error::RedirectFileExists(buf));
             }
 
-            let short = buf.strip_prefix(target.as_ref())?;
+            let short = buf.strip_prefix(target)?;
             info!("{} -> {} as {}", &k, &v, short.display());
             if let Some(ref parent) = buf.parent() {
                 fs::create_dir_all(parent)?;

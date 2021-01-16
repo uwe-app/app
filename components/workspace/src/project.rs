@@ -17,7 +17,7 @@ use compiler::{parser, parser::Parser, BuildContext};
 use config::{
     hook::HookConfig, plugin_cache::PluginCache, profile::Profiles,
     server::HostConfig, syntax::SyntaxConfig, Config, ProfileSettings,
-    RedirectConfig, RuntimeOptions,
+    redirect::{RedirectConfig, Redirects}, RuntimeOptions,
 };
 
 use collections::{synthetic, DataSourceMap, QueryCache};
@@ -868,7 +868,7 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
             let target = info.target.clone();
             let hostname = info.name.clone();
             let endpoint = info.endpoint.clone();
-            let redirect_uris = info.project.redirects.collect()?;
+            let redirect_uris: Redirects = info.project.redirects.clone().try_into()?;
 
             info!(
                 "Virtual host: {} ({} redirects)",

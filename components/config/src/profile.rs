@@ -186,7 +186,7 @@ pub struct ProfileSettings {
     pub pristine: Option<bool>,
     pub force: Option<bool>,
 
-    pub write_redirects: Option<bool>,
+    pub write_redirect_files: Option<bool>,
 
     // Base URL to strip when building links etc
     pub base: Option<String>,
@@ -251,7 +251,7 @@ impl Default for ProfileSettings {
             incremental: None,
             pristine: None,
             force: None,
-            write_redirects: None,
+            write_redirect_files: None,
             base: None,
             paths: None,
             base_href: None,
@@ -291,6 +291,10 @@ impl ProfileSettings {
 
     pub fn include_commit(&self) -> bool {
         self.include_commit.is_some() && self.include_commit.unwrap()
+    }
+
+    pub fn write_redirect_files(&self) -> bool {
+        self.write_redirect_files.is_some() && self.write_redirect_files.unwrap()
     }
 
     /// Determine if drafts should be included.
@@ -390,8 +394,8 @@ impl ProfileSettings {
         if other.force.is_some() {
             self.force = mem::take(&mut other.force)
         }
-        if other.write_redirects.is_some() {
-            self.write_redirects = mem::take(&mut other.write_redirects)
+        if other.write_redirect_files.is_some() {
+            self.write_redirect_files = mem::take(&mut other.write_redirect_files)
         }
         if other.base.is_some() {
             self.base = mem::take(&mut other.base)
