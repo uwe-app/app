@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use std::str::FromStr;
 
@@ -14,13 +14,23 @@ use rusoto_core::Region;
 use rusoto_s3::*;
 
 use log::{debug, error, info};
-use read_progress_stream::ReadProgressStream;
 use pbr::{ProgressBar, Units};
+use read_progress_stream::ReadProgressStream;
 
 use crate::{report::FileBuilder, Error, Result};
 
 // The folder delimiter
 static DELIMITER: &str = "/";
+
+#[derive(Debug)]
+pub struct PublishRequest {
+    pub profile_name: String,
+    pub region: Region,
+    pub bucket: String,
+    pub prefix: Option<String>,
+    pub keep_remote: bool,
+    pub build_target: PathBuf,
+}
 
 // Compute a digest from the file on disc and return it in
 // an etag format.
@@ -57,15 +67,6 @@ pub struct DiffReport {
     pub changed: HashSet<String>,
     // Files that exist on remote but no longer exist locally
     pub deleted: HashSet<String>,
-}
-
-#[derive(Debug)]
-pub struct PublishRequest {
-    pub profile_name: String,
-    pub region: Region,
-    pub bucket: String,
-    pub prefix: Option<String>,
-    pub keep_remote: bool,
 }
 
 #[derive(Debug)]

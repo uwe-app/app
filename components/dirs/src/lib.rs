@@ -26,16 +26,15 @@ static REPOSITORIES: &str = "repositories";
 /// Name for the location of where plugins installed from archives are placed.
 static ARCHIVES: &str = "archives";
 
-/// Get the root directory (~/.uwe) but do not 
+/// Get the root directory (~/.uwe) but do not
 /// create it if it does not exist.
 pub fn root_dir() -> io::Result<PathBuf> {
-    home::home_dir().map(|p| p.join(ROOT_DIR))
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::NotFound,
-                String::from("Could not determine home directory"),
-            )
-        })
+    home::home_dir().map(|p| p.join(ROOT_DIR)).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            String::from("Could not determine home directory"),
+        )
+    })
 }
 
 pub fn sites_dir() -> io::Result<PathBuf> {

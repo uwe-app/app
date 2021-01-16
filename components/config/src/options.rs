@@ -23,7 +23,7 @@ pub struct RuntimeOptions {
     // Root of the output
     pub output: PathBuf,
     // Target output directory including a build tag
-    pub base: PathBuf,
+    base: PathBuf,
     // The computed profile to use
     pub settings: ProfileSettings,
 }
@@ -42,6 +42,10 @@ impl RuntimeOptions {
             base,
             settings,
         }
+    }
+
+    pub fn build_target(&self) -> &PathBuf {
+        &self.base
     }
 
     pub fn profile(&self) -> &ProfileName {

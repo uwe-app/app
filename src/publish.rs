@@ -59,6 +59,7 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                         bucket: bucket.clone(),
                         prefix: env.prefix.clone(),
                         keep_remote: env.keep_remote(),
+                        build_target: project.options.build_target().clone(),
                     };
 
                     publish_aws(project, request, &publish_env).await?
@@ -84,8 +85,10 @@ async fn publish_aws(
     info!("Building local file list");
 
     // Create the list of local build files
-    let mut file_builder =
-        FileBuilder::new(project.options.base.clone(), env.prefix.clone());
+    let mut file_builder = FileBuilder::new(
+        project.options.build_target().clone(),
+        env.prefix.clone(),
+    );
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());

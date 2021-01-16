@@ -15,9 +15,13 @@ use collator::{
 use compiler::{parser, parser::Parser, BuildContext};
 
 use config::{
-    hook::HookConfig, plugin_cache::PluginCache, profile::Profiles,
-    server::HostConfig, syntax::SyntaxConfig, Config, ProfileSettings,
-    redirect::{RedirectConfig, Redirects}, RuntimeOptions,
+    hook::HookConfig,
+    plugin_cache::PluginCache,
+    profile::Profiles,
+    redirect::{RedirectConfig, Redirects},
+    server::HostConfig,
+    syntax::SyntaxConfig,
+    Config, ProfileSettings, RuntimeOptions,
 };
 
 use collections::{synthetic, DataSourceMap, QueryCache};
@@ -35,7 +39,7 @@ use crate::{
 static PLUGIN_SYNTAX: &str = "std::syntax";
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
-    let mut manifest_file = options.base.clone();
+    let mut manifest_file = options.build_target().clone();
     manifest_file.set_extension(config::JSON);
     manifest_file
 }
@@ -290,7 +294,7 @@ impl ProjectBuilder {
 
         let mut res = CollateResult::new(
             &self.config.lang,
-            &self.options.base,
+            self.options.build_target(),
             self.locales.languages(),
         );
 
@@ -315,14 +319,13 @@ impl ProjectBuilder {
         for collation in self.collations.iter_mut() {
             let redirects = collation.get_redirects();
             if !redirects.is_empty() {
-                for (source, target) in redirects.iter() {
-                    if self.redirects.map.contains_key(source) {
+                for (source, target) in redirects {
+                    if self.redirects.contains_key(source) {
                         return Err(Error::RedirectCollision(
                             source.to_string(),
                         ));
                     }
                     self.redirects
-                        .map
                         .insert(source.to_string(), target.to_string());
                 }
             }
@@ -726,7 +729,8 @@ impl Project {
                 //// NOTE: robots must always be at the root regardless
                 //// NOTE: of multi-lingual support so we use `base` rather
                 //// NOTE: than the `target`
-                let robots_file = self.options.base.join(config::robots::FILE);
+                let robots_file =
+                    self.options.build_target().join(config::robots::FILE);
                 utils::fs::write_string(&robots_file, robots.to_string())?;
                 info!("Robots {}", robots_file.display());
             }
@@ -836,7 +840,7 @@ impl Into<HostResult> for CompileResult {
             .map(|project| {
                 let name = project.config.get_local_host_name(multiple);
                 let source = project.options.source.clone();
-                let target = project.options.base.clone();
+                let target = project.options.build_target().clone();
                 let endpoint = utils::generate_id(16);
                 HostInfo {
                     name,
@@ -868,7 +872,8 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
             let target = info.target.clone();
             let hostname = info.name.clone();
             let endpoint = info.endpoint.clone();
-            let redirect_uris: Redirects = info.project.redirects.clone().try_into()?;
+            let redirect_uris: Redirects =
+                info.project.redirects.clone().try_into()?;
 
             info!(
                 "Virtual host: {} ({} redirects)",

@@ -16,7 +16,7 @@ pub async fn uninstall() -> Result<()> {
         info!("");
         info!("curl https://releases.uwe.app/install.sh | sh");
         info!("");
-        return Ok(())
+        return Ok(());
     }
 
     print!(" Uninstall {}? (y/n) ", dir.display());

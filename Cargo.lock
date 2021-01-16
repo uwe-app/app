@@ -2363,6 +2363,7 @@ checksum = "8f1383dff4092fe903ac180e391a8d4121cc48f08ccf850614b0290c6673b69d"
 name = "publisher"
 version = "0.1.0"
 dependencies = [
+ "config",
  "ignore",
  "log",
  "md-5",
@@ -2372,6 +2373,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rusoto_signature",
+ "serde_json",
  "thiserror",
  "tokio",
  "tokio-util",

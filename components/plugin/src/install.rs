@@ -29,7 +29,7 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
         let tree = dependencies::resolve(config.project(), dependencies, &lock)
             .await?;
 
-        // Partition into plugins that have already been resolved 
+        // Partition into plugins that have already been resolved
         // and candidates for installation
         let mut candidates: Vec<(&str, &PluginDependencyState)> = Vec::new();
         partition(

@@ -394,7 +394,7 @@ impl Updater {
 
             // Now try to remove the build product
             if let Some(ref href) = href {
-                let build_file = self.project.options().base.join(
+                let build_file = self.project.options().build_target().join(
                     utils::url::to_path_separator(href.trim_start_matches("/")),
                 );
 

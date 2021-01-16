@@ -294,7 +294,8 @@ impl ProfileSettings {
     }
 
     pub fn write_redirect_files(&self) -> bool {
-        self.write_redirect_files.is_some() && self.write_redirect_files.unwrap()
+        self.write_redirect_files.is_some()
+            && self.write_redirect_files.unwrap()
     }
 
     /// Determine if drafts should be included.
@@ -395,7 +396,8 @@ impl ProfileSettings {
             self.force = mem::take(&mut other.force)
         }
         if other.write_redirect_files.is_some() {
-            self.write_redirect_files = mem::take(&mut other.write_redirect_files)
+            self.write_redirect_files =
+                mem::take(&mut other.write_redirect_files)
         }
         if other.base.is_some() {
             self.base = mem::take(&mut other.base)

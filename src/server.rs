@@ -55,7 +55,8 @@ pub async fn serve(
                 host_result.try_into()?;
 
             for (info, host) in host_configs.iter_mut() {
-                host.directory = info.project.options.base.to_path_buf();
+                host.directory =
+                    info.project.options.build_target().to_path_buf();
             }
 
             let mut it = host_configs.into_iter();

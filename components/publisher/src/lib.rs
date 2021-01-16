@@ -27,11 +27,15 @@ pub enum Error {
     ListObjects(
         #[from] rusoto_core::RusotoError<rusoto_s3::ListObjectsV2Error>,
     ),
+
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 mod publisher;
+mod redirects;
 pub mod report;
 
 pub use publisher::*;
