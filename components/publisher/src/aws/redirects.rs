@@ -4,10 +4,10 @@ use std::path::{Path, PathBuf};
 use config::redirect::{RedirectManifest, REDIRECTS_FILE};
 
 use rusoto_s3::{S3Client, S3, GetObjectRequest};
-use futures_util::StreamExt;
+use futures_util::{TryStreamExt, StreamExt};
 use tokio_util::codec;
 
-use crate::Result;
+use crate::{Result, Error};
 
 pub(crate) async fn diff_redirects<P: AsRef<Path>>(
     client: &S3Client,
@@ -56,12 +56,35 @@ async fn load_bucket_redirects(
 
     if let Ok(mut res) = client.get_object(req).await {
         if let Some(body) = res.body.take() {
-            //let reader = body.into_async_read(); 
 
             let content = codec::FramedRead::new(
-                body.into_async_read(), codec::BytesCodec::new())
-                .into_future();
+                body.into_async_read(), codec::BytesCodec::new());
 
+            let mut buf: Vec<u8> = Vec::new();
+            content.try_for_each(|bytes| {
+                buf.extend(&bytes);
+                futures::future::ok(())
+            }).await?;
+
+            let manifest: RedirectManifest = serde_json::from_slice(&buf)?;
+            return Ok(manifest)
+
+            //let temp = content
+                //.map_ok(|b| b.to_vec())
+                //.collect::<Vec<_>>().await;
+
+            //let buf = temp
+                //.map(||)
+
+            //buf.foo();
+
+                //.try_flatten()
+                //.collect::<Vec<_>>().await?;
+
+
+            //while let Some(bytes) = content.next().await {}
+
+            /*
             let (res, _) = content.await;
 
             if let Some(bytes_result) = res {
@@ -70,6 +93,8 @@ async fn load_bucket_redirects(
                 let manifest: RedirectManifest = serde_json::from_slice(&buf)?;
                 return Ok(manifest)
             }
+            */
+
 
         }
     }

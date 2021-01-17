@@ -1281,6 +1281,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "hosting"
+version = "0.1.0"
+dependencies = [
+ "config",
+ "futures-util",
+ "log",
+ "rusoto_core",
+ "rusoto_s3",
+ "rusoto_signature",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "utils",
+]
+
+[[package]]
 name = "htmlentity"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2374,6 +2391,7 @@ name = "publisher"
 version = "0.1.0"
 dependencies = [
  "config",
+ "futures",
  "futures-util",
  "ignore",
  "log",

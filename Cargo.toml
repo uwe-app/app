@@ -15,6 +15,7 @@ members = [
   "components/config",
   "components/dirs",
   "components/frontmatter",
+  "components/hosting",
   "components/livereload",
   "components/locale",
   "components/minify",
