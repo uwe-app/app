@@ -1,14 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use rusoto_core::{Region, RusotoError};
 use rusoto_s3::{
-    S3,
-    S3Client,
-    HeadBucketRequest,
-    HeadBucketError,
-    CreateBucketRequest,
-    CreateBucketConfiguration,
-    PutBucketPolicyRequest,
+    CreateBucketConfiguration, CreateBucketRequest, ErrorDocument,
+    HeadBucketError, HeadBucketRequest, IndexDocument, PutBucketPolicyRequest,
+    PutBucketWebsiteRequest, S3Client, WebsiteConfiguration, S3,
 };
 
 use crate::{Error, Result};
@@ -49,14 +45,15 @@ impl WebHost {
     /// Bring this web host up.
     pub async fn up(&self, client: &S3Client) -> Result<()> {
         self.ensure_bucket(client).await?;
-        self.set_bucket_policy(client).await?;
+        self.put_bucket_policy(client).await?;
+        self.put_bucket_website(client).await?;
 
         Ok(())
     }
 
     /// Ensure the bucket for this web host exists.
     async fn ensure_bucket(&self, client: &S3Client) -> Result<()> {
-        let req =  HeadBucketRequest {
+        let req = HeadBucketRequest {
             bucket: self.bucket.to_string(),
             ..Default::default()
         };
@@ -73,14 +70,14 @@ impl WebHost {
                     Err(Error::from(e))
                 }
             }
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 
     /// Create a bucket.
     async fn create_bucket(&self, client: &S3Client) -> Result<()> {
         let create_bucket_configuration = CreateBucketConfiguration {
-            location_constraint: Some(self.region.name().to_string())
+            location_constraint: Some(self.region.name().to_string()),
         };
 
         let req = CreateBucketRequest {
@@ -93,13 +90,35 @@ impl WebHost {
     }
 
     /// Set the bucket policy to allow public reads.
-    async fn set_bucket_policy(&self, client: &S3Client) -> Result<()> {
+    async fn put_bucket_policy(&self, client: &S3Client) -> Result<()> {
         let req = PutBucketPolicyRequest {
             bucket: self.bucket.to_string(),
             policy: self.policy.clone().unwrap(),
             ..Default::default()
         };
         client.put_bucket_policy(req).await?;
+        Ok(())
+    }
+
+    /// Set the bucket policy to allow public reads.
+    async fn put_bucket_website(&self, client: &S3Client) -> Result<()> {
+        let website_configuration = WebsiteConfiguration {
+            index_document: self
+                .index_page
+                .clone()
+                .map(|s| IndexDocument { suffix: s.clone() }),
+            error_document: self
+                .error_page
+                .clone()
+                .map(|s| ErrorDocument { key: s.clone() }),
+            ..Default::default()
+        };
+        let req = PutBucketWebsiteRequest {
+            bucket: self.bucket.to_string(),
+            website_configuration,
+            ..Default::default()
+        };
+        client.put_bucket_website(req).await?;
         Ok(())
     }
 }
