@@ -10,6 +10,9 @@ pub enum Error {
     CreateBucket(#[from] rusoto_core::RusotoError<rusoto_s3::CreateBucketError>),
 
     #[error(transparent)]
+    PutBucketPolicy(#[from] rusoto_core::RusotoError<rusoto_s3::PutBucketPolicyError>),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
