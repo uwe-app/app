@@ -1302,15 +1302,14 @@ dependencies = [
 name = "hosting"
 version = "0.1.0"
 dependencies = [
- "config",
  "log",
  "rusoto_core",
  "rusoto_s3",
  "rusoto_signature",
+ "serde",
  "serde_json",
  "thiserror",
  "tokio 1.0.2",
- "utils",
 ]
 
 [[package]]
