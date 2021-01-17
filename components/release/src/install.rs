@@ -100,14 +100,8 @@ pub(crate) async fn fetch(
                 //binary::symlink_names(&version_dir, names)?;
                 version::write(&version_file, version)?;
             }
-
-            info!("Installation {}@{} is ok ✓", name, version.to_string());
+            info!("Version {}@{} is installed and ok ✓", name, version.to_string());
             return Ok(version.clone());
-        } else {
-            warn!(
-                "Existing installation for {}@{} may be corrupt",
-                exe_name, version
-            );
         }
     }
 
