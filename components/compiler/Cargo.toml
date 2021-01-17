@@ -35,4 +35,4 @@ crossbeam = "0.7"
 
 futures = "0.3"
 futures-util = { version = "0.3.4" }
-tokio = { version = "0.2.22", features = ["rt-core", "rt-threaded", "fs"] }
+tokio = { version = "^1.0", features = ["full"] }

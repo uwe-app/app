@@ -417,7 +417,7 @@ fn get_live_reload(
 
 async fn live_render(
     path: FullPath,
-    mut tx: mpsc::Sender<String>,
+    tx: mpsc::Sender<String>,
     rx: Arc<RwLock<mpsc::Receiver<ResponseValue>>>,
 ) -> Result<impl Reply, warp::Rejection> {
     if path.as_str().ends_with("/") || path.as_str().ends_with(".html") {

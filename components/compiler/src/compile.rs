@@ -47,7 +47,7 @@ where
                     // NOTE: we pay a price for creating another runtime
                     // NOTE: inside the rayon thread but it gives us a
                     // NOTE: consistent futures based API
-                    let mut rt = tokio::runtime::Runtime::new().unwrap();
+                    let rt = tokio::runtime::Runtime::new().unwrap();
                     rt.block_on(async move {
                         let res = run::one(context, parser, p).await;
                         if fail_fast && res.is_err() {

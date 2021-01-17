@@ -65,7 +65,7 @@ hex = "0.4.2"
 human_bytes = "0.2.1"
 url = "2"
 unic-langid = "0.9.0"
-tokio = { version = "0.2.22", features = ["rt-core", "rt-threaded", "fs"] }
+tokio = { version = "^1.0", features = ["full"] }
 pbr = "1.0.4"
 
 # uwe-shim

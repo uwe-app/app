@@ -7,7 +7,7 @@ use human_bytes::human_bytes;
 use log::debug;
 use pbr::{ProgressBar, Units};
 use semver::Version;
-use tokio::prelude::*;
+use tokio::io::AsyncWriteExt;
 
 use crate::{Error, Result};
 

@@ -11,6 +11,9 @@ use rusoto_core::ByteStream;
 use rusoto_core::Region;
 use rusoto_s3::*;
 
+use futures::TryStreamExt;
+use tokio_util::codec::{BytesCodec, FramedRead};
+
 use log::debug;
 use pbr::{ProgressBar, Units};
 use read_progress_stream::ReadProgressStream;
@@ -108,9 +111,16 @@ pub async fn put_object_with_progress<P: AsRef<Path>>(
     mut req: PutObjectRequest,
     path: P,
 ) -> Result<PutObjectOutput> {
+    /*
     let file = std::fs::File::open(&path)?;
     let size = file.metadata()?.len();
     let file = tokio::fs::File::from_std(file);
+    */
+
+    let file = tokio::fs::File::open(&path).await?;
+    let size = file.metadata().await?.len();
+    let reader = FramedRead::new(file, BytesCodec::new())
+        .map_ok(|r| r.freeze());
 
     let mut pb = ProgressBar::new(size);
     pb.set_units(Units::Bytes);
@@ -124,7 +134,8 @@ pub async fn put_object_with_progress<P: AsRef<Path>>(
     let progress = Box::new(move |amount: u64, _| {
         pb.add(amount);
     });
-    let stream = ReadProgressStream::new(file, progress);
+
+    let stream = ReadProgressStream::new(reader, progress);
 
     let body = ByteStream::new_with_size(stream, size as usize);
     req.body = Some(body);

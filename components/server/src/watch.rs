@@ -9,6 +9,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::{broadcast, mpsc, oneshot};
 use url::Url;
 use warp::ws::Message;
+use futures_util::FutureExt;
 
 use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
@@ -143,7 +144,7 @@ fn spawn_bind_open(
     launch: Option<String>,
 ) {
     std::thread::spawn(move || {
-        let mut rt = tokio::runtime::Runtime::new().unwrap();
+        let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
             // Get the server connection info
             let info = bind_rx.await.unwrap();
@@ -185,7 +186,7 @@ fn spawn_monitor(
         let watch_channels = Arc::clone(&channels);
 
         std::thread::spawn(move || {
-            let mut rt = tokio::runtime::Runtime::new().unwrap();
+            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
                 // Wrap the fs channel so we can select on the future
                 let (fs_tx, mut fs_rx) = mpsc::unbounded_channel();
@@ -214,7 +215,7 @@ fn spawn_monitor(
 
                 let mut channels_access = watch_channels.write().unwrap();
                 let ws_tx = channels_access.websockets.get(&name).unwrap().clone();
-                let mut response = channels_access.render_responses.get(&name).unwrap().clone();
+                let response = channels_access.render_responses.get(&name).unwrap().clone();
                 let request = channels_access.render.get_mut(&name).unwrap();
 
                 loop {
@@ -251,8 +252,14 @@ fn spawn_monitor(
                                 let mut event_buffer = vec![event];
                                 let start = SystemTime::now();
                                 while SystemTime::now().duration_since(start).unwrap() < Duration::from_millis(50) {
-                                    if let Ok(event) = fs_rx.try_recv() {
-                                        event_buffer.push(event);
+                                    // NOTE: Used to use try_recv() but it was removed in tokio@1.0
+                                    // SEE: https://github.com/tokio-rs/tokio/releases/tag/tokio-1.0.0
+                                    // SEE: https://github.com/tokio-rs/tokio/pull/3263
+                                    // SEE: https://github.com/tokio-rs/tokio/issues/3350
+                                    if let Some(event) = fs_rx.recv().now_or_never() {
+                                        if let Some(ev) = event {
+                                            event_buffer.push(ev);
+                                        }
                                     }
                                 }
 
