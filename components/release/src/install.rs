@@ -94,7 +94,7 @@ pub(crate) async fn fetch(
     if releases::exists(version)? {
         let version_dir = releases::dir(version)?;
         info!("Verify {}", version_dir.display());
-        let (verified, exe_name, _) = verify::test(version, names)?;
+        let (verified, _, _) = verify::test(version, names)?;
         if verified {
             if select {
                 //binary::symlink_names(&version_dir, names)?;
