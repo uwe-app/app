@@ -5,6 +5,7 @@ use rusoto_s3::{
     CreateBucketConfiguration, CreateBucketRequest, ErrorDocument,
     HeadBucketError, HeadBucketRequest, IndexDocument, PutBucketPolicyRequest,
     PutBucketWebsiteRequest, S3Client, WebsiteConfiguration, S3,
+    PutPublicAccessBlockRequest, PublicAccessBlockConfiguration,
 };
 
 use crate::{Error, Result};
@@ -45,9 +46,9 @@ impl WebHost {
     /// Bring this web host up.
     pub async fn up(&self, client: &S3Client) -> Result<()> {
         self.ensure_bucket(client).await?;
+        self.put_public_access_block(client).await?;
         self.put_bucket_policy(client).await?;
         self.put_bucket_website(client).await?;
-
         Ok(())
     }
 
@@ -72,6 +73,24 @@ impl WebHost {
             }
             _ => Ok(()),
         }
+    }
+
+    /// Allow public access configuration.
+    async fn put_public_access_block(&self, client: &S3Client) -> Result<()> {
+        let public_access_block_configuration = PublicAccessBlockConfiguration {
+            block_public_acls: Some(false),
+            block_public_policy: Some(false),
+            ignore_public_acls: Some(false),
+            restrict_public_buckets: Some(false),
+        };
+
+        let req = PutPublicAccessBlockRequest {
+            bucket: self.bucket.to_string(),
+            public_access_block_configuration,
+            ..Default::default()
+        };
+        client.put_public_access_block(req).await?;
+        Ok(())
     }
 
     /// Create a bucket.

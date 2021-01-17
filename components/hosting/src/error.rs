@@ -21,6 +21,11 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    PutPublicAccessBlock(
+        #[from] rusoto_core::RusotoError<rusoto_s3::PutPublicAccessBlockError>,
+    ),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
