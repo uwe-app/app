@@ -10,7 +10,7 @@ use rusoto_s3::{
     PutPublicAccessBlockRequest, PublicAccessBlockConfiguration,
 };
 
-use crate::{Error, Result};
+use crate::{Error, Result, region_info::REGION_INFO};
 
 static INDEX_HTML: &str = "index.html";
 static ERROR_HTML: &str = "404.html";
@@ -45,6 +45,13 @@ impl BucketHost {
         }
     }
 
+    /// Get the endpoint for the website.
+    pub fn endpoint(&self) -> String {
+        let region_info = REGION_INFO.get(&self.region)
+            .expect("Unable to find region info for a region!");
+        format!("{}.{}", &self.bucket, &region_info.s3_endpoint_suffix)
+    }
+
     /// Bring this web host up.
     pub async fn up(&self, client: &S3Client) -> Result<()> {
         info!("Ensure bucket {}", &self.bucket);
@@ -55,6 +62,9 @@ impl BucketHost {
         self.put_bucket_policy(client).await?;
         info!("Set static website hosting {}", &self.bucket);
         self.put_bucket_website(client).await?;
+
+        info!("{} ✓", self.endpoint());
+
         Ok(())
     }
 

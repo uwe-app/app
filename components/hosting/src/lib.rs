@@ -1,4 +1,5 @@
 mod bucket_host;
+mod region_info;
 mod error;
 
 type Result<T> = std::result::Result<T, error::Error>;

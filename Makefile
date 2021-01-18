@@ -56,6 +56,20 @@ build-linux-macos-cross: compile-linux-macos-cross strip-linux-macos-cross
 
 release: build-release build-linux-macos-cross
 
+strip-private:
+	strip target/release/web-host
+	$(MAC_STRIP) target/x86_64-apple-darwin/release/web-host
+
+build-private:
+	@cargo build --bin=web-host --release
+	@PKG_CONFIG_ALLOW_CROSS=1 \
+		LIBZ_SYS_STATIC=1 \
+		CC=o64-clang \
+		CXX=o64-clang++ \
+		cargo build --target=x86_64-apple-darwin --bin=web-host --release
+
+private: build-private strip-private
+
 install: build-release
 	@mkdir -p $(HOME)/.uwe/bin
 	@cp -f \
