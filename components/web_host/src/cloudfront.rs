@@ -16,9 +16,11 @@ use rusoto_cloudfront::{
     CreateDistributionRequest,
     UpdateDistributionRequest,
     Origin, Origins, DefaultCacheBehavior,
-    ViewerCertificate, Aliases, CustomOriginConfig,
+    ViewerCertificate, Aliases,
+    CustomOriginConfig,
+    Distribution,
 };
-use rusoto_core::{credential, request::HttpClient, Region, RusotoError};
+use rusoto_core::{credential, request::HttpClient, Region};
 
 use crate::{Error, Result};
 
@@ -27,15 +29,12 @@ static MAX_ITEMS: usize = 100;
 /*
 allowed_methods  = ["GET", "HEAD"]
 cached_methods   = ["GET", "HEAD"]
-
 forwarded_values {
       query_string = false
-
       cookies {
         forward = "none"
       }
     }
-
 min_ttl                = 0
 default_ttl            = 86400
 max_ttl                = 31536000
@@ -163,11 +162,8 @@ impl DistributionSettings {
 
         let res = client.create_distribution(req).await?;
 
-        if let (Some(location), Some(distribution)) = (res.location, res.distribution) {
-            debug!("Created distribution {}", location);
-            info!("Distribution id {}", distribution.id);
-            info!("Distribution domain name {}", distribution.domain_name);
-            info!("Status {} ✓", distribution.status);
+        if let Some(ref distribution) = res.distribution {
+            self.print_distribution(distribution);
         }
 
         Ok(())
@@ -185,9 +181,20 @@ impl DistributionSettings {
             ..Default::default()
         };
 
-        // TODO: update
+        let res = client.update_distribution(req).await?;
+
+        if let Some(ref distribution) = res.distribution {
+            self.print_distribution(distribution);
+        }
 
         Ok(())
+    }
+
+    /// Print info after a create or update.
+    fn print_distribution(&self, distribution: &Distribution) {
+        info!("Distribution id {}", distribution.id);
+        info!("Distribution domain name {}", distribution.domain_name);
+        info!("Status {} ✓", distribution.status);
     }
 
     /// List all distributions.
@@ -276,12 +283,12 @@ impl DistributionSettings {
     /// Convert into a distribution config suitable for 
     /// creating or updating a distribution.
     fn into_distribution_config(&self) -> DistributionConfig {
-
         let default_cache_behavior = DefaultCacheBehavior {
             compress: Some(self.compress.clone()),
             target_origin_id: self.origin_id.clone(),
             // SEE: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
-            cache_policy_id: Some("Managed-CachingOptimized".to_string()),
+            // TODO: fetch the "Managed-CachingOptimized" identifier!
+            cache_policy_id: Some("658327ea-f89d-4fab-a63d-7e88639e58f6".to_string()),
             viewer_protocol_policy: self.viewer_protocol_policy.to_string(),
             ..Default::default()
         };

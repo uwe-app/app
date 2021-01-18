@@ -45,6 +45,11 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    UpdateDistribution(
+        #[from] rusoto_core::RusotoError<rusoto_cloudfront::UpdateDistributionError>,
+    ),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
