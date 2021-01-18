@@ -131,7 +131,7 @@ pub enum Error {
     Release(#[from] release::Error),
 
     #[error(transparent)]
-    Hosting(#[from] hosting::Error),
+    WebHost(#[from] web_host::Error),
 
     #[error(transparent)]
     Shim(#[from] crate::shim::Error),

@@ -1,4 +1,4 @@
-mod bucket_host;
+mod bucket;
 mod region_info;
 mod error;
 
@@ -18,4 +18,4 @@ pub fn new_client(profile: &str, region: &Region) -> Result<S3Client> {
 }
 
 pub use error::Error;
-pub use bucket_host::BucketHost;
+pub use bucket::BucketHost;

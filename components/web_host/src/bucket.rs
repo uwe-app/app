@@ -12,8 +12,8 @@ use rusoto_s3::{
 
 use crate::{Error, Result, region_info::REGION_INFO};
 
-static INDEX_HTML: &str = "index.html";
-static ERROR_HTML: &str = "404.html";
+//static INDEX_HTML: &str = "index.html";
+//static ERROR_HTML: &str = "404.html";
 
 static BUCKET_TEMPLATE: &str = "__BUCKET__";
 static POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
@@ -34,22 +34,19 @@ pub struct BucketHost {
 }
 
 impl BucketHost {
-    pub fn new(region: Region, bucket: String) -> Self {
+    pub fn new(
+        region: Region,
+        bucket: String,
+        index: String,
+        error: String) -> Self {
         let policy = POLICY_TEMPLATE.replace(BUCKET_TEMPLATE, &bucket);
         Self {
             region,
             bucket,
-            index_page: Some(INDEX_HTML.to_string()),
-            error_page: Some(ERROR_HTML.to_string()),
+            index_page: Some(index),
+            error_page: Some(error),
             policy: Some(policy),
         }
-    }
-
-    /// Get the endpoint for the website.
-    pub fn endpoint(&self) -> String {
-        let region_info = REGION_INFO.get(&self.region)
-            .expect("Unable to find region info for a region!");
-        format!("{}.{}", &self.bucket, &region_info.s3_endpoint_suffix)
     }
 
     /// Bring this web host up.
@@ -63,9 +60,21 @@ impl BucketHost {
         info!("Set static website hosting {}", &self.bucket);
         self.put_bucket_website(client).await?;
 
-        info!("{} ✓", self.endpoint());
+        info!("{} ✓", self.url());
 
         Ok(())
+    }
+
+    /// Get the endpoint for the website.
+    pub fn endpoint(&self) -> String {
+        let region_info = REGION_INFO.get(&self.region)
+            .expect("Unable to find region info for a region!");
+        format!("{}.{}", &self.bucket, &region_info.s3_endpoint_suffix)
+    }
+
+    /// Get the endpoint URL for the website.
+    pub fn url(&self) -> String {
+        format!("http://{}", self.endpoint())
     }
 
     /// Ensure the bucket for this web host exists.

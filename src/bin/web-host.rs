@@ -13,7 +13,7 @@ use uwe::{
     Error, Result,
 };
 
-use hosting::BucketHost;
+use web_host::BucketHost;
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
     src.parse::<Region>().map_err(Error::from)
@@ -35,11 +35,19 @@ struct Cli {
 enum Bucket {
     /// Ensure a bucket is available
     Up {
+        /// Suffix for folder requests
+        #[structopt(short, long, default_value = "index.html")]
+        index_suffix: String,
+
+        /// Key for a bucket error handler
+        #[structopt(short, long, default_value = "404.html")]
+        error_key: String,
+
         /// Credentials profile name
         #[structopt(short, long)]
         credentials: String,
 
-        /// Bucket region
+        /// Region for the bucket
         #[structopt(short, long, parse(try_from_str = parse_region))]
         region: Region,
 
@@ -63,9 +71,9 @@ async fn run(cmd: Command) -> Result<()> {
     match cmd {
         Command::Bucket { cmd } => {
             match cmd {
-                Bucket::Up { credentials, region, bucket } => {
-                    let client = hosting::new_client(&credentials, &region)?;
-                    let bucket_host = BucketHost::new(region, bucket);
+                Bucket::Up { credentials, region, bucket, index_suffix, error_key } => {
+                    let client = web_host::new_client(&credentials, &region)?;
+                    let bucket_host = BucketHost::new(region, bucket, index_suffix, error_key);
                     bucket_host.up(&client).await?;
                 }
             }

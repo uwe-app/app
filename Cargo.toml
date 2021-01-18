@@ -15,7 +15,6 @@ members = [
   "components/config",
   "components/dirs",
   "components/frontmatter",
-  "components/hosting",
   "components/livereload",
   "components/locale",
   "components/minify",
@@ -30,6 +29,7 @@ members = [
   "components/toc",
   "components/transform",
   "components/utils",
+  "components/web_host",
   "components/workspace",
 ]
 
@@ -38,7 +38,6 @@ collections = {version = "0.1", path = "components/collections" }
 compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
 dirs = {version = "0.1", path = "components/dirs" }
-hosting = {version = "0.1", path = "components/hosting" }
 livereload = {version = "0.1", path = "components/livereload" }
 locale = {version = "0.1", path = "components/locale" }
 plugin = {version = "0.1", path = "components/plugin" }
@@ -49,6 +48,7 @@ scm = {version = "0.1", path = "components/scm" }
 server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }
 utils = {version = "0.1", path = "components/utils" }
+web_host = {version = "0.1", path = "components/web_host" }
 workspace = {version = "0.1", path = "components/workspace" }
 
 futures = "0.3"
