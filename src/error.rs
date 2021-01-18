@@ -92,6 +92,9 @@ pub enum Error {
     LanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
 
     #[error(transparent)]
+    ParseRegion(#[from] rusoto_core::region::ParseRegionError),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]
@@ -126,6 +129,9 @@ pub enum Error {
 
     #[error(transparent)]
     Release(#[from] release::Error),
+
+    #[error(transparent)]
+    Hosting(#[from] hosting::Error),
 
     #[error(transparent)]
     Shim(#[from] crate::shim::Error),

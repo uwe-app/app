@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use log::info;
+
 use rusoto_core::{Region, RusotoError};
 use rusoto_s3::{
     CreateBucketConfiguration, CreateBucketRequest, ErrorDocument,
@@ -17,7 +19,7 @@ static BUCKET_TEMPLATE: &str = "__BUCKET__";
 static POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WebHost {
+pub struct BucketHost {
     /// The region used for creating resources.
     region: Region,
     /// Name of the bucket
@@ -31,7 +33,7 @@ pub struct WebHost {
     policy: Option<String>,
 }
 
-impl WebHost {
+impl BucketHost {
     pub fn new(region: Region, bucket: String) -> Self {
         let policy = POLICY_TEMPLATE.replace(BUCKET_TEMPLATE, &bucket);
         Self {
@@ -45,9 +47,13 @@ impl WebHost {
 
     /// Bring this web host up.
     pub async fn up(&self, client: &S3Client) -> Result<()> {
+        info!("Ensure bucket {}", &self.bucket);
         self.ensure_bucket(client).await?;
+        info!("Disable public access block {}", &self.bucket);
         self.put_public_access_block(client).await?;
+        info!("Set bucket policy {}", &self.bucket);
         self.put_bucket_policy(client).await?;
+        info!("Set static website hosting {}", &self.bucket);
         self.put_bucket_website(client).await?;
         Ok(())
     }
@@ -61,7 +67,18 @@ impl WebHost {
 
         match client.head_bucket(req).await {
             Err(e) => {
-                if let RusotoError::Service(ref service_error) = e {
+                // NOTE: The docs have the `NoSuchBucket` enum variant 
+                // NOTE: but it actually triggers as a raw response 
+                // NOTE: with a `404` status. We check for both in case 
+                // NOTE: this changes in the future.
+                if let RusotoError::Unknown(ref http_res) = e {
+                    if http_res.status == 404 {
+                        self.create_bucket(client).await
+                    } else {
+                        Err(Error::from(e))
+                    }
+                } else if let RusotoError::Service(ref service_error) = e {
+                    #[allow(irrefutable_let_patterns)]
                     if let HeadBucketError::NoSuchBucket(_) = service_error {
                         self.create_bucket(client).await
                     } else {

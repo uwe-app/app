@@ -3,6 +3,12 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
+    Tls(#[from] rusoto_core::request::TlsError),
+
+    #[error(transparent)]
+    Credentials(#[from] rusoto_core::credential::CredentialsError),
+
+    #[error(transparent)]
     HeadBucket(#[from] rusoto_core::RusotoError<rusoto_s3::HeadBucketError>),
 
     #[error(transparent)]

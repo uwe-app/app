@@ -38,13 +38,14 @@ collections = {version = "0.1", path = "components/collections" }
 compiler = {version = "0.1", path = "components/compiler" }
 config = {version = "0.1", path = "components/config" }
 dirs = {version = "0.1", path = "components/dirs" }
-scm = {version = "0.1", path = "components/scm" }
+hosting = {version = "0.1", path = "components/hosting" }
 livereload = {version = "0.1", path = "components/livereload" }
 locale = {version = "0.1", path = "components/locale" }
 plugin = {version = "0.1", path = "components/plugin" }
 preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 release = {version = "0.1", path = "components/release" }
+scm = {version = "0.1", path = "components/scm" }
 server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }
 utils = {version = "0.1", path = "components/utils" }
@@ -67,6 +68,7 @@ url = "2"
 unic-langid = "0.9.0"
 tokio = { version = "^1.0", features = ["full"] }
 pbr = "1.0.4"
+rusoto_core = "0.46.0"
 
 # uwe-shim
 winapi = "0.3.9"
