@@ -10,7 +10,7 @@ use rusoto_core::Region;
 
 use uwe::{self, opts::fatal, Error, Result};
 
-use web_host::{BucketSettings, DistributionSettings};
+use web_host::{BucketSettings, DistributionSettings, ViewerProtocolPolicy};
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
     src.parse::<Region>().map_err(Error::from)
@@ -18,6 +18,10 @@ fn parse_region(src: &str) -> std::result::Result<Region, Error> {
 
 fn parse_url(src: &str) -> std::result::Result<Url, Error> {
     src.parse::<Url>().map_err(Error::from)
+}
+
+fn parse_policy(src: &str) -> std::result::Result<ViewerProtocolPolicy, Error> {
+    src.parse::<ViewerProtocolPolicy>().map_err(Error::from)
 }
 
 /// Universal (web editor) plugin manager
@@ -38,9 +42,6 @@ struct Common {
     #[structopt(short, long)]
     credentials: String,
 
-    /// Region for the request
-    #[structopt(short, long, parse(try_from_str = parse_region))]
-    region: Region,
 }
 
 #[derive(StructOpt, Debug)]
@@ -66,6 +67,10 @@ enum Bucket {
         #[structopt(flatten)]
         common: Common,
 
+        /// Region for the bucket
+        #[structopt(short, long, parse(try_from_str = parse_region))]
+        region: Region,
+
         /// Bucket name
         bucket: String,
     },
@@ -81,6 +86,22 @@ enum Cloudfront {
         /// CNAME aliases
         #[structopt(short, long)]
         alias: Vec<String>,
+
+        /// Origin identifier
+        #[structopt(short, long)]
+        origin_id: Option<String>,
+
+        /// Viewer protocol policy.
+        #[structopt(long, parse(try_from_str = parse_policy), default_value = "allow-all")]
+        protocol_policy: ViewerProtocolPolicy,
+
+        /// Comment for the distribution.
+        #[structopt(long)]
+        comment: Option<String>,
+
+        /// ACM certificate ARN
+        #[structopt(long)]
+        acm_certificate_arn: Option<String>,
 
         /// Origin URL
         #[structopt(parse(try_from_str = parse_url))]
@@ -109,6 +130,7 @@ async fn run(cmd: Command) -> Result<()> {
         Command::Bucket { cmd } => match cmd {
             Bucket::Up {
                 common,
+                region,
                 bucket,
                 index_suffix,
                 error_key,
@@ -117,10 +139,10 @@ async fn run(cmd: Command) -> Result<()> {
             } => {
                 let client = web_host::new_s3_client(
                     &common.credentials,
-                    &common.region,
+                    &region,
                 )?;
                 let bucket = BucketSettings::new(
-                    common.region,
+                    region,
                     bucket,
                     index_suffix,
                     error_key,
@@ -136,13 +158,22 @@ async fn run(cmd: Command) -> Result<()> {
                 Cloudfront::Create {
                     common,
                     origin,
+                    origin_id,
                     alias,
+                    acm_certificate_arn,
+                    protocol_policy,
+                    mut comment,
                 } => {
                     let client = web_host::new_cloudfront_client(
                         &common.credentials,
-                        &common.region,
+                        &Region::UsEast1,
                     )?;
-                    let cdn = DistributionSettings::new(origin, alias);
+                    let mut cdn = DistributionSettings::new(origin, alias, origin_id);
+                    cdn.set_acm_certificate_arn(acm_certificate_arn);
+                    cdn.set_viewer_protocol_policy(protocol_policy);
+                    if let Some(comment) = comment.take() {
+                        cdn.set_comment(comment);
+                    }
                     cdn.create(&client).await?;
                 }
             }
