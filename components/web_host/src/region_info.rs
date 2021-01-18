@@ -13,6 +13,7 @@ pub struct RegionInfo {
     pub zone_id: Option<String>,
 }
 
+// SEE: https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteEndpoints.html
 // SEE: https://docs.aws.amazon.com/general/latest/gr/s3.html#s3_website_region_endpoints
 pub static REGION_INFO: Lazy<HashMap<Region, RegionInfo>> = Lazy::new(|| {
     let mut m = HashMap::new();
