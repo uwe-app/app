@@ -11,9 +11,7 @@ use crate::{
 };
 
 /// Publish a plugin.
-pub async fn publish(
-    source: &PathBuf,
-) -> Result<(PathBuf, Vec<u8>, Plugin)> {
+pub async fn publish(source: &PathBuf) -> Result<(PathBuf, Vec<u8>, Plugin)> {
     let plugin = lint(source).await?;
     //lint_plugin(&plugin)?;
 
@@ -45,9 +43,7 @@ pub async fn publish(
 
     if let Some(ref entry) = entry {
         if let Some(_) = entry.get(plugin.version()) {
-            return Err(Error::RegistryPluginVersionExists(
-                plugin.to_string(),
-            ));
+            return Err(Error::RegistryPluginVersionExists(plugin.to_string()));
         }
     }
 
@@ -104,9 +100,14 @@ async fn upload(pkg: &PathBuf, plugin: &Plugin) -> Result<()> {
 
     info!("Upload {} ({})", registry_bucket, registry_region);
     publisher::put_object_file_once(
-        registry_profile, &region, registry_bucket, &key, pkg).await?;
+        registry_profile,
+        &region,
+        registry_bucket,
+        &key,
+        pkg,
+    )
+    .await?;
     info!("{} ✓", &key);
 
     Ok(())
 }
-

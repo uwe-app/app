@@ -16,6 +16,7 @@ mod system_plugins;
 type Result<T> = std::result::Result<T, error::Error>;
 pub type Registry<'r> = Box<dyn registry::RegistryAccess + Send + Sync + 'r>;
 
+pub use self::publisher::publish;
 pub use download::get;
 pub use error::Error;
 pub use install::install;
@@ -31,4 +32,3 @@ pub use registry::{
     RegistryFileAccess,
 };
 pub use system_plugins::{install_blueprint, install_docs};
-pub use self::publisher::publish;

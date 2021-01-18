@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 
 use config::redirect::{RedirectManifest, REDIRECTS_FILE};
 
-use rusoto_s3::{S3Client, S3, GetObjectRequest};
 use futures_util::TryStreamExt;
+use rusoto_s3::{GetObjectRequest, S3Client, S3};
 use tokio_util::codec;
 
 use crate::Result;
@@ -14,24 +14,23 @@ pub(crate) async fn diff_redirects<P: AsRef<Path>>(
     target: P,
     bucket: &str,
     prefix: Option<String>,
-    sync_redirects: bool) -> Result<(RedirectManifest, PathBuf)> {
-
+    sync_redirects: bool,
+) -> Result<(RedirectManifest, PathBuf)> {
     let (local, manifest_file) = load_local_redirects(target).await?;
 
-    // If we are syncing redirects just use an 
+    // If we are syncing redirects just use an
     // empty remote redirects manifest
     let mut remote = if sync_redirects {
-        Default::default() 
+        Default::default()
     // Otherwise fetch a manifest from the remote bucket
     } else {
-        load_bucket_redirects(client, bucket, prefix).await? 
+        load_bucket_redirects(client, bucket, prefix).await?
     };
 
     // Local redirects take precedence
-    remote.map_mut().extend(
-        local.map()
-        .into_iter()
-        .map(|(k, v)| (k.clone(), v.clone())));
+    remote
+        .map_mut()
+        .extend(local.map().into_iter().map(|(k, v)| (k.clone(), v.clone())));
 
     Ok((remote, manifest_file))
 }
@@ -49,25 +48,28 @@ async fn load_bucket_redirects(
 
     // Load remote `redirects.json` file.
     let req = GetObjectRequest {
-        bucket: bucket.to_string(), 
+        bucket: bucket.to_string(),
         key,
         ..Default::default()
     };
 
     if let Ok(mut res) = client.get_object(req).await {
         if let Some(body) = res.body.take() {
-
             let content = codec::FramedRead::new(
-                body.into_async_read(), codec::BytesCodec::new());
+                body.into_async_read(),
+                codec::BytesCodec::new(),
+            );
 
             let mut buf: Vec<u8> = Vec::new();
-            content.try_for_each(|bytes| {
-                buf.extend(&bytes);
-                futures::future::ok(())
-            }).await?;
+            content
+                .try_for_each(|bytes| {
+                    buf.extend(&bytes);
+                    futures::future::ok(())
+                })
+                .await?;
 
             let manifest: RedirectManifest = serde_json::from_slice(&buf)?;
-            return Ok(manifest)
+            return Ok(manifest);
         }
     }
 

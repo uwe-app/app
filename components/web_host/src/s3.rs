@@ -2,16 +2,16 @@ use serde::{Deserialize, Serialize};
 
 use log::info;
 
-use rusoto_core::{Region, RusotoError};
+use rusoto_core::{credential, request::HttpClient, Region, RusotoError};
 use rusoto_s3::{
     CreateBucketConfiguration, CreateBucketRequest, ErrorDocument,
-    HeadBucketError, HeadBucketRequest, IndexDocument, PutBucketPolicyRequest,
-    PutBucketWebsiteRequest, S3Client, WebsiteConfiguration, S3,
-    PutPublicAccessBlockRequest, PublicAccessBlockConfiguration,
-    RedirectAllRequestsTo,
+    HeadBucketError, HeadBucketRequest, IndexDocument,
+    PublicAccessBlockConfiguration, PutBucketPolicyRequest,
+    PutBucketWebsiteRequest, PutPublicAccessBlockRequest,
+    RedirectAllRequestsTo, S3Client, WebsiteConfiguration, S3,
 };
 
-use crate::{Error, Result, region_info::REGION_INFO};
+use crate::{region_info::REGION_INFO, Error, Result};
 
 //static INDEX_HTML: &str = "index.html";
 //static ERROR_HTML: &str = "404.html";
@@ -19,8 +19,16 @@ use crate::{Error, Result, region_info::REGION_INFO};
 static BUCKET_TEMPLATE: &str = "__BUCKET__";
 static POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
 
+pub fn new_client(profile: &str, region: &Region) -> Result<S3Client> {
+    let mut provider = credential::ProfileProvider::new()?;
+    provider.set_profile(profile);
+    let dispatcher = HttpClient::new()?;
+    let client = S3Client::new_with(dispatcher, provider, region.clone());
+    Ok(client)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct BucketHost {
+pub struct BucketSettings {
     /// The region used for creating resources.
     region: Region,
     /// Name of the bucket
@@ -40,7 +48,7 @@ pub struct BucketHost {
     policy: Option<String>,
 }
 
-impl BucketHost {
+impl BucketSettings {
     pub fn new(
         region: Region,
         bucket: String,
@@ -48,7 +56,7 @@ impl BucketHost {
         error: String,
         redirect_host_name: Option<String>,
         redirect_protocol: Option<String>,
-        ) -> Self {
+    ) -> Self {
         let policy = POLICY_TEMPLATE.replace(BUCKET_TEMPLATE, &bucket);
         Self {
             region,
@@ -79,7 +87,8 @@ impl BucketHost {
 
     /// Get the endpoint for the website.
     pub fn endpoint(&self) -> String {
-        let region_info = REGION_INFO.get(&self.region)
+        let region_info = REGION_INFO
+            .get(&self.region)
             .expect("Unable to find region info for a region!");
         format!("{}.{}", &self.bucket, &region_info.s3_endpoint_suffix)
     }
@@ -98,9 +107,9 @@ impl BucketHost {
 
         match client.head_bucket(req).await {
             Err(e) => {
-                // NOTE: The docs have the `NoSuchBucket` enum variant 
-                // NOTE: but it actually triggers as a raw response 
-                // NOTE: with a `404` status. We check for both in case 
+                // NOTE: The docs have the `NoSuchBucket` enum variant
+                // NOTE: but it actually triggers as a raw response
+                // NOTE: with a `404` status. We check for both in case
                 // NOTE: this changes in the future.
                 if let RusotoError::Unknown(ref http_res) = e {
                     if http_res.status == 404 {
@@ -125,12 +134,13 @@ impl BucketHost {
 
     /// Allow public access configuration.
     async fn put_public_access_block(&self, client: &S3Client) -> Result<()> {
-        let public_access_block_configuration = PublicAccessBlockConfiguration {
-            block_public_acls: Some(false),
-            block_public_policy: Some(false),
-            ignore_public_acls: Some(false),
-            restrict_public_buckets: Some(false),
-        };
+        let public_access_block_configuration =
+            PublicAccessBlockConfiguration {
+                block_public_acls: Some(false),
+                block_public_policy: Some(false),
+                ignore_public_acls: Some(false),
+                restrict_public_buckets: Some(false),
+            };
 
         let req = PutPublicAccessBlockRequest {
             bucket: self.bucket.to_string(),
@@ -169,29 +179,30 @@ impl BucketHost {
 
     /// Set the bucket policy to allow public reads.
     async fn put_bucket_website(&self, client: &S3Client) -> Result<()> {
-        let website_configuration = if let Some(ref host_name) = self.redirect_host_name {
-            let redirect_all_requests_to = RedirectAllRequestsTo {
-                host_name: host_name.to_string(), 
-                protocol: self.redirect_protocol.clone(),
+        let website_configuration =
+            if let Some(ref host_name) = self.redirect_host_name {
+                let redirect_all_requests_to = RedirectAllRequestsTo {
+                    host_name: host_name.to_string(),
+                    protocol: self.redirect_protocol.clone(),
+                };
+                WebsiteConfiguration {
+                    redirect_all_requests_to: Some(redirect_all_requests_to),
+                    ..Default::default()
+                }
+            } else {
+                WebsiteConfiguration {
+                    index_document: self
+                        .index_page
+                        .clone()
+                        .map(|s| IndexDocument { suffix: s.clone() }),
+                    error_document: self
+                        .error_page
+                        .clone()
+                        .map(|s| ErrorDocument { key: s.clone() }),
+                    ..Default::default()
+                }
             };
-            WebsiteConfiguration {
-                redirect_all_requests_to: Some(redirect_all_requests_to),
-                ..Default::default()
-            }
-        } else {
-            WebsiteConfiguration {
-                index_document: self
-                    .index_page
-                    .clone()
-                    .map(|s| IndexDocument { suffix: s.clone() }),
-                error_document: self
-                    .error_page
-                    .clone()
-                    .map(|s| ErrorDocument { key: s.clone() }),
-                ..Default::default()
-            }
-        };
-            
+
         let req = PutBucketWebsiteRequest {
             bucket: self.bucket.to_string(),
             website_configuration,

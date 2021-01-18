@@ -4,19 +4,20 @@ extern crate pretty_env_logger;
 use log::info;
 use semver::Version;
 use structopt::StructOpt;
+use url::Url;
 
 use rusoto_core::Region;
 
-use uwe::{
-    self,
-    opts::fatal,
-    Error, Result,
-};
+use uwe::{self, opts::fatal, Error, Result};
 
-use web_host::BucketHost;
+use web_host::{BucketSettings, DistributionSettings};
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
     src.parse::<Region>().map_err(Error::from)
+}
+
+fn parse_url(src: &str) -> std::result::Result<Url, Error> {
+    src.parse::<Url>().map_err(Error::from)
 }
 
 /// Universal (web editor) plugin manager
@@ -29,6 +30,17 @@ struct Cli {
 
     #[structopt(subcommand)]
     cmd: Command,
+}
+
+#[derive(StructOpt, Debug)]
+struct Common {
+    /// Credentials profile name
+    #[structopt(short, long)]
+    credentials: String,
+
+    /// Region for the request
+    #[structopt(short, long, parse(try_from_str = parse_region))]
+    region: Region,
 }
 
 #[derive(StructOpt, Debug)]
@@ -47,17 +59,12 @@ enum Bucket {
         #[structopt(long)]
         redirect_host_name: Option<String>,
 
-        /// Use the given protocol when redirecting requests 
+        /// Protocol when redirecting all requests
         #[structopt(long)]
         redirect_protocol: Option<String>,
 
-        /// Credentials profile name
-        #[structopt(short, long)]
-        credentials: String,
-
-        /// Region for the bucket
-        #[structopt(short, long, parse(try_from_str = parse_region))]
-        region: Region,
+        #[structopt(flatten)]
+        common: Common,
 
         /// Bucket name
         bucket: String,
@@ -65,39 +72,78 @@ enum Bucket {
 }
 
 #[derive(StructOpt, Debug)]
-enum Command {
+enum Cloudfront {
+    /// Create a Cloudfront CDN
+    Create {
+        #[structopt(flatten)]
+        common: Common,
 
-    /// Bucket commands
-    #[structopt(alias = "b")]
+        /// CNAME aliases
+        #[structopt(short, long)]
+        alias: Vec<String>,
+
+        /// Origin URL
+        #[structopt(parse(try_from_str = parse_url))]
+        origin: Url,
+    },
+}
+
+#[derive(StructOpt, Debug)]
+enum Command {
+    /// Static website hosts via S3
     Bucket {
         #[structopt(subcommand)]
         cmd: Bucket,
+    },
+
+    /// Content distribution networks via Cloudfront
+    #[structopt(alias = "cdn")]
+    Cloudfront {
+        #[structopt(subcommand)]
+        cmd: Cloudfront,
     },
 }
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
-        Command::Bucket { cmd } => {
-            match cmd {
-                Bucket::Up {
-                    credentials,
-                    region,
+        Command::Bucket { cmd } => match cmd {
+            Bucket::Up {
+                common,
+                bucket,
+                index_suffix,
+                error_key,
+                redirect_host_name,
+                redirect_protocol,
+            } => {
+                let client = web_host::new_s3_client(
+                    &common.credentials,
+                    &common.region,
+                )?;
+                let bucket = BucketSettings::new(
+                    common.region,
                     bucket,
                     index_suffix,
                     error_key,
                     redirect_host_name,
                     redirect_protocol,
+                );
+                bucket.up(&client).await?;
+            }
+        },
+
+        Command::Cloudfront { cmd } => {
+            match cmd {
+                Cloudfront::Create {
+                    common,
+                    origin,
+                    alias,
                 } => {
-                    let client = web_host::new_client(&credentials, &region)?;
-                    let bucket_host = BucketHost::new(
-                        region,
-                        bucket,
-                        index_suffix,
-                        error_key,
-                        redirect_host_name,
-                        redirect_protocol,
-                    );
-                    bucket_host.up(&client).await?;
+                    let client = web_host::new_cloudfront_client(
+                        &common.credentials,
+                        &common.region,
+                    )?;
+                    let cdn = DistributionSettings::new(origin, alias);
+                    cdn.create(&client).await?;
                 }
             }
         }

@@ -1,16 +1,16 @@
 use std::collections::{HashMap, HashSet};
-use std::{fs, io};
 use std::path::PathBuf;
+use std::{fs, io};
 
 use rusoto_core::Region;
-use rusoto_s3::{S3Client, S3, DeleteObjectRequest, PutObjectRequest};
+use rusoto_s3::{DeleteObjectRequest, PutObjectRequest, S3Client, S3};
 
 use log::{debug, error, info};
 
+use crate::{s3_util::*, Error, Result};
 use config::redirect::RedirectManifest;
-use crate::{Error, Result, s3_util::*};
 
-use super::{report::FileBuilder, redirects};
+use super::{redirects, report::FileBuilder};
 
 #[derive(Debug)]
 pub struct PublishRequest {
@@ -21,7 +21,7 @@ pub struct PublishRequest {
     pub keep_remote: bool,
     pub build_target: PathBuf,
     pub sync_redirects: bool,
-    pub redirects_manifest: Option<RedirectManifest>
+    pub redirects_manifest: Option<RedirectManifest>,
 }
 
 impl PublishRequest {
@@ -35,7 +35,9 @@ pub async fn publish(mut request: PublishRequest) -> Result<()> {
     sync_content(request, file_builder, diff).await
 }
 
-async fn prepare_diff(request: &mut PublishRequest) -> Result<(FileBuilder, DiffReport)> {
+async fn prepare_diff(
+    request: &mut PublishRequest,
+) -> Result<(FileBuilder, DiffReport)> {
     let delimiter = utils::terminal::delimiter();
 
     println!("{}", &delimiter);
@@ -46,10 +48,8 @@ async fn prepare_diff(request: &mut PublishRequest) -> Result<(FileBuilder, Diff
     info!("Building local file list");
 
     // Create the list of local build files
-    let mut file_builder = FileBuilder::new(
-        request.build_target.clone(),
-        request.prefix.clone(),
-    );
+    let mut file_builder =
+        FileBuilder::new(request.build_target.clone(), request.prefix.clone());
     file_builder.walk()?;
 
     info!("Local objects {}", file_builder.keys.len());
@@ -64,24 +64,31 @@ async fn prepare_diff(request: &mut PublishRequest) -> Result<(FileBuilder, Diff
         &request.bucket,
         &request.prefix,
         &mut remote,
-        &mut etags).await?;
+        &mut etags,
+    )
+    .await?;
 
     info!("Remote objects {}", remote.len());
 
     let diff = diff(&file_builder, &remote, &etags)?;
 
-    let (redirects_manifest, redirects_manifest_file) = redirects::diff_redirects(
-        &client,
-        &request.build_target,
-        &request.bucket,
-        request.prefix.clone(),
-        request.sync_redirects,
-    ).await?;
+    let (redirects_manifest, redirects_manifest_file) =
+        redirects::diff_redirects(
+            &client,
+            &request.build_target,
+            &request.bucket,
+            request.prefix.clone(),
+            request.sync_redirects,
+        )
+        .await?;
 
-    // Must overwrite the redirects file with new content 
-    // after merging the local and remote redirect manifests 
+    // Must overwrite the redirects file with new content
+    // after merging the local and remote redirect manifests
     // and before uploading any content.
-    fs::write(&redirects_manifest_file, serde_json::to_vec(&redirects_manifest)?)?;
+    fs::write(
+        &redirects_manifest_file,
+        serde_json::to_vec(&redirects_manifest)?,
+    )?;
     request.redirects_manifest = Some(redirects_manifest);
 
     Ok((file_builder, diff))
@@ -92,7 +99,6 @@ async fn sync_content(
     builder: FileBuilder,
     diff: DiffReport,
 ) -> Result<()> {
-
     let delimiter = utils::terminal::delimiter();
 
     println!("{}", &delimiter);
@@ -121,8 +127,9 @@ async fn sync_content(
         info!("    -> {}", &k);
         */
 
-
-        if let Err(e) = put_object_with_progress(&client, req, &local_path).await {
+        if let Err(e) =
+            put_object_with_progress(&client, req, &local_path).await
+        {
             errors.push(e);
         } else {
             uploaded += 1;
@@ -164,18 +171,15 @@ async fn sync_content(
 
             info!("Redirect {} -> {}", redirect_key, &v);
 
-            if let Err(e) = put_redirect(
-                &client,
-                &request.bucket,
-                redirect_key,
-                v).await {
+            if let Err(e) =
+                put_redirect(&client, &request.bucket, redirect_key, v).await
+            {
                 errors.push(e);
             } else {
                 redirects += 1;
             }
         }
     }
-
 
     println!("{}", &delimiter);
     println!(" SUMMARY");

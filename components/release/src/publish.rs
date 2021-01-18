@@ -286,8 +286,8 @@ async fn upload(
         &key,
         region
     );
-    publisher::put_object_file_once(
-        profile, &aws_region, bucket, &key, file).await?;
+    publisher::put_object_file_once(profile, &aws_region, bucket, &key, file)
+        .await?;
     info!("{} ✓", &key);
 
     Ok(())
@@ -333,8 +333,8 @@ async fn upload_quick_install_script(
     let file = releases::local_releases(project)?.join(INSTALL_SH);
     let key = INSTALL_SH;
     info!("Upload install script {}", INSTALL_SH);
-    publisher::put_object_file_once(
-        profile, &aws_region, bucket, key, &file).await?;
+    publisher::put_object_file_once(profile, &aws_region, bucket, key, &file)
+        .await?;
     Ok(())
 }
 

@@ -45,8 +45,7 @@ mod aws;
 mod s3_util;
 
 pub use aws::provider::{
-    publish as aws_publish,
-    PublishRequest as AwsPublishRequest
+    publish as aws_publish, PublishRequest as AwsPublishRequest,
 };
 
 pub use s3_util::*;

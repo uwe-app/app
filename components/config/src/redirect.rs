@@ -29,11 +29,11 @@ pub struct RedirectManifest {
 
 impl RedirectManifest {
     pub fn map(&self) -> &HashMap<String, String> {
-        &self.map 
+        &self.map
     }
 
     pub fn map_mut(&mut self) -> &mut HashMap<String, String> {
-        &mut self.map 
+        &mut self.map
     }
 }
 

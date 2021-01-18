@@ -119,8 +119,8 @@ pub async fn put_object_with_progress<P: AsRef<Path>>(
 
     let file = tokio::fs::File::open(&path).await?;
     let size = file.metadata().await?.len();
-    let reader = FramedRead::new(file, BytesCodec::new())
-        .map_ok(|r| r.freeze());
+    let reader =
+        FramedRead::new(file, BytesCodec::new()).map_ok(|r| r.freeze());
 
     let mut pb = ProgressBar::new(size);
     pb.set_units(Units::Bytes);
@@ -185,7 +185,7 @@ pub async fn put_object_file_once<F: AsRef<Path>>(
     put_object_with_progress(&client, req, file.as_ref()).await
 }
 
-/// Put a website redirect location and create a transient 
+/// Put a website redirect location and create a transient
 /// client to process the request.
 pub async fn put_redirect_once<S: AsRef<str>>(
     profile: &str,
@@ -197,4 +197,3 @@ pub async fn put_redirect_once<S: AsRef<str>>(
     let client = get_client(profile, region)?;
     Ok(put_redirect(&client, bucket, key, location).await?)
 }
-
