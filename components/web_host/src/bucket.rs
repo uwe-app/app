@@ -8,6 +8,7 @@ use rusoto_s3::{
     HeadBucketError, HeadBucketRequest, IndexDocument, PutBucketPolicyRequest,
     PutBucketWebsiteRequest, S3Client, WebsiteConfiguration, S3,
     PutPublicAccessBlockRequest, PublicAccessBlockConfiguration,
+    RedirectAllRequestsTo,
 };
 
 use crate::{Error, Result, region_info::REGION_INFO};
@@ -29,6 +30,12 @@ pub struct BucketHost {
     /// Error page for static web hosting
     error_page: Option<String>,
 
+    /// Host name to use when redirecting all requests
+    redirect_host_name: Option<String>,
+
+    /// Protocol to use when redirecting all requests
+    redirect_protocol: Option<String>,
+
     #[serde(skip)]
     policy: Option<String>,
 }
@@ -38,7 +45,10 @@ impl BucketHost {
         region: Region,
         bucket: String,
         index: String,
-        error: String) -> Self {
+        error: String,
+        redirect_host_name: Option<String>,
+        redirect_protocol: Option<String>,
+        ) -> Self {
         let policy = POLICY_TEMPLATE.replace(BUCKET_TEMPLATE, &bucket);
         Self {
             region,
@@ -46,6 +56,8 @@ impl BucketHost {
             index_page: Some(index),
             error_page: Some(error),
             policy: Some(policy),
+            redirect_host_name,
+            redirect_protocol,
         }
     }
 
@@ -157,17 +169,29 @@ impl BucketHost {
 
     /// Set the bucket policy to allow public reads.
     async fn put_bucket_website(&self, client: &S3Client) -> Result<()> {
-        let website_configuration = WebsiteConfiguration {
-            index_document: self
-                .index_page
-                .clone()
-                .map(|s| IndexDocument { suffix: s.clone() }),
-            error_document: self
-                .error_page
-                .clone()
-                .map(|s| ErrorDocument { key: s.clone() }),
-            ..Default::default()
+        let website_configuration = if let Some(ref host_name) = self.redirect_host_name {
+            let redirect_all_requests_to = RedirectAllRequestsTo {
+                host_name: host_name.to_string(), 
+                protocol: self.redirect_protocol.clone(),
+            };
+            WebsiteConfiguration {
+                redirect_all_requests_to: Some(redirect_all_requests_to),
+                ..Default::default()
+            }
+        } else {
+            WebsiteConfiguration {
+                index_document: self
+                    .index_page
+                    .clone()
+                    .map(|s| IndexDocument { suffix: s.clone() }),
+                error_document: self
+                    .error_page
+                    .clone()
+                    .map(|s| ErrorDocument { key: s.clone() }),
+                ..Default::default()
+            }
         };
+            
         let req = PutBucketWebsiteRequest {
             bucket: self.bucket.to_string(),
             website_configuration,

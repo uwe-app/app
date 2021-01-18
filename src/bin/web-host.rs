@@ -43,6 +43,14 @@ enum Bucket {
         #[structopt(short, long, default_value = "404.html")]
         error_key: String,
 
+        /// Redirect all requests to the given host name
+        #[structopt(long)]
+        redirect_host_name: Option<String>,
+
+        /// Use the given protocol when redirecting requests 
+        #[structopt(long)]
+        redirect_protocol: Option<String>,
+
         /// Credentials profile name
         #[structopt(short, long)]
         credentials: String,
@@ -71,9 +79,24 @@ async fn run(cmd: Command) -> Result<()> {
     match cmd {
         Command::Bucket { cmd } => {
             match cmd {
-                Bucket::Up { credentials, region, bucket, index_suffix, error_key } => {
+                Bucket::Up {
+                    credentials,
+                    region,
+                    bucket,
+                    index_suffix,
+                    error_key,
+                    redirect_host_name,
+                    redirect_protocol,
+                } => {
                     let client = web_host::new_client(&credentials, &region)?;
-                    let bucket_host = BucketHost::new(region, bucket, index_suffix, error_key);
+                    let bucket_host = BucketHost::new(
+                        region,
+                        bucket,
+                        index_suffix,
+                        error_key,
+                        redirect_host_name,
+                        redirect_protocol,
+                    );
                     bucket_host.up(&client).await?;
                 }
             }
