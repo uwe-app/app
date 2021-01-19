@@ -11,5 +11,8 @@ pub use cloudfront::{
     ViewerProtocolPolicy,
 };
 pub use error::Error;
-pub use route53::{new_client as new_route53_client, DnsRecord, DnsSettings, RecordType};
+pub use route53::{
+    new_client as new_route53_client, DnsRecord, DnsSettings, RecordType,
+    ZoneSettings,
+};
 pub use s3::{new_client as new_s3_client, BucketSettings};

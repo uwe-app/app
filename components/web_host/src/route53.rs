@@ -3,13 +3,13 @@
 use std::fmt;
 use std::str::FromStr;
 
-use log::{debug, info};
-
 use rusoto_core::{credential, request::HttpClient, Region};
 use rusoto_route53::{
-    Change, ChangeBatch, ChangeResourceRecordSetsRequest,
-    ChangeResourceRecordSetsResponse as Response, ResourceRecordSet, Route53,
-    Route53Client, AliasTarget, ResourceRecord,
+    AliasTarget, Change, ChangeBatch, ChangeResourceRecordSetsRequest,
+    ChangeResourceRecordSetsResponse as Response, CreateHostedZoneRequest,
+    CreateHostedZoneResponse,
+    DeleteHostedZoneRequest, DeleteHostedZoneResponse, ResourceRecord,
+    ResourceRecordSet, Route53, Route53Client,
 };
 
 use crate::{Error, Result};
@@ -66,7 +66,11 @@ pub struct DnsRecord {
 }
 
 impl DnsRecord {
-    pub fn new_cloudfront_alias(name: String, value: String, kind: RecordType) -> Self {
+    pub fn new_cloudfront_alias(
+        name: String,
+        value: String,
+        kind: RecordType,
+    ) -> Self {
         Self {
             alias: Some("Z2FDTNDATAQYW2".to_string()),
             name,
@@ -80,20 +84,22 @@ impl Into<ResourceRecordSet> for DnsRecord {
     fn into(self) -> ResourceRecordSet {
         let value = if let RecordType::TXT = self.kind {
             rusoto_route53::util::quote_txt_record(&self.value)
-        } else { self.value };
+        } else {
+            self.value
+        };
 
         let (alias_target, resource_records) =
-            if let Some(hosted_zone_id) = self.alias
-            {
-                (Some(AliasTarget {
-                    hosted_zone_id,
-                    dns_name: value,
-                    ..Default::default()
-                }), None)
+            if let Some(hosted_zone_id) = self.alias {
+                (
+                    Some(AliasTarget {
+                        hosted_zone_id,
+                        dns_name: value,
+                        ..Default::default()
+                    }),
+                    None,
+                )
             } else {
-                (None, Some(vec![
-                    ResourceRecord { value }
-                ]))
+                (None, Some(vec![ResourceRecord { value }]))
             };
 
         ResourceRecordSet {
@@ -124,6 +130,40 @@ impl fmt::Display for ChangeAction {
                 Self::Upsert => "UPSERT",
             }
         )
+    }
+}
+
+#[derive(Debug)]
+pub struct ZoneSettings;
+
+impl ZoneSettings {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    /// Create a new hosted zone.
+    pub async fn create(
+        &self,
+        client: &Route53Client,
+        name: String,
+    ) -> Result<CreateHostedZoneResponse> {
+        let caller_reference = utils::generate_id(16);
+        let req = CreateHostedZoneRequest {
+            caller_reference,
+            name,
+            ..Default::default()
+        };
+        Ok(client.create_hosted_zone(req).await?)
+    }
+
+    /// Delete a hosted zone.
+    pub async fn delete(
+        &self,
+        client: &Route53Client,
+        id: String,
+    ) -> Result<DeleteHostedZoneResponse> {
+        let req = DeleteHostedZoneRequest { id };
+        Ok(client.delete_hosted_zone(req).await?)
     }
 }
 

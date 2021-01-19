@@ -73,6 +73,16 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    CreateHostedZone(
+        #[from] rusoto_core::RusotoError<rusoto_route53::CreateHostedZoneError>,
+    ),
+
+    #[error(transparent)]
+    DeleteHostedZone(
+        #[from] rusoto_core::RusotoError<rusoto_route53::DeleteHostedZoneError>,
+    ),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]

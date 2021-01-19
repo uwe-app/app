@@ -11,12 +11,8 @@ use rusoto_core::Region;
 use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
-    BucketSettings,
-    DistributionSettings,
+    BucketSettings, DistributionSettings, ZoneSettings, DnsRecord, DnsSettings, RecordType,
     ViewerProtocolPolicy,
-    DnsRecord,
-    DnsSettings,
-    RecordType,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -106,18 +102,16 @@ struct RecordInfo {
 impl Into<Vec<DnsRecord>> for RecordInfo {
     fn into(self) -> Vec<DnsRecord> {
         if self.cdn {
-            vec![
-                DnsRecord::new_cloudfront_alias(self.name, self.value, self.kind)
-            ]
+            vec![DnsRecord::new_cloudfront_alias(
+                self.name, self.value, self.kind,
+            )]
         } else {
-            vec![
-                DnsRecord {
-                    kind: self.kind,
-                    name: self.name,
-                    value: self.value,
-                    alias: None,
-                }
-            ]
+            vec![DnsRecord {
+                kind: self.kind,
+                name: self.name,
+                value: self.value,
+                alias: None,
+            }]
         }
     }
 }
@@ -142,6 +136,20 @@ enum Route53Record {
 }
 
 #[derive(StructOpt, Debug)]
+enum Route53Zone {
+    /// Create a hosted zone
+    Create {
+        /// The domain name for the new zone
+        domain_name: String,
+    },
+    /// Delete a hosted zone
+    Delete {
+        /// The identifier for the zone
+        id: String,
+    },
+}
+
+#[derive(StructOpt, Debug)]
 enum Route53 {
     /// Manage DNS record sets
     Record {
@@ -154,6 +162,14 @@ enum Route53 {
 
         #[structopt(subcommand)]
         cmd: Route53Record,
+    },
+    /// Manage hosted zones
+    Zone {
+        #[structopt(flatten)]
+        common: Common,
+
+        #[structopt(subcommand)]
+        cmd: Route53Zone,
     },
 }
 
@@ -264,7 +280,11 @@ async fn run(cmd: Command) -> Result<()> {
             }
         },
         Command::Route53 { cmd } => match cmd {
-            Route53::Record { zone_id, common, cmd } => match cmd {
+            Route53::Record {
+                zone_id,
+                common,
+                cmd,
+            } => match cmd {
                 Route53Record::Create { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
@@ -273,7 +293,10 @@ async fn run(cmd: Command) -> Result<()> {
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
                     for r in records.iter() {
-                        info!("Create record {} {} -> {}", &r.kind, &r.name, &r.value);
+                        info!(
+                            "Create record {} {} -> {}",
+                            &r.kind, &r.name, &r.value
+                        );
                     }
                     dns.create(&client, records).await?;
                     info!("Created record(s) ✓");
@@ -286,7 +309,10 @@ async fn run(cmd: Command) -> Result<()> {
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
                     for r in records.iter() {
-                        info!("Delete record {} {} -> {}", &r.kind, &r.name, &r.value);
+                        info!(
+                            "Delete record {} {} -> {}",
+                            &r.kind, &r.name, &r.value
+                        );
                     }
                     dns.delete(&client, records).await?;
                     info!("Deleted record(s) ✓");
@@ -299,13 +325,41 @@ async fn run(cmd: Command) -> Result<()> {
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
                     for r in records.iter() {
-                        info!("Upsert record {} {} -> {}", &r.kind, &r.name, &r.value);
+                        info!(
+                            "Upsert record {} {} -> {}",
+                            &r.kind, &r.name, &r.value
+                        );
                     }
                     dns.upsert(&client, records).await?;
                     info!("Upserted record(s) ✓");
                 }
+            },
+            Route53::Zone { common, cmd } => match cmd {
+                Route53Zone::Create { domain_name } => {
+                    let client = web_host::new_route53_client(
+                        &common.credentials,
+                        &Region::UsEast1,
+                    )?;
+                    let zone = ZoneSettings::new();
+                    let res = zone.create(&client, domain_name).await?;
+                    let id = res.hosted_zone.id.trim_start_matches("/hostedzone/");
+                    for ns in res.delegation_set.name_servers.iter() {
+                        info!("Name server: {}", ns);
+                    }
+                    info!("Created zone {} ({}) ✓", id, &res.hosted_zone.name);
+                }
+                Route53Zone::Delete { id } => {
+                    let client = web_host::new_route53_client(
+                        &common.credentials,
+                        &Region::UsEast1,
+                    )?;
+                    let zone = ZoneSettings::new();
+                    let res = zone.delete(&client, id).await?;
+                    let id = res.change_info.id.trim_start_matches("/change/");
+                    info!("Deleted zone {} ({}) ✓", id, &res.change_info.status);
+                }
             }
-        }
+        },
     }
     Ok(())
 }
