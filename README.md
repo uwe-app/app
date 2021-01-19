@@ -115,7 +115,18 @@ web-host dns record \
   <distribution-domain-name>
 ```
 
-### TODO: create an ipv6 AAAA record
+The CDN was created with IPv6 enabled so we should also create an `AAAA` record for IPv6 support:
+
+```
+web-host dns record \
+  --zone-id=<zone-id> \
+  --credentials=<credentials> \
+  upsert \
+  --cdn \
+  --type=AAAA \
+  example.com \
+  <distribution-domain-name>
+```
 
 ### Create the Redirect CNAME Record
 
@@ -142,6 +153,8 @@ You may need to wait a while depending upon the propagation status of the name s
 dig example.com
 curl -L example.com
 ```
+
+Be sure to check the `www` redirects too.
 
 ## Releases
 
