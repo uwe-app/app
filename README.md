@@ -60,7 +60,10 @@ TODO
 Create a bucket called `example.com`:
 
 ```
-web-host bucket up --credentials=<credentials> --region=<region> example.com
+web-host bucket up \
+  --credentials=<credentials> \
+  --region=<region> \
+  example.com
 ```
 
 ### Create a Redirect Bucket
@@ -68,10 +71,14 @@ web-host bucket up --credentials=<credentials> --region=<region> example.com
 This redirects all requests from `www.example.com` bucket to the `example.com` domain name:
 
 ```
-web-host bucket up www.example.com --redirect-host-name=example.com --region=<region> --credentials=<credentials>
+web-host bucket up \
+  --credentials=<credentials> \
+  --region=<region> \
+  --redirect-host-name=example.com \
+  www.example.com
 ```
 
-Take a note of the domain name for the endpoint so we can configure a `CNAME` record later, eg: `http://www.example.com.s3-website-ap-southeast-1.amazonaws.com/` - the actual value for the endpoint will vary by region.
+Take a note of the domain name for the endpoint so we can configure a `CNAME` record later, eg: `www.example.com.s3-website-ap-southeast-1.amazonaws.com` - the actual value for the endpoint will vary by region.
 
 ### Create a CDN
 
