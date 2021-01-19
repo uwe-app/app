@@ -48,6 +48,15 @@ impl FromStr for RecordType {
             "A" => Ok(Self::A),
             "AAAA" => Ok(Self::AAAA),
             "CAA" => Ok(Self::CAA),
+            "CNAME" => Ok(Self::CNAME),
+            "MX" => Ok(Self::MX),
+            "NAPTR" => Ok(Self::NAPTR),
+            "NS" => Ok(Self::NS),
+            "PTR" => Ok(Self::PTR),
+            "SOA" => Ok(Self::SOA),
+            "SPF" => Ok(Self::SPF),
+            "SRV" => Ok(Self::SRV),
+            "TXT" => Ok(Self::TXT),
             _ => Err(Error::UnknownDnsRecordType(s.to_string())),
         }
     }
@@ -88,6 +97,10 @@ impl Into<ResourceRecordSet> for DnsRecord {
             self.value
         };
 
+        let ttl: Option<i64> = if let None = self.alias {
+            Some(300) 
+        } else { None };
+
         let (alias_target, resource_records) =
             if let Some(hosted_zone_id) = self.alias {
                 (
@@ -107,6 +120,7 @@ impl Into<ResourceRecordSet> for DnsRecord {
             type_: self.kind.to_string(),
             alias_target,
             resource_records,
+            ttl,
             ..Default::default()
         }
     }

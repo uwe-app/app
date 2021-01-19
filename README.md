@@ -71,6 +71,8 @@ This redirects all requests from `www.example.com` bucket to the `example.com` d
 web-host bucket up www.example.com --redirect-host-name=example.com --region=<region> --credentials=<credentials>
 ```
 
+Take a note of the domain name for the endpoint so we can configure a `CNAME` record later, eg: `http://www.example.com.s3-website-ap-southeast-1.amazonaws.com/` - the actual value for the endpoint will vary by region.
+
 ### Create a CDN
 
 Create a content distribution network:
@@ -88,7 +90,7 @@ web-host cdn create \
   <s3-bucket-endpoint>
 ```
 
-### Create the DNS Record
+### Create the DNS Record(s)
 
 Create the DNS alias record for the hosted zone pointing to the cloudfront distribution domain name:
 
@@ -106,7 +108,24 @@ web-host dns record \
   <distribution-domain-name>
 ```
 
-TODO: create an ipv6 AAAA record
+### TODO: create an ipv6 AAAA record
+
+### Create the Redirect CNAME Record
+
+So that all requests to `www.example.com` and redirected to `example.com`.
+
+* `<zone-id>` The identifier for the Route53 hosted zone (eg: `Z0401662281B83ZUV01IN`).
+* `<s3-website-domain-name>` The domain name for the redirect bucket endpoint created earlier (eg: `www.example.com.s3-website-ap-southeast-1.amazonaws.com`).
+
+```
+web-host dns record \
+  --zone-id=<zone-id> \
+  --credentials=<credentials> \
+  upsert \
+  --type=CNAME \
+  www.example.com \
+  <s3-website-domain-name>
+```
 
 ## Verify
 
