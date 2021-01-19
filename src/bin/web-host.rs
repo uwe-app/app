@@ -11,8 +11,8 @@ use rusoto_core::Region;
 use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
-    BucketSettings, DistributionSettings, ZoneSettings, DnsRecord, DnsSettings, RecordType,
-    ViewerProtocolPolicy,
+    BucketSettings, DistributionSettings, DnsRecord, DnsSettings, RecordType,
+    ViewerProtocolPolicy, ZoneSettings,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -267,7 +267,6 @@ async fn run(cmd: Command) -> Result<()> {
             } => {
                 let client = web_host::new_cloudfront_client(
                     &common.credentials,
-                    &Region::UsEast1,
                 )?;
                 let mut cdn =
                     DistributionSettings::new(origin, alias, origin_id);
@@ -288,7 +287,6 @@ async fn run(cmd: Command) -> Result<()> {
                 Route53Record::Create { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
-                        &Region::UsEast1,
                     )?;
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
@@ -304,7 +302,6 @@ async fn run(cmd: Command) -> Result<()> {
                 Route53Record::Delete { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
-                        &Region::UsEast1,
                     )?;
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
@@ -320,7 +317,6 @@ async fn run(cmd: Command) -> Result<()> {
                 Route53Record::Upsert { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
-                        &Region::UsEast1,
                     )?;
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
@@ -338,11 +334,11 @@ async fn run(cmd: Command) -> Result<()> {
                 Route53Zone::Create { domain_name } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
-                        &Region::UsEast1,
                     )?;
                     let zone = ZoneSettings::new();
                     let res = zone.create(&client, domain_name).await?;
-                    let id = res.hosted_zone.id.trim_start_matches("/hostedzone/");
+                    let id =
+                        res.hosted_zone.id.trim_start_matches("/hostedzone/");
                     for ns in res.delegation_set.name_servers.iter() {
                         info!("Name server: {}", ns);
                     }
@@ -351,14 +347,16 @@ async fn run(cmd: Command) -> Result<()> {
                 Route53Zone::Delete { id } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
-                        &Region::UsEast1,
                     )?;
                     let zone = ZoneSettings::new();
                     let res = zone.delete(&client, id).await?;
                     let id = res.change_info.id.trim_start_matches("/change/");
-                    info!("Deleted zone {} ({}) ✓", id, &res.change_info.status);
+                    info!(
+                        "Deleted zone {} ({}) ✓",
+                        id, &res.change_info.status
+                    );
                 }
-            }
+            },
         },
     }
     Ok(())

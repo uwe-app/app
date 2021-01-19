@@ -7,20 +7,21 @@ use rusoto_core::{credential, request::HttpClient, Region};
 use rusoto_route53::{
     AliasTarget, Change, ChangeBatch, ChangeResourceRecordSetsRequest,
     ChangeResourceRecordSetsResponse as Response, CreateHostedZoneRequest,
-    CreateHostedZoneResponse,
-    DeleteHostedZoneRequest, DeleteHostedZoneResponse, ResourceRecord,
-    ResourceRecordSet, Route53, Route53Client,
+    CreateHostedZoneResponse, DeleteHostedZoneRequest,
+    DeleteHostedZoneResponse, ResourceRecord, ResourceRecordSet, Route53,
+    Route53Client,
 };
 
 use crate::{Error, Result};
 
-pub fn new_client(profile: &str, region: &Region) -> Result<Route53Client> {
+// Route53 must use the US East (N Virginia) region.
+pub fn new_client(profile: &str) -> Result<Route53Client> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(profile);
     Ok(Route53Client::new_with(
         HttpClient::new()?,
         provider,
-        region.clone(),
+        Region::UsEast1,
     ))
 }
 
@@ -98,8 +99,10 @@ impl Into<ResourceRecordSet> for DnsRecord {
         };
 
         let ttl: Option<i64> = if let None = self.alias {
-            Some(300) 
-        } else { None };
+            Some(300)
+        } else {
+            None
+        };
 
         let (alias_target, resource_records) =
             if let Some(hosted_zone_id) = self.alias {

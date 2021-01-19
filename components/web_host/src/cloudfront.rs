@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
 use std::fmt;
 use std::str::FromStr;
 
@@ -25,13 +23,14 @@ static MANAGED_CACHING_OPTIMIZED: &str = "Managed-CachingOptimized";
 // Filter for managed cache policies.
 static MANAGED: &str = "managed";
 
-pub fn new_client(profile: &str, region: &Region) -> Result<CloudFrontClient> {
+// Cloudfront API calls must use US East (N Virginia).
+pub fn new_client(profile: &str) -> Result<CloudFrontClient> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(profile);
     Ok(CloudFrontClient::new_with(
         HttpClient::new()?,
         provider,
-        region.clone(),
+        Region::UsEast1,
     ))
 }
 
@@ -49,7 +48,7 @@ default_ttl            = 86400
 max_ttl                = 31536000
 */
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum ViewerProtocolPolicy {
     AllowAll,
     RedirectToHttps,
@@ -83,14 +82,12 @@ impl FromStr for ViewerProtocolPolicy {
     }
 }
 
-#[serde_as]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct DistributionSettings {
     /// The origin URL for the distribution
-    #[serde_as(as = "DisplayFromStr")]
     origin: Url,
 
-    #[serde(skip)]
+    /// Domain name parsed from the origin URL.
     domain_name: String,
 
     /// Unique identifier for the origin
@@ -106,7 +103,6 @@ pub struct DistributionSettings {
     aliases: Vec<String>,
 
     /// Viewer protocol policy.
-    #[serde_as(as = "DisplayFromStr")]
     viewer_protocol_policy: ViewerProtocolPolicy,
 
     /// Caller refererence for the request.

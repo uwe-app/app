@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use log::info;
 
 use rusoto_core::{credential, request::HttpClient, Region, RusotoError};
@@ -29,7 +27,7 @@ pub fn new_client(profile: &str, region: &Region) -> Result<S3Client> {
     ))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct BucketSettings {
     /// The region used for creating resources.
     region: Region,
@@ -46,7 +44,7 @@ pub struct BucketSettings {
     /// Protocol to use when redirecting all requests
     redirect_protocol: Option<String>,
 
-    #[serde(skip)]
+    /// Bucket policy file.
     policy: Option<String>,
 }
 

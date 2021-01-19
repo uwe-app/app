@@ -14,6 +14,7 @@ rusoto_signature = "0.46.0"
 rusoto_s3 = "0.46.0"
 rusoto_cloudfront = "0.46.0"
 rusoto_route53 = "0.46.0"
+rusoto_acm = "0.46.0"
 tokio = { version = "^1.0", features = ["full"] }
 serde_json = "1"
 serde_with = "1.5.1"

@@ -11,6 +11,9 @@ pub enum Error {
     #[error("Unable to find a cache policy matching the name {0}")]
     NoCachePolicy(String),
 
+    #[error("Unable to get certificate ARN from response")]
+    NoCertificateArn,
+
     #[error(transparent)]
     Tls(#[from] rusoto_core::request::TlsError),
 
@@ -80,6 +83,16 @@ pub enum Error {
     #[error(transparent)]
     DeleteHostedZone(
         #[from] rusoto_core::RusotoError<rusoto_route53::DeleteHostedZoneError>,
+    ),
+
+    #[error(transparent)]
+    RequestCertificate(
+        #[from] rusoto_core::RusotoError<rusoto_acm::RequestCertificateError>,
+    ),
+
+    #[error(transparent)]
+    DescribeCertificate(
+        #[from] rusoto_core::RusotoError<rusoto_acm::DescribeCertificateError>,
     ),
 
     #[error(transparent)]

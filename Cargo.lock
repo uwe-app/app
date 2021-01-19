@@ -2886,6 +2886,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusoto_acm"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2ce9577176e6dfe1d6cae80098131ab1c243cfe0cd54a80d50917f53d49b130"
+dependencies = [
+ "async-trait",
+ "bytes 1.0.1",
+ "futures",
+ "rusoto_core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "rusoto_cloudfront"
 version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4375,6 +4389,7 @@ version = "0.1.0"
 dependencies = [
  "log",
  "once_cell",
+ "rusoto_acm",
  "rusoto_cloudfront",
  "rusoto_core",
  "rusoto_route53",

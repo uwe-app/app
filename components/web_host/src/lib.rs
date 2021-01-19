@@ -1,3 +1,4 @@
+mod acm;
 mod cloudfront;
 mod error;
 mod region_info;
