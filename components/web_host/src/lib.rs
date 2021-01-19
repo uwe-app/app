@@ -6,6 +6,10 @@ mod s3;
 
 type Result<T> = std::result::Result<T, error::Error>;
 
-pub use cloudfront::{DistributionSettings, ViewerProtocolPolicy, new_client as new_cloudfront_client};
+pub use cloudfront::{
+    new_client as new_cloudfront_client, DistributionSettings,
+    ViewerProtocolPolicy,
+};
 pub use error::Error;
-pub use s3::{BucketSettings, new_client as new_s3_client};
+pub use route53::{new_client as new_route53_client, DnsRecord, DnsSettings, RecordType};
+pub use s3::{new_client as new_s3_client, BucketSettings};

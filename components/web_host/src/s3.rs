@@ -22,7 +22,11 @@ static POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
 pub fn new_client(profile: &str, region: &Region) -> Result<S3Client> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(profile);
-    Ok(S3Client::new_with(HttpClient::new()?, provider, region.clone()))
+    Ok(S3Client::new_with(
+        HttpClient::new()?,
+        provider,
+        region.clone(),
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]

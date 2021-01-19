@@ -10,7 +10,14 @@ use rusoto_core::Region;
 
 use uwe::{self, opts::fatal, Error, Result};
 
-use web_host::{BucketSettings, DistributionSettings, ViewerProtocolPolicy};
+use web_host::{
+    BucketSettings,
+    DistributionSettings,
+    ViewerProtocolPolicy,
+    DnsRecord,
+    DnsSettings,
+    RecordType,
+};
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
     src.parse::<Region>().map_err(Error::from)
@@ -22,6 +29,10 @@ fn parse_url(src: &str) -> std::result::Result<Url, Error> {
 
 fn parse_policy(src: &str) -> std::result::Result<ViewerProtocolPolicy, Error> {
     src.parse::<ViewerProtocolPolicy>().map_err(Error::from)
+}
+
+fn parse_record_type(src: &str) -> std::result::Result<RecordType, Error> {
+    src.parse::<RecordType>().map_err(Error::from)
 }
 
 /// Universal (web editor) plugin manager
@@ -41,7 +52,6 @@ struct Common {
     /// Credentials profile name
     #[structopt(short, long)]
     credentials: String,
-
 }
 
 #[derive(StructOpt, Debug)]
@@ -73,6 +83,77 @@ enum Bucket {
 
         /// Bucket name
         bucket: String,
+    },
+}
+
+#[derive(StructOpt, Debug)]
+struct RecordInfo {
+    /// Create Cloudfront alias record type
+    #[structopt(long)]
+    cdn: bool,
+
+    /// The record type.
+    #[structopt(short = "t", long = "type", parse(try_from_str = parse_record_type))]
+    kind: RecordType,
+
+    /// The name of the DNS record.
+    name: String,
+
+    /// The value of the DNS record.
+    value: String,
+}
+
+impl Into<Vec<DnsRecord>> for RecordInfo {
+    fn into(self) -> Vec<DnsRecord> {
+        if self.cdn {
+            vec![
+                DnsRecord::new_cloudfront_alias(self.name, self.value, self.kind)
+            ]
+        } else {
+            vec![
+                DnsRecord {
+                    kind: self.kind,
+                    name: self.name,
+                    value: self.value,
+                    alias: None,
+                }
+            ]
+        }
+    }
+}
+
+#[derive(StructOpt, Debug)]
+enum Route53Record {
+    /// Create a record set
+    Create {
+        #[structopt(flatten)]
+        record: RecordInfo,
+    },
+    /// Delete a record set
+    Delete {
+        #[structopt(flatten)]
+        record: RecordInfo,
+    },
+    /// Create or update a record set
+    Upsert {
+        #[structopt(flatten)]
+        record: RecordInfo,
+    },
+}
+
+#[derive(StructOpt, Debug)]
+enum Route53 {
+    /// Manage DNS record sets
+    Record {
+        /// Hosted zone id.
+        #[structopt(short, long)]
+        zone_id: String,
+
+        #[structopt(flatten)]
+        common: Common,
+
+        #[structopt(subcommand)]
+        cmd: Route53Record,
     },
 }
 
@@ -123,6 +204,13 @@ enum Command {
         #[structopt(subcommand)]
         cmd: Cloudfront,
     },
+
+    /// DNS via Route53
+    #[structopt(alias = "dns")]
+    Route53 {
+        #[structopt(subcommand)]
+        cmd: Route53,
+    },
 }
 
 async fn run(cmd: Command) -> Result<()> {
@@ -137,10 +225,8 @@ async fn run(cmd: Command) -> Result<()> {
                 redirect_host_name,
                 redirect_protocol,
             } => {
-                let client = web_host::new_s3_client(
-                    &common.credentials,
-                    &region,
-                )?;
+                let client =
+                    web_host::new_s3_client(&common.credentials, &region)?;
                 let bucket = BucketSettings::new(
                     region,
                     bucket,
@@ -153,28 +239,70 @@ async fn run(cmd: Command) -> Result<()> {
             }
         },
 
-        Command::Cloudfront { cmd } => {
-            match cmd {
-                Cloudfront::Create {
-                    common,
-                    origin,
-                    origin_id,
-                    alias,
-                    acm_certificate_arn,
-                    protocol_policy,
-                    mut comment,
-                } => {
-                    let client = web_host::new_cloudfront_client(
+        Command::Cloudfront { cmd } => match cmd {
+            Cloudfront::Create {
+                common,
+                origin,
+                origin_id,
+                alias,
+                acm_certificate_arn,
+                protocol_policy,
+                mut comment,
+            } => {
+                let client = web_host::new_cloudfront_client(
+                    &common.credentials,
+                    &Region::UsEast1,
+                )?;
+                let mut cdn =
+                    DistributionSettings::new(origin, alias, origin_id);
+                cdn.set_acm_certificate_arn(acm_certificate_arn);
+                cdn.set_viewer_protocol_policy(protocol_policy);
+                if let Some(comment) = comment.take() {
+                    cdn.set_comment(comment);
+                }
+                cdn.create(&client).await?;
+            }
+        },
+        Command::Route53 { cmd } => match cmd {
+            Route53::Record { zone_id, common, cmd } => match cmd {
+                Route53Record::Create { record } => {
+                    let client = web_host::new_route53_client(
                         &common.credentials,
                         &Region::UsEast1,
                     )?;
-                    let mut cdn = DistributionSettings::new(origin, alias, origin_id);
-                    cdn.set_acm_certificate_arn(acm_certificate_arn);
-                    cdn.set_viewer_protocol_policy(protocol_policy);
-                    if let Some(comment) = comment.take() {
-                        cdn.set_comment(comment);
+                    let dns = DnsSettings::new(zone_id);
+                    let records: Vec<DnsRecord> = record.into();
+                    for r in records.iter() {
+                        info!("Create record {} {} -> {}", &r.kind, &r.name, &r.value);
                     }
-                    cdn.create(&client).await?;
+                    dns.create(&client, records).await?;
+                    info!("Created record(s) ✓");
+                }
+                Route53Record::Delete { record } => {
+                    let client = web_host::new_route53_client(
+                        &common.credentials,
+                        &Region::UsEast1,
+                    )?;
+                    let dns = DnsSettings::new(zone_id);
+                    let records: Vec<DnsRecord> = record.into();
+                    for r in records.iter() {
+                        info!("Delete record {} {} -> {}", &r.kind, &r.name, &r.value);
+                    }
+                    dns.delete(&client, records).await?;
+                    info!("Deleted record(s) ✓");
+                }
+                Route53Record::Upsert { record } => {
+                    let client = web_host::new_route53_client(
+                        &common.credentials,
+                        &Region::UsEast1,
+                    )?;
+                    let dns = DnsSettings::new(zone_id);
+                    let records: Vec<DnsRecord> = record.into();
+                    for r in records.iter() {
+                        info!("Upsert record {} {} -> {}", &r.kind, &r.name, &r.value);
+                    }
+                    dns.upsert(&client, records).await?;
+                    info!("Upserted record(s) ✓");
                 }
             }
         }

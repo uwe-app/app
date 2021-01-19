@@ -3564,6 +3564,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "strum_macros"
+version = "0.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "subtle"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4371,6 +4383,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
+ "strum_macros",
  "thiserror",
  "tokio 1.0.2",
  "url",

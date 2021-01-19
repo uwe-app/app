@@ -5,6 +5,9 @@ pub enum Error {
     #[error("Unknown viewer protocol policy {0}")]
     UnknownViewerProtocolPolicy(String),
 
+    #[error("Unknown record type {0}")]
+    UnknownDnsRecordType(String),
+
     #[error("Unable to find a cache policy matching the name {0}")]
     NoCachePolicy(String),
 
@@ -39,22 +42,34 @@ pub enum Error {
 
     #[error(transparent)]
     ListDistributions(
-        #[from] rusoto_core::RusotoError<rusoto_cloudfront::ListDistributionsError>,
+        #[from]
+        rusoto_core::RusotoError<rusoto_cloudfront::ListDistributionsError>,
     ),
 
     #[error(transparent)]
     CreateDistribution(
-        #[from] rusoto_core::RusotoError<rusoto_cloudfront::CreateDistributionError>,
+        #[from]
+        rusoto_core::RusotoError<rusoto_cloudfront::CreateDistributionError>,
     ),
 
     #[error(transparent)]
     UpdateDistribution(
-        #[from] rusoto_core::RusotoError<rusoto_cloudfront::UpdateDistributionError>,
+        #[from]
+        rusoto_core::RusotoError<rusoto_cloudfront::UpdateDistributionError>,
     ),
 
     #[error(transparent)]
     ListCachePolicies(
-        #[from] rusoto_core::RusotoError<rusoto_cloudfront::ListCachePoliciesError>,
+        #[from]
+        rusoto_core::RusotoError<rusoto_cloudfront::ListCachePoliciesError>,
+    ),
+
+    #[error(transparent)]
+    ChangeResourceRecordSets(
+        #[from]
+        rusoto_core::RusotoError<
+            rusoto_route53::ChangeResourceRecordSetsError,
+        >,
     ),
 
     #[error(transparent)]

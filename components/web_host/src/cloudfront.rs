@@ -1,25 +1,17 @@
-use std::fmt;
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
+use std::fmt;
+use std::str::FromStr;
 
-use log::{info, debug};
+use log::{debug, info};
 use url::Url;
 
 use rusoto_cloudfront::{
-    CloudFront,
-    CloudFrontClient,
-    ListDistributionsRequest,
-    ListDistributionsResult,
-    DistributionSummary,
-    DistributionConfig,
-    CreateDistributionRequest,
-    UpdateDistributionRequest,
-    Origin, Origins, DefaultCacheBehavior,
-    ViewerCertificate, Aliases,
-    CustomOriginConfig,
-    Distribution,
-    ListCachePoliciesRequest,
+    Aliases, CloudFront, CloudFrontClient, CreateDistributionRequest,
+    CustomOriginConfig, DefaultCacheBehavior, Distribution, DistributionConfig,
+    DistributionSummary, ListCachePoliciesRequest, ListDistributionsRequest,
+    ListDistributionsResult, Origin, Origins, UpdateDistributionRequest,
+    ViewerCertificate,
 };
 use rusoto_core::{credential, request::HttpClient, Region};
 
@@ -36,7 +28,11 @@ static MANAGED: &str = "managed";
 pub fn new_client(profile: &str, region: &Region) -> Result<CloudFrontClient> {
     let mut provider = credential::ProfileProvider::new()?;
     provider.set_profile(profile);
-    Ok(CloudFrontClient::new_with(HttpClient::new()?, provider, region.clone()))
+    Ok(CloudFrontClient::new_with(
+        HttpClient::new()?,
+        provider,
+        region.clone(),
+    ))
 }
 
 /*
@@ -62,11 +58,15 @@ pub enum ViewerProtocolPolicy {
 
 impl fmt::Display for ViewerProtocolPolicy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", match self {
-            Self::AllowAll => "allow-all",
-            Self::RedirectToHttps => "redirect-to-https",
-            Self::HttpsOnly => "https-only",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::AllowAll => "allow-all",
+                Self::RedirectToHttps => "redirect-to-https",
+                Self::HttpsOnly => "https-only",
+            }
+        )
     }
 }
 
@@ -78,7 +78,7 @@ impl FromStr for ViewerProtocolPolicy {
             "allow-all" => Ok(Self::AllowAll),
             "redirect-to-https" => Ok(Self::RedirectToHttps),
             "https-only" => Ok(Self::HttpsOnly),
-            _ => Err(Error::UnknownViewerProtocolPolicy(s.to_string()))
+            _ => Err(Error::UnknownViewerProtocolPolicy(s.to_string())),
         }
     }
 }
@@ -123,8 +123,13 @@ pub struct DistributionSettings {
 }
 
 impl DistributionSettings {
-    pub fn new(origin: Url, aliases: Vec<String>, origin_id: Option<String>) -> Self {
-        let domain_name = origin.domain()
+    pub fn new(
+        origin: Url,
+        aliases: Vec<String>,
+        origin_id: Option<String>,
+    ) -> Self {
+        let domain_name = origin
+            .domain()
             .expect("Origin URL must have a valid domain name")
             .to_string();
         Self {
@@ -151,21 +156,25 @@ impl DistributionSettings {
                 debug!("Test domain name {}", origin.domain_name);
                 if origin.domain_name == self.domain_name {
                     // Found an existing match so treat as an update operation
-                    return self.update(client, summary.id).await
+                    return self.update(client, summary.id).await;
                 }
             }
         }
 
         info!("Creating distribution for {}", self.origin);
-        let cache_policy_config_id = self.find_cache_policy_config_id(
-            client,
-            MANAGED_CACHING_OPTIMIZED,
-            MANAGED).await?
+        let cache_policy_config_id = self
+            .find_cache_policy_config_id(
+                client,
+                MANAGED_CACHING_OPTIMIZED,
+                MANAGED,
+            )
+            .await?
             .ok_or_else(|| {
                 Error::NoCachePolicy(MANAGED_CACHING_OPTIMIZED.to_string())
             })?;
 
-        let distribution_config = self.into_distribution_config(cache_policy_config_id);
+        let distribution_config =
+            self.into_distribution_config(cache_policy_config_id);
         debug!("Create {:#?}", &distribution_config);
         let req = CreateDistributionRequest {
             distribution_config,
@@ -181,17 +190,25 @@ impl DistributionSettings {
     }
 
     /// Update a distribution.
-    pub async fn update(&self, client: &CloudFrontClient, id: String) -> Result<()> {
+    pub async fn update(
+        &self,
+        client: &CloudFrontClient,
+        id: String,
+    ) -> Result<()> {
         info!("Updating {} ({})", &id, self.origin);
-        let cache_policy_config_id = self.find_cache_policy_config_id(
-            client,
-            MANAGED_CACHING_OPTIMIZED,
-            MANAGED).await?
+        let cache_policy_config_id = self
+            .find_cache_policy_config_id(
+                client,
+                MANAGED_CACHING_OPTIMIZED,
+                MANAGED,
+            )
+            .await?
             .ok_or_else(|| {
                 Error::NoCachePolicy(MANAGED_CACHING_OPTIMIZED.to_string())
             })?;
 
-        let distribution_config = self.into_distribution_config(cache_policy_config_id);
+        let distribution_config =
+            self.into_distribution_config(cache_policy_config_id);
         debug!("Update {:#?}", &distribution_config);
         let req = UpdateDistributionRequest {
             id,
@@ -210,13 +227,15 @@ impl DistributionSettings {
 
     /// Find the cache policy id for a named cache policy.
     ///
-    /// This assumes that we should be able to retrieve all managed 
-    /// policies in the default number of maximum items - it does **not** 
+    /// This assumes that we should be able to retrieve all managed
+    /// policies in the default number of maximum items - it does **not**
     /// fetch all pages for the list query.
-    async fn find_cache_policy_config_id(&self,
+    async fn find_cache_policy_config_id(
+        &self,
         client: &CloudFrontClient,
         name: &str,
-        filter: &str) -> Result<Option<String>> {
+        filter: &str,
+    ) -> Result<Option<String>> {
         let req = ListCachePoliciesRequest {
             type_: Some(filter.to_string()),
             max_items: Some(MAX_ITEMS.to_string()),
@@ -228,9 +247,9 @@ impl DistributionSettings {
                 for p in items.into_iter() {
                     if &p.cache_policy.cache_policy_config.name == name {
                         return Ok(Some(p.cache_policy.id));
-                    } 
+                    }
                 }
-            } 
+            }
         }
         Ok(None)
     }
@@ -242,18 +261,22 @@ impl DistributionSettings {
     }
 
     /// List all distributions.
-    pub async fn list_distributions_all(&self, client: &CloudFrontClient) -> Result<Vec<DistributionSummary>> {
+    pub async fn list_distributions_all(
+        &self,
+        client: &CloudFrontClient,
+    ) -> Result<Vec<DistributionSummary>> {
         let mut out = Vec::new();
         let mut marker: Option<String> = None;
         loop {
-            let mut result = self.list_distributions(client, marker.clone()).await?;
+            let mut result =
+                self.list_distributions(client, marker.clone()).await?;
             if let Some(ref mut list) = result.distribution_list.as_mut() {
                 if let Some(items) = list.items.take() {
                     out.extend(items);
                 }
                 let is_truncated = list.is_truncated;
                 if !is_truncated {
-                    break; 
+                    break;
                 } else {
                     println!("Setting new marker {:?}", &list.next_marker);
                     marker = list.next_marker.clone();
@@ -267,7 +290,8 @@ impl DistributionSettings {
     pub async fn list_distributions(
         &self,
         client: &CloudFrontClient,
-        marker: Option<String>) -> Result<ListDistributionsResult> {
+        marker: Option<String>,
+    ) -> Result<ListDistributionsResult> {
         let req = ListDistributionsRequest {
             marker,
             max_items: Some(MAX_ITEMS.to_string()),
@@ -298,7 +322,10 @@ impl DistributionSettings {
     }
 
     /// Set an ACM certificate ARN.
-    pub fn set_acm_certificate_arn(&mut self, acm_certificate_arn: Option<String>) {
+    pub fn set_acm_certificate_arn(
+        &mut self,
+        acm_certificate_arn: Option<String>,
+    ) {
         self.acm_certificate_arn = acm_certificate_arn;
     }
 
@@ -319,14 +346,19 @@ impl DistributionSettings {
         if !self.aliases.is_empty() {
             Some(Aliases {
                 quantity: self.aliases.len() as i64,
-                items: Some(self.aliases.clone())
+                items: Some(self.aliases.clone()),
             })
-        } else { None }
+        } else {
+            None
+        }
     }
 
-    /// Convert into a distribution config suitable for 
+    /// Convert into a distribution config suitable for
     /// creating or updating a distribution.
-    fn into_distribution_config(&self, cache_policy_id: String) -> DistributionConfig {
+    fn into_distribution_config(
+        &self,
+        cache_policy_id: String,
+    ) -> DistributionConfig {
         let default_cache_behavior = DefaultCacheBehavior {
             compress: Some(self.compress.clone()),
             target_origin_id: self.origin_id.clone(),
@@ -341,18 +373,16 @@ impl DistributionSettings {
         let aliases = self.into_aliases();
 
         let origin = Origin {
-            domain_name: self.domain_name.clone(), 
+            domain_name: self.domain_name.clone(),
             id: self.origin_id.clone(),
             origin_path: self.origin_path.clone(),
 
-            custom_origin_config: Some(
-                CustomOriginConfig {
-                    http_port: 80,
-                    https_port: 443,
-                    origin_protocol_policy: "http-only".to_string(),
-                    ..Default::default()
-                }   
-            ),
+            custom_origin_config: Some(CustomOriginConfig {
+                http_port: 80,
+                https_port: 443,
+                origin_protocol_policy: "http-only".to_string(),
+                ..Default::default()
+            }),
             /*
             // SEE: https://github.com/hashicorp/terraform/issues/6422
             s3_origin_config: Some(
