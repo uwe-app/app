@@ -19,12 +19,25 @@ use rusoto_cloudfront::{
     ViewerCertificate, Aliases,
     CustomOriginConfig,
     Distribution,
+    ListCachePoliciesRequest,
 };
 use rusoto_core::{credential, request::HttpClient, Region};
 
 use crate::{Error, Result};
 
 static MAX_ITEMS: usize = 100;
+
+// Default cache policy name that we use.
+static MANAGED_CACHING_OPTIMIZED: &str = "Managed-CachingOptimized";
+
+// Filter for managed cache policies.
+static MANAGED: &str = "managed";
+
+pub fn new_client(profile: &str, region: &Region) -> Result<CloudFrontClient> {
+    let mut provider = credential::ProfileProvider::new()?;
+    provider.set_profile(profile);
+    Ok(CloudFrontClient::new_with(HttpClient::new()?, provider, region.clone()))
+}
 
 /*
 allowed_methods  = ["GET", "HEAD"]
@@ -68,15 +81,6 @@ impl FromStr for ViewerProtocolPolicy {
             _ => Err(Error::UnknownViewerProtocolPolicy(s.to_string()))
         }
     }
-}
-
-pub fn new_client(profile: &str, region: &Region) -> Result<CloudFrontClient> {
-    let mut provider = credential::ProfileProvider::new()?;
-    provider.set_profile(profile);
-    let dispatcher = HttpClient::new()?;
-    let client =
-        CloudFrontClient::new_with(dispatcher, provider, region.clone());
-    Ok(client)
 }
 
 #[serde_as]
@@ -153,8 +157,15 @@ impl DistributionSettings {
         }
 
         info!("Creating distribution for {}", self.origin);
+        let cache_policy_config_id = self.find_cache_policy_config_id(
+            client,
+            MANAGED_CACHING_OPTIMIZED,
+            MANAGED).await?
+            .ok_or_else(|| {
+                Error::NoCachePolicy(MANAGED_CACHING_OPTIMIZED.to_string())
+            })?;
 
-        let distribution_config = self.into_distribution_config();
+        let distribution_config = self.into_distribution_config(cache_policy_config_id);
         debug!("Create {:#?}", &distribution_config);
         let req = CreateDistributionRequest {
             distribution_config,
@@ -172,8 +183,15 @@ impl DistributionSettings {
     /// Update a distribution.
     pub async fn update(&self, client: &CloudFrontClient, id: String) -> Result<()> {
         info!("Updating {} ({})", &id, self.origin);
+        let cache_policy_config_id = self.find_cache_policy_config_id(
+            client,
+            MANAGED_CACHING_OPTIMIZED,
+            MANAGED).await?
+            .ok_or_else(|| {
+                Error::NoCachePolicy(MANAGED_CACHING_OPTIMIZED.to_string())
+            })?;
 
-        let distribution_config = self.into_distribution_config();
+        let distribution_config = self.into_distribution_config(cache_policy_config_id);
         debug!("Update {:#?}", &distribution_config);
         let req = UpdateDistributionRequest {
             id,
@@ -190,11 +208,37 @@ impl DistributionSettings {
         Ok(())
     }
 
+    /// Find the cache policy id for a named cache policy.
+    ///
+    /// This assumes that we should be able to retrieve all managed 
+    /// policies in the default number of maximum items - it does **not** 
+    /// fetch all pages for the list query.
+    async fn find_cache_policy_config_id(&self,
+        client: &CloudFrontClient,
+        name: &str,
+        filter: &str) -> Result<Option<String>> {
+        let req = ListCachePoliciesRequest {
+            type_: Some(filter.to_string()),
+            max_items: Some(MAX_ITEMS.to_string()),
+            ..Default::default()
+        };
+        let policies = client.list_cache_policies(req).await?;
+        if let Some(cache_policy_list) = policies.cache_policy_list {
+            if let Some(items) = cache_policy_list.items {
+                for p in items.into_iter() {
+                    if &p.cache_policy.cache_policy_config.name == name {
+                        return Ok(Some(p.cache_policy.id));
+                    } 
+                }
+            } 
+        }
+        Ok(None)
+    }
+
     /// Print info after a create or update.
     fn print_distribution(&self, distribution: &Distribution) {
-        info!("Distribution id {}", distribution.id);
         info!("Distribution domain name {}", distribution.domain_name);
-        info!("Status {} ✓", distribution.status);
+        info!("Distribution {} {} ✓", distribution.id, distribution.status);
     }
 
     /// List all distributions.
@@ -282,13 +326,14 @@ impl DistributionSettings {
 
     /// Convert into a distribution config suitable for 
     /// creating or updating a distribution.
-    fn into_distribution_config(&self) -> DistributionConfig {
+    fn into_distribution_config(&self, cache_policy_id: String) -> DistributionConfig {
         let default_cache_behavior = DefaultCacheBehavior {
             compress: Some(self.compress.clone()),
             target_origin_id: self.origin_id.clone(),
             // SEE: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
             // TODO: fetch the "Managed-CachingOptimized" identifier!
-            cache_policy_id: Some("658327ea-f89d-4fab-a63d-7e88639e58f6".to_string()),
+            //cache_policy_id: Some("658327ea-f89d-4fab-a63d-7e88639e58f6".to_string()),
+            cache_policy_id: Some(cache_policy_id),
             viewer_protocol_policy: self.viewer_protocol_policy.to_string(),
             ..Default::default()
         };

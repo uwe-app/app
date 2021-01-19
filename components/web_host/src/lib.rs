@@ -1,6 +1,7 @@
 mod cloudfront;
 mod error;
 mod region_info;
+mod route53;
 mod s3;
 
 type Result<T> = std::result::Result<T, error::Error>;

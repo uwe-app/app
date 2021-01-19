@@ -2942,6 +2942,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusoto_route53"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9a5e777a7418dbdb2192c488cb37eb6e485b53d7b7c43a7ab6a82c1e2908ba9"
+dependencies = [
+ "async-trait",
+ "bytes 1.0.1",
+ "futures",
+ "rusoto_core",
+ "xml-rs",
+]
+
+[[package]]
 name = "rusoto_s3"
 version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4352,6 +4365,7 @@ dependencies = [
  "once_cell",
  "rusoto_cloudfront",
  "rusoto_core",
+ "rusoto_route53",
  "rusoto_s3",
  "rusoto_signature",
  "serde",

@@ -5,6 +5,9 @@ pub enum Error {
     #[error("Unknown viewer protocol policy {0}")]
     UnknownViewerProtocolPolicy(String),
 
+    #[error("Unable to find a cache policy matching the name {0}")]
+    NoCachePolicy(String),
+
     #[error(transparent)]
     Tls(#[from] rusoto_core::request::TlsError),
 
@@ -47,6 +50,11 @@ pub enum Error {
     #[error(transparent)]
     UpdateDistribution(
         #[from] rusoto_core::RusotoError<rusoto_cloudfront::UpdateDistributionError>,
+    ),
+
+    #[error(transparent)]
+    ListCachePolicies(
+        #[from] rusoto_core::RusotoError<rusoto_cloudfront::ListCachePoliciesError>,
     ),
 
     #[error(transparent)]
