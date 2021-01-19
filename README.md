@@ -44,7 +44,10 @@ The credentials should have full access to S3, Cloudfront and Route53. The outpu
 Create a hosted zone so that we can manage the DNS for the domain name:
 
 ```
-web-host dns zone --credentials=<credentials> create example.com
+web-host dns zone \
+  --credentials=<credentials> \
+  create \
+  example.com
 ```
 
 The output will include a list of name servers for the hosted zone and the owner of the domain needs to update their name servers with the domain registrar.
@@ -130,7 +133,7 @@ web-host dns record \
 
 ### Create the Redirect CNAME Record
 
-So that all requests to `www.example.com` and redirected to `example.com`.
+So that all requests to `www.example.com` are redirected to `example.com`.
 
 * `<zone-id>` The identifier for the Route53 hosted zone (eg: `Z0401662281B83ZUV01IN`).
 * `<s3-website-domain-name>` The domain name for the redirect bucket endpoint created earlier (eg: `www.example.com.s3-website-ap-southeast-1.amazonaws.com`).
