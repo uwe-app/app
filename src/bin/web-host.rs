@@ -12,7 +12,7 @@ use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
     BucketSettings, DistributionSettings, DnsRecord, DnsSettings, RecordType,
-    ViewerProtocolPolicy, ZoneSettings,
+    ViewerProtocolPolicy, ZoneSettings, CertSettings,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -51,7 +51,7 @@ struct Common {
 }
 
 #[derive(StructOpt, Debug)]
-enum Bucket {
+enum Host {
     /// Ensure a bucket is available
     Up {
         /// Suffix for folder requests
@@ -117,7 +117,7 @@ impl Into<Vec<DnsRecord>> for RecordInfo {
 }
 
 #[derive(StructOpt, Debug)]
-enum Route53Record {
+enum ZoneRecord {
     /// Create a record set
     Create {
         #[structopt(flatten)]
@@ -136,7 +136,7 @@ enum Route53Record {
 }
 
 #[derive(StructOpt, Debug)]
-enum Route53Zone {
+enum DnsZone {
     /// Create a hosted zone
     Create {
         /// The domain name for the new zone
@@ -150,7 +150,7 @@ enum Route53Zone {
 }
 
 #[derive(StructOpt, Debug)]
-enum Route53 {
+enum Dns {
     /// Manage DNS record sets
     Record {
         /// Hosted zone id.
@@ -161,7 +161,7 @@ enum Route53 {
         common: Common,
 
         #[structopt(subcommand)]
-        cmd: Route53Record,
+        cmd: ZoneRecord,
     },
     /// Manage hosted zones
     Zone {
@@ -169,12 +169,31 @@ enum Route53 {
         common: Common,
 
         #[structopt(subcommand)]
-        cmd: Route53Zone,
+        cmd: DnsZone,
     },
 }
 
 #[derive(StructOpt, Debug)]
-enum Cloudfront {
+enum Cert {
+    /// Issue a certificate
+    Issue {
+        /// Hosted zone id for DNS validation
+        #[structopt(short, long)]
+        zone_id: String,
+
+        #[structopt(flatten)]
+        common: Common,
+
+        /// Alternative name(s) for the certificate (eg: *.example.com)
+        alternative_name: Vec<String>,
+
+        /// Domain name for the certificate (eg: example.com)
+        domain_name: String,
+    },
+}
+
+#[derive(StructOpt, Debug)]
+enum Cdn {
     /// Create a Cloudfront CDN
     Create {
         #[structopt(flatten)]
@@ -208,31 +227,36 @@ enum Cloudfront {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    /// Static website hosts via S3
-    Bucket {
+    /// Static website hosts (S3)
+    #[structopt(alias = "bucket")]
+    Host{
         #[structopt(subcommand)]
-        cmd: Bucket,
+        cmd: Host,
     },
 
-    /// Content distribution networks via Cloudfront
-    #[structopt(alias = "cdn")]
-    Cloudfront {
+    /// Content distribution networks (Cloudfront)
+    Cdn {
         #[structopt(subcommand)]
-        cmd: Cloudfront,
+        cmd: Cdn,
     },
 
-    /// DNS via Route53
-    #[structopt(alias = "dns")]
-    Route53 {
+    /// DNS (Route53)
+    Dns {
         #[structopt(subcommand)]
-        cmd: Route53,
+        cmd: Dns,
+    },
+
+    /// SSL certificates (ACM)
+    Cert {
+        #[structopt(subcommand)]
+        cmd: Cert,
     },
 }
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
-        Command::Bucket { cmd } => match cmd {
-            Bucket::Up {
+        Command::Host { cmd } => match cmd {
+            Host::Up {
                 common,
                 region,
                 bucket,
@@ -255,8 +279,8 @@ async fn run(cmd: Command) -> Result<()> {
             }
         },
 
-        Command::Cloudfront { cmd } => match cmd {
-            Cloudfront::Create {
+        Command::Cdn { cmd } => match cmd {
+            Cdn::Create {
                 common,
                 origin,
                 origin_id,
@@ -278,13 +302,27 @@ async fn run(cmd: Command) -> Result<()> {
                 cdn.create(&client).await?;
             }
         },
-        Command::Route53 { cmd } => match cmd {
-            Route53::Record {
+        Command::Cert { cmd } => match cmd {
+            Cert::Issue {
+                domain_name,
+                zone_id,
+                common,
+                alternative_name,
+            } => {
+                let client = web_host::new_acm_client(&common.credentials)?;
+                let dns_client = web_host::new_route53_client(&common.credentials)?;
+                let cert = CertSettings::new(domain_name, Some(alternative_name));
+                cert.request_hosted_certificate(&client, &dns_client, zone_id).await?;
+                println!("Issue a cert...");
+            }
+        }
+        Command::Dns { cmd } => match cmd {
+            Dns::Record {
                 zone_id,
                 common,
                 cmd,
             } => match cmd {
-                Route53Record::Create { record } => {
+                ZoneRecord::Create { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
                     )?;
@@ -299,7 +337,7 @@ async fn run(cmd: Command) -> Result<()> {
                     dns.create(&client, records).await?;
                     info!("Created record(s) ✓");
                 }
-                Route53Record::Delete { record } => {
+                ZoneRecord::Delete { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
                     )?;
@@ -314,7 +352,7 @@ async fn run(cmd: Command) -> Result<()> {
                     dns.delete(&client, records).await?;
                     info!("Deleted record(s) ✓");
                 }
-                Route53Record::Upsert { record } => {
+                ZoneRecord::Upsert { record } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
                     )?;
@@ -330,8 +368,8 @@ async fn run(cmd: Command) -> Result<()> {
                     info!("Upserted record(s) ✓");
                 }
             },
-            Route53::Zone { common, cmd } => match cmd {
-                Route53Zone::Create { domain_name } => {
+            Dns::Zone { common, cmd } => match cmd {
+                DnsZone::Create { domain_name } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
                     )?;
@@ -344,7 +382,7 @@ async fn run(cmd: Command) -> Result<()> {
                     }
                     info!("Created zone {} ({}) ✓", id, &res.hosted_zone.name);
                 }
-                Route53Zone::Delete { id } => {
+                DnsZone::Delete { id } => {
                     let client = web_host::new_route53_client(
                         &common.credentials,
                     )?;

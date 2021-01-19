@@ -7,7 +7,7 @@ use rusoto_acm::{
     RequestCertificateRequest, RequestCertificateResponse,
 };
 
-use super::route53::{DnsRecord, RecordType, DnsSettings};
+use super::route53::{DnsRecord, DnsSettings};
 
 use crate::{Error, Result};
 
