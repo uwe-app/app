@@ -56,15 +56,17 @@ Take note of the hosted zone identifier which will be used later to update the D
 
 ### Create an SSL certificate
 
-Create an SSL certificate for the domain name and all sub-domains. Certificates are created in the US East (N Virginia) region which is required for usage with Cloudfront.
+Create an SSL certificate for the domain name and all sub-domains; certificates are created in the US East (N Virginia) region which is required for usage with Cloudfront.
 
-After a certificate is created poll for the DNS records which can be used to authenticate domain ownership and automatically add them to the Route53 hosted zone created in the previous step (`<zone-id>`).
+* `<zone-id>` The identifier for the Route53 hosted zone (eg: `Z0401662281B83ZUV01IN`).
+
+After a certificate is created poll for the DNS records which can be used to authenticate domain ownership and automatically add them to the hosted zone created in the previous step (`<zone-id>`).
 
 Once the DNS records for proving domain ownership have been added monitor the certificate status waiting for a `SUCCESS` status to indicate that the SSL certificate has been issued and can be used. The timeout for monitoring certificate status is 5 minutes by default use the `--timeout` option if necessary.
 
 ```
 web-host cert issue \
-  --credentials=tmpfs \
+  --credentials=<credentials> \
   --zone-id=<zone-id> \
   --alternative-name="*.example.com" \
   --monitor \
