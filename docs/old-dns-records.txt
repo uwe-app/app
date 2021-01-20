@@ -1,0 +1,47 @@
+uwe.app	MX	Simple	-	
+10 mail.protonmail.ch
+20 mailsec.protonmail.ch
+	
+uwe.app	NS	Simple	-	
+ns1.uwe.app.
+ns2.uwe.app.
+ns3.uwe.app.
+ns4.uwe.app.
+
+uwe.app	SOA	Simple	-	
+ns1.uwe.app. dev.uwe.app. 1 7200 900 1209600 86400
+
+uwe.app	TXT	Simple	-	
+"protonmail-verification=009d949014bb7bbaa6e8ab1355d8dbcbfe592440"
+"v=spf1 include:_spf.protonmail.ch mx ~all"
+	
+  protonmail._domainkey.uwe.app	CNAME	Simple	-	
+protonmail.domainkey.dwed4o3m4hb4r7zcv255xolzftpiprusfndchsgoo23kotnebg2la.domains.proton.ch.
+	
+  protonmail2._domainkey.uwe.app	CNAME	Simple	-	
+protonmail2.domainkey.dwed4o3m4hb4r7zcv255xolzftpiprusfndchsgoo23kotnebg2la.domains.proton.ch.
+	
+  protonmail3._domainkey.uwe.app	CNAME	Simple	-	
+protonmail3.domainkey.dwed4o3m4hb4r7zcv255xolzftpiprusfndchsgoo23kotnebg2la.domains.proton.ch.
+
+	ns1.uwe.app	A	Simple	-	
+205.251.192.77
+	ns1.uwe.app	AAAA	Simple	-	
+2600:9000:5300:4d00::1
+	ns2.uwe.app	A	Simple	-	
+205.251.197.188
+	ns2.uwe.app	AAAA	Simple	-	
+2600:9000:5305:bc00::1
+	ns3.uwe.app	A	Simple	-	
+205.251.198.198
+	ns3.uwe.app	AAAA	Simple	-	
+2600:9000:5306:c600::1
+	ns4.uwe.app	A	Simple	-	
+205.251.194.232
+	ns4.uwe.app	AAAA	Simple	-	
+2600:9000:5302:e800::1
+
+ns-544.awsdns-04.net.
+ns-2016.awsdns-60.co.uk.
+ns-507.awsdns-63.com.
+ns-1518.awsdns-61.org.

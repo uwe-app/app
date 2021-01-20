@@ -1,0 +1,27 @@
+{
+    "HostedZone": {
+        "ResourceRecordSetCount": 2,
+        "CallerReference": "uwe",
+        "Config": {
+            "PrivateZone": false
+        },
+        "Id": "/hostedzone/Z04911223AOWXLH2LXWQ8",
+        "Name": "uwe.app."
+    },
+    "DelegationSet": {
+        "NameServers": [
+            "ns-544.awsdns-04.net",
+            "ns-2016.awsdns-60.co.uk",
+            "ns-507.awsdns-63.com",
+            "ns-1518.awsdns-61.org"
+        ],
+        "CallerReference": "uwe",
+        "Id": "/delegationset/N02886841KKW7QD2MZLTC"
+    },
+    "Location": "https://route53.amazonaws.com/2013-04-01/hostedzone/Z04911223AOWXLH2LXWQ8",
+    "ChangeInfo": {
+        "Status": "PENDING",
+        "SubmittedAt": "2021-01-20T11:00:23.715Z",
+        "Id": "/change/C07689683RA7JCCGTBQ1J"
+    }
+}

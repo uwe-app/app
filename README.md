@@ -31,6 +31,42 @@ Repositories must be siblings, for example:
 * [syntax][]: Syntax highlighting language definitions binary files.
 * [syntax-compiler][]: Compiles the syntax highlighting definitions.
 
+## Name Servers
+
+Hosted Zone: `uwe.app`
+Delegation Set ID: `N02886841KKW7QD2MZLTC`
+
+To get the IP addresses for a name server run:
+
+```
+dig A ns-544.awsdns-04.net +short
+dig AAAA ns-544.awsdns-04.net +short
+```
+
+### ns1.uwe.app 
+
+* ns-544.awsdns-04.net
+* 205.251.194.32
+* 2600:9000:5302:2000::1
+
+### ns2.uwe.app 
+
+* ns-2016.awsdns-60.co.uk
+* 205.251.199.224
+* 2600:9000:5307:e000::1
+
+### ns3.uwe.app 
+
+* ns-507.awsdns-63.com
+* 205.251.193.251
+* 2600:9000:5301:fb00::1
+
+### ns4.uwe.app
+
+* ns-1518.awsdns-61.org
+* 205.251.197.238
+* 2600:9000:5305:ee00::1
+
 ## Web Hosts
 
 Until the customer-facing service is deployed we can create all the resources necessary for hosting using the private `web-host` executable.
