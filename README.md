@@ -33,7 +33,7 @@ Repositories must be siblings, for example:
 
 ## Web Hosts
 
-Until the customer-facing service is deployed we can create all the resources necessary for hosting using the private `web-host` executable. This does not cover updating name servers and creating SSL certificates at this stage.
+Until the customer-facing service is deployed we can create all the resources necessary for hosting using the private `web-host` executable.
 
 You should replace `<credentials>` with the identifier of the AWS credentials and `<region>` with the target region, eg: `ap-southeast-1`. Replace all instances of `example.com` with the domain name that is being hosted.
 

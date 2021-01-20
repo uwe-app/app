@@ -114,4 +114,7 @@ pub enum Error {
 
     #[error(transparent)]
     Json(#[from] serde_json::error::Error),
+
+    #[error(transparent)]
+    TomlDeser(#[from] toml::de::Error),
 }

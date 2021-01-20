@@ -124,8 +124,9 @@ impl CertSettings {
                     certificate.domain_validation_options
                 {
                     let dns = DnsSettings::new(zone_id.clone());
-                    let validation = domain_validation_options.iter().find(
-                        |v| v.validation_method == Some(DNS.to_string()));
+                    let validation = domain_validation_options
+                        .iter()
+                        .find(|v| v.validation_method == Some(DNS.to_string()));
 
                     if let Some(validation) = validation {
                         if let Some(ref resource_record) =
@@ -167,7 +168,6 @@ impl CertSettings {
         arn: String,
         timeout: u64,
     ) -> Result<()> {
-
         info!("Monitor {}", &arn);
         let start = SystemTime::now();
 
@@ -182,8 +182,9 @@ impl CertSettings {
                 if let Some(domain_validation_options) =
                     certificate.domain_validation_options
                 {
-                    let validation = domain_validation_options.iter().find(
-                        |v| v.validation_method == Some(DNS.to_string()));
+                    let validation = domain_validation_options
+                        .iter()
+                        .find(|v| v.validation_method == Some(DNS.to_string()));
 
                     if let Some(validation) = validation {
                         if let Some(ref status) = validation.validation_status {

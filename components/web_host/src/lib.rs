@@ -4,6 +4,7 @@ mod error;
 mod region_info;
 mod route53;
 mod s3;
+mod state;
 
 type Result<T> = std::result::Result<T, error::Error>;
 

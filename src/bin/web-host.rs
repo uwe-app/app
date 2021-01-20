@@ -361,10 +361,9 @@ async fn run(cmd: Command) -> Result<()> {
                     .await?;
 
                 if monitor {
-                    let _ = cert.monitor_certificate(
-                        &client,
-                        arn.clone(),
-                        timeout).await?;
+                    let _ = cert
+                        .monitor_certificate(&client, arn.clone(), timeout)
+                        .await?;
                 }
 
                 info!("Created certificate {} ✓", arn);
@@ -377,14 +376,16 @@ async fn run(cmd: Command) -> Result<()> {
                 info!("{:#?}", info);
             }
 
-            Cert::Monitor { arn, common, timeout } => {
+            Cert::Monitor {
+                arn,
+                common,
+                timeout,
+            } => {
                 let client = web_host::new_acm_client(&common.credentials)?;
                 let cert = CertSettings::new();
-                let _ = cert.monitor_certificate(
-                    &client,
-                    arn.clone(),
-                    timeout,
-                    ).await?;
+                let _ = cert
+                    .monitor_certificate(&client, arn.clone(), timeout)
+                    .await?;
                 info!("Certificate issued {} ✓", arn);
             }
         },

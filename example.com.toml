@@ -1,0 +1,4 @@
+domain-name = "example.com"
+bucket-name = "example.com"
+redirect-bucket-name = "www.example.com"
+subject-alternative-names = ["*.example.com"]
