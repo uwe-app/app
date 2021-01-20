@@ -1,0 +1,10 @@
+uwe.app	NS	Simple	-	
+
+ns-1524.awsdns-62.org.
+ns-277.awsdns-34.com.
+ns-587.awsdns-09.net.
+ns-1835.awsdns-37.co.uk.
+
+uwe.app	SOA	Simple	-	
+
+ns-1524.awsdns-62.org. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400

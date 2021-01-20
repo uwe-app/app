@@ -4,7 +4,7 @@ mod error;
 mod region_info;
 mod route53;
 mod s3;
-mod state;
+mod state_machine;
 
 type Result<T> = std::result::Result<T, error::Error>;
 
@@ -19,3 +19,4 @@ pub use route53::{
     ZoneSettings,
 };
 pub use s3::{new_client as new_s3_client, BucketSettings};
+pub use state_machine::WebHost;
