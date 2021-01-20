@@ -7,15 +7,6 @@ use rusoto_core::Region;
 
 use crate::Result;
 
-#[async_trait]
-trait AsyncState<I, O> {
-    async fn transition(
-        val: StateMachine<I>,
-        request: &WebHostRequest, 
-        response: &mut WebHostResponse
-    ) -> Result<StateMachine<O>>;
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct WebHostRequest {
@@ -66,90 +57,65 @@ impl Default for WebHostRequest {
     }
 }
 
-#[derive(Debug)]
-struct StateMachine<S> {
-    state: S,
+#[async_trait]
+trait StateIterator {
+    type Item;
+    async fn next(&mut self) -> Result<Option<Self::Item>>;
 }
 
 #[derive(Debug)]
-struct EmptyState;
+pub enum State {
+    Empty,
+    HostedZone,
+    NameServer,
+    Certificate,
+    Bucket,
+    RedirectBucket,
+    Cdn,
+    Dns4,
+    Dns6,
+    RedirectCname,
+}
 
-impl StateMachine<EmptyState> {
-    fn new() -> Self {
-        StateMachine { state: EmptyState }
+#[derive(Debug)]
+pub struct StateMachine<'a> {
+    request: &'a WebHostRequest, 
+    response: &'a mut WebHostResponse,
+    states: &'a [State],
+    index: usize,
+}
+
+impl<'a> StateMachine<'a> {
+    pub fn new(
+        request: &'a WebHostRequest,
+        response: &'a mut WebHostResponse,
+        states: &'a [State]) -> Self {
+        Self {request, response, states, index: 0} 
     }
 }
 
-#[derive(Debug)]
-struct HostedZoneState;
-
 #[async_trait]
-impl AsyncState<EmptyState, HostedZoneState> for StateMachine<HostedZoneState> {
-    async fn transition(
-        val: StateMachine<EmptyState>,
-        request: &WebHostRequest,
-        response: &mut WebHostResponse, 
-    ) -> Result<StateMachine<HostedZoneState>> {
+impl StateIterator for StateMachine<'_> {
+    type Item = State;
 
-        // TODO: response.zone_id
-        // TODO: response.name_servers
+    async fn next(&mut self) -> Result<Option<State>> {
+        if let Some(state) = self.states.get(self.index) {
+            let item = match state {
+                State::Empty => Some(State::HostedZone),
+                State::HostedZone => Some(State::NameServer),
+                State::NameServer => Some(State::Certificate),
+                State::Certificate => Some(State::Bucket),
+                State::Bucket => Some(State::RedirectBucket),
+                State::RedirectBucket => Some(State::Cdn),
+                State::Cdn => Some(State::Dns4),
+                State::Dns4 => Some(State::Dns6),
+                State::Dns6 => Some(State::RedirectCname),
+                _ => None,
+            };
 
-        Ok(StateMachine {state: HostedZoneState})
-    }
-}
-
-#[derive(Debug)]
-struct NameServerState;
-
-#[async_trait]
-impl AsyncState<HostedZoneState, NameServerState>
-    for StateMachine<NameServerState>
-{
-    async fn transition(
-        val: StateMachine<HostedZoneState>,
-        request: &WebHostRequest,
-        response: &mut WebHostResponse, 
-    ) -> Result<StateMachine<NameServerState>> {
-
-        // TODO: response.propagated
-
-        Ok(StateMachine {state: NameServerState})
-    }
-}
-
-#[derive(Debug)]
-struct CertificateState;
-
-#[async_trait]
-impl AsyncState<NameServerState, CertificateState>
-    for StateMachine<CertificateState>
-{
-    async fn transition(
-        val: StateMachine<NameServerState>,
-        request: &WebHostRequest,
-        response: &mut WebHostResponse, 
-    ) -> Result<StateMachine<CertificateState>> {
-
-        // TODO: response.certificate_arn
-        Ok(StateMachine {state: CertificateState})
-    }
-}
-
-#[derive(Debug)]
-struct BucketState;
-
-#[async_trait]
-impl AsyncState<CertificateState, BucketState>
-    for StateMachine<BucketState>
-{
-    async fn transition(
-        val: StateMachine<CertificateState>,
-        request: &WebHostRequest,
-        response: &mut WebHostResponse, 
-    ) -> Result<StateMachine<BucketState>> {
-
-        // TODO: response.bucket_endpoint
-        Ok(StateMachine {state: BucketState})
+            self.index += 1; 
+            Ok(item)
+        } else { Ok(None) }
     }
 }
 
@@ -157,20 +123,31 @@ impl AsyncState<CertificateState, BucketState>
 pub struct WebHost;
 
 impl WebHost {
-    pub async fn ensure(req: &WebHostRequest) -> Result<()> {
+
+    /// Ensure all resources for a web host.
+    pub async fn ensure(req: &WebHostRequest) -> Result<WebHostResponse> {
         let mut res: WebHostResponse = Default::default();
 
-        let empty = StateMachine::new();
-        let hosted_zone =
-            StateMachine::<HostedZoneState>::transition(empty, req, &mut res).await?;
-        let name_server =
-            StateMachine::<NameServerState>::transition(hosted_zone, req, &mut res).await?;
-        let certificate =
-            StateMachine::<CertificateState>::transition(name_server, req, &mut res).await?;
-        let bucket =
-            StateMachine::<BucketState>::transition(certificate, req, &mut res).await?;
+        let mut machine = StateMachine::new(&req, &mut res,
+            &[
+                State::Empty,
+                State::HostedZone,
+                State::NameServer,
+                State::Certificate,
+                State::Bucket,
+                State::RedirectBucket,
+                State::Cdn,
+                State::Dns4,
+                State::Dns6,
+                State::RedirectCname,
+            ]
+        );
 
-        Ok(())
+        while let Some(state) = machine.next().await? {
+            println!("Got a state {:?}", state);
+        }
+
+        Ok(res)
     }
 
     /// Load the request from a source TOML file.
