@@ -8,11 +8,25 @@ pub enum Error {
     #[error("Unknown record type {0}")]
     UnknownDnsRecordType(String),
 
+    #[error("Unknown certificate validation status {0}")]
+    UnknownValidationStatus(String),
+
     #[error("Unable to find a cache policy matching the name {0}")]
     NoCachePolicy(String),
 
     #[error("Unable to get certificate ARN from response")]
     NoCertificateArn,
+
+    #[error("Unable to get DNS record for certificate validation in timeout period of {0} seconds")]
+    DnsValidationTimeout(u64),
+
+    #[error(
+        "Certificate status monitor exceeded timeout period of {0} seconds"
+    )]
+    MonitorTimeout(u64),
+
+    #[error("Certificate validation failed for {0}")]
+    CertificateValidationFailed(String),
 
     #[error(transparent)]
     Tls(#[from] rusoto_core::request::TlsError),

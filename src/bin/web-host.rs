@@ -11,8 +11,8 @@ use rusoto_core::Region;
 use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
-    BucketSettings, DistributionSettings, DnsRecord, DnsSettings, RecordType,
-    ViewerProtocolPolicy, ZoneSettings, CertSettings,
+    BucketSettings, CertSettings, DistributionSettings, DnsRecord, DnsSettings,
+    RecordType, ViewerProtocolPolicy, ZoneSettings,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -181,14 +181,45 @@ enum Cert {
         #[structopt(short, long)]
         zone_id: String,
 
+        /// Timeout in seconds
+        #[structopt(short, long, default_value = "300")]
+        timeout: u64,
+
+        /// Monitor certificate status
+        #[structopt(short, long)]
+        monitor: bool,
+
         #[structopt(flatten)]
         common: Common,
 
         /// Alternative name(s) for the certificate (eg: *.example.com)
+        #[structopt(short, long)]
         alternative_name: Vec<String>,
 
         /// Domain name for the certificate (eg: example.com)
         domain_name: String,
+    },
+
+    /// Describe a certificate
+    Describe {
+        #[structopt(flatten)]
+        common: Common,
+
+        /// ARN identifier for the certificate
+        arn: String,
+    },
+
+    /// Monitor a certificate status
+    Monitor {
+        /// Timeout in seconds
+        #[structopt(short, long, default_value = "300")]
+        timeout: u64,
+
+        #[structopt(flatten)]
+        common: Common,
+
+        /// ARN identifier for the certificate
+        arn: String,
     },
 }
 
@@ -229,7 +260,7 @@ enum Cdn {
 enum Command {
     /// Static website hosts (S3)
     #[structopt(alias = "bucket")]
-    Host{
+    Host {
         #[structopt(subcommand)]
         cmd: Host,
     },
@@ -289,9 +320,8 @@ async fn run(cmd: Command) -> Result<()> {
                 protocol_policy,
                 mut comment,
             } => {
-                let client = web_host::new_cloudfront_client(
-                    &common.credentials,
-                )?;
+                let client =
+                    web_host::new_cloudfront_client(&common.credentials)?;
                 let mut cdn =
                     DistributionSettings::new(origin, alias, origin_id);
                 cdn.set_acm_certificate_arn(acm_certificate_arn);
@@ -308,14 +338,56 @@ async fn run(cmd: Command) -> Result<()> {
                 zone_id,
                 common,
                 alternative_name,
+                monitor,
+                timeout,
             } => {
+                let alternative_name = if alternative_name.is_empty() {
+                    None
+                } else {
+                    Some(alternative_name)
+                };
                 let client = web_host::new_acm_client(&common.credentials)?;
-                let dns_client = web_host::new_route53_client(&common.credentials)?;
-                let cert = CertSettings::new(domain_name, Some(alternative_name));
-                cert.request_hosted_certificate(&client, &dns_client, zone_id).await?;
-                println!("Issue a cert...");
+                let dns_client =
+                    web_host::new_route53_client(&common.credentials)?;
+                let cert = CertSettings::new();
+                let arn = cert
+                    .request_hosted_certificate(
+                        &client,
+                        &dns_client,
+                        domain_name,
+                        alternative_name,
+                        zone_id,
+                    )
+                    .await?;
+
+                if monitor {
+                    let _ = cert.monitor_certificate(
+                        &client,
+                        arn.clone(),
+                        timeout).await?;
+                }
+
+                info!("Created certificate {} ✓", arn);
             }
-        }
+
+            Cert::Describe { arn, common } => {
+                let client = web_host::new_acm_client(&common.credentials)?;
+                let cert = CertSettings::new();
+                let info = cert.describe_certificate(&client, arn).await?;
+                info!("{:#?}", info);
+            }
+
+            Cert::Monitor { arn, common, timeout } => {
+                let client = web_host::new_acm_client(&common.credentials)?;
+                let cert = CertSettings::new();
+                let _ = cert.monitor_certificate(
+                    &client,
+                    arn.clone(),
+                    timeout,
+                    ).await?;
+                info!("Certificate issued {} ✓", arn);
+            }
+        },
         Command::Dns { cmd } => match cmd {
             Dns::Record {
                 zone_id,
@@ -323,9 +395,8 @@ async fn run(cmd: Command) -> Result<()> {
                 cmd,
             } => match cmd {
                 ZoneRecord::Create { record } => {
-                    let client = web_host::new_route53_client(
-                        &common.credentials,
-                    )?;
+                    let client =
+                        web_host::new_route53_client(&common.credentials)?;
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
                     for r in records.iter() {
@@ -338,9 +409,8 @@ async fn run(cmd: Command) -> Result<()> {
                     info!("Created record(s) ✓");
                 }
                 ZoneRecord::Delete { record } => {
-                    let client = web_host::new_route53_client(
-                        &common.credentials,
-                    )?;
+                    let client =
+                        web_host::new_route53_client(&common.credentials)?;
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
                     for r in records.iter() {
@@ -353,9 +423,8 @@ async fn run(cmd: Command) -> Result<()> {
                     info!("Deleted record(s) ✓");
                 }
                 ZoneRecord::Upsert { record } => {
-                    let client = web_host::new_route53_client(
-                        &common.credentials,
-                    )?;
+                    let client =
+                        web_host::new_route53_client(&common.credentials)?;
                     let dns = DnsSettings::new(zone_id);
                     let records: Vec<DnsRecord> = record.into();
                     for r in records.iter() {
@@ -370,9 +439,8 @@ async fn run(cmd: Command) -> Result<()> {
             },
             Dns::Zone { common, cmd } => match cmd {
                 DnsZone::Create { domain_name } => {
-                    let client = web_host::new_route53_client(
-                        &common.credentials,
-                    )?;
+                    let client =
+                        web_host::new_route53_client(&common.credentials)?;
                     let zone = ZoneSettings::new();
                     let res = zone.create(&client, domain_name).await?;
                     let id =
@@ -383,9 +451,8 @@ async fn run(cmd: Command) -> Result<()> {
                     info!("Created zone {} ({}) ✓", id, &res.hosted_zone.name);
                 }
                 DnsZone::Delete { id } => {
-                    let client = web_host::new_route53_client(
-                        &common.credentials,
-                    )?;
+                    let client =
+                        web_host::new_route53_client(&common.credentials)?;
                     let zone = ZoneSettings::new();
                     let res = zone.delete(&client, id).await?;
                     let id = res.change_info.id.trim_start_matches("/change/");

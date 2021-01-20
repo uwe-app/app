@@ -37,7 +37,7 @@ Until the customer-facing service is deployed we can create all the resources ne
 
 You should replace `<credentials>` with the identifier of the AWS credentials and `<region>` with the target region, eg: `ap-southeast-1`. Replace all instances of `example.com` with the domain name that is being hosted.
 
-The credentials should have full access to S3, Cloudfront and Route53. The output of these commands will include identifiers for the created resources that you can take note of or find them later in the AWS console.
+The credentials should have full access to ACM, S3, Cloudfront and Route53. The output of these commands will include identifiers for the created resources that you can take note of or find them later in the AWS console.
 
 ### Create a Hosted Zone
 
@@ -56,7 +56,22 @@ Take note of the hosted zone identifier which will be used later to update the D
 
 ### Create an SSL certificate
 
-TODO
+Create an SSL certificate for the domain name and all sub-domains. Certificates are created in the US East (N Virginia) region which is required for usage with Cloudfront.
+
+After a certificate is created poll for the DNS records which can be used to authenticate domain ownership and automatically add them to the Route53 hosted zone created in the previous step (`<zone-id>`).
+
+Once the DNS records for proving domain ownership have been added monitor the certificate status waiting for a `SUCCESS` status to indicate that the SSL certificate has been issued and can be used. The timeout for monitoring certificate status is 5 minutes by default use the `--timeout` option if necessary.
+
+```
+web-host cert issue \
+  --credentials=tmpfs \
+  --zone-id=<zone-id> \
+  --alternative-name="*.example.com" \
+  --monitor \
+  example.com 
+```
+
+Note the wildcard sub-domain `*.example.com` is quoted so the shell does not treat it as a glob pattern.
 
 ### Create a Bucket
 

@@ -7,9 +7,7 @@ mod s3;
 
 type Result<T> = std::result::Result<T, error::Error>;
 
-pub use acm::{
-    new_client as new_acm_client, CertSettings,
-};
+pub use acm::{new_client as new_acm_client, CertSettings};
 pub use cloudfront::{
     new_client as new_cloudfront_client, DistributionSettings,
     ViewerProtocolPolicy,
