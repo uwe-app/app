@@ -1,5 +1,6 @@
 mod acm;
 mod cloudfront;
+mod dns_client;
 mod error;
 mod region_info;
 mod route53;

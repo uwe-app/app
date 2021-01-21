@@ -110,6 +110,16 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    Proto(
+        #[from] trust_dns_client::proto::error::ProtoError,
+    ),
+
+    #[error(transparent)]
+    DnsClient(
+        #[from] trust_dns_client::error::ClientError,
+    ),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
