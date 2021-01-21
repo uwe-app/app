@@ -33,8 +33,9 @@ Repositories must be siblings, for example:
 
 ## Name Servers
 
-Hosted Zone: `uwe.app`
-Delegation Set ID: `N02886841KKW7QD2MZLTC`
+* Hosted Zone: `uwe.app`
+* Hosted Zone ID: `Z04911223AOWXLH2LXWQ8`
+* Delegation Set ID: `N02886841KKW7QD2MZLTC`
 
 To get the IP addresses for a name server run:
 
