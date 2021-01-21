@@ -134,6 +134,7 @@ impl Releases {
 #[serde(default)]
 pub struct ReleaseManifest {
     latest: Option<ReleaseInfo>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     versions: Vec<ReleaseInfo>,
 }
 
