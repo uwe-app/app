@@ -1,7 +1,9 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use log::info;
+use std::path::PathBuf;
+
+use log::{info, warn};
 use semver::Version;
 use structopt::StructOpt;
 use url::Url;
@@ -11,8 +13,10 @@ use rusoto_core::Region;
 use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
-    BucketSettings, CertSettings, DistributionSettings, DnsRecord, DnsSettings,
-    RecordType, ViewerProtocolPolicy, ZoneSettings,
+    load_host_file,
+    ensure_domain, list_name_servers, BucketSettings, CertSettings,
+    DistributionSettings, DnsRecord, DnsSettings, RecordType,
+    ViewerProtocolPolicy, WebHostRequest, ZoneSettings,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -257,7 +261,33 @@ enum Cdn {
 }
 
 #[derive(StructOpt, Debug)]
+enum Ensure {
+    /// Ensure a domamin name has it's name
+    /// servers configured correctly.
+    Domain {
+        /// The domain name to check.
+        domain_name: String,
+    },
+    /// Ensure all resoures are configured
+    /// for a website.
+    Website {
+        #[structopt(flatten)]
+        common: Common,
+        /// The website host file (TOML).
+        #[structopt(parse(from_os_str))]
+        host_file: PathBuf,
+    },
+}
+
+#[derive(StructOpt, Debug)]
 enum Command {
+    /// Ensure domamin and website resources
+    #[structopt(alias = "up")]
+    Ensure {
+        #[structopt(subcommand)]
+        cmd: Ensure,
+    },
+
     /// Static website hosts (S3)
     #[structopt(alias = "bucket")]
     Host {
@@ -286,6 +316,48 @@ enum Command {
 
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
+        Command::Ensure { cmd } => match cmd {
+            Ensure::Domain { domain_name } => {
+                let req = WebHostRequest::new_domain(domain_name);
+                match ensure_domain(&req).await {
+                    Ok(_) => {
+                        info!("Name servers ok ✓");
+                    }
+                    Err(e) => {
+                        for ns in list_name_servers() {
+                            warn!("Expecting NS record {}", ns);
+                        }
+                        return Err(Error::from(e));
+                    }
+                }
+            }
+            Ensure::Website { common, host_file} => {
+
+                if !host_file.exists() {
+                    return Err(Error::NotFile(host_file))
+                }
+
+                let mut req = load_host_file(&host_file)?;
+                req.set_credentials(common.credentials);
+
+                println!("Request {:?}", req);
+
+                /*
+                let req = WebHostRequest::new_domain(domain_name);
+                match ensure_domain(&req).await {
+                    Ok(_) => {
+                        info!("Name servers ok ✓");
+                    }
+                    Err(e) => {
+                        for ns in list_name_servers() {
+                            warn!("Expecting NS record {}", ns);
+                        }
+                        return Err(Error::from(e));
+                    }
+                }
+                */
+            }
+        },
         Command::Host { cmd } => match cmd {
             Host::Up {
                 common,

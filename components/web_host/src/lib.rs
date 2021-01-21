@@ -2,6 +2,7 @@ mod acm;
 mod cloudfront;
 mod dns_client;
 mod error;
+mod name_servers;
 mod region_info;
 mod route53;
 mod s3;
@@ -15,9 +16,13 @@ pub use cloudfront::{
     ViewerProtocolPolicy,
 };
 pub use error::Error;
+pub use name_servers::list as list_name_servers;
 pub use route53::{
     new_client as new_route53_client, DnsRecord, DnsSettings, RecordType,
     ZoneSettings,
 };
 pub use s3::{new_client as new_s3_client, BucketSettings};
-pub use state_machine::WebHost;
+pub use state_machine::{
+    ensure_domain, ensure_website, load_host_file, WebHostRequest,
+    WebHostResponse,
+};

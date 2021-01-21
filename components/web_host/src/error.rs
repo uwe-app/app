@@ -28,6 +28,9 @@ pub enum Error {
     #[error("Certificate validation failed for {0}")]
     CertificateValidationFailed(String),
 
+    #[error("Name servers have not propagated yet; ensure they have been set and try again later")]
+    NameServerPropagation,
+
     #[error(transparent)]
     Tls(#[from] rusoto_core::request::TlsError),
 
@@ -110,14 +113,10 @@ pub enum Error {
     ),
 
     #[error(transparent)]
-    Proto(
-        #[from] trust_dns_client::proto::error::ProtoError,
-    ),
+    Proto(#[from] trust_dns_client::proto::error::ProtoError),
 
     #[error(transparent)]
-    DnsClient(
-        #[from] trust_dns_client::error::ClientError,
-    ),
+    DnsClient(#[from] trust_dns_client::error::ClientError),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

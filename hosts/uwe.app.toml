@@ -1,0 +1,5 @@
+domain-name = "uwe.app"
+bucket-name = "uwe.app"
+region = ["ap-southeast-1"]
+redirect-bucket-name = "www.uwe.app"
+subject-alternative-names = ["*.uwe.app"]
