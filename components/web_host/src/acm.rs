@@ -6,8 +6,12 @@ use std::{
 
 use log::{debug, info};
 
+use trust_dns_client::rr::domain::Name;
+
 use rusoto_acm::{
-    Acm, AcmClient, DescribeCertificateRequest, DescribeCertificateResponse,
+    Acm, AcmClient, CertificateDetail, CertificateSummary,
+    DescribeCertificateRequest, DescribeCertificateResponse,
+    ListCertificatesRequest, ListCertificatesResponse,
     RequestCertificateRequest, RequestCertificateResponse,
 };
 use rusoto_core::{credential, request::HttpClient, Region};
@@ -16,6 +20,8 @@ use rusoto_route53::Route53Client;
 use super::route53::{DnsRecord, DnsSettings};
 
 use crate::{Error, Result};
+
+static MAX_ITEMS: i64 = 100;
 
 // NOTE: Using certificates with cloudfront requires the region is US East (N Virginia).
 // SEE: https://docs.aws.amazon.com/acm/latest/userguide/acm-regions.html
@@ -55,6 +61,12 @@ impl FromStr for CertificateValidationStatus {
 }
 
 #[derive(Debug)]
+pub enum CertUpsert {
+    Create(String),
+    Exists(CertificateDetail),
+}
+
+#[derive(Debug)]
 pub struct CertSettings {
     validation_method: Option<String>,
     idempotency_token: Option<String>,
@@ -68,20 +80,191 @@ impl CertSettings {
         }
     }
 
-    /// Request a certificate and automatically add the domain validation requirements
-    /// as DNS records to a hosted zone.
-    pub async fn request_hosted_certificate(
+    /// Request a certificate if a cartificate does not already exists
+    /// that matches the given domain name and alternaitve names.
+    pub async fn upsert(
         &self,
         client: &AcmClient,
         dns_client: &Route53Client,
         domain_name: String,
         subject_alternative_names: Option<Vec<String>>,
         zone_id: String,
+        monitor: bool,
+        timeout: u64,
+    ) -> Result<CertUpsert> {
+        let (ascii_name, alternative_names) =
+            self.to_idna_punycode(domain_name, subject_alternative_names)?;
+
+        // NOTE: When a certificate is described the subject alternative names
+        // NOTE: already includes the primary domain name.
+        let mut target_names = vec![ascii_name.clone()];
+        if let Some(ref alternative_names) = alternative_names {
+            target_names.extend(alternative_names.clone());
+        }
+        target_names.sort();
+
+        let certs = self.list_all(client).await?;
+        // NOTE: Must describe each certificate to get the subject_alternative_names
+        for summary in certs {
+            if let Some(certificate_arn) = summary.certificate_arn {
+                let res =
+                    self.describe_certificate(client, certificate_arn).await?;
+                if let Some(mut certificate) = res.certificate {
+                    if let Some(ref mut subject_names) =
+                        certificate.subject_alternative_names
+                    {
+                        subject_names.sort();
+                        if &mut target_names == subject_names {
+                            return Ok(CertUpsert::Exists(certificate));
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(CertUpsert::Create(
+            self.request_hosted_certificate(
+                client,
+                dns_client,
+                ascii_name,
+                alternative_names,
+                zone_id,
+                monitor,
+                timeout,
+            )
+            .await?,
+        ))
+    }
+
+    /// List all certificates.
+    pub async fn list_all(
+        &self,
+        client: &AcmClient,
+    ) -> Result<Vec<CertificateSummary>> {
+        let mut out = Vec::new();
+        let mut next_token: Option<String> = None;
+        loop {
+            let mut result = self.list(client, next_token.clone()).await?;
+            if let Some(certificate_summary_list) =
+                result.certificate_summary_list.take()
+            {
+                out.extend(certificate_summary_list);
+            }
+            if let Some(token) = result.next_token {
+                next_token = Some(token);
+            } else {
+                break;
+            }
+        }
+        Ok(out)
+    }
+
+    /// List certificates until `MAX_ITEMS` is reached.
+    pub async fn list(
+        &self,
+        client: &AcmClient,
+        next_token: Option<String>,
+    ) -> Result<ListCertificatesResponse> {
+        let req = ListCertificatesRequest {
+            next_token,
+            max_items: Some(MAX_ITEMS),
+            ..Default::default()
+        };
+        let res = client.list_certificates(req).await?;
+        Ok(res)
+    }
+
+    /// Request a certificate and automatically add the domain validation requirements
+    /// as DNS records to a hosted zone.
+    ///
+    /// The domain name and subject alternative names are converted from UTF8 to ASCII
+    /// punycode.
+    pub async fn create(
+        &self,
+        client: &AcmClient,
+        dns_client: &Route53Client,
+        domain_name: String,
+        subject_alternative_names: Option<Vec<String>>,
+        zone_id: String,
+        monitor: bool,
+        timeout: u64,
     ) -> Result<String> {
-        debug!("Request certificate...");
+        let (ascii_name, alternative_names) =
+            self.to_idna_punycode(domain_name, subject_alternative_names)?;
+        info!("Request certificate for {}", &ascii_name);
+
+        self.request_hosted_certificate(
+            client,
+            dns_client,
+            ascii_name,
+            alternative_names,
+            zone_id,
+            monitor,
+            timeout,
+        )
+        .await
+
+    }
+
+    fn to_idna_punycode(
+        &self,
+        domain_name: String,
+        subject_alternative_names: Option<Vec<String>>,
+    ) -> Result<(String, Option<Vec<String>>)> {
+        let idna_name = Name::from_utf8(&domain_name)?;
+        let ascii_name = idna_name.to_ascii();
+        let alternative_names = if let Some(subject_alternative_names) =
+            subject_alternative_names
+        {
+            let mut out = Vec::new();
+            for name in subject_alternative_names {
+                out.push(Name::from_utf8(&name)?.to_ascii());
+            }
+            Some(out)
+        } else {
+            None
+        };
+
+        Ok((ascii_name, alternative_names))
+    }
+
+    /// Request a hosted certificate.
+    ///
+    /// Names must already have been converted to IDNA format.
+    async fn request_hosted_certificate(
+        &self,
+        client: &AcmClient,
+        dns_client: &Route53Client,
+        domain_name: String,
+        subject_alternative_names: Option<Vec<String>>,
+        zone_id: String,
+        monitor: bool,
+        timeout: u64,
+    ) -> Result<String> {
+        let idna_name = Name::from_utf8(&domain_name)?;
+        let ascii_name = idna_name.to_ascii();
+
+        info!(
+            "Request certificate for {} (IDNA: {})",
+            &domain_name, &ascii_name
+        );
+
+        let alternative_names = if let Some(subject_alternative_names) =
+            subject_alternative_names
+        {
+            let mut out = Vec::new();
+            for name in subject_alternative_names {
+                out.push(Name::from_utf8(&name)?.to_ascii());
+            }
+            Some(out)
+        } else {
+            None
+        };
+
         let res = self
-            .request_certificate(client, domain_name, subject_alternative_names)
+            .request_certificate(client, ascii_name, alternative_names)
             .await?;
+
         let certificate_arn =
             res.certificate_arn.ok_or_else(|| Error::NoCertificateArn)?;
 
@@ -98,6 +281,12 @@ impl CertSettings {
             30,
         )
         .await?;
+
+        if monitor {
+            let _ = self
+                .monitor_certificate(&client, certificate_arn.clone(), timeout)
+                .await?;
+        }
 
         Ok(certificate_arn)
     }

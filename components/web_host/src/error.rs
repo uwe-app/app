@@ -118,6 +118,11 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    ListCertificates(
+        #[from] rusoto_core::RusotoError<rusoto_acm::ListCertificatesError>,
+    ),
+
+    #[error(transparent)]
     Proto(#[from] trust_dns_client::proto::error::ProtoError),
 
     #[error(transparent)]

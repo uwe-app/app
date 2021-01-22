@@ -12,14 +12,12 @@ use rusoto_core::Region;
 
 use uwe::{self, opts::fatal, Error, Result};
 
-
 use web_host::{
-    load_host_file,
-    trim_hosted_zone_id,
-    ensure_domain, ensure_website, list_name_servers, BucketSettings, CertSettings,
-    DistributionSettings, DnsRecord, DnsSettings, RecordType,
-    ViewerProtocolPolicy, WebHostRequest, ZoneSettings, HostedZoneUpsert,
-    rusoto_route53::CreateHostedZoneResponse,
+    ensure_domain, ensure_website, list_name_servers, load_host_file,
+    rusoto_route53::CreateHostedZoneResponse, trim_hosted_zone_id,
+    BucketSettings, CertSettings, CertUpsert, DistributionSettings, DnsRecord, DnsSettings,
+    HostedZoneUpsert, RecordType, ViewerProtocolPolicy, WebHostRequest,
+    ZoneSettings,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -197,30 +195,45 @@ enum Dns {
 }
 
 #[derive(StructOpt, Debug)]
+struct CertOptions {
+    /// Hosted zone id for DNS validation
+    #[structopt(short, long)]
+    zone_id: String,
+
+    /// Timeout in seconds
+    #[structopt(short, long, default_value = "300")]
+    timeout: u64,
+
+    /// Monitor certificate status
+    #[structopt(short, long)]
+    monitor: bool,
+
+    /// Alternative name(s) for the certificate (eg: *.example.com)
+    #[structopt(short, long)]
+    alternative_name: Option<Vec<String>>,
+
+    /// Domain name for the certificate (eg: example.com)
+    domain_name: String,
+}
+
+#[derive(StructOpt, Debug)]
 enum Cert {
     /// Issue a certificate
     Issue {
-        /// Hosted zone id for DNS validation
-        #[structopt(short, long)]
-        zone_id: String,
-
-        /// Timeout in seconds
-        #[structopt(short, long, default_value = "300")]
-        timeout: u64,
-
-        /// Monitor certificate status
-        #[structopt(short, long)]
-        monitor: bool,
-
         #[structopt(flatten)]
         common: Common,
 
-        /// Alternative name(s) for the certificate (eg: *.example.com)
-        #[structopt(short, long)]
-        alternative_name: Vec<String>,
+        #[structopt(flatten)]
+        options: CertOptions,
+    },
 
-        /// Domain name for the certificate (eg: example.com)
-        domain_name: String,
+    /// Create a certificate if it does not exist
+    Upsert {
+        #[structopt(flatten)]
+        common: Common,
+
+        #[structopt(flatten)]
+        options: CertOptions,
     },
 
     /// Describe a certificate
@@ -350,10 +363,9 @@ async fn run(cmd: Command) -> Result<()> {
                     }
                 }
             }
-            Ensure::Website { common, host_file} => {
-
+            Ensure::Website { common, host_file } => {
                 if !host_file.exists() {
-                    return Err(Error::NotFile(host_file))
+                    return Err(Error::NotFile(host_file));
                 }
 
                 let mut req = load_host_file(&host_file)?;
@@ -410,38 +422,84 @@ async fn run(cmd: Command) -> Result<()> {
             }
         },
         Command::Cert { cmd } => match cmd {
-            Cert::Issue {
+            Cert::Upsert {
+                common,
+                options
+                /*
                 domain_name,
                 zone_id,
                 common,
                 alternative_name,
                 monitor,
                 timeout,
+                */
             } => {
-                let alternative_name = if alternative_name.is_empty() {
+                /*
+                let alternative_name = if options.alternative_name.is_empty() {
                     None
                 } else {
                     Some(alternative_name)
                 };
+                */
+                let client = web_host::new_acm_client(&common.credentials)?;
+                let dns_client =
+                    web_host::new_route53_client(&common.credentials)?;
+                let cert = CertSettings::new();
+                match cert
+                    .upsert(
+                        &client,
+                        &dns_client,
+                        options.domain_name,
+                        options.alternative_name,
+                        options.zone_id,
+                        options.monitor,
+                        options.timeout,
+                    )
+                    .await? {
+                    CertUpsert::Create(arn) => {
+                        info!("Created certificate {} ✓", arn);
+                    }
+                    CertUpsert::Exists(detail) => {
+                        info!("Certificate exists {} ✓", detail.certificate_arn.unwrap());
+                    }
+                }
+
+            }
+
+            Cert::Issue {
+                common,
+                options
+                    /*
+                domain_name,
+                zone_id,
+                common,
+                alternative_name,
+                monitor,
+                timeout,
+                    */
+            } => {
+                /*
+                let alternative_name = if options.alternative_name.is_empty() {
+                    None
+                } else {
+                    Some(alternative_name)
+                };
+                */
                 let client = web_host::new_acm_client(&common.credentials)?;
                 let dns_client =
                     web_host::new_route53_client(&common.credentials)?;
                 let cert = CertSettings::new();
                 let arn = cert
-                    .request_hosted_certificate(
+                    .create(
                         &client,
                         &dns_client,
-                        domain_name,
-                        alternative_name,
-                        zone_id,
+                        options.domain_name,
+                        options.alternative_name,
+                        options.zone_id,
+                        options.monitor,
+                        options.timeout,
                     )
                     .await?;
-
-                if monitor {
-                    let _ = cert
-                        .monitor_certificate(&client, arn.clone(), timeout)
-                        .await?;
-                }
 
                 info!("Created certificate {} ✓", arn);
             }
@@ -525,7 +583,11 @@ async fn run(cmd: Command) -> Result<()> {
                             log_zone_create(res);
                         }
                         HostedZoneUpsert::Exists(res) => {
-                            info!("Zone exists {} {} ", res.name, trim_hosted_zone_id(&res.id));
+                            info!(
+                                "Zone exists {} {} ",
+                                res.name,
+                                trim_hosted_zone_id(&res.id)
+                            );
                         }
                     }
                 }

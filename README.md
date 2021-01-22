@@ -76,14 +76,28 @@ You should replace `<credentials>` with the identifier of the AWS credentials an
 
 The credentials should have full access to ACM, S3, Cloudfront and Route53. The output of these commands will include identifiers for the created resources that you can take note of or find them later in the AWS console.
 
-### Create a Hosted Zone
+## Name Servers
+
+To verify the name servers for a domain have been configured and propagated run:
+
+```
+web-host ensure domain uwe.app
+```
+
+Or for an IDNA domain:
+
+```
+web-host ensure domain exämple.com
+```
+
+### Create or update a Hosted Zone
 
 Create a hosted zone so that we can manage the DNS for the domain name:
 
 ```
 web-host dns zone \
   --credentials=<credentials> \
-  create \
+  upsert \
   example.com
 ```
 

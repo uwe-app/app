@@ -3,20 +3,15 @@ use std::fs;
 use std::path::Path;
 
 use async_trait::async_trait;
-use rusoto_core::Region;
 use log::debug;
+use rusoto_core::Region;
 
 use crate::{
-    new_route53_client,
-    name_servers,
-    trim_hosted_zone_id,
-    ZoneSettings,
-    HostedZoneUpsert,
-    Error,
-    Result,
+    name_servers, new_acm_client, new_route53_client, trim_hosted_zone_id,
+    Error, HostedZoneUpsert, Result, ZoneSettings,
 };
 
-/// Asynchronous fallible transition from a state 
+/// Asynchronous fallible transition from a state
 /// to the next state.
 #[async_trait]
 pub trait Transition {
@@ -41,14 +36,14 @@ pub enum State {
     RedirectCname,
 }
 
-/// State machine iterates available states and yields a 
-/// transition for each state. 
+/// State machine iterates available states and yields a
+/// transition for each state.
 ///
-/// Iterators should invoke the `next()` function on the yielded 
-/// transition to get the next state and then call `advance()` on 
+/// Iterators should invoke the `next()` function on the yielded
+/// transition to get the next state and then call `advance()` on
 /// the state machine to jump to the next state.
 ///
-/// The next state must exist in the list of iterable states 
+/// The next state must exist in the list of iterable states
 /// otherwise iteration is halted.
 #[derive(Debug)]
 pub struct StateMachine<'a> {
@@ -148,7 +143,7 @@ impl WebHostRequest {
     }
 
     pub fn set_credentials(&mut self, credentials: String) {
-        self.credentials = credentials; 
+        self.credentials = credentials;
     }
 }
 
@@ -212,7 +207,10 @@ impl Transition for HostedZoneTransition {
     ) -> Result<Option<State>> {
         let client = new_route53_client(&request.credentials)?;
         let zone = ZoneSettings::new();
-        match zone.upsert(&client, request.domain_name.to_string()).await? {
+        match zone
+            .upsert(&client, request.domain_name.to_string())
+            .await?
+        {
             HostedZoneUpsert::Create(res) => {
                 response.zone_id = trim_hosted_zone_id(&res.hosted_zone.id);
             }
@@ -226,16 +224,12 @@ impl Transition for HostedZoneTransition {
 }
 
 /// Ensure name servers are configured.
-pub async fn ensure_domain(
-    req: &WebHostRequest,
-) -> Result<WebHostResponse> {
+pub async fn ensure_domain(req: &WebHostRequest) -> Result<WebHostResponse> {
     Ok(run(req, &[State::NameServer]).await?)
 }
 
 /// Ensure all resources for a web host.
-pub async fn ensure_website(
-    req: &WebHostRequest,
-) -> Result<WebHostResponse> {
+pub async fn ensure_website(req: &WebHostRequest) -> Result<WebHostResponse> {
     Ok(run(
         req,
         &[
@@ -254,9 +248,7 @@ pub async fn ensure_website(
 }
 
 /// Load the request from a source TOML file.
-pub fn load_host_file<P: AsRef<Path>>(
-    input: P,
-) -> Result<WebHostRequest> {
+pub fn load_host_file<P: AsRef<Path>>(input: P) -> Result<WebHostRequest> {
     let input = input.as_ref().to_path_buf();
     let contents = fs::read_to_string(&input)?;
     let request: WebHostRequest = toml::from_str(&contents)?;

@@ -6,12 +6,13 @@ use rusoto_route53::{
     AliasTarget, Change, ChangeBatch, ChangeResourceRecordSetsRequest,
     ChangeResourceRecordSetsResponse as Response, CreateHostedZoneRequest,
     CreateHostedZoneResponse, DeleteHostedZoneRequest,
-    DeleteHostedZoneResponse, ResourceRecord, ResourceRecordSet, Route53,
-    Route53Client, HostedZone, ListHostedZonesRequest, ListHostedZonesResponse,
+    DeleteHostedZoneResponse, HostedZone, ListHostedZonesRequest,
+    ListHostedZonesResponse, ResourceRecord, ResourceRecordSet, Route53,
+    Route53Client,
 };
 use trust_dns_client::rr::domain::Name;
 
-use crate::{Error, Result};
+use crate::{list_name_servers, Error, Result};
 
 static MAX_ITEMS: usize = 100;
 static DELEGATION_SET_ID: &str = "N02886841KKW7QD2MZLTC";
@@ -123,8 +124,8 @@ impl Into<ResourceRecordSet> for DnsRecord {
                 if value.contains("\n") {
                     let records: Vec<ResourceRecord> = value
                         .split("\n")
-                        .map(|value| {
-                            ResourceRecord { value: value.to_string() }
+                        .map(|value| ResourceRecord {
+                            value: value.to_string(),
                         })
                         .collect();
                     (None, Some(records))
@@ -195,7 +196,8 @@ impl ZoneSettings {
             ..Default::default()
         };
         let res = client.create_hosted_zone(req).await?;
-        self.assign_name_servers(client, &res.hosted_zone.id, &ascii_name).await?;
+        self.assign_name_servers(client, &res.hosted_zone.id, &ascii_name)
+            .await?;
         Ok(res)
     }
 
@@ -203,12 +205,13 @@ impl ZoneSettings {
         &self,
         client: &Route53Client,
         zone_id: &str,
-        idna_name: &str) -> Result<()> {
+        idna_name: &str,
+    ) -> Result<()> {
         let dns = DnsSettings::new(zone_id.to_string());
 
-        let ns_value = crate::list_name_servers().join("\n");
+        let ns_value = list_name_servers().join("\n");
 
-        // SOA and NS records for the new hosted zone 
+        // SOA and NS records for the new hosted zone
         // should use out name servers
         let records = vec![
             DnsRecord {
@@ -226,7 +229,7 @@ impl ZoneSettings {
                 ttl: Some(172800),
             },
         ];
-            
+
         dns.upsert(client, records).await?;
         Ok(())
     }
@@ -254,11 +257,10 @@ impl ZoneSettings {
         let qualified_name = name_servers::qualified(&ascii_name);
 
         let zones = self.list_all(client).await?;
-        let existing_zone = zones.iter().find(|z| {
-            &z.name == &qualified_name 
-        });
+        let existing_zone = zones.iter().find(|z| &z.name == &qualified_name);
         if let Some(hosted_zone) = existing_zone {
-            self.assign_name_servers(client, &hosted_zone.id, &ascii_name).await?;
+            self.assign_name_servers(client, &hosted_zone.id, &ascii_name)
+                .await?;
             Ok(HostedZoneUpsert::Exists(hosted_zone.clone()))
         } else {
             Ok(HostedZoneUpsert::Create(self.create(client, name).await?))
@@ -273,8 +275,7 @@ impl ZoneSettings {
         let mut out = Vec::new();
         let mut marker: Option<String> = None;
         loop {
-            let result =
-                self.list(client, marker.clone()).await?;
+            let result = self.list(client, marker.clone()).await?;
             out.extend(result.hosted_zones);
             if !result.is_truncated {
                 break;
