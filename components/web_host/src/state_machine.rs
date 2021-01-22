@@ -6,7 +6,15 @@ use async_trait::async_trait;
 use rusoto_core::Region;
 use log::debug;
 
-use crate::{name_servers, Error, Result};
+use crate::{
+    new_route53_client,
+    name_servers,
+    trim_hosted_zone_id,
+    ZoneSettings,
+    HostedZoneUpsert,
+    Error,
+    Result,
+};
 
 /// Asynchronous fallible transition from a state 
 /// to the next state.
@@ -202,8 +210,18 @@ impl Transition for HostedZoneTransition {
         request: &WebHostRequest,
         response: &mut WebHostResponse,
     ) -> Result<Option<State>> {
-        println!("Hosted zone transition running...");
-        Ok(None)
+        let client = new_route53_client(&request.credentials)?;
+        let zone = ZoneSettings::new();
+        match zone.upsert(&client, request.domain_name.to_string()).await? {
+            HostedZoneUpsert::Create(res) => {
+                response.zone_id = trim_hosted_zone_id(&res.hosted_zone.id);
+            }
+            HostedZoneUpsert::Exists(res) => {
+                response.zone_id = trim_hosted_zone_id(&res.id);
+            }
+        }
+
+        Ok(Some(State::Certificate))
     }
 }
 

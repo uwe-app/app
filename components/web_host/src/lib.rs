@@ -28,3 +28,8 @@ pub use state_machine::{
 };
 
 pub use rusoto_route53;
+
+pub fn trim_hosted_zone_id(id: &str) -> String {
+    id.trim_start_matches("/hostedzone/").to_string()
+}
+

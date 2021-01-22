@@ -15,6 +15,7 @@ use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
     load_host_file,
+    trim_hosted_zone_id,
     ensure_domain, ensure_website, list_name_servers, BucketSettings, CertSettings,
     DistributionSettings, DnsRecord, DnsSettings, RecordType,
     ViewerProtocolPolicy, WebHostRequest, ZoneSettings, HostedZoneUpsert,
@@ -35,10 +36,6 @@ fn parse_policy(src: &str) -> std::result::Result<ViewerProtocolPolicy, Error> {
 
 fn parse_record_type(src: &str) -> std::result::Result<RecordType, Error> {
     src.parse::<RecordType>().map_err(Error::from)
-}
-
-fn trim_hosted_zone_id(id: &str) -> String {
-    id.trim_start_matches("/hostedzone/").to_string()
 }
 
 fn log_zone_create(res: CreateHostedZoneResponse) {
