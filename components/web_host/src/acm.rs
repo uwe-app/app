@@ -142,6 +142,7 @@ impl CertSettings {
                                 value: resource_record.value.clone(),
                                 kind: resource_record.type_.parse()?,
                                 alias: None,
+                                ttl: Some(300),
                             }];
 
                             dns.create(dns_client, records).await?;

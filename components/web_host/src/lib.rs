@@ -19,10 +19,12 @@ pub use error::Error;
 pub use name_servers::list as list_name_servers;
 pub use route53::{
     new_client as new_route53_client, DnsRecord, DnsSettings, RecordType,
-    ZoneSettings,
+    ZoneSettings, HostedZoneUpsert,
 };
 pub use s3::{new_client as new_s3_client, BucketSettings};
 pub use state_machine::{
     ensure_domain, ensure_website, load_host_file, WebHostRequest,
     WebHostResponse,
 };
+
+pub use rusoto_route53;

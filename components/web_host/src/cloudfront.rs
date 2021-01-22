@@ -274,7 +274,6 @@ impl DistributionSettings {
                 if !is_truncated {
                     break;
                 } else {
-                    println!("Setting new marker {:?}", &list.next_marker);
                     marker = list.next_marker.clone();
                 }
             }

@@ -12,11 +12,13 @@ use rusoto_core::Region;
 
 use uwe::{self, opts::fatal, Error, Result};
 
+
 use web_host::{
     load_host_file,
-    ensure_domain, list_name_servers, BucketSettings, CertSettings,
+    ensure_domain, ensure_website, list_name_servers, BucketSettings, CertSettings,
     DistributionSettings, DnsRecord, DnsSettings, RecordType,
-    ViewerProtocolPolicy, WebHostRequest, ZoneSettings,
+    ViewerProtocolPolicy, WebHostRequest, ZoneSettings, HostedZoneUpsert,
+    rusoto_route53::CreateHostedZoneResponse,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -33,6 +35,20 @@ fn parse_policy(src: &str) -> std::result::Result<ViewerProtocolPolicy, Error> {
 
 fn parse_record_type(src: &str) -> std::result::Result<RecordType, Error> {
     src.parse::<RecordType>().map_err(Error::from)
+}
+
+fn trim_hosted_zone_id(id: &str) -> String {
+    id.trim_start_matches("/hostedzone/").to_string()
+}
+
+fn log_zone_create(res: CreateHostedZoneResponse) {
+    let id = trim_hosted_zone_id(&res.hosted_zone.id);
+    /*
+    for ns in res.delegation_set.name_servers.iter() {
+        info!("Name server: {}", ns);
+    }
+    */
+    info!("Created zone {} ({}) ✓", id, &res.hosted_zone.name);
 }
 
 /// Universal (web editor) plugin manager
@@ -56,7 +72,7 @@ struct Common {
 
 #[derive(StructOpt, Debug)]
 enum Host {
-    /// Ensure a bucket is available
+    /// Make a bucket available
     Up {
         /// Suffix for folder requests
         #[structopt(short, long, default_value = "index.html")]
@@ -115,6 +131,7 @@ impl Into<Vec<DnsRecord>> for RecordInfo {
                 name: self.name,
                 value: self.value,
                 alias: None,
+                ttl: Some(300),
             }]
         }
     }
@@ -143,13 +160,18 @@ enum ZoneRecord {
 enum DnsZone {
     /// Create a hosted zone
     Create {
-        /// The domain name for the new zone
+        /// The domain name for the zone
         domain_name: String,
     },
     /// Delete a hosted zone
     Delete {
         /// The identifier for the zone
         id: String,
+    },
+    /// Create a hosted zone if it does not exist
+    Upsert {
+        /// The domain name for the zone
+        domain_name: String,
     },
 }
 
@@ -341,21 +363,7 @@ async fn run(cmd: Command) -> Result<()> {
                 req.set_credentials(common.credentials);
 
                 println!("Request {:?}", req);
-
-                /*
-                let req = WebHostRequest::new_domain(domain_name);
-                match ensure_domain(&req).await {
-                    Ok(_) => {
-                        info!("Name servers ok ✓");
-                    }
-                    Err(e) => {
-                        for ns in list_name_servers() {
-                            warn!("Expecting NS record {}", ns);
-                        }
-                        return Err(Error::from(e));
-                    }
-                }
-                */
+                ensure_website(&req).await?;
             }
         },
         Command::Host { cmd } => match cmd {
@@ -511,17 +519,25 @@ async fn run(cmd: Command) -> Result<()> {
                 }
             },
             Dns::Zone { common, cmd } => match cmd {
+                DnsZone::Upsert { domain_name } => {
+                    let client =
+                        web_host::new_route53_client(&common.credentials)?;
+                    let zone = ZoneSettings::new();
+                    match zone.upsert(&client, domain_name).await? {
+                        HostedZoneUpsert::Create(res) => {
+                            log_zone_create(res);
+                        }
+                        HostedZoneUpsert::Exists(res) => {
+                            info!("Zone exists {} {} ", res.name, trim_hosted_zone_id(&res.id));
+                        }
+                    }
+                }
                 DnsZone::Create { domain_name } => {
                     let client =
                         web_host::new_route53_client(&common.credentials)?;
                     let zone = ZoneSettings::new();
                     let res = zone.create(&client, domain_name).await?;
-                    let id =
-                        res.hosted_zone.id.trim_start_matches("/hostedzone/");
-                    for ns in res.delegation_set.name_servers.iter() {
-                        info!("Name server: {}", ns);
-                    }
-                    info!("Created zone {} ({}) ✓", id, &res.hosted_zone.name);
+                    log_zone_create(res);
                 }
                 DnsZone::Delete { id } => {
                     let client =

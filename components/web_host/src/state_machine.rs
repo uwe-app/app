@@ -4,8 +4,106 @@ use std::path::Path;
 
 use async_trait::async_trait;
 use rusoto_core::Region;
+use log::debug;
 
 use crate::{name_servers, Error, Result};
+
+/// Asynchronous fallible transition from a state 
+/// to the next state.
+#[async_trait]
+pub trait Transition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>>;
+}
+
+/// Enumeration of available states.
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum State {
+    NameServer,
+    HostedZone,
+    Certificate,
+    Bucket,
+    RedirectBucket,
+    Cdn,
+    Dns4,
+    Dns6,
+    RedirectCname,
+}
+
+/// State machine iterates available states and yields a 
+/// transition for each state. 
+///
+/// Iterators should invoke the `next()` function on the yielded 
+/// transition to get the next state and then call `advance()` on 
+/// the state machine to jump to the next state.
+///
+/// The next state must exist in the list of iterable states 
+/// otherwise iteration is halted.
+#[derive(Debug)]
+pub struct StateMachine<'a> {
+    states: &'a [State],
+    index: usize,
+}
+
+impl<'a> StateMachine<'a> {
+    pub fn new(states: &'a [State]) -> Self {
+        Self { states, index: 0 }
+    }
+
+    /// Advance the index to the next state
+    /// returned by a transition function.
+    fn advance(&mut self, state: State) {
+        let index = self.states.iter().position(|r| r == &state);
+        if let Some(index) = index {
+            self.index = index;
+        } else {
+            // Nowhere to go so prevent any more iteration.
+            self.stop();
+        }
+    }
+
+    /// Stop iteration by moving the state index out of bounds.
+    fn stop(&mut self) {
+        self.index = self.states.len()
+    }
+}
+
+/// Iterator yields a transition for a state.
+impl<'a> Iterator for StateMachine<'a> {
+    type Item = (State, Box<dyn Transition>);
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(state) = self.states.get(self.index) {
+            let item = match state {
+                State::NameServer => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(NameServerTransition {});
+                    Some((state.clone(), transition))
+                }
+                State::HostedZone => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(HostedZoneTransition {});
+                    Some((state.clone(), transition))
+                }
+
+                /*
+                State::Certificate => Some(State::Bucket),
+                State::Bucket => Some(State::RedirectBucket),
+                State::RedirectBucket => Some(State::Cdn),
+                State::Cdn => Some(State::Dns4),
+                State::Dns4 => Some(State::Dns6),
+                State::Dns6 => Some(State::RedirectCname),
+                */
+                _ => None,
+            };
+            item
+        } else {
+            None
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
@@ -75,65 +173,13 @@ pub struct WebHostResponse {
     pub cdn_domain_name: String,
 }
 
-#[async_trait]
-trait StateIterator {
-    type Item;
-    async fn next(&mut self) -> Result<Option<Self::Item>>;
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum State {
-    NameServer,
-    HostedZone,
-    Certificate,
-    Bucket,
-    RedirectBucket,
-    Cdn,
-    Dns4,
-    Dns6,
-    RedirectCname,
-}
-
-#[derive(Debug)]
-pub struct StateMachine<'a> {
-    states: &'a [State],
-    index: usize,
-}
-
-impl<'a> StateMachine<'a> {
-    pub fn new(states: &'a [State]) -> Self {
-        Self { states, index: 0 }
-    }
-
-    /// Advance the index to the next state
-    /// returned by a transition function.
-    fn advance(&mut self, state: State) {
-        let index = self.states.iter().position(|r| r == &state);
-        if let Some(index) = index {
-            self.index = index;
-        } else {
-            // Nowhere to go so prevent any more iteration.
-            self.index = self.states.len()
-        }
-    }
-}
-
-#[async_trait]
-pub trait Transition<'a> {
-    async fn to(
-        &self,
-        request: &'a WebHostRequest,
-        response: &mut WebHostResponse,
-    ) -> Result<Option<State>>;
-}
-
 struct NameServerTransition;
 
 #[async_trait]
-impl<'a> Transition<'a> for NameServerTransition {
-    async fn to(
+impl Transition for NameServerTransition {
+    async fn next(
         &self,
-        request: &'a WebHostRequest,
+        request: &WebHostRequest,
         response: &mut WebHostResponse,
     ) -> Result<Option<State>> {
         let dns_domain_name = name_servers::qualified(&request.domain_name);
@@ -147,32 +193,17 @@ impl<'a> Transition<'a> for NameServerTransition {
     }
 }
 
-/// Iterator yields a transition for a state.
-impl<'a> Iterator for StateMachine<'a> {
-    type Item = Box<dyn Transition<'a>>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(state) = self.states.get(self.index) {
-            let item = match state {
-                State::NameServer => {
-                    let transition: Box<dyn Transition<'a>> =
-                        Box::new(NameServerTransition {});
-                    Some(transition)
-                }
-                /*
-                State::HostedZone => Some(State::Certificate),
-                State::Certificate => Some(State::Bucket),
-                State::Bucket => Some(State::RedirectBucket),
-                State::RedirectBucket => Some(State::Cdn),
-                State::Cdn => Some(State::Dns4),
-                State::Dns4 => Some(State::Dns6),
-                State::Dns6 => Some(State::RedirectCname),
-                */
-                _ => None,
-            };
-            item
-        } else {
-            None
-        }
+struct HostedZoneTransition;
+
+#[async_trait]
+impl Transition for HostedZoneTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+        println!("Hosted zone transition running...");
+        Ok(None)
     }
 }
 
@@ -221,10 +252,14 @@ async fn run(
 ) -> Result<WebHostResponse> {
     let mut res: WebHostResponse = Default::default();
     let mut machine = StateMachine::new(states);
-    while let Some(transition) = machine.next() {
-        let next_state = transition.to(req, &mut res).await?;
+    while let Some((state, transition)) = machine.next() {
+        debug!("Current state {:?}", state);
+        let next_state = transition.next(req, &mut res).await?;
         if let Some(state) = next_state {
+            debug!("Advance state {:?}", state);
             machine.advance(state);
+        } else {
+            machine.stop();
         }
     }
     Ok(res)

@@ -1,5 +1,3 @@
-//use serde::{Deserialize, Serialize};
-//use serde_with::{serde_as, DisplayFromStr};
 use std::fmt;
 use std::str::FromStr;
 
@@ -9,10 +7,15 @@ use rusoto_route53::{
     ChangeResourceRecordSetsResponse as Response, CreateHostedZoneRequest,
     CreateHostedZoneResponse, DeleteHostedZoneRequest,
     DeleteHostedZoneResponse, ResourceRecord, ResourceRecordSet, Route53,
-    Route53Client,
+    Route53Client, HostedZone, ListHostedZonesRequest, ListHostedZonesResponse,
 };
+use trust_dns_client::rr::domain::Name;
 
 use crate::{Error, Result};
+
+static MAX_ITEMS: usize = 100;
+static DELEGATION_SET_ID: &str = "N02886841KKW7QD2MZLTC";
+static SOA: &str = "ns1.uwe.app. dev.uwe.app. 1 7200 900 1209600 86400";
 
 // Route53 must use the US East (N Virginia) region.
 pub fn new_client(profile: &str) -> Result<Route53Client> {
@@ -73,6 +76,8 @@ pub struct DnsRecord {
     pub kind: RecordType,
     /// A hosted zone id when an alias should be used.
     pub alias: Option<String>,
+    /// TTL for the record.
+    pub ttl: Option<i64>,
 }
 
 impl DnsRecord {
@@ -86,6 +91,7 @@ impl DnsRecord {
             name,
             value,
             kind,
+            ttl: Some(300),
         }
     }
 }
@@ -98,11 +104,7 @@ impl Into<ResourceRecordSet> for DnsRecord {
             self.value
         };
 
-        let ttl: Option<i64> = if let None = self.alias {
-            Some(300)
-        } else {
-            None
-        };
+        let ttl: Option<i64> = self.ttl.clone();
 
         let (alias_target, resource_records) =
             if let Some(hosted_zone_id) = self.alias {
@@ -115,7 +117,20 @@ impl Into<ResourceRecordSet> for DnsRecord {
                     None,
                 )
             } else {
-                (None, Some(vec![ResourceRecord { value }]))
+                // Records of type NS use a newline delimiter
+                // and should be expanded to multiple resource record
+                // values
+                if value.contains("\n") {
+                    let records: Vec<ResourceRecord> = value
+                        .split("\n")
+                        .map(|value| {
+                            ResourceRecord { value: value.to_string() }
+                        })
+                        .collect();
+                    (None, Some(records))
+                } else {
+                    (None, Some(vec![ResourceRecord { value }]))
+                }
             };
 
         ResourceRecordSet {
@@ -151,6 +166,12 @@ impl fmt::Display for ChangeAction {
 }
 
 #[derive(Debug)]
+pub enum HostedZoneUpsert {
+    Create(CreateHostedZoneResponse),
+    Exists(HostedZone),
+}
+
+#[derive(Debug)]
 pub struct ZoneSettings;
 
 impl ZoneSettings {
@@ -165,12 +186,49 @@ impl ZoneSettings {
         name: String,
     ) -> Result<CreateHostedZoneResponse> {
         let caller_reference = utils::generate_id(16);
+        let idna_name = Name::from_utf8(&name)?;
+        let ascii_name = idna_name.to_ascii();
         let req = CreateHostedZoneRequest {
             caller_reference,
-            name,
+            delegation_set_id: Some(DELEGATION_SET_ID.to_string()),
+            name: ascii_name.to_string(),
             ..Default::default()
         };
-        Ok(client.create_hosted_zone(req).await?)
+        let res = client.create_hosted_zone(req).await?;
+        self.assign_name_servers(client, &res.hosted_zone.id, &ascii_name).await?;
+        Ok(res)
+    }
+
+    async fn assign_name_servers(
+        &self,
+        client: &Route53Client,
+        zone_id: &str,
+        idna_name: &str) -> Result<()> {
+        let dns = DnsSettings::new(zone_id.to_string());
+
+        let ns_value = crate::list_name_servers().join("\n");
+
+        // SOA and NS records for the new hosted zone 
+        // should use out name servers
+        let records = vec![
+            DnsRecord {
+                kind: RecordType::SOA,
+                name: idna_name.to_string(),
+                value: SOA.to_string(),
+                alias: None,
+                ttl: Some(900),
+            },
+            DnsRecord {
+                kind: RecordType::NS,
+                name: idna_name.to_string(),
+                value: ns_value,
+                alias: None,
+                ttl: Some(172800),
+            },
+        ];
+            
+        dns.upsert(client, records).await?;
+        Ok(())
     }
 
     /// Delete a hosted zone.
@@ -181,6 +239,65 @@ impl ZoneSettings {
     ) -> Result<DeleteHostedZoneResponse> {
         let req = DeleteHostedZoneRequest { id };
         Ok(client.delete_hosted_zone(req).await?)
+    }
+
+    /// Create a new hosted zone if it does not exist.
+    pub async fn upsert(
+        &self,
+        client: &Route53Client,
+        name: String,
+    ) -> Result<HostedZoneUpsert> {
+        use crate::name_servers;
+
+        let idna_name = Name::from_utf8(&name)?;
+        let ascii_name = idna_name.to_ascii();
+        let qualified_name = name_servers::qualified(&ascii_name);
+
+        let zones = self.list_all(client).await?;
+        let existing_zone = zones.iter().find(|z| {
+            &z.name == &qualified_name 
+        });
+        if let Some(hosted_zone) = existing_zone {
+            self.assign_name_servers(client, &hosted_zone.id, &ascii_name).await?;
+            Ok(HostedZoneUpsert::Exists(hosted_zone.clone()))
+        } else {
+            Ok(HostedZoneUpsert::Create(self.create(client, name).await?))
+        }
+    }
+
+    /// List all hosted zones.
+    pub async fn list_all(
+        &self,
+        client: &Route53Client,
+    ) -> Result<Vec<HostedZone>> {
+        let mut out = Vec::new();
+        let mut marker: Option<String> = None;
+        loop {
+            let result =
+                self.list(client, marker.clone()).await?;
+            out.extend(result.hosted_zones);
+            if !result.is_truncated {
+                break;
+            } else {
+                marker = result.next_marker.clone();
+            }
+        }
+        Ok(out)
+    }
+
+    /// List hosted zones until `MAX_ITEMS` is reached.
+    pub async fn list(
+        &self,
+        client: &Route53Client,
+        marker: Option<String>,
+    ) -> Result<ListHostedZonesResponse> {
+        let req = ListHostedZonesRequest {
+            marker,
+            max_items: Some(MAX_ITEMS.to_string()),
+            ..Default::default()
+        };
+        let res = client.list_hosted_zones(req).await?;
+        Ok(res)
     }
 }
 

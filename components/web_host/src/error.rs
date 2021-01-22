@@ -103,6 +103,11 @@ pub enum Error {
     ),
 
     #[error(transparent)]
+    ListHostedZone(
+        #[from] rusoto_core::RusotoError<rusoto_route53::ListHostedZonesError>,
+    ),
+
+    #[error(transparent)]
     RequestCertificate(
         #[from] rusoto_core::RusotoError<rusoto_acm::RequestCertificateError>,
     ),
