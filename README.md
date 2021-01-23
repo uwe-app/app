@@ -33,7 +33,7 @@ Repositories must be siblings, for example:
 
 ## Name Servers
 
-To transfer a domain to our managed hosting service clients should update the name servers for the domain name with their registrar to these values:
+To transfer a domain to our managed hosting service customers should update the name servers for the domain name with their registrar to these values:
 
 ```
 ns1.uwe.app
@@ -44,80 +44,31 @@ ns4.uwe.app
 
 > Some registrars may require a fully qualified name using a trailing period, eg: `ns1.uwe.app.` others prefer it without the trailing period - it depends on the registrar.
 
-After the DNS changes for the domain have propagated follow the instructions in [Web Host](#web-host) to create all the resources to host the domain name.
-
-Creating a web host will:
-
-* Verify name servers have propagated
-* Create a hosted zone for the domain name
-* Create an SSL certificate for the domain name and all sub-domains
-* Create a bucket for the website files
-* Create a bucket for the `www` redirect
-* Create a CDN using the SSL certificate
-* Configure the DNS records for the CDN
-* Redirect all HTTP requests to HTTPS
-* Configure the DNS for the `www` redirect
-
----
-
-* Hosted Zone: `uwe.app`
-* Hosted Zone ID: `Z04911223AOWXLH2LXWQ8`
-* Delegation Set ID: `N02886841KKW7QD2MZLTC`
-
-To get the IP addresses for a name server run:
-
-```
-dig A ns-544.awsdns-04.net +short
-dig AAAA ns-544.awsdns-04.net +short
-```
-
-### ns1.uwe.app 
-
-* ns-544.awsdns-04.net
-* 205.251.194.32
-* 2600:9000:5302:2000::1
-
-### ns2.uwe.app 
-
-* ns-2016.awsdns-60.co.uk
-* 205.251.199.224
-* 2600:9000:5307:e000::1
-
-### ns3.uwe.app 
-
-* ns-507.awsdns-63.com
-* 205.251.193.251
-* 2600:9000:5301:fb00::1
-
-### ns4.uwe.app
-
-* ns-1518.awsdns-61.org
-* 205.251.197.238
-* 2600:9000:5305:ee00::1
-
-## Web Hosts
-
 Until the customer-facing service is deployed we can create all the resources necessary for hosting using the private `web-host` executable.
 
-You should replace `<credentials>` with the identifier of the AWS credentials and `<region>` with the target region, eg: `ap-southeast-1`. Replace all instances of `example.com` with the domain name that is being hosted.
+The credentials (`<credentials>`) used in the `web-host` command examples should have full access to ACM, S3, Cloudfront and Route53.
 
-The credentials should have full access to ACM, S3, Cloudfront and Route53.
-
-## Name Server Test
-
-To verify the name servers for a domain have been configured and propagated run:
+To verify the name servers for a domain name have been configured and propagated run:
 
 ```
-web-host ensure domain uwe.app
+web-host ensure domain <domain-name>
 ```
 
-Or for an IDNA domain:
+An example using an IDNA internationalized domain name:
 
 ```
 web-host ensure domain exämple.com
 ```
 
+After the name servers for the domain have propagated follow the instructions in [Web Host](#web-host) to create all the resources to host the domain name.
+
 ## Web Host
+
+Web hosts follow best practices for performance and security:
+
+* Use a global CDN for edge locations near to clients
+* Automatic compression for better response times
+* Always use HTTPS for more secure file transfers
 
 To setup all the resources for a host create a configuration file like this one (`uwe.app.toml`):
 
@@ -135,11 +86,25 @@ Then run the command:
 web-host ensure website uwe.app.toml --credentials=<credentials>
 ```
 
-For fine-grained control of resources see the next section.
+Creating a web host will:
 
-## Host Resources
+* Verify name servers have propagated
+* Create a hosted zone for the domain name
+* Create an SSL certificate for the domain name and all sub-domains
+* Create a bucket for the website files
+* Create a bucket for the `www` redirect
+* Create a CDN using the SSL certificate
+* Configure the DNS records for the CDN
+* Redirect all HTTP requests to HTTPS
+* Configure the DNS for the `www` redirect
 
-It is recommended to use the `ensure` command whenever possible but sometimes it may necessary to manage resources individually.
+For fine-grained control of [resources](#resources) see the next section.
+
+## Resources
+
+It is recommended to use the `ensure` command whenever possible but sometimes it may be necessary to manage resources individually.
+
+Replace `<credentials>` with the identifier of the AWS credentials and `<region>` with the target region, eg: `ap-southeast-1`. Replace all instances of `example.com` with the domain name that is being hosted.
 
 The output of these commands will include identifiers for the created resources that you can take note of or find them later in the AWS console.
 
@@ -153,8 +118,6 @@ web-host dns zone \
   upsert \
   example.com
 ```
-
-The output will include a list of name servers for the hosted zone and the owner of the domain needs to update their name servers with the domain registrar.
 
 Take note of the hosted zone identifier which will be used later to update the DNS records.
 
@@ -346,6 +309,43 @@ To cross-compile from Linux for MacOs the [osxcross][] library is required and y
 ## Preferences
 
 This component is currently in limbo but may be restored in the future.
+
+## Name Server Details
+
+* Hosted Zone: `uwe.app`
+* Hosted Zone ID: `Z04911223AOWXLH2LXWQ8`
+* Delegation Set ID: `N02886841KKW7QD2MZLTC`
+
+To get the IP addresses for a name server run:
+
+```
+dig A ns-544.awsdns-04.net +short
+dig AAAA ns-544.awsdns-04.net +short
+```
+
+### ns1.uwe.app 
+
+* ns-544.awsdns-04.net
+* 205.251.194.32
+* 2600:9000:5302:2000::1
+
+### ns2.uwe.app 
+
+* ns-2016.awsdns-60.co.uk
+* 205.251.199.224
+* 2600:9000:5307:e000::1
+
+### ns3.uwe.app 
+
+* ns-507.awsdns-63.com
+* 205.251.193.251
+* 2600:9000:5301:fb00::1
+
+### ns4.uwe.app
+
+* ns-1518.awsdns-61.org
+* 205.251.197.238
+* 2600:9000:5305:ee00::1
 
 ## Notes
 

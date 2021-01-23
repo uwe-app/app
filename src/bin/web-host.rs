@@ -13,7 +13,7 @@ use rusoto_core::Region;
 use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
-    ensure_domain, ensure_website, list_name_servers, load_host_file,
+    ensure_domain, ensure_website, list_name_servers, load_host_file, to_idna_punycode,
     rusoto_route53::CreateHostedZoneResponse, trim_hosted_zone_id,
     BucketSettings, CertSettings, CertUpsert, DistributionSettings, DnsRecord,
     DnsSettings, HostedZoneUpsert, RecordType, ViewerProtocolPolicy,
@@ -118,12 +118,12 @@ impl Into<Vec<DnsRecord>> for RecordInfo {
     fn into(self) -> Vec<DnsRecord> {
         if self.cdn {
             vec![DnsRecord::new_cloudfront_alias(
-                self.name, self.value, self.kind,
+                to_idna_punycode(&self.name).unwrap(), self.value, self.kind,
             )]
         } else {
             vec![DnsRecord {
                 kind: self.kind,
-                name: self.name,
+                name: to_idna_punycode(&self.name).unwrap(),
                 value: self.value,
                 alias: None,
                 ttl: Some(300),
