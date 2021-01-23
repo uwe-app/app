@@ -1,3 +1,5 @@
+use trust_dns_client::rr::domain::Name;
+
 mod acm;
 mod cloudfront;
 mod dns_client;
@@ -13,7 +15,7 @@ type Result<T> = std::result::Result<T, error::Error>;
 pub use acm::{new_client as new_acm_client, CertSettings, CertUpsert};
 pub use cloudfront::{
     new_client as new_cloudfront_client, DistributionSettings,
-    ViewerProtocolPolicy,
+    ViewerProtocolPolicy, DistributionUpsert,
 };
 pub use error::Error;
 pub use name_servers::list as list_name_servers;
@@ -32,3 +34,9 @@ pub use rusoto_route53;
 pub fn trim_hosted_zone_id(id: &str) -> String {
     id.trim_start_matches("/hostedzone/").to_string()
 }
+
+pub fn to_idna_punycode(name: &str) -> Result<String> {
+    let idna_name = Name::from_utf8(name)?;
+    Ok(idna_name.to_ascii())
+}
+

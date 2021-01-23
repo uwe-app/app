@@ -15,9 +15,9 @@ use uwe::{self, opts::fatal, Error, Result};
 use web_host::{
     ensure_domain, ensure_website, list_name_servers, load_host_file,
     rusoto_route53::CreateHostedZoneResponse, trim_hosted_zone_id,
-    BucketSettings, CertSettings, CertUpsert, DistributionSettings, DnsRecord, DnsSettings,
-    HostedZoneUpsert, RecordType, ViewerProtocolPolicy, WebHostRequest,
-    ZoneSettings,
+    BucketSettings, CertSettings, CertUpsert, DistributionSettings, DnsRecord,
+    DnsSettings, HostedZoneUpsert, RecordType, ViewerProtocolPolicy,
+    WebHostRequest, ZoneSettings,
 };
 
 fn parse_region(src: &str) -> std::result::Result<Region, Error> {
@@ -262,7 +262,7 @@ enum Cert {
 #[derive(StructOpt, Debug)]
 enum Cdn {
     /// Create a Cloudfront CDN
-    Create {
+    Upsert {
         #[structopt(flatten)]
         common: Common,
 
@@ -401,7 +401,7 @@ async fn run(cmd: Command) -> Result<()> {
         },
 
         Command::Cdn { cmd } => match cmd {
-            Cdn::Create {
+            Cdn::Upsert {
                 common,
                 origin,
                 origin_id,
@@ -419,21 +419,20 @@ async fn run(cmd: Command) -> Result<()> {
                 if let Some(comment) = comment.take() {
                     cdn.set_comment(comment);
                 }
-                cdn.create(&client).await?;
+                cdn.upsert(&client).await?;
             }
         },
         Command::Cert { cmd } => match cmd {
             Cert::Upsert {
                 common,
-                options
-                /*
-                domain_name,
-                zone_id,
-                common,
-                alternative_name,
-                monitor,
-                timeout,
-                */
+                options, /*
+                         domain_name,
+                         zone_id,
+                         common,
+                         alternative_name,
+                         monitor,
+                         timeout,
+                         */
             } => {
                 /*
                 let alternative_name = if options.alternative_name.is_empty() {
@@ -456,28 +455,30 @@ async fn run(cmd: Command) -> Result<()> {
                         options.monitor,
                         options.timeout,
                     )
-                    .await? {
+                    .await?
+                {
                     CertUpsert::Create(arn) => {
                         info!("Created certificate {} ✓", arn);
                     }
                     CertUpsert::Exists(detail) => {
-                        info!("Certificate exists {} ✓", detail.certificate_arn.unwrap());
+                        info!(
+                            "Certificate exists {} ✓",
+                            detail.certificate_arn.unwrap()
+                        );
                     }
                 }
-
             }
 
             Cert::Issue {
                 common,
-                options
-                    /*
-                domain_name,
-                zone_id,
-                common,
-                alternative_name,
-                monitor,
-                timeout,
-                    */
+                options, /*
+                         domain_name,
+                         zone_id,
+                         common,
+                         alternative_name,
+                         monitor,
+                         timeout,
+                             */
             } => {
                 /*
                 let alternative_name = if options.alternative_name.is_empty() {

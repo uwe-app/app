@@ -132,6 +132,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
+    Url(#[from] url::ParseError),
+
+    #[error(transparent)]
     Json(#[from] serde_json::error::Error),
 
     #[error(transparent)]

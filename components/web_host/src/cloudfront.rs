@@ -83,6 +83,12 @@ impl FromStr for ViewerProtocolPolicy {
 }
 
 #[derive(Debug)]
+pub enum DistributionUpsert {
+    Create(Distribution),
+    Exists(DistributionSummary),
+}
+
+#[derive(Debug)]
 pub struct DistributionSettings {
     /// The origin URL for the distribution
     origin: Url,
@@ -143,21 +149,25 @@ impl DistributionSettings {
         }
     }
 
-    /// Create a distribution.
-    pub async fn create(&self, client: &CloudFrontClient) -> Result<()> {
-        info!("Searching for {}", self.origin);
+    /// Create or update a distribution.
+    pub async fn upsert(
+        &self,
+        client: &CloudFrontClient,
+    ) -> Result<DistributionUpsert> {
+        debug!("Searching for {}", self.origin);
         let distributions = self.list_distributions_all(client).await?;
         for summary in distributions {
             for origin in summary.origins.items.iter() {
                 debug!("Test domain name {}", origin.domain_name);
                 if origin.domain_name == self.domain_name {
                     // Found an existing match so treat as an update operation
-                    return self.update(client, summary.id).await;
+                    self.update(client, summary.id.clone()).await?;
+                    return Ok(DistributionUpsert::Exists(summary));
                 }
             }
         }
 
-        info!("Creating distribution for {}", self.origin);
+        debug!("Creating distribution for {}", self.origin);
         let cache_policy_config_id = self
             .find_cache_policy_config_id(
                 client,
@@ -177,12 +187,16 @@ impl DistributionSettings {
         };
 
         let res = client.create_distribution(req).await?;
+        Ok(DistributionUpsert::Create(res.distribution.unwrap()))
 
-        if let Some(ref distribution) = res.distribution {
-            self.print_distribution(distribution);
-        }
+        //if let Some(ref distribution) = res.distribution {
+        //self.print_distribution(distribution);
+        //}
 
-        Ok(())
+        //info!("Distribution domain name {}", distribution.domain_name);
+        //info!("Distribution {} {} ✓", distribution.id, distribution.status);
+
+        //Ok(())
     }
 
     /// Update a distribution.

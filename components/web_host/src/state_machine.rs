@@ -4,12 +4,16 @@ use std::path::Path;
 
 use async_trait::async_trait;
 use log::debug;
+use url::Url;
 use rusoto_core::Region;
+use slug::slugify;
 
 use crate::{
-    name_servers, new_acm_client, new_s3_client, new_route53_client, trim_hosted_zone_id,
-    Error, HostedZoneUpsert, Result, ZoneSettings, CertSettings, CertUpsert,
-    BucketSettings,
+    to_idna_punycode,
+    name_servers, new_acm_client, new_cloudfront_client, new_route53_client,
+    new_s3_client, trim_hosted_zone_id, BucketSettings, CertSettings,
+    CertUpsert, Error, HostedZoneUpsert, Result, ZoneSettings, DistributionSettings,
+    DistributionUpsert, ViewerProtocolPolicy,
 };
 
 static INDEX_SUFFIX: &str = "index.html";
@@ -109,9 +113,13 @@ impl<'a> Iterator for StateMachine<'a> {
                         Box::new(RedirectBucketTransition {});
                     Some((state.clone(), transition))
                 }
+                State::Cdn => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(CdnTransition {});
+                    Some((state.clone(), transition))
+                }
 
                 /*
-                State::Cdn => Some(State::Dns4),
                 State::Dns4 => Some(State::Dns6),
                 State::Dns6 => Some(State::RedirectCname),
                 */
@@ -148,8 +156,8 @@ pub struct WebHostRequest {
     redirect_bucket_name: Option<String>,
     /// Protocol used for redirects.
     ///
-    /// Recommended to leave this empty so that the redirect 
-    /// uses the protocol for the request but could be used 
+    /// Recommended to leave this empty so that the redirect
+    /// uses the protocol for the request but could be used
     /// to force `https` redirects if required.
     redirect_protocol: Option<String>,
 
@@ -206,6 +214,8 @@ pub struct WebHostResponse {
     pub redirect_bucket_endpoint: String,
     /// Domain name for the CDN.
     pub cdn_domain_name: String,
+    /// Distribution id.
+    pub cdn_distribution_id: String,
 }
 
 struct NameServerTransition;
@@ -276,7 +286,7 @@ impl Transition for CertificateTransition {
                 response.zone_id.clone(),
                 request.monitor_certificate,
                 request.monitor_certificate_timeout,
-                )
+            )
             .await?
         {
             CertUpsert::Create(arn) => {
@@ -341,6 +351,42 @@ impl Transition for RedirectBucketTransition {
 
         response.redirect_bucket_endpoint = bucket.up(&client).await?;
         Ok(Some(State::Cdn))
+    }
+}
+
+struct CdnTransition;
+
+#[async_trait]
+impl Transition for CdnTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+        let client =
+            new_cloudfront_client(&request.credentials)?;
+
+        let origin: Url = format!("http://{}", &response.bucket_endpoint).parse()?;
+        let alias = vec![to_idna_punycode(&request.domain_name)?];
+        let origin_id = slugify(&request.domain_name);
+
+        let mut cdn =
+            DistributionSettings::new(origin, alias, Some(origin_id));
+        cdn.set_acm_certificate_arn(Some(response.certificate_arn.clone()));
+        cdn.set_viewer_protocol_policy(ViewerProtocolPolicy::RedirectToHttps);
+
+        match cdn.upsert(&client).await? {
+            DistributionUpsert::Create(dist) => {
+                response.cdn_domain_name = dist.domain_name;
+                response.cdn_distribution_id = dist.id;
+            }
+            DistributionUpsert::Exists(dist) => {
+                response.cdn_domain_name = dist.domain_name;
+                response.cdn_distribution_id = dist.id;
+            }
+        }
+
+        Ok(Some(State::Dns4))
     }
 }
 
