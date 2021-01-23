@@ -8,7 +8,7 @@ use rusoto_core::Region;
 
 use crate::{
     name_servers, new_acm_client, new_route53_client, trim_hosted_zone_id,
-    Error, HostedZoneUpsert, Result, ZoneSettings,
+    Error, HostedZoneUpsert, Result, ZoneSettings, CertSettings, CertUpsert,
 };
 
 /// Asynchronous fallible transition from a state
@@ -90,9 +90,12 @@ impl<'a> Iterator for StateMachine<'a> {
                         Box::new(HostedZoneTransition {});
                     Some((state.clone(), transition))
                 }
-
+                State::Certificate => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(CertificateTransition {});
+                    Some((state.clone(), transition))
+                }
                 /*
-                State::Certificate => Some(State::Bucket),
                 State::Bucket => Some(State::RedirectBucket),
                 State::RedirectBucket => Some(State::Cdn),
                 State::Cdn => Some(State::Dns4),
@@ -119,13 +122,17 @@ pub struct WebHostRequest {
     /// require region selection.
     region: Region,
     /// Alternative domain names for the SSL certificate.
-    subject_alternative_names: Vec<String>,
+    subject_alternative_names: Option<Vec<String>>,
     /// Name for the S3 bucket.
     bucket_name: String,
     /// Redirect all requests from this bucket to the primary
     /// bucket. Useful for configuring `www` to redirect to the
     /// primary domain.
     redirect_bucket_name: Option<String>,
+    /// Monitor for certificate status
+    monitor_certificate: bool,
+    /// Timeout when monitoring certificate status.
+    monitor_certificate_timeout: u64,
 }
 
 impl WebHostRequest {
@@ -133,12 +140,8 @@ impl WebHostRequest {
     /// AWS calls are required.
     pub fn new_domain(domain_name: String) -> Self {
         Self {
-            credentials: String::new(),
-            region: Region::UsEast1,
-            bucket_name: domain_name.clone(),
-            subject_alternative_names: Vec::new(),
-            redirect_bucket_name: None,
             domain_name,
+            ..Default::default()
         }
     }
 
@@ -153,9 +156,11 @@ impl Default for WebHostRequest {
             credentials: String::new(),
             region: Region::UsEast1,
             bucket_name: String::new(),
-            subject_alternative_names: Vec::new(),
+            subject_alternative_names: None,
             redirect_bucket_name: None,
             domain_name: String::new(),
+            monitor_certificate: true,
+            monitor_certificate_timeout: 300,
         }
     }
 }
@@ -220,6 +225,41 @@ impl Transition for HostedZoneTransition {
         }
 
         Ok(Some(State::Certificate))
+    }
+}
+
+struct CertificateTransition;
+
+#[async_trait]
+impl Transition for CertificateTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+        let client = new_acm_client(&request.credentials)?;
+        let dns_client = new_route53_client(&request.credentials)?;
+        let cert = CertSettings::new();
+        match cert
+            .upsert(
+                &client,
+                &dns_client,
+                request.domain_name.to_string(),
+                request.subject_alternative_names.clone(),
+                response.zone_id.clone(),
+                request.monitor_certificate,
+                request.monitor_certificate_timeout,
+                )
+            .await?
+        {
+            CertUpsert::Create(arn) => {
+                response.certificate_arn = arn;
+            }
+            CertUpsert::Exists(details) => {
+                response.certificate_arn = details.certificate_arn.unwrap();
+            }
+        }
+        Ok(Some(State::Bucket))
     }
 }
 

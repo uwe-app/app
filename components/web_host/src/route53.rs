@@ -187,8 +187,7 @@ impl ZoneSettings {
         name: String,
     ) -> Result<CreateHostedZoneResponse> {
         let caller_reference = utils::generate_id(16);
-        let idna_name = Name::from_utf8(&name)?;
-        let ascii_name = idna_name.to_ascii();
+        let ascii_name = self.to_idna_punycode(&name)?;
         let req = CreateHostedZoneRequest {
             caller_reference,
             delegation_set_id: Some(DELEGATION_SET_ID.to_string()),
@@ -199,6 +198,11 @@ impl ZoneSettings {
         self.assign_name_servers(client, &res.hosted_zone.id, &ascii_name)
             .await?;
         Ok(res)
+    }
+
+    fn to_idna_punycode(&self, name: &str) -> Result<String> {
+        let idna_name = Name::from_utf8(name)?;
+        Ok(idna_name.to_ascii())
     }
 
     async fn assign_name_servers(
@@ -252,8 +256,7 @@ impl ZoneSettings {
     ) -> Result<HostedZoneUpsert> {
         use crate::name_servers;
 
-        let idna_name = Name::from_utf8(&name)?;
-        let ascii_name = idna_name.to_ascii();
+        let ascii_name = self.to_idna_punycode(&name)?;
         let qualified_name = name_servers::qualified(&ascii_name);
 
         let zones = self.list_all(client).await?;

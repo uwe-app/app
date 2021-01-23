@@ -80,7 +80,7 @@ impl CertSettings {
         }
     }
 
-    /// Request a certificate if a cartificate does not already exists
+    /// Request a certificate if a certificate does not already exist 
     /// that matches the given domain name and alternaitve names.
     pub async fn upsert(
         &self,
