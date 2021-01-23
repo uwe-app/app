@@ -333,7 +333,7 @@ impl CertSettings {
                                 ttl: Some(300),
                             }];
 
-                            dns.create(dns_client, records).await?;
+                            dns.upsert(dns_client, records).await?;
                             info!(
                                 "Created validation record {} {} {}",
                                 resource_record.type_,

@@ -13,7 +13,7 @@ use rusoto_core::Region;
 use uwe::{self, opts::fatal, Error, Result};
 
 use web_host::{
-    ensure_domain, ensure_website, list_name_servers, load_host_file, to_idna_punycode,
+    ensure_domain, ensure_website, list_name_servers, load_host_file,
     rusoto_route53::CreateHostedZoneResponse, trim_hosted_zone_id,
     BucketSettings, CertSettings, CertUpsert, DistributionSettings, DnsRecord,
     DnsSettings, HostedZoneUpsert, RecordType, ViewerProtocolPolicy,
@@ -118,12 +118,12 @@ impl Into<Vec<DnsRecord>> for RecordInfo {
     fn into(self) -> Vec<DnsRecord> {
         if self.cdn {
             vec![DnsRecord::new_cloudfront_alias(
-                to_idna_punycode(&self.name).unwrap(), self.value, self.kind,
+                self.name, self.value, self.kind,
             )]
         } else {
             vec![DnsRecord {
                 kind: self.kind,
-                name: to_idna_punycode(&self.name).unwrap(),
+                name: self.name,
                 value: self.value,
                 alias: None,
                 ttl: Some(300),
@@ -134,18 +134,13 @@ impl Into<Vec<DnsRecord>> for RecordInfo {
 
 #[derive(StructOpt, Debug)]
 enum ZoneRecord {
-    /// Create a record set
-    Create {
+    /// Create or update a record set
+    Upsert {
         #[structopt(flatten)]
         record: RecordInfo,
     },
     /// Delete a record set
     Delete {
-        #[structopt(flatten)]
-        record: RecordInfo,
-    },
-    /// Create or update a record set
-    Upsert {
         #[structopt(flatten)]
         record: RecordInfo,
     },
@@ -532,20 +527,6 @@ async fn run(cmd: Command) -> Result<()> {
                 common,
                 cmd,
             } => match cmd {
-                ZoneRecord::Create { record } => {
-                    let client =
-                        web_host::new_route53_client(&common.credentials)?;
-                    let dns = DnsSettings::new(zone_id);
-                    let records: Vec<DnsRecord> = record.into();
-                    for r in records.iter() {
-                        info!(
-                            "Create record {} {} -> {}",
-                            &r.kind, &r.name, &r.value
-                        );
-                    }
-                    dns.create(&client, records).await?;
-                    info!("Created record(s) ✓");
-                }
                 ZoneRecord::Delete { record } => {
                     let client =
                         web_host::new_route53_client(&common.credentials)?;

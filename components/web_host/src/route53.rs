@@ -309,11 +309,17 @@ impl DnsSettings {
         Self { zone_id }
     }
 
-    pub async fn create(
+    /*
+    async fn create(
         &self,
         client: &Route53Client,
-        records: Vec<DnsRecord>,
+        mut records: Vec<DnsRecord>,
     ) -> Result<Response> {
+
+        for mut r in records.iter_mut() {
+            r.name = to_idna_punycode(&r.name)?;
+        }
+
         let changes = records
             .into_iter()
             .map(|record| (ChangeAction::Create, record.into()))
@@ -321,6 +327,7 @@ impl DnsSettings {
         let req = self.into_change_set(changes);
         Ok(client.change_resource_record_sets(req).await?)
     }
+    */
 
     pub async fn delete(
         &self,
@@ -338,8 +345,13 @@ impl DnsSettings {
     pub async fn upsert(
         &self,
         client: &Route53Client,
-        records: Vec<DnsRecord>,
+        mut records: Vec<DnsRecord>,
     ) -> Result<Response> {
+
+        for mut r in records.iter_mut() {
+            r.name = to_idna_punycode(&r.name)?;
+        }
+
         let changes = records
             .into_iter()
             .map(|record| (ChangeAction::Upsert, record.into()))

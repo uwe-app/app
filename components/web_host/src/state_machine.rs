@@ -411,12 +411,12 @@ impl Transition for CdnDnsTransition {
 
         let records = vec![
             DnsRecord::new_cloudfront_alias(
-                to_idna_punycode(&request.domain_name)?,
+                request.domain_name.clone(),
                 response.cdn_domain_name.clone(),
                 RecordType::A,
             ),
             DnsRecord::new_cloudfront_alias(
-                to_idna_punycode(&request.domain_name)?,
+                request.domain_name.clone(),
                 response.cdn_domain_name.clone(),
                 RecordType::AAAA,
             ),
@@ -424,7 +424,7 @@ impl Transition for CdnDnsTransition {
 
         let dns = DnsSettings::new(response.zone_id.clone());
         let client = new_route53_client(&request.credentials)?;
-        dns.create(&client, records).await?;
+        dns.upsert(&client, records).await?;
 
         if let Some(_) = response.redirect_bucket_endpoint {
             Ok(Some(State::RedirectCname))
@@ -444,14 +444,12 @@ impl Transition for RedirectCnameTransition {
         response: &mut WebHostResponse,
     ) -> Result<Option<State>> {
 
-        let default_domain = format!("{}.{}", WWW, request.domain_name);
-        let name = to_idna_punycode({
+        let name =
             if let Some(ref domain) = request.redirect_domain_name {
-                domain
+                domain.clone()
             } else {
-                &default_domain
-            }
-        })?;
+                format!("{}.{}", WWW, request.domain_name)
+            };
 
         let value = format!("http://{}", response.redirect_bucket_endpoint.as_ref().unwrap());
 
@@ -467,7 +465,7 @@ impl Transition for RedirectCnameTransition {
 
         let dns = DnsSettings::new(response.zone_id.clone());
         let client = new_route53_client(&request.credentials)?;
-        dns.create(&client, records).await?;
+        dns.upsert(&client, records).await?;
 
         Ok(None)
     }
