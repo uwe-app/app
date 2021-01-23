@@ -33,6 +33,17 @@ Repositories must be siblings, for example:
 
 ## Name Servers
 
+To transfer a domain to our managed hosting service clients should update the name servers for the domain name with their registrar to these values:
+
+```
+ns1.uwe.app
+ns2.uwe.app
+ns3.uwe.app
+ns4.uwe.app
+```
+
+---
+
 * Hosted Zone: `uwe.app`
 * Hosted Zone ID: `Z04911223AOWXLH2LXWQ8`
 * Delegation Set ID: `N02886841KKW7QD2MZLTC`
@@ -76,7 +87,7 @@ You should replace `<credentials>` with the identifier of the AWS credentials an
 
 The credentials should have full access to ACM, S3, Cloudfront and Route53.
 
-## Name Servers
+## Name Server Test
 
 To verify the name servers for a domain have been configured and propagated run:
 
