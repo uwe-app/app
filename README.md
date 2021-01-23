@@ -42,18 +42,20 @@ ns3.uwe.app
 ns4.uwe.app
 ```
 
+> Some registrars may require a fully qualified name using a trailing period, eg: `ns1.uwe.app.` others prefer it without the trailing period - it depends on the registrar.
+
 After the DNS changes for the domain have propagated follow the instructions in [Web Host](#web-host) to create all the resources to host the domain name.
 
 Creating a web host will:
 
 * Verify name servers have propagated
 * Create a hosted zone for the domain name
-* Create an SSL certificate for the domain name
+* Create an SSL certificate for the domain name and all sub-domains
 * Create a bucket for the website files
 * Create a bucket for the `www` redirect
 * Create a CDN using the SSL certificate
 * Configure the DNS records for the CDN
-* Redirect all HTTP request to HTTPS
+* Redirect all HTTP requests to HTTPS
 * Configure the DNS for the `www` redirect
 
 ---
