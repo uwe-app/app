@@ -74,7 +74,7 @@ Until the customer-facing service is deployed we can create all the resources ne
 
 You should replace `<credentials>` with the identifier of the AWS credentials and `<region>` with the target region, eg: `ap-southeast-1`. Replace all instances of `example.com` with the domain name that is being hosted.
 
-The credentials should have full access to ACM, S3, Cloudfront and Route53. The output of these commands will include identifiers for the created resources that you can take note of or find them later in the AWS console.
+The credentials should have full access to ACM, S3, Cloudfront and Route53.
 
 ## Name Servers
 
@@ -89,6 +89,32 @@ Or for an IDNA domain:
 ```
 web-host ensure domain exämple.com
 ```
+
+## Web Host
+
+To setup all the resources for a host create a configuration file like this one (`uwe.app.toml`):
+
+```toml
+domain-name = "uwe.app"
+bucket-name = "uwe.app"
+region = ["ap-southeast-1"]
+redirect-bucket-name = "www.uwe.app"
+subject-alternative-names = ["*.uwe.app"]
+```
+
+Then run the command:
+
+```
+web-host ensure website uwe.app.toml --credentials=<credentials>
+```
+
+For fine-grained control of resources see the next section.
+
+## Host Resources
+
+It is recommended to use the `ensure` command whenever possible but sometimes it may necessary to manage resources individually.
+
+The output of these commands will include identifiers for the created resources that you can take note of or find them later in the AWS console.
 
 ### Create or update a Hosted Zone
 
