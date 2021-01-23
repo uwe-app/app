@@ -13,9 +13,10 @@ use crate::{
     name_servers, new_acm_client, new_cloudfront_client, new_route53_client,
     new_s3_client, trim_hosted_zone_id, BucketSettings, CertSettings,
     CertUpsert, Error, HostedZoneUpsert, Result, ZoneSettings, DistributionSettings,
-    DistributionUpsert, ViewerProtocolPolicy,
+    DistributionUpsert, ViewerProtocolPolicy, DnsRecord, RecordType, DnsSettings,
 };
 
+static WWW: &str = "www";
 static INDEX_SUFFIX: &str = "index.html";
 static ERROR_KEY: &str = "404.html";
 
@@ -39,8 +40,7 @@ pub enum State {
     Bucket,
     RedirectBucket,
     Cdn,
-    Dns4,
-    Dns6,
+    CdnDns,
     RedirectCname,
 }
 
@@ -118,12 +118,16 @@ impl<'a> Iterator for StateMachine<'a> {
                         Box::new(CdnTransition {});
                     Some((state.clone(), transition))
                 }
-
-                /*
-                State::Dns4 => Some(State::Dns6),
-                State::Dns6 => Some(State::RedirectCname),
-                */
-                _ => None,
+                State::CdnDns => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(CdnDnsTransition {});
+                    Some((state.clone(), transition))
+                }
+                State::RedirectCname => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(RedirectCnameTransition {});
+                    Some((state.clone(), transition))
+                }
             };
             item
         } else {
@@ -150,6 +154,10 @@ pub struct WebHostRequest {
     index_suffix: String,
     /// The key for a bucket error document.
     error_key: String,
+    /// Domain name for the redirecgt bucket.
+    ///
+    /// If no name is given `www` is prefixed to the default domain name,
+    redirect_domain_name: Option<String>,
     /// Redirect all requests from this bucket to the primary
     /// bucket. Useful for configuring `www` to redirect to the
     /// primary domain.
@@ -191,6 +199,7 @@ impl Default for WebHostRequest {
             index_suffix: INDEX_SUFFIX.to_string(),
             error_key: ERROR_KEY.to_string(),
             subject_alternative_names: None,
+            redirect_domain_name: None,
             redirect_bucket_name: None,
             redirect_protocol: None,
             domain_name: String::new(),
@@ -211,7 +220,7 @@ pub struct WebHostResponse {
     /// Endpoint for the primary bucket as a host name.
     pub bucket_endpoint: String,
     /// Endpoint for the redirect bucket as a host name.
-    pub redirect_bucket_endpoint: String,
+    pub redirect_bucket_endpoint: Option<String>,
     /// Domain name for the CDN.
     pub cdn_domain_name: String,
     /// Distribution id.
@@ -349,7 +358,7 @@ impl Transition for RedirectBucketTransition {
             request.redirect_protocol.clone(),
         );
 
-        response.redirect_bucket_endpoint = bucket.up(&client).await?;
+        response.redirect_bucket_endpoint = Some(bucket.up(&client).await?);
         Ok(Some(State::Cdn))
     }
 }
@@ -386,7 +395,81 @@ impl Transition for CdnTransition {
             }
         }
 
-        Ok(Some(State::Dns4))
+        Ok(Some(State::CdnDns))
+    }
+}
+
+struct CdnDnsTransition;
+
+#[async_trait]
+impl Transition for CdnDnsTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+
+        let records = vec![
+            DnsRecord::new_cloudfront_alias(
+                to_idna_punycode(&request.domain_name)?,
+                response.cdn_domain_name.clone(),
+                RecordType::A,
+            ),
+            DnsRecord::new_cloudfront_alias(
+                to_idna_punycode(&request.domain_name)?,
+                response.cdn_domain_name.clone(),
+                RecordType::AAAA,
+            ),
+        ];
+
+        let dns = DnsSettings::new(response.zone_id.clone());
+        let client = new_route53_client(&request.credentials)?;
+        dns.create(&client, records).await?;
+
+        if let Some(_) = response.redirect_bucket_endpoint {
+            Ok(Some(State::RedirectCname))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+struct RedirectCnameTransition;
+
+#[async_trait]
+impl Transition for RedirectCnameTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+
+        let default_domain = format!("{}.{}", WWW, request.domain_name);
+        let name = to_idna_punycode({
+            if let Some(ref domain) = request.redirect_domain_name {
+                domain
+            } else {
+                &default_domain
+            }
+        })?;
+
+        let value = format!("http://{}", response.redirect_bucket_endpoint.as_ref().unwrap());
+
+        let records = vec![
+            DnsRecord {
+                name,
+                value,
+                kind: RecordType::CNAME,
+                alias: None,
+                ttl: Some(300),
+            }
+        ];
+
+        let dns = DnsSettings::new(response.zone_id.clone());
+        let client = new_route53_client(&request.credentials)?;
+        dns.create(&client, records).await?;
+
+        Ok(None)
     }
 }
 
@@ -406,8 +489,7 @@ pub async fn ensure_website(req: &WebHostRequest) -> Result<WebHostResponse> {
             State::Bucket,
             State::RedirectBucket,
             State::Cdn,
-            State::Dns4,
-            State::Dns6,
+            State::CdnDns,
             State::RedirectCname,
         ],
     )
