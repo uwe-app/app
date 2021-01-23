@@ -1,4 +1,4 @@
-use log::info;
+use log::debug;
 
 use rusoto_core::{credential, request::HttpClient, Region, RusotoError};
 use rusoto_s3::{
@@ -70,19 +70,17 @@ impl BucketSettings {
     }
 
     /// Bring this web host up.
-    pub async fn up(&self, client: &S3Client) -> Result<()> {
-        info!("Ensure bucket {}", &self.bucket);
+    pub async fn up(&self, client: &S3Client) -> Result<String> {
+        debug!("Ensure bucket {}", &self.bucket);
         self.ensure_bucket(client).await?;
-        info!("Disable public access block {}", &self.bucket);
+        debug!("Disable public access block {}", &self.bucket);
         self.put_public_access_block(client).await?;
-        info!("Set bucket policy {}", &self.bucket);
+        debug!("Set bucket policy {}", &self.bucket);
         self.put_bucket_policy(client).await?;
-        info!("Set static website hosting {}", &self.bucket);
+        debug!("Set static website hosting {}", &self.bucket);
         self.put_bucket_website(client).await?;
 
-        info!("{} ✓", self.url());
-
-        Ok(())
+        Ok(self.endpoint())
     }
 
     /// Get the endpoint for the website.

@@ -396,6 +396,7 @@ async fn run(cmd: Command) -> Result<()> {
                     redirect_protocol,
                 );
                 bucket.up(&client).await?;
+                info!("{} ✓", bucket.url());
             }
         },
 

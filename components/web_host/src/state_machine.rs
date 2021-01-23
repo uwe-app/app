@@ -7,9 +7,13 @@ use log::debug;
 use rusoto_core::Region;
 
 use crate::{
-    name_servers, new_acm_client, new_route53_client, trim_hosted_zone_id,
+    name_servers, new_acm_client, new_s3_client, new_route53_client, trim_hosted_zone_id,
     Error, HostedZoneUpsert, Result, ZoneSettings, CertSettings, CertUpsert,
+    BucketSettings,
 };
+
+static INDEX_SUFFIX: &str = "index.html";
+static ERROR_KEY: &str = "404.html";
 
 /// Asynchronous fallible transition from a state
 /// to the next state.
@@ -95,9 +99,18 @@ impl<'a> Iterator for StateMachine<'a> {
                         Box::new(CertificateTransition {});
                     Some((state.clone(), transition))
                 }
+                State::Bucket => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(BucketTransition {});
+                    Some((state.clone(), transition))
+                }
+                State::RedirectBucket => {
+                    let transition: Box<dyn Transition> =
+                        Box::new(RedirectBucketTransition {});
+                    Some((state.clone(), transition))
+                }
+
                 /*
-                State::Bucket => Some(State::RedirectBucket),
-                State::RedirectBucket => Some(State::Cdn),
                 State::Cdn => Some(State::Dns4),
                 State::Dns4 => Some(State::Dns6),
                 State::Dns6 => Some(State::RedirectCname),
@@ -125,10 +138,21 @@ pub struct WebHostRequest {
     subject_alternative_names: Option<Vec<String>>,
     /// Name for the S3 bucket.
     bucket_name: String,
+    /// The suffix for folder requests to a bucket.
+    index_suffix: String,
+    /// The key for a bucket error document.
+    error_key: String,
     /// Redirect all requests from this bucket to the primary
     /// bucket. Useful for configuring `www` to redirect to the
     /// primary domain.
     redirect_bucket_name: Option<String>,
+    /// Protocol used for redirects.
+    ///
+    /// Recommended to leave this empty so that the redirect 
+    /// uses the protocol for the request but could be used 
+    /// to force `https` redirects if required.
+    redirect_protocol: Option<String>,
+
     /// Monitor for certificate status
     monitor_certificate: bool,
     /// Timeout when monitoring certificate status.
@@ -156,8 +180,11 @@ impl Default for WebHostRequest {
             credentials: String::new(),
             region: Region::UsEast1,
             bucket_name: String::new(),
+            index_suffix: INDEX_SUFFIX.to_string(),
+            error_key: ERROR_KEY.to_string(),
             subject_alternative_names: None,
             redirect_bucket_name: None,
+            redirect_protocol: None,
             domain_name: String::new(),
             monitor_certificate: true,
             monitor_certificate_timeout: 300,
@@ -173,9 +200,9 @@ pub struct WebHostResponse {
     pub zone_id: String,
     /// An ARN identifier for the SSL certificate.
     pub certificate_arn: String,
-    /// Endpoint for the primary bucket.
+    /// Endpoint for the primary bucket as a host name.
     pub bucket_endpoint: String,
-    /// Endpoint for the redirect bucket.
+    /// Endpoint for the redirect bucket as a host name.
     pub redirect_bucket_endpoint: String,
     /// Domain name for the CDN.
     pub cdn_domain_name: String,
@@ -260,6 +287,60 @@ impl Transition for CertificateTransition {
             }
         }
         Ok(Some(State::Bucket))
+    }
+}
+
+struct BucketTransition;
+
+#[async_trait]
+impl Transition for BucketTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+        let client = new_s3_client(&request.credentials, &request.region)?;
+        let bucket = BucketSettings::new(
+            request.region.clone(),
+            request.bucket_name.clone(),
+            request.index_suffix.clone(),
+            request.error_key.clone(),
+            None,
+            None,
+        );
+
+        response.bucket_endpoint = bucket.up(&client).await?;
+
+        if let Some(_) = request.redirect_bucket_name {
+            Ok(Some(State::RedirectBucket))
+        } else {
+            Ok(Some(State::Cdn))
+        }
+    }
+}
+
+struct RedirectBucketTransition;
+
+#[async_trait]
+impl Transition for RedirectBucketTransition {
+    async fn next(
+        &self,
+        request: &WebHostRequest,
+        response: &mut WebHostResponse,
+    ) -> Result<Option<State>> {
+        let client = new_s3_client(&request.credentials, &request.region)?;
+
+        let bucket = BucketSettings::new(
+            request.region.clone(),
+            request.redirect_bucket_name.clone().unwrap(),
+            request.index_suffix.clone(),
+            request.error_key.clone(),
+            Some(request.domain_name.clone()),
+            request.redirect_protocol.clone(),
+        );
+
+        response.redirect_bucket_endpoint = bucket.up(&client).await?;
+        Ok(Some(State::Cdn))
     }
 }
 
