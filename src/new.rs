@@ -101,19 +101,6 @@ fn write_settings<P: AsRef<Path>>(
         }
     }
 
-    let mut fluent: Map<String, Value> = Map::new();
-    if let Some(ref lang) = language {
-        fluent.insert(
-            config::FALLBACK_KEY.to_string(),
-            Value::String(lang.to_string()),
-        );
-    }
-    fluent.insert(
-        config::SHARED_KEY.to_string(),
-        Value::String(config::CORE_FTL.to_string()),
-    );
-    site_config.insert(config::FLUENT_KEY.to_string(), Value::Table(fluent));
-
     let mut redirect: Map<String, Value> = Map::new();
     if has_custom_lang {
         if let Some(ref lang) = language {
