@@ -125,7 +125,9 @@ async fn run(cmd: Command) -> Result<()> {
     match cmd {
         Command::New { args } => {
             let opts = uwe::new::ProjectOptions {
-                source: args.source,
+                source: args.plugin,
+                git: args.git,
+                path: args.path,
                 message: args.message,
                 target: args.target,
                 language: args.language,

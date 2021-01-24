@@ -20,9 +20,11 @@ static REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
 
 #[derive(Debug)]
 pub struct ProjectOptions {
+    pub source: Option<String>,
+    pub git: Option<Url>,
+    pub path: Option<PathBuf>,
     pub target: PathBuf,
     pub message: Option<String>,
-    pub source: Option<String>,
     pub language: Option<String>,
     pub host: Option<String>,
     pub locales: Option<String>,
@@ -176,7 +178,36 @@ fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
     Ok(())
 }
 
-pub async fn project(options: ProjectOptions) -> Result<()> {
+#[derive(Debug)]
+pub enum ProjectSource {
+    Plugin(String),
+    Git(Url),
+    Path(PathBuf),
+}
+
+pub async fn project(mut options: ProjectOptions) -> Result<()> {
+
+    let mut sources: Vec<ProjectSource> = Vec::new();
+    if let Some(git) = options.git.take() {
+        sources.push(ProjectSource::Git(git))
+    }
+    if let Some(path) = options.path.take() {
+        sources.push(ProjectSource::Path(path))
+    }
+    if let Some(plugin) = options.source.take() {
+        sources.push(ProjectSource::Plugin(plugin))
+    }
+
+    if sources.is_empty() {
+        sources.push(ProjectSource::Plugin(DEFAULT_NAME.to_string()));
+    }
+
+    if sources.len() > 1 {
+        return Err(Error::NewProjectMultipleSource)
+    }
+
+    let source = sources.swap_remove(0);
+
     let mut language = None;
 
     if let Some(ref lang) = options.language {
@@ -231,47 +262,39 @@ pub async fn project(options: ProjectOptions) -> Result<()> {
         return Err(Error::TargetExists(target.clone()));
     }
 
-    // 1) Check for URL; if valid clone as a scm repository
-    // 2) Check for local file system folder; if valid copy files.
-    // 3) Check for named blueprint folder; if valid copy files.
-    if let Some(ref source) = options.source {
-        match source.parse::<Url>() {
-            Ok(url) => {
-                // Treat as a git url
-                if url.has_authority() {
-                    create_target_parents(&target)?;
-                    scm::copy(url.to_string(), &target, message)?;
-                    check_site_settings(&target)?;
-                    write_settings(&target, settings)?;
-                // May be a plugin spec like std::blueprint::default@^1
-                } else {
-                    install_from_blueprint(source, &target, settings, message)
-                        .await?;
-                }
-            }
-            Err(_) => {
-                let source_dir = PathBuf::from(source);
-
-                // Try to install from a local folder
-                if source_dir.exists() && source_dir.is_dir() {
-                    if !source_dir.exists() {
-                        return Err(Error::NoInitSource);
-                    }
-                    check_site_settings(&source_dir)?;
-                    init_folder(source_dir, &target, settings, message)?;
-                // Otherwise treat as a blueprint name
-                } else {
-                    install_from_blueprint(source, &target, settings, message)
-                        .await?;
-                }
-            }
+    match source {
+        ProjectSource::Git(url) => {
+            create_target_parents(&target)?;
+            scm::copy(url.to_string(), &target, message)?;
+            check_site_settings(&target)?;
+            write_settings(&target, settings)?;
         }
+        ProjectSource::Path(source_dir) => {
+            if !source_dir.exists() {
+                return Err(Error::NoInitSource);
+            }
+            check_site_settings(&source_dir)?;
+            init_folder(source_dir, &target, settings, message)?;
+        }
+        ProjectSource::Plugin(plugin) => {
+            let plugin = plugin::install_blueprint(&plugin).await?;
+            let source_dir = plugin.base();
+            if !source_dir.exists() {
+                return Err(Error::NoInitSource);
+            }
 
-    // 4) No source specified so we just use the default blueprint.
-    } else {
-        install_from_blueprint(DEFAULT_NAME, &target, settings, message)
-            .await?;
-    };
+            if plugin.kind() != &PluginType::Site {
+                return Err(Error::BlueprintPluginNotSiteType(
+                    plugin.name().to_string(),
+                    plugin.version().to_string(),
+                    plugin.kind().to_string(),
+                ));
+            }
+
+            check_site_settings(&source_dir)?;
+            init_folder(&source_dir, &target, settings, message)?;
+        }
+    }
 
     if let Some(ref url) = options.remote_url {
         scm::set_remote(&target, &options.remote_name, url)?;
@@ -279,30 +302,5 @@ pub async fn project(options: ProjectOptions) -> Result<()> {
 
     info!("Created {} ✓", target.to_string_lossy());
 
-    Ok(())
-}
-
-async fn install_from_blueprint(
-    source: &str,
-    target: &PathBuf,
-    settings: InitSettings,
-    message: &str,
-) -> Result<()> {
-    let plugin = plugin::install_blueprint(source).await?;
-    let source_dir = plugin.base();
-    if !source_dir.exists() {
-        return Err(Error::NoInitSource);
-    }
-
-    if plugin.kind() != &PluginType::Site {
-        return Err(Error::BlueprintPluginNotSiteType(
-            plugin.name().to_string(),
-            plugin.version().to_string(),
-            plugin.kind().to_string(),
-        ));
-    }
-
-    check_site_settings(&source_dir)?;
-    init_folder(&source_dir, target, settings, message)?;
     Ok(())
 }

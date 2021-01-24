@@ -68,6 +68,9 @@ pub enum Error {
     #[error("Plugin targets cannot be mixed; use a plugin name or an option (--path, --archive, --git)")]
     PluginAddMultipleTargets,
 
+    #[error("New projects must have one source; use a plugin name, --path or --git")]
+    NewProjectMultipleSource,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
