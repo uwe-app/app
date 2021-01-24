@@ -14,7 +14,10 @@ use uwe::{
     Error, Result,
 };
 
-use config::plugin::{ExactPluginSpec, PluginSpec};
+use config::{
+    href::UrlPath,
+    plugin::{ExactPluginSpec, PluginSpec}
+};
 
 /// Universal (web editor) plugin manager
 #[derive(Debug, StructOpt)]
@@ -183,6 +186,10 @@ enum Command {
         #[structopt(short, long)]
         git: Option<Url>,
 
+        /// Folder prefix for git repositories.
+        #[structopt(short, long)]
+        prefix: Option<UrlPath>,
+
         /// Plugin name.
         plugin_name: Option<ExactPluginSpec>,
     },
@@ -248,9 +255,10 @@ async fn run(cmd: Command) -> Result<()> {
             path,
             archive,
             git,
+            prefix,
             force,
         } => {
-            uwe::plugin::add(plugin_name, path, archive, git, force).await?;
+            uwe::plugin::add(plugin_name, path, archive, git, prefix, force).await?;
         }
     }
     Ok(())

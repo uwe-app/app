@@ -7,9 +7,12 @@ use log::{debug, info};
 use semver::VersionReq;
 use url::Url;
 
-use config::plugin::{
-    dependency::{Dependency, DependencyTarget},
-    ExactPluginSpec, Plugin, PluginSpec,
+use config::{
+    href::UrlPath,
+    plugin::{
+        dependency::{Dependency, DependencyTarget},
+        ExactPluginSpec, Plugin, PluginSpec,
+    }
 };
 use plugin::{
     check_for_updates, dependency_installed, get, install_dependency,
@@ -142,6 +145,7 @@ pub async fn add(
     mut path: Option<PathBuf>,
     mut archive: Option<PathBuf>,
     mut git: Option<Url>,
+    prefix: Option<UrlPath>,
     force: bool,
 ) -> Result<()> {
     // Check only a single plugin option is given
@@ -208,7 +212,7 @@ pub async fn add(
                 )
             } else {
                 if let Some(git) = git.take() {
-                    (String::new(), DependencyTarget::Repo { git }.into())
+                    (String::new(), DependencyTarget::Repo { git, prefix }.into())
                 } else {
                     return Err(Error::PluginAddNoTarget);
                 }

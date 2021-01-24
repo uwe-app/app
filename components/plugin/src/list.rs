@@ -39,7 +39,13 @@ fn format_item(name: &str, state: &PluginDependencyState) -> String {
                 DependencyTarget::Archive { ref archive } => {
                     Some(format!("{}", archive.display()))
                 }
-                DependencyTarget::Repo { ref git } => Some(format!("{}", git)),
+                DependencyTarget::Repo { ref git, ref prefix } => {
+                    if let Some(ref prefix) = prefix {
+                        Some(format!("{} ({})", git, prefix))
+                    } else {
+                        Some(format!("{}", git))
+                    }
+                },
                 DependencyTarget::Local { .. } => Some(String::from("scoped")),
             }
         } else {

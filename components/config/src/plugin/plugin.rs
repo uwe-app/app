@@ -443,9 +443,13 @@ version = "^{}""#,
                         archive.display()
                     ));
                 }
-                DependencyTarget::Repo { git } => {
+                DependencyTarget::Repo { git, prefix } => {
                     out.push('\n');
                     out.push_str(&format!(r#"git = "{}""#, git.to_string()));
+                    if let Some(ref prefix) = prefix {
+                        out.push('\n');
+                        out.push_str(&format!(r#"prefix = "{}""#, prefix.to_string()));
+                    }
                 }
                 _ => {
                     // Ignore local scoped dependencies for now.

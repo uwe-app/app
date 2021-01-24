@@ -10,9 +10,12 @@ use url::Url;
 use utils::walk;
 
 use crate::{Error, Result};
-use config::plugin::{
-    dependency::{Dependency, DependencyTarget},
-    Plugin, PluginSpec, PluginType,
+use config::{
+    href::UrlPath,
+    plugin::{
+        dependency::{Dependency, DependencyTarget},
+        Plugin, PluginSpec, PluginType,
+    }
 };
 
 use plugin::{install_dependency, install_repo, install_path, new_registry};
@@ -26,7 +29,7 @@ static REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
 #[derive(Debug)]
 pub enum ProjectSource {
     Plugin(String),
-    Git(Url),
+    Git(Url, Option<UrlPath>),
     Path(PathBuf),
 }
 
@@ -34,6 +37,7 @@ pub enum ProjectSource {
 pub struct ProjectOptions {
     pub source: Option<String>,
     pub git: Option<Url>,
+    pub prefix: Option<UrlPath>,
     pub path: Option<PathBuf>,
     pub target: PathBuf,
     pub message: Option<String>,
@@ -104,15 +108,18 @@ fn write_settings<P: AsRef<Path>>(
     let mut dep: Map<String, Value> = Map::new();
     if let Some(ref target) = dependency.target() {
         match target {
-            DependencyTarget::Repo { git } => {
-                dep.insert("git".to_string(), Value::String(git.to_string()));
+            DependencyTarget::Repo { git, prefix } => {
                 dep.insert("version".to_string(), Value::String("*".to_string()));
+                dep.insert("git".to_string(), Value::String(git.to_string()));
+                if let Some(prefix) = prefix {
+                    dep.insert("prefix".to_string(), Value::String(prefix.to_string()));
+                }
             }
             DependencyTarget::File { path } => {
                 let dest = path.canonicalize()?;
                 let value = dest.to_string_lossy().into_owned().to_string();
-                dep.insert("path".to_string(), Value::String(value));
                 dep.insert("version".to_string(), Value::String("*".to_string()));
+                dep.insert("path".to_string(), Value::String(value));
             }
             _ => {}
         }
@@ -188,7 +195,7 @@ fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
 pub async fn project(mut options: ProjectOptions) -> Result<()> {
     let mut sources: Vec<ProjectSource> = Vec::new();
     if let Some(git) = options.git.take() {
-        sources.push(ProjectSource::Git(git))
+        sources.push(ProjectSource::Git(git, options.prefix.clone()))
     }
     if let Some(path) = options.path.take() {
         sources.push(ProjectSource::Path(path))
@@ -262,8 +269,8 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     }
 
     let (name, dependency) = match source {
-        ProjectSource::Git(git) => {
-            (None, Dependency::new_target(DependencyTarget::Repo { git }))
+        ProjectSource::Git(git, prefix) => {
+            (None, Dependency::new_target(DependencyTarget::Repo { git, prefix }))
         }
         ProjectSource::Path(path) => (
             None,
@@ -308,8 +315,8 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     } else {
         let dep_target: DependencyTarget = dependency.target().clone().unwrap();
         match dep_target {
-            DependencyTarget::Repo { ref git } => {
-                let plugin = install_repo(&target, git, false).await?;
+            DependencyTarget::Repo { ref git, ref prefix } => {
+                let plugin = install_repo(&target, git, prefix, false).await?;
                 (plugin.name().to_string(), plugin)
             } 
             DependencyTarget::File { ref path } => {

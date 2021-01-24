@@ -11,6 +11,7 @@ use config::{
     plugin::{Plugin, PluginMap, PluginSource},
     registry::RegistryItem,
     semver::{Version, VersionReq},
+    href::UrlPath,
     PLUGIN,
 };
 
@@ -51,8 +52,8 @@ pub async fn install_dependency<P: AsRef<Path>>(
             DependencyTarget::Archive { ref archive } => {
                 install_archive(project, archive, force).await
             }
-            DependencyTarget::Repo { ref git } => {
-                install_repo(project, git, force).await
+            DependencyTarget::Repo { ref git, ref prefix } => {
+                install_repo(project, git, prefix, force).await
             }
             DependencyTarget::Local { ref scope } => {
                 install_local(project, scope, locals).await
@@ -236,6 +237,7 @@ pub async fn install_archive<P: AsRef<Path>, F: AsRef<Path>>(
 pub async fn install_repo<P: AsRef<Path>>(
     project: P,
     scm_url: &Url,
+    prefix: &Option<UrlPath>,
     force: bool,
 ) -> Result<Plugin> {
     let scm_url_str = scm_url.to_string();
@@ -244,11 +246,19 @@ pub async fn install_repo<P: AsRef<Path>>(
     hasher.update(scm_url_str.as_bytes());
     let scm_id = hex::encode(hasher.finalize().as_slice().to_owned());
 
-    let repo_path = repos_dir.join(scm_id);
+    let mut repo_path = repos_dir.join(scm_id);
     debug!("Install repository {}", repo_path.display());
     scm::clone_or_fetch(&scm_url_str, &repo_path)?;
 
     let source = Some(PluginSource::Repo(scm_url.clone()));
+
+    // Update the repo path to include a prefix when available 
+    // so we install the plugin from the correct folder
+    if let Some(ref prefix) = prefix {
+        let prefix_path = prefix.as_str().trim_start_matches("/");
+        repo_path = repo_path.join(prefix_path);
+    }
+
     let plugin = install_path(project, &repo_path, source).await?;
 
     let target = installation_dir(plugin.name(), plugin.version())?;
@@ -259,8 +269,6 @@ pub async fn install_repo<P: AsRef<Path>>(
             target,
         ));
     }
-
-    //let plugin = copy_plugin_folder(&repo_path, plugin, force).await?;
 
     Ok(plugin)
 }

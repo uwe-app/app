@@ -1,4 +1,6 @@
 use std::fmt;
+use std::str::FromStr;
+use std::convert::Infallible;
 use std::path::{Path, PathBuf};
 
 use serde::{
@@ -32,6 +34,13 @@ impl UrlPath {
 
     pub fn as_str(&self) -> &str {
         &self.value
+    }
+}
+
+impl FromStr for UrlPath {
+    type Err = Infallible;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(UrlPath { value: s.to_string() })
     }
 }
 

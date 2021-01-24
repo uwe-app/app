@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
-use crate::{Error, Result};
+use crate::{Error, Result, utils::href::UrlPath};
 
 use super::features::{FeatureFlags, FeatureMap};
 use super::plugin_spec::{ExactPluginSpec, PluginSpec};
@@ -208,6 +208,7 @@ pub enum DependencyTarget {
     Repo {
         #[serde_as(as = "DisplayFromStr")]
         git: Url,
+        prefix: Option<UrlPath>,
     },
     /// Load plugin from a local scope.
     Local { scope: String },
