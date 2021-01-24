@@ -15,7 +15,7 @@ type Result<T> = std::result::Result<T, error::Error>;
 pub use acm::{new_client as new_acm_client, CertSettings, CertUpsert};
 pub use cloudfront::{
     new_client as new_cloudfront_client, DistributionSettings,
-    ViewerProtocolPolicy, DistributionUpsert,
+    DistributionUpsert, ViewerProtocolPolicy,
 };
 pub use error::Error;
 pub use name_servers::list as list_name_servers;
@@ -39,4 +39,3 @@ pub fn to_idna_punycode(name: &str) -> Result<String> {
     let idna_name = Name::from_utf8(name)?;
     Ok(idna_name.to_ascii())
 }
-

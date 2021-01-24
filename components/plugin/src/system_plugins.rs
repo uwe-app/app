@@ -21,6 +21,7 @@ async fn install_plugin(spec: PluginSpec) -> Result<Plugin> {
     }
 }
 
+/*
 pub async fn install_blueprint(source: &str) -> Result<Plugin> {
     let spec: PluginSpec = if let Ok(spec) = source.parse::<PluginSpec>() {
         spec
@@ -35,6 +36,7 @@ pub async fn install_blueprint(source: &str) -> Result<Plugin> {
     };
     Ok(install_plugin(spec).await?)
 }
+*/
 
 /// Install the offline documentation plugin attempting to use
 /// the preferred version if it is available in the registry

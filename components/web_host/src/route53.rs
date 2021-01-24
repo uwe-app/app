@@ -347,7 +347,6 @@ impl DnsSettings {
         client: &Route53Client,
         mut records: Vec<DnsRecord>,
     ) -> Result<Response> {
-
         for mut r in records.iter_mut() {
             r.name = to_idna_punycode(&r.name)?;
         }

@@ -109,10 +109,6 @@ pub async fn install_path<P: AsRef<Path>, F: AsRef<Path>>(
 
     let (target, mut plugin) = install_file(project.as_ref(), path).await?;
 
-    //let url_target =
-    //format!("{}:{}", FILE_SCHEME, utils::url::to_href_separator(&target));
-    //let source: Url = url_target.parse()?;
-
     let source = if let Some(ref source) = source {
         source.clone()
     } else {

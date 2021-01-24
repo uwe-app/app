@@ -4,19 +4,31 @@ use std::path::PathBuf;
 
 use log::info;
 use toml::map::Map;
-use toml::value::Value;
+use toml::value::{Table, Value};
 use url::Url;
 
 use utils::walk;
 
 use crate::{Error, Result};
-use config::plugin::PluginType;
+use config::plugin::{
+    dependency::{Dependency, DependencyTarget},
+    Plugin, PluginSpec, PluginType,
+};
+
+use plugin::{install_dependency, install_repo, install_path, new_registry};
 
 static DEFAULT_NAME: &str = "default";
 static DEFAULT_MESSAGE: &str = "Initial files.";
 
 // Files to remove for projects created from blueprint plugins
 static REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
+
+#[derive(Debug)]
+pub enum ProjectSource {
+    Plugin(String),
+    Git(Url),
+    Path(PathBuf),
+}
 
 #[derive(Debug)]
 pub struct ProjectOptions {
@@ -43,6 +55,9 @@ struct InitSettings {
 fn write_settings<P: AsRef<Path>>(
     output: P,
     settings: InitSettings,
+    plugin_name: String,
+    dependency: Dependency,
+    plugin: Plugin,
 ) -> Result<()> {
     let prefs = preference::load()?;
     let lang = settings.language;
@@ -68,7 +83,7 @@ fn write_settings<P: AsRef<Path>>(
     let mut config_file = target.clone();
     config_file.push(config::SITE_TOML);
 
-    let mut site_config: toml::value::Table =
+    let mut site_config: Table =
         toml::from_str(&utils::fs::read_string(&config_file)?)?;
     if let Some(ref lang) = language {
         site_config.insert(
@@ -81,6 +96,36 @@ fn write_settings<P: AsRef<Path>>(
     }
 
     let empty = String::from("");
+
+    // Inject the plugin dependency
+    let dependencies = site_config
+        .entry("dependencies")
+        .or_insert(Value::Table(Default::default()));
+    let mut dep: Map<String, Value> = Map::new();
+    if let Some(ref target) = dependency.target() {
+        match target {
+            DependencyTarget::Repo { git } => {
+                dep.insert("git".to_string(), Value::String(git.to_string()));
+                dep.insert("version".to_string(), Value::String("*".to_string()));
+            }
+            DependencyTarget::File { path } => {
+                let dest = path.canonicalize()?;
+                let value = dest.to_string_lossy().into_owned().to_string();
+                dep.insert("path".to_string(), Value::String(value));
+                dep.insert("version".to_string(), Value::String("*".to_string()));
+            }
+            _ => {}
+        }
+    } else {
+        dep.insert(
+            "version".to_string(),
+            Value::String(plugin.version().to_string()),
+        );
+    }
+
+    if let Value::Table(ref mut map) = dependencies {
+        map.insert(plugin_name, Value::Table(dep));
+    }
 
     if !locale_ids.is_empty() {
         let mut site_dir = target.clone();
@@ -118,12 +163,14 @@ fn write_settings<P: AsRef<Path>>(
     Ok(())
 }
 
+/*
 /// Initialize a project copying files from a source folder.
 fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
     source: S,
     target: T,
     settings: InitSettings,
     message: &str,
+    project_source: ProjectSource,
 ) -> Result<()> {
     create_target_parents(target.as_ref())?;
 
@@ -137,11 +184,12 @@ fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
         true
     })?;
 
-    write_settings(target.as_ref(), settings)?;
+    write_settings(target.as_ref(), settings, project_source)?;
     scm::init(target.as_ref(), message)?;
 
     Ok(())
 }
+*/
 
 /// Check a folder has the site settings configuration file.
 fn check_site_settings<T: AsRef<Path>>(target: T) -> Result<()> {
@@ -165,15 +213,7 @@ fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug)]
-pub enum ProjectSource {
-    Plugin(String),
-    Git(Url),
-    Path(PathBuf),
-}
-
 pub async fn project(mut options: ProjectOptions) -> Result<()> {
-
     let mut sources: Vec<ProjectSource> = Vec::new();
     if let Some(git) = options.git.take() {
         sources.push(ProjectSource::Git(git))
@@ -190,7 +230,7 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     }
 
     if sources.len() > 1 {
-        return Err(Error::NewProjectMultipleSource)
+        return Err(Error::NewProjectMultipleSource);
     }
 
     let source = sources.swap_remove(0);
@@ -249,27 +289,127 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
         return Err(Error::TargetExists(target.clone()));
     }
 
+    let (name, dependency) = match source {
+        ProjectSource::Git(git) => {
+            (None, Dependency::new_target(DependencyTarget::Repo { git }))
+        }
+        ProjectSource::Path(path) => (
+            None,
+            Dependency::new_target(DependencyTarget::File { path }),
+        ),
+        ProjectSource::Plugin(plugin_name) => {
+            let spec: PluginSpec =
+                if let Ok(spec) = plugin_name.parse::<PluginSpec>() {
+                    spec
+                } else {
+                    let fqn = format!(
+                        "{}{}{}",
+                        config::PLUGIN_BLUEPRINT_NAMESPACE,
+                        config::PLUGIN_NS,
+                        plugin_name
+                    );
+                    PluginSpec::from(fqn)
+                };
+
+            (
+                Some(spec.name().to_string()),
+                Dependency::new(spec.range().clone()),
+            )
+        }
+    };
+
+    let registry = new_registry()?;
+    let (name, plugin) = if let Some(ref name) = name {
+        (
+            name.to_string(),
+            install_dependency(
+                &target,
+                &registry,
+                name,
+                &dependency,
+                false,
+                None,
+            )
+            .await?,
+        )
+    // Now we have a dependency but no plugin name yet!
+    } else {
+        let dep_target: DependencyTarget = dependency.target().clone().unwrap();
+        match dep_target {
+            DependencyTarget::Repo { ref git } => {
+                let plugin = install_repo(&target, git, false).await?;
+                (plugin.name().to_string(), plugin)
+            } 
+            DependencyTarget::File { ref path } => {
+                let plugin = install_path(&target, path, None).await?;
+                (plugin.name().to_string(), plugin)
+            } 
+            _ => {
+                panic!("Unsupported dependency target whilst creating new project!")
+            }
+        }
+    };
+
+    let source_dir = plugin.base();
+    if !source_dir.exists() || !source_dir.is_dir() {
+        return Err(Error::NotDirectory(source_dir.to_path_buf()));
+    }
+
+    if plugin.kind() != &PluginType::Blueprint {
+        return Err(Error::BlueprintPluginInvalidType(
+            plugin.name().to_string(),
+            plugin.version().to_string(),
+            plugin.kind().to_string(),
+        ));
+    }
+
+    check_site_settings(source_dir)?;
+    //init_folder(&source_dir, &target, settings, message, source)?;
+
+    create_target_parents(&target)?;
+
+    walk::copy(source_dir, &target, |f| {
+        if let Some(file_name) = f.file_name() {
+            let name = file_name.to_string_lossy();
+            if REMOVE.contains(&name.as_ref()) {
+                return false;
+            }
+        }
+        true
+    })?;
+
+    write_settings(&target, settings, name, dependency, plugin)?;
+    scm::init(&target, message)?;
+
+    /*
+    let plugin = install_dependency(
+        &target,
+        registry,
+        ).await?;
+    */
+
+    /*
     match source {
-        ProjectSource::Git(url) => {
+        ProjectSource::Git(ref url) => {
             create_target_parents(&target)?;
             scm::copy(url.to_string(), &target, message)?;
             check_site_settings(&target)?;
-            write_settings(&target, settings)?;
+            write_settings(&target, settings, source)?;
         }
-        ProjectSource::Path(source_dir) => {
-            if !source_dir.exists() {
-                return Err(Error::NoInitSource);
+        ProjectSource::Path(ref source_dir) => {
+            if !source_dir.exists() || !source_dir.is_dir() {
+                return Err(Error::NotDirectory(source_dir.to_path_buf()));
             }
-            check_site_settings(&source_dir)?;
-            init_folder(source_dir, &target, settings, message)?;
+            let folder = source_dir.to_path_buf();
+            check_site_settings(&folder)?;
+            init_folder(&folder, &target, settings, message, source)?;
         }
-        ProjectSource::Plugin(plugin) => {
+        ProjectSource::Plugin(ref plugin) => {
             let plugin = plugin::install_blueprint(&plugin).await?;
             let source_dir = plugin.base();
-            if !source_dir.exists() {
-                return Err(Error::NoInitSource);
+            if !source_dir.exists() || !source_dir.is_dir() {
+                return Err(Error::NotDirectory(source_dir.to_path_buf()));
             }
-
             if plugin.kind() != &PluginType::Blueprint {
                 return Err(Error::BlueprintPluginInvalidType(
                     plugin.name().to_string(),
@@ -279,9 +419,10 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
             }
 
             check_site_settings(&source_dir)?;
-            init_folder(&source_dir, &target, settings, message)?;
+            init_folder(&source_dir, &target, settings, message, source)?;
         }
     }
+    */
 
     if let Some(ref url) = options.remote_url {
         scm::set_remote(&target, &options.remote_name, url)?;

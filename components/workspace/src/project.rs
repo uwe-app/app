@@ -223,7 +223,8 @@ impl ProjectBuilder {
                 for (dep, plugin) in plugins.iter_mut() {
                     info!("Use {}", plugin);
                     debug!(" -> {}", plugin.base().display());
-                    let src: Url = plugin.source().clone().unwrap().try_into()?;
+                    let src: Url =
+                        plugin.source().clone().unwrap().try_into()?;
                     debug!(" -> {}", src.to_string());
 
                     // Prepare the dependency so that we have cached

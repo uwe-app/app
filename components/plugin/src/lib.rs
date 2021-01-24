@@ -22,6 +22,7 @@ pub use error::Error;
 pub use install::install;
 pub use installer::{
     dependency_installed, install_dependency, installation_dir, peek,
+    install_repo, install_path,
     version_installed,
 };
 pub use linter::lint;
@@ -31,4 +32,4 @@ pub use registry::{
     check_for_updates, new_registry, update_registry, RegistryAccess,
     RegistryFileAccess,
 };
-pub use system_plugins::{install_blueprint, install_docs};
+pub use system_plugins::install_docs;

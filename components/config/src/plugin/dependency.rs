@@ -260,6 +260,16 @@ impl Dependency {
         }
     }
 
+    pub fn new_target(target: DependencyTarget) -> Self {
+        Self {
+            version: VersionReq::any(),
+            target: Some(target),
+            optional: None,
+            features: None,
+            apply: None,
+        }
+    }
+
     pub fn new_scope(scope: String, version: VersionReq) -> Self {
         Self {
             version,

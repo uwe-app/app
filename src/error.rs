@@ -21,9 +21,6 @@ pub enum Error {
     #[error("Folder {0} does not contain a settings file {1}")]
     NoSiteSettings(PathBuf, String),
 
-    #[error("Unable to determine a source for the new project, please check the <source> option")]
-    NoInitSource,
-
     #[error("Language {0} does not exist in the locales {1}")]
     LanguageMissingFromLocales(String, String),
 
@@ -68,7 +65,9 @@ pub enum Error {
     #[error("Plugin targets cannot be mixed; use a plugin name or an option (--path, --archive, --git)")]
     PluginAddMultipleTargets,
 
-    #[error("New projects must have one source; use a plugin name, --path or --git")]
+    #[error(
+        "New projects must have one source; use a plugin name, --path or --git"
+    )]
     NewProjectMultipleSource,
 
     #[error(transparent)]

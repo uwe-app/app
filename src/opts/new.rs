@@ -43,9 +43,9 @@ pub struct New {
 
     /// Plugin name for the project blueprint
     ///
-    /// If no plugin name is specified the default 
-    /// plugin will be used. If a bare name is given 
-    /// then it is assumed to be in the std::blueprint 
+    /// If no plugin name is specified the default
+    /// plugin will be used. If a bare name is given
+    /// then it is assumed to be in the std::blueprint
     /// namespace.
     #[structopt()]
     pub plugin: Option<String>,

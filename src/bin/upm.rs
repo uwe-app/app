@@ -131,9 +131,7 @@ enum Command {
     Print plugin information for a specific version: 
         upm info std::core@4.1.12
 ")]
-    Show {
-        target: ExactPluginSpec,
-    },
+    Show { target: ExactPluginSpec },
 
     /// Remove installed plugin(s)
     #[structopt(
@@ -147,9 +145,7 @@ enum Command {
         upm rm std::core@^4
 "
     )]
-    Remove {
-        target: PluginSpec,
-    },
+    Remove { target: PluginSpec },
 
     /// Add a plugin
     ///

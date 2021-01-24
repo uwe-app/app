@@ -4,16 +4,16 @@ use std::path::Path;
 
 use async_trait::async_trait;
 use log::debug;
-use url::Url;
 use rusoto_core::Region;
 use slug::slugify;
+use url::Url;
 
 use crate::{
-    to_idna_punycode,
     name_servers, new_acm_client, new_cloudfront_client, new_route53_client,
-    new_s3_client, trim_hosted_zone_id, BucketSettings, CertSettings,
-    CertUpsert, Error, HostedZoneUpsert, Result, ZoneSettings, DistributionSettings,
-    DistributionUpsert, ViewerProtocolPolicy, DnsRecord, RecordType, DnsSettings,
+    new_s3_client, to_idna_punycode, trim_hosted_zone_id, BucketSettings,
+    CertSettings, CertUpsert, DistributionSettings, DistributionUpsert,
+    DnsRecord, DnsSettings, Error, HostedZoneUpsert, RecordType, Result,
+    ViewerProtocolPolicy, ZoneSettings,
 };
 
 static WWW: &str = "www";
@@ -372,15 +372,14 @@ impl Transition for CdnTransition {
         request: &WebHostRequest,
         response: &mut WebHostResponse,
     ) -> Result<Option<State>> {
-        let client =
-            new_cloudfront_client(&request.credentials)?;
+        let client = new_cloudfront_client(&request.credentials)?;
 
-        let origin: Url = format!("http://{}", &response.bucket_endpoint).parse()?;
+        let origin: Url =
+            format!("http://{}", &response.bucket_endpoint).parse()?;
         let alias = vec![to_idna_punycode(&request.domain_name)?];
         let origin_id = slugify(&request.domain_name);
 
-        let mut cdn =
-            DistributionSettings::new(origin, alias, Some(origin_id));
+        let mut cdn = DistributionSettings::new(origin, alias, Some(origin_id));
         cdn.set_acm_certificate_arn(Some(response.certificate_arn.clone()));
         cdn.set_viewer_protocol_policy(ViewerProtocolPolicy::RedirectToHttps);
 
@@ -408,7 +407,6 @@ impl Transition for CdnDnsTransition {
         request: &WebHostRequest,
         response: &mut WebHostResponse,
     ) -> Result<Option<State>> {
-
         let records = vec![
             DnsRecord::new_cloudfront_alias(
                 request.domain_name.clone(),
@@ -443,25 +441,24 @@ impl Transition for RedirectCnameTransition {
         request: &WebHostRequest,
         response: &mut WebHostResponse,
     ) -> Result<Option<State>> {
+        let name = if let Some(ref domain) = request.redirect_domain_name {
+            domain.clone()
+        } else {
+            format!("{}.{}", WWW, request.domain_name)
+        };
 
-        let name =
-            if let Some(ref domain) = request.redirect_domain_name {
-                domain.clone()
-            } else {
-                format!("{}.{}", WWW, request.domain_name)
-            };
+        let value = format!(
+            "http://{}",
+            response.redirect_bucket_endpoint.as_ref().unwrap()
+        );
 
-        let value = format!("http://{}", response.redirect_bucket_endpoint.as_ref().unwrap());
-
-        let records = vec![
-            DnsRecord {
-                name,
-                value,
-                kind: RecordType::CNAME,
-                alias: None,
-                ttl: Some(300),
-            }
-        ];
+        let records = vec![DnsRecord {
+            name,
+            value,
+            kind: RecordType::CNAME,
+            alias: None,
+            ttl: Some(300),
+        }];
 
         let dns = DnsSettings::new(response.zone_id.clone());
         let client = new_route53_client(&request.credentials)?;
