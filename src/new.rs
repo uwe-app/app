@@ -270,8 +270,8 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
                 return Err(Error::NoInitSource);
             }
 
-            if plugin.kind() != &PluginType::Site {
-                return Err(Error::BlueprintPluginNotSiteType(
+            if plugin.kind() != &PluginType::Blueprint {
+                return Err(Error::BlueprintPluginInvalidType(
                     plugin.name().to_string(),
                     plugin.version().to_string(),
                     plugin.kind().to_string(),

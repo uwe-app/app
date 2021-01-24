@@ -99,9 +99,9 @@ pub enum PluginType {
     /// partials, layouts, scripts, styles or any other files.
     #[serde(rename = "library")]
     Library,
-    /// Site plugins can be used as project blueprints.
-    #[serde(rename = "site")]
-    Site,
+    /// Blueprint plugins scaffold new projects.
+    #[serde(rename = "blueprint")]
+    Blueprint,
 }
 
 impl fmt::Display for PluginType {
@@ -111,7 +111,7 @@ impl fmt::Display for PluginType {
             "{}",
             match *self {
                 Self::Library => "library",
-                Self::Site => "site",
+                Self::Blueprint => "blueprint",
             }
         )
     }

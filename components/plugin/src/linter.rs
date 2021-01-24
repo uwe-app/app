@@ -27,7 +27,7 @@ pub async fn lint<P: AsRef<Path>>(path: P) -> crate::Result<Plugin> {
 pub(crate) fn lint_plugin(plugin: &Plugin) -> crate::Result<()> {
     let result = match plugin.kind() {
         PluginType::Library => lint_library(plugin),
-        PluginType::Site => lint_site(plugin),
+        PluginType::Blueprint => lint_blueprint(plugin),
     };
     Ok(result.map_err(crate::Error::from)?)
 }
@@ -88,8 +88,8 @@ fn lint_symlinks(plugin: &Plugin) -> Result<(), LintError> {
     Ok(())
 }
 
-/// Lint for the site plugin type.
-fn lint_site(plugin: &Plugin) -> Result<(), LintError> {
+/// Lint for the blueprint plugin type.
+fn lint_blueprint(plugin: &Plugin) -> Result<(), LintError> {
     lint_common(plugin)?;
     if !plugin.features().is_empty() {
         return Err(LintError::LintFeaturesSiteType);

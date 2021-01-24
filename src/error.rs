@@ -56,8 +56,8 @@ pub enum Error {
     #[error("Local dependency {0} is not allowed")]
     LocalDependencyNotAllowed(PathBuf),
 
-    #[error("Plugin {0}@{1} for project blueprint should be of type 'site' but got '{2}'")]
-    BlueprintPluginNotSiteType(String, String, String),
+    #[error("Plugin {0}@{1} for new project should be of type 'blueprint' but got '{2}'")]
+    BlueprintPluginInvalidType(String, String, String),
 
     #[error("Plugin {0}@{1} is already installed, use --force to overwrite")]
     PluginAlreadyInstalled(String, String),
