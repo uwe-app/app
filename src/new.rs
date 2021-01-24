@@ -163,34 +163,6 @@ fn write_settings<P: AsRef<Path>>(
     Ok(())
 }
 
-/*
-/// Initialize a project copying files from a source folder.
-fn init_folder<S: AsRef<Path>, T: AsRef<Path>>(
-    source: S,
-    target: T,
-    settings: InitSettings,
-    message: &str,
-    project_source: ProjectSource,
-) -> Result<()> {
-    create_target_parents(target.as_ref())?;
-
-    walk::copy(source.as_ref(), target.as_ref(), |f| {
-        if let Some(file_name) = f.file_name() {
-            let name = file_name.to_string_lossy();
-            if REMOVE.contains(&name.as_ref()) {
-                return false;
-            }
-        }
-        true
-    })?;
-
-    write_settings(target.as_ref(), settings, project_source)?;
-    scm::init(target.as_ref(), message)?;
-
-    Ok(())
-}
-*/
-
 /// Check a folder has the site settings configuration file.
 fn check_site_settings<T: AsRef<Path>>(target: T) -> Result<()> {
     let site_toml = target.as_ref().join(config::SITE_TOML);
@@ -364,8 +336,6 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     }
 
     check_site_settings(source_dir)?;
-    //init_folder(&source_dir, &target, settings, message, source)?;
-
     create_target_parents(&target)?;
 
     walk::copy(source_dir, &target, |f| {
@@ -380,49 +350,6 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
 
     write_settings(&target, settings, name, dependency, plugin)?;
     scm::init(&target, message)?;
-
-    /*
-    let plugin = install_dependency(
-        &target,
-        registry,
-        ).await?;
-    */
-
-    /*
-    match source {
-        ProjectSource::Git(ref url) => {
-            create_target_parents(&target)?;
-            scm::copy(url.to_string(), &target, message)?;
-            check_site_settings(&target)?;
-            write_settings(&target, settings, source)?;
-        }
-        ProjectSource::Path(ref source_dir) => {
-            if !source_dir.exists() || !source_dir.is_dir() {
-                return Err(Error::NotDirectory(source_dir.to_path_buf()));
-            }
-            let folder = source_dir.to_path_buf();
-            check_site_settings(&folder)?;
-            init_folder(&folder, &target, settings, message, source)?;
-        }
-        ProjectSource::Plugin(ref plugin) => {
-            let plugin = plugin::install_blueprint(&plugin).await?;
-            let source_dir = plugin.base();
-            if !source_dir.exists() || !source_dir.is_dir() {
-                return Err(Error::NotDirectory(source_dir.to_path_buf()));
-            }
-            if plugin.kind() != &PluginType::Blueprint {
-                return Err(Error::BlueprintPluginInvalidType(
-                    plugin.name().to_string(),
-                    plugin.version().to_string(),
-                    plugin.kind().to_string(),
-                ));
-            }
-
-            check_site_settings(&source_dir)?;
-            init_folder(&source_dir, &target, settings, message, source)?;
-        }
-    }
-    */
 
     if let Some(ref url) = options.remote_url {
         scm::set_remote(&target, &options.remote_name, url)?;
