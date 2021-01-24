@@ -16,20 +16,6 @@ use uwe::{
 
 use config::plugin::{ExactPluginSpec, PluginSpec};
 
-fn parse_plugin_spec(src: &str) -> std::result::Result<PluginSpec, Error> {
-    src.parse::<PluginSpec>().map_err(Error::from)
-}
-
-fn parse_exact_plugin_spec(
-    src: &str,
-) -> std::result::Result<ExactPluginSpec, Error> {
-    src.parse::<ExactPluginSpec>().map_err(Error::from)
-}
-
-fn parse_url(src: &str) -> std::result::Result<Url, Error> {
-    src.parse::<Url>().map_err(Error::from)
-}
-
 /// Universal (web editor) plugin manager
 #[derive(Debug, StructOpt)]
 #[structopt(name = "upm")]
@@ -146,7 +132,6 @@ enum Command {
         upm info std::core@4.1.12
 ")]
     Show {
-        #[structopt(parse(try_from_str = parse_exact_plugin_spec))]
         target: ExactPluginSpec,
     },
 
@@ -163,7 +148,6 @@ enum Command {
 "
     )]
     Remove {
-        #[structopt(parse(try_from_str = parse_plugin_spec))]
         target: PluginSpec,
     },
 
@@ -200,11 +184,10 @@ enum Command {
         archive: Option<PathBuf>,
 
         /// URL for a git repository.
-        #[structopt(short, long, parse(try_from_str = parse_url))]
+        #[structopt(short, long)]
         git: Option<Url>,
 
         /// Plugin name.
-        #[structopt(parse(try_from_str = parse_exact_plugin_spec))]
         plugin_name: Option<ExactPluginSpec>,
     },
 }

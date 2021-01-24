@@ -18,7 +18,7 @@ use crate::{
     license::LicenseGroup,
     script::ScriptAsset,
     style::StyleAsset,
-    Result, ASSETS, PLUGINS,
+    ASSETS, PLUGINS,
 };
 
 pub type PluginMap = HashMap<String, Plugin>;
@@ -43,12 +43,26 @@ impl TryInto<Url> for PluginSource {
             }
             Self::Repo(url) => Ok(url),
             Self::Registry(url) => Ok(url),
-            _ => todo!(),
+            Self::Archive(ref path) => {
+                let url_target = format!(
+                    "{}{}",
+                    crate::SCHEME_TAR_LZMA,
+                    utils::url::to_href_separator(path)
+                );
+                Ok(url_target.parse()?)
+            }
+            Self::Local(ref name) => {
+                // TODO: url encoding the name?
+                let url_target = format!("{}{}", crate::SCHEME_PLUGIN, name);
+                Ok(url_target.parse()?)
+            }
         }
     }
 }
 
+/*
 impl PluginSource {
+    #[deprecated(note = "Implement TryInto<Url>")]
     pub fn to_url(&self) -> Result<Url> {
         match *self {
             Self::File(ref path) => {
@@ -76,6 +90,7 @@ impl PluginSource {
         }
     }
 }
+*/
 
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
