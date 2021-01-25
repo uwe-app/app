@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use jsonfeed::Author;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use url::Url;
 
@@ -18,6 +18,7 @@ use crate::{
     license::LicenseGroup,
     script::ScriptAsset,
     style::StyleAsset,
+    utils::matcher::GlobPatternMatcher,
     ASSETS, PLUGINS,
 };
 
@@ -59,38 +60,6 @@ impl TryInto<Url> for PluginSource {
         }
     }
 }
-
-/*
-impl PluginSource {
-    #[deprecated(note = "Implement TryInto<Url>")]
-    pub fn to_url(&self) -> Result<Url> {
-        match *self {
-            Self::File(ref path) => {
-                let url_target = format!(
-                    "{}{}",
-                    crate::SCHEME_FILE,
-                    utils::url::to_href_separator(path)
-                );
-                Ok(url_target.parse()?)
-            }
-            Self::Archive(ref path) => {
-                let url_target = format!(
-                    "{}{}",
-                    crate::SCHEME_TAR_LZMA,
-                    utils::url::to_href_separator(path)
-                );
-                Ok(url_target.parse()?)
-            }
-            Self::Repo(ref url) | Self::Registry(ref url) => Ok(url.clone()),
-            Self::Local(ref name) => {
-                // TODO: url encoding the name?
-                let url_target = format!("{}{}", crate::SCHEME_PLUGIN, name);
-                Ok(url_target.parse()?)
-            }
-        }
-    }
-}
-*/
 
 /// Hint as to the type of plugin.
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
@@ -199,6 +168,12 @@ pub struct Plugin {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     library: HashMap<String, ExternalLibrary>,
 
+    /// Directives for how a plugin should be computed.
+    compute: ComputeDirectives,
+
+    /// Directives for blueprint plugins
+    blueprint: Option<BlueprintDirectives>,
+
     /// Base path this plugin was loaded from,
     /// used to resolve assets during collation.
     #[serde(skip)]
@@ -239,7 +214,9 @@ impl Default for Plugin {
             dependencies: Default::default(),
             features: Default::default(),
             library: HashMap::new(),
-            base: PathBuf::from(String::new()),
+            base: PathBuf::new(),
+            compute: Default::default(),
+            blueprint: None,
             checksum: None,
             source: None,
             prefix: None,
@@ -403,6 +380,18 @@ impl Plugin {
         &self.library
     }
 
+    pub fn compute(&self) -> &ComputeDirectives {
+        &self.compute
+    }
+
+    pub fn blueprint(&self) -> &Option<BlueprintDirectives> {
+        &self.blueprint
+    }
+
+    pub fn blueprint_mut(&mut self) -> &mut Option<BlueprintDirectives> {
+        &mut self.blueprint
+    }
+
     /// Generate a qualified name relative to the plugin name.
     pub fn qualified(&self, val: &str) -> String {
         format!("{}::{}", &self.name, val)
@@ -460,6 +449,85 @@ version = "^{}""#,
             }
         }
         out
+    }
+}
+
+/// Plugin settings just for the `blueprint` plugin type.
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+pub struct BlueprintDirectives {
+    /// Set a primary layout for projects created from this blueprint plugin.
+    layout: Option<String>,
+    /// Determine how files are copied when creating a project from the blueprint.
+    files: Option<GlobPatternMatcher>,
+}
+
+impl BlueprintDirectives {
+    pub fn files(&self) -> &Option<GlobPatternMatcher> {
+        &self.files
+    }
+
+    pub fn files_mut(&mut self) -> &mut Option<GlobPatternMatcher> {
+        &mut self.files
+    }
+}
+
+// So we can skip serializing default values for the compute 
+// directive boolean flags.
+fn is_true(b: &bool) -> bool {
+    b == &true
+}
+
+/// Directives to determine how plugins automatically compute.
+///
+/// By default computing attempts all types of files but in some 
+/// cases such as collisions with blueprint plugins it is useful 
+/// to disable some automatic computation.
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct ComputeDirectives {
+    #[serde(skip_serializing_if = "is_true")]
+    pub assets: bool,
+    pub assets_path: Option<UrlPath>,
+    #[serde(skip_serializing_if = "is_true")]
+    pub styles: bool,
+    pub styles_path: Option<UrlPath>,
+    #[serde(skip_serializing_if = "is_true")]
+    pub scripts: bool,
+    pub scripts_path: Option<UrlPath>,
+    #[serde(skip_serializing_if = "is_true")]
+    pub fonts: bool,
+    pub fonts_path: Option<UrlPath>,
+    #[serde(skip_serializing_if = "is_true")]
+    pub plugins: bool,
+    pub plugins_path: Option<UrlPath>,
+    #[serde(skip_serializing_if = "is_true")]
+    pub partials: bool,
+    pub partials_path: Option<UrlPath>,
+    #[serde(skip_serializing_if = "is_true")]
+    pub layouts: bool,
+    pub layouts_path: Option<UrlPath>,
+}
+
+impl Default for ComputeDirectives {
+    fn default() -> Self {
+        Self {
+            assets: true,
+            assets_path: None,
+            styles: true,
+            styles_path: None,
+            scripts: true,
+            scripts_path: None,
+            fonts: true,
+            fonts_path: None,
+            plugins: true,
+            plugins_path: None,
+            partials: true,
+            partials_path: None,
+            layouts: true,
+            layouts_path: None,
+        }
     }
 }
 

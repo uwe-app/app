@@ -14,6 +14,14 @@ pub struct GlobPatternMatcher {
     pub exclude_match: Vec<GlobMatcher>,
 }
 
+impl PartialEq for GlobPatternMatcher {
+    fn eq(&self, other: &Self) -> bool {
+        self.includes == other.includes && self.excludes == other.excludes
+    }
+}
+
+impl Eq for GlobPatternMatcher {}
+
 impl Default for GlobPatternMatcher {
     fn default() -> Self {
         Self {
@@ -55,6 +63,26 @@ impl GlobPatternMatcher {
     /// pattern matches. Excludes take precedence.
     pub fn filter(&self, href: &str) -> bool {
         self.test(href, true)
+    }
+
+    /// Determine if the pattern would be excluded.
+    pub fn is_excluded(&self, href: &str) -> bool {
+        for glob in self.exclude_match.iter() {
+            if glob.is_match(href) {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Determine if the pattern would be included.
+    pub fn is_included(&self, href: &str) -> bool {
+        for glob in self.include_match.iter() {
+            if glob.is_match(href) {
+                return true;
+            }
+        }
+        false
     }
 
     fn test(&self, href: &str, empty: bool) -> bool {

@@ -308,7 +308,7 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     };
 
     let registry = new_registry()?;
-    let (name, plugin) = if let Some(ref name) = name {
+    let (name, mut plugin) = if let Some(ref name) = name {
         (
             name.to_string(),
             install_dependency(
@@ -342,7 +342,7 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
         }
     };
 
-    let source_dir = plugin.base();
+    let source_dir = plugin.base().to_path_buf();
     if !source_dir.exists() || !source_dir.is_dir() {
         return Err(Error::NotDirectory(source_dir.to_path_buf()));
     }
@@ -355,16 +355,40 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
         ));
     }
 
-    check_site_settings(source_dir)?;
+    check_site_settings(&source_dir)?;
     create_target_parents(&target)?;
 
-    walk::copy(source_dir, &target, |f| {
+    // Compile the matching directives
+    if let Some(directives) = plugin.blueprint_mut() {
+        if let Some(files) = directives.files_mut() {
+            files.compile();
+        }
+    }
+
+    walk::copy(&source_dir, &target, |f| {
+        // Built in files we always want to ignore.
         if let Some(file_name) = f.file_name() {
             let name = file_name.to_string_lossy();
             if REMOVE.contains(&name.as_ref()) {
                 return false;
             }
         }
+
+        // Filter files based on the blueprint directives
+        // in the plugin.
+        if let Some(directives) = plugin.blueprint() {
+            if let Some(files) = directives.files() {
+                if let Ok(relative) = f.strip_prefix(&source_dir) {
+                    let rel_path: UrlPath = UrlPath::from(relative);
+                    if files.is_excluded(rel_path.as_str())
+                        && !files.is_included(rel_path.as_str())
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
         true
     })?;
 

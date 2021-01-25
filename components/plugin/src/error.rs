@@ -38,6 +38,9 @@ pub enum LintError {
     #[error("Plugin file {0} is outside {1}, possible symbolic link error")]
     LintSymbolicLink(PathBuf, PathBuf),
 
+    #[error("Plugin blueprint directives may only be used with plugins of type 'blueprint'")]
+    LintBlueprintNotAllowed,
+
     #[error("{0}")]
     Syntax(String),
 

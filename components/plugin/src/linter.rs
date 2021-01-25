@@ -102,6 +102,10 @@ fn lint_blueprint(plugin: &Plugin) -> Result<(), LintError> {
 fn lint_library(plugin: &Plugin) -> Result<(), LintError> {
     lint_common(plugin)?;
 
+    if plugin.blueprint().is_some() {
+        return Err(LintError::LintBlueprintNotAllowed);
+    }
+
     if !plugin.features().is_empty() {
         lint_features(plugin, plugin.features())?;
     }

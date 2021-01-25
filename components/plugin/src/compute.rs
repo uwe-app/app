@@ -9,7 +9,7 @@ use config::{
     dependency::Dependency,
     engine::{TemplateEngine, ENGINES},
     href::UrlPath,
-    plugin::{Plugin, PluginType, TemplateAsset},
+    plugin::{Plugin, PluginType, TemplateAsset, ComputeDirectives},
     script::ScriptAsset,
     semver::VersionReq,
     style::StyleAsset,
@@ -32,37 +32,65 @@ struct SourcePrefix {
     plugins: PathBuf,
 }
 
-impl SourcePrefix {
-    pub fn new_blueprint() -> Self {
-        Self {
-            assets: PathBuf::from(config::SITE).join(config::ASSETS),
-            styles: PathBuf::from(config::SITE)
-                .join(config::ASSETS)
-                .join(config::STYLES),
-            scripts: PathBuf::from(config::SITE)
-                .join(config::ASSETS)
-                .join(config::SCRIPTS),
-            fonts: PathBuf::from(config::SITE)
-                .join(config::ASSETS)
-                .join(config::FONTS),
-            partials: PathBuf::from(config::SITE).join(config::PARTIALS),
-            layouts: PathBuf::from(config::SITE).join(config::LAYOUTS),
-            plugins: PathBuf::from(config::SITE).join(config::PLUGINS),
-        }
-    }
-}
+impl From<&Plugin> for SourcePrefix {
+    fn from(plugin: &Plugin) -> Self {
+        let directives = plugin.compute();
 
-impl Default for SourcePrefix {
-    fn default() -> Self {
-        Self {
-            assets: PathBuf::from(config::ASSETS),
-            styles: PathBuf::from(config::STYLES),
-            scripts: PathBuf::from(config::SCRIPTS),
-            fonts: PathBuf::from(config::FONTS),
-            partials: PathBuf::from(config::PARTIALS),
-            layouts: PathBuf::from(config::LAYOUTS),
-            plugins: PathBuf::from(config::PLUGINS),
-        }
+        match plugin.kind() {
+            PluginType::Blueprint => {
+                Self {
+                    assets: directives.assets_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::ASSETS)),
+                    styles: directives.styles_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::ASSETS)
+                            .join(config::STYLES)),
+                    scripts: directives.scripts_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::ASSETS)
+                            .join(config::SCRIPTS)),
+                    fonts: directives.fonts_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::ASSETS)
+                            .join(config::FONTS)),
+                    plugins: directives.plugins_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::PLUGINS)),
+                    partials: directives.partials_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::PARTIALS)),
+                    layouts: directives.layouts_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(
+                            PathBuf::from(config::SITE)
+                            .join(config::LAYOUTS)),
+                }
+            }
+            _ => {
+                Self {
+                    assets: directives.assets_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::ASSETS)),
+                    styles: directives.styles_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::STYLES)),
+                    scripts: directives.scripts_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::SCRIPTS)),
+                    fonts: directives.fonts_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::FONTS)),
+                    partials: directives.partials_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::PARTIALS)),
+                    layouts: directives.layouts_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::LAYOUTS)),
+                    plugins: directives.plugins_path.as_ref().map(|u| u.to_path_buf())
+                        .unwrap_or(PathBuf::from(config::PLUGINS)),
+                }
+            }
+        } 
     }
 }
 
@@ -70,18 +98,14 @@ impl Default for SourcePrefix {
 pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
     let mut computed = original.clone();
     let base = computed.base().canonicalize()?;
+    let directives = original.compute();
 
     let mut stack: Vec<PathBuf> = Vec::new();
 
-    let prefixes: SourcePrefix = if let PluginType::Blueprint = original.kind()
-    {
-        SourcePrefix::new_blueprint()
-    } else {
-        Default::default()
-    };
-
+    let prefixes = SourcePrefix::from(original);
     let path_prefix = PathBuf::new();
-    load_scope(base, &prefixes, &path_prefix, &mut computed, &mut stack)?;
+
+    load_scope(directives, base, &prefixes, &path_prefix, &mut computed, &mut stack)?;
 
     //println!("{:#?}", computed);
 
@@ -89,6 +113,7 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 }
 
 fn load_scope(
+    directives: &ComputeDirectives,
     base: PathBuf,
     prefix: &SourcePrefix,
     path_prefix: &PathBuf,
@@ -105,27 +130,36 @@ fn load_scope(
     let scripts = base.join(&prefix.scripts);
     let plugins = base.join(&prefix.plugins);
 
-    if assets.exists() && assets.is_dir() {
+    let compute_assets = 
+        directives.assets && assets.exists() && assets.is_dir();
+    let compute_fonts = 
+        directives.fonts && fonts.exists() && fonts.is_dir();
+    let compute_styles = 
+        directives.styles && styles.exists() && styles.is_dir();
+    let compute_scripts = 
+        directives.scripts && scripts.exists() && scripts.is_dir();
+
+    if compute_assets {
         load_assets(&base, path_prefix, &assets, scope);
     }
 
     // Fonts just get placed in the assets collection, this
     // convention is for convenience so plugin authors can
     // be more explicit using the file system layout.
-    if fonts.exists() && fonts.is_dir() {
+    if compute_fonts {
         load_assets(&base, path_prefix, &fonts, scope);
     }
 
-    if styles.exists() && styles.is_dir() {
+    if compute_styles {
         load_styles(&base, path_prefix, &styles, scope);
     }
 
-    if scripts.exists() && scripts.is_dir() {
+    if compute_scripts {
         load_scripts(&base, path_prefix, &scripts, scope);
     }
 
     for engine in ENGINES.iter() {
-        load_engine(&base, prefix, path_prefix, &engine, scope);
+        load_engine(directives, &base, prefix, path_prefix, &engine, scope);
     }
 
     if plugins.exists() && plugins.is_dir() {
@@ -142,16 +176,19 @@ fn load_scope(
                         return Err(Error::CyclicPlugin(base));
                     }
 
+                    let scope_directives: ComputeDirectives = Default::default();
                     let scope_prefix =
                         scope_base.strip_prefix(&base)?.to_path_buf();
                     let path_prefix = UrlPath::from(&scope_prefix);
                     let mut child_scope: Plugin =
                         Plugin::new_scope(scope, &scope_name, path_prefix);
+                    let scope_source_prefix = SourcePrefix::from(&child_scope);
 
                     stack.push(scope_base.clone());
                     load_scope(
+                        &scope_directives,
                         scope_base,
-                        prefix,
+                        &scope_source_prefix,
                         &scope_prefix,
                         &mut child_scope,
                         stack,
@@ -300,6 +337,7 @@ fn load_scripts(
 }
 
 fn load_engine(
+    directives: &ComputeDirectives,
     base: &PathBuf,
     prefix: &SourcePrefix,
     path_prefix: &PathBuf,
@@ -308,10 +346,16 @@ fn load_engine(
 ) {
     let partials = base.join(&prefix.partials);
     let layouts = base.join(&prefix.layouts);
-    if partials.exists() && partials.is_dir() {
+
+    let compute_partials = 
+        directives.partials && partials.exists() && partials.is_dir();
+    let compute_layouts = 
+        directives.layouts && layouts.exists() && layouts.is_dir();
+
+    if compute_partials {
         load_partials(base, path_prefix, &partials, engine, computed);
     }
-    if layouts.exists() && layouts.is_dir() {
+    if compute_layouts {
         load_layouts(base, path_prefix, &layouts, engine, computed);
     }
 }
