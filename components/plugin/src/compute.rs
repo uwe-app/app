@@ -9,8 +9,7 @@ use config::{
     dependency::Dependency,
     engine::{TemplateEngine, ENGINES},
     href::UrlPath,
-    plugin::Plugin,
-    plugin::TemplateAsset,
+    plugin::{Plugin, PluginType, TemplateAsset},
     script::ScriptAsset,
     semver::VersionReq,
     style::StyleAsset,
@@ -23,13 +22,42 @@ use crate::{Error, Result};
 static PLUGIN_STACK_SIZE: usize = 8;
 
 #[derive(Debug)]
-struct Prefix {
-    assets: String,
-    fonts: String,
-    styles: String,
-    scripts: String,
-    partials: String,
-    plugins: String,
+struct SourcePrefix {
+    assets: PathBuf,
+    styles: PathBuf,
+    scripts: PathBuf,
+    fonts: PathBuf,
+    partials: PathBuf,
+    layouts: PathBuf,
+    plugins: PathBuf,
+}
+
+impl SourcePrefix {
+    pub fn new_blueprint() -> Self {
+        Self {
+            assets: PathBuf::from(config::SITE).join(config::ASSETS), 
+            styles: PathBuf::from(config::SITE).join(config::ASSETS).join(config::STYLES), 
+            scripts: PathBuf::from(config::SITE).join(config::ASSETS).join(config::SCRIPTS), 
+            fonts: PathBuf::from(config::SITE).join(config::ASSETS).join(config::FONTS), 
+            partials: PathBuf::from(config::SITE).join(config::PARTIALS), 
+            layouts: PathBuf::from(config::SITE).join(config::LAYOUTS), 
+            plugins: PathBuf::from(config::SITE).join(config::PLUGINS), 
+        } 
+    }
+}
+
+impl Default for SourcePrefix {
+    fn default() -> Self {
+        Self {
+            assets: PathBuf::from(config::ASSETS), 
+            styles: PathBuf::from(config::STYLES), 
+            scripts: PathBuf::from(config::SCRIPTS), 
+            fonts: PathBuf::from(config::FONTS), 
+            partials: PathBuf::from(config::PARTIALS), 
+            layouts: PathBuf::from(config::LAYOUTS), 
+            plugins: PathBuf::from(config::PLUGINS), 
+        } 
+    }
 }
 
 /// Compute plugin information by convention from the file system.
@@ -39,8 +67,14 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 
     let mut stack: Vec<PathBuf> = Vec::new();
 
-    let prefix = PathBuf::new();
-    load_scope(base, prefix, &mut computed, &mut stack)?;
+    let prefixes: SourcePrefix = if let PluginType::Blueprint = original.kind() {
+        SourcePrefix::new_blueprint()
+    } else {
+        Default::default()
+    };
+
+    let path_prefix = PathBuf::new();
+    load_scope(base, &prefixes, &path_prefix, &mut computed, &mut stack)?;
 
     //println!("{:#?}", computed);
 
@@ -49,7 +83,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 
 fn load_scope(
     base: PathBuf,
-    prefix: PathBuf,
+    prefix: &SourcePrefix,
+    path_prefix: &PathBuf,
     scope: &mut Plugin,
     stack: &mut Vec<PathBuf>,
 ) -> Result<()> {
@@ -57,33 +92,33 @@ fn load_scope(
         return Err(Error::PluginStackTooLarge(PLUGIN_STACK_SIZE));
     }
 
-    let assets = base.join(config::ASSETS);
-    let fonts = base.join(config::FONTS);
-    let styles = base.join(config::STYLES);
-    let scripts = base.join(config::SCRIPTS);
-    let plugins = base.join(config::PLUGINS);
+    let assets = base.join(&prefix.assets);
+    let fonts = base.join(&prefix.fonts);
+    let styles = base.join(&prefix.styles);
+    let scripts = base.join(&prefix.scripts);
+    let plugins = base.join(&prefix.plugins);
 
     if assets.exists() && assets.is_dir() {
-        load_assets(&base, &prefix, &assets, scope);
+        load_assets(&base, path_prefix, &assets, scope);
     }
 
     // Fonts just get placed in the assets collection, this
     // convention is for convenience so plugin authors can
     // be more explicit using the file system layout.
     if fonts.exists() && fonts.is_dir() {
-        load_assets(&base, &prefix, &fonts, scope);
+        load_assets(&base, path_prefix, &fonts, scope);
     }
 
     if styles.exists() && styles.is_dir() {
-        load_styles(&base, &prefix, &styles, scope);
+        load_styles(&base, path_prefix, &styles, scope);
     }
 
     if scripts.exists() && scripts.is_dir() {
-        load_scripts(&base, &prefix, &scripts, scope);
+        load_scripts(&base, path_prefix, &scripts, scope);
     }
 
     for engine in ENGINES.iter() {
-        load_engine(&base, &prefix, &engine, scope);
+        load_engine(&base, prefix, path_prefix, &engine, scope);
     }
 
     if plugins.exists() && plugins.is_dir() {
@@ -102,14 +137,15 @@ fn load_scope(
 
                     let scope_prefix =
                         scope_base.strip_prefix(&base)?.to_path_buf();
-                    let prefix = UrlPath::from(&scope_prefix);
+                    let path_prefix = UrlPath::from(&scope_prefix);
                     let mut child_scope: Plugin =
-                        Plugin::new_scope(scope, &scope_name, prefix);
+                        Plugin::new_scope(scope, &scope_name, path_prefix);
 
                     stack.push(scope_base.clone());
                     load_scope(
                         scope_base,
-                        scope_prefix,
+                        prefix,
+                        &scope_prefix,
                         &mut child_scope,
                         stack,
                     )?;
@@ -258,17 +294,18 @@ fn load_scripts(
 
 fn load_engine(
     base: &PathBuf,
-    prefix: &PathBuf,
+    prefix: &SourcePrefix,
+    path_prefix: &PathBuf,
     engine: &TemplateEngine,
     computed: &mut Plugin,
 ) {
-    let partials = base.join(config::PARTIALS);
-    let layouts = base.join(config::LAYOUTS);
+    let partials = base.join(&prefix.partials);
+    let layouts = base.join(&prefix.layouts);
     if partials.exists() && partials.is_dir() {
-        load_partials(base, prefix, &partials, engine, computed);
+        load_partials(base, path_prefix, &partials, engine, computed);
     }
     if layouts.exists() && layouts.is_dir() {
-        load_layouts(base, prefix, &layouts, engine, computed);
+        load_layouts(base, path_prefix, &layouts, engine, computed);
     }
 }
 
