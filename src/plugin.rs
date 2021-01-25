@@ -12,7 +12,7 @@ use config::{
     plugin::{
         dependency::{Dependency, DependencyTarget},
         ExactPluginSpec, Plugin, PluginSpec,
-    }
+    },
 };
 use plugin::{
     check_for_updates, dependency_installed, get, install_dependency,
@@ -212,7 +212,10 @@ pub async fn add(
                 )
             } else {
                 if let Some(git) = git.take() {
-                    (String::new(), DependencyTarget::Repo { git, prefix }.into())
+                    (
+                        String::new(),
+                        DependencyTarget::Repo { git, prefix }.into(),
+                    )
                 } else {
                     return Err(Error::PluginAddNoTarget);
                 }

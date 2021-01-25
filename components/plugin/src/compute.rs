@@ -35,28 +35,34 @@ struct SourcePrefix {
 impl SourcePrefix {
     pub fn new_blueprint() -> Self {
         Self {
-            assets: PathBuf::from(config::SITE).join(config::ASSETS), 
-            styles: PathBuf::from(config::SITE).join(config::ASSETS).join(config::STYLES), 
-            scripts: PathBuf::from(config::SITE).join(config::ASSETS).join(config::SCRIPTS), 
-            fonts: PathBuf::from(config::SITE).join(config::ASSETS).join(config::FONTS), 
-            partials: PathBuf::from(config::SITE).join(config::PARTIALS), 
-            layouts: PathBuf::from(config::SITE).join(config::LAYOUTS), 
-            plugins: PathBuf::from(config::SITE).join(config::PLUGINS), 
-        } 
+            assets: PathBuf::from(config::SITE).join(config::ASSETS),
+            styles: PathBuf::from(config::SITE)
+                .join(config::ASSETS)
+                .join(config::STYLES),
+            scripts: PathBuf::from(config::SITE)
+                .join(config::ASSETS)
+                .join(config::SCRIPTS),
+            fonts: PathBuf::from(config::SITE)
+                .join(config::ASSETS)
+                .join(config::FONTS),
+            partials: PathBuf::from(config::SITE).join(config::PARTIALS),
+            layouts: PathBuf::from(config::SITE).join(config::LAYOUTS),
+            plugins: PathBuf::from(config::SITE).join(config::PLUGINS),
+        }
     }
 }
 
 impl Default for SourcePrefix {
     fn default() -> Self {
         Self {
-            assets: PathBuf::from(config::ASSETS), 
-            styles: PathBuf::from(config::STYLES), 
-            scripts: PathBuf::from(config::SCRIPTS), 
-            fonts: PathBuf::from(config::FONTS), 
-            partials: PathBuf::from(config::PARTIALS), 
-            layouts: PathBuf::from(config::LAYOUTS), 
-            plugins: PathBuf::from(config::PLUGINS), 
-        } 
+            assets: PathBuf::from(config::ASSETS),
+            styles: PathBuf::from(config::STYLES),
+            scripts: PathBuf::from(config::SCRIPTS),
+            fonts: PathBuf::from(config::FONTS),
+            partials: PathBuf::from(config::PARTIALS),
+            layouts: PathBuf::from(config::LAYOUTS),
+            plugins: PathBuf::from(config::PLUGINS),
+        }
     }
 }
 
@@ -67,7 +73,8 @@ pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
 
     let mut stack: Vec<PathBuf> = Vec::new();
 
-    let prefixes: SourcePrefix = if let PluginType::Blueprint = original.kind() {
+    let prefixes: SourcePrefix = if let PluginType::Blueprint = original.kind()
+    {
         SourcePrefix::new_blueprint()
     } else {
         Default::default()

@@ -21,9 +21,8 @@ pub use download::get;
 pub use error::Error;
 pub use install::install;
 pub use installer::{
-    dependency_installed, install_dependency, installation_dir, peek,
-    install_repo, install_path,
-    version_installed,
+    dependency_installed, install_dependency, install_path, install_repo,
+    installation_dir, peek, version_installed,
 };
 pub use linter::lint;
 pub use list::list_dependencies;

@@ -344,7 +344,10 @@ async fn resolve_version<P: AsRef<Path>>(
             }
 
             // NOTE: This potentially requires a network connection!
-            DependencyTarget::Repo { ref git, ref prefix } => {
+            DependencyTarget::Repo {
+                ref git,
+                ref prefix,
+            } => {
                 debug!("Resolve local repository {:?}", git);
                 let plugin =
                     installer::install_repo(project, git, prefix, true).await?;

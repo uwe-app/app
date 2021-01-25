@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
+use config::href::UrlPath;
 use structopt::StructOpt;
 use url::Url;
-use config::href::UrlPath;
 
 #[derive(StructOpt, Debug)]
 pub struct New {

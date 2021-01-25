@@ -16,7 +16,7 @@ use uwe::{
 
 use config::{
     href::UrlPath,
-    plugin::{ExactPluginSpec, PluginSpec}
+    plugin::{ExactPluginSpec, PluginSpec},
 };
 
 /// Universal (web editor) plugin manager
@@ -258,7 +258,8 @@ async fn run(cmd: Command) -> Result<()> {
             prefix,
             force,
         } => {
-            uwe::plugin::add(plugin_name, path, archive, git, prefix, force).await?;
+            uwe::plugin::add(plugin_name, path, archive, git, prefix, force)
+                .await?;
         }
     }
     Ok(())

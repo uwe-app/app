@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
-use crate::{Error, Result, utils::href::UrlPath};
+use crate::{utils::href::UrlPath, Error, Result};
 
 use super::features::{FeatureFlags, FeatureMap};
 use super::plugin_spec::{ExactPluginSpec, PluginSpec};

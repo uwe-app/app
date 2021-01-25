@@ -8,10 +8,10 @@ use url::Url;
 
 use config::{
     dependency::{Dependency, DependencyTarget},
+    href::UrlPath,
     plugin::{Plugin, PluginMap, PluginSource},
     registry::RegistryItem,
     semver::{Version, VersionReq},
-    href::UrlPath,
     PLUGIN,
 };
 
@@ -52,9 +52,10 @@ pub async fn install_dependency<P: AsRef<Path>>(
             DependencyTarget::Archive { ref archive } => {
                 install_archive(project, archive, force).await
             }
-            DependencyTarget::Repo { ref git, ref prefix } => {
-                install_repo(project, git, prefix, force).await
-            }
+            DependencyTarget::Repo {
+                ref git,
+                ref prefix,
+            } => install_repo(project, git, prefix, force).await,
             DependencyTarget::Local { ref scope } => {
                 install_local(project, scope, locals).await
             }
@@ -252,7 +253,7 @@ pub async fn install_repo<P: AsRef<Path>>(
 
     let source = Some(PluginSource::Repo(scm_url.clone()));
 
-    // Update the repo path to include a prefix when available 
+    // Update the repo path to include a prefix when available
     // so we install the plugin from the correct folder
     if let Some(ref prefix) = prefix {
         let prefix_path = prefix.as_str().trim_start_matches("/");

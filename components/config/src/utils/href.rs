@@ -1,7 +1,7 @@
-use std::fmt;
-use std::str::FromStr;
 use std::convert::Infallible;
+use std::fmt;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use serde::{
     de::{self, Visitor},
@@ -40,7 +40,9 @@ impl UrlPath {
 impl FromStr for UrlPath {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(UrlPath { value: s.to_string() })
+        Ok(UrlPath {
+            value: s.to_string(),
+        })
     }
 }
 

@@ -15,10 +15,10 @@ use config::{
     plugin::{
         dependency::{Dependency, DependencyTarget},
         Plugin, PluginSpec, PluginType,
-    }
+    },
 };
 
-use plugin::{install_dependency, install_repo, install_path, new_registry};
+use plugin::{install_dependency, install_path, install_repo, new_registry};
 
 static DEFAULT_NAME: &str = "default";
 static DEFAULT_MESSAGE: &str = "Initial files.";
@@ -109,16 +109,25 @@ fn write_settings<P: AsRef<Path>>(
     if let Some(ref target) = dependency.target() {
         match target {
             DependencyTarget::Repo { git, prefix } => {
-                dep.insert("version".to_string(), Value::String("*".to_string()));
+                dep.insert(
+                    "version".to_string(),
+                    Value::String("*".to_string()),
+                );
                 dep.insert("git".to_string(), Value::String(git.to_string()));
                 if let Some(prefix) = prefix {
-                    dep.insert("prefix".to_string(), Value::String(prefix.to_string()));
+                    dep.insert(
+                        "prefix".to_string(),
+                        Value::String(prefix.to_string()),
+                    );
                 }
             }
             DependencyTarget::File { path } => {
                 let dest = path.canonicalize()?;
                 let value = dest.to_string_lossy().into_owned().to_string();
-                dep.insert("version".to_string(), Value::String("*".to_string()));
+                dep.insert(
+                    "version".to_string(),
+                    Value::String("*".to_string()),
+                );
                 dep.insert("path".to_string(), Value::String(value));
             }
             _ => {}
@@ -269,9 +278,10 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     }
 
     let (name, dependency) = match source {
-        ProjectSource::Git(git, prefix) => {
-            (None, Dependency::new_target(DependencyTarget::Repo { git, prefix }))
-        }
+        ProjectSource::Git(git, prefix) => (
+            None,
+            Dependency::new_target(DependencyTarget::Repo { git, prefix }),
+        ),
         ProjectSource::Path(path) => (
             None,
             Dependency::new_target(DependencyTarget::File { path }),
@@ -315,14 +325,17 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     } else {
         let dep_target: DependencyTarget = dependency.target().clone().unwrap();
         match dep_target {
-            DependencyTarget::Repo { ref git, ref prefix } => {
+            DependencyTarget::Repo {
+                ref git,
+                ref prefix,
+            } => {
                 let plugin = install_repo(&target, git, prefix, false).await?;
                 (plugin.name().to_string(), plugin)
-            } 
+            }
             DependencyTarget::File { ref path } => {
                 let plugin = install_path(&target, path, None).await?;
                 (plugin.name().to_string(), plugin)
-            } 
+            }
             _ => {
                 panic!("Unsupported dependency target whilst creating new project!")
             }

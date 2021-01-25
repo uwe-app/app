@@ -448,7 +448,10 @@ version = "^{}""#,
                     out.push_str(&format!(r#"git = "{}""#, git.to_string()));
                     if let Some(ref prefix) = prefix {
                         out.push('\n');
-                        out.push_str(&format!(r#"prefix = "{}""#, prefix.to_string()));
+                        out.push_str(&format!(
+                            r#"prefix = "{}""#,
+                            prefix.to_string()
+                        ));
                     }
                 }
                 _ => {
