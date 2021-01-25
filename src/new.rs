@@ -106,7 +106,10 @@ fn write_settings<P: AsRef<Path>>(
                 .entry("build")
                 .or_insert(Value::Table(Default::default()));
             if let Value::Table(ref mut map) = build {
-                map.insert("layout".to_string(), Value::String(layout.to_string()));
+                map.insert(
+                    "layout".to_string(),
+                    Value::String(layout.to_string()),
+                );
             }
         }
     }

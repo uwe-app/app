@@ -43,6 +43,9 @@ pub enum Error {
     #[error("Dependency {0} wants to apply the layout {2} but the plugin does not have the layout: {2} (engine: {1})")]
     ApplyLayoutNoLayoutForKey(String, String, String),
 
+    #[error("Filters given for {0} dependency but no plugin files matched")]
+    ApplyFiltersNoMatch(String),
+
     //#[error("Page {0} is outside the source directory {1}")]
     //PageOutsideSource(PathBuf, PathBuf),
     #[error("Failed to read link catalog {0}")]

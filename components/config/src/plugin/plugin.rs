@@ -476,7 +476,7 @@ impl BlueprintDirectives {
     }
 }
 
-// So we can skip serializing default values for the compute 
+// So we can skip serializing default values for the compute
 // directive boolean flags.
 fn is_true(b: &bool) -> bool {
     b == &true
@@ -484,8 +484,8 @@ fn is_true(b: &bool) -> bool {
 
 /// Directives to determine how plugins automatically compute.
 ///
-/// By default computing attempts all types of files but in some 
-/// cases such as collisions with blueprint plugins it is useful 
+/// By default computing attempts all types of files but in some
+/// cases such as collisions with blueprint plugins it is useful
 /// to disable some automatic computation.
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]

@@ -341,11 +341,24 @@ impl From<ExactPluginSpec> for Dependency {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[serde(untagged)]
+pub enum ApplyMatch {
+    Pattern(Glob),
+    Filter { to: Glob, filter: Glob },
+}
+
+impl Default for ApplyMatch {
+    fn default() -> Self {
+        Self::Pattern(Glob::new("**").unwrap())
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct Apply {
-    pub styles: Option<Vec<Glob>>,
-    pub scripts: Option<Vec<Glob>>,
+    pub styles: Option<Vec<ApplyMatch>>,
+    pub scripts: Option<Vec<ApplyMatch>>,
     pub layouts: Option<HashMap<String, Vec<Glob>>>,
 
     #[serde(skip)]
@@ -354,6 +367,11 @@ pub struct Apply {
     pub scripts_match: Vec<GlobMatcher>,
     #[serde(skip)]
     pub layouts_match: HashMap<String, Vec<GlobMatcher>>,
+
+    #[serde(skip)]
+    pub styles_filter: Option<Vec<GlobMatcher>>,
+    #[serde(skip)]
+    pub scripts_filter: Option<Vec<GlobMatcher>>,
 }
 
 impl PartialEq for Apply {
@@ -368,30 +386,78 @@ impl Eq for Apply {}
 
 impl Apply {
     /// Prepare the global patterns by compiling them.
-    ///
-    /// Original GlobSet declarations are moved out of the Option(s).
     pub(crate) fn prepare(&mut self) -> Result<()> {
-        self.styles_match = if let Some(styles) = self.styles.take() {
-            styles.iter().map(|g| g.compile_matcher()).collect()
+        let (styles_match, styles_filter) = if let Some(ref styles) = self.styles
+        {
+            let mut styles_match = Vec::new();
+            let mut styles_filter = Vec::new();
+            for v in styles {
+                match v {
+                    ApplyMatch::Pattern (ptn) => {
+                        styles_match.push(ptn.compile_matcher());
+                    }
+                    ApplyMatch::Filter { ref to, ref filter } => {
+                        styles_match.push(to.compile_matcher());
+                        styles_filter.push(filter.compile_matcher());
+                    },
+                }
+            }
+
+            if styles_filter.is_empty() {
+                (styles_match, None)
+            } else {
+                (styles_match, Some(styles_filter))
+            }
         } else {
-            Vec::new()
+            (Vec::new(), None)
         };
 
-        self.scripts_match = if let Some(scripts) = self.scripts.take() {
-            scripts.iter().map(|g| g.compile_matcher()).collect()
+        self.styles_match = styles_match;
+        self.styles_filter = styles_filter;
+
+        let (scripts_match, scripts_filter) = if let Some(ref scripts) = self.scripts
+        {
+            let mut scripts_match = Vec::new();
+            let mut scripts_filter = Vec::new();
+            for v in scripts {
+                match v {
+                    ApplyMatch::Pattern (ptn) => {
+                        scripts_match.push(ptn.compile_matcher());
+                    }
+                    ApplyMatch::Filter { ref to, ref filter } => {
+                        scripts_match.push(to.compile_matcher());
+                        scripts_filter.push(filter.compile_matcher());
+                    },
+                }
+            }
+
+            if scripts_filter.is_empty() {
+                (scripts_match, None)
+            } else {
+                (scripts_match, Some(scripts_filter))
+            }
         } else {
-            Vec::new()
+            (Vec::new(), None)
         };
 
-        self.layouts_match = if let Some(layouts) = self.layouts.take() {
+        self.scripts_match = scripts_match;
+        self.scripts_filter = scripts_filter;
+
+        self.layouts_match = if let Some(ref layouts) = self.layouts
+        {
             let mut tmp: HashMap<String, Vec<GlobMatcher>> = HashMap::new();
             for (k, v) in layouts {
-                tmp.insert(k, v.iter().map(|g| g.compile_matcher()).collect());
+                tmp.insert(
+                    k.clone(),
+                    v.iter().map(|g| g.compile_matcher()).collect(),
+                );
+
             }
             tmp
         } else {
             HashMap::new()
         };
+
         Ok(())
     }
 }
