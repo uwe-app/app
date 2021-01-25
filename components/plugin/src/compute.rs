@@ -22,6 +22,16 @@ use crate::{Error, Result};
 
 static PLUGIN_STACK_SIZE: usize = 8;
 
+#[derive(Debug)]
+struct Prefix {
+    assets: String,
+    fonts: String,
+    styles: String,
+    scripts: String,
+    partials: String,
+    plugins: String,
+}
+
 /// Compute plugin information by convention from the file system.
 pub(crate) async fn transform(original: &Plugin) -> Result<Plugin> {
     let mut computed = original.clone();

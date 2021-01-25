@@ -187,7 +187,7 @@ enum Command {
         git: Option<Url>,
 
         /// Folder prefix for git repositories.
-        #[structopt(short, long)]
+        #[structopt(long)]
         prefix: Option<UrlPath>,
 
         /// Plugin name.
