@@ -99,6 +99,18 @@ fn write_settings<P: AsRef<Path>>(
         site_config.insert(config::HOST_KEY.to_string(), Value::String(host));
     }
 
+    // Inject a layout from a blueprint.
+    if let Some(blueprint) = plugin.blueprint() {
+        if let Some(ref layout) = blueprint.layout() {
+            let build = site_config
+                .entry("build")
+                .or_insert(Value::Table(Default::default()));
+            if let Value::Table(ref mut map) = build {
+                map.insert("layout".to_string(), Value::String(layout.to_string()));
+            }
+        }
+    }
+
     let empty = String::from("");
 
     // Inject the plugin dependency

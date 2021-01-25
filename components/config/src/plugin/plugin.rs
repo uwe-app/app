@@ -463,6 +463,10 @@ pub struct BlueprintDirectives {
 }
 
 impl BlueprintDirectives {
+    pub fn layout(&self) -> &Option<String> {
+        &self.layout
+    }
+
     pub fn files(&self) -> &Option<GlobPatternMatcher> {
         &self.files
     }
