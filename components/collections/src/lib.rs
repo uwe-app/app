@@ -14,16 +14,16 @@ pub enum Error {
     IndexKeyType,
 
     #[error("Data source document should be an object")]
-    DataSourceDocumentNotAnObject,
+    CollectionDocumentNotAnObject,
 
     #[error("Data source document must have an id")]
-    DataSourceDocumentNoId,
+    CollectionDocumentNoId,
 
     #[error("Page size {0} is not large enough, must be greater than one")]
     PageSizeTooSmall(usize),
 
     #[error("No data source with name {0}")]
-    NoDataSource(String),
+    NoCollection(String),
 
     #[error("No index with name {0}")]
     NoIndex(String),
@@ -31,10 +31,10 @@ pub enum Error {
     //#[error("No feed template file {0}")]
     //NoFeedTemplate(PathBuf),
     #[error("No configuration {conf} for data source {key}")]
-    NoDataSourceConf { conf: String, key: String },
+    NoCollectionConf { conf: String, key: String },
 
     #[error("No {docs} directory for data source {key}")]
-    NoDataSourceDocuments { docs: PathBuf, key: String },
+    NoCollectionDocuments { docs: PathBuf, key: String },
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

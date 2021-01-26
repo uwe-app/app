@@ -24,7 +24,7 @@ use config::{
     Config, ProfileSettings, RuntimeOptions,
 };
 
-use collections::{synthetic, DataSourceMap, QueryCache};
+use collections::{synthetic, CollectionsMap, QueryCache};
 
 use locale::Locales;
 
@@ -192,7 +192,7 @@ pub struct ProjectBuilder {
     options: RuntimeOptions,
     plugins: Option<PluginCache>,
     redirects: RedirectConfig,
-    datasource: DataSourceMap,
+    collections: CollectionsMap,
     cache: QueryCache,
     collations: CollationBuilder,
 }
@@ -364,11 +364,11 @@ impl ProjectBuilder {
         let collation = self.collations.get_fallback();
 
         // Set up the cache for data source queries
-        self.cache = DataSourceMap::get_cache();
+        self.cache = CollectionsMap::get_cache();
 
         // Load data sources and create indices
-        self.datasource =
-            DataSourceMap::load(&self.config, &self.options, collation).await?;
+        self.collections =
+            CollectionsMap::load(&self.config, &self.options, collation).await?;
 
         Ok(self)
     }
@@ -401,7 +401,7 @@ impl ProjectBuilder {
                 &self.config,
                 &self.options,
                 collation,
-                &self.datasource,
+                &self.collections,
                 &mut self.cache,
             )?;
         }
@@ -417,7 +417,7 @@ impl ProjectBuilder {
                 &self.config,
                 &self.options,
                 collation,
-                &self.datasource,
+                &self.collections,
                 &mut self.cache,
             )?;
         }
@@ -433,7 +433,7 @@ impl ProjectBuilder {
                 &self.config,
                 &self.options,
                 collation,
-                &self.datasource,
+                &self.collections,
                 &mut self.cache,
             )?;
         }
@@ -548,7 +548,7 @@ impl ProjectBuilder {
             locales,
             manifest,
             redirects: self.redirects,
-            datasource: self.datasource,
+            collections: self.collections,
             //cache: self.cache,
         })
     }
@@ -576,9 +576,8 @@ pub struct Project {
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Arc<Locales>,
-    pub datasource: DataSourceMap,
+    pub collections: CollectionsMap,
 
-    //cache: QueryCache,
     parsers: Vec<Box<dyn Parser + Send + Sync>>,
     pub(crate) renderers: Vec<Renderer>,
     manifest: Option<Arc<RwLock<Manifest>>>,
@@ -593,8 +592,8 @@ impl Project {
         &*self.options
     }
 
-    pub fn collections(&self) -> &DataSourceMap {
-        &self.datasource
+    pub fn collections(&self) -> &CollectionsMap {
+        &self.collections
     }
 
     pub fn parsers_mut(&mut self) -> &mut Vec<Box<dyn Parser + Send + Sync>> {

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use log::{info, warn};
 
-use collections::DataSourceMap;
+use collections::CollectionsMap;
 use config::{hook::HookConfig, Config, RuntimeOptions};
 
 use crate::{
@@ -58,7 +58,7 @@ impl Updater {
         self.project.options()
     }
 
-    pub fn collections(&self) -> &DataSourceMap {
+    pub fn collections(&self) -> &CollectionsMap {
         self.project.collections()
     }
 

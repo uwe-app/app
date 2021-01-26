@@ -6,14 +6,14 @@ use serde_json::json;
 use collator::{create_page, CollateInfo};
 use config::{Config, PageLink, PaginateInfo, RuntimeOptions};
 
-use crate::{DataSourceMap, Error, QueryCache, Result};
+use crate::{CollectionsMap, Error, QueryCache, Result};
 
 // Assign query results to the page data
 pub fn assign(
     _config: &Config,
     _options: &RuntimeOptions,
     info: &mut CollateInfo,
-    map: &DataSourceMap,
+    map: &CollectionsMap,
     cache: &mut QueryCache,
 ) -> Result<()> {
     for (q, p) in info.queries.clone().iter() {
@@ -49,7 +49,7 @@ pub fn each(
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
-    map: &DataSourceMap,
+    map: &CollectionsMap,
     cache: &mut QueryCache,
 ) -> Result<()> {
     let queries = info.queries.clone();
@@ -102,7 +102,7 @@ pub fn each(
                         rewrite_index,
                     )?;
                 } else {
-                    return Err(Error::DataSourceDocumentNoId);
+                    return Err(Error::CollectionDocumentNoId);
                 }
             }
         }
@@ -116,7 +116,7 @@ pub fn pages(
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
-    map: &DataSourceMap,
+    map: &CollectionsMap,
     cache: &mut QueryCache,
 ) -> Result<()> {
     let queries = info.queries.clone();

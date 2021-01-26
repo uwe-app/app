@@ -249,9 +249,9 @@ pub fn feed(
         let source_dir = options.source.join(&channel_target);
 
         // Data is the same for each feed
-        let mut data_source: Page = Default::default();
-        data_source.standalone = Some(true);
-        data_source.feed = Some(build_feed(
+        let mut feed_page_data: Page = Default::default();
+        feed_page_data.standalone = Some(true);
+        feed_page_data.feed = Some(build_feed(
             name, locales, config, options, info, feed, channel,
         )?);
 
@@ -289,7 +289,7 @@ pub fn feed(
                 return Err(Error::NoFeedTemplate(template));
             }
 
-            let mut item_data = data_source.clone();
+            let mut item_data = feed_page_data.clone();
 
             let url_path = if locales.is_multi_lingual() {
                 Some(info.get_lang())

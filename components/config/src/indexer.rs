@@ -46,7 +46,7 @@ impl Default for SourceProvider {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DataBase {
-    pub load: Option<HashMap<String, DataSource>>,
+    pub load: Option<HashMap<String, DataProvider>>,
 }
 
 impl DataBase {
@@ -66,7 +66,7 @@ impl DataBase {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
-pub struct DataSource {
+pub struct DataProvider {
     #[serde(rename = "type")]
     pub kind: Option<SourceType>,
     pub provider: Option<SourceProvider>,
@@ -79,7 +79,7 @@ pub struct DataSource {
     pub index: Option<HashMap<String, IndexRequest>>,
 }
 
-impl Default for DataSource {
+impl Default for DataProvider {
     fn default() -> Self {
         Self {
             kind: Some(Default::default()),

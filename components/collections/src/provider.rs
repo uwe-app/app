@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 use std::io;
 use std::path::PathBuf;
 use std::pin::Pin;
-use std::result::Result as StdResult;
 use std::sync::Arc;
 
 use serde_json::Value;
@@ -11,7 +10,7 @@ use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 use tokio::fs::{self, DirEntry};
 
 use collator::CollateInfo;
-use config::indexer::{DataSource, SourceProvider, SourceType};
+use config::indexer::{DataProvider, SourceProvider, SourceType};
 use config::{Config, RuntimeOptions};
 
 use super::identifier::{ComputeIdentifier, Strategy};
@@ -35,7 +34,7 @@ pub struct LoadRequest<'a> {
     pub config: &'a Config,
     pub options: &'a RuntimeOptions,
     pub collation: &'a CollateInfo,
-    pub definition: &'a DataSource,
+    pub definition: &'a DataProvider,
     pub strategy: Strategy,
     pub kind: SourceType,
     pub provider: SourceProvider,
@@ -216,7 +215,7 @@ impl Provider {
 
     fn find_documents<'a>(
         req: &'a LoadRequest<'a>,
-    ) -> Pin<Box<dyn Stream<Item = StdResult<(usize, DirEntry), Error>> + 'a>>
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<(usize, DirEntry), Error>> + 'a>>
     {
         find_recursive(&req.source)
             .map_err(Error::from)

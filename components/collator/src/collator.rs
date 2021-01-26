@@ -319,10 +319,10 @@ pub fn add(
     if path.extension() == Some(OsStr::new(template_ext)) {
         add_template(info, config, options, key)
     } else {
-        let is_data_source = key.starts_with(options.collections_path());
+        let is_collection = key.starts_with(options.collections_path());
 
         let is_page =
-            !is_data_source && path.is_file() && options.is_page(&path);
+            !is_collection && path.is_file() && options.is_page(&path);
 
         if is_page {
             let layout_name = layout_name(options);

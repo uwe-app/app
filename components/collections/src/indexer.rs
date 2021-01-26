@@ -9,7 +9,7 @@ use serde_json::{Map, Value};
 
 use collator::CollateInfo;
 use config::indexer::{
-    DataSource as DataSourceConfig, IndexKey, IndexQuery, KeyResult, KeyType,
+    DataProvider, IndexKey, IndexQuery, KeyResult, KeyType,
     QueryResult, QueryValue,
 };
 use config::{Config, RuntimeOptions};
@@ -22,7 +22,6 @@ pub type IndexValue = (IndexKey, Arc<Value>);
 pub type Index = Vec<IndexValue>;
 
 static DOCUMENTS: &str = "documents";
-
 static IDENTITY: &str = "id";
 static NAME: &str = "name";
 static PATH: &str = "path";
@@ -37,11 +36,23 @@ pub fn documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
 }
 
 #[derive(Debug)]
-pub struct DataSource {
+pub struct CollectionIndex {
     pub source: PathBuf,
-    pub config: DataSourceConfig,
+    pub config: DataProvider,
     pub all: BTreeMap<String, Arc<Value>>,
     pub indices: BTreeMap<String, ValueIndex>,
+}
+
+impl CollectionIndex {
+    pub fn new(source: PathBuf, config: DataProvider) -> Self {
+        CollectionIndex {
+            source,
+            all: BTreeMap::new(),
+            indices: BTreeMap::new(),
+            config,
+        }
+    }
+
 }
 
 #[derive(Debug)]
@@ -238,21 +249,11 @@ impl ValueIndex {
 }
 
 #[derive(Debug, Default)]
-pub struct DataSourceMap {
-    pub map: BTreeMap<String, DataSource>,
+pub struct CollectionsMap {
+    pub map: BTreeMap<String, CollectionIndex>,
 }
 
-impl DataSourceMap {
-    fn to_data_source(path: &PathBuf, config: &DataSourceConfig) -> DataSource {
-        let all: BTreeMap<String, Arc<Value>> = BTreeMap::new();
-        let indices: BTreeMap<String, ValueIndex> = BTreeMap::new();
-        DataSource {
-            source: path.to_path_buf(),
-            all,
-            indices,
-            config: config.clone(),
-        }
-    }
+impl CollectionsMap {
 
     pub fn get_cache() -> QueryCache {
         HashMap::new()
@@ -262,8 +263,8 @@ impl DataSourceMap {
         config: &Config,
         options: &RuntimeOptions,
         collation: &mut CollateInfo,
-    ) -> Result<DataSourceMap> {
-        let mut map: BTreeMap<String, DataSource> = BTreeMap::new();
+    ) -> Result<CollectionsMap> {
+        let mut map: BTreeMap<String, CollectionIndex> = BTreeMap::new();
 
         // Map configurations for collations
         if let Some(ref db) = config.db {
@@ -275,31 +276,30 @@ impl DataSourceMap {
                         options.source.clone()
                     };
 
-                    let data_source = DataSourceMap::to_data_source(&from, v);
-                    map.insert(k.to_string(), data_source);
+                    map.insert(k.to_string(), CollectionIndex::new(from.to_path_buf(), v.clone()));
                 }
             }
         }
 
         // Load the documents for each configuration
-        DataSourceMap::load_documents(&mut map, config, options, collation)
+        CollectionsMap::load_documents(&mut map, config, options, collation)
             .await?;
 
         // Create the indices
-        DataSourceMap::load_index(&mut map)?;
+        CollectionsMap::load_index(&mut map)?;
 
-        Ok(DataSourceMap { map })
+        Ok(CollectionsMap { map })
     }
 
     async fn load_documents(
-        map: &mut BTreeMap<String, DataSource>,
+        map: &mut BTreeMap<String, CollectionIndex>,
         config: &Config,
         options: &RuntimeOptions,
         collation: &CollateInfo,
     ) -> Result<()> {
         for (k, g) in map.iter_mut() {
             if !g.source.exists() || !g.source.is_dir() {
-                return Err(Error::NoDataSourceDocuments {
+                return Err(Error::NoCollectionDocuments {
                     docs: g.source.clone(),
                     key: k.to_string(),
                 });
@@ -331,7 +331,7 @@ impl DataSourceMap {
         id.as_ref().to_string()
     }
 
-    fn load_index(map: &mut BTreeMap<String, DataSource>) -> Result<()> {
+    fn load_index(map: &mut BTreeMap<String, CollectionIndex>) -> Result<()> {
         for (_, generator) in map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
 
@@ -358,7 +358,7 @@ impl DataSourceMap {
                         id: id.clone(),
                         name: id.clone(),
                         doc_id: id.clone(),
-                        sort: DataSourceMap::get_sort_key_for_value(
+                        sort: CollectionsMap::get_sort_key_for_value(
                             id, &key_val,
                         ),
                         value: key_val.clone(),
@@ -391,7 +391,7 @@ impl DataSourceMap {
 
     fn get_result_set(
         &self,
-        _ds: &DataSource,
+        _ds: &CollectionIndex,
         idx: &ValueIndex,
         query: &IndexQuery,
         cache: &mut QueryCache,
@@ -425,7 +425,7 @@ impl DataSourceMap {
                 return Err(Error::NoIndex(idx_name.to_string()));
             }
         } else {
-            return Err(Error::NoDataSource(name.to_string()));
+            return Err(Error::NoCollection(name.to_string()));
         }
     }
 }
