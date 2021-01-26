@@ -72,8 +72,11 @@ impl ScriptTag {
 
 impl fmt::Display for ScriptTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+        write!(f, "<script")?;
+
         if let Some(ref attr) = self.src {
-            write!(f, "<script src=\"{}\"", entity::escape(attr))?;
+            write!(f, " src=\"{}\"", entity::escape(attr))?;
         }
         if let Some(ref attr) = self.script_type {
             write!(f, " type=\"{}\"", entity::escape(attr))?;
