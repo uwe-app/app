@@ -1,10 +1,10 @@
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, RwLockWriteGuard};
 
-use serde_json::json;
+use serde_json::{json, Value};
 
 use collator::{create_page, CollateInfo};
-use config::{Config, PageLink, PaginateInfo, RuntimeOptions};
+use config::{Config, Page, PageLink, PaginateInfo, RuntimeOptions, IndexQuery};
 
 use crate::{CollectionsMap, Error, QueryCache, Result};
 
@@ -16,31 +16,68 @@ pub fn assign(
     map: &CollectionsMap,
     cache: &mut QueryCache,
 ) -> Result<()> {
-    for (q, p) in info.queries.clone().iter() {
+
+    // Find pages that have associated queries.
+    let mut query_cache: Vec<(Vec<IndexQuery>, Arc<RwLock<Page>>)> = Vec::new();
+    for (q, p) in info.queries.iter() {
         let queries = q.to_assign_vec();
         if queries.is_empty() {
             continue;
         }
+        let page = info.get_page(p).unwrap();
+        query_cache.push((queries, Arc::clone(page)));
+    }
 
-        let page = info.get_page_mut(p).unwrap();
+    // Assign collections query data to each page.
+    for (queries, page) in query_cache.into_iter() {
         for query in queries.iter() {
-            let idx = map.query_index(query, cache)?;
-
-            let res = idx
-                .iter()
-                .map(|v| v.to_value(query).unwrap())
-                .collect::<Vec<_>>();
-
             let mut writer = page.write().unwrap();
-
-            //println!("Assigning result using key {}", query.get_parameter());
-            //println!("Got result {:?}", res);
-
-            // TODO: error or warn on overwriting existing key
-            writer.extra.insert(query.get_parameter(), json!(res));
+            assign_page_query(&mut writer, query, map, cache)?;
         }
     }
 
+    Ok(())
+}
+
+pub fn assign_page_lookup<'a>(
+    info: &CollateInfo,
+    map: &CollectionsMap,
+    cache: &mut QueryCache,
+    needle: &Arc<PathBuf>,
+    writer: &mut RwLockWriteGuard<'a, Page>,
+) -> Result<()> {
+
+    if let Some((q, _)) = info.queries.iter().find(|(_, p)| {
+        p == needle
+    }) {
+        let queries = q.to_assign_vec();
+        for query in queries.iter() {
+            assign_page_query(writer, query, map, cache)?;
+        }
+    }
+
+    Ok(())
+}
+
+// Assign collections query data for a single page.
+pub fn assign_page_query<'a>(
+    writer: &mut RwLockWriteGuard<'a, Page>,
+    query: &IndexQuery,
+    map: &CollectionsMap,
+    cache: &mut QueryCache,
+) -> Result<()> {
+    let idx = map.query_index(query, cache)?;
+
+    let res = idx
+        .iter()
+        .map(|v| v.to_value(query).unwrap())
+        .collect::<Vec<_>>();
+
+    //println!("Assigning result using key {}", query.get_parameter());
+    //println!("Got result {:?}", res);
+
+    // TODO: error or warn on overwriting existing key
+    writer.extra.insert(query.get_parameter(), Value::Array(res));
     Ok(())
 }
 

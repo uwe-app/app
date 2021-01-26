@@ -192,9 +192,9 @@ pub struct ProjectBuilder {
     options: RuntimeOptions,
     plugins: Option<PluginCache>,
     redirects: RedirectConfig,
+    collations: CollationBuilder,
     collections: CollectionsMap,
     cache: QueryCache,
-    collations: CollationBuilder,
 }
 
 impl ProjectBuilder {
@@ -507,6 +507,8 @@ impl ProjectBuilder {
             None
         };
 
+        let collections = Arc::new(RwLock::new(self.collections));
+
         let mut renderers: Vec<Renderer> = Vec::new();
         let mut parsers: Vec<Box<dyn Parser + Send + Sync>> = Vec::new();
 
@@ -530,6 +532,7 @@ impl ProjectBuilder {
             let info = CompilerInput {
                 sources: Arc::clone(&sources),
                 locales: Arc::clone(&locales),
+                collections: Arc::clone(&collections),
                 context,
                 manifest: manifest.clone(),
             };
@@ -548,7 +551,7 @@ impl ProjectBuilder {
             locales,
             manifest,
             redirects: self.redirects,
-            collections: RwLock::new(self.collections),
+            collections,
             //cache: self.cache,
         })
     }
@@ -576,7 +579,7 @@ pub struct Project {
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Arc<Locales>,
-    pub collections: RwLock<CollectionsMap>,
+    pub collections: Arc<RwLock<CollectionsMap>>,
 
     parsers: Vec<Box<dyn Parser + Send + Sync>>,
     pub(crate) renderers: Vec<Renderer>,
@@ -592,7 +595,7 @@ impl Project {
         &*self.options
     }
 
-    pub fn collections(&self) -> &RwLock<CollectionsMap> {
+    pub fn collections(&self) -> &Arc<RwLock<CollectionsMap>> {
         &self.collections
     }
 

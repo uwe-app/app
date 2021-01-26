@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use log::{info, warn};
 
@@ -59,7 +59,7 @@ impl Updater {
         self.project.options()
     }
 
-    pub fn collections(&self) -> &RwLock<CollectionsMap> {
+    pub fn collections(&self) -> &Arc<RwLock<CollectionsMap>> {
         self.project.collections()
     }
 
