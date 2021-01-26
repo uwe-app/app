@@ -75,7 +75,15 @@ impl Helper for Scripts {
                 .collect()
         };
 
+        // Partition so we are certain that inline
+        // scripts are always rendered last.
+        let (inline, scripts): (Vec<ScriptAsset>, Vec<ScriptAsset>) =
+            scripts.into_iter().partition(|s| s.source().is_none());
+
         for script in scripts {
+            rc.write(&script.to_string())?;
+        }
+        for script in inline {
             rc.write(&script.to_string())?;
         }
 

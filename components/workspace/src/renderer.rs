@@ -9,7 +9,7 @@ use url::Url;
 use human_bytes::human_bytes;
 
 use collator::{builder::PageBuilder, resource::Resource};
-use collections::{synthetic, QueryCache, CollectionsMap};
+use collections::{synthetic, CollectionsMap, QueryCache};
 use compiler::{
     compile, parser::Parser, run, BuildContext, CompilerOutput, ParseData,
 };
@@ -184,14 +184,16 @@ impl Renderer {
 
                         // Update collections query assignments
                         let collate_info = collation.fallback.read().unwrap();
-                        let collections_map = self.info.collections.read().unwrap();
+                        let collections_map =
+                            self.info.collections.read().unwrap();
                         let mut query_cache = QueryCache::new();
                         synthetic::assign_page_lookup(
                             &collate_info,
                             &collections_map,
                             &mut query_cache,
                             &key,
-                            &mut page_write)?;
+                            &mut page_write,
+                        )?;
                     }
                 }
                 self.one(parser, path).await?;

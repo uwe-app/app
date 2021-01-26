@@ -588,10 +588,7 @@ impl CollateInfo {
         &self.pages
     }
 
-    pub fn get_page(
-        &self,
-        key: &PathBuf,
-    ) -> Option<&Arc<RwLock<Page>>> {
+    pub fn get_page(&self, key: &PathBuf) -> Option<&Arc<RwLock<Page>>> {
         self.pages.get(key)
     }
 

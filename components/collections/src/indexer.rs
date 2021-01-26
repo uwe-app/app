@@ -9,8 +9,8 @@ use serde_json::{Map, Value};
 
 use collator::CollateInfo;
 use config::indexer::{
-    DataProvider, IndexKey, IndexQuery, KeyResult, KeyType,
-    QueryResult, QueryValue,
+    DataProvider, IndexKey, IndexQuery, KeyResult, KeyType, QueryResult,
+    QueryValue,
 };
 use config::{Config, RuntimeOptions};
 use utils::json_path;
@@ -52,7 +52,6 @@ impl CollectionIndex {
             config,
         }
     }
-
 }
 
 #[derive(Debug)]
@@ -254,7 +253,6 @@ pub struct CollectionsMap {
 }
 
 impl CollectionsMap {
-
     pub fn get_cache() -> QueryCache {
         HashMap::new()
     }
@@ -276,7 +274,10 @@ impl CollectionsMap {
                         options.source.clone()
                     };
 
-                    map.insert(k.to_string(), CollectionIndex::new(from.to_path_buf(), v.clone()));
+                    map.insert(
+                        k.to_string(),
+                        CollectionIndex::new(from.to_path_buf(), v.clone()),
+                    );
                 }
             }
         }

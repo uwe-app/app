@@ -72,7 +72,6 @@ impl ScriptTag {
 
 impl fmt::Display for ScriptTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
         write!(f, "<script")?;
 
         if let Some(ref attr) = self.src {

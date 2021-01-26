@@ -82,19 +82,22 @@ impl PluginCache {
                             if let Some(ref filter) = apply.styles_filter {
                                 if let Some(src) = s.source() {
                                     // Try to match on the name rather than the full path
-                                    let parts = src.split('/').collect::<Vec<_>>();
+                                    let parts =
+                                        src.split('/').collect::<Vec<_>>();
                                     let name = if parts.is_empty() {
                                         src
-                                    } else { parts.last().unwrap() };
+                                    } else {
+                                        parts.last().unwrap()
+                                    };
                                     for ptn in filter {
                                         if ptn.is_match(name) {
-                                            return true
+                                            return true;
                                         }
                                     }
                                 }
-                                return false
+                                return false;
                             }
-                            true 
+                            true
                         })
                         .map(|mut s| {
                             s.set_source_prefix(&assets_href_base);
@@ -103,7 +106,9 @@ impl PluginCache {
                         .collect::<Vec<StyleAsset>>();
 
                     if styles.is_empty() && apply.styles_filter.is_some() {
-                        return Err(Error::ApplyFiltersNoMatch(plugin.name().to_string()))
+                        return Err(Error::ApplyFiltersNoMatch(
+                            plugin.name().to_string(),
+                        ));
                     }
 
                     self.styles_cache.push((dep.clone(), styles));
@@ -119,19 +124,22 @@ impl PluginCache {
                             if let Some(ref filter) = apply.scripts_filter {
                                 if let Some(src) = s.source() {
                                     // Try to match on the name rather than the full path
-                                    let parts = src.split('/').collect::<Vec<_>>();
+                                    let parts =
+                                        src.split('/').collect::<Vec<_>>();
                                     let name = if parts.is_empty() {
                                         src
-                                    } else { parts.last().unwrap() };
+                                    } else {
+                                        parts.last().unwrap()
+                                    };
                                     for ptn in filter {
                                         if ptn.is_match(name) {
-                                            return true
+                                            return true;
                                         }
                                     }
                                 }
-                                return false
+                                return false;
                             }
-                            true 
+                            true
                         })
                         .map(|mut s| {
                             s.set_source_prefix(&assets_href_base);
@@ -140,7 +148,9 @@ impl PluginCache {
                         .collect::<Vec<ScriptAsset>>();
 
                     if scripts.is_empty() && apply.scripts_filter.is_some() {
-                        return Err(Error::ApplyFiltersNoMatch(plugin.name().to_string()))
+                        return Err(Error::ApplyFiltersNoMatch(
+                            plugin.name().to_string(),
+                        ));
                     }
 
                     self.scripts_cache.push((dep.clone(), scripts));

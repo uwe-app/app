@@ -387,71 +387,69 @@ impl Eq for Apply {}
 impl Apply {
     /// Prepare the global patterns by compiling them.
     pub(crate) fn prepare(&mut self) -> Result<()> {
-        let (styles_match, styles_filter) = if let Some(ref styles) = self.styles
-        {
-            let mut styles_match = Vec::new();
-            let mut styles_filter = Vec::new();
-            for v in styles {
-                match v {
-                    ApplyMatch::Pattern (ptn) => {
-                        styles_match.push(ptn.compile_matcher());
+        let (styles_match, styles_filter) =
+            if let Some(ref styles) = self.styles {
+                let mut styles_match = Vec::new();
+                let mut styles_filter = Vec::new();
+                for v in styles {
+                    match v {
+                        ApplyMatch::Pattern(ptn) => {
+                            styles_match.push(ptn.compile_matcher());
+                        }
+                        ApplyMatch::Filter { ref to, ref filter } => {
+                            styles_match.push(to.compile_matcher());
+                            styles_filter.push(filter.compile_matcher());
+                        }
                     }
-                    ApplyMatch::Filter { ref to, ref filter } => {
-                        styles_match.push(to.compile_matcher());
-                        styles_filter.push(filter.compile_matcher());
-                    },
                 }
-            }
 
-            if styles_filter.is_empty() {
-                (styles_match, None)
+                if styles_filter.is_empty() {
+                    (styles_match, None)
+                } else {
+                    (styles_match, Some(styles_filter))
+                }
             } else {
-                (styles_match, Some(styles_filter))
-            }
-        } else {
-            (Vec::new(), None)
-        };
+                (Vec::new(), None)
+            };
 
         self.styles_match = styles_match;
         self.styles_filter = styles_filter;
 
-        let (scripts_match, scripts_filter) = if let Some(ref scripts) = self.scripts
-        {
-            let mut scripts_match = Vec::new();
-            let mut scripts_filter = Vec::new();
-            for v in scripts {
-                match v {
-                    ApplyMatch::Pattern (ptn) => {
-                        scripts_match.push(ptn.compile_matcher());
+        let (scripts_match, scripts_filter) =
+            if let Some(ref scripts) = self.scripts {
+                let mut scripts_match = Vec::new();
+                let mut scripts_filter = Vec::new();
+                for v in scripts {
+                    match v {
+                        ApplyMatch::Pattern(ptn) => {
+                            scripts_match.push(ptn.compile_matcher());
+                        }
+                        ApplyMatch::Filter { ref to, ref filter } => {
+                            scripts_match.push(to.compile_matcher());
+                            scripts_filter.push(filter.compile_matcher());
+                        }
                     }
-                    ApplyMatch::Filter { ref to, ref filter } => {
-                        scripts_match.push(to.compile_matcher());
-                        scripts_filter.push(filter.compile_matcher());
-                    },
                 }
-            }
 
-            if scripts_filter.is_empty() {
-                (scripts_match, None)
+                if scripts_filter.is_empty() {
+                    (scripts_match, None)
+                } else {
+                    (scripts_match, Some(scripts_filter))
+                }
             } else {
-                (scripts_match, Some(scripts_filter))
-            }
-        } else {
-            (Vec::new(), None)
-        };
+                (Vec::new(), None)
+            };
 
         self.scripts_match = scripts_match;
         self.scripts_filter = scripts_filter;
 
-        self.layouts_match = if let Some(ref layouts) = self.layouts
-        {
+        self.layouts_match = if let Some(ref layouts) = self.layouts {
             let mut tmp: HashMap<String, Vec<GlobMatcher>> = HashMap::new();
             for (k, v) in layouts {
                 tmp.insert(
                     k.clone(),
                     v.iter().map(|g| g.compile_matcher()).collect(),
                 );
-
             }
             tmp
         } else {

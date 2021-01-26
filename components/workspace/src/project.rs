@@ -368,7 +368,8 @@ impl ProjectBuilder {
 
         // Load data sources and create indices
         self.collections =
-            CollectionsMap::load(&self.config, &self.options, collation).await?;
+            CollectionsMap::load(&self.config, &self.options, collation)
+                .await?;
 
         Ok(self)
     }
@@ -976,7 +977,8 @@ pub async fn compile<P: AsRef<Path>>(
             .await?;
 
         // Load collections, resolve synthetic assets
-        let builder = builder.load_collections().and_then(|s| s.menus()).await?;
+        let builder =
+            builder.load_collections().and_then(|s| s.menus()).await?;
 
         // Redirects come after synthetic assets in case
         // they need to create any redirects.

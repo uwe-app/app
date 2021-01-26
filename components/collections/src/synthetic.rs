@@ -4,7 +4,9 @@ use std::sync::{Arc, RwLock, RwLockWriteGuard};
 use serde_json::{json, Value};
 
 use collator::{create_page, CollateInfo};
-use config::{Config, Page, PageLink, PaginateInfo, RuntimeOptions, IndexQuery};
+use config::{
+    Config, IndexQuery, Page, PageLink, PaginateInfo, RuntimeOptions,
+};
 
 use crate::{CollectionsMap, Error, QueryCache, Result};
 
@@ -16,7 +18,6 @@ pub fn assign(
     map: &CollectionsMap,
     cache: &mut QueryCache,
 ) -> Result<()> {
-
     // Find pages that have associated queries.
     let mut query_cache: Vec<(Vec<IndexQuery>, Arc<RwLock<Page>>)> = Vec::new();
     for (q, p) in info.queries.iter() {
@@ -46,10 +47,7 @@ pub fn assign_page_lookup<'a>(
     needle: &Arc<PathBuf>,
     writer: &mut RwLockWriteGuard<'a, Page>,
 ) -> Result<()> {
-
-    if let Some((q, _)) = info.queries.iter().find(|(_, p)| {
-        p == needle
-    }) {
+    if let Some((q, _)) = info.queries.iter().find(|(_, p)| p == needle) {
         let queries = q.to_assign_vec();
         for query in queries.iter() {
             assign_page_query(writer, query, map, cache)?;
@@ -77,7 +75,9 @@ pub fn assign_page_query<'a>(
     //println!("Got result {:?}", res);
 
     // TODO: error or warn on overwriting existing key
-    writer.extra.insert(query.get_parameter(), Value::Array(res));
+    writer
+        .extra
+        .insert(query.get_parameter(), Value::Array(res));
     Ok(())
 }
 

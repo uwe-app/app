@@ -215,8 +215,12 @@ impl Provider {
 
     fn find_documents<'a>(
         req: &'a LoadRequest<'a>,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<(usize, DirEntry), Error>> + 'a>>
-    {
+    ) -> Pin<
+        Box<
+            dyn Stream<Item = std::result::Result<(usize, DirEntry), Error>>
+                + 'a,
+        >,
+    > {
         find_recursive(&req.source)
             .map_err(Error::from)
             .filter(|result| {
