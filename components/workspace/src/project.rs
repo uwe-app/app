@@ -357,7 +357,7 @@ impl ProjectBuilder {
     }
 
     /// Load data sources.
-    pub async fn load_data(mut self) -> Result<Self> {
+    pub async fn load_collections(mut self) -> Result<Self> {
         debug!("Load collection data sources...");
 
         // TODO: how to iterate and store data sources?
@@ -548,7 +548,7 @@ impl ProjectBuilder {
             locales,
             manifest,
             redirects: self.redirects,
-            collections: self.collections,
+            collections: RwLock::new(self.collections),
             //cache: self.cache,
         })
     }
@@ -576,7 +576,7 @@ pub struct Project {
     pub options: Arc<RuntimeOptions>,
     pub redirects: RedirectConfig,
     pub locales: Arc<Locales>,
-    pub collections: CollectionsMap,
+    pub collections: RwLock<CollectionsMap>,
 
     parsers: Vec<Box<dyn Parser + Send + Sync>>,
     pub(crate) renderers: Vec<Renderer>,
@@ -592,7 +592,7 @@ impl Project {
         &*self.options
     }
 
-    pub fn collections(&self) -> &CollectionsMap {
+    pub fn collections(&self) -> &RwLock<CollectionsMap> {
         &self.collections
     }
 
@@ -973,7 +973,7 @@ pub async fn compile<P: AsRef<Path>>(
             .await?;
 
         // Load collections, resolve synthetic assets
-        let builder = builder.load_data().and_then(|s| s.menus()).await?;
+        let builder = builder.load_collections().and_then(|s| s.menus()).await?;
 
         // Redirects come after synthetic assets in case
         // they need to create any redirects.

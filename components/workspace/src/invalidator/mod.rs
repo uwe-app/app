@@ -177,6 +177,8 @@ impl Invalidator {
         let collections_paths: Vec<PathBuf> = self
             .updater
             .collections()
+            .read()
+            .unwrap()
             .map
             .values()
             .map(|g| canonical(g.source.clone()))
