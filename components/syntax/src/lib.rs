@@ -126,14 +126,14 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
     let assets = assets(None);
     let ps = &assets.syntax_set;
 
-    if config.is_inline() {
+    if let Some(ref theme) = config.theme() {
         let ts = &assets.theme_set;
 
         return inline::highlighted_html_for_string(
             value,
             ps,
             syntax,
-            &ts.themes[config.theme()],
+            &ts.themes[theme],
         );
     }
 
@@ -194,15 +194,17 @@ pub fn setup(syntax_dir: &PathBuf, config: &SyntaxConfig) -> Result<()> {
     let assets = assets(Some(assets_cache));
     let ts = &assets.theme_set;
 
-    if !ts.themes.contains_key(conf.theme()) {
-        let supported = ts
-            .themes
-            .keys()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
+    if let Some(ref theme) = conf.theme() {
+        if !ts.themes.contains_key(theme) {
+            let supported = ts
+                .themes
+                .keys()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
 
-        return Err(Error::UnknownTheme(conf.theme().to_string(), supported));
+            return Err(Error::UnknownTheme(theme.to_string(), supported));
+        }
     }
 
     let mut flag = initialized().write().unwrap();
