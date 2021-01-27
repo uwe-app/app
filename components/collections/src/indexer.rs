@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -21,19 +20,12 @@ pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 pub type IndexValue = (IndexKey, Arc<Value>);
 pub type Index = Vec<IndexValue>;
 
-static DOCUMENTS: &str = "documents";
 static IDENTITY: &str = "id";
 static NAME: &str = "name";
 static PATH: &str = "path";
 static DOC: &str = "doc";
 
 static IDENTITY_KEY: &str = "*";
-
-pub fn documents_path<P: AsRef<Path>>(source: P) -> PathBuf {
-    let mut pth = source.as_ref().to_path_buf();
-    pth.push(DOCUMENTS);
-    pth
-}
 
 #[derive(Debug)]
 pub struct CollectionIndex {
@@ -253,9 +245,6 @@ pub struct CollectionsMap {
 }
 
 impl CollectionsMap {
-    pub fn get_cache() -> QueryCache {
-        HashMap::new()
-    }
 
     pub async fn load(
         config: &Config,

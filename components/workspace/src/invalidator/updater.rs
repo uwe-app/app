@@ -285,6 +285,34 @@ impl Updater {
         Ok(())
     }
 
+
+    /// Update collections.
+    ///
+    /// For now this is very basic and just loads and invalidates the 
+    /// entire index.
+    ///
+    /// We don't know which pages should change so we invalidate all 
+    /// pages.
+    ///
+    pub(crate) async fn update_collections(
+        &mut self,
+        collections: &HashSet<PathBuf>,
+    ) -> Result<()> {
+
+        println!("Got collections files {:#?}", collections);
+
+        for (_, renderer) in self.project.iter_mut() {
+            let collation =
+                &*renderer.info.context.collation.read().unwrap();
+            let fallback = collation.fallback.read().unwrap();
+            // Update the JIT buffer with all pages!
+            let all_pages = fallback.link_map();
+            self.buffer.extend(all_pages);
+        }
+
+        Ok(())
+    }
+
     pub async fn invalidate(&mut self, rule: &Invalidation) -> Result<()> {
         // Remove deleted files.
         if !rule.deletions.is_empty() {
@@ -314,6 +342,11 @@ impl Updater {
         // Compile layouts
         if !rule.layouts.is_empty() {
             self.update_layouts(&rule.layouts).await?;
+        }
+
+        // Update collections data sources
+        if !rule.collections.is_empty() {
+            self.update_collections(&rule.collections).await?;
         }
 
         for action in &rule.actions {

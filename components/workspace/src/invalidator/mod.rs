@@ -229,8 +229,7 @@ impl Invalidator {
                         rule.assets.insert(path);
                     } else if path.starts_with(&collections) {
                         for p in &collections_paths {
-                            let documents = collections::documents_path(p);
-                            if path.starts_with(documents) {
+                            if path.starts_with(p) {
                                 rule.collections.insert(path);
                                 break;
                             }

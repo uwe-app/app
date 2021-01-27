@@ -364,7 +364,7 @@ impl ProjectBuilder {
         let collation = self.collations.get_fallback();
 
         // Set up the cache for data source queries
-        self.cache = CollectionsMap::get_cache();
+        self.cache = QueryCache::new();
 
         // Load data sources and create indices
         self.collections =
