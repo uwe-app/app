@@ -53,7 +53,11 @@ pub struct Invalidation {
     // List of paths that do not exist anymore
     pub(crate) deletions: HashSet<PathBuf>,
     // List of paths in a collection data source
-    pub(crate) collections: HashSet<PathBuf>,
+    //
+    // Collections paths are stored using the identifier 
+    // if the corresponding `CollectionsIndex` in the 
+    // `CollectionsMap` so the collection can easily be located.
+    pub(crate) collections: HashSet<(String, PathBuf)>,
 }
 
 impl Invalidation {
@@ -174,15 +178,14 @@ impl Invalidator {
         // FIXME: this does not respect when data sources have a `from` directory configured
         let collections = canonical(options.collections_path());
 
-        let collections_paths: Vec<PathBuf> = self
+        let collections_paths: Vec<(String, PathBuf)> = self
             .updater
             .collections()
             .read()
             .unwrap()
-            .map
-            .values()
-            .map(|g| canonical(g.source.clone()))
-            .collect::<Vec<_>>();
+            .iter()
+            .map(|(k, v)| (k.to_string(), canonical(v.source.clone())))
+            .collect();
 
         'paths: for path in paths {
             match path.canonicalize() {
@@ -228,9 +231,9 @@ impl Invalidator {
                     } else if path.starts_with(&assets) {
                         rule.assets.insert(path);
                     } else if path.starts_with(&collections) {
-                        for p in &collections_paths {
+                        for (key, p) in &collections_paths {
                             if path.starts_with(p) {
-                                rule.collections.insert(path);
+                                rule.collections.insert((key.to_string(), path));
                                 break;
                             }
                         }

@@ -367,9 +367,10 @@ impl ProjectBuilder {
         self.cache = QueryCache::new();
 
         // Load data sources and create indices
-        self.collections =
-            CollectionsMap::load(&self.config, &self.options, collation)
-                .await?;
+        let mut collections: CollectionsMap = Default::default();
+        collections.load(&self.config, &self.options, collation).await?;
+
+        self.collections = collections;
 
         Ok(self)
     }

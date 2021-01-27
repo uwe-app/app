@@ -273,15 +273,6 @@ impl Updater {
 
         self.buffer.extend(invalidated);
 
-        // Render pages that require an update as they
-        // reference a changed layout
-        //for (lang, file) in render_pages {
-        //println!("Layout changed got file {:?}", file)
-        //let options =
-        //RenderOptions::new_file_lang(file, lang, true, false, false);
-        //self.project.render(options).await?;
-        //}
-
         Ok(())
     }
 
@@ -296,10 +287,21 @@ impl Updater {
     ///
     pub(crate) async fn update_collections(
         &mut self,
-        collections: &HashSet<PathBuf>,
+        collections: &HashSet<(String, PathBuf)>,
     ) -> Result<()> {
 
         println!("Got collections files {:#?}", collections);
+
+        let indices = collections
+            .iter()
+            .map(|(nm, _)| nm)
+            .collect::<HashSet<_>>();
+
+        println!("Update indices with names {:?}", indices);
+
+        //let collections = self.project.collections.write().unwrap();
+        
+        // TODO: update all the indices
 
         for (_, renderer) in self.project.iter_mut() {
             let collation =

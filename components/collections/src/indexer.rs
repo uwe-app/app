@@ -241,18 +241,27 @@ impl ValueIndex {
 
 #[derive(Debug, Default)]
 pub struct CollectionsMap {
-    pub map: BTreeMap<String, CollectionIndex>,
+    map: BTreeMap<String, CollectionIndex>,
+}
+
+impl CollectionsMap {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<'_, String, CollectionIndex> {
+        self.map.iter() 
+    }
+
+    pub fn map(&self) -> &BTreeMap<String, CollectionIndex> {
+        &self.map
+    }
 }
 
 impl CollectionsMap {
 
     pub async fn load(
+        &mut self,
         config: &Config,
         options: &RuntimeOptions,
         collation: &mut CollateInfo,
-    ) -> Result<CollectionsMap> {
-        let mut map: BTreeMap<String, CollectionIndex> = BTreeMap::new();
-
+    ) -> Result<()> {
         // Map configurations for collations
         if let Some(ref db) = config.db {
             if let Some(ref sources) = db.load {
@@ -263,7 +272,7 @@ impl CollectionsMap {
                         options.source.clone()
                     };
 
-                    map.insert(
+                    self.map.insert(
                         k.to_string(),
                         CollectionIndex::new(from.to_path_buf(), v.clone()),
                     );
@@ -272,22 +281,20 @@ impl CollectionsMap {
         }
 
         // Load the documents for each configuration
-        CollectionsMap::load_documents(&mut map, config, options, collation)
-            .await?;
-
+        self.load_documents(config, options, collation).await?;
         // Create the indices
-        CollectionsMap::load_index(&mut map)?;
+        self.load_indices()?;
 
-        Ok(CollectionsMap { map })
+        Ok(())
     }
 
     async fn load_documents(
-        map: &mut BTreeMap<String, CollectionIndex>,
+        &mut self,
         config: &Config,
         options: &RuntimeOptions,
         collation: &CollateInfo,
     ) -> Result<()> {
-        for (k, g) in map.iter_mut() {
+        for (k, g) in self.map.iter_mut() {
             if !g.source.exists() || !g.source.is_dir() {
                 return Err(Error::NoCollectionDocuments {
                     docs: g.source.clone(),
@@ -321,8 +328,8 @@ impl CollectionsMap {
         id.as_ref().to_string()
     }
 
-    fn load_index(map: &mut BTreeMap<String, CollectionIndex>) -> Result<()> {
-        for (_, generator) in map.iter_mut() {
+    fn load_indices(&mut self) -> Result<()> {
+        for (_, generator) in self.map.iter_mut() {
             let index = generator.config.index.as_ref().unwrap();
 
             for (name, def) in index {
