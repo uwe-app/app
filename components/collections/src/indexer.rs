@@ -28,21 +28,143 @@ static DOC: &str = "doc";
 static IDENTITY_KEY: &str = "*";
 
 #[derive(Debug)]
-pub struct CollectionIndex {
+pub struct CollectionDataBase {
     pub source: PathBuf,
-    pub config: DataProvider,
-    pub all: BTreeMap<String, Arc<Value>>,
-    pub indices: BTreeMap<String, ValueIndex>,
+    config: DataProvider,
+    all: BTreeMap<String, Arc<Value>>,
+    indices: BTreeMap<String, ValueIndex>,
 }
 
-impl CollectionIndex {
+impl CollectionDataBase {
     pub fn new(source: PathBuf, config: DataProvider) -> Self {
-        CollectionIndex {
+        CollectionDataBase {
             source,
             all: BTreeMap::new(),
             indices: BTreeMap::new(),
             config,
         }
+    }
+
+    /// Build a single database; loading documents from disc 
+    /// and computing indices.
+    pub async fn build(
+        &mut self,
+        db_name: &str,
+        config: &Config,
+        options: &RuntimeOptions,
+        collation: &CollateInfo) -> Result<()> {
+
+        // Ensure the database is pristine
+        self.clear();
+
+        // Load the documents for the database
+        self.load_provider(db_name, config, options, collation).await?;
+
+        // Compute the indices for the new database
+        self.load_indices(db_name)?;
+
+        Ok(())
+    }
+
+    async fn load_provider(
+        &mut self,
+        db_name: &str,
+        config: &Config,
+        options: &RuntimeOptions,
+        collation: &CollateInfo,
+        ) -> Result<()> {
+
+        if !self.source.exists() || !self.source.is_dir() {
+            return Err(Error::NoCollectionDocuments {
+                docs: self.source.clone(),
+                key: db_name.to_string(),
+            });
+        }
+
+        info!("{} < {}", db_name, self.source.display());
+
+        let req = provider::LoadRequest {
+            strategy: identifier::Strategy::FileName,
+            kind: self.config.kind.as_ref().unwrap().clone(),
+            provider: self.config.provider.as_ref().unwrap().clone(),
+            source: &self.source,
+            definition: &self.config,
+            config,
+            options,
+            collation,
+        };
+
+        // Load all the documents into the db
+        self.all = provider::Provider::load(req).await?;
+
+        Ok(()) 
+    }
+
+    fn load_indices(
+        &mut self,
+        db_name: &str) -> Result<()> {
+
+        let index = self.config.index.as_ref().unwrap();
+
+        for (name, def) in index {
+            info!("{} / {}", db_name, name);
+
+            let key = def.key.clone();
+            let identity = key == IDENTITY_KEY;
+
+            let mut values = ValueIndex {
+                documents: Vec::new(),
+            };
+
+            for (id, document) in self.all.iter() {
+                let key_val = if identity {
+                    Value::String(id.to_string())
+                } else {
+                    json_path::find_path(&key, document)
+                };
+
+                if let Value::Null = key_val {
+                    continue;
+                }
+
+                let default_key = IndexKey {
+                    id: id.clone(),
+                    name: id.clone(),
+                    doc_id: id.clone(),
+                    sort: CollectionsMap::get_sort_key_for_value(
+                        id, &key_val,
+                    ),
+                    value: key_val.clone(),
+                };
+
+                values.documents.push((default_key, Arc::clone(document)));
+            }
+
+            // Sort using default key
+            values.documents.sort_by(|a, b| {
+                let (ak, _arc) = a;
+                let (bk, _brc) = b;
+                ak.partial_cmp(&bk).unwrap()
+            });
+
+            self.indices.insert(name.clone(), values);
+        }
+
+        /*
+        for (k, idx) in &self.indices {
+            if k == "all" {
+                println!("Index {:#?} for {:?}", idx, k);
+            }
+        }
+        */
+
+        Ok(())
+    }
+
+
+    pub fn clear(&mut self) {
+        self.all.clear();
+        self.indices.clear();
     }
 }
 
@@ -241,82 +363,52 @@ impl ValueIndex {
 
 #[derive(Debug, Default)]
 pub struct CollectionsMap {
-    map: BTreeMap<String, CollectionIndex>,
+    map: BTreeMap<String, CollectionDataBase>,
 }
 
 impl CollectionsMap {
-    pub fn iter(&self) -> std::collections::btree_map::Iter<'_, String, CollectionIndex> {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<'_, String, CollectionDataBase> {
         self.map.iter() 
     }
 
-    pub fn map(&self) -> &BTreeMap<String, CollectionIndex> {
+    pub fn map(&self) -> &BTreeMap<String, CollectionDataBase> {
         &self.map
+    }
+
+    pub fn map_mut(&mut self) -> &mut BTreeMap<String, CollectionDataBase> {
+        &mut self.map
     }
 }
 
 impl CollectionsMap {
 
+    /// Load database document providers and compute indices.
     pub async fn load(
         &mut self,
         config: &Config,
         options: &RuntimeOptions,
         collation: &mut CollateInfo,
     ) -> Result<()> {
-        // Map configurations for collations
         if let Some(ref db) = config.db {
             if let Some(ref sources) = db.load {
-                for (k, v) in sources {
-                    let from = if v.from.is_some() {
-                        options.source.join(v.from.as_ref().unwrap())
+                for (db_name, provider) in sources {
+                    let from = if provider.from.is_some() {
+                        options.source.join(provider.from.as_ref().unwrap())
                     } else {
                         options.source.clone()
                     };
 
-                    self.map.insert(
-                        k.to_string(),
-                        CollectionIndex::new(from.to_path_buf(), v.clone()),
-                    );
+                    let mut db = CollectionDataBase::new(from.to_path_buf(), provider.clone());
+
+                    // Load the documents for the database and compute indices
+                    db.build(db_name, config, options, collation).await?;
+
+                    // Store for querying and live reload invalidation
+                    self.map.insert(db_name.to_string(), db);
                 }
             }
         }
 
-        // Load the documents for each configuration
-        self.load_documents(config, options, collation).await?;
-        // Create the indices
-        self.load_indices()?;
-
-        Ok(())
-    }
-
-    async fn load_documents(
-        &mut self,
-        config: &Config,
-        options: &RuntimeOptions,
-        collation: &CollateInfo,
-    ) -> Result<()> {
-        for (k, g) in self.map.iter_mut() {
-            if !g.source.exists() || !g.source.is_dir() {
-                return Err(Error::NoCollectionDocuments {
-                    docs: g.source.clone(),
-                    key: k.to_string(),
-                });
-            }
-
-            info!("{} < {}", k, g.source.display());
-
-            let req = provider::LoadRequest {
-                strategy: identifier::Strategy::FileName,
-                kind: g.config.kind.as_ref().unwrap().clone(),
-                provider: g.config.provider.as_ref().unwrap().clone(),
-                source: &g.source,
-                definition: &g.config,
-                config,
-                options,
-                collation,
-            };
-
-            g.all = provider::Provider::load(req).await?;
-        }
         Ok(())
     }
 
@@ -328,67 +420,9 @@ impl CollectionsMap {
         id.as_ref().to_string()
     }
 
-    fn load_indices(&mut self) -> Result<()> {
-        for (_, generator) in self.map.iter_mut() {
-            let index = generator.config.index.as_ref().unwrap();
-
-            for (name, def) in index {
-                let key = def.key.clone();
-                let identity = key == IDENTITY_KEY;
-
-                let mut values = ValueIndex {
-                    documents: Vec::new(),
-                };
-
-                for (id, document) in generator.all.iter() {
-                    let key_val = if identity {
-                        Value::String(id.to_string())
-                    } else {
-                        json_path::find_path(&key, document)
-                    };
-
-                    if let Value::Null = key_val {
-                        continue;
-                    }
-
-                    let default_key = IndexKey {
-                        id: id.clone(),
-                        name: id.clone(),
-                        doc_id: id.clone(),
-                        sort: CollectionsMap::get_sort_key_for_value(
-                            id, &key_val,
-                        ),
-                        value: key_val.clone(),
-                    };
-
-                    values.documents.push((default_key, Arc::clone(document)));
-                }
-
-                // Sort using default key
-                values.documents.sort_by(|a, b| {
-                    let (ak, _arc) = a;
-                    let (bk, _brc) = b;
-                    ak.partial_cmp(&bk).unwrap()
-                });
-
-                generator.indices.insert(name.clone(), values);
-            }
-
-            /*
-            for (k, idx) in &generator.indices {
-                if k == "all" {
-                    println!("Index {:#?} for {:?}", idx, k);
-                }
-            }
-            */
-        }
-
-        Ok(())
-    }
-
     fn get_result_set(
         &self,
-        _ds: &CollectionIndex,
+        _ds: &CollectionDataBase,
         idx: &ValueIndex,
         query: &IndexQuery,
         cache: &mut QueryCache,

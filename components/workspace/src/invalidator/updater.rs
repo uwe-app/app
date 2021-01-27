@@ -289,24 +289,30 @@ impl Updater {
         &mut self,
         collections: &HashSet<(String, PathBuf)>,
     ) -> Result<()> {
-
-        println!("Got collections files {:#?}", collections);
-
-        let indices = collections
+        let db_names = collections
             .iter()
-            .map(|(nm, _)| nm)
+            .map(|(nm, _)| nm.to_string())
             .collect::<HashSet<_>>();
-
-        println!("Update indices with names {:?}", indices);
-
-        //let collections = self.project.collections.write().unwrap();
-        
-        // TODO: update all the indices
 
         for (_, renderer) in self.project.iter_mut() {
             let collation =
                 &*renderer.info.context.collation.read().unwrap();
             let fallback = collation.fallback.read().unwrap();
+
+        
+            // Rebuild databases for collections that changed
+            let mut collections = renderer.info.collections.write().unwrap();
+            for db_name in db_names.iter() {
+                if let Some(db) = collections.map_mut().get_mut(db_name) {
+                    db.build(
+                        db_name,
+                        &*renderer.info.context.config,
+                        &*renderer.info.context.options,
+                        &fallback,
+                        ).await?;
+                }
+            }
+
             // Update the JIT buffer with all pages!
             let all_pages = fallback.link_map();
             self.buffer.extend(all_pages);
