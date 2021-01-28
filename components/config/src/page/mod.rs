@@ -67,6 +67,9 @@ pub struct Page {
     /// Ignore from directory listings.
     listing: Option<bool>,
 
+    /// Ignore from collections indexing.
+    //ignore_collections_index: Option<bool>,
+
     pub query: Option<QueryList>,
 
     pub layout: Option<String>,
@@ -132,6 +135,7 @@ impl Default for Page {
             draft: None,
             standalone: None,
             listing: None,
+            //ignore_collections_index: None,
             noindex: None,
             print: None,
             fallback: None,
@@ -239,6 +243,12 @@ impl Page {
     pub fn draft(&self) -> bool {
         self.draft.is_some() && self.draft.unwrap()
     }
+
+    /*
+    pub fn ignore_collections_index(&self) -> bool {
+        self.ignore_collections_index.is_some() && self.ignore_collections_index.unwrap()
+    }
+    */
 
     /// Get an absolute permalink for the page; will panic if `href` is not set.
     pub fn permalink(

@@ -105,22 +105,13 @@ impl Provider {
                 if !p.starts_with(req.source) {
                     return future::ready(false);
                 }
-
                 if !req.definition.matcher().is_empty() {
-                    // NOTE: `from` is already relative to source
-                    let folder = if let Some(ref from) = req.definition.from() {
-                        from.as_path()
-                    } else {
-                        req.source.as_path()
-                    };
-
-                    if let Some(relative) = p.strip_prefix(folder).ok() {
-                        if req.definition.matcher().is_excluded(relative) {
+                    if let Some(relative) = p.strip_prefix(req.source).ok() {
+                        if req.definition.matcher().is_excluded(&relative) {
                             return future::ready(false);
                         }
                     }
                 }
-
                 future::ready(true)
             })
             .enumerate()
@@ -129,8 +120,6 @@ impl Provider {
                 // Convert the page data to a Value for indexing
                 let data = req.collation.resolve(path).unwrap();
                 let page = data.read().unwrap();
-
-                // TODO: check `indexable` page field
 
                 let result = serde_json::to_value(&*page);
                 match result {
