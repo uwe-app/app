@@ -396,10 +396,25 @@ impl Updater {
 
                 self.buffer.extend(all_pages);
             }
-
         }
 
         Ok(())
+    }
+
+    // Remove synthetic pages from the invalidation buffer.
+    fn filter_synthetics(&mut self) {
+        for (_, renderer) in self.project.iter_mut() {
+            let collation = &*renderer.info.context.collation.read().unwrap();
+            self.buffer.retain(|_, page_path| {
+                if let Some(page_data) = collation.resolve(page_path) {
+                    let reader = page_data.read().unwrap(); 
+                    if reader.is_synthetic() {
+                        return false;
+                    }
+                }
+                true 
+            });
+        }
     }
 
     pub async fn invalidate(&mut self, rule: &Invalidation) -> Result<()> {
@@ -457,6 +472,9 @@ impl Updater {
         if !rule.collections.is_empty() || !pages.is_empty() {
             self.update_collections(&rule.collections, pages).await?;
         }
+
+        // Must remove any synthetic pages from the list of pages to render server-side.
+        self.filter_synthetics();
 
         for action in &rule.actions {
             match action {
