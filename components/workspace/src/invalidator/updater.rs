@@ -297,7 +297,23 @@ impl Updater {
         // Must be canonical becaause page paths are absolute
         let source_path = self.project.options.source.canonicalize()?;
 
+        // This is the relative path version required to get 
+        // collections base paths correctly.
+        let source = self.project.options.source.clone();
+
+        // Store matchers so we can exclude files from 
+        // the list of pages to invalidate
         let mut matchers = Vec::new();
+
+        // list of pages that were changed so we can reload 
+        // their data before invalidation of the database collection.
+        // 
+        // Database collections use the existing collated data so 
+        // we need to manually update pages that have changed so 
+        // that front matter changes are reflected on pages that 
+        // list changed pages, for example, a blog index page 
+        // with a recents query.
+        let mut invalidated_pages = Vec::new();
 
         // Find any collections that might include any of the target pages
         if !pages.is_empty() {
@@ -313,10 +329,6 @@ impl Updater {
                         } else { false }
                     })
                 .collect();
-
-
-            let source = self.project.options.source.clone();
-            //let file = relative_to(path, &source, &source)?;
 
             // Find pages that would be included in the database 
             // collection and add the db name to the list of 
@@ -337,6 +349,9 @@ impl Updater {
                         db.data_provider().matcher().clone()));
 
                     for page_path in pages.iter() {
+
+                        invalidated_pages.push(relative_to(page_path, &source_path, &source)?);
+
                         // The page must exist in the `from` path for the 
                         // pages collection
                         if page_path.starts_with(&base_path) {
@@ -344,6 +359,9 @@ impl Updater {
                                 // Check the page is not excluded from the collection
                                 if db.data_provider().matcher().is_empty() 
                                     || !db.data_provider().matcher().is_excluded(relative) {
+
+                                    // FIXME: reload the page data!
+
                                     db_names.insert(name.to_string());
                                 }
                             }
@@ -354,6 +372,16 @@ impl Updater {
         }
 
         for (_, renderer) in self.project.iter_mut() {
+
+            // Reload the data for invalidated pages
+            //
+            // NOTE: must execute before we acquire the read locks below
+            // NOTE: otherwise we will get a deadlock!
+            for page in invalidated_pages.iter() {
+                renderer.reload(page)?; 
+            }
+            //
+
             let collation = &*renderer.info.context.collation.read().unwrap();
             let fallback = collation.fallback.read().unwrap();
 

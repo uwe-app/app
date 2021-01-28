@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 use std::fs::{self, File};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 use log::{debug, info};
@@ -137,64 +137,13 @@ impl Renderer {
     ) -> Result<RenderResult> {
         let mut output: CompilerOutput = Default::default();
 
-        let collation = self.info.context.collation.read().unwrap();
-
         match render_options.target {
             RenderTarget::All => {
                 self.build(parser, render_options, &mut output).await?;
             }
             RenderTarget::File(ref path) => {
                 if render_options.reload_data {
-                    let key = Arc::new(path.to_path_buf());
-                    let mut info = collation.fallback.write().unwrap();
-                    let layout_name =
-                        collator::layout_name(&self.info.context.options);
-
-                    let plugins = self.info.context.plugins.as_deref();
-
-                    let builder = PageBuilder::new(
-                        &mut info,
-                        &self.info.context.config,
-                        &self.info.context.options,
-                        plugins,
-                        &key,
-                        path,
-                    )
-                    .compute()?
-                    .layout(layout_name)?
-                    .queries()?
-                    .seal()?
-                    .scripts()?
-                    .styles()?
-                    .layouts()?
-                    // WARN: calling link() will create a collision!
-                    //.link()?
-                    // WARN: calling permalinks() will create a collision!
-                    //.permalinks()?
-                    .feeds()?;
-
-                    let (_, _, _, computed_page) = builder.build();
-
-                    drop(info);
-
-                    if let Some(page_lock) = collation.resolve(path) {
-                        let mut page_write = page_lock.write().unwrap();
-
-                        *page_write = computed_page;
-
-                        // Update collections query assignments
-                        let collate_info = collation.fallback.read().unwrap();
-                        let collections_map =
-                            self.info.collections.read().unwrap();
-                        let mut query_cache = QueryCache::new();
-                        synthetic::assign_page_lookup(
-                            &collate_info,
-                            &collections_map,
-                            &mut query_cache,
-                            &key,
-                            &mut page_write,
-                        )?;
-                    }
+                    self.reload(path)?;
                 }
                 self.one(parser, path).await?;
             }
@@ -203,6 +152,65 @@ impl Renderer {
         Ok(RenderResult {
             sitemap: self.finish(output, render_options)?,
         })
+    }
+
+    /// Reload the data for a single page.
+    pub fn reload<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        let collation = self.info.context.collation.read().unwrap();
+    
+        let key = Arc::new(path.as_ref().to_path_buf());
+        let path_buf = &*key;
+        let mut info = collation.fallback.write().unwrap();
+        let layout_name =
+            collator::layout_name(&self.info.context.options);
+
+        let plugins = self.info.context.plugins.as_deref();
+
+        let builder = PageBuilder::new(
+            &mut info,
+            &self.info.context.config,
+            &self.info.context.options,
+            plugins,
+            &key,
+            path.as_ref(),
+        )
+        .compute()?
+        .layout(layout_name)?
+        .queries()?
+        .seal()?
+        .scripts()?
+        .styles()?
+        .layouts()?
+        // WARN: calling link() will create a collision!
+        //.link()?
+        // WARN: calling permalinks() will create a collision!
+        //.permalinks()?
+        .feeds()?;
+
+        let (_, _, _, computed_page) = builder.build();
+
+        drop(info);
+
+        if let Some(page_lock) = collation.resolve(path_buf) {
+            let mut page_write = page_lock.write().unwrap();
+
+            *page_write = computed_page;
+
+            // Update collections query assignments
+            let collate_info = collation.fallback.read().unwrap();
+            let collections_map =
+                self.info.collections.read().unwrap();
+            let mut query_cache = QueryCache::new();
+            synthetic::assign_page_lookup(
+                &collate_info,
+                &collections_map,
+                &mut query_cache,
+                &key,
+                &mut page_write,
+            )?;
+        }
+
+        Ok(())
     }
 
     fn finish(
