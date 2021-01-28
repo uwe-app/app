@@ -116,6 +116,10 @@ pub struct Page {
 
     #[serde(flatten)]
     pub extra: Map<String, Value>,
+
+    // Mark this page as synthetic
+    #[serde(skip)]
+    synthetic: bool,
 }
 
 impl Default for Page {
@@ -159,6 +163,8 @@ impl Default for Page {
             //canonical: None,
             paginate: None,
             feed: None,
+
+            synthetic: false,
         }
     }
 }
@@ -176,6 +182,14 @@ impl Page {
         page.seal(config, options, &file, &destination, None)?;
 
         Ok(page)
+    }
+
+    pub fn set_synthetic(&mut self, synthetic: bool) {
+        self.synthetic = synthetic;
+    }
+
+    pub fn is_synthetic(&self) -> bool {
+        self.synthetic 
     }
 
     /// Get the destination output file for this page.

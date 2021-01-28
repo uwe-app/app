@@ -32,6 +32,7 @@ pub fn create_page(
 
     let mut writer = page_info.write().unwrap();
     writer.seal(config, options, &source, &dest, Some(template))?;
+    writer.set_synthetic(true);
     drop(writer);
 
     // Configure a link for the synthetic page
@@ -331,6 +332,7 @@ pub fn feed(
                                 url.to_string(),
                                 Some(mime_type.to_string()),
                             );
+
                             page_write.links_mut().insert(alternate);
                         }
                     }
