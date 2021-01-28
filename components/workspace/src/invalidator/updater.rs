@@ -297,9 +297,13 @@ impl Updater {
         // Must be canonical becaause page paths are absolute
         let source_path = self.project.options.source.canonicalize()?;
 
+        let mut matchers = Vec::new();
+
         // Find any collections that might include any of the target pages
         if !pages.is_empty() {
             let collections = self.project.collections.read().unwrap();
+
+            // Find databases that operate on pages
             let pages_databases: Vec<(&String, &CollectionDataBase)> =
                 collections.iter()
                     .filter(|(_, v)| {
@@ -310,22 +314,38 @@ impl Updater {
                     })
                 .collect();
 
-            for (name, db) in pages_databases.into_iter() {
-                let base_path = if let Some(ref from) = db.data_provider().from() {
-                    source_path.join(from)
-                } else {
-                    source_path.to_path_buf() 
-                };
 
-                for page_path in pages.iter() {
-                    // The page must exist in the `from` path for the 
-                    // pages collection
-                    if page_path.starts_with(&base_path) {
-                        if let Ok(relative) = page_path.strip_prefix(&base_path) {
-                            // Check the page is not excluded from the collection
-                            if db.data_provider().matcher().is_empty() 
-                                || !db.data_provider().matcher().is_excluded(relative) {
-                                db_names.insert(name.to_string());
+            let source = self.project.options.source.clone();
+            //let file = relative_to(path, &source, &source)?;
+
+            // Find pages that would be included in the database 
+            // collection and add the db name to the list of 
+            // databases to be invalidated
+            for (name, db) in pages_databases.into_iter() {
+
+                if !db_names.contains(name) {
+                    let base_path = if let Some(ref from) = db.data_provider().from() {
+                        source_path.join(from)
+                    } else {
+                        source_path.to_path_buf() 
+                    };
+
+                    // Store matchers so we can filter the invalidations to exclude 
+                    // files that should be excluded from the database collection
+                    matchers.push((
+                        relative_to(&base_path, &source, &source)?,
+                        db.data_provider().matcher().clone()));
+
+                    for page_path in pages.iter() {
+                        // The page must exist in the `from` path for the 
+                        // pages collection
+                        if page_path.starts_with(&base_path) {
+                            if let Ok(relative) = page_path.strip_prefix(&base_path) {
+                                // Check the page is not excluded from the collection
+                                if db.data_provider().matcher().is_empty() 
+                                    || !db.data_provider().matcher().is_excluded(relative) {
+                                    db_names.insert(name.to_string());
+                                }
                             }
                         }
                     }
@@ -352,8 +372,31 @@ impl Updater {
             }
 
             // Update the JIT buffer with all pages!
-            let all_pages = fallback.link_map();
-            self.buffer.extend(all_pages);
+            if matchers.is_empty() {
+                let all_pages = fallback.link_map();
+                self.buffer.extend(all_pages);
+            // Or filter to respect the collections matcher
+            } else {
+                let all_pages: HashMap<String, PathBuf> = fallback.link_map()
+                    .iter()
+                    .filter(|(_, page_path)| {
+                        for (base_path, matcher) in matchers.iter() {
+                            if page_path.starts_with(base_path) {
+                                if let Ok(relative) = page_path.strip_prefix(base_path) {
+                                    if matcher.is_excluded(relative) {
+                                        return false
+                                    }
+                                }
+                            } 
+                        } 
+                        true
+                    })
+                    .map(|(k, v)| (k.to_string(), v.to_path_buf()))
+                    .collect();
+
+                self.buffer.extend(all_pages);
+            }
+
         }
 
         Ok(())
