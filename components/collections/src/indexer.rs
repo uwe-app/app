@@ -29,7 +29,7 @@ static IDENTITY_KEY: &str = "*";
 
 #[derive(Debug)]
 pub struct CollectionDataBase {
-    pub source: PathBuf,
+    source: PathBuf,
     config: DataProvider,
     all: BTreeMap<String, Arc<Value>>,
     indices: BTreeMap<String, ValueIndex>,
@@ -43,22 +43,31 @@ impl CollectionDataBase {
             indices: BTreeMap::new(),
             config,
         }
+    } 
+    
+    pub fn source(&self) -> &PathBuf {
+        &self.source
     }
 
-    /// Build a single database; loading documents from disc 
+    pub fn data_provider(&self) -> &DataProvider {
+        &self.config
+    }
+
+    /// Build a single database; loading documents from disc
     /// and computing indices.
     pub async fn build(
         &mut self,
         db_name: &str,
         config: &Config,
         options: &RuntimeOptions,
-        collation: &CollateInfo) -> Result<()> {
-
+        collation: &CollateInfo,
+    ) -> Result<()> {
         // Ensure the database is pristine
         self.clear();
 
         // Load the documents for the database
-        self.load_provider(db_name, config, options, collation).await?;
+        self.load_provider(db_name, config, options, collation)
+            .await?;
 
         // Compute the indices for the new database
         self.load_indices(db_name)?;
@@ -72,8 +81,7 @@ impl CollectionDataBase {
         config: &Config,
         options: &RuntimeOptions,
         collation: &CollateInfo,
-        ) -> Result<()> {
-
+    ) -> Result<()> {
         if !self.source.exists() || !self.source.is_dir() {
             return Err(Error::NoCollectionDocuments {
                 docs: self.source.clone(),
@@ -81,12 +89,12 @@ impl CollectionDataBase {
             });
         }
 
-        info!("{} < {}", db_name, self.source.display());
+        info!("Load {} < {}", db_name, self.source.display());
 
         let req = provider::LoadRequest {
             strategy: identifier::Strategy::FileName,
-            kind: self.config.kind.as_ref().unwrap().clone(),
-            provider: self.config.provider.as_ref().unwrap().clone(),
+            kind: self.config.kind(),
+            provider: self.config.source_provider(),
             source: &self.source,
             definition: &self.config,
             config,
@@ -97,17 +105,14 @@ impl CollectionDataBase {
         // Load all the documents into the db
         self.all = provider::Provider::load(req).await?;
 
-        Ok(()) 
+        Ok(())
     }
 
-    fn load_indices(
-        &mut self,
-        db_name: &str) -> Result<()> {
-
+    fn load_indices(&mut self, db_name: &str) -> Result<()> {
         let index = self.config.index.as_ref().unwrap();
 
         for (name, def) in index {
-            info!("{} / {}", db_name, name);
+            info!("Build index {} / {}", db_name, name);
 
             let key = def.key.clone();
             let identity = key == IDENTITY_KEY;
@@ -131,9 +136,7 @@ impl CollectionDataBase {
                     id: id.clone(),
                     name: id.clone(),
                     doc_id: id.clone(),
-                    sort: CollectionsMap::get_sort_key_for_value(
-                        id, &key_val,
-                    ),
+                    sort: CollectionsMap::get_sort_key_for_value(id, &key_val),
                     value: key_val.clone(),
                 };
 
@@ -160,7 +163,6 @@ impl CollectionDataBase {
 
         Ok(())
     }
-
 
     pub fn clear(&mut self) {
         self.all.clear();
@@ -367,8 +369,10 @@ pub struct CollectionsMap {
 }
 
 impl CollectionsMap {
-    pub fn iter(&self) -> std::collections::btree_map::Iter<'_, String, CollectionDataBase> {
-        self.map.iter() 
+    pub fn iter(
+        &self,
+    ) -> std::collections::btree_map::Iter<'_, String, CollectionDataBase> {
+        self.map.iter()
     }
 
     pub fn map(&self) -> &BTreeMap<String, CollectionDataBase> {
@@ -381,7 +385,6 @@ impl CollectionsMap {
 }
 
 impl CollectionsMap {
-
     /// Load database document providers and compute indices.
     pub async fn load(
         &mut self,
@@ -392,13 +395,16 @@ impl CollectionsMap {
         if let Some(ref db) = config.db {
             if let Some(ref sources) = db.load {
                 for (db_name, provider) in sources {
-                    let from = if provider.from.is_some() {
-                        options.source.join(provider.from.as_ref().unwrap())
+                    let from = if let Some(ref from) = provider.from() {
+                        options.source.join(from)
                     } else {
                         options.source.clone()
                     };
 
-                    let mut db = CollectionDataBase::new(from.to_path_buf(), provider.clone());
+                    let mut db = CollectionDataBase::new(
+                        from.to_path_buf(),
+                        provider.clone(),
+                    );
 
                     // Load the documents for the database and compute indices
                     db.build(db_name, config, options, collation).await?;

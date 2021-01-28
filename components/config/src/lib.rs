@@ -169,7 +169,7 @@ pub use self::utils::{href, markdown};
 pub use config::*;
 pub use fluent::{FluentConfig, CORE_FTL};
 pub use hook::HookConfig;
-pub use indexer::{IndexQuery, KeyType, QueryResult};
+pub use indexer::{IndexQuery, KeyType, QueryResult, SourceProvider};
 pub use menu::{MenuEntry, MenuReference, MenuResult};
 pub use options::{DestinationBuilder, FileType, LinkOptions, RuntimeOptions};
 pub use page::{Author, Page, PageLink, PaginateInfo};

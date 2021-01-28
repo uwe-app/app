@@ -6,8 +6,8 @@ use std::sync::{Arc, RwLock};
 
 use log::{info, warn};
 
-use collections::CollectionsMap;
-use config::{hook::HookConfig, Config, RuntimeOptions};
+use collections::{CollectionDataBase, CollectionsMap};
+use config::{hook::HookConfig, Config, RuntimeOptions, SourceProvider};
 
 use crate::{
     project::Project,
@@ -276,30 +276,67 @@ impl Updater {
         Ok(())
     }
 
-
     /// Update collections.
     ///
-    /// For now this is very basic and just loads and invalidates the 
+    /// For now this is very basic and just loads and invalidates the
     /// entire index.
     ///
-    /// We don't know which pages should change so we invalidate all 
+    /// We don't know which pages should change so we invalidate all
     /// pages.
     ///
     pub(crate) async fn update_collections(
         &mut self,
         collections: &HashSet<(String, PathBuf)>,
+        pages: Vec<&PathBuf>,
     ) -> Result<()> {
-        let db_names = collections
+        let mut db_names = collections
             .iter()
             .map(|(nm, _)| nm.to_string())
             .collect::<HashSet<_>>();
 
+        // Must be canonical becaause page paths are absolute
+        let source_path = self.project.options.source.canonicalize()?;
+
+        // Find any collections that might include any of the target pages
+        if !pages.is_empty() {
+            let collections = self.project.collections.read().unwrap();
+            let pages_databases: Vec<(&String, &CollectionDataBase)> =
+                collections.iter()
+                    .filter(|(_, v)| {
+                        let provider = v.data_provider().source_provider();
+                        if let SourceProvider::Pages = provider {
+                            true
+                        } else { false }
+                    })
+                .collect();
+
+            for (name, db) in pages_databases.into_iter() {
+                let base_path = if let Some(ref from) = db.data_provider().from() {
+                    source_path.join(from)
+                } else {
+                    source_path.to_path_buf() 
+                };
+
+                for page_path in pages.iter() {
+                    // The page must exist in the `from` path for the 
+                    // pages collection
+                    if page_path.starts_with(&base_path) {
+                        if let Ok(relative) = page_path.strip_prefix(&base_path) {
+                            // Check the page is not excluded from the collection
+                            if db.data_provider().matcher().is_empty() 
+                                || !db.data_provider().matcher().is_excluded(relative) {
+                                db_names.insert(name.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         for (_, renderer) in self.project.iter_mut() {
-            let collation =
-                &*renderer.info.context.collation.read().unwrap();
+            let collation = &*renderer.info.context.collation.read().unwrap();
             let fallback = collation.fallback.read().unwrap();
 
-        
             // Rebuild databases for collections that changed
             let mut collections = renderer.info.collections.write().unwrap();
             for db_name in db_names.iter() {
@@ -309,7 +346,8 @@ impl Updater {
                         &*renderer.info.context.config,
                         &*renderer.info.context.options,
                         &fallback,
-                        ).await?;
+                    )
+                    .await?;
                 }
             }
 
@@ -352,9 +390,29 @@ impl Updater {
             self.update_layouts(&rule.layouts).await?;
         }
 
+        // Gather pages so we can test if they should cause
+        // a collections invalidation
+        let pages: Vec<&PathBuf> = rule
+            .actions
+            .iter()
+            .filter(|action| {
+                if let Kind::Page(_) = action {
+                    true
+                } else {
+                    false
+                }
+            })
+            .map(|action| match action {
+                Kind::Page(path) => path,
+                _ => {
+                    panic!("Got unsupported page kind in invalidation updater")
+                }
+            })
+            .collect();
+
         // Update collections data sources
-        if !rule.collections.is_empty() {
-            self.update_collections(&rule.collections).await?;
+        if !rule.collections.is_empty() || !pages.is_empty() {
+            self.update_collections(&rule.collections, pages).await?;
         }
 
         for action in &rule.actions {
@@ -364,6 +422,7 @@ impl Updater {
                     // as the notify crate gives us an absolute path
                     let source = self.project.options.source.clone();
                     let file = relative_to(path, &source, &source)?;
+
                     self.one(&file).await?;
                 }
             }

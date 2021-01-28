@@ -6,9 +6,7 @@ use std::path::PathBuf;
 use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
 
-use globset::Glob;
-
-use crate::{Error, Result};
+use crate::{Error, Result, utils::matcher::GlobPatternMatcher};
 
 static DEFAULT_PARAMETER: &str = "result";
 
@@ -50,14 +48,16 @@ pub struct DataBase {
 }
 
 impl DataBase {
-    pub(crate) fn prepare(&self) -> Result<()> {
-        if let Some(ref collators) = self.load {
-            for (_, v) in collators {
+    pub(crate) fn prepare(&mut self) -> Result<()> {
+        if let Some(ref mut providers) = self.load {
+            for (_, v) in providers.iter_mut() {
                 if let Some(ref from) = v.from {
                     if from.is_absolute() {
                         return Err(Error::FromAbsolute(from.to_path_buf()));
                     }
                 }
+
+                v.prepare()?;
             }
         }
         Ok(())
@@ -68,13 +68,20 @@ impl DataBase {
 #[serde(default)]
 pub struct DataProvider {
     #[serde(rename = "type")]
-    pub kind: Option<SourceType>,
-    pub provider: Option<SourceProvider>,
-    pub from: Option<PathBuf>,
+    kind: Option<SourceType>,
+    provider: Option<SourceProvider>,
+    from: Option<PathBuf>,
+
+    // TODO: use a full GlobMatcher!
+
     // Omit files that match this pattern when building
     // the index; patterns are matched relative to the containing
     // directory.
-    pub excludes: Vec<Glob>,
+    //pub excludes: Vec<Glob>,
+
+    #[serde(flatten)]
+    matcher: GlobPatternMatcher,
+
     #[serde(alias = "on")]
     pub index: Option<HashMap<String, IndexRequest>>,
 }
@@ -86,8 +93,31 @@ impl Default for DataProvider {
             provider: Some(Default::default()),
             from: None,
             index: Some(HashMap::new()),
-            excludes: Vec::new(),
+            matcher: Default::default(),
         }
+    }
+}
+
+impl DataProvider {
+    pub fn kind(&self) -> &SourceType {
+        self.kind.as_ref().unwrap()
+    }
+
+    pub fn source_provider(&self) -> &SourceProvider {
+        self.provider.as_ref().unwrap()
+    }
+
+    pub fn from(&self) -> &Option<PathBuf> {
+        &self.from
+    }
+
+    pub fn matcher(&self) -> &GlobPatternMatcher {
+        &self.matcher
+    }
+
+    fn prepare(&mut self) -> Result<()> {
+        self.matcher.compile();
+        Ok(()) 
     }
 }
 

@@ -1,3 +1,4 @@
+use std::path::Path;
 use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
 
@@ -53,7 +54,7 @@ impl GlobPatternMatcher {
     ///
     /// No assumptions are made about matching when the
     /// pattern lists are empty.
-    pub fn matches(&self, href: &str) -> bool {
+    pub fn matches<P: AsRef<Path>>(&self, href: P) -> bool {
         self.test(href, false)
     }
 
@@ -61,14 +62,14 @@ impl GlobPatternMatcher {
     ///
     /// If the include list is empty it is assumed the
     /// pattern matches. Excludes take precedence.
-    pub fn filter(&self, href: &str) -> bool {
+    pub fn filter<P: AsRef<Path>>(&self, href: P) -> bool {
         self.test(href, true)
     }
 
     /// Determine if the pattern would be excluded.
-    pub fn is_excluded(&self, href: &str) -> bool {
+    pub fn is_excluded<P: AsRef<Path>>(&self, href: P) -> bool {
         for glob in self.exclude_match.iter() {
-            if glob.is_match(href) {
+            if glob.is_match(href.as_ref()) {
                 return true;
             }
         }
@@ -76,18 +77,18 @@ impl GlobPatternMatcher {
     }
 
     /// Determine if the pattern would be included.
-    pub fn is_included(&self, href: &str) -> bool {
+    pub fn is_included<P: AsRef<Path>>(&self, href: P) -> bool {
         for glob in self.include_match.iter() {
-            if glob.is_match(href) {
+            if glob.is_match(href.as_ref()) {
                 return true;
             }
         }
         false
     }
 
-    fn test(&self, href: &str, empty: bool) -> bool {
+    fn test<P: AsRef<Path>>(&self, href: P, empty: bool) -> bool {
         for glob in self.exclude_match.iter() {
-            if glob.is_match(href) {
+            if glob.is_match(href.as_ref()) {
                 return false;
             }
         }
@@ -95,7 +96,7 @@ impl GlobPatternMatcher {
             return true;
         }
         for glob in self.include_match.iter() {
-            if glob.is_match(href) {
+            if glob.is_match(href.as_ref()) {
                 return true;
             }
         }

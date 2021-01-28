@@ -504,7 +504,7 @@ impl Config {
             if let Some(date) = cfg.date.as_mut() {
                 date.prepare();
             }
-            if let Some(ref db) = cfg.db {
+            if let Some(db) = cfg.db.as_mut() {
                 db.prepare()?;
             }
             if let Some(search) = cfg.search.as_mut() {

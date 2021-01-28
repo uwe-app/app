@@ -368,7 +368,9 @@ impl ProjectBuilder {
 
         // Load data sources and create indices
         let mut collections: CollectionsMap = Default::default();
-        collections.load(&self.config, &self.options, collation).await?;
+        collections
+            .load(&self.config, &self.options, collation)
+            .await?;
 
         self.collections = collections;
 

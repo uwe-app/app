@@ -36,8 +36,8 @@ pub struct LoadRequest<'a> {
     pub collation: &'a CollateInfo,
     pub definition: &'a DataProvider,
     pub strategy: Strategy,
-    pub kind: SourceType,
-    pub provider: SourceProvider,
+    pub kind: &'a SourceType,
+    pub provider: &'a SourceProvider,
 }
 
 fn find_recursive(
@@ -100,37 +100,22 @@ impl Provider {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
         let limit: usize = 100;
 
-        let exclude = req
-            .definition
-            .excludes
-            .iter()
-            .map(|g| g.compile_matcher())
-            .collect::<Vec<globset::GlobMatcher>>();
-
         stream::iter(req.collation.pages())
             .filter(|(p, _)| {
                 if !p.starts_with(req.source) {
                     return future::ready(false);
                 }
 
-                if !exclude.is_empty() {
+                if !req.definition.matcher().is_empty() {
                     // NOTE: `from` is already relative to source
-                    let folder = if let Some(ref from) = req.definition.from {
+                    let folder = if let Some(ref from) = req.definition.from() {
                         from.as_path()
                     } else {
                         req.source.as_path()
                     };
 
                     if let Some(relative) = p.strip_prefix(folder).ok() {
-                        let skip = exclude.iter().find(|m| {
-                            if m.is_match(relative) {
-                                true
-                            } else {
-                                false
-                            }
-                        });
-
-                        if let Some(_) = skip {
+                        if req.definition.matcher().is_excluded(relative) {
                             return future::ready(false);
                         }
                     }
@@ -144,6 +129,9 @@ impl Provider {
                 // Convert the page data to a Value for indexing
                 let data = req.collation.resolve(path).unwrap();
                 let page = data.read().unwrap();
+
+                // TODO: check `indexable` page field
+
                 let result = serde_json::to_value(&*page);
                 match result {
                     Ok(document) => {

@@ -324,7 +324,8 @@ pub fn feed(
             for (page_path, page_lock) in info.pages.iter() {
                 let mut page_write = page_lock.write().unwrap();
                 if let Some(ref href) = info.get_link_href(page_path) {
-                    if channel.alternate.filter(href) {
+                    let alternate_href = href.to_string();
+                    if channel.alternate.filter(&alternate_href) {
                         for (url, mime_type) in alternates.iter() {
                             let alternate = LinkTag::new_alternate(
                                 url.to_string(),

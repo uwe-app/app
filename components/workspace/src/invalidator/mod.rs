@@ -54,8 +54,8 @@ pub struct Invalidation {
     pub(crate) deletions: HashSet<PathBuf>,
     // List of paths in a collection data source
     //
-    // Collections paths are stored using the identifier 
-    // if the corresponding `CollectionsIndex` in the 
+    // Collections paths are stored using the identifier
+    // if the corresponding `CollectionsIndex` in the
     // `CollectionsMap` so the collection can easily be located.
     pub(crate) collections: HashSet<(String, PathBuf)>,
 }
@@ -184,7 +184,7 @@ impl Invalidator {
             .read()
             .unwrap()
             .iter()
-            .map(|(k, v)| (k.to_string(), canonical(v.source.clone())))
+            .map(|(k, v)| (k.to_string(), canonical(v.source().clone())))
             .collect();
 
         'paths: for path in paths {
@@ -233,7 +233,8 @@ impl Invalidator {
                     } else if path.starts_with(&collections) {
                         for (key, p) in &collections_paths {
                             if path.starts_with(p) {
-                                rule.collections.insert((key.to_string(), path));
+                                rule.collections
+                                    .insert((key.to_string(), path));
                                 break;
                             }
                         }
