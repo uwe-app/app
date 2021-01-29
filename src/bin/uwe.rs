@@ -134,6 +134,7 @@ async fn run(cmd: Command) -> Result<()> {
                 language: args.language,
                 host: args.host,
                 locales: args.locales,
+                bare: args.bare,
                 remote_name: args.remote_name,
                 remote_url: args.remote_url,
             };

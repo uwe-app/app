@@ -44,6 +44,7 @@ pub struct ProjectOptions {
     pub language: Option<String>,
     pub host: Option<String>,
     pub locales: Option<String>,
+    pub bare: bool,
     pub remote_name: String,
     pub remote_url: Option<String>,
 }
@@ -408,10 +409,12 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
     })?;
 
     write_settings(&target, settings, name, dependency, plugin)?;
-    scm::init(&target, message)?;
 
-    if let Some(ref url) = options.remote_url {
-        scm::set_remote(&target, &options.remote_name, url)?;
+    if !options.bare {
+        scm::init(&target, message)?;
+        if let Some(ref url) = options.remote_url {
+            scm::set_remote(&target, &options.remote_name, url)?;
+        }
     }
 
     info!("Created {} ✓", target.to_string_lossy());

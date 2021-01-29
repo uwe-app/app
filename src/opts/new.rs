@@ -22,6 +22,10 @@ pub struct New {
     #[structopt(short = "L", long)]
     pub locales: Option<String>,
 
+    /// Create project without git initialization.
+    #[structopt(long)]
+    pub bare: bool,
+
     /// Remote name for the new project
     #[structopt(long, default_value = "origin")]
     pub remote_name: String,
@@ -34,7 +38,7 @@ pub struct New {
     #[structopt(short, long)]
     pub git: Option<Url>,
 
-    /// Folder prefix for git repositories.
+    /// Folder prefix for git blueprints.
     #[structopt(long)]
     pub prefix: Option<UrlPath>,
 
