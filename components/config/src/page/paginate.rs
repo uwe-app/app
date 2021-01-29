@@ -16,6 +16,8 @@ pub struct PaginateInfo {
     pub total: usize,
     // Current page number.
     pub current: usize,
+    // Name of the current page (current + 1)
+    pub name: String,
     // Total number of items in the collection.
     pub length: usize,
     // The index into the collection for the

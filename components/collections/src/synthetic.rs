@@ -244,6 +244,7 @@ pub fn pages(
                     first,
                     last,
                     size,
+                    name: (current + 1).to_string(),
                     links: Vec::new(),
                     prev: None,
                     next: None,
