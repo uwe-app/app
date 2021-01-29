@@ -82,7 +82,7 @@ impl CollectionDataBase {
         options: &RuntimeOptions,
         collation: &CollateInfo,
     ) -> Result<()> {
-        if !self.source.exists() || !self.source.is_dir() {
+        if !self.source.exists() {
             return Err(Error::NoCollectionDocuments {
                 docs: self.source.clone(),
                 key: db_name.to_string(),

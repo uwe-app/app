@@ -91,7 +91,46 @@ impl Provider {
         match req.provider {
             SourceProvider::Files => Provider::load_files(req).await,
             SourceProvider::Pages => Provider::load_pages(req).await,
+            SourceProvider::Document => Provider::load_document(req).await,
         }
+    }
+
+    async fn load_document(
+        req: LoadRequest<'_>,
+    ) -> Result<BTreeMap<String, Arc<Value>>> {
+        let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
+
+        if !req.source.exists() || !req.source.is_file() {
+            return Err(Error::NotDocumentFile(req.source.to_path_buf()))
+        }
+
+        let content = fs::read_to_string(req.source).await?;
+        let value = Provider::deserialize(&req.kind, &content)?;
+        let supported_type = match value {
+            Value::Array(_) => true,
+            Value::Object(_) => true,
+            _ => false,
+        };
+
+        if !supported_type {
+            return Err(Error::UnsupportedType(req.source.to_path_buf()))
+        }
+
+        match value {
+            Value::Array(list) => {
+                for (i, value) in list.into_iter().enumerate() {
+                    docs.insert(i.to_string(), Arc::new(value));
+                }
+            }
+            Value::Object(map) => {
+                for (key, value) in map {
+                    docs.insert(key, Arc::new(value));
+                } 
+            }
+            _ => {}
+        }
+
+        Ok(docs)
     }
 
     async fn load_pages(

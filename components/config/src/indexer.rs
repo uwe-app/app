@@ -34,6 +34,8 @@ pub enum SourceProvider {
     Files,
     #[serde(rename = "pages")]
     Pages,
+    #[serde(rename = "document")]
+    Document,
 }
 
 impl Default for SourceProvider {

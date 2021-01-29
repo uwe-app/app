@@ -30,11 +30,17 @@ pub enum Error {
 
     //#[error("No feed template file {0}")]
     //NoFeedTemplate(PathBuf),
-    #[error("No configuration {conf} for data source {key}")]
+    #[error("No configuration {conf} for collection {key}")]
     NoCollectionConf { conf: String, key: String },
 
-    #[error("No {docs} directory for data source {key}")]
+    #[error("Target {docs} for collection {key} does not exist")]
     NoCollectionDocuments { docs: PathBuf, key: String },
+
+    #[error("Path for 'document' provider must be a file ({0})")]
+    NotDocumentFile(PathBuf),
+
+    #[error("Unsupported type for 'document' provider in {0} (must be an object or array)")]
+    UnsupportedType(PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
