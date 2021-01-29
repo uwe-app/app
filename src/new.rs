@@ -344,7 +344,7 @@ pub async fn project(mut options: ProjectOptions) -> Result<()> {
                 ref git,
                 ref prefix,
             } => {
-                let plugin = install_repo(&target, git, prefix, false).await?;
+                let plugin = install_repo(&target, git, prefix, true).await?;
                 (plugin.name().to_string(), plugin)
             }
             DependencyTarget::File { ref path } => {
