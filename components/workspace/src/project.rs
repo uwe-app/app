@@ -117,12 +117,7 @@ pub async fn new_project_builder(
     members: &Vec<Member>,
 ) -> Result<ProjectBuilder> {
     let options = crate::options::prepare(&mut config, args, members).await?;
-    let redirects = if let Some(ref redirects) = config.redirect {
-        redirects.clone()
-    } else {
-        Default::default()
-    };
-
+    let redirects = config.redirects().clone();
     let builder = ProjectBuilder {
         config: config,
         options,

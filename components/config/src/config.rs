@@ -217,8 +217,7 @@ pub struct Config {
     node: NodeConfig,
     pub page: Option<Page>,
     pub pages: Option<HashMap<String, Page>>,
-    #[serde(alias = "redirects")]
-    pub redirect: Option<RedirectConfig>,
+    redirects: RedirectConfig,
     pub date: Option<DateConfig>,
     pub link: Option<LinkConfig>,
     pub profile: Option<HashMap<String, ProfileSettings>>,
@@ -302,7 +301,7 @@ impl Default for Config {
             node: Default::default(),
             page: Some(Default::default()),
             pages: None,
-            redirect: None,
+            redirects: Default::default(),
             date: Some(Default::default()),
             link: Some(Default::default()),
             profile: Some(Default::default()),
@@ -337,6 +336,10 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn redirects(&self) -> &RedirectConfig {
+        &self.redirects
+    }
 
     pub fn node(&self) -> &NodeConfig {
         &self.node
