@@ -168,6 +168,8 @@ pub struct ProfileSettings {
 
     pub rewrite_index: Option<bool>,
     pub include_index: Option<bool>,
+    /// Should we pass the commit hash to page templates.
+    pub include_commit: Option<bool>,
 
     pub incremental: Option<bool>,
     pub pristine: Option<bool>,
@@ -193,9 +195,6 @@ pub struct ProfileSettings {
 
     /// List of workspace members to filter.
     pub member: Vec<String>,
-
-    /// Should we pass the commit hash to page templates.
-    pub include_commit: Option<bool>,
 }
 
 impl Default for ProfileSettings {

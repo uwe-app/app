@@ -232,7 +232,7 @@ pub struct Config {
     pub menu: Option<MenuConfig>,
 
     // Optional sitemap config
-    pub sitemap: Option<SiteMapConfig>,
+    sitemap: SiteMapConfig,
 
     // Optional robots config
     pub robots: Option<RobotsConfig>,
@@ -310,7 +310,7 @@ impl Default for Config {
             index: None,
             authors: HashMap::new(),
             menu: None,
-            sitemap: Some(Default::default()),
+            sitemap: Default::default(),
             robots: Some(Default::default()),
             dependencies: None,
             dependencies_map: None,
@@ -340,6 +340,10 @@ impl Config {
 
     pub fn node(&self) -> &NodeConfig {
         &self.node
+    }
+
+    pub fn sitemap(&self) -> &SiteMapConfig {
+        &self.sitemap
     }
 
     pub fn dependencies(&self) -> &Option<DependencyMap> {

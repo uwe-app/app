@@ -157,7 +157,7 @@ impl Renderer {
     /// Reload the data for a single page.
     pub fn reload<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let collation = self.info.context.collation.read().unwrap();
-    
+
         let key = Arc::new(path.as_ref().to_path_buf());
         let path_buf = &*key;
         let mut info = collation.fallback.write().unwrap();
@@ -297,85 +297,84 @@ impl Renderer {
 
         let mut res: Option<Url> = None;
 
-        if let Some(ref sitemap) = ctx.config.sitemap {
-            if sitemap.profiles().is_match(ctx.options.profile()) {
-                // How many entries per chunk window?
-                let entries = sitemap.entries.as_ref().unwrap();
+        let sitemap = ctx.config.sitemap();
+        if sitemap.profiles().is_match(ctx.options.profile()) {
+            // How many entries per chunk window?
+            let entries = sitemap.entries.as_ref().unwrap();
 
-                let with_lang = if ctx.locales.is_multi_lingual() {
-                    Some(collation.get_lang().to_string())
-                } else {
-                    None
-                };
+            let with_lang = if ctx.locales.is_multi_lingual() {
+                Some(collation.get_lang().to_string())
+            } else {
+                None
+            };
 
-                // Base canonical URL
-                let base = ctx
-                    .options
-                    .get_canonical_url(&ctx.config, with_lang.as_ref())?;
+            // Base canonical URL
+            let base = ctx
+                .options
+                .get_canonical_url(&ctx.config, with_lang.as_ref())?;
 
-                // Create the top-level index of all sitemaps
-                let folder = sitemap.name.as_ref().unwrap().to_string();
-                let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
+            // Create the top-level index of all sitemaps
+            let folder = sitemap.name.as_ref().unwrap().to_string();
+            let mut idx = SiteMapIndex::new(base.clone(), folder.clone());
 
-                let base_folder = collation.get_path().join(&folder);
+            let base_folder = collation.get_path().join(&folder);
 
-                if !base_folder.exists() {
-                    fs::create_dir_all(&base_folder)?;
-                }
-
-                let err_name = OsStr::new("404");
-
-                for (count, window) in parse_list.chunks(*entries).enumerate() {
-                    let href = format!("{}.xml", count + 1);
-                    let mut sitemap = SiteMapFile {
-                        href,
-                        entries: vec![],
-                    };
-                    let sitemap_path = base_folder.join(&sitemap.href);
-                    sitemap.entries = window
-                        .iter()
-                        // NOTE: quick hack to ignore error file, needs stronger logic
-                        .filter(|d| {
-                            if Some(err_name) == d.file.file_stem() {
-                                return false;
-                            }
-                            true
-                        })
-                        .map(|d| {
-                            // Get the href to use to build the location
-                            let href =
-                                collation.get_link_href(&d.file).unwrap();
-                            // Get the last modification data from the page
-                            let page = collation.resolve(&d.file).unwrap();
-                            let page = &*page.read().unwrap();
-                            // Generate the absolute location
-                            let location = base.join(href.as_ref()).unwrap();
-                            let lastmod = page.lastmod();
-                            SiteMapEntry { location, lastmod }
-                        })
-                        .collect();
-
-                    let map_file = File::create(&sitemap_path)?;
-                    sitemap.to_writer(map_file)?;
-
-                    // Add the file to the index
-                    idx.maps.push(sitemap);
-                }
-
-                // Write out the master index file
-                let idx_path = base_folder.join(config::sitemap::FILE);
-                let idx_file = File::create(&idx_path)?;
-                idx.to_writer(idx_file)?;
-
-                let sitemap_url = idx.to_location();
-                info!(
-                    "Sitemap {} ({})",
-                    sitemap_url.to_string(),
-                    idx.maps.len()
-                );
-
-                res = Some(sitemap_url);
+            if !base_folder.exists() {
+                fs::create_dir_all(&base_folder)?;
             }
+
+            let err_name = OsStr::new("404");
+
+            for (count, window) in parse_list.chunks(*entries).enumerate() {
+                let href = format!("{}.xml", count + 1);
+                let mut sitemap = SiteMapFile {
+                    href,
+                    entries: vec![],
+                };
+                let sitemap_path = base_folder.join(&sitemap.href);
+                sitemap.entries = window
+                    .iter()
+                    // NOTE: quick hack to ignore error file, needs stronger logic
+                    .filter(|d| {
+                        if Some(err_name) == d.file.file_stem() {
+                            return false;
+                        }
+                        true
+                    })
+                    .map(|d| {
+                        // Get the href to use to build the location
+                        let href =
+                            collation.get_link_href(&d.file).unwrap();
+                        // Get the last modification data from the page
+                        let page = collation.resolve(&d.file).unwrap();
+                        let page = &*page.read().unwrap();
+                        // Generate the absolute location
+                        let location = base.join(href.as_ref()).unwrap();
+                        let lastmod = page.lastmod();
+                        SiteMapEntry { location, lastmod }
+                    })
+                    .collect();
+
+                let map_file = File::create(&sitemap_path)?;
+                sitemap.to_writer(map_file)?;
+
+                // Add the file to the index
+                idx.maps.push(sitemap);
+            }
+
+            // Write out the master index file
+            let idx_path = base_folder.join(config::sitemap::FILE);
+            let idx_file = File::create(&idx_path)?;
+            idx.to_writer(idx_file)?;
+
+            let sitemap_url = idx.to_location();
+            info!(
+                "Sitemap {} ({})",
+                sitemap_url.to_string(),
+                idx.maps.len()
+            );
+
+            res = Some(sitemap_url);
         }
 
         Ok(res)
