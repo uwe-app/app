@@ -276,7 +276,8 @@ pub fn pages(
                 mut item_data,
                 mut paginate,
                 items,
-            ) in chunks {
+            ) in chunks
+            {
                 paginate.links = links.clone();
 
                 if current > 0 {

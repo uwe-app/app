@@ -25,7 +25,7 @@ use crate::{
     menu::MenuConfig,
     minify::MinifyConfig,
     page::{Author, Page},
-    profile::{ProfileName, ProfileSettings, Profiles, NodeConfig},
+    profile::{NodeConfig, ProfileName, ProfileSettings, Profiles},
     redirect::RedirectConfig,
     repository::RepositoryConfig,
     robots::RobotsConfig,
@@ -234,7 +234,7 @@ pub struct Config {
     sitemap: SiteMapConfig,
 
     // Optional robots config
-    pub robots: Option<RobotsConfig>,
+    robots: RobotsConfig,
 
     dependencies: Option<DependencyDefinitionMap>,
     dependencies_map: Option<DependencyMap>,
@@ -310,7 +310,7 @@ impl Default for Config {
             authors: HashMap::new(),
             menu: None,
             sitemap: Default::default(),
-            robots: Some(Default::default()),
+            robots: Default::default(),
             dependencies: None,
             dependencies_map: None,
             layout: None,
@@ -336,6 +336,9 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn robots(&self) -> &RobotsConfig {
+        &self.robots
+    }
 
     pub fn redirects(&self) -> &RedirectConfig {
         &self.redirects

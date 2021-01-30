@@ -14,8 +14,6 @@ impl LiveReload {
 
 impl Default for LiveReload {
     fn default() -> Self {
-        Self {
-            follow_edits: None,
-        }
+        Self { follow_edits: None }
     }
 }

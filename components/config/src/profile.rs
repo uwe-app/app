@@ -26,7 +26,7 @@ static PRODUCTION: &str = "production";
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NodeConfig {
     #[serde(flatten)]
-    map: HashMap<ProfileName, String>
+    map: HashMap<ProfileName, String>,
 }
 
 impl Default for NodeConfig {
@@ -270,10 +270,7 @@ impl ProfileSettings {
         settings
     }
 
-    pub fn get_node_env(
-        &self,
-        config: &NodeConfig,
-    ) -> String {
+    pub fn get_node_env(&self, config: &NodeConfig) -> String {
         if let Some(ref name) = config.map.get(&self.name) {
             name.to_string()
         } else {

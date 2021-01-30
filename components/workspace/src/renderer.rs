@@ -161,8 +161,7 @@ impl Renderer {
         let key = Arc::new(path.as_ref().to_path_buf());
         let path_buf = &*key;
         let mut info = collation.fallback.write().unwrap();
-        let layout_name =
-            collator::layout_name(&self.info.context.options);
+        let layout_name = collator::layout_name(&self.info.context.options);
 
         let plugins = self.info.context.plugins.as_deref();
 
@@ -198,8 +197,7 @@ impl Renderer {
 
             // Update collections query assignments
             let collate_info = collation.fallback.read().unwrap();
-            let collections_map =
-                self.info.collections.read().unwrap();
+            let collections_map = self.info.collections.read().unwrap();
             let mut query_cache = QueryCache::new();
             synthetic::assign_page_lookup(
                 &collate_info,
@@ -343,8 +341,7 @@ impl Renderer {
                     })
                     .map(|d| {
                         // Get the href to use to build the location
-                        let href =
-                            collation.get_link_href(&d.file).unwrap();
+                        let href = collation.get_link_href(&d.file).unwrap();
                         // Get the last modification data from the page
                         let page = collation.resolve(&d.file).unwrap();
                         let page = &*page.read().unwrap();
@@ -368,11 +365,7 @@ impl Renderer {
             idx.to_writer(idx_file)?;
 
             let sitemap_url = idx.to_location();
-            info!(
-                "Sitemap {} ({})",
-                sitemap_url.to_string(),
-                idx.maps.len()
-            );
+            info!("Sitemap {} ({})", sitemap_url.to_string(), idx.maps.len());
 
             res = Some(sitemap_url);
         }

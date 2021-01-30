@@ -69,7 +69,6 @@ pub struct Page {
 
     /// Ignore from collections indexing.
     //ignore_collections_index: Option<bool>,
-
     pub query: Option<QueryList>,
 
     pub layout: Option<String>,
@@ -189,7 +188,7 @@ impl Page {
     }
 
     pub fn is_synthetic(&self) -> bool {
-        self.synthetic 
+        self.synthetic
     }
 
     /// Get the destination output file for this page.

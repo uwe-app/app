@@ -714,29 +714,23 @@ impl Project {
     }
 
     pub fn write_robots(&self, sitemaps: Vec<Url>) -> Result<()> {
-        let output_robots =
-            self.config.robots.is_some() || !sitemaps.is_empty();
+        let output_robots = self
+            .config
+            .robots()
+            .profiles()
+            .is_match(self.options.profile())
+            || !sitemaps.is_empty();
 
         if output_robots {
-            let mut robots = if let Some(ref robots) = self.config.robots {
-                robots.clone()
-            } else {
-                Default::default()
-            };
-
-            if robots.profiles().is_match(self.options.profile())
-                || !sitemaps.is_empty()
-            {
-                robots.sitemaps = sitemaps;
-
-                //// NOTE: robots must always be at the root regardless
-                //// NOTE: of multi-lingual support so we use `base` rather
-                //// NOTE: than the `target`
-                let robots_file =
-                    self.options.build_target().join(config::robots::FILE);
-                utils::fs::write_string(&robots_file, robots.to_string())?;
-                info!("Robots {}", robots_file.display());
-            }
+            let mut robots = self.config.robots().clone();
+            robots.sitemaps = sitemaps;
+            //// NOTE: robots must always be at the root regardless
+            //// NOTE: of multi-lingual support so we use `base` rather
+            //// NOTE: than the `target`
+            let robots_file =
+                self.options.build_target().join(config::robots::FILE);
+            utils::fs::write_string(&robots_file, robots.to_string())?;
+            info!("Robots {}", robots_file.display());
         }
 
         Ok(())

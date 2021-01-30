@@ -101,7 +101,7 @@ impl Provider {
         let mut docs: BTreeMap<String, Arc<Value>> = BTreeMap::new();
 
         if !req.source.exists() || !req.source.is_file() {
-            return Err(Error::NotDocumentFile(req.source.to_path_buf()))
+            return Err(Error::NotDocumentFile(req.source.to_path_buf()));
         }
 
         let content = fs::read_to_string(req.source).await?;
@@ -113,7 +113,7 @@ impl Provider {
         };
 
         if !supported_type {
-            return Err(Error::UnsupportedType(req.source.to_path_buf()))
+            return Err(Error::UnsupportedType(req.source.to_path_buf()));
         }
 
         match value {
@@ -125,7 +125,7 @@ impl Provider {
             Value::Object(map) => {
                 for (key, value) in map {
                     docs.insert(key, Arc::new(value));
-                } 
+                }
             }
             _ => {}
         }
@@ -160,14 +160,14 @@ impl Provider {
                 let data = req.collation.resolve(path).unwrap();
                 let page = data.read().unwrap();
 
-                // Must ignore synthetic pages otherwise during 
-                // live reload they can be added to a collection 
-                // database when it is invalidated which breaks the 
-                // logic in various ways and can cause errors with 
-                // links not being found due to inclusion of feeds 
+                // Must ignore synthetic pages otherwise during
+                // live reload they can be added to a collection
+                // database when it is invalidated which breaks the
+                // logic in various ways and can cause errors with
+                // links not being found due to inclusion of feeds
                 // and other synthetic pages.
                 if page.is_synthetic() {
-                    return future::ok(())
+                    return future::ok(());
                 }
 
                 let result = serde_json::to_value(&*page);

@@ -297,21 +297,21 @@ impl Updater {
         // Must be canonical becaause page paths are absolute
         let source_path = self.project.options.source.canonicalize()?;
 
-        // This is the relative path version required to get 
+        // This is the relative path version required to get
         // collections base paths correctly.
         let source = self.project.options.source.clone();
 
-        // Store matchers so we can exclude files from 
+        // Store matchers so we can exclude files from
         // the list of pages to invalidate
         let mut matchers = Vec::new();
 
-        // list of pages that were changed so we can reload 
+        // list of pages that were changed so we can reload
         // their data before invalidation of the database collection.
-        // 
-        // Database collections use the existing collated data so 
-        // we need to manually update pages that have changed so 
-        // that front matter changes are reflected on pages that 
-        // list changed pages, for example, a blog index page 
+        //
+        // Database collections use the existing collated data so
+        // we need to manually update pages that have changed so
+        // that front matter changes are reflected on pages that
+        // list changed pages, for example, a blog index page
         // with a recents query.
         let mut invalidated_pages = Vec::new();
 
@@ -321,45 +321,57 @@ impl Updater {
 
             // Find databases that operate on pages
             let pages_databases: Vec<(&String, &CollectionDataBase)> =
-                collections.iter()
+                collections
+                    .iter()
                     .filter(|(_, v)| {
                         let provider = v.data_provider().source_provider();
                         if let SourceProvider::Pages = provider {
                             true
-                        } else { false }
+                        } else {
+                            false
+                        }
                     })
-                .collect();
+                    .collect();
 
-            // Find pages that would be included in the database 
-            // collection and add the db name to the list of 
+            // Find pages that would be included in the database
+            // collection and add the db name to the list of
             // databases to be invalidated
             for (name, db) in pages_databases.into_iter() {
-
                 if !db_names.contains(name) {
-                    let base_path = if let Some(ref from) = db.data_provider().from() {
-                        source_path.join(from)
-                    } else {
-                        source_path.to_path_buf() 
-                    };
+                    let base_path =
+                        if let Some(ref from) = db.data_provider().from() {
+                            source_path.join(from)
+                        } else {
+                            source_path.to_path_buf()
+                        };
 
-                    // Store matchers so we can filter the invalidations to exclude 
+                    // Store matchers so we can filter the invalidations to exclude
                     // files that should be excluded from the database collection
                     matchers.push((
                         relative_to(&base_path, &source, &source)?,
-                        db.data_provider().matcher().clone()));
+                        db.data_provider().matcher().clone(),
+                    ));
 
                     for page_path in pages.iter() {
+                        invalidated_pages.push(relative_to(
+                            page_path,
+                            &source_path,
+                            &source,
+                        )?);
 
-                        invalidated_pages.push(relative_to(page_path, &source_path, &source)?);
-
-                        // The page must exist in the `from` path for the 
+                        // The page must exist in the `from` path for the
                         // pages collection
                         if page_path.starts_with(&base_path) {
-                            if let Ok(relative) = page_path.strip_prefix(&base_path) {
+                            if let Ok(relative) =
+                                page_path.strip_prefix(&base_path)
+                            {
                                 // Check the page is not excluded from the collection
-                                if db.data_provider().matcher().is_empty() 
-                                    || !db.data_provider().matcher().is_excluded(relative) {
-
+                                if db.data_provider().matcher().is_empty()
+                                    || !db
+                                        .data_provider()
+                                        .matcher()
+                                        .is_excluded(relative)
+                                {
                                     // FIXME: reload the page data!
 
                                     db_names.insert(name.to_string());
@@ -372,13 +384,12 @@ impl Updater {
         }
 
         for (_, renderer) in self.project.iter_mut() {
-
             // Reload the data for invalidated pages
             //
             // NOTE: must execute before we acquire the read locks below
             // NOTE: otherwise we will get a deadlock!
             for page in invalidated_pages.iter() {
-                renderer.reload(page)?; 
+                renderer.reload(page)?;
             }
             //
 
@@ -405,18 +416,21 @@ impl Updater {
                 self.buffer.extend(all_pages);
             // Or filter to respect the collections matcher
             } else {
-                let all_pages: HashMap<String, PathBuf> = fallback.link_map()
+                let all_pages: HashMap<String, PathBuf> = fallback
+                    .link_map()
                     .iter()
                     .filter(|(_, page_path)| {
                         for (base_path, matcher) in matchers.iter() {
                             if page_path.starts_with(base_path) {
-                                if let Ok(relative) = page_path.strip_prefix(base_path) {
+                                if let Ok(relative) =
+                                    page_path.strip_prefix(base_path)
+                                {
                                     if matcher.is_excluded(relative) {
-                                        return false
+                                        return false;
                                     }
                                 }
-                            } 
-                        } 
+                            }
+                        }
                         true
                     })
                     .map(|(k, v)| (k.to_string(), v.to_path_buf()))
@@ -435,12 +449,12 @@ impl Updater {
             let collation = &*renderer.info.context.collation.read().unwrap();
             self.buffer.retain(|_, page_path| {
                 if let Some(page_data) = collation.resolve(page_path) {
-                    let reader = page_data.read().unwrap(); 
+                    let reader = page_data.read().unwrap();
                     if reader.is_synthetic() {
                         return false;
                     }
                 }
-                true 
+                true
             });
         }
     }

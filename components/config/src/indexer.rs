@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use serde_json::{to_value, Value};
 use serde_with::skip_serializing_none;
 
-use crate::{Error, Result, utils::matcher::GlobPatternMatcher};
+use crate::{utils::matcher::GlobPatternMatcher, Error, Result};
 
 static DEFAULT_PARAMETER: &str = "result";
 
@@ -80,7 +80,6 @@ pub struct DataProvider {
     // the index; patterns are matched relative to the containing
     // directory.
     //pub excludes: Vec<Glob>,
-
     #[serde(flatten)]
     matcher: GlobPatternMatcher,
 

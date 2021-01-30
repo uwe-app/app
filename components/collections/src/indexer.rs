@@ -43,8 +43,8 @@ impl CollectionDataBase {
             indices: BTreeMap::new(),
             config,
         }
-    } 
-    
+    }
+
     pub fn source(&self) -> &PathBuf {
         &self.source
     }

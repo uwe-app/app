@@ -1,6 +1,6 @@
-use std::path::Path;
 use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]

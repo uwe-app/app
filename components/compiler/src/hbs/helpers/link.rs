@@ -60,9 +60,8 @@ fn url<'render, 'call>(
 
     if let Some(verify) = link_config.verify {
         if verify {
-
             //println!("Link testing page key {:?} {} {}",
-                //page_key, &normalized_href,  &input);
+            //page_key, &normalized_href,  &input);
 
             if page_key.is_none() {
                 return Err(HelperError::new(format!(
