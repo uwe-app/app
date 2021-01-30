@@ -208,7 +208,7 @@ pub struct Config {
 
     // Host name when running locally which overrides the inferred
     // localhost subdomain
-    pub localhost: Option<String>,
+    pub local_domain: Option<String>,
 
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
@@ -255,7 +255,7 @@ pub struct Config {
     sync: Option<SyncConfig>,
 
     pub minify: Option<MinifyConfig>,
-    livereload: Option<LiveReload>,
+    live_reload: Option<LiveReload>,
 
     // Commit digest when available
     commit: Option<String>,
@@ -294,7 +294,7 @@ impl Default for Config {
             charset: Some(String::from(CHARSET)),
             repository: None,
             engine: Some(Default::default()),
-            localhost: None,
+            local_domain: None,
             build: Some(Default::default()),
             workspace: None,
             fluent: Some(Default::default()),
@@ -324,7 +324,7 @@ impl Default for Config {
             db: None,
             sync: Some(Default::default()),
             minify: None,
-            livereload: Some(Default::default()),
+            live_reload: Some(Default::default()),
 
             project: PathBuf::from(""),
             file: PathBuf::from(""),
@@ -369,8 +369,8 @@ impl Config {
         self.commit = commit;
     }
 
-    pub fn livereload(&self) -> &LiveReload {
-        self.livereload.as_ref().unwrap()
+    pub fn live_reload(&self) -> &LiveReload {
+        self.live_reload.as_ref().unwrap()
     }
 
     pub fn sync(&self) -> &SyncConfig {
@@ -446,8 +446,8 @@ impl Config {
     }
 
     pub fn get_local_host_name(&self, infer_from_host: bool) -> String {
-        if let Some(ref hostname) = self.localhost {
-            hostname.clone()
+        if let Some(domain) = self.local_domain.clone() {
+            domain
         } else {
             if infer_from_host {
                 self.dev_local_host_name(&self.host)

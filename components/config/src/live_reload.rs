@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct LiveReload {
-    notify: Option<bool>,
     follow_edits: Option<bool>,
 }
 
@@ -16,7 +15,6 @@ impl LiveReload {
 impl Default for LiveReload {
     fn default() -> Self {
         Self {
-            notify: Some(true),
             follow_edits: None,
         }
     }

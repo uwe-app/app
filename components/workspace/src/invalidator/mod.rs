@@ -98,7 +98,7 @@ impl Invalidator {
     pub fn find_page_href(&self, path: &PathBuf) -> Option<String> {
         let config = self.updater.config();
         let options = self.updater.options();
-        if config.livereload().follow_edits() {
+        if config.live_reload().follow_edits() {
             if let Ok(file) =
                 relative_to(path, &options.source, &options.source)
             {

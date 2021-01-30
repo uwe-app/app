@@ -119,7 +119,7 @@ impl DataProvider {
 
     fn prepare(&mut self) -> Result<()> {
         self.matcher.compile();
-        Ok(()) 
+        Ok(())
     }
 }
 
