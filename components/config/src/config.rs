@@ -25,7 +25,7 @@ use crate::{
     menu::MenuConfig,
     minify::MinifyConfig,
     page::{Author, Page},
-    profile::{ProfileName, ProfileSettings, Profiles},
+    profile::{ProfileName, ProfileSettings, Profiles, NodeConfig},
     redirect::RedirectConfig,
     repository::RepositoryConfig,
     robots::RobotsConfig,
@@ -214,7 +214,7 @@ pub struct Config {
     pub workspace: Option<WorkspaceConfig>,
     pub fluent: Option<FluentConfig>,
     pub hooks: Option<HookMap>,
-    pub node: Option<NodeConfig>,
+    node: NodeConfig,
     pub page: Option<Page>,
     pub pages: Option<HashMap<String, Page>>,
     #[serde(alias = "redirects")]
@@ -299,7 +299,7 @@ impl Default for Config {
             workspace: None,
             fluent: Some(Default::default()),
             hooks: None,
-            node: Some(Default::default()),
+            node: Default::default(),
             page: Some(Default::default()),
             pages: None,
             redirect: None,
@@ -337,6 +337,11 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn node(&self) -> &NodeConfig {
+        &self.node
+    }
+
     pub fn dependencies(&self) -> &Option<DependencyMap> {
         &self.dependencies_map
     }
@@ -575,14 +580,6 @@ impl Config {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceConfig {
     pub members: Vec<String>,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub struct NodeConfig {
-    // Allow custom mappings for NODE_ENV
-    pub debug: Option<String>,
-    pub release: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

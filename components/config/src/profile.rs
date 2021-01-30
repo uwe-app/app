@@ -22,6 +22,23 @@ static DIST: &str = "dist";
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
 
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NodeConfig {
+    #[serde(flatten)]
+    map: HashMap<ProfileName, String>
+}
+
+impl Default for NodeConfig {
+    fn default() -> Self {
+        let mut map = HashMap::new();
+        map.insert(ProfileName::Debug, DEVELOPMENT.to_string());
+        map.insert(ProfileName::Release, PRODUCTION.to_string());
+        map.insert(ProfileName::Dist, PRODUCTION.to_string());
+        Self { map }
+    }
+}
+
 /// Trait for settings that maintain a list of profiles.
 ///
 /// Typically this is used to indicate that the settings
@@ -104,36 +121,6 @@ impl fmt::Display for ProfileName {
             ProfileName::Debug => write!(f, "{}", DEBUG),
             ProfileName::Release => write!(f, "{}", RELEASE),
             ProfileName::Dist => write!(f, "{}", DIST),
-        }
-    }
-}
-
-impl ProfileName {
-    pub fn get_node_env(
-        &self,
-        debug: Option<String>,
-        release: Option<String>,
-    ) -> String {
-        match self {
-            ProfileName::Debug => {
-                if let Some(env) = debug {
-                    return env;
-                }
-                return DEVELOPMENT.to_string();
-            }
-            ProfileName::Release => {
-                if let Some(env) = release {
-                    return env;
-                }
-                return PRODUCTION.to_string();
-            }
-            ProfileName::Dist => {
-                if let Some(env) = release {
-                    return env;
-                }
-                return PRODUCTION.to_string();
-            }
-            ProfileName::Custom(s) => return s.to_string(),
         }
     }
 }
@@ -282,6 +269,17 @@ impl ProfileSettings {
         settings.name = ProfileName::Dist;
         settings.include_index = Some(true);
         settings
+    }
+
+    pub fn get_node_env(
+        &self,
+        config: &NodeConfig,
+    ) -> String {
+        if let Some(ref name) = config.map.get(&self.name) {
+            name.to_string()
+        } else {
+            PRODUCTION.to_string()
+        }
     }
 
     /// Determine if this build profile can execute hooks.

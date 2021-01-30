@@ -40,12 +40,10 @@ pub fn exec(
     let build_source = ctx.options.source.canonicalize()?;
     let build_target = collation.get_path().canonicalize()?;
 
-    let node = ctx.config.node.as_ref().unwrap();
     let node_env = ctx
         .options
         .settings
-        .name
-        .get_node_env(node.debug.clone(), node.release.clone());
+        .get_node_env(ctx.config.node());
 
     info!("{} {}", cmd, args.join(" "));
     debug!("BUILD_PROJECT {}", project_root.display());
