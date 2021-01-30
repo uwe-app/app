@@ -156,9 +156,18 @@ fn build_feed(
 
             item.title = p.title.clone();
             item.summary = p.description.clone();
-            if let Some(ref created) = p.created {
-                item.date_published = Some(created.to_rfc3339());
-            }
+
+            let created = if let Some(ref created) = p.created {
+                created.clone()
+            } else {
+                if let Some(ref file) = p.file {
+                    DateTime::from(file.modified)
+                } else {
+                    DateTime::from(Utc::now())
+                }
+            };
+
+            item.date_published = Some(created.to_rfc3339());
             item.date_modified = if let Some(ref updated) = p.updated {
                 Some(updated.to_rfc3339())
             } else {
