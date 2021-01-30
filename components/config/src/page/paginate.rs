@@ -3,10 +3,10 @@ use serde_with::skip_serializing_none;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PageLink {
-    pub index: usize,
     pub name: String,
     pub href: String,
-    pub preserve: bool,
+    #[serde(skip)]
+    pub index: usize,
 }
 
 #[skip_serializing_none]

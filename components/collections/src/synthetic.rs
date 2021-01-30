@@ -255,7 +255,6 @@ pub fn pages(
                     index: current,
                     name: page_name,
                     href: options.absolute(&mock, Default::default())?,
-                    preserve: false,
                 };
 
                 links.push(link);
@@ -270,9 +269,6 @@ pub fn pages(
                 ));
             }
 
-            let length = chunks.len();
-            let upto = 2;
-
             for (
                 current,
                 mock,
@@ -280,23 +276,8 @@ pub fn pages(
                 mut item_data,
                 mut paginate,
                 items,
-            ) in chunks
-            {
-                let mut page_links = links.clone();
-
-                for (i, v) in page_links.iter_mut().enumerate() {
-                    let after = current + upto;
-                    let before: i32 = current as i32 - upto as i32;
-                    let before_limit = std::cmp::max(before, 0) as usize;
-                    let after_limit = std::cmp::min(after, length - 1);
-                    if (i < current && i >= before_limit)
-                        || (i > current && i <= after_limit)
-                    {
-                        v.preserve = true;
-                    }
-                }
-
-                paginate.links = page_links;
+            ) in chunks {
+                paginate.links = links.clone();
 
                 if current > 0 {
                     paginate.prev = Some(paginate.links[current - 1].clone());
