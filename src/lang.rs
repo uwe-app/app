@@ -50,7 +50,7 @@ async fn list(project: PathBuf) -> Result<()> {
         info!(
             "Project {} (language: {})",
             info.config.project().display(),
-            info.config.lang
+            info.config.lang(),
         );
         if info.has_locales {
             info!("Locales {}", info.locales_dir.display());
@@ -80,20 +80,20 @@ async fn new(project: PathBuf, languages: Vec<String>) -> Result<()> {
         info!(
             "Project {} (language: {})",
             info.config.project().display(),
-            info.config.lang
+            info.config.lang(),
         );
 
         fs::create_dir_all(&info.locales_dir)?;
 
         let mut files = vec![
             PathBuf::from(config::CORE_FTL),
-            PathBuf::from(&info.config.lang).join(config::MAIN_FTL),
+            PathBuf::from(info.config.lang()).join(config::MAIN_FTL),
         ];
 
         // Filter out the primary fallback language if it was specified
         let langs: Vec<&String> = languages
             .iter()
-            .filter(|&s| s != &info.config.lang)
+            .filter(|&s| s != info.config.lang())
             .collect();
 
         for lang in langs.iter() {

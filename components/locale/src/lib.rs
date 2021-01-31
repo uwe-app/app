@@ -167,7 +167,7 @@ impl Locales {
 
         let arc_ref = self.wrap(arc);
 
-        self.languages = self.get_locale_map(arc_ref, &config.lang)?;
+        self.languages = self.get_locale_map(arc_ref, config.lang())?;
         Ok(&self.languages)
     }
 }

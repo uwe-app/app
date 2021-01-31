@@ -43,7 +43,7 @@ async fn do_publish(options: &PublishOptions, project: &Project) -> Result<()> {
                     let bucket = if let Some(ref bucket) = env.bucket {
                         bucket.to_string()
                     } else {
-                        project.config.host.clone()
+                        project.config.host().to_string()
                     };
 
                     let region =

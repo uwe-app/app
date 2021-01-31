@@ -192,8 +192,8 @@ pub fn parse_host<S: AsRef<str>>(host: S) -> Result<Url, Error> {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct Config {
-    pub lang: String,
-    pub host: String,
+    lang: String,
+    host: String,
 
     /// Project version
     #[serde_as(as = "DisplayFromStr")]
@@ -425,6 +425,10 @@ impl Config {
 
     pub fn host(&self) -> &str {
         &self.host
+    }
+
+    pub fn lang(&self) -> &str {
+        &self.lang
     }
 
     pub fn icon_mut(&mut self) -> &mut Option<UrlPath> {

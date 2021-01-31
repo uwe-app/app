@@ -543,7 +543,7 @@ impl Updater {
         let lang: &str = if let Some(ref lang) = lang {
             lang.as_str()
         } else {
-            &self.config().lang
+            self.config().lang()
         };
 
         let options = RenderOptions::new_file_lang(
@@ -568,7 +568,7 @@ impl Updater {
         let lang = if let Some(lang) = lang.take() {
             lang
         } else {
-            self.project.config().lang.clone()
+            self.project.config().lang().to_string()
         };
 
         // Find the correct renderer so we access the collation

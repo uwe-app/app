@@ -289,7 +289,7 @@ impl ProjectBuilder {
         };
 
         let mut res = CollateResult::new(
-            &self.config.lang,
+            self.config.lang(),
             self.options.build_target(),
             self.locales.languages(),
         );
@@ -951,7 +951,7 @@ pub async fn compile<P: AsRef<Path>>(
             warn!("If you trust the commands in the site settings ");
             warn!("enable command execution with the --exec option.");
             warn!("");
-            return Err(Error::NoExecCapability(config.host.to_string()));
+            return Err(Error::NoExecCapability(config.host().to_string()));
         }
 
         // Prepare the options and project builder
