@@ -225,7 +225,10 @@ version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31accafdb70df7871592c058eca3985b71104e15ac32f64706022c58867da931"
 dependencies = [
+ "lazy_static",
  "memchr",
+ "regex-automata",
+ "serde",
 ]
 
 [[package]]
@@ -366,6 +369,7 @@ version = "0.1.0"
 dependencies = [
  "collator",
  "config",
+ "csv",
  "futures",
  "globset",
  "log",
@@ -643,6 +647,28 @@ dependencies = [
  "procedural-masquerade",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "csv"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9d58633299b24b515ac72a3f869f8b91306a3cec616a602843a383acd6f9e97"
+dependencies = [
+ "bstr",
+ "csv-core",
+ "itoa",
+ "ryu",
+ "serde",
+]
+
+[[package]]
+name = "csv-core"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b2466559f260f48ad25fe6317b3c8dac77b5bdb5763ac7d9d6103530663bc90"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]
@@ -2721,6 +2747,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex-automata"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae1ded71d66a4a97f5e961fd0cb25a5f366a42a41570d16a763a69c092c26ae4"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "regex-syntax"
 version = "0.6.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4147,7 +4182,7 @@ dependencies = [
 
 [[package]]
 name = "uwe"
-version = "0.45.4"
+version = "0.45.5"
 dependencies = [
  "collections",
  "compiler",

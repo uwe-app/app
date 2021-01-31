@@ -20,6 +20,8 @@ pub enum SourceType {
     Json,
     #[serde(rename = "toml")]
     Toml,
+    #[serde(rename = "csv")]
+    Csv,
 }
 
 impl Default for SourceType {

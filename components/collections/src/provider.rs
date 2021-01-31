@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -21,10 +21,16 @@ static JSON: &str = "json";
 #[derive(thiserror::Error, Debug)]
 pub enum DeserializeError {
     #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
     Json(#[from] serde_json::Error),
 
     #[error(transparent)]
     Toml(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    Csv(#[from] csv::Error),
 }
 
 type ProviderResult = std::result::Result<Value, DeserializeError>;
@@ -75,13 +81,41 @@ fn find_recursive(
 pub struct Provider {}
 
 impl Provider {
+
+    /*
     fn deserialize<S: AsRef<str>>(
         kind: &SourceType,
         content: S,
     ) -> ProviderResult {
         match kind {
-            SourceType::Json => Ok(serde_json::from_str(content.as_ref())?),
             SourceType::Toml => Ok(toml::from_str(content.as_ref())?),
+            _ => panic!("Unsupported type found deserializing collection data provider"),
+        }
+    }
+    */
+
+    fn deserialize_path<P: AsRef<Path>>(
+        kind: &SourceType,
+        path: P,
+    ) -> ProviderResult {
+        match kind {
+            SourceType::Json => {
+                let content = utils::fs::read_string(path.as_ref())?;
+                Ok(serde_json::from_str(&content)?)
+            },
+            SourceType::Toml => {
+                let content = utils::fs::read_string(path.as_ref())?;
+                Ok(toml::from_str(&content)?)
+            },
+            SourceType::Csv => {
+                let mut rdr = csv::Reader::from_path(path)?;
+                let mut records: Vec<Value> = Vec::new();
+                for result in rdr.deserialize() {
+                    let record: Vec<Value> = result?;
+                    records.push(Value::Array(record));
+                }
+                Ok(Value::Array(records))
+            },
         }
     }
 
@@ -104,8 +138,8 @@ impl Provider {
             return Err(Error::NotDocumentFile(req.source.to_path_buf()));
         }
 
-        let content = fs::read_to_string(req.source).await?;
-        let value = Provider::deserialize(&req.kind, &content)?;
+        //let content = fs::read_to_string(req.source).await?;
+        let value = Provider::deserialize_path(&req.kind, req.source)?;
         let supported_type = match value {
             Value::Array(_) => true,
             Value::Object(_) => true,
@@ -206,10 +240,11 @@ impl Provider {
         Provider::find_documents(&req)
             .try_for_each_concurrent(limit, |(count, entry)| {
                 let path = entry.path();
-                let result = utils::fs::read_string(&path);
-                match result {
-                    Ok(content) => {
-                        let result = Provider::deserialize(&req.kind, &content);
+                //let result = utils::fs::read_string(&path);
+                //match result {
+                    //Ok(content) => {
+
+                        let result = Provider::deserialize_path(&req.kind, &path);
                         match result {
                             Ok(document) => {
                                 let key = ComputeIdentifier::id(
@@ -229,9 +264,10 @@ impl Provider {
                             }
                             Err(e) => return future::err(Error::from(e)),
                         }
-                    }
-                    Err(e) => return future::err(Error::from(e)),
-                }
+
+                    //}
+                    //Err(e) => return future::err(Error::from(e)),
+                //}
 
                 future::ok(())
             })

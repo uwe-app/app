@@ -202,10 +202,19 @@ impl ValueIndex {
         } else if doc.is_array() {
             let list = doc.as_array_mut().unwrap();
             for doc in list.iter_mut() {
-                let obj = doc.as_object_mut().unwrap();
-                obj.insert(IDENTITY.to_string(), Value::Object(ident.clone()));
+                match doc {
+                    Value::Object(_) => {
+                        let obj = doc.as_object_mut().unwrap();
+                        obj.insert(IDENTITY.to_string(), Value::Object(ident.clone()));
+                    }
+                    _ => {
+                        // TODO: how to handle other types of data?
+                    }
+                }
             }
         }
+
+        //Ok(())
     }
 
     fn map_entry(
