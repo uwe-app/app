@@ -11,7 +11,7 @@ thiserror = "1"
 once_cell = "1.4"
 
 [dependencies.syntect]
-version = "4.3"
+version = "4.5"
 default-features = false
 features = [
   "regex-fancy",
@@ -20,7 +20,7 @@ features = [
 ]
 
 # Note that currently there is a linker error when cross-compiling
-# to macos with the `onig` regex library so we use the slower 
+# to macos with the `onig` regex library so we use the slower
 # rust only version so that cross-compiling works ok for now.
 #[target.x86_64-apple-darwin.dependencies]
 #config = {version = "0.1", path = "../config" }

@@ -112,7 +112,7 @@ fn lookup() -> &'static HashMap<&'static str, &'static str> {
         lang_lookup.insert("handlebars", "hbs");
 
         // Add custom mappings from the config
-        let map = conf(None).map.as_ref().unwrap();
+        let map = conf(None).map();
         for (k, v) in map.iter() {
             lang_lookup.entry(k).or_insert(&v);
         }
@@ -148,7 +148,7 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
         ClassStyle::Spaced,
     );
     for line in value.lines() {
-        html_generator.parse_html_for_line(&line);
+        html_generator.parse_html_for_line_which_includes_newline(&line);
     }
     html_generator.finalize()
 }

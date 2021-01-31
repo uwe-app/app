@@ -6,18 +6,16 @@ use crate::profile::{ProfileFilter, Profiles};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct SyntaxConfig {
-    pub theme: Option<String>,
-    //pub languages: Option<Vec<String>>,
-    pub map: Option<HashMap<String, String>>,
+    theme: Option<String>,
     profiles: ProfileFilter,
+    map: HashMap<String, String>,
 }
 
 impl Default for SyntaxConfig {
     fn default() -> Self {
         Self {
             theme: None,
-            //languages: None,
-            map: Some(HashMap::new()),
+            map: HashMap::new(),
             profiles: Default::default(),
         }
     }
@@ -30,6 +28,10 @@ impl SyntaxConfig {
 
     pub fn theme(&self) -> &Option<String> {
         &self.theme
+    }
+
+    pub fn map(&self) -> &HashMap<String, String> {
+        &self.map
     }
 }
 
