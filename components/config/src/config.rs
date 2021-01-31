@@ -19,7 +19,6 @@ use crate::{
     fluent::FluentConfig,
     hook::HookMap,
     indexer::DataBase,
-    layout::LayoutConfig,
     link::LinkConfig,
     live_reload::LiveReload,
     menu::MenuConfig,
@@ -238,8 +237,6 @@ pub struct Config {
     dependencies: Option<DependencyDefinitionMap>,
     dependencies_map: Option<DependencyMap>,
 
-    pub layout: Option<LayoutConfig>,
-
     syntax: Option<SyntaxConfig>,
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
@@ -311,7 +308,6 @@ impl Default for Config {
             robots: Default::default(),
             dependencies: None,
             dependencies_map: None,
-            layout: None,
             syntax: None,
             transform: Some(Default::default()),
             search: None,
