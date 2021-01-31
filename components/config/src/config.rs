@@ -18,7 +18,7 @@ use crate::{
     feed::FeedConfig,
     fluent::FluentConfig,
     hook::HookMap,
-    indexer::{DataBase, IndexRequest},
+    indexer::DataBase,
     layout::LayoutConfig,
     link::LinkConfig,
     live_reload::LiveReload,
@@ -222,7 +222,6 @@ pub struct Config {
     pub link: Option<LinkConfig>,
     pub profile: Option<HashMap<String, ProfileSettings>>,
     pub publish: Option<PublishConfig>,
-    pub index: Option<HashMap<String, IndexRequest>>,
 
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     authors: HashMap<String, Author>,
@@ -306,7 +305,6 @@ impl Default for Config {
             link: Some(Default::default()),
             profile: Some(Default::default()),
             publish: Some(Default::default()),
-            index: None,
             authors: HashMap::new(),
             menu: None,
             sitemap: Default::default(),
