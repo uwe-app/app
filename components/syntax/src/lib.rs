@@ -107,16 +107,12 @@ fn lookup() -> &'static HashMap<&'static str, &'static str> {
     static INSTANCE: OnceCell<HashMap<&'static str, &'static str>> =
         OnceCell::new();
     INSTANCE.get_or_init(|| {
-        let mut lang_lookup = HashMap::new();
-        lang_lookup.insert("rust", "rs");
-        lang_lookup.insert("handlebars", "hbs");
-
+        let mut lang_lookup: HashMap<&'static str, &'static str> = HashMap::new();
         // Add custom mappings from the config
         let map = conf(None).map();
         for (k, v) in map.iter() {
             lang_lookup.entry(k).or_insert(&v);
         }
-
         lang_lookup
     })
 }
