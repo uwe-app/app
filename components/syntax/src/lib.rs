@@ -13,6 +13,7 @@ use syntect::highlighting::ThemeSet;
 use syntect::html::{ClassStyle, ClassedHTMLGenerator};
 use syntect::parsing::SyntaxReference;
 use syntect::parsing::SyntaxSet;
+use syntect::util::LinesWithEndings;
 
 //use syntect::html::css_for_theme;
 
@@ -143,7 +144,7 @@ pub fn highlight<'a>(value: &str, syntax: &'a SyntaxReference) -> String {
         ps,
         ClassStyle::Spaced,
     );
-    for line in value.lines() {
+    for line in LinesWithEndings::from(value) {
         html_generator.parse_html_for_line_which_includes_newline(&line);
     }
     html_generator.finalize()
