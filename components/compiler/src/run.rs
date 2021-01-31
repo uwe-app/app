@@ -73,40 +73,6 @@ pub async fn one(
         }
     }
 
-    /*
-    match collation.get_resource(file).unwrap() {
-        Resource::Page { ref target } => {
-            if let Some(page) = collation.resolve(file) {
-                let page = &*page.read().unwrap();
-
-                match target.operation {
-                    ResourceOperation::Render => {
-                        //let rel = page.file.as_ref().unwrap().target.clone();
-                        //let dest = context.collation.get_path().join(&rel);
-
-                        let dest = target.get_output(collation.get_path());
-
-                        return parse(
-                            context,
-                            parser,
-                            page.get_template(),
-                            page,
-                            &dest,
-                        )
-                        .await;
-                    }
-                    _ => resource(context, file, target).await?,
-                }
-            } else {
-                return Err(Error::PageResolve(file.to_path_buf()));
-            }
-        }
-        Resource::File { ref target } => {
-            resource(context, file, target).await?
-        }
-    }
-    */
-
     Ok(None)
 }
 
@@ -223,7 +189,7 @@ pub async fn parse(
         let mut html_flags: HtmlTransformFlags = Default::default();
 
         // Do we need to perform any transformations?
-        let mut requires_transform = ctx.config.search.is_some();
+        let mut requires_transform = ctx.config.search.is_some() || ctx.config.syntax().is_some();
 
         if let Some(ref transform) = ctx.config.transform {
             if let Some(ref html) = transform.html {

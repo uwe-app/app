@@ -251,7 +251,7 @@ impl ProjectBuilder {
     pub async fn runtime(self) -> Result<Self> {
         debug!("Verify runtime assets...");
 
-        if self.config.syntax.is_some() {
+        if self.config.syntax().is_some() {
             if self.config.is_syntax_enabled(&self.options.settings.name) {
                 if let Some(ref plugin_cache) = self.plugins {
                     if let Some(plugin) = plugin_cache.find(PLUGIN_SYNTAX) {
@@ -464,7 +464,7 @@ impl ProjectBuilder {
     /// Determine if syntax highlighting is enabled.
     pub fn get_syntax(&self) -> &Option<SyntaxConfig> {
         if self.config.is_syntax_enabled(&self.options.settings.name) {
-            return &self.config.syntax;
+            return self.config.syntax();
         }
         &None
     }

@@ -241,7 +241,7 @@ pub struct Config {
 
     pub layout: Option<LayoutConfig>,
 
-    pub syntax: Option<SyntaxConfig>,
+    syntax: Option<SyntaxConfig>,
     pub transform: Option<TransformConfig>,
     pub search: Option<SearchConfig>,
     pub feed: Option<FeedConfig>,
@@ -336,6 +336,10 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn syntax(&self) -> &Option<SyntaxConfig> {
+        &self.syntax
+    }
 
     pub fn fluent(&self) -> &FluentConfig {
         &self.fluent
