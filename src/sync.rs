@@ -16,13 +16,13 @@ pub async fn run(opts: Sync) -> Result<()> {
     let remote = if let Some(ref remote) = remote_opt {
         remote
     } else {
-        config.sync().remote.as_ref().unwrap()
+        config.sync().remote()
     };
 
     let branch = if let Some(ref branch) = branch_opt {
         branch
     } else {
-        config.sync().branch.as_ref().unwrap()
+        config.sync().branch()
     };
 
     info!(

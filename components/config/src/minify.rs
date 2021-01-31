@@ -9,7 +9,6 @@ pub struct MinifyConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MinifyFormat {
-    //pub profiles: Vec<ProfileName>,
     profiles: ProfileFilter,
 }
 
