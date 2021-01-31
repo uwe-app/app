@@ -119,14 +119,12 @@ impl Locales {
     {
         let locales_dir = path.as_ref();
         if locales_dir.exists() && locales_dir.is_dir() {
-            if let Some(ref fluent) = config.fluent {
-                match arc(locales_dir, fluent) {
-                    Ok(result) => {
-                        return (Some(Box::new(result)), None);
-                    }
-                    Err(e) => {
-                        return (None, Some(e));
-                    }
+            match arc(locales_dir, config.fluent()) {
+                Ok(result) => {
+                    return (Some(Box::new(result)), None);
+                }
+                Err(e) => {
+                    return (None, Some(e));
                 }
             }
         }
@@ -179,13 +177,9 @@ fn arc<'a, P: AsRef<Path>>(
     fluent: &FluentConfig,
 ) -> std::result::Result<ArcLoader, Box<dyn std::error::Error>> {
     let file = dir.as_ref();
-    if let Some(core_file) = &fluent.shared {
-        let mut core = file.to_path_buf();
-        core.push(core_file);
-        return ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone())
-            .shared_resources(Some(&[core]))
-            .build();
-    }
-
-    ArcLoader::builder(dir.as_ref(), fluent.fallback_id.clone()).build()
+    let mut core = file.to_path_buf();
+    core.push(fluent.shared());
+    ArcLoader::builder(dir.as_ref(), fluent.fallback().clone())
+        .shared_resources(Some(&[core]))
+        .build()
 }

@@ -212,7 +212,7 @@ pub struct Config {
 
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
-    pub fluent: Option<FluentConfig>,
+    pub fluent: FluentConfig,
     pub hooks: Option<HookMap>,
     node: NodeConfig,
     pub page: Option<Page>,
@@ -296,7 +296,7 @@ impl Default for Config {
             local_domain: None,
             build: Some(Default::default()),
             workspace: None,
-            fluent: Some(Default::default()),
+            fluent: Default::default(),
             hooks: None,
             node: Default::default(),
             page: Some(Default::default()),
@@ -336,6 +336,11 @@ impl Default for Config {
 }
 
 impl Config {
+
+    pub fn fluent(&self) -> &FluentConfig {
+        &self.fluent
+    }
+
     pub fn robots(&self) -> &RobotsConfig {
         &self.robots
     }
@@ -513,9 +518,8 @@ impl Config {
                 cfg.dependencies_map = Some(deps.try_into()?);
             }
 
-            if let Some(fluent) = cfg.fluent.as_mut() {
-                fluent.prepare(&cfg.lang, lang_id);
-            }
+            cfg.fluent.prepare(lang_id);
+
             if let Some(date) = cfg.date.as_mut() {
                 date.prepare();
             }

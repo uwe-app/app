@@ -1,26 +1,33 @@
 use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use unic_langid::LanguageIdentifier;
 
-use crate::LANG;
-
 pub static CORE_FTL: &str = "core.ftl";
 
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct FluentConfig {
-    pub shared: Option<String>,
-    #[serde(skip)]
-    pub fallback: Option<String>,
-    #[serde(skip)]
-    pub fallback_id: LanguageIdentifier,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    fallback: Option<LanguageIdentifier>,
+    shared: String,
 }
 
 impl FluentConfig {
-    pub(crate) fn prepare(&mut self, lang: &str, lang_id: LanguageIdentifier) {
-        self.fallback = Some(lang.to_string());
-        self.fallback_id = lang_id;
+    pub(crate) fn prepare(&mut self, lang_id: LanguageIdentifier) {
+        if self.fallback.is_none() {
+            self.fallback = Some(lang_id);
+        }
+    }
+
+    pub fn fallback(&self) -> &LanguageIdentifier {
+        self.fallback.as_ref().unwrap()
+    }
+
+    pub fn shared(&self) -> &str {
+        &self.shared
     }
 }
 
@@ -28,8 +35,7 @@ impl Default for FluentConfig {
     fn default() -> Self {
         Self {
             fallback: None,
-            shared: Some(String::from(CORE_FTL)),
-            fallback_id: String::from(LANG).parse().unwrap(),
+            shared: CORE_FTL.to_string(),
         }
     }
 }
