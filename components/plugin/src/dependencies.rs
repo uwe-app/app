@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use async_recursion::async_recursion;
 use log::debug;
+use semver::VersionReq;
 
 use config::{
     dependency::{Dependency, DependencyMap, DependencyTarget},
@@ -105,6 +106,10 @@ impl PluginDependencyState {
         }
     }
 
+    pub fn entry(&self) -> &Option<LockFileEntry> {
+        &self.entry
+    }
+
     pub fn target_version(&self) -> &Option<Version> {
         &self.version
     }
@@ -161,10 +166,10 @@ impl PluginDependencyState {
             }
         }
 
-        println!("has_lockfile_entry {}", has_lock_file_entry);
-        println!("has_plugin {}", has_plugin);
-        println!("is_installed {}", is_installed);
-        println!("satisfies_range {}", satisfies_range);
+        //println!("has_lockfile_entry {}", has_lock_file_entry);
+        //println!("has_plugin {}", has_plugin);
+        //println!("is_installed {}", is_installed);
+        //println!("satisfies_range {}", satisfies_range);
 
         Ok(
             has_lock_file_entry
@@ -250,7 +255,7 @@ async fn solver(
             .map(|e| e.clone());
 
         let (version, mut package, mut plugin) =
-            resolve_version(project, registry, name, &dep, &parent).await?;
+            resolve_version(project, registry, name, &dep, &entry, &parent).await?;
 
         let target_version: Option<Version> = if let Some(ref entry) = entry {
             Some(entry.version().clone())
@@ -259,7 +264,18 @@ async fn solver(
         };
 
         let solved = if let Some(plugin) = plugin.take() {
-            MaybePlugin::Plugin(plugin)
+            // If we have a lock file entry any existing plugin
+            // must be an exact match
+            if let Some(_) = entry {
+                let lock_file_version = target_version.as_ref().unwrap();
+                if plugin.version() == lock_file_version {
+                    MaybePlugin::Plugin(plugin)
+                } else {
+                    MaybePlugin::NotFound
+                }
+            } else {
+                MaybePlugin::Plugin(plugin)
+            }
         } else if let Some(package) = package.take() {
             MaybePlugin::Package(package)
         } else {
@@ -329,6 +345,7 @@ async fn resolve_version<P: AsRef<Path>>(
     registry: &Registry<'_>,
     name: &str,
     dep: &Dependency,
+    entry: &Option<LockFileEntry>,
     parent: &Option<MaybePlugin>,
 ) -> Result<(Option<Version>, Option<RegistryItem>, Option<Plugin>)> {
     debug!("Resolving version {}", name);
@@ -386,7 +403,15 @@ async fn resolve_version<P: AsRef<Path>>(
         }
     } else {
         // Get version from registry
-        match registry.resolve(name, &dep.version).await {
+        let version_range = if let Some(ref entry) = entry {
+            VersionReq::exact(entry.version())
+        } else {
+            dep.range().clone()
+        };
+
+        //println!("Resolve registry version {} {}", name, &version_range);
+
+        match registry.resolve(name, &version_range).await {
             Ok((version, package)) => {
                 debug!("Resolved registry package for {:?}", &version);
 

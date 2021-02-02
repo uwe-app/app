@@ -289,6 +289,10 @@ impl Dependency {
         &self.version
     }
 
+    pub fn set_range(&mut self, range: VersionReq) {
+        self.version = range;
+    }
+
     pub fn apply(&self) -> &Option<Apply> {
         &self.apply
     }

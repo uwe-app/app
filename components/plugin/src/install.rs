@@ -3,6 +3,8 @@ use std::path::Path;
 
 use log::{debug, info};
 
+use semver::VersionReq;
+
 use config::{
     lock_file::{LockFile, LockFileEntry},
     plugin::{
@@ -64,15 +66,32 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
                 let plugin = match state.maybe_plugin() {
                     MaybePlugin::Plugin(ref plugin) => plugin.clone(),
                     _ => {
-                        installer::install_dependency(
-                            config.project(),
-                            &registry,
-                            name,
-                            state.dependency(),
-                            true,
-                            None,
-                        )
-                        .await?
+                        if let Some(ref entry) = state.entry() {
+                            // Use an exact version for installation
+                            // from a lock file entry
+                            let mut dep = state.dependency().clone();
+                            dep.set_range(VersionReq::exact(entry.version()));
+
+                            installer::install_dependency(
+                                config.project(),
+                                &registry,
+                                name,
+                                &dep,
+                                true,
+                                None,
+                            )
+                            .await?
+                        } else {
+                            installer::install_dependency(
+                                config.project(),
+                                &registry,
+                                name,
+                                state.dependency(),
+                                true,
+                                None,
+                            )
+                            .await?
+                        }
                     }
                 };
 
@@ -98,36 +117,6 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
 
     Ok(resolved)
 }
-
-/*
-fn into_resolved(
-    tree: &DependencyTree,
-    resolved: &mut ResolvedPlugins,
-) -> Result<()> {
-    for (name, state) in tree.iter() {
-        let dep = state.dependency().clone();
-
-        // This should be safe because we called `state.satisfied()` when finding
-        // installation candidates.
-        let plugin = if let MaybePlugin::Plugin(plugin) = state.maybe_plugin() {
-            plugin.clone()
-        } else {
-            return Err(Error::PluginNotSatisfied);
-        };
-
-        // Basic verification that the plugin is sane
-        check(name, &dep, &plugin)?;
-
-        resolved.push((dep, plugin));
-
-        if !state.transitive().is_empty() {
-            into_resolved(state.transitive(), resolved)?;
-        }
-    }
-
-    Ok(())
-}
-*/
 
 fn scope_inheritance(resolved: &mut ResolvedPlugins) -> Result<()> {
     let scoped = resolved
@@ -194,10 +183,9 @@ fn partition<'a, P: AsRef<Path>>(
     resolved: &mut ResolvedPlugins,
 ) -> Result<()> {
     for (name, state) in tree.iter() {
-        println!("Testing satisfied {:?}", name);
-
+        //println!("Testing satisfied {:?}", name);
         if !state.satisfied()? {
-            println!("Not satisfied {:?}", name);
+            //println!("Not satisfied {:?}", name);
             candidates.push((name, state));
         } else {
             // Gather plugins that have already been resolved
@@ -205,6 +193,7 @@ fn partition<'a, P: AsRef<Path>>(
                 if let MaybePlugin::Plugin(plugin) = state.maybe_plugin() {
                     plugin.clone()
                 } else {
+                    //println!("State {:?}", state);
                     return Err(Error::PluginNotSatisfied);
                 };
 
