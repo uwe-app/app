@@ -344,7 +344,7 @@ impl ProjectBuilder {
                     &self.config,
                     &self.options,
                     collation,
-                    plugin_cache.plugins(),
+                    plugin_cache,
                 )?;
             }
         }

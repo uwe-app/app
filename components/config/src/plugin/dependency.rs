@@ -288,6 +288,10 @@ impl Dependency {
     pub fn range(&self) -> &VersionReq {
         &self.version
     }
+
+    pub fn apply(&self) -> &Option<Apply> {
+        &self.apply
+    }
 }
 
 impl fmt::Display for Dependency {
@@ -457,5 +461,13 @@ impl Apply {
         };
 
         Ok(())
+    }
+
+    pub fn has_scripts(&self) -> bool {
+        !self.scripts_match.is_empty()
+    }
+
+    pub fn has_styles(&self) -> bool {
+        !self.styles_match.is_empty()
     }
 }

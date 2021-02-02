@@ -2,7 +2,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use collator::{create_file, CollateInfo};
-use config::{plugin::ResolvedPlugins, Config, Plugin, RuntimeOptions};
+use config::{
+    plugin_cache::PluginCache,
+    Config, Plugin, RuntimeOptions};
 
 use crate::{Error, Result};
 
@@ -117,15 +119,28 @@ pub fn collate(
     config: &Config,
     options: &RuntimeOptions,
     info: &mut CollateInfo,
-    plugins: &ResolvedPlugins,
+    plugin_cache: &PluginCache,
 ) -> Result<()> {
-    for (_dep, plugin) in plugins.iter() {
+    for (dep, plugin) in plugin_cache.plugins().iter() {
         let name = &plugin.name;
         let plugin_base = plugin.to_assets_path();
 
+        let has_scripts = dep.apply().is_some()
+            && dep.apply().as_ref().unwrap().has_scripts();
+
+        let has_styles = dep.apply().is_some()
+            && dep.apply().as_ref().unwrap().has_styles();
+
         assets(options, info, name, plugin, &plugin_base)?;
-        scripts(options, info, name, plugin, &plugin_base)?;
-        styles(options, info, name, plugin, &plugin_base)?;
+
+        if has_scripts {
+            scripts(options, info, name, plugin, &plugin_base)?;
+        }
+
+        if has_styles {
+            styles(options, info, name, plugin, &plugin_base)?;
+        }
+
         layouts(config, options, info, name, plugin)?;
     }
 
