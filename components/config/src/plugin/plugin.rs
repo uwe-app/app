@@ -149,6 +149,9 @@ pub struct Plugin {
     #[serde(flatten, skip_serializing_if = "HashMap::is_empty")]
     templates: HashMap<TemplateEngine, PluginTemplates>,
 
+    // FIXME: use DependencyDefinitionMap so we can use the version string shorthand
+    // FIXME: in plugins too
+
     /// Plugin dependencies.
     #[serde(skip_serializing_if = "DependencyMap::is_empty")]
     dependencies: DependencyMap,

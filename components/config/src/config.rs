@@ -25,6 +25,7 @@ use crate::{
     minify::MinifyConfig,
     page::{Author, Page},
     profile::{NodeConfig, ProfileName, ProfileSettings, Profiles},
+    plugin::Plugin,
     redirect::RedirectConfig,
     repository::RepositoryConfig,
     robots::RobotsConfig,
@@ -517,7 +518,20 @@ impl Config {
             parse_host(&cfg.host)?;
 
             if let Some(deps) = cfg.dependencies.take() {
-                cfg.dependencies_map = Some(deps.try_into()?);
+                let mut dependency_map: DependencyMap = deps.try_into()?;
+
+                // To ease the development of blueprints we include the
+                // plugin dependencies too so they don't have to be duplicated
+                if let Some(parent) = file.parent() {
+                    let plugin_file = parent.join(PLUGIN);
+                    if plugin_file.exists() {
+                        let content = utils::fs::read_string(plugin_file)?;
+                        let plugin: Plugin = toml::from_str(&content)?;
+                        dependency_map.append(plugin.dependencies().clone());
+                    }
+                }
+
+                cfg.dependencies_map = Some(dependency_map);
             }
 
             cfg.fluent.prepare(lang_id);

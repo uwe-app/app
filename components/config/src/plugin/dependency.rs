@@ -91,6 +91,10 @@ impl DependencyMap {
         self.items.is_empty()
     }
 
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
     pub fn get<S: AsRef<str>>(&self, s: S) -> Option<&Dependency> {
         self.items.get(s.as_ref())
     }
