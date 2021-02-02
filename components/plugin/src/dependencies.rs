@@ -255,7 +255,8 @@ async fn solver(
             .map(|e| e.clone());
 
         let (version, mut package, mut plugin) =
-            resolve_version(project, registry, name, &dep, &entry, &parent).await?;
+            resolve_version(project, registry, name, &dep, &entry, &parent)
+                .await?;
 
         let target_version: Option<Version> = if let Some(ref entry) = entry {
             Some(entry.version().clone())

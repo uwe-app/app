@@ -8,4 +8,4 @@ edition = "2018"
 config = {version = "0.1", path = "../config" }
 utils = {version = "0.1", path = "../utils" }
 
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }

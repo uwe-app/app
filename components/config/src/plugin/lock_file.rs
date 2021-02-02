@@ -1,6 +1,6 @@
 use std::convert::{TryFrom, TryInto};
-use std::path::{Path, PathBuf};
 use std::hash::{Hash, Hasher};
+use std::path::{Path, PathBuf};
 
 use indexmap::IndexSet;
 use semver::Version;

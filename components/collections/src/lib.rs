@@ -42,6 +42,9 @@ pub enum Error {
     #[error("Unsupported type for 'document' provider in {0} (must be an object or array)")]
     UnsupportedType(PathBuf),
 
+    #[error("XML document {0} is empty")]
+    EmptyXmlDocument(PathBuf),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -55,11 +58,15 @@ pub enum Error {
     TomlDeser(#[from] toml::de::Error),
 
     #[error(transparent)]
+    Csv(#[from] csv::Error),
+
+    #[error(transparent)]
+    Xml(#[from] xml::reader::Error),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
     Collator(#[from] collator::Error),
-    #[error(transparent)]
-    Provider(#[from] provider::DeserializeError),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -68,5 +75,6 @@ pub mod identifier;
 mod indexer;
 pub mod provider;
 pub mod synthetic;
+mod xml_value;
 
 pub use indexer::*;

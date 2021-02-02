@@ -57,7 +57,7 @@ open = "1.1"
 structopt = {version = "^0.3.21", features = ["wrap_help"]}
 log = "0.4.8"
 pretty_env_logger = "0.4"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"
 toml = { version = "0.5", features = ["preserve_order"] }
 semver = "0.10"

@@ -22,6 +22,8 @@ pub enum SourceType {
     Toml,
     #[serde(rename = "csv")]
     Csv,
+    #[serde(rename = "xml")]
+    Xml,
 }
 
 impl Default for SourceType {

@@ -13,27 +13,12 @@ use collator::CollateInfo;
 use config::indexer::{DataProvider, SourceProvider, SourceType};
 use config::{Config, RuntimeOptions};
 
-use super::identifier::{ComputeIdentifier, Strategy};
-use super::{Error, Result};
+use crate::{
+    identifier::{ComputeIdentifier, Strategy},
+    xml_value, Error, Result,
+};
 
 static JSON: &str = "json";
-
-#[derive(thiserror::Error, Debug)]
-pub enum DeserializeError {
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
-
-    #[error(transparent)]
-    Toml(#[from] toml::de::Error),
-
-    #[error(transparent)]
-    Csv(#[from] csv::Error),
-}
-
-type ProviderResult = std::result::Result<Value, DeserializeError>;
 
 pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,
@@ -81,22 +66,10 @@ fn find_recursive(
 pub struct Provider {}
 
 impl Provider {
-    /*
-    fn deserialize<S: AsRef<str>>(
-        kind: &SourceType,
-        content: S,
-    ) -> ProviderResult {
-        match kind {
-            SourceType::Toml => Ok(toml::from_str(content.as_ref())?),
-            _ => panic!("Unsupported type found deserializing collection data provider"),
-        }
-    }
-    */
-
     fn deserialize_path<P: AsRef<Path>>(
         kind: &SourceType,
         path: P,
-    ) -> ProviderResult {
+    ) -> Result<Value> {
         match kind {
             SourceType::Json => {
                 let content = utils::fs::read_string(path.as_ref())?;
@@ -115,6 +88,7 @@ impl Provider {
                 }
                 Ok(Value::Array(records))
             }
+            SourceType::Xml => Ok(xml_value::from_path(path)?),
         }
     }
 

@@ -10,7 +10,7 @@ utils = {version = "0.1", path = "../utils" }
 
 chrono = { version = "0.4", features = ["serde"] }
 log = "0.4.8"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"
 serde_with = "1.5.1"
 thiserror = "1"
