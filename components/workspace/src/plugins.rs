@@ -4,6 +4,7 @@ use std::sync::Arc;
 use collator::{create_file, CollateInfo};
 use config::{
     plugin_cache::PluginCache,
+    plugin::dependency::Dependency,
     Config, Plugin, RuntimeOptions};
 
 use crate::{Error, Result};
@@ -67,10 +68,52 @@ fn scripts(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     name: &String,
+    dep: &Dependency,
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-    for script in plugin.scripts() {
+
+    // Safe to unwrap as we only call this when apply is present
+    let apply = dep.apply().as_ref().unwrap();
+    let has_filters = apply.has_script_filters();
+    let has_wildcard = apply.has_script_wildcard();
+
+    // Consists just of filters so no need to collate
+    // items that will never be used
+    let scripts = if !has_wildcard && has_filters {
+        plugin
+            .scripts()
+            .iter()
+            .filter(|s| {
+                if let Some(ref filter) = apply.scripts_filter {
+                    if let Some(src) = s.source() {
+                        // Try to match on the name rather than the full path
+                        let parts =
+                            src.split('/').collect::<Vec<_>>();
+                        let name = if parts.is_empty() {
+                            src
+                        } else {
+                            parts.last().unwrap()
+                        };
+                        for ptn in filter {
+                            if ptn.is_match(name) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+                true
+            })
+            .collect::<Vec<_>>()
+    } else {
+        plugin.scripts()
+            .iter()
+            .map(|s| s)
+            .collect::<Vec<_>>()
+    };
+
+    for script in scripts {
         if let Some(src) = script.source() {
             create_asset(options, info, name, plugin, plugin_target, src)?;
         }
@@ -83,10 +126,52 @@ fn styles(
     options: &RuntimeOptions,
     info: &mut CollateInfo,
     name: &String,
+    dep: &Dependency,
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-    for style in plugin.styles() {
+
+    // Safe to unwrap as we only call this when apply is present
+    let apply = dep.apply().as_ref().unwrap();
+    let has_filters = apply.has_style_filters();
+    let has_wildcard = apply.has_style_wildcard();
+
+    // Consists just of filters so no need to collate
+    // items that will never be used
+    let styles = if !has_wildcard && has_filters {
+        plugin
+            .styles()
+            .iter()
+            .filter(|s| {
+                if let Some(ref filter) = apply.styles_filter {
+                    if let Some(src) = s.source() {
+                        // Try to match on the name rather than the full path
+                        let parts =
+                            src.split('/').collect::<Vec<_>>();
+                        let name = if parts.is_empty() {
+                            src
+                        } else {
+                            parts.last().unwrap()
+                        };
+                        for ptn in filter {
+                            if ptn.is_match(name) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+                true
+            })
+            .collect::<Vec<_>>()
+    } else {
+        plugin.styles()
+            .iter()
+            .map(|s| s)
+            .collect::<Vec<_>>()
+    };
+
+    for style in styles {
         if let Some(src) = style.source() {
             create_asset(options, info, name, plugin, plugin_target, src)?;
         }
@@ -134,11 +219,11 @@ pub fn collate(
         assets(options, info, name, plugin, &plugin_base)?;
 
         if has_scripts {
-            scripts(options, info, name, plugin, &plugin_base)?;
+            scripts(options, info, name, dep, plugin, &plugin_base)?;
         }
 
         if has_styles {
-            styles(options, info, name, plugin, &plugin_base)?;
+            styles(options, info, name, dep, plugin, &plugin_base)?;
         }
 
         layouts(config, options, info, name, plugin)?;

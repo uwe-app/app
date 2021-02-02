@@ -470,4 +470,48 @@ impl Apply {
     pub fn has_styles(&self) -> bool {
         !self.styles_match.is_empty()
     }
+
+    /// Determine if any filters should be applied
+    /// when assigning scripts.
+    pub fn has_script_filters(&self) -> bool {
+        if let Some(ref filters) = self.scripts_filter {
+            !filters.is_empty()
+        } else { false }
+    }
+
+    /// Determine if a script apply pattern matches all scripts
+    /// defined by the plugin.
+    pub fn has_script_wildcard(&self) -> bool {
+        if let Some(ref scripts) = self.scripts {
+            return scripts.iter().find(|s| {
+                if let ApplyMatch::Pattern(_) = s {
+                    true
+                } else { false }
+            })
+            .is_some()
+        }
+        false
+    }
+
+    /// Determine if any filters should be applied
+    /// when assigning styles.
+    pub fn has_style_filters(&self) -> bool {
+        if let Some(ref filters) = self.styles_filter {
+            !filters.is_empty()
+        } else { false }
+    }
+
+    /// Determine if a style apply pattern matches all styles
+    /// defined by the plugin.
+    pub fn has_style_wildcard(&self) -> bool {
+        if let Some(ref styles) = self.styles {
+            return styles.iter().find(|s| {
+                if let ApplyMatch::Pattern(_) = s {
+                    true
+                } else { false }
+            })
+            .is_some()
+        }
+        false
+    }
 }
