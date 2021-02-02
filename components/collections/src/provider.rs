@@ -81,7 +81,6 @@ fn find_recursive(
 pub struct Provider {}
 
 impl Provider {
-
     /*
     fn deserialize<S: AsRef<str>>(
         kind: &SourceType,
@@ -102,11 +101,11 @@ impl Provider {
             SourceType::Json => {
                 let content = utils::fs::read_string(path.as_ref())?;
                 Ok(serde_json::from_str(&content)?)
-            },
+            }
             SourceType::Toml => {
                 let content = utils::fs::read_string(path.as_ref())?;
                 Ok(toml::from_str(&content)?)
-            },
+            }
             SourceType::Csv => {
                 let mut rdr = csv::Reader::from_path(path)?;
                 let mut records: Vec<Value> = Vec::new();
@@ -115,7 +114,7 @@ impl Provider {
                     records.push(Value::Array(record));
                 }
                 Ok(Value::Array(records))
-            },
+            }
         }
     }
 
@@ -242,31 +241,31 @@ impl Provider {
                 let path = entry.path();
                 //let result = utils::fs::read_string(&path);
                 //match result {
-                    //Ok(content) => {
+                //Ok(content) => {
 
-                        let result = Provider::deserialize_path(&req.kind, &path);
-                        match result {
-                            Ok(document) => {
-                                let key = ComputeIdentifier::id(
-                                    &req.strategy,
-                                    &path,
-                                    &document,
-                                    &count,
-                                );
-                                if docs.contains_key(&key) {
-                                    return future::err(Error::DuplicateId {
-                                        key,
-                                        path: path.to_path_buf(),
-                                    });
-                                }
-
-                                docs.insert(key, Arc::new(document));
-                            }
-                            Err(e) => return future::err(Error::from(e)),
+                let result = Provider::deserialize_path(&req.kind, &path);
+                match result {
+                    Ok(document) => {
+                        let key = ComputeIdentifier::id(
+                            &req.strategy,
+                            &path,
+                            &document,
+                            &count,
+                        );
+                        if docs.contains_key(&key) {
+                            return future::err(Error::DuplicateId {
+                                key,
+                                path: path.to_path_buf(),
+                            });
                         }
 
-                    //}
-                    //Err(e) => return future::err(Error::from(e)),
+                        docs.insert(key, Arc::new(document));
+                    }
+                    Err(e) => return future::err(Error::from(e)),
+                }
+
+                //}
+                //Err(e) => return future::err(Error::from(e)),
                 //}
 
                 future::ok(())

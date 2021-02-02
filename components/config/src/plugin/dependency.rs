@@ -476,19 +476,25 @@ impl Apply {
     pub fn has_script_filters(&self) -> bool {
         if let Some(ref filters) = self.scripts_filter {
             !filters.is_empty()
-        } else { false }
+        } else {
+            false
+        }
     }
 
     /// Determine if a script apply pattern matches all scripts
     /// defined by the plugin.
     pub fn has_script_wildcard(&self) -> bool {
         if let Some(ref scripts) = self.scripts {
-            return scripts.iter().find(|s| {
-                if let ApplyMatch::Pattern(_) = s {
-                    true
-                } else { false }
-            })
-            .is_some()
+            return scripts
+                .iter()
+                .find(|s| {
+                    if let ApplyMatch::Pattern(_) = s {
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .is_some();
         }
         false
     }
@@ -498,19 +504,25 @@ impl Apply {
     pub fn has_style_filters(&self) -> bool {
         if let Some(ref filters) = self.styles_filter {
             !filters.is_empty()
-        } else { false }
+        } else {
+            false
+        }
     }
 
     /// Determine if a style apply pattern matches all styles
     /// defined by the plugin.
     pub fn has_style_wildcard(&self) -> bool {
         if let Some(ref styles) = self.styles {
-            return styles.iter().find(|s| {
-                if let ApplyMatch::Pattern(_) = s {
-                    true
-                } else { false }
-            })
-            .is_some()
+            return styles
+                .iter()
+                .find(|s| {
+                    if let ApplyMatch::Pattern(_) = s {
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .is_some();
         }
         false
     }

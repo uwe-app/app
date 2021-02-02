@@ -96,8 +96,17 @@ fn write_settings<P: AsRef<Path>>(
             Value::String(lang.to_string()),
         );
     }
+
     if let Some(host) = host {
         site_config.insert(config::HOST_KEY.to_string(), Value::String(host));
+    } else {
+        // NOTE: By setting the default to `localhost` when no host is given means
+        // NOTE: we can assign a custom `host` value to the blueprint projects so that
+        // NOTE: we can treat all blueprints as a workspace (when host names must be unique).
+        site_config.insert(
+            config::HOST_KEY.to_string(),
+            Value::String(config::LOCALHOST.to_string()),
+        );
     }
 
     // Inject a layout from a blueprint.

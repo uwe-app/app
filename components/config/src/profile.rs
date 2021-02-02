@@ -421,7 +421,11 @@ impl ProfileSettings {
     ) -> crate::Result<Url> {
         if self.is_release() {
             let scheme = self.scheme.as_ref().unwrap();
-            Ok(Url::parse(&crate::to_url_string(scheme, conf.host(), None))?)
+            Ok(Url::parse(&crate::to_url_string(
+                scheme,
+                conf.host(),
+                None,
+            ))?)
         } else {
             let scheme = if self.tls.is_some() {
                 config::SCHEME_HTTPS

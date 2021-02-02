@@ -205,7 +205,10 @@ impl ValueIndex {
                 match doc {
                     Value::Object(_) => {
                         let obj = doc.as_object_mut().unwrap();
-                        obj.insert(IDENTITY.to_string(), Value::Object(ident.clone()));
+                        obj.insert(
+                            IDENTITY.to_string(),
+                            Value::Object(ident.clone()),
+                        );
                     }
                     _ => {
                         // TODO: how to handle other types of data?

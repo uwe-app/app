@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use collator::{create_file, CollateInfo};
 use config::{
-    plugin_cache::PluginCache,
-    plugin::dependency::Dependency,
-    Config, Plugin, RuntimeOptions};
+    plugin::dependency::Dependency, plugin_cache::PluginCache, Config, Plugin,
+    RuntimeOptions,
+};
 
 use crate::{Error, Result};
 
@@ -72,7 +72,6 @@ fn scripts(
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-
     // Safe to unwrap as we only call this when apply is present
     let apply = dep.apply().as_ref().unwrap();
     let has_filters = apply.has_script_filters();
@@ -88,8 +87,7 @@ fn scripts(
                 if let Some(ref filter) = apply.scripts_filter {
                     if let Some(src) = s.source() {
                         // Try to match on the name rather than the full path
-                        let parts =
-                            src.split('/').collect::<Vec<_>>();
+                        let parts = src.split('/').collect::<Vec<_>>();
                         let name = if parts.is_empty() {
                             src
                         } else {
@@ -107,10 +105,7 @@ fn scripts(
             })
             .collect::<Vec<_>>()
     } else {
-        plugin.scripts()
-            .iter()
-            .map(|s| s)
-            .collect::<Vec<_>>()
+        plugin.scripts().iter().map(|s| s).collect::<Vec<_>>()
     };
 
     for script in scripts {
@@ -130,7 +125,6 @@ fn styles(
     plugin: &Plugin,
     plugin_target: &PathBuf,
 ) -> Result<()> {
-
     // Safe to unwrap as we only call this when apply is present
     let apply = dep.apply().as_ref().unwrap();
     let has_filters = apply.has_style_filters();
@@ -146,8 +140,7 @@ fn styles(
                 if let Some(ref filter) = apply.styles_filter {
                     if let Some(src) = s.source() {
                         // Try to match on the name rather than the full path
-                        let parts =
-                            src.split('/').collect::<Vec<_>>();
+                        let parts = src.split('/').collect::<Vec<_>>();
                         let name = if parts.is_empty() {
                             src
                         } else {
@@ -165,10 +158,7 @@ fn styles(
             })
             .collect::<Vec<_>>()
     } else {
-        plugin.styles()
-            .iter()
-            .map(|s| s)
-            .collect::<Vec<_>>()
+        plugin.styles().iter().map(|s| s).collect::<Vec<_>>()
     };
 
     for style in styles {
@@ -213,8 +203,8 @@ pub fn collate(
         let has_scripts = dep.apply().is_some()
             && dep.apply().as_ref().unwrap().has_scripts();
 
-        let has_styles = dep.apply().is_some()
-            && dep.apply().as_ref().unwrap().has_styles();
+        let has_styles =
+            dep.apply().is_some() && dep.apply().as_ref().unwrap().has_styles();
 
         assets(options, info, name, plugin, &plugin_base)?;
 

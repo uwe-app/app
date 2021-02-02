@@ -189,7 +189,8 @@ pub async fn parse(
         let mut html_flags: HtmlTransformFlags = Default::default();
 
         // Do we need to perform any transformations?
-        let mut requires_transform = ctx.config.search.is_some() || ctx.config.syntax().is_some();
+        let mut requires_transform =
+            ctx.config.search.is_some() || ctx.config.syntax().is_some();
 
         if let Some(ref transform) = ctx.config.transform {
             if let Some(ref html) = transform.html {

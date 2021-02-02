@@ -77,6 +77,7 @@ pub static TAGS: &str = "tags";
 /// Used when multiple virtual hosts and inferring
 /// a sub-domain from the primary host name.
 pub static HOST_DEV: &str = "loopback.space";
+pub static LOCALHOST: &str = "localhost";
 
 pub static ADDR: &str = "127.0.0.1";
 pub static HOST: &str = "localhost";
@@ -330,7 +331,6 @@ impl Default for Config {
 }
 
 impl Config {
-
     pub fn syntax(&self) -> &Option<SyntaxConfig> {
         &self.syntax
     }
