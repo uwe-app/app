@@ -1,5 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 use std::path::{Path, PathBuf};
+use std::hash::{Hash, Hasher};
 
 use indexmap::IndexSet;
 use semver::Version;
@@ -49,7 +50,7 @@ impl LockFile {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq)]
 #[serde(default)]
 pub struct LockFileEntry {
     pub name: String,
@@ -58,6 +59,12 @@ pub struct LockFileEntry {
     pub checksum: Option<String>,
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub source: Option<Url>,
+}
+
+impl Hash for LockFileEntry {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
 }
 
 impl PartialEq for LockFileEntry {

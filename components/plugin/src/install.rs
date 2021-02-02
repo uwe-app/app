@@ -26,6 +26,7 @@ pub async fn install(config: &Config) -> Result<ResolvedPlugins> {
         let registry = new_registry()?;
         let lock_path = LockFile::get_lock_file(config.project());
         let lock = LockFile::load(&lock_path)?;
+
         let tree = dependencies::resolve(config.project(), dependencies, &lock)
             .await?;
 
@@ -193,7 +194,10 @@ fn partition<'a, P: AsRef<Path>>(
     resolved: &mut ResolvedPlugins,
 ) -> Result<()> {
     for (name, state) in tree.iter() {
+        println!("Testing satisfied {:?}", name);
+
         if !state.satisfied()? {
+            println!("Not satisfied {:?}", name);
             candidates.push((name, state));
         } else {
             // Gather plugins that have already been resolved

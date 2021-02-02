@@ -161,6 +161,11 @@ impl PluginDependencyState {
             }
         }
 
+        println!("has_lockfile_entry {}", has_lock_file_entry);
+        println!("has_plugin {}", has_plugin);
+        println!("is_installed {}", is_installed);
+        println!("satisfies_range {}", satisfies_range);
+
         Ok(
             has_lock_file_entry
                 && has_plugin
