@@ -137,7 +137,7 @@ web-host cert issue \
   --zone-id=<zone-id> \
   --alternative-name="*.example.com" \
   --monitor \
-  example.com 
+  example.com
 ```
 
 Note the wildcard sub-domain `*.example.com` is quoted so the shell does not treat it as a glob pattern.
@@ -180,7 +180,7 @@ web-host cdn create \
   --origin-id=example-com \
   --alias=example.com \
   --protocol-policy=redirect-to-https \
-  --acm-certificate-arn=<acm-certificate-arn> \ 
+  --acm-certificate-arn=<acm-certificate-arn> \
   <s3-bucket-endpoint>
 ```
 
@@ -247,8 +247,8 @@ Be sure to check the `www` redirects too.
 
 A private executable `release-manager` performs all the steps for a release.
 
-1) Bump the version in `Cargo.toml`.
-2) Publish a new release: `cargo run --bin=release-manager`.
+1) Publish a new release: `cargo run --bin=release-manager`.
+2) Bump the version in `Cargo.toml` to prepare for the next release.
 
 If you need them `release-manager` supports `--force` to force overwrite an existing version and `--skip-build` if you know that the release artifacts are up to date. If uploads succeed but the release fails afterwards `--skip-upload` can also be used. These flags are primarily used for testing and development purposes; for example if you encounter a network error after a build has succeeded you could use:
 
@@ -323,19 +323,19 @@ dig A ns-544.awsdns-04.net +short
 dig AAAA ns-544.awsdns-04.net +short
 ```
 
-### ns1.uwe.app 
+### ns1.uwe.app
 
 * ns-544.awsdns-04.net
 * 205.251.194.32
 * 2600:9000:5302:2000::1
 
-### ns2.uwe.app 
+### ns2.uwe.app
 
 * ns-2016.awsdns-60.co.uk
 * 205.251.199.224
 * 2600:9000:5307:e000::1
 
-### ns3.uwe.app 
+### ns3.uwe.app
 
 * ns-507.awsdns-63.com
 * 205.251.193.251
