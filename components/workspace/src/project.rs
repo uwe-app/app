@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 
 use log::{debug, info, warn};
 
-use futures::TryFutureExt;
+use futures::{Future, TryFutureExt};
 use scopeguard::defer;
 use url::Url;
 
@@ -895,6 +895,170 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
     }
 }
 
+#[derive(Debug)]
+pub struct WorkspaceBuilder<'a> {
+    project: &'a Path,
+    settings: &'a ProfileSettings,
+    workspace: Workspace,
+    members: Vec<Member>,
+    member_filters: Vec<String>,
+}
+
+impl<'a> WorkspaceBuilder<'a> {
+    pub fn new(
+        project: &'a Path,
+        settings: &'a ProfileSettings,
+    ) -> Result<Self> {
+        let workspace = open(project, true, &settings.member)?;
+
+        // Cache of workspace member information used to
+        // build URLs for linking to members in templates
+        let members: Vec<Member> = match &workspace {
+            Workspace::Many(configs, _, _) => configs
+                .iter()
+                .map(|c| {
+                    Member::new(
+                        c.member_name().as_ref().unwrap().to_owned(),
+                        c.host().to_owned(),
+                    )
+                })
+                .collect(),
+            _ => vec![],
+        };
+
+        let member_filters = workspace.member_filters();
+
+        Ok(WorkspaceBuilder {
+            project,
+            settings,
+            workspace,
+            members,
+            member_filters,
+        })
+    }
+
+    pub async fn build<F, B>(self, mut builder: B) -> Result<Vec<Project>>
+    where
+        F: Future<Output = Result<Project>>,
+        B: FnMut(ProjectBuilder) -> F,
+    {
+        let mut projects: Vec<Project> = Vec::new();
+
+        for config in self.workspace.into_iter() {
+            // Skip members not in the list of member filters
+            // when member filters have  been specified
+            if let Some(member_name) = config.member_name() {
+                if !self.member_filters.is_empty()
+                    && !self.member_filters.contains(member_name)
+                {
+                    continue;
+                }
+            }
+
+            let lock_path = config.file().to_path_buf();
+            let lock_file = lock::acquire(&lock_path)?;
+            defer! { let _ = lock::release(lock_file); }
+
+            if config.hooks.is_some() && !self.settings.can_exec() {
+                warn!("The project has some hooks defined but does ");
+                warn!("not have the capability to execute commands.");
+                warn!("");
+                warn!("{}", config.file().display());
+                warn!("");
+                warn!("If you trust the commands in the site settings ");
+                warn!("enable command execution with the --exec option.");
+                warn!("");
+                return Err(Error::NoExecCapability(config.host().to_string()));
+            }
+
+            // Prepare the options and project builder
+            let project_builder =
+                new_project_builder(config, self.settings, &self.members)
+                    .await?;
+            let project = builder(project_builder).await?;
+            projects.push(project);
+        }
+        Ok(projects)
+    }
+}
+
+/// Build a project using a custom iterator callback.
+pub async fn build<F, B, P: AsRef<Path>>(
+    project: P,
+    args: &ProfileSettings,
+    builder: B,
+) -> Result<CompileResult>
+where
+    F: Future<Output = Result<Project>>,
+    B: FnMut(ProjectBuilder) -> F,
+{
+    let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
+    let projects = workspace_builder.build(builder).await?;
+    Ok(CompileResult { projects })
+}
+
+/// Compile a project.
+///
+/// The project may contain workspace members in which case all
+/// member projects will be compiled or only those supplied as member filters.
+pub async fn compile<P: AsRef<Path>>(
+    project: P,
+    args: &ProfileSettings,
+) -> Result<CompileResult> {
+    let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
+    let projects = workspace_builder.build(default_compiler).await?;
+    Ok(CompileResult { projects })
+}
+
+pub async fn default_compiler(builder: ProjectBuilder) -> Result<Project> {
+    // Resolve sources, locales and collate the page data
+    let builder = builder
+        .sources()
+        .and_then(|s| s.plugins())
+        .and_then(|s| s.locales())
+        .and_then(|s| s.runtime())
+        .and_then(|s| s.collate())
+        .and_then(|s| s.inherit())
+        .and_then(|s| s.collate_plugins())
+        .await?;
+
+    // Load collections, resolve synthetic assets
+    let builder = builder.load_collections().and_then(|s| s.menus()).await?;
+
+    // Redirects come after synthetic assets in case
+    // they need to create any redirects.
+    let builder = builder.redirects().await?;
+
+    // Pagination, collections, syntax highlighting
+    let builder = builder
+        .pages()
+        .and_then(|s| s.each())
+        .and_then(|s| s.assign())
+        .and_then(|s| s.syntax())
+        // NOTE: feed comes after synthetic collections
+        // NOTE: so that <link rel="alternate"> patterns
+        // NOTE: can be injected correctly
+        .and_then(|s| s.feed())
+        .await?;
+
+    let mut state = builder.build()?;
+
+    // Render all the languages
+    let result = state.render(Default::default()).await?;
+
+    // Write the robots file containing any
+    // generated sitemaps
+    state.write_robots(result.sitemaps)?;
+
+    // Write out manifest for incremental builds
+    state.write_manifest()?;
+
+    //compiled.projects.push(state);
+
+    Ok(state)
+}
+
+/*
 /// Compile a project.
 ///
 /// The project may contain workspace members in which case all
@@ -1005,3 +1169,4 @@ pub async fn compile<P: AsRef<Path>>(
 
     Ok(compiled)
 }
+*/

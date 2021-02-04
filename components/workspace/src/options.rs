@@ -314,29 +314,25 @@ pub(crate) async fn prepare(
     args: &ProfileSettings,
     members: &Vec<Member>,
 ) -> Result<RuntimeOptions> {
-
     // Start with the base `build` profile
     let mut root = cfg.build.as_ref().unwrap().clone();
     let profiles = cfg.profile.as_ref().unwrap();
 
-    let mut overlay: ProfileSettings =
-        match args.name {
-            ProfileName::Debug
-            | ProfileName::Release
-            | ProfileName::Dist
-            | ProfileName::Test => {
-                ProfileSettings::from(&args.name) 
-            }
-            ProfileName::Custom(ref s) => {
-                let mut profile = profiles
-                    .get(s)
-                    .cloned()
-                    .ok_or_else(|| Error::NoProfile(s.to_string()))?;
+    let mut overlay: ProfileSettings = match args.name {
+        ProfileName::Debug
+        | ProfileName::Release
+        | ProfileName::Dist
+        | ProfileName::Test => ProfileSettings::from(&args.name),
+        ProfileName::Custom(ref s) => {
+            let mut profile = profiles
+                .get(s)
+                .cloned()
+                .ok_or_else(|| Error::NoProfile(s.to_string()))?;
 
-                profile.name = ProfileName::Custom(s.to_string());
-                profile
-            }
-        };
+            profile.name = ProfileName::Custom(s.to_string());
+            profile
+        }
+    };
 
     root.append(&mut overlay);
 

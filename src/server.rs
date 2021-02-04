@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
 
-use config::{server::HostConfig, ProfileSettings, ProfileName};
+use config::{server::HostConfig, ProfileName, ProfileSettings};
 use workspace::{compile, HostInfo, HostResult};
 
 use crate::opts::Compile;

@@ -46,7 +46,10 @@ impl XmlValue {
         }
     }
 
-    pub fn new_attributes(name: String, attributes: Map<String, Value>) -> Self {
+    pub fn new_attributes(
+        name: String,
+        attributes: Map<String, Value>,
+    ) -> Self {
         Self {
             name,
             attributes,
@@ -102,13 +105,16 @@ where
                     let node_name = qualified_xml_name(name);
 
                     let value = if attributes.is_empty() {
-                        Rc::new(RefCell::new(XmlValue::new(
-                            node_name.clone(),
-                        )))
+                        Rc::new(RefCell::new(XmlValue::new(node_name.clone())))
                     } else {
                         let attrs = attributes
                             .into_iter()
-                            .map(|attr| (qualified_xml_name(attr.name), Value::String(attr.value)))
+                            .map(|attr| {
+                                (
+                                    qualified_xml_name(attr.name),
+                                    Value::String(attr.value),
+                                )
+                            })
                             .collect::<Map<String, Value>>();
 
                         Rc::new(RefCell::new(XmlValue::new_attributes(
@@ -121,19 +127,26 @@ where
 
                     let insert = Rc::clone(&value);
                     let mut writer = parent.borrow_mut();
-                    if let Some(child_list) = writer.children.get_mut(&node_name) {
+                    if let Some(child_list) =
+                        writer.children.get_mut(&node_name)
+                    {
                         match child_list {
                             XmlChildren::One(node) => {
                                 let mut nodes = vec![node.clone()];
                                 nodes.push(insert);
-                                writer.children.insert(node_name, XmlChildren::Many(nodes));
+                                writer.children.insert(
+                                    node_name,
+                                    XmlChildren::Many(nodes),
+                                );
                             }
                             XmlChildren::Many(nodes) => {
                                 nodes.push(insert);
                             }
                         }
                     } else {
-                        writer.children.insert(node_name, XmlChildren::One(insert));
+                        writer
+                            .children
+                            .insert(node_name, XmlChildren::One(insert));
                     }
                     drop(writer);
                     parents.push(value);

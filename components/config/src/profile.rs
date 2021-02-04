@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::convert::From;
+use std::convert::Infallible;
 use std::fmt;
 use std::mem;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::convert::Infallible;
 
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
@@ -223,7 +223,7 @@ pub struct ProfileSettings {
 impl From<&ProfileName> for ProfileSettings {
     fn from(name: &ProfileName) -> Self {
         let mut settings = ProfileSettings {
-            name: name.clone(), 
+            name: name.clone(),
             ..Default::default()
         };
 
@@ -292,7 +292,6 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
-
     pub fn get_node_env(&self, config: &NodeConfig) -> String {
         if let Some(ref name) = config.map.get(&self.name) {
             name.to_string()

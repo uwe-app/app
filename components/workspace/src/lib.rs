@@ -63,7 +63,6 @@ pub enum Error {
 
     //#[error("Profiles may not define a build profile, please remove it")]
     //NoProfileInProfile,
-
     #[error("Failed to get canonical path for project root {0}")]
     CanonicalProjectRoot(PathBuf),
 
@@ -113,7 +112,7 @@ pub enum Error {
     Release(#[from] release::Error),
 }
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 mod hook;
 mod invalidator;

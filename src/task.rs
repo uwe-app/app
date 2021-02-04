@@ -25,7 +25,10 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::ListBlueprints {} => {
             list_blueprints().await?;
         }
-        Task::InitTest { project, folder_name } => {
+        Task::InitTest {
+            project,
+            folder_name,
+        } => {
             let project = opts::project_path(&project)?;
             init_test(project, folder_name).await?;
         }
@@ -61,7 +64,7 @@ async fn init_test(project: PathBuf, name: String) -> Result<()> {
     }
 
     let cypress_content = format!(
-    r#"{{
+        r#"{{
   "downloadsFolder": "{}",
   "fixturesFolder": "{}",
   "integrationFolder": "{}",
@@ -70,14 +73,14 @@ async fn init_test(project: PathBuf, name: String) -> Result<()> {
   "pluginsFile": false,
   "supportFile": false
 }}"#,
-    format!("{}/{}", &name, DOWNLOADS),
-    format!("{}/{}", &name, FIXTURES),
-    format!("{}/{}", &name, INTEGRATION),
-    format!("{}/{}", &name, SCREENSHOTS),
-    format!("{}/{}", &name, VIDEOS),
+        format!("{}/{}", &name, DOWNLOADS),
+        format!("{}/{}", &name, FIXTURES),
+        format!("{}/{}", &name, INTEGRATION),
+        format!("{}/{}", &name, SCREENSHOTS),
+        format!("{}/{}", &name, VIDEOS),
     );
 
-let spec_content = r#"
+    let spec_content = r#"
 describe('Open the site', () => {
   it('Visits the index page', () => {
     cy.visit('/');
@@ -90,8 +93,7 @@ describe('Open the site', () => {
         let cypress_json = config.project().join(&name).join(CYPRESS_JSON);
 
         if cypress_json.exists() {
-            return Err(
-                Error::NoOverwriteTestSpec(cypress_json.to_path_buf()));
+            return Err(Error::NoOverwriteTestSpec(cypress_json.to_path_buf()));
         }
 
         info!("Init test {}", config.project().display());
@@ -115,7 +117,8 @@ describe('Open the site', () => {
         info!("Created {} ✓", cypress_json.display());
 
         // Create a stub test spec if possible
-        let open_spec = config.project()
+        let open_spec = config
+            .project()
             .join(&name)
             .join(INTEGRATION)
             .join(OPEN_SPEC);

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use config::{ProfileSettings, ProfileName};
+use config::{ProfileName, ProfileSettings};
 use publisher::{self, aws_publish, AwsPublishRequest, PublishProvider};
 
 use workspace::{compile, Project};
