@@ -17,6 +17,8 @@ pub async fn run(opts: Test) -> Result<()> {
 async fn test_compiler(builder: ProjectBuilder) -> workspace::Result<Project> {
     let project = default_compiler(builder).await?;
 
+    //let (shutdown_tx, shutdown_rx) = futures::channel::oneshot::channel::<()>();
+
     println!("Project was compiled for test runner...");
 
     // TODO: launch test server

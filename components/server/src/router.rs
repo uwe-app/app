@@ -62,7 +62,8 @@ macro_rules! virtual_hosts {
         $opts:expr,
         $filters:expr,
         $addr:expr,
-        $bind:expr
+        $bind:expr,
+        $shutdown_rx:expr
     ) => {
         // NOTE: This mess is because `warp` cannot dynamically chain filters using
         // NOTE: `or()`; we can't use macro_rules!() as it is runtime data and
@@ -72,23 +73,23 @@ macro_rules! virtual_hosts {
             panic!("No virtual hosts!");
         } else if $filters.len() == 1 {
             let all = $filters.swap_remove(0);
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 2 {
             let all = $filters.swap_remove(0).or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 3 {
             let all = $filters
                 .swap_remove(0)
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 4 {
             let all = $filters
                 .swap_remove(0)
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 5 {
             let all = $filters
                 .swap_remove(0)
@@ -96,7 +97,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 6 {
             let all = $filters
                 .swap_remove(0)
@@ -105,7 +106,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 7 {
             let all = $filters
                 .swap_remove(0)
@@ -115,7 +116,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 8 {
             let all = $filters
                 .swap_remove(0)
@@ -126,7 +127,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 9 {
             let all = $filters
                 .swap_remove(0)
@@ -138,7 +139,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 10 {
             let all = $filters
                 .swap_remove(0)
@@ -151,7 +152,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 11 {
             let all = $filters
                 .swap_remove(0)
@@ -165,7 +166,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 12 {
             let all = $filters
                 .swap_remove(0)
@@ -180,7 +181,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 13 {
             let all = $filters
                 .swap_remove(0)
@@ -196,7 +197,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 14 {
             let all = $filters
                 .swap_remove(0)
@@ -213,7 +214,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 15 {
             let all = $filters
                 .swap_remove(0)
@@ -231,7 +232,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else if $filters.len() == 16 {
             let all = $filters
                 .swap_remove(0)
@@ -250,7 +251,7 @@ macro_rules! virtual_hosts {
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0))
                 .or($filters.swap_remove(0));
-            bind!($opts, all, $addr, $bind);
+            bind!($opts, all, $addr, $bind, $shutdown_rx);
         } else {
             panic!("Too many virtual hosts!");
         }
@@ -263,7 +264,8 @@ macro_rules! bind {
         $opts:expr,
         $routes:expr,
         $addr:expr,
-        $bind_channel:expr
+        $bind_channel:expr,
+        $shutdown_rx:expr
     ) => {
         let with_server = get_with_server($opts);
         let host = $opts.default_host.name.clone();
@@ -278,7 +280,9 @@ macro_rules! bind {
                 .tls()
                 .cert_path(&$opts.tls.as_ref().unwrap().cert)
                 .key_path(&$opts.tls.as_ref().unwrap().key)
-                .bind_ephemeral(*$addr);
+                .bind_with_graceful_shutdown(*$addr, async {
+                    $shutdown_rx.await.ok();
+                });
 
             info!("Bind TLS {}", addr.port());
 
@@ -299,7 +303,11 @@ macro_rules! bind {
 
             future.await;
         } else {
-            let bind_result = warp::serve(routes).try_bind_ephemeral(*$addr);
+            let bind_result = warp::serve(routes)
+                .try_bind_with_graceful_shutdown(*$addr, async {
+                    $shutdown_rx.await.ok();
+                });
+
             match bind_result {
                 Ok((addr, future)) => {
                     info!("Bind {}", addr.port());
@@ -584,6 +592,7 @@ pub async fn serve(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> crate::Result<()> {
+
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     let default_host: &'static HostConfig = &opts.default_host;
     let should_watch = default_host.watch;
@@ -598,13 +607,15 @@ pub async fn serve(
             .iter()
             .map(|c| get_host_filter_watch(&addr, opts, c, &mut channels))
             .collect();
-        virtual_hosts!(opts, filters, &addr, bind);
+
+        virtual_hosts!(opts, filters, &addr, bind, channels.shutdown.1);
     } else {
         let mut filters: Vec<BoxedFilter<_>> = configs
             .iter()
             .map(|c| get_host_filter(&addr, opts, c))
             .collect();
-        virtual_hosts!(opts, filters, &addr, bind);
+
+        virtual_hosts!(opts, filters, &addr, bind, channels.shutdown.1);
     }
 
     Ok(())
