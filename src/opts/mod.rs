@@ -198,6 +198,7 @@ mod publish;
 mod server;
 mod sync;
 mod task;
+mod test;
 mod web_server;
 
 pub use self::alias::Alias;
@@ -210,3 +211,4 @@ pub use self::publish::Publish;
 pub use self::server::Server;
 pub use self::sync::Sync;
 pub use self::task::Task;
+pub use self::test::Test;

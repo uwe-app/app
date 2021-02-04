@@ -15,6 +15,12 @@ pub enum Error {
     #[error("Not a file {0}")]
     NotFile(PathBuf),
 
+    #[error("Path {0} is absolute but a relative path is required")]
+    NotRelative(PathBuf),
+
+    #[error("Refusing to overwrite {0}, please move it away to initialize integration tests")]
+    NoOverwriteTestSpec(PathBuf),
+
     #[error("Target {0} exists, please move it away")]
     TargetExists(PathBuf),
 

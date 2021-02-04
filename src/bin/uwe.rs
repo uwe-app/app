@@ -15,7 +15,7 @@ use uwe::{
     self,
     opts::{
         self, fatal, Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync,
-        Task,
+        Task, Test,
     },
     Result,
 };
@@ -119,6 +119,12 @@ enum Command {
         #[structopt(subcommand)]
         cmd: Lang,
     },
+
+    /// Run integration tests
+    Test {
+        #[structopt(subcommand)]
+        cmd: Test,
+    },
 }
 
 async fn run(cmd: Command) -> Result<()> {
@@ -143,6 +149,10 @@ async fn run(cmd: Command) -> Result<()> {
 
         Command::Lang { cmd } => {
             uwe::lang::run(cmd).await?;
+        }
+
+        Command::Test { cmd } => {
+            uwe::test::run(cmd).await?;
         }
 
         Command::Sync { args } => {

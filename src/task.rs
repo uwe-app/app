@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 
 use log::info;
@@ -11,10 +12,22 @@ use plugin::new_registry;
 
 use super::alias;
 
+static CYPRESS_JSON: &str = "cypress.json";
+static OPEN_SPEC: &str = "open.spec.js";
+static DOWNLOADS: &str = "downloads";
+static FIXTURES: &str = "fixtures";
+static INTEGRATION: &str = "integration";
+static SCREENSHOTS: &str = "screenshots";
+static VIDEOS: &str = "videos";
+
 pub async fn run(cmd: Task) -> Result<()> {
     match cmd {
         Task::ListBlueprints {} => {
             list_blueprints().await?;
+        }
+        Task::InitTest { project, folder_name } => {
+            let project = opts::project_path(&project)?;
+            init_test(project, folder_name).await?;
         }
         Task::CheckDeps { project } => {
             let project = opts::project_path(&project)?;
@@ -37,6 +50,83 @@ async fn list_blueprints() -> Result<()> {
         let short_name = item.short_name().unwrap();
         info!("{} ({}@{})", short_name, name, version.to_string());
     }
+    Ok(())
+}
+
+/// Create the integration test folder structure.
+async fn init_test(project: PathBuf, name: String) -> Result<()> {
+    let test_name = PathBuf::from(&name);
+    if test_name.is_absolute() {
+        return Err(Error::NotRelative(test_name));
+    }
+
+    let cypress_content = format!(
+    r#"{{
+  "downloadsFolder": "{}",
+  "fixturesFolder": "{}",
+  "integrationFolder": "{}",
+  "screenshotsFolder": "{}",
+  "videosFolder": "{}",
+  "pluginsFile": false,
+  "supportFile": false
+}}"#,
+    format!("{}/{}", &name, DOWNLOADS),
+    format!("{}/{}", &name, FIXTURES),
+    format!("{}/{}", &name, INTEGRATION),
+    format!("{}/{}", &name, SCREENSHOTS),
+    format!("{}/{}", &name, VIDEOS),
+    );
+
+let spec_content = r#"
+describe('Open the site', () => {
+  it('Visits the index page', () => {
+    cy.visit('/');
+  })
+})
+"#;
+
+    let workspace = workspace::open(&project, true, &vec![])?;
+    for config in workspace.into_iter() {
+        let cypress_json = config.project().join(&name).join(CYPRESS_JSON);
+
+        if cypress_json.exists() {
+            return Err(
+                Error::NoOverwriteTestSpec(cypress_json.to_path_buf()));
+        }
+
+        info!("Init test {}", config.project().display());
+
+        let dirs = vec![
+            config.project().join(&name).join(DOWNLOADS),
+            config.project().join(&name).join(FIXTURES),
+            config.project().join(&name).join(INTEGRATION),
+            config.project().join(&name).join(SCREENSHOTS),
+            config.project().join(&name).join(VIDEOS),
+        ];
+
+        // Create the directories
+        for d in dirs {
+            fs::create_dir_all(&d)?;
+            info!("Created {} ✓", d.display());
+        }
+
+        // Write the configuration settings
+        fs::write(&cypress_json, &cypress_content)?;
+        info!("Created {} ✓", cypress_json.display());
+
+        // Create a stub test spec if possible
+        let open_spec = config.project()
+            .join(&name)
+            .join(INTEGRATION)
+            .join(OPEN_SPEC);
+        if !open_spec.exists() {
+            fs::write(&open_spec, &spec_content)?;
+            info!("Created {} ✓", open_spec.display());
+        }
+
+        info!("Done ✓");
+    }
+
     Ok(())
 }
 

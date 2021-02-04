@@ -13,6 +13,7 @@ pub mod server;
 pub mod shim;
 pub mod sync;
 pub mod task;
+pub mod test;
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);

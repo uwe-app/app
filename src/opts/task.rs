@@ -6,6 +6,17 @@ use crate::opts::Alias;
 /// Utility tasks.
 #[derive(StructOpt, Debug)]
 pub enum Task {
+    /// Initialize the integration test folder for a project
+    InitTest {
+        /// Name of the folder for test files
+        #[structopt(short, long, default_value = "test")]
+        folder_name: String,
+
+        /// Project path
+        #[structopt(parse(from_os_str), default_value = ".")]
+        project: PathBuf,
+    },
+
     /// List project blueprints
     ListBlueprints {},
 
