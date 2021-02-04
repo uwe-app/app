@@ -321,9 +321,12 @@ pub(crate) async fn prepare(
 
     let mut overlay: ProfileSettings =
         match args.name {
-            ProfileName::Debug => ProfileSettings::new_debug(),
-            ProfileName::Release => ProfileSettings::new_release(),
-            ProfileName::Dist => ProfileSettings::new_dist(),
+            ProfileName::Debug
+            | ProfileName::Release
+            | ProfileName::Dist
+            | ProfileName::Test => {
+                ProfileSettings::from(&args.name) 
+            }
             ProfileName::Custom(ref s) => {
                 let mut profile = profiles
                     .get(s)

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use config::ProfileSettings;
+use config::{ProfileSettings, ProfileName};
 use publisher::{self, aws_publish, AwsPublishRequest, PublishProvider};
 
 use workspace::{compile, Project};
@@ -17,7 +17,7 @@ pub struct PublishOptions {
 }
 
 pub async fn publish(options: PublishOptions) -> Result<()> {
-    let mut args = ProfileSettings::new_release();
+    let mut args = ProfileSettings::from(&ProfileName::Release);
     args.exec = Some(options.exec);
 
     let result = compile(&options.project, &args).await?;

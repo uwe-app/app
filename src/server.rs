@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::{Error, Result};
 use config::server::{LaunchConfig, ServerConfig};
 
-use config::{server::HostConfig, ProfileSettings};
+use config::{server::HostConfig, ProfileSettings, ProfileName};
 use workspace::{compile, HostInfo, HostResult};
 
 use crate::opts::Compile;
@@ -43,7 +43,7 @@ pub async fn serve(
                 // TODO: try to load redirects from `redirects.json`
             }
         } else {
-            let mut settings = ProfileSettings::new_release();
+            let mut settings = ProfileSettings::from(&ProfileName::Release);
             settings.exec = Some(args.exec);
             settings.member = args.member;
             settings.include_drafts = Some(args.include_drafts);

@@ -20,6 +20,7 @@ use crate::{
 static DEBUG: &str = "debug";
 static RELEASE: &str = "release";
 static DIST: &str = "dist";
+static TEST: &str = "test";
 
 static DEVELOPMENT: &str = "development";
 static PRODUCTION: &str = "production";
@@ -37,6 +38,7 @@ impl Default for NodeConfig {
         map.insert(ProfileName::Debug, DEVELOPMENT.to_string());
         map.insert(ProfileName::Release, PRODUCTION.to_string());
         map.insert(ProfileName::Dist, PRODUCTION.to_string());
+        map.insert(ProfileName::Test, TEST.to_string());
         Self { map }
     }
 }
@@ -79,6 +81,7 @@ pub enum ProfileName {
     Debug,
     Release,
     Dist,
+    Test,
     Custom(String),
 }
 
@@ -91,6 +94,7 @@ impl Serialize for ProfileName {
             ProfileName::Debug => serializer.serialize_str(DEBUG),
             ProfileName::Release => serializer.serialize_str(RELEASE),
             ProfileName::Dist => serializer.serialize_str(DIST),
+            ProfileName::Test => serializer.serialize_str(TEST),
             ProfileName::Custom(ref val) => serializer.serialize_str(val),
         }
     }
@@ -110,6 +114,8 @@ impl From<String> for ProfileName {
             ProfileName::Release
         } else if s == DIST {
             ProfileName::Dist
+        } else if s == TEST {
+            ProfileName::Test
         } else {
             ProfileName::Custom(s)
         }
@@ -122,8 +128,9 @@ impl FromStr for ProfileName {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "debug" => Ok(ProfileName::Debug),
-            "release" => Ok(ProfileName::Release) ,
-            "dist" => Ok(ProfileName::Dist) ,
+            "release" => Ok(ProfileName::Release),
+            "dist" => Ok(ProfileName::Dist),
+            "test" => Ok(ProfileName::Test),
             _ => Ok(ProfileName::Custom(s.to_owned())),
         }
     }
@@ -131,12 +138,15 @@ impl FromStr for ProfileName {
 
 impl fmt::Display for ProfileName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            ProfileName::Custom(ref val) => write!(f, "{}", val),
-            ProfileName::Debug => write!(f, "{}", DEBUG),
-            ProfileName::Release => write!(f, "{}", RELEASE),
-            ProfileName::Dist => write!(f, "{}", DIST),
-        }
+        write!(f, "{}", {
+            match *self {
+                ProfileName::Custom(ref val) => val,
+                ProfileName::Debug => DEBUG,
+                ProfileName::Release => RELEASE,
+                ProfileName::Dist => DIST,
+                ProfileName::Test => TEST,
+            }
+        })
     }
 }
 
@@ -210,6 +220,27 @@ pub struct ProfileSettings {
     pub member: Vec<String>,
 }
 
+impl From<&ProfileName> for ProfileSettings {
+    fn from(name: &ProfileName) -> Self {
+        let mut settings = ProfileSettings {
+            name: name.clone(), 
+            ..Default::default()
+        };
+
+        match name {
+            ProfileName::Release => {
+                settings.release = Some(true);
+            }
+            ProfileName::Dist => {
+                settings.include_index = Some(true);
+            }
+            _ => {}
+        }
+
+        settings
+    }
+}
+
 impl Default for ProfileSettings {
     fn default() -> Self {
         Self {
@@ -261,24 +292,6 @@ impl Default for ProfileSettings {
 }
 
 impl ProfileSettings {
-    pub fn new_debug() -> Self {
-        let settings: ProfileSettings = Default::default();
-        settings
-    }
-
-    pub fn new_release() -> Self {
-        let mut settings: ProfileSettings = Default::default();
-        settings.name = ProfileName::Release;
-        settings.release = Some(true);
-        settings
-    }
-
-    pub fn new_dist() -> Self {
-        let mut settings = ProfileSettings::new_release();
-        settings.name = ProfileName::Dist;
-        settings.include_index = Some(true);
-        settings
-    }
 
     pub fn get_node_env(&self, config: &NodeConfig) -> String {
         if let Some(ref name) = config.map.get(&self.name) {
