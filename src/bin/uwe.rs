@@ -7,7 +7,7 @@ use log::info;
 use semver::Version;
 use structopt::StructOpt;
 
-use config::{server::LaunchConfig, ProfileName, ProfileSettings};
+use config::{server::LaunchConfig, ProfileSettings};
 
 use publisher::PublishProvider;
 
@@ -61,7 +61,7 @@ enum Command {
         args: Build,
     },
 
-    /// Live reload server
+    /// Launch a development server
     ///
     /// Compiles a debug build of the website into the `build/debug` folder and starts a web
     /// server with live reload enabled watching for changes to the source files in the `site`
@@ -122,8 +122,8 @@ enum Command {
 
     /// Run integration tests
     Test {
-        #[structopt(subcommand)]
-        cmd: Test,
+        #[structopt(flatten)]
+        args: Test,
     },
 }
 
@@ -151,8 +151,8 @@ async fn run(cmd: Command) -> Result<()> {
             uwe::lang::run(cmd).await?;
         }
 
-        Command::Test { cmd } => {
-            uwe::test::run(cmd).await?;
+        Command::Test { args } => {
+            uwe::test::run(args).await?;
         }
 
         Command::Sync { args } => {
@@ -227,10 +227,7 @@ async fn run(cmd: Command) -> Result<()> {
             let build_args = ProfileSettings {
                 paths,
                 release: Some(true),
-                profile: args
-                    .profile
-                    .or(Some(ProfileName::Release.to_string())),
-                offline: Some(args.compile.offline),
+                name: args.profile,
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
                 include_drafts: Some(args.compile.include_drafts),
@@ -262,11 +259,10 @@ async fn run(cmd: Command) -> Result<()> {
 
             let build_args = ProfileSettings {
                 paths,
-                profile: args.profile.or(Some(ProfileName::Debug.to_string())),
+                name: args.profile,
                 launch: args.launch,
                 host: args.server.host,
                 port: args.server.port,
-                offline: Some(args.compile.offline),
                 exec: Some(args.compile.exec),
                 member: args.compile.member,
                 include_drafts: Some(args.compile.include_drafts),

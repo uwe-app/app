@@ -3,6 +3,8 @@ use std::convert::From;
 use std::fmt;
 use std::mem;
 use std::path::PathBuf;
+use std::str::FromStr;
+use std::convert::Infallible;
 
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
@@ -96,7 +98,7 @@ impl Serialize for ProfileName {
 
 impl Default for ProfileName {
     fn default() -> Self {
-        ProfileName::Debug
+        ProfileName::Release
     }
 }
 
@@ -110,6 +112,19 @@ impl From<String> for ProfileName {
             ProfileName::Dist
         } else {
             ProfileName::Custom(s)
+        }
+    }
+}
+
+impl FromStr for ProfileName {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "debug" => Ok(ProfileName::Debug),
+            "release" => Ok(ProfileName::Release) ,
+            "dist" => Ok(ProfileName::Dist) ,
+            _ => Ok(ProfileName::Custom(s.to_owned())),
         }
     }
 }
@@ -129,7 +144,6 @@ impl fmt::Display for ProfileName {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct ProfileSettings {
-    #[serde(skip)]
     pub name: ProfileName,
 
     pub source: PathBuf,
@@ -155,7 +169,6 @@ pub struct ProfileSettings {
 
     pub extend: Option<Vec<String>>,
 
-    pub profile: Option<String>,
     pub live: Option<bool>,
     pub launch: Option<String>,
     pub release: Option<bool>,
@@ -201,7 +214,6 @@ impl Default for ProfileSettings {
     fn default() -> Self {
         Self {
             name: Default::default(),
-
             source: PathBuf::from(config::SITE),
             target: PathBuf::from(config::BUILD),
             exec: None,
@@ -220,8 +232,6 @@ impl Default for ProfileSettings {
 
             rewrite_index: Some(true),
             extend: None,
-
-            profile: None,
 
             // FIXME: use ServeConfig
             host: Some(config::HOST.to_string()),

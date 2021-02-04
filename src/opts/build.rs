@@ -4,6 +4,8 @@ use structopt::StructOpt;
 
 use super::web_server::WebServerOpts;
 
+use config::ProfileName;
+
 #[derive(StructOpt, Debug)]
 pub struct Compile {
     /// Allow hook command execution.
@@ -17,10 +19,6 @@ pub struct Compile {
     /// Filter on workspace members
     #[structopt(short, long)]
     pub member: Vec<String>,
-
-    /// Offline mode, do not attempt plugin installation
-    #[structopt(short, long)]
-    pub offline: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -29,8 +27,8 @@ pub struct Build {
     pub compile: Compile,
 
     /// Build profile name
-    #[structopt(long)]
-    pub profile: Option<String>,
+    #[structopt(long, default_value = "release")]
+    pub profile: ProfileName,
 
     /// Project path
     #[structopt(parse(from_os_str), default_value = ".")]
@@ -47,8 +45,8 @@ pub struct Dev {
     pub compile: Compile,
 
     /// Build profile name
-    #[structopt(long)]
-    pub profile: Option<String>,
+    #[structopt(long, default_value = "debug")]
+    pub profile: ProfileName,
 
     /// Launch page URL
     #[structopt(long)]

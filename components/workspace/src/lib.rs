@@ -61,8 +61,8 @@ pub enum Error {
     #[error("Expected menu file {0} for book path {1}")]
     NoBookMenu(PathBuf, PathBuf),
 
-    #[error("Profiles may not define a build profile, please remove it")]
-    NoProfileInProfile,
+    //#[error("Profiles may not define a build profile, please remove it")]
+    //NoProfileInProfile,
 
     #[error("Failed to get canonical path for project root {0}")]
     CanonicalProjectRoot(PathBuf),

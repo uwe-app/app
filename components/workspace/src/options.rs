@@ -314,38 +314,28 @@ pub(crate) async fn prepare(
     args: &ProfileSettings,
     members: &Vec<Member>,
 ) -> Result<RuntimeOptions> {
+
     // Start with the base `build` profile
     let mut root = cfg.build.as_ref().unwrap().clone();
     let profiles = cfg.profile.as_ref().unwrap();
 
-    let mut overlay: Option<ProfileSettings> =
-        if let Some(ref profile_name) = args.profile {
-            let profile_id = ProfileName::from(profile_name.to_string());
-            match profile_id {
-                ProfileName::Debug => Some(ProfileSettings::new_debug()),
-                ProfileName::Release => Some(ProfileSettings::new_release()),
-                ProfileName::Dist => Some(ProfileSettings::new_dist()),
-                ProfileName::Custom(s) => {
-                    let mut profile = profiles
-                        .get(profile_name)
-                        .cloned()
-                        .ok_or_else(|| Error::NoProfile(s.to_string()))?;
+    let mut overlay: ProfileSettings =
+        match args.name {
+            ProfileName::Debug => ProfileSettings::new_debug(),
+            ProfileName::Release => ProfileSettings::new_release(),
+            ProfileName::Dist => ProfileSettings::new_dist(),
+            ProfileName::Custom(ref s) => {
+                let mut profile = profiles
+                    .get(s)
+                    .cloned()
+                    .ok_or_else(|| Error::NoProfile(s.to_string()))?;
 
-                    if profile.profile.is_some() {
-                        return Err(Error::NoProfileInProfile);
-                    }
-
-                    profile.name = ProfileName::Custom(s.to_string());
-                    Some(profile)
-                }
+                profile.name = ProfileName::Custom(s.to_string());
+                profile
             }
-        } else {
-            None
         };
 
-    if let Some(mut overlay) = overlay.take() {
-        root.append(&mut overlay);
-    }
+    root.append(&mut overlay);
 
     let mut input = args.clone();
     from_cli(&mut root, &mut input);
