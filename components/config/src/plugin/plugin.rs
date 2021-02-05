@@ -171,6 +171,7 @@ pub struct Plugin {
     library: HashMap<String, ExternalLibrary>,
 
     /// Directives for how a plugin should be computed.
+    #[serde(skip_serializing_if = "ComputeDirectives::is_default")]
     compute: ComputeDirectives,
 
     /// Directives for blueprint plugins
@@ -514,6 +515,13 @@ pub struct ComputeDirectives {
     #[serde(skip_serializing_if = "is_true")]
     pub layouts: bool,
     pub layouts_path: Option<UrlPath>,
+}
+
+impl ComputeDirectives {
+    pub fn is_default(directives: &ComputeDirectives) -> bool {
+        let default: ComputeDirectives = Default::default(); 
+        directives == &default
+    }
 }
 
 impl Default for ComputeDirectives {
