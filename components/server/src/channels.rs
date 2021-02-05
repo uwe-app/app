@@ -14,16 +14,28 @@ pub struct ServerChannels {
     pub(crate) render: HashMap<String, mpsc::Sender<String>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
     pub(crate) render_responses: HashMap<String, mpsc::Receiver<ResponseValue>>,
-    pub(crate) shutdown: (oneshot::Sender<()>, oneshot::Receiver<()>),
+    pub(crate) shutdown: oneshot::Receiver<()>,
 }
 
-impl Default for ServerChannels {
-    fn default() -> Self {
+impl ServerChannels {
+    pub fn new_shutdown(rx: oneshot::Receiver::<()>) -> Self {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
             render_responses: HashMap::new(),
-            shutdown: oneshot::channel(),
+            shutdown: rx,
+        }
+    }
+}
+
+impl Default for ServerChannels {
+    fn default() -> Self {
+        let (_, rx) = oneshot::channel();
+        Self {
+            render: HashMap::new(),
+            websockets: HashMap::new(),
+            render_responses: HashMap::new(),
+            shutdown: rx,
         }
     }
 }

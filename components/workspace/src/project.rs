@@ -36,6 +36,8 @@ use crate::{
     Error, Result,
 };
 
+pub type BuildResult = std::result::Result<Project, Box<dyn std::error::Error + Sync + Send>>;
+
 static PLUGIN_SYNTAX: &str = "std::syntax";
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
@@ -939,7 +941,7 @@ impl<'a> WorkspaceBuilder<'a> {
 
     pub async fn build<F, B>(self, mut builder: B) -> Result<Vec<Project>>
     where
-        F: Future<Output = Result<Project>>,
+        F: Future<Output = BuildResult>,
         B: FnMut(ProjectBuilder) -> F,
     {
         let mut projects: Vec<Project> = Vec::new();
@@ -989,7 +991,7 @@ pub async fn build<F, B, P: AsRef<Path>>(
     builder: B,
 ) -> Result<CompileResult>
 where
-    F: Future<Output = Result<Project>>,
+    F: Future<Output = BuildResult>,
     B: FnMut(ProjectBuilder) -> F,
 {
     let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
@@ -1010,7 +1012,7 @@ pub async fn compile<P: AsRef<Path>>(
     Ok(CompileResult { projects })
 }
 
-pub async fn default_compiler(builder: ProjectBuilder) -> Result<Project> {
+pub async fn default_compiler(builder: ProjectBuilder) -> BuildResult {
     // Resolve sources, locales and collate the page data
     let builder = builder
         .sources()
@@ -1053,120 +1055,5 @@ pub async fn default_compiler(builder: ProjectBuilder) -> Result<Project> {
     // Write out manifest for incremental builds
     state.write_manifest()?;
 
-    //compiled.projects.push(state);
-
     Ok(state)
 }
-
-/*
-/// Compile a project.
-///
-/// The project may contain workspace members in which case all
-/// member projects will be compiled.
-pub async fn compile<P: AsRef<Path>>(
-    project: P,
-    args: &ProfileSettings,
-) -> Result<CompileResult> {
-    let workspace = open(project.as_ref(), true, &args.member)?;
-
-    let mut compiled: CompileResult = Default::default();
-
-    // Cache of workspace member information used to
-    // build URLs for linking to members in templates
-    let members: Vec<Member> = match &workspace {
-        Workspace::Many(configs, _, _) => configs
-            .iter()
-            .map(|c| {
-                Member::new(
-                    c.member_name().as_ref().unwrap().to_owned(),
-                    c.host().to_owned(),
-                )
-            })
-            .collect(),
-        _ => vec![],
-    };
-
-    let member_filters = workspace.member_filters();
-
-    for config in workspace.into_iter() {
-        if let Some(member_name) = config.member_name() {
-            if !member_filters.is_empty()
-                && !member_filters.contains(member_name)
-            {
-                continue;
-            }
-        }
-
-        let lock_path = config.file().to_path_buf();
-        let lock_file = lock::acquire(&lock_path)?;
-        defer! { let _ = lock::release(lock_file); }
-
-        // WARN: If we add too many futures to the chain
-        // WARN: then the compiler overflows resolving trait
-        // WARN: bounds. The workaround is to break the chain
-        // WARN: with multiple await statements.
-
-        if config.hooks.is_some() && !args.can_exec() {
-            warn!("The project has some hooks defined but does ");
-            warn!("not have the capability to execute commands.");
-            warn!("");
-            warn!("{}", config.file().display());
-            warn!("");
-            warn!("If you trust the commands in the site settings ");
-            warn!("enable command execution with the --exec option.");
-            warn!("");
-            return Err(Error::NoExecCapability(config.host().to_string()));
-        }
-
-        // Prepare the options and project builder
-        let builder = new_project_builder(config, args, &members).await?;
-
-        // Resolve sources, locales and collate the page data
-        let builder = builder
-            .sources()
-            .and_then(|s| s.plugins())
-            .and_then(|s| s.locales())
-            .and_then(|s| s.runtime())
-            .and_then(|s| s.collate())
-            .and_then(|s| s.inherit())
-            .and_then(|s| s.collate_plugins())
-            .await?;
-
-        // Load collections, resolve synthetic assets
-        let builder =
-            builder.load_collections().and_then(|s| s.menus()).await?;
-
-        // Redirects come after synthetic assets in case
-        // they need to create any redirects.
-        let builder = builder.redirects().await?;
-
-        // Pagination, collections, syntax highlighting
-        let builder = builder
-            .pages()
-            .and_then(|s| s.each())
-            .and_then(|s| s.assign())
-            .and_then(|s| s.syntax())
-            // NOTE: feed comes after synthetic collections
-            // NOTE: so that <link rel="alternate"> patterns
-            // NOTE: can be injected correctly
-            .and_then(|s| s.feed())
-            .await?;
-
-        let mut state = builder.build()?;
-
-        // Render all the languages
-        let result = state.render(Default::default()).await?;
-
-        // Write the robots file containing any
-        // generated sitemaps
-        state.write_robots(result.sitemaps)?;
-
-        // Write out manifest for incremental builds
-        state.write_manifest()?;
-
-        compiled.projects.push(state);
-    }
-
-    Ok(compiled)
-}
-*/

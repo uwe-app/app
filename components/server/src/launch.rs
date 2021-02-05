@@ -37,7 +37,7 @@ pub async fn launch(
     Ok(start(options, ctx, channels).await?)
 }
 
-/// Start a server.
+/// Start a headless server with the given channels.
 pub async fn start(
     options: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,

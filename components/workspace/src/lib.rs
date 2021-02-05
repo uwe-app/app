@@ -73,6 +73,9 @@ pub enum Error {
     DuplicateHostName(String, PathBuf, PathBuf),
 
     #[error(transparent)]
+    Box(#[from] Box<dyn std::error::Error + Sync + Send>),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]

@@ -3,10 +3,12 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::str::FromStr;
 
 use once_cell::sync::OnceCell;
 use serde_json::json;
 
+use futures::future;
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 
@@ -15,6 +17,7 @@ use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
 use warp::filters::BoxedFilter;
 use warp::http::{StatusCode, Uri};
 use warp::path::FullPath;
+use warp::host::Authority;
 use warp::reject::Reject;
 use warp::ws::Message;
 use warp::{Filter, Rejection, Reply};
@@ -329,13 +332,34 @@ macro_rules! bind {
     };
 }
 
+fn host_ephemeral(expected: &str) -> impl Filter<Extract = (), Error = Rejection> + Clone {
+    let expected = Authority::from_str(expected).expect("invalid host/authority");
+    warp::host::optional()
+        .and_then(move |option: Option<Authority>| match option {
+            Some(authority) => {
+                if authority == expected {
+                    return future::ok(())
+                } else {
+                    if let Some(port) = expected.port() {
+                        if port == 0 && authority.host() == expected.host() {
+                            return future::ok(())
+                        }
+                    }
+                }
+                future::err(warp::reject::not_found())
+            },
+            _ => future::err(warp::reject::not_found()),
+        })
+        .untuple_one()
+}
+
 fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
 ) -> BoxedFilter<(impl Reply,)> {
     let (hostname, static_server) = get_static_server(address, opts, host);
-    warp::host::exact(&hostname).and(static_server).boxed()
+    host_ephemeral(&hostname).and(static_server).boxed()
 }
 
 fn get_host_filter_watch(
@@ -361,7 +385,7 @@ fn get_host_filter_watch(
         .and(response)
         .and_then(live_render);
 
-    warp::host::exact(&hostname)
+    host_ephemeral(&hostname)
         .and(livereload.or(live_renderer).or(static_server))
         .boxed()
 }
@@ -608,14 +632,14 @@ pub async fn serve(
             .map(|c| get_host_filter_watch(&addr, opts, c, &mut channels))
             .collect();
 
-        virtual_hosts!(opts, filters, &addr, bind, channels.shutdown.1);
+        virtual_hosts!(opts, filters, &addr, bind, channels.shutdown);
     } else {
         let mut filters: Vec<BoxedFilter<_>> = configs
             .iter()
             .map(|c| get_host_filter(&addr, opts, c))
             .collect();
 
-        virtual_hosts!(opts, filters, &addr, bind, channels.shutdown.1);
+        virtual_hosts!(opts, filters, &addr, bind, channels.shutdown);
     }
 
     Ok(())

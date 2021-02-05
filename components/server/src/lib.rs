@@ -10,6 +10,7 @@ mod router;
 mod watch;
 
 pub use error::Error;
+pub use channels::*;
 pub use launch::*;
 pub use watch::watch;
 
