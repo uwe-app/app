@@ -59,9 +59,14 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
 
     let build_dir = project.options.build_target(); 
 
-    server_opts.port = 0;
-    if let Some(ref mut tls) = server_opts.tls {
-        tls.port = 0; 
+    if writer.opts.server.port.is_none() {
+        server_opts.port = 0;
+    }
+
+    if writer.opts.server.ssl_port.is_none() {
+        if let Some(ref mut tls) = server_opts.tls {
+            tls.port = 0; 
+        }
     }
 
     server_opts.redirect_insecure = false;
