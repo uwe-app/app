@@ -102,7 +102,9 @@ fn create_channels(
     results: &Vec<HostInfo>,
 ) -> Result<(ServerChannels, WatchChannels)> {
     // Create the collection of channels
-    let mut server: ServerChannels = Default::default();
+
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let mut server = ServerChannels::new(shutdown_tx, shutdown_rx);
     let mut watch: WatchChannels = Default::default();
 
     results.iter().try_for_each(|host| {

@@ -93,7 +93,6 @@ fn get_runner_opts<P: AsRef<Path>>(build_dir: P) -> Result<Vec<String>> {
         }
         opts
     };
-
     Ok(opts)
 }
 

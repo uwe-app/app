@@ -13,7 +13,8 @@ pub async fn launch(
     // Create a channel to receive the bind address.
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 
-    let channels: ServerChannels = Default::default();
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let channels = ServerChannels::new(shutdown_tx, shutdown_rx);
 
     let _ = tokio::task::spawn(async move {
         let info = crx.await.unwrap();
@@ -33,6 +34,8 @@ pub async fn launch(
             open::that(&url).map(|_| ()).unwrap_or(());
         }
     });
+
+    println!("{:#?}", options);
 
     Ok(start(options, ctx, channels).await?)
 }
