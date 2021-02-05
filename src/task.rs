@@ -13,6 +13,7 @@ use plugin::new_registry;
 use super::alias;
 
 static CYPRESS_JSON: &str = "cypress.json";
+static CYPRESS_OPTS: &str = "cypress.opts";
 static OPEN_SPEC: &str = "open.spec.js";
 static DOWNLOADS: &str = "downloads";
 static FIXTURES: &str = "fixtures";
@@ -62,6 +63,13 @@ async fn init_test(project: PathBuf, name: String) -> Result<()> {
     if test_name.is_absolute() {
         return Err(Error::NotRelative(test_name));
     }
+
+    let cypress_opts = r#"
+--config-file
+test/cypress.json
+--reporter-options
+--no-color
+"#;
 
     let cypress_content = format!(
         r#"{{
@@ -125,6 +133,15 @@ describe('Open the site', () => {
         if !open_spec.exists() {
             fs::write(&open_spec, &spec_content)?;
             info!("Created {} ✓", open_spec.display());
+        }
+
+        let opts = config
+            .project()
+            .join(&name)
+            .join(CYPRESS_OPTS);
+        if !opts.exists() {
+            fs::write(&opts, &cypress_opts)?;
+            info!("Created {} ✓", opts.display());
         }
 
         info!("Done ✓");

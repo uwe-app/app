@@ -103,6 +103,9 @@ pub enum Error {
     ParseRegion(#[from] rusoto_core::region::ParseRegionError),
 
     #[error(transparent)]
+    Recv(#[from] tokio::sync::oneshot::error::RecvError),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]

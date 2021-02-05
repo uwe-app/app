@@ -201,6 +201,8 @@ mod task;
 mod test;
 mod web_server;
 
+pub mod uwe;
+
 pub use self::alias::Alias;
 pub use self::build::{Build, Compile, Dev};
 pub use self::clean::Clean;
