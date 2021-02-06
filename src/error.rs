@@ -76,6 +76,15 @@ pub enum Error {
     )]
     NewProjectMultipleSource,
 
+    #[error("Failed to spawn the command '{0}', check the program is installed and has executable permissions")]
+    CommandSpawn(String),
+
+    #[error("The command '{0}' failed, see it's error output")]
+    CommandExec(String),
+
+    #[error("Test runner command '{0} {1}' failed, see it's error output for more details")]
+    IntegrationTestFail(String, String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 

@@ -6,7 +6,7 @@ use tokio::process::Command;
 
 use once_cell::sync::OnceCell;
 
-use log::{info, debug};
+use log::{info, debug, error};
 
 use structopt::StructOpt;
 use tokio::sync::oneshot;
@@ -114,16 +114,21 @@ async fn spawn_test_runner<P: AsRef<Path>>(
     for (k, v) in env.iter() {
         debug!("{} {}", k, v);
     }
+
     let mut child = Command::new(command)
         .current_dir(build_dir)
         .envs(env)
-        .args(args)
+        .args(&args)
         .spawn()
-        .expect("Test runner failed");
+        .map_err(|_| Error::CommandSpawn(command.to_string()))?;
 
-    let status = child.wait().await?;
+    let status = child.wait().await
+        .map_err(|_| Error::CommandExec(command.to_string()))?;
+
     if status.success() {
         info!("Tests passed ✓");
+    } else {
+        return Err(Error::IntegrationTestFail(command.to_string(), args.join(" ")));
     }
 
     Ok(())
@@ -173,10 +178,16 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
         let url = info.to_url();
         info!("Serve {}", &url);
 
-        spawn_test_runner(&url, &spawn_dir, &runner_settings).await?;
+        let test_result = spawn_test_runner(&url, &spawn_dir, &runner_settings).await;
 
         info!("Shutdown {}", &url);
         let _ = shutdown_tx.send(());
+
+
+        if let Err(e) = test_result {
+            error!("{}", e);
+            std::process::exit(1);
+        }
 
         Ok::<(), Error>(())
     });
