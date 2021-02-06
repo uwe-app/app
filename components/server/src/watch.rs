@@ -35,14 +35,15 @@ pub async fn watch(
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
     let host_result: HostResult = result.into();
-    let host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
+    let mut host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
+
+    for (info, host) in host_configs.iter_mut() {
+        host.watch = true;
+        host.webdav_directory = Some(info.source.to_path_buf());
+    }
 
     let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =
         host_configs.into_iter().unzip();
-
-    for host in hosts.iter_mut() {
-        host.watch = true;
-    }
 
     create_resources(port, &tls, &host_info)?;
 

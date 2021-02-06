@@ -208,8 +208,12 @@ impl ServerConfig {
 pub struct HostConfig {
     /// Host name.
     pub name: String,
+
     /// Directory for static files.
     pub directory: PathBuf,
+
+    /// Directory for webdav integration.
+    pub webdav_directory: Option<PathBuf>,
 
     #[serde(skip)]
     pub redirects: Option<Redirects>,
@@ -234,6 +238,7 @@ impl Default for HostConfig {
         Self {
             name: crate::config::HOST.to_string(),
             directory: PathBuf::from(""),
+            webdav_directory: None,
             redirects: None,
             endpoint: None,
             disable_cache: false,
@@ -260,6 +265,7 @@ impl HostConfig {
             disable_cache: true,
             log,
             watch,
+            webdav_directory: None,
         }
     }
 }

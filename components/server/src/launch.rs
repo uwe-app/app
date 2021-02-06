@@ -35,7 +35,7 @@ pub async fn launch(
         }
     });
 
-    println!("{:#?}", options);
+    //println!("{:#?}", options);
 
     Ok(start(options, ctx, channels).await?)
 }

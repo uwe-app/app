@@ -2,7 +2,6 @@ use std::convert::Infallible;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use once_cell::sync::OnceCell;
@@ -15,12 +14,13 @@ use futures_util::StreamExt;
 use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
 
 use warp::filters::BoxedFilter;
-use warp::host::Authority;
 use warp::http::{StatusCode, Uri};
 use warp::path::FullPath;
 use warp::reject::Reject;
 use warp::ws::Message;
 use warp::{Filter, Rejection, Reply};
+
+use webdav_handler::warp::dav_dir;
 
 use serde::Serialize;
 
@@ -29,6 +29,7 @@ use log::{error, info, trace};
 
 use crate::{
     channels::{ResponseValue, ServerChannels},
+    helper_routes::host_ephemeral,
     drop_privileges::*,
     Error,
 };
@@ -332,37 +333,27 @@ macro_rules! bind {
     };
 }
 
-fn host_ephemeral(
-    expected: &str,
-) -> impl Filter<Extract = (), Error = Rejection> + Clone {
-    let expected =
-        Authority::from_str(expected).expect("invalid host/authority");
-    warp::host::optional()
-        .and_then(move |option: Option<Authority>| match option {
-            Some(authority) => {
-                if authority == expected {
-                    return future::ok(());
-                } else {
-                    if let Some(port) = expected.port() {
-                        if port == 0 && authority.host() == expected.host() {
-                            return future::ok(());
-                        }
-                    }
-                }
-                future::err(warp::reject::not_found())
-            }
-            _ => future::err(warp::reject::not_found()),
-        })
-        .untuple_one()
-}
-
 fn get_host_filter(
     address: &SocketAddr,
     opts: &'static ServerConfig,
     host: &'static HostConfig,
 ) -> BoxedFilter<(impl Reply,)> {
     let (hostname, static_server) = get_static_server(address, opts, host);
-    host_ephemeral(&hostname).and(static_server).boxed()
+
+    let none = warp::path::end()
+        .and_then(|| {
+            future::err(warp::reject::not_found())
+        });
+
+    if let Some(ref webdav_dir) = host.webdav_directory {
+        info!("Webdav {}", webdav_dir.display());
+        let dav_server = warp::path("-")
+            .and(warp::path("webdav"))
+            .and(dav_dir(webdav_dir, true, true));
+        host_ephemeral(&hostname).and(dav_server.or(static_server)).boxed()
+    } else {
+        host_ephemeral(&hostname).and(none.or(static_server)).boxed()
+    }
 }
 
 fn get_host_filter_watch(
@@ -388,9 +379,26 @@ fn get_host_filter_watch(
         .and(response)
         .and_then(live_render);
 
-    host_ephemeral(&hostname)
-        .and(livereload.or(live_renderer).or(static_server))
-        .boxed()
+    let none = warp::path::end()
+        .and_then(|| {
+            future::err(warp::reject::not_found())
+        });
+
+    if let Some(ref webdav_dir) = host.webdav_directory {
+        info!("Webdav {}", webdav_dir.display());
+        let dav_server = warp::path("-")
+            .and(warp::path("webdav"))
+            .and(dav_dir(webdav_dir, true, true));
+
+        host_ephemeral(&hostname)
+            .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
+            .boxed()
+    } else {
+        host_ephemeral(&hostname)
+            .and(none.or(livereload.or(live_renderer).or(static_server)))
+            .boxed()
+    }
+
 }
 
 fn get_live_reload(

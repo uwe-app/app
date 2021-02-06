@@ -4,6 +4,7 @@ use once_cell::sync::OnceCell;
 mod channels;
 mod drop_privileges;
 mod error;
+mod helper_routes;
 mod launch;
 pub mod redirect;
 mod router;
