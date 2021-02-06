@@ -519,7 +519,7 @@ pub struct ComputeDirectives {
 
 impl ComputeDirectives {
     pub fn is_default(directives: &ComputeDirectives) -> bool {
-        let default: ComputeDirectives = Default::default(); 
+        let default: ComputeDirectives = Default::default();
         directives == &default
     }
 }

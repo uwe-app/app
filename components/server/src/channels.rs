@@ -19,7 +19,7 @@ pub struct ServerChannels {
 }
 
 impl ServerChannels {
-    pub fn new(tx: oneshot::Sender::<()>, rx: oneshot::Receiver::<()>) -> Self {
+    pub fn new(tx: oneshot::Sender<()>, rx: oneshot::Receiver<()>) -> Self {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
@@ -29,7 +29,7 @@ impl ServerChannels {
         }
     }
 
-    pub fn new_shutdown(rx: oneshot::Receiver::<()>) -> Self {
+    pub fn new_shutdown(rx: oneshot::Receiver<()>) -> Self {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),

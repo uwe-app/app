@@ -135,10 +135,7 @@ describe('Open the site', () => {
             info!("Created {} ✓", open_spec.display());
         }
 
-        let opts = config
-            .project()
-            .join(&name)
-            .join(CYPRESS_OPTS);
+        let opts = config.project().join(&name).join(CYPRESS_OPTS);
         if !opts.exists() {
             fs::write(&opts, &cypress_opts)?;
             info!("Created {} ✓", opts.display());

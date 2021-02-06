@@ -36,6 +36,7 @@ use crate::{
     sync::SyncConfig,
     syntax::SyntaxConfig,
     tags::{link::LinkTag, script::ScriptTag},
+    test::TestConfig,
     transform::TransformConfig,
     utils::href::UrlPath,
     Error,
@@ -257,6 +258,8 @@ pub struct Config {
     // Commit digest when available
     commit: Option<String>,
 
+    test: TestConfig,
+
     #[serde(skip)]
     file: PathBuf,
 
@@ -325,6 +328,7 @@ impl Default for Config {
             file: PathBuf::from(""),
 
             commit: None,
+            test: Default::default(),
             member_name: None,
             member_urls: None,
         }
@@ -338,6 +342,10 @@ impl Config {
 
     pub fn fluent(&self) -> &FluentConfig {
         &self.fluent
+    }
+
+    pub fn test(&self) -> &TestConfig {
+        &self.test
     }
 
     pub fn robots(&self) -> &RobotsConfig {

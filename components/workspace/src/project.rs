@@ -36,7 +36,8 @@ use crate::{
     Error, Result,
 };
 
-pub type BuildResult = std::result::Result<Project, Box<dyn std::error::Error + Sync + Send>>;
+pub type BuildResult =
+    std::result::Result<Project, Box<dyn std::error::Error + Sync + Send>>;
 
 static PLUGIN_SYNTAX: &str = "std::syntax";
 

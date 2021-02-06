@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use structopt::{StructOpt, clap::AppSettings};
+use structopt::{clap::AppSettings, StructOpt};
 
 use super::build::Compile;
 use super::web_server::WebServerOpts;
@@ -24,6 +24,11 @@ pub struct Test {
     pub profile: ProfileName,
 
     /// Project path
-    #[structopt(parse(from_os_str), default_value = ".", multiple = true, number_of_values = 1)]
+    #[structopt(
+        parse(from_os_str),
+        default_value = ".",
+        multiple = true,
+        number_of_values = 1
+    )]
     pub project: PathBuf,
 }

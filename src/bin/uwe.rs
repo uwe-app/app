@@ -13,7 +13,10 @@ use publisher::PublishProvider;
 
 use uwe::{
     self,
-    opts::{uwe::{Uwe, Command}, self, fatal},
+    opts::{
+        self, fatal,
+        uwe::{Command, Uwe},
+    },
     Result,
 };
 

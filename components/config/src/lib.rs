@@ -160,6 +160,7 @@ pub mod style;
 pub mod sync;
 pub mod syntax;
 pub mod tags;
+pub mod test;
 pub mod transform;
 
 pub(crate) mod utils;

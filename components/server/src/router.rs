@@ -2,8 +2,8 @@ use std::convert::Infallible;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use once_cell::sync::OnceCell;
 use serde_json::json;
@@ -15,9 +15,9 @@ use futures_util::StreamExt;
 use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
 
 use warp::filters::BoxedFilter;
+use warp::host::Authority;
 use warp::http::{StatusCode, Uri};
 use warp::path::FullPath;
-use warp::host::Authority;
 use warp::reject::Reject;
 use warp::ws::Message;
 use warp::{Filter, Rejection, Reply};
@@ -332,22 +332,25 @@ macro_rules! bind {
     };
 }
 
-fn host_ephemeral(expected: &str) -> impl Filter<Extract = (), Error = Rejection> + Clone {
-    let expected = Authority::from_str(expected).expect("invalid host/authority");
+fn host_ephemeral(
+    expected: &str,
+) -> impl Filter<Extract = (), Error = Rejection> + Clone {
+    let expected =
+        Authority::from_str(expected).expect("invalid host/authority");
     warp::host::optional()
         .and_then(move |option: Option<Authority>| match option {
             Some(authority) => {
                 if authority == expected {
-                    return future::ok(())
+                    return future::ok(());
                 } else {
                     if let Some(port) = expected.port() {
                         if port == 0 && authority.host() == expected.host() {
-                            return future::ok(())
+                            return future::ok(());
                         }
                     }
                 }
                 future::err(warp::reject::not_found())
-            },
+            }
             _ => future::err(warp::reject::not_found()),
         })
         .untuple_one()
@@ -616,7 +619,6 @@ pub async fn serve(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> crate::Result<()> {
-
     let addr = opts.get_sock_addr(PortType::Infer, None)?;
     let default_host: &'static HostConfig = &opts.default_host;
     let should_watch = default_host.watch;
