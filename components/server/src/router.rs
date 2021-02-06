@@ -537,34 +537,65 @@ fn get_static_server(
     opts: &'static ServerConfig,
     host: &'static HostConfig,
 ) -> (String, BoxedFilter<(impl Reply,)>) {
-    // NOTE: Later we add this to all requests in the macro
-    // NOTE: but we also need to add it here so the `else` branch
-    // NOTE: below for `disable_cache` has a type that matches the
-    // NOTE: `if` branch. A `noop` filter would be really useful
-    // NOTE: here but warp does not expose the functionality to create one.
-    let with_server = get_with_server(opts);
-
     let disable_cache = host.disable_cache;
 
     let with_cache_control = warp::reply::with::header(
         "cache-control",
         "no-cache, no-store, must-revalidate",
     );
+
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
+
+    let referrer_policy = warp::reply::with::header(
+        "referrer-policy",
+        "origin");
+    let x_content_type_options = warp::reply::with::header(
+        "x-content-type-options",
+        "nosniff");
+    let x_frame_options = warp::reply::with::header(
+        "x-frame-options",
+        "DENY");
+    let x_xss_protection = warp::reply::with::header(
+        "x-xss-protection",
+        "1; mode=block");
+
+    let permissions_policy = warp::reply::with::header(
+        "permissions-policy",
+        "geolocation=()");
+
+    let strict_transport_security = warp::reply::with::header(
+        "strict-transport-security",
+        "max-age=31536000; includeSubDomains; preload");
+
+    // TODO: Content-Security-Policy
+    // SEE: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy
+    // TODO: Support setting Permissions-Policy values
 
     let dir_server = warp::fs::dir(host.directory.clone())
         .recover(move |e| handle_rejection(e, Some(host.directory.clone())));
 
     let file_server = if disable_cache {
         dir_server
+            .with(referrer_policy)
+            .with(x_content_type_options)
+            .with(x_frame_options)
+            .with(x_xss_protection)
+            .with(permissions_policy)
+            .with(strict_transport_security)
             .with(with_cache_control)
             .with(with_pragma)
             .with(with_expires)
-            .with(with_server.clone())
             .boxed()
     } else {
-        dir_server.with(with_server.clone()).boxed()
+        dir_server
+            .with(referrer_policy)
+            .with(x_content_type_options)
+            .with(x_frame_options)
+            .with(x_xss_protection)
+            .with(permissions_policy)
+            .with(strict_transport_security)
+            .boxed()
     };
 
     let with_options = warp::any().map(move || opts);
