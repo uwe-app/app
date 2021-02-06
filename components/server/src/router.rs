@@ -345,11 +345,11 @@ fn get_host_filter(
             future::err(warp::reject::not_found())
         });
 
-    if let Some(ref webdav_dir) = host.webdav_directory {
-        info!("Webdav {}", webdav_dir.display());
+    if let Some(ref webdav) = host.webdav {
+        info!("Webdav {}", webdav.directory.display());
         let dav_server = warp::path("-")
             .and(warp::path("webdav"))
-            .and(dav_dir(webdav_dir, true, true));
+            .and(dav_dir(&webdav.directory, false, webdav.listing));
         host_ephemeral(&hostname).and(dav_server.or(static_server)).boxed()
     } else {
         host_ephemeral(&hostname).and(none.or(static_server)).boxed()
@@ -384,11 +384,11 @@ fn get_host_filter_watch(
             future::err(warp::reject::not_found())
         });
 
-    if let Some(ref webdav_dir) = host.webdav_directory {
-        info!("Webdav {}", webdav_dir.display());
+    if let Some(ref webdav) = host.webdav {
+        info!("Webdav {}", webdav.directory.display());
         let dav_server = warp::path("-")
             .and(warp::path("webdav"))
-            .and(dav_dir(webdav_dir, true, true));
+            .and(dav_dir(&webdav.directory, false, webdav.listing));
 
         host_ephemeral(&hostname)
             .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
@@ -398,7 +398,6 @@ fn get_host_filter_watch(
             .and(none.or(livereload.or(live_renderer).or(static_server)))
             .boxed()
     }
-
 }
 
 fn get_live_reload(

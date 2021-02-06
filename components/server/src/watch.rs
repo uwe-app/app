@@ -12,7 +12,7 @@ use url::Url;
 use warp::ws::Message;
 
 use config::server::{
-    ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig,
+    ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig, WebDavConfig,
 };
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
@@ -29,6 +29,7 @@ pub async fn watch(
     tls: Option<TlsConfig>,
     launch: Option<String>,
     result: CompileResult,
+    webdav_enabled: bool,
     error_cb: ErrorCallback,
 ) -> Result<()> {
     // Create a channel to receive the bind address.
@@ -39,7 +40,12 @@ pub async fn watch(
 
     for (info, host) in host_configs.iter_mut() {
         host.watch = true;
-        host.webdav_directory = Some(info.source.to_path_buf());
+        if webdav_enabled {
+            host.webdav = Some(WebDavConfig {
+                directory: info.source.to_path_buf(),
+                listing: false,
+            });
+        }
     }
 
     let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =

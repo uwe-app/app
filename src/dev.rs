@@ -29,6 +29,7 @@ pub async fn run<P: AsRef<Path>>(
         args.tls.clone(),
         args.launch.clone(),
         result,
+        true,
         server_error_cb,
     )
     .await?;

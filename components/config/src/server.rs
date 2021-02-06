@@ -212,8 +212,8 @@ pub struct HostConfig {
     /// Directory for static files.
     pub directory: PathBuf,
 
-    /// Directory for webdav integration.
-    pub webdav_directory: Option<PathBuf>,
+    /// Configuration for webdav.
+    pub webdav: Option<WebDavConfig>,
 
     #[serde(skip)]
     pub redirects: Option<Redirects>,
@@ -238,7 +238,7 @@ impl Default for HostConfig {
         Self {
             name: crate::config::HOST.to_string(),
             directory: PathBuf::from(""),
-            webdav_directory: None,
+            webdav: None,
             redirects: None,
             endpoint: None,
             disable_cache: false,
@@ -265,7 +265,15 @@ impl HostConfig {
             disable_cache: true,
             log,
             watch,
-            webdav_directory: None,
+            webdav: None,
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebDavConfig {
+    /// Directory for the webdav mount point.
+    pub directory: PathBuf,
+    /// Whether to list directories.
+    pub listing: bool,
 }
