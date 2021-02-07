@@ -20,6 +20,8 @@ pub async fn run<P: AsRef<Path>>(
     // Must mark the build profile for live reload
     args.live = Some(true);
 
+    let headless = option_env!("UWE_HEADLESS").is_some();
+
     // Compile the project
     let result = workspace::compile(project, &args).await?;
 
@@ -28,6 +30,7 @@ pub async fn run<P: AsRef<Path>>(
         port,
         args.tls.clone(),
         args.launch.clone(),
+        headless,
         result,
         false,
         server_error_cb,

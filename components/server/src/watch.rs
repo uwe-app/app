@@ -28,6 +28,7 @@ pub async fn watch(
     port: u16,
     tls: Option<TlsConfig>,
     launch: Option<String>,
+    headless: bool,
     result: CompileResult,
     webdav_enabled: bool,
     error_cb: ErrorCallback,
@@ -65,7 +66,9 @@ pub async fn watch(
     opts.hosts = hosts;
 
     // Spawn the bind listener to launch a browser
-    spawn_bind_open(bind_rx, launch);
+    if !headless {
+        spawn_bind_open(bind_rx, launch);
+    }
 
     // Spawn the file system watchers
     spawn_monitor(host_info, Arc::new(RwLock::new(watch_channels)), error_cb);
@@ -240,7 +243,7 @@ fn spawn_monitor(
                                             let _ = response.send(None).await;
                                         },
                                         Err(e) => {
-                                            // Send error back to the server so it can 
+                                            // Send error back to the server so it can
                                             // show a 500 error if the compile fails
                                             error!("{}", e);
                                             let _ = response.send(Some(Box::new(e))).await;
@@ -295,7 +298,7 @@ fn spawn_monitor(
                                     match invalidator.get_invalidation(paths) {
                                         Ok(invalidation) => {
 
-                                            // Try to determine a page href to use 
+                                            // Try to determine a page href to use
                                             // when following edits.
                                             let href: Option<String> = if let Some(path) =
                                                 invalidation.single_page()
