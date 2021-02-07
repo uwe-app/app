@@ -17,10 +17,10 @@ pub struct WebServerOpts {
     pub ssl_port: Option<u16>,
 
     /// Path to an SSL certificate file
-    #[structopt(long, env, hide_env_values = true)]
+    #[structopt(long, env = "UWE_SSL_CERT", hide_env_values = true)]
     pub ssl_cert: Option<PathBuf>,
 
     /// Path to an SSL key file
-    #[structopt(long, env, hide_env_values = true)]
+    #[structopt(long, env = "UWE_SSL_KEY", hide_env_values = true)]
     pub ssl_key: Option<PathBuf>,
 }
