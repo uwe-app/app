@@ -77,7 +77,7 @@ pub enum Error {
     #[error("Plugin key {0} does not match plugin name {1}")]
     PluginNameMismatch(String, String),
 
-    #[error("Plugin {0}@{1} does not satsify requirement {2}")]
+    #[error("Plugin {0}@{1} does not satisfy requirement {2}")]
     PluginVersionMismatch(String, String, String),
 
     #[error("Cyclic dependency {0}")]
