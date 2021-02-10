@@ -46,6 +46,9 @@ pub async fn publish(
     region: String,
     profile: String,
     skip_build: bool,
+    skip_test: bool,
+    skip_cookbook: bool,
+    skip_build_tools: bool,
     skip_upload: bool,
     force_overwrite: bool,
 ) -> Result<()> {
@@ -70,6 +73,24 @@ pub async fn publish(
         build(&manifest)?;
     } else {
         warn!("Skipping build step!");
+    }
+
+    if !skip_test {
+        test()?;
+    } else {
+        warn!("Skipping test step!");
+    }
+
+    if !skip_cookbook {
+        cookbook()?;
+    } else {
+        warn!("Skipping cookbook step!");
+    }
+
+    if !skip_build_tools {
+        build_tools()?;
+    } else {
+        warn!("Skipping build tool compile step!");
     }
 
     let artifacts = artifacts(&manifest)?;
@@ -126,14 +147,6 @@ pub async fn publish(
 
     update_documentation(&website_repo, &semver)?;
 
-    Ok(())
-}
-
-fn update_website(website_repo: &PathBuf) -> Result<()> {
-    // FIXME: do not remove the lock file!
-    let lock_file = website_repo.join(config::SITE_LOCK);
-    fs::remove_file(&lock_file)?;
-    publish_website(&website_repo, "stage")?;
     Ok(())
 }
 
@@ -222,6 +235,49 @@ fn build(cwd: &PathBuf) -> Result<()> {
     Command::new("make")
         .current_dir(cwd)
         .args(vec!["build-release", "build-linux-macos-cross"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+    Ok(())
+}
+
+/// Run the end to end test suite.
+fn test() -> Result<()> {
+    Command::new("make")
+        // Test repo must be sibling of `app`
+        .current_dir("../test")
+        .env("UWE", UWE_BINARY)
+        .args(vec!["test"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+    Ok(())
+}
+
+/// Compile the cookbook examples.
+fn cookbook() -> Result<()> {
+    Command::new(UWE_BINARY)
+        .args(vec!["build", "../cookbook"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+    Ok(())
+}
+
+/// Compile the build tool examples.
+fn build_tools() -> Result<()> {
+
+    // Ensure node_modules are sane
+    Command::new("make")
+        .current_dir("../cookbook/build")
+        .args(vec!["install-deps"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    // Compile all the build tools examples
+    Command::new(UWE_BINARY)
+        .args(vec!["build", "../cookbook/build", "--exec"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
@@ -373,6 +429,24 @@ fn update_releases_website(releases_file: &PathBuf) -> Result<()> {
     fs::remove_file(&lock_file)?;
     publish_website(&releases_website_repo, "production")?;
 
+    Ok(())
+}
+
+fn update_website(website_repo: &PathBuf) -> Result<()> {
+    /*
+    // FIXME: do not remove the lock file!
+    let lock_file = website_repo.join(config::SITE_LOCK);
+    fs::remove_file(&lock_file)?;
+    */
+
+    Command::new("make")
+        .current_dir(website_repo)
+        .args(vec!["help"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    publish_website(&website_repo, "stage")?;
     Ok(())
 }
 

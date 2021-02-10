@@ -25,6 +25,18 @@ struct Cli {
     #[structopt(long)]
     skip_build: bool,
 
+    /// Skip the test step.
+    #[structopt(long)]
+    skip_test: bool,
+
+    /// Skip compiling the cookbook.
+    #[structopt(long)]
+    skip_cookbook: bool,
+
+    /// Skip compiling the build tools.
+    #[structopt(long)]
+    skip_build_tools: bool,
+
     /// Skip the upload step.
     #[structopt(long)]
     skip_upload: bool,
@@ -57,6 +69,9 @@ async fn main() -> Result<()> {
         root_args.region,
         root_args.profile,
         root_args.skip_build,
+        root_args.skip_test,
+        root_args.skip_cookbook,
+        root_args.skip_build_tools,
         root_args.skip_upload,
         root_args.force,
     )
