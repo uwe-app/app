@@ -153,7 +153,7 @@ impl Invalidator {
         let config_file = config.file();
         let cfg_file = config_file.canonicalize()?;
 
-        let hooks = if let Some(ref hooks) = config.hooks {
+        let hooks = if let Some(ref hooks) = config.hooks() {
             hooks
                 .iter()
                 .filter(|h| {

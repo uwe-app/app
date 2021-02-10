@@ -962,7 +962,7 @@ impl<'a> WorkspaceBuilder<'a> {
             let lock_file = lock::acquire(&lock_path)?;
             defer! { let _ = lock::release(lock_file); }
 
-            if config.hooks.is_some() && !self.settings.can_exec() {
+            if config.hooks().is_some() && !self.settings.can_exec() {
                 warn!("The project has some hooks defined but does ");
                 warn!("not have the capability to execute commands.");
                 warn!("");

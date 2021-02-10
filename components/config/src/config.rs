@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 
@@ -17,7 +17,7 @@ use crate::{
     engine::TemplateEngine,
     feed::FeedConfig,
     fluent::FluentConfig,
-    hook::HookMap,
+    hook::{HookMap, HookConfig},
     indexer::DataBase,
     link::LinkConfig,
     live_reload::LiveReload,
@@ -215,7 +215,6 @@ pub struct Config {
     pub build: Option<ProfileSettings>,
     pub workspace: Option<WorkspaceConfig>,
     pub fluent: FluentConfig,
-    pub hooks: Option<HookMap>,
     node: NodeConfig,
     pub page: Option<Page>,
     pub pages: Option<HashMap<String, Page>>,
@@ -227,6 +226,11 @@ pub struct Config {
 
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     authors: HashMap<String, Author>,
+
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    hook: HashSet<HookConfig>,
+    #[serde(skip)]
+    hook_map: Option<HookMap>,
 
     // Menus keyed by name
     pub menu: Option<MenuConfig>,
@@ -298,7 +302,8 @@ impl Default for Config {
             build: Some(Default::default()),
             workspace: None,
             fluent: Default::default(),
-            hooks: None,
+            hook: Default::default(),
+            hook_map: None,
             node: Default::default(),
             page: Some(Default::default()),
             pages: None,
@@ -336,6 +341,14 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn hooks(&self) -> &Option<HookMap> {
+        &self.hook_map
+    }
+
+    pub fn hooks_mut(&mut self) -> &mut Option<HookMap> {
+        &mut self.hook_map
+    }
+
     pub fn syntax(&self) -> &Option<SyntaxConfig> {
         &self.syntax
     }
@@ -543,6 +556,11 @@ impl Config {
             }
 
             cfg.fluent.prepare(lang_id);
+
+            if !cfg.hook.is_empty() {
+                let exec_hooks: HashSet<HookConfig> = cfg.hook.drain().collect();
+                cfg.hook_map = Some(HookMap::from(exec_hooks));
+            }
 
             if let Some(date) = cfg.date.as_mut() {
                 date.prepare();

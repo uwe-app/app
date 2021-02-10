@@ -8,10 +8,15 @@ use serde_with::skip_serializing_none;
 
 use crate::{profile::ProfileName, Error, Result};
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct HookMap {
-    #[serde(rename = "run")]
     exec: HashSet<HookConfig>,
+}
+
+impl From<HashSet<HookConfig>> for HookMap {
+    fn from(exec: HashSet<HookConfig>) -> Self {
+        Self { exec }
+    }
 }
 
 impl HookMap {

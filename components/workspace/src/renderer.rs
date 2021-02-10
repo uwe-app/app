@@ -382,7 +382,7 @@ impl Renderer {
     }
 
     async fn run_before_hooks(&self) -> Result<()> {
-        if let Some(ref hooks) = self.info.context.config.hooks {
+        if let Some(ref hooks) = self.info.context.config.hooks() {
             hook::run(
                 &self.info.context,
                 hook::collect(
@@ -397,7 +397,7 @@ impl Renderer {
     }
 
     async fn run_after_hooks(&self) -> Result<()> {
-        if let Some(ref hooks) = self.info.context.config.hooks {
+        if let Some(ref hooks) = self.info.context.config.hooks() {
             hook::run(
                 &self.info.context,
                 hook::collect(
