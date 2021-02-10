@@ -30,7 +30,7 @@ impl HookMap {
     pub fn prepare(&mut self, source: &PathBuf, base: &PathBuf) -> Result<()> {
         let mut out: HashSet<HookConfig> = HashSet::new();
         for mut v in self.exec.drain() {
-            if v.path.is_empty() {
+            if v.command.is_empty() {
                 return Err(Error::HookPathEmpty(base.to_path_buf()));
             }
 
@@ -63,7 +63,8 @@ impl HookMap {
 #[serde(default)]
 pub struct HookConfig {
     // Command path.
-    pub path: String,
+    #[serde(alias = "path")]
+    pub command: String,
 
     // Command arguments.
     pub args: Option<Vec<String>>,
@@ -105,7 +106,7 @@ pub struct HookConfig {
 impl Default for HookConfig {
     fn default() -> Self {
         Self {
-            path: String::new(),
+            command: String::new(),
             args: None,
             stdout: Some(true),
             stderr: Some(true),
@@ -153,7 +154,7 @@ impl HookConfig {
 
 impl PartialEq for HookConfig {
     fn eq(&self, other: &Self) -> bool {
-        self.path == other.path && self.args == other.args
+        self.command == other.command && self.args == other.args
     }
 }
 
@@ -161,7 +162,7 @@ impl Eq for HookConfig {}
 
 impl Hash for HookConfig {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.path.hash(state);
+        self.command.hash(state);
         self.args.hash(state);
     }
 }

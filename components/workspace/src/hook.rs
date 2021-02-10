@@ -26,7 +26,7 @@ pub fn exec(
         Error::CanonicalProjectRoot(ctx.config.project().to_path_buf())
     })?;
 
-    let mut cmd = hook.path.clone();
+    let mut cmd = hook.command.clone();
     let mut args: Vec<String> = vec![];
     if let Some(arguments) = &hook.args {
         args = arguments.to_vec();
