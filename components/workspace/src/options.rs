@@ -142,6 +142,9 @@ fn from_cli(settings: &mut ProfileSettings, args: &mut ProfileSettings) {
     if args.exec.is_some() {
         settings.exec = args.exec.clone();
     }
+    if args.tls.is_some() {
+        settings.tls = args.tls.clone();
+    }
 }
 
 /// Prepare the live reload style and script.

@@ -505,8 +505,8 @@ impl ProfileSettings {
     }
 
     pub fn get_canonical_port(&self) -> u16 {
-        if self.tls.is_some() {
-            self.tls.as_ref().unwrap().port
+        if let Some(ref tls) = self.tls {
+            tls.port
         } else {
             self.get_port()
         }
