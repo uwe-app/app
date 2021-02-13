@@ -2,11 +2,7 @@ use std::str::FromStr;
 
 use futures::future;
 
-//use warp::filters::BoxedFilter;
 use warp::host::Authority;
-//use warp::http::{StatusCode, Uri};
-//use warp::path::FullPath;
-//use warp::reject::Reject;
 use warp::{Filter, Rejection};
 
 //use webdav_handler::warp::dav_dir;
@@ -24,7 +20,6 @@ pub(crate) fn host_ephemeral(
     warp::host::optional()
         .and_then(move |option: Option<Authority>| match option {
             Some(authority) => {
-                //println!("Testing authority {:?}", authority);
                 if authority == expected {
                     return future::ok(());
                 } else {

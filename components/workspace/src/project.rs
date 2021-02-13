@@ -921,9 +921,6 @@ impl<'a> WorkspaceBuilder<'a> {
             Workspace::Many(configs, _, _) => configs
                 .iter()
                 .map(|c| {
-
-                    //println!("Getting config host name: {}", c.host().to_owned());
-
                     Member::new(
                         c.member_name().as_ref().unwrap().to_owned(),
                         c.host().to_owned(),
