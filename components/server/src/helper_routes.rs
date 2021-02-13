@@ -11,8 +11,8 @@ use warp::{Filter, Rejection};
 
 //use webdav_handler::warp::dav_dir;
 
-/// Support for the Host header that also identifies the ephemeral port zero 
-/// and switches the test to only the host name if the expected host has 
+/// Support for the Host header that also identifies the ephemeral port zero
+/// and switches the test to only the host name if the expected host has
 /// a port value of zero.
 ///
 /// This allows ephemeral ports to work as expected with virtual hosts.
@@ -24,6 +24,7 @@ pub(crate) fn host_ephemeral(
     warp::host::optional()
         .and_then(move |option: Option<Authority>| match option {
             Some(authority) => {
+                //println!("Testing authority {:?}", authority);
                 if authority == expected {
                     return future::ok(());
                 } else {

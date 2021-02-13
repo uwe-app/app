@@ -70,8 +70,20 @@ pub async fn watch(
         spawn_bind_open(bind_rx, launch);
     }
 
+    let number_watchers = host_info.len();
+    let mut watchers_started = 0usize;
+    let (watcher_tx, mut watcher_rx) = mpsc::channel::<bool>(number_watchers);
+
     // Spawn the file system watchers
-    spawn_monitor(host_info, Arc::new(RwLock::new(watch_channels)), error_cb);
+    spawn_monitor(host_info, Arc::new(RwLock::new(watch_channels)), watcher_tx, error_cb);
+
+    // Must wait for all the watchers to set up channels before starting the web server
+    while let Some(_) = watcher_rx.recv().await {
+        watchers_started += 1;
+        if watchers_started == number_watchers {
+            break;
+        }
+    }
 
     // Convert to &'static reference
     let opts = super::configure(opts);
@@ -192,10 +204,13 @@ fn spawn_bind_open(
 fn spawn_monitor(
     watchers: Vec<HostInfo>,
     channels: Arc<RwLock<WatchChannels>>,
+    watcher_tx: mpsc::Sender<bool>,
     error_cb: ErrorCallback,
 ) {
     for w in watchers {
         let watch_channels = Arc::clone(&channels);
+
+        let started_tx = watcher_tx.clone();
 
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
@@ -224,11 +239,17 @@ fn spawn_monitor(
                 info!("Watch {} in {}", name, source.display());
 
                 let mut invalidator = Invalidator::new(w.project);
-
                 let mut channels_access = watch_channels.write().unwrap();
                 let ws_tx = channels_access.websockets.get(&name).unwrap().clone();
                 let response = channels_access.render_responses.get(&name).unwrap().clone();
-                let request = channels_access.render.get_mut(&name).unwrap();
+
+                // NOTE: must `remove` the receiver and drop `channels_access` so that
+                // NOTE: multiple virtual hosts start up as expected
+                let mut request = channels_access.render.remove(&name).unwrap();
+                drop(channels_access);
+
+                // Notify that this watcher is ready to accept messages
+                let _ = started_tx.send(true).await;
 
                 loop {
                     tokio::select! {
@@ -255,7 +276,6 @@ fn spawn_monitor(
                                     let _ = response.send(None).await;
                                 }
                             }
-
                         }
                         val = fs_rx.recv() => {
                             if let Some(event) = val {

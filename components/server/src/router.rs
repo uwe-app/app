@@ -479,6 +479,7 @@ async fn live_render(
         // the compiled static asset otherwise changes will
         // not be reflected!
         let mut reply_channel = rx.write().await;
+
         if let Some(response) = reply_channel.recv().await {
             if let Some(error) = response {
                 let registry = parser();

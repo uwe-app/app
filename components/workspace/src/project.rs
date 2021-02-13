@@ -886,6 +886,7 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
                 hostname,
                 Some(redirect_uris),
                 Some(endpoint),
+                // TODO: allow logging to be enabled from the CLI
                 false,
                 false,
             );
@@ -920,6 +921,9 @@ impl<'a> WorkspaceBuilder<'a> {
             Workspace::Many(configs, _, _) => configs
                 .iter()
                 .map(|c| {
+
+                    //println!("Getting config host name: {}", c.host().to_owned());
+
                     Member::new(
                         c.member_name().as_ref().unwrap().to_owned(),
                         c.host().to_owned(),
