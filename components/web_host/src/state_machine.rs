@@ -87,49 +87,17 @@ impl<'a> Iterator for StateMachine<'a> {
     type Item = (State, Box<dyn Transition>);
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(state) = self.states.get(self.index) {
-            let item = match state {
-                State::NameServer => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(NameServerTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::HostedZone => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(HostedZoneTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::Certificate => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(CertificateTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::Bucket => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(BucketTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::RedirectBucket => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(RedirectBucketTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::Cdn => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(CdnTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::CdnDns => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(CdnDnsTransition {});
-                    Some((state.clone(), transition))
-                }
-                State::RedirectCname => {
-                    let transition: Box<dyn Transition> =
-                        Box::new(RedirectCnameTransition {});
-                    Some((state.clone(), transition))
-                }
+            let transition: Box<dyn Transition> = match state {
+                State::NameServer => Box::new(NameServerTransition {}),
+                State::HostedZone => Box::new(HostedZoneTransition {}),
+                State::Certificate => Box::new(CertificateTransition {}),
+                State::Bucket => Box::new(BucketTransition {}),
+                State::RedirectBucket => Box::new(RedirectBucketTransition {}),
+                State::Cdn => Box::new(CdnTransition {}),
+                State::CdnDns => Box::new(CdnDnsTransition {}),
+                State::RedirectCname => Box::new(RedirectCnameTransition {}),
             };
-            item
+            Some((state.clone(), transition))
         } else {
             None
         }
