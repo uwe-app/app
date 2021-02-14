@@ -10,18 +10,37 @@ title = "Editor"
           display: flex;
           justify-content: space-between;
         }
+
+        #filesystem {
+          display: block;
+          flex: 0 1;
+          min-width: 260px;
+          background: red;
+        }
+
+        #editor {
+          display: block;
+          flex: 1;
+        }
+
+        #preview {
+          display: block;
+          flex: 1;
+          min-width: 320px;
+        }
       </style>
 
       <!--<slot name="tabs"></slot>-->
-      <slot name="filesystem"></slot>
-      <slot name="editor"></slot>
-      <slot name="preview"></slot>
+      <slot id="filesystem" name="filesystem"></slot>
+      <slot id="editor" name="editor"></slot>
+      <slot id="preview" name="preview"></slot>
   </template>
 
   <filesystem-view slot="filesystem">
     <template shadowroot="open">
       <style>
         :host(filesystem-view) {
+          flex: 0;
           /*background: pink; */
           min-width: 220px;
         }
@@ -34,12 +53,18 @@ title = "Editor"
       <slot id="nav" name="controls"></slot>
       <slot name="list"></slot>
     </template>
-    <nav slot="controls">File system controls</nav>
+    <nav slot="controls">File action bar</nav>
     <p slot="list">No files yet</p>
   </filesystem-view>
 
   <text-editor slot="editor">
     <template shadowroot="open">
+      <style>
+        :host(text-editor) {
+          flex: 1;
+          background: red;
+        }
+      </style>
       <slot></slot>
     </template>
     <p>Text editor</p>
@@ -53,4 +78,3 @@ title = "Editor"
   </live-preview>
 
 </editor-view>
-

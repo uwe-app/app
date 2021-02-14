@@ -15,7 +15,7 @@ main {
 
 main > header {
   flex: 0;
-  background: red;
+  padding: 0;
 }
 
 article {
