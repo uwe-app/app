@@ -350,9 +350,9 @@ fn get_host_filter(
         let dav_server = warp::path("-")
             .and(warp::path("webdav"))
             .and(dav_dir(&webdav.directory, false, webdav.listing));
-        host_ephemeral(&hostname).and(dav_server.or(static_server)).boxed()
+        host_ephemeral(&hostname, opts.authorities()).and(dav_server.or(static_server)).boxed()
     } else {
-        host_ephemeral(&hostname).and(none.or(static_server)).boxed()
+        host_ephemeral(&hostname, opts.authorities()).and(none.or(static_server)).boxed()
     }
 }
 
@@ -390,11 +390,11 @@ fn get_host_filter_watch(
             .and(warp::path("webdav"))
             .and(dav_dir(&webdav.directory, false, webdav.listing));
 
-        host_ephemeral(&hostname)
+        host_ephemeral(&hostname, opts.authorities())
             .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
             .boxed()
     } else {
-        host_ephemeral(&hostname)
+        host_ephemeral(&hostname, opts.authorities())
             .and(none.or(livereload.or(live_renderer).or(static_server)))
             .boxed()
     }

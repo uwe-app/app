@@ -106,6 +106,7 @@ pub struct ServerConfig {
     pub tls: Option<TlsConfig>,
     pub default_host: HostConfig,
     pub hosts: Vec<HostConfig>,
+    pub authorities: Option<Vec<String>>,
 
     /// When running a server over SSL redirect HTTP to HTTPS.
     #[serde(skip)]
@@ -124,6 +125,7 @@ impl Default for ServerConfig {
             redirect_insecure: true,
             temporary_redirect: false,
             default_host: Default::default(),
+            authorities: None,
             hosts: vec![],
         }
     }
@@ -152,8 +154,13 @@ impl ServerConfig {
             redirect_insecure: true,
             temporary_redirect: true,
             default_host: host,
+            authorities: None,
             hosts: vec![],
         }
+    }
+
+    pub fn authorities(&self) -> &Option<Vec<String>> {
+        &self.authorities
     }
 
     pub fn get_port(&self, port_type: PortType) -> u16 {

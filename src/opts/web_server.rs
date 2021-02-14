@@ -12,6 +12,10 @@ pub struct WebServerOpts {
     #[structopt(short, long)]
     pub port: Option<u16>,
 
+    /// Allow these virtual host authorities.
+    #[structopt(long)]
+    pub authority: Option<Vec<String>>,
+
     /// The port number for SSL
     #[structopt(long)]
     pub ssl_port: Option<u16>,

@@ -10,6 +10,7 @@ fn server_error_cb(e: server::Error) {
 pub async fn run<P: AsRef<Path>>(
     project: P,
     mut args: ProfileSettings,
+    authorities: Option<Vec<String>>,
 ) -> Result<(), Error> {
     // Prepare the server settings
     let port = args.get_port().clone();
@@ -34,6 +35,7 @@ pub async fn run<P: AsRef<Path>>(
         result,
         false,
         args.host.clone(),
+        authorities,
         server_error_cb,
     )
     .await?;

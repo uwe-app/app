@@ -14,12 +14,20 @@ use warp::{Filter, Rejection};
 /// This allows ephemeral ports to work as expected with virtual hosts.
 pub(crate) fn host_ephemeral(
     expected: &str,
+    authorities: &'static Option<Vec<String>>,
 ) -> impl Filter<Extract = (), Error = Rejection> + Clone {
     let expected =
         Authority::from_str(expected).expect("invalid host/authority");
     warp::host::optional()
         .and_then(move |option: Option<Authority>| match option {
             Some(authority) => {
+
+                if let Some(ref authorities) = authorities {
+                    if authorities.contains(&authority.to_string()) {
+                        return future::ok(());
+                    }
+                }
+
                 if authority == expected {
                     return future::ok(());
                 } else {

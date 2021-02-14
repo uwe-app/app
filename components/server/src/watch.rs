@@ -32,6 +32,7 @@ pub async fn watch(
     result: CompileResult,
     webdav_enabled: bool,
     bind_host: Option<String>,
+    authorities: Option<Vec<String>>,
     error_cb: ErrorCallback,
 ) -> Result<()> {
     // Create a channel to receive the bind address.
@@ -64,6 +65,7 @@ pub async fn watch(
     // Server must have at least a single virtual host
     let host = hosts.swap_remove(0);
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
+    opts.authorities = authorities;
     opts.hosts = hosts;
 
     if let Some(ref host) = bind_host {

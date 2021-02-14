@@ -147,6 +147,7 @@ pub fn server_config(
 
     let mut server_config = ServerConfig::new_host(host, port.to_owned(), tls);
     server_config.listen = opts.addr.to_string();
+    server_config.authorities = opts.authority.clone();
     server_config
 }
 
