@@ -167,12 +167,15 @@ async fn sync_content(
 
         for (k, v) in redirects_manifest.map() {
             // NOTE: must not start with a slash!
-            let redirect_key = k.trim_start_matches("/");
+            let mut redirect_key = k.trim_start_matches("/").to_string();
+            if redirect_key.ends_with("/") {
+                redirect_key.push_str(config::INDEX_HTML);
+            }
 
-            info!("Redirect {} -> {}", redirect_key, &v);
+            info!("Redirect {} -> {}", &redirect_key, &v);
 
             if let Err(e) =
-                put_redirect(&client, &request.bucket, redirect_key, v).await
+                put_redirect(&client, &request.bucket, &redirect_key, v).await
             {
                 errors.push(e);
             } else {
