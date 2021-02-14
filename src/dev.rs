@@ -33,6 +33,7 @@ pub async fn run<P: AsRef<Path>>(
         headless,
         result,
         false,
+        args.host.clone(),
         server_error_cb,
     )
     .await?;

@@ -154,7 +154,7 @@ async fn run(cmd: Command) -> Result<()> {
                 paths,
                 name: args.profile,
                 launch: args.launch,
-                host: args.server.host,
+                host: Some(args.server.addr),
                 port: args.server.port,
                 exec: Some(args.compile.exec),
                 member: args.compile.member,

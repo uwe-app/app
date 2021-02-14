@@ -12,7 +12,7 @@ use crate::Result;
 
 /// An HTTP server that redirects all requests to HTTPS.
 pub fn spawn(options: ServerConfig) -> Result<()> {
-    let addr = options.get_sock_addr(PortType::Insecure, None)?;
+    let addr = options.get_sock_addr(PortType::Insecure)?;
     let tls_port = options.tls_port();
 
     let host_url =

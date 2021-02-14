@@ -194,9 +194,8 @@ impl ServerConfig {
     pub fn get_sock_addr(
         &self,
         port_type: PortType,
-        host: Option<String>,
     ) -> Result<SocketAddr> {
-        let address = self.get_address(port_type, host);
+        let address = self.get_address(port_type, None);
         Ok(address
             .to_socket_addrs()?
             .next()

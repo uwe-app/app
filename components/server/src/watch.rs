@@ -31,6 +31,7 @@ pub async fn watch(
     headless: bool,
     result: CompileResult,
     webdav_enabled: bool,
+    bind_host: Option<String>,
     error_cb: ErrorCallback,
 ) -> Result<()> {
     // Create a channel to receive the bind address.
@@ -64,6 +65,10 @@ pub async fn watch(
     let host = hosts.swap_remove(0);
     let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
     opts.hosts = hosts;
+
+    if let Some(ref host) = bind_host {
+        opts.listen = host.to_string();
+    }
 
     // Spawn the bind listener to launch a browser
     if !headless {

@@ -5,8 +5,8 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 pub struct WebServerOpts {
     /// Bind address for the web server
-    #[structopt(short, long)]
-    pub host: Option<String>,
+    #[structopt(short, long, default_value = "0.0.0.0")]
+    pub addr: String,
 
     /// The port number
     #[structopt(short, long)]

@@ -127,15 +127,11 @@ pub fn server_config(
     default_port: u16,
     default_port_ssl: u16,
 ) -> ServerConfig {
-    let serve: ServerConfig = Default::default();
-    let mut host = &serve.listen;
+    let host = opts.addr.clone();
     let mut port = &default_port;
 
-    let tls = tls_config(serve.tls.clone(), opts, default_port_ssl);
+    let tls = tls_config(Default::default(), opts, default_port_ssl);
 
-    if let Some(ref h) = opts.host {
-        host = h;
-    }
     if let Some(ref p) = opts.port {
         port = p;
     }
@@ -149,7 +145,9 @@ pub fn server_config(
         false,
     );
 
-    ServerConfig::new_host(host, port.to_owned(), tls)
+    let mut server_config = ServerConfig::new_host(host, port.to_owned(), tls);
+    server_config.listen = opts.addr.to_string();
+    server_config
 }
 
 fn compiler_error(e: &compiler::Error) {

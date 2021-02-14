@@ -409,7 +409,7 @@ fn get_live_reload(
 
     let use_tls = opts.tls.is_some();
 
-    let address = opts.get_sock_addr(PortType::Infer, None)?;
+    let address = opts.get_sock_addr(PortType::Infer)?;
     let port = address.port();
     let mut cors = warp::cors().allow_any_origin();
     if port > 0 {
@@ -658,7 +658,7 @@ pub async fn serve(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> crate::Result<()> {
-    let addr = opts.get_sock_addr(PortType::Infer, None)?;
+    let addr = opts.get_sock_addr(PortType::Infer)?;
     let default_host: &'static HostConfig = &opts.default_host;
     let should_watch = default_host.watch;
 
