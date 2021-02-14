@@ -1,0 +1,56 @@
+<!--
+title = "Editor"
+-->
+
+<editor-view>
+  <template shadowroot="open">
+      <style>
+        :host(editor-view) {
+          flex: 1 1;
+          display: flex;
+          justify-content: space-between;
+        }
+      </style>
+
+      <!--<slot name="tabs"></slot>-->
+      <slot name="filesystem"></slot>
+      <slot name="editor"></slot>
+      <slot name="preview"></slot>
+  </template>
+
+  <filesystem-view slot="filesystem">
+    <template shadowroot="open">
+      <style>
+        :host(filesystem-view) {
+          /*background: pink; */
+          min-width: 220px;
+        }
+
+        #nav {
+          display: block; /* Must use this otherwise background colors do not render */
+          background: magenta !important;
+        }
+      </style>
+      <slot id="nav" name="controls"></slot>
+      <slot name="list"></slot>
+    </template>
+    <nav slot="controls">File system controls</nav>
+    <p slot="list">No files yet</p>
+  </filesystem-view>
+
+  <text-editor slot="editor">
+    <template shadowroot="open">
+      <slot></slot>
+    </template>
+    <p>Text editor</p>
+  </text-editor>
+
+  <live-preview slot="preview">
+    <template shadowroot="open">
+      <slot></slot>
+    </template>
+    <p>Live preview</p>
+  </live-preview>
+
+</editor-view>
+
