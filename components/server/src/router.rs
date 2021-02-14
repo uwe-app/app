@@ -288,7 +288,7 @@ macro_rules! bind {
                     $shutdown_rx.await.ok();
                 });
 
-            info!("Bind TLS {}", addr.port());
+            info!("Bind TLS {}", addr);
 
             if redirect_insecure {
                 super::redirect::spawn($opts.clone()).unwrap_or_else(|_| {
@@ -314,7 +314,7 @@ macro_rules! bind {
 
             match bind_result {
                 Ok((addr, future)) => {
-                    info!("Bind {}", addr.port());
+                    info!("Bind {}", addr);
 
                     if is_root() {
                         drop_privileges()?;
