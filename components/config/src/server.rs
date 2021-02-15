@@ -221,6 +221,9 @@ pub struct HostConfig {
     /// Configuration for webdav.
     pub webdav: Option<WebDavConfig>,
 
+    /// Directory for the editor UI static files.
+    pub editor_directory: Option<PathBuf>,
+
     #[serde(skip)]
     pub redirects: Option<Redirects>,
 
@@ -245,6 +248,7 @@ impl Default for HostConfig {
             name: crate::config::HOST.to_string(),
             directory: PathBuf::from(""),
             webdav: None,
+            editor_directory: None,
             redirects: None,
             endpoint: None,
             disable_cache: false,
@@ -272,6 +276,7 @@ impl HostConfig {
             log,
             watch,
             webdav: None,
+            editor_directory: None,
         }
     }
 }

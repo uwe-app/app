@@ -390,9 +390,19 @@ fn get_host_filter_watch(
             .and(warp::path("webdav"))
             .and(dav_dir(&webdav.directory, false, webdav.listing));
 
-        host_ephemeral(&hostname, opts.authorities())
-            .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
-            .boxed()
+        if let Some(ref editor_directory) = host.editor_directory {
+            let editor_server = warp::path("-")
+                .and(warp::path("editor"))
+                .and(warp::fs::dir(editor_directory.clone()));
+
+            host_ephemeral(&hostname, opts.authorities())
+                .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
+                .boxed()
+        } else {
+            host_ephemeral(&hostname, opts.authorities())
+                .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
+                .boxed()
+        }
     } else {
         host_ephemeral(&hostname, opts.authorities())
             .and(none.or(livereload.or(live_renderer).or(static_server)))

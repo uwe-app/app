@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::env;
+use std::path::{Path, PathBuf};
 
 use crate::{Error, Result, error::server_error_cb};
 use config::ProfileSettings;
@@ -18,7 +19,8 @@ pub async fn run<P: AsRef<Path>>(
     // Must mark the build profile for live reload
     args.live = Some(true);
 
-    let headless = std::env::var("UWE_HEADLESS").ok().is_some();
+    let headless = env::var("UWE_HEADLESS").ok().is_some();
+    let editor_directory = env::var("UWE_EDITOR").ok().map(PathBuf::from);
 
     // Compile the project
     let result = workspace::compile(project, &args).await?;
@@ -31,6 +33,7 @@ pub async fn run<P: AsRef<Path>>(
         headless,
         result,
         true,
+        editor_directory,
         args.host.clone(),
         authorities,
         server_error_cb,

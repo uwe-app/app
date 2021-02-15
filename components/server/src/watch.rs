@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::sync::{Arc, RwLock};
@@ -31,6 +32,7 @@ pub async fn watch(
     headless: bool,
     result: CompileResult,
     webdav_enabled: bool,
+    editor_directory: Option<PathBuf>,
     bind_host: Option<String>,
     authorities: Option<Vec<String>>,
     error_cb: ErrorCallback,
@@ -43,6 +45,7 @@ pub async fn watch(
 
     for (info, host) in host_configs.iter_mut() {
         host.watch = true;
+        host.editor_directory = editor_directory.clone();
         if webdav_enabled {
             host.webdav = Some(WebDavConfig {
                 directory: info.source.to_path_buf(),
