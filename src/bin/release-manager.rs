@@ -3,7 +3,7 @@ extern crate pretty_env_logger;
 
 use structopt::StructOpt;
 
-use uwe::{opts::fatal, Error, Result};
+use uwe::{fatal, Error, Result};
 
 /// Package and publish a release.
 #[derive(Debug, StructOpt)]

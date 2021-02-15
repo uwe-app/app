@@ -1,4 +1,8 @@
 use std::path::PathBuf;
+use std::panic;
+
+use log::error;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -157,6 +161,55 @@ pub enum Error {
     Shim(#[from] crate::shim::Error),
 }
 
+pub fn panic_hook() {
+    // Fluent templates panics if an error is caught parsing the
+    // templates (for example attempting to override from a shared resource)
+    // so we catch it here and push it out via the log
+    panic::set_hook(Box::new(|info| {
+        let message = format!("{}", info);
+        // NOTE: We must NOT call `fatal` here which explictly exits the program;
+        // NOTE: if we did our defer! {} hooks would not get called which means
+        // NOTE: lock files would not be removed from disc correctly.
+        print_error(Error::Panic(message));
+    }));
+}
+
+fn compiler_error(e: &compiler::Error) {
+    match e {
+        compiler::Error::Multi { ref errs } => {
+            error!("Compile error ({})", errs.len());
+            for e in errs {
+                error!("{}", e);
+            }
+            std::process::exit(1);
+        }
+        _ => {}
+    }
+
+    error!("{}", e);
+}
+
+pub fn print_error(e: Error) {
+    match e {
+        Error::Compiler(ref e) => {
+            return compiler_error(e);
+        }
+        Error::Workspace(ref e) => match e {
+            workspace::Error::Compiler(ref e) => {
+                return compiler_error(e);
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+    error!("{}", e);
+}
+
+pub fn fatal(e: Error) -> Result<(), Error> {
+    print_error(e);
+    std::process::exit(1);
+}
+
 pub fn server_error_cb(e: server::Error) {
-    let _ = crate::opts::fatal(Error::from(e));
+    let _ = fatal(Error::from(e));
 }

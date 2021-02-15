@@ -5,7 +5,7 @@ use log::info;
 use semver::{Version, VersionReq};
 use structopt::StructOpt;
 
-use uwe::{opts::fatal, Error, Result};
+use uwe::{fatal, Error, Result};
 
 /// Universal (web editor) version manager
 #[derive(Debug, StructOpt)]
@@ -99,7 +99,7 @@ async fn run(cmd: Command) -> release::Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::from_args();
-    uwe::opts::panic_hook();
+    uwe::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     // Configure the generator meta data ahead of time

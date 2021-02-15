@@ -14,9 +14,10 @@ use publisher::PublishProvider;
 use uwe::{
     self,
     opts::{
-        self, fatal,
+        self,
         uwe::{Command, Uwe},
     },
+    fatal,
     Result,
 };
 
@@ -134,7 +135,7 @@ async fn run(cmd: Command) -> Result<()> {
                         info!("{:?}", t);
                     }
                 }
-                Err(e) => opts::print_error(e),
+                Err(e) => uwe::print_error(e),
             }
         }
 
@@ -164,7 +165,7 @@ async fn run(cmd: Command) -> Result<()> {
             };
 
             if let Err(e) = uwe::dev::run(&project, build_args, args.server.authority).await {
-                opts::print_error(e);
+                uwe::print_error(e);
             }
         }
 
@@ -187,7 +188,7 @@ async fn run(cmd: Command) -> Result<()> {
             };
 
             if let Err(e) = uwe::editor::run(&project, build_args, args.server.authority).await {
-                opts::print_error(e);
+                uwe::print_error(e);
             }
         }
     }
@@ -199,7 +200,7 @@ async fn run(cmd: Command) -> Result<()> {
 async fn main() -> Result<()> {
     let args = Uwe::from_args();
 
-    uwe::opts::panic_hook();
+    uwe::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     // Configure the generator meta data ahead of time

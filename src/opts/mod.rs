@@ -1,8 +1,7 @@
 use std::env;
-use std::panic;
 use std::path::PathBuf;
 
-use log::{error, info};
+use log::info;
 
 use config::server::{HostConfig, ServerConfig, TlsConfig};
 
@@ -11,20 +10,6 @@ use web_server::WebServerOpts;
 use crate::{shim, Error, Result};
 
 const LOG_ENV_NAME: &'static str = "UWE_LOG";
-
-pub fn panic_hook() {
-    // Fluent templates panics if an error is caught parsing the
-    // templates (for example attempting to override from a shared resource)
-    // so we catch it here and push it out via the log
-    panic::set_hook(Box::new(|info| {
-        let message = format!("{}", info);
-        // NOTE: We must NOT call `fatal` here which explictly exits the program;
-        // NOTE: if we did our defer! {} hooks would not get called which means
-        // NOTE: lock files would not be removed from disc correctly.
-        print_error(Error::Panic(message));
-    }));
-}
-
 pub fn log_level(level: &str) -> Result<()> {
     match level {
         "trace" => env::set_var(LOG_ENV_NAME, level),
@@ -149,42 +134,6 @@ pub fn server_config(
     server_config.listen = opts.addr.to_string();
     server_config.authorities = opts.authority.clone();
     server_config
-}
-
-fn compiler_error(e: &compiler::Error) {
-    match e {
-        compiler::Error::Multi { ref errs } => {
-            error!("Compile error ({})", errs.len());
-            for e in errs {
-                error!("{}", e);
-            }
-            std::process::exit(1);
-        }
-        _ => {}
-    }
-
-    error!("{}", e);
-}
-
-pub fn print_error(e: Error) {
-    match e {
-        Error::Compiler(ref e) => {
-            return compiler_error(e);
-        }
-        Error::Workspace(ref e) => match e {
-            workspace::Error::Compiler(ref e) => {
-                return compiler_error(e);
-            }
-            _ => {}
-        },
-        _ => {}
-    }
-    error!("{}", e);
-}
-
-pub fn fatal(e: Error) -> Result<()> {
-    print_error(e);
-    std::process::exit(1);
 }
 
 mod alias;

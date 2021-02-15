@@ -10,7 +10,7 @@ use url::Url;
 
 use rusoto_core::Region;
 
-use uwe::{self, opts::fatal, Error, Result};
+use uwe::{self, fatal, Error, Result};
 
 use web_host::{
     ensure_domain, ensure_website, list_name_servers, load_host_file,
@@ -601,7 +601,7 @@ async fn run(cmd: Command) -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::from_args();
-    uwe::opts::panic_hook();
+    uwe::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     // Configure the generator meta data ahead of time

@@ -19,4 +19,4 @@ pub mod test;
 pub type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);
 
-pub use error::Error;
+pub use error::{Error, panic_hook, print_error, fatal};

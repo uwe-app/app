@@ -10,7 +10,8 @@ use url::Url;
 
 use uwe::{
     self,
-    opts::{self, fatal},
+    opts,
+    fatal,
     Error, Result,
 };
 
@@ -129,9 +130,9 @@ enum Command {
 
     /// Show plugin information
     #[structopt(after_help = "EXAMPLES:
-    Print plugin information: 
+    Print plugin information:
         upm info std::core
-    Print plugin information for a specific version: 
+    Print plugin information for a specific version:
         upm info std::core@4.1.12
 ")]
     Show { target: ExactPluginSpec },
@@ -140,11 +141,11 @@ enum Command {
     #[structopt(
         alias = "rm",
         after_help = "EXAMPLES:
-    Remove all versions of a plugin: 
+    Remove all versions of a plugin:
         upm rm std::core
-    Remove a specific version: 
+    Remove a specific version:
         upm rm std::core@=4.1.12
-    Remove all versions with major version 4: 
+    Remove all versions with major version 4:
         upm rm std::core@^4
 "
     )]
@@ -158,15 +159,15 @@ enum Command {
     /// Options --path, --archive, --git and <plugin-name>
     /// are mutually exclusive; it is an error to combine them.
     #[structopt(after_help = "EXAMPLES:
-    Add from the registry: 
+    Add from the registry:
         upm add std::core
-    Add a specific version from the registry: 
+    Add a specific version from the registry:
         upm add std::core@4.1.12
-    Add from a folder: 
+    Add from a folder:
         upm add --path /path/to/plugin
-    Add from an archive: 
+    Add from an archive:
         upm add --archive /path/to/plugin/package.tar.xz
-    Add from a git repository: 
+    Add from a git repository:
         upm add --git https://github.com/username/plugin-repo
 ")]
     Add {
@@ -268,7 +269,7 @@ async fn run(cmd: Command) -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::from_args();
-    uwe::opts::panic_hook();
+    uwe::panic_hook();
     uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
 
     // Configure the generator meta data ahead of time
