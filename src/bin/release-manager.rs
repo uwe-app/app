@@ -51,8 +51,9 @@ struct Cli {
 async fn main() -> Result<()> {
     let root_args = Cli::from_args();
 
-    std::env::set_var("RUST_LOG", "info");
-    pretty_env_logger::init();
+    uwe::panic_hook();
+    uwe::log_level("info")
+        .expect("Unable to set log level");
 
     // Must configure the version here otherwise option_env!() will
     // use the version from the workspace package which we don't really

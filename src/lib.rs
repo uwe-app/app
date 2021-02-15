@@ -16,7 +16,10 @@ pub mod sync;
 pub mod task;
 pub mod test;
 
+pub mod logger;
+
 pub type Result<T> = std::result::Result<T, Error>;
 pub type ErrorCallback = fn(Error);
 
 pub use error::{Error, panic_hook, print_error, fatal};
+pub use logger::log_level;

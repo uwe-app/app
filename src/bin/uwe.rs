@@ -201,7 +201,7 @@ async fn main() -> Result<()> {
     let args = Uwe::from_args();
 
     uwe::panic_hook();
-    uwe::opts::log_level(&*args.log_level).or_else(fatal)?;
+    uwe::log_level(&*args.log_level).or_else(fatal)?;
 
     // Configure the generator meta data ahead of time
 
