@@ -156,3 +156,7 @@ pub enum Error {
     #[error(transparent)]
     Shim(#[from] crate::shim::Error),
 }
+
+pub fn server_error_cb(e: server::Error) {
+    let _ = crate::opts::fatal(Error::from(e));
+}

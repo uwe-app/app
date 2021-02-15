@@ -1,17 +1,13 @@
 use std::path::Path;
 
-use crate::{opts::fatal, Error};
+use crate::{Error, Result, error::server_error_cb};
 use config::ProfileSettings;
-
-fn server_error_cb(e: server::Error) {
-    let _ = fatal(Error::from(e));
-}
 
 pub async fn run<P: AsRef<Path>>(
     project: P,
     mut args: ProfileSettings,
     authorities: Option<Vec<String>>,
-) -> Result<(), Error> {
+) -> Result<()> {
     // Prepare the server settings
     let port = args.get_port().clone();
     if port == 0 {
