@@ -1,7 +1,7 @@
 use structopt::StructOpt;
 
 use super::{
-    Build, Clean, Dev, Docs, Lang, New, Publish, Server, Sync, Task, Test,
+    Build, Clean, Dev, Docs, Editor, Lang, New, Publish, Server, Sync, Task, Test,
 };
 
 #[derive(Debug, StructOpt)]
@@ -9,7 +9,7 @@ use super::{
 #[structopt(
     name = "uwe",
     after_help = "EXAMPLES:
-    Start a live reload server: 
+    Start a live reload server:
         uwe dev .
     Preview a release build:
         uwe server . --open
@@ -19,7 +19,7 @@ use super::{
         uwe docs
 
 Visit https://uwe.app for more guides and information.
-    
+
 To upgrade or uninstall use the version manager (uvm)."
 )]
 pub struct Uwe {
@@ -53,6 +53,12 @@ pub enum Command {
     Dev {
         #[structopt(flatten)]
         args: Dev,
+    },
+
+    /// Launch the editor user interface
+    Editor {
+        #[structopt(flatten)]
+        args: Editor,
     },
 
     /// Remove the build directory

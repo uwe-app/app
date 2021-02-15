@@ -190,7 +190,9 @@ pub fn fatal(e: Error) -> Result<()> {
 mod alias;
 mod build;
 mod clean;
+mod dev;
 mod docs;
+mod editor;
 mod lang;
 mod new;
 mod publish;
@@ -203,9 +205,11 @@ mod web_server;
 pub mod uwe;
 
 pub use self::alias::Alias;
-pub use self::build::{Build, Compile, Dev};
+pub use self::build::{Build, Compile};
 pub use self::clean::Clean;
+pub use self::dev::Dev;
 pub use self::docs::Docs;
+pub use self::editor::Editor;
 pub use self::lang::Lang;
 pub use self::new::New;
 pub use self::publish::Publish;
