@@ -396,11 +396,17 @@ fn get_host_filter_watch(
                 .and(warp::fs::dir(editor_directory.clone()));
 
             host_ephemeral(&hostname, opts.authorities())
-                .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
+                .and(editor_server.or(dav_server).or(livereload.or(live_renderer).or(static_server)))
                 .boxed()
         } else {
+            let editor_server = warp::path("-")
+                .and(warp::path("editor"))
+                .and_then(|| {
+                    future::err(warp::reject::not_found())
+                });
+
             host_ephemeral(&hostname, opts.authorities())
-                .and(dav_server.or(livereload.or(live_renderer).or(static_server)))
+                .and(editor_server.or(dav_server).or(livereload.or(live_renderer).or(static_server)))
                 .boxed()
         }
     } else {
