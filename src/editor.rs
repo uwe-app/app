@@ -2,6 +2,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::{Error, Result, error::server_error_cb};
+use workspace::{HostSettings, HostNameMode};
 use config::ProfileSettings;
 
 pub async fn run<P: AsRef<Path>>(
@@ -22,8 +23,12 @@ pub async fn run<P: AsRef<Path>>(
     let headless = env::var("UWE_HEADLESS").ok().is_some();
     let editor_directory = env::var("UWE_EDITOR").ok().map(PathBuf::from);
 
+    let settings = HostSettings {
+        host_name: HostNameMode::Always,
+    };
+
     // Compile the project
-    let result = workspace::compile(project, &args).await?;
+    let result = workspace::compile(project, &args, settings).await?;
 
     // Start the webserver
     server::watch(

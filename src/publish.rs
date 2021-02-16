@@ -20,7 +20,7 @@ pub async fn publish(options: PublishOptions) -> Result<()> {
     let mut args = ProfileSettings::from(&ProfileName::Release);
     args.exec = Some(options.exec);
 
-    let result = compile(&options.project, &args).await?;
+    let result = compile(&options.project, &args, Default::default()).await?;
 
     // FIXME: support multiple projects (workspaces)
     for project in result.projects.into_iter() {

@@ -824,21 +824,45 @@ pub struct HostInfo {
     pub endpoint: String,
 }
 
+pub enum HostNameMode {
+    /// Automatically determine the host subdomain based
+    /// on whether multiple projects are active.
+    Auto,
+    /// Enforce use of a subdomain.
+    Always,
+}
+
+impl Default for HostNameMode {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
+
+#[derive(Default)]
+pub struct HostSettings {
+    pub host_name: HostNameMode,
+}
+
 #[derive(Default)]
 pub struct CompileResult {
     pub projects: Vec<Project>,
+    pub host_settings: HostSettings,
 }
 
 impl Into<HostResult> for CompileResult {
     fn into(self) -> HostResult {
-        // Multiple projects will use *.localhost names
+        // Multiple projects will use *.loopback.space names
         // otherwise we can just run using the standard `localhost`.
-        let multiple = self.projects.len() > 1;
+        let use_subdomain = match self.host_settings.host_name {
+            HostNameMode::Auto => self.projects.len() > 1,
+            HostNameMode::Always => true,
+        };
+
         let hosts: Vec<HostInfo> = self
             .projects
             .into_iter()
             .map(|project| {
-                let name = project.config.get_local_host_name(multiple);
+                let name = project.config.get_local_host_name(use_subdomain);
                 let source = project.options.source.clone();
                 let target = project.options.build_target().clone();
                 let endpoint = utils::generate_id(16);
@@ -991,6 +1015,7 @@ pub async fn build<F, B, P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
     builder: B,
+    host_settings: HostSettings,
 ) -> Result<CompileResult>
 where
     F: Future<Output = BuildResult>,
@@ -998,7 +1023,7 @@ where
 {
     let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
     let projects = workspace_builder.build(builder).await?;
-    Ok(CompileResult { projects })
+    Ok(CompileResult { projects, host_settings })
 }
 
 /// Compile a project.
@@ -1008,10 +1033,11 @@ where
 pub async fn compile<P: AsRef<Path>>(
     project: P,
     args: &ProfileSettings,
+    host_settings: HostSettings,
 ) -> Result<CompileResult> {
     let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
     let projects = workspace_builder.build(default_compiler).await?;
-    Ok(CompileResult { projects })
+    Ok(CompileResult { projects, host_settings })
 }
 
 pub async fn default_compiler(builder: ProjectBuilder) -> BuildResult {

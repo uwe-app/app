@@ -48,7 +48,7 @@ pub async fn serve(
             settings.member = args.member;
             settings.include_drafts = Some(args.include_drafts);
 
-            let result = compile(&target, &settings).await?;
+            let result = compile(&target, &settings, Default::default()).await?;
 
             let host_result: HostResult = result.into();
             let mut host_configs: Vec<(HostInfo, HostConfig)> =

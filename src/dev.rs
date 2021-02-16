@@ -20,7 +20,7 @@ pub async fn run<P: AsRef<Path>>(
     let headless = std::env::var("UWE_HEADLESS").ok().is_some();
 
     // Compile the project
-    let result = workspace::compile(project, &args).await?;
+    let result = workspace::compile(project, &args, Default::default()).await?;
 
     // Start the webserver
     server::watch(

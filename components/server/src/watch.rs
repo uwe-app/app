@@ -44,8 +44,9 @@ pub async fn watch(
     let mut host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
 
     for (info, host) in host_configs.iter_mut() {
+        //println!("Starting with host name {:?}", &host.name);
         host.watch = true;
-        host.editor_directory = editor_directory.clone();
+        //host.editor_directory = editor_directory.clone();
         if webdav_enabled {
             host.webdav = Some(WebDavConfig {
                 directory: info.source.to_path_buf(),
