@@ -1,19 +1,16 @@
 use std::convert::TryInto;
 use std::path::PathBuf;
 
-use crate::{Error, Result};
-use config::server::{LaunchConfig, ServerConfig};
-
-use config::{server::HostConfig, ProfileName, ProfileSettings};
+use config::{server::{HostConfig, LaunchConfig, ServerConfig}, ProfileName, ProfileSettings};
 use workspace::{compile, HostInfo, HostResult};
 
-use crate::opts::Compile;
+use crate::{Error, Result, opts::Compile};
 
 /// Serve using an `index.html` file.
 async fn serve_index(opts: ServerConfig, launch: LaunchConfig) -> Result<()> {
     // Convert to &'static reference
-    let opts = server::configure(opts);
-    Ok(server::launch(opts, launch).await?)
+    let opts = server_actix::configure(opts);
+    Ok(server_actix::launch(opts, launch).await?)
 }
 
 /// Serve either a project or a target directory.

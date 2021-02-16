@@ -47,15 +47,12 @@ pub async fn watch(
         //println!("Starting with host name {:?}", &host.name);
         host.watch = true;
         //host.editor_directory = editor_directory.clone();
-        //
-        /*
         if webdav_enabled {
             host.webdav = Some(WebDavConfig {
                 directory: info.source.to_path_buf(),
                 listing: false,
             });
         }
-        */
     }
 
     let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =

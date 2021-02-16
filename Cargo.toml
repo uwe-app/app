@@ -24,7 +24,7 @@ members = [
   "components/release",
   "components/scm",
   "components/server",
-  "components/server-actix",
+  "components/server_actix",
   "components/site",
   "components/syntax",
   "components/toc",
@@ -47,6 +47,7 @@ publisher = {version = "0.1", path = "components/publisher" }
 release = {version = "0.1", path = "components/release" }
 scm = {version = "0.1", path = "components/scm" }
 server = {version = "0.1", path = "components/server" }
+server_actix = {version = "0.1", path = "components/server_actix" }
 site = {version = "0.1", path = "components/site" }
 utils = {version = "0.1", path = "components/utils" }
 web_host = {version = "0.1", path = "components/web_host" }

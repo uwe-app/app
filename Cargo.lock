@@ -11,28 +11,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix"
-version = "0.11.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8eb78f9871feb3519e06b947c2becbf2cc7f67ce786e510e6bd3f9a27da3dbf1"
-dependencies = [
- "actix-rt",
- "bitflags",
- "bytes",
- "crossbeam-channel 0.5.0",
- "futures-core",
- "futures-sink",
- "futures-task",
- "log",
- "once_cell",
- "parking_lot",
- "pin-project-lite",
- "smallvec 1.6.1",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
 name = "actix-codec"
 version = "0.4.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -246,23 +224,6 @@ dependencies = [
  "socket2",
  "time 0.2.25",
  "url",
-]
-
-[[package]]
-name = "actix-web-actors"
-version = "4.0.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d274730a8b970612d3f0467b7ba5c43261fe9cce8b5c5da79afc6513462d048f"
-dependencies = [
- "actix",
- "actix-codec",
- "actix-http",
- "actix-web",
- "bytes",
- "bytestring",
- "futures-core",
- "pin-project 1.0.4",
- "tokio",
 ]
 
 [[package]]
@@ -3735,12 +3696,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "server-actix"
+name = "server_actix"
 version = "0.1.0"
 dependencies = [
  "actix-files",
  "actix-web",
- "actix-web-actors",
  "bracket",
  "config",
  "futures",
@@ -4706,6 +4666,7 @@ dependencies = [
  "serde",
  "serde_json",
  "server",
+ "server_actix",
  "site",
  "structopt",
  "thiserror",

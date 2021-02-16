@@ -143,6 +143,9 @@ pub enum Error {
     Site(#[from] site::Error),
 
     #[error(transparent)]
+    ServerActix(#[from] server_actix::Error),
+
+    #[error(transparent)]
     Server(#[from] server::Error),
 
     #[error(transparent)]

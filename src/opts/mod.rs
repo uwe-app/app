@@ -98,9 +98,15 @@ pub fn server_config(
         port = p;
     }
 
+    let name = if host == config::ADDR {
+        config::LOCALHOST.to_string()
+    } else {
+        host.to_owned()
+    };
+
     let host = HostConfig::new(
         target.clone(),
-        host.to_owned(),
+        name,
         None,
         None,
         false,
