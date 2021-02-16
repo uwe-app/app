@@ -338,6 +338,7 @@ fn get_host_filter(
     opts: &'static ServerConfig,
     host: &'static HostConfig,
 ) -> BoxedFilter<(impl Reply,)> {
+//) -> impl Filter<Extract = Filter + Clone, Error = Rejection> + Clone {
     let (hostname, static_server) = get_static_server(address, opts, host);
 
     let none = warp::path::end()
@@ -686,7 +687,9 @@ pub async fn serve(
     if should_watch {
         let mut filters: Vec<BoxedFilter<_>> = configs
             .iter()
-            .map(|c| get_host_filter_watch(&addr, opts, c, &mut channels))
+            .map(|c| {
+                get_host_filter_watch(&addr, opts, c, &mut channels)
+            })
             .collect();
 
         virtual_hosts!(opts, filters, &addr, bind, channels.shutdown);

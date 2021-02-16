@@ -24,6 +24,7 @@ members = [
   "components/release",
   "components/scm",
   "components/server",
+  "components/server-actix",
   "components/site",
   "components/syntax",
   "components/toc",
