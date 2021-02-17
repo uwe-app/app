@@ -66,7 +66,9 @@ pub async fn watch(
 
     // Map the editor hosts
     if let Some(ref editor_directory) = editor_directory {
-        let mut editor_hosts = host_info.iter().zip(hosts.iter())
+        let mut editor_hosts = host_info
+            .iter()
+            .zip(hosts.iter())
             .map(|(info, host)| {
                 let editor_host_name = format!("editor-{}", &host.name);
 
@@ -77,7 +79,6 @@ pub async fn watch(
                 editor_host.redirects = None;
                 editor_host.endpoint = None;
                 editor_host.disable_cache = false;
-
 
                 if webdav_enabled {
                     editor_host.webdav = Some(WebDavConfig {
@@ -227,7 +228,7 @@ fn spawn_bind_open(
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
-            // Get the server connection info so we 
+            // Get the server connection info so we
             // can open a browser with the correct URL
             match bind_rx.await {
                 Ok(info) => {
@@ -250,11 +251,15 @@ fn spawn_bind_open(
 
                     // Ensure the cache is bypassed so that switching between
                     // projects does not show an older project
-                    url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
+                    url.push_str(&format!(
+                        "{}?r={}",
+                        path,
+                        utils::generate_id(4)
+                    ));
 
                     info!("Serve {}", &url);
                     open::that(&url).map(|_| ()).unwrap_or(());
-                } 
+                }
                 _ => {}
             }
         });

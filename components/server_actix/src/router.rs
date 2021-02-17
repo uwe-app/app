@@ -14,10 +14,13 @@ use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 
 use actix_files::Files;
 use actix_web::{
-    dev::{Service},
+    dev::Service,
     guard,
-    http::{self, header::{self, HeaderValue}},
-    middleware, web, App, HttpServer, HttpResponse,
+    http::{
+        self,
+        header::{self, HeaderValue},
+    },
+    middleware, web, App, HttpResponse, HttpServer,
 };
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
@@ -28,9 +31,8 @@ use log::info;
 
 use crate::{
     channels::{ResponseValue, ServerChannels},
-    drop_privileges::{is_root, drop_privileges},
-    Result,
-    Error,
+    drop_privileges::{drop_privileges, is_root},
+    Error, Result,
 };
 
 use config::server::{ConnectionInfo, PortType, ServerConfig};
@@ -44,7 +46,10 @@ pub fn parser() -> &'static Registry<'static> {
     })
 }
 
-pub async fn dav_handler(req: DavRequest, davhandler: web::Data<DavHandler>) -> DavResponse {
+pub async fn dav_handler(
+    req: DavRequest,
+    davhandler: web::Data<DavHandler>,
+) -> DavResponse {
     if let Some(prefix) = req.prefix() {
         let config = DavConfig::new().strip_prefix(prefix);
         davhandler.handle_with(config, req.request).await.into()
@@ -59,15 +64,14 @@ async fn start(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> Result<()> {
-
     let ssl_key = std::env::var("UWE_SSL_KEY");
     let ssl_cert = std::env::var("UWE_SSL_CERT");
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
     let hosts = opts.hosts();
 
-    // Print each host name here otherwise it would be 
-    // duplicated for each worker thread if we do it within 
+    // Print each host name here otherwise it would be
+    // duplicated for each worker thread if we do it within
     // the HttpServer::new setup closure
     for host in hosts.iter() {
         info!("Host {}", &host.name);
@@ -79,23 +83,29 @@ async fn start(
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
         for host in hosts.iter() {
-
             let disable_cache = host.disable_cache;
 
             if let Some(ref webdav) = host.webdav {
                 let dav_server = DavHandler::builder()
-                        .filesystem(LocalFs::new(webdav.directory.clone(), false, false, false))
-                        .locksystem(FakeLs::new())
-                        .strip_prefix("/webdav")
-                        .build_handler();
+                    .filesystem(LocalFs::new(
+                        webdav.directory.clone(),
+                        false,
+                        false,
+                        false,
+                    ))
+                    .locksystem(FakeLs::new())
+                    .strip_prefix("/webdav")
+                    .build_handler();
 
                 app = app.service(
                     web::scope("/webdav")
-                        .wrap(middleware::NormalizePath::new(middleware::TrailingSlash::Always))
+                        .wrap(middleware::NormalizePath::new(
+                            middleware::TrailingSlash::Always,
+                        ))
                         .guard(guard::Host(&host.name))
                         .data(dav_server)
-                        .service(web::resource("/{tail:.*}").to(dav_handler))
-                ); 
+                        .service(web::resource("/{tail:.*}").to(dav_handler)),
+                );
             }
 
             app = app.service(
@@ -134,7 +144,6 @@ async fn start(
                             .redirect_to_slash_directory(),
                     ),
             );
-
         }
         app
     });
@@ -157,43 +166,34 @@ async fn start(
         let tls_port = opts.tls_port();
 
         let redirect_server = HttpServer::new(move || {
-                let mut app: App<_, _> = App::new();
-                app = app.service(
-                    web::scope("")
-                        .wrap_fn(move |req, _srv| {
-                            // This includes any port in the host name!
-                            let host = req.connection_info().host().to_owned();
+            let mut app: App<_, _> = App::new();
+            app = app.service(web::scope("").wrap_fn(move |req, _srv| {
+                // This includes any port in the host name!
+                let host = req.connection_info().host().to_owned();
 
-                            // Must remove the port from the host name
-                            let host_url: Url = format!("http://{}", host).parse().unwrap();
-                            let host = host_url.host_str().unwrap();
+                // Must remove the port from the host name
+                let host_url: Url = format!("http://{}", host).parse().unwrap();
+                let host = host_url.host_str().unwrap();
 
-                            let url = if tls_port == 443 {
-                                format!("{}//{}", config::SCHEME_HTTPS, host)
-                            } else {
-                                format!(
-                                    "{}//{}:{}",
-                                    config::SCHEME_HTTPS,
-                                    host,
-                                    tls_port
-                                )
-                            };
+                let url = if tls_port == 443 {
+                    format!("{}//{}", config::SCHEME_HTTPS, host)
+                } else {
+                    format!("{}//{}:{}", config::SCHEME_HTTPS, host, tls_port)
+                };
 
-                            let url = format!("{}{}", url, req.uri().to_owned());
-                            ok(req.into_response(
-                                HttpResponse::MovedPermanently()
-                                    .append_header((http::header::LOCATION, url))
-                                    .finish()
-                                    .into_body(),
-                            ))
-                        })
-                );
-                app
-            })
-            .bind(http_addr)?;
+                let url = format!("{}{}", url, req.uri().to_owned());
+                ok(req.into_response(
+                    HttpResponse::MovedPermanently()
+                        .append_header((http::header::LOCATION, url))
+                        .finish()
+                        .into_body(),
+                ))
+            }));
+            app
+        })
+        .bind(http_addr)?;
 
         (server.bind_rustls(addr, config)?, Some(redirect_server))
-
     } else {
         (server.bind(addr)?, None)
     };
@@ -216,6 +216,8 @@ async fn start(
     }
 
     let shutdown_rx = channels.shutdown;
+    // TODO: get this from the shutdown signal!
+    let graceful = true;
 
     // Support redirect server when running over SSL
     let servers = if let Some(redirect_server) = redirect_server.take() {
@@ -225,8 +227,8 @@ async fn start(
         let shutdown_redirect_server = redirect_server.clone();
         let shutdown = async move {
             let _ = shutdown_rx.await;
-            shutdown_redirect_server.stop(true).await;
-            shutdown_server.stop(true).await;
+            shutdown_redirect_server.stop(false).await;
+            shutdown_server.stop(graceful).await;
         };
 
         futures::join!(redirect_server, server, shutdown)
@@ -235,7 +237,7 @@ async fn start(
         let shutdown_server = server.clone();
         let shutdown = async move {
             let _ = shutdown_rx.await;
-            shutdown_server.stop(true).await;
+            shutdown_server.stop(graceful).await;
         };
 
         futures::join!(ok(()), server, shutdown)
@@ -244,8 +246,8 @@ async fn start(
     // Propagate errors up the call stack
     match servers {
         (s1, s2, _) => {
-            let _ = s1?; 
-            let _ = s2?; 
+            let _ = s1?;
+            let _ = s2?;
         }
     }
 
@@ -259,8 +261,7 @@ pub async fn serve(
 ) -> Result<()> {
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
-        start(opts, bind, channels)
-            .expect("Failed to start web server");
+        start(opts, bind, channels).expect("Failed to start web server");
     });
 
     let _ = handle.join();

@@ -16,7 +16,8 @@ use config::{
     test::{IntegrationTestConfig, BASE_URL},
     ProfileSettings,
 };
-use server::ServerChannels;
+
+use server_actix::ServerChannels;
 use workspace::{build, default_compiler, BuildResult, ProjectBuilder};
 
 use crate::{
@@ -199,9 +200,9 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     });
 
     // Convert to &'static reference
-    let server_opts = server::configure(server_opts);
+    let server_opts = server_actix::configure(server_opts);
     // Launch the test server
-    server::start(server_opts, bind_tx, channels).await?;
+    server_actix::start(server_opts, bind_tx, channels).await?;
 
     Ok(project)
 }
