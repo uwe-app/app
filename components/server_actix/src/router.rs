@@ -79,6 +79,9 @@ async fn start(
     // the HttpServer::new setup closure
     for host in hosts.iter() {
         info!("Host {}", &host.name);
+        if let Some(ref webdav) = host.webdav {
+            info!("Webdav {}", webdav.directory.display());
+        }
     }
 
     let server = HttpServer::new(move || {
@@ -91,20 +94,23 @@ async fn start(
                 let dav_server = DavHandler::builder()
                         .filesystem(LocalFs::new(webdav.directory.clone(), false, false, false))
                         .locksystem(FakeLs::new())
+                        .strip_prefix("/webdav")
                         .build_handler();
 
-                println!("Starting web dav server...");
+                //println!("Starting web dav server {} {:#?}", &host.name, &webdav.directory);
 
                 app = app.service(
                     web::scope("/webdav")
+                        .wrap(middleware::NormalizePath::new(middleware::TrailingSlash::Always))
                         .guard(guard::Host(&host.name))
                         .data(dav_server)
                         .service(web::resource("/{tail:.*}").to(dav_handler))
                 ); 
             }
 
+
             app = app.service(
-                web::scope("")
+                web::scope("/")
                     .wrap_fn(move |req, srv| {
                         //println!("Request path: {}", req.path());
                         let fut = srv.call(req);
@@ -131,7 +137,7 @@ async fn start(
                     })
                     .guard(guard::Host(&host.name))
                     .service(
-                        Files::new("/", host.directory.clone())
+                        Files::new("", host.directory.clone())
                             .prefer_utf8(true)
                             .index_file(config::INDEX_HTML)
                             .use_etag(!host.disable_cache)
@@ -139,6 +145,7 @@ async fn start(
                             .redirect_to_slash_directory(),
                     ),
             );
+
         }
         app
     });
