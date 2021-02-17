@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::pin::Pin;
 
 use url::Url;
 
@@ -8,13 +9,14 @@ use once_cell::sync::OnceCell;
 use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
 
 use futures::future::ok;
+use futures::Future;
 
 use webdav_handler::actix::*;
 use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 
 use actix_files::Files;
 use actix_web::{
-    dev::Service,
+    dev::{Service, ServiceResponse},
     guard::{self, Guard},
     http::{
         self,
@@ -93,6 +95,8 @@ async fn start(
         let mut app: App<_, _> = App::new();
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
+            let redirects =
+                host.redirects.clone().unwrap_or(Default::default());
 
             let mut host_names = vec![&host.name];
             if let Some(ref authorities) = opts.authorities() {
@@ -116,6 +120,7 @@ async fn start(
                     ))
                     .locksystem(FakeLs::new())
                     .strip_prefix("/webdav")
+                    // TODO: support directory listing for webdav?
                     .build_handler();
 
                 app = app.service(
@@ -131,6 +136,48 @@ async fn start(
 
             app = app.service(
                 web::scope("/")
+                    // Handle redirect mappings
+                    .wrap_fn(move |req, srv| {
+                        if let Some(uri) = redirects.get(req.path()) {
+                            let location = uri.to_string();
+
+                            let response: Pin<
+                                Box<
+                                    dyn Future<
+                                        Output = std::result::Result<
+                                            ServiceResponse,
+                                            actix_web::Error,
+                                        >,
+                                    >,
+                                >,
+                            > = Box::pin(async move {
+                                let redirect = if opts.temporary_redirect {
+                                    HttpResponse::TemporaryRedirect()
+                                        .append_header((
+                                            http::header::LOCATION,
+                                            location,
+                                        ))
+                                        .finish()
+                                        .into_body()
+                                } else {
+                                    HttpResponse::PermanentRedirect()
+                                        .append_header((
+                                            http::header::LOCATION,
+                                            location,
+                                        ))
+                                        .finish()
+                                        .into_body()
+                                };
+
+                                Ok(req.into_response(redirect))
+                            });
+
+                            return response;
+                        }
+
+                        srv.call(req)
+                    })
+                    // Handle headers
                     .wrap_fn(move |req, srv| {
                         //println!("Request path: {}", req.path());
                         let fut = srv.call(req);
@@ -155,6 +202,7 @@ async fn start(
                             Ok(res)
                         }
                     })
+                    // Check virtual hosts
                     .guard(guard::fn_guard(move |req| {
                         for g in host_guards.iter() {
                             if g.check(req) {
@@ -163,6 +211,7 @@ async fn start(
                         }
                         false
                     }))
+                    // Serve static files
                     .service(
                         Files::new("", host.directory.clone())
                             .prefer_utf8(true)
