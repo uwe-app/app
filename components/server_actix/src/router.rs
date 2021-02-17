@@ -22,7 +22,8 @@ use actix_web::{
         self,
         header::{self, HeaderValue},
     },
-    middleware, web, App, HttpResponse, HttpServer,
+    middleware::{self, DefaultHeaders, Logger, NormalizePath, TrailingSlash},
+    web, App, HttpResponse, HttpServer,
 };
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
@@ -125,8 +126,8 @@ async fn start(
 
                 app = app.service(
                     web::scope("/webdav")
-                        .wrap(middleware::NormalizePath::new(
-                            middleware::TrailingSlash::Always,
+                        .wrap(NormalizePath::new(
+                            TrailingSlash::Always,
                         ))
                         .guard(guard::Host(&host.name))
                         .data(dav_server)
@@ -177,7 +178,7 @@ async fn start(
 
                         srv.call(req)
                     })
-                    // Handle headers
+                    // Handle conditional headers
                     .wrap_fn(move |req, srv| {
                         //println!("Request path: {}", req.path());
                         let fut = srv.call(req);
@@ -202,6 +203,13 @@ async fn start(
                             Ok(res)
                         }
                     })
+                    // Always add these headers
+                    .wrap(
+                        DefaultHeaders::new()
+                            .header(
+                                header::SERVER,
+                                config::generator::user_agent())
+                    )
                     // Check virtual hosts
                     .guard(guard::fn_guard(move |req| {
                         for g in host_guards.iter() {
@@ -221,6 +229,10 @@ async fn start(
                             .redirect_to_slash_directory(),
                     ),
             );
+
+            //if host.log {
+                //app = app
+            //}
         }
         app
     });
