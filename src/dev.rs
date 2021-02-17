@@ -23,7 +23,7 @@ pub async fn run<P: AsRef<Path>>(
     let result = workspace::compile(project, &args, Default::default()).await?;
 
     // Start the webserver
-    server::watch(
+    server_actix::watch(
         port,
         args.tls.clone(),
         args.launch.clone(),

@@ -64,8 +64,16 @@ async fn start(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> Result<()> {
-    let ssl_key = std::env::var("UWE_SSL_KEY");
-    let ssl_cert = std::env::var("UWE_SSL_CERT");
+    let ssl_key = std::env::var("UWE_SSL_KEY").ok();
+    let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
+
+    // Allow empty environment variables as a means of 
+    // disabling SSL certificate
+    let use_ssl = if let (Some(key), Some(cert)) = (ssl_key.as_ref(), ssl_cert.as_ref()) {
+        !key.is_empty() && !cert.is_empty() 
+    } else {
+        false 
+    };
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
     let hosts = opts.hosts();
@@ -148,13 +156,15 @@ async fn start(
         app
     });
     //.workers(4);
+    //
 
-    let (server, mut redirect_server) = if let (Some(ref key), Some(ref cert)) =
-        (ssl_key.ok(), ssl_cert.ok())
-    {
+    let (server, mut redirect_server) = if use_ssl {
+        let key = ssl_key.unwrap();
+        let cert = ssl_cert.unwrap();
+
         let mut config = TlsServerConfig::new(NoClientAuth::new());
-        let cert_file = &mut BufReader::new(File::open(cert)?);
-        let key_file = &mut BufReader::new(File::open(key)?);
+        let cert_file = &mut BufReader::new(File::open(&cert)?);
+        let key_file = &mut BufReader::new(File::open(&key)?);
         let cert_chain = certs(cert_file)
             .map_err(|_| Error::SslCertChain(cert.to_string()))?;
         let mut keys = pkcs8_private_keys(key_file)
@@ -217,7 +227,7 @@ async fn start(
 
     let shutdown_rx = channels.shutdown;
     // TODO: get this from the shutdown signal!
-    let graceful = true;
+    let graceful = false;
 
     // Support redirect server when running over SSL
     let servers = if let Some(redirect_server) = redirect_server.take() {
@@ -225,27 +235,41 @@ async fn start(
         let redirect_server = redirect_server.run();
         let shutdown_server = server.clone();
         let shutdown_redirect_server = redirect_server.clone();
-        let shutdown = async move {
-            let _ = shutdown_rx.await;
-            shutdown_redirect_server.stop(false).await;
-            shutdown_server.stop(graceful).await;
-        };
 
-        futures::join!(redirect_server, server, shutdown)
+        // Must spawn a thread for the shutdown handler otherwise 
+        // it prevents Ctrl-c from quitting as the shutdown future
+        // will block the current thread
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async move {
+                let _ = shutdown_rx.await;
+                shutdown_redirect_server.stop(false).await;
+                shutdown_server.stop(graceful).await;
+            });
+        });
+
+        futures::join!(redirect_server, server)
     } else {
         let server = server.run();
         let shutdown_server = server.clone();
-        let shutdown = async move {
-            let _ = shutdown_rx.await;
-            shutdown_server.stop(graceful).await;
-        };
 
-        futures::join!(ok(()), server, shutdown)
+        // Must spawn a thread for the shutdown handler otherwise 
+        // it prevents Ctrl-c from quitting as the shutdown future
+        // will block the current thread
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async move {
+                let _ = shutdown_rx.await;
+                shutdown_server.stop(graceful).await;
+            });
+        });
+
+        futures::join!(ok(()), server)
     };
 
     // Propagate errors up the call stack
     match servers {
-        (s1, s2, _) => {
+        (s1, s2) => {
             let _ = s1?;
             let _ = s2?;
         }
@@ -257,13 +281,13 @@ async fn start(
 pub async fn serve(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
-    mut channels: ServerChannels,
+    channels: ServerChannels,
 ) -> Result<()> {
+
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
         start(opts, bind, channels).expect("Failed to start web server");
     });
-
     let _ = handle.join();
 
     Ok(())

@@ -23,7 +23,6 @@ members = [
   "components/publisher",
   "components/release",
   "components/scm",
-  "components/server",
   "components/server_actix",
   "components/site",
   "components/syntax",
@@ -46,7 +45,6 @@ preference = {version = "0.1", path = "components/preference" }
 publisher = {version = "0.1", path = "components/publisher" }
 release = {version = "0.1", path = "components/release" }
 scm = {version = "0.1", path = "components/scm" }
-server = {version = "0.1", path = "components/server" }
 server_actix = {version = "0.1", path = "components/server_actix" }
 site = {version = "0.1", path = "components/site" }
 utils = {version = "0.1", path = "components/utils" }
