@@ -213,6 +213,11 @@ pub fn fatal(e: Error) -> Result<(), Error> {
     std::process::exit(1);
 }
 
+pub fn server_actix_error_cb(e: server_actix::Error) {
+    let _ = fatal(Error::from(e));
+}
+
+#[deprecated(note = "Use actix version")]
 pub fn server_error_cb(e: server::Error) {
     let _ = fatal(Error::from(e));
 }

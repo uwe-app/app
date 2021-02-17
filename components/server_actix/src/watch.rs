@@ -66,9 +66,8 @@ pub async fn watch(
 
     // Map the editor hosts
     if let Some(ref editor_directory) = editor_directory {
-        let mut editor_hosts = hosts
-            .iter()
-            .map(|host| {
+        let mut editor_hosts = host_info.iter().zip(hosts.iter())
+            .map(|(info, host)| {
                 let editor_host_name = format!("editor-{}", &host.name);
 
                 let mut editor_host = host.clone();
@@ -78,6 +77,14 @@ pub async fn watch(
                 editor_host.redirects = None;
                 editor_host.endpoint = None;
                 editor_host.disable_cache = false;
+
+
+                if webdav_enabled {
+                    editor_host.webdav = Some(WebDavConfig {
+                        directory: info.source.to_path_buf(),
+                        listing: false,
+                    });
+                }
 
                 println!("Creating editor host {:?}", &editor_host.name);
                 println!("Creating editor host {:?}", &editor_host.directory);

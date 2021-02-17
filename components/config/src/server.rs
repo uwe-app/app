@@ -159,6 +159,13 @@ impl ServerConfig {
         }
     }
 
+    pub fn hosts(&self) -> Vec<&HostConfig> {
+        let mut list = vec![&self.default_host];
+        let mut hosts = self.hosts.iter().collect::<Vec<_>>();
+        list.append(&mut hosts);
+        list
+    }
+
     pub fn authorities(&self) -> &Option<Vec<String>> {
         &self.authorities
     }

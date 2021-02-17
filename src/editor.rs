@@ -1,7 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use crate::{error::server_error_cb, Error, Result};
+use crate::{error::server_actix_error_cb, Error, Result};
 use config::ProfileSettings;
 use workspace::{HostNameMode, HostSettings};
 
@@ -30,7 +30,7 @@ pub async fn run<P: AsRef<Path>>(
     let result = workspace::compile(project, &args, settings).await?;
 
     // Start the webserver
-    server::watch(
+    server_actix::watch(
         port,
         args.tls.clone(),
         args.launch.clone(),
@@ -40,7 +40,7 @@ pub async fn run<P: AsRef<Path>>(
         editor_directory,
         args.host.clone(),
         authorities,
-        server_error_cb,
+        server_actix_error_cb,
     )
     .await?;
 

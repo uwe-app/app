@@ -72,17 +72,19 @@ async fn start(
     let ssl_cert = std::env::var("UWE_SSL_CERT");
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
+    let hosts = opts.hosts();
 
-    let default_host: &'static HostConfig = &opts.default_host;
-
-    let mut hosts = vec![default_host];
-    for host in opts.hosts.iter() {
-        hosts.push(host);
+    // Print each host name here otherwise it would be 
+    // duplicated for each worker thread if we do it within 
+    // the HttpServer::new setup closure
+    for host in hosts.iter() {
+        info!("Host {}", &host.name);
     }
 
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
         for host in hosts.iter() {
+
             let disable_cache = host.disable_cache;
 
             if let Some(ref webdav) = host.webdav {
@@ -90,6 +92,8 @@ async fn start(
                         .filesystem(LocalFs::new(webdav.directory.clone(), false, false, false))
                         .locksystem(FakeLs::new())
                         .build_handler();
+
+                println!("Starting web dav server...");
 
                 app = app.service(
                     web::scope("/webdav")
@@ -138,20 +142,23 @@ async fn start(
         }
         app
     });
+    //.workers(4);
 
     let server = if let (Some(ref key), Some(ref cert)) =
         (ssl_key.ok(), ssl_cert.ok())
     {
         let mut config = TlsServerConfig::new(NoClientAuth::new());
-        let cert_file = &mut BufReader::new(File::open(cert).unwrap());
-        let key_file = &mut BufReader::new(File::open(key).unwrap());
-        let cert_chain = certs(cert_file).unwrap();
-        let mut keys = pkcs8_private_keys(key_file).unwrap();
+        let cert_file = &mut BufReader::new(File::open(cert)?);
+        let key_file = &mut BufReader::new(File::open(key)?);
+        let cert_chain = certs(cert_file)
+            .map_err(|_| Error::SslCertChain(cert.to_string()))?;
+        let mut keys = pkcs8_private_keys(key_file)
+            .map_err(|_| Error::SslPrivateKey(key.to_string()))?;
         config.set_single_cert(cert_chain, keys.remove(0)).unwrap();
 
-        server.bind_rustls(addr, config).unwrap()
+        server.bind_rustls(addr, config)?
     } else {
-        server.bind(addr).unwrap()
+        server.bind(addr)?
     };
 
     let mut addrs = server.addrs();

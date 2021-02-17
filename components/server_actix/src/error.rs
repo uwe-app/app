@@ -24,11 +24,20 @@ pub enum Error {
     #[error("No virtual hosts for live reload")]
     NoLiveHosts,
 
+    #[error("Unable to construct SSL certificate chain from {0}")]
+    SslCertChain(String),
+
+    #[error("Unable to load SSL private key from {0}")]
+    SslPrivateKey(String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
     Notify(#[from] notify::Error),
+
+    #[error(transparent)]
+    Tls(#[from] rustls::TLSError),
 
     #[error(transparent)]
     TrySend(#[from] tokio::sync::mpsc::error::TrySendError<ConnectionInfo>),
