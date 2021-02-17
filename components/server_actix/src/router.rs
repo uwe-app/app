@@ -215,15 +215,35 @@ async fn start(
         drop_privileges()?;
     }
 
+    let shutdown_rx = channels.shutdown;
+
+    // Support redirect server when running over SSL
     let servers = if let Some(redirect_server) = redirect_server.take() {
-        futures::join!(redirect_server.run(), server.run())
+        let server = server.run();
+        let redirect_server = redirect_server.run();
+        let shutdown_server = server.clone();
+        let shutdown_redirect_server = redirect_server.clone();
+        let shutdown = async move {
+            let _ = shutdown_rx.await;
+            shutdown_redirect_server.stop(true).await;
+            shutdown_server.stop(true).await;
+        };
+
+        futures::join!(redirect_server, server, shutdown)
     } else {
-        futures::join!(server.run(), ok(()))
+        let server = server.run();
+        let shutdown_server = server.clone();
+        let shutdown = async move {
+            let _ = shutdown_rx.await;
+            shutdown_server.stop(true).await;
+        };
+
+        futures::join!(ok(()), server, shutdown)
     };
 
     // Propagate errors up the call stack
     match servers {
-        (s1, s2) => {
+        (s1, s2, _) => {
             let _ = s1?; 
             let _ = s2?; 
         }
@@ -239,7 +259,8 @@ pub async fn serve(
 ) -> Result<()> {
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
-        start(opts, bind, channels).expect("Failed to start web server");
+        start(opts, bind, channels)
+            .expect("Failed to start web server");
     });
 
     let _ = handle.join();
