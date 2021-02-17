@@ -22,7 +22,7 @@ use actix_web::{
         self,
         header::{self, HeaderValue},
     },
-    middleware::{DefaultHeaders, Logger, NormalizePath, TrailingSlash},
+    middleware::{Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash},
     web, App, HttpResponse, HttpServer,
 };
 
@@ -94,6 +94,8 @@ async fn start(
 
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
+            //.wrap(Logger::default());
+
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
             let deny_iframe = host.deny_iframe;
@@ -256,9 +258,6 @@ async fn start(
                     ),
             );
 
-            //if host.log {
-                //app = app
-            //}
         }
         app
     });
