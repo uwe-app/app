@@ -28,7 +28,7 @@ use log::info;
 
 use crate::{
     channels::{ResponseValue, ServerChannels},
-    //drop_privileges::*,
+    drop_privileges::{is_root, drop_privileges},
     Result,
     Error,
 };
@@ -209,6 +209,10 @@ async fn start(
             .expect("Failed to send web server socket address");
     } else {
         panic!("Could not get web server address!");
+    }
+
+    if is_root() {
+        drop_privileges()?;
     }
 
     let servers = if let Some(redirect_server) = redirect_server.take() {

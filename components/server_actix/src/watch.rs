@@ -227,31 +227,36 @@ fn spawn_bind_open(
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
-            // Get the server connection info
-            let info = bind_rx.await.unwrap();
-            let mut url = info.to_url();
+            // Get the server connection info so we 
+            // can open a browser with the correct URL
+            match bind_rx.await {
+                Ok(info) => {
+                    let mut url = info.to_url();
 
-            let path = if let Some(ref path) = launch {
-                // If we get an absolute URL just use the path
-                let url_path = if let Ok(url) = path.parse::<Url>() {
-                    url.path().to_string()
-                } else {
-                    path.to_string()
-                };
+                    let path = if let Some(ref path) = launch {
+                        // If we get an absolute URL just use the path
+                        let url_path = if let Ok(url) = path.parse::<Url>() {
+                            url.path().to_string()
+                        } else {
+                            path.to_string()
+                        };
 
-                // Allow for path strings to omit the leading slash
-                let url_path = url_path.trim_start_matches("/");
-                format!("/{}", url_path)
-            } else {
-                "/".to_string()
-            };
+                        // Allow for path strings to omit the leading slash
+                        let url_path = url_path.trim_start_matches("/");
+                        format!("/{}", url_path)
+                    } else {
+                        "/".to_string()
+                    };
 
-            // Ensure the cache is bypassed so that switching between
-            // projects does not show an older project
-            url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
+                    // Ensure the cache is bypassed so that switching between
+                    // projects does not show an older project
+                    url.push_str(&format!("{}?r={}", path, utils::generate_id(4)));
 
-            info!("Serve {}", &url);
-            open::that(&url).map(|_| ()).unwrap_or(());
+                    info!("Serve {}", &url);
+                    open::that(&url).map(|_| ()).unwrap_or(());
+                } 
+                _ => {}
+            }
         });
     });
 }
