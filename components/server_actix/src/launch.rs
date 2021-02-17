@@ -36,7 +36,6 @@ pub async fn launch(
             }
             _ => {}
         }
-
     });
 
     //println!("{:#?}", options);

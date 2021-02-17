@@ -15,7 +15,7 @@ use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 use actix_files::Files;
 use actix_web::{
     dev::Service,
-    guard,
+    guard::{self, Guard},
     http::{
         self,
         header::{self, HeaderValue},
@@ -67,12 +67,13 @@ async fn start(
     let ssl_key = std::env::var("UWE_SSL_KEY").ok();
     let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
 
-    // Allow empty environment variables as a means of 
-    // disabling SSL certificate
-    let use_ssl = if let (Some(key), Some(cert)) = (ssl_key.as_ref(), ssl_cert.as_ref()) {
-        !key.is_empty() && !cert.is_empty() 
+    // Allow empty environment variables as a means of disabling SSL certificates
+    let use_ssl = if let (Some(key), Some(cert)) =
+        (ssl_key.as_ref(), ssl_cert.as_ref())
+    {
+        !key.is_empty() && !cert.is_empty()
     } else {
-        false 
+        false
     };
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
@@ -92,6 +93,18 @@ async fn start(
         let mut app: App<_, _> = App::new();
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
+
+            let mut host_names = vec![&host.name];
+            if let Some(ref authorities) = opts.authorities() {
+                for name in authorities.iter() {
+                    host_names.push(name);
+                }
+            }
+
+            let host_guards = host_names
+                .iter()
+                .map(|name| guard::Host(name))
+                .collect::<Vec<_>>();
 
             if let Some(ref webdav) = host.webdav {
                 let dav_server = DavHandler::builder()
@@ -142,7 +155,14 @@ async fn start(
                             Ok(res)
                         }
                     })
-                    .guard(guard::Host(&host.name))
+                    .guard(guard::fn_guard(move |req| {
+                        for g in host_guards.iter() {
+                            if g.check(req) {
+                                return true;
+                            }
+                        }
+                        false
+                    }))
                     .service(
                         Files::new("", host.directory.clone())
                             .prefer_utf8(true)
@@ -234,7 +254,7 @@ async fn start(
         let shutdown_server = server.clone();
         let shutdown_redirect_server = redirect_server.clone();
 
-        // Must spawn a thread for the shutdown handler otherwise 
+        // Must spawn a thread for the shutdown handler otherwise
         // it prevents Ctrl-c from quitting as the shutdown future
         // will block the current thread
         std::thread::spawn(move || {
@@ -255,7 +275,7 @@ async fn start(
         let server = server.run();
         let shutdown_server = server.clone();
 
-        // Must spawn a thread for the shutdown handler otherwise 
+        // Must spawn a thread for the shutdown handler otherwise
         // it prevents Ctrl-c from quitting as the shutdown future
         // will block the current thread
         std::thread::spawn(move || {
@@ -289,7 +309,6 @@ pub async fn serve(
     bind: oneshot::Sender<ConnectionInfo>,
     channels: ServerChannels,
 ) -> Result<()> {
-
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
         start(opts, bind, channels).expect("Failed to start web server");
