@@ -22,7 +22,7 @@ use actix_web::{
         self,
         header::{self, HeaderValue},
     },
-    middleware::{self, DefaultHeaders, Logger, NormalizePath, TrailingSlash},
+    middleware::{DefaultHeaders, Logger, NormalizePath, TrailingSlash},
     web, App, HttpResponse, HttpServer,
 };
 
@@ -96,6 +96,7 @@ async fn start(
         let mut app: App<_, _> = App::new();
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
+            let deny_iframe = host.deny_iframe;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
 
@@ -200,6 +201,14 @@ async fn start(
                                     HeaderValue::from_static("0"),
                                 );
                             }
+
+                            if deny_iframe {
+                                res.headers_mut().insert(
+                                    header::X_FRAME_OPTIONS,
+                                    HeaderValue::from_static("DENY"),
+                                );
+                            }
+
                             Ok(res)
                         }
                     })
@@ -209,6 +218,23 @@ async fn start(
                             .header(
                                 header::SERVER,
                                 config::generator::user_agent())
+                            .header(
+                                header::REFERRER_POLICY,
+                                "origin")
+                            .header(
+                                header::X_CONTENT_TYPE_OPTIONS,
+                                "nosniff")
+                            .header(
+                                header::X_XSS_PROTECTION,
+                                "1; mode=block")
+                            .header(
+                                header::STRICT_TRANSPORT_SECURITY,
+                                "max-age=31536000; includeSubDomains; preload")
+
+                            // TODO: allow configuring this header
+                            .header(
+                                "permissions-policy",
+                                "geolocation=()")
                     )
                     // Check virtual hosts
                     .guard(guard::fn_guard(move |req| {

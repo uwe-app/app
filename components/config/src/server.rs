@@ -237,6 +237,9 @@ pub struct HostConfig {
     /// Send headers that instruct browsers to disable caching.
     #[serde(skip)]
     pub disable_cache: bool,
+    #[serde(skip)]
+    pub deny_iframe: bool,
+
     /// Log server requests.
     #[serde(skip)]
     pub log: bool,
@@ -256,6 +259,7 @@ impl Default for HostConfig {
             redirects: None,
             endpoint: None,
             disable_cache: false,
+            deny_iframe: true,
             log: false,
             watch: false,
         }
@@ -277,6 +281,7 @@ impl HostConfig {
             redirects,
             endpoint,
             disable_cache: true,
+            deny_iframe: true,
             log,
             watch,
             webdav: None,
