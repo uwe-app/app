@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use std::collections::HashSet;
 use std::convert::TryInto;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime};
 
@@ -41,7 +41,8 @@ pub async fn watch(
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
     let host_result: HostResult = result.into();
-    let mut host_configs: Vec<(HostInfo, HostConfig)> = host_result.try_into()?;
+    let mut host_configs: Vec<(HostInfo, HostConfig)> =
+        host_result.try_into()?;
 
     for (info, host) in host_configs.iter_mut() {
         //println!("Starting with host name {:?}", &host.name);
@@ -62,8 +63,7 @@ pub async fn watch(
 
     // Map the editor hosts
     if let Some(ref editor_directory) = editor_directory {
-        let mut editor_hosts =
-            hosts
+        let mut editor_hosts = hosts
             .iter()
             .map(|host| {
                 let editor_host_name = format!("editor-{}", &host.name);
@@ -94,11 +94,10 @@ pub async fn watch(
 
     create_resources(port, &tls, &host_info)?;
 
-    let channel_names =
-        hosts
-            .iter()
-            .map(|h| h.name.clone())
-            .collect::<Vec<String>>();
+    let channel_names = hosts
+        .iter()
+        .map(|h| h.name.clone())
+        .collect::<Vec<String>>();
 
     let (server_channels, watch_channels) = create_channels(channel_names)?;
 
@@ -122,7 +121,12 @@ pub async fn watch(
     let (watcher_tx, mut watcher_rx) = mpsc::channel::<bool>(number_watchers);
 
     // Spawn the file system watchers
-    spawn_monitor(host_info, Arc::new(RwLock::new(watch_channels)), watcher_tx, error_cb);
+    spawn_monitor(
+        host_info,
+        Arc::new(RwLock::new(watch_channels)),
+        watcher_tx,
+        error_cb,
+    );
 
     // Must wait for all the watchers to set up channels before starting the web server
     while let Some(_) = watcher_rx.recv().await {
@@ -191,12 +195,8 @@ fn create_channels(
         // Create a channel for replies when rendering
         let (response_tx, response_rx) =
             mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
-        server
-            .render_responses
-            .insert(name.clone(), response_rx);
-        watch
-            .render_responses
-            .insert(name.clone(), response_tx);
+        server.render_responses.insert(name.clone(), response_rx);
+        watch.render_responses.insert(name.clone(), response_tx);
 
         Ok::<(), Error>(())
     })?;

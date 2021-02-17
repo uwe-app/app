@@ -21,7 +21,6 @@ pub(crate) fn host_ephemeral(
     warp::host::optional()
         .and_then(move |option: Option<Authority>| match option {
             Some(authority) => {
-
                 if let Some(ref authorities) = authorities {
                     if authorities.contains(&authority.to_string()) {
                         return future::ok(());

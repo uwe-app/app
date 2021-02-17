@@ -198,10 +198,7 @@ impl ServerConfig {
         format!("{}//{}", scheme, self.get_address(port_type, host))
     }
 
-    pub fn get_sock_addr(
-        &self,
-        port_type: PortType,
-    ) -> Result<SocketAddr> {
+    pub fn get_sock_addr(&self, port_type: PortType) -> Result<SocketAddr> {
         let address = self.get_address(port_type, None);
         Ok(address
             .to_socket_addrs()?

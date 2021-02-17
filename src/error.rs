@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::panic;
+use std::path::PathBuf;
 
 use log::error;
 

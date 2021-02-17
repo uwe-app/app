@@ -8,12 +8,7 @@ use semver::Version;
 use structopt::StructOpt;
 use url::Url;
 
-use uwe::{
-    self,
-    opts,
-    fatal,
-    Error, Result,
-};
+use uwe::{self, fatal, opts, Error, Result};
 
 use config::{
     href::UrlPath,

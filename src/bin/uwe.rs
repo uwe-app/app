@@ -12,12 +12,11 @@ use config::{server::LaunchConfig, ProfileSettings};
 use publisher::PublishProvider;
 
 use uwe::{
-    self,
+    self, fatal,
     opts::{
         self,
         uwe::{Command, Uwe},
     },
-    fatal,
     Result,
 };
 
@@ -164,7 +163,9 @@ async fn run(cmd: Command) -> Result<()> {
                 ..Default::default()
             };
 
-            if let Err(e) = uwe::dev::run(&project, build_args, args.server.authority).await {
+            if let Err(e) =
+                uwe::dev::run(&project, build_args, args.server.authority).await
+            {
                 uwe::print_error(e);
             }
         }
@@ -187,7 +188,10 @@ async fn run(cmd: Command) -> Result<()> {
                 ..Default::default()
             };
 
-            if let Err(e) = uwe::editor::run(&project, build_args, args.server.authority).await {
+            if let Err(e) =
+                uwe::editor::run(&project, build_args, args.server.authority)
+                    .await
+            {
                 uwe::print_error(e);
             }
         }

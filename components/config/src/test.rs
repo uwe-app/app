@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 
 static NPX: &str = "npx";
 static CYPRESS: &str = "cypress";
@@ -64,7 +64,7 @@ impl Default for IntegrationTestConfig {
             command: NPX.to_string(),
             args: vec![CYPRESS.to_string(), RUN.to_string()],
             env: HashMap::new(),
-            opts: PathBuf::from(OPTS)
+            opts: PathBuf::from(OPTS),
         }
     }
 }

@@ -19,8 +19,16 @@ use serde::Serialize;
 
 use futures::FutureExt;
 
-use actix_web::{dev::Service, http::header::{self, HeaderValue}, web, guard, middleware, App, HttpServer, Responder};
+use webdav_handler::actix::*;
+use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
+
 use actix_files::Files;
+use actix_web::{
+    dev::Service,
+    guard,
+    http::header::{self, HeaderValue},
+    middleware, web, App, HttpServer, Responder,
+};
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 use rustls::{NoClientAuth, ServerConfig as TlsServerConfig};
@@ -45,6 +53,14 @@ pub fn parser() -> &'static Registry<'static> {
     })
 }
 
+pub async fn dav_handler(req: DavRequest, davhandler: web::Data<DavHandler>) -> DavResponse {
+    if let Some(prefix) = req.prefix() {
+        let config = DavConfig::new().strip_prefix(prefix);
+        davhandler.handle_with(config, req.request).await.into()
+    } else {
+        davhandler.handle(req.request).await.into()
+    }
+}
 
 #[actix_web::main]
 async fn start(
@@ -52,7 +68,6 @@ async fn start(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> crate::Result<()> {
-
     let ssl_key = std::env::var("UWE_SSL_KEY");
     let ssl_cert = std::env::var("UWE_SSL_CERT");
 
@@ -70,47 +85,63 @@ async fn start(
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
 
-            app = app
-                .service(
-                    web::scope("")
-                        .wrap_fn(move |req, srv| {
-                            //println!("Request path: {}", req.path());
-                            let fut = srv.call(req);
-                            async move {
-                                let mut res = fut.await?;
-                                if disable_cache {
-                                    res.headers_mut().insert(
-                                       header::CACHE_CONTROL,
-                                       HeaderValue::from_static("no-cache, no-store, must-revalidate"),
-                                    );
-                                    res.headers_mut().insert(
-                                       header::PRAGMA,
-                                       HeaderValue::from_static("no-cache"),
-                                    );
-                                    res.headers_mut().insert(
-                                       header::EXPIRES,
-                                       HeaderValue::from_static("0"),
-                                    );
-                                }
-                                Ok(res)
-                            }
-                        })
+            if let Some(ref webdav) = host.webdav {
+                let dav_server = DavHandler::builder()
+                        .filesystem(LocalFs::new(webdav.directory.clone(), false, false, false))
+                        .locksystem(FakeLs::new())
+                        .build_handler();
+
+                app = app.service(
+                    web::scope("/webdav")
                         .guard(guard::Host(&host.name))
-                        .service(
-                            Files::new("/", host.directory.clone())
-                                .prefer_utf8(true)
-                                .index_file(config::INDEX_HTML)
-                                .use_etag(!host.disable_cache)
-                                .use_last_modified(!host.disable_cache)
-                                .redirect_to_slash_directory()
-                        )
-                );
+                        .data(dav_server)
+                        .service(web::resource("/{tail:.*}").to(dav_handler))
+                ); 
+            }
+
+            app = app.service(
+                web::scope("")
+                    .wrap_fn(move |req, srv| {
+                        //println!("Request path: {}", req.path());
+                        let fut = srv.call(req);
+                        async move {
+                            let mut res = fut.await?;
+                            if disable_cache {
+                                res.headers_mut().insert(
+                                    header::CACHE_CONTROL,
+                                    HeaderValue::from_static(
+                                        "no-cache, no-store, must-revalidate",
+                                    ),
+                                );
+                                res.headers_mut().insert(
+                                    header::PRAGMA,
+                                    HeaderValue::from_static("no-cache"),
+                                );
+                                res.headers_mut().insert(
+                                    header::EXPIRES,
+                                    HeaderValue::from_static("0"),
+                                );
+                            }
+                            Ok(res)
+                        }
+                    })
+                    .guard(guard::Host(&host.name))
+                    .service(
+                        Files::new("/", host.directory.clone())
+                            .prefer_utf8(true)
+                            .index_file(config::INDEX_HTML)
+                            .use_etag(!host.disable_cache)
+                            .use_last_modified(!host.disable_cache)
+                            .redirect_to_slash_directory(),
+                    ),
+            );
         }
         app
     });
 
-    let server = if let (Some(ref key), Some(ref cert)) = (ssl_key.ok(), ssl_cert.ok()) {
-
+    let server = if let (Some(ref key), Some(ref cert)) =
+        (ssl_key.ok(), ssl_cert.ok())
+    {
         let mut config = TlsServerConfig::new(NoClientAuth::new());
         let cert_file = &mut BufReader::new(File::open(cert).unwrap());
         let key_file = &mut BufReader::new(File::open(key).unwrap());
@@ -132,7 +163,6 @@ async fn start(
         let info = ConnectionInfo { addr, host, tls };
         bind.send(info)
             .expect("Failed to send web server socket address");
-
     } else {
         panic!("Could not get web server address!");
     }
@@ -147,11 +177,9 @@ pub async fn serve(
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
 ) -> crate::Result<()> {
-
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
-        start(opts, bind, channels)
-            .expect("Failed to start web server");
+        start(opts, bind, channels).expect("Failed to start web server");
     });
 
     let _ = handle.join();

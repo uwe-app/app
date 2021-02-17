@@ -1,7 +1,8 @@
 use structopt::StructOpt;
 
 use super::{
-    Build, Clean, Dev, Docs, Editor, Lang, New, Publish, Server, Sync, Task, Test,
+    Build, Clean, Dev, Docs, Editor, Lang, New, Publish, Server, Sync, Task,
+    Test,
 };
 
 #[derive(Debug, StructOpt)]

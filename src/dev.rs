@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{Error, Result, error::server_error_cb};
+use crate::{error::server_error_cb, Error, Result};
 use config::ProfileSettings;
 
 pub async fn run<P: AsRef<Path>>(

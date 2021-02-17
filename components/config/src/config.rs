@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 
@@ -17,7 +17,7 @@ use crate::{
     engine::TemplateEngine,
     feed::FeedConfig,
     fluent::FluentConfig,
-    hook::{HookMap, HookConfig},
+    hook::{HookConfig, HookMap},
     indexer::DataBase,
     link::LinkConfig,
     live_reload::LiveReload,
@@ -558,7 +558,8 @@ impl Config {
             cfg.fluent.prepare(lang_id);
 
             if !cfg.hook.is_empty() {
-                let exec_hooks: HashSet<HookConfig> = cfg.hook.drain().collect();
+                let exec_hooks: HashSet<HookConfig> =
+                    cfg.hook.drain().collect();
                 cfg.hook_map = Some(HookMap::from(exec_hooks));
             }
 

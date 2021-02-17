@@ -57,7 +57,9 @@ pub struct MenuResult {
 }
 
 #[skip_serializing_none]
-#[derive(Serialize, Deserialize, Debug, Clone, Default, Hash, Eq, PartialEq)]
+#[derive(
+    Serialize, Deserialize, Debug, Clone, Default, Hash, Eq, PartialEq,
+)]
 pub struct MenuEntry {
     #[serde(flatten, skip_serializing)]
     pub definition: MenuReference,

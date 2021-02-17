@@ -29,8 +29,8 @@ use log::{error, info, trace};
 
 use crate::{
     channels::{ResponseValue, ServerChannels},
-    helper_routes::host_ephemeral,
     drop_privileges::*,
+    helper_routes::host_ephemeral,
     Error,
 };
 use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
@@ -338,22 +338,24 @@ fn get_host_filter(
     opts: &'static ServerConfig,
     host: &'static HostConfig,
 ) -> BoxedFilter<(impl Reply,)> {
-//) -> impl Filter<Extract = Filter + Clone, Error = Rejection> + Clone {
+    //) -> impl Filter<Extract = Filter + Clone, Error = Rejection> + Clone {
     let (hostname, static_server) = get_static_server(address, opts, host);
 
-    let none = warp::path::end()
-        .and_then(|| {
-            future::err(warp::reject::not_found())
-        });
+    let none =
+        warp::path::end().and_then(|| future::err(warp::reject::not_found()));
 
     if let Some(ref webdav) = host.webdav {
         info!("Webdav {}", webdav.directory.display());
         let dav_server = warp::path("-")
             .and(warp::path("webdav"))
             .and(dav_dir(&webdav.directory, false, webdav.listing));
-        host_ephemeral(&hostname, opts.authorities()).and(dav_server.or(static_server)).boxed()
+        host_ephemeral(&hostname, opts.authorities())
+            .and(dav_server.or(static_server))
+            .boxed()
     } else {
-        host_ephemeral(&hostname, opts.authorities()).and(none.or(static_server)).boxed()
+        host_ephemeral(&hostname, opts.authorities())
+            .and(none.or(static_server))
+            .boxed()
     }
 }
 
@@ -380,10 +382,8 @@ fn get_host_filter_watch(
         .and(response)
         .and_then(live_render);
 
-    let none = warp::path::end()
-        .and_then(|| {
-            future::err(warp::reject::not_found())
-        });
+    let none =
+        warp::path::end().and_then(|| future::err(warp::reject::not_found()));
 
     if let Some(ref webdav) = host.webdav {
         info!("Webdav {}", webdav.directory.display());
@@ -397,17 +397,23 @@ fn get_host_filter_watch(
                 .and(warp::fs::dir(editor_directory.clone()));
 
             host_ephemeral(&hostname, opts.authorities())
-                .and(editor_server.or(dav_server).or(livereload.or(live_renderer).or(static_server)))
+                .and(
+                    editor_server
+                        .or(dav_server)
+                        .or(livereload.or(live_renderer).or(static_server)),
+                )
                 .boxed()
         } else {
             let editor_server = warp::path("-")
                 .and(warp::path("editor"))
-                .and_then(|| {
-                    future::err(warp::reject::not_found())
-                });
+                .and_then(|| future::err(warp::reject::not_found()));
 
             host_ephemeral(&hostname, opts.authorities())
-                .and(editor_server.or(dav_server).or(livereload.or(live_renderer).or(static_server)))
+                .and(
+                    editor_server
+                        .or(dav_server)
+                        .or(livereload.or(live_renderer).or(static_server)),
+                )
                 .boxed()
         }
     } else {
@@ -572,26 +578,21 @@ fn get_static_server(
     let with_pragma = warp::reply::with::header("pragma", "no-cache");
     let with_expires = warp::reply::with::header("expires", "0");
 
-    let referrer_policy = warp::reply::with::header(
-        "referrer-policy",
-        "origin");
-    let x_content_type_options = warp::reply::with::header(
-        "x-content-type-options",
-        "nosniff");
-    let x_frame_options = warp::reply::with::header(
-        "x-frame-options",
-        "DENY");
-    let x_xss_protection = warp::reply::with::header(
-        "x-xss-protection",
-        "1; mode=block");
+    let referrer_policy =
+        warp::reply::with::header("referrer-policy", "origin");
+    let x_content_type_options =
+        warp::reply::with::header("x-content-type-options", "nosniff");
+    let x_frame_options = warp::reply::with::header("x-frame-options", "DENY");
+    let x_xss_protection =
+        warp::reply::with::header("x-xss-protection", "1; mode=block");
 
-    let permissions_policy = warp::reply::with::header(
-        "permissions-policy",
-        "geolocation=()");
+    let permissions_policy =
+        warp::reply::with::header("permissions-policy", "geolocation=()");
 
     let strict_transport_security = warp::reply::with::header(
         "strict-transport-security",
-        "max-age=31536000; includeSubDomains; preload");
+        "max-age=31536000; includeSubDomains; preload",
+    );
 
     // TODO: Content-Security-Policy
     // SEE: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy
@@ -687,9 +688,7 @@ pub async fn serve(
     if should_watch {
         let mut filters: Vec<BoxedFilter<_>> = configs
             .iter()
-            .map(|c| {
-                get_host_filter_watch(&addr, opts, c, &mut channels)
-            })
+            .map(|c| get_host_filter_watch(&addr, opts, c, &mut channels))
             .collect();
 
         virtual_hosts!(opts, filters, &addr, bind, channels.shutdown);

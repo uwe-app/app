@@ -52,8 +52,7 @@ async fn main() -> Result<()> {
     let root_args = Cli::from_args();
 
     uwe::panic_hook();
-    uwe::log_level("info")
-        .expect("Unable to set log level");
+    uwe::log_level("info").expect("Unable to set log level");
 
     // Must configure the version here otherwise option_env!() will
     // use the version from the workspace package which we don't really

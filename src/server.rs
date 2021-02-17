@@ -1,10 +1,13 @@
 use std::convert::TryInto;
 use std::path::PathBuf;
 
-use config::{server::{HostConfig, LaunchConfig, ServerConfig}, ProfileName, ProfileSettings};
+use config::{
+    server::{HostConfig, LaunchConfig, ServerConfig},
+    ProfileName, ProfileSettings,
+};
 use workspace::{compile, HostInfo, HostResult};
 
-use crate::{Error, Result, opts::Compile};
+use crate::{opts::Compile, Error, Result};
 
 /// Serve using an `index.html` file.
 async fn serve_index(opts: ServerConfig, launch: LaunchConfig) -> Result<()> {
@@ -45,7 +48,8 @@ pub async fn serve(
             settings.member = args.member;
             settings.include_drafts = Some(args.include_drafts);
 
-            let result = compile(&target, &settings, Default::default()).await?;
+            let result =
+                compile(&target, &settings, Default::default()).await?;
 
             let host_result: HostResult = result.into();
             let mut host_configs: Vec<(HostInfo, HostConfig)> =

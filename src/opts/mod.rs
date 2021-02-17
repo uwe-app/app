@@ -104,14 +104,7 @@ pub fn server_config(
         host.to_owned()
     };
 
-    let host = HostConfig::new(
-        target.clone(),
-        name,
-        None,
-        None,
-        false,
-        false,
-    );
+    let host = HostConfig::new(target.clone(), name, None, None, false, false);
 
     let mut server_config = ServerConfig::new_host(host, port.to_owned(), tls);
     server_config.listen = opts.addr.to_string();

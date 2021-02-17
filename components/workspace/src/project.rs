@@ -1023,7 +1023,10 @@ where
 {
     let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
     let projects = workspace_builder.build(builder).await?;
-    Ok(CompileResult { projects, host_settings })
+    Ok(CompileResult {
+        projects,
+        host_settings,
+    })
 }
 
 /// Compile a project.
@@ -1037,7 +1040,10 @@ pub async fn compile<P: AsRef<Path>>(
 ) -> Result<CompileResult> {
     let workspace_builder = WorkspaceBuilder::new(project.as_ref(), args)?;
     let projects = workspace_builder.build(default_compiler).await?;
-    Ok(CompileResult { projects, host_settings })
+    Ok(CompileResult {
+        projects,
+        host_settings,
+    })
 }
 
 pub async fn default_compiler(builder: ProjectBuilder) -> BuildResult {

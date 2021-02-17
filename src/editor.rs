@@ -1,16 +1,15 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use crate::{Error, Result, error::server_error_cb};
-use workspace::{HostSettings, HostNameMode};
+use crate::{error::server_error_cb, Error, Result};
 use config::ProfileSettings;
+use workspace::{HostNameMode, HostSettings};
 
 pub async fn run<P: AsRef<Path>>(
     project: P,
     mut args: ProfileSettings,
     authorities: Option<Vec<String>>,
 ) -> Result<()> {
-
     // Prepare the server settings
     let port = args.get_port().clone();
     if port == 0 {

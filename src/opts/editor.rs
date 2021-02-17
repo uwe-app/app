@@ -3,10 +3,7 @@ use structopt::StructOpt;
 
 use config::ProfileName;
 
-use super::{
-    build::Compile,
-    web_server::WebServerOpts,
-};
+use super::{build::Compile, web_server::WebServerOpts};
 
 #[derive(StructOpt, Debug)]
 pub struct Editor {
@@ -22,7 +19,6 @@ pub struct Editor {
     #[structopt(long)]
     pub launch: Option<String>,
     */
-
     #[structopt(flatten)]
     pub server: WebServerOpts,
 

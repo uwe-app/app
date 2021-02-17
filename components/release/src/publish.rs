@@ -266,7 +266,6 @@ fn cookbook() -> Result<()> {
 
 /// Compile the build tool examples.
 fn build_tools() -> Result<()> {
-
     // Ensure node_modules are sane
     Command::new("make")
         .current_dir("../cookbook/build")

@@ -6,13 +6,15 @@ use tokio::process::Command;
 
 use once_cell::sync::OnceCell;
 
-use log::{info, debug, error};
+use log::{debug, error, info};
 
 use structopt::StructOpt;
 use tokio::sync::oneshot;
 
 use config::{
-    server::ConnectionInfo, test::{IntegrationTestConfig, BASE_URL}, ProfileSettings,
+    server::ConnectionInfo,
+    test::{IntegrationTestConfig, BASE_URL},
+    ProfileSettings,
 };
 use server::ServerChannels;
 use workspace::{build, default_compiler, BuildResult, ProjectBuilder};
@@ -75,7 +77,7 @@ fn parse_rest_opts() -> Option<Vec<String>> {
 fn get_runner_opts<P: AsRef<Path>>(
     build_dir: P,
     settings: &IntegrationTestConfig,
-    ) -> Result<Vec<String>> {
+) -> Result<Vec<String>> {
     let opts = if let Some(opts) = parse_rest_opts() {
         opts
     } else {
@@ -98,7 +100,6 @@ async fn spawn_test_runner<P: AsRef<Path>>(
     build_dir: P,
     settings: &IntegrationTestConfig,
 ) -> Result<()> {
-
     let command = settings.command();
     let mut args = settings.args().clone();
     let mut env = settings.env().clone();
@@ -122,13 +123,18 @@ async fn spawn_test_runner<P: AsRef<Path>>(
         .spawn()
         .map_err(|_| Error::CommandSpawn(command.to_string()))?;
 
-    let status = child.wait().await
+    let status = child
+        .wait()
+        .await
         .map_err(|_| Error::CommandExec(command.to_string()))?;
 
     if status.success() {
         info!("Tests passed ✓");
     } else {
-        return Err(Error::IntegrationTestFail(command.to_string(), args.join(" ")));
+        return Err(Error::IntegrationTestFail(
+            command.to_string(),
+            args.join(" "),
+        ));
     }
 
     Ok(())
@@ -178,11 +184,11 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
         let url = info.to_url();
         info!("Serve {}", &url);
 
-        let test_result = spawn_test_runner(&url, &spawn_dir, &runner_settings).await;
+        let test_result =
+            spawn_test_runner(&url, &spawn_dir, &runner_settings).await;
 
         info!("Shutdown {}", &url);
         let _ = shutdown_tx.send(());
-
 
         if let Err(e) = test_result {
             error!("{}", e);

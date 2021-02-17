@@ -3,10 +3,7 @@ use structopt::StructOpt;
 
 use config::ProfileName;
 
-use super::{
-    build::Compile,
-    web_server::WebServerOpts,
-};
+use super::{build::Compile, web_server::WebServerOpts};
 
 #[derive(StructOpt, Debug)]
 pub struct Dev {

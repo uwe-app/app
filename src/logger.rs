@@ -1,5 +1,5 @@
-use std::env;
 use crate::{Error, Result};
+use std::env;
 
 const LOG_ENV_NAME: &'static str = "UWE_LOG";
 
@@ -22,4 +22,3 @@ pub fn log_level(level: &str) -> Result<()> {
 
     Ok(())
 }
-
