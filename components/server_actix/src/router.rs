@@ -1,48 +1,39 @@
 use std::fs::File;
 use std::io::BufReader;
 
-use std::fmt;
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::sync::Arc;
+use url::Url;
 
 use once_cell::sync::OnceCell;
-use serde_json::json;
-
-use futures::future;
-use futures_util::sink::SinkExt;
-use futures_util::StreamExt;
 
 use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
 
-use serde::Serialize;
-
-use futures::FutureExt;
+use futures::future::ok;
 
 use webdav_handler::actix::*;
 use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 
 use actix_files::Files;
 use actix_web::{
-    dev::Service,
+    dev::{Service},
     guard,
-    http::header::{self, HeaderValue},
-    middleware, web, App, HttpServer, Responder,
+    http::{self, header::{self, HeaderValue}},
+    middleware, web, App, HttpServer, HttpResponse,
 };
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 use rustls::{NoClientAuth, ServerConfig as TlsServerConfig};
 
 use bracket::Registry;
-use log::{error, info, trace};
+use log::info;
 
 use crate::{
     channels::{ResponseValue, ServerChannels},
-    drop_privileges::*,
+    //drop_privileges::*,
+    Result,
     Error,
 };
 
-use config::server::{ConnectionInfo, HostConfig, PortType, ServerConfig};
+use config::server::{ConnectionInfo, PortType, ServerConfig};
 
 pub fn parser() -> &'static Registry<'static> {
     static INSTANCE: OnceCell<Registry> = OnceCell::new();
@@ -67,7 +58,8 @@ async fn start(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
-) -> crate::Result<()> {
+) -> Result<()> {
+
     let ssl_key = std::env::var("UWE_SSL_KEY");
     let ssl_cert = std::env::var("UWE_SSL_CERT");
 
@@ -97,8 +89,6 @@ async fn start(
                         .strip_prefix("/webdav")
                         .build_handler();
 
-                //println!("Starting web dav server {} {:#?}", &host.name, &webdav.directory);
-
                 app = app.service(
                     web::scope("/webdav")
                         .wrap(middleware::NormalizePath::new(middleware::TrailingSlash::Always))
@@ -107,7 +97,6 @@ async fn start(
                         .service(web::resource("/{tail:.*}").to(dav_handler))
                 ); 
             }
-
 
             app = app.service(
                 web::scope("/")
@@ -151,7 +140,7 @@ async fn start(
     });
     //.workers(4);
 
-    let server = if let (Some(ref key), Some(ref cert)) =
+    let (server, mut redirect_server) = if let (Some(ref key), Some(ref cert)) =
         (ssl_key.ok(), ssl_cert.ok())
     {
         let mut config = TlsServerConfig::new(NoClientAuth::new());
@@ -163,9 +152,50 @@ async fn start(
             .map_err(|_| Error::SslPrivateKey(key.to_string()))?;
         config.set_single_cert(cert_chain, keys.remove(0)).unwrap();
 
-        server.bind_rustls(addr, config)?
+        // Always redirect HTTP -> HTTPS
+        let http_addr = opts.get_sock_addr(PortType::Insecure)?;
+        let tls_port = opts.tls_port();
+
+        let redirect_server = HttpServer::new(move || {
+                let mut app: App<_, _> = App::new();
+                app = app.service(
+                    web::scope("")
+                        .wrap_fn(move |req, _srv| {
+                            // This includes any port in the host name!
+                            let host = req.connection_info().host().to_owned();
+
+                            // Must remove the port from the host name
+                            let host_url: Url = format!("http://{}", host).parse().unwrap();
+                            let host = host_url.host_str().unwrap();
+
+                            let url = if tls_port == 443 {
+                                format!("{}//{}", config::SCHEME_HTTPS, host)
+                            } else {
+                                format!(
+                                    "{}//{}:{}",
+                                    config::SCHEME_HTTPS,
+                                    host,
+                                    tls_port
+                                )
+                            };
+
+                            let url = format!("{}{}", url, req.uri().to_owned());
+                            ok(req.into_response(
+                                HttpResponse::MovedPermanently()
+                                    .append_header((http::header::LOCATION, url))
+                                    .finish()
+                                    .into_body(),
+                            ))
+                        })
+                );
+                app
+            })
+            .bind(http_addr)?;
+
+        (server.bind_rustls(addr, config)?, Some(redirect_server))
+
     } else {
-        server.bind(addr)?
+        (server.bind(addr)?, None)
     };
 
     let mut addrs = server.addrs();
@@ -181,7 +211,19 @@ async fn start(
         panic!("Could not get web server address!");
     }
 
-    server.run().await?;
+    let servers = if let Some(redirect_server) = redirect_server.take() {
+        futures::join!(redirect_server.run(), server.run())
+    } else {
+        futures::join!(server.run(), ok(()))
+    };
+
+    // Propagate errors up the call stack
+    match servers {
+        (s1, s2) => {
+            let _ = s1?; 
+            let _ = s2?; 
+        }
+    }
 
     Ok(())
 }
@@ -190,7 +232,7 @@ pub async fn serve(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
     mut channels: ServerChannels,
-) -> crate::Result<()> {
+) -> Result<()> {
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
         start(opts, bind, channels).expect("Failed to start web server");
