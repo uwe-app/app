@@ -147,7 +147,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     let state = get_state(None);
     let writer = state.write().unwrap();
 
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
 
     let mut server_opts = opts::server_config(
         &writer.opts.project,
@@ -189,7 +189,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
             spawn_test_runner(&url, &spawn_dir, &runner_settings).await;
 
         info!("Shutdown {}", &url);
-        let _ = shutdown_tx.send(());
+        let _ = shutdown_tx.send(false);
 
         if let Err(e) = test_result {
             error!("{}", e);

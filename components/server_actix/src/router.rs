@@ -226,8 +226,6 @@ async fn start(
     }
 
     let shutdown_rx = channels.shutdown;
-    // TODO: get this from the shutdown signal!
-    let graceful = false;
 
     // Support redirect server when running over SSL
     let servers = if let Some(redirect_server) = redirect_server.take() {
@@ -242,9 +240,13 @@ async fn start(
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                let _ = shutdown_rx.await;
-                shutdown_redirect_server.stop(false).await;
-                shutdown_server.stop(graceful).await;
+                match shutdown_rx.await {
+                    Ok(graceful) => {
+                        shutdown_redirect_server.stop(graceful).await;
+                        shutdown_server.stop(graceful).await;
+                    }
+                    _ => {}
+                }
             });
         });
 
@@ -259,8 +261,12 @@ async fn start(
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                let _ = shutdown_rx.await;
-                shutdown_server.stop(graceful).await;
+                match shutdown_rx.await {
+                    Ok(graceful) => {
+                        shutdown_server.stop(graceful).await;
+                    }
+                    _ => {}
+                }
             });
         });
 

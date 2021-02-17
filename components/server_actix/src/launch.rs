@@ -13,7 +13,7 @@ pub async fn launch(
     // Create a channel to receive the bind address.
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
     let channels = ServerChannels::new(shutdown_tx, shutdown_rx);
 
     let _ = tokio::task::spawn(async move {

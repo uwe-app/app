@@ -187,7 +187,7 @@ fn create_channels(
 ) -> Result<(ServerChannels, WatchChannels)> {
     // Create the collection of channels
 
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
     let mut server = ServerChannels::new(shutdown_tx, shutdown_rx);
     let mut watch: WatchChannels = Default::default();
 

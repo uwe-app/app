@@ -14,12 +14,12 @@ pub struct ServerChannels {
     pub(crate) render: HashMap<String, mpsc::Sender<String>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
     pub(crate) render_responses: HashMap<String, mpsc::Receiver<ResponseValue>>,
-    pub(crate) shutdown: oneshot::Receiver<()>,
-    pub(crate) shutdown_tx: Option<oneshot::Sender<()>>,
+    pub(crate) shutdown: oneshot::Receiver<bool>,
+    pub(crate) shutdown_tx: Option<oneshot::Sender<bool>>,
 }
 
 impl ServerChannels {
-    pub fn new(tx: oneshot::Sender<()>, rx: oneshot::Receiver<()>) -> Self {
+    pub fn new(tx: oneshot::Sender<bool>, rx: oneshot::Receiver<bool>) -> Self {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
@@ -29,7 +29,7 @@ impl ServerChannels {
         }
     }
 
-    pub fn new_shutdown(rx: oneshot::Receiver<()>) -> Self {
+    pub fn new_shutdown(rx: oneshot::Receiver<bool>) -> Self {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
