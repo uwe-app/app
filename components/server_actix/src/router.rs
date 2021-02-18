@@ -21,9 +21,11 @@ use actix_files::Files;
 use actix_web::{
     dev::{Service, ServiceResponse},
     guard::{self, Guard},
+    error,
     http::{
         self,
         header::{self, HeaderValue},
+        StatusCode,
     },
     middleware::{DefaultHeaders, NormalizePath, TrailingSlash},
     web, App, HttpRequest, HttpResponse, HttpServer,
@@ -322,12 +324,12 @@ async fn start(
                                             .render("error", &data)
                                             .unwrap();
 
-                                        /*
-                                        return Ok(warp::reply::with_status(
-                                            warp::reply::html(doc),
-                                            StatusCode::INTERNAL_SERVER_ERROR,
-                                        ));
-                                        */
+                                        let res = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+                                            .body(doc);
+                                        return Err(
+                                            actix_web::Error::from(
+                                                error::InternalError::from_response(error, res)))
+
                                     }
                                 }
                             }
