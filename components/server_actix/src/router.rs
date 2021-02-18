@@ -1,21 +1,22 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, atomic::AtomicUsize};
 
 use serde_json::json;
 use url::Url;
 
 use once_cell::sync::OnceCell;
 
-use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
+use tokio::sync::oneshot;
 
-use futures::future::{lazy, ok};
+use futures::future::ok;
 use futures::Future;
 
 use webdav_handler::actix::*;
 use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 
+use actix::Actor;
 use actix_files::Files;
 use actix_web::{
     dev::{Service, ServiceResponse},
@@ -25,9 +26,9 @@ use actix_web::{
         header::{self, HeaderValue},
     },
     middleware::{
-        Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash,
+        DefaultHeaders, NormalizePath, TrailingSlash,
     },
-    web, App, Either, HttpRequest, HttpResponse, HttpServer,
+    web, App, HttpRequest, HttpResponse, HttpServer,
 };
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
@@ -38,6 +39,7 @@ use log::info;
 
 use crate::{
     channels::{ResponseValue, ServerChannels},
+    reload_server::LiveReloadServer,
     drop_privileges::{drop_privileges, is_root},
     websocket::ws_index,
     Error, Result,
@@ -111,8 +113,16 @@ async fn start(
         }
     }
 
+    //let data = web::Data::new(Arc::new(Mutex::new(SocketClients { sockets: Vec::new() })));
+
+    let app_state = Arc::new(AtomicUsize::new(0));
+    let reload_server = LiveReloadServer::new(app_state.clone()).start();
+
     let server = HttpServer::new(move || {
-        let mut app: App<_, _> = App::new();
+        let mut app: App<_, _> = App::new()
+            .data(app_state.clone())
+            .data(reload_server.clone());
+
         //.wrap(Logger::default());
 
         for host in hosts.iter() {

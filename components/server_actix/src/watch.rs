@@ -39,7 +39,7 @@ pub async fn watch(
 ) -> Result<()> {
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
+    let (_shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
 
     let host_result: HostResult = result.into();
     let mut host_configs: Vec<(HostInfo, HostConfig)> =

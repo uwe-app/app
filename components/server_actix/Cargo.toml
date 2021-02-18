@@ -11,6 +11,7 @@ workspace = { version = "0.1", path = "../workspace" }
 utils = { version = "0.1", path = "../utils" }
 
 thiserror = "1"
+rand = "0.7.3"
 log = "0.4.8"
 url = "2"
 open = "1.1"

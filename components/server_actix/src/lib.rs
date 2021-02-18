@@ -7,6 +7,7 @@ mod error;
 mod launch;
 //mod live_render;
 //pub mod redirect;
+mod reload_server;
 mod router;
 mod watch;
 mod websocket;

@@ -3739,6 +3739,7 @@ dependencies = [
  "notify",
  "once_cell",
  "open",
+ "rand 0.7.3",
  "rustls",
  "serde",
  "serde_json",
