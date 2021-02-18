@@ -11,9 +11,8 @@ pub(crate) const RENDER_CHANNEL_BUFFER: usize = 128;
 
 #[derive(Debug)]
 pub struct ServerChannels {
-    pub(crate) render: HashMap<String, mpsc::Sender<String>>,
+    pub(crate) render: HashMap<String, mpsc::Sender<(String, oneshot::Sender<ResponseValue>)>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
-    pub(crate) render_responses: HashMap<String, mpsc::Receiver<ResponseValue>>,
     pub(crate) shutdown: oneshot::Receiver<bool>,
     pub(crate) shutdown_tx: Option<oneshot::Sender<bool>>,
 }
@@ -23,7 +22,6 @@ impl ServerChannels {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
-            render_responses: HashMap::new(),
             shutdown_tx: Some(tx),
             shutdown: rx,
         }
@@ -33,7 +31,6 @@ impl ServerChannels {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
-            render_responses: HashMap::new(),
             shutdown_tx: None,
             shutdown: rx,
         }
@@ -42,7 +39,6 @@ impl ServerChannels {
 
 #[derive(Debug, Default)]
 pub struct WatchChannels {
-    pub(crate) render: HashMap<String, mpsc::Receiver<String>>,
+    pub(crate) render: HashMap<String, mpsc::Receiver<(String, oneshot::Sender<ResponseValue>)>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
-    pub(crate) render_responses: HashMap<String, mpsc::Sender<ResponseValue>>,
 }

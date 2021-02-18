@@ -45,18 +45,8 @@ pub async fn watch(
         host_result.try_into()?;
 
     for (_info, host) in host_configs.iter_mut() {
-        //println!("Starting with host name {:?}", &host.name);
         host.watch = true;
         //host.editor_directory = editor_directory.clone();
-        //
-        /*
-        if webdav_enabled {
-            host.webdav = Some(WebDavConfig {
-                directory: info.source.to_path_buf(),
-                listing: false,
-            });
-        }
-        */
     }
 
     let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =
@@ -89,7 +79,6 @@ pub async fn watch(
 
                 println!("Creating editor host {:?}", &editor_host.name);
                 println!("Creating editor host {:?}", &editor_host.directory);
-
                 println!("Host {:#?}", &editor_host);
 
                 editor_host
@@ -199,15 +188,9 @@ fn create_channels(
 
         // Create a channel to receive lazy render requests
         let (request_tx, request_rx) =
-            mpsc::channel::<String>(channels::RENDER_CHANNEL_BUFFER);
+            mpsc::channel::<(String, oneshot::Sender<ResponseValue>)>(channels::RENDER_CHANNEL_BUFFER);
         server.render.insert(name.clone(), request_tx);
         watch.render.insert(name.clone(), request_rx);
-
-        // Create a channel for replies when rendering
-        let (response_tx, response_rx) =
-            mpsc::channel::<ResponseValue>(channels::RENDER_CHANNEL_BUFFER);
-        server.render_responses.insert(name.clone(), response_rx);
-        watch.render_responses.insert(name.clone(), response_tx);
 
         Ok::<(), Error>(())
     })?;
@@ -308,7 +291,7 @@ fn spawn_monitor(
                 let mut invalidator = Invalidator::new(w.project);
                 let mut channels_access = watch_channels.write().unwrap();
                 let ws_tx = channels_access.websockets.get(&name).unwrap().clone();
-                let response = channels_access.render_responses.get(&name).unwrap().clone();
+                //let response = channels_access.render_responses.get(&name).unwrap().clone();
 
                 // NOTE: must `remove` the receiver and drop `channels_access` so that
                 // NOTE: multiple virtual hosts start up as expected
@@ -321,26 +304,26 @@ fn spawn_monitor(
                 loop {
                     tokio::select! {
                         val = request.recv() => {
-                            if let Some(path) = val {
+                            if let Some((path, resp_tx)) = val {
                                 let updater = invalidator.updater_mut();
                                 let has_page_path = updater.has_page_path(&path);
                                 if has_page_path {
                                     info!("SSR {}", &path);
                                     match updater.render(&path).await {
                                         Ok(_) => {
-                                            let _ = response.send(None).await;
+                                            let _ = resp_tx.send(None);
                                         },
                                         Err(e) => {
                                             // Send error back to the server so it can
                                             // show a 500 error if the compile fails
                                             error!("{}", e);
-                                            let _ = response.send(Some(Box::new(e))).await;
+                                            let _ = resp_tx.send(Some(Box::new(e)));
                                         }
                                     }
                                 } else {
                                     // Must always send a reply as the web server
                                     // blocks waiting for one
-                                    let _ = response.send(None).await;
+                                    let _ = resp_tx.send(None);
                                 }
                             }
                         }

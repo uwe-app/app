@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 
 use url::Url;
 use serde_json::json;
@@ -9,7 +10,7 @@ use once_cell::sync::OnceCell;
 
 use tokio::sync::{broadcast, mpsc, oneshot, RwLock};
 
-use futures::future::ok;
+use futures::future::{lazy, ok};
 use futures::Future;
 
 use webdav_handler::actix::*;
@@ -64,11 +65,10 @@ pub async fn dav_handler(
 
 /// Default route handler.
 async fn default_route(req: HttpRequest) -> HttpResponse {
-
     if req.path() == "" || req.path() == "/" || req.path() == "/index.html" {
         HttpResponse::Ok()
             .content_type("text/html")
-            .body(format!("No virtul host matched your request!"))
+            .body(format!("No virtual host matched your request!"))
     } else {
         HttpResponse::NotFound()
             .content_type("text/html")
@@ -80,7 +80,7 @@ async fn default_route(req: HttpRequest) -> HttpResponse {
 async fn start(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
-    mut channels: ServerChannels,
+    channels: ServerChannels,
 ) -> Result<()> {
     let ssl_key = std::env::var("UWE_SSL_KEY").ok();
     let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
@@ -107,20 +107,25 @@ async fn start(
         }
     }
 
-    //let channels = Arc::new(RwLock::new(channels));
+    //let shutdown_rx = std::mem::take(&mut channels.shutdown);
+    let service_channels = Arc::new(Mutex::new(channels));
 
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
             //.wrap(Logger::default());
+
+        let channels = Arc::clone(&service_channels);
 
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
             let deny_iframe = host.deny_iframe;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
+           
+            let route_channels = channels.lock().unwrap();
 
-            //let live_render_tx = channels.render.get(&host.name).unwrap().clone();
-            //let live_render_rx = channels.render_responses.remove(&host.name).unwrap();
+            let live_render_tx = Arc::new(route_channels.render.get(&host.name).unwrap().clone());
+            //let live_render_rx = route_channels.render_responses.remove(&host.name).unwrap();
 
             let mut host_names = vec![&host.name];
             if let Some(ref authorities) = opts.authorities() {
@@ -214,15 +219,21 @@ async fn start(
                             None
                         };
 
-                        let fut = srv.call(req);
-                        async move {
-
+                        let tx = Arc::clone(&live_render_tx);
+                        let compiler = async move {
                             if let Some(href) = href.take() {
-                                /*
-                                // TODO: handle RenderSendError
-                                let _ = live_render_tx.send(href).await;
+                                let (resp_tx, resp_rx) = oneshot::channel::<ResponseValue>();
 
-                                if let Some(response) = live_render_rx.recv().await {
+                                println!("Sending live render");
+
+                                // TODO: handle RenderSendError
+                                let _ = tx.send((href, resp_tx)).await;
+   
+                                // WARN: currently this will serve from a stale 
+                                // WARN: cache if the live render channel fails.
+                                if let Ok(response) = resp_rx.await {
+                                    println!("Got live render reply");
+
                                     if let Some(error) = response {
                                         let registry = parser();
                                         let data = json!({
@@ -238,14 +249,15 @@ async fn start(
                                         */
                                     }
                                 }
-                                */
                             }
+                        };
 
-                            let mut res = fut.await?;
-
-                            Ok(res)
+                        let fut = srv.call(req);
+                        async move {
+                            compiler.await;
+                            println!("SSR completed, serving file");
+                            Ok(fut.await?)
                         }
-
                     })
                     // Handle conditional headers
                     .wrap_fn(move |req, srv| {
@@ -411,8 +423,6 @@ async fn start(
         drop_privileges()?;
     }
 
-    let shutdown_rx = channels.shutdown;
-
     // Support redirect server when running over SSL
     let servers = if let Some(redirect_server) = redirect_server.take() {
         let server = server.run();
@@ -426,6 +436,8 @@ async fn start(
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
+
+                /*
                 match shutdown_rx.await {
                     Ok(graceful) => {
                         shutdown_redirect_server.stop(graceful).await;
@@ -433,10 +445,11 @@ async fn start(
                     }
                     _ => {}
                 }
+                */
             });
         });
 
-        futures::join!(redirect_server, server)
+        futures::try_join!(redirect_server, server)
     } else {
         let server = server.run();
         let shutdown_server = server.clone();
@@ -447,25 +460,22 @@ async fn start(
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
+                /*
                 match shutdown_rx.await {
                     Ok(graceful) => {
                         shutdown_server.stop(graceful).await;
                     }
                     _ => {}
                 }
+                */
             });
         });
 
-        futures::join!(ok(()), server)
+        futures::try_join!(ok(()), server)
     };
 
     // Propagate errors up the call stack
-    match servers {
-        (s1, s2) => {
-            let _ = s1?;
-            let _ = s2?;
-        }
-    }
+    let _ = servers?;
 
     Ok(())
 }
