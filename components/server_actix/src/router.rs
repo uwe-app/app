@@ -39,6 +39,7 @@ use log::info;
 use crate::{
     channels::{ResponseValue, ServerChannels},
     drop_privileges::{drop_privileges, is_root},
+    websocket::ws_index,
     Error, Result,
 };
 
@@ -110,14 +111,9 @@ async fn start(
         }
     }
 
-    //let shutdown_rx = std::mem::take(&mut channels.shutdown);
-    //let service_channels = Arc::new(Mutex::new(channels));
-
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
         //.wrap(Logger::default());
-
-        //let channels = Arc::clone(&service_channels);
 
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
@@ -126,12 +122,11 @@ async fn start(
                 host.redirects.clone().unwrap_or(Default::default());
             let watch = host.watch;
 
-            //println!("Got a channel renderer {:#?}", channels.render.get(&host.name));
-
-            //let route_channels = channels.lock().unwrap();
-
-            //let live_render_tx = Arc::new(channels.render.get(&host.name).unwrap().clone());
-            //let live_render_rx = route_channels.render_responses.remove(&host.name).unwrap();
+            let endpoint = if let Some(ref endpoint) = host.endpoint {
+                endpoint.clone()
+            } else {
+                utils::generate_id(16)
+            };
 
             let mut host_names = vec![&host.name];
             if let Some(ref authorities) = opts.authorities() {
@@ -334,6 +329,11 @@ async fn start(
                         }
                         false
                     }))
+                    .service(
+                        web::resource(&endpoint)
+                        //.guard()
+                        .route(web::get().to(ws_index)))
+
                     // Serve static files
                     .service(
                         Files::new("", host.directory.clone())

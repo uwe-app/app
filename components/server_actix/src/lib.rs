@@ -9,6 +9,7 @@ mod launch;
 //pub mod redirect;
 mod router;
 mod watch;
+mod websocket;
 
 pub use channels::*;
 pub use error::Error;
