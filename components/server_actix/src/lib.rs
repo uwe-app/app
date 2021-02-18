@@ -5,6 +5,7 @@ mod channels;
 mod drop_privileges;
 mod error;
 mod launch;
+//mod live_render;
 //pub mod redirect;
 mod router;
 mod watch;

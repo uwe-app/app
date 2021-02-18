@@ -39,6 +39,7 @@ pub async fn watch(
 ) -> Result<()> {
     // Create a channel to receive the bind address.
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
 
     let host_result: HostResult = result.into();
     let mut host_configs: Vec<(HostInfo, HostConfig)> =
@@ -99,7 +100,8 @@ pub async fn watch(
         .map(|h| h.name.clone())
         .collect::<Vec<String>>();
 
-    let (server_channels, watch_channels) = create_channels(channel_names)?;
+    let (server_channels, watch_channels) =
+        create_channels(channel_names, shutdown_tx)?;
 
     // Server must have at least a single virtual host
     let host = hosts.swap_remove(0);
@@ -140,7 +142,7 @@ pub async fn watch(
     let opts = super::configure(opts);
 
     // Start the webserver
-    super::router::serve(opts, bind_tx, server_channels).await?;
+    super::router::serve(opts, bind_tx, shutdown_rx, server_channels).await?;
 
     Ok(())
 }
@@ -173,11 +175,10 @@ fn create_resources(
 
 fn create_channels(
     names: Vec<String>,
+    shutdown_tx: oneshot::Sender<bool>,
 ) -> Result<(ServerChannels, WatchChannels)> {
     // Create the collection of channels
-
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
-    let mut server = ServerChannels::new(shutdown_tx, shutdown_rx);
+    let mut server = ServerChannels::new_keepalive(shutdown_tx);
     let mut watch: WatchChannels = Default::default();
 
     names.iter().try_for_each(|name| {
@@ -188,7 +189,9 @@ fn create_channels(
 
         // Create a channel to receive lazy render requests
         let (request_tx, request_rx) =
-            mpsc::channel::<(String, oneshot::Sender<ResponseValue>)>(channels::RENDER_CHANNEL_BUFFER);
+            mpsc::channel::<(String, oneshot::Sender<ResponseValue>)>(
+                channels::RENDER_CHANNEL_BUFFER,
+            );
         server.render.insert(name.clone(), request_tx);
         watch.render.insert(name.clone(), request_rx);
 

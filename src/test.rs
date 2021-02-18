@@ -175,7 +175,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
 
     //println!("{:#?}", server_opts);
 
-    let channels = ServerChannels::new_shutdown(shutdown_rx);
+    let channels = ServerChannels::new();
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();
 
     let runner_settings = project.config.test().integration().clone();
@@ -202,7 +202,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     // Convert to &'static reference
     let server_opts = server_actix::configure(server_opts);
     // Launch the test server
-    server_actix::start(server_opts, bind_tx, channels).await?;
+    server_actix::start(server_opts, bind_tx, shutdown_rx, channels).await?;
 
     Ok(project)
 }

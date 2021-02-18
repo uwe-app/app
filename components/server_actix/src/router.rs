@@ -3,8 +3,8 @@ use std::io::BufReader;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
-use url::Url;
 use serde_json::json;
+use url::Url;
 
 use once_cell::sync::OnceCell;
 
@@ -24,8 +24,10 @@ use actix_web::{
         self,
         header::{self, HeaderValue},
     },
-    middleware::{Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash},
-    web, App, HttpRequest, HttpResponse, HttpServer,
+    middleware::{
+        Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash,
+    },
+    web, App, Either, HttpRequest, HttpResponse, HttpServer,
 };
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
@@ -80,6 +82,7 @@ async fn default_route(req: HttpRequest) -> HttpResponse {
 async fn start(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
+    shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<()> {
     let ssl_key = std::env::var("UWE_SSL_KEY").ok();
@@ -108,23 +111,26 @@ async fn start(
     }
 
     //let shutdown_rx = std::mem::take(&mut channels.shutdown);
-    let service_channels = Arc::new(Mutex::new(channels));
+    //let service_channels = Arc::new(Mutex::new(channels));
 
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
-            //.wrap(Logger::default());
+        //.wrap(Logger::default());
 
-        let channels = Arc::clone(&service_channels);
+        //let channels = Arc::clone(&service_channels);
 
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
             let deny_iframe = host.deny_iframe;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
-           
-            let route_channels = channels.lock().unwrap();
+            let watch = host.watch;
 
-            let live_render_tx = Arc::new(route_channels.render.get(&host.name).unwrap().clone());
+            //println!("Got a channel renderer {:#?}", channels.render.get(&host.name));
+
+            //let route_channels = channels.lock().unwrap();
+
+            //let live_render_tx = Arc::new(channels.render.get(&host.name).unwrap().clone());
             //let live_render_rx = route_channels.render_responses.remove(&host.name).unwrap();
 
             let mut host_names = vec![&host.name];
@@ -139,6 +145,7 @@ async fn start(
                 .map(|name| guard::Host(name))
                 .collect::<Vec<_>>();
 
+            // Setup webdav route
             if let Some(ref webdav) = host.webdav {
                 let dav_server = DavHandler::builder()
                     .filesystem(LocalFs::new(
@@ -154,14 +161,20 @@ async fn start(
 
                 app = app.service(
                     web::scope("/webdav")
-                        .wrap(NormalizePath::new(
-                            TrailingSlash::Always,
-                        ))
+                        .wrap(NormalizePath::new(TrailingSlash::Always))
                         .guard(guard::Host(&host.name))
                         .data(dav_server)
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
             }
+
+            let live_render_tx = if watch {
+                Arc::new(
+                    Some(
+                        channels.render.get(&host.name).unwrap().clone()))
+            } else {
+                Arc::new(None)
+            };
 
             app = app.service(
                 web::scope("/")
@@ -206,59 +219,6 @@ async fn start(
 
                         srv.call(req)
                     })
-                    // Handle live rendering
-                    .wrap_fn(move |req, srv| {
-
-                        let mut href = if req.path().ends_with("/") || req.path().ends_with(".html") {
-                            if req.path().ends_with("/") && req.path() != "/" {
-                                Some(format!("{}{}", req.path(), config::INDEX_HTML))
-                            } else {
-                                Some(req.path().to_string())
-                            }
-                        } else {
-                            None
-                        };
-
-                        let tx = Arc::clone(&live_render_tx);
-                        let compiler = async move {
-                            if let Some(href) = href.take() {
-                                let (resp_tx, resp_rx) = oneshot::channel::<ResponseValue>();
-
-                                println!("Sending live render");
-
-                                // TODO: handle RenderSendError
-                                let _ = tx.send((href, resp_tx)).await;
-   
-                                // WARN: currently this will serve from a stale 
-                                // WARN: cache if the live render channel fails.
-                                if let Ok(response) = resp_rx.await {
-                                    println!("Got live render reply");
-
-                                    if let Some(error) = response {
-                                        let registry = parser();
-                                        let data = json!({
-                                            "title": "Render Error",
-                                            "message": error.to_string()});
-                                        let doc = registry.render("error", &data).unwrap();
-
-                                        /*
-                                        return Ok(warp::reply::with_status(
-                                            warp::reply::html(doc),
-                                            StatusCode::INTERNAL_SERVER_ERROR,
-                                        ));
-                                        */
-                                    }
-                                }
-                            }
-                        };
-
-                        let fut = srv.call(req);
-                        async move {
-                            compiler.await;
-                            println!("SSR completed, serving file");
-                            Ok(fut.await?)
-                        }
-                    })
                     // Handle conditional headers
                     .wrap_fn(move |req, srv| {
                         //println!("Request path: {}", req.path());
@@ -292,29 +252,78 @@ async fn start(
                             Ok(res)
                         }
                     })
+                    // Handle live rendering
+                    .wrap_fn(move |req, srv| {
+                        let mut href = if req.path().ends_with("/")
+                            || req.path().ends_with(".html")
+                        {
+                            if req.path().ends_with("/") && req.path() != "/" {
+                                Some(format!(
+                                    "{}{}",
+                                    req.path(),
+                                    config::INDEX_HTML
+                                ))
+                            } else {
+                                Some(req.path().to_string())
+                            }
+                        } else {
+                            None
+                        };
+
+                        let tx = Arc::clone(&live_render_tx);
+                        let fut = srv.call(req);
+                        async move {
+                            if let (Some(href), Some(ref tx)) =
+                                (href.take(), &*tx)
+                            {
+                                let (resp_tx, resp_rx) =
+                                    oneshot::channel::<ResponseValue>();
+
+                                // TODO: handle RenderSendError
+                                let _ = tx.send((href, resp_tx)).await;
+
+                                // WARN: currently this will serve from a stale
+                                // WARN: cache if the live render channel fails.
+                                if let Ok(response) = resp_rx.await {
+                                    if let Some(error) = response {
+                                        let registry = parser();
+                                        let data = json!({
+                                            "title": "Render Error",
+                                            "message": error.to_string()});
+                                        let doc = registry
+                                            .render("error", &data)
+                                            .unwrap();
+
+                                        /*
+                                        return Ok(warp::reply::with_status(
+                                            warp::reply::html(doc),
+                                            StatusCode::INTERNAL_SERVER_ERROR,
+                                        ));
+                                        */
+                                    }
+                                }
+
+                            }
+
+                            Ok(fut.await?)
+                        }
+                    })
                     // Always add these headers
                     .wrap(
                         DefaultHeaders::new()
                             .header(
                                 header::SERVER,
-                                config::generator::user_agent())
-                            .header(
-                                header::REFERRER_POLICY,
-                                "origin")
-                            .header(
-                                header::X_CONTENT_TYPE_OPTIONS,
-                                "nosniff")
-                            .header(
-                                header::X_XSS_PROTECTION,
-                                "1; mode=block")
+                                config::generator::user_agent(),
+                            )
+                            .header(header::REFERRER_POLICY, "origin")
+                            .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
+                            .header(header::X_XSS_PROTECTION, "1; mode=block")
                             .header(
                                 header::STRICT_TRANSPORT_SECURITY,
-                                "max-age=31536000; includeSubDomains; preload")
-
+                                "max-age=31536000; includeSubDomains; preload",
+                            )
                             // TODO: allow configuring this header
-                            .header(
-                                "permissions-policy",
-                                "geolocation=()")
+                            .header("permissions-policy", "geolocation=()"),
                     )
                     // Check virtual hosts
                     .guard(guard::fn_guard(move |req| {
@@ -335,21 +344,19 @@ async fn start(
                             .redirect_to_slash_directory(),
                     ),
             );
-
         }
 
-        app = app
-            .default_service(
-                // 404 for GET request
-                web::resource("")
-                    .route(web::get().to(default_route))
-                    // all requests that are not `GET`
-                    .route(
-                        web::route()
-                            .guard(guard::Not(guard::Get()))
-                            .to(HttpResponse::MethodNotAllowed),
-                    ),
-            );
+        app = app.default_service(
+            // 404 for GET request
+            web::resource("")
+                .route(web::get().to(default_route))
+                // all requests that are not `GET`
+                .route(
+                    web::route()
+                        .guard(guard::Not(guard::Get()))
+                        .to(HttpResponse::MethodNotAllowed),
+                ),
+        );
 
         app
     });
@@ -436,16 +443,13 @@ async fn start(
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-
-                /*
-                match shutdown_rx.await {
+                match shutdown.await {
                     Ok(graceful) => {
                         shutdown_redirect_server.stop(graceful).await;
                         shutdown_server.stop(graceful).await;
                     }
                     _ => {}
                 }
-                */
             });
         });
 
@@ -460,14 +464,12 @@ async fn start(
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                /*
-                match shutdown_rx.await {
+                match shutdown.await {
                     Ok(graceful) => {
                         shutdown_server.stop(graceful).await;
                     }
                     _ => {}
                 }
-                */
             });
         });
 
@@ -483,11 +485,13 @@ async fn start(
 pub async fn serve(
     opts: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
+    shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<()> {
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
-        start(opts, bind, channels).expect("Failed to start web server");
+        start(opts, bind, shutdown, channels)
+            .expect("Failed to start web server");
     });
     let _ = handle.join();
 

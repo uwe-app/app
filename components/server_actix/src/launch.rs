@@ -14,7 +14,7 @@ pub async fn launch(
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
-    let channels = ServerChannels::new(shutdown_tx, shutdown_rx);
+    let channels = ServerChannels::new_keepalive(shutdown_tx);
 
     let _ = tokio::task::spawn(async move {
         match crx.await {
@@ -40,14 +40,15 @@ pub async fn launch(
 
     //println!("{:#?}", options);
 
-    Ok(start(options, ctx, channels).await?)
+    Ok(start(options, ctx, shutdown_rx, channels).await?)
 }
 
 /// Start a headless server with the given channels.
 pub async fn start(
     options: &'static ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
+    shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<(), Error> {
-    Ok(router::serve(options, bind, channels).await?)
+    Ok(router::serve(options, bind, shutdown, channels).await?)
 }
