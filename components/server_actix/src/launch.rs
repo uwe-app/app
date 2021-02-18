@@ -14,7 +14,7 @@ pub async fn launch(
     let (ctx, crx) = oneshot::channel::<ConnectionInfo>();
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
-    let channels = ServerChannels::new_keepalive(shutdown_tx);
+    let channels = ServerChannels::new();
 
     let _ = tokio::task::spawn(async move {
         match crx.await {

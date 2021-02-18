@@ -14,7 +14,6 @@ pub struct ServerChannels {
     pub(crate) render:
         HashMap<String, mpsc::Sender<(String, oneshot::Sender<ResponseValue>)>>,
     pub(crate) websockets: HashMap<String, broadcast::Sender<Message>>,
-    //shutdown_tx: Option<oneshot::Sender<bool>>,
 }
 
 impl ServerChannels {
@@ -25,20 +24,6 @@ impl ServerChannels {
         Self {
             render: HashMap::new(),
             websockets: HashMap::new(),
-            //shutdown_tx: None,
-        }
-    }
-
-    /// Create a channels collection that owns the shutdown
-    /// sender so the server is kept alive.
-    ///
-    /// Use this when starting a server and you do not need to
-    /// call the shutdown channel.
-    pub fn new_keepalive(tx: oneshot::Sender<bool>) -> Self {
-        Self {
-            render: HashMap::new(),
-            websockets: HashMap::new(),
-            //shutdown_tx: Some(tx),
         }
     }
 }

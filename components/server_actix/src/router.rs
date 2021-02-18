@@ -347,15 +347,15 @@ async fn start(
         }
 
         app = app.default_service(
-            // 404 for GET request
+            // Show something when no virtual hosts match
+            // for all requests that are not `GET`.
             web::resource("")
                 .route(web::get().to(default_route))
-                // all requests that are not `GET`
                 .route(
                     web::route()
                         .guard(guard::Not(guard::Get()))
                         .to(HttpResponse::MethodNotAllowed),
-                ),
+                )
         );
 
         app

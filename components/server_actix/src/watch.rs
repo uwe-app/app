@@ -100,8 +100,7 @@ pub async fn watch(
         .map(|h| h.name.clone())
         .collect::<Vec<String>>();
 
-    let (server_channels, watch_channels) =
-        create_channels(channel_names, shutdown_tx)?;
+    let (server_channels, watch_channels) = create_channels(channel_names)?;
 
     // Server must have at least a single virtual host
     let host = hosts.swap_remove(0);
@@ -175,10 +174,9 @@ fn create_resources(
 
 fn create_channels(
     names: Vec<String>,
-    shutdown_tx: oneshot::Sender<bool>,
 ) -> Result<(ServerChannels, WatchChannels)> {
     // Create the collection of channels
-    let mut server = ServerChannels::new_keepalive(shutdown_tx);
+    let mut server = ServerChannels::new();
     let mut watch: WatchChannels = Default::default();
 
     names.iter().try_for_each(|name| {
