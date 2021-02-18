@@ -125,7 +125,7 @@ impl Handler<Connect> for LiveReloadServer {
     type Result = usize;
 
     fn handle(&mut self, msg: Connect, _: &mut Context<Self>) -> Self::Result {
-        println!("Someone joined");
+        //println!("Someone joined");
 
         // notify all users in same room
         self.send_message(&"Main".to_owned(), "Someone joined", 0);
@@ -143,7 +143,7 @@ impl Handler<Connect> for LiveReloadServer {
         let count = self.visitor_count.fetch_add(1, Ordering::SeqCst);
         self.send_message("Main", &format!("Total visitors {}", count), 0);
 
-        println!("Id is {:?}", id);
+        //println!("Id is {:?}", id);
 
         // send id back
         id
@@ -155,7 +155,7 @@ impl Handler<Disconnect> for LiveReloadServer {
     type Result = ();
 
     fn handle(&mut self, msg: Disconnect, _: &mut Context<Self>) {
-        println!("Someone disconnected");
+        //println!("Someone disconnected");
 
         let mut rooms: Vec<String> = Vec::new();
 
