@@ -3,6 +3,7 @@ use std::io::BufReader;
 use std::pin::Pin;
 
 use url::Url;
+use serde_json::json;
 
 use once_cell::sync::OnceCell;
 
@@ -23,7 +24,7 @@ use actix_web::{
         header::{self, HeaderValue},
     },
     middleware::{Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash},
-    web, App, HttpResponse, HttpServer,
+    web, App, HttpRequest, HttpResponse, HttpServer,
 };
 
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
@@ -61,6 +62,20 @@ pub async fn dav_handler(
     }
 }
 
+/// Default route handler.
+async fn default_route(req: HttpRequest) -> HttpResponse {
+
+    if req.path() == "" || req.path() == "/" || req.path() == "/index.html" {
+        HttpResponse::Ok()
+            .content_type("text/html")
+            .body(format!("No virtul host matched your request!"))
+    } else {
+        HttpResponse::NotFound()
+            .content_type("text/html")
+            .body(format!("No page found!"))
+    }
+}
+
 #[actix_web::main]
 async fn start(
     opts: &'static ServerConfig,
@@ -92,6 +107,8 @@ async fn start(
         }
     }
 
+    //let channels = Arc::new(RwLock::new(channels));
+
     let server = HttpServer::new(move || {
         let mut app: App<_, _> = App::new();
             //.wrap(Logger::default());
@@ -101,6 +118,9 @@ async fn start(
             let deny_iframe = host.deny_iframe;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
+
+            //let live_render_tx = channels.render.get(&host.name).unwrap().clone();
+            //let live_render_rx = channels.render_responses.remove(&host.name).unwrap();
 
             let mut host_names = vec![&host.name];
             if let Some(ref authorities) = opts.authorities() {
@@ -181,6 +201,52 @@ async fn start(
 
                         srv.call(req)
                     })
+                    // Handle live rendering
+                    .wrap_fn(move |req, srv| {
+
+                        let mut href = if req.path().ends_with("/") || req.path().ends_with(".html") {
+                            if req.path().ends_with("/") && req.path() != "/" {
+                                Some(format!("{}{}", req.path(), config::INDEX_HTML))
+                            } else {
+                                Some(req.path().to_string())
+                            }
+                        } else {
+                            None
+                        };
+
+                        let fut = srv.call(req);
+                        async move {
+
+                            if let Some(href) = href.take() {
+                                /*
+                                // TODO: handle RenderSendError
+                                let _ = live_render_tx.send(href).await;
+
+                                if let Some(response) = live_render_rx.recv().await {
+                                    if let Some(error) = response {
+                                        let registry = parser();
+                                        let data = json!({
+                                            "title": "Render Error",
+                                            "message": error.to_string()});
+                                        let doc = registry.render("error", &data).unwrap();
+
+                                        /*
+                                        return Ok(warp::reply::with_status(
+                                            warp::reply::html(doc),
+                                            StatusCode::INTERNAL_SERVER_ERROR,
+                                        ));
+                                        */
+                                    }
+                                }
+                                */
+                            }
+
+                            let mut res = fut.await?;
+
+                            Ok(res)
+                        }
+
+                    })
                     // Handle conditional headers
                     .wrap_fn(move |req, srv| {
                         //println!("Request path: {}", req.path());
@@ -259,6 +325,20 @@ async fn start(
             );
 
         }
+
+        app = app
+            .default_service(
+                // 404 for GET request
+                web::resource("")
+                    .route(web::get().to(default_route))
+                    // all requests that are not `GET`
+                    .route(
+                        web::route()
+                            .guard(guard::Not(guard::Get()))
+                            .to(HttpResponse::MethodNotAllowed),
+                    ),
+            );
+
         app
     });
     //.workers(4);
