@@ -10,7 +10,7 @@ use futures_util::FutureExt;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::{broadcast, mpsc, oneshot};
 use url::Url;
-use warp::ws::Message;
+//use warp::ws::Message;
 
 use config::server::{
     ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig, WebDavConfig,
@@ -19,7 +19,7 @@ use config::server::{
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
 
 use crate::{
-    channels::{self, ResponseValue, ServerChannels, WatchChannels},
+    channels::{self, Message, ResponseValue, ServerChannels, WatchChannels},
     Error, ErrorCallback, Result,
 };
 
@@ -364,7 +364,7 @@ fn spawn_monitor(
                                     let msg = livereload::messages::start();
                                     let txt = serde_json::to_string(&msg).unwrap();
 
-                                    let _ = ws_tx.send(Message::text(txt));
+                                    let _ = ws_tx.send(Message::Text(txt));
 
                                     match invalidator.get_invalidation(paths) {
                                         Ok(invalidation) => {
@@ -390,7 +390,7 @@ fn spawn_monitor(
                                                         livereload::messages::reload(href);
                                                     let txt = serde_json::to_string(&msg)
                                                         .unwrap();
-                                                    let _ = ws_tx.send(Message::text(txt));
+                                                    let _ = ws_tx.send(Message::Text(txt));
                                                     //println!("Got result {:?}", res);
                                                 }
                                                 // Send errors to the websocket
@@ -403,7 +403,7 @@ fn spawn_monitor(
                                                     );
                                                     let txt = serde_json::to_string(&msg)
                                                         .unwrap();
-                                                    let _ = ws_tx.send(Message::text(txt));
+                                                    let _ = ws_tx.send(Message::Text(txt));
                                                 }
                                             }
                                         }

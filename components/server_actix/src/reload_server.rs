@@ -108,6 +108,16 @@ impl Actor for LiveReloadServer {
     type Context = Context<Self>;
 }
 
+/// Broadcast message to all rooms.
+impl Handler<Message> for LiveReloadServer {
+    type Result = ();
+    fn handle(&mut self, msg: Message, _ctx: &mut Self::Context) {
+        for (k, _v) in self.rooms.iter() {
+            self.send_message(k, &msg.0, 0);
+        }
+    }
+}
+
 /// Handler for Connect message.
 ///
 /// Register new session and assign unique id to this session

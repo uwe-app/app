@@ -3,11 +3,17 @@
 use std::collections::HashMap;
 
 use tokio::sync::{broadcast, mpsc, oneshot};
-use warp::ws::Message;
+//use warp::ws::Message;
+//
 
 pub type ResponseValue = Option<Box<dyn std::error::Error + Send + Sync>>;
 
 pub(crate) const RENDER_CHANNEL_BUFFER: usize = 128;
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    Text(String),
+}
 
 #[derive(Debug, Clone)]
 pub struct ServerChannels {

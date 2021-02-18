@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::pin::Pin;
-use std::sync::{Arc, atomic::AtomicUsize};
+use std::sync::{atomic::AtomicUsize, Arc};
 
 use serde_json::json;
 use url::Url;
@@ -25,9 +25,7 @@ use actix_web::{
         self,
         header::{self, HeaderValue},
     },
-    middleware::{
-        DefaultHeaders, NormalizePath, TrailingSlash,
-    },
+    middleware::{DefaultHeaders, NormalizePath, TrailingSlash},
     web, App, HttpRequest, HttpResponse, HttpServer,
 };
 
@@ -38,9 +36,9 @@ use bracket::Registry;
 use log::info;
 
 use crate::{
-    channels::{ResponseValue, ServerChannels},
-    reload_server::LiveReloadServer,
+    channels::{Message, ResponseValue, ServerChannels},
     drop_privileges::{drop_privileges, is_root},
+    reload_server::{self, LiveReloadServer},
     websocket::ws_index,
     Error, Result,
 };
@@ -130,25 +128,52 @@ async fn start(
             let deny_iframe = host.deny_iframe;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
-            let watch = host.watch;
 
+            let watch = host.watch;
             let endpoint = if let Some(ref endpoint) = host.endpoint {
                 endpoint.clone()
             } else {
                 utils::generate_id(16)
             };
 
+            // Collect all authorities and setup guards for virtual host detection
             let mut host_names = vec![&host.name];
             if let Some(ref authorities) = opts.authorities() {
                 for name in authorities.iter() {
                     host_names.push(name);
                 }
             }
-
             let host_guards = host_names
                 .iter()
                 .map(|name| guard::Host(name))
                 .collect::<Vec<_>>();
+
+            // Set up logic to broadcast notifications to all connected
+            // web sockets when we get a notification via the watch module.
+            //
+            // Requires a thread per host as we need to block whilst waiting
+            // for notifications on the reload channel.
+            if watch {
+                let broadcast_server = reload_server.clone();
+                let reload_rx =
+                    channels.websockets.get(&host.name).unwrap().clone();
+                let mut live_reload_rx = reload_rx.subscribe();
+
+                std::thread::spawn(move || {
+                    let rt = tokio::runtime::Runtime::new().unwrap();
+                    rt.block_on(async move {
+                        while let Ok(m) = live_reload_rx.recv().await {
+                            match m {
+                                Message::Text(message) => {
+                                    broadcast_server.do_send(
+                                        reload_server::Message(message),
+                                    );
+                                }
+                            }
+                        }
+                    });
+                });
+            }
 
             // Setup webdav route
             if let Some(ref webdav) = host.webdav {
@@ -174,9 +199,7 @@ async fn start(
             }
 
             let live_render_tx = if watch {
-                Arc::new(
-                    Some(
-                        channels.render.get(&host.name).unwrap().clone()))
+                Arc::new(Some(channels.render.get(&host.name).unwrap().clone()))
             } else {
                 Arc::new(None)
             };
@@ -307,7 +330,6 @@ async fn start(
                                         */
                                     }
                                 }
-
                             }
 
                             Ok(fut.await?)
@@ -341,9 +363,9 @@ async fn start(
                     }))
                     .service(
                         web::resource(&endpoint)
-                        //.guard()
-                        .route(web::get().to(ws_index)))
-
+                            //.guard()
+                            .route(web::get().to(ws_index)),
+                    )
                     // Serve static files
                     .service(
                         Files::new("", host.directory.clone())
@@ -359,13 +381,11 @@ async fn start(
         app = app.default_service(
             // Show something when no virtual hosts match
             // for all requests that are not `GET`.
-            web::resource("")
-                .route(web::get().to(default_route))
-                .route(
-                    web::route()
-                        .guard(guard::Not(guard::Get()))
-                        .to(HttpResponse::MethodNotAllowed),
-                )
+            web::resource("").route(web::get().to(default_route)).route(
+                web::route()
+                    .guard(guard::Not(guard::Get()))
+                    .to(HttpResponse::MethodNotAllowed),
+            ),
         );
 
         app

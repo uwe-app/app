@@ -12,13 +12,12 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-
 /// do websocket handshake and start `ClientSocket` actor
 pub(crate) async fn ws_index(
     r: HttpRequest,
     stream: web::Payload,
-    srv: web::Data<Addr<LiveReloadServer>>
-    ) -> Result<HttpResponse, Error> {
+    srv: web::Data<Addr<LiveReloadServer>>,
+) -> Result<HttpResponse, Error> {
     let socket = ClientSocket::new(srv.get_ref().clone());
     let res = ws::start(socket, &r, stream);
     //println!("{:?}", res);
@@ -40,7 +39,6 @@ pub struct ClientSocket {
 /// Handle messages from server, we simply send it to peer websocket
 impl Handler<reload_server::Message> for ClientSocket {
     type Result = ();
-
     fn handle(&mut self, msg: reload_server::Message, ctx: &mut Self::Context) {
         ctx.text(msg.0);
     }
@@ -113,7 +111,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClientSocket {
 
 impl ClientSocket {
     fn new(addr: Addr<LiveReloadServer>) -> Self {
-        Self { hb: Instant::now(), id: 0, addr }
+        Self {
+            hb: Instant::now(),
+            id: 0,
+            addr,
+        }
     }
 
     /// helper method that sends ping to client every second.
@@ -123,7 +125,6 @@ impl ClientSocket {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             // check client heartbeats
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-
                 // heartbeat timed out
                 //println!("Websocket Client heartbeat failed, disconnecting!");
 
