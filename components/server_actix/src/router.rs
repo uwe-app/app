@@ -52,6 +52,10 @@ use config::server::{ConnectionInfo, PortType, ServerConfig};
 /// for the route handler.
 pub struct IndexPage(pub String);
 
+/// Wrap the default not found page in a specific type 
+/// for the route handler.
+pub struct NotFoundPage(pub String);
+
 /// Information about known virtual hosts passed to the 
 /// default index page template.
 #[derive(Debug, Serialize)]
@@ -67,6 +71,8 @@ pub fn parser() -> &'static Registry<'static> {
         let _ = registry.insert("error", include_str!("error.html"));
         let _ = registry
             .insert("default_index", include_str!("default_index.html"));
+        let _ = registry
+            .insert("default_not_found", include_str!("default_not_found.html"));
         registry
     })
 }
@@ -84,7 +90,11 @@ pub async fn dav_handler(
 }
 
 /// Default route handler.
-async fn default_route(req: HttpRequest, index_page: web::Data<IndexPage>) -> HttpResponse {
+async fn default_route(
+    req: HttpRequest,
+    index_page: web::Data<IndexPage>,
+    not_found_page: web::Data<NotFoundPage>,
+    ) -> HttpResponse {
     if req.path() == "" || req.path() == "/" || req.path() == "/index.html" {
         HttpResponse::Ok()
             .content_type("text/html")
@@ -92,7 +102,7 @@ async fn default_route(req: HttpRequest, index_page: web::Data<IndexPage>) -> Ht
     } else {
         HttpResponse::NotFound()
             .content_type("text/html")
-            .body(format!("No page found!"))
+            .body(&not_found_page.0)
     }
 }
 
@@ -140,8 +150,12 @@ async fn start(
     let data = json!({
         "hosts": virtual_hosts,
     });
+
     let default_index = registry.render("default_index", &data).unwrap();
-    let default_index_data = web::Data::new(IndexPage(default_index));
+    let default_index = web::Data::new(IndexPage(default_index));
+
+    let default_not_found = registry.render("default_not_found", &json!({})).unwrap();
+    let default_not_found = web::Data::new(NotFoundPage(default_not_found));
 
     let app_state = Arc::new(AtomicUsize::new(0));
     let reload_server = LiveReloadServer::new(app_state.clone()).start();
@@ -415,7 +429,8 @@ async fn start(
             // Show something when no virtual hosts match
             // for all requests that are not `GET`.
             web::resource("")
-                .app_data(default_index_data.clone())
+                .app_data(default_index.clone())
+                .app_data(default_not_found.clone())
                 .route(web::get().to(default_route)).route(
                 web::route()
                     .guard(guard::Not(guard::Get()))
