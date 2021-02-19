@@ -7,7 +7,7 @@ use config::server::{ConnectionInfo, LaunchConfig, ServerConfig};
 
 /// Start a server and launch a browser window.
 pub async fn launch(
-    options: &'static ServerConfig,
+    options: ServerConfig,
     launch: LaunchConfig,
 ) -> Result<(), Error> {
     // Create a channel to receive the bind address.
@@ -45,7 +45,7 @@ pub async fn launch(
 
 /// Start a headless server with the given channels.
 pub async fn start(
-    options: &'static ServerConfig,
+    options: ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,

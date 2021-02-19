@@ -138,7 +138,7 @@ pub async fn watch(
     }
 
     // Convert to &'static reference
-    let opts = super::configure(opts);
+    //let opts = super::configure(opts);
 
     // Start the webserver
     super::router::serve(opts, bind_tx, shutdown_rx, server_channels).await?;

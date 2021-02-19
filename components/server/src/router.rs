@@ -108,7 +108,7 @@ async fn default_route(
 
 #[actix_web::main]
 async fn start(
-    opts: &'static ServerConfig,
+    opts: ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
@@ -127,6 +127,13 @@ async fn start(
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
     let hosts = opts.hosts();
+    let tls = opts.tls.is_some();
+    let host = opts.default_host.name.clone();
+    let temporary_redirect = opts.temporary_redirect;
+    let http_addr = opts.get_sock_addr(PortType::Insecure)?;
+    let tls_port = opts.tls_port();
+    let authorities = opts.authorities().clone();
+
 
     let mut virtual_hosts = Vec::new();
 
@@ -182,7 +189,7 @@ async fn start(
 
             // Collect all authorities and setup guards for virtual host detection
             let mut host_names = vec![&host.name];
-            if let Some(ref authorities) = opts.authorities() {
+            if let Some(ref authorities) = authorities {
                 for name in authorities.iter() {
                     host_names.push(name);
                 }
@@ -265,7 +272,7 @@ async fn start(
                                     >,
                                 >,
                             > = Box::pin(async move {
-                                let redirect = if opts.temporary_redirect {
+                                let redirect = if temporary_redirect {
                                     HttpResponse::TemporaryRedirect()
                                         .append_header((
                                             http::header::LOCATION,
@@ -457,9 +464,6 @@ async fn start(
         config.set_single_cert(cert_chain, keys.remove(0)).unwrap();
 
         // Always redirect HTTP -> HTTPS
-        let http_addr = opts.get_sock_addr(PortType::Insecure)?;
-        let tls_port = opts.tls_port();
-
         let redirect_server = HttpServer::new(move || {
             let mut app: App<_, _> = App::new();
             app = app.service(web::scope("").wrap_fn(move |req, _srv| {
@@ -496,9 +500,7 @@ async fn start(
     let mut addrs = server.addrs();
 
     if !addrs.is_empty() {
-        let tls = opts.tls.is_some();
         let addr = addrs.swap_remove(0);
-        let host = opts.default_host.name.clone();
         let info = ConnectionInfo { addr, host, tls };
         bind.send(info)
             .expect("Failed to send web server socket address");
@@ -563,7 +565,7 @@ async fn start(
 }
 
 pub async fn serve(
-    opts: &'static ServerConfig,
+    opts: ServerConfig,
     bind: oneshot::Sender<ConnectionInfo>,
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,

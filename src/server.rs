@@ -9,13 +9,6 @@ use workspace::{compile, HostInfo, HostResult};
 
 use crate::{opts::Compile, Error, Result};
 
-/// Serve using an `index.html` file.
-async fn serve_index(opts: ServerConfig, launch: LaunchConfig) -> Result<()> {
-    // Convert to &'static reference
-    let opts = server::configure(opts);
-    Ok(server::launch(opts, launch).await?)
-}
-
 /// Serve either a project or a target directory.
 pub async fn serve(
     target: &PathBuf,
@@ -65,13 +58,12 @@ pub async fn serve(
             opts.default_host = default_host;
 
             let hosts: Vec<HostConfig> = it.map(|(_, host)| host).collect();
-
             opts.hosts = hosts;
         }
 
-        Ok(serve_index(opts, launch).await?)
+        Ok(server::launch(opts, launch).await?)
     } else if index_file.exists() && index_file.is_file() {
-        Ok(serve_index(opts, launch).await?)
+        Ok(server::launch(opts, launch).await?)
     } else {
         Err(Error::NoServerFile(
             config::SITE_TOML.to_string(),

@@ -199,8 +199,6 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
         Ok::<(), Error>(())
     });
 
-    // Convert to &'static reference
-    let server_opts = server::configure(server_opts);
     // Launch the test server
     server::start(server_opts, bind_tx, shutdown_rx, channels).await?;
 

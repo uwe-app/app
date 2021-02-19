@@ -159,9 +159,9 @@ impl ServerConfig {
         }
     }
 
-    pub fn hosts(&self) -> Vec<&HostConfig> {
-        let mut list = vec![&self.default_host];
-        let mut hosts = self.hosts.iter().collect::<Vec<_>>();
+    pub fn hosts(&self) -> Vec<HostConfig> {
+        let mut list = vec![self.default_host.clone()];
+        let mut hosts = self.hosts.iter().map(|h| h.clone()).collect::<Vec<_>>();
         list.append(&mut hosts);
         list
     }
