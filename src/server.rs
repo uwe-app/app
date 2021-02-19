@@ -113,6 +113,9 @@ pub async fn serve(
         }
 
         let opts = ServerConfig::load(config)?;
+
+        println!("Config opts {:#?}", opts);
+
         server::launch(opts, launch).await?;
     } else {
         return Err(Error::NoServerTargets)

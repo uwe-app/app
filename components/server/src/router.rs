@@ -118,15 +118,6 @@ async fn start(
     let ssl_key = std::env::var("UWE_SSL_KEY").ok();
     let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
 
-    // Allow empty environment variables as a means of disabling SSL certificates
-    let use_ssl = if let (Some(key), Some(cert)) =
-        (ssl_key.as_ref(), ssl_cert.as_ref())
-    {
-        !key.is_empty() && !cert.is_empty()
-    } else {
-        false
-    };
-
     let addr = opts.get_sock_addr(PortType::Infer)?;
     let hosts = opts.hosts();
     let tls = opts.tls.is_some();
@@ -136,13 +127,22 @@ async fn start(
     let tls_port = opts.tls_port();
     let authorities = opts.authorities().clone();
 
+    // Allow empty environment variables as a means of disabling SSL certificates
+    let use_ssl = tls && if let (Some(key), Some(cert)) =
+        (ssl_key.as_ref(), ssl_cert.as_ref())
+    {
+        !key.is_empty() && !cert.is_empty()
+    } else {
+        false
+    };
+
     let mut virtual_hosts = Vec::new();
 
     // Print each host name here otherwise it would be
     // duplicated for each worker thread if we do it within
     // the HttpServer::new setup closure
     for host in hosts.iter() {
-        info!("Host {}", &host.name);
+        info!("Host {} ({})", &host.name, host.directory.display());
         if let Some(ref webdav) = host.webdav {
             info!("Webdav {}", webdav.directory.display());
         }
