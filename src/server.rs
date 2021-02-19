@@ -17,41 +17,23 @@ async fn serve_project(
     mut opts: ServerConfig,
     launch: LaunchConfig,
     args: Compile,
-    skip_build: bool,
 ) -> Result<()> {
-    if skip_build {
-        let workspace = workspace::open(&project, false, &args.member)?;
-        let mut it = workspace.iter();
-        if let Some(config) = it.next() {
-            // Respect target build directory
-            let build = config.build.as_ref().unwrap();
-            let build_target = project.join(build.target.join(config::RELEASE));
-            if !build_target.exists() || !build_target.is_dir() {
-                return Err(Error::NotDirectory(build_target));
-            }
+    let mut settings = ProfileSettings::from(&ProfileName::Release);
+    settings.exec = Some(args.exec);
+    settings.member = args.member;
+    settings.include_drafts = Some(args.include_drafts);
 
-            let mut host: HostConfig = Default::default();
-            host.directory = build_target;
-            opts.add_host(host);
-        }
-    } else {
-        let mut settings = ProfileSettings::from(&ProfileName::Release);
-        settings.exec = Some(args.exec);
-        settings.member = args.member;
-        settings.include_drafts = Some(args.include_drafts);
+    let result = compile(&project, &settings, Default::default()).await?;
 
-        let result = compile(&project, &settings, Default::default()).await?;
+    let host_result: HostResult = result.into();
+    let mut host_configs: Vec<(HostInfo, HostConfig)> =
+        host_result.try_into()?;
 
-        let host_result: HostResult = result.into();
-        let mut host_configs: Vec<(HostInfo, HostConfig)> =
-            host_result.try_into()?;
-
-        for (info, host) in host_configs.iter_mut() {
-            host.directory = info.project.options.build_target().to_path_buf();
-        }
-
-        opts.hosts = host_configs.into_iter().map(|(_, host)| host).collect();
+    for (info, host) in host_configs.iter_mut() {
+        host.directory = info.project.options.build_target().to_path_buf();
     }
+
+    opts.hosts = host_configs.into_iter().map(|(_, host)| host).collect();
 
     Ok(server::launch(opts, launch).await?)
 }
@@ -59,7 +41,6 @@ async fn serve_project(
 /// Serve either a project, directory or load from a config.
 pub async fn serve(
     targets: (Option<PathBuf>, Option<PathBuf>, Option<PathBuf>),
-    skip_build: bool,
     server: WebServerOpts,
     open: bool,
     args: Compile,
@@ -86,7 +67,7 @@ pub async fn serve(
         let project = project_path(&project)?;
         let opts = server_config(&server, config::PORT, config::PORT_SSL);
 
-        serve_project(project, opts, launch, args, skip_build).await?;
+        serve_project(project, opts, launch, args).await?;
     // Handle directory
     } else if let Some(directory) = targets.1 {
         let mut opts = server_config(&server, config::PORT, config::PORT_SSL);

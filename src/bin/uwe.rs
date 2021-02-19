@@ -78,7 +78,6 @@ async fn run(cmd: Command) -> Result<()> {
         Command::Server { args } => {
             uwe::server::serve(
                 (args.project, args.directory, args.config),
-                args.skip_build,
                 args.server,
                 args.open,
                 args.build_opts,

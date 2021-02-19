@@ -10,10 +10,6 @@ pub struct Server {
     #[structopt(flatten)]
     pub server: WebServerOpts,
 
-    /// Do not create a release build for projects
-    #[structopt(short, long)]
-    pub skip_build: bool,
-
     /// Launch a web browser
     #[structopt(short = "O", long)]
     pub open: bool,
