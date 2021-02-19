@@ -7,7 +7,10 @@ use config::{
 };
 use workspace::{compile, HostInfo, HostResult};
 
-use crate::{opts::{Compile, project_path, server_config, web_server::WebServerOpts}, Error, Result};
+use crate::{
+    opts::{project_path, server_config, web_server::WebServerOpts, Compile},
+    Error, Result,
+};
 
 async fn serve_project(
     project: PathBuf,
@@ -15,8 +18,7 @@ async fn serve_project(
     launch: LaunchConfig,
     args: Compile,
     skip_build: bool,
-    ) -> Result<()> {
-
+) -> Result<()> {
     if skip_build {
         let workspace = workspace::open(&project, false, &args.member)?;
         let mut it = workspace.iter();
@@ -38,16 +40,14 @@ async fn serve_project(
         settings.member = args.member;
         settings.include_drafts = Some(args.include_drafts);
 
-        let result =
-            compile(&project, &settings, Default::default()).await?;
+        let result = compile(&project, &settings, Default::default()).await?;
 
         let host_result: HostResult = result.into();
         let mut host_configs: Vec<(HostInfo, HostConfig)> =
             host_result.try_into()?;
 
         for (info, host) in host_configs.iter_mut() {
-            host.directory =
-                info.project.options.build_target().to_path_buf();
+            host.directory = info.project.options.build_target().to_path_buf();
         }
 
         opts.hosts = host_configs.into_iter().map(|(_, host)| host).collect();
@@ -64,13 +64,18 @@ pub async fn serve(
     open: bool,
     args: Compile,
 ) -> Result<()> {
-
     let mut given = Vec::new();
-    if targets.0.is_some() { given.push(true) }
-    if targets.1.is_some() { given.push(true) }
-    if targets.2.is_some() { given.push(true) }
+    if targets.0.is_some() {
+        given.push(true)
+    }
+    if targets.1.is_some() {
+        given.push(true)
+    }
+    if targets.2.is_some() {
+        given.push(true)
+    }
     if given.len() > 1 {
-        return Err(Error::TooManyServerTargets)
+        return Err(Error::TooManyServerTargets);
     }
 
     let launch = LaunchConfig { open };
@@ -78,21 +83,13 @@ pub async fn serve(
     // Handle project
     if let Some(project) = targets.0 {
         // Must call project_path() so we respect `.uwe-version` !!!
-        let project = project_path(&project)?; 
-        let opts = server_config(
-            &server,
-            config::PORT,
-            config::PORT_SSL,
-        );
+        let project = project_path(&project)?;
+        let opts = server_config(&server, config::PORT, config::PORT_SSL);
 
         serve_project(project, opts, launch, args, skip_build).await?;
     // Handle directory
     } else if let Some(directory) = targets.1 {
-        let mut opts = server_config(
-            &server,
-            config::PORT,
-            config::PORT_SSL,
-        );
+        let mut opts = server_config(&server, config::PORT, config::PORT_SSL);
 
         let host = HostConfig::new_directory(directory);
         opts.add_host(host);
@@ -101,7 +98,7 @@ pub async fn serve(
     // Handle configuration file
     } else if let Some(config) = targets.2 {
         if !config.exists() || !config.is_file() {
-            return Err(Error::NotFile(config))
+            return Err(Error::NotFile(config));
         }
 
         let opts = ServerConfig::load(config)?;
@@ -110,7 +107,7 @@ pub async fn serve(
 
         server::launch(opts, launch).await?;
     } else {
-        return Err(Error::NoServerTargets)
+        return Err(Error::NoServerTargets);
     }
 
     Ok(())

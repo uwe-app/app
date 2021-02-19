@@ -18,9 +18,9 @@ use webdav_handler::actix::*;
 use webdav_handler::{fakels::FakeLs, localfs::LocalFs, DavConfig, DavHandler};
 
 use actix::Actor;
-use actix_files::Files;
+use actix_files::{Files, NamedFile};
 use actix_web::{
-    dev::{Service, ServiceResponse},
+    dev::{Service, ServiceRequest, ServiceResponse},
     error,
     guard::{self, Guard},
     http::{
@@ -36,7 +36,7 @@ use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 use rustls::{NoClientAuth, ServerConfig as TlsServerConfig};
 
 use bracket::Registry;
-use log::{info, warn, error};
+use log::{error, info, warn};
 
 use crate::{
     channels::{Message, ResponseValue, ServerChannels},
@@ -137,13 +137,14 @@ async fn start(
     let authorities = opts.authorities().clone();
 
     // Allow empty environment variables as a means of disabling SSL certificates
-    let use_ssl = tls && if let (Some(key), Some(cert)) =
-        (ssl_key.as_ref(), ssl_cert.as_ref())
-    {
-        !key.is_empty() && !cert.is_empty()
-    } else {
-        false
-    };
+    let use_ssl = tls
+        && if let (Some(key), Some(cert)) =
+            (ssl_key.as_ref(), ssl_cert.as_ref())
+        {
+            !key.is_empty() && !cert.is_empty()
+        } else {
+            false
+        };
 
     let mut virtual_hosts = Vec::new();
 
@@ -163,7 +164,8 @@ async fn start(
         if !host.directory.exists() || !host.directory.is_dir() {
             return Err(Error::VirtualHostDirectory(
                 host.name.to_string(),
-                host.directory.to_path_buf()));
+                host.directory.to_path_buf(),
+            ));
         }
 
         if host.redirects.is_none() {
@@ -173,7 +175,10 @@ async fn start(
         if host.require_index {
             let index_page = host.directory.join(config::INDEX_HTML);
             if !index_page.exists() || !index_page.is_file() {
-                return Err(Error::NoIndexFile(host.name.to_string(), index_page));
+                return Err(Error::NoIndexFile(
+                    host.name.to_string(),
+                    index_page,
+                ));
             }
         }
 
@@ -216,6 +221,7 @@ async fn start(
             let deny_iframe = host.deny_iframe;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
+            let error_page = host.directory.join(config::ERROR_HTML);
 
             let watch = host.watch;
             let endpoint = if let Some(ref endpoint) = host.endpoint {
@@ -460,6 +466,31 @@ async fn start(
                     // Serve static files
                     .service(
                         Files::new("", host.directory.clone())
+                            .default_handler(move |req: ServiceRequest| {
+                                let err = error_page.clone();
+                                let (http_req, _payload) = req.into_parts();
+                                async {
+                                    let response = if err.exists() {
+                                        match NamedFile::open(err) {
+                                            Ok(file) => {
+                                                file.into_response(&http_req)
+                                            }
+                                            Err(e) => {
+                                                return Err(
+                                                    actix_web::Error::from(e),
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        // TODO: pretty not found when no 404.html for the host?
+                                        HttpResponse::NotFound()
+                                            .content_type("text/html")
+                                            .body("NOT_FOUND")
+                                    };
+
+                                    Ok(ServiceResponse::new(http_req, response))
+                                }
+                            })
                             .prefer_utf8(true)
                             .index_file(config::INDEX_HTML)
                             .use_etag(!host.disable_cache)
@@ -608,7 +639,6 @@ pub async fn serve(
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<()> {
-
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
         if let Err(e) = start(opts, bind, shutdown, channels) {
@@ -624,7 +654,7 @@ pub async fn serve(
                         warn!("a different port for the web server using the --port ");
                         warn!("and --ssl-port options.");
                         eprintln!("{}", delimiter);
-                    } 
+                    }
                 }
                 _ => {}
             }

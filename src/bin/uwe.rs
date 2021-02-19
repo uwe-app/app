@@ -7,7 +7,7 @@ use log::info;
 use semver::Version;
 use structopt::StructOpt;
 
-use config::{ProfileSettings, server::HostConfig};
+use config::{server::HostConfig, ProfileSettings};
 
 use publisher::PublishProvider;
 

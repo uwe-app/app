@@ -57,7 +57,9 @@ impl TryInto<Redirects> for RedirectConfig {
     type Error = crate::Error;
 
     fn try_into(self) -> std::result::Result<Redirects, Self::Error> {
-        let mut map = Redirects {items: HashMap::new()};
+        let mut map = Redirects {
+            items: HashMap::new(),
+        };
         for (k, v) in self.manifest.map {
             map.items.insert(k, v.as_str().parse::<Uri>()?);
         }

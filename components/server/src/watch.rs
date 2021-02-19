@@ -106,7 +106,8 @@ pub async fn watch(
     let mut opts = ServerConfig::new(
         listen.unwrap_or(config::ADDR.to_string()),
         port.to_owned(),
-        tls);
+        tls,
+    );
 
     opts.authorities = authorities;
     opts.hosts = hosts;

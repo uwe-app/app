@@ -11,9 +11,6 @@ use rusoto_s3::{
 
 use crate::{region_info::REGION_INFO, Error, Result};
 
-//const INDEX_HTML: &str = "index.html";
-//const ERROR_HTML: &str = "404.html";
-
 const BUCKET_TEMPLATE: &str = "__BUCKET__";
 const POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
 

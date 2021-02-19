@@ -83,7 +83,7 @@ pub fn tls_config(
     tls
 }
 
-/// Generate a server config with zero hosts that respects 
+/// Generate a server config with zero hosts that respects
 /// the default ports and SSL command line options.
 pub fn server_config(
     opts: &WebServerOpts,
@@ -96,10 +96,8 @@ pub fn server_config(
         port = p;
     }
 
-    let mut server_config = ServerConfig::new(
-        opts.addr.to_string(),
-        port.to_owned(),
-        tls);
+    let mut server_config =
+        ServerConfig::new(opts.addr.to_string(), port.to_owned(), tls);
     //server_config.listen = opts.addr.to_string();
     server_config.authorities = opts.authority.clone();
     server_config

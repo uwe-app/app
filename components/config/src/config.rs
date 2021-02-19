@@ -59,6 +59,7 @@ pub const PACKAGE: &str = "package";
 pub const HTML: &str = "html";
 pub const INDEX_STEM: &str = "index";
 pub const INDEX_HTML: &str = "index.html";
+pub const ERROR_HTML: &str = "404.html";
 pub const MD: &str = "md";
 pub const TOML: &str = "toml";
 pub const JSON: &str = "json";

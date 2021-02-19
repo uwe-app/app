@@ -156,7 +156,7 @@ impl ServerConfig {
         let contents = fs::read_to_string(file.as_ref())?;
         let mut config: ServerConfig = toml::from_str(&contents)?;
 
-        // Directory paths that are relative should be resolved 
+        // Directory paths that are relative should be resolved
         // using the parent folder of the configuration file.
         if let Some(parent) = file.as_ref().parent() {
             for host in config.hosts.iter_mut() {
@@ -298,27 +298,21 @@ impl Default for HostConfig {
 }
 
 impl HostConfig {
-
-    pub fn new(
-        name: String,
-        directory: PathBuf,
-    ) -> Self {
+    pub fn new(name: String, directory: PathBuf) -> Self {
         let mut host: HostConfig = Default::default();
         host.name = name;
         host.directory = directory;
         host
     }
 
-    pub fn new_directory(
-        directory: PathBuf,
-    ) -> Self {
+    pub fn new_directory(directory: PathBuf) -> Self {
         let mut host: HostConfig = Default::default();
         host.directory = directory;
         host
     }
 
     pub fn name(&self) -> &str {
-        &self.name 
+        &self.name
     }
 
     pub fn directory(&self) -> &PathBuf {
@@ -342,7 +336,6 @@ impl HostConfig {
         }
         Ok(())
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

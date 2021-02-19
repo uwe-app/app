@@ -89,7 +89,9 @@ pub enum Error {
     #[error("Test runner command '{0} {1}' failed, see it's error output for more details")]
     IntegrationTestFail(String, String),
 
-    #[error("The server comamnd expects a project path or --directory or --config")]
+    #[error(
+        "The server comamnd expects a project path or --directory or --config"
+    )]
     NoServerTargets,
 
     #[error("The server comamnd expects either a project path, a directory or a config but multiple options given")]
