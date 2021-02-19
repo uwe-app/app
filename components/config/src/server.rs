@@ -185,13 +185,13 @@ impl ServerConfig {
     pub fn get_address(
         &self,
         port_type: PortType,
-        host: Option<String>,
+        host: Option<&str>,
     ) -> String {
         let port = self.get_port(port_type);
         let host = if let Some(host) = host {
             host.clone()
         } else {
-            self.listen.clone()
+            &self.listen
         };
         format!("{}:{}", host, port)
     }
@@ -200,9 +200,19 @@ impl ServerConfig {
         &self,
         scheme: &str,
         port_type: PortType,
-        host: Option<String>,
+        host: Option<&str>,
     ) -> String {
         format!("{}//{}", scheme, self.get_address(port_type, host))
+    }
+
+    pub fn get_host_url(
+        &self,
+        host: &str,
+    ) -> String {
+        let scheme = if self.tls.is_some() {
+            crate::SCHEME_HTTPS
+        } else { crate::SCHEME_HTTP };
+        format!("{}//{}", scheme, self.get_address(PortType::Infer, Some(host)))
     }
 
     pub fn get_sock_addr(&self, port_type: PortType) -> Result<SocketAddr> {

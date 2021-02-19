@@ -3,6 +3,7 @@ use std::io::BufReader;
 use std::pin::Pin;
 use std::sync::{atomic::AtomicUsize, Arc};
 
+use serde::Serialize;
 use serde_json::json;
 use url::Url;
 
@@ -20,8 +21,8 @@ use actix::Actor;
 use actix_files::Files;
 use actix_web::{
     dev::{Service, ServiceResponse},
-    guard::{self, Guard},
     error,
+    guard::{self, Guard},
     http::{
         self,
         header::{self, HeaderValue},
@@ -47,11 +48,25 @@ use crate::{
 
 use config::server::{ConnectionInfo, PortType, ServerConfig};
 
+/// Wrap the default index page in a specific type 
+/// for the route handler.
+pub struct IndexPage(pub String);
+
+/// Information about known virtual hosts passed to the 
+/// default index page template.
+#[derive(Debug, Serialize)]
+struct VirtualHost {
+    name: String,
+    url: String,
+}
+
 pub fn parser() -> &'static Registry<'static> {
     static INSTANCE: OnceCell<Registry> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         let mut registry = Registry::new();
         let _ = registry.insert("error", include_str!("error.html"));
+        let _ = registry
+            .insert("default_index", include_str!("default_index.html"));
         registry
     })
 }
@@ -69,11 +84,11 @@ pub async fn dav_handler(
 }
 
 /// Default route handler.
-async fn default_route(req: HttpRequest) -> HttpResponse {
+async fn default_route(req: HttpRequest, index_page: web::Data<IndexPage>) -> HttpResponse {
     if req.path() == "" || req.path() == "/" || req.path() == "/index.html" {
         HttpResponse::Ok()
             .content_type("text/html")
-            .body(format!("No virtual host matched your request!"))
+            .body(&index_page.0)
     } else {
         HttpResponse::NotFound()
             .content_type("text/html")
@@ -103,6 +118,8 @@ async fn start(
     let addr = opts.get_sock_addr(PortType::Infer)?;
     let hosts = opts.hosts();
 
+    let mut virtual_hosts = Vec::new();
+
     // Print each host name here otherwise it would be
     // duplicated for each worker thread if we do it within
     // the HttpServer::new setup closure
@@ -111,9 +128,20 @@ async fn start(
         if let Some(ref webdav) = host.webdav {
             info!("Webdav {}", webdav.directory.display());
         }
+
+        let virtual_host = VirtualHost {
+            name: host.name.to_string(),
+            url: opts.get_host_url(&host.name),
+        };
+        virtual_hosts.push(virtual_host);
     }
 
-    //let data = web::Data::new(Arc::new(Mutex::new(SocketClients { sockets: Vec::new() })));
+    let registry = parser();
+    let data = json!({
+        "hosts": virtual_hosts,
+    });
+    let default_index = registry.render("default_index", &data).unwrap();
+    let default_index_data = web::Data::new(IndexPage(default_index));
 
     let app_state = Arc::new(AtomicUsize::new(0));
     let reload_server = LiveReloadServer::new(app_state.clone()).start();
@@ -324,12 +352,15 @@ async fn start(
                                             .render("error", &data)
                                             .unwrap();
 
-                                        let res = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-                                            .body(doc);
-                                        return Err(
-                                            actix_web::Error::from(
-                                                error::InternalError::from_response(error, res)))
-
+                                        let res = HttpResponse::build(
+                                            StatusCode::INTERNAL_SERVER_ERROR,
+                                        )
+                                        .body(doc);
+                                        return Err(actix_web::Error::from(
+                                            error::InternalError::from_response(
+                                                error, res,
+                                            ),
+                                        ));
                                     }
                                 }
                             }
@@ -383,7 +414,9 @@ async fn start(
         app = app.default_service(
             // Show something when no virtual hosts match
             // for all requests that are not `GET`.
-            web::resource("").route(web::get().to(default_route)).route(
+            web::resource("")
+                .app_data(default_index_data.clone())
+                .route(web::get().to(default_route)).route(
                 web::route()
                     .guard(guard::Not(guard::Get()))
                     .to(HttpResponse::MethodNotAllowed),
