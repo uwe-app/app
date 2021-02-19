@@ -101,13 +101,16 @@ impl Default for LogConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default, rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case")]
 pub struct ServerConfig {
     pub listen: String,
     pub port: u16,
     pub tls: Option<TlsConfig>,
-    pub default_host: HostConfig,
+
+    #[serde(default, alias = "host")]
     pub hosts: Vec<HostConfig>,
+
+    #[serde(default)]
     pub authorities: Option<Vec<String>>,
 
     /// When running a server over SSL redirect HTTP to HTTPS.
@@ -126,7 +129,6 @@ impl Default for ServerConfig {
             tls: None,
             redirect_insecure: true,
             temporary_redirect: false,
-            default_host: Default::default(),
             authorities: None,
             hosts: vec![],
         }
@@ -143,22 +145,16 @@ impl ServerConfig {
         tmp
     }
 
-    /// New configuration using a default host.
-    pub fn new_host(
-        host: HostConfig,
+    /// New configuration using the default listen address.
+    pub fn new_port(
         port: u16,
         tls: Option<TlsConfig>,
     ) -> Self {
-        Self {
-            listen: String::from(crate::config::ADDR),
-            port: port,
-            tls,
-            redirect_insecure: true,
-            temporary_redirect: true,
-            default_host: host,
-            authorities: None,
-            hosts: vec![],
-        }
+        ServerConfig::new(crate::config::ADDR.to_string(), port, tls)
+    }
+
+    pub fn add_host(&mut self, host: HostConfig) {
+        self.hosts.push(host);
     }
 
     pub fn load<P: AsRef<Path>>(file: P) -> Result<ServerConfig> {
@@ -168,11 +164,7 @@ impl ServerConfig {
     }
 
     pub fn hosts(&self) -> Vec<HostConfig> {
-        let mut list = vec![self.default_host.clone()];
-        let mut hosts =
-            self.hosts.iter().map(|h| h.clone()).collect::<Vec<_>>();
-        list.append(&mut hosts);
-        list
+        self.hosts.iter().map(|h| h.clone()).collect::<Vec<_>>()
     }
 
     pub fn authorities(&self) -> &Option<Vec<String>> {
@@ -237,6 +229,7 @@ impl ServerConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "kebab-case")]
 pub struct HostConfig {
     /// Host name.
     pub name: String,
@@ -244,10 +237,24 @@ pub struct HostConfig {
     /// Directory for static files.
     pub directory: PathBuf,
 
+    /// Require an index page inside the directory.
+    #[serde(default)]
+    pub require_index: bool,
+
+    /// Send headers that instruct browsers to disable caching.
+    #[serde(default)]
+    pub disable_cache: bool,
+
+    /// Deny embedding as an iframe.
+    #[serde(default)]
+    pub deny_iframe: bool,
+
     /// Configuration for webdav.
+    #[serde(skip)]
     pub webdav: Option<WebDavConfig>,
 
     /// Directory for the editor UI static files.
+    #[serde(skip)]
     pub editor_directory: Option<PathBuf>,
 
     #[serde(skip)]
@@ -256,11 +263,6 @@ pub struct HostConfig {
     /// Websocket endpoint when watching for file system changes.
     #[serde(skip)]
     pub endpoint: Option<String>,
-    /// Send headers that instruct browsers to disable caching.
-    #[serde(skip)]
-    pub disable_cache: bool,
-    #[serde(skip)]
-    pub deny_iframe: bool,
 
     /// Log server requests.
     #[serde(skip)]
@@ -281,6 +283,7 @@ impl Default for HostConfig {
             redirects: None,
             endpoint: None,
             disable_cache: false,
+            require_index: true,
             deny_iframe: true,
             log: false,
             watch: false,
@@ -303,6 +306,7 @@ impl HostConfig {
             redirects,
             endpoint,
             disable_cache: true,
+            require_index: true,
             deny_iframe: true,
             log,
             watch,

@@ -119,9 +119,18 @@ async fn start(
     let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
-    let hosts = opts.hosts();
+    let mut hosts = opts.hosts();
+
+    if hosts.is_empty() {
+        return Err(Error::NoVirtualHosts);
+    }
+
     let tls = opts.tls.is_some();
-    let host = opts.default_host.name.clone();
+
+    // The first host in the list is the one we send via ConnectionInfo
+    // that will be launched in a browser tab
+    let host = hosts.get(0).unwrap().name.clone();
+
     let temporary_redirect = opts.temporary_redirect;
     let http_addr = opts.get_sock_addr(PortType::Insecure)?;
     let tls_port = opts.tls_port();
@@ -141,7 +150,25 @@ async fn start(
     // Print each host name here otherwise it would be
     // duplicated for each worker thread if we do it within
     // the HttpServer::new setup closure
-    for host in hosts.iter() {
+    for host in hosts.iter_mut() {
+
+        if !host.directory.exists() || !host.directory.is_dir() {
+            return Err(Error::VirtualHostDirectory(
+                host.name.to_string(),
+                host.directory.to_path_buf()));
+        }
+
+        if host.redirects.is_none() {
+            host.load_redirects()?;
+        }
+
+        if host.require_index {
+            let index_page = host.directory.join(config::INDEX_HTML);
+            if !index_page.exists() || !index_page.is_file() {
+                return Err(Error::NoIndexFile(host.name.to_string(), index_page));
+            }
+        }
+
         info!("Host {} ({})", &host.name, host.directory.display());
         if let Some(ref webdav) = host.webdav {
             info!("Webdav {}", webdav.directory.display());

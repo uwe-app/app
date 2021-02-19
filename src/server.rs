@@ -27,8 +27,10 @@ async fn serve_project(
             if !build_target.exists() || !build_target.is_dir() {
                 return Err(Error::NotDirectory(build_target));
             }
-            opts.default_host.directory = build_target;
-            opts.default_host.load_redirects()?;
+
+            let mut host: HostConfig = Default::default();
+            host.directory = build_target;
+            opts.add_host(host);
         }
     } else {
         let mut settings = ProfileSettings::from(&ProfileName::Release);
@@ -48,12 +50,7 @@ async fn serve_project(
                 info.project.options.build_target().to_path_buf();
         }
 
-        let mut it = host_configs.into_iter();
-        let (_, default_host) = it.next().unwrap();
-        opts.default_host = default_host;
-
-        let hosts: Vec<HostConfig> = it.map(|(_, host)| host).collect();
-        opts.hosts = hosts;
+        opts.hosts = host_configs.into_iter().map(|(_, host)| host).collect();
     }
 
     Ok(server::launch(opts, launch).await?)
@@ -80,7 +77,7 @@ pub async fn serve(
 
     // Handle project
     if let Some(project) = targets.0 {
-        // Must call project_path() so we respect `.uwe-version`
+        // Must call project_path() so we respect `.uwe-version` !!!
         let project = project_path(&project)?; 
         let opts = server_config(
             &project,
@@ -90,21 +87,17 @@ pub async fn serve(
         );
 
         serve_project(project, opts, launch, args, skip_build).await?;
-
     // Handle directory
     } else if let Some(directory) = targets.1 {
-
         // TODO: check has index.html file?
 
-        let mut opts = server_config(
+        let opts = server_config(
             &directory,
             &server,
             config::PORT,
             config::PORT_SSL,
         );
 
-        opts.default_host.load_redirects()?;
-   
         server::launch(opts, launch).await?;
     // Handle configuration file
     } else if let Some(config) = targets.2 {

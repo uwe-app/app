@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use config::server::ConnectionInfo;
 use thiserror::Error;
 
@@ -29,6 +31,15 @@ pub enum Error {
 
     #[error("Unable to load SSL private key from {0}")]
     SslPrivateKey(String),
+
+    #[error("Web server requires some virtual hosts")]
+    NoVirtualHosts,
+
+    #[error("The virtual host {0} has a directory {1} which does not exist or is not a directory")]
+    VirtualHostDirectory(String, PathBuf),
+
+    #[error("The virtual host {0} expects the index file {1}")]
+    NoIndexFile(String, PathBuf),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

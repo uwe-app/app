@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use tokio::sync::oneshot;
 
 use config::{
-    server::ConnectionInfo,
+    server::{ConnectionInfo, HostConfig},
     test::{IntegrationTestConfig, BASE_URL},
     ProfileSettings,
 };
@@ -169,7 +169,12 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     }
 
     server_opts.redirect_insecure = false;
-    server_opts.default_host.directory = build_dir.to_path_buf();
+
+    let mut host: HostConfig = Default::default();
+    host.directory = build_dir.to_path_buf();
+    server_opts.add_host(host);
+
+    //server_opts.default_host.directory = build_dir.to_path_buf();
 
     let spawn_dir = project.config.project().to_path_buf();
 

@@ -45,6 +45,8 @@ pub async fn watch(
     let mut host_configs: Vec<(HostInfo, HostConfig)> =
         host_result.try_into()?;
 
+    println!("Configure with hosts {:?}", host_configs.len());
+
     for (_info, host) in host_configs.iter_mut() {
         host.watch = true;
         //host.editor_directory = editor_directory.clone();
@@ -103,8 +105,7 @@ pub async fn watch(
     let (server_channels, watch_channels) = create_channels(channel_names)?;
 
     // Server must have at least a single virtual host
-    let host = hosts.swap_remove(0);
-    let mut opts = ServerConfig::new_host(host, port.to_owned(), tls);
+    let mut opts = ServerConfig::new_port(port.to_owned(), tls);
     opts.authorities = authorities;
     opts.hosts = hosts;
 
