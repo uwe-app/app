@@ -161,7 +161,8 @@ impl ServerConfig {
 
     pub fn hosts(&self) -> Vec<HostConfig> {
         let mut list = vec![self.default_host.clone()];
-        let mut hosts = self.hosts.iter().map(|h| h.clone()).collect::<Vec<_>>();
+        let mut hosts =
+            self.hosts.iter().map(|h| h.clone()).collect::<Vec<_>>();
         list.append(&mut hosts);
         list
     }
@@ -205,14 +206,17 @@ impl ServerConfig {
         format!("{}//{}", scheme, self.get_address(port_type, host))
     }
 
-    pub fn get_host_url(
-        &self,
-        host: &str,
-    ) -> String {
+    pub fn get_host_url(&self, host: &str) -> String {
         let scheme = if self.tls.is_some() {
             crate::SCHEME_HTTPS
-        } else { crate::SCHEME_HTTP };
-        format!("{}//{}", scheme, self.get_address(PortType::Infer, Some(host)))
+        } else {
+            crate::SCHEME_HTTP
+        };
+        format!(
+            "{}//{}",
+            scheme,
+            self.get_address(PortType::Infer, Some(host))
+        )
     }
 
     pub fn get_sock_addr(&self, port_type: PortType) -> Result<SocketAddr> {

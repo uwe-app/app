@@ -13,7 +13,7 @@ use crate::{
     Error, Result,
 };
 
-static MENU_TEMPLATE_PREFIX: &str = "@menu";
+const MENU_TEMPLATE_PREFIX: &str = "@menu";
 
 #[derive(Debug, Default)]
 pub struct Collation {

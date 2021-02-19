@@ -19,8 +19,8 @@ use crate::{
     Error, Result,
 };
 
-static RELEASE_URL: &str = "https://releases.uwe.app";
-//static RELEASE_URL: &str = "http://releases.uwe.app.s3-website-ap-southeast-1.amazonaws.com";
+const RELEASE_URL: &str = "https://releases.uwe.app";
+//const RELEASE_URL: &str = "http://releases.uwe.app.s3-website-ap-southeast-1.amazonaws.com";
 
 pub(crate) fn url(version: &Version, name: &str) -> Result<Url> {
     let full_url = format!(

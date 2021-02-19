@@ -13,9 +13,9 @@ use rusoto_route53::{
 
 use crate::{list_name_servers, to_idna_punycode, Error, Result};
 
-static MAX_ITEMS: usize = 100;
-static DELEGATION_SET_ID: &str = "N02886841KKW7QD2MZLTC";
-static SOA: &str = "ns1.uwe.app. dev.uwe.app. 1 7200 900 1209600 86400";
+const MAX_ITEMS: usize = 100;
+const DELEGATION_SET_ID: &str = "N02886841KKW7QD2MZLTC";
+const SOA: &str = "ns1.uwe.app. dev.uwe.app. 1 7200 900 1209600 86400";
 
 // Route53 must use the US East (N Virginia) region.
 pub fn new_client(profile: &str) -> Result<Route53Client> {

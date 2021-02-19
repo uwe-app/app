@@ -19,7 +19,7 @@ use utils::walk;
 
 use crate::{Error, Result};
 
-static PLUGIN_STACK_SIZE: usize = 8;
+const PLUGIN_STACK_SIZE: usize = 8;
 
 #[derive(Debug)]
 struct SourcePrefix {

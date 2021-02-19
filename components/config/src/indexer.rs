@@ -8,7 +8,7 @@ use serde_with::skip_serializing_none;
 
 use crate::{utils::matcher::GlobPatternMatcher, Error, Result};
 
-static DEFAULT_PARAMETER: &str = "result";
+const DEFAULT_PARAMETER: &str = "result";
 
 // This is the configuration option for generating
 // an index, it is exposed here so that we can use

@@ -17,13 +17,13 @@ use crate::{
     utils::matcher::GlobPatternMatcher,
 };
 
-static DEBUG: &str = "debug";
-static RELEASE: &str = "release";
-static DIST: &str = "dist";
-static TEST: &str = "test";
+const DEBUG: &str = "debug";
+const RELEASE: &str = "release";
+const DIST: &str = "dist";
+const TEST: &str = "test";
 
-static DEVELOPMENT: &str = "development";
-static PRODUCTION: &str = "production";
+const DEVELOPMENT: &str = "development";
+const PRODUCTION: &str = "production";
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]

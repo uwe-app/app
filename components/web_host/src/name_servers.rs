@@ -10,10 +10,10 @@ use trust_dns_client::{
     rr::{Name, RData},
 };
 
-static NS1: &str = "ns1.uwe.app.";
-static NS2: &str = "ns2.uwe.app.";
-static NS3: &str = "ns3.uwe.app.";
-static NS4: &str = "ns4.uwe.app.";
+const NS1: &str = "ns1.uwe.app.";
+const NS2: &str = "ns2.uwe.app.";
+const NS3: &str = "ns3.uwe.app.";
+const NS4: &str = "ns4.uwe.app.";
 
 #[derive(Debug)]
 pub struct NameServerResult {

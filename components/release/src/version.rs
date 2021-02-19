@@ -6,7 +6,7 @@ use semver::Version;
 
 use crate::{Error, Result};
 
-static VERSION_FILE: &str = ".uwe-version";
+const VERSION_FILE: &str = ".uwe-version";
 
 pub(crate) fn file() -> Result<PathBuf> {
     Ok(dirs::root_dir()?.join(VERSION_FILE))

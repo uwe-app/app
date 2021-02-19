@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::matcher::GlobPatternMatcher;
 
-static ID: &str = "site-index";
-static INDEX: &str = "/search.idx";
-static JS: &str = "/assets/plugins/std::search/scripts/search.js";
-static WASM: &str = "/assets/plugins/std::search/assets/search.wasm";
+const ID: &str = "site-index";
+const INDEX: &str = "/search.idx";
+const JS: &str = "/assets/plugins/std::search/scripts/search.js";
+const WASM: &str = "/assets/plugins/std::search/assets/search.wasm";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default, rename_all = "kebab-case")]

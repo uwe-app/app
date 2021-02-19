@@ -15,10 +15,10 @@ use crate::cache::TransformCache;
 use crate::text::TextExtraction;
 use crate::{Error, Result};
 
-static HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
-static CODE: &str = "pre > code[class]";
-static TITLE: &str = "title";
-static TEXT: &str = "p, [data-index] *";
+const HEADINGS: &str = "h1, h2, h3, h4, h5, h6";
+const CODE: &str = "pre > code[class]";
+const TITLE: &str = "title";
+const TEXT: &str = "p, [data-index] *";
 
 fn scan(
     doc: &str,

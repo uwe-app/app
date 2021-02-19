@@ -48,15 +48,15 @@ use crate::{
 
 use config::server::{ConnectionInfo, PortType, ServerConfig};
 
-/// Wrap the default index page in a specific type 
+/// Wrap the default index page in a specific type
 /// for the route handler.
 pub struct IndexPage(pub String);
 
-/// Wrap the default not found page in a specific type 
+/// Wrap the default not found page in a specific type
 /// for the route handler.
 pub struct NotFoundPage(pub String);
 
-/// Information about known virtual hosts passed to the 
+/// Information about known virtual hosts passed to the
 /// default index page template.
 #[derive(Debug, Serialize)]
 struct VirtualHost {
@@ -71,8 +71,10 @@ pub fn parser() -> &'static Registry<'static> {
         let _ = registry.insert("error", include_str!("error.html"));
         let _ = registry
             .insert("default_index", include_str!("default_index.html"));
-        let _ = registry
-            .insert("default_not_found", include_str!("default_not_found.html"));
+        let _ = registry.insert(
+            "default_not_found",
+            include_str!("default_not_found.html"),
+        );
         registry
     })
 }
@@ -94,7 +96,7 @@ async fn default_route(
     req: HttpRequest,
     index_page: web::Data<IndexPage>,
     not_found_page: web::Data<NotFoundPage>,
-    ) -> HttpResponse {
+) -> HttpResponse {
     if req.path() == "" || req.path() == "/" || req.path() == "/index.html" {
         HttpResponse::Ok()
             .content_type("text/html")
@@ -134,7 +136,6 @@ async fn start(
     let tls_port = opts.tls_port();
     let authorities = opts.authorities().clone();
 
-
     let mut virtual_hosts = Vec::new();
 
     // Print each host name here otherwise it would be
@@ -161,7 +162,8 @@ async fn start(
     let default_index = registry.render("default_index", &data).unwrap();
     let default_index = web::Data::new(IndexPage(default_index));
 
-    let default_not_found = registry.render("default_not_found", &json!({})).unwrap();
+    let default_not_found =
+        registry.render("default_not_found", &json!({})).unwrap();
     let default_not_found = web::Data::new(NotFoundPage(default_not_found));
 
     let app_state = Arc::new(AtomicUsize::new(0));
@@ -438,11 +440,12 @@ async fn start(
             web::resource("")
                 .app_data(default_index.clone())
                 .app_data(default_not_found.clone())
-                .route(web::get().to(default_route)).route(
-                web::route()
-                    .guard(guard::Not(guard::Get()))
-                    .to(HttpResponse::MethodNotAllowed),
-            ),
+                .route(web::get().to(default_route))
+                .route(
+                    web::route()
+                        .guard(guard::Not(guard::Get()))
+                        .to(HttpResponse::MethodNotAllowed),
+                ),
         );
 
         app

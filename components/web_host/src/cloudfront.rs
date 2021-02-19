@@ -15,13 +15,13 @@ use rusoto_core::{credential, request::HttpClient, Region};
 
 use crate::{Error, Result};
 
-static MAX_ITEMS: usize = 100;
+const MAX_ITEMS: usize = 100;
 
 // Default cache policy name that we use.
-static MANAGED_CACHING_OPTIMIZED: &str = "Managed-CachingOptimized";
+const MANAGED_CACHING_OPTIMIZED: &str = "Managed-CachingOptimized";
 
 // Filter for managed cache policies.
-static MANAGED: &str = "managed";
+const MANAGED: &str = "managed";
 
 // Cloudfront API calls must use US East (N Virginia).
 pub fn new_client(profile: &str) -> Result<CloudFrontClient> {

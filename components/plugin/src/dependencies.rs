@@ -21,7 +21,7 @@ use crate::{
     Error, Registry, Result,
 };
 
-static DEPENDENCY_STACK_SIZE: usize = 32;
+const DEPENDENCY_STACK_SIZE: usize = 32;
 
 // Top-level of a project dependencies
 pub type DependencyTree = BTreeMap<String, PluginDependencyState>;

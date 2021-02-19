@@ -4,7 +4,7 @@ use config::{dependency::DependencyTarget, Plugin, PLUGIN};
 
 use crate::{compute, Error, Result};
 
-static NORMALIZED_HEADER: &str = "\
+const NORMALIZED_HEADER: &str = "\
 # Automatically generated plugin file, see plugin.orig.toml for the raw content.
 #
 # Generating an archive of a plugin indicates that it should be portable; this

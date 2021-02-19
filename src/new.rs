@@ -20,11 +20,11 @@ use config::{
 
 use plugin::{install_dependency, install_path, install_repo, new_registry};
 
-static DEFAULT_NAME: &str = "default";
-static DEFAULT_MESSAGE: &str = "Initial files.";
+const DEFAULT_NAME: &str = "default";
+const DEFAULT_MESSAGE: &str = "Initial files.";
 
 // Files to remove for projects created from blueprint plugins
-static REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
+const REMOVE: [&str; 3] = [".ignore", "plugin.orig.toml", "plugin.toml"];
 
 #[derive(Debug)]
 pub enum ProjectSource {

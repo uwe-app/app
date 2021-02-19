@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 type FeatureName = String;
 type DependencyName = String;
 
-static DEFAULT: &str = "default";
+const DEFAULT: &str = "default";
 
 /// Flags used by a dependency to select optional dependencies.
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]

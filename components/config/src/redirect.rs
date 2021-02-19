@@ -10,8 +10,8 @@ use http::Uri;
 
 use crate::{Error, Result, RuntimeOptions};
 
-static MAX_REDIRECTS: usize = 4;
-pub static REDIRECTS_FILE: &str = "redirects.json";
+const MAX_REDIRECTS: usize = 4;
+pub const REDIRECTS_FILE: &str = "redirects.json";
 
 pub type Redirects = HashMap<String, Uri>;
 

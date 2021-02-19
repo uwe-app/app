@@ -7,7 +7,7 @@ use config::plugin::{dependency::Dependency, Plugin, PluginSpec};
 
 use crate::{installer::install_registry, new_registry, Error, Result};
 
-static PLUGIN_DOCS: &str = "std::documentation";
+const PLUGIN_DOCS: &str = "std::documentation";
 
 async fn install_plugin(spec: PluginSpec) -> Result<Plugin> {
     let registry = new_registry()?;

@@ -8,8 +8,8 @@ use thiserror::Error;
 use dirs;
 use utils;
 
-static PREFERENCES: &str = "preferences.toml";
-static LANG: &str = "en";
+const PREFERENCES: &str = "preferences.toml";
+const LANG: &str = "en";
 
 #[derive(Error, Debug)]
 pub enum Error {

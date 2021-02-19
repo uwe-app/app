@@ -15,7 +15,7 @@ use crate::{utils::href::UrlPath, Error, Result};
 use super::features::{FeatureFlags, FeatureMap};
 use super::plugin_spec::{ExactPluginSpec, PluginSpec};
 
-static FEATURE_STACK_SIZE: usize = 16;
+const FEATURE_STACK_SIZE: usize = 16;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DependencyDefinitionMap {

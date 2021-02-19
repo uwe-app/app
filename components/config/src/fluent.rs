@@ -3,7 +3,7 @@ use serde_with::{serde_as, skip_serializing_none, DisplayFromStr};
 
 use unic_langid::LanguageIdentifier;
 
-pub static CORE_FTL: &str = "core.ftl";
+pub const CORE_FTL: &str = "core.ftl";
 
 #[serde_as]
 #[skip_serializing_none]

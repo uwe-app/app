@@ -16,9 +16,9 @@ use crate::{
     ViewerProtocolPolicy, ZoneSettings,
 };
 
-static WWW: &str = "www";
-static INDEX_SUFFIX: &str = "index.html";
-static ERROR_KEY: &str = "404.html";
+const WWW: &str = "www";
+const INDEX_SUFFIX: &str = "index.html";
+const ERROR_KEY: &str = "404.html";
 
 /// Asynchronous fallible transition from a state
 /// to the next state.

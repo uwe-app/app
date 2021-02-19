@@ -5,11 +5,11 @@ use config::Config;
 
 pub mod messages;
 
-static JS_FILE: &str = "__livereload.js";
-static CSS_FILE: &str = "__livereload.css";
+const JS_FILE: &str = "__livereload.js";
+const CSS_FILE: &str = "__livereload.css";
 
-static SCRIPT: &str = include_str!("livereload.js");
-static CSS: &str = include_str!("livereload.css");
+const SCRIPT: &str = include_str!("livereload.js");
+const CSS: &str = include_str!("livereload.css");
 
 fn get_script(url: &str) -> String {
     // NOTE: we use an IIFE (immediately invoked function expression)

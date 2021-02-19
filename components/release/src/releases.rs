@@ -12,23 +12,23 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::Result;
 
-pub static MANIFEST_JSON: &str = "manifest.json";
+pub const MANIFEST_JSON: &str = "manifest.json";
 
-pub static RELEASES: &str = "releases";
-pub static LATEST: &str = "latest";
+pub const RELEASES: &str = "releases";
+pub const LATEST: &str = "latest";
 
-pub static LINUX: &str = "linux";
-pub static MACOS: &str = "macos";
+pub const LINUX: &str = "linux";
+pub const MACOS: &str = "macos";
 #[cfg(target_os = "windows")]
-pub static WINDOWS: &str = "windows";
+pub const WINDOWS: &str = "windows";
 
-pub static PUBLISH_EXE_NAMES: [&str; 5] =
+pub const PUBLISH_EXE_NAMES: [&str; 5] =
     ["uwe", "upm", "uvm", "uwe-shim", "upm-shim"];
-pub static INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
-pub static VERSION_EXE_NAMES: [&str; 3] = ["uvm", "uwe-shim", "upm-shim"];
-pub static INSTALL_SHIM_NAMES: [&str; 2] = ["uwe-shim", "upm-shim"];
+pub const INSTALL_EXE_NAMES: [&str; 2] = ["uwe", "upm"];
+pub const VERSION_EXE_NAMES: [&str; 3] = ["uvm", "uwe-shim", "upm-shim"];
+pub const INSTALL_SHIM_NAMES: [&str; 2] = ["uwe-shim", "upm-shim"];
 
-pub static SHIM: [(&str, &str); 2] = [("uwe-shim", "uwe"), ("upm-shim", "upm")];
+pub const SHIM: [(&str, &str); 2] = [("uwe-shim", "uwe"), ("upm-shim", "upm")];
 
 pub(crate) type Platform = String;
 pub(crate) type ExecutableTargets =

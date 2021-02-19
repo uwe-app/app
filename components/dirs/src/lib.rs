@@ -1,30 +1,30 @@
 use std::path::PathBuf;
 use std::{fs, io};
 
-static ROOT_DIR: &str = ".uwe";
+const ROOT_DIR: &str = ".uwe";
 
-static BIN: &str = "bin";
-static ENV: &str = "env";
+const BIN: &str = "bin";
+const ENV: &str = "env";
 
-static SITES_NAME: &str = "sites";
-static SITES_FILE: &str = "sites.toml";
+const SITES_NAME: &str = "sites";
+const SITES_FILE: &str = "sites.toml";
 
-static RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
-static REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
+const RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
+const REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
 
 /// Name of the releases reppsitory.
-static RELEASES: &str = "releases";
+const RELEASES: &str = "releases";
 
 /// Name of the plugin registry repository.
-static REGISTRY: &str = "registry";
+const REGISTRY: &str = "registry";
 /// Name for the location of cached plugin downloads.
-static DOWNLOADS: &str = "downloads";
+const DOWNLOADS: &str = "downloads";
 /// Name for the location of registry packages (JSON files).
-static PACKAGES: &str = "packages";
+const PACKAGES: &str = "packages";
 /// Name for the location of cached plugin repositories.
-static REPOSITORIES: &str = "repositories";
+const REPOSITORIES: &str = "repositories";
 /// Name for the location of where plugins installed from archives are placed.
-static ARCHIVES: &str = "archives";
+const ARCHIVES: &str = "archives";
 
 /// Get the root directory (~/.uwe) but do not
 /// create it if it does not exist.

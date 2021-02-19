@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-static HTML: &str = "html";
+const HTML: &str = "html";
 
 /// Get aconfiguration depending upon a path file extension.
 pub fn get_config(file: &PathBuf) -> Config {

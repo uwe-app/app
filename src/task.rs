@@ -12,14 +12,14 @@ use plugin::new_registry;
 
 use super::alias;
 
-static CYPRESS_JSON: &str = "cypress.json";
-static CYPRESS_OPTS: &str = "cypress.opts";
-static OPEN_SPEC: &str = "open.spec.js";
-static DOWNLOADS: &str = "downloads";
-static FIXTURES: &str = "fixtures";
-static INTEGRATION: &str = "integration";
-static SCREENSHOTS: &str = "screenshots";
-static VIDEOS: &str = "videos";
+const CYPRESS_JSON: &str = "cypress.json";
+const CYPRESS_OPTS: &str = "cypress.opts";
+const OPEN_SPEC: &str = "open.spec.js";
+const DOWNLOADS: &str = "downloads";
+const FIXTURES: &str = "fixtures";
+const INTEGRATION: &str = "integration";
+const SCREENSHOTS: &str = "screenshots";
+const VIDEOS: &str = "videos";
 
 pub async fn run(cmd: Task) -> Result<()> {
     match cmd {

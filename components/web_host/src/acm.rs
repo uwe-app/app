@@ -21,7 +21,8 @@ use super::route53::{DnsRecord, DnsSettings};
 
 use crate::{Error, Result};
 
-static MAX_ITEMS: i64 = 100;
+const MAX_ITEMS: i64 = 100;
+const DNS: &str = "DNS";
 
 // NOTE: Using certificates with cloudfront requires the region is US East (N Virginia).
 // SEE: https://docs.aws.amazon.com/acm/latest/userguide/acm-regions.html
@@ -35,8 +36,6 @@ pub fn new_client(profile: &str) -> Result<AcmClient> {
         Region::UsEast1,
     ))
 }
-
-static DNS: &str = "DNS";
 
 #[derive(Debug, strum_macros::Display, strum_macros::IntoStaticStr)]
 pub enum CertificateValidationStatus {

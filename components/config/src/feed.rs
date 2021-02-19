@@ -5,18 +5,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::matcher::GlobPatternMatcher;
 
-static JSON: &str = "json";
-static XML: &str = "xml";
+const JSON: &str = "json";
+const XML: &str = "xml";
 
-static JSON_MIME: &str = "application/feed+json";
-static ATOM_MIME: &str = "application/atom+xml";
-static RSS_MIME: &str = "application/rss+xml";
+const JSON_MIME: &str = "application/feed+json";
+const ATOM_MIME: &str = "application/atom+xml";
+const RSS_MIME: &str = "application/rss+xml";
 
-static JSON_NAME: &str = "feed";
-static RSS_NAME: &str = "rss";
-static ATOM_NAME: &str = "atom";
+const JSON_NAME: &str = "feed";
+const RSS_NAME: &str = "rss";
+const ATOM_NAME: &str = "atom";
 
-static PLUGIN_NAME: &str = "std::feed";
+const PLUGIN_NAME: &str = "std::feed";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub enum FeedType {

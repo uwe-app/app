@@ -20,12 +20,11 @@ pub type QueryCache = HashMap<IndexQuery, Vec<QueryResult>>;
 pub type IndexValue = (IndexKey, Arc<Value>);
 pub type Index = Vec<IndexValue>;
 
-static IDENTITY: &str = "id";
-static NAME: &str = "name";
-static PATH: &str = "path";
-static DOC: &str = "doc";
-
-static IDENTITY_KEY: &str = "*";
+const IDENTITY: &str = "id";
+const NAME: &str = "name";
+const PATH: &str = "path";
+const DOC: &str = "doc";
+const IDENTITY_KEY: &str = "*";
 
 #[derive(Debug)]
 pub struct CollectionDataBase {

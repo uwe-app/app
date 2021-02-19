@@ -42,104 +42,104 @@ use crate::{
     Error,
 };
 
-pub static SITE: &str = "site";
-pub static BUILD: &str = "build";
-pub static RELEASE: &str = "release";
-pub static SITE_LOCK: &str = "site.lock";
-pub static SITE_TOML: &str = "site.toml";
-pub static LOCALES: &str = "locales";
-pub static MAIN_FTL: &str = "main.ftl";
-pub static LANG_KEY: &str = "lang";
-pub static HOST_KEY: &str = "host";
-pub static FLUENT_KEY: &str = "fluent";
-pub static FALLBACK_KEY: &str = "fallback";
-pub static SHARED_KEY: &str = "shared";
-pub static REDIRECT_KEY: &str = "redirect";
-pub static PACKAGE: &str = "package";
-pub static HTML: &str = "html";
-pub static INDEX_STEM: &str = "index";
-pub static INDEX_HTML: &str = "index.html";
-pub static MD: &str = "md";
-pub static TOML: &str = "toml";
-pub static JSON: &str = "json";
-pub static ASSETS: &str = "assets";
-pub static STYLES: &str = "styles";
-pub static SCRIPTS: &str = "scripts";
-pub static FONTS: &str = "fonts";
-pub static PLUGINS: &str = "plugins";
-pub static PARTIALS: &str = "partials";
-pub static LAYOUTS: &str = "layouts";
-pub static INCLUDES: &str = "includes";
-pub static COLLECTIONS: &str = "collections";
-pub static RESOURCES: &str = "resources";
-pub static LANG: &str = "en";
-pub static CHARSET: &str = "utf-8";
-pub static TAGS: &str = "tags";
+pub const SITE: &str = "site";
+pub const BUILD: &str = "build";
+pub const RELEASE: &str = "release";
+pub const SITE_LOCK: &str = "site.lock";
+pub const SITE_TOML: &str = "site.toml";
+pub const LOCALES: &str = "locales";
+pub const MAIN_FTL: &str = "main.ftl";
+pub const LANG_KEY: &str = "lang";
+pub const HOST_KEY: &str = "host";
+pub const FLUENT_KEY: &str = "fluent";
+pub const FALLBACK_KEY: &str = "fallback";
+pub const SHARED_KEY: &str = "shared";
+pub const REDIRECT_KEY: &str = "redirect";
+pub const PACKAGE: &str = "package";
+pub const HTML: &str = "html";
+pub const INDEX_STEM: &str = "index";
+pub const INDEX_HTML: &str = "index.html";
+pub const MD: &str = "md";
+pub const TOML: &str = "toml";
+pub const JSON: &str = "json";
+pub const ASSETS: &str = "assets";
+pub const STYLES: &str = "styles";
+pub const SCRIPTS: &str = "scripts";
+pub const FONTS: &str = "fonts";
+pub const PLUGINS: &str = "plugins";
+pub const PARTIALS: &str = "partials";
+pub const LAYOUTS: &str = "layouts";
+pub const INCLUDES: &str = "includes";
+pub const COLLECTIONS: &str = "collections";
+pub const RESOURCES: &str = "resources";
+pub const LANG: &str = "en";
+pub const CHARSET: &str = "utf-8";
+pub const TAGS: &str = "tags";
 
 /// Used when multiple virtual hosts and inferring
 /// a sub-domain from the primary host name.
-pub static HOST_DEV: &str = "loopback.space";
-pub static LOCALHOST: &str = "localhost";
+pub const HOST_DEV: &str = "loopback.space";
+pub const LOCALHOST: &str = "localhost";
 
-pub static ADDR: &str = "0.0.0.0";
-pub static HOST: &str = "localhost";
-pub static PORT: u16 = 8888;
-pub static PORT_SSL: u16 = 8843;
+pub const ADDR: &str = "0.0.0.0";
+pub const HOST: &str = "localhost";
+pub const PORT: u16 = 8888;
+pub const PORT_SSL: u16 = 8843;
 
-pub static PORT_DOCS: u16 = 9988;
-pub static PORT_DOCS_SSL: u16 = 9943;
+pub const PORT_DOCS: u16 = 9988;
+pub const PORT_DOCS_SSL: u16 = 9943;
 
-pub static SCHEME_HTTPS: &str = "https:";
-pub static SCHEME_HTTP: &str = "http:";
-pub static SCHEME_DATA: &str = "data:";
-pub static SCHEME_DELIMITER: &str = "//";
-pub static SCHEME_WSS: &str = "wss:";
-pub static SCHEME_WS: &str = "ws:";
+pub const SCHEME_HTTPS: &str = "https:";
+pub const SCHEME_HTTP: &str = "http:";
+pub const SCHEME_DATA: &str = "data:";
+pub const SCHEME_DELIMITER: &str = "//";
+pub const SCHEME_WSS: &str = "wss:";
+pub const SCHEME_WS: &str = "ws:";
 
-pub static SCHEME_FILE: &str = "file:";
-pub static SCHEME_TAR_LZMA: &str = "tar+xz:";
-pub static SCHEME_PLUGIN: &str = "plugin:";
+pub const SCHEME_FILE: &str = "file:";
+pub const SCHEME_TAR_LZMA: &str = "tar+xz:";
+pub const SCHEME_PLUGIN: &str = "plugin:";
 
-pub static PLUGIN: &str = "plugin.toml";
-pub static PLUGIN_NS: &str = "::";
-pub static PLUGIN_SPEC: &str = "@";
-pub static PLUGIN_BLUEPRINT_NAMESPACE: &str = "std::blueprint";
-pub static LATEST: &str = "latest";
-pub static PACKAGE_NAME: &str = "package.tar.xz";
+pub const PLUGIN: &str = "plugin.toml";
+pub const PLUGIN_NS: &str = "::";
+pub const PLUGIN_SPEC: &str = "@";
+pub const PLUGIN_BLUEPRINT_NAMESPACE: &str = "std::blueprint";
+pub const LATEST: &str = "latest";
+pub const PACKAGE_NAME: &str = "package.tar.xz";
 
 /// Prefix applied when extracting packages from archives.
-pub static PLUGIN_ARCHIVE_PREFIX: &str = "pkg";
+pub const PLUGIN_ARCHIVE_PREFIX: &str = "pkg";
 
 // For open graph defaults.
-pub static OG_TYPE: &str = "type";
-pub static OG_WEBSITE: &str = "website";
-pub static OG_URL: &str = "url";
-pub static OG_IMAGE: &str = "image";
-pub static OG_TITLE: &str = "title";
-pub static OG_DESCRIPTION: &str = "description";
+pub const OG_TYPE: &str = "type";
+pub const OG_WEBSITE: &str = "website";
+pub const OG_URL: &str = "url";
+pub const OG_IMAGE: &str = "image";
+pub const OG_TITLE: &str = "title";
+pub const OG_DESCRIPTION: &str = "description";
 
-pub static LAYOUT_HBS: &str = "main.hbs";
-pub static MAIN: &str = "main";
-//pub static MAIN_CSS: &str = "main.css";
-//pub static MAIN_JS: &str = "main.js";
-pub static DEFAULT_LAYOUT_NAME: &str = "std::core::main";
+pub const LAYOUT_HBS: &str = "main.hbs";
+pub const MAIN: &str = "main";
+//pub const MAIN_CSS: &str = "main.css";
+//pub const MAIN_JS: &str = "main.js";
+pub const DEFAULT_LAYOUT_NAME: &str = "std::core::main";
 
-static DEFAULT_STYLE: &str = "assets/styles/main.css";
-static DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
+const DEFAULT_STYLE: &str = "assets/styles/main.css";
+const DEFAULT_SCRIPT: &str = "assets/scripts/main.js";
 
-static DEFAULT_ICON: &str = "favicon.ico";
-static DEFAULT_ICON_DATA: &str =
+const DEFAULT_ICON: &str = "favicon.ico";
+const DEFAULT_ICON_DATA: &str =
     "data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==";
 
-pub static DEFAULT_PWA_MANIFEST: &str = "app.webmanifest";
+pub const DEFAULT_PWA_MANIFEST: &str = "app.webmanifest";
 
-pub static PUBLIC_HTML: &str = "public_html";
+pub const PUBLIC_HTML: &str = "public_html";
 
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }
 
-pub static DEFAULT_ENGINE: TemplateEngine = default_engine();
+pub const DEFAULT_ENGINE: TemplateEngine = default_engine();
 
 fn resolve_cwd() -> Option<PathBuf> {
     if let Ok(cwd) = std::env::current_dir() {

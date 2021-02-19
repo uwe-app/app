@@ -18,7 +18,7 @@ use crate::{
     xml_value, Error, Result,
 };
 
-static JSON: &str = "json";
+const JSON: &str = "json";
 
 pub struct LoadRequest<'a> {
     pub source: &'a PathBuf,

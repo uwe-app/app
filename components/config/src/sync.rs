@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-static REMOTE: &str = "origin";
-static BRANCH: &str = "main";
+const REMOTE: &str = "origin";
+const BRANCH: &str = "main";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 #[serde(default)]

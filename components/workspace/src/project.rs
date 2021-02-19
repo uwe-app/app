@@ -39,7 +39,7 @@ use crate::{
 pub type BuildResult =
     std::result::Result<Project, Box<dyn std::error::Error + Sync + Send>>;
 
-static PLUGIN_SYNTAX: &str = "std::syntax";
+const PLUGIN_SYNTAX: &str = "std::syntax";
 
 fn get_manifest_file(options: &RuntimeOptions) -> PathBuf {
     let mut manifest_file = options.build_target().clone();

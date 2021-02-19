@@ -11,11 +11,11 @@ use rusoto_s3::{
 
 use crate::{region_info::REGION_INFO, Error, Result};
 
-//static INDEX_HTML: &str = "index.html";
-//static ERROR_HTML: &str = "404.html";
+//const INDEX_HTML: &str = "index.html";
+//const ERROR_HTML: &str = "404.html";
 
-static BUCKET_TEMPLATE: &str = "__BUCKET__";
-static POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
+const BUCKET_TEMPLATE: &str = "__BUCKET__";
+const POLICY_TEMPLATE: &str = include_str!("bucket_policy.json");
 
 pub fn new_client(profile: &str, region: &Region) -> Result<S3Client> {
     let mut provider = credential::ProfileProvider::new()?;

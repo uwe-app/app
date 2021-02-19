@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use crate::Result;
 
-static BASH: &str = "bash";
-static ZSH: &str = "zsh";
+const BASH: &str = "bash";
+const ZSH: &str = "zsh";
 
 #[cfg(unix)]
 pub(crate) fn get_source_env() -> String {

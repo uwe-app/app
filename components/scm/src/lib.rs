@@ -10,10 +10,10 @@ use git2::{
 use log::{debug, info, warn};
 use thiserror::Error;
 
-pub static HEAD: &str = "HEAD";
-pub static ORIGIN: &str = "origin";
-pub static MAIN: &str = "main";
-pub static REFSPEC: &str = "+refs/heads/main:refs/heads/main";
+pub const HEAD: &str = "HEAD";
+pub const ORIGIN: &str = "origin";
+pub const MAIN: &str = "main";
+pub const REFSPEC: &str = "+refs/heads/main:refs/heads/main";
 
 #[derive(Error, Debug)]
 pub enum Error {

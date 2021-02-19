@@ -9,9 +9,9 @@ use crate::{
     Result,
 };
 
-static TREE_BAR: &str = "│";
-static TREE_BRANCH: &str = "├──";
-static TREE_CORNER: &str = "└──";
+const TREE_BAR: &str = "│";
+const TREE_BRANCH: &str = "├──";
+const TREE_CORNER: &str = "└──";
 
 /// List the plugin dependencies for a project.
 pub async fn list_dependencies(config: &Config) -> Result<()> {

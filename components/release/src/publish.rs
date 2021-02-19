@@ -17,12 +17,12 @@ use config::plugin::{Plugin, VersionKey};
 
 /// WARN: Assumes we are building on linux!
 
-static INSTALL_SH: &str = "install.sh";
-static LINUX_PREFIX: &str = "target/release";
-static MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
+const INSTALL_SH: &str = "install.sh";
+const LINUX_PREFIX: &str = "target/release";
+const MACOS_PREFIX: &str = "target/x86_64-apple-darwin/release";
 
-static UWE_BINARY: &str = "target/release/uwe";
-static UPM_BINARY: &str = "target/release/upm";
+const UWE_BINARY: &str = "target/release/uwe";
+const UPM_BINARY: &str = "target/release/upm";
 
 /// Publish a new release.
 ///

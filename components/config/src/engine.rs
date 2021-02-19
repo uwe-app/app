@@ -4,12 +4,11 @@ use std::str::FromStr;
 
 use crate::Error;
 
-//static LAYOUT: &str = "layout";
-static HANDLEBARS: &str = "handlebars";
-static HANDLEBARS_EXT: &str = "hbs";
+const HANDLEBARS: &str = "handlebars";
+const HANDLEBARS_EXT: &str = "hbs";
 
 /// All available template engines.
-pub static ENGINES: [TemplateEngine; 1] = [TemplateEngine::Handlebars];
+pub const ENGINES: [TemplateEngine; 1] = [TemplateEngine::Handlebars];
 
 /// The supported template engines.
 ///

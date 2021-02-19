@@ -2,11 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-static NPX: &str = "npx";
-static CYPRESS: &str = "cypress";
-static RUN: &str = "run";
-static OPTS: &str = "test/cypress.opts";
-pub static BASE_URL: &str = "CYPRESS_BASE_URL";
+const NPX: &str = "npx";
+const CYPRESS: &str = "cypress";
+const RUN: &str = "run";
+const OPTS: &str = "test/cypress.opts";
+pub const BASE_URL: &str = "CYPRESS_BASE_URL";
 
 // NOTE: later we may provide hooks for running unit tests
 // NOTE: too hence this is `[test.integration]`

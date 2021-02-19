@@ -6,44 +6,44 @@ use crate::Error;
 
 // SEE: https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types
 
-static ALTERNATE: &str = "alternate";
-static AUTHOR: &str = "author";
-static BOOKMARK: &str = "bookmark";
-static CANONICAL: &str = "canonical";
-static EXTERNAL: &str = "external";
-static HELP: &str = "help";
-static ICON: &str = "icon";
-static LICENSE: &str = "license";
-static MANIFEST: &str = "manifest";
-static MODULE_PRELOAD: &str = "modulepreload";
-static NEXT: &str = "next";
-static NO_FOLLOW: &str = "nofollow";
-static NO_OPENER: &str = "noopener";
-static NO_REFERRER: &str = "noreferrer";
-static PING_BACK: &str = "pingback";
-static PRE_FETCH: &str = "prefetch";
-static PRE_LOAD: &str = "preload";
-static PREV: &str = "prev";
-static SEARCH: &str = "search";
-static SHORT_LINK: &str = "shortlink";
-static STYLE_SHEET: &str = "stylesheet";
-static TAG: &str = "tag";
+const ALTERNATE: &str = "alternate";
+const AUTHOR: &str = "author";
+const BOOKMARK: &str = "bookmark";
+const CANONICAL: &str = "canonical";
+const EXTERNAL: &str = "external";
+const HELP: &str = "help";
+const ICON: &str = "icon";
+const LICENSE: &str = "license";
+const MANIFEST: &str = "manifest";
+const MODULE_PRELOAD: &str = "modulepreload";
+const NEXT: &str = "next";
+const NO_FOLLOW: &str = "nofollow";
+const NO_OPENER: &str = "noopener";
+const NO_REFERRER: &str = "noreferrer";
+const PING_BACK: &str = "pingback";
+const PRE_FETCH: &str = "prefetch";
+const PRE_LOAD: &str = "preload";
+const PREV: &str = "prev";
+const SEARCH: &str = "search";
+const SHORT_LINK: &str = "shortlink";
+const STYLE_SHEET: &str = "stylesheet";
+const TAG: &str = "tag";
 
-static ANONYMOUS: &str = "anonymous";
-static USE_CREDENTIALS: &str = "use-credentials";
+const ANONYMOUS: &str = "anonymous";
+const USE_CREDENTIALS: &str = "use-credentials";
 
-static AUDIO: &str = "audio";
-static DOCUMENT: &str = "document";
-static EMBED: &str = "embed";
-static FETCH: &str = "fetch";
-static FONT: &str = "font";
-static IMAGE: &str = "image";
-static OBJECT: &str = "object";
-static SCRIPT: &str = "script";
-static STYLE: &str = "style";
-static TRACK: &str = "track";
-static VIDEO: &str = "video";
-static WORKER: &str = "worker";
+const AUDIO: &str = "audio";
+const DOCUMENT: &str = "document";
+const EMBED: &str = "embed";
+const FETCH: &str = "fetch";
+const FONT: &str = "font";
+const IMAGE: &str = "image";
+const OBJECT: &str = "object";
+const SCRIPT: &str = "script";
+const STYLE: &str = "style";
+const TRACK: &str = "track";
+const VIDEO: &str = "video";
+const WORKER: &str = "worker";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -231,13 +231,13 @@ pub mod referrer_policy {
     use serde::{Deserialize, Serialize};
     use std::fmt;
 
-    static NO_REFERRER: &str = "no-referrer";
-    static NO_REFERRER_WHEN_DOWNGRADE: &str = "no-referrer-when-downgrade";
-    static ORIGIN: &str = "origin";
-    static ORIGIN_WHEN_CROSS_ORIGIN: &str = "origin-when-cross-origin";
-    static SAME_ORIGIN: &str = "same-origin";
-    static STRICT_ORIGIN: &str = "strict-origin";
-    static STRICT_ORIGIN_WHEN_CROSS_ORIGIN: &str =
+    const NO_REFERRER: &str = "no-referrer";
+    const NO_REFERRER_WHEN_DOWNGRADE: &str = "no-referrer-when-downgrade";
+    const ORIGIN: &str = "origin";
+    const ORIGIN_WHEN_CROSS_ORIGIN: &str = "origin-when-cross-origin";
+    const SAME_ORIGIN: &str = "same-origin";
+    const STRICT_ORIGIN: &str = "strict-origin";
+    const STRICT_ORIGIN_WHEN_CROSS_ORIGIN: &str =
         "strict-origin-when-cross-origin";
 
     #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]

@@ -11,7 +11,7 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{Error, Result};
 
-pub(crate) static REGISTRY: &str =
+pub(crate) const REGISTRY: &str =
     "https://s3-ap-southeast-1.amazonaws.com/registry.uwe.app";
 
 #[derive(Debug)]

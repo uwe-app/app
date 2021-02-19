@@ -3,9 +3,9 @@ use std::sync::Arc;
 use crate::BuildContext;
 use bracket::helper::prelude::*;
 
-static TEXT: &str = "MADE BY UWE";
-static HREF: &str = "https://uwe.app";
-static TITLE: &str = "Made by Universal Web Editor";
+const TEXT: &str = "MADE BY UWE";
+const HREF: &str = "https://uwe.app";
+const TITLE: &str = "Made by Universal Web Editor";
 
 pub struct Powered {
     pub context: Arc<BuildContext>,

@@ -3,8 +3,8 @@ use std::io;
 
 use url::Url;
 
-pub static FILE: &str = "index.xml";
-pub static NAME: &str = "sitemap";
+pub const FILE: &str = "index.xml";
+pub const NAME: &str = "sitemap";
 
 use crate::profile::{ProfileFilter, ProfileName, Profiles};
 
