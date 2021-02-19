@@ -3679,7 +3679,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "server_actix"
+name = "server"
 version = "0.1.0"
 dependencies = [
  "actix",
@@ -4591,7 +4591,7 @@ dependencies = [
  "semver 0.10.0",
  "serde",
  "serde_json",
- "server_actix",
+ "server",
  "site",
  "structopt",
  "thiserror",

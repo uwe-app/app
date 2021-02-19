@@ -143,7 +143,7 @@ pub enum Error {
     Site(#[from] site::Error),
 
     #[error(transparent)]
-    Server(#[from] server_actix::Error),
+    Server(#[from] server::Error),
 
     #[error(transparent)]
     Plugin(#[from] plugin::Error),
@@ -210,6 +210,6 @@ pub fn fatal(e: Error) -> Result<(), Error> {
     std::process::exit(1);
 }
 
-pub fn server_error_cb(e: server_actix::Error) {
+pub fn server_error_cb(e: server::Error) {
     let _ = fatal(Error::from(e));
 }

@@ -1,5 +1,5 @@
 [package]
-name = "server_actix"
+name = "server"
 version = "0.1.0"
 authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"

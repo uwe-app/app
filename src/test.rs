@@ -17,7 +17,7 @@ use config::{
     ProfileSettings,
 };
 
-use server_actix::ServerChannels;
+use server::ServerChannels;
 use workspace::{build, default_compiler, BuildResult, ProjectBuilder};
 
 use crate::{
@@ -200,9 +200,9 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     });
 
     // Convert to &'static reference
-    let server_opts = server_actix::configure(server_opts);
+    let server_opts = server::configure(server_opts);
     // Launch the test server
-    server_actix::start(server_opts, bind_tx, shutdown_rx, channels).await?;
+    server::start(server_opts, bind_tx, shutdown_rx, channels).await?;
 
     Ok(project)
 }
