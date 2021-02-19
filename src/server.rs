@@ -17,10 +17,6 @@ async fn serve_project(
     skip_build: bool,
     ) -> Result<()> {
 
-        //let host = HostConfig::new_directory(project);
-        //opts.add_host(host);
-
-
     if skip_build {
         let workspace = workspace::open(&project, false, &args.member)?;
         let mut it = workspace.iter();

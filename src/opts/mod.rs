@@ -90,23 +90,17 @@ pub fn server_config(
     default_port: u16,
     default_port_ssl: u16,
 ) -> ServerConfig {
-    let host = opts.addr.clone();
     let mut port = &default_port;
-
     let tls = tls_config(Default::default(), opts, default_port_ssl);
-
     if let Some(ref p) = opts.port {
         port = p;
     }
 
-    let name = if host == config::ADDR {
-        config::LOCALHOST.to_string()
-    } else {
-        host.to_owned()
-    };
-
-    let mut server_config = ServerConfig::new_port(port.to_owned(), tls);
-    server_config.listen = opts.addr.to_string();
+    let mut server_config = ServerConfig::new(
+        opts.addr.to_string(),
+        port.to_owned(),
+        tls);
+    //server_config.listen = opts.addr.to_string();
     server_config.authorities = opts.authority.clone();
     server_config
 }

@@ -26,6 +26,7 @@ use crate::{
 /// Start watching for file system notifications in the source
 /// directories for the given compiler results.
 pub async fn watch(
+    listen: Option<String>,
     port: u16,
     tls: Option<TlsConfig>,
     launch: Option<String>,
@@ -33,7 +34,6 @@ pub async fn watch(
     result: CompileResult,
     webdav_enabled: bool,
     editor_directory: Option<PathBuf>,
-    bind_host: Option<String>,
     authorities: Option<Vec<String>>,
     error_cb: ErrorCallback,
 ) -> Result<()> {
@@ -103,13 +103,19 @@ pub async fn watch(
     let (server_channels, watch_channels) = create_channels(channel_names)?;
 
     // Server must have at least a single virtual host
-    let mut opts = ServerConfig::new_port(port.to_owned(), tls);
+    let mut opts = ServerConfig::new(
+        listen.unwrap_or(config::ADDR.to_string()),
+        port.to_owned(),
+        tls);
+
     opts.authorities = authorities;
     opts.hosts = hosts;
 
+    /*
     if let Some(ref host) = bind_host {
         opts.listen = host.to_string();
     }
+    */
 
     // Spawn the bind listener to launch a browser
     if !headless {

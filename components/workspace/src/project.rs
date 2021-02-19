@@ -905,16 +905,9 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
                 redirect_uris.items().len()
             );
 
-            let host = HostConfig::new(
-                target,
-                hostname,
-                Some(redirect_uris),
-                Some(endpoint),
-                // TODO: allow logging to be enabled from the CLI
-                false,
-                false,
-            );
-
+            let mut host = HostConfig::new(hostname, target);
+            host.set_redirects(redirect_uris);
+            host.set_endpoint(endpoint);
             out.push((info, host));
 
             Ok::<(), Error>(())

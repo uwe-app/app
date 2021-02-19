@@ -24,6 +24,7 @@ pub async fn run<P: AsRef<Path>>(
 
     // Start the webserver
     server::watch(
+        args.host.clone(),
         port,
         args.tls.clone(),
         args.launch.clone(),
@@ -31,7 +32,6 @@ pub async fn run<P: AsRef<Path>>(
         result,
         false,
         None,
-        args.host.clone(),
         authorities,
         server_error_cb,
     )

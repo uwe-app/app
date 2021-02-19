@@ -103,8 +103,10 @@ impl Default for LogConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct ServerConfig {
-    pub listen: String,
+    listen: String,
+
     pub port: u16,
+
     pub tls: Option<TlsConfig>,
 
     #[serde(default, alias = "host")]
@@ -116,6 +118,7 @@ pub struct ServerConfig {
     /// When running a server over SSL redirect HTTP to HTTPS.
     #[serde(skip)]
     pub redirect_insecure: bool,
+
     /// Whether redirects should use a temporary status code.
     #[serde(skip)]
     pub temporary_redirect: bool,
@@ -145,21 +148,25 @@ impl ServerConfig {
         tmp
     }
 
-    /// New configuration using the default listen address.
-    pub fn new_port(
-        port: u16,
-        tls: Option<TlsConfig>,
-    ) -> Self {
-        ServerConfig::new(crate::config::ADDR.to_string(), port, tls)
-    }
-
     pub fn add_host(&mut self, host: HostConfig) {
         self.hosts.push(host);
     }
 
     pub fn load<P: AsRef<Path>>(file: P) -> Result<ServerConfig> {
         let contents = fs::read_to_string(file.as_ref())?;
-        let config: ServerConfig = toml::from_str(&contents)?;
+        let mut config: ServerConfig = toml::from_str(&contents)?;
+
+        // Directory paths that are relative should be resolved 
+        // using the parent folder of the configuration file.
+        if let Some(parent) = file.as_ref().parent() {
+            for host in config.hosts.iter_mut() {
+                let dir = host.directory().to_string_lossy();
+                if !dir.is_empty() && host.directory().is_relative() {
+                    host.directory = parent.join(host.directory());
+                }
+            }
+        }
+
         Ok(config)
     }
 
@@ -229,7 +236,7 @@ impl ServerConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "kebab-case")]
+#[serde(default, rename_all = "kebab-case")]
 pub struct HostConfig {
     /// Host name.
     pub name: String,
@@ -238,11 +245,9 @@ pub struct HostConfig {
     pub directory: PathBuf,
 
     /// Require an index page inside the directory.
-    #[serde(default)]
     pub require_index: bool,
 
     /// Send headers that instruct browsers to disable caching.
-    #[serde(default)]
     pub disable_cache: bool,
 
     /// Deny embedding as an iframe.
@@ -267,6 +272,7 @@ pub struct HostConfig {
     /// Log server requests.
     #[serde(skip)]
     pub log: bool,
+
     /// Flag that indicates this host should be configured
     /// for file system watching.
     #[serde(skip)]
@@ -293,6 +299,16 @@ impl Default for HostConfig {
 
 impl HostConfig {
 
+    pub fn new(
+        name: String,
+        directory: PathBuf,
+    ) -> Self {
+        let mut host: HostConfig = Default::default();
+        host.name = name;
+        host.directory = directory;
+        host
+    }
+
     pub fn new_directory(
         directory: PathBuf,
     ) -> Self {
@@ -301,29 +317,21 @@ impl HostConfig {
         host
     }
 
-    pub fn new(
-        directory: PathBuf,
-        name: String,
-        redirects: Option<Redirects>,
-        endpoint: Option<String>,
-        log: bool,
-        watch: bool,
-    ) -> Self {
-        Self {
-            directory,
-            name,
-            redirects,
-            endpoint,
-            disable_cache: true,
-            require_index: true,
-            deny_iframe: true,
-            log,
-            watch,
-            webdav: None,
-            editor_directory: None,
-        }
+    pub fn name(&self) -> &str {
+        &self.name 
     }
 
+    pub fn directory(&self) -> &PathBuf {
+        &self.directory
+    }
+
+    pub fn set_redirects(&mut self, redirects: Redirects) {
+        self.redirects = Some(redirects);
+    }
+
+    pub fn set_endpoint(&mut self, endpoint: String) {
+        self.endpoint = Some(endpoint);
+    }
 
     /// Attempt to load from a redirects file into this host.
     pub fn load_redirects(&mut self) -> Result<()> {

@@ -151,6 +151,14 @@ async fn start(
     // duplicated for each worker thread if we do it within
     // the HttpServer::new setup closure
     for host in hosts.iter_mut() {
+        if host.name().trim().is_empty() {
+            return Err(Error::NoVirtualHostName);
+        }
+
+        let dir = host.directory().to_string_lossy();
+        if dir.is_empty() {
+            return Err(Error::NoVirtualHostDirectory(host.name().to_string()));
+        }
 
         if !host.directory.exists() || !host.directory.is_dir() {
             return Err(Error::VirtualHostDirectory(
