@@ -1,8 +1,10 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fs;
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 
 use log::info;
 
@@ -13,7 +15,21 @@ use crate::{Error, Result, RuntimeOptions};
 const MAX_REDIRECTS: usize = 4;
 pub const REDIRECTS_FILE: &str = "redirects.json";
 
-pub type Redirects = HashMap<String, Uri>;
+//pub type Redirects = HashMap<String, Uri>;
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct Redirects {
+    #[serde_as(as = "HashMap<_, DisplayFromStr>")]
+    #[serde(flatten)]
+    items: HashMap<String, Uri>,
+}
+
+impl Redirects {
+    pub fn items(&self) -> &HashMap<String, Uri> {
+        &self.items
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct RedirectConfig {
@@ -41,9 +57,9 @@ impl TryInto<Redirects> for RedirectConfig {
     type Error = crate::Error;
 
     fn try_into(self) -> std::result::Result<Redirects, Self::Error> {
-        let mut map: HashMap<String, Uri> = HashMap::new();
+        let mut map = Redirects {items: HashMap::new()};
         for (k, v) in self.manifest.map {
-            map.insert(k, v.as_str().parse::<Uri>()?);
+            map.items.insert(k, v.as_str().parse::<Uri>()?);
         }
         Ok(map)
     }

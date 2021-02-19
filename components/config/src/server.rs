@@ -1,3 +1,4 @@
+use std::fs;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
 
@@ -302,6 +303,18 @@ impl HostConfig {
             editor_directory: None,
         }
     }
+
+
+    /// Attempt to load from a redirects file into this host.
+    pub fn load_redirects(&mut self) -> Result<()> {
+        let redirects = self.directory.join(crate::REDIRECTS_FILE);
+        if redirects.exists() {
+            let contents = fs::read_to_string(&redirects)?;
+            self.redirects = Some(serde_json::from_str(&contents)?);
+        }
+        Ok(())
+    }
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

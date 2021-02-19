@@ -902,7 +902,7 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
             info!(
                 "Virtual host: {} ({} redirects)",
                 &hostname,
-                redirect_uris.len()
+                redirect_uris.items().len()
             );
 
             let host = HostConfig::new(

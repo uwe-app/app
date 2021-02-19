@@ -21,7 +21,15 @@ pub struct Server {
     #[structopt(flatten)]
     pub build_opts: Compile,
 
-    /// Project or directory to serve files from
-    #[structopt(parse(from_os_str), default_value = ".")]
-    pub target: PathBuf,
+    /// Directory to serve
+    #[structopt(short, long, parse(from_os_str))]
+    pub directory: Option<PathBuf>,
+
+    /// Config file
+    #[structopt(short, long, parse(from_os_str))]
+    pub config: Option<PathBuf>,
+
+    /// Project path
+    #[structopt(parse(from_os_str))]
+    pub project: Option<PathBuf>,
 }

@@ -7,7 +7,7 @@ use log::info;
 use semver::Version;
 use structopt::StructOpt;
 
-use config::{server::LaunchConfig, ProfileSettings};
+use config::ProfileSettings;
 
 use publisher::PublishProvider;
 
@@ -72,21 +72,11 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Server { args } => {
-            let project = opts::project_path(&args.target)?;
-
-            let opts = uwe::opts::server_config(
-                &project,
-                &args.server,
-                config::PORT,
-                config::PORT_SSL,
-            );
-
-            let launch = LaunchConfig { open: args.open };
             uwe::server::serve(
-                &project,
+                (args.project, args.directory, args.config),
                 args.skip_build,
-                opts,
-                launch,
+                args.server,
+                args.open,
                 args.build_opts,
             )
             .await?;

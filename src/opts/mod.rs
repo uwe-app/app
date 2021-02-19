@@ -125,7 +125,7 @@ mod server;
 mod sync;
 mod task;
 mod test;
-mod web_server;
+pub(crate) mod web_server;
 
 pub mod uwe;
 

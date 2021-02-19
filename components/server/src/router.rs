@@ -261,7 +261,7 @@ async fn start(
                 web::scope("/")
                     // Handle redirect mappings
                     .wrap_fn(move |req, srv| {
-                        if let Some(uri) = redirects.get(req.path()) {
+                        if let Some(uri) = redirects.items().get(req.path()) {
                             let location = uri.to_string();
 
                             let response: Pin<
