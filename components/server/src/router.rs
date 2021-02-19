@@ -28,7 +28,7 @@ use actix_web::{
         header::{self, HeaderValue},
         StatusCode,
     },
-    middleware::{DefaultHeaders, NormalizePath, TrailingSlash},
+    middleware::{Condition, Compat, Logger, DefaultHeaders, NormalizePath, TrailingSlash},
     web, App, HttpRequest, HttpResponse, HttpServer,
 };
 
@@ -219,6 +219,7 @@ async fn start(
         for host in hosts.iter() {
             let disable_cache = host.disable_cache;
             let deny_iframe = host.deny_iframe;
+            let log = host.log;
             let redirects =
                 host.redirects.clone().unwrap_or(Default::default());
             let error_page = host.directory.join(config::ERROR_HTML);
@@ -458,6 +459,7 @@ async fn start(
                         }
                         false
                     }))
+                    .wrap(Condition::new(log, Compat::new(Logger::default())))
                     .service(
                         web::resource(&endpoint)
                             //.guard()

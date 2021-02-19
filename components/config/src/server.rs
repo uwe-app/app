@@ -87,19 +87,6 @@ pub struct LaunchConfig {
     pub open: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LogConfig {
-    pub prefix: String,
-}
-
-impl Default for LogConfig {
-    fn default() -> Self {
-        Self {
-            prefix: "web:log".to_string(),
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct ServerConfig {
@@ -251,8 +238,10 @@ pub struct HostConfig {
     pub disable_cache: bool,
 
     /// Deny embedding as an iframe.
-    #[serde(default)]
     pub deny_iframe: bool,
+
+    /// Log server requests.
+    pub log: bool,
 
     /// Configuration for webdav.
     #[serde(skip)]
@@ -268,10 +257,6 @@ pub struct HostConfig {
     /// Websocket endpoint when watching for file system changes.
     #[serde(skip)]
     pub endpoint: Option<String>,
-
-    /// Log server requests.
-    #[serde(skip)]
-    pub log: bool,
 
     /// Flag that indicates this host should be configured
     /// for file system watching.
