@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::server::{HostConfig, ServerConfig, TlsConfig};
+use config::server::{ServerConfig, TlsConfig};
 use web_server::WebServerOpts;
 
 use crate::{shim, Error, Result};
@@ -83,8 +83,9 @@ pub fn tls_config(
     tls
 }
 
+/// Generate a server config with zero hosts that respects 
+/// the default ports and SSL command line options.
 pub fn server_config(
-    target: &PathBuf,
     opts: &WebServerOpts,
     default_port: u16,
     default_port_ssl: u16,
@@ -104,11 +105,7 @@ pub fn server_config(
         host.to_owned()
     };
 
-    let host = HostConfig::new(
-        target.clone(), name, None, None, false, false);
-
     let mut server_config = ServerConfig::new_port(port.to_owned(), tls);
-    server_config.hosts = vec![host];
     server_config.listen = opts.addr.to_string();
     server_config.authorities = opts.authority.clone();
     server_config

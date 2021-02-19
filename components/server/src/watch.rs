@@ -45,8 +45,6 @@ pub async fn watch(
     let mut host_configs: Vec<(HostInfo, HostConfig)> =
         host_result.try_into()?;
 
-    println!("Configure with hosts {:?}", host_configs.len());
-
     for (_info, host) in host_configs.iter_mut() {
         host.watch = true;
         //host.editor_directory = editor_directory.clone();
@@ -55,7 +53,7 @@ pub async fn watch(
     let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =
         host_configs.into_iter().unzip();
 
-    println!("Has editor directory {:?}", editor_directory);
+    //println!("Has editor directory {:?}", editor_directory);
 
     // Map the editor hosts
     if let Some(ref editor_directory) = editor_directory {

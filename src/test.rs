@@ -150,7 +150,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
 
     let mut server_opts = opts::server_config(
-        &writer.opts.project,
+        //&writer.opts.project,
         &writer.opts.server,
         config::PORT,
         config::PORT_SSL,
@@ -171,14 +171,12 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     server_opts.redirect_insecure = false;
 
     let mut host: HostConfig = Default::default();
+    host.require_index = false;
     host.directory = build_dir.to_path_buf();
+
     server_opts.add_host(host);
 
-    //server_opts.default_host.directory = build_dir.to_path_buf();
-
     let spawn_dir = project.config.project().to_path_buf();
-
-    //println!("{:#?}", server_opts);
 
     let channels = ServerChannels::new();
     let (bind_tx, bind_rx) = oneshot::channel::<ConnectionInfo>();

@@ -292,6 +292,15 @@ impl Default for HostConfig {
 }
 
 impl HostConfig {
+
+    pub fn new_directory(
+        directory: PathBuf,
+    ) -> Self {
+        let mut host: HostConfig = Default::default();
+        host.directory = directory;
+        host
+    }
+
     pub fn new(
         directory: PathBuf,
         name: String,

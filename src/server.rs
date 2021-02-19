@@ -17,6 +17,10 @@ async fn serve_project(
     skip_build: bool,
     ) -> Result<()> {
 
+        //let host = HostConfig::new_directory(project);
+        //opts.add_host(host);
+
+
     if skip_build {
         let workspace = workspace::open(&project, false, &args.member)?;
         let mut it = workspace.iter();
@@ -80,7 +84,6 @@ pub async fn serve(
         // Must call project_path() so we respect `.uwe-version` !!!
         let project = project_path(&project)?; 
         let opts = server_config(
-            &project,
             &server,
             config::PORT,
             config::PORT_SSL,
@@ -89,14 +92,14 @@ pub async fn serve(
         serve_project(project, opts, launch, args, skip_build).await?;
     // Handle directory
     } else if let Some(directory) = targets.1 {
-        // TODO: check has index.html file?
-
-        let opts = server_config(
-            &directory,
+        let mut opts = server_config(
             &server,
             config::PORT,
             config::PORT_SSL,
         );
+
+        let host = HostConfig::new_directory(directory);
+        opts.add_host(host);
 
         server::launch(opts, launch).await?;
     // Handle configuration file

@@ -7,7 +7,7 @@ use log::info;
 use semver::Version;
 use structopt::StructOpt;
 
-use config::ProfileSettings;
+use config::{ProfileSettings, server::HostConfig};
 
 use publisher::PublishProvider;
 
@@ -62,12 +62,16 @@ async fn run(cmd: Command) -> Result<()> {
             let plugin = plugin::install_docs(Some(version)).await?;
 
             let target = plugin.base().join(config::PUBLIC_HTML);
-            let opts = uwe::opts::server_config(
-                &target,
+            let mut opts = uwe::opts::server_config(
+                //&target,
                 &args.server,
                 config::PORT_DOCS,
                 config::PORT_DOCS_SSL,
             );
+
+            let host = HostConfig::new_directory(target);
+            opts.add_host(host);
+
             uwe::docs::open(opts).await?;
         }
 
