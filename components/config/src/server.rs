@@ -1,6 +1,6 @@
 use std::fs;
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -101,6 +101,7 @@ impl Default for LogConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct ServerConfig {
     pub listen: String,
     pub port: u16,
@@ -158,6 +159,12 @@ impl ServerConfig {
             authorities: None,
             hosts: vec![],
         }
+    }
+
+    pub fn load<P: AsRef<Path>>(file: P) -> Result<ServerConfig> {
+        let contents = fs::read_to_string(file.as_ref())?;
+        let config: ServerConfig = toml::from_str(&contents)?;
+        Ok(config)
     }
 
     pub fn hosts(&self) -> Vec<HostConfig> {

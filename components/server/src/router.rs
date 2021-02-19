@@ -36,7 +36,7 @@ use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 use rustls::{NoClientAuth, ServerConfig as TlsServerConfig};
 
 use bracket::Registry;
-use log::info;
+use log::{info, warn, error};
 
 use crate::{
     channels::{Message, ResponseValue, ServerChannels},
@@ -573,10 +573,30 @@ pub async fn serve(
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<()> {
+
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
-        start(opts, bind, shutdown, channels)
-            .expect("Failed to start web server");
+        if let Err(e) = start(opts, bind, shutdown, channels) {
+            match e {
+                Error::Io(ref e) => {
+                    if e.kind() == std::io::ErrorKind::AddrInUse {
+                        let delimiter = utils::terminal::delimiter();
+                        eprintln!("{}", delimiter);
+                        warn!("Could not start the server because the address is being used!");
+                        warn!("This happens when a server is already running on a port.");
+                        warn!("");
+                        warn!("To fix this problem either stop the existing server or choose ");
+                        warn!("a different port for the web server using the --port ");
+                        warn!("and --ssl-port options.");
+                        eprintln!("{}", delimiter);
+                    } 
+                }
+                _ => {}
+            }
+
+            error!("{}", e);
+            std::process::exit(1);
+        }
     });
     let _ = handle.join();
 
