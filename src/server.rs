@@ -33,7 +33,7 @@ async fn serve_project(
         host.directory = info.project.options.build_target().to_path_buf();
     }
 
-    opts.hosts = host_configs.into_iter().map(|(_, host)| host).collect();
+    opts.set_hosts(host_configs.into_iter().map(|(_, host)| host).collect());
 
     Ok(server::launch(opts, launch).await?)
 }

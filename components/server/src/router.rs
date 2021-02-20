@@ -119,19 +119,20 @@ async fn start(
     let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
-    let mut hosts = opts.hosts();
+    let mut hosts = opts.hosts()
+        .iter().map(|h| h.clone()).collect::<Vec<_>>();
 
     if hosts.is_empty() {
         return Err(Error::NoVirtualHosts);
     }
 
-    let tls = opts.tls.is_some();
+    let tls = opts.has_ssl();
 
     // The first host in the list is the one we send via ConnectionInfo
     // that will be launched in a browser tab
     let host = hosts.get(0).unwrap().name.clone();
 
-    let temporary_redirect = opts.temporary_redirect;
+    let temporary_redirect = opts.temporary_redirect();
     let http_addr = opts.get_sock_addr(PortType::Insecure)?;
     let tls_port = opts.tls_port();
     let authorities = opts.authorities().clone();

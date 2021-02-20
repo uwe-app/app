@@ -150,7 +150,6 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<bool>();
 
     let mut server_opts = opts::server_config(
-        //&writer.opts.project,
         &writer.opts.server,
         config::PORT,
         config::PORT_SSL,
@@ -159,16 +158,16 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     let build_dir = project.options.build_target();
 
     if writer.opts.server.port.is_none() {
-        server_opts.port = 0;
+        server_opts.set_port(0);
     }
 
     if writer.opts.server.ssl_port.is_none() {
-        if let Some(ref mut tls) = server_opts.tls {
+        if let Some(ref mut tls) = server_opts.ssl_mut() {
             tls.port = 0;
         }
     }
 
-    server_opts.redirect_insecure = false;
+    server_opts.set_redirect_insecure(false);
 
     let mut host: HostConfig = Default::default();
     host.require_index = false;

@@ -92,26 +92,26 @@ pub struct LaunchConfig {
 pub struct ServerConfig {
     listen: String,
 
-    pub port: u16,
+    port: u16,
 
     #[serde(default = "num_cpus::get")]
     workers: usize,
 
-    pub tls: Option<TlsConfig>,
+    tls: Option<TlsConfig>,
 
     #[serde(default, alias = "host")]
-    pub hosts: Vec<HostConfig>,
+    hosts: Vec<HostConfig>,
 
     #[serde(default)]
-    pub authorities: Option<Vec<String>>,
+    authorities: Option<Vec<String>>,
 
     /// When running a server over SSL redirect HTTP to HTTPS.
     #[serde(skip)]
-    pub redirect_insecure: bool,
+    redirect_insecure: bool,
 
     /// Whether redirects should use a temporary status code.
     #[serde(skip)]
-    pub temporary_redirect: bool,
+    temporary_redirect: bool,
 }
 
 impl Default for ServerConfig {
@@ -139,10 +139,6 @@ impl ServerConfig {
         tmp
     }
 
-    pub fn add_host(&mut self, host: HostConfig) {
-        self.hosts.push(host);
-    }
-
     pub fn load<P: AsRef<Path>>(file: P) -> Result<ServerConfig> {
         let contents = fs::read_to_string(file.as_ref())?;
         let mut config: ServerConfig = toml::from_str(&contents)?;
@@ -161,16 +157,44 @@ impl ServerConfig {
         Ok(config)
     }
 
+    pub fn ssl(&self) -> &Option<TlsConfig> {
+        &self.tls
+    }
+
+    pub fn ssl_mut(&mut self) -> &mut Option<TlsConfig> {
+        &mut self.tls
+    }
+
+    pub fn has_ssl(&self) -> bool {
+        self.tls.is_some()
+    }
+
     pub fn workers(&self) -> usize {
         self.workers 
     }
 
-    pub fn hosts(&self) -> Vec<HostConfig> {
-        self.hosts.iter().map(|h| h.clone()).collect::<Vec<_>>()
+    pub fn add_host(&mut self, host: HostConfig) {
+        self.hosts.push(host);
+    }
+
+    pub fn set_hosts(&mut self, hosts: Vec<HostConfig>) {
+        self.hosts = hosts;
+    }
+
+    pub fn hosts(&self) -> &Vec<HostConfig> {
+        &self.hosts
+    }
+
+    pub fn set_authorities(&mut self, authorities: Option<Vec<String>>) {
+        self.authorities = authorities
     }
 
     pub fn authorities(&self) -> &Option<Vec<String>> {
         &self.authorities
+    }
+
+    pub fn set_port(&mut self, port: u16) {
+        self.port = port;
     }
 
     pub fn get_port(&self, port_type: PortType) -> u16 {
@@ -183,6 +207,18 @@ impl ServerConfig {
         } else {
             crate::PORT_SSL
         }
+    }
+
+    pub fn set_redirect_insecure(&mut self, flag: bool) {
+        self.redirect_insecure = flag;
+    }
+
+    pub fn temporary_redirect(&self) -> bool {
+        self.temporary_redirect
+    }
+
+    pub fn set_temporary_redirect(&mut self, flag: bool) {
+        self.temporary_redirect = flag;
     }
 
     pub fn get_address(

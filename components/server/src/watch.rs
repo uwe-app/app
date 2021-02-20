@@ -109,8 +109,8 @@ pub async fn watch(
         tls,
     );
 
-    opts.authorities = authorities;
-    opts.hosts = hosts;
+    opts.set_authorities(authorities);
+    opts.set_hosts(hosts);
 
     /*
     if let Some(ref host) = bind_host {
