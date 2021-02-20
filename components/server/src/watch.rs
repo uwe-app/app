@@ -1,4 +1,3 @@
-use std::thread;
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::path::PathBuf;
@@ -251,7 +250,6 @@ fn spawn_bind_open(
 
                     info!("Serve {}", &url);
 
-                    thread::sleep(Duration::from_millis(25));
                     open::that(&url).map(|_| ()).unwrap_or(());
                 }
                 _ => {}

@@ -134,6 +134,9 @@ pub struct ServerConfig {
     /// Whether redirects should use a temporary status code.
     #[serde(skip)]
     temporary_redirect: bool,
+
+    #[serde(skip)]
+    allow_ssl_from_env: bool,
 }
 
 impl Default for ServerConfig {
@@ -145,6 +148,7 @@ impl Default for ServerConfig {
             ssl: None,
             redirect_insecure: true,
             temporary_redirect: false,
+            allow_ssl_from_env: true,
             authorities: None,
             hosts: vec![],
         }
@@ -183,9 +187,11 @@ impl ServerConfig {
         let (ssl_cert, ssl_key, ssl_port) = if let Some(ref ssl) = self.ssl {
             (Some(ssl.cert.to_path_buf()), Some(ssl.key.to_path_buf()), ssl.port())
         } else {
-            (std::env::var("UWE_SSL_CERT").ok().map(PathBuf::from),
-                std::env::var("UWE_SSL_KEY").ok().map(PathBuf::from),
-                crate::PORT_SSL)
+            if self.allow_ssl_from_env {
+                (std::env::var("UWE_SSL_CERT").ok().map(PathBuf::from),
+                    std::env::var("UWE_SSL_KEY").ok().map(PathBuf::from),
+                    crate::PORT_SSL)
+            } else { (None, None, crate::PORT_SSL)  }
         };
 
         if let (Some(cert), Some(key)) = (ssl_cert.as_ref(), ssl_key.as_ref()) {
@@ -248,6 +254,10 @@ impl ServerConfig {
         } else {
             crate::PORT_SSL
         }
+    }
+
+    pub fn set_allow_ssl_from_env(&mut self, flag: bool) {
+        self.allow_ssl_from_env = flag;
     }
 
     pub fn set_redirect_insecure(&mut self, flag: bool) {

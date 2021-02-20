@@ -79,11 +79,13 @@ pub async fn serve(
     // Handle configuration file
     } else if let Some(configs) = targets.2 {
         let mut servers = Vec::new();
-        for config in configs {
-            if !config.exists() || !config.is_file() {
-                return Err(Error::NotFile(config));
+        for file in configs {
+            if !file.exists() || !file.is_file() {
+                return Err(Error::NotFile(file));
             }
-            servers.push(ServerConfig::load(config)?);
+            let mut config = ServerConfig::load(file)?;
+            config.set_allow_ssl_from_env(false);
+            servers.push(config);
         }
         server::run(servers).await?;
     } else {

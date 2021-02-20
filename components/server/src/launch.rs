@@ -1,5 +1,3 @@
-use std::{thread, time::Duration};
-
 use tokio::sync::oneshot;
 
 use log::info;
@@ -57,8 +55,6 @@ pub async fn launch(
                 // 2) Don't open a browser window unless the build succeeds.
                 //
                 if launch.open {
-                    thread::sleep(Duration::from_millis(25));
-
                     // It is ok if this errors we just don't open a browser window
                     open::that(&url).map(|_| ()).unwrap_or(());
                 }

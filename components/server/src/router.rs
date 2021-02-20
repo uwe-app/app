@@ -128,8 +128,6 @@ async fn start(
         return Err(Error::NoVirtualHosts);
     }
 
-    //println!("Has ssl config {:#?}", ssl_config);
-
     // The first host in the list is the one we send via ConnectionInfo
     // that will be launched in a browser tab
     let host = hosts.get(0).unwrap().name().to_string();
@@ -216,8 +214,6 @@ async fn start(
             let redirects =
                 host.redirects().clone().unwrap_or(Default::default());
             let error_page = host.directory().join(config::ERROR_HTML);
-
-            //println!("Has disabled cache {:?}", disable_cache);
 
             let watch = host.watch();
             let endpoint = if let Some(ref endpoint) = host.endpoint() {
@@ -342,7 +338,6 @@ async fn start(
                     })
                     // Handle conditional headers
                     .wrap_fn(move |req, srv| {
-                        //println!("Request path: {}", req.path());
                         let fut = srv.call(req);
                         async move {
                             let mut res = fut.await?;
@@ -577,19 +572,21 @@ async fn start(
 
     let mut addrs = server.addrs();
 
-    if !addrs.is_empty() {
-        let addr = addrs.swap_remove(0);
-        let info = ConnectionInfo { addr, host, tls: use_ssl };
-
-        match bind.send(info) {
-            Err(_) => {
-                warn!("Failed to send connection info on bind channel");
+    let bind_notify = async move {
+        if !addrs.is_empty() {
+            let addr = addrs.swap_remove(0);
+            let info = ConnectionInfo { addr, host, tls: use_ssl };
+            match bind.send(info) {
+                Err(_) => {
+                    warn!("Failed to send connection info on bind channel");
+                }
+                _ => {}
             }
-            _ => {}
+        } else {
+            warn!("Could not send connection info to bind channel (server address not available)");
         }
-    } else {
-        panic!("Could not get web server address!");
-    }
+        Ok(())
+    };
 
     if is_root() {
         drop_privileges()?;
@@ -618,8 +615,9 @@ async fn start(
             });
         });
 
-        futures::try_join!(redirect_server, server)
+        futures::try_join!(redirect_server, server, bind_notify)
     } else {
+
         let server = server.run();
         let shutdown_server = server.clone();
 
@@ -638,7 +636,7 @@ async fn start(
             });
         });
 
-        futures::try_join!(ok(()), server)
+        futures::try_join!(ok(()), server, bind_notify)
     };
 
     // Propagate errors up the call stack
