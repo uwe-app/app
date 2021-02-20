@@ -94,6 +94,9 @@ pub struct ServerConfig {
 
     pub port: u16,
 
+    #[serde(default = "num_cpus::get")]
+    workers: usize,
+
     pub tls: Option<TlsConfig>,
 
     #[serde(default, alias = "host")]
@@ -116,6 +119,7 @@ impl Default for ServerConfig {
         Self {
             listen: String::from(crate::config::HOST),
             port: crate::config::PORT,
+            workers: num_cpus::get(),
             tls: None,
             redirect_insecure: true,
             temporary_redirect: false,
@@ -155,6 +159,10 @@ impl ServerConfig {
         }
 
         Ok(config)
+    }
+
+    pub fn workers(&self) -> usize {
+        self.workers 
     }
 
     pub fn hosts(&self) -> Vec<HostConfig> {

@@ -26,3 +26,4 @@ jsonfeed = {version = "0.3", path = "../../../library/jsonfeed"}
 slug = "0.1.4"
 spdx = "0.3.4"
 indexmap = {version = "^1.6.1", features = ["serde-1"]}
+num_cpus = "1.13.0"

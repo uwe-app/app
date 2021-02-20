@@ -517,9 +517,8 @@ async fn start(
         );
 
         app
-    });
-    //.workers(4);
-    //
+    })
+    .workers(opts.workers());
 
     let (server, mut redirect_server) = if use_ssl {
         let key = ssl_key.unwrap();

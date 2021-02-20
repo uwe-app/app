@@ -767,6 +767,7 @@ dependencies = [
  "indexmap",
  "jsonfeed",
  "log",
+ "num_cpus",
  "once_cell",
  "pulldown-cmark",
  "semver 0.10.0",
