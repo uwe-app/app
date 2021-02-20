@@ -170,7 +170,7 @@ impl ServerConfig {
     }
 
     pub fn workers(&self) -> usize {
-        self.workers 
+        self.workers
     }
 
     pub fn add_host(&mut self, host: HostConfig) {
@@ -430,11 +430,15 @@ pub struct WebDavConfig {
 
 impl WebDavConfig {
     pub fn new(mount_path: String, directory: PathBuf, listing: bool) -> Self {
-        Self {mount_path, directory, listing} 
+        Self {
+            mount_path,
+            directory,
+            listing,
+        }
     }
 
     pub fn mount_path(&self) -> &str {
-        &self.mount_path 
+        &self.mount_path
     }
 
     pub fn directory(&self) -> &PathBuf {

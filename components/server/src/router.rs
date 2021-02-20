@@ -28,7 +28,9 @@ use actix_web::{
         header::{self, HeaderValue},
         StatusCode,
     },
-    middleware::{Condition, Compat, Logger, DefaultHeaders, NormalizePath, TrailingSlash},
+    middleware::{
+        Compat, Condition, DefaultHeaders, Logger, NormalizePath, TrailingSlash,
+    },
     web, App, HttpRequest, HttpResponse, HttpServer,
 };
 
@@ -43,7 +45,7 @@ use crate::{
     drop_privileges::{drop_privileges, is_root},
     reload_server::{self, LiveReloadServer},
     websocket::ws_index,
-    Error, Result,
+    Error, Result, ServerSettings,
 };
 
 use config::server::{ConnectionInfo, PortType, ServerConfig};
@@ -119,8 +121,7 @@ async fn start(
     let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
-    let mut hosts = opts.hosts()
-        .iter().map(|h| h.clone()).collect::<Vec<_>>();
+    let mut hosts = opts.hosts().iter().map(|h| h.clone()).collect::<Vec<_>>();
 
     if hosts.is_empty() {
         return Err(Error::NoVirtualHosts);
@@ -183,7 +184,7 @@ async fn start(
             }
         }
 
-        info!("Host {} ({})",&host.name(), host.directory().display());
+        info!("Host {} ({})", &host.name(), host.directory().display());
         if let Some(ref webdav) = host.webdav() {
             info!("Webdav {}", webdav.directory().display());
         }
@@ -296,7 +297,9 @@ async fn start(
             }
 
             let live_render_tx = if watch {
-                Arc::new(Some(channels.render.get(host.name()).unwrap().clone()))
+                Arc::new(Some(
+                    channels.render.get(host.name()).unwrap().clone(),
+                ))
             } else {
                 Arc::new(None)
             };
@@ -636,15 +639,15 @@ async fn start(
     Ok(())
 }
 
-pub async fn serve(
-    opts: ServerConfig,
-    bind: oneshot::Sender<ConnectionInfo>,
-    shutdown: oneshot::Receiver<bool>,
-    channels: ServerChannels,
-) -> Result<()> {
+pub async fn serve(settings: ServerSettings) -> Result<()> {
     // Must spawn a new thread as we are already in a tokio runtime
     let handle = std::thread::spawn(move || {
-        if let Err(e) = start(opts, bind, shutdown, channels) {
+        if let Err(e) = start(
+            settings.config,
+            settings.bind,
+            settings.shutdown,
+            settings.channels,
+        ) {
             match e {
                 Error::Io(ref e) => {
                     if e.kind() == std::io::ErrorKind::AddrInUse {

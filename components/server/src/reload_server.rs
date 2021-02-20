@@ -141,7 +141,7 @@ impl Handler<Connect> for LiveReloadServer {
             .insert(id);
 
         let count = self.visitor_count.fetch_add(1, Ordering::SeqCst);
-        self.send_message("Main", &format!("Total visitors {}", count), 0);
+        //self.send_message("Main", &format!("Total visitors {}", count), 0);
 
         //println!("Id is {:?}", id);
 
@@ -168,10 +168,13 @@ impl Handler<Disconnect> for LiveReloadServer {
                 }
             }
         }
+
+        /*
         // send message to other users
         for room in rooms {
             self.send_message(&room, "Someone disconnected", 0);
         }
+        */
     }
 }
 
@@ -216,7 +219,7 @@ impl Handler<Join> for LiveReloadServer {
         }
         // send message to other users
         for room in rooms {
-            self.send_message(&room, "Someone disconnected", 0);
+            //self.send_message(&room, "Someone disconnected", 0);
         }
 
         self.rooms
@@ -224,6 +227,6 @@ impl Handler<Join> for LiveReloadServer {
             .or_insert_with(HashSet::new)
             .insert(id);
 
-        self.send_message(&name, "Someone connected", id);
+        //self.send_message(&name, "Someone connected", id);
     }
 }

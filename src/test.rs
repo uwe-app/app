@@ -17,7 +17,7 @@ use config::{
     ProfileSettings,
 };
 
-use server::ServerChannels;
+use server::{ServerSettings, ServerChannels};
 use workspace::{build, default_compiler, BuildResult, ProjectBuilder};
 
 use crate::{
@@ -202,7 +202,11 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     });
 
     // Launch the test server
-    server::start(server_opts, bind_tx, shutdown_rx, channels).await?;
+    server::start(ServerSettings {
+        config: server_opts,
+        bind: bind_tx,
+        shutdown: shutdown_rx,
+        channels}).await?;
 
     Ok(project)
 }

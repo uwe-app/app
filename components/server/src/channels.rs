@@ -15,7 +15,7 @@ pub enum Message {
     Text(String),
 }
 
-/// Channels that the web server uses to send render requests to the file 
+/// Channels that the web server uses to send render requests to the file
 /// system watcher and receives messages to be sent to connected websocket clients.
 #[derive(Debug, Clone)]
 pub struct ServerChannels {
@@ -36,7 +36,7 @@ impl ServerChannels {
     }
 }
 
-/// Channels that the file system watcher receives render requests 
+/// Channels that the file system watcher receives render requests
 /// from the web server and send notifications to the server websockets.
 #[derive(Debug, Default)]
 pub struct WatchChannels {

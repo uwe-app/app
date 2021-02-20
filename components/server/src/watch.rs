@@ -20,7 +20,7 @@ use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
 
 use crate::{
     channels::{self, Message, ResponseValue, ServerChannels, WatchChannels},
-    Error, ErrorCallback, Result,
+    Error, ErrorCallback, Result, ServerSettings,
 };
 
 /// Start watching for file system notifications in the source
@@ -70,7 +70,8 @@ pub async fn watch(
                 editor_host.set_webdav(Some(WebDavConfig::new(
                     "/webdav".to_string(),
                     info.source.to_path_buf(),
-                    false )));
+                    false,
+                )));
 
                 println!("Creating editor host {:?}", editor_host.name());
                 println!("Creating editor host {:?}", editor_host.directory());
@@ -141,7 +142,13 @@ pub async fn watch(
     //let opts = super::configure(opts);
 
     // Start the webserver
-    super::router::serve(opts, bind_tx, shutdown_rx, server_channels).await?;
+    super::router::serve(ServerSettings {
+        config: opts,
+        bind: bind_tx,
+        shutdown: shutdown_rx,
+        channels: server_channels,
+    })
+    .await?;
 
     Ok(())
 }
