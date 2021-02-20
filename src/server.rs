@@ -40,7 +40,7 @@ async fn serve_project(
 
 /// Serve either a project, directory or load from a config.
 pub async fn serve(
-    targets: (Option<PathBuf>, Option<PathBuf>, Option<PathBuf>),
+    targets: (Option<PathBuf>, Option<PathBuf>, Option<Vec<PathBuf>>),
     server: WebServerOpts,
     open: bool,
     args: Compile,
@@ -77,16 +77,15 @@ pub async fn serve(
 
         server::launch(opts, launch).await?;
     // Handle configuration file
-    } else if let Some(config) = targets.2 {
-        if !config.exists() || !config.is_file() {
-            return Err(Error::NotFile(config));
+    } else if let Some(configs) = targets.2 {
+        let mut servers = Vec::new();
+        for config in configs {
+            if !config.exists() || !config.is_file() {
+                return Err(Error::NotFile(config));
+            }
+            servers.push(ServerConfig::load(config)?);
         }
-
-        let opts = ServerConfig::load(config)?;
-
-        println!("Config opts {:#?}", opts);
-
-        server::launch(opts, launch).await?;
+        server::run(servers).await?;
     } else {
         return Err(Error::NoServerTargets);
     }

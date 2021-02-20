@@ -448,10 +448,12 @@ async fn start(
                             .header(header::REFERRER_POLICY, "origin")
                             .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
                             .header(header::X_XSS_PROTECTION, "1; mode=block")
+                            /*
                             .header(
                                 header::STRICT_TRANSPORT_SECURITY,
                                 "max-age=31536000; includeSubDomains; preload",
                             )
+                            */
                             // TODO: allow configuring this header
                             .header("permissions-policy", "geolocation=()"),
                     )
@@ -577,8 +579,13 @@ async fn start(
     if !addrs.is_empty() {
         let addr = addrs.swap_remove(0);
         let info = ConnectionInfo { addr, host, tls };
-        bind.send(info)
-            .expect("Failed to send web server socket address");
+
+        match bind.send(info) {
+            Err(_) => {
+                warn!("Failed to send connection info on bind channel");
+            }
+            _ => {}
+        }
     } else {
         panic!("Could not get web server address!");
     }
@@ -639,37 +646,49 @@ async fn start(
     Ok(())
 }
 
-pub async fn serve(settings: ServerSettings) -> Result<()> {
-    // Must spawn a new thread as we are already in a tokio runtime
-    let handle = std::thread::spawn(move || {
-        if let Err(e) = start(
-            settings.config,
-            settings.bind,
-            settings.shutdown,
-            settings.channels,
-        ) {
-            match e {
-                Error::Io(ref e) => {
-                    if e.kind() == std::io::ErrorKind::AddrInUse {
-                        let delimiter = utils::terminal::delimiter();
-                        eprintln!("{}", delimiter);
-                        warn!("Could not start the server because the address is being used!");
-                        warn!("This happens when a server is already running on a port.");
-                        warn!("");
-                        warn!("To fix this problem either stop the existing server or choose ");
-                        warn!("a different port for the web server using the --port ");
-                        warn!("and --ssl-port options.");
-                        eprintln!("{}", delimiter);
-                    }
-                }
-                _ => {}
-            }
+pub async fn serve(settings: impl Into<Vec<ServerSettings>>) -> Result<()> {
+    let settings = settings.into();
+    let length = settings.len();
 
-            error!("{}", e);
-            std::process::exit(1);
+    for (i, settings) in settings.into_iter().enumerate() {
+        let last = i == length - 1;
+
+        // Must spawn a new thread as we are already in a tokio runtime
+        let handle = std::thread::spawn(move || {
+            if let Err(e) = start(
+                settings.config,
+                settings.bind,
+                settings.shutdown,
+                settings.channels,
+            ) {
+                match e {
+                    Error::Io(ref e) => {
+                        if e.kind() == std::io::ErrorKind::AddrInUse {
+                            let delimiter = utils::terminal::delimiter();
+                            eprintln!("{}", delimiter);
+                            warn!("Could not start the server because the address is being used!");
+                            warn!("This happens when a server is already running on a port.");
+                            warn!("");
+                            warn!("To fix this problem either stop the existing server or choose ");
+                            warn!("a different port for the web server using the --port ");
+                            warn!("and --ssl-port options.");
+                            eprintln!("{}", delimiter);
+                        }
+                    }
+                    _ => {}
+                }
+
+                error!("{}", e);
+                std::process::exit(1);
+            }
+        });
+
+        // Block on the last thread we spawn to keep
+        // this process alive
+        if last {
+            let _ = handle.join();
         }
-    });
-    let _ = handle.join();
+    }
 
     Ok(())
 }

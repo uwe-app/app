@@ -5,6 +5,8 @@
 use actix::prelude::*;
 use rand::{self, rngs::ThreadRng, Rng};
 
+use log::debug;
+
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -141,11 +143,12 @@ impl Handler<Connect> for LiveReloadServer {
             .insert(id);
 
         let count = self.visitor_count.fetch_add(1, Ordering::SeqCst);
+        debug!("Websocket client connected, visitor count {:?}", count);
         //self.send_message("Main", &format!("Total visitors {}", count), 0);
 
         //println!("Id is {:?}", id);
 
-        // send id back
+        // send id back to be assigned to the actor
         id
     }
 }
@@ -168,6 +171,8 @@ impl Handler<Disconnect> for LiveReloadServer {
                 }
             }
         }
+
+        debug!("Websocket client disconnected");
 
         /*
         // send message to other users
@@ -218,9 +223,11 @@ impl Handler<Join> for LiveReloadServer {
             }
         }
         // send message to other users
+        /*
         for room in rooms {
-            //self.send_message(&room, "Someone disconnected", 0);
+            self.send_message(&room, "Someone disconnected", 0);
         }
+        */
 
         self.rooms
             .entry(name.clone())

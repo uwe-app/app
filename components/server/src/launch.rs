@@ -24,6 +24,12 @@ pub struct ServerSettings {
     pub channels: ServerChannels,
 }
 
+impl Into<Vec<ServerSettings>> for ServerSettings {
+    fn into(self) -> Vec<ServerSettings>{
+        vec![self]
+    }
+}
+
 /// Start a server and launch a browser window.
 pub async fn launch(
     config: ServerConfig,
@@ -60,9 +66,26 @@ pub async fn launch(
     Ok(start(ServerSettings {config, bind, shutdown, channels}).await?)
 }
 
+/// Start a headless server using the supplied server configurations.
+pub async fn run(
+    configs: Vec<ServerConfig>,
+) -> Result<(), Error> {
+    let mut servers = Vec::new();
+    let mut bind_receivers = Vec::new();
+
+    for config in configs {
+        let (bind, bind_rx) = oneshot::channel::<ConnectionInfo>();
+        let (_shutdown_tx, shutdown) = oneshot::channel::<bool>();
+        let channels = ServerChannels::new();
+        bind_receivers.push(bind_rx);
+        servers.push(ServerSettings {config, bind, shutdown, channels});
+    }
+    Ok(start(servers).await?)
+}
+
 /// Start a headless server with the given channels.
 pub async fn start(
-    settings: ServerSettings,
+    settings: impl Into<Vec<ServerSettings>>,
 ) -> Result<(), Error> {
     Ok(router::serve(settings).await?)
 }

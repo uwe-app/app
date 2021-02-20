@@ -23,7 +23,7 @@ pub struct Server {
 
     /// Config file
     #[structopt(short, long, parse(from_os_str))]
-    pub config: Option<PathBuf>,
+    pub config: Option<Vec<PathBuf>>,
 
     /// Project path
     #[structopt(parse(from_os_str))]
