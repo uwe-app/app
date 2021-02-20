@@ -906,7 +906,7 @@ impl TryInto<Vec<(HostInfo, HostConfig)>> for HostResult {
             );
 
             let mut host = HostConfig::new(hostname, target);
-            host.set_redirects(redirect_uris);
+            host.set_redirects(Some(redirect_uris));
             host.set_endpoint(endpoint);
             out.push((info, host));
 

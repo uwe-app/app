@@ -32,7 +32,6 @@ pub async fn watch(
     launch: Option<String>,
     headless: bool,
     result: CompileResult,
-    webdav_enabled: bool,
     editor_directory: Option<PathBuf>,
     authorities: Option<Vec<String>>,
     error_cb: ErrorCallback,
@@ -46,7 +45,7 @@ pub async fn watch(
         host_result.try_into()?;
 
     for (_info, host) in host_configs.iter_mut() {
-        host.watch = true;
+        host.set_watch(true);
         //host.editor_directory = editor_directory.clone();
     }
 
@@ -61,25 +60,20 @@ pub async fn watch(
             .iter()
             .zip(hosts.iter())
             .map(|(info, host)| {
-                let editor_host_name = format!("editor-{}", &host.name);
+                let editor_host_name = format!("editor-{}", host.name());
 
-                let mut editor_host = host.clone();
-                editor_host.name = editor_host_name;
-                editor_host.watch = false;
-                editor_host.directory = editor_directory.clone();
-                editor_host.redirects = None;
-                editor_host.endpoint = None;
-                editor_host.disable_cache = false;
+                let mut editor_host: HostConfig = Default::default();
+                editor_host.set_name(editor_host_name);
+                editor_host.set_directory(editor_directory.clone());
+                editor_host.set_disable_cache(false);
 
-                if webdav_enabled {
-                    editor_host.webdav = Some(WebDavConfig {
-                        directory: info.source.to_path_buf(),
-                        listing: false,
-                    });
-                }
+                editor_host.set_webdav(Some(WebDavConfig::new(
+                    "/webdav".to_string(),
+                    info.source.to_path_buf(),
+                    false )));
 
-                println!("Creating editor host {:?}", &editor_host.name);
-                println!("Creating editor host {:?}", &editor_host.directory);
+                println!("Creating editor host {:?}", editor_host.name());
+                println!("Creating editor host {:?}", editor_host.directory());
                 println!("Host {:#?}", &editor_host);
 
                 editor_host
@@ -97,7 +91,7 @@ pub async fn watch(
 
     let channel_names = hosts
         .iter()
-        .map(|h| h.name.clone())
+        .map(|h| h.name().to_string())
         .collect::<Vec<String>>();
 
     let (server_channels, watch_channels) = create_channels(channel_names)?;

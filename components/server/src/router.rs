@@ -130,11 +130,11 @@ async fn start(
 
     // The first host in the list is the one we send via ConnectionInfo
     // that will be launched in a browser tab
-    let host = hosts.get(0).unwrap().name.clone();
+    let host = hosts.get(0).unwrap().name().to_string();
 
     let temporary_redirect = opts.temporary_redirect();
     let http_addr = opts.get_sock_addr(PortType::Insecure)?;
-    let tls_port = opts.tls_port();
+    let ssl_port = opts.ssl_port();
     let authorities = opts.authorities().clone();
 
     // Allow empty environment variables as a means of disabling SSL certificates
@@ -162,35 +162,35 @@ async fn start(
             return Err(Error::NoVirtualHostDirectory(host.name().to_string()));
         }
 
-        if !host.directory.exists() || !host.directory.is_dir() {
+        if !host.directory().exists() || !host.directory().is_dir() {
             return Err(Error::VirtualHostDirectory(
-                host.name.to_string(),
-                host.directory.to_path_buf(),
+                host.name().to_string(),
+                host.directory().to_path_buf(),
             ));
         }
 
-        if host.redirects.is_none() {
+        if host.redirects().is_none() {
             host.load_redirects()?;
         }
 
-        if host.require_index {
-            let index_page = host.directory.join(config::INDEX_HTML);
+        if host.require_index() {
+            let index_page = host.directory().join(config::INDEX_HTML);
             if !index_page.exists() || !index_page.is_file() {
                 return Err(Error::NoIndexFile(
-                    host.name.to_string(),
+                    host.name().to_string(),
                     index_page,
                 ));
             }
         }
 
-        info!("Host {} ({})", &host.name, host.directory.display());
-        if let Some(ref webdav) = host.webdav {
-            info!("Webdav {}", webdav.directory.display());
+        info!("Host {} ({})",&host.name(), host.directory().display());
+        if let Some(ref webdav) = host.webdav() {
+            info!("Webdav {}", webdav.directory().display());
         }
 
         let virtual_host = VirtualHost {
-            name: host.name.to_string(),
-            url: opts.get_host_url(&host.name),
+            name: host.name().to_string(),
+            url: opts.get_host_url(host.name()),
         };
         virtual_hosts.push(virtual_host);
     }
@@ -218,22 +218,22 @@ async fn start(
         //.wrap(Logger::default());
 
         for host in hosts.iter() {
-            let disable_cache = host.disable_cache;
-            let deny_iframe = host.deny_iframe;
-            let log = host.log;
+            let disable_cache = host.disable_cache();
+            let deny_iframe = host.deny_iframe();
+            let log = host.log();
             let redirects =
-                host.redirects.clone().unwrap_or(Default::default());
-            let error_page = host.directory.join(config::ERROR_HTML);
+                host.redirects().clone().unwrap_or(Default::default());
+            let error_page = host.directory().join(config::ERROR_HTML);
 
-            let watch = host.watch;
-            let endpoint = if let Some(ref endpoint) = host.endpoint {
+            let watch = host.watch();
+            let endpoint = if let Some(ref endpoint) = host.endpoint() {
                 endpoint.clone()
             } else {
                 utils::generate_id(16)
             };
 
             // Collect all authorities and setup guards for virtual host detection
-            let mut host_names = vec![&host.name];
+            let mut host_names = vec![host.name()];
             if let Some(ref authorities) = authorities {
                 for name in authorities.iter() {
                     host_names.push(name);
@@ -252,7 +252,7 @@ async fn start(
             if watch {
                 let broadcast_server = reload_server.clone();
                 let reload_rx =
-                    channels.websockets.get(&host.name).unwrap().clone();
+                    channels.websockets.get(host.name()).unwrap().clone();
                 let mut live_reload_rx = reload_rx.subscribe();
 
                 std::thread::spawn(move || {
@@ -272,30 +272,31 @@ async fn start(
             }
 
             // Setup webdav route
-            if let Some(ref webdav) = host.webdav {
+            if let Some(ref webdav) = host.webdav() {
                 let dav_server = DavHandler::builder()
                     .filesystem(LocalFs::new(
-                        webdav.directory.clone(),
+                        webdav.directory().to_path_buf(),
                         false,
                         false,
                         false,
                     ))
                     .locksystem(FakeLs::new())
-                    .strip_prefix("/webdav")
-                    // TODO: support directory listing for webdav?
+                    .strip_prefix(webdav.mount_path())
+                    .autoindex(webdav.listing())
+                    //.indexfile()
                     .build_handler();
 
                 app = app.service(
-                    web::scope("/webdav")
+                    web::scope(webdav.mount_path())
                         .wrap(NormalizePath::new(TrailingSlash::Always))
-                        .guard(guard::Host(&host.name))
+                        .guard(guard::Host(host.name()))
                         .data(dav_server)
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
                 );
             }
 
             let live_render_tx = if watch {
-                Arc::new(Some(channels.render.get(&host.name).unwrap().clone()))
+                Arc::new(Some(channels.render.get(host.name()).unwrap().clone()))
             } else {
                 Arc::new(None)
             };
@@ -468,7 +469,7 @@ async fn start(
                     )
                     // Serve static files
                     .service(
-                        Files::new("", host.directory.clone())
+                        Files::new("", host.directory().to_path_buf())
                             .default_handler(move |req: ServiceRequest| {
                                 let err = error_page.clone();
                                 let (http_req, _payload) = req.into_parts();
@@ -496,8 +497,8 @@ async fn start(
                             })
                             .prefer_utf8(true)
                             .index_file(config::INDEX_HTML)
-                            .use_etag(!host.disable_cache)
-                            .use_last_modified(!host.disable_cache)
+                            .use_etag(!host.disable_cache())
+                            .use_last_modified(!host.disable_cache())
                             .redirect_to_slash_directory(),
                     ),
             );
@@ -545,10 +546,10 @@ async fn start(
                 let host_url: Url = format!("http://{}", host).parse().unwrap();
                 let host = host_url.host_str().unwrap();
 
-                let url = if tls_port == 443 {
+                let url = if ssl_port == 443 {
                     format!("{}//{}", config::SCHEME_HTTPS, host)
                 } else {
-                    format!("{}//{}:{}", config::SCHEME_HTTPS, host, tls_port)
+                    format!("{}//{}:{}", config::SCHEME_HTTPS, host, ssl_port)
                 };
 
                 let url = format!("{}{}", url, req.uri().to_owned());

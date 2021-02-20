@@ -30,7 +30,7 @@ async fn serve_project(
         host_result.try_into()?;
 
     for (info, host) in host_configs.iter_mut() {
-        host.directory = info.project.options.build_target().to_path_buf();
+        host.set_directory(info.project.options.build_target().to_path_buf());
     }
 
     opts.set_hosts(host_configs.into_iter().map(|(_, host)| host).collect());

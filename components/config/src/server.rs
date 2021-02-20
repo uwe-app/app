@@ -97,7 +97,7 @@ pub struct ServerConfig {
     #[serde(default = "num_cpus::get")]
     workers: usize,
 
-    tls: Option<TlsConfig>,
+    ssl: Option<TlsConfig>,
 
     #[serde(default, alias = "host")]
     hosts: Vec<HostConfig>,
@@ -120,7 +120,7 @@ impl Default for ServerConfig {
             listen: String::from(crate::config::HOST),
             port: crate::config::PORT,
             workers: num_cpus::get(),
-            tls: None,
+            ssl: None,
             redirect_insecure: true,
             temporary_redirect: false,
             authorities: None,
@@ -131,11 +131,11 @@ impl Default for ServerConfig {
 
 impl ServerConfig {
     /// New configuration for a host and port.
-    pub fn new(listen: String, port: u16, tls: Option<TlsConfig>) -> Self {
+    pub fn new(listen: String, port: u16, ssl: Option<TlsConfig>) -> Self {
         let mut tmp: Self = Default::default();
         tmp.listen = listen;
         tmp.port = port;
-        tmp.tls = tls;
+        tmp.ssl = ssl;
         tmp
     }
 
@@ -158,15 +158,15 @@ impl ServerConfig {
     }
 
     pub fn ssl(&self) -> &Option<TlsConfig> {
-        &self.tls
+        &self.ssl
     }
 
     pub fn ssl_mut(&mut self) -> &mut Option<TlsConfig> {
-        &mut self.tls
+        &mut self.ssl
     }
 
     pub fn has_ssl(&self) -> bool {
-        self.tls.is_some()
+        self.ssl.is_some()
     }
 
     pub fn workers(&self) -> usize {
@@ -198,12 +198,12 @@ impl ServerConfig {
     }
 
     pub fn get_port(&self, port_type: PortType) -> u16 {
-        get_port(self.port, &self.tls, port_type)
+        get_port(self.port, &self.ssl, port_type)
     }
 
-    pub fn tls_port(&self) -> u16 {
-        if let Some(ref tls) = self.tls {
-            tls.port
+    pub fn ssl_port(&self) -> u16 {
+        if let Some(ref ssl) = self.ssl {
+            ssl.port
         } else {
             crate::PORT_SSL
         }
@@ -245,7 +245,7 @@ impl ServerConfig {
     }
 
     pub fn get_host_url(&self, host: &str) -> String {
-        let scheme = if self.tls.is_some() {
+        let scheme = if self.ssl.is_some() {
             crate::SCHEME_HTTPS
         } else {
             crate::SCHEME_HTTP
@@ -270,42 +270,38 @@ impl ServerConfig {
 #[serde(default, rename_all = "kebab-case")]
 pub struct HostConfig {
     /// Host name.
-    pub name: String,
+    name: String,
 
     /// Directory for static files.
-    pub directory: PathBuf,
+    directory: PathBuf,
 
     /// Require an index page inside the directory.
-    pub require_index: bool,
+    require_index: bool,
 
     /// Send headers that instruct browsers to disable caching.
-    pub disable_cache: bool,
+    disable_cache: bool,
 
     /// Deny embedding as an iframe.
-    pub deny_iframe: bool,
+    deny_iframe: bool,
 
     /// Log server requests.
-    pub log: bool,
+    log: bool,
 
     /// Configuration for webdav.
     #[serde(skip)]
-    pub webdav: Option<WebDavConfig>,
-
-    /// Directory for the editor UI static files.
-    #[serde(skip)]
-    pub editor_directory: Option<PathBuf>,
+    webdav: Option<WebDavConfig>,
 
     #[serde(skip)]
-    pub redirects: Option<Redirects>,
+    redirects: Option<Redirects>,
 
     /// Websocket endpoint when watching for file system changes.
     #[serde(skip)]
-    pub endpoint: Option<String>,
+    endpoint: Option<String>,
 
     /// Flag that indicates this host should be configured
     /// for file system watching.
     #[serde(skip)]
-    pub watch: bool,
+    watch: bool,
 }
 
 impl Default for HostConfig {
@@ -314,7 +310,6 @@ impl Default for HostConfig {
             name: crate::config::HOST.to_string(),
             directory: PathBuf::from(""),
             webdav: None,
-            editor_directory: None,
             redirects: None,
             endpoint: None,
             disable_cache: false,
@@ -344,16 +339,72 @@ impl HostConfig {
         &self.name
     }
 
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
     pub fn directory(&self) -> &PathBuf {
         &self.directory
     }
 
-    pub fn set_redirects(&mut self, redirects: Redirects) {
-        self.redirects = Some(redirects);
+    pub fn set_directory(&mut self, directory: PathBuf) {
+        self.directory = directory;
+    }
+
+    pub fn require_index(&self) -> bool {
+        self.require_index
+    }
+
+    pub fn set_require_index(&mut self, require_index: bool) {
+        self.require_index = require_index;
+    }
+
+    pub fn disable_cache(&self) -> bool {
+        self.disable_cache
+    }
+
+    pub fn set_disable_cache(&mut self, disable_cache: bool) {
+        self.disable_cache = disable_cache;
+    }
+
+    pub fn deny_iframe(&self) -> bool {
+        self.deny_iframe
+    }
+
+    pub fn endpoint(&self) -> &Option<String> {
+        &self.endpoint
     }
 
     pub fn set_endpoint(&mut self, endpoint: String) {
         self.endpoint = Some(endpoint);
+    }
+
+    pub fn watch(&self) -> bool {
+        self.watch
+    }
+
+    pub fn set_watch(&mut self, watch: bool) {
+        self.watch = watch;
+    }
+
+    pub fn log(&self) -> bool {
+        self.log
+    }
+
+    pub fn redirects(&self) -> &Option<Redirects> {
+        &self.redirects
+    }
+
+    pub fn set_redirects(&mut self, redirects: Option<Redirects>) {
+        self.redirects = redirects;
+    }
+
+    pub fn webdav(&self) -> &Option<WebDavConfig> {
+        &self.webdav
+    }
+
+    pub fn set_webdav(&mut self, webdav: Option<WebDavConfig>) {
+        self.webdav = webdav;
     }
 
     /// Attempt to load from a redirects file into this host.
@@ -369,8 +420,28 @@ impl HostConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WebDavConfig {
+    /// Path in the virtual host used to mount the webdav directory.
+    mount_path: String,
     /// Directory for the webdav mount point.
-    pub directory: PathBuf,
+    directory: PathBuf,
     /// Whether to list directories.
-    pub listing: bool,
+    listing: bool,
+}
+
+impl WebDavConfig {
+    pub fn new(mount_path: String, directory: PathBuf, listing: bool) -> Self {
+        Self {mount_path, directory, listing} 
+    }
+
+    pub fn mount_path(&self) -> &str {
+        &self.mount_path 
+    }
+
+    pub fn directory(&self) -> &PathBuf {
+        &self.directory
+    }
+
+    pub fn listing(&self) -> bool {
+        self.listing
+    }
 }

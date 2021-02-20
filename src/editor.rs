@@ -37,7 +37,6 @@ pub async fn run<P: AsRef<Path>>(
         args.launch.clone(),
         headless,
         result,
-        true,
         editor_directory,
         authorities,
         server_error_cb,

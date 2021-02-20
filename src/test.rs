@@ -170,8 +170,8 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     server_opts.set_redirect_insecure(false);
 
     let mut host: HostConfig = Default::default();
-    host.require_index = false;
-    host.directory = build_dir.to_path_buf();
+    host.set_require_index(false);
+    host.set_directory(build_dir.to_path_buf());
 
     server_opts.add_host(host);
 
