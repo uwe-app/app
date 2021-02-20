@@ -5,6 +5,26 @@ use log::info;
 use crate::{channels::ServerChannels, router, Error};
 use config::server::{ConnectionInfo, LaunchConfig, ServerConfig};
 
+
+/// Settings required to launch a single web server.
+#[derive(Debug)]
+pub struct ServerSettings {
+    /// The underlying server configuration that determines 
+    /// ports, virtual hosts and various other server options.
+    pub config: ServerConfig,
+
+    /// Channel that receives a notification once the server 
+    /// has bound to all ports, usually used to launch a browser.
+    pub bind: oneshot::Sender<ConnectionInfo>,
+
+    /// Channel used to shutdown the web server.
+    pub shutdown: oneshot::Receiver<bool>,
+
+    /// Channels mapped by host name that the server can use 
+    /// to request dynamic rendering of pages (SSR).
+    pub channels: ServerChannels,
+}
+
 /// Start a server and launch a browser window.
 pub async fn launch(
     options: ServerConfig,

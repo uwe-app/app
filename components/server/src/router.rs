@@ -64,7 +64,7 @@ struct VirtualHost {
     url: String,
 }
 
-pub fn parser() -> &'static Registry<'static> {
+fn parser() -> &'static Registry<'static> {
     static INSTANCE: OnceCell<Registry> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         let mut registry = Registry::new();
@@ -79,7 +79,7 @@ pub fn parser() -> &'static Registry<'static> {
     })
 }
 
-pub async fn dav_handler(
+async fn dav_handler(
     req: DavRequest,
     davhandler: web::Data<DavHandler>,
 ) -> DavResponse {
