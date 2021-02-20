@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use log::info;
 
-use config::server::{ServerConfig, TlsConfig};
+use config::server::{ServerConfig, SslConfig};
 use web_server::WebServerOpts;
 
 use crate::{shim, Error, Result};
@@ -53,12 +53,13 @@ pub fn project_path(input: &PathBuf) -> Result<PathBuf> {
     Ok(result)
 }
 
-pub fn tls_config(
-    initial: Option<TlsConfig>,
+pub fn ssl_config(
+    initial: Option<SslConfig>,
     opts: &WebServerOpts,
     default_port_ssl: u16,
-) -> Option<TlsConfig> {
-    let mut tls = initial;
+) -> Option<SslConfig> {
+
+    let mut ssl = initial;
 
     let ssl_port = if let Some(ssl_port) = opts.ssl_port {
         ssl_port
@@ -69,18 +70,14 @@ pub fn tls_config(
     if opts.ssl_cert.is_some() && opts.ssl_key.is_some() {
         let cert = opts.ssl_cert.as_ref().unwrap().to_path_buf();
         let key = opts.ssl_key.as_ref().unwrap().to_path_buf();
-        let empty_cert = cert == PathBuf::from("");
-        let empty_key = cert == PathBuf::from("");
+        let empty_cert = cert.to_string_lossy().is_empty();
+        let empty_key = key.to_string_lossy().is_empty();
         if !empty_cert && !empty_key {
-            tls = Some(TlsConfig {
-                cert,
-                key,
-                port: ssl_port,
-            });
+            ssl = Some(SslConfig::new(cert, key, ssl_port));
         }
     }
 
-    tls
+    ssl
 }
 
 /// Generate a server config with zero hosts that respects
@@ -91,7 +88,7 @@ pub fn server_config(
     default_port_ssl: u16,
 ) -> ServerConfig {
     let mut port = &default_port;
-    let tls = tls_config(Default::default(), opts, default_port_ssl);
+    let tls = ssl_config(Default::default(), opts, default_port_ssl);
     if let Some(ref p) = opts.port {
         port = p;
     }

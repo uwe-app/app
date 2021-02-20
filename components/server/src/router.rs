@@ -117,8 +117,9 @@ async fn start(
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<()> {
-    let ssl_key = std::env::var("UWE_SSL_KEY").ok();
-    let ssl_cert = std::env::var("UWE_SSL_CERT").ok();
+
+    let ssl_config = opts.compute_ssl();
+    let use_ssl = ssl_config.is_some();
 
     let addr = opts.get_sock_addr(PortType::Infer)?;
     let mut hosts = opts.hosts().iter().map(|h| h.clone()).collect::<Vec<_>>();
@@ -127,7 +128,7 @@ async fn start(
         return Err(Error::NoVirtualHosts);
     }
 
-    let tls = opts.has_ssl();
+    //println!("Has ssl config {:#?}", ssl_config);
 
     // The first host in the list is the one we send via ConnectionInfo
     // that will be launched in a browser tab
@@ -137,16 +138,6 @@ async fn start(
     let http_addr = opts.get_sock_addr(PortType::Insecure)?;
     let ssl_port = opts.ssl_port();
     let authorities = opts.authorities().clone();
-
-    // Allow empty environment variables as a means of disabling SSL certificates
-    let use_ssl = tls
-        && if let (Some(key), Some(cert)) =
-            (ssl_key.as_ref(), ssl_cert.as_ref())
-        {
-            !key.is_empty() && !cert.is_empty()
-        } else {
-            false
-        };
 
     let mut virtual_hosts = Vec::new();
 
@@ -225,6 +216,8 @@ async fn start(
             let redirects =
                 host.redirects().clone().unwrap_or(Default::default());
             let error_page = host.directory().join(config::ERROR_HTML);
+
+            //println!("Has disabled cache {:?}", disable_cache);
 
             let watch = host.watch();
             let endpoint = if let Some(ref endpoint) = host.endpoint() {
@@ -527,18 +520,26 @@ async fn start(
     })
     .workers(opts.workers());
 
-    let (server, mut redirect_server) = if use_ssl {
-        let key = ssl_key.unwrap();
-        let cert = ssl_cert.unwrap();
+    let (server, mut redirect_server) = if let Some(ref ssl_config) = ssl_config {
+        let cert = ssl_config.cert();
+        let key = ssl_config.key();
 
         let mut config = TlsServerConfig::new(NoClientAuth::new());
-        let cert_file = &mut BufReader::new(File::open(&cert)?);
-        let key_file = &mut BufReader::new(File::open(&key)?);
+        let cert_file = &mut BufReader::new(File::open(cert)
+            .map_err(|_| Error::SslCertFile(cert.to_path_buf()))?);
+        let key_file = &mut BufReader::new(File::open(key)
+            .map_err(|_| Error::SslKeyFile(key.to_path_buf()))?);
         let cert_chain = certs(cert_file)
-            .map_err(|_| Error::SslCertChain(cert.to_string()))?;
+            .map_err(|_| Error::SslCertChain(cert.to_path_buf()))?;
+
         let mut keys = pkcs8_private_keys(key_file)
-            .map_err(|_| Error::SslPrivateKey(key.to_string()))?;
-        config.set_single_cert(cert_chain, keys.remove(0)).unwrap();
+            .map_err(|_| Error::SslPrivateKey(key.to_path_buf()))?;
+
+        if keys.is_empty() {
+            return Err(Error::SslKeyRead(key.to_path_buf()))
+        }
+
+        config.set_single_cert(cert_chain, keys.remove(0))?;
 
         // Always redirect HTTP -> HTTPS
         let redirect_server = HttpServer::new(move || {
@@ -578,7 +579,7 @@ async fn start(
 
     if !addrs.is_empty() {
         let addr = addrs.swap_remove(0);
-        let info = ConnectionInfo { addr, host, tls };
+        let info = ConnectionInfo { addr, host, tls: use_ssl };
 
         match bind.send(info) {
             Err(_) => {

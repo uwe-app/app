@@ -141,7 +141,7 @@ async fn run(cmd: Command) -> Result<()> {
             };
 
             let tls =
-                uwe::opts::tls_config(None, &args.server, config::PORT_SSL);
+                uwe::opts::ssl_config(None, &args.server, config::PORT_SSL);
 
             let build_args = ProfileSettings {
                 paths,
@@ -166,7 +166,7 @@ async fn run(cmd: Command) -> Result<()> {
         Command::Editor { args } => {
             let project = opts::project_path(&args.project)?;
             let tls =
-                uwe::opts::tls_config(None, &args.server, config::PORT_SSL);
+                uwe::opts::ssl_config(None, &args.server, config::PORT_SSL);
 
             let build_args = ProfileSettings {
                 paths: None,

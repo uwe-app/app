@@ -13,7 +13,7 @@ use url::Url;
 
 use crate::{
     config::{self, Config},
-    server::TlsConfig,
+    server::SslConfig,
     utils::matcher::GlobPatternMatcher,
 };
 
@@ -212,7 +212,7 @@ pub struct ProfileSettings {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub scheme: Option<String>,
-    pub tls: Option<TlsConfig>,
+    pub tls: Option<SslConfig>,
 
     pub resources: Option<Resources>,
 
@@ -506,7 +506,7 @@ impl ProfileSettings {
 
     pub fn get_canonical_port(&self) -> u16 {
         if let Some(ref tls) = self.tls {
-            tls.port
+            tls.port()
         } else {
             self.get_port()
         }

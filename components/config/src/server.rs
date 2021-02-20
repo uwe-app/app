@@ -24,7 +24,7 @@ pub fn to_websocket_url(
 
 pub fn get_port(
     port: u16,
-    tls: &Option<TlsConfig>,
+    tls: &Option<SslConfig>,
     port_type: PortType,
 ) -> u16 {
     match port_type {
@@ -76,10 +76,32 @@ pub enum PortType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TlsConfig {
-    pub cert: PathBuf,
-    pub key: PathBuf,
-    pub port: u16,
+pub struct SslConfig {
+    cert: PathBuf,
+    key: PathBuf,
+    port: u16,
+}
+
+impl SslConfig {
+    pub fn new(cert: PathBuf, key: PathBuf, port: u16) -> Self {
+        Self {cert, key, port}
+    }
+
+    pub fn set_port(&mut self, port: u16) {
+        self.port = port;
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+
+    pub fn cert(&self) -> &PathBuf {
+        &self.cert
+    }
+
+    pub fn key(&self) -> &PathBuf {
+        &self.key
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,7 +119,7 @@ pub struct ServerConfig {
     #[serde(default = "num_cpus::get")]
     workers: usize,
 
-    ssl: Option<TlsConfig>,
+    ssl: Option<SslConfig>,
 
     #[serde(default, alias = "host")]
     hosts: Vec<HostConfig>,
@@ -131,7 +153,7 @@ impl Default for ServerConfig {
 
 impl ServerConfig {
     /// New configuration for a host and port.
-    pub fn new(listen: String, port: u16, ssl: Option<TlsConfig>) -> Self {
+    pub fn new(listen: String, port: u16, ssl: Option<SslConfig>) -> Self {
         let mut tmp: Self = Default::default();
         tmp.listen = listen;
         tmp.port = port;
@@ -157,11 +179,30 @@ impl ServerConfig {
         Ok(config)
     }
 
-    pub fn ssl(&self) -> &Option<TlsConfig> {
+    pub fn compute_ssl(&self) -> Option<SslConfig> {
+        let (ssl_cert, ssl_key, ssl_port) = if let Some(ref ssl) = self.ssl {
+            (Some(ssl.cert.to_path_buf()), Some(ssl.key.to_path_buf()), ssl.port())
+        } else {
+            (std::env::var("UWE_SSL_CERT").ok().map(PathBuf::from),
+                std::env::var("UWE_SSL_KEY").ok().map(PathBuf::from),
+                crate::PORT_SSL)
+        };
+
+        if let (Some(cert), Some(key)) = (ssl_cert.as_ref(), ssl_key.as_ref()) {
+            // Allow empty environment variables as a means of disabling SSL certificates
+            let is_cert_empty = cert.to_string_lossy().is_empty();
+            let is_key_empty = key.to_string_lossy().is_empty();
+            if !is_cert_empty && !is_key_empty {
+                Some(SslConfig::new(cert.to_path_buf(), key.to_path_buf(), ssl_port))
+            } else { None }
+        } else { None }
+    }
+
+    pub fn ssl(&self) -> &Option<SslConfig> {
         &self.ssl
     }
 
-    pub fn ssl_mut(&mut self) -> &mut Option<TlsConfig> {
+    pub fn ssl_mut(&mut self) -> &mut Option<SslConfig> {
         &mut self.ssl
     }
 

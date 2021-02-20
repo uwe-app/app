@@ -1,3 +1,4 @@
+use std::thread;
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::path::PathBuf;
@@ -13,7 +14,7 @@ use url::Url;
 //use warp::ws::Message;
 
 use config::server::{
-    ConnectionInfo, HostConfig, PortType, ServerConfig, TlsConfig, WebDavConfig,
+    ConnectionInfo, HostConfig, PortType, ServerConfig, SslConfig, WebDavConfig,
 };
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
@@ -28,7 +29,7 @@ use crate::{
 pub async fn watch(
     listen: Option<String>,
     port: u16,
-    tls: Option<TlsConfig>,
+    tls: Option<SslConfig>,
     launch: Option<String>,
     headless: bool,
     result: CompileResult,
@@ -46,7 +47,7 @@ pub async fn watch(
 
     for (_info, host) in host_configs.iter_mut() {
         host.set_watch(true);
-        //host.editor_directory = editor_directory.clone();
+        host.set_disable_cache(true);
     }
 
     let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =
@@ -156,7 +157,7 @@ pub async fn watch(
 /// Write out the live reload Javascript and CSS.
 fn create_resources(
     port: u16,
-    tls: &Option<TlsConfig>,
+    tls: &Option<SslConfig>,
     hosts: &Vec<HostInfo>,
 ) -> Result<()> {
     hosts.iter().try_for_each(|host| {
@@ -249,6 +250,8 @@ fn spawn_bind_open(
                     ));
 
                     info!("Serve {}", &url);
+
+                    thread::sleep(Duration::from_millis(25));
                     open::that(&url).map(|_| ()).unwrap_or(());
                 }
                 _ => {}

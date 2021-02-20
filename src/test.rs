@@ -163,7 +163,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
 
     if writer.opts.server.ssl_port.is_none() {
         if let Some(ref mut tls) = server_opts.ssl_mut() {
-            tls.port = 0;
+            tls.set_port(0);
         }
     }
 

@@ -26,11 +26,20 @@ pub enum Error {
     #[error("No virtual hosts for live reload")]
     NoLiveHosts,
 
+    #[error("Unable to open SSL certificate file {0}")]
+    SslCertFile(PathBuf),
+
+    #[error("Unable to open SSL key file {0}")]
+    SslKeyFile(PathBuf),
+
     #[error("Unable to construct SSL certificate chain from {0}")]
-    SslCertChain(String),
+    SslCertChain(PathBuf),
 
     #[error("Unable to load SSL private key from {0}")]
-    SslPrivateKey(String),
+    SslPrivateKey(PathBuf),
+
+    #[error("No PKCS8 keys decoded from SSL key file {0}")]
+    SslKeyRead(PathBuf),
 
     #[error("Web server requires some virtual hosts")]
     NoVirtualHosts,
