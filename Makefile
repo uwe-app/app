@@ -48,7 +48,6 @@ strip-linux-macos-cross:
 compile-linux-macos-cross:
 	@PKG_CONFIG_ALLOW_CROSS=1 \
 		LZMA_API_STATIC=1 \
-		WINIT_LINK_COLORSYNC=1 \
 		CC=o64-clang \
 		CXX=o64-clang++ \
 		cargo build --target=x86_64-apple-darwin --release

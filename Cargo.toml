@@ -69,7 +69,7 @@ unic-langid = "0.9.0"
 tokio = { version = "^1.0", features = ["full"] }
 pbr = "1.0.4"
 rusoto_core = "0.46.0"
-wry = {version = "0.5.1", path = "../library/wry" }
+wry = "0.5.1"
 tinyfiledialogs = "3.3.10"
 
 # uwe-shim
