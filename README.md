@@ -302,9 +302,30 @@ It is **required** to set the `pushurl` and `push` refspec:
   push = refs/heads/main:refs/heads/main
 ```
 
+## Linux
+
+For webview support install `libwebkit2gtk`:
+
+```
+sudo apt install libwebkit2gtk-4.0-dev
+```
+
 ## Cross Compiling
 
-To cross-compile from Linux for MacOs the [osxcross][] library is required and you must add the `bin` directory to your `PATH`; see `.cargo/config` and `Makefile` for more details.
+MacOs minimum supported version: `10.9` (Mavericks).
+MacOs SDK version: `11.1`
+
+To cross-compile from Linux for MacOs the [osxcross][] library is required and you must add the `target/bin` directory to your `PATH`; see `.cargo/config` and `Makefile` for more details on the required executables.
+
+To setup [osxcross][] for Linux follow these steps:
+
+1) Clone the [osxcross][] repo
+2) Install all the system dependencies described in packaging on linux plus `libbx2-dev` which is required for `xar` to work
+3) Download the Xcode `xip` file, eg: `Xcode_12.4.xip`
+4) Generate the SDK according to the [osxcross][] instructions (`./tools/gen_sdk_package_pbzx.sh Xcode_12.4.xip`) - you will need a lot of free disc space!
+5) Move the generated tarball `MacOSX11.1.sdk.tar.xz` into the tarballs folder
+6) Build the SDK target `UNATTENDED=yes ./build.sh`
+7) Add the `target/bin` directory to `PATH` so the cross-compiler executables are available
 
 ## Preferences
 
