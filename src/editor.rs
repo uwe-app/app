@@ -1,47 +1,74 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use crate::{error::server_error_cb, Error, Result};
-use config::ProfileSettings;
-use workspace::{HostNameMode, HostSettings};
+use log::info;
 
-pub async fn run<P: AsRef<Path>>(
-    project: P,
-    mut args: ProfileSettings,
-    authorities: Option<Vec<String>>,
-) -> Result<()> {
-    // Prepare the server settings
-    let port = args.get_port().clone();
-    if port == 0 {
-        return Err(Error::NoLiveEphemeralPort);
-    }
+use crate::{Error, Result};
+use config::server::{HostConfig, ServerConfig, ConnectionInfo};
 
-    // Must mark the build profile for live reload
-    args.live = Some(true);
+pub async fn run() -> Result<()> {
+    let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
 
-    let headless = env::var("UWE_HEADLESS").ok().is_some();
-    let editor_directory = env::var("UWE_EDITOR").ok().map(PathBuf::from);
+    // WARN: We cannot launch the window directly from the server
+    // WARN: callback otherwise it's event loop and the tokio runtime
+    // WARN: event loop collide and the window will not respond.
+    //
+    // WARN: To prevent this issue **both** the server and the window
+    // WARN: must be spawned in separate threads.
+    std::thread::spawn(move || {
+        let mut server: ServerConfig = Default::default();
+        server.set_allow_ssl_from_env(false);
+        server.set_port(0);
 
-    let settings = HostSettings {
-        host_name: HostNameMode::Always,
-    };
+        let editor_directory = env::var("UWE_EDITOR")
+            .ok()
+            .map(PathBuf::from)
+            .ok_or_else(|| Error::NoEditorDirectory)?;
 
-    // Compile the project
-    let result = workspace::compile(project, &args, settings).await?;
+        //println!("Editor directory {:?}", editor_directory);
 
-    // Start the webserver
-    server::watch(
-        args.host.clone(),
-        port,
-        args.tls.clone(),
-        args.launch.clone(),
-        headless,
-        result,
-        editor_directory,
-        authorities,
-        server_error_cb,
-    )
-    .await?;
+        //let editor_host_name = format!("editor-{}", host.name());
+
+        let mut editor_host: HostConfig = Default::default();
+        //editor_host.set_name(editor_host_name);
+        editor_host.set_directory(editor_directory.clone());
+        editor_host.set_disable_cache(true);
+        editor_host.log();
+
+        server.add_host(editor_host);
+
+        //println!("Server {:#?}", &server);
+
+        /*
+        editor_host.set_webdav(Some(WebDavConfig::new(
+            "/webdav".to_string(),
+            info.source.to_path_buf(),
+            false,
+        )));
+        */
+
+        println!("3) Spawn servers for each active project");
+
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async move {
+            server::open(server, move |info| {
+                let _ = tx.send(info);
+            })
+            .await?;
+            Ok::<(), Error>(())
+        })?;
+
+        Ok::<(), Error>(())
+    });
+
+    // Spawn a thread for the UI window event loop.
+    let handle = std::thread::spawn(move || {
+        let info = rx.recv().unwrap();
+        info!("Editor {:#?}", info.to_url());
+        crate::ui::window(info.to_url())?;
+        Ok::<(), Error>(())
+    });
+    let _ = handle.join();
 
     Ok(())
 }

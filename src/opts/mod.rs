@@ -58,7 +58,6 @@ pub fn ssl_config(
     opts: &WebServerOpts,
     default_port_ssl: u16,
 ) -> Option<SslConfig> {
-
     let mut ssl = initial;
 
     let ssl_port = if let Some(ssl_port) = opts.ssl_port {

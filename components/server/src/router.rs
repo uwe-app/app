@@ -117,7 +117,6 @@ async fn start(
     shutdown: oneshot::Receiver<bool>,
     channels: ServerChannels,
 ) -> Result<()> {
-
     let ssl_config = opts.compute_ssl();
     let use_ssl = ssl_config.is_some();
 
@@ -515,15 +514,20 @@ async fn start(
     })
     .workers(opts.workers());
 
-    let (server, mut redirect_server) = if let Some(ref ssl_config) = ssl_config {
+    let (server, mut redirect_server) = if let Some(ref ssl_config) = ssl_config
+    {
         let cert = ssl_config.cert();
         let key = ssl_config.key();
 
         let mut config = TlsServerConfig::new(NoClientAuth::new());
-        let cert_file = &mut BufReader::new(File::open(cert)
-            .map_err(|_| Error::SslCertFile(cert.to_path_buf()))?);
-        let key_file = &mut BufReader::new(File::open(key)
-            .map_err(|_| Error::SslKeyFile(key.to_path_buf()))?);
+        let cert_file = &mut BufReader::new(
+            File::open(cert)
+                .map_err(|_| Error::SslCertFile(cert.to_path_buf()))?,
+        );
+        let key_file = &mut BufReader::new(
+            File::open(key)
+                .map_err(|_| Error::SslKeyFile(key.to_path_buf()))?,
+        );
         let cert_chain = certs(cert_file)
             .map_err(|_| Error::SslCertChain(cert.to_path_buf()))?;
 
@@ -531,7 +535,7 @@ async fn start(
             .map_err(|_| Error::SslPrivateKey(key.to_path_buf()))?;
 
         if keys.is_empty() {
-            return Err(Error::SslKeyRead(key.to_path_buf()))
+            return Err(Error::SslKeyRead(key.to_path_buf()));
         }
 
         config.set_single_cert(cert_chain, keys.remove(0))?;
@@ -575,7 +579,11 @@ async fn start(
     let bind_notify = async move {
         if !addrs.is_empty() {
             let addr = addrs.swap_remove(0);
-            let info = ConnectionInfo { addr, host, tls: use_ssl };
+            let info = ConnectionInfo {
+                addr,
+                host,
+                tls: use_ssl,
+            };
             match bind.send(info) {
                 Err(_) => {
                     warn!("Failed to send connection info on bind channel");
@@ -617,7 +625,6 @@ async fn start(
 
         futures::try_join!(redirect_server, server, bind_notify)
     } else {
-
         let server = server.run();
         let shutdown_server = server.clone();
 

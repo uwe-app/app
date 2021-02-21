@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use structopt::StructOpt;
 
 use config::ProfileName;
@@ -14,15 +13,6 @@ pub struct Editor {
     #[structopt(long, default_value = "debug")]
     pub profile: ProfileName,
 
-    /*
-    /// Launch page URL
-    #[structopt(long)]
-    pub launch: Option<String>,
-    */
     #[structopt(flatten)]
     pub server: WebServerOpts,
-
-    /// Project path
-    #[structopt(parse(from_os_str), default_value = ".")]
-    pub project: PathBuf,
 }

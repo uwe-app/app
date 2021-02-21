@@ -25,9 +25,48 @@ pub struct ServerSettings {
 }
 
 impl Into<Vec<ServerSettings>> for ServerSettings {
-    fn into(self) -> Vec<ServerSettings>{
+    fn into(self) -> Vec<ServerSettings> {
         vec![self]
     }
+}
+
+/// Start a server and call a callback once the
+/// server is bound and connection info is available.
+pub async fn open<F>(config: ServerConfig, callback: F) -> Result<(), Error>
+where
+    F: Fn(ConnectionInfo) + Send + 'static,
+{
+    // Create a channel to receive the bind address.
+    let (bind, crx) = oneshot::channel::<ConnectionInfo>();
+    let (_shutdown_tx, shutdown) = oneshot::channel::<bool>();
+    let channels = ServerChannels::new();
+
+    /*
+    std::thread::spawn(|| {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async move {
+            match crx.await {
+                Ok(info) => (callback)(info),
+                _ => {}
+            }
+        });
+    });
+    */
+
+    let _ = tokio::task::spawn(async move {
+        match crx.await {
+            Ok(info) => (callback)(info),
+            _ => {}
+        }
+    });
+
+    Ok(start(ServerSettings {
+        config,
+        bind,
+        shutdown,
+        channels,
+    })
+    .await?)
 }
 
 /// Start a server and launch a browser window.
@@ -35,41 +74,27 @@ pub async fn launch(
     config: ServerConfig,
     launch: LaunchConfig,
 ) -> Result<(), Error> {
-    // Create a channel to receive the bind address.
-    let (bind, crx) = oneshot::channel::<ConnectionInfo>();
+    Ok(open(config, move |info| {
+        let url = info.to_url();
+        info!("Serve {}", &url);
 
-    let (_shutdown_tx, shutdown) = oneshot::channel::<bool>();
-    let channels = ServerChannels::new();
-
-    let _ = tokio::task::spawn(async move {
-        match crx.await {
-            Ok(info) => {
-                let url = info.to_url();
-                info!("Serve {}", &url);
-
-                // Most of the time we want to open a browser unless explictly
-                // disabled however in the case of the live reload logic it
-                // takes control of opening the browser so that:
-                //
-                // 1) Don't start to compile until we have bound to a port.
-                // 2) Don't open a browser window unless the build succeeds.
-                //
-                if launch.open {
-                    // It is ok if this errors we just don't open a browser window
-                    open::that(&url).map(|_| ()).unwrap_or(());
-                }
-            }
-            _ => {}
+        // Most of the time we want to open a browser unless explictly
+        // disabled however in the case of the live reload logic it
+        // takes control of opening the browser so that:
+        //
+        // 1) Don't start to compile until we have bound to a port.
+        // 2) Don't open a browser window unless the build succeeds.
+        //
+        if launch.open {
+            // It is ok if this errors we just don't open a browser window
+            open::that(&url).map(|_| ()).unwrap_or(());
         }
-    });
-
-    Ok(start(ServerSettings {config, bind, shutdown, channels}).await?)
+    })
+    .await?)
 }
 
 /// Start a headless server using the supplied server configurations.
-pub async fn run(
-    configs: Vec<ServerConfig>,
-) -> Result<(), Error> {
+pub async fn run(configs: Vec<ServerConfig>) -> Result<(), Error> {
     let mut servers = Vec::new();
     let mut bind_receivers = Vec::new();
 
@@ -78,7 +103,12 @@ pub async fn run(
         let (_shutdown_tx, shutdown) = oneshot::channel::<bool>();
         let channels = ServerChannels::new();
         bind_receivers.push(bind_rx);
-        servers.push(ServerSettings {config, bind, shutdown, channels});
+        servers.push(ServerSettings {
+            config,
+            bind,
+            shutdown,
+            channels,
+        });
     }
     Ok(start(servers).await?)
 }

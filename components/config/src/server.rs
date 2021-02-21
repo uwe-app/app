@@ -84,7 +84,7 @@ pub struct SslConfig {
 
 impl SslConfig {
     pub fn new(cert: PathBuf, key: PathBuf, port: u16) -> Self {
-        Self {cert, key, port}
+        Self { cert, key, port }
     }
 
     pub fn set_port(&mut self, port: u16) {
@@ -185,13 +185,21 @@ impl ServerConfig {
 
     pub fn compute_ssl(&self) -> Option<SslConfig> {
         let (ssl_cert, ssl_key, ssl_port) = if let Some(ref ssl) = self.ssl {
-            (Some(ssl.cert.to_path_buf()), Some(ssl.key.to_path_buf()), ssl.port())
+            (
+                Some(ssl.cert.to_path_buf()),
+                Some(ssl.key.to_path_buf()),
+                ssl.port(),
+            )
         } else {
             if self.allow_ssl_from_env {
-                (std::env::var("UWE_SSL_CERT").ok().map(PathBuf::from),
+                (
+                    std::env::var("UWE_SSL_CERT").ok().map(PathBuf::from),
                     std::env::var("UWE_SSL_KEY").ok().map(PathBuf::from),
-                    crate::PORT_SSL)
-            } else { (None, None, crate::PORT_SSL)  }
+                    crate::PORT_SSL,
+                )
+            } else {
+                (None, None, crate::PORT_SSL)
+            }
         };
 
         if let (Some(cert), Some(key)) = (ssl_cert.as_ref(), ssl_key.as_ref()) {
@@ -199,9 +207,17 @@ impl ServerConfig {
             let is_cert_empty = cert.to_string_lossy().is_empty();
             let is_key_empty = key.to_string_lossy().is_empty();
             if !is_cert_empty && !is_key_empty {
-                Some(SslConfig::new(cert.to_path_buf(), key.to_path_buf(), ssl_port))
-            } else { None }
-        } else { None }
+                Some(SslConfig::new(
+                    cert.to_path_buf(),
+                    key.to_path_buf(),
+                    ssl_port,
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     pub fn ssl(&self) -> &Option<SslConfig> {

@@ -17,7 +17,7 @@ use config::{
     ProfileSettings,
 };
 
-use server::{ServerSettings, ServerChannels};
+use server::{ServerChannels, ServerSettings};
 use workspace::{build, default_compiler, BuildResult, ProjectBuilder};
 
 use crate::{
@@ -206,7 +206,9 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
         config: server_opts,
         bind: bind_tx,
         shutdown: shutdown_rx,
-        channels}).await?;
+        channels,
+    })
+    .await?;
 
     Ok(project)
 }

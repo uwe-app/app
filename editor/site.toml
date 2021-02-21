@@ -15,3 +15,6 @@ keywords = "Vanilla, Website"
 
 [build]
 extend = ["html"]
+
+[minify.html]
+profiles = false

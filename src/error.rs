@@ -97,6 +97,9 @@ pub enum Error {
     #[error("The server comamnd expects either a project path, a directory or a config but multiple options given")]
     TooManyServerTargets,
 
+    #[error("No editor directory, please set UWE_EDITOR")]
+    NoEditorDirectory,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -125,6 +128,9 @@ pub enum Error {
 
     #[error(transparent)]
     Recv(#[from] tokio::sync::oneshot::error::RecvError),
+
+    #[error(transparent)]
+    Wry(#[from] wry::Error),
 
     #[error(transparent)]
     Config(#[from] config::Error),

@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::convert::TryInto;
-use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime};
 
@@ -13,7 +12,7 @@ use url::Url;
 //use warp::ws::Message;
 
 use config::server::{
-    ConnectionInfo, HostConfig, PortType, ServerConfig, SslConfig, WebDavConfig,
+    ConnectionInfo, HostConfig, PortType, ServerConfig, SslConfig,
 };
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
@@ -32,7 +31,6 @@ pub async fn watch(
     launch: Option<String>,
     headless: bool,
     result: CompileResult,
-    editor_directory: Option<PathBuf>,
     authorities: Option<Vec<String>>,
     error_cb: ErrorCallback,
 ) -> Result<()> {
@@ -49,9 +47,10 @@ pub async fn watch(
         host.set_disable_cache(true);
     }
 
-    let (host_info, mut hosts): (Vec<HostInfo>, Vec<HostConfig>) =
+    let (host_info, hosts): (Vec<HostInfo>, Vec<HostConfig>) =
         host_configs.into_iter().unzip();
 
+    /*
     //println!("Has editor directory {:?}", editor_directory);
 
     // Map the editor hosts
@@ -60,29 +59,12 @@ pub async fn watch(
             .iter()
             .zip(hosts.iter())
             .map(|(info, host)| {
-                let editor_host_name = format!("editor-{}", host.name());
-
-                let mut editor_host: HostConfig = Default::default();
-                editor_host.set_name(editor_host_name);
-                editor_host.set_directory(editor_directory.clone());
-                editor_host.set_disable_cache(false);
-
-                editor_host.set_webdav(Some(WebDavConfig::new(
-                    "/webdav".to_string(),
-                    info.source.to_path_buf(),
-                    false,
-                )));
-
-                println!("Creating editor host {:?}", editor_host.name());
-                println!("Creating editor host {:?}", editor_host.directory());
-                println!("Host {:#?}", &editor_host);
-
-                editor_host
             })
             .collect::<Vec<_>>();
 
         hosts.append(&mut editor_hosts);
     }
+    */
 
     if hosts.is_empty() {
         return Err(Error::NoLiveHosts);

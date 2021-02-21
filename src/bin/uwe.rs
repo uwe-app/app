@@ -164,27 +164,7 @@ async fn run(cmd: Command) -> Result<()> {
         }
 
         Command::Editor { args } => {
-            let project = opts::project_path(&args.project)?;
-            let tls =
-                uwe::opts::ssl_config(None, &args.server, config::PORT_SSL);
-
-            let build_args = ProfileSettings {
-                paths: None,
-                name: args.profile,
-                launch: None,
-                host: Some(args.server.addr),
-                port: args.server.port,
-                exec: Some(args.compile.exec),
-                member: args.compile.member,
-                include_drafts: Some(args.compile.include_drafts),
-                tls,
-                ..Default::default()
-            };
-
-            if let Err(e) =
-                uwe::editor::run(&project, build_args, args.server.authority)
-                    .await
-            {
+            if let Err(e) = uwe::editor::run().await {
                 uwe::print_error(e);
             }
         }
