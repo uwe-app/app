@@ -135,6 +135,9 @@ pub struct ServerConfig {
 
     #[serde(skip)]
     allow_ssl_from_env: bool,
+
+    #[serde(skip)]
+    disable_signals: bool,
 }
 
 impl Default for ServerConfig {
@@ -149,6 +152,7 @@ impl Default for ServerConfig {
             allow_ssl_from_env: true,
             authorities: None,
             hosts: vec![],
+            disable_signals: false,
         }
     }
 }
@@ -272,6 +276,14 @@ impl ServerConfig {
 
     pub fn set_allow_ssl_from_env(&mut self, flag: bool) {
         self.allow_ssl_from_env = flag;
+    }
+
+    pub fn disable_signals(&self) -> bool {
+        self.disable_signals
+    }
+
+    pub fn set_disable_signals(&mut self, flag: bool) {
+        self.disable_signals = flag;
     }
 
     pub fn set_redirect_insecure(&mut self, flag: bool) {

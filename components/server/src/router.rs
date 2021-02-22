@@ -551,7 +551,7 @@ async fn start(
     })
     .workers(opts.workers());
 
-    let (server, mut redirect_server) = if let Some(ref ssl_config) = ssl_config
+    let (mut server, mut redirect_server) = if let Some(ref ssl_config) = ssl_config
     {
         let cert = ssl_config.cert();
         let key = ssl_config.key();
@@ -604,12 +604,17 @@ async fn start(
             }));
             app
         })
+        .disable_signals()
         .bind(http_addr)?;
 
         (server.bind_rustls(addr, config)?, Some(redirect_server))
     } else {
         (server.bind(addr)?, None)
     };
+
+    if opts.disable_signals() {
+        server = server.disable_signals();
+    }
 
     let mut addrs = server.addrs();
 

@@ -17,6 +17,7 @@ pub async fn run() -> Result<()> {
         let mut server: ServerConfig = Default::default();
         server.set_allow_ssl_from_env(false);
         server.set_port(0);
+        server.set_disable_signals(true);
 
         // Run the editor UI on localhost
         let mut editor_host: HostConfig = Default::default();

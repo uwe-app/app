@@ -25,3 +25,18 @@ document.querySelectorAll('template[shadowroot]').forEach(template => {
 
 // Register custom elements
 customElements.define('editor-view', EditorView);
+
+let fullscreen = false;
+
+function toggleFullScreen() {
+    if (fullscreen) {
+        onIpcRequest(JSON.stringify({event: 'exit-fullscreen'}));
+    } else {
+        onIpcRequest(JSON.stringify({event: 'enter-fullscreen'}));
+    }
+    fullscreen = !fullscreen;
+}
+
+function onIpcMessage(message) {
+    document.getElementById("ipc-result").innerHTML = JSON.stringify(message, undefined, 2);
+}
