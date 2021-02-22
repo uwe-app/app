@@ -63,7 +63,7 @@ strip-private:
 build-private:
 	@cargo build --bin=web-host --release
 	@PKG_CONFIG_ALLOW_CROSS=1 \
-		LIBZ_SYS_STATIC=1 \
+		LZMA_API_STATIC=1 \
 		CC=o64-clang \
 		CXX=o64-clang++ \
 		cargo build --target=x86_64-apple-darwin --bin=web-host --release
