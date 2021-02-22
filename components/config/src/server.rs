@@ -286,6 +286,10 @@ impl ServerConfig {
         self.disable_signals = flag;
     }
 
+    pub fn redirect_insecure(&self) -> bool {
+        self.redirect_insecure
+    }
+
     pub fn set_redirect_insecure(&mut self, flag: bool) {
         self.redirect_insecure = flag;
     }

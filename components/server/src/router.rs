@@ -577,37 +577,41 @@ async fn start(
 
         config.set_single_cert(cert_chain, keys.remove(0))?;
 
-        // Always redirect HTTP -> HTTPS
-        let redirect_server = HttpServer::new(move || {
-            let mut app: App<_, _> = App::new();
-            app = app.service(web::scope("").wrap_fn(move |req, _srv| {
-                // This includes any port in the host name!
-                let host = req.connection_info().host().to_owned();
+        let redirect_server = if opts.redirect_insecure() {
+            // Always redirect HTTP -> HTTPS
+            let redirect_server = HttpServer::new(move || {
+                let mut app: App<_, _> = App::new();
+                app = app.service(web::scope("").wrap_fn(move |req, _srv| {
+                    // This includes any port in the host name!
+                    let host = req.connection_info().host().to_owned();
 
-                // Must remove the port from the host name
-                let host_url: Url = format!("http://{}", host).parse().unwrap();
-                let host = host_url.host_str().unwrap();
+                    // Must remove the port from the host name
+                    let host_url: Url = format!("http://{}", host).parse().unwrap();
+                    let host = host_url.host_str().unwrap();
 
-                let url = if ssl_port == 443 {
-                    format!("{}//{}", config::SCHEME_HTTPS, host)
-                } else {
-                    format!("{}//{}:{}", config::SCHEME_HTTPS, host, ssl_port)
-                };
+                    let url = if ssl_port == 443 {
+                        format!("{}//{}", config::SCHEME_HTTPS, host)
+                    } else {
+                        format!("{}//{}:{}", config::SCHEME_HTTPS, host, ssl_port)
+                    };
 
-                let url = format!("{}{}", url, req.uri().to_owned());
-                ok(req.into_response(
-                    HttpResponse::MovedPermanently()
-                        .append_header((http::header::LOCATION, url))
-                        .finish()
-                        .into_body(),
-                ))
-            }));
-            app
-        })
-        .disable_signals()
-        .bind(http_addr)?;
+                    let url = format!("{}{}", url, req.uri().to_owned());
+                    ok(req.into_response(
+                        HttpResponse::MovedPermanently()
+                            .append_header((http::header::LOCATION, url))
+                            .finish()
+                            .into_body(),
+                    ))
+                }));
+                app
+            })
+            .disable_signals()
+            .bind(http_addr)?;
 
-        (server.bind_rustls(addr, config)?, Some(redirect_server))
+            Some(redirect_server)
+        } else { None };
+
+        (server.bind_rustls(addr, config)?, redirect_server)
     } else {
         (server.bind(addr)?, None)
     };
