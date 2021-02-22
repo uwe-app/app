@@ -21,6 +21,7 @@ pub async fn run() -> Result<()> {
 
         // Run the editor UI on localhost
         let mut editor_host: HostConfig = Default::default();
+        //editor_host.set_name("uwe.localhost".to_string());
 
         #[cfg(debug_assertions)]
         editor_host.set_directory(PathBuf::from("editor/build/debug"));

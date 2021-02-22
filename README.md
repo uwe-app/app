@@ -37,7 +37,7 @@ To develop the editor user interface use a release build of `uwe` to set up a li
 
 ```
 # Create a live reload development server
-uwe dev editor
+uwe dev --headless editor
 # Show the editor native window
 cargo run -- editor
 ```

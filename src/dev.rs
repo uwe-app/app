@@ -5,6 +5,7 @@ use config::ProfileSettings;
 
 pub async fn run<P: AsRef<Path>>(
     project: P,
+    headless: bool,
     mut args: ProfileSettings,
     authorities: Option<Vec<String>>,
 ) -> Result<()> {
@@ -16,8 +17,6 @@ pub async fn run<P: AsRef<Path>>(
 
     // Must mark the build profile for live reload
     args.live = Some(true);
-
-    let headless = std::env::var("UWE_HEADLESS").ok().is_some();
 
     // Compile the project
     let result = workspace::compile(project, &args, Default::default()).await?;

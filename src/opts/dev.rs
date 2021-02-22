@@ -18,6 +18,10 @@ pub struct Dev {
     #[structopt(long)]
     pub launch: Option<String>,
 
+    /// Do not launch a browser
+    #[structopt(long)]
+    pub headless: bool,
+
     #[structopt(flatten)]
     pub server: WebServerOpts,
 
