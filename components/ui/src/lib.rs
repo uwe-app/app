@@ -1,7 +1,7 @@
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("{0}")]
-    ClientError(String),
+    #[error(transparent)]
+    Boxed(#[from] Box<dyn std::error::Error + Send>),
 
     #[error(transparent)]
     Wry(#[from] wry::Error),
@@ -10,7 +10,6 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 mod jsonrpc;
-mod webview_ipc;
 mod window;
 
 pub use window::window;
