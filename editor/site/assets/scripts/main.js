@@ -1,3 +1,43 @@
+class JsonRpc {
+  constructor() {
+    this.id = 0;
+  }
+
+  request(method, params) {
+    const req = {
+      jsonrpc: "2.0",
+      id: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+      method,
+      params
+    };
+    return req;
+  }
+}
+
+class WebViewIpc {
+  constructor(call, rpc) {
+    this.external = {call};
+    this.rpc = rpc;
+  }
+
+  openFolder() {
+    this.send('folder.open')
+  }
+
+  openProject(path) {
+    this.send('project.open', [path])
+  }
+
+  send(method, params) {
+    const req = JSON.stringify(this.rpc.request(method, params));
+    this.external.call(req);
+  }
+}
+
+if (typeof onIpcRequest === 'function') {
+  window.ipc = new WebViewIpc(onIpcRequest, new JsonRpc());
+}
+
 class EditorView extends HTMLElement {
   constructor() {
     super();

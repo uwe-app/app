@@ -157,8 +157,13 @@ async fn run(cmd: Command) -> Result<()> {
                 ..Default::default()
             };
 
-            if let Err(e) =
-                uwe::dev::run(&project, args.headless, build_args, args.server.authority).await
+            if let Err(e) = uwe::dev::run(
+                &project,
+                args.headless,
+                build_args,
+                args.server.authority,
+            )
+            .await
             {
                 uwe::print_error(e);
             }

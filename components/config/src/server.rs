@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Error, Result, redirect::Redirects, memfs::EmbeddedFileSystem};
+use crate::{memfs::EmbeddedFileSystem, redirect::Redirects, Error, Result};
 
 pub fn to_websocket_url(
     tls: bool,

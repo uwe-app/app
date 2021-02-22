@@ -48,7 +48,10 @@ use crate::{
     Error, Result, ServerSettings,
 };
 
-use config::{server::{ConnectionInfo, PortType, ServerConfig}, memfs::EmbeddedFileSystem};
+use config::{
+    memfs::EmbeddedFileSystem,
+    server::{ConnectionInfo, PortType, ServerConfig},
+};
 
 /// Wrap the default index page in a specific type
 /// for the route handler.
@@ -97,7 +100,6 @@ async fn embedded_handler(
     req: HttpRequest,
     memfs: web::Data<Box<dyn EmbeddedFileSystem>>,
 ) -> HttpResponse {
-
     let memfs_path = if req.path() == "/" {
         config::INDEX_HTML
     } else {
@@ -551,7 +553,8 @@ async fn start(
     })
     .workers(opts.workers());
 
-    let (mut server, mut redirect_server) = if let Some(ref ssl_config) = ssl_config
+    let (mut server, mut redirect_server) = if let Some(ref ssl_config) =
+        ssl_config
     {
         let cert = ssl_config.cert();
         let key = ssl_config.key();
@@ -586,13 +589,19 @@ async fn start(
                     let host = req.connection_info().host().to_owned();
 
                     // Must remove the port from the host name
-                    let host_url: Url = format!("http://{}", host).parse().unwrap();
+                    let host_url: Url =
+                        format!("http://{}", host).parse().unwrap();
                     let host = host_url.host_str().unwrap();
 
                     let url = if ssl_port == 443 {
                         format!("{}//{}", config::SCHEME_HTTPS, host)
                     } else {
-                        format!("{}//{}:{}", config::SCHEME_HTTPS, host, ssl_port)
+                        format!(
+                            "{}//{}:{}",
+                            config::SCHEME_HTTPS,
+                            host,
+                            ssl_port
+                        )
                     };
 
                     let url = format!("{}{}", url, req.uri().to_owned());
@@ -609,7 +618,9 @@ async fn start(
             .bind(http_addr)?;
 
             Some(redirect_server)
-        } else { None };
+        } else {
+            None
+        };
 
         (server.bind_rustls(addr, config)?, redirect_server)
     } else {

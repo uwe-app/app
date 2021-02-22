@@ -1,7 +1,7 @@
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 
-use config::memfs::{MemoryFileSystem, EmbeddedFileSystem};
+use config::memfs::{EmbeddedFileSystem, MemoryFileSystem};
 
 #[derive(RustEmbed)]
 #[folder = "../../editor/build/release"]

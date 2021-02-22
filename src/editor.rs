@@ -1,8 +1,8 @@
-use std::path::PathBuf;
 use log::{info, warn};
+use std::path::PathBuf;
 
-use crate::{Error, Result, opts::Editor};
-use config::server::{HostConfig, ServerConfig, ConnectionInfo};
+use crate::{opts::Editor, Error, Result};
+use config::server::{ConnectionInfo, HostConfig, ServerConfig};
 
 pub async fn run(args: Editor) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
@@ -75,7 +75,7 @@ pub async fn run(args: Editor) -> Result<()> {
                 };
                 info!("Editor {:#?}", url);
                 ui::window(url)?;
-            },
+            }
             Err(_e) => {
                 warn!("Failed to receive connection info from the web server");
             }
