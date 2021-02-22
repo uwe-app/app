@@ -1,9 +1,6 @@
 use wry::{Application, Attributes, Callback, WindowProxy};
 
-mod embedded_fs;
 mod ipc;
-
-pub use embedded_fs::Asset;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

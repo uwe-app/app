@@ -458,6 +458,10 @@ impl HostConfig {
         self.log
     }
 
+    pub fn set_log(&mut self, log: bool) {
+        self.log = log;
+    }
+
     pub fn redirects(&self) -> &Option<Redirects> {
         &self.redirects
     }

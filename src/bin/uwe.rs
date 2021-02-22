@@ -163,7 +163,7 @@ async fn run(cmd: Command) -> Result<()> {
             }
         }
 
-        Command::Editor { args } => {
+        Command::Editor { .. } => {
             if let Err(e) = uwe::editor::run().await {
                 uwe::print_error(e);
             }

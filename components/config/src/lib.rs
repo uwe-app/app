@@ -142,6 +142,7 @@ pub mod indexer;
 pub mod license;
 mod link;
 mod live_reload;
+pub mod memfs;
 mod menu;
 mod minify;
 mod options;

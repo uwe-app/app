@@ -1,7 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
-use log::info;
+use log::{info, warn};
 
 use crate::{Error, Result};
 use config::server::{HostConfig, ServerConfig, ConnectionInfo};
@@ -25,15 +25,11 @@ pub async fn run() -> Result<()> {
             .map(PathBuf::from)
             .ok_or_else(|| Error::NoEditorDirectory)?;
 
-        //println!("Editor directory {:?}", editor_directory);
-
-        //let editor_host_name = format!("editor-{}", host.name());
-
+        // Run the editor UI on localhost
         let mut editor_host: HostConfig = Default::default();
-        //editor_host.set_name(editor_host_name);
         editor_host.set_directory(editor_directory.clone());
         editor_host.set_disable_cache(true);
-        editor_host.log();
+        editor_host.set_log(true);
 
         server.add_host(editor_host);
 
@@ -61,15 +57,23 @@ pub async fn run() -> Result<()> {
         Ok::<(), Error>(())
     });
 
-    for nm in ui::Asset::iter() {
+    /*
+    for nm in vfs::editor().iter() {
         println!("Got {:#?}", nm);
     }
+    */
 
     // Spawn a thread for the UI window event loop.
     let handle = std::thread::spawn(move || {
-        let info = rx.recv().unwrap();
-        info!("Editor {:#?}", info.to_url());
-        ui::window(info.to_url())?;
+        match rx.recv() {
+            Ok(info) => {
+                info!("Editor {:#?}", info.to_url());
+                ui::window(info.to_url())?;
+            },
+            Err(_e) => {
+                warn!("Failed to receive connection info from the web server");
+            }
+        }
         Ok::<(), Error>(())
     });
     let _ = handle.join();
