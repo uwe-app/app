@@ -1,12 +1,39 @@
 use std::rc::Rc;
 use wry::{Application, Attributes, Callback};
 
+use log::{info, warn, error};
+
 use crate::{jsonrpc::*, services::*};
 
 /// Create a native application window and display the given URL.
 pub fn window(url: String) -> crate::Result<()> {
-    let callback = Callback {
-        name: "onIpcRequest".to_owned(),
+
+    /*
+    let log_info = Callback {
+        name: "log_info".to_owned(),
+        function: Box::new(move |proxy, _sequence, requests| {
+            info!("{}", requests.join(" "));
+            0
+        }),
+    };
+    let log_warn = Callback {
+        name: "log_warn".to_owned(),
+        function: Box::new(move |proxy, _sequence, requests| {
+            warn!("{}", requests.join(" "));
+            0
+        }),
+    };
+    let log_error = Callback {
+        name: "log_error".to_owned(),
+        function: Box::new(move |proxy, _sequence, requests| {
+            error!("{}", requests.join(" "));
+            0
+        }),
+    };
+    */
+
+    let ipc = Callback {
+        name: "external_handler".to_owned(),
         function: Box::new(move |proxy, _sequence, requests| {
             let window_proxy = Rc::new(proxy);
 
@@ -28,7 +55,8 @@ pub fn window(url: String) -> crate::Result<()> {
                 };
 
                 let invoke = format!(
-                    "onIpcMessage({})",
+                    r#"window.ipc.responses[{}] = {}"#,
+                    response.id(),
                     serde_json::to_string(&response).unwrap()
                 );
                 window_proxy.evaluate_script(invoke).unwrap();
@@ -44,7 +72,7 @@ pub fn window(url: String) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         ..Default::default()
     };
-    app.add_window(attrs, Some(vec![callback]))?;
+    app.add_window(attrs, Some(vec![ipc/*, log_info, log_warn, log_error*/]))?;
     app.run();
     Ok(())
 }

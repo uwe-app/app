@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 thiserror = "1"
 rand = "0.8"
+log = "0.4.8"
 serde = "1"
 serde_json = {version = "1", features = ["raw_value"] }
 wry = "0.5.1"

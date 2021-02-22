@@ -2,8 +2,7 @@
 title = "Editor"
 -->
 
-<!--<a href="javascript:onIpcRequest(JSON.stringify({event: 'open-folder'}));">Select folder</a>-->
-<a href="javascript:ipc.openFolder('Choose a project');">Select folder</a>
-<a href="javascript:ipc.openProject('/home/muji/git/uwe/sites/website');">Open project</a>
-<a href="javascript:ipc.toggleFullScreen();">Toggle Fullscreen</a>
+<a onclick="chooseProject()">Select folder</a>
+<a onclick="ipc.openProject('/home/muji/git/uwe/sites/website');">Open project</a>
+<a onclick="ipc.toggleFullScreen();">Toggle Fullscreen</a>
 <pre id="ipc-result"></pre>

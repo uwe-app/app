@@ -190,6 +190,13 @@ pub struct Response {
     error: Option<JsonRpcError>,
 }
 
+impl Response {
+    /// The id for the response.
+    pub fn id(&self) -> &Value {
+        &self.id
+    }
+}
+
 impl<'a> From<(&'a mut Request, Value)> for Response {
     fn from(req: (&'a mut Request, Value)) -> Self {
         Self {
