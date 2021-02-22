@@ -168,6 +168,7 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
     }
 
     server_opts.set_redirect_insecure(false);
+    server_opts.set_disable_signals(true);
 
     let mut host: HostConfig = Default::default();
     host.set_require_index(false);

@@ -88,6 +88,7 @@ pub async fn watch(
 
     opts.set_authorities(authorities);
     opts.set_hosts(hosts);
+    opts.set_disable_signals(true);
 
     /*
     if let Some(ref host) = bind_host {

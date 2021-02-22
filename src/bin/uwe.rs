@@ -71,6 +71,7 @@ async fn run(cmd: Command) -> Result<()> {
 
             let host = HostConfig::new_directory(target);
             opts.add_host(host);
+            opts.set_disable_signals(true);
 
             uwe::docs::open(opts).await?;
         }
