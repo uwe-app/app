@@ -130,9 +130,6 @@ pub enum Error {
     Recv(#[from] tokio::sync::oneshot::error::RecvError),
 
     #[error(transparent)]
-    Wry(#[from] wry::Error),
-
-    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]
@@ -173,6 +170,10 @@ pub enum Error {
 
     #[error(transparent)]
     Shim(#[from] crate::shim::Error),
+
+    #[error(transparent)]
+    Ui(#[from] ui::Error),
+
 }
 
 pub fn panic_hook() {

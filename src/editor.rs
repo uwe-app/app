@@ -61,11 +61,15 @@ pub async fn run() -> Result<()> {
         Ok::<(), Error>(())
     });
 
+    for nm in ui::Asset::iter() {
+        println!("Got {:#?}", nm);
+    }
+
     // Spawn a thread for the UI window event loop.
     let handle = std::thread::spawn(move || {
         let info = rx.recv().unwrap();
         info!("Editor {:#?}", info.to_url());
-        crate::ui::window(info.to_url())?;
+        ui::window(info.to_url())?;
         Ok::<(), Error>(())
     });
     let _ = handle.join();

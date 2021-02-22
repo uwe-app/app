@@ -15,7 +15,6 @@ pub mod shim;
 pub mod sync;
 pub mod task;
 pub mod test;
-mod ui;
 
 pub mod logger;
 

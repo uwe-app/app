@@ -1,0 +1,13 @@
+[package]
+name = "ui"
+version = "0.1.0"
+authors = ["muji <muji@tmpfs.org>"]
+edition = "2018"
+
+[dependencies]
+thiserror = "1"
+serde = "1"
+serde_json = "1"
+rust-embed = "5.9"
+wry = "0.5.1"
+tinyfiledialogs = "3.3.10"
