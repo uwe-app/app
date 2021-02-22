@@ -1,8 +1,4 @@
 class JsonRpc {
-  constructor() {
-    this.id = 0;
-  }
-
   request(method, params) {
     const req = {
       jsonrpc: "2.0",
@@ -18,63 +14,32 @@ class WebViewIpc {
   constructor(call, rpc) {
     this.external = {call};
     this.rpc = rpc;
+    this.fullscreen = false;
   }
 
-  openFolder() {
-    this.send('folder.open')
+  toggleFullScreen() {
+    const res = this.send('window.set_fullscreen', !this.fullscreen);
+    this.fullscreen = !this.fullscreen;
+    return res;
+  }
+
+  openFolder(title) {
+    return this.send('folder.open', title);
   }
 
   openProject(path) {
-    this.send('project.open', [path])
+    return this.send('project.open', [path]);
   }
 
   send(method, params) {
-    const req = JSON.stringify(this.rpc.request(method, params));
+    const request = this.rpc.request(method, params);
+    const req = JSON.stringify(request);
     this.external.call(req);
   }
 }
 
 if (typeof onIpcRequest === 'function') {
   window.ipc = new WebViewIpc(onIpcRequest, new JsonRpc());
-}
-
-class EditorView extends HTMLElement {
-  constructor() {
-    super();
-
-    if (this.shadowRoot) {
-      // A Declarative Shadow Root exists!
-      // wire up event listeners, references, etc.:
-      const button = this.shadowRoot.firstElementChild;
-      button.addEventListener('click', () => {
-        console.log('Toggle was called...');
-      });
-    } else {
-      console.error("Component does not have a shadow root");
-    }
-  }
-}
-
-// Polyfill for declarative shadow dom
-document.querySelectorAll('template[shadowroot]').forEach(template => {
-  const mode = template.getAttribute('shadowroot');
-  const shadowRoot = template.parentNode.attachShadow({ mode });
-  shadowRoot.appendChild(template.content);
-  template.remove();
-});
-
-// Register custom elements
-customElements.define('editor-view', EditorView);
-
-let fullscreen = false;
-
-function toggleFullScreen() {
-    if (fullscreen) {
-        onIpcRequest(JSON.stringify({event: 'exit-fullscreen'}));
-    } else {
-        onIpcRequest(JSON.stringify({event: 'enter-fullscreen'}));
-    }
-    fullscreen = !fullscreen;
 }
 
 function onIpcMessage(message) {
