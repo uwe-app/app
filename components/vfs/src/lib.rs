@@ -1,12 +1,13 @@
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 
-use config::memfs::MemoryFileSystem;
+use config::memfs::{MemoryFileSystem, EmbeddedFileSystem};
 
 #[derive(RustEmbed)]
 #[folder = "../../editor/build/release"]
 pub struct Editor;
 
+#[derive(Debug, Clone)]
 pub struct EditorFileSystem;
 
 /// Wrapper for the rust embed API so we can pass around a
@@ -21,7 +22,9 @@ impl MemoryFileSystem for EditorFileSystem {
     }
 }
 
+impl EmbeddedFileSystem for EditorFileSystem {}
+
 /// Get the in-memory file system for the editor assets.
-pub fn editor() -> Box<dyn MemoryFileSystem> {
+pub fn editor() -> Box<dyn EmbeddedFileSystem> {
     Box::new(EditorFileSystem {})
 }

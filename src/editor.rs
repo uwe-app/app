@@ -1,6 +1,4 @@
-use std::env;
 use std::path::PathBuf;
-
 use log::{info, warn};
 
 use crate::{Error, Result};
@@ -20,14 +18,19 @@ pub async fn run() -> Result<()> {
         server.set_allow_ssl_from_env(false);
         server.set_port(0);
 
-        let editor_directory = env::var("UWE_EDITOR")
-            .ok()
-            .map(PathBuf::from)
-            .ok_or_else(|| Error::NoEditorDirectory)?;
-
         // Run the editor UI on localhost
         let mut editor_host: HostConfig = Default::default();
-        editor_host.set_directory(editor_directory.clone());
+
+        #[cfg(debug_assertions)]
+        editor_host.set_directory(PathBuf::from("editor/build/debug"));
+
+        #[cfg(not(debug_assertions))]
+        editor_host.set_directory(std::env::current_dir()?);
+
+        #[cfg(not(debug_assertions))]
+        editor_host.set_embedded(Some(vfs::editor()));
+
+        editor_host.set_require_index(false);
         editor_host.set_disable_cache(true);
         editor_host.set_log(true);
 

@@ -31,6 +31,19 @@ Repositories must be siblings, for example:
 * [syntax][]: Syntax highlighting language definitions binary files.
 * [syntax-compiler][]: Compiles the syntax highlighting definitions.
 
+## Editor
+
+To develop the editor user interface use a release build of `uwe` to set up a live reload server and run the `editor` command with `debug_assertions`:
+
+```
+# Create a live reload development server
+uwe dev editor
+# Show the editor native window
+cargo run -- editor
+```
+
+Now as you make changes to the files in the `editor/site` folder the native window interface will automatically reload.
+
 ## Name Servers
 
 To transfer a domain to our managed hosting service customers should update the name servers for the domain name with their registrar to these values:

@@ -48,7 +48,7 @@ use crate::{
     Error, Result, ServerSettings,
 };
 
-use config::server::{ConnectionInfo, PortType, ServerConfig};
+use config::{server::{ConnectionInfo, PortType, ServerConfig}, memfs::EmbeddedFileSystem};
 
 /// Wrap the default index page in a specific type
 /// for the route handler.
@@ -90,6 +90,31 @@ async fn dav_handler(
         davhandler.handle_with(config, req.request).await.into()
     } else {
         davhandler.handle(req.request).await.into()
+    }
+}
+
+async fn embedded_handler(
+    req: HttpRequest,
+    memfs: web::Data<Box<dyn EmbeddedFileSystem>>,
+) -> HttpResponse {
+
+    let memfs_path = if req.path() == "/" {
+        config::INDEX_HTML
+    } else {
+        req.path().trim_start_matches("/")
+    };
+
+    if let Some(memfs_file) = memfs.get(memfs_path) {
+        let mime_type = mime_guess::from_path(memfs_path)
+            .first()
+            .unwrap_or(mime::TEXT_PLAIN);
+        HttpResponse::Ok()
+            .content_type(mime_type)
+            .body(memfs_file.into_owned())
+    } else {
+        HttpResponse::NotFound()
+            .content_type("text/html")
+            .body("NOT_FOUND")
     }
 }
 
@@ -292,208 +317,220 @@ async fn start(
                 Arc::new(None)
             };
 
-            app = app.service(
-                web::scope("/")
-                    // Handle redirect mappings
-                    .wrap_fn(move |req, srv| {
-                        if let Some(uri) = redirects.items().get(req.path()) {
-                            let location = uri.to_string();
+            if let Some(ref embedded) = host.embedded() {
+                println!("Configure embedded web server...");
 
-                            let response: Pin<
-                                Box<
-                                    dyn Future<
-                                        Output = std::result::Result<
-                                            ServiceResponse,
-                                            actix_web::Error,
+                app = app.service(
+                    web::resource("/{tail:.*}")
+                        .data(embedded.clone())
+                        .route(web::get().to(embedded_handler))
+                );
+
+            } else {
+                app = app.service(
+                    web::scope("/")
+                        // Handle redirect mappings
+                        .wrap_fn(move |req, srv| {
+                            if let Some(uri) = redirects.items().get(req.path()) {
+                                let location = uri.to_string();
+
+                                let response: Pin<
+                                    Box<
+                                        dyn Future<
+                                            Output = std::result::Result<
+                                                ServiceResponse,
+                                                actix_web::Error,
+                                            >,
                                         >,
                                     >,
-                                >,
-                            > = Box::pin(async move {
-                                let redirect = if temporary_redirect {
-                                    HttpResponse::TemporaryRedirect()
-                                        .append_header((
-                                            http::header::LOCATION,
-                                            location,
-                                        ))
-                                        .finish()
-                                        .into_body()
-                                } else {
-                                    HttpResponse::PermanentRedirect()
-                                        .append_header((
-                                            http::header::LOCATION,
-                                            location,
-                                        ))
-                                        .finish()
-                                        .into_body()
-                                };
-
-                                Ok(req.into_response(redirect))
-                            });
-
-                            return response;
-                        }
-
-                        srv.call(req)
-                    })
-                    // Handle conditional headers
-                    .wrap_fn(move |req, srv| {
-                        let fut = srv.call(req);
-                        async move {
-                            let mut res = fut.await?;
-                            if disable_cache {
-                                res.headers_mut().insert(
-                                    header::CACHE_CONTROL,
-                                    HeaderValue::from_static(
-                                        "no-cache, no-store, must-revalidate",
-                                    ),
-                                );
-                                res.headers_mut().insert(
-                                    header::PRAGMA,
-                                    HeaderValue::from_static("no-cache"),
-                                );
-                                res.headers_mut().insert(
-                                    header::EXPIRES,
-                                    HeaderValue::from_static("0"),
-                                );
-                            }
-
-                            if deny_iframe {
-                                res.headers_mut().insert(
-                                    header::X_FRAME_OPTIONS,
-                                    HeaderValue::from_static("DENY"),
-                                );
-                            }
-
-                            Ok(res)
-                        }
-                    })
-                    // Handle live rendering
-                    .wrap_fn(move |req, srv| {
-                        let mut href = if req.path().ends_with("/")
-                            || req.path().ends_with(".html")
-                        {
-                            if req.path().ends_with("/") && req.path() != "/" {
-                                Some(format!(
-                                    "{}{}",
-                                    req.path(),
-                                    config::INDEX_HTML
-                                ))
-                            } else {
-                                Some(req.path().to_string())
-                            }
-                        } else {
-                            None
-                        };
-
-                        let tx = Arc::clone(&live_render_tx);
-                        let fut = srv.call(req);
-                        async move {
-                            if let (Some(href), Some(ref tx)) =
-                                (href.take(), &*tx)
-                            {
-                                let (resp_tx, resp_rx) =
-                                    oneshot::channel::<ResponseValue>();
-
-                                // TODO: handle RenderSendError
-                                let _ = tx.send((href, resp_tx)).await;
-
-                                // WARN: currently this will serve from a stale
-                                // WARN: cache if the live render channel fails.
-                                if let Ok(response) = resp_rx.await {
-                                    if let Some(error) = response {
-                                        let registry = parser();
-                                        let data = json!({
-                                            "title": "Render Error",
-                                            "message": error.to_string()});
-                                        let doc = registry
-                                            .render("error", &data)
-                                            .unwrap();
-
-                                        let res = HttpResponse::build(
-                                            StatusCode::INTERNAL_SERVER_ERROR,
-                                        )
-                                        .body(doc);
-                                        return Err(actix_web::Error::from(
-                                            error::InternalError::from_response(
-                                                error, res,
-                                            ),
-                                        ));
-                                    }
-                                }
-                            }
-
-                            Ok(fut.await?)
-                        }
-                    })
-                    // Always add these headers
-                    .wrap(
-                        DefaultHeaders::new()
-                            .header(
-                                header::SERVER,
-                                config::generator::user_agent(),
-                            )
-                            .header(header::REFERRER_POLICY, "origin")
-                            .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
-                            .header(header::X_XSS_PROTECTION, "1; mode=block")
-                            /*
-                            .header(
-                                header::STRICT_TRANSPORT_SECURITY,
-                                "max-age=31536000; includeSubDomains; preload",
-                            )
-                            */
-                            // TODO: allow configuring this header
-                            .header("permissions-policy", "geolocation=()"),
-                    )
-                    // Check virtual hosts
-                    .guard(guard::fn_guard(move |req| {
-                        for g in host_guards.iter() {
-                            if g.check(req) {
-                                return true;
-                            }
-                        }
-                        false
-                    }))
-                    .wrap(Condition::new(log, Compat::new(Logger::default())))
-                    .service(
-                        web::resource(&endpoint)
-                            //.guard()
-                            .route(web::get().to(ws_index)),
-                    )
-                    // Serve static files
-                    .service(
-                        Files::new("", host.directory().to_path_buf())
-                            .default_handler(move |req: ServiceRequest| {
-                                let err = error_page.clone();
-                                let (http_req, _payload) = req.into_parts();
-                                async {
-                                    let response = if err.exists() {
-                                        match NamedFile::open(err) {
-                                            Ok(file) => {
-                                                file.into_response(&http_req)
-                                            }
-                                            Err(e) => {
-                                                return Err(
-                                                    actix_web::Error::from(e),
-                                                )
-                                            }
-                                        }
+                                > = Box::pin(async move {
+                                    let redirect = if temporary_redirect {
+                                        HttpResponse::TemporaryRedirect()
+                                            .append_header((
+                                                http::header::LOCATION,
+                                                location,
+                                            ))
+                                            .finish()
+                                            .into_body()
                                     } else {
-                                        // TODO: pretty not found when no 404.html for the host?
-                                        HttpResponse::NotFound()
-                                            .content_type("text/html")
-                                            .body("NOT_FOUND")
+                                        HttpResponse::PermanentRedirect()
+                                            .append_header((
+                                                http::header::LOCATION,
+                                                location,
+                                            ))
+                                            .finish()
+                                            .into_body()
                                     };
 
-                                    Ok(ServiceResponse::new(http_req, response))
+                                    Ok(req.into_response(redirect))
+                                });
+
+                                return response;
+                            }
+
+                            srv.call(req)
+                        })
+                        // Handle conditional headers
+                        .wrap_fn(move |req, srv| {
+                            let fut = srv.call(req);
+                            async move {
+                                let mut res = fut.await?;
+                                if disable_cache {
+                                    res.headers_mut().insert(
+                                        header::CACHE_CONTROL,
+                                        HeaderValue::from_static(
+                                            "no-cache, no-store, must-revalidate",
+                                        ),
+                                    );
+                                    res.headers_mut().insert(
+                                        header::PRAGMA,
+                                        HeaderValue::from_static("no-cache"),
+                                    );
+                                    res.headers_mut().insert(
+                                        header::EXPIRES,
+                                        HeaderValue::from_static("0"),
+                                    );
                                 }
-                            })
-                            .prefer_utf8(true)
-                            .index_file(config::INDEX_HTML)
-                            .use_etag(!host.disable_cache())
-                            .use_last_modified(!host.disable_cache())
-                            .redirect_to_slash_directory(),
-                    ),
-            );
+
+                                if deny_iframe {
+                                    res.headers_mut().insert(
+                                        header::X_FRAME_OPTIONS,
+                                        HeaderValue::from_static("DENY"),
+                                    );
+                                }
+
+                                Ok(res)
+                            }
+                        })
+                        // Handle live rendering
+                        .wrap_fn(move |req, srv| {
+                            let mut href = if req.path().ends_with("/")
+                                || req.path().ends_with(".html")
+                            {
+                                if req.path().ends_with("/") && req.path() != "/" {
+                                    Some(format!(
+                                        "{}{}",
+                                        req.path(),
+                                        config::INDEX_HTML
+                                    ))
+                                } else {
+                                    Some(req.path().to_string())
+                                }
+                            } else {
+                                None
+                            };
+
+                            let tx = Arc::clone(&live_render_tx);
+                            let fut = srv.call(req);
+                            async move {
+                                if let (Some(href), Some(ref tx)) =
+                                    (href.take(), &*tx)
+                                {
+                                    let (resp_tx, resp_rx) =
+                                        oneshot::channel::<ResponseValue>();
+
+                                    // TODO: handle RenderSendError
+                                    let _ = tx.send((href, resp_tx)).await;
+
+                                    // WARN: currently this will serve from a stale
+                                    // WARN: cache if the live render channel fails.
+                                    if let Ok(response) = resp_rx.await {
+                                        if let Some(error) = response {
+                                            let registry = parser();
+                                            let data = json!({
+                                                "title": "Render Error",
+                                                "message": error.to_string()});
+                                            let doc = registry
+                                                .render("error", &data)
+                                                .unwrap();
+
+                                            let res = HttpResponse::build(
+                                                StatusCode::INTERNAL_SERVER_ERROR,
+                                            )
+                                            .body(doc);
+                                            return Err(actix_web::Error::from(
+                                                error::InternalError::from_response(
+                                                    error, res,
+                                                ),
+                                            ));
+                                        }
+                                    }
+                                }
+
+                                Ok(fut.await?)
+                            }
+                        })
+                        // Always add these headers
+                        .wrap(
+                            DefaultHeaders::new()
+                                .header(
+                                    header::SERVER,
+                                    config::generator::user_agent(),
+                                )
+                                .header(header::REFERRER_POLICY, "origin")
+                                .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
+                                .header(header::X_XSS_PROTECTION, "1; mode=block")
+                                /*
+                                .header(
+                                    header::STRICT_TRANSPORT_SECURITY,
+                                    "max-age=31536000; includeSubDomains; preload",
+                                )
+                                */
+                                // TODO: allow configuring this header
+                                .header("permissions-policy", "geolocation=()"),
+                        )
+                        // Check virtual hosts
+                        .guard(guard::fn_guard(move |req| {
+                            for g in host_guards.iter() {
+                                if g.check(req) {
+                                    return true;
+                                }
+                            }
+                            false
+                        }))
+                        .wrap(Condition::new(log, Compat::new(Logger::default())))
+                        .service(
+                            web::resource(&endpoint)
+                                //.guard()
+                                .route(web::get().to(ws_index)),
+                        )
+                        // Serve static files
+                        .service(
+                            Files::new("", host.directory().to_path_buf())
+                                .default_handler(move |req: ServiceRequest| {
+                                    let err = error_page.clone();
+                                    let (http_req, _payload) = req.into_parts();
+                                    async {
+                                        let response = if err.exists() {
+                                            match NamedFile::open(err) {
+                                                Ok(file) => {
+                                                    file.into_response(&http_req)
+                                                }
+                                                Err(e) => {
+                                                    return Err(
+                                                        actix_web::Error::from(e),
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            // TODO: pretty not found when no 404.html for the host?
+                                            HttpResponse::NotFound()
+                                                .content_type("text/html")
+                                                .body("NOT_FOUND")
+                                        };
+
+                                        Ok(ServiceResponse::new(http_req, response))
+                                    }
+                                })
+                                .prefer_utf8(true)
+                                .index_file(config::INDEX_HTML)
+                                .use_etag(!host.disable_cache())
+                                .use_last_modified(!host.disable_cache())
+                                .redirect_to_slash_directory(),
+                        ),
+                );
+
+            }
         }
 
         app = app.default_service(

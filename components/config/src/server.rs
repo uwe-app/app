@@ -4,9 +4,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::redirect::Redirects;
-
-use crate::{Error, Result};
+use crate::{Error, Result, redirect::Redirects, memfs::EmbeddedFileSystem};
 
 pub fn to_websocket_url(
     tls: bool,
@@ -342,6 +340,11 @@ pub struct HostConfig {
     /// Directory for static files.
     directory: PathBuf,
 
+    /// Embedded file system, overrides any directory
+    /// setting.
+    #[serde(skip)]
+    embedded: Option<Box<dyn EmbeddedFileSystem>>,
+
     /// Require an index page inside the directory.
     require_index: bool,
 
@@ -376,6 +379,7 @@ impl Default for HostConfig {
         Self {
             name: crate::config::HOST.to_string(),
             directory: PathBuf::from(""),
+            embedded: None,
             webdav: None,
             redirects: None,
             endpoint: None,
@@ -416,6 +420,14 @@ impl HostConfig {
 
     pub fn set_directory(&mut self, directory: PathBuf) {
         self.directory = directory;
+    }
+
+    pub fn embedded(&self) -> &Option<Box<dyn EmbeddedFileSystem>> {
+        &self.embedded
+    }
+
+    pub fn set_embedded(&mut self, fs: Option<Box<dyn EmbeddedFileSystem>>) {
+        self.embedded = fs;
     }
 
     pub fn require_index(&self) -> bool {
