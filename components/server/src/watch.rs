@@ -50,22 +50,6 @@ pub async fn watch(
     let (host_info, hosts): (Vec<HostInfo>, Vec<HostConfig>) =
         host_configs.into_iter().unzip();
 
-    /*
-    //println!("Has editor directory {:?}", editor_directory);
-
-    // Map the editor hosts
-    if let Some(ref editor_directory) = editor_directory {
-        let mut editor_hosts = host_info
-            .iter()
-            .zip(hosts.iter())
-            .map(|(info, host)| {
-            })
-            .collect::<Vec<_>>();
-
-        hosts.append(&mut editor_hosts);
-    }
-    */
-
     if hosts.is_empty() {
         return Err(Error::NoLiveHosts);
     }
@@ -89,12 +73,6 @@ pub async fn watch(
     opts.set_authorities(authorities);
     opts.set_hosts(hosts);
     opts.set_disable_signals(true);
-
-    /*
-    if let Some(ref host) = bind_host {
-        opts.listen = host.to_string();
-    }
-    */
 
     // Spawn the bind listener to launch a browser
     if !headless {
@@ -120,9 +98,6 @@ pub async fn watch(
             break;
         }
     }
-
-    // Convert to &'static reference
-    //let opts = super::configure(opts);
 
     // Start the webserver
     super::router::serve(ServerSettings {

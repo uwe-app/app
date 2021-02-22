@@ -1,11 +1,13 @@
 use std::path::PathBuf;
 use log::{info, warn};
 
-use crate::{Error, Result};
+use crate::{Error, Result, opts::Editor};
 use config::server::{HostConfig, ServerConfig, ConnectionInfo};
 
-pub async fn run() -> Result<()> {
+pub async fn run(args: Editor) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
+
+    let is_project_editor = args.project.is_some();
 
     // WARN: We cannot launch the window directly from the server
     // WARN: callback otherwise it's event loop and the tokio runtime
@@ -62,18 +64,17 @@ pub async fn run() -> Result<()> {
         Ok::<(), Error>(())
     });
 
-    /*
-    for nm in vfs::editor().iter() {
-        println!("Got {:#?}", nm);
-    }
-    */
-
     // Spawn a thread for the UI window event loop.
     let handle = std::thread::spawn(move || {
         match rx.recv() {
             Ok(info) => {
-                info!("Editor {:#?}", info.to_url());
-                ui::window(info.to_url())?;
+                let url = if is_project_editor {
+                    format!("{}/project.html", info.to_url())
+                } else {
+                    info.to_url()
+                };
+                info!("Editor {:#?}", url);
+                ui::window(url)?;
             },
             Err(_e) => {
                 warn!("Failed to receive connection info from the web server");

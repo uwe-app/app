@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 use config::ProfileName;
@@ -15,4 +16,8 @@ pub struct Editor {
 
     #[structopt(flatten)]
     pub server: WebServerOpts,
+
+    /// Project path
+    #[structopt(parse(from_os_str))]
+    pub project: Option<PathBuf>,
 }
