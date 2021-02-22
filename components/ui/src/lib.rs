@@ -10,6 +10,7 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 mod jsonrpc;
+mod services;
 mod window;
 
 pub use window::window;
