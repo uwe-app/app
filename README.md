@@ -325,7 +325,7 @@ sudo apt install libwebkit2gtk-4.0-dev
 
 ## Cross Compiling
 
-MacOs minimum supported version: `10.9` (Mavericks).
+MacOs minimum supported version: `10.10` (Yosemite).
 MacOs SDK version: `11.1`
 
 To cross-compile from Linux for MacOs the [osxcross][] library is required and you must add the `target/bin` directory to your `PATH`; see `.cargo/config` and `Makefile` for more details on the required executables.
@@ -339,6 +339,20 @@ To setup [osxcross][] for Linux follow these steps:
 5) Move the generated tarball `MacOSX11.1.sdk.tar.xz` into the tarballs folder
 6) Build the SDK target `UNATTENDED=yes ./build.sh`
 7) Add the `target/bin` directory to `PATH` so the cross-compiler executables are available
+
+### Dynamic Libraries
+
+Use `objdump` on Linux to view the linked `.so` files:
+
+```
+objdump -p target/debug/uwe
+```
+
+Use `otool` to show dynamically linked libraries for MacOs, eg:
+
+```
+x86_64-apple-darwin20.2-otool -L target/x86_64-apple-darwin/release/uwe
+```
 
 ## Preferences
 
