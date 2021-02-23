@@ -5,7 +5,10 @@ authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
 
 [dependencies]
+config = { version = "0.1", path = "../config" }
+
 thiserror = "1"
+rust-embed = "5.9"
 rand = "0.8"
 log = "0.4.8"
 serde = "1"

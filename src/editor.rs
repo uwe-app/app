@@ -32,7 +32,7 @@ pub async fn run(args: Editor) -> Result<()> {
         editor_host.set_directory(std::env::current_dir()?);
 
         #[cfg(not(debug_assertions))]
-        editor_host.set_embedded(Some(vfs::editor()));
+        editor_host.set_embedded(Some(ui::editor()));
 
         editor_host.set_require_index(false);
         editor_host.set_disable_cache(true);

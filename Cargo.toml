@@ -30,7 +30,6 @@ members = [
   "components/transform",
   "components/ui",
   "components/utils",
-  "components/vfs",
   "components/web_host",
   "components/workspace",
 ]
@@ -51,7 +50,6 @@ server = {version = "0.1", path = "components/server" }
 site = {version = "0.1", path = "components/site" }
 ui = {version = "0.1", path = "components/ui" }
 utils = {version = "0.1", path = "components/utils" }
-vfs = {version = "0.1", path = "components/vfs" }
 web_host = {version = "0.1", path = "components/web_host" }
 workspace = {version = "0.1", path = "components/workspace" }
 

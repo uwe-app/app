@@ -1,13 +1,12 @@
 use std::rc::Rc;
 use wry::{Application, Attributes, Callback};
 
-use log::{info, warn, error};
+use log::{error, info, warn};
 
 use crate::{jsonrpc::*, services::*};
 
 /// Create a native application window and display the given URL.
 pub fn window(url: String) -> crate::Result<()> {
-
     /*
     let log_info = Callback {
         name: "log_info".to_owned(),
@@ -43,7 +42,8 @@ pub fn window(url: String) -> crate::Result<()> {
             });
             let dialog_service: Box<dyn Service> = Box::new(DialogService {});
             let project_service: Box<dyn Service> = Box::new(ProjectService {});
-            let services = vec![&window_service, &dialog_service, &project_service];
+            let services =
+                vec![&window_service, &dialog_service, &project_service];
 
             if let Some(arg) = requests.get(0) {
                 let response = match Request::from_str(arg) {
@@ -72,7 +72,7 @@ pub fn window(url: String) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         ..Default::default()
     };
-    app.add_window(attrs, Some(vec![ipc/*, log_info, log_warn, log_error*/]))?;
+    app.add_window(attrs, Some(vec![ipc /*, log_info, log_warn, log_error*/]))?;
     app.run();
     Ok(())
 }

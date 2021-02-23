@@ -1,11 +1,11 @@
 use rand::Rng;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Number, Value};
 
 const VERSION: &str = "2.0";
 
 const PARSE_ERROR: isize = -32700;
-//const INVALID_REQUEST: isize = -32600;
+const INVALID_REQUEST: isize = -32600;
 const METHOD_NOT_FOUND: isize = -32601;
 const INVALID_PARAMS: isize = -32602;
 const INTERNAL_ERROR: isize = -32603;
@@ -16,7 +16,13 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Enumeration of errors.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Service method {name} not found")]
+    #[error("Parsing failed, invalid JSON data")]
+    Parse { data: String },
+
+    #[error("Invalid JSON-RPC request")]
+    InvalidRequest { data: String },
+
+    #[error("Service method not found: {name}")]
     MethodNotFound { id: Value, name: String },
 
     #[error("Message parameters are invalid")]
@@ -33,8 +39,14 @@ impl<'a> Into<Response> for (&'a mut Request, Error) {
     fn into(self) -> Response {
         let (code, data): (isize, Option<String>) = match &self.1 {
             Error::MethodNotFound { .. } => (METHOD_NOT_FOUND, None),
-            Error::InvalidParams { data, .. } => (INVALID_PARAMS, Some(data.to_string())),
-            Error::Json(_) => (PARSE_ERROR, None),
+            Error::InvalidParams { data, .. } => {
+                (INVALID_PARAMS, Some(data.to_string()))
+            }
+            Error::Parse { data } => (PARSE_ERROR, Some(data.to_string())),
+            Error::InvalidRequest { data } => {
+                (INVALID_REQUEST, Some(data.to_string()))
+            }
+            Error::Json(e) => (PARSE_ERROR, Some(e.to_string())),
             _ => (INTERNAL_ERROR, None),
         };
         Response {
@@ -106,7 +118,7 @@ impl Broker {
 
         let err = Error::MethodNotFound {
             name: req.method().to_string(),
-            id: req.id.clone()
+            id: req.id.clone(),
         };
 
         Ok((req, err).into())
@@ -124,7 +136,6 @@ pub struct Request {
 }
 
 impl Request {
-
     /// The id for the request.
     pub fn id(&self) -> &Value {
         &self.id
@@ -149,12 +160,14 @@ impl Request {
             Ok(serde_json::from_value::<T>(params).map_err(|e| {
                 Error::InvalidParams {
                     id: self.id.clone(),
-                    data: e.to_string()}
+                    data: e.to_string(),
+                }
             })?)
         } else {
             Err(Error::InvalidParams {
                 id: self.id.clone(),
-                data: "No parameters given".to_string()})
+                data: "No parameters given".to_string(),
+            })
         }
     }
 }
@@ -174,7 +187,19 @@ impl Request {
 
     /// Parse a JSON payload.
     pub fn from_str(message: &str) -> Result<Self> {
-        Ok(serde_json::from_str::<Request>(message)?)
+        Ok(serde_json::from_str::<Request>(message).map_err(|e| {
+            if e.is_syntax() {
+                Error::Parse {
+                    data: e.to_string(),
+                }
+            } else if e.is_data() {
+                Error::InvalidRequest {
+                    data: e.to_string(),
+                }
+            } else {
+                Error::from(e)
+            }
+        })?)
     }
 }
 

@@ -1,6 +1,6 @@
 use serde_json::Value;
 use std::rc::Rc;
-use wry::{WindowProxy};
+use wry::WindowProxy;
 
 use crate::jsonrpc::*;
 
@@ -24,8 +24,7 @@ impl Service for DialogService {
         let mut response = None;
         if req.matches("folder.open") {
             let title: String = req.into_params()?;
-            let folder =
-                tinyfiledialogs::select_folder_dialog(&title, "");
+            let folder = tinyfiledialogs::select_folder_dialog(&title, "");
             response = if let Some(ref path) = folder {
                 Some((req, Value::String(path.to_string())).into())
             } else {

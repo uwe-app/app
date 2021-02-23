@@ -11,6 +11,8 @@ type Result<T> = std::result::Result<T, Error>;
 
 mod jsonrpc;
 mod services;
+mod vfs;
 mod window;
 
+pub use vfs::editor;
 pub use window::window;
