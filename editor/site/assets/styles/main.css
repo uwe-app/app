@@ -6,6 +6,7 @@ body {
   padding: 0;
 }
 
+/*
 main {
   display: flex;
   flex-direction: column;
@@ -22,10 +23,11 @@ article {
   flex: 1 1;
   display: flex;
   justify-content: space-between;
-  /*background: blue;*/
 }
 
 footer {
   flex: 0;
   background: green;
 }
+*/
+

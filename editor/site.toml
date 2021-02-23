@@ -4,8 +4,8 @@ host = "localhost"
 [dependencies."std::core"]
 version = "^5"
 
-[dependencies."std::core".apply]
-styles = ["**"]
+#[dependencies."std::core".apply]
+#styles = ["**"]
 
 [page.meta]
 description = "Universal Web Editor"

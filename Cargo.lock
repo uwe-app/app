@@ -2502,6 +2502,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "json-rpc2"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f26616a3c09a0966d6dce14a06229585de56cbff166b6893a49eb682a3ddbd7"
+dependencies = [
+ "rand 0.8.2",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "jsonfeed"
 version = "0.3.0"
 dependencies = [
@@ -3130,9 +3142,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.5.2"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13bd41f508810a131401606d54ac32a467c97172d74ba7662562ebba5ad07fa0"
+checksum = "4ad167a2f54e832b82dbe003a046280dceffe5227b5f79e08e363a29638cfddd"
 
 [[package]]
 name = "opaque-debug"
@@ -5358,6 +5370,7 @@ name = "ui"
 version = "0.1.0"
 dependencies = [
  "config",
+ "json-rpc2",
  "log",
  "rand 0.8.2",
  "rust-embed",
@@ -6031,9 +6044,8 @@ dependencies = [
 [[package]]
 name = "wry"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "860165cb99c55ae5da58684bb16ab0faf92488a735423bddb09410e787581901"
 dependencies = [
+ "cairo-rs",
  "cocoa",
  "core-graphics 0.22.2",
  "gdk",

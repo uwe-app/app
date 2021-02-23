@@ -1,3 +1,19 @@
+const isEmbedded = typeof external_handler === 'function';
+if (isEmbedded) {
+  console.info = function() {
+    log_info.apply(null, Array.prototype.slice.call(arguments));
+  }
+  console.log = function() {
+    log_info.apply(null, Array.prototype.slice.call(arguments));
+  }
+  console.warn = function() {
+    log_warn.apply(null, Array.prototype.slice.call(arguments));
+  }
+  console.error = function() {
+    log_error.apply(null, Array.prototype.slice.call(arguments));
+  }
+}
+
 window.onerror = function(message, filename, lineno, colno, error) {
     if (error != null) {
       alert(error.stack);
@@ -64,12 +80,6 @@ class WebViewIpc {
 }
 
 if (typeof external_handler === 'function') {
-  /*
-  console.info = (message) => log_info(message);
-  console.warn = (message) => log_warn(message);
-  console.error = (message) => log_error(message);
-  */
-
   window.ipc = new WebViewIpc(external_handler, new JsonRpc());
 }
 
@@ -82,3 +92,8 @@ async function chooseProject() {
   const path = await ipc.openFolder('Choose a project');
   alert('Folder path ' + path);
 }
+
+//console.info('App started...');
+//console.log('App started...');
+//console.warn('App started...');
+//console.error('App started...');

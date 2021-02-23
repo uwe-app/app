@@ -2,7 +2,7 @@ use serde_json::Value;
 use std::rc::Rc;
 use wry::WindowProxy;
 
-use crate::jsonrpc::*;
+use json_rpc2::*;
 
 pub struct ProjectService;
 
@@ -44,7 +44,7 @@ impl Service for WindowService {
         let mut response = None;
         if req.matches("window.set_fullscreen") {
             let flag: bool = req.into_params()?;
-            self.proxy.set_fullscreen(flag).map_err(box_error)?;
+            self.proxy.set_fullscreen(flag).map_err(Error::boxed)?;
             response = Some(req.into());
         }
         Ok(response)

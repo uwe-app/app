@@ -1,42 +1,53 @@
 use std::rc::Rc;
 use wry::{Application, Attributes, Callback};
+use serde_json::Value;
 
+use json_rpc2::*;
 use log::{error, info, warn};
 
-use crate::{jsonrpc::*, services::*};
+use crate::services::*;
 
 /// Create a native application window and display the given URL.
 pub fn window(url: String) -> crate::Result<()> {
-    /*
     let log_info = Callback {
         name: "log_info".to_owned(),
-        function: Box::new(move |proxy, _sequence, requests| {
-            info!("{}", requests.join(" "));
-            0
+        function: Box::new(move |_proxy, _sequence, requests| {
+            let values = requests
+                .iter()
+                .map(|r| r.to_string())
+                .collect::<Vec<String>>();
+            info!("{}", values.join(" "));
+            Ok(())
         }),
     };
     let log_warn = Callback {
         name: "log_warn".to_owned(),
-        function: Box::new(move |proxy, _sequence, requests| {
-            warn!("{}", requests.join(" "));
-            0
+        function: Box::new(move |_proxy, _sequence, requests| {
+            let values = requests
+                .iter()
+                .map(|r| r.to_string())
+                .collect::<Vec<String>>();
+            warn!("{}", values.join(" "));
+            Ok(())
         }),
     };
     let log_error = Callback {
         name: "log_error".to_owned(),
-        function: Box::new(move |proxy, _sequence, requests| {
-            error!("{}", requests.join(" "));
-            0
+        function: Box::new(move |_proxy, _sequence, requests| {
+            let values = requests
+                .iter()
+                .map(|r| r.to_string())
+                .collect::<Vec<String>>();
+            error!("{}", values.join(" "));
+            Ok(())
         }),
     };
-    */
 
     let ipc = Callback {
         name: "external_handler".to_owned(),
-        function: Box::new(move |proxy, _sequence, requests| {
+        function: Box::new(move |proxy, _sequence, mut requests| {
             let window_proxy = Rc::new(proxy);
 
-            let broker = Broker {};
             let window_service: Box<dyn Service> = Box::new(WindowService {
                 proxy: Rc::clone(&window_proxy),
             });
@@ -45,24 +56,29 @@ pub fn window(url: String) -> crate::Result<()> {
             let services =
                 vec![&window_service, &dialog_service, &project_service];
 
-            if let Some(arg) = requests.get(0) {
-                let response = match Request::from_str(arg) {
-                    Ok(mut req) => match broker.handle(&services, &mut req) {
-                        Ok(result) => result,
-                        Err(e) => (&mut req, e).into(),
-                    },
-                    Err(e) => e.into(),
-                };
+            if let Some(_) = requests.get(0) {
+                let arg = requests.swap_remove(0);
 
-                let invoke = format!(
-                    r#"window.ipc.responses[{}] = {}"#,
-                    response.id(),
-                    serde_json::to_string(&response).unwrap()
-                );
-                window_proxy.evaluate_script(invoke).unwrap();
+                if let Value::String(msg) = arg {
+                    let response = match Request::from_str(&msg) {
+                        Ok(mut req) => match Broker::handle(&services, &mut req) {
+                            Ok(result) => result,
+                            Err(e) => (&mut req, e).into(),
+                        },
+                        Err(e) => e.into(),
+                    };
+
+                    let invoke = format!(
+                        r#"window.ipc.responses[{}] = {}"#,
+                        response.id(),
+                        serde_json::to_string(&response).unwrap()
+                    );
+                    window_proxy.evaluate_script(invoke).unwrap();
+
+                }
             }
 
-            0
+            Ok(())
         }),
     };
 
@@ -72,7 +88,7 @@ pub fn window(url: String) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         ..Default::default()
     };
-    app.add_window(attrs, Some(vec![ipc /*, log_info, log_warn, log_error*/]))?;
+    app.add_window(attrs, Some(vec![ipc, log_error, log_info, log_warn]))?;
     app.run();
     Ok(())
 }
