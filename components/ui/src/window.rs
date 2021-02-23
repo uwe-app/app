@@ -47,7 +47,6 @@ pub fn window(url: String) -> crate::Result<()> {
         name: "external_handler".to_owned(),
         function: Box::new(move |proxy, _sequence, mut requests| {
             let window_proxy = Rc::new(proxy);
-
             let window_service: Box<dyn Service> = Box::new(WindowService {
                 proxy: Rc::clone(&window_proxy),
             });
@@ -74,7 +73,6 @@ pub fn window(url: String) -> crate::Result<()> {
                         serde_json::to_string(&response).unwrap()
                     );
                     window_proxy.evaluate_script(invoke).unwrap();
-
                 }
             }
 

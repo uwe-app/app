@@ -23,7 +23,7 @@ impl Service for DialogService {
     fn handle(&self, req: &mut Request) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("folder.open") {
-            let title: String = req.into_params()?;
+            let title: String = req.deserialize()?;
             let folder = tinyfiledialogs::select_folder_dialog(&title, "");
             response = if let Some(ref path) = folder {
                 Some((req, Value::String(path.to_string())).into())
@@ -43,7 +43,7 @@ impl Service for WindowService {
     fn handle(&self, req: &mut Request) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("window.set_fullscreen") {
-            let flag: bool = req.into_params()?;
+            let flag: bool = req.deserialize()?;
             self.proxy.set_fullscreen(flag).map_err(Error::boxed)?;
             response = Some(req.into());
         }
