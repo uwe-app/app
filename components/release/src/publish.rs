@@ -26,6 +26,7 @@ const UPM_BINARY: &str = "target/release/upm";
 
 /// Publish a new release.
 ///
+/// - Compile embedded editor resources.
 /// - Compile the release artifacts.
 /// - Upload all the release executables.
 /// - Update the `latest` redirects to point to the new version.
@@ -70,6 +71,7 @@ pub async fn publish(
     }
 
     if !skip_build {
+        build_editor(&manifest)?;
         build(&manifest)?;
     } else {
         warn!("Skipping build step!");
@@ -227,6 +229,17 @@ fn update_documentation(
 
     // TODO: launch a server with the documentation for verification?
 
+    Ok(())
+}
+
+/// Compile the editor resources.
+fn build_editor(cwd: &PathBuf) -> Result<()> {
+    Command::new("cargo")
+        .current_dir(cwd)
+        .args(vec!["run", "--", "build", "./editor"])
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
     Ok(())
 }
 
