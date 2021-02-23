@@ -320,8 +320,6 @@ async fn start(
             };
 
             if let Some(ref embedded) = host.embedded() {
-                println!("Configure embedded web server...");
-
                 app = app.service(
                     web::resource("/{tail:.*}")
                         .data(embedded.clone())

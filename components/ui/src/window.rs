@@ -61,7 +61,7 @@ pub fn window(url: String) -> crate::Result<()> {
 
                 if let Value::String(msg) = arg {
                     let response = match from_str(&msg) {
-                        Ok(mut req) => match Broker::handle(&services, &mut req) {
+                        Ok(mut req) => match handle(&services, &mut req) {
                             Ok(result) => result,
                             Err(e) => (&mut req, e).into(),
                         },

@@ -2503,9 +2503,9 @@ dependencies = [
 
 [[package]]
 name = "json-rpc2"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9702bc44e1259eb1056205089546d0fcaf2f05c9bc681dddb7485632b4cc7252"
+checksum = "5c4bf463be58a9980896a65799fa28147a61ed6721575bd0d16b1167f97b9d17"
 dependencies = [
  "rand 0.8.2",
  "serde",
