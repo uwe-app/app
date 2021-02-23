@@ -2503,9 +2503,9 @@ dependencies = [
 
 [[package]]
 name = "json-rpc2"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f26616a3c09a0966d6dce14a06229585de56cbff166b6893a49eb682a3ddbd7"
+checksum = "9702bc44e1259eb1056205089546d0fcaf2f05c9bc681dddb7485632b4cc7252"
 dependencies = [
  "rand 0.8.2",
  "serde",
@@ -6010,6 +6010,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "winrt"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf62b1e56a9efd6caec59a053450dd9fe5bc3d0dc28a27d3054b85b68db95a4"
+dependencies = [
+ "sha1",
+ "winrt_macros",
+]
+
+[[package]]
+name = "winrt_gen"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f497492d5f30d47cb397c3d5bee37700996822311062a3a609493523ad3bb9ae"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_json",
+ "sha1",
+ "syn",
+ "winrt_gen_macros",
+]
+
+[[package]]
+name = "winrt_gen_macros"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85cd78ebb3f0f35f3d9b7f3272b7afac1904cc3e3f636a0a6e5877d72c78b7d8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "winrt_macros"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d88594f878eee84909a5d20cad8bfef8587f9e1473ce81b74fbbd4b12748d662"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "winrt_gen",
+]
+
+[[package]]
 name = "workspace"
 version = "0.1.0"
 dependencies = [
@@ -6055,6 +6102,7 @@ dependencies = [
  "gtk",
  "image",
  "libc",
+ "mime_guess",
  "objc",
  "once_cell",
  "serde",
@@ -6065,6 +6113,7 @@ dependencies = [
  "webview2",
  "winapi 0.3.9",
  "winit",
+ "winrt",
 ]
 
 [[package]]

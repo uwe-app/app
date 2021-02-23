@@ -60,7 +60,7 @@ pub fn window(url: String) -> crate::Result<()> {
                 let arg = requests.swap_remove(0);
 
                 if let Value::String(msg) = arg {
-                    let response = match Request::from_str(&msg) {
+                    let response = match from_str(&msg) {
                         Ok(mut req) => match Broker::handle(&services, &mut req) {
                             Ok(result) => result,
                             Err(e) => (&mut req, e).into(),
@@ -88,7 +88,7 @@ pub fn window(url: String) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         ..Default::default()
     };
-    app.add_window(attrs, Some(vec![ipc, log_error, log_info, log_warn]))?;
+    app.add_window(attrs, Some(vec![ipc, log_error, log_info, log_warn]), None)?;
     app.run();
     Ok(())
 }
