@@ -6,8 +6,8 @@ use json_rpc2::*;
 
 pub struct ProjectService;
 
-impl Service for ProjectService {
-    fn handle(&self, req: &mut Request) -> Result<Option<Response>> {
+impl<T> Service<T> for ProjectService {
+    fn handle(&self, req: &mut Request, _ctx: &Context<T>) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("project.open") {
             //println!("Got project open!");
@@ -19,8 +19,8 @@ impl Service for ProjectService {
 
 pub struct DialogService;
 
-impl Service for DialogService {
-    fn handle(&self, req: &mut Request) -> Result<Option<Response>> {
+impl<T> Service<T> for DialogService {
+    fn handle(&self, req: &mut Request, _ctx: &Context<T>) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("folder.open") {
             let title: String = req.deserialize()?;
@@ -39,8 +39,8 @@ pub struct WindowService {
     pub(crate) proxy: Rc<WindowProxy>,
 }
 
-impl Service for WindowService {
-    fn handle(&self, req: &mut Request) -> Result<Option<Response>> {
+impl<T> Service<T> for WindowService {
+    fn handle(&self, req: &mut Request, _ctx: &Context<T>) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("window.set_fullscreen") {
             let flag: bool = req.deserialize()?;
