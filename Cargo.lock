@@ -2503,9 +2503,9 @@ dependencies = [
 
 [[package]]
 name = "json-rpc2"
-version = "0.7.3"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39c40ee9a086356ebf74a437bd579a62c09f9e5e35084113ea4690db0f3fc2b9"
+checksum = "ad9173e40d9e260ff072241865ede87ba1b9c9d3b0c09bbe953505de731abbd2"
 dependencies = [
  "async-trait",
  "rand 0.8.2",

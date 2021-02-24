@@ -61,7 +61,7 @@ pub fn window(url: String) -> crate::Result<()> {
 
                 if let Value::String(msg) = arg {
                     let response = match from_str(&msg) {
-                        Ok(mut req) => server.serve(&mut req, &Context::new(data)),
+                        Ok(mut req) => server.serve(&mut req, &data),
                         Err(e) => e.into(),
                     };
 
