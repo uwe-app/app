@@ -47,20 +47,19 @@ pub fn window(url: String) -> crate::Result<()> {
         name: "external_handler".to_owned(),
         function: Box::new(move |proxy, _sequence, mut requests| {
             let window_proxy = Rc::new(proxy);
-            let window_service: Box<dyn Service<()>> = Box::new(WindowService {
-                proxy: Rc::clone(&window_proxy),
-            });
-            let dialog_service: Box<dyn Service<()>> = Box::new(DialogService {});
-            let project_service: Box<dyn Service<()>> = Box::new(ProjectService {});
+            let window_service: Box<dyn Service<Data = ServiceData>> = Box::new(WindowService {});
+            let dialog_service: Box<dyn Service<Data = ServiceData>> = Box::new(DialogService {});
+            let project_service: Box<dyn Service<Data = ServiceData>> = Box::new(ProjectService {});
             let server =
                 Server::new(vec![&window_service, &dialog_service, &project_service]);
+            let data = ServiceData {window: Rc::clone(&window_proxy)};
 
             if let Some(_) = requests.get(0) {
                 let arg = requests.swap_remove(0);
 
                 if let Value::String(msg) = arg {
                     let response = match from_str(&msg) {
-                        Ok(mut req) => server.serve(&mut req, &Context::new(())),
+                        Ok(mut req) => server.serve(&mut req, &Context::new(data)),
                         Err(e) => e.into(),
                     };
 

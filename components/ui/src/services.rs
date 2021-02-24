@@ -1,13 +1,18 @@
-use serde_json::Value;
 use std::rc::Rc;
+use serde_json::Value;
 use wry::WindowProxy;
 
 use json_rpc2::*;
 
+pub struct ServiceData {
+    pub window: Rc<WindowProxy>,
+}
+
 pub struct ProjectService;
 
-impl<T> Service<T> for ProjectService {
-    fn handle(&self, req: &mut Request, _ctx: &Context<T>) -> Result<Option<Response>> {
+impl Service for ProjectService {
+    type Data = ServiceData;
+    fn handle(&self, req: &mut Request, _ctx: &Context<Self::Data>) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("project.open") {
             //println!("Got project open!");
@@ -19,8 +24,9 @@ impl<T> Service<T> for ProjectService {
 
 pub struct DialogService;
 
-impl<T> Service<T> for DialogService {
-    fn handle(&self, req: &mut Request, _ctx: &Context<T>) -> Result<Option<Response>> {
+impl Service for DialogService {
+    type Data = ServiceData;
+    fn handle(&self, req: &mut Request, _ctx: &Context<Self::Data>) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("folder.open") {
             let title: String = req.deserialize()?;
@@ -35,16 +41,15 @@ impl<T> Service<T> for DialogService {
     }
 }
 
-pub struct WindowService {
-    pub(crate) proxy: Rc<WindowProxy>,
-}
+pub struct WindowService;
 
-impl<T> Service<T> for WindowService {
-    fn handle(&self, req: &mut Request, _ctx: &Context<T>) -> Result<Option<Response>> {
+impl Service for WindowService {
+    type Data = ServiceData;
+    fn handle(&self, req: &mut Request, ctx: &Context<Self::Data>) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("window.set_fullscreen") {
             let flag: bool = req.deserialize()?;
-            self.proxy.set_fullscreen(flag).map_err(Error::boxed)?;
+            ctx.data().window.set_fullscreen(flag).map_err(Error::boxed)?;
             response = Some(req.into());
         }
         Ok(response)
