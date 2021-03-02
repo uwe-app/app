@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use crate::{opts::Editor, Error, Result};
 use config::server::{ConnectionInfo, HostConfig, ServerConfig};
 
-pub async fn run(args: Editor) -> Result<()> {
+// NOTE: Must **not** execute on the tokio runtime as the event loop
+// NOTE: used for webview rendering must execute on the main thread (macOS)
+pub fn run(args: &Editor) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
 
     let is_project_editor = args.project.is_some();
@@ -50,7 +52,7 @@ pub async fn run(args: Editor) -> Result<()> {
         )));
         */
 
-        println!("3) Spawn servers for each active project");
+        //println!("3) Spawn servers for each active project");
 
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
@@ -64,25 +66,21 @@ pub async fn run(args: Editor) -> Result<()> {
         Ok::<(), Error>(())
     });
 
-    // Spawn a thread for the UI window event loop.
-    let handle = std::thread::spawn(move || {
-        match rx.recv() {
-            Ok(info) => {
-                let url = if is_project_editor {
-                    format!("{}/project.html", info.to_url())
-                } else {
-                    info.to_url()
-                };
-                info!("Editor {:#?}", url);
-                ui::window(url)?;
-            }
-            Err(_e) => {
-                warn!("Failed to receive connection info from the web server");
-            }
+    // Wait for the web server to start before opening the UI window
+    match rx.recv() {
+        Ok(info) => {
+            let url = if is_project_editor {
+                format!("{}/project.html", info.to_url())
+            } else {
+                info.to_url()
+            };
+            info!("Editor {:#?}", url);
+            ui::window(url)?;
         }
-        Ok::<(), Error>(())
-    });
-    let _ = handle.join();
+        Err(_e) => {
+            warn!("Failed to receive connection info from the web server");
+        }
+    }
 
     Ok(())
 }

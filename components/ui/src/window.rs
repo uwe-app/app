@@ -1,6 +1,6 @@
+use serde_json::Value;
 use std::rc::Rc;
 use wry::{Application, Attributes, Callback};
-use serde_json::Value;
 
 use json_rpc2::*;
 use log::{error, info, warn};
@@ -43,17 +43,25 @@ pub fn window(url: String) -> crate::Result<()> {
         }),
     };
 
-    let window_service: Box<dyn Service<Data = ServiceData>> = Box::new(WindowService {});
-    let dialog_service: Box<dyn Service<Data = ServiceData>> = Box::new(DialogService {});
-    let project_service: Box<dyn Service<Data = ServiceData>> = Box::new(ProjectService {});
+    let window_service: Box<dyn Service<Data = ServiceData>> =
+        Box::new(WindowService {});
+    let dialog_service: Box<dyn Service<Data = ServiceData>> =
+        Box::new(DialogService {});
+    let project_service: Box<dyn Service<Data = ServiceData>> =
+        Box::new(ProjectService {});
 
     let ipc = Callback {
         name: "external_handler".to_owned(),
         function: Box::new(move |proxy, _sequence, mut requests| {
             let window_proxy = Rc::new(proxy);
-            let server =
-                Server::new(vec![&window_service, &dialog_service, &project_service]);
-            let data = ServiceData {window: Rc::clone(&window_proxy)};
+            let server = Server::new(vec![
+                &window_service,
+                &dialog_service,
+                &project_service,
+            ]);
+            let data = ServiceData {
+                window: Rc::clone(&window_proxy),
+            };
             if let Some(_) = requests.get(0) {
                 let arg = requests.swap_remove(0);
 
@@ -82,7 +90,11 @@ pub fn window(url: String) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         ..Default::default()
     };
-    app.add_window(attrs, Some(vec![ipc, log_error, log_info, log_warn]), None)?;
+    app.add_window_with_configs(
+        attrs,
+        Some(vec![ipc, log_error, log_info, log_warn]),
+        None,
+    )?;
     app.run();
     Ok(())
 }

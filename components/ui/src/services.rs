@@ -1,5 +1,5 @@
-use std::rc::Rc;
 use serde_json::Value;
+use std::rc::Rc;
 use wry::WindowProxy;
 
 use json_rpc2::*;
@@ -12,7 +12,11 @@ pub struct ProjectService;
 
 impl Service for ProjectService {
     type Data = ServiceData;
-    fn handle(&self, req: &mut Request, _ctx: &Self::Data) -> Result<Option<Response>> {
+    fn handle(
+        &self,
+        req: &mut Request,
+        _ctx: &Self::Data,
+    ) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("project.open") {
             //println!("Got project open!");
@@ -26,7 +30,11 @@ pub struct DialogService;
 
 impl Service for DialogService {
     type Data = ServiceData;
-    fn handle(&self, req: &mut Request, _ctx: &Self::Data) -> Result<Option<Response>> {
+    fn handle(
+        &self,
+        req: &mut Request,
+        _ctx: &Self::Data,
+    ) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("folder.open") {
             let title: String = req.deserialize()?;
@@ -45,7 +53,11 @@ pub struct WindowService;
 
 impl Service for WindowService {
     type Data = ServiceData;
-    fn handle(&self, req: &mut Request, ctx: &Self::Data) -> Result<Option<Response>> {
+    fn handle(
+        &self,
+        req: &mut Request,
+        ctx: &Self::Data,
+    ) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("window.set_fullscreen") {
             let flag: bool = req.deserialize()?;

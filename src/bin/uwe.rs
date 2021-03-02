@@ -169,18 +169,15 @@ async fn run(cmd: Command) -> Result<()> {
             }
         }
 
-        Command::Editor { args } => {
-            if let Err(e) = uwe::editor::run(args).await {
-                uwe::print_error(e);
-            }
+        Command::Editor { .. } => {
+            unreachable!()
         }
     }
 
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let args = Uwe::from_args();
 
     uwe::panic_hook();
@@ -208,5 +205,18 @@ async fn main() -> Result<()> {
     };
     config::generator::get(Some(app_data));
 
-    Ok(run(args.cmd).await.or_else(fatal)?)
+    match &args.cmd {
+        Command::Editor { args } => {
+            if let Err(e) = uwe::editor::run(args) {
+                uwe::print_error(e);
+            }
+        }
+        _ => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            let res = rt.block_on(run(args.cmd));
+            res.or_else(fatal)?;
+        }
+    }
+
+    Ok(())
 }
