@@ -253,7 +253,7 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
     if let Some(current) = current.take() {
         if current == version {
-            info!("Version uwe@{} is up to date ✓", version);
+            info!("uwe@{} is up to date ✓", version);
         } else {
             show_message(first_run, name, version);
         }
@@ -269,7 +269,7 @@ fn show_message(first_run: bool, name: &str, version: Version) {
     info!("{} {}@{} ✓", message_kind, name, version);
 }
 
-pub async fn update_self(_current: &str) -> Result<()> {
+pub async fn update_self(current: &str) -> Result<()> {
     scm::system_repo::fetch_releases().await?;
 
     let exe = std::env::current_exe()?;
@@ -281,14 +281,13 @@ pub async fn update_self(_current: &str) -> Result<()> {
     // Get the latest available version.
     let (version, info) = releases.latest();
 
-    /*
     // This is the version of the current executing program
     let current: Version = current.parse()?;
 
     if &current == version {
-        return info::upto_date(&current);
+        info!("uvm@{} is up to date ✓", version);
+        return Ok(())
     }
-    */
 
     // Download the uvm artifact for the version.
     let binaries =
