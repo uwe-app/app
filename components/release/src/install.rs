@@ -253,7 +253,7 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
     if let Some(current) = current.take() {
         if current == version {
-            info!("uwe@{} is up to date ✓", version);
+            info!("Version uwe@{} is up to date ✓", version);
         } else {
             show_message(first_run, name, version);
         }
@@ -285,7 +285,7 @@ pub async fn update_self(current: &str) -> Result<()> {
     let current: Version = current.parse()?;
 
     if &current == version {
-        info!("uvm@{} is up to date ✓", version);
+        info!("Version uvm@{} is up to date ✓", version);
         return Ok(())
     }
 
