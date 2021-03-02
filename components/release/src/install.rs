@@ -224,10 +224,11 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
         // Include shims on first run
         names.extend_from_slice(&releases::INSTALL_SHIM_NAMES);
 
-        // Fetch plugin registry meta data
-        scm::system_repo::fetch_registry().await?;
-        info!("Downloaded plugin registry ✓");
     }
+
+    // Fetch plugin registry meta data
+    scm::system_repo::fetch_registry().await?;
+    info!("Downloaded plugin registry ✓");
 
     let mut current = version::default_version().ok();
 
