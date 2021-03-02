@@ -253,7 +253,7 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
     if let Some(current) = current.take() {
         if current == version {
-            info!("Version {} is up to date ✓", version);
+            info!("Version uwe@{} is up to date ✓", version);
         } else {
             show_message(first_run, name, version);
         }
