@@ -1,5 +1,4 @@
 use serde_json::Value;
-use std::rc::Rc;
 use wry::{Application, Attributes, RpcRequest, RpcResponse, WindowProxy};
 
 use json_rpc2::*;
@@ -36,7 +35,7 @@ pub fn window(url: String) -> crate::Result<()> {
     let project_service: Box<dyn Service<Data = ServiceData>> =
         Box::new(ProjectService {});
 
-    let handler = Box::new(move |proxy: Rc<WindowProxy>, req: RpcRequest| {
+    let handler = Box::new(move |proxy: WindowProxy, req: RpcRequest| {
         let server = Server::new(vec![
             &window_service,
             &dialog_service,
@@ -45,7 +44,7 @@ pub fn window(url: String) -> crate::Result<()> {
 
         let mut req = into_request(req);
         let data = ServiceData {
-            window: Rc::clone(&proxy),
+            window: proxy,
         };
 
         if let Some(response) = server.serve(&mut req, &data) {

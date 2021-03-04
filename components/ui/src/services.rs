@@ -1,11 +1,10 @@
 use serde_json::Value;
-use std::rc::Rc;
 use wry::WindowProxy;
 
 use json_rpc2::*;
 
 pub struct ServiceData {
-    pub window: Rc<WindowProxy>,
+    pub window: WindowProxy,
 }
 
 pub struct ProjectService;
