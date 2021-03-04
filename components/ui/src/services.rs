@@ -37,13 +37,17 @@ impl Service for DialogService {
     ) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("folder.open") {
-            let title: String = req.deserialize()?;
-            let folder = tinyfiledialogs::select_folder_dialog(&title, "");
-            response = if let Some(ref path) = folder {
-                Some((req, Value::String(path.to_string())).into())
+            let params: Vec<String> = req.deserialize()?;
+            if let Some(title) = params.get(0) {
+                let folder = tinyfiledialogs::select_folder_dialog(title, "");
+                response = if let Some(ref path) = folder {
+                    Some((req, Value::String(path.to_string())).into())
+                } else {
+                    Some(req.into())
+                }
             } else {
-                Some(req.into())
-            };
+                response = Some(req.into());
+            }
         }
         Ok(response)
     }
@@ -60,8 +64,13 @@ impl Service for WindowService {
     ) -> Result<Option<Response>> {
         let mut response = None;
         if req.matches("window.set_fullscreen") {
-            let flag: bool = req.deserialize()?;
-            ctx.window.set_fullscreen(flag).map_err(Error::boxed)?;
+            let mut params: Vec<bool> = req.deserialize()?;
+            let flag = if params.get(0).is_none() {
+                None
+            } else { Some(params.swap_remove(0)) };
+            if let Some(flag) = flag {
+                ctx.window.set_fullscreen(flag).map_err(Box::from)?;
+            }
             response = Some(req.into());
         }
         Ok(response)
