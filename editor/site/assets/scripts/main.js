@@ -1,12 +1,31 @@
-const isEmbedded = typeof rpc !== 'undefined';
-
 window.onerror = function(message, filename, lineno, colno, error) {
     if (error != null) {
-      alert(error.stack);
+      console.error(error.stack);
     } else {
-      alert(`${message} ${filename} ${lineno}`);
+      console.error(`${message} ${filename} ${lineno}`);
     }
 };
+
+function RpcProxy() {
+
+  this._result = function(id, result) {
+    console.log("RpcProxy got result to resolve promise", id, result);
+    window.external.rpc._result(id, result);
+  }
+
+  this._error = function(id, error) {
+    console.log("RpcProxy got error to reject promise", id, error);
+    window.external.rpc._error(id, error);
+  }
+
+  this.call = function() {
+    let args = Array.prototype.slice.call(arguments)
+    console.log("RpcProxy call: ", args);
+    window.external.rpc.call.apply(window.external, args)
+  }
+}
+
+window.rpc = new RpcProxy();
 
 function toggleFullScreen() {
   const res = window.rpc.call('window.set_fullscreen', !this.fullscreen);
@@ -25,8 +44,17 @@ function openProject(path) {
 */
 
 async function chooseProject() {
-  const path = await openFolder('Choose a project');
-  alert('Folder path ' + path);
+  console.log("Choosing project folder...");
+  try {
+    const path = await openFolder('Choose a project');
+    if (path == undefined) {
+      console.log("User did not choose a folder (cancelled)") ;
+    } else {
+      console.log("User picked a folder", path);
+    }
+  } catch(e) {
+    console.error("Got error choosing folder", e);
+  }
 }
 
 //console.info('App started...');

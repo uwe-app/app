@@ -36,6 +36,9 @@ pub fn window(url: String) -> crate::Result<()> {
         Box::new(ProjectService {});
 
     let handler = Box::new(move |proxy: WindowProxy, req: RpcRequest| {
+
+        println!("Rpc handler got raw request: {:?}", req);
+
         let server = Server::new(vec![
             &window_service,
             &dialog_service,
@@ -43,13 +46,19 @@ pub fn window(url: String) -> crate::Result<()> {
         ]);
 
         let mut req = into_request(req);
+
+        println!("Rpc handler got transformed request: {:?}", req);
+
         let data = ServiceData {
             window: proxy,
         };
 
         if let Some(response) = server.serve(&mut req, &data) {
+            println!("Rpc handler got service response: {:?}", response);
+            let response = into_response(response);
+            println!("Rpc handler got transformed response: {:?}", response);
             //println!("Got rpc response to send {:?}", response);
-            Some(into_response(response))
+            Some(response)
         } else { None }
     });
 
