@@ -1,3 +1,45 @@
+const embedded = typeof rpc !== undefined;
+
+if (embedded) {
+  const tee = false;
+
+  const console_methods = {
+    log: console.log,
+    info: console.info,
+    warn: console.warn,
+    error: console.error,
+  }
+
+  console.log = function() {
+    const args = Array.prototype.slice.call(arguments, 0);
+    if (tee && typeof console_methods.log === 'function') {
+      console_methods.log.apply(null, args);
+    }
+    return window.rpc.notify('console.log', ...args)
+  }
+  console.info = function() {
+    const args = Array.prototype.slice.call(arguments, 0);
+    if (tee && typeof console_methods.info === 'function') {
+      console_methods.info.apply(null, args);
+    }
+    return window.rpc.notify('console.info', ...args);
+  }
+  console.warn = function() {
+    const args = Array.prototype.slice.call(arguments, 0);
+    if (tee && typeof console_methods.warn === 'function') {
+      console_methods.warn.apply(null, args);
+    }
+    return window.rpc.notify('console.warn', ...args);
+  }
+  console.error = function() {
+    const args = Array.prototype.slice.call(arguments, 0);
+    if (tee && typeof console_methods.error === 'function') {
+      console_methods.error.apply(null, args);
+    }
+    return window.rpc.notify('console.error', ...args);
+  }
+}
+
 window.onerror = function(message, filename, lineno, colno, error) {
     if (error != null) {
       console.error(error.stack);
@@ -5,27 +47,6 @@ window.onerror = function(message, filename, lineno, colno, error) {
       console.error(`${message} ${filename} ${lineno}`);
     }
 };
-
-function RpcProxy() {
-
-  this._result = function(id, result) {
-    console.log("RpcProxy got result to resolve promise", id, result);
-    window.external.rpc._result(id, result);
-  }
-
-  this._error = function(id, error) {
-    console.log("RpcProxy got error to reject promise", id, error);
-    window.external.rpc._error(id, error);
-  }
-
-  this.call = function() {
-    let args = Array.prototype.slice.call(arguments)
-    console.log("RpcProxy call: ", args);
-    window.external.rpc.call.apply(window.external, args)
-  }
-}
-
-window.rpc = new RpcProxy();
 
 function toggleFullScreen() {
   const res = window.rpc.call('window.set_fullscreen', !this.fullscreen);
@@ -52,12 +73,15 @@ async function chooseProject() {
     } else {
       console.log("User picked a folder", path);
     }
+    document.getElementById('folder-result').innerText = path;
   } catch(e) {
     console.error("Got error choosing folder", e);
   }
 }
 
-//console.info('App started...');
-//console.log('App started...');
-//console.warn('App started...');
-//console.error('App started...');
+/*
+console.info('App started (info)');
+console.log('App started (log)');
+console.warn('App started (warn)');
+console.error('App started (error)');
+*/

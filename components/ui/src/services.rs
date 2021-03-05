@@ -3,8 +3,50 @@ use wry::WindowProxy;
 
 use json_rpc2::*;
 
+use log::{info, warn, error};
+
 pub struct ServiceData {
     pub window: WindowProxy,
+}
+
+pub struct ConsoleService;
+
+impl Service for ConsoleService {
+    type Data = ServiceData;
+    fn handle(
+        &self,
+        req: &mut Request,
+        _ctx: &Self::Data,
+    ) -> Result<Option<Response>> {
+        let mut response = None;
+        if req.method().starts_with("console.") {
+            let params: Vec<Value> = req.deserialize()?;
+            let log_value = params
+                .into_iter()
+                .map(|v| {
+                    if let Value::String(s) = v {
+                        s
+                    } else {
+                        serde_json::to_string(&v).unwrap()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join(" ");
+
+            if req.method().ends_with("log") {
+                info!("CONSOLE {}", log_value);
+            } else if req.method().ends_with("info") {
+                info!("CONSOLE {}", log_value);
+            } else if req.method().ends_with("warn") {
+                warn!("CONSOLE {}", log_value);
+            } else if req.method().ends_with("error") {
+                error!("CONSOLE {}", log_value);
+            }
+
+            response = Some(req.into());
+        }
+        Ok(response)
+    }
 }
 
 pub struct ProjectService;
