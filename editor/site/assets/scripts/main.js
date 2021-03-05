@@ -1,4 +1,4 @@
-const embedded = typeof rpc !== undefined;
+const embedded = typeof rpc !== 'undefined';
 
 if (embedded) {
   const tee = false;

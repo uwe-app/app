@@ -241,6 +241,23 @@ async fn start(
                 host.redirects().clone().unwrap_or(Default::default());
             let error_page = host.directory().join(config::ERROR_HTML);
 
+            /*
+            let address = opts.get_sock_addr(PortType::Infer)?;
+            let port = address.port();
+            let mut cors = warp::cors().allow_any_origin();
+            if port > 0 {
+                let scheme = if use_tls {
+                    config::SCHEME_HTTPS
+                } else {
+                    config::SCHEME_HTTP
+                };
+                let origin = format!("{}//{}:{}", scheme, &host.name, port);
+                cors = warp::cors()
+                    .allow_origin(origin.as_str())
+                    .allow_methods(vec!["GET"]);
+            }
+            */
+
             let watch = host.watch();
             let endpoint = if let Some(ref endpoint) = host.endpoint() {
                 endpoint.clone()
