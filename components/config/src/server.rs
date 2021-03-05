@@ -238,6 +238,10 @@ impl ServerConfig {
         self.workers
     }
 
+    pub fn set_workers(&mut self, workers: usize) {
+        self.workers = workers;
+    }
+
     pub fn add_host(&mut self, host: HostConfig) {
         self.hosts.push(host);
     }

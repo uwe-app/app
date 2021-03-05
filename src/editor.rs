@@ -22,6 +22,7 @@ pub fn run(args: &Editor) -> Result<()> {
         server.set_allow_ssl_from_env(false);
         server.set_port(0);
         server.set_disable_signals(true);
+        server.set_workers(2);
 
         // Run the editor UI on localhost
         let mut editor_host: HostConfig = Default::default();
