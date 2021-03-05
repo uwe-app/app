@@ -354,6 +354,13 @@ Use `otool` to show dynamically linked libraries for MacOs, eg:
 x86_64-apple-darwin20.2-otool -L target/x86_64-apple-darwin/release/uwe
 ```
 
+### Install on Debian/Ubuntu from .deb file
+
+```
+sudo apt install libwebkit2gtk-4.0
+sudo dpkg -i uwe_0.48.8_amd64.deb
+```
+
 ## Preferences
 
 This component is currently in limbo but may be restored in the future.
