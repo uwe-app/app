@@ -5,31 +5,53 @@
 
 {{#match "/"}}
 <script>
-  if (typeof Reveal !== "undefined") {
-    const deck = new Reveal(document.querySelector('article'), {
-      embedded: true,
-      hash: true,
-      history: true,
-      controls: false,
-      controlsTutorial: false,
-      progress: false,
-      disableLayout: true,
-    });
+  (function() {
+    if (typeof Reveal !== "undefined") {
+      const deck = new Reveal(document.querySelector('article'), {
+        embedded: true,
+        hash: true,
+        history: true,
+        controls: false,
+        controlsTutorial: false,
+        progress: false,
+        disableLayout: true,
+      });
 
-    function slideProgress(current, total) {
-      let el = document.querySelector('footer .slide-progress');
-      if (el) {
-        el.innerText = `${current} / ${total}`;
+      function slideProgress(current, total) {
+        let el = document.querySelector('footer .slide-progress');
+        if (el) {
+          el.innerText = `${current} / ${total}`;
+        }
       }
+
+      function showSlideTitle(currentSlide) {
+        if (currentSlide) {
+          const title = currentSlide.querySelector('.slide-title');
+          if (title) {
+            const headerTitle = 
+              document.querySelector('main > header > .title');
+            if (headerTitle) {
+              const titleCopy = title.cloneNode(true);    
+              titleCopy.classList.remove('slide-title');
+              headerTitle.innerHTML = "";
+              headerTitle.appendChild(titleCopy);
+            }
+          }
+        }
+      }
+
+      deck.on('slidechanged', event => {
+        showSlideTitle(event.currentSlide);
+        slideProgress(event.indexh + 1, deck.getSlides().length)
+      });
+
+      deck.initialize()
+        .then(() => {
+          showSlideTitle(deck.getCurrentSlide());
+        });
+      slideProgress(1, deck.getSlides().length);
     }
-
-    deck.on('slidechanged', event => {
-      slideProgress(event.indexh + 1, deck.getSlides().length)
-    });
-
-    deck.initialize();
-    slideProgress(1, deck.getSlides().length);
-  }
+  })();
 </script>
 {{/match}}
 <noscript>

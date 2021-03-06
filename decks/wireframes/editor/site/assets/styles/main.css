@@ -38,8 +38,10 @@ aside ul {
 }
 
 main > header {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
   padding: 1em 0;
-  align-self: flex-start;
 }
 
 section p, pre {
@@ -67,6 +69,10 @@ footer > div:last-child > p:last-child > a:last-child {
   text-transform: uppercase;
   text-decoration: none !important;
   font-size: 12px;
+}
+
+.slide-title {
+  display: none;
 }
 
 .next-prev {

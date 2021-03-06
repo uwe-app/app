@@ -8,7 +8,12 @@ href = "/assets/styles/deck.css"
 
 <div class="reveal">
   <div class="slides">
-    {{#menu "slides"}}<section>{{render this.href}}</section>{{/menu}}
+    {{#menu "slides"~}}
+<section>
+<span class="slide-title">{{this.title}}</span>
+{{render this.href}}
+</section>
+    {{~/menu}}
   </div>
 </div>
 
