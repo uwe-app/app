@@ -1,6 +1,6 @@
-<div>
-  <strong>04. New project</strong>
-</div>
++++
+title = "04. New project"
++++
 
 In the *launch view* if a user selects the *New Project* option they are presented with a view allowing blueprint selection and controls for project fields.
 

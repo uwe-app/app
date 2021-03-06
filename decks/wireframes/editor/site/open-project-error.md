@@ -1,6 +1,6 @@
-<div>
-  <strong>03. Open project (folder select error)</strong>
-</div>
++++
+title = "03. Open project (folder select error)"
++++
 
 When the *Open Project* option is selected a native dialog asks the user to choose a folder. If a folder is selected and no error occurs then the interface proceeds to the *Project Editor* view.
 

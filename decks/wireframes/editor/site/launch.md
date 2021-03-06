@@ -1,6 +1,6 @@
-<div>
-  <strong>01. Launch view (first run)</strong>
-</div>
++++
+title = "01. Launch view (first run)"
++++
 
 When the UI is opened a *launch view* is displayed.
 

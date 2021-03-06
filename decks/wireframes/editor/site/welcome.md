@@ -1,4 +1,4 @@
-This deck displays wireframes for the [UWE][] editor UI.
+This deck shows wireframes for the [UWE][] editor UI.
 
 Use the arrow keys to view the presentation.
 

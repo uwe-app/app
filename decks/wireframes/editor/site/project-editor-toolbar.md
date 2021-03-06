@@ -1,6 +1,6 @@
-<div>
-  <strong>05. Project editor (toolbar)</strong>
-</div>
++++
+title = "05. Project editor (toolbar)"
++++
 
 The *Project Editor* view shows a single project and controls to manage and edit files and preview the compiled website.
 

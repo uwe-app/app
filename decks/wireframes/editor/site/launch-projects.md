@@ -1,6 +1,6 @@
-<div>
-  <strong>02. Launch view (project list)</strong>
-</div>
++++
+title = "02. Launch view (project list)"
++++
 
 In the *launch view* if projects have already been created or opened a list of links to each project is displayed; clicking a link proceeds to the *Project Editor* view.
 
