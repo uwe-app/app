@@ -55,6 +55,17 @@ compile-linux-macos-cross:
 
 build-linux-macos-cross: compile-linux-macos-cross strip-linux-macos-cross
 
+bundle-macos: build-linux-macos-cross
+	@PKG_CONFIG_ALLOW_CROSS=1 \
+		LZMA_API_STATIC=1 \
+		RUSTFLAGS="-l framework=WebKit" \
+		CC=o64-clang \
+		CXX=o64-clang++ \
+	cargo bundle --target=x86_64-apple-darwin --release
+
+bundle-linux: build-release
+	cargo bundle --release
+
 release: build-release build-linux-macos-cross
 
 strip-private:

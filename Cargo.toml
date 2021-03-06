@@ -101,3 +101,4 @@ deb_depends = [
   #"libm",
   #"libdl",
 ]
+osx_minimum_system_version = "10.13"
