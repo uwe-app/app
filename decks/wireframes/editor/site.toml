@@ -1,0 +1,48 @@
+lang = "en"
+host = "localhost"
+
+[dependencies."std::core"]
+version = "^5"
+
+[dependencies."std::core".apply]
+styles = ["**"]
+
+[dependencies."std::menu"]
+version = "^1.0.2"
+
+[dependencies."lib::reveal"]
+version = "^1"
+
+[dependencies."lib::reveal".apply]
+styles = ["/"]
+scripts = ["/"]
+
+[dependencies."std::syntax"]
+version = "^1"
+
+[dependencies."std::sidebar"]
+version = "~1"
+
+[dependencies."std::sidebar".apply]
+scripts = ["**"]
+
+[dependencies."std::blueprint::deck"]
+version = "1.1.1"
+
+[page.meta]
+description = "Deck"
+keywords = "Presentation, Deck"
+
+[menu.slides]
+pages = [
+  "/welcome/",
+  "/launch/",
+  "/launch-projects/",
+  "/open-project-error/",
+  "/new-project/",
+  "/project-editor-toolbar/",
+  "/project-editor-elements/",
+]
+
+[syntax]
+theme = "Solarized (light)"

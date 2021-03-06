@@ -1,0 +1,14 @@
+/*
+main {
+  align-items: stretch !important;
+}
+*/
+
+article {
+  display: block !important;
+}
+
+section p, pre {
+  max-width: none !important;
+  margin: 0 auto 1em auto !important;
+}

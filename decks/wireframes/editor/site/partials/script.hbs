@@ -1,0 +1,40 @@
+{{!--
+  Note the match conditional so that the script is only initialized for the page
+  that embeds the presentation - not for other pages.
+--}}
+
+{{#match "/"}}
+<script>
+  if (typeof Reveal !== "undefined") {
+    const deck = new Reveal(document.querySelector('article'), {
+      embedded: true,
+      hash: true,
+      history: true,
+      controls: false,
+      controlsTutorial: false,
+      progress: false,
+      disableLayout: true,
+    });
+
+    function slideProgress(current, total) {
+      let el = document.querySelector('footer .slide-progress');
+      if (el) {
+        el.innerText = `${current} / ${total}`;
+      }
+    }
+
+    deck.on('slidechanged', event => {
+      slideProgress(event.indexh + 1, deck.getSlides().length)
+    });
+
+    deck.initialize();
+    slideProgress(1, deck.getSlides().length);
+  }
+</script>
+{{/match}}
+<noscript>
+  <style>
+    .reveal { display: none; }
+    #sidebar { min-width: var(--sidebar-width); }
+  </style>
+</noscript>

@@ -1,0 +1,57 @@
+body {
+  display: block !important;
+}
+
+main {
+  align-items: stretch !important;
+}
+
+article {
+  display: block !important;
+}
+
+noscript p {
+  text-align: center;
+}
+
+/* REVEAL */
+
+.reveal, .slides {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.reveal-viewport {
+  background-color: transparent;
+  color: inherit;
+  line-height: inherit;
+}
+
+/* SIDEBAR */
+
+#sidebar {
+  width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /*position: absolute;*/
+  top: 0;
+  bottom: 0;
+  display: none;
+  background: var(--std-background);
+}
+
+#sidebar.animate {
+  transition: margin-left 0.25s linear;
+}
+
+input#sidebar-toggle {
+  display: none;
+}
+
+input#sidebar-toggle:checked + aside {
+  display: block;
+  margin-left: 0;
+}
+
