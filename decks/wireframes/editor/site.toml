@@ -42,7 +42,16 @@ pages = [
   "/new-project/",
   "/project-editor-toolbar/",
   "/project-editor-elements/",
+  "/file-manager/",
+  "/file-editor/",
+  "/website-preview/",
 ]
 
-[syntax]
-theme = "Solarized (light)"
+[minify.html]
+profiles = false
+
+[sitemap]
+profiles = false
+
+[robots]
+profiles = false

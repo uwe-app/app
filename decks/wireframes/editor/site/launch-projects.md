@@ -1,8 +1,8 @@
 +++
-title = "02. Launch view (project list)"
+title = "03. Launch view (project list)"
 +++
 
-In the *launch view* if projects have already been created or opened a list of links to each project is displayed; clicking a link proceeds to the *Project Editor* view.
+In the *Launch View* if projects have already been created or opened a list of links to each project is displayed; clicking a link proceeds to the *Project Editor* view.
 
 <div class="wireframe flex padded sml rhythm">
   <span>Main tool bar w/ Logo</span>

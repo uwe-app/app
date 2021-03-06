@@ -1,8 +1,8 @@
 +++
-title = "01. Launch view (first run)"
+title = "02. Launch view (first run)"
 +++
 
-When the UI is opened a *launch view* is displayed.
+When the UI is opened a *Launch View* is displayed.
 
 The main toolbar runs across the top of the screen showing the branding with no further controls. An action area shows buttons to open an existing project or to create a new project.
 

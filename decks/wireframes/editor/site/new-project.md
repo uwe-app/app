@@ -1,10 +1,10 @@
 +++
-title = "04. New project"
+title = "05. New project"
 +++
 
-In the *launch view* if a user selects the *New Project* option they are presented with a view allowing blueprint selection and controls for project fields.
+If a user selects the *New Project* option they are presented with a view allowing blueprint selection and controls for project fields.
 
-When the user selects *Create Project* and it is successful they will move to the *Project editor* view. Form validation or project creation errors can be shown inline.
+When the user selects *Create Project* and it is successful they will move to the *Project Editor* view. Form validation or project creation errors can be shown inline.
 
 <div class="wireframe flex padded sml rhythm">
   <span>Main tool bar w/ Logo</span>
@@ -13,7 +13,7 @@ When the user selects *Create Project* and it is successful they will move to th
 <div class="wireframe flex column padded center">
 
   <div class="flex spacer-x center rhythm">
-    <a href="#">&lt; Back</a>
+    <a href="#">Close [X]</a>
   </div>
 
   <div class="flex column spacer-x rhythm">
