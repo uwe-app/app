@@ -27,10 +27,12 @@ pub fn html<S: AsRef<str>>(content: S) -> String {
             tmp = "".to_string();
             state = State::Inside;
         } else if c == '>' {
-            state = State::Between;
-            empty = true;
-            buf.push(c);
-            continue;
+            if let State::Inside = state {
+                state = State::Between;
+                empty = true;
+                buf.push(c);
+                continue;
+            }
         }
 
         match state {
@@ -90,5 +92,28 @@ mod tests {
         let expect = "<p><b>bold</b> with some inline text <i>italic</i></p>";
         let res = html(val);
         assert_eq!(res, expect.to_string());
+    }
+
+    #[test]
+    fn strip_ignore_script() {
+        let val = r#"<script>
+    const el = document.querySelector('main > header > .title');
+</script>"#;
+        let res = html(val);
+        assert_eq!(res, val.to_string());
+    }
+
+
+    #[test]
+    fn strip_script_comparison() {
+        let val = r#"<script>
+if (1 < 10 && 12 > 1) {
+    if (foo < bar && bar > baz) {
+
+    }
+}
+</script>"#;
+        let res = html(val);
+        assert_eq!(res, val.to_string());
     }
 }

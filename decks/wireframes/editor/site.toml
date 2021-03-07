@@ -47,8 +47,8 @@ pages = [
   "/website-preview/",
 ]
 
-[minify.html]
-profiles = false
+#[minify.html]
+#profiles = false
 
 [sitemap]
 profiles = false
