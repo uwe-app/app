@@ -25,6 +25,10 @@ pub fn get_port(
     tls: &Option<SslConfig>,
     port_type: PortType,
 ) -> u16 {
+    if port == 0 {
+        return port;
+    }
+
     match port_type {
         PortType::Infer => {
             if let Some(ref tls) = tls {

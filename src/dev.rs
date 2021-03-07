@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{error::server_error_cb, Error, Result};
+use crate::{error::server_error_cb, Result};
 use config::ProfileSettings;
 
 pub async fn run<P: AsRef<Path>>(
@@ -9,11 +9,9 @@ pub async fn run<P: AsRef<Path>>(
     mut args: ProfileSettings,
     authorities: Option<Vec<String>>,
 ) -> Result<()> {
+
     // Prepare the server settings
     let port = args.get_port().clone();
-    if port == 0 {
-        return Err(Error::NoLiveEphemeralPort);
-    }
 
     // Must mark the build profile for live reload
     args.live = Some(true);

@@ -11,13 +11,16 @@ const CSS_FILE: &str = "__livereload.css";
 const SCRIPT: &str = include_str!("livereload.js");
 const CSS: &str = include_str!("livereload.css");
 
-fn get_script(url: &str) -> String {
+fn get_script(endpoint: &str) -> String {
     // NOTE: we use an IIFE (immediately invoked function expression)
     // NOTE: and the template closes and calls the expression but we
     // NOTE: open it here
     let mut script = String::from(format!(
-        "(function() {{const socket = new WebSocket('{}');\n",
-        url
+        "(function() {{
+            const protocol = document.location.protocol === 'https:' ? 'wss' : 'ws';
+            const url = `${{protocol}}://${{document.location.host}}/{}`;
+            const socket = new WebSocket(url);\n",
+        endpoint
     ));
     script.push_str(SCRIPT);
     script
@@ -50,8 +53,8 @@ pub fn javascript() -> String {
 pub fn write(
     _config: &Config,
     target: &PathBuf,
-    url: &str,
+    endpoint: &str,
 ) -> std::io::Result<()> {
-    write_javascript(target, url)?;
+    write_javascript(target, endpoint)?;
     write_stylesheet(target)
 }

@@ -2,18 +2,17 @@
 title = "10. Website preview"
 +++
 
-The *Website Preview* area shows the compiled version of the website for the current project.
+The *Website Preview* area shows the compiled version of the website for the current project, an address bar allows manually setting the location of the embedded iframe.
 
 <div class="wireframe flex column">
   <div class="flex spacer-x padded sml">
-    <span>Document 1 [X]</span>
-    <span>Document 2 [X]</span>
-    <span>Document 3 [X]</span>
+    <input type="text" value="/docs/" style="width: 100%;">
   </div>
-  <iframe src="https://stage.uwe.app">
+  <iframe src="https://stage.uwe.app/docs/" sandbox>
   </iframe>
   <div class="flex space-between padded sml">
-    <span>Document 2, 34KB</span>
+    <span>uwe.app running at <a href="#">http://localhost:32471</a></span>
+    <span>Last published 3 days ago</span>
   </div>
 </div>
 

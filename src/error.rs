@@ -34,11 +34,6 @@ pub enum Error {
     #[error("Language {0} does not exist in the locales {1}")]
     LanguageMissingFromLocales(String, String),
 
-    //#[error("No virtual hosts for live reload")]
-    //NoLiveHosts,
-    #[error("Live reload does not support the ephemeral port")]
-    NoLiveEphemeralPort,
-
     #[error("No publish configuration")]
     NoPublishConfiguration,
 

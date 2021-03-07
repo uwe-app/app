@@ -9,10 +9,9 @@ use futures_util::FutureExt;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::{broadcast, mpsc, oneshot};
 use url::Url;
-//use warp::ws::Message;
 
 use config::server::{
-    ConnectionInfo, HostConfig, PortType, ServerConfig, SslConfig,
+    ConnectionInfo, HostConfig, ServerConfig, SslConfig,
 };
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
@@ -54,7 +53,7 @@ pub async fn watch(
         return Err(Error::NoLiveHosts);
     }
 
-    create_resources(port, &tls, &host_info)?;
+    create_resources(&host_info)?;
 
     let channel_names = hosts
         .iter()
@@ -69,6 +68,7 @@ pub async fn watch(
         port.to_owned(),
         tls,
     );
+
 
     opts.set_authorities(authorities);
     opts.set_hosts(hosts);
@@ -113,24 +113,12 @@ pub async fn watch(
 
 /// Write out the live reload Javascript and CSS.
 fn create_resources(
-    port: u16,
-    tls: &Option<SslConfig>,
     hosts: &Vec<HostInfo>,
 ) -> Result<()> {
     hosts.iter().try_for_each(|host| {
-        // NOTE: These host names may not resolve so cannot attempt
-        // NOTE: to lookup a socket address here.
-        let ws_url = config::server::to_websocket_url(
-            tls.is_some(),
-            &host.name,
-            &host.endpoint,
-            config::server::get_port(port.to_owned(), tls, PortType::Infer),
-        );
-
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
-        livereload::write(&host.project.config, &host.target, &ws_url)?;
-
+        livereload::write(&host.project.config, &host.target, &host.endpoint)?;
         Ok::<(), Error>(())
     })?;
 
