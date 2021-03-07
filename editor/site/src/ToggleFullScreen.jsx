@@ -1,11 +1,22 @@
-import {h} from 'preact';
-import {useContext} from 'preact/hooks';
-import {State, toggleFullScreen} from './State'
+import {h, Fragment} from 'preact';
+import {useContext, useEffect} from 'preact/hooks';
+import {observer} from 'mobx-react';
+import {State} from './State'
 
 export default function ToggleFullScreen(props) {
   const state = useContext(State);
   const click = async () => {
-    await toggleFullScreen(state);
+    await state.window.toggle();
+    //console.log("After toggle: ", state.window.fullscreen);
   }
-  return <button onclick={click}>Toggle Fullscreen</button>
+
+  //const fullscreen = state.window.fullscreen;
+  const FullScreen = observer(({ window }) => {
+    return <span>Is fullscreen? {window.fullscreen.toString()} </span>
+  });
+
+  return <>
+    <button onclick={click}>Toggle Fullscreen</button>
+    <FullScreen window={state.window} />
+  </>;
 }
