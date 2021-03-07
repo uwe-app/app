@@ -630,6 +630,7 @@ async fn start(
                 app
             })
             .disable_signals()
+            .workers(opts.workers())
             .bind(http_addr)?;
 
             Some(redirect_server)

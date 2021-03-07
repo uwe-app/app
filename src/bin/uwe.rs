@@ -69,6 +69,8 @@ async fn run(cmd: Command) -> Result<()> {
                 config::PORT_DOCS_SSL,
             );
 
+            opts.set_workers(2);
+
             let host = HostConfig::new_directory(target);
             opts.add_host(host);
             opts.set_disable_signals(true);
