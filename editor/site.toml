@@ -14,6 +14,17 @@ keywords = "Web, Editor"
 [build]
 extend = ["html"]
 
+[script]
+src = "/assets/scripts/main.js"
+dynamic = true
+type = "module"
+
+[[hook]]
+command = "npm"
+args = ["run", "build"]
+files = ["src/*.js"]
+watch = true
+
 [minify.html]
 profiles = false
 

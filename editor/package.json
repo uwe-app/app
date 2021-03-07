@@ -1,0 +1,13 @@
+{
+  "name": "@uwe/editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "spack"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.1.35",
+    "@swc/core": "^1.2.50",
+    "preact": "^10.5.12"
+  }
+}
