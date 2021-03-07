@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "spack"
+    "build": "esbuild --define:process.env.NODE_ENV=\"'production'\"  ${BUILD_SOURCE}/src/main.jsx --bundle --outfile=${BUILD_TARGET}/assets/scripts/main.js --jsx-factory=h --jsx-fragment=Fragment"
   },
   "devDependencies": {
-    "@swc/cli": "^0.1.35",
-    "@swc/core": "^1.2.50",
+    "esbuild": "^0.8.56",
+    "mobx": "^6.1.8",
     "preact": "^10.5.12"
   }
 }

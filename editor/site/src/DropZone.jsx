@@ -1,3 +1,5 @@
+import {h} from 'preact';
+
 export default function DropZone(props) {
 
   function dragOver(ev) {

@@ -17,12 +17,12 @@ extend = ["html"]
 [script]
 src = "/assets/scripts/main.js"
 dynamic = true
-type = "module"
+#type = "module"
 
 [[hook]]
 command = "npm"
 args = ["run", "build"]
-files = ["src/*.js"]
+files = ["src/*.js", "src/*.jsx"]
 watch = true
 
 [minify.html]
