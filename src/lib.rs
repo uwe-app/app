@@ -1,4 +1,4 @@
-pub mod alias;
+//pub mod alias;
 pub mod build;
 pub mod clean;
 pub mod dev;

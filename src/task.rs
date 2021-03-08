@@ -10,7 +10,7 @@ use crate::{
 use config::plugin::dependency::DependencyTarget;
 use plugin::new_registry;
 
-use super::alias;
+//use super::alias;
 
 const CYPRESS_JSON: &str = "cypress.json";
 const CYPRESS_OPTS: &str = "cypress.opts";
@@ -37,9 +37,9 @@ pub async fn run(cmd: Task) -> Result<()> {
             let project = opts::project_path(&project)?;
             check_deps(project).await?;
         }
-        Task::Alias { cmd } => {
-            alias::run(cmd).await?;
-        }
+        //Task::Alias { cmd } => {
+            //alias::run(cmd).await?;
+        //}
     }
     Ok(())
 }
@@ -176,69 +176,3 @@ async fn check_deps(project: PathBuf) -> Result<()> {
 
     Ok(())
 }
-
-/*
-/// Pull from a remote repository.
-async fn pull(
-    target: PathBuf,
-    remote: String,
-    branch: String,
-) -> Result<()> {
-    let target = opts::project_path(&target)?;
-
-    scm::open(&target)
-        .map_err(|_| Error::NotRepository(target.to_path_buf()))?;
-
-    scm::pull(&target, Some(remote), Some(branch))
-        .map(|_| ())
-        .map_err(Error::from)
-}
-*/
-
-/*
-fn create(target: PathBuf, message: String) -> Result<()> {
-    let target = opts::project_path(&target)?;
-
-    scm::init(&target, &message)
-        .map(|_| ())
-        .map_err(Error::from)
-}
-
-fn clone_or_copy(
-    source: String,
-    target: Option<PathBuf>,
-    pristine: Option<String>,
-) -> Result<()> {
-
-    let target = if let Some(target) = target {
-        target.to_path_buf()
-    } else {
-        let base = std::env::current_dir()?;
-
-        let mut target_parts =
-            source.trim_end_matches("/").split("/").collect::<Vec<_>>();
-
-        let target_name =
-            target_parts.pop().ok_or_else(|| Error::NoTargetName)?;
-        base.join(target_name)
-    };
-
-    let _ = source
-        .parse::<Url>()
-        .map_err(|_| Error::InvalidRepositoryUrl(source.to_string()))?;
-
-    if target.exists() {
-        return Err(Error::TargetExists(target.to_path_buf()));
-    }
-
-    if let Some(ref message) = pristine {
-        scm::copy(&source, &target, message)
-            .map(|_| ())
-            .map_err(Error::from)
-    } else {
-        scm::clone(&source, &target)
-            .map(|_| ())
-            .map_err(Error::from)
-    }
-}
-*/

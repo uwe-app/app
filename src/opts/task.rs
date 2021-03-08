@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use crate::opts::Alias;
+//use crate::opts::Alias;
 
 /// Utility tasks.
 #[derive(StructOpt, Debug)]
@@ -27,11 +27,14 @@ pub enum Task {
         project: PathBuf,
     },
 
+    /*
     /// Manage site aliases (symbolic links)
     Alias {
         #[structopt(subcommand)]
         cmd: Alias,
     },
+    */
+
     /*
     /// Initialize, add files and commit.
     Create {

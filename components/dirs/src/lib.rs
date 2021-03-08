@@ -6,8 +6,7 @@ const ROOT_DIR: &str = ".uwe";
 const BIN: &str = "bin";
 const ENV: &str = "env";
 
-const SITES_NAME: &str = "sites";
-const SITES_FILE: &str = "sites.toml";
+const PROJECTS_FILE: &str = "projects.toml";
 
 const RELEASES_REPO: &str = "https://github.com/uwe-app/releases";
 const REGISTRY_REPO: &str = "https://github.com/uwe-app/registry";
@@ -37,17 +36,8 @@ pub fn root_dir() -> io::Result<PathBuf> {
     })
 }
 
-pub fn sites_dir() -> io::Result<PathBuf> {
-    let mut bin = root_dir()?;
-    bin.push(SITES_NAME);
-    if !bin.exists() {
-        fs::create_dir(&bin)?;
-    }
-    Ok(bin)
-}
-
-pub fn sites_manifest() -> io::Result<PathBuf> {
-    Ok(root_dir()?.join(SITES_FILE))
+pub fn projects_manifest() -> io::Result<PathBuf> {
+    Ok(root_dir()?.join(PROJECTS_FILE))
 }
 
 pub fn env_file() -> io::Result<PathBuf> {

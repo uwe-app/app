@@ -146,7 +146,7 @@ pub enum Error {
     Publish(#[from] publisher::Error),
 
     #[error(transparent)]
-    Site(#[from] site::Error),
+    Project(#[from] project::Error),
 
     #[error(transparent)]
     Server(#[from] server::Error),

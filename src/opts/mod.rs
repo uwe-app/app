@@ -98,7 +98,7 @@ pub fn server_config(
     server_config
 }
 
-mod alias;
+//mod alias;
 mod build;
 mod clean;
 mod dev;
@@ -115,7 +115,7 @@ pub(crate) mod web_server;
 
 pub mod uwe;
 
-pub use self::alias::Alias;
+//pub use self::alias::Alias;
 pub use self::build::{Build, Compile};
 pub use self::clean::Clean;
 pub use self::dev::Dev;
