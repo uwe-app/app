@@ -7,6 +7,10 @@ use config::server::{ConnectionInfo, HostConfig, ServerConfig};
 // NOTE: Must **not** execute on the tokio runtime as the event loop
 // NOTE: used for webview rendering must execute on the main thread (macOS)
 pub fn run(args: &Editor) -> Result<()> {
+
+    // Load user projects list
+    project::load()?;
+
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
 
     let is_project_editor = args.project.is_some();

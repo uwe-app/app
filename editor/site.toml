@@ -22,7 +22,7 @@ command = "./build.sh"
   #"scripts": {
     #"build": "esbuild --define:process.env.NODE_ENV=\"'production'\"  ${BUILD_SOURCE}/src/main.jsx --bundle --outfile=${BUILD_TARGET}/assets/scripts/main.js --jsx-factory=h --jsx-fragment=Fragment"
   #},
-files = ["src/*.js", "src/*.jsx"]
+files = ["src/*.ts", "src/*.tsx"]
 watch = true
 
 [minify.html]

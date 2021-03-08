@@ -3,31 +3,16 @@
 }
 
 body {
+  padding: 2em;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
   padding: 0;
 }
 
-/*
-main {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  justify-content: stretch;
-}
-
-main > header {
-  flex: 0;
-  padding: 0;
-}
-
-article {
-  flex: 1 1;
+ul.projects > li {
   display: flex;
   justify-content: space-between;
 }
-
-footer {
-  flex: 0;
-  background: green;
-}
-*/
-
