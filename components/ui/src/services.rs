@@ -5,6 +5,8 @@ use json_rpc2::*;
 
 use log::{info, warn, error};
 
+use project::ProjectManifestEntry;
+
 pub struct ServiceData {
     pub window: WindowProxy,
 }
@@ -59,9 +61,28 @@ impl Service for ProjectService {
         _ctx: &Self::Data,
     ) -> Result<Option<Response>> {
         let mut response = None;
-        if req.matches("project.open") {
-            //println!("Got project open!");
-            response = Some(req.into());
+        if req.matches("project.list") {
+            let manifest = project::list().map_err(Box::from)?;
+            let result = serde_json::to_value(manifest).map_err(Box::from)?;
+            response = Some((req, result).into());
+        } else if req.matches("project.add") {
+            let mut params: Vec<ProjectManifestEntry> = req.deserialize()?;
+            if !params.is_empty() {
+                let entry = params.swap_remove(0);
+                project::add(entry).map_err(Box::from)?;
+                response = Some(req.into());
+            } else {
+                return Err((req, "Method expects parameters").into())
+            }
+        } else if req.matches("project.remove") {
+            let mut params: Vec<ProjectManifestEntry> = req.deserialize()?;
+            if !params.is_empty() {
+                let entry = params.swap_remove(0);
+                project::remove(&entry).map_err(Box::from)?;
+                response = Some(req.into());
+            } else {
+                return Err((req, "Method expects parameters").into())
+            }
         }
         Ok(response)
     }

@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 config = { version = "0.1", path = "../config" }
+project = { version = "0.1", path = "../project" }
 
 thiserror = "1"
 rust-embed = "5.9"
@@ -17,4 +18,4 @@ serde_json = "1"
 wry = { version = "0.5.1", path = "/home/muji/git/2.external/wry" }
 #wry = { version = "0.5.1" }
 tinyfiledialogs = "3.3.10"
-json-rpc2 = { version = "0.9", features = ["async"] }
+json-rpc2 = { version = "0.9.4", features = ["async"] }

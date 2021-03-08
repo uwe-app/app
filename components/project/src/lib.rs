@@ -11,8 +11,8 @@ use config::Config;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Could not determine project name")]
-    EmptyName,
+    #[error("Project path {0} is relative, must be an absolute path")]
+    NoRelativeProject(PathBuf),
 
     #[error("Project {0} already exists")]
     Exists(PathBuf),
@@ -40,6 +40,19 @@ fn manifest() -> &'static RwLock<ProjectManifest> {
     INSTANCE.get_or_init(|| RwLock::new(ProjectManifest {projects: HashSet::new()}))
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+pub enum SettingsStatus {
+    /// Settings file does not exist
+    #[serde(rename = "missing")]
+    Missing,
+    /// Settings file could not be parsed
+    #[serde(rename = "error")]
+    Error,
+    /// Settings files is ok
+    #[serde(rename = "ok")]
+    Ok,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectManifest {
     pub projects: HashSet<ProjectManifestEntry>,
@@ -50,9 +63,9 @@ pub struct ProjectManifestEntry {
     pub project: PathBuf,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct ProjectStatus {
-    pub ok: bool,
+    pub status: SettingsStatus,
     pub entry: ProjectManifestEntry,
 }
 
@@ -82,38 +95,26 @@ fn flush(manifest: ProjectManifest) -> Result<()> {
 /// Add a project to the manifest.
 ///
 /// The project is added to the in-memory store and flushed to disc.
-pub fn add(project: PathBuf, site_name: Option<String>) -> Result<String> {
+pub fn add(entry: ProjectManifestEntry) -> Result<()> {
     let mut manifest = manifest().write().unwrap();
 
+    if entry.project.is_relative() {
+        return Err(Error::NoRelativeProject(entry.project.to_path_buf()))
+    }
+
     // Must have a valid config
-    let config = Config::load(&project, false)?;
-    let project = config.project().canonicalize()?;
-
-    // Use specific name or infer from the directory name
-    let mut name = "".to_string();
-    if let Some(ref project_name) = site_name {
-        name = project_name.to_string()
-    } else {
-        if let Some(ref file_name) = project.file_name() {
-            name = file_name.to_string_lossy().into_owned();
-        }
-    }
-
-    if name.is_empty() {
-        return Err(Error::EmptyName);
-    }
+    let _ = Config::load(&entry.project, false)?;
 
     let existing = manifest.projects
-        .iter().find(|p| &p.project == &project);
+        .iter().find(|p| &p.project == &entry.project);
     if existing.is_some() {
-        return Err(Error::Exists(project.to_path_buf()));
+        return Err(Error::Exists(entry.project.to_path_buf()));
     }
 
-    let entry = ProjectManifestEntry { project };
     manifest.projects.insert(entry);
     flush(manifest.clone())?;
 
-    Ok(name)
+    Ok(())
 }
 
 /// Remove a project from the manifest.
@@ -138,9 +139,17 @@ pub fn list() -> Result<HashSet<ProjectStatus>> {
     let mut projects: HashSet<ProjectStatus> = HashSet::new();
     let manifest = manifest().read().unwrap();
     for entry in manifest.projects.iter() {
-        let ok = Config::load(&entry.project, false).is_ok();
-        let status = ProjectStatus { ok, entry: entry.clone() };
-        projects.insert(status);
+        let settings_file = entry.project.join(config::SITE_TOML);
+        let status = if settings_file.exists() {
+            match Config::load(&entry.project, false) {
+                Ok(_) => SettingsStatus::Ok,
+                Err(_) => SettingsStatus::Error,
+            }
+        } else {
+            SettingsStatus::Missing
+        };
+        let item = ProjectStatus { status, entry: entry.clone() };
+        projects.insert(item);
     }
     Ok(projects)
 }
