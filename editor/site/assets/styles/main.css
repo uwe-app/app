@@ -12,7 +12,19 @@ ul {
   padding: 0;
 }
 
+ul.projects {
+  margin: 2em 0;
+}
+
 ul.projects > li {
   display: flex;
   justify-content: space-between;
+}
+
+.flash > div {
+  padding: 2em;
+}
+
+.flash > div.error {
+  border: 1px solid red;
 }

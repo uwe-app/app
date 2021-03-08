@@ -1,13 +1,11 @@
-import {h} from 'preact';
-import ChooseFolder from './ChooseFolder';
-//import ToggleFullScreen from './ToggleFullScreen';
-//import DropZone from './DropZone';
-
-import {ProjectsList} from './Projects';
+import {h, Fragment} from 'preact';
+import Flash from './Flash';
+import {ProjectsList, OpenProject} from './Projects';
 
 export default function App(props) {
-  return <div>
-    <ChooseFolder title="Choose a project" />
+  return <>
+    <Flash />
     <ProjectsList />
-  </div>
+    <OpenProject />
+  </>
 }
