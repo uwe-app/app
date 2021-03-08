@@ -1,6 +1,10 @@
 import { h, Fragment, render, createContext } from 'preact';
+import {Route} from 'wouter';
+
 import * as _ from './preamble';
-import App from './App';
+import Launch from './Launch';
+import Flash from './Flash';
+import {CreateProject} from './CreateProject';
 import {value, State} from './State';
 
 /*
@@ -10,4 +14,12 @@ window.addEventListener('contextmenu', (e) => {
 });
 */
 
-render(<State.Provider value={value}><App /></State.Provider>, document.body);
+render(<State.Provider value={value}>
+    <Flash />
+    <Route path="/">
+      <Launch />
+    </Route>
+    <Route path="/create">
+      <CreateProject />
+    </Route>
+</State.Provider>, document.body);

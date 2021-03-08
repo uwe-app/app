@@ -2,6 +2,13 @@ import {h} from 'preact';
 import {useContext} from 'preact/hooks';
 import {observer} from 'mobx-react';
 import {State} from './State'
+import {Link} from 'wouter';
+
+function NewProject(props) {
+  return <Link href="/create">
+    <button>New Project</button>
+  </Link>;
+}
 
 function OpenProject(props) {
   const state = useContext(State);
@@ -59,4 +66,4 @@ function ProjectsList(props) {
   return <List projects={state.projects} />;
 }
 
-export {ProjectsList, OpenProject}
+export {ProjectsList, OpenProject, NewProject}

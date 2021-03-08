@@ -2,10 +2,13 @@
   "name": "@uwe/editor",
   "version": "1.0.0",
   "private": true,
-  "devDependencies": {
-    "esbuild": "^0.8.56",
+  "dependencies": {
     "mobx": "^6.1.8",
     "mobx-react": "^7.1.0",
-    "preact": "^10.5.12"
+    "preact": "^10.5.12",
+    "wouter": "^2.7.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.8.56"
   }
 }
