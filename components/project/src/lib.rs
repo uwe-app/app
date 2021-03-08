@@ -1,5 +1,8 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::sync::{RwLock};
+
+use once_cell::sync::OnceCell;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -32,6 +35,11 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+fn manifest() -> &'static RwLock<ProjectManifest> {
+    static INSTANCE: OnceCell<RwLock<ProjectManifest>> = OnceCell::new();
+    INSTANCE.get_or_init(|| RwLock::new(ProjectManifest {projects: HashSet::new()}))
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectManifest {
     pub projects: HashSet<ProjectManifestEntry>,
@@ -48,25 +56,34 @@ pub struct ProjectStatus {
     pub entry: ProjectManifestEntry,
 }
 
-fn load() -> Result<ProjectManifest> {
+/// Load from the disc to the in-memory store.
+pub fn load() -> Result<()> {
     let file = dirs::projects_manifest()?;
     if !file.exists() {
-        return Ok(ProjectManifest { projects: HashSet::new() });
+        return Ok(());
     }
     let contents = utils::fs::read_string(file)?;
-    let manifest: ProjectManifest = toml::from_str(&contents)?;
-    Ok(manifest)
+    let backing: ProjectManifest = toml::from_str(&contents)?;
+
+    let mut manifest = manifest().write().unwrap();
+    *manifest = backing;
+
+    Ok(())
 }
 
-fn save(manifest: ProjectManifest) -> Result<()> {
+// Save a copy of the in-memory project manifest back to disc.
+fn flush(manifest: ProjectManifest) -> Result<()> {
     let file = dirs::projects_manifest()?;
     let content = toml::to_string(&manifest)?;
     utils::fs::write_string(file, content)?;
     Ok(())
 }
 
+/// Add a project to the manifest.
+///
+/// The project is added to the in-memory store and flushed to disc.
 pub fn add(project: PathBuf, site_name: Option<String>) -> Result<String> {
-    let mut manifest = load()?;
+    let mut manifest = manifest().write().unwrap();
 
     // Must have a valid config
     let config = Config::load(&project, false)?;
@@ -94,32 +111,35 @@ pub fn add(project: PathBuf, site_name: Option<String>) -> Result<String> {
 
     let entry = ProjectManifestEntry { project };
     manifest.projects.insert(entry);
-    save(manifest)?;
+    flush(manifest.clone())?;
 
     Ok(name)
 }
 
+/// Remove a project from the manifest.
+///
+/// The project is removed from the in-memory store and flushed to disc.
 pub fn remove(entry: &ProjectManifestEntry) -> Result<()> {
-    //let target = target.as_ref();
-    let mut manifest = load()?;
+    let mut manifest = manifest().write().unwrap();
 
     // Update the manifest
     let removed = manifest.projects.remove(&entry);
 
     if removed {
-        save(manifest)?;
+        flush(manifest.clone())?;
         Ok(())
     } else {
         Err(Error::NotExists(entry.project.to_path_buf()))
     }
 }
 
+/// List projects and check if the project settings can be loaded.
 pub fn list() -> Result<HashSet<ProjectStatus>> {
     let mut projects: HashSet<ProjectStatus> = HashSet::new();
-    let manifest = load()?;
-    for entry in manifest.projects {
+    let manifest = manifest().read().unwrap();
+    for entry in manifest.projects.iter() {
         let ok = Config::load(&entry.project, false).is_ok();
-        let status = ProjectStatus { ok, entry };
+        let status = ProjectStatus { ok, entry: entry.clone() };
         projects.insert(status);
     }
     Ok(projects)

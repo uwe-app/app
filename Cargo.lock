@@ -3645,6 +3645,7 @@ dependencies = [
  "config",
  "dirs",
  "log",
+ "once_cell",
  "serde",
  "thiserror",
  "toml",
