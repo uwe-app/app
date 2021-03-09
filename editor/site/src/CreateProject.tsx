@@ -13,34 +13,43 @@ function CreateProject(props) {
   const state = useContext(State);
 
   const [name, setName] = useState('');
-  const [base, setBase] = useState(state.preferences.base);
-  const [blueprint, setBlueprint] = useState('default');
+  const [target, setTarget] = useState(state.preferences.project.target);
+  const [source, setSource] = useState('default');
 
   const submit = async (e) => {
     e.preventDefault();
     if (!name) {
       return state.flash.error('Project name is required.');
-    } else if (!base) {
+    } else if (!target) {
       return state.flash.error('Project folder path is required.');
     }
     const form = {
       name,
-      base,
-      blueprint,
+      target,
+      source,
     }
-    console.log("Request", JSON.stringify(form));
+
+    try {
+      const path = await state.projects.create(form);
+      const entry = {path}
+      await state.projects.add(entry);
+      await state.projects.fetch();
+      state.flash.info(`Created project ${path}`);
+    } catch (e) {
+      state.flash.error(e);
+    }
   }
 
   const chooseFolder = async (e) => {
     e.preventDefault();
     const path = await state.dialog.openFolder("Choose a folder");
     if (path) {
-      setBase(path)
+      setTarget(path)
     }
   }
 
   const select = (e) => {
-    setBlueprint(e.target.value);
+    setSource(e.target.value);
   }
 
   return <div>
@@ -56,7 +65,7 @@ function CreateProject(props) {
           placeholder="Project name" />
       </fieldset>
       <fieldset class="flex space-between">
-        <label id="project-base">{base}</label>
+        <label>{target}</label>
         <button onclick={chooseFolder}>Choose folder</button>
       </fieldset>
       <fieldset>
@@ -64,9 +73,9 @@ function CreateProject(props) {
         <div>
           <input
             id="default"
-            checked={blueprint === 'default'}
+            checked={source === 'default'}
             onclick={select}
-            name="blueprint"
+            name="source"
             type="radio"
             value="default" />
           <label for="default">Website</label>
@@ -74,9 +83,9 @@ function CreateProject(props) {
         <div>
           <input
             id="blog"
-            checked={blueprint === 'blog'}
+            checked={source === 'blog'}
             onclick={select}
-            name="blueprint"
+            name="source"
             type="radio"
             value="blog" />
           <label for="blog">Blog</label>
@@ -84,9 +93,9 @@ function CreateProject(props) {
         <div>
           <input
             id="deck"
-            checked={blueprint === 'deck'}
+            checked={source === 'deck'}
             onclick={select}
-            name="blueprint"
+            name="source"
             type="radio"
             value="deck" />
           <label for="deck">Deck</label>

@@ -33,7 +33,7 @@ pub enum ProjectSource {
     Path(PathBuf),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ProjectOptions {
     pub source: Option<String>,
     pub git: Option<Url>,

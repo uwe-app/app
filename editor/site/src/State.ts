@@ -29,6 +29,10 @@ class Projects {
     this.list = list;
   }
 
+  async create(request) {
+    return await window.rpc.call('project.create', request);
+  }
+
   async add(entry) {
     return await window.rpc.call('project.add', entry);
   }
@@ -78,6 +82,10 @@ class Flash {
     this.message = {};
   }
 
+  info(text: string) {
+    this.message = { text, className: 'info' }
+  }
+
   error(err: string | RpcError) {
     if (typeof err === 'string') {
       this.message = { text: err, className: 'error' }
@@ -91,8 +99,12 @@ class Flash {
   }
 }
 
+interface ProjectPreferences {
+  target?: string,
+}
+
 interface Preferences {
-  base?: string,
+  project: ProjectPreferences,
 }
 
 const value = {
@@ -108,7 +120,7 @@ const value = {
 const boot = async () => {
   const result = await window.rpc.call('app.boot');
   value.projects.list = result.projects;
-  value.preferences = {base: result.base};
+  value.preferences = result.preferences;
   value.booted = true;
 }
 

@@ -29,6 +29,10 @@ ul.projects > li {
   border: 1px solid red;
 }
 
+.flash > div.info {
+  border: 1px solid blue;
+}
+
 .flex {
   display: flex;
 }

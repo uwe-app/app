@@ -12,9 +12,7 @@ use log::{info, warn, error};
 
 use project::{ProjectList, ProjectManifestEntry};
 
-pub struct ServiceData {
-    //pub window: WindowProxy,
-}
+pub struct ServiceData {}
 
 pub struct ConsoleService;
 
@@ -60,7 +58,17 @@ impl Service for ConsoleService {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppInfo {
     projects: ProjectList,
-    base: Option<PathBuf>,
+    preferences: AppPreferences,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AppPreferences {
+    project: ProjectPreferences,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectPreferences {
+    target: Option<PathBuf>,
 }
 
 pub struct AppService;
@@ -77,13 +85,25 @@ impl Service for AppService {
         if req.matches("app.boot") {
             let projects = project::list().map_err(Box::from)?;
             // TODO: get project base from preferences
-            let base = dirs::home_dir();
-            let info = AppInfo { projects, base };
+            let target = dirs::home_dir();
+            let info = AppInfo {
+                projects,
+                preferences: AppPreferences {
+                    project: ProjectPreferences {target}
+                }
+            };
             let result = serde_json::to_value(info).map_err(Box::from)?;
             response = Some((req, result).into());
         }
         Ok(response)
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectCreateRequest {
+    name: String,
+    target: PathBuf,
+    source: String,
 }
 
 pub struct ProjectService;
@@ -97,7 +117,29 @@ impl Service for ProjectService {
         _ctx: &Self::Data,
     ) -> Result<Option<Response>> {
         let mut response = None;
-        if req.matches("project.list") {
+        if req.matches("project.create") {
+            let mut params: Vec<ProjectCreateRequest> = req.deserialize()?;
+            if !params.is_empty() {
+                let project_request = params.swap_remove(0);
+
+                println!("Create a project {:?}", &project_request);
+
+                let target = project_request.target.join(&project_request.name);
+                let opts = project::ProjectOptions {
+                    source: Some(project_request.source),
+                    target: target.to_path_buf(),
+                    ..Default::default()
+                };
+                println!("Create a project {:?}", &opts);
+
+                project::create(opts).await.map_err(Box::from)?;
+
+                let project_path = target.to_string_lossy().into_owned();
+                response = Some((req, Value::String(project_path)).into());
+            } else {
+                return Err((req, "Method expects parameters").into())
+            }
+        } else if req.matches("project.list") {
             let manifest = project::list().map_err(Box::from)?;
             let result = serde_json::to_value(manifest).map_err(Box::from)?;
             response = Some((req, result).into());
