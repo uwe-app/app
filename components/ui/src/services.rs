@@ -3,21 +3,25 @@ use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use wry::WindowProxy;
 
-use json_rpc2::*;
+//use json_rpc2::*;
+
+use json_rpc2::{futures::*, Request, Response, Result};
+use async_trait::async_trait;
 
 use log::{info, warn, error};
 
 use project::{ProjectList, ProjectManifestEntry};
 
 pub struct ServiceData {
-    pub window: WindowProxy,
+    //pub window: WindowProxy,
 }
 
 pub struct ConsoleService;
 
+#[async_trait]
 impl Service for ConsoleService {
     type Data = ServiceData;
-    fn handle(
+    async fn handle(
         &self,
         req: &mut Request,
         _ctx: &Self::Data,
@@ -61,9 +65,10 @@ pub struct AppInfo {
 
 pub struct AppService;
 
+#[async_trait]
 impl Service for AppService {
     type Data = ServiceData;
-    fn handle(
+    async fn handle(
         &self,
         req: &mut Request,
         _ctx: &Self::Data,
@@ -83,9 +88,10 @@ impl Service for AppService {
 
 pub struct ProjectService;
 
+#[async_trait]
 impl Service for ProjectService {
     type Data = ServiceData;
-    fn handle(
+    async fn handle(
         &self,
         req: &mut Request,
         _ctx: &Self::Data,
@@ -120,9 +126,10 @@ impl Service for ProjectService {
 
 pub struct DialogService;
 
+#[async_trait]
 impl Service for DialogService {
     type Data = ServiceData;
-    fn handle(
+    async fn handle(
         &self,
         req: &mut Request,
         _ctx: &Self::Data,
@@ -147,8 +154,8 @@ impl Service for DialogService {
 
 pub struct WindowService;
 
-impl Service for WindowService {
-    type Data = ServiceData;
+impl json_rpc2::Service for WindowService {
+    type Data = WindowProxy;
     fn handle(
         &self,
         req: &mut Request,
@@ -161,7 +168,7 @@ impl Service for WindowService {
                 None
             } else { Some(params.swap_remove(0)) };
             if let Some(flag) = flag {
-                ctx.window.set_fullscreen(flag).map_err(Box::from)?;
+                ctx.set_fullscreen(flag).map_err(Box::from)?;
             }
             response = Some(req.into());
         }

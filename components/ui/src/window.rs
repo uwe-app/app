@@ -1,7 +1,7 @@
 use serde_json::Value;
 use wry::{Application, Attributes, RpcRequest, RpcResponse, WindowProxy};
 
-use json_rpc2::*;
+use json_rpc2::{futures::{Service, Server}, Request, Response, RpcError};
 //use log::{error, info, warn};
 
 use crate::services::*;
@@ -36,27 +36,58 @@ pub fn window(url: String) -> crate::Result<()> {
         Box::new(DialogService {});
     let project_service: Box<dyn Service<Data = ServiceData>> =
         Box::new(ProjectService {});
-    let window_service: Box<dyn Service<Data = ServiceData>> =
-        Box::new(WindowService {});
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
 
     let handler = Box::new(move |proxy: WindowProxy, req: RpcRequest| {
-        let server = Server::new(vec![
-            &app_service,
-            &console_service,
-            &dialog_service,
-            &project_service,
-            &window_service,
-        ]);
-
         let mut req = into_request(req);
 
-        let data = ServiceData {
-            window: proxy,
-        };
+        // Synchronous handling for window operations because
+        // we cannot send `&WindowProxy` between threads which is
+        // required for use with futures.
+        if req.method().starts_with("window") {
+            let window_service: Box<dyn json_rpc2::Service<Data = WindowProxy>> =
+                Box::new(WindowService {});
+            let server = json_rpc2::Server::new(vec![&window_service]);
+            if let Some(response) = server.serve(&mut req, &proxy) {
+                Some(into_response(response))
+            } else { None }
+        } else {
 
+            let server = Server::new(vec![
+                &app_service,
+                &console_service,
+                &dialog_service,
+                &project_service,
+            ]);
+
+            rt.block_on(async move {
+                let data = ServiceData {};
+                if let Some(response) = server.serve(&mut req, &data).await {
+                    if let Some(id) = req.id_mut().take() {
+                        let script = if let Some(err) = response.error() {
+                            let err = serde_json::to_value(err).unwrap();
+                            RpcResponse::into_error_script(id, err).unwrap()
+                        } else if let Some(res) = response.result() {
+                            let res = serde_json::to_value(res).unwrap();
+                            RpcResponse::into_result_script(id, res).unwrap()
+                        } else {
+                            RpcResponse::into_result_script(id, Value::Null).unwrap()
+                        };
+                        let _ = proxy.evaluate_script(&script);
+                    }
+                }
+            });
+
+            None
+        }
+
+        /*
         if let Some(response) = server.serve(&mut req, &data) {
             Some(into_response(response))
         } else { None }
+        */
+        //None
     });
 
     let attrs = Attributes {

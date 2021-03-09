@@ -2510,8 +2510,6 @@ dependencies = [
 [[package]]
 name = "json-rpc2"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a68f3613366b38ee97b456ad3ca41c61418186d418939c1b198d765ce900c6e"
 dependencies = [
  "async-trait",
  "rand 0.8.2",
@@ -5386,6 +5384,7 @@ checksum = "56dee185309b50d1f11bfedef0fe6d036842e3fb77413abef29f8f8d1c5d4c1c"
 name = "ui"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "config",
  "dirs",
  "json-rpc2",
@@ -5397,6 +5396,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tinyfiledialogs",
+ "tokio",
  "wry",
 ]
 
