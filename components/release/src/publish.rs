@@ -236,7 +236,7 @@ fn update_documentation(
 fn build_editor(cwd: &PathBuf) -> Result<()> {
     Command::new("cargo")
         .current_dir(cwd)
-        .args(vec!["run", "--", "build", "./editor"])
+        .args(vec!["run", "--", "build", "--exec", "./editor"])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;
