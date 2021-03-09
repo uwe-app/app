@@ -62,6 +62,11 @@ interface FlashMessage {
   className: string,
 }
 
+interface RpcError {
+  message: string,
+  data?: string,
+}
+
 class Flash {
   message: FlashMessage = {};
 
@@ -73,17 +78,33 @@ class Flash {
     this.message = {};
   }
 
-  error(text: string) {
-    this.message = { text, className: 'error' }
+  error(err: string | RpcError) {
+    if (typeof err === 'string') {
+      this.message = { text: err, className: 'error' }
+    } else {
+      let text = err.message;
+      if (err.data) {
+        text = err.data;
+      }
+      this.message = { text, className: 'error' }
+    }
   }
 }
 
 const value = {
+  booted: false,
   window: new Window(),
   projects: new Projects(),
   dialog: new Dialog(),
   flash: new Flash(),
 };
 
+// Load initial state information for the editor.
+const boot = async () => {
+  const result = await window.rpc.call('app.boot');
+  value.projects.list = result.projects;
+  value.booted = true;
+}
+
 const State = createContext(value);
-export {value, State};
+export {boot, value, State};

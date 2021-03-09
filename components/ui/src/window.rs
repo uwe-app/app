@@ -28,21 +28,24 @@ pub fn window(url: String) -> crate::Result<()> {
 
     let mut app = Application::new()?;
 
+    let app_service: Box<dyn Service<Data = ServiceData>> =
+        Box::new(AppService {});
     let console_service: Box<dyn Service<Data = ServiceData>> =
         Box::new(ConsoleService {});
-    let window_service: Box<dyn Service<Data = ServiceData>> =
-        Box::new(WindowService {});
     let dialog_service: Box<dyn Service<Data = ServiceData>> =
         Box::new(DialogService {});
     let project_service: Box<dyn Service<Data = ServiceData>> =
         Box::new(ProjectService {});
+    let window_service: Box<dyn Service<Data = ServiceData>> =
+        Box::new(WindowService {});
 
     let handler = Box::new(move |proxy: WindowProxy, req: RpcRequest| {
         let server = Server::new(vec![
+            &app_service,
             &console_service,
-            &window_service,
             &dialog_service,
             &project_service,
+            &window_service,
         ]);
 
         let mut req = into_request(req);

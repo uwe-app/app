@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use wry::WindowProxy;
 
@@ -5,7 +6,7 @@ use json_rpc2::*;
 
 use log::{info, warn, error};
 
-use project::ProjectManifestEntry;
+use project::{ProjectList, ProjectManifestEntry};
 
 pub struct ServiceData {
     pub window: WindowProxy,
@@ -46,6 +47,31 @@ impl Service for ConsoleService {
             }
 
             response = Some(req.into());
+        }
+        Ok(response)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AppInfo {
+    projects: ProjectList,
+}
+
+pub struct AppService;
+
+impl Service for AppService {
+    type Data = ServiceData;
+    fn handle(
+        &self,
+        req: &mut Request,
+        _ctx: &Self::Data,
+    ) -> Result<Option<Response>> {
+        let mut response = None;
+        if req.matches("app.boot") {
+            let projects = project::list().map_err(Box::from)?;
+            let info = AppInfo { projects };
+            let result = serde_json::to_value(info).map_err(Box::from)?;
+            response = Some((req, result).into());
         }
         Ok(response)
     }

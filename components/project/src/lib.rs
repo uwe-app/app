@@ -35,6 +35,8 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+pub type ProjectList = HashSet<ProjectStatus>;
+
 fn manifest() -> &'static RwLock<ProjectManifest> {
     static INSTANCE: OnceCell<RwLock<ProjectManifest>> = OnceCell::new();
     INSTANCE.get_or_init(|| RwLock::new(ProjectManifest {project: HashSet::new()}))

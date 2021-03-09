@@ -22,7 +22,7 @@ function OpenProject(props) {
           // Update the projects list
           await state.projects.fetch();
         } catch(e) {
-          state.flash.error(e.message);
+          state.flash.error(e);
         }
       }
     } catch(e) {
@@ -34,10 +34,6 @@ function OpenProject(props) {
 
 function ProjectsList(props) {
   const state = useContext(State);
-
-  const fetch = async () => {
-    await state.projects.fetch();
-  }
 
   const remove = async (item) => {
     await state.projects.remove(item);
@@ -59,9 +55,6 @@ function ProjectsList(props) {
       return <p>No projects yet</p>;
     }
   });
-
-  // Fetch initial projects list
-  fetch();
 
   return <List projects={state.projects} />;
 }
