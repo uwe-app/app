@@ -91,18 +91,24 @@ class Flash {
   }
 }
 
+interface Preferences {
+  base?: string,
+}
+
 const value = {
   booted: false,
   window: new Window(),
   projects: new Projects(),
   dialog: new Dialog(),
   flash: new Flash(),
+  preferences: {},
 };
 
 // Load initial state information for the editor.
 const boot = async () => {
   const result = await window.rpc.call('app.boot');
   value.projects.list = result.projects;
+  value.preferences = {base: result.base};
   value.booted = true;
 }
 

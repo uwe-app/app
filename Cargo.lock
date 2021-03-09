@@ -5387,6 +5387,7 @@ name = "ui"
 version = "0.1.0"
 dependencies = [
  "config",
+ "dirs",
  "json-rpc2",
  "log",
  "project",

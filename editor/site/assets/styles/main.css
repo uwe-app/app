@@ -28,3 +28,21 @@ ul.projects > li {
 .flash > div.error {
   border: 1px solid red;
 }
+
+.flex {
+  display: flex;
+}
+
+.flex.space-between {
+  justify-content: space-between;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 1em 0;
+}
+
+input[type="text"] {
+  width: 100%;
+}

@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use wry::WindowProxy;
@@ -55,6 +56,7 @@ impl Service for ConsoleService {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppInfo {
     projects: ProjectList,
+    base: Option<PathBuf>,
 }
 
 pub struct AppService;
@@ -69,7 +71,9 @@ impl Service for AppService {
         let mut response = None;
         if req.matches("app.boot") {
             let projects = project::list().map_err(Box::from)?;
-            let info = AppInfo { projects };
+            // TODO: get project base from preferences
+            let base = dirs::home_dir();
+            let info = AppInfo { projects, base };
             let result = serde_json::to_value(info).map_err(Box::from)?;
             response = Some((req, result).into());
         }

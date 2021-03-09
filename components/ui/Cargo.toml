@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 config = { version = "0.1", path = "../config" }
+dirs = { version = "0.1", path = "../dirs" }
 project = { version = "0.1", path = "../project" }
 
 thiserror = "1"

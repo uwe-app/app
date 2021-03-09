@@ -12,7 +12,9 @@ function NewProject(props) {
 
 function OpenProject(props) {
   const state = useContext(State);
-  const click = async () => {
+  const click = async (e) => {
+    e.preventDefault();
+
     try {
       const path = await state.dialog.openFolder("Choose a project");
       if (path) {
@@ -35,7 +37,8 @@ function OpenProject(props) {
 function ProjectsList(props) {
   const state = useContext(State);
 
-  const remove = async (item) => {
+  const remove = async (e, item) => {
+    e.preventDefault();
     await state.projects.remove(item);
   }
 
@@ -46,7 +49,7 @@ function ProjectsList(props) {
           projects.list.map((item) => {
             return <li>
               <span>{item.entry.path} ({item.status.toString()})</span>
-              <a href="#" onclick={() => remove(item)}>Remove</a>
+              <a href="#" onclick={(e) => remove(e, item)}>Remove</a>
             </li>
           })
         }
