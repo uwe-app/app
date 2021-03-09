@@ -23,7 +23,7 @@ use uwe::{
 async fn run(cmd: Command) -> Result<()> {
     match cmd {
         Command::New { args } => {
-            let opts = uwe::new::ProjectOptions {
+            let opts = project::ProjectOptions {
                 source: args.plugin,
                 git: args.git,
                 prefix: args.prefix,

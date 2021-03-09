@@ -3644,9 +3644,13 @@ dependencies = [
  "dirs",
  "log",
  "once_cell",
+ "plugin",
+ "preference",
+ "scm",
  "serde",
  "thiserror",
  "toml",
+ "url",
  "utils",
 ]
 

@@ -25,15 +25,6 @@ pub enum Error {
     #[error("Refusing to overwrite {0}, please move it away to initialize integration tests")]
     NoOverwriteTestSpec(PathBuf),
 
-    #[error("Target {0} exists, please move it away")]
-    TargetExists(PathBuf),
-
-    #[error("Folder {0} does not contain a settings file {1}")]
-    NoSiteSettings(PathBuf, String),
-
-    #[error("Language {0} does not exist in the locales {1}")]
-    LanguageMissingFromLocales(String, String),
-
     #[error("No publish configuration")]
     NoPublishConfiguration,
 
@@ -58,9 +49,6 @@ pub enum Error {
     #[error("Local dependency {0} is not allowed")]
     LocalDependencyNotAllowed(PathBuf),
 
-    #[error("Plugin {0}@{1} for new project should be of type 'blueprint' but got '{2}'")]
-    BlueprintPluginInvalidType(String, String, String),
-
     #[error("Plugin {0}@{1} is already installed, use --force to overwrite")]
     PluginAlreadyInstalled(String, String),
 
@@ -69,11 +57,6 @@ pub enum Error {
 
     #[error("Plugin targets cannot be mixed; use a plugin name or an option (--path, --archive, --git)")]
     PluginAddMultipleTargets,
-
-    #[error(
-        "New projects must have one source; use a plugin name, --path or --git"
-    )]
-    NewProjectMultipleSource,
 
     #[error("Failed to spawn the command '{0}', check the program is installed and has executable permissions")]
     CommandSpawn(String),
