@@ -1,4 +1,7 @@
 import { h, render } from 'preact';
-import * as _ from './preamble';
+import preamble from './preamble';
 import App from './App';
+
+preamble();
+
 render(<App />, document.body);
