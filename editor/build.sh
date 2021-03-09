@@ -1,7 +1,10 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-#echo "Running the book ${BUILD_SOURCE}";
-#echo "Running the book ${BUILD_TARGET}";
+ARGS=""
+
+if [ $NODE_ENV == "production" ]; then
+  ARGS="--minify"
+fi
 
 npx esbuild \
   ${BUILD_SOURCE}/src/main.jsx \
@@ -9,4 +12,5 @@ npx esbuild \
   --define:process.env.NODE_ENV="'production'" \
   --jsx-factory=h \
   --jsx-fragment=Fragment \
+  $ARGS \
   --bundle
