@@ -1,9 +1,10 @@
-import {h, Fragment, render} from 'preact';
+import {h} from 'preact';
 import {useEffect} from 'preact/hooks';
 import {Route, useLocation} from 'wouter';
 import Launch from './Launch';
 import Flash from './Flash';
-import {CreateProject} from './CreateProject';
+import CreateProject from './CreateProject';
+import ProjectView from './ProjectView';
 import {boot, value, State} from './State';
 
 import makeCachedMatcher from "wouter/matcher";
@@ -33,7 +34,7 @@ export default function App() {
     }
   }, []);
 
-  // Look an initial search query and rewrite the location
+  // Look at an initial search query and rewrite the location
   // so we fulfill the /project/:id route match.
   //
   // This is required because we want to launch with a query
@@ -64,7 +65,7 @@ export default function App() {
       <CreateProject />
     </Route>
     <Route path="/project/:id">
-      {(params) => <div>Project, {params.id}!</div>}
+      <ProjectView />
     </Route>
   </State.Provider>;
 }

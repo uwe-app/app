@@ -3,7 +3,7 @@ import {useContext, useState} from 'preact/hooks';
 import {State} from './State'
 import {Link} from 'wouter';
 
-function CloseCreate(props) {
+function Close(props) {
   return <Link href="/">
     <a href="#">Close [X]</a>
   </Link>;
@@ -52,7 +52,7 @@ function CreateProject(props) {
   }
 
   return <div>
-    <CloseCreate />
+    <Close />
     <form onsubmit={submit}>
       <fieldset>
         <label for="project-name">Name for the new project:</label>
@@ -105,4 +105,4 @@ function CreateProject(props) {
   </div>;
 }
 
-export {CreateProject}
+export default CreateProject
