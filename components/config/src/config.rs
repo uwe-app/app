@@ -81,6 +81,7 @@ pub const TAGS: &str = "tags";
 /// a sub-domain from the primary host name.
 pub const HOST_DEV: &str = "loopback.space";
 pub const LOCALHOST: &str = "localhost";
+pub const LOOPBACK_IP: &str = "127.0.0.1";
 
 pub const ADDR: &str = "0.0.0.0";
 pub const HOST: &str = "localhost";

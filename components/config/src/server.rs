@@ -266,6 +266,10 @@ impl ServerConfig {
         &self.authorities
     }
 
+    pub fn set_listen(&mut self, listen: String) {
+        self.listen = listen;
+    }
+
     pub fn set_port(&mut self, port: u16) {
         self.port = port;
     }
