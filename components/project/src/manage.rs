@@ -10,14 +10,14 @@ use config::Config;
 
 use crate::{Error, Result};
 
-pub type ProjectList = HashSet<ProjectStatus>;
+pub type ProjectList = Vec<ProjectStatus>;
 
 fn manifest() -> &'static RwLock<ProjectManifest> {
     static INSTANCE: OnceCell<RwLock<ProjectManifest>> = OnceCell::new();
     INSTANCE.get_or_init(|| RwLock::new(ProjectManifest {project: HashSet::new()}))
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub enum SettingsStatus {
     /// Settings file does not exist
     #[serde(rename = "missing")]
@@ -35,13 +35,13 @@ pub struct ProjectManifest {
     pub project: HashSet<ProjectManifestEntry>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct ProjectManifestEntry {
     pub id: Option<String>,
     pub path: PathBuf,
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct ProjectStatus {
     pub status: SettingsStatus,
     pub entry: ProjectManifestEntry,
@@ -127,10 +127,10 @@ pub fn remove(entry: &ProjectManifestEntry) -> Result<()> {
 }
 
 /// List projects and check if the project settings can be loaded.
-pub fn list() -> Result<HashSet<ProjectStatus>> {
-    let mut projects: HashSet<ProjectStatus> = HashSet::new();
-
+pub fn list() -> Result<ProjectList> {
     let manifest = manifest().read().unwrap();
+    let mut projects: Vec<ProjectStatus> = Vec::with_capacity(manifest.project.len());
+
     for entry in manifest.project.iter() {
         let settings_file = entry.path.join(config::SITE_TOML);
         let status = if settings_file.exists() {
@@ -142,7 +142,10 @@ pub fn list() -> Result<HashSet<ProjectStatus>> {
             SettingsStatus::Missing
         };
         let item = ProjectStatus { status, entry: entry.clone() };
-        projects.insert(item);
+        projects.push(item);
     }
+
+    projects.sort();
+
     Ok(projects)
 }
