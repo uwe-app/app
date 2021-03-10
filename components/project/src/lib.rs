@@ -66,7 +66,7 @@ mod create;
 mod manage;
 
 pub use create::{create, ProjectOptions};
-pub use manage::{load, list, add, remove, ProjectList, ProjectManifestEntry};
+pub use manage::{load, find, list, add, remove, ProjectList, ProjectManifestEntry};
 
 /// Compute the SHA3-256 checksum of a project path.
 pub(crate) fn digest<P: AsRef<Path>>(target: P) -> Result<Vec<u8>> {

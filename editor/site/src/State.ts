@@ -41,6 +41,10 @@ class Projects {
     const result = await window.rpc.call('project.remove', item.entry);
     await this.fetch();
   }
+
+  async find(id) {
+    return await window.rpc.call('project.find', id);
+  }
 }
 
 class Window {

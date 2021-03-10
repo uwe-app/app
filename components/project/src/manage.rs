@@ -126,6 +126,22 @@ pub fn remove(entry: &ProjectManifestEntry) -> Result<()> {
     }
 }
 
+pub fn find(id: &str) -> Result<Option<ProjectManifestEntry>> {
+    let manifest = manifest().read().unwrap();
+    for entry in manifest.project.iter() {
+        let item_id = if let Some(ref id) = entry.id {
+            id.to_string()
+        } else {
+            crate::checksum(&entry.path)?
+        };
+
+        if id == &item_id {
+            return Ok(Some(entry.clone()));
+        }
+    }
+    Ok(None)
+}
+
 /// List projects and check if the project settings can be loaded.
 pub fn list() -> Result<ProjectList> {
     let manifest = manifest().read().unwrap();

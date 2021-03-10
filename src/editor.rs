@@ -75,7 +75,9 @@ pub fn run(args: &Editor) -> Result<()> {
     match rx.recv() {
         Ok(info) => {
             let url = if is_project_editor {
-                let project_id = project::checksum(args.project.as_ref().unwrap())?;
+                // Must be canonical so the id matches
+                let project = args.project.as_ref().unwrap().canonicalize()?;
+                let project_id = project::checksum(&project)?;
                 format!("{}/?project={}", info.to_url(), project_id)
             } else {
                 info.to_url()

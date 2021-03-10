@@ -115,7 +115,21 @@ impl Service for ProjectService {
         _ctx: &Self::Data,
     ) -> Result<Option<Response>> {
         let mut response = None;
-        if req.matches("project.create") {
+        if req.matches("project.find") {
+            let mut params: Vec<String> = req.deserialize()?;
+            if !params.is_empty() {
+                let id = params.swap_remove(0);
+                let entry = project::find(&id).map_err(Box::from)?;
+                let value = if let Some(entry) = entry {
+                    serde_json::to_value(entry).map_err(Box::from)?
+                } else {
+                    Value::Null
+                };
+                response = Some((req, value).into());
+            } else {
+                return Err((req, "Method expects parameters").into())
+            }
+        } else if req.matches("project.create") {
             let mut params: Vec<ProjectCreateRequest> = req.deserialize()?;
             if !params.is_empty() {
                 let project_request = params.swap_remove(0);
