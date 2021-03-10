@@ -120,20 +120,14 @@ impl Service for ProjectService {
             if !params.is_empty() {
                 let project_request = params.swap_remove(0);
 
-                println!("Create a project {:?}", &project_request);
-
                 let target = project_request.target.join(&project_request.name);
                 let opts = project::ProjectOptions {
                     source: Some(project_request.source),
                     target: target.to_path_buf(),
                     ..Default::default()
                 };
-                println!("Create a project {:?}", &opts);
 
-                project::create(opts).await.map_err(Box::from)?;
-
-                let path = target.to_string_lossy().into_owned();
-                let entry = ProjectManifestEntry { path: PathBuf::from(&path) };
+                let entry = project::create(opts).await.map_err(Box::from)?;
                 let value = serde_json::to_value(entry).map_err(Box::from)?;
                 response = Some((req, value).into());
             } else {

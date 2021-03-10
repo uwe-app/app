@@ -37,6 +37,7 @@ pub struct ProjectManifest {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct ProjectManifestEntry {
+    pub id: Option<String>,
     pub path: PathBuf,
 }
 
@@ -53,10 +54,20 @@ pub fn load() -> Result<()> {
         return Ok(());
     }
     let contents = utils::fs::read_string(file)?;
-    let backing: ProjectManifest = toml::from_str(&contents)?;
+    let mut backing: ProjectManifest = toml::from_str(&contents)?;
+
+    // Set up opaque identifiers from project paths
+    let project = backing
+        .project
+        .drain()
+        .map(|mut e| {
+            e.id = Some(crate::checksum(&e.path).unwrap());
+            e
+        })
+        .collect::<HashSet<_>>();
 
     let mut manifest = manifest().write().unwrap();
-    *manifest = backing;
+    *manifest = ProjectManifest { project };
 
     Ok(())
 }
@@ -72,7 +83,7 @@ fn flush(manifest: ProjectManifest) -> Result<()> {
 /// Add a project to the manifest.
 ///
 /// The project is added to the in-memory store and flushed to disc.
-pub fn add(entry: ProjectManifestEntry) -> Result<()> {
+pub fn add(mut entry: ProjectManifestEntry) -> Result<()> {
     let mut manifest = manifest().write().unwrap();
 
     if entry.path.is_relative() {
@@ -86,6 +97,10 @@ pub fn add(entry: ProjectManifestEntry) -> Result<()> {
         .iter().find(|p| &p.path == &entry.path);
     if existing.is_some() {
         return Err(Error::Exists(entry.path.to_path_buf()));
+    }
+
+    if entry.id.is_none() {
+        entry.id = Some(crate::checksum(&entry.path)?);
     }
 
     manifest.project.insert(entry);

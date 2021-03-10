@@ -48,7 +48,9 @@ function ProjectsList(props) {
         {
           projects.list.map((item) => {
             return <li>
-              <span>{item.entry.path} ({item.status.toString()})</span>
+              <Link href={'/project/' + item.entry.id}>
+                <span>{item.entry.path} ({item.status.toString()})</span>
+              </Link>
               <a href="#" onclick={(e) => remove(e, item)}>Remove</a>
             </li>
           })
