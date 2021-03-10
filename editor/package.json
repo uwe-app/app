@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "mobx": "^6.1.8",
-    "mobx-react": "^7.1.0",
+    "mobx-react-lite": "^3.2.0",
     "preact": "^10.5.12",
     "wouter": "^2.7.3"
   },

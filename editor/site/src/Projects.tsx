@@ -1,6 +1,6 @@
 import {h} from 'preact';
 import {useContext} from 'preact/hooks';
-import {observer} from 'mobx-react';
+import {observer} from 'mobx-react-lite';
 import {State} from './State'
 import {Link} from 'wouter';
 
