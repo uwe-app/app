@@ -48,5 +48,7 @@ export default function preamble() {
         }
     };
   }
+
+  return {embedded};
 }
 

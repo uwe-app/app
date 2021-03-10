@@ -10,7 +10,7 @@ dirs = { version = "0.1", path = "../dirs" }
 project = { version = "0.1", path = "../project" }
 
 thiserror = "1"
-rust-embed = "5.9"
+rust-embed = { version = "5.9", features = ["compression"] }
 rand = "0.8"
 log = "0.4.8"
 serde = "1"
