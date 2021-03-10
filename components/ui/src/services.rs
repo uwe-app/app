@@ -3,8 +3,6 @@ use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use wry::WindowProxy;
 
-//use json_rpc2::*;
-
 use json_rpc2::{futures::*, Request, Response, Result};
 use async_trait::async_trait;
 
@@ -134,8 +132,10 @@ impl Service for ProjectService {
 
                 project::create(opts).await.map_err(Box::from)?;
 
-                let project_path = target.to_string_lossy().into_owned();
-                response = Some((req, Value::String(project_path)).into());
+                let path = target.to_string_lossy().into_owned();
+                let entry = ProjectManifestEntry { path: PathBuf::from(&path) };
+                let value = serde_json::to_value(entry).map_err(Box::from)?;
+                response = Some((req, value).into());
             } else {
                 return Err((req, "Method expects parameters").into())
             }

@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use sha3::{Digest, Sha3_256};
 
 use thiserror::Error;
 
@@ -66,3 +68,20 @@ mod manage;
 pub use create::{create, ProjectOptions};
 pub use manage::{load, list, add, remove, ProjectList, ProjectManifestEntry};
 
+/// Compute the SHA3-256 checksum of a project path.
+pub(crate) fn digest<P: AsRef<Path>>(target: P) -> Result<Vec<u8>> {
+    let mut hasher = Sha3_256::new();
+    hasher.write(target.as_ref().to_string_lossy().as_bytes())?;
+    Ok(hasher.finalize().as_slice().to_owned())
+}
+
+/// Compute the SHA3-256 checksum of a project path as a hex string.
+pub fn checksum<P: AsRef<Path>>(target: P) -> Result<String> {
+    let checksum = digest(target)?;
+    let s = checksum
+        .iter()
+        .map(|b| format!("{:x}", b))
+        .collect::<Vec<_>>()
+        .join("");
+    Ok(s)
+}

@@ -30,11 +30,10 @@ function CreateProject(props) {
     }
 
     try {
-      const path = await state.projects.create(form);
-      const entry = {path}
+      const entry = await state.projects.create(form);
       await state.projects.add(entry);
       await state.projects.fetch();
-      state.flash.info(`Created project ${path}`);
+      state.flash.info(`Created project ${entry.path}`);
     } catch (e) {
       state.flash.error(e);
     }

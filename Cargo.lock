@@ -3703,6 +3703,7 @@ dependencies = [
  "preference",
  "scm",
  "serde",
+ "sha3",
  "thiserror",
  "toml",
  "url",
