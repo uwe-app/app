@@ -7,8 +7,9 @@ use log::{error, info};
 
 use futures_util::FutureExt;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::sync::{broadcast, mpsc, oneshot::{self, error::TryRecvError}, Mutex};
 use url::Url;
+use psup_impl::Worker;
 
 use config::server::{
     ConnectionInfo, HostConfig, ServerConfig, SslConfig,
@@ -74,10 +75,40 @@ pub async fn watch(
     opts.set_hosts(hosts);
     opts.set_disable_signals(true);
 
+    let (worker_tx, worker_rx) = oneshot::channel::<ConnectionInfo>();
+    let connection_rx = Arc::new(Mutex::new(worker_rx));
+
+    // Set up a worker to pass on connection info to a supervisor process.
+    //
+    // This should only be required when the UI editor is running which needs
+    // to supervise the child processes per project.
+    tokio::task::spawn(async move {
+        let worker = Worker::new()
+            .client(|stream, id| async {
+                //println!("Psup worker client connected {:?}", id.to_string());
+                //let rx = Arc::clone(&connection_rx);
+                let mut rx = connection_rx.lock().await;
+                loop {
+                    match rx.try_recv() {
+                        Ok(info) => {
+                            println!("Got web server connected info {:?}", info);
+                            break;
+                        }
+                        Err(TryRecvError::Closed) => break,
+                        _ => {}
+                    }
+                }
+
+                Ok::<(), psup_impl::Error>(())
+            })
+            .relaxed(true);
+
+        worker.run().await?;
+        Ok::<(), psup_impl::Error>(())
+    });
+
     // Spawn the bind listener to launch a browser
-    if !headless {
-        spawn_bind_open(bind_rx, launch);
-    }
+    spawn_bind_open(bind_rx, worker_tx, launch, headless);
 
     let number_watchers = host_info.len();
     let mut watchers_started = 0usize;
@@ -160,7 +191,9 @@ fn create_channels(
 /// encountered.
 fn spawn_bind_open(
     bind_rx: oneshot::Receiver<ConnectionInfo>,
+    bind_tx: oneshot::Sender<ConnectionInfo>,
     launch: Option<String>,
+    headless: bool,
 ) {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -169,34 +202,39 @@ fn spawn_bind_open(
             // can open a browser with the correct URL
             match bind_rx.await {
                 Ok(info) => {
+                    let _ = bind_tx.send(info.clone());
+
                     let mut url = info.to_url();
 
-                    let path = if let Some(ref path) = launch {
-                        // If we get an absolute URL just use the path
-                        let url_path = if let Ok(url) = path.parse::<Url>() {
-                            url.path().to_string()
+                    if !headless {
+                        let path = if let Some(ref path) = launch {
+                            // If we get an absolute URL just use the path
+                            let url_path = if let Ok(url) = path.parse::<Url>() {
+                                url.path().to_string()
+                            } else {
+                                path.to_string()
+                            };
+
+                            // Allow for path strings to omit the leading slash
+                            let url_path = url_path.trim_start_matches("/");
+                            format!("/{}", url_path)
                         } else {
-                            path.to_string()
+                            "/".to_string()
                         };
 
-                        // Allow for path strings to omit the leading slash
-                        let url_path = url_path.trim_start_matches("/");
-                        format!("/{}", url_path)
-                    } else {
-                        "/".to_string()
-                    };
+                        // Ensure the cache is bypassed so that switching between
+                        // projects does not show an older project
+                        url.push_str(&format!(
+                            "{}?r={}",
+                            path,
+                            utils::generate_id(4)
+                        ));
 
-                    // Ensure the cache is bypassed so that switching between
-                    // projects does not show an older project
-                    url.push_str(&format!(
-                        "{}?r={}",
-                        path,
-                        utils::generate_id(4)
-                    ));
+                        info!("Serve {}", &url);
 
-                    info!("Serve {}", &url);
+                        open::that(&url).map(|_| ()).unwrap_or(());
+                    }
 
-                    open::that(&url).map(|_| ()).unwrap_or(());
                 }
                 _ => {}
             }

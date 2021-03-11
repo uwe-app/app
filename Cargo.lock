@@ -4662,6 +4662,7 @@ dependencies = [
  "notify",
  "once_cell",
  "open",
+ "psup-impl",
  "rand 0.7.3",
  "rustls",
  "serde",

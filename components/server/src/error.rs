@@ -72,6 +72,9 @@ pub enum Error {
     SendError(#[from] tokio::sync::mpsc::error::SendError<String>),
 
     #[error(transparent)]
+    Psup(#[from] psup_impl::Error),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]

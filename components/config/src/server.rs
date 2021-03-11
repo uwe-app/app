@@ -48,7 +48,7 @@ pub fn get_port(
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConnectionInfo {
     pub addr: SocketAddr,
     pub host: String,

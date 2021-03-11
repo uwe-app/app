@@ -90,12 +90,28 @@ pub fn run(args: &Editor) -> Result<()> {
                             #[cfg(not(debug_assertions))]
                             let cmd = "uwe";
                             #[cfg(not(debug_assertions))]
-                            let args = &["dev", "--headless", "--port", "0", &path];
+                            let args = &[
+                                "dev",
+                                "--headless",
+                                "--port",
+                                "0",
+                                "--addr",
+                                config::LOOPBACK_IP,
+                                &path];
 
                             #[cfg(debug_assertions)]
                             let cmd = "cargo";
                             #[cfg(debug_assertions)]
-                            let args = &["run", "--", "dev", "--headless", "--port", "0", &path];
+                            let args = &[
+                                "run",
+                                "--",
+                                "dev",
+                                "--headless",
+                                "--port",
+                                "0",
+                                "--addr",
+                                config::LOOPBACK_IP,
+                                &path];
 
                             let task = Task::new(cmd).args(args).daemon(true);
                             let worker_id = supervisor.spawn(task);
