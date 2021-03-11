@@ -124,32 +124,21 @@ impl Service for ProjectService {
             if !params.is_empty() {
                 let path = params.swap_remove(0);
 
-                println!("Got open path {:?}", path);
+                //println!("Got open path {:?}", path);
 
-                let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+                let (tx, rx) = tokio::sync::oneshot::channel::<String>();
                 let msg = ProcessMessage::OpenProject { path, reply: tx };
 
                 println!("Sending message {:?}", msg);
 
                 let _ = ctx.ps.send(msg).await;
-
-                //let result = rx.await;
+                let worker_id = rx.await.map_err(Box::from)?;
 
                 //println!("Service broker got project spawn result {:?}", result);
 
-
                 //let entry = project::find(&id).map_err(Box::from)?;
 
-                /*
-                let value = if let Some(entry) = entry {
-                    serde_json::to_value(entry).map_err(Box::from)?
-                } else {
-                    Value::Null
-                };
-                response = Some((req, value).into());
-                */
-
-                response = Some(req.into());
+                response = Some((req, Value::String(worker_id)).into());
             } else {
                 return Err((req, "Method expects parameters").into())
             }

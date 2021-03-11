@@ -13,7 +13,7 @@ use crate::Result;
 
 #[derive(Debug)]
 pub enum ProcessMessage {
-    OpenProject { path: String, reply: Sender<()> },
+    OpenProject { path: String, reply: Sender<String> },
 }
 
 

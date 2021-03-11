@@ -70,8 +70,6 @@ pub fn run(args: &Editor) -> Result<()> {
         )));
         */
 
-        //println!("3) Spawn servers for each active project");
-
         // Get the child process supervisor
         let supervisor = ui::supervisor(shutdown_rx)?;
 
@@ -115,8 +113,7 @@ pub fn run(args: &Editor) -> Result<()> {
 
                             let task = Task::new(cmd).args(args).daemon(true);
                             let worker_id = supervisor.spawn(task);
-
-                            println!("Spawned worker with id {:?}", worker_id);
+                            let _ = reply.send(worker_id);
                         }
                     }
                 }

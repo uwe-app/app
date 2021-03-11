@@ -15,13 +15,15 @@ export default function ProjectView() {
 
   const [match, params] = useRoute("/project/:id");
   const [valid, setValid] = useState(true);
+  const [id, setWorkerId] = useState(null);
   const [result, setResult] = useState(null);
 
   useEffect(async () => {
     try {
       const project = await state.projects.find(params.id);
       if (project) {
-        await state.projects.open(project.path);
+        const id = await state.projects.open(project.path);
+        setWorkerId(id);
         setResult(project);
       } else {
         setValid(false);
