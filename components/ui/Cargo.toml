@@ -22,4 +22,5 @@ tinyfiledialogs = "3.3.10"
 json-rpc2 = { version = "0.10.0", features = ["async"], path = "/home/muji/git/json-rpc2" }
 async-trait = "0.1"
 tokio = {version = "1", features = ["full"]}
-psup-impl = "0.5"
+psup-impl = "0.6.1"
+#psup-impl = { version =  "0.6", path = "/home/muji/git/psup/impl" }

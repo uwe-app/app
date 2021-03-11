@@ -3,14 +3,17 @@ use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use wry::WindowProxy;
 
+use tokio::sync::mpsc::Sender;
 use json_rpc2::{futures::*, Request, Response, Result};
 use async_trait::async_trait;
-
 use log::{info, warn, error};
 
 use project::{ProjectList, ProjectManifestEntry};
+use crate::ProcessMessage;
 
-pub struct ServiceData {}
+pub struct ServiceData {
+    pub ps: Sender<ProcessMessage>,
+}
 
 pub struct ConsoleService;
 
@@ -112,10 +115,46 @@ impl Service for ProjectService {
     async fn handle(
         &self,
         req: &mut Request,
-        _ctx: &Self::Data,
+        ctx: &Self::Data,
     ) -> Result<Option<Response>> {
         let mut response = None;
-        if req.matches("project.find") {
+
+        if req.matches("project.open") {
+            let mut params: Vec<String> = req.deserialize()?;
+            if !params.is_empty() {
+                let path = params.swap_remove(0);
+
+                println!("Got open path {:?}", path);
+
+                let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+                let msg = ProcessMessage::OpenProject { path, reply: tx };
+
+                println!("Sending message {:?}", msg);
+
+                let _ = ctx.ps.send(msg).await;
+
+                //let result = rx.await;
+
+                //println!("Service broker got project spawn result {:?}", result);
+
+
+                //let entry = project::find(&id).map_err(Box::from)?;
+
+                /*
+                let value = if let Some(entry) = entry {
+                    serde_json::to_value(entry).map_err(Box::from)?
+                } else {
+                    Value::Null
+                };
+                response = Some((req, value).into());
+                */
+
+                response = Some(req.into());
+            } else {
+                return Err((req, "Method expects parameters").into())
+            }
+
+        } else if req.matches("project.find") {
             let mut params: Vec<String> = req.deserialize()?;
             if !params.is_empty() {
                 let id = params.swap_remove(0);

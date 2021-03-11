@@ -3712,9 +3712,9 @@ dependencies = [
 
 [[package]]
 name = "psup-impl"
-version = "0.5.2"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19b742390a4214d46caf3fd492e9283caadf76362f2b995ce9b742777ea29893"
+checksum = "25ac78d193a2d04ba69b2a21babcd55778359557205511b24932e1a1999aa3fb"
 dependencies = [
  "futures",
  "log",
@@ -5666,6 +5666,7 @@ dependencies = [
  "futures",
  "hex",
  "human_bytes",
+ "libc",
  "livereload",
  "locale",
  "log",

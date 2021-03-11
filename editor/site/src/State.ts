@@ -45,6 +45,10 @@ class Projects {
   async find(id) {
     return await window.rpc.call('project.find', id);
   }
+
+  async open(path) {
+    return await window.rpc.call('project.open', path);
+  }
 }
 
 class Window {

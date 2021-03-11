@@ -1,10 +1,12 @@
 use serde_json::Value;
 use wry::{Application, Attributes, RpcRequest, RpcResponse, WindowProxy};
 
+use tokio::sync::mpsc::Sender;
+
 use json_rpc2::{futures::{Service, Server}, Request, Response, RpcError};
 //use log::{error, info, warn};
 
-use crate::services::*;
+use crate::{services::*, supervisor::ProcessMessage};
 
 /// Convert a WRY RpcRequest into a json_rpc2::Request
 /// so we can process it via the service handler.
@@ -24,7 +26,7 @@ fn into_response(res: Response) -> RpcResponse {
 }
 
 /// Create a native application window and display the given URL.
-pub fn window(url: String) -> crate::Result<()> {
+pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
 
     let mut app = Application::new()?;
 
@@ -61,8 +63,11 @@ pub fn window(url: String) -> crate::Result<()> {
                 &project_service,
             ]);
 
+            let data = ServiceData {
+                ps: ps_tx.clone(),
+            };
+
             rt.block_on(async move {
-                let data = ServiceData {};
                 if let Some(response) = server.serve(&mut req, &data).await {
                     if let Some(id) = req.id_mut().take() {
                         let script = if let Some(err) = response.error() {

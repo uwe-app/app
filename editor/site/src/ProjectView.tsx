@@ -21,6 +21,7 @@ export default function ProjectView() {
     try {
       const project = await state.projects.find(params.id);
       if (project) {
+        await state.projects.open(project.path);
         setResult(project);
       } else {
         setValid(false);

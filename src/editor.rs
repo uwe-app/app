@@ -4,7 +4,9 @@ use log::{info, warn};
 use crate::{opts::Editor, Error, Result};
 use config::server::{ConnectionInfo, HostConfig, ServerConfig};
 
-use ui::{ProcessMessage};
+use ui::ProcessMessage;
+
+use psup_impl::Task;
 
 // NOTE: Must **not** execute on the tokio runtime as the event loop
 // NOTE: used for webview rendering must execute on the main thread (macOS)
@@ -18,7 +20,10 @@ pub fn run(args: &Editor) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
 
     // Set up a channel for services to spawn child processes
-    let (ps_tx, ps_rx) = tokio::sync::mpsc::channel::<ProcessMessage>(64);
+    let (ps_tx, mut ps_rx) = tokio::sync::mpsc::channel::<ProcessMessage>(64);
+
+    // Channel used to shutdown all child worker processes
+    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
 
     let is_project_editor = args.project.is_some();
 
@@ -68,13 +73,38 @@ pub fn run(args: &Editor) -> Result<()> {
         //println!("3) Spawn servers for each active project");
 
         // Get the child process supervisor
-        let supervisor = ui::supervisor(ps_rx)?;
+        let supervisor = ui::supervisor(shutdown_rx)?;
 
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
 
             // Start the process supervisor
             supervisor.run().await?;
+
+            tokio::task::spawn(async move {
+                while let Some(msg) = ps_rx.recv().await {
+                    println!("Got incoming message {:?}", msg);
+
+                    match msg {
+                        ProcessMessage::OpenProject {path, reply} => {
+                            #[cfg(not(debug_assertions))]
+                            let cmd = "uwe";
+                            #[cfg(not(debug_assertions))]
+                            let args = &["dev", "--headless", "--port", "0", &path];
+
+                            #[cfg(debug_assertions)]
+                            let cmd = "cargo";
+                            #[cfg(debug_assertions)]
+                            let args = &["run", "--", "dev", "--headless", "--port", "0", &path];
+
+                            let task = Task::new(cmd).args(args).daemon(true);
+                            let worker_id = supervisor.spawn(task);
+
+                            println!("Spawned worker with id {:?}", worker_id);
+                        }
+                    }
+                }
+            });
 
             // Start the editor web server
             server::open(server, move |info| {
@@ -101,7 +131,15 @@ pub fn run(args: &Editor) -> Result<()> {
                 info.to_url()
             };
             info!("Editor {:#?}", url);
-            ui::window(url)?;
+            ui::window(url, ps_tx)?;
+
+            // NOTE: When the window is closed the thread resumes and
+            // NOTE: this code executes, we need to ensure that spawned
+            // NOTE: worker processes are closed.
+            //
+            // NOTE: We don't need to do this when SIGINT is received via Ctrl+c
+            // NOTE: as that will terminate the child processes.
+            let _ = shutdown_tx.send(());
         }
         Err(_e) => {
             warn!("Failed to receive connection info from the web server");
