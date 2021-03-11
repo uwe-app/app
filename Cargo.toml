@@ -71,6 +71,7 @@ unic-langid = "0.9.0"
 tokio = { version = "^1.0", features = ["full"] }
 pbr = "1.0.4"
 rusoto_core = "0.46.0"
+psup-impl = "0.5"
 
 # uwe-shim
 winapi = "0.3.9"

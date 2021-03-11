@@ -108,6 +108,9 @@ pub enum Error {
     Recv(#[from] tokio::sync::oneshot::error::RecvError),
 
     #[error(transparent)]
+    Psup(#[from] psup_impl::Error),
+
+    #[error(transparent)]
     Config(#[from] config::Error),
 
     #[error(transparent)]
@@ -151,6 +154,7 @@ pub enum Error {
 
     #[error(transparent)]
     Ui(#[from] ui::Error),
+
 }
 
 pub fn panic_hook() {

@@ -5,6 +5,7 @@ const ROOT_DIR: &str = ".uwe";
 
 const BIN: &str = "bin";
 const ENV: &str = "env";
+const TMP: &str = "tmp";
 
 const PROJECTS_FILE: &str = "projects.toml";
 
@@ -24,6 +25,8 @@ const PACKAGES: &str = "packages";
 const REPOSITORIES: &str = "repositories";
 /// Name for the location of where plugins installed from archives are placed.
 const ARCHIVES: &str = "archives";
+/// Name for the socket used to communicate with child processes.
+const SOCKET: &str = "uwe.sock";
 
 /// Get the root directory (~/.uwe) but do not
 /// create it if it does not exist.
@@ -41,9 +44,20 @@ pub fn projects_manifest() -> io::Result<PathBuf> {
 }
 
 pub fn env_file() -> io::Result<PathBuf> {
-    let mut env = root_dir()?;
-    env.push(ENV);
-    Ok(env)
+    Ok(root_dir()?.join(ENV))
+}
+
+pub fn socket_file() -> io::Result<PathBuf> {
+    Ok(tmp_dir()?.join(SOCKET))
+}
+
+pub fn tmp_dir() -> io::Result<PathBuf> {
+    let mut tmp = root_dir()?;
+    tmp.push(TMP);
+    if !tmp.exists() {
+        fs::create_dir(&tmp)?;
+    }
+    Ok(tmp)
 }
 
 pub fn bin_dir() -> io::Result<PathBuf> {

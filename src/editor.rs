@@ -1,8 +1,10 @@
-use log::{info, warn};
 use std::path::PathBuf;
+use log::{info, warn};
 
 use crate::{opts::Editor, Error, Result};
 use config::server::{ConnectionInfo, HostConfig, ServerConfig};
+
+use ui::{ProcessMessage};
 
 // NOTE: Must **not** execute on the tokio runtime as the event loop
 // NOTE: used for webview rendering must execute on the main thread (macOS)
@@ -11,7 +13,12 @@ pub fn run(args: &Editor) -> Result<()> {
     // Load user projects list
     project::load()?;
 
+    // NOTE: this channel must be `std::sync::mpsc` as the window
+    // NOTE: must run on the main thread (MacOS)
     let (tx, rx) = std::sync::mpsc::channel::<ConnectionInfo>();
+
+    // Set up a channel for services to spawn child processes
+    let (ps_tx, ps_rx) = tokio::sync::mpsc::channel::<ProcessMessage>(64);
 
     let is_project_editor = args.project.is_some();
 
@@ -60,9 +67,19 @@ pub fn run(args: &Editor) -> Result<()> {
 
         //println!("3) Spawn servers for each active project");
 
+        // Get the child process supervisor
+        let supervisor = ui::supervisor(ps_rx)?;
+
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
+
+            // Start the process supervisor
+            supervisor.run().await?;
+
+            // Start the editor web server
             server::open(server, move |info| {
+                // Notify that the web server is ready
+                // so the UI window is displayed
                 let _ = tx.send(info);
             })
             .await?;
