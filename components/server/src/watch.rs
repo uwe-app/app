@@ -85,14 +85,15 @@ pub async fn watch(
     // to supervise the child processes per project.
     tokio::task::spawn(async move {
         let worker = Worker::new()
-            .client(|stream, _id| async {
+            .client(|stream, id| async {
                 let (_reader, mut writer) = stream.into_split();
                 let mut rx = connection_rx.lock().await;
                 loop {
                     match rx.try_recv() {
                         Ok(info) => {
+                            let bridge = project::ConnectionBridge::new(id, info);
                             let params =
-                                serde_json::to_value(&info).map_err(Box::from)?;
+                                serde_json::to_value(&bridge).map_err(Box::from)?;
                             let req = notify("connected", Some(params));
                             write(&mut writer, &req).await?;
                             break;

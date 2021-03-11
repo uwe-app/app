@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 config = { version = "0.1", path = "../config" }
 livereload = { version = "0.1", path = "../livereload" }
+project = { version = "0.1", path = "../project" }
 workspace = { version = "0.1", path = "../workspace" }
 utils = { version = "0.1", path = "../utils" }
 
@@ -25,7 +26,8 @@ bracket = "^0.9.32"
 mime_guess = "2"
 mime = "0.3"
 json-rpc2 = "0.10"
-psup-impl = "0.6.1"
+psup-impl = "0.6.2"
+#psup-impl = { version =  "0.6", path = "/home/muji/git/psup/impl" }
 psup-json-rpc = "0.6"
 
 tokio = { version = "^1.0", features = ["full"] }

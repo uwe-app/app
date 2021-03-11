@@ -8,7 +8,8 @@ use async_trait::async_trait;
 
 use psup_json_rpc::serve;
 
-use config::server::ConnectionInfo;
+use project::ConnectionBridge;
+
 use crate::Result;
 
 #[derive(Debug)]
@@ -29,7 +30,7 @@ impl Service for SupervisorService {
     ) -> json_rpc2::Result<Option<Response>> {
         let mut response = None;
         if req.matches("connected") {
-            let info: ConnectionInfo = req.deserialize()?;
+            let info: ConnectionBridge = req.deserialize()?;
             println!("Got connected message in supervisor {:?}", info);
             response = Some(req.into());
         }

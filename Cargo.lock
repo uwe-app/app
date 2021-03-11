@@ -3714,9 +3714,9 @@ dependencies = [
 
 [[package]]
 name = "psup-impl"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25ac78d193a2d04ba69b2a21babcd55778359557205511b24932e1a1999aa3fb"
+checksum = "b6af4818674eb569c1026ae4a413cff6c8f707f28d148b3036f7e3fed4b92ad4"
 dependencies = [
  "futures",
  "log",
@@ -4679,6 +4679,7 @@ dependencies = [
  "notify",
  "once_cell",
  "open",
+ "project",
  "psup-impl",
  "psup-json-rpc",
  "rand 0.7.3",

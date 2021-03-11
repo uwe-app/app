@@ -62,9 +62,11 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+mod bridge;
 mod create;
 mod manage;
 
+pub use bridge::ConnectionBridge;
 pub use create::{create, ProjectOptions};
 pub use manage::{load, find, list, add, remove, ProjectList, ProjectManifestEntry};
 

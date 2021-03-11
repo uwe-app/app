@@ -71,7 +71,7 @@ pub fn run(args: &Editor) -> Result<()> {
         */
 
         // Get the child process supervisor
-        let supervisor = ui::supervisor(shutdown_rx)?;
+        let mut supervisor = ui::supervisor(shutdown_rx)?;
 
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
