@@ -19,8 +19,9 @@ serde_json = "1"
 wry = { version = "0.5.1", path = "/home/muji/git/2.external/wry" }
 #wry = { version = "0.5.1" }
 tinyfiledialogs = "3.3.10"
-json-rpc2 = { version = "0.10.0", features = ["async"], path = "/home/muji/git/json-rpc2" }
+json-rpc2 = { version = "0.10.0", features = ["async"] }
 async-trait = "0.1"
 tokio = {version = "1", features = ["full"]}
 psup-impl = "0.6.1"
+psup-json-rpc = "0.6"
 #psup-impl = { version =  "0.6", path = "/home/muji/git/psup/impl" }

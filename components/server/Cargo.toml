@@ -24,7 +24,9 @@ libc = "0.2"
 bracket = "^0.9.32"
 mime_guess = "2"
 mime = "0.3"
+json-rpc2 = "0.10"
 psup-impl = "0.6.1"
+psup-json-rpc = "0.6"
 
 tokio = { version = "^1.0", features = ["full"] }
 

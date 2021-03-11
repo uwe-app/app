@@ -2544,6 +2544,8 @@ dependencies = [
 [[package]]
 name = "json-rpc2"
 version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78b49f717fad135c34796717cd5d932dc193aab2034c5c7a18caf29602f127a5"
 dependencies = [
  "async-trait",
  "rand 0.8.2",
@@ -3725,6 +3727,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "psup-json-rpc"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93bece47438c0d3c77a706f5d5ab64702d8167d03c654c1e43b6de4a5c94a9f2"
+dependencies = [
+ "futures",
+ "json-rpc2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "publisher"
 version = "0.1.0"
 dependencies = [
@@ -4654,6 +4670,7 @@ dependencies = [
  "config",
  "futures",
  "futures-util",
+ "json-rpc2",
  "libc",
  "livereload",
  "log",
@@ -4663,6 +4680,7 @@ dependencies = [
  "once_cell",
  "open",
  "psup-impl",
+ "psup-json-rpc",
  "rand 0.7.3",
  "rustls",
  "serde",
@@ -5499,6 +5517,7 @@ dependencies = [
  "log",
  "project",
  "psup-impl",
+ "psup-json-rpc",
  "rand 0.8.2",
  "rust-embed",
  "serde",

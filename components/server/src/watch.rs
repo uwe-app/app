@@ -10,6 +10,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::{broadcast, mpsc, oneshot::{self, error::TryRecvError}, Mutex};
 use url::Url;
 use psup_impl::Worker;
+use psup_json_rpc::{write, notify};
 
 use config::server::{
     ConnectionInfo, HostConfig, ServerConfig, SslConfig,
@@ -84,21 +85,22 @@ pub async fn watch(
     // to supervise the child processes per project.
     tokio::task::spawn(async move {
         let worker = Worker::new()
-            .client(|stream, id| async {
-                //println!("Psup worker client connected {:?}", id.to_string());
-                //let rx = Arc::clone(&connection_rx);
+            .client(|stream, _id| async {
+                let (_reader, mut writer) = stream.into_split();
                 let mut rx = connection_rx.lock().await;
                 loop {
                     match rx.try_recv() {
                         Ok(info) => {
-                            println!("Got web server connected info {:?}", info);
+                            let params =
+                                serde_json::to_value(&info).map_err(Box::from)?;
+                            let req = notify("connected", Some(params));
+                            write(&mut writer, &req).await?;
                             break;
                         }
                         Err(TryRecvError::Closed) => break,
                         _ => {}
                     }
                 }
-
                 Ok::<(), psup_impl::Error>(())
             })
             .relaxed(true);
