@@ -10,12 +10,14 @@ export default function ProjectView() {
 
   const [match, params] = useRoute("/project/:id");
   const [valid, setValid] = useState(true);
-  const [id, setWorkerId] = useState(null);
+  const [connection, setConnection] = useState(null);
   const [result, setResult] = useState(null);
+
+  let workerId = null;
 
   const close = async (e) => {
     e.preventDefault();
-    await state.projects.close(id);
+    await state.projects.close(workerId);
     setLocation('/');
   }
 
@@ -24,11 +26,28 @@ export default function ProjectView() {
   }
 
   useEffect(async () => {
+    // FIXME: add a timeout for this poll!
+    let id = null;
+    const poll = async () => {
+      if (workerId) {
+        const info = await state.projects.status(workerId);
+        if (info) {
+          const protocol = info.tls ? 'https:' : 'http:';
+          info.url = `${protocol}//${info.addr}/`;
+          setConnection(info);
+          clearInterval(id);
+        }
+      }
+    }
+
+    id = setInterval(poll, 500);
+  }, []);
+
+  useEffect(async () => {
     try {
       const project = await state.projects.find(params.id);
       if (project) {
-        const id = await state.projects.open(project.path);
-        setWorkerId(id);
+        workerId = await state.projects.open(project.path);
         setResult(project);
       } else {
         setValid(false);
@@ -45,11 +64,19 @@ export default function ProjectView() {
       <Close />
       <p>Project not found</p>
     </div>;
-  } else if (result && valid) {
-    return <div>
-      <Close />
-      <p>Id: {result.id}</p>
-      <p>Path: {result.path}</p>
+  } else if (result && valid && connection) {
+    return <div class="project-editor">
+      <header>
+        <Close />
+        <p>Id: {result.id}</p>
+        <p>Path: {result.path}</p>
+      </header>
+      <iframe
+        class="preview"
+        src={connection.url}
+        frameborder="0"
+        sandbox="allow-scripts allow-forms"
+        />
     </div>;
   }
 }

@@ -137,6 +137,10 @@ pub const DEFAULT_PWA_MANIFEST: &str = "app.webmanifest";
 
 pub const PUBLIC_HTML: &str = "public_html";
 
+// Environment variables
+pub const ENV_DISABLE_SSL:&str = "UWE_DISABLE_SSL";
+pub const ENV_LOOPBACK_HOST:&str = "UWE_LOOPBACK_HOST";
+
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
 }

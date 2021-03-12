@@ -53,6 +53,10 @@ class Projects {
   async close(workerId) {
     return await window.rpc.notify('project.close', workerId);
   }
+
+  async status(workerId) {
+    return await window.rpc.call('project.status', workerId);
+  }
 }
 
 class Window {

@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use log::{info, warn};
 use tokio::sync::{oneshot, mpsc, Mutex};
@@ -11,9 +12,19 @@ use json_rpc2::{
 };
 use psup_impl::{id, Supervisor, SupervisorBuilder, Message};
 use psup_json_rpc::serve;
+use once_cell::sync::OnceCell;
 
 use crate::Result;
+use config::server::ConnectionInfo;
 use project::ConnectionBridge;
+
+/// Store the web server connection info for each supervised process.
+pub(crate) fn project_servers() -> &'static RwLock<HashMap<String, ConnectionInfo>> {
+    static INSTANCE: OnceCell<RwLock<HashMap<String, ConnectionInfo>>> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        RwLock::new(HashMap::new())
+    })
+}
 
 #[derive(Debug)]
 pub struct SocketFile {
@@ -51,6 +62,8 @@ impl Service for SupervisorService {
         if req.matches("connected") {
             let info: ConnectionBridge = req.deserialize()?;
             println!("Got connected message in supervisor {:?}", info);
+            let mut servers = project_servers().write().unwrap();
+            servers.insert(info.id, info.connection);
             response = Some(req.into());
         }
         Ok(response)

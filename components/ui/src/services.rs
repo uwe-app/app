@@ -1,14 +1,14 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::path::PathBuf;
 use wry::WindowProxy;
-
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Request, Response, Result};
 use log::{error, info, warn};
 use tokio::sync::mpsc::Sender;
 
-use crate::ProcessMessage;
+use crate::{ProcessMessage, supervisor::project_servers};
 use project::{ProjectList, ProjectManifestEntry};
 
 pub struct ServiceData {
@@ -119,7 +119,21 @@ impl Service for ProjectService {
     ) -> Result<Option<Response>> {
         let mut response = None;
 
-        if req.matches("project.close") {
+        if req.matches("project.status") {
+            let mut params: Vec<String> = req.deserialize()?;
+            if !params.is_empty() {
+                let worker_id = params.swap_remove(0);
+                let servers = project_servers().read().unwrap();
+                if let Some(info) = servers.get(&worker_id) {
+                    let value = serde_json::to_value(info).map_err(Box::from)?;
+                    response = Some((req, value).into());
+                } else {
+                    response = Some(req.into());
+                }
+            } else {
+                return Err((req, "Method expects parameters").into());
+            }
+        } else if req.matches("project.close") {
             let mut params: Vec<String> = req.deserialize()?;
             if !params.is_empty() {
                 let worker_id = params.swap_remove(0);
@@ -133,21 +147,10 @@ impl Service for ProjectService {
             let mut params: Vec<String> = req.deserialize()?;
             if !params.is_empty() {
                 let path = params.swap_remove(0);
-
-                //println!("Got open path {:?}", path);
-
                 let (tx, rx) = tokio::sync::oneshot::channel::<String>();
                 let msg = ProcessMessage::OpenProject { path, reply: tx };
-
-                println!("Sending message {:?}", msg);
-
                 let _ = ctx.ps.send(msg).await;
                 let worker_id = rx.await.map_err(Box::from)?;
-
-                //println!("Service broker got project spawn result {:?}", result);
-
-                //let entry = project::find(&id).map_err(Box::from)?;
-
                 response = Some((req, Value::String(worker_id)).into());
             } else {
                 return Err((req, "Method expects parameters").into());

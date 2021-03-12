@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use log::{info, warn};
 use std::path::PathBuf;
 
@@ -121,7 +122,11 @@ pub fn run(args: &Editor) -> Result<()> {
                                 &path,
                             ];
 
-                            let task = Task::new(cmd).args(args).daemon(true);
+                            let mut envs = HashMap::new();
+                            envs.insert(config::ENV_DISABLE_SSL, "1");
+                            envs.insert(config::ENV_LOOPBACK_HOST, "1");
+
+                            let task = Task::new(cmd).args(args).envs(envs).daemon(true);
                             let worker_id = supervisor.spawn(task);
                             let _ = reply.send(worker_id);
                         }

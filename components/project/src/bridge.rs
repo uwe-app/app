@@ -4,8 +4,8 @@ use config::server::ConnectionInfo;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectionBridge {
-    id: String,
-    connection: ConnectionInfo,
+    pub id: String,
+    pub connection: ConnectionInfo,
 }
 
 impl ConnectionBridge {

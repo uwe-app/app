@@ -230,6 +230,10 @@ impl ServerConfig {
         &self.ssl
     }
 
+    pub fn set_ssl(&mut self, ssl: Option<SslConfig>) {
+        self.ssl = ssl;
+    }
+
     pub fn ssl_mut(&mut self) -> &mut Option<SslConfig> {
         &mut self.ssl
     }
@@ -476,6 +480,10 @@ impl HostConfig {
 
     pub fn deny_iframe(&self) -> bool {
         self.deny_iframe
+    }
+
+    pub fn set_deny_iframe(&mut self, deny_iframe: bool) {
+        self.deny_iframe = deny_iframe;
     }
 
     pub fn endpoint(&self) -> &Option<String> {

@@ -45,9 +45,14 @@ pub async fn watch(
     let mut host_configs: Vec<(HostInfo, HostConfig)> =
         host_result.try_into()?;
 
-    for (_info, host) in host_configs.iter_mut() {
+    for (info, host) in host_configs.iter_mut() {
         host.set_watch(true);
         host.set_disable_cache(true);
+        if let Some(_) = std::env::var(config::ENV_LOOPBACK_HOST).ok() {
+            host.set_name(config::LOOPBACK_IP.to_string());
+            host.set_deny_iframe(false);
+            info.name = config::LOOPBACK_IP.to_string();
+        }
     }
 
     let (host_info, hosts): (Vec<HostInfo>, Vec<HostConfig>) =
@@ -64,6 +69,8 @@ pub async fn watch(
         .map(|h| h.name().to_string())
         .collect::<Vec<String>>();
 
+    println!("Using channel names {:?}", channel_names);
+
     let (server_channels, watch_channels) = create_channels(channel_names)?;
 
     // Server must have at least a single virtual host
@@ -76,6 +83,11 @@ pub async fn watch(
     opts.set_authorities(authorities);
     opts.set_hosts(hosts);
     opts.set_disable_signals(true);
+    opts.set_workers(2);
+    if let Some(_) = std::env::var(config::ENV_DISABLE_SSL).ok() {
+        opts.set_allow_ssl_from_env(false);
+        opts.set_ssl(None);
+    }
 
     let (worker_tx, worker_rx) = oneshot::channel::<ConnectionInfo>();
     let connection_rx = Arc::new(Mutex::new(worker_rx));

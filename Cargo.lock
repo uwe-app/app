@@ -5538,6 +5538,7 @@ dependencies = [
  "dirs",
  "json-rpc2",
  "log",
+ "once_cell",
  "project",
  "psup-impl",
  "psup-json-rpc",

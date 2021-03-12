@@ -4,7 +4,9 @@ import {ProjectsList, OpenProject, NewProject} from './Projects';
 export default function Launch(props) {
   return <>
     <ProjectsList />
-    <OpenProject />
-    <NewProject />
+    <div class="actions">
+      <OpenProject />
+      <NewProject />
+    </div>
   </>
 }
