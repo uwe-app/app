@@ -9,7 +9,6 @@ pub async fn run<P: AsRef<Path>>(
     mut args: ProfileSettings,
     authorities: Option<Vec<String>>,
 ) -> Result<()> {
-
     // Prepare the server settings
     let port = args.get_port().clone();
 

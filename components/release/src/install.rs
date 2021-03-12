@@ -223,7 +223,6 @@ pub async fn update(name: &str, range: Option<VersionReq>) -> Result<()> {
 
         // Include shims on first run
         names.extend_from_slice(&releases::INSTALL_SHIM_NAMES);
-
     }
 
     // Fetch plugin registry meta data
@@ -286,7 +285,7 @@ pub async fn update_self(current: &str) -> Result<()> {
 
     if &current == version {
         info!("Version uvm@{} is up to date ✓", version);
-        return Ok(())
+        return Ok(());
     }
 
     // Download the uvm artifact for the version.

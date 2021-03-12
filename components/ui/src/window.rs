@@ -3,7 +3,10 @@ use wry::{Application, Attributes, RpcRequest, RpcResponse, WindowProxy};
 
 use tokio::sync::mpsc::Sender;
 
-use json_rpc2::{futures::{Service, Server}, Request, Response, RpcError};
+use json_rpc2::{
+    futures::{Server, Service},
+    Request, Response, RpcError,
+};
 //use log::{error, info, warn};
 
 use crate::{services::*, supervisor::ProcessMessage};
@@ -17,7 +20,8 @@ fn into_request(req: RpcRequest) -> Request {
 /// Convert a service Response into an RpcResponse for passing
 /// back to the Javascript.
 fn into_response(res: Response) -> RpcResponse {
-    let (id, error, result): (Option<Value>, Option<RpcError>, Option<Value>) = res.into();
+    let (id, error, result): (Option<Value>, Option<RpcError>, Option<Value>) =
+        res.into();
     if let Some(err) = error {
         RpcResponse::new_error(id, serde_json::to_value(err).ok())
     } else {
@@ -27,7 +31,6 @@ fn into_response(res: Response) -> RpcResponse {
 
 /// Create a native application window and display the given URL.
 pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
-
     let mut app = Application::new()?;
 
     let app_service: Box<dyn Service<Data = ServiceData>> =
@@ -48,14 +51,16 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
         // we cannot send `&WindowProxy` between threads which is
         // required for use with futures.
         if req.method().starts_with("window") {
-            let window_service: Box<dyn json_rpc2::Service<Data = WindowProxy>> =
-                Box::new(WindowService {});
+            let window_service: Box<
+                dyn json_rpc2::Service<Data = WindowProxy>,
+            > = Box::new(WindowService {});
             let server = json_rpc2::Server::new(vec![&window_service]);
             if let Some(response) = server.serve(&mut req, &proxy) {
                 Some(into_response(response))
-            } else { None }
+            } else {
+                None
+            }
         } else {
-
             let server = Server::new(vec![
                 &app_service,
                 &console_service,
@@ -63,9 +68,7 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
                 &project_service,
             ]);
 
-            let data = ServiceData {
-                ps: ps_tx.clone(),
-            };
+            let data = ServiceData { ps: ps_tx.clone() };
 
             rt.block_on(async move {
                 if let Some(response) = server.serve(&mut req, &data).await {
@@ -77,7 +80,8 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
                             let res = serde_json::to_value(res).unwrap();
                             RpcResponse::into_result_script(id, res).unwrap()
                         } else {
-                            RpcResponse::into_result_script(id, Value::Null).unwrap()
+                            RpcResponse::into_result_script(id, Value::Null)
+                                .unwrap()
                         };
                         let _ = proxy.evaluate_script(&script);
                     }
@@ -100,11 +104,7 @@ pub fn window(url: String, ps_tx: Sender<ProcessMessage>) -> crate::Result<()> {
         title: "Universal Web Editor".to_string(),
         ..Default::default()
     };
-    app.add_window_with_configs(
-        attrs,
-        Some(handler),
-        None,
-    )?;
+    app.add_window_with_configs(attrs, Some(handler), None)?;
     app.run();
     Ok(())
 }

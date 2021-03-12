@@ -154,7 +154,6 @@ pub enum Error {
 
     #[error(transparent)]
     Ui(#[from] ui::Error),
-
 }
 
 pub fn panic_hook() {

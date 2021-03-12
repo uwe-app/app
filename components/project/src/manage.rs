@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::{RwLock};
+use std::sync::RwLock;
 
 use once_cell::sync::OnceCell;
 
@@ -14,10 +14,16 @@ pub type ProjectList = Vec<ProjectStatus>;
 
 fn manifest() -> &'static RwLock<ProjectManifest> {
     static INSTANCE: OnceCell<RwLock<ProjectManifest>> = OnceCell::new();
-    INSTANCE.get_or_init(|| RwLock::new(ProjectManifest {project: HashSet::new()}))
+    INSTANCE.get_or_init(|| {
+        RwLock::new(ProjectManifest {
+            project: HashSet::new(),
+        })
+    })
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(
+    Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd,
+)]
 pub enum SettingsStatus {
     /// Settings file does not exist
     #[serde(rename = "missing")]
@@ -35,13 +41,17 @@ pub struct ProjectManifest {
     pub project: HashSet<ProjectManifestEntry>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(
+    Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Ord, PartialOrd,
+)]
 pub struct ProjectManifestEntry {
     pub id: Option<String>,
     pub path: PathBuf,
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(
+    Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd,
+)]
 pub struct ProjectStatus {
     pub status: SettingsStatus,
     pub entry: ProjectManifestEntry,
@@ -87,14 +97,13 @@ pub fn add(mut entry: ProjectManifestEntry) -> Result<()> {
     let mut manifest = manifest().write().unwrap();
 
     if entry.path.is_relative() {
-        return Err(Error::NoRelativeProject(entry.path.to_path_buf()))
+        return Err(Error::NoRelativeProject(entry.path.to_path_buf()));
     }
 
     // Must have a valid config
     let _ = Config::load(&entry.path, false)?;
 
-    let existing = manifest.project
-        .iter().find(|p| &p.path == &entry.path);
+    let existing = manifest.project.iter().find(|p| &p.path == &entry.path);
     if existing.is_some() {
         return Err(Error::Exists(entry.path.to_path_buf()));
     }
@@ -145,7 +154,8 @@ pub fn find(id: &str) -> Result<Option<ProjectManifestEntry>> {
 /// List projects and check if the project settings can be loaded.
 pub fn list() -> Result<ProjectList> {
     let manifest = manifest().read().unwrap();
-    let mut projects: Vec<ProjectStatus> = Vec::with_capacity(manifest.project.len());
+    let mut projects: Vec<ProjectStatus> =
+        Vec::with_capacity(manifest.project.len());
 
     for entry in manifest.project.iter() {
         let settings_file = entry.path.join(config::SITE_TOML);
@@ -157,7 +167,10 @@ pub fn list() -> Result<ProjectList> {
         } else {
             SettingsStatus::Missing
         };
-        let item = ProjectStatus { status, entry: entry.clone() };
+        let item = ProjectStatus {
+            status,
+            entry: entry.clone(),
+        };
         projects.push(item);
     }
 

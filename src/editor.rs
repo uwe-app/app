@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use log::{info, warn};
+use std::path::PathBuf;
 
 use crate::{opts::Editor, Error, Result};
 use config::server::{ConnectionInfo, HostConfig, ServerConfig};
@@ -11,7 +11,6 @@ use psup_impl::Task;
 // NOTE: Must **not** execute on the tokio runtime as the event loop
 // NOTE: used for webview rendering must execute on the main thread (macOS)
 pub fn run(args: &Editor) -> Result<()> {
-
     let socket = SocketFile::new()?;
     let socket_path = socket.path().to_path_buf();
     let ctrlc_path = socket.path().to_path_buf();
@@ -32,6 +31,9 @@ pub fn run(args: &Editor) -> Result<()> {
 
     // Set up a channel for services to spawn child processes
     let (ps_tx, mut ps_rx) = tokio::sync::mpsc::channel::<ProcessMessage>(64);
+
+    // Set up a channel for services to shutdown child processes.
+    let (proxy_tx, proxy_rx) = tokio::sync::mpsc::channel::<ProcessMessage>(64);
 
     // Channel used to shutdown all child worker processes
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
@@ -71,8 +73,6 @@ pub fn run(args: &Editor) -> Result<()> {
 
         server.add_host(editor_host);
 
-        //println!("Server {:#?}", &server);
-
         /*
         editor_host.set_webdav(Some(WebDavConfig::new(
             "/webdav".to_string(),
@@ -82,20 +82,17 @@ pub fn run(args: &Editor) -> Result<()> {
         */
 
         // Get the child process supervisor
-        let mut supervisor = ui::supervisor(&socket, shutdown_rx)?;
+        let mut supervisor = ui::supervisor(&socket, shutdown_rx, proxy_rx)?;
 
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
-
             // Start the process supervisor
             supervisor.run().await?;
 
             tokio::task::spawn(async move {
                 while let Some(msg) = ps_rx.recv().await {
-                    println!("Got incoming message {:?}", msg);
-
                     match msg {
-                        ProcessMessage::OpenProject {path, reply} => {
+                        ProcessMessage::OpenProject { path, reply } => {
                             #[cfg(not(debug_assertions))]
                             let cmd = "uwe";
                             #[cfg(not(debug_assertions))]
@@ -106,7 +103,8 @@ pub fn run(args: &Editor) -> Result<()> {
                                 "0",
                                 "--addr",
                                 config::LOOPBACK_IP,
-                                &path];
+                                &path,
+                            ];
 
                             #[cfg(debug_assertions)]
                             let cmd = "cargo";
@@ -120,11 +118,17 @@ pub fn run(args: &Editor) -> Result<()> {
                                 "0",
                                 "--addr",
                                 config::LOOPBACK_IP,
-                                &path];
+                                &path,
+                            ];
 
                             let task = Task::new(cmd).args(args).daemon(true);
                             let worker_id = supervisor.spawn(task);
                             let _ = reply.send(worker_id);
+                        }
+                        _ => {
+                            if let Err(e) = proxy_tx.send(msg).await {
+                                warn!("Failed to send message to supervisor proxy: {}", e);
+                            }
                         }
                     }
                 }

@@ -1,22 +1,27 @@
 import {h} from 'preact';
 import {useEffect, useContext, useState} from 'preact/hooks';
-import {useRoute} from 'wouter';
+import {useRoute, useLocation} from 'wouter';
 import {Link} from 'wouter';
 import {State} from './State'
 
-function Close(props) {
-  return <Link href="/">
-    <a href="#">Close [X]</a>
-  </Link>;
-}
-
 export default function ProjectView() {
   const state = useContext(State);
+  const [location, setLocation] = useLocation();
 
   const [match, params] = useRoute("/project/:id");
   const [valid, setValid] = useState(true);
   const [id, setWorkerId] = useState(null);
   const [result, setResult] = useState(null);
+
+  const close = async (e) => {
+    e.preventDefault();
+    await state.projects.close(id);
+    setLocation('/');
+  }
+
+  const Close = (props) =>  {
+    return <a href="#" onclick={close}>Close [X]</a>
+  }
 
   useEffect(async () => {
     try {

@@ -1,15 +1,19 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use tokio::sync::oneshot::{Sender, Receiver};
-use log::info;
+use log::{info, warn};
+use tokio::sync::{oneshot, mpsc, Mutex};
 
-use json_rpc2::{futures::{Service, Server}, Request, Response};
 use async_trait::async_trait;
-use psup_impl::{Supervisor, SupervisorBuilder, id};
+use json_rpc2::{
+    futures::{Server, Service},
+    Request, Response,
+};
+use psup_impl::{id, Supervisor, SupervisorBuilder, Message};
 use psup_json_rpc::serve;
 
-use project::ConnectionBridge;
 use crate::Result;
+use project::ConnectionBridge;
 
 #[derive(Debug)]
 pub struct SocketFile {
@@ -19,9 +23,7 @@ pub struct SocketFile {
 impl SocketFile {
     pub fn new() -> Result<Self> {
         let path = dirs::tmp_dir()?.join(format!("uwe-{}.sock", id()));
-        Ok(Self {
-            path
-        })
+        Ok(Self { path })
     }
 
     pub fn path(&self) -> &PathBuf {
@@ -31,7 +33,8 @@ impl SocketFile {
 
 #[derive(Debug)]
 pub enum ProcessMessage {
-    OpenProject { path: String, reply: Sender<String> },
+    OpenProject { path: String, reply: oneshot::Sender<String> },
+    CloseProject { worker_id: String },
 }
 
 struct SupervisorService;
@@ -54,11 +57,35 @@ impl Service for SupervisorService {
     }
 }
 
-pub fn supervisor(file: &SocketFile, shutdown: Receiver<()>) -> Result<Supervisor> {
+pub fn supervisor(
+    file: &SocketFile,
+    shutdown: oneshot::Receiver<()>,
+    proxy: mpsc::Receiver<ProcessMessage>,
+) -> Result<Supervisor> {
+    let proxy = Arc::new(Mutex::new(proxy));
 
     // Set up the child process supervisor
     Ok(SupervisorBuilder::new()
-        .server(move |stream, _tx| {
+        .server(move |stream, tx| {
+
+            // Listen for messages on the proxy channel which are brokered
+            // by the editor but originate from the UI RPC services
+            let rx = Arc::clone(&proxy);
+            tokio::task::spawn(async move {
+                let mut rx = rx.lock().await;
+                while let Some(msg) = rx.recv().await {
+                    match msg {
+                        ProcessMessage::CloseProject { worker_id } => {
+                            let control_msg = Message::Shutdown {id: worker_id};
+                            if let Err(e) = tx.send(control_msg).await {
+                                warn!("Failed to send to supervisor control channel: {}", e);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            });
+
             tokio::task::spawn(async move {
                 let (reader, writer) = tokio::io::split(stream);
                 tokio::task::spawn(async move {

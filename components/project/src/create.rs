@@ -9,7 +9,7 @@ use url::Url;
 
 use utils::walk;
 
-use crate::{Error, Result, ProjectManifestEntry};
+use crate::{Error, ProjectManifestEntry, Result};
 use config::{
     href::UrlPath,
     plugin::{
@@ -226,7 +226,9 @@ fn create_target_parents<T: AsRef<Path>>(target: T) -> Result<()> {
     Ok(())
 }
 
-pub async fn create(mut options: ProjectOptions) -> Result<ProjectManifestEntry> {
+pub async fn create(
+    mut options: ProjectOptions,
+) -> Result<ProjectManifestEntry> {
     let mut sources: Vec<ProjectSource> = Vec::new();
     if let Some(git) = options.git.take() {
         sources.push(ProjectSource::Git(git, options.prefix.clone()))
@@ -430,7 +432,10 @@ pub async fn create(mut options: ProjectOptions) -> Result<ProjectManifestEntry>
 
     let path = target.to_string_lossy().into_owned();
     let id = Some(crate::checksum(&path)?);
-    let entry = ProjectManifestEntry { id, path: PathBuf::from(&path) };
+    let entry = ProjectManifestEntry {
+        id,
+        path: PathBuf::from(&path),
+    };
 
     Ok(entry)
 }

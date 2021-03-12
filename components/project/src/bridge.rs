@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use config::server::ConnectionInfo;
 
@@ -10,9 +10,6 @@ pub struct ConnectionBridge {
 
 impl ConnectionBridge {
     pub fn new(id: String, connection: ConnectionInfo) -> Self {
-        Self {
-            id,
-            connection,
-        }
+        Self { id, connection }
     }
 }

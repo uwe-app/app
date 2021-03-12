@@ -1,15 +1,15 @@
-use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::path::PathBuf;
 use wry::WindowProxy;
 
-use tokio::sync::mpsc::Sender;
-use json_rpc2::{futures::*, Request, Response, Result};
 use async_trait::async_trait;
-use log::{info, warn, error};
+use json_rpc2::{futures::*, Request, Response, Result};
+use log::{error, info, warn};
+use tokio::sync::mpsc::Sender;
 
-use project::{ProjectList, ProjectManifestEntry};
 use crate::ProcessMessage;
+use project::{ProjectList, ProjectManifestEntry};
 
 pub struct ServiceData {
     pub ps: Sender<ProcessMessage>,
@@ -90,8 +90,8 @@ impl Service for AppService {
             let info = AppInfo {
                 projects,
                 preferences: AppPreferences {
-                    project: ProjectPreferences {target}
-                }
+                    project: ProjectPreferences { target },
+                },
             };
             let result = serde_json::to_value(info).map_err(Box::from)?;
             response = Some((req, result).into());
@@ -119,7 +119,17 @@ impl Service for ProjectService {
     ) -> Result<Option<Response>> {
         let mut response = None;
 
-        if req.matches("project.open") {
+        if req.matches("project.close") {
+            let mut params: Vec<String> = req.deserialize()?;
+            if !params.is_empty() {
+                let worker_id = params.swap_remove(0);
+                let msg = ProcessMessage::CloseProject { worker_id };
+                let _ = ctx.ps.send(msg).await;
+                response = Some(req.into());
+            } else {
+                return Err((req, "Method expects parameters").into());
+            }
+        } else if req.matches("project.open") {
             let mut params: Vec<String> = req.deserialize()?;
             if !params.is_empty() {
                 let path = params.swap_remove(0);
@@ -140,9 +150,8 @@ impl Service for ProjectService {
 
                 response = Some((req, Value::String(worker_id)).into());
             } else {
-                return Err((req, "Method expects parameters").into())
+                return Err((req, "Method expects parameters").into());
             }
-
         } else if req.matches("project.find") {
             let mut params: Vec<String> = req.deserialize()?;
             if !params.is_empty() {
@@ -155,7 +164,7 @@ impl Service for ProjectService {
                 };
                 response = Some((req, value).into());
             } else {
-                return Err((req, "Method expects parameters").into())
+                return Err((req, "Method expects parameters").into());
             }
         } else if req.matches("project.create") {
             let mut params: Vec<ProjectCreateRequest> = req.deserialize()?;
@@ -173,7 +182,7 @@ impl Service for ProjectService {
                 let value = serde_json::to_value(entry).map_err(Box::from)?;
                 response = Some((req, value).into());
             } else {
-                return Err((req, "Method expects parameters").into())
+                return Err((req, "Method expects parameters").into());
             }
         } else if req.matches("project.list") {
             let manifest = project::list().map_err(Box::from)?;
@@ -186,7 +195,7 @@ impl Service for ProjectService {
                 project::add(entry).map_err(Box::from)?;
                 response = Some(req.into());
             } else {
-                return Err((req, "Method expects parameters").into())
+                return Err((req, "Method expects parameters").into());
             }
         } else if req.matches("project.remove") {
             let mut params: Vec<ProjectManifestEntry> = req.deserialize()?;
@@ -195,7 +204,7 @@ impl Service for ProjectService {
                 project::remove(&entry).map_err(Box::from)?;
                 response = Some(req.into());
             } else {
-                return Err((req, "Method expects parameters").into())
+                return Err((req, "Method expects parameters").into());
             }
         }
         Ok(response)
@@ -244,7 +253,9 @@ impl json_rpc2::Service for WindowService {
             let mut params: Vec<bool> = req.deserialize()?;
             let flag = if params.get(0).is_none() {
                 None
-            } else { Some(params.swap_remove(0)) };
+            } else {
+                Some(params.swap_remove(0))
+            };
             if let Some(flag) = flag {
                 ctx.set_fullscreen(flag).map_err(Box::from)?;
             }

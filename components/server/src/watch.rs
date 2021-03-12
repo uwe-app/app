@@ -7,14 +7,16 @@ use log::{error, info};
 
 use futures_util::FutureExt;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-use tokio::sync::{broadcast, mpsc, oneshot::{self, error::TryRecvError}, Mutex};
-use url::Url;
 use psup_impl::Worker;
-use psup_json_rpc::{write, notify};
-
-use config::server::{
-    ConnectionInfo, HostConfig, ServerConfig, SslConfig,
+use psup_json_rpc::{notify, write};
+use tokio::sync::{
+    broadcast, mpsc,
+    oneshot::{self, error::TryRecvError},
+    Mutex,
 };
+use url::Url;
+
+use config::server::{ConnectionInfo, HostConfig, ServerConfig, SslConfig};
 
 use workspace::{CompileResult, HostInfo, HostResult, Invalidator};
 
@@ -71,7 +73,6 @@ pub async fn watch(
         tls,
     );
 
-
     opts.set_authorities(authorities);
     opts.set_hosts(hosts);
     opts.set_disable_signals(true);
@@ -91,9 +92,10 @@ pub async fn watch(
                 loop {
                     match rx.try_recv() {
                         Ok(info) => {
-                            let bridge = project::ConnectionBridge::new(id, info);
-                            let params =
-                                serde_json::to_value(&bridge).map_err(Box::from)?;
+                            let bridge =
+                                project::ConnectionBridge::new(id, info);
+                            let params = serde_json::to_value(&bridge)
+                                .map_err(Box::from)?;
                             let req = notify("connected", Some(params));
                             write(&mut writer, &req).await?;
                             break;
@@ -146,9 +148,7 @@ pub async fn watch(
 }
 
 /// Write out the live reload Javascript and CSS.
-fn create_resources(
-    hosts: &Vec<HostInfo>,
-) -> Result<()> {
+fn create_resources(hosts: &Vec<HostInfo>) -> Result<()> {
     hosts.iter().try_for_each(|host| {
         // Write out the livereload javascript using the correct
         // websocket endpoint which the server will create later
@@ -212,7 +212,8 @@ fn spawn_bind_open(
                     if !headless {
                         let path = if let Some(ref path) = launch {
                             // If we get an absolute URL just use the path
-                            let url_path = if let Ok(url) = path.parse::<Url>() {
+                            let url_path = if let Ok(url) = path.parse::<Url>()
+                            {
                                 url.path().to_string()
                             } else {
                                 path.to_string()
@@ -237,7 +238,6 @@ fn spawn_bind_open(
 
                         open::that(&url).map(|_| ()).unwrap_or(());
                     }
-
                 }
                 _ => {}
             }

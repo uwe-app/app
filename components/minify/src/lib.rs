@@ -103,7 +103,6 @@ mod tests {
         assert_eq!(res, val.to_string());
     }
 
-
     #[test]
     fn strip_script_comparison() {
         let val = r#"<script>

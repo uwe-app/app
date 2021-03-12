@@ -26,7 +26,6 @@ pub enum Task {
         #[structopt(parse(from_os_str), default_value = ".")]
         project: PathBuf,
     },
-
     /*
     /// Manage site aliases (symbolic links)
     Alias {

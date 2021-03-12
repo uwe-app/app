@@ -36,10 +36,9 @@ pub async fn run(cmd: Task) -> Result<()> {
         Task::CheckDeps { project } => {
             let project = opts::project_path(&project)?;
             check_deps(project).await?;
-        }
-        //Task::Alias { cmd } => {
-            //alias::run(cmd).await?;
-        //}
+        } //Task::Alias { cmd } => {
+          //alias::run(cmd).await?;
+          //}
     }
     Ok(())
 }
