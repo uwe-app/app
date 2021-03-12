@@ -10,10 +10,9 @@ export default function ProjectView() {
 
   const [match, params] = useRoute("/project/:id");
   const [valid, setValid] = useState(true);
+  const [workerId, setWorkerId] = useState(null);
   const [connection, setConnection] = useState(null);
   const [result, setResult] = useState(null);
-
-  let workerId = null;
 
   const close = async (e) => {
     e.preventDefault();
@@ -26,29 +25,28 @@ export default function ProjectView() {
   }
 
   useEffect(async () => {
-    // FIXME: add a timeout for this poll!
-    let id = null;
-    const poll = async () => {
-      if (workerId) {
-        const info = await state.projects.status(workerId);
-        if (info) {
-          const protocol = info.tls ? 'https:' : 'http:';
-          info.url = `${protocol}//${info.addr}/`;
-          setConnection(info);
-          clearInterval(id);
-        }
-      }
-    }
-
-    id = setInterval(poll, 500);
-  }, []);
-
-  useEffect(async () => {
     try {
       const project = await state.projects.find(params.id);
       if (project) {
-        workerId = await state.projects.open(project.path);
+        const workerId = await state.projects.open(project.path);
+        setWorkerId(workerId);
         setResult(project);
+
+        // FIXME: add a timeout for this poll!
+        let id = null;
+        const poll = async () => {
+          //console.log('Polling with worker id', workerId);
+          if (workerId) {
+            const info = await state.projects.status(workerId);
+            if (info) {
+              const protocol = info.tls ? 'https:' : 'http:';
+              info.url = `${protocol}//${info.addr}/`;
+              setConnection(info);
+              clearInterval(id);
+            }
+          }
+        }
+        id = setInterval(poll, 500);
       } else {
         setValid(false);
       }
