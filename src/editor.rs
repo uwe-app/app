@@ -4,13 +4,24 @@ use log::{info, warn};
 use crate::{opts::Editor, Error, Result};
 use config::server::{ConnectionInfo, HostConfig, ServerConfig};
 
-use ui::ProcessMessage;
+use ui::{ProcessMessage, SocketFile};
 
 use psup_impl::Task;
 
 // NOTE: Must **not** execute on the tokio runtime as the event loop
 // NOTE: used for webview rendering must execute on the main thread (macOS)
 pub fn run(args: &Editor) -> Result<()> {
+
+    let socket = SocketFile::new()?;
+    let socket_path = socket.path().to_path_buf();
+    let ctrlc_path = socket.path().to_path_buf();
+
+    ctrlc::set_handler(move || {
+        // Clean up the socket file
+        let _ = std::fs::remove_file(&ctrlc_path);
+        std::process::exit(0);
+    })
+    .expect("Could not set Ctrl-C handler");
 
     // Load user projects list
     project::load()?;
@@ -71,7 +82,7 @@ pub fn run(args: &Editor) -> Result<()> {
         */
 
         // Get the child process supervisor
-        let mut supervisor = ui::supervisor(shutdown_rx)?;
+        let mut supervisor = ui::supervisor(&socket, shutdown_rx)?;
 
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async move {
@@ -145,6 +156,9 @@ pub fn run(args: &Editor) -> Result<()> {
             };
             info!("Editor {:#?}", url);
             ui::window(url, ps_tx)?;
+
+            // Clean up the socket file
+            let _ = std::fs::remove_file(&socket_path);
 
             // NOTE: When the window is closed the thread resumes and
             // NOTE: this code executes, we need to ensure that spawned

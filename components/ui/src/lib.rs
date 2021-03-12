@@ -21,6 +21,6 @@ mod supervisor;
 mod vfs;
 mod window;
 
-pub use supervisor::{supervisor, ProcessMessage};
+pub use supervisor::{supervisor, ProcessMessage, SocketFile};
 pub use vfs::editor;
 pub use window::window;

@@ -1,22 +1,38 @@
-use psup_impl::{Supervisor, SupervisorBuilder};
+use std::path::PathBuf;
 
 use tokio::sync::oneshot::{Sender, Receiver};
 use log::info;
 
 use json_rpc2::{futures::{Service, Server}, Request, Response};
 use async_trait::async_trait;
-
+use psup_impl::{Supervisor, SupervisorBuilder, id};
 use psup_json_rpc::serve;
 
 use project::ConnectionBridge;
-
 use crate::Result;
+
+#[derive(Debug)]
+pub struct SocketFile {
+    path: PathBuf,
+}
+
+impl SocketFile {
+    pub fn new() -> Result<Self> {
+        let path = dirs::tmp_dir()?.join(format!("uwe-{}.sock", id()));
+        Ok(Self {
+            path
+        })
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+}
 
 #[derive(Debug)]
 pub enum ProcessMessage {
     OpenProject { path: String, reply: Sender<String> },
 }
-
 
 struct SupervisorService;
 
@@ -38,7 +54,8 @@ impl Service for SupervisorService {
     }
 }
 
-pub fn supervisor(shutdown: Receiver<()>) -> Result<Supervisor> {
+pub fn supervisor(file: &SocketFile, shutdown: Receiver<()>) -> Result<Supervisor> {
+
     // Set up the child process supervisor
     Ok(SupervisorBuilder::new()
         .server(move |stream, _tx| {
@@ -65,7 +82,7 @@ pub fn supervisor(shutdown: Receiver<()>) -> Result<Supervisor> {
                 });
             });
         })
-        .path(dirs::socket_file()?)
+        .path(file.path())
         .shutdown(shutdown)
         .build())
 }

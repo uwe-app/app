@@ -26,7 +26,7 @@ bracket = "^0.9.32"
 mime_guess = "2"
 mime = "0.3"
 json-rpc2 = "0.10"
-psup-impl = "0.6.2"
+psup-impl = "0.6.3"
 #psup-impl = { version =  "0.6", path = "/home/muji/git/psup/impl" }
 psup-json-rpc = "0.6"
 
