@@ -125,6 +125,7 @@ pub fn run(args: &Editor) -> Result<()> {
                             let mut envs = HashMap::new();
                             envs.insert(config::ENV_DISABLE_SSL, "1");
                             envs.insert(config::ENV_LOOPBACK_HOST, "1");
+                            envs.insert(config::ENV_WEBDAV, config::WEBDAV_MOUNT_PATH);
 
                             let task = Task::new(cmd).args(args).envs(envs).daemon(true);
                             let worker_id = supervisor.spawn(task);

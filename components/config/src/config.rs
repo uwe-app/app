@@ -140,6 +140,10 @@ pub const PUBLIC_HTML: &str = "public_html";
 // Environment variables
 pub const ENV_DISABLE_SSL:&str = "UWE_DISABLE_SSL";
 pub const ENV_LOOPBACK_HOST:&str = "UWE_LOOPBACK_HOST";
+pub const ENV_WEBDAV:&str = "UWE_WEBDAV";
+
+// Webdav
+pub const WEBDAV_MOUNT_PATH: &str = "/-/webdav";
 
 const fn default_engine() -> TemplateEngine {
     TemplateEngine::Handlebars
