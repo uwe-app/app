@@ -322,6 +322,17 @@ async fn start(
                 app = app.service(
                     web::scope(webdav.mount_path())
                         .wrap(NormalizePath::new(TrailingSlash::Always))
+                        .wrap(
+                            DefaultHeaders::new()
+                                .header(
+                                    header::SERVER,
+                                    config::generator::user_agent(),
+                                )
+                                .header(header::REFERRER_POLICY, "origin")
+                                .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                                .header(header::ACCESS_CONTROL_ALLOW_HEADERS, "Depth")
+                                .header(header::ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, PUT, PATCH, PROPFIND")
+                        )
                         .guard(guard::Host(host.name()))
                         .data(dav_server)
                         .service(web::resource("/{tail:.*}").to(dav_handler)),
@@ -487,6 +498,7 @@ async fn start(
                                 .header(header::REFERRER_POLICY, "origin")
                                 .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
                                 .header(header::X_XSS_PROTECTION, "1; mode=block")
+
                                 /*
                                 .header(
                                     header::STRICT_TRANSPORT_SECURITY,

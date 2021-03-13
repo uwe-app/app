@@ -6,6 +6,7 @@
     "mobx": "^6.1.8",
     "mobx-react-lite": "^3.2.0",
     "preact": "^10.5.12",
+    "webdav": "^4.2.1",
     "wouter": "^2.7.3"
   },
   "devDependencies": {

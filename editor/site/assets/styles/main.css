@@ -80,6 +80,16 @@ input[type="text"] {
   flex: 0;
 }
 
+.project-editor > section {
+  display: flex;
+  height: 100%;
+}
+
+
+.project-editor > section > .file-manager {
+  flex-basis: 200px;
+}
+
 iframe.preview {
   flex: 1;
   width: 100%;

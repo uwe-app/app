@@ -3,6 +3,8 @@ import {useEffect, useContext, useState} from 'preact/hooks';
 import {useRoute, useLocation} from 'wouter';
 import {Link} from 'wouter';
 import {State} from './State'
+import FileManager from './FileManager';
+import WebsitePreview from './WebsitePreview';
 
 export default function ProjectView() {
   const state = useContext(State);
@@ -66,12 +68,10 @@ export default function ProjectView() {
         <p>Id: {result.id}</p>
         <p>Path: {result.path}</p>
       </header>
-      <iframe
-        class="preview"
-        src={connection.url}
-        frameborder="0"
-        sandbox="allow-scripts allow-forms"
-        />
+      <section>
+        <FileManager webdav={connection.url + '/-/webdav'} />
+        <WebsitePreview url={connection.url} />
+      </section>
     </div>;
   }
 }
