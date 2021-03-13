@@ -4,6 +4,7 @@ import {useRoute, useLocation} from 'wouter';
 import {Link} from 'wouter';
 import {State} from './State'
 import FileManager from './FileManager';
+import FileEditor from './FileEditor';
 import WebsitePreview from './WebsitePreview';
 
 export default function ProjectView() {
@@ -27,10 +28,22 @@ export default function ProjectView() {
   }
 
   useEffect(async () => {
+    let workerId;
+
+    // During development this will spawn a new project process
+    // when live reload is enabled so we should close any existng
+    // worker process.
+    const unload = async () => {
+      if (workerId) {
+        await state.projects.close(workerId);
+      }
+    }
+    window.addEventListener('unload', unload);
+
     try {
       const project = await state.projects.find(params.id);
       if (project) {
-        const workerId = await state.projects.open(project.path);
+        workerId = await state.projects.open(project.path);
         setWorkerId(workerId);
         setResult(project);
 
@@ -52,6 +65,10 @@ export default function ProjectView() {
     } catch(e) {
       state.flash.error(e);
     }
+
+    return () => {
+      window.removeEventListener('unload', unload);
+    }
   }, []);
 
   if (!result && valid) {
@@ -70,6 +87,7 @@ export default function ProjectView() {
       </header>
       <section>
         <FileManager webdav={connection.url + '/-/webdav'} />
+        <FileEditor />
         <WebsitePreview url={connection.url} />
       </section>
     </div>;

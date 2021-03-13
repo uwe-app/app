@@ -5,7 +5,7 @@ import App from './App';
 const {embedded} = preamble();
 
 if (embedded) {
-  render(<App />, document.body);
+  render(<App />, document.querySelector('article'));
 } else {
-  render(<p>Unsupported environment</p>, document.body);
+  render(<p>Unsupported environment</p>, document.querySelector('article'));
 }

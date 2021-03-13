@@ -3,6 +3,24 @@ import {useEffect, useState, useContext} from 'preact/hooks';
 import {createClient, FileStat} from 'webdav/web';
 import {State} from './State';
 
+const Header = (props) => {
+  return <header>File manager actions</header>;
+}
+
+const Content = ({ listing }) => {
+  return <div class="content">
+    <ul>
+      {listing.map((item) => {
+        return <li>{item.filename}</li>
+      })}
+    </ul>
+  </div>;
+}
+
+const Footer = (props) => {
+  return <footer>...</footer>;
+}
+
 export default function FileManager({ webdav }) {
   const state = useContext(State);
   const client = createClient(webdav);
@@ -39,10 +57,8 @@ export default function FileManager({ webdav }) {
   //console.log('Render with listing', listing);
 
   return <div class="file-manager">
-    <ul>
-      {listing.map((item) => {
-        return <li>{item.filename}</li>
-      })}
-    </ul>
+    <Header />
+    <Content listing={listing} />
+    <Footer />
   </div>;
 }

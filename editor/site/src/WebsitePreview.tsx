@@ -1,10 +1,26 @@
 import {h} from 'preact';
 
-export default function WebsitePreview({ url }) {
+const Header = (props) => {
+  return <header>Website preview address bar</header>;
+}
+
+const Content = ({ url }) => {
   return <iframe
-    class="preview"
-    src={url}
-    frameborder="0"
-    sandbox="allow-scripts allow-forms"
-    />
+      class="preview content"
+      src={url}
+      frameborder="0"
+      sandbox="allow-scripts allow-forms"
+      />;
+}
+
+const Footer = (props) => {
+  return <footer>...</footer>;
+}
+
+export default function WebsitePreview({ url }) {
+  return <div class="website-preview">
+    <Header />
+    <Content url={url} />
+    <Footer />
+  </div>;
 }
