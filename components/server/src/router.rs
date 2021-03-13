@@ -652,11 +652,7 @@ async fn start(
     let bind_notify = async move {
         if !addrs.is_empty() {
             let addr = addrs.swap_remove(0);
-            let info = ConnectionInfo {
-                addr,
-                host,
-                tls: use_ssl,
-            };
+            let info = ConnectionInfo::new(addr, host, use_ssl);
             match bind.send(info) {
                 Err(_) => {
                     warn!("Failed to send connection info on bind channel");

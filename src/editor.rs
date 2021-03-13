@@ -160,9 +160,9 @@ pub fn run(args: &Editor) -> Result<()> {
                 // Must be canonical so the id matches
                 let project = args.project.as_ref().unwrap().canonicalize()?;
                 let project_id = project::checksum(&project)?;
-                format!("{}/?project={}", info.to_url(), project_id)
+                format!("{}/?project={}", info.url(), project_id)
             } else {
-                info.to_url()
+                info.url().to_string()
             };
             info!("Editor {:#?}", url);
             ui::window(url, ps_tx)?;

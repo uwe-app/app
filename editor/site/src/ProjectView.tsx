@@ -35,12 +35,9 @@ export default function ProjectView() {
         // FIXME: add a timeout for this poll!
         let id = null;
         const poll = async () => {
-          //console.log('Polling with worker id', workerId);
           if (workerId) {
             const info = await state.projects.status(workerId);
             if (info) {
-              const protocol = info.tls ? 'https:' : 'http:';
-              info.url = `${protocol}//${info.addr}/`;
               setConnection(info);
               clearInterval(id);
             }

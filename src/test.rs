@@ -185,13 +185,13 @@ async fn test_compiler(builder: ProjectBuilder) -> BuildResult {
 
     let _ = tokio::task::spawn(async move {
         let info = bind_rx.await?;
-        let url = info.to_url();
-        info!("Serve {}", &url);
+        let url = info.url();
+        info!("Serve {}", url);
 
         let test_result =
-            spawn_test_runner(&url, &spawn_dir, &runner_settings).await;
+            spawn_test_runner(url, &spawn_dir, &runner_settings).await;
 
-        info!("Shutdown {}", &url);
+        info!("Shutdown {}", url);
         let _ = shutdown_tx.send(false);
 
         if let Err(e) = test_result {

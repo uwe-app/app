@@ -50,19 +50,26 @@ pub fn get_port(
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConnectionInfo {
-    pub addr: SocketAddr,
-    pub host: String,
-    pub tls: bool,
+    addr: SocketAddr,
+    host: String,
+    tls: bool,
+    url: String,
 }
 
 impl ConnectionInfo {
-    pub fn to_url(&self) -> String {
-        let scheme = if self.tls {
+
+    pub fn new(addr: SocketAddr, host: String, tls: bool) -> Self {
+        let scheme = if tls {
             crate::SCHEME_HTTPS
         } else {
             crate::SCHEME_HTTP
         };
-        crate::to_url_string(scheme, &self.host, self.addr.port())
+        let url = crate::to_url_string(scheme, &host, addr.port());
+        Self {addr, host, tls, url}
+    }
+
+    pub fn url(&self) -> &str {
+        &self.url
     }
 
     pub fn to_websocket_url(&self, endpoint: &str) -> String {

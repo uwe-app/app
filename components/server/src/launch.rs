@@ -75,8 +75,8 @@ pub async fn launch(
     launch: LaunchConfig,
 ) -> Result<(), Error> {
     Ok(open(config, move |info| {
-        let url = info.to_url();
-        info!("Serve {}", &url);
+        let url = info.url();
+        info!("Serve {}", url);
 
         // Most of the time we want to open a browser unless explictly
         // disabled however in the case of the live reload logic it
@@ -87,7 +87,7 @@ pub async fn launch(
         //
         if launch.open {
             // It is ok if this errors we just don't open a browser window
-            open::that(&url).map(|_| ()).unwrap_or(());
+            open::that(url).map(|_| ()).unwrap_or(());
         }
     })
     .await?)

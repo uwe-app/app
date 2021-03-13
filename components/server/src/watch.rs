@@ -227,7 +227,7 @@ fn spawn_bind_open(
                 Ok(info) => {
                     let _ = bind_tx.send(info.clone());
 
-                    let mut url = info.to_url();
+                    let mut url = info.url().to_string();
 
                     if !headless {
                         let path = if let Some(ref path) = launch {
