@@ -4,7 +4,7 @@ import {ProjectsList, OpenProject, NewProject} from './Projects';
 export default function Launch(props) {
   return <>
     <ProjectsList />
-    <div class="actions">
+    <div class="actions no-select">
       <OpenProject />
       <NewProject />
     </div>

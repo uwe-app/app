@@ -44,7 +44,7 @@ function ProjectsList(props) {
 
   const List = observer(({ projects }) => {
     if (projects.list.length) {
-      return <ul class="projects">
+      return <ul class="projects no-select">
         {
           projects.list.map((item) => {
             return <li>

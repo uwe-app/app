@@ -56,7 +56,7 @@ export default function FileManager({ webdav }) {
 
   //console.log('Render with listing', listing);
 
-  return <div class="file-manager">
+  return <div class="file-manager no-select">
     <Header />
     <Content listing={listing} />
     <Footer />

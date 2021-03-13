@@ -1,3 +1,7 @@
+@import "prosemirror.css";
+@import "example-setup.css";
+@import "menu.css";
+
 html {
   box-sizing: border-box;
 }
@@ -17,6 +21,11 @@ body {
   height: 100vh;
   min-height: 100vh;
   text-rendering: optimizeLegibility;
+}
+
+.no-select, button {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 main, article {
@@ -130,6 +139,7 @@ input[type="text"] {
   justify-content: center;
   flex: 0;
   flex-basis: 32px;
+  min-height: 32px;
   padding: 0 0.5em;
 }
 
@@ -137,6 +147,17 @@ input[type="text"] {
 .file-editor > .content,
 .website-preview > .content {
   flex: 1;
+  position: relative;
+}
+
+.file-editor > .content > :first-child {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  height: 100%;
+  overflow: auto;
 }
 
 iframe.preview {

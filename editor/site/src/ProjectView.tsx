@@ -80,7 +80,7 @@ export default function ProjectView() {
     </div>;
   } else if (result && valid && connection) {
     return <div class="project-editor">
-      <header>
+      <header class="no-select">
         <Close />
         <p>Id: {result.id}</p>
         <p>Path: {result.path}</p>
