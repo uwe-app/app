@@ -26,4 +26,9 @@ socket.onmessage = (event) => {
         }
 	}
 };
+
+if (window.parent) {
+  window.parent.postMessage(document.location.href, "*");
+}
+
 window.onbeforeunload = () => socket.close()})();

@@ -95,6 +95,9 @@ input[type="text"] {
   flex-direction: column;
   justify-content: stretch;
   flex-basis: 200px;
+  max-width: 200px;
+  /* FIXME: use ellipsis for list items instead */
+  overflow-x: hidden;
   border: 1px solid red;
 }
 
