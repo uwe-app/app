@@ -1,9 +1,63 @@
 import {h, createRef} from 'preact';
-import {useEffect, useState} from 'preact/hooks';
+import {useEffect, useState, useContext} from 'preact/hooks';
+import {State} from './State';
 
-const Header = ({ address, setAddress, pushHistory, onChange, onHome, onBack, onForward }) => {
+const Header = ({ base, onChange, onRefresh }) => {
+  const state = useContext(State);
+
+  const [address, setAddress] = useState(null);
+
+  /*
+  let [history, setHistory] = useState(() => []);
+  const [cursor, setCursor] = useState(() => -1);
+  const pushHistory = (path) => {
+    console.log('pushHistory', history.length);
+    console.log('pushHistory', cursor);
+    // Truncate history when navigating whilst the cursor
+    // points to a history entry that is not the last one
+    if (cursor > -1 && cursor < history.length - 1) {
+      console.log('Truncating history...', cursor)
+      history = history.slice(0, cursor - 1);
+    }
+
+    history.push(path);
+    setCursor(history.length - 1);
+  }
+  */
+
+  const onHome = (e) => {
+    e.preventDefault();
+    setAddress('/');
+    onChange('/?history=1&t=' + Date.now());
+  }
+
+  const onReload = (e) => {
+    e.preventDefault();
+    onRefresh(address);
+  }
+
+  const onBack = (e) => {
+    e.preventDefault();
+    const path = state.history.back();
+    if (path) {
+        setAddress(path);
+        onChange(path + '?history=1&t=' + Date.now());
+    }
+  }
+
+  const onForward = (e) => {
+    e.preventDefault();
+    const path = state.history.forward();
+    if (path) {
+        setAddress(path);
+        onChange(path + '?history=1&t=' + Date.now());
+    }
+  }
+
   const onSubmit = (e) => {
     e.preventDefault();
+    //alert('Got form submission...');
+    //console.log('Submit with address: ', address);
     onChange(address);
   }
 
@@ -12,12 +66,16 @@ const Header = ({ address, setAddress, pushHistory, onChange, onHome, onBack, on
       const location = new URL(e.data);
       if (address !== location.pathname) {
         setAddress(location.pathname);
-        pushHistory(location.pathname);
+        state.history.push(location.pathname);
       }
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, []);
+
+  const canHome = address != '/';
+
+  //FIXME: the button(s) in the form prevents onSubmit firing!!!
 
   return <header>
     <form onsubmit={onSubmit}>
@@ -25,22 +83,39 @@ const Header = ({ address, setAddress, pushHistory, onChange, onHome, onBack, on
         class="address"
         type="text"
         onChange={(e) => setAddress(e.target.value)} value={address} />
-      <button onclick={onHome}>H</button>
-      <button onclick={onBack}>&lt;</button>
-      <button onclick={onForward}>&gt;</button>
+      <button
+        disabled={!canHome}
+        onclick={onHome}>H</button>
+      <button
+        onclick={onReload}>O</button>
+      <button
+        disabled={!state.history.canBack()}
+        onclick={onBack}>&lt;</button>
+      <button
+        disabled={!state.history.canForward()}
+        onclick={onForward}>&gt;</button>
     </form>
   </header>;
 }
 
-const Content = ({ url, onSize }) => {
+const Content = ({ src }) => {
+  return <iframe
+    id="preview"
+    class="preview content"
+    src={src}
+    frameborder="0"
+    sandbox="allow-scripts allow-forms"
+    />;
+}
 
-  const preview = createRef();
+const Footer = () => {
+  const [dimensions, setDimensions] = useState(null);
 
   useEffect(() => {
     const onResize = (e) => {
       const el = document.querySelector('iframe.preview');
       if (el) {
-        onSize(el.offsetWidth, el.offsetHeight);
+        setDimensions({width: el.offsetWidth, height: el.offsetHeight});
       }
     }
     window.addEventListener('resize', onResize);
@@ -48,17 +123,6 @@ const Content = ({ url, onSize }) => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  return <iframe
-    id="preview"
-    ref={preview}
-    class="preview content"
-    src={url}
-    frameborder="0"
-    sandbox="allow-scripts allow-forms"
-    />;
-}
-
-const Footer = ({ dimensions }) => {
   if (dimensions) {
     return <footer class="no-select">
       <small>{dimensions.width}x{dimensions.height}</small>
@@ -68,81 +132,31 @@ const Footer = ({ dimensions }) => {
 }
 
 export default function WebsitePreview({ url }) {
-  const [address, setAddress] = useState(null);
-  const [source, setSource] = useState(url);
-  const [dimensions, setDimensions] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [cursor, setCursor] = useState(-1);
-
+  const [src, setSource] = useState(url);
   const base = new URL(url);
 
-  const onAddressChange = (value) => {
+  const getLocation = (value) => {
     const path = value.replace(/^\/+/, '');
-    const src = `${base.protocol}//${base.host}/${path}`;
+    return `${base.protocol}//${base.host}/${path}`;
+  }
+
+  const onChange = (value) => {
+    console.log('Changing iframe src', value);
+    setSource(getLocation(value));
+  }
+
+  const onRefresh = (value) => {
+    const url = getLocation(value);
+    const src = `${url}?history=1&t=` + Date.now();
     setSource(src);
-  }
-
-  const pushHistory = (path) => {
-    history.push(path);
-    setCursor(history.length - 1);
-  }
-
-  const onHome = (e) => {
-    e.preventDefault();
-    const src = `${base.protocol}//${base.host}/?t=` + Date.now();
-    setSource(src);
-  }
-
-  const onBack = (e) => {
-    e.preventDefault();
-    // Skip the first history item (home === /)
-    if (history.length > 1) {
-      let pos = cursor;
-      if (pos == -1) {
-        pos = history.length - 2;
-      } else {
-        pos = cursor - 1;
-      }
-
-      if (history[pos]) {
-        const path = history[pos];
-        const src = `${base.protocol}//${base.host}${path}?history=1&t=` + Date.now();
-        setSource(src);
-        setAddress(path);
-        setCursor(pos);
-      }
-    }
-  }
-
-  const onForward = (e) => {
-    e.preventDefault();
-    if (history.length > 1 && cursor < history.length - 1) {
-      let pos = cursor + 1;
-      if (history[pos]) {
-        const path = history[pos];
-        const src = `${base.protocol}//${base.host}${path}?history=1&t=` + Date.now();
-        setSource(src);
-        setAddress(path);
-        setCursor(pos);
-      }
-    }
-  }
-
-  const onSize = (width, height) => {
-    setDimensions({width, height});
   }
 
   return <div class="website-preview">
     <Header
-      address={address}
-      setAddress={setAddress}
-      onChange={onAddressChange}
-      onHome={onHome}
-      onBack={onBack}
-      onForward={onForward}
-      pushHistory={pushHistory}
-      />
-    <Content url={source} onSize={onSize} />
-    <Footer dimensions={dimensions} />
+      base={base}
+      onChange={onChange}
+      onRefresh={onRefresh} />
+    <Content src={src} />
+    <Footer />
   </div>;
 }

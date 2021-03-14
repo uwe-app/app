@@ -31,6 +31,8 @@ export default function ProjectView() {
   }
 
   useEffect(async () => {
+    state.history.clear();
+
     let workerId;
 
     // During development this will spawn a new project process

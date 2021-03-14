@@ -16,6 +16,52 @@ interface ProjectListItem {
   status: ProjectStatus,
 }
 
+class History {
+  urls: string[];
+  cursor: integer;
+
+  constructor() {
+    this.clear();
+  }
+
+  clear() {
+    this.urls = [];
+    this.cursor = -1;
+  }
+
+  push(url) {
+    if (this.cursor > -1 && this.cursor < this.urls.length - 1) {
+      this.urls = this.urls.slice(0, this.cursor + 1);
+    }
+    this.urls.push(url);
+    this.cursor = this.urls.length - 1;
+  }
+
+  back() {
+    // Skip the first history item (home === /)
+    if (this.cursor > 0) {
+      this.cursor--;
+      return this.urls[this.cursor]
+    }
+  }
+
+  forward() {
+    if (this.urls.length > 1 && this.cursor < this.urls.length - 1) {
+      this.cursor++;
+      return this.urls[this.cursor];
+    }
+  }
+
+  canBack () {
+    return this.urls.length > 1 && this.cursor > 0;
+  }
+
+  canForward() {
+    return this.urls.length > 1 && this.cursor > -1 && this.cursor < this.urls.length - 1;
+  }
+
+}
+
 class Projects {
   list: ProjectListItem[];
 
@@ -130,6 +176,7 @@ const value = {
   dialog: new Dialog(),
   flash: new Flash(),
   preferences: {},
+  history: new History(),
 };
 
 // Load initial state information for the editor.
