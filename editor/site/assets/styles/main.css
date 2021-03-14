@@ -166,6 +166,21 @@ input[type="text"] {
   border-top: 1px solid black;
 }
 
+.website-preview > header {
+  display: flex;
+  flex-direction: row;
+  justify-content: stretch;
+}
+
+.website-preview > header > div {
+  flex: 0;
+  flex-basis: 115px;
+}
+
+.website-preview > header > form {
+  flex: 1;
+}
+
 input.address {
   border: 0;
   background: none;
@@ -177,6 +192,10 @@ input.address {
 .website-preview > .content {
   flex: 1;
   position: relative;
+}
+
+.file-manager > .content {
+  padding: 0 .5em;
 }
 
 .file-editor > .content > :first-child {

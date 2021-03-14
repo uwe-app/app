@@ -2,46 +2,42 @@ import {h, createRef} from 'preact';
 import {useEffect, useState, useContext} from 'preact/hooks';
 import {State} from './State';
 
+const getLocation = (base, value) => {
+  const path = value.replace(/^\/+/, '');
+  return `${base.protocol}//${base.host}/${path}`;
+}
+
 const Header = ({ base, onChange, onRefresh }) => {
   const state = useContext(State);
+  const [value, setValue] = useState(null);
+  const [address, setAddress] = useState(base);
 
-  const [address, setAddress] = useState(null);
-
-  /*
-  let [history, setHistory] = useState(() => []);
-  const [cursor, setCursor] = useState(() => -1);
-  const pushHistory = (path) => {
-    console.log('pushHistory', history.length);
-    console.log('pushHistory', cursor);
-    // Truncate history when navigating whilst the cursor
-    // points to a history entry that is not the last one
-    if (cursor > -1 && cursor < history.length - 1) {
-      console.log('Truncating history...', cursor)
-      history = history.slice(0, cursor - 1);
-    }
-
-    history.push(path);
-    setCursor(history.length - 1);
+  const setLocation = (path) => {
+    const src = getLocation(base, path);
+    const url = new URL(src);
+    console.log('Set location', path);
+    //const url = new URL(path);
+    setAddress(url);
+    onChange(path);
   }
-  */
 
   const onHome = (e) => {
     e.preventDefault();
-    setAddress('/');
-    onChange('/?history=1&t=' + Date.now());
+    setValue('/');
+    setLocation('/?history=1&t=' + Date.now());
   }
 
   const onReload = (e) => {
     e.preventDefault();
-    onRefresh(address);
+    onRefresh(value);
   }
 
   const onBack = (e) => {
     e.preventDefault();
     const path = state.history.back();
     if (path) {
-        setAddress(path);
-        onChange(path + '?history=1&t=' + Date.now());
+        setValue(path);
+        setLocation(path + '?history=1&t=' + Date.now());
     }
   }
 
@@ -49,22 +45,21 @@ const Header = ({ base, onChange, onRefresh }) => {
     e.preventDefault();
     const path = state.history.forward();
     if (path) {
-        setAddress(path);
-        onChange(path + '?history=1&t=' + Date.now());
+        setValue(path);
+        setLocation(path + '?history=1&t=' + Date.now());
     }
   }
 
   const onSubmit = (e) => {
     e.preventDefault();
-    //alert('Got form submission...');
-    //console.log('Submit with address: ', address);
-    onChange(address);
+    setLocation(value);
   }
 
   useEffect(() => {
     const onMessage = (e) => {
       const location = new URL(e.data);
-      if (address !== location.pathname) {
+      if (value !== location.pathname) {
+        setValue(location.pathname);
         setAddress(location.pathname);
         state.history.push(location.pathname);
       }
@@ -73,16 +68,17 @@ const Header = ({ base, onChange, onRefresh }) => {
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
-  const canHome = address != '/';
+  const canHome = address.pathname != '/';
 
-  //FIXME: the button(s) in the form prevents onSubmit firing!!!
-
+  //NOTE: If the button(s) are in the <form> it prevents onSubmit firing!!!
   return <header>
     <form onsubmit={onSubmit}>
       <input
         class="address"
         type="text"
-        onChange={(e) => setAddress(e.target.value)} value={address} />
+        onChange={(e) => setValue(e.target.value)} value={value} />
+    </form>
+    <div>
       <button
         disabled={!canHome}
         onclick={onHome}>H</button>
@@ -94,7 +90,7 @@ const Header = ({ base, onChange, onRefresh }) => {
       <button
         disabled={!state.history.canForward()}
         onclick={onForward}>&gt;</button>
-    </form>
+    </div>
   </header>;
 }
 
@@ -135,18 +131,13 @@ export default function WebsitePreview({ url }) {
   const [src, setSource] = useState(url);
   const base = new URL(url);
 
-  const getLocation = (value) => {
-    const path = value.replace(/^\/+/, '');
-    return `${base.protocol}//${base.host}/${path}`;
-  }
-
   const onChange = (value) => {
     console.log('Changing iframe src', value);
-    setSource(getLocation(value));
+    setSource(getLocation(base, value));
   }
 
   const onRefresh = (value) => {
-    const url = getLocation(value);
+    const url = getLocation(base, value);
     const src = `${url}?history=1&t=` + Date.now();
     setSource(src);
   }
