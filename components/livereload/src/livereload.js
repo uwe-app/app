@@ -28,7 +28,16 @@ socket.onmessage = (event) => {
 };
 
 if (window.parent) {
-  window.parent.postMessage(document.location.href, "*");
+  // Hack so that we can handle history in the editor.
+  //
+  // It sets the `history` query string parameter to indicate
+  // that the navigation is from a history handler (back/forward)
+  // so there is no need to notify of the location change.
+  const history = new URLSearchParams(
+      window.location.search).get('history');
+  if (!history) {
+    window.parent.postMessage(document.location.href, "*");
+  }
 }
 
 window.onbeforeunload = () => socket.close()})();

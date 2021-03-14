@@ -151,6 +151,15 @@ input[type="text"] {
   border-bottom: 1px solid black;
 }
 
+.website-preview > header > form {
+  display: flex;
+  justify-content: stretch;
+}
+
+.website-preview > header > form > input {
+  flex: 1;
+}
+
 .file-manager > footer,
 .file-editor > footer,
 .website-preview > footer {
@@ -160,6 +169,7 @@ input[type="text"] {
 input.address {
   border: 0;
   background: none;
+  width: auto;
 }
 
 .file-manager > .content,
