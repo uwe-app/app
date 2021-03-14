@@ -3,8 +3,21 @@ import {useEffect, useState, useContext} from 'preact/hooks';
 import {FileStat} from 'webdav/web';
 import {State} from './State';
 
-const Header = (props) => {
-  return <header>File manager actions</header>;
+const Header = ({ ancestors, onSelect }) => {
+
+  const onChange = (e) => {
+    e.preventDefault();
+    onSelect(e.target.value);
+  }
+
+  return <header>
+    <select onChange={onChange}>
+      {ancestors.map((item, i) => {
+        const last = i === ancestors.length - 1;
+        return <option disabled={last} selected={last} value={item.filename}>{item.basename}</option>
+      })}
+    </select>
+  </header>;
 }
 
 const Content = ({ listing, onOpenFile, onOpenDirectory }) => {
@@ -21,7 +34,8 @@ const Content = ({ listing, onOpenFile, onOpenDirectory }) => {
   return <div class="content">
     <ul>
       {listing.map((item) => {
-        return <li ondoubleclick={(e) => onDoubleClick(e, item)}>{item.basename}</li>
+        const icon = item.type === 'directory' ? <span>D</span> : <span>F</span>;
+        return <li ondoubleclick={(e) => onDoubleClick(e, item)}>{icon} {item.basename}</li>
       })}
     </ul>
   </div>;
@@ -45,7 +59,8 @@ const Footer = ({ listing }) => {
 export default function FileManager({ webdav, onOpenFile }) {
   const state = useContext(State);
   const [listing, setListing] = useState([]);
-  const [directoty, setDirectory] = useState(null);
+  const [directory, setDirectory] = useState(null);
+  const [ancestors, setAncestors] = useState(['/']);
 
   const onOpenDirectory = async (path, item) => {
     try {
@@ -66,6 +81,27 @@ export default function FileManager({ webdav, onOpenFile }) {
       });
       setListing(listing);
       setDirectory(path, item);
+
+      if (path === '/') {
+        setAncestors([{filename: '/', basename: '/'}])
+      } else {
+        const parts = path.split('/');
+        let tmp = []
+        const ancestors = parts.map((part) => {
+          tmp.push(part);
+          let basename;
+          let filename;
+          if (part === '') {
+            basename = '/';
+            filename = '/';
+          } else {
+            basename = part;
+            filename = tmp.length ? tmp.join('/') : '/';
+          }
+          return {basename, filename};
+        });
+        setAncestors(ancestors);
+      }
     } catch(e) {
       state.flash.error(e);
     }
@@ -76,7 +112,7 @@ export default function FileManager({ webdav, onOpenFile }) {
   }, []);
 
   return <div class="file-manager no-select">
-    <Header />
+    <Header ancestors={ancestors} onSelect={onOpenDirectory} />
     <Content
       listing={listing}
       onOpenFile={onOpenFile}

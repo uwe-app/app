@@ -80,14 +80,18 @@ const Header = ({ base, onChange, onRefresh }) => {
     </form>
     <div>
       <button
+        title="Home"
         disabled={!canHome}
         onclick={onHome}>H</button>
       <button
+        title="Reload"
         onclick={onReload}>O</button>
       <button
+        title="Back"
         disabled={!state.history.canBack()}
         onclick={onBack}>&lt;</button>
       <button
+        title="Forward"
         disabled={!state.history.canForward()}
         onclick={onForward}>&gt;</button>
     </div>
