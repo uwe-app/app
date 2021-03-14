@@ -87,7 +87,6 @@ export default function ProjectView() {
       setCurrentFile(item);
     }
 
-
         //<p>Id: {result.id}</p>
         //<p>Path: {result.path}</p>
 

@@ -144,6 +144,24 @@ input[type="text"] {
   padding: 0 0.5em;
 }
 
+
+.file-manager > header,
+.file-editor > header,
+.website-preview > header {
+  border-bottom: 1px solid black;
+}
+
+.file-manager > footer,
+.file-editor > footer,
+.website-preview > footer {
+  border-top: 1px solid black;
+}
+
+input.address {
+  border: 0;
+  background: none;
+}
+
 .file-manager > .content,
 .file-editor > .content,
 .website-preview > .content {

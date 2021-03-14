@@ -1,4 +1,4 @@
-import {h} from 'preact';
+import {h, createRef} from 'preact';
 import {useEffect, useState} from 'preact/hooks';
 
 const Header = ({ address, onChange }) => {
@@ -20,29 +20,53 @@ const Header = ({ address, onChange }) => {
 
   return <header>
     <form onsubmit={onSubmit}>
-      <input type="text" onChange={(e) => setValue(e.target.value)} value={value} />
+      <input
+        class="address"
+        type="text"
+        onChange={(e) => setValue(e.target.value)} value={value} />
     </form>
   </header>;
 }
 
-const Content = ({ url }) => {
+const Content = ({ url, onSize }) => {
+
+  const preview = createRef();
+
+  useEffect(() => {
+    const onResize = (e) => {
+      const el = document.querySelector('iframe.preview');
+      if (el) {
+        onSize(el.offsetWidth, el.offsetHeight);
+      }
+    }
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   return <iframe
     id="preview"
+    ref={preview}
     class="preview content"
     src={url}
     frameborder="0"
-    sandbox="allow-scripts allow-forms allow-same-origin"
+    sandbox="allow-scripts allow-forms"
     />;
 }
 
-const Footer = (props) => {
-  return <footer>...</footer>;
+const Footer = ({ dimensions }) => {
+  if (dimensions) {
+    return <footer class="no-select">
+      <small>{dimensions.width}x{dimensions.height}</small>
+    </footer>;
+  }
+  return null;
 }
 
 export default function WebsitePreview({ url }) {
-
   const [source, setSource] = useState(url);
   const [address, setAddress] = useState("/");
+  const [dimensions, setDimensions] = useState(null);
   const base = new URL(url);
 
   const onAddressChange = (value) => {
@@ -51,9 +75,13 @@ export default function WebsitePreview({ url }) {
     setSource(src);
   }
 
+  const onSize = (width, height) => {
+    setDimensions({width, height});
+  }
+
   return <div class="website-preview">
     <Header onChange={onAddressChange} address={address} />
-    <Content url={source} />
-    <Footer />
+    <Content url={source} onSize={onSize} />
+    <Footer dimensions={dimensions} />
   </div>;
 }

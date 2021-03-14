@@ -11,8 +11,6 @@ const Header = (props) => {
 }
 
 const Content = ({ webdav, file }) => {
-  console.log("Rendering editor with file: ", file);
-
   const view = createRef();
 
   useEffect(async () => {
@@ -35,7 +33,6 @@ const Content = ({ webdav, file }) => {
         editor.focus();
 
       }
-
     }
   });
 
@@ -44,14 +41,19 @@ const Content = ({ webdav, file }) => {
   </div>;
 }
 
-const Footer = (props) => {
-  return <footer>...</footer>;
+const Footer = ({ file }) => {
+  if (file) {
+    return <footer class="no-select">
+      <small>{file.filename} ({file.size})</small>
+    </footer>;
+  }
+  return null;
 }
 
 export default function FileEditor({ webdav, file }) {
   return <div class="file-editor">
     <Header />
     <Content webdav={webdav} file={file} />
-    <Footer />
+    <Footer file={file} />
   </div>;
 }
