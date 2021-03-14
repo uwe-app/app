@@ -2,6 +2,8 @@ import {h} from 'preact';
 import {useEffect, useContext, useState} from 'preact/hooks';
 import {useRoute, useLocation} from 'wouter';
 import {Link} from 'wouter';
+import {createClient} from 'webdav/web';
+
 import {State} from './State'
 import FileManager from './FileManager';
 import FileEditor from './FileEditor';
@@ -16,6 +18,7 @@ export default function ProjectView() {
   const [workerId, setWorkerId] = useState(null);
   const [connection, setConnection] = useState(null);
   const [result, setResult] = useState(null);
+  const [currentFile, setCurrentFile] = useState(null);
 
   const close = async (e) => {
     e.preventDefault();
@@ -79,15 +82,26 @@ export default function ProjectView() {
       <p>Project not found</p>
     </div>;
   } else if (result && valid && connection) {
+    const webdav = createClient(connection.url + '/-/webdav');
+    const onOpenFile = (item) => {
+      setCurrentFile(item);
+    }
+
+
+        //<p>Id: {result.id}</p>
+        //<p>Path: {result.path}</p>
+
     return <div class="project-editor">
       <header class="no-select">
         <Close />
-        <p>Id: {result.id}</p>
-        <p>Path: {result.path}</p>
       </header>
       <section>
-        <FileManager webdav={connection.url + '/-/webdav'} />
-        <FileEditor />
+        <FileManager
+          webdav={webdav}
+          onOpenFile={onOpenFile} />
+        <FileEditor
+          webdav={webdav}
+          file={currentFile} />
         <WebsitePreview url={connection.url} />
       </section>
     </div>;

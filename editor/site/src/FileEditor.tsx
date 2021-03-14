@@ -10,22 +10,34 @@ const Header = (props) => {
   return <header>File editor actions</header>;
 }
 
-const Content = (props) => {
+const Content = ({ webdav, file }) => {
+  console.log("Rendering editor with file: ", file);
+
   const view = createRef();
 
-  useEffect(() => {
+  useEffect(async () => {
     if (view.current) {
-      let content = "## Some title";
+      let content = "";
+      if (file) {
+        const content = await webdav.getFileContents(
+            file.filename, {format: 'text'});
 
-      let state = EditorState.create({
-        doc: defaultMarkdownParser.parse(content),
-        plugins: exampleSetup({schema})
-      });
+        while (view.current.firstChild !== null) {
+          view.current.removeChild(view.current.firstChild);
+        }
 
-      let editor = new EditorView(view.current, {state});
-      editor.focus();
+        let state = EditorState.create({
+          doc: defaultMarkdownParser.parse(content),
+          plugins: exampleSetup({schema})
+        });
+
+        let editor = new EditorView(view.current, {state});
+        editor.focus();
+
+      }
+
     }
-  }, []);
+  });
 
   return <div class="content">
     <div ref={view}></div>
@@ -36,10 +48,10 @@ const Footer = (props) => {
   return <footer>...</footer>;
 }
 
-export default function FileEditor(props) {
+export default function FileEditor({ webdav, file }) {
   return <div class="file-editor">
     <Header />
-    <Content />
+    <Content webdav={webdav} file={file} />
     <Footer />
   </div>;
 }

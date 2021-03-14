@@ -1,17 +1,25 @@
 import {h} from 'preact';
 import {useEffect, useState, useContext} from 'preact/hooks';
-import {createClient, FileStat} from 'webdav/web';
+import {FileStat} from 'webdav/web';
 import {State} from './State';
 
 const Header = (props) => {
   return <header>File manager actions</header>;
 }
 
-const Content = ({ listing }) => {
+const Content = ({ listing, onOpenFile }) => {
+
+  const onDoubleClick = (e, item) => {
+    e.preventDefault();
+    if (item.type === 'file') {
+      onOpenFile(item);
+    }
+  };
+
   return <div class="content">
     <ul>
       {listing.map((item) => {
-        return <li>{item.filename}</li>
+        return <li ondoubleclick={(e) => onDoubleClick(e, item)}>{item.filename}</li>
       })}
     </ul>
   </div>;
@@ -21,15 +29,14 @@ const Footer = (props) => {
   return <footer>...</footer>;
 }
 
-export default function FileManager({ webdav }) {
+export default function FileManager({ webdav, onOpenFile }) {
   const state = useContext(State);
-  const client = createClient(webdav);
 
   const [listing, setListing] = useState([]);
 
   useEffect(async () => {
     try {
-      const directoryItems = await client.getDirectoryContents("/");
+      const directoryItems = await webdav.getDirectoryContents("/");
       console.log(directoryItems);
 
       const listing = directoryItems.sort((a, b) => {
@@ -58,7 +65,7 @@ export default function FileManager({ webdav }) {
 
   return <div class="file-manager no-select">
     <Header />
-    <Content listing={listing} />
+    <Content listing={listing} onOpenFile={onOpenFile} />
     <Footer />
   </div>;
 }
