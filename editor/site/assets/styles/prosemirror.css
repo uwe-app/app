@@ -1,5 +1,14 @@
 .ProseMirror {
   position: relative;
+  padding: 0.5em;
+}
+
+.ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+.ProseMirror > :last-child {
+  margin-bottom: 0;
 }
 
 .ProseMirror {

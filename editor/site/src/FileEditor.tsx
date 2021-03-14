@@ -4,10 +4,14 @@ import {schema, defaultMarkdownParser,
         defaultMarkdownSerializer} from "prosemirror-markdown"
 import {EditorState} from "prosemirror-state";
 import {EditorView} from "prosemirror-view";
-import {exampleSetup} from "prosemirror-example-setup";
 
-const Header = (props) => {
-  return <header>File editor actions</header>;
+import {setup} from "./prosemirror/index";
+
+const Header = ({ file }) => {
+  if (file) {
+    return <header>{file.basename}</header>;
+  }
+  return null;
 }
 
 const Content = ({ webdav, file }) => {
@@ -26,7 +30,7 @@ const Content = ({ webdav, file }) => {
 
         let state = EditorState.create({
           doc: defaultMarkdownParser.parse(content),
-          plugins: exampleSetup({schema})
+          plugins: setup({schema})
         });
 
         let editor = new EditorView(view.current, {state});
@@ -52,7 +56,7 @@ const Footer = ({ file }) => {
 
 export default function FileEditor({ webdav, file }) {
   return <div class="file-editor">
-    <Header />
+    <Header file={file} />
     <Content webdav={webdav} file={file} />
     <Footer file={file} />
   </div>;

@@ -32,7 +32,7 @@ main, article {
   height: 100vh;
 }
 
-ul {
+.file-manager ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
